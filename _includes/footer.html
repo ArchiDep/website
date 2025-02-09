@@ -1,0 +1,12 @@
+<footer class="fixed bottom-0 left-0 right-0 p-2">
+  <data class="u-url" href="{{ "/" | relative_url }}"></data>
+
+  <div class="flex justify-between items-center gap-2">
+    <p class="feed-subscribe">
+      <a href="{{ site.feed.path | default: 'feed.xml' | absolute_url }}">
+        {%- include icons/rss.html class="size-4" -%}
+      </a>
+    </p>
+    <p class="text-xs">{{ site.description | escape }}</p>
+  </div>
+</footer>

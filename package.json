@@ -1,0 +1,32 @@
+{
+  "name": "archidep",
+  "version": "0.0.0",
+  "description": "Media engineering architecture and deployment course",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArchiDep/site.git"
+  },
+  "keywords": [
+    "architecture",
+    "deployment"
+  ],
+  "author": "Simon Oulevay <simon.oulevay@heig-vd.ch>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ArchiDep/site/issues"
+  },
+  "homepage": "https://github.com/ArchiDep/site#readme",
+  "scripts": {
+    "start": "tailwindcss -i ./src/style.css -o ./assets/css/style.css --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.0.5",
+    "tailwindcss": "^4.0.5"
+  },
+  "engines": {
+    "node": "^22",
+    "npm": ">= 8"
+  }
+}

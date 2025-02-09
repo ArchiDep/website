@@ -1,0 +1,7 @@
+# https://git-scm.com/docs/gitignore
+/assets/css/style.css
+/.jekyll-cache
+/.jekyll-metadata
+/node_modules
+/_site
+/vendor
