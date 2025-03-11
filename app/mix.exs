@@ -50,8 +50,8 @@ defmodule ArchiDep.MixProject do
       {:ueberauth, "~> 0.10.8"},
       {:ueberauth_oidcc, "~> 0.4.1"},
       # Development
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
+      {:phoenix_live_reload, "~> 1.2", only: [:dev, :proxy]},
+      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev || Mix.env() == :proxy},
       # Test
       {:floki, ">= 0.30.0", only: :test},
       {:mix_test_watch, "~> 1.0", only: :test, runtime: false}

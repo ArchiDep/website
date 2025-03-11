@@ -6,6 +6,8 @@ description: >-
 baseurl: ""
 url: "https://archidep.ch"
 port: 42001
+livereload_port: 42002
+livereload_base_url: http://localhost:42002
 destination: "../app/priv/static"
 strict_front_matter: true
 
