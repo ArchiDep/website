@@ -1,0 +1,46 @@
+pane_frames true
+
+layout {
+  default_tab_template {
+    children
+    pane size=1 borderless=true {
+      plugin location="zellij:compact-bar"
+    }
+  }
+
+  tab name="db" {
+    pane command="psql" {
+      args "archidep"
+    }
+  }
+
+  tab name="app" split_direction="vertical" {
+    pane size="50%" cwd="app" borderless=true
+    pane size="25%" command="mix" cwd="app" {
+      args "phx.server"
+    }
+    pane size="25%" command="mix" cwd="app" start_suspended=true {
+      args "test"
+    }
+  }
+
+  tab name="shell" focus=true {
+    pane borderless=true
+  }
+
+  tab name="course" split_direction="vertical" {
+    pane size="50%" borderless=true cwd="course"
+    pane size="25%" command="bundle" cwd="course" {
+      args "exec" "jekyll" "serve" "--drafts" "--livereload" "--livereload-port" "42003"
+    }
+    pane size="25%" command="npm" cwd="course" {
+      args "start"
+    }
+  }
+
+  tab name="ngrok" {
+    pane command="ngrok" start_suspended=true {
+      args "start archidep"
+    }
+  }
+}

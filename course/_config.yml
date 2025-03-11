@@ -5,6 +5,17 @@ description: >-
   Media engineering architecture and deployment course
 baseurl: ""
 url: "https://archidep.ch"
+port: 42001
+
+collections:
+  exercises:
+    output: true
+  solutions:
+    output: true
+  subjects:
+    output: true
+
+collections_dir: collections
 
 # Build settings
 plugins:

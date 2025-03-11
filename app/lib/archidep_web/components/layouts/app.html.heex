@@ -1,0 +1,21 @@
+<header class="p-2 border-b border-gray-800 dark:border-gray-200 flex gap-2">
+  <h1 class="order-2 md:order-1 font-bold">
+    <a href="/">ArchiDep</a>
+  </h1>
+
+  <nav class="order-1 md:order-2">
+    <input type="checkbox" id="nav-trigger" class="peer hidden" />
+    <label for="nav-trigger" class="block md:hidden">
+      <Heroicons.bars_3 class="size-6" />
+    </label>
+
+    <div class="hidden md:block peer-checked:block peer-checked:fixed peer-checked:top-10 peer-checked:bottom-0 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-zinc-200 peer-checked:dark:bg-zinc-800 clear-both">
+      <a href="/about">About</a>
+      <a href="/app/auth/switch-edu-id">Login</a>
+    </div>
+  </nav>
+</header>
+<main>
+  <.flash_group flash={@flash} />
+  {@inner_content}
+</main>

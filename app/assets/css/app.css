@@ -1,8 +1,6 @@
 @import "tailwindcss";
 
-@source "../_includes";
-@source "../_layouts";
-@source "../_posts";
+@source "../../lib";
 
 body {
   @apply text-slate-800 bg-white dark:text-neutral-100 dark:bg-black;

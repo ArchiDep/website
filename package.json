@@ -5,26 +5,25 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ArchiDep/site.git"
+    "url": "git+https://github.com/ArchiDep/website.git"
   },
   "keywords": [
     "architecture",
-    "deployment"
+    "deployment",
+    "course"
   ],
   "author": "Simon Oulevay <simon.oulevay@heig-vd.ch>",
+  "contributors": [
+    "Mathias Oberson <mathias.oberson@heig-vd.ch>",
+    "Arthur Verdon <arthur.verdon@heig-vd.ch>",
+    "Simon Pinkas <simon.pinkas@heig-vd.ch>"
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ArchiDep/site/issues"
+    "url": "https://github.com/ArchiDep/website/issues"
   },
-  "homepage": "https://github.com/ArchiDep/site#readme",
-  "scripts": {
-    "start": "tailwindcss -i ./src/style.css -o ./assets/css/style.css --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "@tailwindcss/cli": "^4.0.5",
-    "tailwindcss": "^4.0.5"
-  },
+  "homepage": "https://github.com/ArchiDep/website#readme",
+  "workspaces": ["course"],
   "engines": {
     "node": "^22",
     "npm": ">= 8"

@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@source "../../../app/lib";
+@source "../../course/_includes";
+@source "../../course/_layouts";
+@source "../../course/_posts";
+
+body {
+  @apply text-slate-800 bg-white dark:text-neutral-100 dark:bg-black;
+}
