@@ -17,7 +17,7 @@ defmodule ArchiDepWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  def static_paths, do: ~w(assets favicon.ico course fonts images index.html robots.txt)
 
   def router do
     quote do
