@@ -14,13 +14,16 @@ layout {
     }
   }
 
-  tab name="app" split_direction="vertical" {
-    pane size="50%" cwd="app" borderless=true
-    pane size="25%" command="mix" cwd="app" {
-      args "phx.server"
+  tab name="test" {
+    pane command="mix" cwd="app" {
+      args "test.watch"
     }
-    pane size="25%" command="mix" cwd="app" start_suspended=true {
-      args "test"
+  }
+
+  tab name="app" split_direction="vertical" {
+    pane cwd="app" size="65%" borderless=true
+    pane command="mix" cwd="app" size="35%" {
+      args "phx.server"
     }
   }
 
@@ -29,18 +32,15 @@ layout {
   }
 
   tab name="course" split_direction="vertical" {
-    pane size="50%" borderless=true cwd="course"
-    pane size="25%" command="bundle" cwd="course" {
+    pane borderless=true cwd="course" size="65%"
+    pane command="bundle" cwd="course" size="35%" {
       args "exec" "jekyll" "serve" "--drafts" "--livereload" "--livereload-port" "42003"
-    }
-    pane size="25%" command="npm" cwd="course" {
-      args "start"
     }
   }
 
-  tab name="ngrok" {
-    pane command="ngrok" start_suspended=true {
-      args "start archidep"
+  tab name="theme" {
+    pane command="npm" cwd="theme" {
+      args "start"
     }
   }
 }

@@ -4,8 +4,7 @@
   "description": "Media engineering architecture and deployment course",
   "private": true,
   "scripts": {
-    "start": "tailwindcss -i ./src/style.css -o ./assets/css/style.css --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "tailwindcss -i ./src/app.css -o ../app/priv/static/assets/app.css --watch"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.0.5",

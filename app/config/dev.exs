@@ -17,8 +17,7 @@ config :archidep, ArchiDepWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:archidep, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:archidep, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:archidep, ~w(--sourcemap=inline --watch)]}
   ]
 
 # Watch static and templates for browser reloading.

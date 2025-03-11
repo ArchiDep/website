@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@source "../../../app/lib";
+@source "../../app/lib";
 @source "../../course/_includes";
 @source "../../course/_layouts";
 @source "../../course/_posts";

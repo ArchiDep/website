@@ -23,7 +23,10 @@
     "url": "https://github.com/ArchiDep/website/issues"
   },
   "homepage": "https://github.com/ArchiDep/website#readme",
-  "workspaces": ["course"],
+  "scripts": {
+    "start": "npm --workspace theme start"
+  },
+  "workspaces": ["theme"],
   "engines": {
     "node": "^22",
     "npm": ">= 8"
