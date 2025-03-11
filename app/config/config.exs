@@ -19,7 +19,7 @@ config :archidep, ArchiDepWeb.Endpoint,
   server: true,
   # Bind to the loopback IPv4 address to prevent access from other machines by
   # default.
-  http: [ip: {127, 0, 0, 1}, port: 3000],
+  http: [ip: {127, 0, 0, 1}, port: 42000],
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [

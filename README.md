@@ -34,7 +34,15 @@ bundle install
 # Install other tooling
 cd ..
 npm ci
+
+# Copy (and adapt) the application's local config file
+cd app
+cp config/local.sample.exs config/local.exs
 ```
+
+## Configuration
+
+Ports 42000, 42001 & 42002 are used by default.
 
 [asdf]: https://asdf-vm.com
 [elixir]: https://elixir-lang.org

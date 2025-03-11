@@ -34,7 +34,7 @@ layout {
   tab name="course" split_direction="vertical" {
     pane borderless=true cwd="course" size="65%"
     pane command="bundle" cwd="course" size="35%" {
-      args "exec" "jekyll" "serve" "--drafts" "--livereload" "--livereload-port" "42003"
+      args "exec" "jekyll" "serve" "--drafts" "--livereload" "--livereload-port" "42002"
     }
   }
 
