@@ -1,4 +1,5 @@
 # https://beyondgrep.com
 --ignore-dir=app/deps
+--ignore-dir=app/.elixir_ls
 --ignore-dir=app/priv/static
 --ignore-dir=course/.jekyll-cache

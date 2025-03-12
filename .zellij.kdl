@@ -22,8 +22,8 @@ layout {
 
   tab name="app" split_direction="vertical" {
     pane cwd="app" size="65%" borderless=true
-    pane command="env" cwd="app" size="35%" {
-      args "MIX_ENV=proxy" "mix" "phx.server"
+    pane command="mix" cwd="app" size="35%" {
+      args "phx.server"
     }
   }
 
@@ -34,19 +34,13 @@ layout {
   tab name="course" split_direction="vertical" {
     pane borderless=true cwd="course" size="65%"
     pane command="bundle" cwd="course" size="35%" {
-      args "exec" "jekyll" "serve" "--config" "_config.yml,_config.proxy.yml" "--drafts" "--livereload"
+      args "exec" "jekyll" "serve" "--config" "_config.yml" "--drafts" "--livereload"
     }
   }
 
   tab name="theme" {
     pane command="npm" cwd="theme" {
       args "start"
-    }
-  }
-
-  tab name="proxy" {
-    pane command="ssh" {
-      args "archidep-proxy"
     }
   }
 }

@@ -19,16 +19,13 @@ defmodule ArchiDepWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
-
-    scope "/auth" do
-      get "/:provider", AuthController, :request
-    end
   end
 
-  scope "/callbacks", ArchiDepWeb do
+  scope "/auth", ArchiDepWeb do
     pipe_through :browser
 
-    get "/openid", AuthController, :callback
+    get "/switch-edu-id", AuthController, :request
+    get "/switch-edu-id/callback", AuthController, :callback
   end
 
   # Other scopes may use custom stacks.

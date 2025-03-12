@@ -46,7 +46,7 @@ defmodule ArchiDepWeb.Config do
     "Switch edu-ID client ID for OpenID Connect authentication"
     |> ConfigValue.new()
     |> ConfigValue.env_var(env, "ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID")
-    |> ConfigValue.default_to(default_config, [:switch_edu_id, :client_id])
+    |> ConfigValue.default_to(default_config, [:"switch-edu-id", :client_id])
     |> ConfigValue.required_value()
   end
 
@@ -54,7 +54,7 @@ defmodule ArchiDepWeb.Config do
     "Switch edu-ID client secret for OpenID Connect authentication"
     |> ConfigValue.new()
     |> ConfigValue.env_var(env, "ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_SECRET")
-    |> ConfigValue.default_to(default_config, [:switch_edu_id, :client_secret])
+    |> ConfigValue.default_to(default_config, [:"switch-edu-id", :client_secret])
     |> ConfigValue.required_value()
   end
 

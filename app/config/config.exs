@@ -58,13 +58,10 @@ config :logger, level: :info
 config :phoenix, :json_library, Jason
 
 config :ueberauth, Ueberauth,
-  base_path: "/app/auth",
   providers: [
-    switch_edu_id: { Ueberauth.Strategy.Oidcc,
+    "switch-edu-id": { Ueberauth.Strategy.Oidcc,
       issuer: :switch_edu_id,
       scopes: ["openid", "profile", "email", "https://login.eduid.ch/authz/User.Read"],
-      request_path: "/app/auth/switch-edu-id",
-      callback_path: "/callbacks/openid",
       userinfo: true
       # uid_field: "email"
     }
