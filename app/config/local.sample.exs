@@ -1,5 +1,7 @@
 import Config
 
+config :archidep, root_users: ["example@archidep.ch"]
+
 config :archidep, ArchiDep.Repo,
   url:
     if(config_env() != :test,

@@ -10,7 +10,8 @@ import Config
 config :archidep,
   namespace: ArchiDep,
   ecto_repos: [ArchiDep.Repo],
-  generators: [timestamp_type: :utc_datetime, binary_id: true]
+  generators: [timestamp_type: :utc_datetime, binary_id: true],
+  root_users: []
 
 config :archidep, ArchiDep.Repo, pool_size: 10, socket_options: []
 
