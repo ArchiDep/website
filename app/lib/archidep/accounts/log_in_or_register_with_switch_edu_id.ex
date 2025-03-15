@@ -24,9 +24,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
         switch_edu_id_data,
         meta
       ) do
-    with :ok <- authorize_switch_edu_id_account(switch_edu_id_data),
+    with {:ok, roles} <- authorize_switch_edu_id_account(switch_edu_id_data),
          {:ok, %{switch_edu_id: switch_edu_id}} <-
-           create_or_update_account(switch_edu_id_data) do
+           log_in_or_register(switch_edu_id_data, roles, meta) do
       IO.puts("@@@ OK #{inspect(switch_edu_id)}")
       {:error, :unauthorized_switch_edu_id}
     else
@@ -37,22 +37,27 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
   defp authorize_switch_edu_id_account(switch_edu_id_data) do
     if Enum.member?(@root_users, switch_edu_id_data.email) ||
          Enum.member?(@root_users, switch_edu_id_data.swiss_edu_person_unique_id) do
-      :ok
+      {:ok, [:root]}
     else
       {:error, :unauthorized_switch_edu_id}
     end
   end
 
-  defp create_or_update_account(switch_edu_id_data) do
+  defp log_in_or_register(switch_edu_id_data, roles, meta) do
     Multi.new()
     |> Multi.insert_or_update(
       :switch_edu_id,
       SwitchEduId.create_or_update(switch_edu_id_data)
     )
-    |> Multi.insert(
+    |> Multi.insert_or_update(
       :user_account,
-      fn %{switch_edu_id: switch_edu_id} -> UserAccount.new_root(switch_edu_id) end
+      fn %{switch_edu_id: switch_edu_id} ->
+        UserAccount.fetch_or_create_for_switch_edu_id(switch_edu_id, roles)
+      end
     )
+    |> Multi.insert(:session, fn %{user_account: user_account} ->
+      UserSession.new_session(user_account, EventMetadata.extract(meta))
+    end)
     # |> insert(:stored_event, fn %{user_session: session} ->
     #   session
     #   |> UserLoggedIn.new()

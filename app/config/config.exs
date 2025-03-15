@@ -63,16 +63,15 @@ config :phoenix, :json_library, Jason
 
 config :ueberauth, Ueberauth,
   providers: [
-    switch_edu_id:
-      {
-        Ueberauth.Strategy.Oidcc,
-        issuer: :switch_edu_id,
-        scopes: ["openid", "profile", "email", "https://login.eduid.ch/authz/User.Read"],
-        userinfo: true,
-        request_path: "/auth/switch-edu-id",
-        callback_path: "/auth/switch-edu-id/callback"
-        # uid_field: "email"
-      }
+    switch_edu_id: {
+      Ueberauth.Strategy.Oidcc,
+      issuer: :switch_edu_id,
+      scopes: ["openid", "profile", "email", "https://login.eduid.ch/authz/User.Read"],
+      userinfo: true,
+      request_path: "/auth/switch-edu-id",
+      callback_path: "/auth/switch-edu-id/callback"
+      # uid_field: "email"
+    }
   ]
 
 config :ueberauth_oidcc, :issuers, [

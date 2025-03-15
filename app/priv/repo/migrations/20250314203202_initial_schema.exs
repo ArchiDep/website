@@ -72,6 +72,10 @@ defmodule ArchiDep.Repo.Migrations.InitialSchema do
       timestamps(inserted_at: :created_at, required: true, type: :utc_datetime_usec)
     end
 
+    create unique_index(:user_accounts, [:switch_edu_id_id],
+             name: :user_accounts_unique_switch_edu_id_index
+           )
+
     create unique_index(:user_accounts, ["LOWER(username)"],
              name: :user_accounts_unique_username_index
            )

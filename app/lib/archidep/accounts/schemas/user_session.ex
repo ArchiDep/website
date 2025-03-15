@@ -52,9 +52,12 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   @spec new_session(UserAccount.t(), EventMetadata.t()) ::
           Changeset.t(__MODULE__.t())
   def new_session(user_account, metadata) do
+    id = UUID.generate()
+    now = DateTime.utc_now()
+
     %__MODULE__{}
     |> change(
-      id: UUID.generate(),
+      id: id,
       token: generate_session_token(),
       client_ip_address:
         metadata
@@ -63,9 +66,10 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       client_user_agent: Map.get(metadata, :client_user_agent),
       user_account: user_account,
       user_account_id: user_account.id,
-      created_at: DateTime.utc_now()
+      created_at: now
     )
-    |> validate_required([:token, :user_account])
+    |> validate_required([:id, :token, :user_account, :created_at])
+    |> validate_length(:client_ip_address, max: 50)
   end
 
   @doc """

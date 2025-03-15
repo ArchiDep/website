@@ -7,6 +7,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   use ArchiDep, :schema
 
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
+  alias ArchiDep.Accounts.Types
 
   @derive {Inspect, only: [:id, :username, :roles, :version]}
   @primary_key {:id, :binary_id, []}
@@ -16,8 +17,9 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   @type t :: %__MODULE__{
           id: UUID.t(),
           username: String.t(),
-          roles: list(String.t()),
-          switch_edu_id: SwitchEduId.t(),
+          roles: list(Types.role()),
+          switch_edu_id: SwitchEduId.t() | NotLoaded,
+          switch_edu_id_id: UUID.t(),
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -34,20 +36,39 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     field(:updated_at, :utc_datetime_usec)
   end
 
-  @doc """
-  Creates a new root user account from a Switch edu-ID login.
-  """
-  @spec new_root(SwitchEduId.t()) :: Changeset.t(__MODULE__.t())
-  def new_root(switch_edu_id) do
+  @spec fetch_or_create_for_switch_edu_id(SwitchEduId.t(), list(Types.role())) ::
+          Changeset.t(__MODULE__.t())
+  def fetch_or_create_for_switch_edu_id(switch_edu_id, roles) do
+    if existing_account = fetch_for_switch_edu_id(switch_edu_id) do
+      update_switch_edu_id_account_roles(existing_account, switch_edu_id, roles)
+    else
+      new_switch_edu_id_account(switch_edu_id, roles)
+    end
+  end
+
+  @spec event_stream(String.t() | __MODULE__.t()) :: String.t()
+  def event_stream(id) when is_binary(id), do: "user-accounts:#{id}"
+  def event_stream(%__MODULE__{id: id}), do: event_stream(id)
+
+  defp fetch_for_switch_edu_id(%SwitchEduId{id: switch_edu_id_id}),
+    do:
+      from(ua in __MODULE__,
+        join: sei in SwitchEduId,
+        on: ua.switch_edu_id_id == sei.id,
+        where: sei.id == ^switch_edu_id_id,
+        preload: [switch_edu_id: sei]
+      )
+      |> Repo.one()
+
+  defp new_switch_edu_id_account(switch_edu_id, roles) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
     %__MODULE__{}
-    |> cast(%{username: switch_edu_id.first_name, roles: [:root]}, [
+    |> cast(%{username: switch_edu_id.first_name, roles: roles}, [
       :username,
       :roles
     ])
-    |> validate_required([:username, :roles])
     |> change(
       id: id,
       switch_edu_id_id: switch_edu_id.id,
@@ -58,12 +79,15 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     |> validate()
   end
 
-  @doc """
-  Returns the event stream for the specified user account entity.
-  """
-  @spec event_stream(String.t() | __MODULE__.t()) :: String.t()
-  def event_stream(id) when is_binary(id), do: "user-accounts:#{id}"
-  def event_stream(%__MODULE__{id: id}), do: event_stream(id)
+  defp update_switch_edu_id_account_roles(existing_account, switch_edu_id, roles) do
+    now = DateTime.utc_now()
+
+    existing_account
+    |> cast(%{roles: roles}, [:roles])
+    |> touch_if_roles_changed(now)
+    |> optimistic_lock(:version)
+    |> validate()
+  end
 
   defp validate(changeset),
     do:
@@ -77,5 +101,14 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
         :updated_at
       ])
       |> validate_length(:username, max: @max_username_length)
+      |> validate_subset(:roles, [:root, :student])
       |> unique_constraint(:username, name: :user_accounts_unique_username_index)
+
+  defp touch_if_roles_changed(changeset, updated_at) do
+    if changed?(changeset, :roles) do
+      change(changeset, updated_at: updated_at)
+    else
+      changeset
+    end
+  end
 end

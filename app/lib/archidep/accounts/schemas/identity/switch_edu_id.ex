@@ -53,7 +53,7 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
          Repo.get_by(__MODULE__, swiss_edu_person_unique_id: swiss_edu_person_unique_id) do
       existing_switch_edu_id
       |> cast(data, [:email, :first_name, :last_name])
-      |> mark_as_updated(now)
+      |> touch_if_data_changed(now)
       |> change(used_at: now)
       |> optimistic_lock(:version)
       |> validate()
@@ -84,7 +84,7 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
       |> unique_constraint(:email, name: :switch_edu_ids_unique_email_index)
       |> unique_constraint(:swiss_edu_person_unique_id, name: :switch_edu_ids_unique_sepui_index)
 
-  defp mark_as_updated(changeset, updated_at) do
+  defp touch_if_data_changed(changeset, updated_at) do
     if changed?(changeset, :email) or changed?(changeset, :first_name) or
          changed?(changeset, :last_name) do
       change(changeset, updated_at: updated_at)
