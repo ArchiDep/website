@@ -121,8 +121,8 @@ defmodule ArchiDepWeb.CoreComponents do
       {@rest}
     >
       <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
-        <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
+        <Heroicons.information_circle :if={@kind == :info} class="size-4" />
+        <Heroicons.exclamation_circle :if={@kind == :error} class="size-4" />
         {@title}
       </p>
       <p class="mt-2 text-sm leading-5">{msg}</p>
@@ -156,8 +156,7 @@ defmodule ArchiDepWeb.CoreComponents do
         phx-connected={hide("#client-error")}
         hidden
       >
-        Attempting to reconnect
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+        Attempting to reconnect <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
       </.flash>
 
       <.flash

@@ -1,26 +1,17 @@
 <header class="p-2 border-b border-gray-800 dark:border-gray-200 flex gap-2">
-  {%- assign default_paths = site.pages | map: "path" -%}
-  {%- assign page_paths = site.header_pages | default: default_paths -%}
-  {%- assign titles_size = site.pages | map: 'title' | join: '' | size -%}
   <h1 class="order-2 md:order-1 font-bold">
     <a href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
   </h1>
 
-  {%- if titles_size > 0 -%}
-    <nav class="order-1 md:order-2">
-      <input type="checkbox" id="nav-trigger" class="peer hidden" />
-      <label for="nav-trigger" class="block md:hidden">
-        {%- include icons/bars-3.html class="size-6" -%}
-      </label>
+  <nav class="order-1 md:order-2">
+    <input type="checkbox" id="nav-trigger" class="peer hidden" />
+    <label for="nav-trigger" class="block md:hidden">
+      {%- include icons/bars-3.html class="size-6" -%}
+    </label>
 
-      <div class="hidden md:block peer-checked:block peer-checked:fixed peer-checked:top-10 peer-checked:bottom-0 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-zinc-200 peer-checked:dark:bg-zinc-800 clear-both">
-        {%- for path in page_paths -%}
-          {%- assign current_page = site.pages | where: "path", path | first -%}
-          {%- if current_page.title -%}
-          <a class="page-link" href="{{ current_page.url | relative_url }}">{{ current_page.title | escape }}</a>
-          {%- endif -%}
-        {%- endfor -%}
-      </div>
-    </nav>
-  {%- endif -%}
+    <div class="hidden md:block peer-checked:block peer-checked:fixed peer-checked:top-10 peer-checked:bottom-0 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-zinc-200 peer-checked:dark:bg-zinc-800 clear-both">
+      <a class="page-link" href="{{ link index.md }}">Course</a>
+      <a class="page-link" href="{{ site.baseurl }}/app">App</a>
+    </div>
+  </nav>
 </header>

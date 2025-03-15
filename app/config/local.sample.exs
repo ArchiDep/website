@@ -17,4 +17,4 @@ config :archidep, ArchiDepWeb.Endpoint,
   session_signing_salt: "changeme"
 
 config :ueberauth_oidcc, :providers,
-  "switch-edu-id": [client_id: "changeme", client_secret: "changeme"]
+  switch_edu_id: [client_id: "changeme", client_secret: "changeme"]

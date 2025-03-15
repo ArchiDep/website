@@ -9,7 +9,9 @@ import Config
 
 config :archidep, ArchiDep.Repo, ArchiDep.Config.repo()
 config :archidep, ArchiDepWeb.Endpoint, ArchiDepWeb.Config.endpoint()
-config :ueberauth_oidcc, :providers, "switch-edu-id": ArchiDepWeb.Config.switch_edu_id_auth_credentials()
+
+config :ueberauth_oidcc, :providers,
+  switch_edu_id: ArchiDepWeb.Config.switch_edu_id_auth_credentials()
 
 # ## Configuring the mailer
 #

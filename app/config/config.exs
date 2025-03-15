@@ -13,6 +13,9 @@ config :archidep,
   generators: [timestamp_type: :utc_datetime, binary_id: true],
   root_users: []
 
+# Configure contexts.
+config :archidep, ArchiDep.Accounts, ArchiDep.Accounts.ContextImpl
+
 config :archidep, ArchiDep.Repo, pool_size: 10, socket_options: []
 
 # Configures the endpoint
@@ -60,12 +63,16 @@ config :phoenix, :json_library, Jason
 
 config :ueberauth, Ueberauth,
   providers: [
-    "switch-edu-id": { Ueberauth.Strategy.Oidcc,
-      issuer: :switch_edu_id,
-      scopes: ["openid", "profile", "email", "https://login.eduid.ch/authz/User.Read"],
-      userinfo: true
-      # uid_field: "email"
-    }
+    switch_edu_id:
+      {
+        Ueberauth.Strategy.Oidcc,
+        issuer: :switch_edu_id,
+        scopes: ["openid", "profile", "email", "https://login.eduid.ch/authz/User.Read"],
+        userinfo: true,
+        request_path: "/auth/switch-edu-id",
+        callback_path: "/auth/switch-edu-id/callback"
+        # uid_field: "email"
+      }
   ]
 
 config :ueberauth_oidcc, :issuers, [

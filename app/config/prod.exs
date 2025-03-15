@@ -13,7 +13,8 @@ config :archidep, ArchiDepWeb.Endpoint,
 
 # Swoosh API Client
 config :swoosh,
-  api_client: Swoosh.ApiClient.Finch, finch_name: ArchiDep.Finch,
+  api_client: Swoosh.ApiClient.Finch,
+  finch_name: ArchiDep.Finch,
   # Disable Swoosh Local Memory Storage
   local: false
 

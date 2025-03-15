@@ -1,0 +1,14 @@
+defmodule ArchiDep.Accounts do
+  @moduledoc """
+  User account management context.
+  """
+
+  @behaviour ArchiDep.Accounts.Behaviour
+
+  import ArchiDep.Helpers.ContextHelpers, only: [delegate: 1]
+  alias ArchiDep.Accounts.Behaviour
+
+  @implementation Application.compile_env!(:archidep, __MODULE__)
+
+  delegate(&Behaviour.log_in_or_register_with_switch_edu_id/2)
+end

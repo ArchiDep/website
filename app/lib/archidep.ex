@@ -1,9 +1,61 @@
 defmodule ArchiDep do
   @moduledoc """
-  ArchiDep keeps the contexts that define your domain
+  This module keeps the contexts that define your domain
   and business logic.
 
   Contexts are also responsible for managing your data, regardless
   if it comes from the database, an external API or others.
   """
+
+  @doc """
+  Returns the current version of the application.
+  """
+  @spec version() :: Version.t()
+  def version do
+    {:ok, vsn} = :application.get_key(:archidep, :vsn)
+    vsn |> List.to_string() |> Version.parse!()
+  end
+
+  @spec schema :: Macro.t()
+  def schema do
+    quote do
+      use Ecto.Schema
+
+      import ArchiDep.Helpers.PipeHelpers
+      import ArchiDep.Helpers.SchemaHelpers
+      import Ecto.Changeset
+      import Ecto.Query, only: [from: 2]
+      alias Ecto.Association.NotLoaded
+      alias Ecto.Changeset
+      alias Ecto.Query
+      alias Ecto.UUID
+      alias ArchiDep.EventMetadata
+      alias ArchiDep.Repo
+    end
+  end
+
+  @spec use_case :: Macro.t()
+  def use_case do
+    quote do
+      import ArchiDep.Helpers.UseCaseHelpers
+      import ArchiDep.Repo, only: [transaction: 1]
+      import Ecto.Multi, only: [delete: 3, insert: 3, put: 3, run: 3, update: 3]
+      import Ecto.Query, only: [from: 2]
+      alias Ecto.Changeset
+      alias Ecto.Multi
+      alias Ecto.UUID
+      alias ArchiDep.Authentication
+      alias ArchiDep.EventMetadata
+      alias ArchiDep.Events.Registry
+      alias ArchiDep.Events.Store.StoredEvent
+      alias ArchiDep.Repo
+    end
+  end
+
+  @doc """
+  When used, dispatch to the appropriate function.
+  """
+  defmacro __using__(which) when is_atom(which) do
+    apply(__MODULE__, which, [])
+  end
 end
