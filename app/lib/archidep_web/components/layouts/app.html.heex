@@ -13,8 +13,7 @@
       <a href="/">Course</a>
       <a href="/app">App</a>
       <.link :if={logged_in?(@auth)} href={~p"/logout"} method="delete" class="gap-1 inline">
-        <Heroicons.arrow_right_on_rectangle outline class="size-6 inline" />
-        Log out
+        <Heroicons.arrow_right_on_rectangle outline class="size-6 inline" /> Log out
       </.link>
     </div>
   </nav>

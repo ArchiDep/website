@@ -17,6 +17,15 @@ defmodule ArchiDepWeb.Auth.AuthController do
     Auth.log_out(conn)
   end
 
+  @spec configure_switch_edu_id_login(Conn.t(), map) :: Conn.t()
+  def configure_switch_edu_id_login(conn, params),
+    do:
+      conn
+      |> put_session(:remember_me, Map.has_key?(params, "remember-me"))
+      |> redirect(to: "/auth/switch-edu-id")
+
+  @spec callback(Conn.t(), map) :: Conn.t()
+
   def callback(%{assigns: %{ueberauth_failure: fails}} = conn, _params) do
     IO.puts("@@@@@@@@@@@@@@@ fails #{inspect(fails)}")
 
@@ -42,7 +51,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
             }
           }
         } = conn,
-        params
+        _params
       ) do
     with {:ok, auth} <-
            Accounts.log_in_or_register_with_switch_edu_id(
@@ -55,7 +64,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
              conn_metadata(conn)
            ) do
       conn
-      |> Auth.log_in(auth, params)
+      |> Auth.log_in(auth)
       |> put_flash(:info, "Welcome!")
     else
       {:error, :unauthorized_switch_edu_id} ->

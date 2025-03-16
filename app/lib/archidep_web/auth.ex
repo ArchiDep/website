@@ -18,6 +18,7 @@ defmodule ArchiDepWeb.Auth do
 
   @remember_me_cookie "_archidep_remember_me"
   @remember_me_options [sign: true, max_age: @max_age_in_seconds, same_site: "Lax"]
+  @remember_me_enabled_cookie "_archidep_remember_me_enabled"
 
   @doc """
   Logs the user_account in.
@@ -25,15 +26,16 @@ defmodule ArchiDepWeb.Auth do
   It renews the session ID and clears the whole session to avoid fixation
   attacks. See the renew_session function to customize this behaviour.
   """
-  @spec log_in(Conn.t(), Authentication.t(), map) :: Conn.t()
-  def log_in(conn, auth, params) do
+  @spec log_in(Conn.t(), Authentication.t()) :: Conn.t()
+  def log_in(conn, auth) do
     token = Authentication.session_token(auth)
     user_return_to = get_session(conn, :user_return_to)
+    remember_me = get_session(conn, :remember_me, false)
 
     conn
     |> renew_session()
     |> put_session(:session_token, token)
-    |> maybe_write_remember_me_cookie(token, params)
+    |> maybe_write_remember_me_cookie(token, remember_me)
     |> redirect(to: user_return_to || signed_in_path())
   end
 
@@ -54,10 +56,8 @@ defmodule ArchiDepWeb.Auth do
     |> redirect(to: "/login")
   end
 
-  defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}),
-    do: put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
-
-  defp maybe_write_remember_me_cookie(conn, _token, _params), do: conn
+  defp maybe_write_remember_me_cookie(conn, token, true), do: put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
+  defp maybe_write_remember_me_cookie(conn, token, false), do: conn
 
   # This function renews the session ID and erases the whole session to avoid
   # fixation attacks. If there is any data in the session you may want to

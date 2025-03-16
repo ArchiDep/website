@@ -2,7 +2,6 @@ defmodule ArchiDepWeb.Router do
   use ArchiDepWeb, :router
 
   import ArchiDepWeb.Auth
-  alias ArchiDepWeb.LiveDashboardHelpers
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -44,6 +43,7 @@ defmodule ArchiDepWeb.Router do
     scope "/auth" do
       pipe_through [:fetch_authentication, :redirect_if_user_is_authenticated]
       get "/switch-edu-id", AuthController, :request
+      get "/switch-edu-id/configure", AuthController, :configure_switch_edu_id_login
       get "/switch-edu-id/callback", AuthController, :callback
     end
   end
