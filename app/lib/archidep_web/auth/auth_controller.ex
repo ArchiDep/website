@@ -57,7 +57,6 @@ defmodule ArchiDepWeb.Auth.AuthController do
       conn
       |> Auth.log_in(auth, params)
       |> put_flash(:info, "Welcome!")
-      |> redirect(to: "/app")
     else
       {:error, :unauthorized_switch_edu_id} ->
         conn

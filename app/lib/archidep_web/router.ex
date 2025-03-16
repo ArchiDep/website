@@ -14,10 +14,6 @@ defmodule ArchiDepWeb.Router do
     plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
   end
 
-  pipeline :authenticated do
-    plug(:fetch_authentication)
-  end
-
   pipeline :dev do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -27,7 +23,7 @@ defmodule ArchiDepWeb.Router do
   end
 
   scope "/app", ArchiDepWeb do
-    pipe_through [:browser, :authenticated]
+    pipe_through [:browser, :fetch_authentication]
 
     live "/", Dashboard.DashboardLive, :home
   end
@@ -36,14 +32,17 @@ defmodule ArchiDepWeb.Router do
     pipe_through :browser
 
     scope "/" do
-      pipe_through [:authenticated, :redirect_if_user_is_authenticated]
+      pipe_through [:fetch_authentication, :redirect_if_user_is_authenticated]
       get "/login", AuthController, :login
     end
 
-    delete "/logout", AuthController, :logout
+    scope "/" do
+      pipe_through :fetch_authentication
+      delete "/logout", AuthController, :logout
+    end
 
     scope "/auth" do
-      pipe_through :redirect_if_user_is_authenticated
+      pipe_through [:fetch_authentication, :redirect_if_user_is_authenticated]
       get "/switch-edu-id", AuthController, :request
       get "/switch-edu-id/callback", AuthController, :callback
     end
