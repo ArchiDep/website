@@ -39,7 +39,7 @@ defmodule ArchiDepWeb do
   def controller do
     quote do
       use Phoenix.Controller,
-        formats: [:html, :json],
+        formats: [:html],
         layouts: [html: ArchiDepWeb.Layouts]
 
       import Plug.Conn
@@ -52,6 +52,8 @@ defmodule ArchiDepWeb do
     quote do
       use Phoenix.LiveView,
         layout: {ArchiDepWeb.Layouts, :app}
+
+      on_mount(ArchiDepWeb.LiveAuth)
 
       unquote(html_helpers())
     end

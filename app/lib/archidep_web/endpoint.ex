@@ -1,19 +1,18 @@
 defmodule ArchiDepWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :archidep
 
-  # The session will be stored in the cookie and signed,
-  # this means its contents can be read but not tampered with.
-  # Set :encryption_salt if you would also like to encrypt it.
+  # The session will be stored in the cookie and signed, this means its contents
+  # can be read but not tampered with. Set :encryption_salt if you would also
+  # like to encrypt it.
   @session_options [
     store: :cookie,
     key: "_archidep_key",
-    signing_salt: "mAtTxZh3",
-    same_site: "Lax"
+    signing_salt: {__MODULE__, :session_signing_salt, []}
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [connect_info: [:peer_data, :user_agent, session: @session_options]],
+    longpoll: [connect_info: [:peer_data, :user_agent, session: @session_options]]
 
   plug Plug.Static.IndexHtml
 
@@ -52,4 +51,11 @@ defmodule ArchiDepWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug ArchiDepWeb.Router
+
+  @doc """
+  Returns the configured salt used to sign session cookies.
+  """
+  @spec session_signing_salt() :: String.t()
+  def session_signing_salt,
+    do: :archidep |> Application.fetch_env!(__MODULE__) |> Keyword.fetch!(:session_signing_salt)
 end

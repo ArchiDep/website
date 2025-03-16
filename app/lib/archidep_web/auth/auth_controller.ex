@@ -1,4 +1,4 @@
-defmodule ArchiDepWeb.AuthController do
+defmodule ArchiDepWeb.Auth.AuthController do
   use ArchiDepWeb, :controller
 
   import ArchiDepWeb.Helpers.ConnHelpers
@@ -7,6 +7,10 @@ defmodule ArchiDepWeb.AuthController do
   alias Ueberauth.Auth.Extra
 
   plug Ueberauth
+
+  def login(conn, _params) do
+    render(conn, "login.html")
+  end
 
   def callback(%{assigns: %{ueberauth_failure: fails}} = conn, _params) do
     IO.puts("@@@@@@@@@@@@@@@ fails #{inspect(fails)}")

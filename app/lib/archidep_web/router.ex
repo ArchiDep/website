@@ -33,14 +33,18 @@ defmodule ArchiDepWeb.Router do
   scope "/app", ArchiDepWeb do
     pipe_through [:browser, :authenticated]
 
-    get "/", PageController, :home
+    live "/", Dashboard.DashboardLive, :home
   end
 
-  scope "/auth", ArchiDepWeb do
-    pipe_through :browser
+  scope "/", ArchiDepWeb.Auth do
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    get "/switch-edu-id", AuthController, :request
-    get "/switch-edu-id/callback", AuthController, :callback
+    get "/login", AuthController, :login
+
+    scope "/auth" do
+      get "/switch-edu-id", AuthController, :request
+      get "/switch-edu-id/callback", AuthController, :callback
+    end
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

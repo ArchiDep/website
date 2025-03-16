@@ -3,8 +3,7 @@ defmodule ArchiDepWeb.Auth do
   Helpers to handle HTTP authentication based on session cookies.
   """
 
-  import ArchiDepWeb.Helpers.ProblemDetailsHelpers
-  import ArchiDepWeb.Utils.ConnUtils
+  import ArchiDepWeb.Helpers.ConnHelpers
   import Phoenix.Controller
   import Plug.Conn
   alias ArchiDep.Accounts
@@ -39,7 +38,7 @@ defmodule ArchiDepWeb.Auth do
   end
 
   @doc """
-  Logs the user_account out.
+  Logs out the user account.
 
   It clears all session data for safety.
   """
@@ -52,7 +51,7 @@ defmodule ArchiDepWeb.Auth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: "/auth/login")
+    |> redirect(to: "/login")
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}),
@@ -133,5 +132,5 @@ defmodule ArchiDepWeb.Auth do
     assign(conn, :auth, nil)
   end
 
-  defp signed_in_path, do: "/"
+  defp signed_in_path, do: "/app"
 end
