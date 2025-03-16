@@ -11,54 +11,56 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
   @derive Jason.Encoder
 
   @enforce_keys [
-    :user_account_id,
-    :username,
     :switch_edu_id,
     :email,
     :first_name,
     :last_name,
     :swiss_edu_person_unique_id,
+    :user_account_id,
+    :username,
     :session_id,
     :client_ip_address,
     :client_user_agent
   ]
   defstruct [
-    :user_account_id,
-    :username,
     :switch_edu_id,
     :email,
     :first_name,
     :last_name,
     :swiss_edu_person_unique_id,
+    :user_account_id,
+    :username,
     :session_id,
     :client_ip_address,
     :client_user_agent
   ]
 
   @type t :: %__MODULE__{
-          user_account_id: UUID.t(),
-          username: String.t(),
           switch_edu_id: UUID.t(),
           email: String.t(),
           first_name: String.t(),
           last_name: String.t() | nil,
           swiss_edu_person_unique_id: String.t(),
+          user_account_id: UUID.t(),
+          username: String.t(),
           session_id: UUID.t(),
           client_ip_address: String.t() | nil,
           client_user_agent: String.t() | nil
         }
 
-  @spec new(UserAccount.t(), UserSession.t()) :: t()
-  def new(user_account, user_session) do
+  @spec new(SwitchEduId.t(), UserAccount.t(), UserSession.t()) :: t()
+  def new(switch_edu_id, user_account, user_session) do
+    %SwitchEduId{
+      id: id,
+      email: email,
+      first_name: first_name,
+      last_name: last_name,
+      swiss_edu_person_unique_id: swiss_edu_person_unique_id
+    } = switch_edu_id
+
     %UserAccount{
       id: user_account_id,
-      username: username,
-      switch_edu_id: %SwitchEduId{
-        email: email,
-        first_name: first_name,
-        last_name: last_name,
-        swiss_edu_person_unique_id: swiss_edu_person_unique_id
-      }
+      username: username
     } = user_account
 
     %UserSession{
@@ -68,13 +70,13 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
     } = user_session
 
     %__MODULE__{
-      user_account_id: user_account_id,
-      username: username,
-      switch_edu_id: user_account.switch_edu_id.id,
+      switch_edu_id: id,
       email: email,
       first_name: first_name,
       last_name: last_name,
       swiss_edu_person_unique_id: swiss_edu_person_unique_id,
+      user_account_id: user_account_id,
+      username: username,
       session_id: session_id,
       client_ip_address: client_ip_address,
       client_user_agent: client_user_agent

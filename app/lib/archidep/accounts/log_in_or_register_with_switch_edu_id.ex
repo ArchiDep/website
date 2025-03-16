@@ -5,7 +5,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
   """
   use ArchiDep, :use_case
 
-  alias ArchiDep.Accounts.Events.SwitchEduIdUserLoggedIn
+  alias ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId
   alias ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.UserAccount
@@ -24,9 +24,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
         switch_edu_id_data,
         meta
       ) do
+    extracted_metadata = EventMetadata.extract(meta)
+
     with {:ok, roles} <- authorize_switch_edu_id_account(switch_edu_id_data),
          {:ok, %{switch_edu_id: switch_edu_id}} <-
-           log_in_or_register(switch_edu_id_data, roles, meta) do
+           log_in_or_register(switch_edu_id_data, roles, extracted_metadata) do
       IO.puts("@@@ OK #{inspect(switch_edu_id)}")
       {:error, :unauthorized_switch_edu_id}
     else
@@ -49,22 +51,39 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
       :switch_edu_id,
       SwitchEduId.create_or_update(switch_edu_id_data)
     )
-    |> Multi.insert_or_update(
-      :user_account,
-      fn %{switch_edu_id: switch_edu_id} ->
-        UserAccount.fetch_or_create_for_switch_edu_id(switch_edu_id, roles)
+    |> Multi.run(
+      :user_account_and_state,
+      fn _repo, %{switch_edu_id: switch_edu_id} ->
+        switch_edu_id |> UserAccount.fetch_or_create_for_switch_edu_id(roles) |> ok()
       end
     )
-    |> Multi.insert(:session, fn %{user_account: user_account} ->
-      UserSession.new_session(user_account, EventMetadata.extract(meta))
+    |> Multi.insert_or_update(:user_account, fn %{user_account_and_state: {_state, changeset}} ->
+      changeset
     end)
-    # |> insert(:stored_event, fn %{user_session: session} ->
-    #   session
-    #   |> UserLoggedIn.new()
-    #   |> new_event(metadata, occurred_at: session.created_at)
-    #   |> add_to_stream(user_account)
-    #   |> initiated_by(user_account)
-    # end)
+    |> Multi.insert(:user_session, fn %{user_account: user_account} ->
+      UserSession.new_session(user_account, meta)
+    end)
+    |> insert(:stored_event, fn
+      %{
+        switch_edu_id: switch_edu_id,
+        user_account_and_state: {state, _changeset},
+        user_account: user_account,
+        user_session: session
+      } ->
+        case state do
+          :new_account ->
+            UserRegisteredWithSwitchEduId.new(switch_edu_id, user_account, session)
+            |> new_event(meta, occurred_at: session.created_at)
+            |> add_to_stream(user_account)
+            |> initiated_by(user_account)
+
+          :existing_account ->
+            UserLoggedInWithSwitchEduId.new(switch_edu_id, session, meta)
+            |> new_event(meta, occurred_at: session.created_at)
+            |> add_to_stream(user_account)
+            |> initiated_by(user_account)
+        end
+    end)
     |> transaction()
   end
 end

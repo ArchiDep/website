@@ -37,12 +37,13 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   end
 
   @spec fetch_or_create_for_switch_edu_id(SwitchEduId.t(), list(Types.role())) ::
-          Changeset.t(__MODULE__.t())
+          {:existing_account, Changeset.t(t())} | {:new_account, Changeset.t(t())}
   def fetch_or_create_for_switch_edu_id(switch_edu_id, roles) do
     if existing_account = fetch_for_switch_edu_id(switch_edu_id) do
-      update_switch_edu_id_account_roles(existing_account, switch_edu_id, roles)
+      {:existing_account,
+       update_switch_edu_id_account_roles(existing_account, switch_edu_id, roles)}
     else
-      new_switch_edu_id_account(switch_edu_id, roles)
+      {:new_account, new_switch_edu_id_account(switch_edu_id, roles)}
     end
   end
 

@@ -37,6 +37,7 @@ defmodule ArchiDep do
   @spec use_case :: Macro.t()
   def use_case do
     quote do
+      import ArchiDep.Helpers.PipeHelpers
       import ArchiDep.Helpers.UseCaseHelpers
       import ArchiDep.Repo, only: [transaction: 1]
       import Ecto.Multi, only: [delete: 3, insert: 3, put: 3, run: 3, update: 3]
