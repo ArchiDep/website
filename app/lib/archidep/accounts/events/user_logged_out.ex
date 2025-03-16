@@ -1,0 +1,26 @@
+defmodule ArchiDep.Accounts.Events.UserLoggedOut do
+  @moduledoc """
+  A user logged out of one session.
+  """
+
+  alias Ecto.UUID
+  alias ArchiDep.Accounts.Schemas.UserSession
+
+  @derive Jason.Encoder
+
+  @enforce_keys [:user_account_id, :session_id]
+  defstruct [:user_account_id, :session_id]
+
+  @type t :: %__MODULE__{
+          user_account_id: UUID.t(),
+          session_id: UUID.t()
+        }
+
+  @doc """
+  Creates a new logout event for the specified session.
+  """
+  @spec new(UserSession.t()) :: __MODULE__.t()
+  def new(%UserSession{id: session_id, user_account: %{id: user_account_id}}) do
+    %__MODULE__{user_account_id: user_account_id, session_id: session_id}
+  end
+end

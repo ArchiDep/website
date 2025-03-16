@@ -1,14 +1,29 @@
 defmodule ArchiDepWeb.Router do
   use ArchiDepWeb, :router
 
+  import ArchiDepWeb.Auth
+  alias ArchiDepWeb.LiveDashboardHelpers
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, html: {ArchiDepWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug(:put_secure_browser_headers, %{"content-security-policy" => "default-src 'self'"})
     plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
+  end
+
+  pipeline :authenticated do
+    plug(:fetch_authentication)
+  end
+
+  pipeline :dev do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
   end
 
   pipeline :api do
@@ -16,7 +31,7 @@ defmodule ArchiDepWeb.Router do
   end
 
   scope "/app", ArchiDepWeb do
-    pipe_through :browser
+    pipe_through [:browser, :authenticated]
 
     get "/", PageController, :home
   end
@@ -28,11 +43,6 @@ defmodule ArchiDepWeb.Router do
     get "/switch-edu-id/callback", AuthController, :callback
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", ArchiDepWeb do
-  #   pipe_through :api
-  # end
-
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:archidep, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
@@ -43,7 +53,7 @@ defmodule ArchiDepWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
-      pipe_through :browser
+      pipe_through :dev
 
       live_dashboard "/dashboard", metrics: ArchiDepWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview

@@ -11,4 +11,6 @@ defmodule ArchiDep.Accounts do
   @implementation Application.compile_env!(:archidep, __MODULE__)
 
   delegate(&Behaviour.log_in_or_register_with_switch_edu_id/2)
+  delegate(&Behaviour.validate_session/2)
+  delegate(&Behaviour.log_out/1)
 end

@@ -40,8 +40,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
           {:existing_account, Changeset.t(t())} | {:new_account, Changeset.t(t())}
   def fetch_or_create_for_switch_edu_id(switch_edu_id, roles) do
     if existing_account = fetch_for_switch_edu_id(switch_edu_id) do
-      {:existing_account,
-       update_switch_edu_id_account_roles(existing_account, switch_edu_id, roles)}
+      {:existing_account, existing_account}
     else
       {:new_account, new_switch_edu_id_account(switch_edu_id, roles)}
     end
@@ -77,16 +76,6 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       created_at: now,
       updated_at: now
     )
-    |> validate()
-  end
-
-  defp update_switch_edu_id_account_roles(existing_account, switch_edu_id, roles) do
-    now = DateTime.utc_now()
-
-    existing_account
-    |> cast(%{roles: roles}, [:roles])
-    |> touch_if_roles_changed(now)
-    |> optimistic_lock(:version)
     |> validate()
   end
 

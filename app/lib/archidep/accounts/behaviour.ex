@@ -6,10 +6,6 @@ defmodule ArchiDep.Accounts.Behaviour do
   use ArchiDep.Helpers.ContextHelpers, :behaviour
 
   import ArchiDep.Helpers.ContextHelpers, only: [callback: 1]
-  alias Ecto.Changeset
-  alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
-  alias ArchiDep.Accounts.Schemas.UserAccount
-  alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
   alias ArchiDep.Authentication
 
@@ -26,4 +22,18 @@ defmodule ArchiDep.Accounts.Behaviour do
       {:ok, Authentication.t()}
       | {:error, :unauthorized_switch_edu_id}
   )
+
+  @doc """
+  Authenticates using the specified session token. The token must correspond to
+  an active session.
+  """
+  callback(
+    validate_session(token: String.t(), meta: map) ::
+      {:ok, Authentication.t()} | {:error, :session_not_found}
+  )
+
+  @doc """
+  Logs out a user account.
+  """
+  callback(log_out(auth: Authentication.t()) :: :ok | {:error, :session_not_found})
 end

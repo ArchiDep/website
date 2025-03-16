@@ -94,7 +94,7 @@ defmodule ArchiDep.Events.Store.Registry do
 
         def event_stream(%@module{} = event) do
           identity = Map.get(event, @event_stream_by)
-          if is_nil(identity), do: raise ArchiDep.Events.Errors.EventHasNoIdentityError
+          if is_nil(identity), do: raise(ArchiDep.Events.Errors.EventHasNoIdentityError)
           "#{@event_stream_prefix}#{identity}"
         end
 
