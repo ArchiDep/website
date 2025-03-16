@@ -93,7 +93,9 @@ defmodule ArchiDep.Events.Store.Registry do
         @event_type_string Atom.to_string(@event_type)
 
         def event_stream(%@module{} = event) do
-          "#{@event_stream_prefix}#{Map.get(event, @event_stream_by)}"
+          identity = Map.get(event, @event_stream_by)
+          if is_nil(identity), do: raise ArchiDep.Events.Errors.EventHasNoIdentityError
+          "#{@event_stream_prefix}#{identity}"
         end
 
         def event_type(%@module{} = event) do

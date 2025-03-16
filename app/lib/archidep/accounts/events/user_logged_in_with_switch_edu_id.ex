@@ -13,36 +13,36 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
   @derive Jason.Encoder
 
   @enforce_keys [
-    :id,
-    :user_account_id,
-    :session_id,
+    :switch_edu_id,
     :email,
     :first_name,
     :last_name,
     :swiss_edu_person_unique_id,
+    :user_account_id,
+    :session_id,
     :client_ip_address,
     :client_user_agent
   ]
   defstruct [
-    :id,
-    :user_account_id,
-    :session_id,
+    :switch_edu_id,
     :email,
     :first_name,
     :last_name,
     :swiss_edu_person_unique_id,
+    :user_account_id,
+    :session_id,
     :client_ip_address,
     :client_user_agent
   ]
 
   @type t :: %__MODULE__{
-          id: UUID.t(),
-          user_account_id: UUID.t(),
-          session_id: UUID.t(),
+          switch_edu_id: UUID.t(),
           email: String.t(),
           first_name: String.t(),
           last_name: String.t() | nil,
           swiss_edu_person_unique_id: String.t(),
+          user_account_id: UUID.t(),
+          session_id: UUID.t(),
           client_ip_address: String.t() | nil,
           client_user_agent: String.t() | nil
         }
@@ -50,7 +50,7 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
   @spec new(UserSession.t(), SwitchEduId.t(), EventMetadata.t()) :: t()
   def new(switch_edu_id, session, meta) do
     %SwitchEduId{
-      id: id,
+      id: switch_edu_id,
       email: email,
       first_name: first_name,
       last_name: last_name,
@@ -63,7 +63,7 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
     } = session
 
     %__MODULE__{
-      id: id,
+      switch_edu_id: switch_edu_id,
       user_account_id: user_account_id,
       session_id: session_id,
       email: email,

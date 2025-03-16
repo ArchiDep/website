@@ -10,13 +10,13 @@ defmodule ArchiDep.Events.Registry do
 
   event(UserLoggedInWithSwitchEduId,
     prefix: "user-accounts:",
-    by: :id,
+    by: :switch_edu_id,
     type: :"archidep/accounts/user-logged-in-with-switch-edu-id"
   )
 
   event(UserRegisteredWithSwitchEduId,
     prefix: "user-accounts:",
-    by: :id,
+    by: :switch_edu_id,
     type: :"archidep/accounts/user-registered-with-switch-edu-id"
   )
 end
