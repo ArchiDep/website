@@ -3,8 +3,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
 
   import ArchiDepWeb.Helpers.ConnHelpers
   alias ArchiDep.Accounts
-  alias Ueberauth.Auth
-  alias Ueberauth.Auth.Extra
+  alias ArchiDepWeb.Auth
 
   plug Ueberauth
 
@@ -17,15 +16,15 @@ defmodule ArchiDepWeb.Auth.AuthController do
 
     conn
     |> put_flash(:error, "Failed to authenticate.")
-    |> redirect(to: "/app")
+    |> redirect(to: "/login")
   end
 
   def callback(
         %{
           assigns: %{
-            ueberauth_auth: %Auth{
+            ueberauth_auth: %Ueberauth.Auth{
               provider: :switch_edu_id,
-              extra: %Extra{
+              extra: %Ueberauth.Auth.Extra{
                 raw_info: %{
                   userinfo: %{
                     "email" => email,
@@ -37,9 +36,9 @@ defmodule ArchiDepWeb.Auth.AuthController do
             }
           }
         } = conn,
-        _params
+        params
       ) do
-    with {:ok, _auth} <-
+    with {:ok, auth} <-
            Accounts.log_in_or_register_with_switch_edu_id(
              %{
                swiss_edu_person_unique_id: swiss_edu_person_unique_id,
@@ -50,7 +49,8 @@ defmodule ArchiDepWeb.Auth.AuthController do
              conn_metadata(conn)
            ) do
       conn
-      |> put_flash(:info, "Welcome, ${first_name}!")
+      |> Auth.log_in(auth, params)
+      |> put_flash(:info, "Welcome!")
       |> redirect(to: "/app")
     else
       {:error, :unauthorized_switch_edu_id} ->
@@ -61,20 +61,5 @@ defmodule ArchiDepWeb.Auth.AuthController do
         )
         |> redirect(to: "/app")
     end
-
-    # case UserFromAuth.find_or_create(auth) do
-    #   {:ok, user} ->
-    #     conn
-    #     |> put_flash(:info, "Successfully authenticated.")
-    #     |> put_session(:current_user, user)
-    #     |> configure_session(renew: true)
-    #     |> redirect(to: "/")
-
-    #   {:error, reason} ->
-    conn
-    |> put_flash(:error, "Oops")
-    |> redirect(to: "/app")
-
-    # end
   end
 end

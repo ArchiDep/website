@@ -40,7 +40,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
           {:existing_account, Changeset.t(t())} | {:new_account, Changeset.t(t())}
   def fetch_or_create_for_switch_edu_id(switch_edu_id, roles) do
     if existing_account = fetch_for_switch_edu_id(switch_edu_id) do
-      {:existing_account, existing_account}
+      {:existing_account, change(existing_account)}
     else
       {:new_account, new_switch_edu_id_account(switch_edu_id, roles)}
     end

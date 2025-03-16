@@ -27,10 +27,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
     extracted_metadata = EventMetadata.extract(meta)
 
     with {:ok, roles} <- authorize_switch_edu_id_account(switch_edu_id_data),
-         {:ok, %{switch_edu_id: switch_edu_id}} <-
+         {:ok, %{user_session: session}} <-
            log_in_or_register(switch_edu_id_data, roles, extracted_metadata) do
-      IO.puts("@@@ OK #{inspect(switch_edu_id)}")
-      {:error, :unauthorized_switch_edu_id}
+      {:ok, Authentication.for_user_session(session, extracted_metadata)}
     else
       error -> error
     end
