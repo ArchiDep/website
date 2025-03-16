@@ -12,6 +12,10 @@
     <div class="hidden md:block peer-checked:block peer-checked:fixed peer-checked:top-10 peer-checked:bottom-0 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-zinc-200 peer-checked:dark:bg-zinc-800 clear-both">
       <a href="/">Course</a>
       <a href="/app">App</a>
+      <.link :if={logged_in?(@auth)} href={~p"/logout"} method="delete" class="gap-1 inline">
+        <Heroicons.arrow_right_on_rectangle outline class="size-6 inline" />
+        Log out
+      </.link>
     </div>
   </nav>
 </header>

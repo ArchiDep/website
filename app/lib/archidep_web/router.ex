@@ -26,10 +26,6 @@ defmodule ArchiDepWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
-
   scope "/app", ArchiDepWeb do
     pipe_through [:browser, :authenticated]
 
@@ -37,11 +33,17 @@ defmodule ArchiDepWeb.Router do
   end
 
   scope "/", ArchiDepWeb.Auth do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
+    pipe_through :browser
 
-    get "/login", AuthController, :login
+    scope "/" do
+      pipe_through [:authenticated, :redirect_if_user_is_authenticated]
+      get "/login", AuthController, :login
+    end
+
+    delete "/logout", AuthController, :logout
 
     scope "/auth" do
+      pipe_through :redirect_if_user_is_authenticated
       get "/switch-edu-id", AuthController, :request
       get "/switch-edu-id/callback", AuthController, :callback
     end

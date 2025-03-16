@@ -7,8 +7,14 @@ defmodule ArchiDepWeb.Auth.AuthController do
 
   plug Ueberauth
 
+  @spec login(Conn.t(), map) :: Conn.t()
   def login(conn, _params) do
     render(conn, "login.html")
+  end
+
+  @spec logout(Conn.t(), map) :: Conn.t()
+  def logout(conn, %{}) do
+    Auth.log_out(conn)
   end
 
   def callback(%{assigns: %{ueberauth_failure: fails}} = conn, _params) do

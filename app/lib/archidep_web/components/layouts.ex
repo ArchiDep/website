@@ -10,5 +10,7 @@ defmodule ArchiDepWeb.Layouts do
   """
   use ArchiDepWeb, :html
 
+  import ArchiDepWeb.Helpers.AuthHelpers
+
   embed_templates "layouts/*"
 end
