@@ -22,12 +22,6 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
   def logged_in?(nil), do: false
   def logged_in?(_auth), do: true
 
-  @doc """
-  Returns the username of the currently authenticated user.
-  """
-  @spec current_username(Authentication.t()) :: String.t()
-  defdelegate current_username(auth), to: Authentication
-
   @spec current_session?(Authentication.t(), UserSession.t()) :: boolean
   defdelegate current_session?(auth, session), to: Authentication
 end

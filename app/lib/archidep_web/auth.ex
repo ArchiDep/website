@@ -8,8 +8,6 @@ defmodule ArchiDepWeb.Auth do
   import Plug.Conn
   alias ArchiDep.Accounts
   alias ArchiDep.Authentication
-  alias ArchiDepWeb.Endpoint
-  alias Phoenix.Token
   alias Plug.Conn
 
   # Make the session cookie valid for 60 days. If you want bump or reduce
@@ -18,7 +16,6 @@ defmodule ArchiDepWeb.Auth do
 
   @remember_me_cookie "_archidep_remember_me"
   @remember_me_options [sign: true, max_age: @max_age_in_seconds, same_site: "Lax"]
-  @remember_me_enabled_cookie "_archidep_remember_me_enabled"
 
   @doc """
   Logs the user_account in.
@@ -57,7 +54,7 @@ defmodule ArchiDepWeb.Auth do
   end
 
   defp maybe_write_remember_me_cookie(conn, token, true), do: put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
-  defp maybe_write_remember_me_cookie(conn, token, false), do: conn
+  defp maybe_write_remember_me_cookie(conn, _token, false), do: conn
 
   # This function renews the session ID and erases the whole session to avoid
   # fixation attacks. If there is any data in the session you may want to

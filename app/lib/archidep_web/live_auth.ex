@@ -7,15 +7,7 @@ defmodule ArchiDepWeb.LiveAuth do
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView
   alias ArchiDep.Accounts
-  alias ArchiDep.Accounts.Schemas.UserSession
   alias Phoenix.LiveView.Socket
-
-  @doc """
-  Deletes the specified session and logs out all associated live sockets.
-  """
-  @spec delete_session(Socket.t(), String.t()) ::
-          {:ok, UserSession.t()} | {:error, :session_not_found}
-  def delete_session(socket, id), do: Accounts.delete_session(socket.assigns.auth, id)
 
   @doc """
   Verifies that the user is logged in before mounting a live view.

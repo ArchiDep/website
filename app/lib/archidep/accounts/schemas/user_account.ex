@@ -93,12 +93,4 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       |> validate_length(:username, max: @max_username_length)
       |> validate_subset(:roles, [:root, :student])
       |> unique_constraint(:username, name: :user_accounts_unique_username_index)
-
-  defp touch_if_roles_changed(changeset, updated_at) do
-    if changed?(changeset, :roles) do
-      change(changeset, updated_at: updated_at)
-    else
-      changeset
-    end
-  end
 end
