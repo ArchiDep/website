@@ -24,27 +24,32 @@ defmodule ArchiDepWeb.Router do
   scope "/app", ArchiDepWeb do
     pipe_through [:browser, :fetch_authentication]
 
-    live "/", Dashboard.DashboardLive, :home
+    live "/", Dashboard.DashboardLive
   end
 
-  scope "/", ArchiDepWeb.Auth do
+  scope "/", ArchiDepWeb do
     pipe_through :browser
 
-    scope "/" do
+    scope "/", Auth do
       pipe_through [:fetch_authentication, :redirect_if_user_is_authenticated]
       get "/login", AuthController, :login
     end
 
-    scope "/" do
+    scope "/", Auth do
       pipe_through :fetch_authentication
       delete "/logout", AuthController, :logout
     end
 
-    scope "/auth" do
+    scope "/auth", Auth do
       pipe_through [:fetch_authentication, :redirect_if_user_is_authenticated]
       get "/switch-edu-id", AuthController, :request
       get "/switch-edu-id/configure", AuthController, :configure_switch_edu_id_login
       get "/switch-edu-id/callback", AuthController, :callback
+    end
+
+    scope "/" do
+      pipe_through :fetch_authentication
+      live "/profile", Profile.ProfileLive
     end
   end
 

@@ -53,7 +53,9 @@ defmodule ArchiDepWeb.Auth do
     |> redirect(to: "/login")
   end
 
-  defp maybe_write_remember_me_cookie(conn, token, true), do: put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
+  defp maybe_write_remember_me_cookie(conn, token, true),
+    do: put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
+
   defp maybe_write_remember_me_cookie(conn, _token, false), do: conn
 
   # This function renews the session ID and erases the whole session to avoid

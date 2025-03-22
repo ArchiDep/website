@@ -46,6 +46,17 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     end
   end
 
+  @spec get_with_switch_edu_id!(UUID.t()) :: t
+  def get_with_switch_edu_id!(id),
+    do:
+      from(ua in __MODULE__,
+        join: sei in SwitchEduId,
+        on: ua.switch_edu_id_id == sei.id,
+        where: ua.id == ^id,
+        preload: [switch_edu_id: sei]
+      )
+      |> Repo.one!()
+
   @spec event_stream(String.t() | __MODULE__.t()) :: String.t()
   def event_stream(id) when is_binary(id), do: "user-accounts:#{id}"
   def event_stream(%__MODULE__{id: id}), do: event_stream(id)

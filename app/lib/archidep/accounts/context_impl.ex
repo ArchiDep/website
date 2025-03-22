@@ -12,5 +12,8 @@ defmodule ArchiDep.Accounts.ContextImpl do
   )
 
   implement(&Behaviour.validate_session/2, ArchiDep.Accounts.Sessions)
+
+  implement(&Behaviour.user_account/1, ArchiDep.Accounts.Sessions)
+
   implement(&Behaviour.log_out/1, ArchiDep.Accounts.LogOut)
 end

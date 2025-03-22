@@ -12,5 +12,6 @@ defmodule ArchiDep.Accounts do
 
   delegate(&Behaviour.log_in_or_register_with_switch_edu_id/2)
   delegate(&Behaviour.validate_session/2)
+  delegate(&Behaviour.user_account/1)
   delegate(&Behaviour.log_out/1)
 end

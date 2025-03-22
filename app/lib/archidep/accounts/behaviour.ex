@@ -6,6 +6,7 @@ defmodule ArchiDep.Accounts.Behaviour do
   use ArchiDep.Helpers.ContextHelpers, :behaviour
 
   import ArchiDep.Helpers.ContextHelpers, only: [callback: 1]
+  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Types
   alias ArchiDep.Authentication
 
@@ -31,6 +32,11 @@ defmodule ArchiDep.Accounts.Behaviour do
     validate_session(token: String.t(), meta: map) ::
       {:ok, Authentication.t()} | {:error, :session_not_found}
   )
+
+  @doc """
+  Fetches the user account corresponding to the current authentication.
+  """
+  callback(user_account(auth: Authentication.t()) :: UserAccount.t())
 
   @doc """
   Logs out a user account.

@@ -86,6 +86,8 @@ defmodule ArchiDepWeb do
       import Phoenix.HTML
       # Core UI components
       import ArchiDepWeb.CoreComponents
+      import ArchiDepWeb.Helpers.AuthHelpers
+      import ArchiDepWeb.Helpers.DateFormatHelpers
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
