@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Profile.ProfileLive do
   use ArchiDepWeb, :live_view
 
   alias ArchiDep.Accounts
+  alias ArchiDepWeb.Profile.CurrentSessionsLive
 
   def mount(_params, _session, socket) do
     user_account = Accounts.user_account(socket.assigns.auth)

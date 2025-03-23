@@ -5,8 +5,8 @@ defmodule ArchiDep.Accounts.Sessions do
   """
 
   use ArchiDep, :use_case
-  use ArchiDep.Authorization
 
+  alias ArchiDep.Accounts.Policy
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
 
@@ -14,7 +14,7 @@ defmodule ArchiDep.Accounts.Sessions do
   def fetch_active_sessions(auth),
     do:
       auth
-      |> tap(&authorize!(:fetch_active_sessions, &1, %{}))
+      |> authorize!(Policy, :accounts, :fetch_active_sessions, %{})
       |> Authentication.user_account_id()
       |> UserSession.fetch_active_sessions_by_user_account_id()
 
@@ -35,9 +35,4 @@ defmodule ArchiDep.Accounts.Sessions do
     |> Authentication.user_account_id()
     |> UserAccount.get_with_switch_edu_id!()
   end
-
-  # do:
-  #   auth
-  #   |> Authentication.user_account_id()
-  #   |> &(Repo.get!(UserAccount, &1))
 end

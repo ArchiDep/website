@@ -5,9 +5,16 @@ defmodule ArchiDep.Events.Registry do
 
   use ArchiDep.Events.Store.Registry
 
+  alias ArchiDep.Accounts.Events.SessionDeleted
   alias ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId
   alias ArchiDep.Accounts.Events.UserLoggedOut
   alias ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId
+
+  event(SessionDeleted,
+    prefix: "user-accounts:",
+    by: :user_account_id,
+    type: :"archidep/accounts/session-deleted"
+  )
 
   event(UserLoggedInWithSwitchEduId,
     prefix: "user-accounts:",

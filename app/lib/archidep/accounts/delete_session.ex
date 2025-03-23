@@ -6,16 +6,16 @@ defmodule ArchiDep.Accounts.DeleteSession do
   """
 
   use ArchiDep, :use_case
-  use ArchiDep.Authorization
 
   alias ArchiDep.Accounts.Events.SessionDeleted
+  alias ArchiDep.Accounts.Policy
   alias ArchiDep.Accounts.Schemas.UserSession
 
   @spec delete_session(Authentication.t(), String.t()) ::
           {:ok, UserSession.t()} | {:error, :session_not_found}
   def delete_session(auth, id) do
     with {:ok, session} <- UserSession.fetch_by_id(id) do
-      authorize!(:delete_session, auth, session)
+      authorize!(auth, Policy, :accounts, :delete_session, session)
       {:ok, _result} = store(session, auth)
       {:ok, session}
     end

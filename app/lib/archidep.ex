@@ -16,6 +16,18 @@ defmodule ArchiDep do
     vsn |> List.to_string() |> Version.parse!()
   end
 
+  @spec policy :: Macro.t()
+  def policy do
+    quote do
+      alias Ecto.Changeset
+      alias ArchiDep.Accounts.Schemas.UserAccount
+      alias ArchiDep.Authentication
+      alias ArchiDep.Policy
+
+      @behaviour Policy
+    end
+  end
+
   @spec schema :: Macro.t()
   def schema do
     quote do
@@ -37,11 +49,14 @@ defmodule ArchiDep do
   @spec use_case :: Macro.t()
   def use_case do
     quote do
+      import ArchiDep.Authorization
       import ArchiDep.Helpers.PipeHelpers
       import ArchiDep.Helpers.UseCaseHelpers
       import ArchiDep.Repo, only: [transaction: 1]
       import Ecto.Multi, only: [delete: 3, insert: 3, put: 3, run: 3, update: 3]
       import Ecto.Query, only: [from: 2]
+      alias ArchiDep.Accounts.Schemas.UserAccount
+      alias ArchiDep.Authentication
       alias Ecto.Changeset
       alias Ecto.Multi
       alias Ecto.UUID

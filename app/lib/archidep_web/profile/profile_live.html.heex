@@ -6,3 +6,7 @@
   <dt>Registration date</dt>
   <dd>{format_date_time(@user_account.created_at)}</dd>
 </dl>
+
+<h2 class="mt-5 text-2xl font-bold mb-3">Sessions</h2>
+
+<.live_component module={CurrentSessionsLive} id={CurrentSessionsLive.id()} auth={@auth} />
