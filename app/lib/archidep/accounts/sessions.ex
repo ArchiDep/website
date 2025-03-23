@@ -34,10 +34,10 @@ defmodule ArchiDep.Accounts.Sessions do
     auth
     |> Authentication.user_account_id()
     |> UserAccount.get_with_switch_edu_id!()
-    # Repo.get!(UserAccount, Authentication.user_account_id(auth))
   end
-    # do:
-    #   auth
-    #   |> Authentication.user_account_id()
-    #   |> &(Repo.get!(UserAccount, &1))
+
+  # do:
+  #   auth
+  #   |> Authentication.user_account_id()
+  #   |> &(Repo.get!(UserAccount, &1))
 end

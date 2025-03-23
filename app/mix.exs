@@ -47,6 +47,7 @@ defmodule ArchiDep.MixProject do
       {:swoosh, "~> 1.5"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
+      {:ua_inspector, "~> 3.0"},
       {:ueberauth, "~> 0.10.8"},
       {:ueberauth_oidcc, "~> 0.4.1"},
       # Development
@@ -66,7 +67,13 @@ defmodule ArchiDep.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      setup: [
+        "deps.get",
+        "ecto.setup",
+        "ua_inspector.download --force",
+        "assets.setup",
+        "assets.build"
+      ],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],

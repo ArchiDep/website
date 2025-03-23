@@ -1,0 +1,80 @@
+<table id="current-sessions" class="table w-full">
+  <thead>
+    <tr>
+      <th>Login</th>
+      <th>Last used</th>
+      <th>Expiration</th>
+      <th>IP address</th>
+      <th>Client</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for session <- @active_sessions do %>
+      <tr>
+        <!-- Login date -->
+        <td>{format_date_time(session.created_at)}</td>
+        <!-- Last used -->
+        <td>
+          <%= if current_session?(@auth, session) do %>
+            <span class="badge badge-primary">Current session</span>
+          <% else %>
+            <%= if session.used_at do %>
+              <div class="tooltip" data-tip={format_date_time(session.used_at)}>
+                <span class="badge">
+                  {format_duration(session.used_at)} ago
+                </span>
+              </div>
+            <% else %>
+              <span class="badge badge-default">Never</span>
+            <% end %>
+          <% end %>
+        </td>
+        <!-- Expiration -->
+        <td>
+          <div class="tooltip" data-tip={session |> expires_at() |> format_date_time()}>
+            <%= if expired?(session) do %>
+              <span class="badge badge-error">Expired</span>
+            <% else %>
+              <span class={"badge #{if expires_soon?(session), do: "badge-warning", else: "badge-success"}"}>
+                {session |> expires_at() |> format_duration()}
+              </span>
+            <% end %>
+          </div>
+        </td>
+        <!-- IP address-->
+        <td>
+          <%= if session.client_ip_address do %>
+            <code>{session.client_ip_address}</code>
+          <% else %>
+            <span class="text-slate-500">-</span>
+          <% end %>
+        </td>
+        <!-- Client -->
+        <td>
+          <%= if session.client_user_agent do %>
+            {format_user_agent(session.client_user_agent)}
+          <% else %>
+            <span class="text-slate-500">-</span>
+          <% end %>
+        </td>
+        <!-- Actions -->
+        <td>
+          <%= unless current_session?(@auth, session) do %>
+            <div class="tooltip" data-tip="Delete this session">
+              <button
+                class="delete-session btn btn-circle btn-outline btn-xs btn-secondary align-middle"
+                type="button"
+                phx-click={delete_session(session)}
+                phx-target={@myself}
+              >
+                <Heroicons.x_mark outline class="w-6 h-6" />
+                <span class="sr-only">Delete</span>
+              </button>
+            </div>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

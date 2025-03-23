@@ -34,6 +34,19 @@ defmodule ArchiDep.Accounts.Behaviour do
   )
 
   @doc """
+  Returns the list of active sessions for the currently authenticated user.
+  """
+  callback(fetch_active_sessions(auth: Authentication.t()) :: list(UserSession.t()))
+
+  @doc """
+  Deletes the specified session.
+  """
+  callback(
+    delete_session(auth: Authentication.t(), id: String.t()) ::
+      {:ok, UserSession.t()} | {:error, :session_not_found}
+  )
+
+  @doc """
   Fetches the user account corresponding to the current authentication.
   """
   callback(user_account(auth: Authentication.t()) :: UserAccount.t())

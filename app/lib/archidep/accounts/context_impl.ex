@@ -12,6 +12,8 @@ defmodule ArchiDep.Accounts.ContextImpl do
   )
 
   implement(&Behaviour.validate_session/2, ArchiDep.Accounts.Sessions)
+  implement(&Behaviour.fetch_active_sessions/1, ArchiDep.Accounts.Sessions)
+  implement(&Behaviour.delete_session/2, ArchiDep.Accounts.DeleteSession)
 
   implement(&Behaviour.user_account/1, ArchiDep.Accounts.Sessions)
 

@@ -63,6 +63,12 @@ defmodule ArchiDepWeb do
     quote do
       use Phoenix.LiveComponent
 
+      import ArchiDep.Helpers.PipeHelpers
+      alias Phoenix.LiveComponent
+      alias Phoenix.LiveView.JS
+
+      @type js :: %JS{}
+
       unquote(html_helpers())
     end
   end
