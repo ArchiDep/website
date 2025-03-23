@@ -21,7 +21,19 @@
     </div>
   </nav>
 </header>
+
 <main>
   <.flash_group flash={@flash} />
-  {@inner_content}
+  <div class="flex gap-4">
+    <nav class="w-full md:w-1/5">
+      <ul>
+        <li :if={has_role?(@auth, :root)}>
+          <.link patch={~p"/admin/events"}>Events</.link>
+        </li>
+      </ul>
+    </nav>
+    <div>
+      {@inner_content}
+    </div>
+  </div>
 </main>

@@ -51,6 +51,11 @@ defmodule ArchiDepWeb.Router do
       pipe_through :fetch_authentication
       live "/profile", Profile.ProfileLive
     end
+
+    scope "/admin" do
+      pipe_through :fetch_authentication
+      live "/events", Admin.EventLogLive
+    end
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

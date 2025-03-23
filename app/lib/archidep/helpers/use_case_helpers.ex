@@ -12,6 +12,12 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   alias ArchiDep.Events.Store.StoredEvent
 
   @doc """
+  Ensures that the specified limit is not too large.
+  """
+  @spec validate_limit(pos_integer()) :: pos_integer()
+  def validate_limit(limit) when is_integer(limit) and limit >= 1 and limit <= 1000, do: limit
+
+  @doc """
   Builds a changeset of a new business event for the specified data,
   representing the creation of the specified entity.
   """

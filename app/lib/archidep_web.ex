@@ -19,6 +19,7 @@ defmodule ArchiDepWeb do
 
   def static_paths, do: ~w(assets favicon.ico course fonts images index.html robots.txt)
 
+  @spec router :: Macro.t()
   def router do
     quote do
       use Phoenix.Router, helpers: false
@@ -30,12 +31,23 @@ defmodule ArchiDepWeb do
     end
   end
 
+  @spec channel :: Macro.t()
   def channel do
     quote do
       use Phoenix.Channel
     end
   end
 
+  @spec component :: Macro.t()
+  def component do
+    quote do
+      use Phoenix.Component
+
+      unquote(html_helpers())
+    end
+  end
+
+  @spec controller :: Macro.t()
   def controller do
     quote do
       use Phoenix.Controller,
@@ -48,10 +60,13 @@ defmodule ArchiDepWeb do
     end
   end
 
+  @spec live_view :: Macro.t()
   def live_view do
     quote do
       use Phoenix.LiveView,
         layout: {ArchiDepWeb.Layouts, :app}
+
+      alias Phoenix.LiveView
 
       on_mount(ArchiDepWeb.LiveAuth)
 
@@ -59,6 +74,7 @@ defmodule ArchiDepWeb do
     end
   end
 
+  @spec live_component :: Macro.t()
   def live_component do
     quote do
       use Phoenix.LiveComponent
@@ -73,6 +89,7 @@ defmodule ArchiDepWeb do
     end
   end
 
+  @spec html :: Macro.t()
   def html do
     quote do
       use Phoenix.Component

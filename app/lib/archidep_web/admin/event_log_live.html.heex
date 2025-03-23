@@ -1,0 +1,51 @@
+<div class="container mt-5 mx-auto">
+  <div class="text-sm breadcrumbs">
+    <ul>
+      <li class="text-error">
+        <Heroicons.fire outline class="w-6 h-6 mr-1" /> Admin
+      </li>
+      <li>
+        <Heroicons.book_open solid class="w-6 h-6 mr-1" /> Event Log
+      </li>
+    </ul>
+  </div>
+
+  <table class="table table-zebra w-full mt-3">
+    <thead>
+      <tr>
+        <th>Context</th>
+        <th>Action</th>
+        <th>Entity</th>
+        <th>Occurred at</th>
+      </tr>
+    </thead>
+    <tbody
+      id="event-log-events"
+      phx-update="stream"
+      phx-viewport-top={@before && "prev-page"}
+      phx-viewport-bottom={!@end_of_timeline? && "next-page"}
+      phx-page-loading
+      class={[
+        if(@end_of_timeline?, do: "pb-10", else: "pb-[calc(200vh)]"),
+        if(@before, do: "pt-10", else: "pt-[calc(200vh)]")
+      ]}
+    >
+      <tr
+        :for={{id, event} <- @streams.events}
+        id={id}
+        class="hover:bg-base-200 hover:even:bg-base-300"
+      >
+        <td>
+          <div class="mb-40"><.event_context event={event} /></div>
+        </td>
+        <th><.event_action event={event} /></th>
+        <td><.event_entity event={event} /></td>
+        <td>{format_date_time(event.occurred_at)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div :if={@end_of_timeline?} class="mt-3 mb-5 flex justify-center">
+    <p class="italic text-info">This is the beginning of time.</p>
+  </div>
+</div>

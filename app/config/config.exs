@@ -15,6 +15,7 @@ config :archidep,
 
 # Configure contexts.
 config :archidep, ArchiDep.Accounts, ArchiDep.Accounts.ContextImpl
+config :archidep, ArchiDep.Events, ArchiDep.Events.ContextImpl
 
 config :archidep, ArchiDep.Repo, pool_size: 10, socket_options: []
 

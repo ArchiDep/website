@@ -7,6 +7,7 @@ defmodule ArchiDep.Authentication do
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Errors.AuthenticatedUserNotFoundError
   alias ArchiDep.Repo
+  alias ArchiDep.Types
 
   @spec is_authentication(term) :: Macro.t()
   defguard is_authentication(value) when is_struct(value, __MODULE__)
@@ -36,6 +37,13 @@ defmodule ArchiDep.Authentication do
   """
   @spec username(__MODULE__.t()) :: String.t()
   def username(%__MODULE__{principal: %UserAccount{username: username}}), do: username
+
+  @doc """
+  Indicates whether the authenticated user has the specified role.
+  """
+  @spec has_role?(__MODULE__.t(), Types.role()) :: boolean
+  def has_role?(%__MODULE__{principal: %UserAccount{roles: roles}}, role),
+    do: Enum.member?(roles, role)
 
   @doc """
   Returns the ID of the authenticated user account.
