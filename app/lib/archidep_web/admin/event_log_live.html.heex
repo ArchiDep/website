@@ -35,9 +35,7 @@
         id={id}
         class="hover:bg-base-200 hover:even:bg-base-300"
       >
-        <td>
-          <div class="mb-40"><.event_context event={event} /></div>
-        </td>
+        <td><.event_context event={event} /></td>
         <th><.event_action event={event} /></th>
         <td><.event_entity event={event} /></td>
         <td>{format_date_time(event.occurred_at)}</td>
