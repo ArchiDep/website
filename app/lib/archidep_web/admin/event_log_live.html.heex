@@ -22,12 +22,12 @@
     <tbody
       id="event-log-events"
       phx-update="stream"
-      phx-viewport-top={@before && "prev-page"}
+      phx-viewport-top={@beginning? && "prev-page"}
       phx-viewport-bottom={!@end_of_timeline? && "next-page"}
       phx-page-loading
       class={[
-        if(@end_of_timeline?, do: "pb-10", else: "pb-[calc(200vh)]"),
-        if(@before, do: "pt-10", else: "pt-[calc(200vh)]")
+        if(@beginning?, do: "pt-10", else: "pt-[calc(200vh)]"),
+        if(@end_of_timeline?, do: "pb-10", else: "pb-[calc(200vh)]")
       ]}
     >
       <tr

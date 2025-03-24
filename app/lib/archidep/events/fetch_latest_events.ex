@@ -30,7 +30,7 @@ defmodule ArchiDep.Events.FetchLatestEvents do
   end
 
   defp before_event(query, opts) do
-    if before = Keyword.get(opts, :before) do
+    if before = Keyword.get(opts, :older_than) do
       before_id = before.id
       before_timestamp = before.occurred_at
 
@@ -46,7 +46,7 @@ defmodule ArchiDep.Events.FetchLatestEvents do
   end
 
   defp after_event(query, opts) do
-    if aftr = Keyword.get(opts, :after) do
+    if aftr = Keyword.get(opts, :newer_than) do
       after_id = aftr.id
       after_timestamp = aftr.occurred_at
 
