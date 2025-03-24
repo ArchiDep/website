@@ -9,7 +9,7 @@ defmodule ArchiDepWeb.Admin.EventLogLive do
 
   @impl LiveView
   def mount(_params, _session, socket) do
-    events = Events.fetch_latest_events(socket.assigns.auth, limit: @limit)
+    events = Events.fetch_events(socket.assigns.auth, limit: @limit)
 
     socket
     |> assign(
@@ -47,7 +47,7 @@ defmodule ArchiDepWeb.Admin.EventLogLive do
 
     at = if Keyword.has_key?(opts, :newer_than), do: 0, else: -1
 
-    events = Events.fetch_latest_events(socket.assigns.auth, Keyword.put(opts, :limit, @limit))
+    events = Events.fetch_events(socket.assigns.auth, Keyword.put(opts, :limit, @limit))
     newest_event = List.first(events)
     oldest_event = List.last(events)
     ordered_events = if at == 0, do: Enum.reverse(events), else: events

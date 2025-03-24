@@ -5,7 +5,7 @@ defmodule ArchiDep.Events.ContextImpl do
 
   import ArchiDep.Helpers.ContextHelpers, only: [implement: 2]
   alias ArchiDep.Events.Behaviour
-  alias ArchiDep.Events.FetchLatestEvents
+  alias ArchiDep.Events.FetchEvents
 
-  implement(&Behaviour.fetch_latest_events/2, FetchLatestEvents)
+  implement(&Behaviour.fetch_events/2, FetchEvents)
 end

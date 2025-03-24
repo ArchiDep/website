@@ -1,4 +1,4 @@
-defmodule ArchiDep.Events.FetchLatestEvents do
+defmodule ArchiDep.Events.FetchEvents do
   @moduledoc """
   Business events use case to fetch the latest events that have occurred.
   """
@@ -10,10 +10,10 @@ defmodule ArchiDep.Events.FetchLatestEvents do
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Events.Types
 
-  @spec fetch_latest_events(Authentication.t(), list(Types.fetch_latest_events_option())) ::
+  @spec fetch_events(Authentication.t(), list(Types.fetch_events_option())) ::
           list(StoredEvent.t(struct))
-  def fetch_latest_events(auth, opts) do
-    authorize!(auth, Policy, :events, :fetch_latest_events, nil)
+  def fetch_events(auth, opts) do
+    authorize!(auth, Policy, :events, :fetch_events, nil)
 
     events = opts |> base_query() |> before_event(opts) |> after_event(opts) |> Repo.all()
     streams = events |> Enum.map(& &1.stream) |> Enum.uniq()

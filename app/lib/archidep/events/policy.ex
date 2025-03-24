@@ -9,7 +9,7 @@ defmodule ArchiDep.Events.Policy do
 
   def authorize(
         :events,
-        :fetch_latest_events,
+        :fetch_events,
         %Authentication{principal: %UserAccount{roles: roles}},
         nil
       ),

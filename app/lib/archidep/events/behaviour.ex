@@ -14,9 +14,9 @@ defmodule ArchiDep.Events.Behaviour do
   Returns the latest stored events.
   """
   callback(
-    fetch_latest_events(
+    fetch_events(
       auth: Authentication.t(),
-      opts: list(Types.fetch_latest_events_option())
+      opts: list(Types.fetch_events_option())
     ) ::
       list(StoredEvent.t(map))
   )
