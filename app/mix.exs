@@ -10,6 +10,7 @@ defmodule ArchiDep.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: project_dependencies(),
+      dialyzer: [plt_add_apps: [:ex_unit, :mix]],
       preferred_cli_env: [
         "test.watch": :test
       ]
@@ -32,6 +33,7 @@ defmodule ArchiDep.MixProject do
   defp project_dependencies do
     [
       {:bandit, "~> 1.5"},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dns_cluster, "~> 0.1.1"},
       {:ecto_sql, "~> 3.10"},
       {:finch, "~> 0.13"},

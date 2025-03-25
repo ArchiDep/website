@@ -16,6 +16,24 @@ defmodule ArchiDep do
     vsn |> List.to_string() |> Version.parse!()
   end
 
+  @spec behaviour :: Macro.t()
+  def behaviour do
+    quote do
+      alias Ecto.Changeset
+      alias ArchiDep.Authentication
+      alias ArchiDep.EventMetadata
+    end
+  end
+
+  @spec context :: Macro.t()
+  def context do
+    quote do
+      alias Ecto.Changeset
+      alias ArchiDep.Authentication
+      alias ArchiDep.EventMetadata
+    end
+  end
+
   @spec policy :: Macro.t()
   def policy do
     quote do

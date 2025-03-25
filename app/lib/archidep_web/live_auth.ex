@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.LiveAuth do
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView
   alias ArchiDep.Accounts
+  alias ArchiDep.Accounts.Schemas.UserSession
   alias Phoenix.LiveView.Socket
 
   @doc """

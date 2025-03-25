@@ -4,7 +4,6 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
   account.
   """
 
-  import ArchiDep.Helpers.PipeHelpers, only: [truthy_then: 2]
   alias ArchiDep.EventMetadata
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.UserSession
@@ -47,10 +46,10 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
           client_user_agent: String.t() | nil
         }
 
-  @spec new(UserSession.t(), SwitchEduId.t(), EventMetadata.t()) :: t()
+  @spec new(SwitchEduId.t(), UserSession.t(), EventMetadata.t()) :: t()
   def new(switch_edu_id, session, meta) do
     %SwitchEduId{
-      id: switch_edu_id,
+      id: switch_edu_id_id,
       email: email,
       first_name: first_name,
       last_name: last_name,
@@ -62,19 +61,21 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
       user_account_id: user_account_id
     } = session
 
+    client_ip_address = EventMetadata.client_ip_address(meta)
+
+    serialized_client_ip_address =
+      if client_ip_address, do: EventMetadata.serialize_ip_address(client_ip_address), else: nil
+
     %__MODULE__{
-      switch_edu_id: switch_edu_id,
-      user_account_id: user_account_id,
-      session_id: session_id,
+      switch_edu_id: switch_edu_id_id,
       email: email,
       first_name: first_name,
       last_name: last_name,
       swiss_edu_person_unique_id: swiss_edu_person_unique_id,
-      client_ip_address:
-        meta
-        |> Map.get(:client_ip_address)
-        |> truthy_then(&EventMetadata.serialize_ip_address/1),
-      client_user_agent: meta[:client_user_agent]
+      user_account_id: user_account_id,
+      session_id: session_id,
+      client_ip_address: serialized_client_ip_address,
+      client_user_agent: EventMetadata.client_user_agent(meta)
     }
   end
 end

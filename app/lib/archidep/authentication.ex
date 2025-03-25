@@ -5,9 +5,9 @@ defmodule ArchiDep.Authentication do
 
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
+  alias ArchiDep.Accounts.Types
   alias ArchiDep.Errors.AuthenticatedUserNotFoundError
   alias ArchiDep.Repo
-  alias ArchiDep.Types
 
   @spec is_authentication(term) :: Macro.t()
   defguard is_authentication(value) when is_struct(value, __MODULE__)
@@ -15,11 +15,11 @@ defmodule ArchiDep.Authentication do
   @enforce_keys [:session, :principal, :metadata]
   defstruct [:session, :principal, :metadata]
 
-  @opaque t :: %__MODULE__{
-            session: UserSession.t(),
-            principal: UserAccount.t(),
-            metadata: map
-          }
+  @type t :: %__MODULE__{
+          session: UserSession.t(),
+          principal: UserAccount.t(),
+          metadata: map
+        }
 
   @doc """
   Creates an authentication context for the specified user session.

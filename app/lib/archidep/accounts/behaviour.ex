@@ -7,6 +7,7 @@ defmodule ArchiDep.Accounts.Behaviour do
 
   import ArchiDep.Helpers.ContextHelpers, only: [callback: 1]
   alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
   alias ArchiDep.Authentication
 

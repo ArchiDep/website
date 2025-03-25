@@ -47,7 +47,7 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   def new_event(data, meta_or_auth, opts \\ [])
 
   def new_event(data, auth, opts)
-      when is_struct(data) and is_struct(auth, Authentication) and is_list(opts) do
+      when is_struct(data) and is_list(opts) do
     meta = auth |> Authentication.metadata() |> EventMetadata.serialize()
     data |> StoredEvent.new(meta, opts) |> initiated_by(auth.principal)
   end

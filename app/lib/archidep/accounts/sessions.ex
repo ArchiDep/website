@@ -14,19 +14,19 @@ defmodule ArchiDep.Accounts.Sessions do
   def fetch_active_sessions(auth),
     do:
       auth
-      |> authorize!(Policy, :accounts, :fetch_active_sessions, %{})
+      |> authorize!(Policy, :accounts, :fetch_active_sessions, nil)
       |> Authentication.user_account_id()
       |> UserSession.fetch_active_sessions_by_user_account_id()
 
   @spec validate_session(String.t(), map) ::
-          {:ok, UserSession.t()} | {:error, :session_not_found}
+          {:ok, Authentication.t()} | {:error, :session_not_found}
   def validate_session(token, metadata) do
     extracted_metadata = EventMetadata.extract(metadata)
 
-    token
-    |> UserSession.fetch_active_session_by_token()
-    |> ok_then(&UserSession.touch(&1, extracted_metadata))
-    |> ok_map(&Authentication.for_user_session(&1, extracted_metadata))
+    with {:ok, session} <- UserSession.fetch_active_session_by_token(token),
+         {:ok, touched_session} <- UserSession.touch(session, extracted_metadata) do
+      {:ok, Authentication.for_user_session(touched_session, extracted_metadata)}
+    end
   end
 
   @spec user_account(Authentication.t()) :: UserAccount.t()

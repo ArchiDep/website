@@ -5,9 +5,11 @@ defmodule ArchiDep.EventMetadata do
 
   import ArchiDep.Helpers.NetHelpers
 
-  @type t :: %{
-          optional(:client_ip_address) => :inet.ip_address(),
-          optional(:client_user_agent) => String.t()
+  defstruct client_ip_address: nil, client_user_agent: nil
+
+  @type t :: %__MODULE__{
+          client_ip_address: :inet.ip_address() | nil,
+          client_user_agent: String.t() | nil
         }
 
   @type serialized :: %{
@@ -21,28 +23,35 @@ defmodule ArchiDep.EventMetadata do
   ## Examples
 
       iex> import ArchiDep.EventMetadata
+      iex> alias ArchiDep.EventMetadata
       iex> extract(%{})
-      %{}
+      %EventMetadata{client_ip_address: nil, client_user_agent: nil}
       iex> extract(%{client_ip_address: {1, 2, 3, 4}})
-      %{client_ip_address: {1, 2, 3, 4}}
+      %EventMetadata{client_ip_address: {1, 2, 3, 4}, client_user_agent: nil}
       iex> extract(%{client_user_agent: "Mozilla/5.0"})
-      %{client_user_agent: "Mozilla/5.0"}
+      %EventMetadata{client_ip_address: nil, client_user_agent: "Mozilla/5.0"}
       iex> extract(%{client_ip_address: {1, 2, 3, 4}, client_user_agent: "Mozilla/5.0"})
-      %{client_ip_address: {1, 2, 3, 4}, client_user_agent: "Mozilla/5.0"}
+      %EventMetadata{client_ip_address: {1, 2, 3, 4}, client_user_agent: "Mozilla/5.0"}
 
       iex> ArchiDep.EventMetadata.extract(%{client_ip_address: {1, 2, 3, 4, 5}})
       ** (FunctionClauseError) no function clause matching in ArchiDep.EventMetadata.validate_ip_address/1
-
-      iex> ArchiDep.EventMetadata.extract(%{client_ip_address: {1, 2, 3, 4}, foo: :bar})
-      ** (RuntimeError) Unknown metadata: %{foo: :bar}
   """
   @spec extract(map) :: t()
   def extract(metadata) when is_map(metadata) do
-    {%{}, metadata}
-    |> extract_metadata(:client_ip_address, &validate_ip_address/1)
-    |> extract_metadata(:client_user_agent, &validate_user_agent/1)
-    |> assert_no_more_metadata()
+    client_ip_address = Map.get(metadata, :client_ip_address)
+    client_user_agent = Map.get(metadata, :client_user_agent)
+
+    %__MODULE__{
+      client_ip_address: validate_ip_address(client_ip_address),
+      client_user_agent: validate_user_agent(client_user_agent)
+    }
   end
+
+  @spec client_ip_address(__MODULE__.t()) :: :inet.ip_address() | nil
+  def client_ip_address(%__MODULE__{client_ip_address: client_ip_address}), do: client_ip_address
+
+  @spec client_user_agent(__MODULE__.t()) :: String.t() | nil
+  def client_user_agent(%__MODULE__{client_user_agent: client_user_agent}), do: client_user_agent
 
   @doc """
   Transforms valid metadata into a serializable map for database storage.
@@ -50,13 +59,14 @@ defmodule ArchiDep.EventMetadata do
   ## Examples
 
       iex> import ArchiDep.EventMetadata
-      iex> serialize(%{})
+      iex> alias ArchiDep.EventMetadata
+      iex> serialize(%EventMetadata{})
       %{}
-      iex> serialize(%{client_ip_address: {1, 2, 3, 4}})
+      iex> serialize(%EventMetadata{client_ip_address: {1, 2, 3, 4}})
       %{"client_ip_address" => "1.2.3.4"}
-      iex> serialize(%{client_user_agent: "Mozilla/5.0"})
+      iex> serialize(%EventMetadata{client_user_agent: "Mozilla/5.0"})
       %{"client_user_agent" => "Mozilla/5.0"}
-      iex> serialize(%{client_ip_address: {1, 2, 3, 4}, client_user_agent: "Mozilla/5.0"})
+      iex> serialize(%EventMetadata{client_ip_address: {1, 2, 3, 4}, client_user_agent: "Mozilla/5.0"})
       %{"client_ip_address" => "1.2.3.4", "client_user_agent" => "Mozilla/5.0"}
   """
   @spec serialize(t()) :: serialized()
@@ -93,25 +103,6 @@ defmodule ArchiDep.EventMetadata do
       serialized
     end
   end
-
-  defp extract_metadata({extracted, metadata}, key, validator)
-       when is_map(extracted) and is_map(metadata) and is_atom(key) and is_function(validator, 1) do
-    case Map.pop(metadata, key) do
-      {nil, remaining_metadata} ->
-        {extracted, remaining_metadata}
-
-      {value, remaining_metadata} ->
-        {Map.put(extracted, key, validator.(value)), remaining_metadata}
-    end
-  end
-
-  defp assert_no_more_metadata({extracted, remaining_metadata})
-       when is_map(extracted) and remaining_metadata == %{},
-       do: extracted
-
-  defp assert_no_more_metadata({extracted, remaining_metadata})
-       when is_map(extracted) and is_map(remaining_metadata),
-       do: raise("Unknown metadata: #{inspect(remaining_metadata)}")
 
   defp validate_ip_address(value) when is_ip_address(value), do: value
   defp validate_user_agent(value) when is_binary(value), do: value

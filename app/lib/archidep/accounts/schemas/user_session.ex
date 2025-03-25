@@ -27,7 +27,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
           client_ip_address: String.t() | nil,
           client_user_agent: String.t() | nil,
           user_account: UserAccount.t() | NotLoaded,
-          user_account_id: String.t()
+          user_account_id: UUID.t()
         }
 
   schema "user_sessions" do
@@ -77,16 +77,21 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   """
   @spec fetch_active_session_by_token(String.t()) ::
           {:ok, __MODULE__.t()} | {:error, :session_not_found}
-  def fetch_active_session_by_token(token),
-    do:
-      from(us in __MODULE__,
-        join: ua in UserAccount,
-        on: us.user_account_id == ua.id,
-        where: us.token == ^token and us.created_at > ago(@session_validity_in_days, "day"),
-        preload: [user_account: ua]
-      )
-      |> Repo.one()
-      |> truthy_or(:session_not_found)
+  def fetch_active_session_by_token(token) do
+    if session =
+         Repo.one(
+           from(us in __MODULE__,
+             join: ua in UserAccount,
+             on: us.user_account_id == ua.id,
+             where: us.token == ^token and us.created_at > ago(@session_validity_in_days, "day"),
+             preload: [user_account: ua]
+           )
+         ) do
+      {:ok, session}
+    else
+      {:error, :session_not_found}
+    end
+  end
 
   @doc """
   Finds the session with the specified ID.
@@ -132,18 +137,31 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   def touch(session, metadata) do
     now = DateTime.utc_now()
 
+    client_ip_address =
+      metadata
+      |> EventMetadata.client_ip_address()
+      |> truthy_then(&EventMetadata.serialize_ip_address/1)
+
+    client_user_agent = Map.get(metadata, :client_user_agent)
+
     updates = [
       used_at: now,
-      client_ip_address:
-        metadata
-        |> Map.get(:client_ip_address)
-        |> truthy_then(&EventMetadata.serialize_ip_address/1),
-      client_user_agent: Map.get(metadata, :client_user_agent)
+      client_ip_address: client_ip_address,
+      client_user_agent: client_user_agent
     ]
 
     case Repo.update_all(query_session_by_id(session), set: updates) do
-      {0, _result} -> {:error, :session_not_found}
-      {n, _result} when n == 1 -> {:ok, Map.merge(session, Enum.into(updates, %{}))}
+      {0, _result} ->
+        {:error, :session_not_found}
+
+      {n, _result} when n == 1 ->
+        {:ok,
+         %__MODULE__{
+           session
+           | used_at: now,
+             client_ip_address: client_ip_address,
+             client_user_agent: client_user_agent
+         }}
     end
   end
 

@@ -9,6 +9,13 @@ defmodule ArchiDep.Events.Registry do
   alias ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId
   alias ArchiDep.Accounts.Events.UserLoggedOut
   alias ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId
+  alias ArchiDep.Students.Events.ClassCreated
+
+  event(ClassCreated,
+    prefix: "classes:",
+    by: :id,
+    type: :"archidep/students/class-created"
+  )
 
   event(SessionDeleted,
     prefix: "user-accounts:",

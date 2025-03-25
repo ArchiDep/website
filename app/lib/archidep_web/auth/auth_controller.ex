@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
   import ArchiDepWeb.Helpers.ConnHelpers
   alias ArchiDep.Accounts
   alias ArchiDepWeb.Auth
+  alias Plug.Conn
 
   plug Ueberauth
 

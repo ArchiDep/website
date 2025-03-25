@@ -4,8 +4,8 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
   """
 
   alias ArchiDep.Accounts.Schemas.UserSession
+  alias ArchiDep.Accounts.Types
   alias ArchiDep.Authentication
-  alias ArchiDep.Types
 
   @spec logged_in?(Authentication.t()) :: boolean
   def logged_in?(nil), do: false
