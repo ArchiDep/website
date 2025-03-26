@@ -21,7 +21,6 @@ defmodule ArchiDep do
     quote do
       alias Ecto.Changeset
       alias ArchiDep.Authentication
-      alias ArchiDep.EventMetadata
     end
   end
 
@@ -30,7 +29,6 @@ defmodule ArchiDep do
     quote do
       alias Ecto.Changeset
       alias ArchiDep.Authentication
-      alias ArchiDep.EventMetadata
     end
   end
 
@@ -59,7 +57,6 @@ defmodule ArchiDep do
       alias Ecto.Changeset
       alias Ecto.Query
       alias Ecto.UUID
-      alias ArchiDep.EventMetadata
       alias ArchiDep.Repo
     end
   end
@@ -79,7 +76,6 @@ defmodule ArchiDep do
       alias Ecto.Multi
       alias Ecto.UUID
       alias ArchiDep.Authentication
-      alias ArchiDep.EventMetadata
       alias ArchiDep.Events.Registry
       alias ArchiDep.Events.Store.StoredEvent
       alias ArchiDep.Repo

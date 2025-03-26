@@ -3,11 +3,11 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   Helper functions to implement business use cases.
   """
 
+  import ArchiDep.Authentication, only: [is_authentication: 1]
   alias Ecto.Changeset
   alias Ecto.Multi
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Authentication
-  alias ArchiDep.EventMetadata
   alias ArchiDep.Events.Registry
   alias ArchiDep.Events.Store.StoredEvent
 
@@ -47,13 +47,12 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   def new_event(data, meta_or_auth, opts \\ [])
 
   def new_event(data, auth, opts)
-      when is_struct(data) and is_list(opts) do
-    meta = auth |> Authentication.metadata() |> EventMetadata.serialize()
-    data |> StoredEvent.new(meta, opts) |> initiated_by(auth.principal)
+      when is_struct(data) and is_authentication(auth) and is_list(opts) do
+    data |> StoredEvent.new(%{}, opts) |> initiated_by(auth.principal)
   end
 
   def new_event(data, meta, opts) when is_struct(data) and is_map(meta) and is_list(opts) do
-    StoredEvent.new(data, EventMetadata.serialize(meta), opts)
+    StoredEvent.new(data, meta, opts)
   end
 
   @doc """

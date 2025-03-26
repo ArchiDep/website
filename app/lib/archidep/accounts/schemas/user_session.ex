@@ -8,7 +8,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   use ArchiDep, :schema
 
   alias ArchiDep.Accounts.Schemas.UserAccount
-  alias ArchiDep.EventMetadata
+  alias ArchiDep.ClientMetadata
 
   @derive {Inspect, only: [:id, :created_at, :user_account]}
   @primary_key {:id, :binary_id, []}
@@ -49,9 +49,9 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   @doc """
   Creates a new session.
   """
-  @spec new_session(UserAccount.t(), EventMetadata.t()) ::
+  @spec new_session(UserAccount.t(), ClientMetadata.t()) ::
           Changeset.t(__MODULE__.t())
-  def new_session(user_account, metadata) do
+  def new_session(user_account, client_metadata) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
@@ -59,11 +59,8 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     |> change(
       id: id,
       token: generate_session_token(),
-      client_ip_address:
-        metadata
-        |> Map.get(:client_ip_address)
-        |> truthy_then(&EventMetadata.serialize_ip_address/1),
-      client_user_agent: Map.get(metadata, :client_user_agent),
+      client_ip_address: client_metadata.ip_address,
+      client_user_agent: client_metadata.user_agent,
       user_account: user_account,
       user_account_id: user_account.id,
       created_at: now
@@ -132,22 +129,15 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   @doc """
   Updates the date at which the specified session was last used.
   """
-  @spec touch(__MODULE__.t(), EventMetadata.t()) ::
+  @spec touch(__MODULE__.t(), ClientMetadata.t()) ::
           {:ok, __MODULE__.t()} | {:error, :session_not_found}
-  def touch(session, metadata) do
+  def touch(session, client_metadata) do
     now = DateTime.utc_now()
-
-    client_ip_address =
-      metadata
-      |> EventMetadata.client_ip_address()
-      |> truthy_then(&EventMetadata.serialize_ip_address/1)
-
-    client_user_agent = Map.get(metadata, :client_user_agent)
 
     updates = [
       used_at: now,
-      client_ip_address: client_ip_address,
-      client_user_agent: client_user_agent
+      client_ip_address: client_metadata.ip_address,
+      client_user_agent: client_metadata.user_agent
     ]
 
     case Repo.update_all(query_session_by_id(session), set: updates) do
@@ -159,8 +149,8 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
          %__MODULE__{
            session
            | used_at: now,
-             client_ip_address: client_ip_address,
-             client_user_agent: client_user_agent
+             client_ip_address: client_metadata.ip_address,
+             client_user_agent: client_metadata.user_agent
          }}
     end
   end

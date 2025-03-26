@@ -9,6 +9,7 @@ defmodule ArchiDep.Accounts.Sessions do
   alias ArchiDep.Accounts.Policy
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
+  alias ArchiDep.ClientMetadata
 
   @spec fetch_active_sessions(Authentication.t()) :: list(UserSession.t())
   def fetch_active_sessions(auth),
@@ -18,14 +19,12 @@ defmodule ArchiDep.Accounts.Sessions do
       |> Authentication.user_account_id()
       |> UserSession.fetch_active_sessions_by_user_account_id()
 
-  @spec validate_session(String.t(), map) ::
+  @spec validate_session(String.t(), ClientMetadata.t()) ::
           {:ok, Authentication.t()} | {:error, :session_not_found}
-  def validate_session(token, metadata) do
-    extracted_metadata = EventMetadata.extract(metadata)
-
+  def validate_session(token, client_metadata) do
     with {:ok, session} <- UserSession.fetch_active_session_by_token(token),
-         {:ok, touched_session} <- UserSession.touch(session, extracted_metadata) do
-      {:ok, Authentication.for_user_session(touched_session, extracted_metadata)}
+         {:ok, touched_session} <- UserSession.touch(session, client_metadata) do
+      {:ok, Authentication.for_user_session(touched_session, client_metadata)}
     end
   end
 

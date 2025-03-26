@@ -8,9 +8,9 @@ defmodule ArchiDep.Students.ContextImpl do
 
   @behaviour ArchiDep.Students.Behaviour
 
-  @spec create_class(Authentication.t(), Types.class_data(), EventMetadata.t()) ::
+  @spec create_class(Authentication.t(), Types.class_data()) ::
           {:ok, Class.t()} | {:error, Changeset.t()}
-  defdelegate create_class(auth, data, meta), to: CreateClass
+  defdelegate create_class(auth, data), to: CreateClass
 
   @spec list_classes(Authentication.t()) :: list(Class.t())
   defdelegate list_classes(auth), to: ListClasses

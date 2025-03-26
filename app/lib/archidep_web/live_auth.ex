@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.LiveAuth do
   import Phoenix.LiveView
   alias ArchiDep.Accounts
   alias ArchiDep.Accounts.Schemas.UserSession
+  alias ArchiDep.ClientMetadata
   alias Phoenix.LiveView.Socket
 
   @doc """
@@ -64,8 +65,5 @@ defmodule ArchiDepWeb.LiveAuth do
   end
 
   defp socket_metadata(%Socket{assigns: %{peer_data: peer_data} = assigns}),
-    do: %{
-      client_ip_address: peer_data.address,
-      client_user_agent: Map.get(assigns, :user_agent)
-    }
+    do: ClientMetadata.new(peer_data.address, Map.get(assigns, :user_agent))
 end

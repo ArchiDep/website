@@ -4,9 +4,9 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
   account.
   """
 
-  alias ArchiDep.EventMetadata
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.UserSession
+  alias ArchiDep.ClientMetadata
   alias Ecto.UUID
 
   @derive Jason.Encoder
@@ -46,8 +46,8 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
           client_user_agent: String.t() | nil
         }
 
-  @spec new(SwitchEduId.t(), UserSession.t(), EventMetadata.t()) :: t()
-  def new(switch_edu_id, session, meta) do
+  @spec new(SwitchEduId.t(), UserSession.t(), ClientMetadata.t()) :: t()
+  def new(switch_edu_id, session, client_metadata) do
     %SwitchEduId{
       id: switch_edu_id_id,
       email: email,
@@ -61,11 +61,6 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
       user_account_id: user_account_id
     } = session
 
-    client_ip_address = EventMetadata.client_ip_address(meta)
-
-    serialized_client_ip_address =
-      if client_ip_address, do: EventMetadata.serialize_ip_address(client_ip_address), else: nil
-
     %__MODULE__{
       switch_edu_id: switch_edu_id_id,
       email: email,
@@ -74,8 +69,8 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
       swiss_edu_person_unique_id: swiss_edu_person_unique_id,
       user_account_id: user_account_id,
       session_id: session_id,
-      client_ip_address: serialized_client_ip_address,
-      client_user_agent: EventMetadata.client_user_agent(meta)
+      client_ip_address: client_metadata.ip_address,
+      client_user_agent: client_metadata.user_agent
     }
   end
 end
