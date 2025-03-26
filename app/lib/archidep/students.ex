@@ -8,6 +8,9 @@ defmodule ArchiDep.Students do
 
   @implementation Application.compile_env!(:archidep, __MODULE__)
 
+  @spec validate_class(Authentication.t(), Types.class_data()) :: Changeset.t()
+  defdelegate validate_class(auth, data), to: @implementation
+
   @spec create_class(Authentication.t(), Types.class_data()) ::
           {:ok, Class.t()} | {:error, Changeset.t()}
   defdelegate create_class(auth, data), to: @implementation

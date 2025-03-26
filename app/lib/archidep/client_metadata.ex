@@ -39,6 +39,23 @@ defmodule ArchiDep.ClientMetadata do
     }
   end
 
+  @doc """
+  Serializes an IP address into a string.
+
+  ## Examples
+
+      iex> import ArchiDep.ClientMetadata
+      iex> serialize_ip_address({1, 2, 3, 4})
+      "1.2.3.4"
+      iex> serialize_ip_address({46_833, 10_531, 26_574, 53_935, 41_542, 21_716, 6_225, 8_172})
+      "b6f1:2923:67ce:d2af:a246:54d4:1851:1fec"
+      iex> serialize_ip_address({46_833, 0, 26_574, 0, 0, 0, 6_225, 8_172})
+      "b6f1:0:67ce::1851:1fec"
+  """
+  @spec serialize_ip_address(:inet.ip_address()) :: String.t()
+  def serialize_ip_address(ip_address) when is_ip_address(ip_address),
+    do: ip_address |> :inet.ntoa() |> List.to_string()
+
   defp validate_ip_address(ip_address) when is_ip_address(ip_address), do: ip_address
   defp validate_ip_address(_ip_address), do: nil
 end

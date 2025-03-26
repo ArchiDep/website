@@ -61,6 +61,11 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
       user_account_id: user_account_id
     } = session
 
+    client_ip_address =
+      if client_metadata.ip_address,
+        do: ClientMetadata.serialize_ip_address(client_metadata.ip_address),
+        else: nil
+
     %__MODULE__{
       switch_edu_id: switch_edu_id_id,
       email: email,
@@ -69,7 +74,7 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
       swiss_edu_person_unique_id: swiss_edu_person_unique_id,
       user_account_id: user_account_id,
       session_id: session_id,
-      client_ip_address: client_metadata.ip_address,
+      client_ip_address: client_ip_address,
       client_user_agent: client_metadata.user_agent
     }
   end

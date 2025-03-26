@@ -66,6 +66,8 @@ defmodule ArchiDepWeb do
       use Phoenix.LiveView,
         layout: {ArchiDepWeb.Layouts, :app}
 
+      import ArchiDep.Helpers.PipeHelpers
+      alias Ecto.Changeset
       alias Phoenix.LiveView
 
       on_mount(ArchiDepWeb.LiveAuth)

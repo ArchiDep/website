@@ -1,0 +1,13 @@
+<h1>Classes</h1>
+
+<.link patch={~p"/admin/classes/new"}>New Class</.link>
+
+<em :if={Enum.empty?(@classes)}>
+  No classes found.
+</em>
+
+<ul :if={not Enum.empty?(@classes)}>
+  <%= for class <- @classes do %>
+    <li><%= class.name %></li>
+  <% end %>
+</ul>

@@ -55,11 +55,16 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     id = UUID.generate()
     now = DateTime.utc_now()
 
+    client_ip_address =
+      if client_metadata.ip_address,
+        do: ClientMetadata.serialize_ip_address(client_metadata.ip_address),
+        else: nil
+
     %__MODULE__{}
     |> change(
       id: id,
       token: generate_session_token(),
-      client_ip_address: client_metadata.ip_address,
+      client_ip_address: client_ip_address,
       client_user_agent: client_metadata.user_agent,
       user_account: user_account,
       user_account_id: user_account.id,
@@ -134,9 +139,14 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   def touch(session, client_metadata) do
     now = DateTime.utc_now()
 
+    client_ip_address =
+      if client_metadata.ip_address,
+        do: ClientMetadata.serialize_ip_address(client_metadata.ip_address),
+        else: nil
+
     updates = [
       used_at: now,
-      client_ip_address: client_metadata.ip_address,
+      client_ip_address: client_ip_address,
       client_user_agent: client_metadata.user_agent
     ]
 
@@ -149,7 +159,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
          %__MODULE__{
            session
            | used_at: now,
-             client_ip_address: client_metadata.ip_address,
+             client_ip_address: client_ip_address,
              client_user_agent: client_metadata.user_agent
          }}
     end

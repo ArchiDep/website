@@ -6,6 +6,12 @@ defmodule ArchiDep.Students.CreateClass do
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Types
 
+  @spec validate_class(Authentication.t(), Types.class_data()) :: Changeset.t()
+  def validate_class(auth, data) do
+    authorize!(auth, Policy, :students, :validate_class, nil)
+    Class.new(data)
+  end
+
   @spec create_class(Authentication.t(), Types.class_data()) ::
           {:ok, Class.t()} | {:error, Changeset.t()}
   def create_class(auth, data) do

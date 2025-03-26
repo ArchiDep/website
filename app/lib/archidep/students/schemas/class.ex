@@ -6,6 +6,7 @@ defmodule ArchiDep.Students.Schemas.Class do
 
   use ArchiDep, :schema
 
+  import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Students.Types
 
   @primary_key {:id, :binary_id, []}
@@ -42,6 +43,13 @@ defmodule ArchiDep.Students.Schemas.Class do
     |> validate_required([:name, :active])
     |> unique_constraint(:name, name: :classes_unique_name_index)
     |> validate_start_and_end_dates()
+    |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
+      name = get_field(changeset, :name)
+
+      from(c in __MODULE__,
+        where: fragment("LOWER(?)", c.name) == fragment("LOWER(?)", ^name)
+      )
+    end)
   end
 
   defp validate_start_and_end_dates(changeset) do

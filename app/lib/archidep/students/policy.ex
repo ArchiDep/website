@@ -3,6 +3,15 @@ defmodule ArchiDep.Students.Policy do
 
   @impl Policy
 
+  # Root users can validate classes.
+  def authorize(
+        :students,
+        :validate_class,
+        %Authentication{principal: %UserAccount{roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   # Root users can create classes.
   def authorize(
         :students,

@@ -54,6 +54,8 @@ defmodule ArchiDepWeb.Router do
 
     scope "/admin" do
       pipe_through :fetch_authentication
+      live "/classes", Admin.Classes.ClassesLive
+      live "/classes/new", Admin.Classes.NewClassLive
       live "/events", Admin.EventLogLive
     end
   end

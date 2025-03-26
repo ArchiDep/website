@@ -8,6 +8,9 @@ defmodule ArchiDep.Students.ContextImpl do
 
   @behaviour ArchiDep.Students.Behaviour
 
+  @spec validate_class(Authentication.t(), Types.class_data()) :: Changeset.t()
+  defdelegate validate_class(auth, data), to: CreateClass
+
   @spec create_class(Authentication.t(), Types.class_data()) ::
           {:ok, Class.t()} | {:error, Changeset.t()}
   defdelegate create_class(auth, data), to: CreateClass

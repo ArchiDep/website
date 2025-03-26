@@ -29,6 +29,7 @@
       <ul>
         <li :if={has_role?(@auth, :root)}>
           <.link patch={~p"/admin/events"}>Events</.link>
+          <.link patch={~p"/admin/classes"}>Classes</.link>
         </li>
       </ul>
     </nav>

@@ -12,7 +12,7 @@ defmodule ArchiDep.Repo.Migrations.AddStudentsContext do
       timestamps(inserted_at: :created_at, required: true, type: :utc_datetime_usec)
     end
 
-    create unique_index(:classes, [:name], name: :classes_unique_name_index)
+    create unique_index(:classes, ["LOWER(name)"], name: :classes_unique_name_index)
     create constraint(:classes, :version_is_positive, check: "version >= 1")
 
     create constraint(:classes, :dates_are_consistent,

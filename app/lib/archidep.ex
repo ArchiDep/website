@@ -19,8 +19,8 @@ defmodule ArchiDep do
   @spec behaviour :: Macro.t()
   def behaviour do
     quote do
-      alias Ecto.Changeset
       alias ArchiDep.Authentication
+      alias Ecto.Changeset
     end
   end
 
@@ -53,11 +53,11 @@ defmodule ArchiDep do
       import ArchiDep.Helpers.SchemaHelpers
       import Ecto.Changeset
       import Ecto.Query, only: [from: 2]
+      alias ArchiDep.Repo
       alias Ecto.Association.NotLoaded
       alias Ecto.Changeset
       alias Ecto.Query
       alias Ecto.UUID
-      alias ArchiDep.Repo
     end
   end
 
