@@ -9,7 +9,11 @@ defmodule ArchiDepWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {ArchiDepWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug(:put_secure_browser_headers, %{"content-security-policy" => "default-src 'self'"})
+
+    plug(:put_secure_browser_headers, %{
+      "content-security-policy" => "default-src 'self'; img-src 'self' data:;"
+    })
+
     plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
   end
 
@@ -55,7 +59,6 @@ defmodule ArchiDepWeb.Router do
     scope "/admin" do
       pipe_through :fetch_authentication
       live "/classes", Admin.Classes.ClassesLive
-      live "/classes/new", Admin.Classes.NewClassLive
       live "/events", Admin.EventLogLive
     end
   end

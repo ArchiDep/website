@@ -1,6 +1,8 @@
 <h1>Classes</h1>
 
-<.link patch={~p"/admin/classes/new"}>New Class</.link>
+<button type="button" class="btn btn-primary" phx-click={JS.dispatch("open-new-class-dialog", to: "body")}>
+  New Class
+</button>
 
 <em :if={Enum.empty?(@classes)}>
   No classes found.
@@ -11,3 +13,5 @@
     <li><%= class.name %></li>
   <% end %>
 </ul>
+
+<.live_component module={NewClassDialogLive} id={NewClassDialogLive.id()} auth={@auth} />

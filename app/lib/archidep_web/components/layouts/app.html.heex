@@ -1,40 +1,82 @@
-<header class="p-2 border-b border-gray-800 dark:border-gray-200 flex gap-2">
-  <h1 class="order-2 md:order-1 font-bold">
-    <a href="/">ArchiDep</a>
-  </h1>
-
-  <nav class="order-1 md:order-2">
-    <input type="checkbox" id="nav-trigger" class="peer hidden" />
-    <label for="nav-trigger" class="block md:hidden">
-      <Heroicons.bars_3 class="size-6" />
+<header class="navbar bg-base-300 shadow-sm">
+  <div class="navbar-start">
+    <label for="sidebar" class="lg:hidden btn btn-square btn-ghost">
+      <Heroicons.bars_3 class="size-5" />
     </label>
-
-    <div class="hidden md:block peer-checked:block peer-checked:fixed peer-checked:top-10 peer-checked:bottom-0 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-zinc-200 peer-checked:dark:bg-zinc-800 clear-both">
-      <a href="/">Course</a>
-      <.link patch={~p"/app"}>App</.link>
-      <%= if logged_in?(@auth) do %>
-        <.link patch={~p"/profile"}>Profile</.link>
-        <.link href={~p"/logout"} method="delete" class="gap-1 inline">
-          <Heroicons.arrow_right_on_rectangle outline class="size-6 inline" /> Log out
+    <a class="btn btn-ghost text-xl" href="/">
+      ArchiDep
+    </a>
+    <ul class="menu menu-horizontal px-1">
+      <li>
+        <.link patch={~p"/app"}>
+          <span><Heroicons.cube class="size-5" /></span>
+          <span class="hidden md:inline">App</span>
         </.link>
-      <% end %>
-    </div>
-  </nav>
-</header>
+      </li>
+    </ul>
+  </div>
 
-<main>
-  <.flash_group flash={@flash} />
-  <div class="flex gap-4">
-    <nav class="w-full md:w-1/5">
-      <ul>
-        <li :if={has_role?(@auth, :root)}>
-          <.link patch={~p"/admin/events"}>Events</.link>
-          <.link patch={~p"/admin/classes"}>Classes</.link>
+  <div :if={logged_in?(@auth)} class="navbar-end">
+    <div class="dropdown dropdown-end">
+      <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+        <div class="w-10 rounded-full">
+          <Heroicons.user_circle />
+        </div>
+      </div>
+      <ul
+        tabindex="0"
+        class="menu menu-sm dropdown-content bg-base-300 rounded-box z-1 mt-3 w-52 p-2 shadow">
+        <li>
+          <.link patch={~p"/profile"} class="flex items-center gap-1">
+            <Heroicons.user outline class="size-3.5" />
+            <span>Profile</span>
+          </.link>
+        </li>
+        <li>
+          <.link href={~p"/logout"} method="delete" class="flex items-center gap-1">
+            <Heroicons.arrow_right_on_rectangle outline class="size-3.5" />
+            <span>Log out</span>
+          </.link>
         </li>
       </ul>
-    </nav>
-    <div>
-      {@inner_content}
     </div>
   </div>
-</main>
+</header>
+
+<.flash_group flash={@flash} />
+
+<div class="drawer lg:drawer-open">
+  <input id="sidebar" type="checkbox" class="drawer-toggle" />
+  <div class="drawer-content">
+    <main class="p-4">
+      {@inner_content}
+    </main>
+  </div>
+  <div class="drawer-side">
+    <label for="sidebar" aria-label="close sidebar" class="drawer-overlay"></label>
+    <ul :if={has_role?(@auth, :root)} class="menu bg-base-200 text-base-content min-h-full w-80 p-4">
+      <li class="mb-4 lg:hidden">
+        <div class="flex justify-between">
+          <.link href="/" class="text-xl font-bold inline">ArchiDep</.link>
+          <label for="sidebar" class="btn btn-square btn-ghost">
+            <Heroicons.x_mark class="size-5" />
+          </label>
+        </div>
+      </li>
+      <li>
+        <.link patch={~p"/admin/classes"} class="flex items-center gap-2">
+          <Heroicons.academic_cap class="size-4" />
+          <span>Classes</span>
+        </.link>
+      </li>
+      <li>
+        <.link patch={~p"/admin/events"} class="flex items-center gap-2">
+          <Heroicons.calendar class="size-4" />
+          <span>Events</span>
+        </.link>
+      </li>
+    </ul>
+  </div>
+</div>
+
+

@@ -82,6 +82,7 @@ defmodule ArchiDepWeb do
       use Phoenix.LiveComponent
 
       import ArchiDep.Helpers.PipeHelpers
+      alias Ecto.Changeset
       alias Phoenix.LiveComponent
       alias Phoenix.LiveView.JS
 
