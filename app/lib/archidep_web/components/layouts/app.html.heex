@@ -8,7 +8,7 @@
     </a>
     <ul class="menu menu-horizontal px-1">
       <li>
-        <.link patch={~p"/app"}>
+        <.link navigate={~p"/app"}>
           <span><Heroicons.cube class="size-5" /></span>
           <span class="hidden md:inline">App</span>
         </.link>
@@ -25,9 +25,10 @@
       </div>
       <ul
         tabindex="0"
-        class="menu menu-sm dropdown-content bg-base-300 rounded-box z-1 mt-3 w-52 p-2 shadow">
+        class="menu menu-sm dropdown-content bg-base-300 rounded-box z-1 mt-3 w-52 p-2 shadow"
+      >
         <li>
-          <.link patch={~p"/profile"} class="flex items-center gap-1">
+          <.link navigate={~p"/profile"} class="flex items-center gap-1">
             <Heroicons.user outline class="size-3.5" />
             <span>Profile</span>
           </.link>
@@ -54,7 +55,10 @@
   </div>
   <div class="drawer-side">
     <label for="sidebar" aria-label="close sidebar" class="drawer-overlay"></label>
-    <ul :if={has_role?(@auth, :root)} class="menu bg-base-200 text-base-content min-h-full w-80 p-4">
+    <ul
+      :if={has_role?(@auth, :root)}
+      class="menu bg-base-200 text-base-content min-h-full w-80 p-4"
+    >
       <li class="mb-4 lg:hidden">
         <div class="flex justify-between">
           <.link href="/" class="text-xl font-bold inline">ArchiDep</.link>
@@ -64,13 +68,13 @@
         </div>
       </li>
       <li>
-        <.link patch={~p"/admin/classes"} class="flex items-center gap-2">
+        <.link navigate={~p"/admin/classes"} class="flex items-center gap-2">
           <Heroicons.academic_cap class="size-4" />
           <span>Classes</span>
         </.link>
       </li>
       <li>
-        <.link patch={~p"/admin/events"} class="flex items-center gap-2">
+        <.link navigate={~p"/admin/events"} class="flex items-center gap-2">
           <Heroicons.calendar class="size-4" />
           <span>Events</span>
         </.link>
@@ -78,5 +82,3 @@
     </ul>
   </div>
 </div>
-
-

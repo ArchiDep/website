@@ -1,12 +1,44 @@
 <dialog id="new-class-dialog" class="modal">
   <div class="modal-box">
-    <h3 class="text-lg font-bold">New Class</h3>
-    <.form for={@form} phx-change="validate" phx-submit="create">
-      <.input type="text" field={@form[:name]} />
-      <button>Save</button>
+    <.form
+      id="new-class-form"
+      for={@form}
+      phx-change="validate"
+      phx-submit="create"
+      phx-target={@myself}
+    >
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">
+          <h3 class="text-lg font-bold">New Class</h3>
+        </legend>
+
+        <label class="fieldset-label">Name</label>
+        <input
+          type="text"
+          id={@form[:name].id}
+          class="input"
+          name={@form[:name].name}
+          value={@form[:name].value}
+        />
+
+        <label class="fieldset-label">
+          <input
+            type="checkbox"
+            id={@form[:active].id}
+            class="checkbox"
+            name={@form[:active].name}
+            checked={@form[:active].value}
+            value="true"
+          /> Active
+        </label>
+
+        <div class="flex justify-end gap-x-2">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </fieldset>
     </.form>
   </div>
   <form method="dialog" class="modal-backdrop">
-    <button>close</button>
+    <button type="submit">close</button>
   </form>
 </dialog>

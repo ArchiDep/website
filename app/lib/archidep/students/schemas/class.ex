@@ -36,8 +36,17 @@ defmodule ArchiDep.Students.Schemas.Class do
 
   @spec new(Types.class_data()) :: Changeset.t(t())
   def new(data) do
+    id = UUID.generate()
+    now = DateTime.utc_now()
+
     %__MODULE__{}
     |> cast(data, [:name, :start_date, :end_date, :active])
+    |> change(
+      id: id,
+      version: 1,
+      created_at: now,
+      updated_at: now
+    )
     |> validate_length(:name, min: 2, max: 50)
     |> validate_format(:name, ~r/\A\S.*\S\z/, message: "must not start or end with whitespace")
     |> validate_required([:name, :active])

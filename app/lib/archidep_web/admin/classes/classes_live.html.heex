@@ -1,6 +1,10 @@
 <h1>Classes</h1>
 
-<button type="button" class="btn btn-primary" phx-click={JS.dispatch("open-new-class-dialog", to: "body")}>
+<button
+  type="button"
+  class="btn btn-primary"
+  phx-click={JS.dispatch("open-new-class-dialog", to: "body")}
+>
   New Class
 </button>
 
@@ -10,7 +14,7 @@
 
 <ul :if={not Enum.empty?(@classes)}>
   <%= for class <- @classes do %>
-    <li><%= class.name %></li>
+    <li>{class.name}</li>
   <% end %>
 </ul>
 

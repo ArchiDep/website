@@ -39,11 +39,12 @@ defmodule ArchiDepWeb.Admin.EventLogLive do
   end
 
   defp paginate_events(socket, params \\ nil) do
-    opts = case params do
-      {:older_than, event} -> [older_than: event]
-      {:newer_than, event} -> [newer_than: event]
-      nil -> []
-    end
+    opts =
+      case params do
+        {:older_than, event} -> [older_than: event]
+        {:newer_than, event} -> [newer_than: event]
+        nil -> []
+      end
 
     at = if Keyword.has_key?(opts, :newer_than), do: 0, else: -1
 

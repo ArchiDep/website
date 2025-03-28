@@ -5,5 +5,8 @@ defmodule ArchiDep.Events.Types do
 
   alias ArchiDep.Events.Store.StoredEvent
 
-  @type fetch_events_option :: {:newer_than, StoredEvent.t(any)} | {:older_than, StoredEvent.t(any)} | {:limit, 1..1000}
+  @type fetch_events_option ::
+          {:newer_than, StoredEvent.t(any)}
+          | {:older_than, StoredEvent.t(any)}
+          | {:limit, 1..1000}
 end

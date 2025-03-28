@@ -23,10 +23,10 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
     with {:ok, form_data} <- Changeset.apply_action(CreateClassForm.changeset(%{}), :validate),
          changeset <-
            Students.validate_class(socket.assigns.auth, form_data) do
-      {:ok, assign(socket, form: to_form(changeset, action: :validate))}
+      {:ok, assign(socket, form: to_form(changeset, as: :class, action: :validate))}
     else
       {:error, changeset} ->
-        {:ok, assign(socket, form: to_form(changeset))}
+        {:ok, assign(socket, form: to_form(changeset, as: :class))}
     end
   end
 
@@ -39,25 +39,27 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
     |> noreply()
   end
 
-  def handle_event("validate", %{"create_class_form" => params}, socket) do
-    form =
-      socket.assigns.auth
-      |> Students.validate_class(params)
-      |> to_form(action: :validate)
-
-    {:noreply, assign(socket, form: form)}
+  def handle_event("validate", %{"class" => params}, socket) do
+    with {:ok, form_data} <- Changeset.apply_action(CreateClassForm.changeset(params), :validate),
+         changeset <-
+           Students.validate_class(socket.assigns.auth, Map.from_struct(form_data)) do
+      {:noreply, assign(socket, form: to_form(changeset, as: :class, action: :validate))}
+    else
+      {:error, changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset, as: :class))}
+    end
   end
 
-  def handle_event("create", %{"create_class_form" => params}, socket) do
+  def handle_event("create", %{"class" => params}, socket) do
     case Students.create_class(socket.assigns.auth, params) do
       {:ok, _class} ->
         {:noreply,
          socket
          |> put_flash(:info, "Class created")
-         |> redirect(to: ~p"/admin/classes")}
+         |> push_navigate(to: ~p"/admin/classes")}
 
       {:error, %Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, as: :class))}
     end
   end
 end
