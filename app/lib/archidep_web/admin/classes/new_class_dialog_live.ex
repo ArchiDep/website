@@ -1,6 +1,7 @@
 defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
   use ArchiDepWeb, :live_component
 
+  import ArchiDepWeb.Components.FormComponents
   alias ArchiDep.Students
   alias ArchiDepWeb.Admin.Classes.CreateClassForm
 
@@ -20,22 +21,26 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
 
   @impl LiveComponent
   def mount(socket) do
-    with {:ok, form_data} <- Changeset.apply_action(CreateClassForm.changeset(%{}), :validate),
-         changeset <-
-           Students.validate_class(socket.assigns.auth, form_data) do
-      {:ok, assign(socket, form: to_form(changeset, as: :class, action: :validate))}
-    else
-      {:error, changeset} ->
-        {:ok, assign(socket, form: to_form(changeset, as: :class))}
-    end
+    {:error, changeset} = Changeset.apply_action(CreateClassForm.changeset(%{}), :validate)
+    {:ok, assign(socket, form: to_form(changeset, as: :class))}
   end
 
   @impl LiveComponent
 
   def handle_event("opened", _params, socket) do
     socket
-    |> assign(open: true)
     |> push_event("app:focus", %{id: @name_field_id})
+    |> noreply()
+  end
+
+  def handle_event("closed", _params, socket) do
+    {:error, changeset} = Changeset.apply_action(CreateClassForm.changeset(%{}), :validate)
+
+    socket
+    |> assign(
+      open: false,
+      form: to_form(changeset)
+    )
     |> noreply()
   end
 

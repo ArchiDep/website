@@ -12,16 +12,38 @@
           <h3 class="text-lg font-bold">New Class</h3>
         </legend>
 
-        <label class="fieldset-label">Name</label>
+        <label class="fieldset-label mt-2">Name</label>
         <input
           type="text"
           id={@form[:name].id}
-          class="input"
+          class="input w-full"
           name={@form[:name].name}
           value={@form[:name].value}
         />
+        <.errors_for field={@form[:name]} />
 
-        <label class="fieldset-label">
+        <label class="fieldset-label mt-2">Start date</label>
+        <input
+          type="date"
+          id={@form[:start_date].id}
+          class="input w-full"
+          name={@form[:start_date].name}
+          value={@form[:start_date].value}
+        />
+        <.errors_for field={@form[:start_date]} />
+
+        <label class="fieldset-label mt-2">End date</label>
+        <input
+          type="date"
+          id={@form[:end_date].id}
+          class="input w-full"
+          name={@form[:end_date].name}
+          value={@form[:end_date].value}
+        />
+        <.errors_for field={@form[:end_date]} />
+
+        <label class="fieldset-label mt-2">
+          <input type="hidden" name={@form[:active].name} value="false" />
           <input
             type="checkbox"
             id={@form[:active].id}
@@ -38,7 +60,7 @@
       </fieldset>
     </.form>
   </div>
-  <form method="dialog" class="modal-backdrop">
+  <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
     <button type="submit">close</button>
   </form>
 </dialog>

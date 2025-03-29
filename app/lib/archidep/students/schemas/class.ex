@@ -47,8 +47,9 @@ defmodule ArchiDep.Students.Schemas.Class do
       created_at: now,
       updated_at: now
     )
-    |> validate_length(:name, min: 2, max: 50)
-    |> validate_format(:name, ~r/\A\S.*\S\z/, message: "must not start or end with whitespace")
+    |> validate_length(:name, max: 50)
+    |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
+    |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
     |> validate_required([:name, :active])
     |> unique_constraint(:name, name: :classes_unique_name_index)
     |> validate_start_and_end_dates()

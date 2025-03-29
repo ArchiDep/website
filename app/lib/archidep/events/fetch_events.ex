@@ -9,6 +9,7 @@ defmodule ArchiDep.Events.FetchEvents do
   alias ArchiDep.Events.Policy
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Events.Types
+  alias ArchiDep.Students.Schemas.Class
 
   @spec fetch_events(Authentication.t(), list(Types.fetch_events_option())) ::
           list(StoredEvent.t(struct))
@@ -71,6 +72,9 @@ defmodule ArchiDep.Events.FetchEvents do
       streams
       |> Enum.map(&String.split(&1, ":"))
       |> Enum.reduce(%{}, fn
+        ["classes", id], map ->
+          Map.update(map, "classes", [id], fn ids -> [id | ids] end)
+
         ["user-accounts", id], map ->
           Map.update(map, "user-accounts", [id], fn ids -> [id | ids] end)
       end)
@@ -88,12 +92,20 @@ defmodule ArchiDep.Events.FetchEvents do
         {type, task} -> {type, Task.await(task)}
       end)
 
+  defp fetch_entities_by_type({"classes", ids}) when is_list(ids),
+    do: from(c in Class, where: c.id in ^ids)
+
   defp fetch_entities_by_type({"user-accounts", ids}) when is_list(ids),
     do: from(ua in UserAccount, where: ua.id in ^ids)
 
   defp to_entities_by_stream(entities_by_type),
     do:
       Enum.reduce(entities_by_type, %{}, fn
+        {"classes", classes}, map ->
+          Enum.reduce(classes, map, fn class, acc ->
+            Map.put(acc, "classes:#{class.id}", class)
+          end)
+
         {"user-accounts", users}, map ->
           Enum.reduce(users, map, fn user, acc ->
             Map.put(acc, "user-accounts:#{user.id}", user)

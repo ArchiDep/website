@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Events.EventsComponents do
 
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Events.Store.StoredEvent
+  alias ArchiDep.Students.Schemas.Class
 
   @spec event_context(map) :: Phoenix.LiveView.Rendered.t()
 
@@ -25,6 +26,9 @@ defmodule ArchiDepWeb.Events.EventsComponents do
 
   defp event_context_and_class(["archidep", "accounts", _action]),
     do: [context: "accounts", class: "badge badge-primary"]
+
+  defp event_context_and_class(["archidep", "students", _action]),
+    do: [context: "students", class: "badge badge-secondary"]
 
   defp event_context_and_class(["archidep", context, _action]),
     do: [context: context, class: "badge badge-accent"]
@@ -47,7 +51,7 @@ defmodule ArchiDepWeb.Events.EventsComponents do
     do: type |> String.split("/") |> event_action_and_class()
 
   defp event_action_and_class(["archidep", "accounts", action])
-       when action in ["admin-user-created", "user-password-changed"],
+       when action in ["user-registered-with-switch-edu-id"],
        do: [action: action, class: "badge badge-error"]
 
   defp event_action_and_class(["archidep", "accounts", action]),
@@ -64,19 +68,32 @@ defmodule ArchiDepWeb.Events.EventsComponents do
 
   def event_entity(assigns) when is_map(assigns) do
     case assigns.event.entity do
+      %Class{name: name} ->
+        assigns = assign(assigns, :name, name)
+
+        ~H"""
+        <span class="flex items-center">
+          <Heroicons.academic_cap solid class="size-6 mr-1" />
+          <span>{@name}</span>
+        </span>
+        """
+
       %UserAccount{username: username} ->
         assigns = assign(assigns, :username, username)
 
         ~H"""
         <span class="flex items-center">
-          <Heroicons.user solid class="w-6 h-6 mr-1" />
-          {@username}
+          <Heroicons.user solid class="size-6 mr-1" />
+          <span>{@username}</span>
         </span>
         """
 
       _anything_else ->
         ~H"""
-        <Heroicons.question_mark_circle solid class="w-6 h-6 me-1" /> unknown
+        <span class="flex items-center">
+          <Heroicons.question_mark_circle solid class="size-6 me-1" />
+          <span>unknown</span>
+        </span>
         """
     end
   end

@@ -26,8 +26,6 @@ defmodule ArchiDepWeb.Admin.Classes.CreateClassForm do
   def changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{}
     |> cast(params, [:name, :start_date, :end_date, :active])
-    |> validate_change(:start_date, fn :start_date, date -> Date.from_iso8601(date) end)
-    |> validate_change(:end_date, fn :end_date, date -> Date.from_iso8601(date) end)
     |> validate_required([:name, :active])
   end
 end
