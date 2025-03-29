@@ -4,6 +4,7 @@ defmodule ArchiDep.Students do
   @behaviour ArchiDep.Students.Behaviour
 
   alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Types
 
   @implementation Application.compile_env!(:archidep, __MODULE__)
@@ -17,4 +18,17 @@ defmodule ArchiDep.Students do
 
   @spec list_classes(Authentication.t()) :: list(Class.t())
   defdelegate list_classes(auth), to: @implementation
+
+  @spec fetch_class(Authentication.t(), UUID.t()) :: {:ok, Class.t()} | {:error, :class_not_found}
+  defdelegate fetch_class(auth, id), to: @implementation
+
+  @spec validate_student(Authentication.t(), Types.student_data()) :: Changeset.t()
+  defdelegate validate_student(auth, data), to: @implementation
+
+  @spec create_student(Authentication.t(), Types.student_data()) ::
+          {:ok, Student.t()} | {:error, Changeset.t()}
+  defdelegate create_student(auth, data), to: @implementation
+
+  @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
+  defdelegate list_students(auth, class), to: @implementation
 end

@@ -2,8 +2,12 @@ defmodule ArchiDep.Students.ContextImpl do
   use ArchiDep, :context
 
   alias ArchiDep.Students.CreateClass
+  alias ArchiDep.Students.CreateStudent
+  alias ArchiDep.Students.FetchClass
   alias ArchiDep.Students.ListClasses
+  alias ArchiDep.Students.ListStudents
   alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Types
 
   @behaviour ArchiDep.Students.Behaviour
@@ -17,4 +21,17 @@ defmodule ArchiDep.Students.ContextImpl do
 
   @spec list_classes(Authentication.t()) :: list(Class.t())
   defdelegate list_classes(auth), to: ListClasses
+
+  @spec fetch_class(Authentication.t(), UUID.t()) :: {:ok, Class.t()} | {:error, :class_not_found}
+  defdelegate fetch_class(auth, id), to: FetchClass
+
+  @spec validate_student(Authentication.t(), Types.student_data()) :: Changeset.t()
+  defdelegate validate_student(auth, data), to: CreateStudent
+
+  @spec create_student(Authentication.t(), Types.student_data()) ::
+          {:ok, Student.t()} | {:error, Changeset.t()}
+  defdelegate create_student(auth, data), to: CreateStudent
+
+  @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
+  defdelegate list_students(auth, class), to: ListStudents
 end

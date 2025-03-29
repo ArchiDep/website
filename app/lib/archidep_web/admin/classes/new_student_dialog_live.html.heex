@@ -1,7 +1,7 @@
-<dialog id="new-class-dialog" class="modal">
+<dialog id={NewStudentDialogLive.id()} class="modal">
   <div class="modal-box">
     <.form
-      id="new-class-form"
+      id="new-student-form"
       for={@form}
       phx-change="validate"
       phx-submit="create"
@@ -9,7 +9,7 @@
     >
       <fieldset class="fieldset">
         <legend class="fieldset-legend">
-          <h3 class="text-lg font-bold">New Class</h3>
+          <h3 class="text-lg font-bold">New Student</h3>
         </legend>
 
         <label class="fieldset-label mt-2">Name</label>
@@ -22,37 +22,28 @@
         />
         <.errors_for field={@form[:name]} />
 
-        <label class="fieldset-label mt-2">Start date</label>
+        <label class="fieldset-label mt-2">Email</label>
         <input
-          type="date"
-          id={@form[:start_date].id}
+          type="email"
+          id={@form[:email].id}
           class="input w-full"
-          name={@form[:start_date].name}
-          value={@form[:start_date].value}
+          name={@form[:email].name}
+          value={@form[:email].value}
         />
-        <.errors_for field={@form[:start_date]} />
+        <.errors_for field={@form[:email]} />
 
-        <label class="fieldset-label mt-2">End date</label>
-        <input
-          type="date"
-          id={@form[:end_date].id}
-          class="input w-full"
-          name={@form[:end_date].name}
-          value={@form[:end_date].value}
-        />
-        <.errors_for field={@form[:end_date]} />
-
-        <label class="fieldset-label mt-2">
-          <input type="hidden" name={@form[:active].name} value="false" />
-          <input
-            type="checkbox"
-            id={@form[:active].id}
-            class="toggle border-error-content bg-error text-error-content/25 checked:border-success-content checked:bg-success checked:text-success-content/50"
-            name={@form[:active].name}
-            checked={@form[:active].value}
-            value="true"
-          /> Active
-        </label>
+        <label class="fieldset-label mt-2">Class</label>
+        <select
+          id={@form[:class_id].id}
+          class="select w-full"
+          name={@form[:class_id].name}
+        >
+          <option disabled selected>Choose a class</option>
+          <option :for={class <- @classes} value={class.id} selected={class.id == @form[:class_id].value}>
+            {class.name}
+          </option>
+        </select>
+        <.errors_for field={@form[:class_id]} />
 
         <div class="mt-2 flex justify-end gap-x-2">
           <button type="button" class="btn btn-secondary" phx-click={close()}>

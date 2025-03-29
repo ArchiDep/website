@@ -5,7 +5,7 @@ defmodule ArchiDepWeb.Admin.EventLogLive do
   import ArchiDepWeb.Events.EventsComponents
   alias ArchiDep.Events
 
-  @limit 10
+  @limit 15
 
   @impl LiveView
   def mount(_params, _session, socket) do

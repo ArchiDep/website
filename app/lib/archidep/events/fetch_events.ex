@@ -10,6 +10,7 @@ defmodule ArchiDep.Events.FetchEvents do
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Events.Types
   alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Students.Schemas.Student
 
   @spec fetch_events(Authentication.t(), list(Types.fetch_events_option())) ::
           list(StoredEvent.t(struct))
@@ -75,6 +76,9 @@ defmodule ArchiDep.Events.FetchEvents do
         ["classes", id], map ->
           Map.update(map, "classes", [id], fn ids -> [id | ids] end)
 
+        ["students", id], map ->
+          Map.update(map, "students", [id], fn ids -> [id | ids] end)
+
         ["user-accounts", id], map ->
           Map.update(map, "user-accounts", [id], fn ids -> [id | ids] end)
       end)
@@ -95,6 +99,9 @@ defmodule ArchiDep.Events.FetchEvents do
   defp fetch_entities_by_type({"classes", ids}) when is_list(ids),
     do: from(c in Class, where: c.id in ^ids)
 
+  defp fetch_entities_by_type({"students", ids}) when is_list(ids),
+    do: from(s in Student, where: s.id in ^ids)
+
   defp fetch_entities_by_type({"user-accounts", ids}) when is_list(ids),
     do: from(ua in UserAccount, where: ua.id in ^ids)
 
@@ -104,6 +111,11 @@ defmodule ArchiDep.Events.FetchEvents do
         {"classes", classes}, map ->
           Enum.reduce(classes, map, fn class, acc ->
             Map.put(acc, "classes:#{class.id}", class)
+          end)
+
+        {"students", classes}, map ->
+          Enum.reduce(classes, map, fn class, acc ->
+            Map.put(acc, "students:#{class.id}", class)
           end)
 
         {"user-accounts", users}, map ->

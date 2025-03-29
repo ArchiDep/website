@@ -45,8 +45,36 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
-window.addEventListener("open-new-class-dialog", () => {
-  document.getElementById('new-class-dialog').showModal();
+window.addEventListener("open-dialog", event => {
+  const dialogId = event.detail?.dialog;
+  if (!dialogId) {
+    console.warn(`No dialog ID provided in "open-dialog" event detail`);
+    return;
+  }
+
+  const dialog = document.getElementById(dialogId)
+  if (!dialog) {
+    console.warn(`Dialog with ID ${dialogId} not found`);
+    return;
+  }
+
+  dialog.showModal();
+});
+
+window.addEventListener("close-dialog", event => {
+  const dialogId = event.detail?.dialog;
+  if (!dialogId) {
+    console.warn(`No dialog ID provided in "close-dialog" event detail`);
+    return;
+  }
+
+  const dialog = document.getElementById(dialogId)
+  if (!dialog) {
+    console.warn(`Dialog with ID ${dialogId} not found`);
+    return;
+  }
+
+  dialog.close();
 });
 
 // connect if there are any LiveViews on the page

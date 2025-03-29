@@ -1,7 +1,18 @@
 defmodule ArchiDepWeb.Helpers.DateFormatHelpers do
   @moduledoc """
-  Helper functions to format dates in the UI.
+  Helper functions to format date and times in the UI.
   """
+
+  @doc """
+  Formats the specified date with the default format.
+
+  ## Examples
+
+      iex> LairWeb.Helpers.DateFormatHelpers.format_date(~D[2016-05-24])
+      "Tue, May 24 2016"
+  """
+  @spec format_date(Date.t()) :: String.t()
+  def format_date(date), do: Calendar.strftime(date, "%a, %B %d, %Y")
 
   @doc """
   Formats the specified date time with the default format.
@@ -13,7 +24,7 @@ defmodule ArchiDepWeb.Helpers.DateFormatHelpers do
   """
   @spec format_date_time(DateTime.t()) :: String.t()
   def format_date_time(date_time),
-    do: Calendar.strftime(date_time, "%a, %B %d %Y at %H:%M:%S")
+    do: Calendar.strftime(date_time, "%a, %B %d, %Y at %H:%M:%S")
 
   @doc """
   Formats the specified date time as a human-readable duration. The duration

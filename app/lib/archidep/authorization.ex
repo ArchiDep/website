@@ -7,11 +7,11 @@ defmodule ArchiDep.Authorization do
   Indicates whether the specified action is authorized.
   """
   @spec authorize(Authentication.t(), module, atom, atom, term) ::
-          {:ok, Authentication.t()} | {:error, {:access_denied, atom, atom}}
+          :ok | {:error, {:access_denied, atom, atom}}
   def authorize(auth, policy, context, action, params)
       when is_authentication(auth) and is_atom(context) and is_atom(action) do
     if policy.authorize(context, action, auth, params) do
-      {:ok, auth}
+      :ok
     else
       {:error, {:access_denied, context, action}}
     end

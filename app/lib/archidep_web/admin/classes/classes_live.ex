@@ -1,6 +1,7 @@
 defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
   use ArchiDepWeb, :live_view
 
+  import ArchiDepWeb.Helpers.DateFormatHelpers
   alias ArchiDep.Students
   alias ArchiDepWeb.Admin.Classes.NewClassDialogLive
 

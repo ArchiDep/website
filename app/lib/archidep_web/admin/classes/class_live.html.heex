@@ -1,0 +1,104 @@
+<div class="breadcrumbs text-xs">
+  <ul>
+    <li class="text-error">
+      <span class="flex items-center gap-1 !cursor-default !no-underline">
+        <Heroicons.fire outline class="size-4" />
+        <span>Admin</span>
+      </span>
+    </li>
+    <li>
+      <.link class="flex items-center gap-1" navigate={~p"/admin/classes"}>
+        <Heroicons.academic_cap solid class="size-4" />
+        <span>Classes</span>
+      </.link>
+    </li>
+    <li>
+      <span class="flex items-center gap-1 !cursor-default !no-underline">
+        <Heroicons.academic_cap solid class="size-4" />
+        <span>{@class.name}</span>
+      </span>
+    </li>
+  </ul>
+</div>
+
+<h2 class="text-2xl font-bold my-2 flex items-center gap-x-2">
+  <Heroicons.academic_cap solid class="size-6" />
+  {@class.name}
+</h2>
+
+<table>
+  <tbody>
+    <tr>
+      <th class="text-left p-2">Start date</th>
+      <td class="p-2">
+        <%= if @class.start_date do %>
+          {format_date(@class.start_date)}
+        <% else %>
+          <span class="text-base-content/50">-</span>
+        <% end %>
+      </td>
+    </tr>
+    <tr>
+      <th class="text-left p-2">End date</th>
+      <td class="p-2">
+        <%= if @class.end_date do %>
+          {format_date(@class.end_date)}
+        <% else %>
+          <span class="text-base-content/50">-</span>
+        <% end %>
+      </td>
+    </tr>
+    <tr>
+      <th class="text-left p-2">Active</th>
+      <td class="p-2">
+        <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
+        <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="mt-4 mb-2 flex justify-between items-end">
+  <h3 class="text-xl font-bold">Students</h3>
+  <button
+    type="button"
+    class="btn btn-success btn-sm"
+    phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewStudentDialogLive.id()})}
+  >
+    <span class="flex items-center gap-x-2">
+      <Heroicons.plus class="size-4" />
+      <span>Student</span>
+    </span>
+  </button>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr :if={Enum.empty?(@students)}>
+      <td class="text-base-content/50" colspan="1000">
+        No student in this class
+      </td>
+    </tr>
+    <tr :for={student <- @students} id={"student-#{student.id}"} class="even:bg-base-200">
+      <td>
+        {student.name}
+      </td>
+      <td>
+        {student.email}
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<.live_component
+  module={NewStudentDialogLive}
+  id={NewStudentDialogLive.id()}
+  auth={@auth}
+  class={@class}
+/>

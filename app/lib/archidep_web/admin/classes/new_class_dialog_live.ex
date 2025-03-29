@@ -7,62 +7,47 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
 
   @id "new-class-dialog"
   @html_id "##{@id}"
-  @name_field_id "new-class-name"
 
   @spec id() :: String.t()
   def id, do: @id
 
-  @spec open(js) :: js
-  def open(js \\ %JS{}),
+  @spec close() :: js
+  def close(),
     do:
-      js
-      |> JS.add_class("modal-open", to: @html_id, transition: "fade-in")
-      |> JS.push("opened", target: @html_id)
+      %JS{}
+      |> JS.push("closed", target: @html_id)
+      |> JS.dispatch("close-dialog", detail: %{dialog: @id})
 
   @impl LiveComponent
-  def mount(socket) do
-    {:error, changeset} = Changeset.apply_action(CreateClassForm.changeset(%{}), :validate)
-    {:ok, assign(socket, form: to_form(changeset, as: :class))}
-  end
+  def mount(socket),
+    do: socket |> assign(form: to_form(CreateClassForm.changeset(%{}), as: :class)) |> ok()
 
   @impl LiveComponent
 
-  def handle_event("opened", _params, socket) do
-    socket
-    |> push_event("app:focus", %{id: @name_field_id})
-    |> noreply()
-  end
-
-  def handle_event("closed", _params, socket) do
-    {:error, changeset} = Changeset.apply_action(CreateClassForm.changeset(%{}), :validate)
-
-    socket
-    |> assign(
-      open: false,
-      form: to_form(changeset)
-    )
-    |> noreply()
-  end
+  def handle_event("closed", _params, socket),
+    do:
+      socket
+      |> assign(form: to_form(CreateClassForm.changeset(%{}), as: :class))
+      |> noreply()
 
   def handle_event("validate", %{"class" => params}, socket) do
-    with {:ok, form_data} <- Changeset.apply_action(CreateClassForm.changeset(params), :validate),
-         changeset <-
-           Students.validate_class(socket.assigns.auth, Map.from_struct(form_data)) do
+    with {:ok, form_data} <- Changeset.apply_action(CreateClassForm.changeset(params), :validate) do
+      changeset = Students.validate_class(socket.assigns.auth, Map.from_struct(form_data))
       {:noreply, assign(socket, form: to_form(changeset, as: :class, action: :validate))}
     else
-      {:error, changeset} ->
+      {:error, %Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: :class))}
     end
   end
 
   def handle_event("create", %{"class" => params}, socket) do
-    case Students.create_class(socket.assigns.auth, params) do
-      {:ok, _class} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Class created")
-         |> push_navigate(to: ~p"/admin/classes")}
-
+    with {:ok, form_data} <- Changeset.apply_action(CreateClassForm.changeset(params), :validate),
+         {:ok, _class} <- Students.create_class(socket.assigns.auth, Map.from_struct(form_data)) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Class created")
+       |> push_navigate(to: ~p"/admin/classes")}
+    else
       {:error, %Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: :class))}
     end

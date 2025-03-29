@@ -1,21 +1,81 @@
-<h1>Classes</h1>
+<div class="breadcrumbs text-xs">
+  <ul>
+    <li class="text-error">
+      <span class="flex items-center gap-1 !cursor-default !no-underline">
+        <Heroicons.fire outline class="size-4" />
+        <span>Admin</span>
+      </span>
+    </li>
+    <li>
+      <span class="flex items-center gap-1 !cursor-default !no-underline">
+        <Heroicons.academic_cap solid class="size-4" />
+        <span>Classes</span>
+      </span>
+    </li>
+  </ul>
+</div>
 
-<button
-  type="button"
-  class="btn btn-primary"
-  phx-click={JS.dispatch("open-new-class-dialog", to: "body")}
->
-  New Class
-</button>
+<div class="mt-2 mb-2 flex justify-between items-end">
+  <h2 class="text-2xl font-bold flex items-center gap-x-2">
+    <Heroicons.academic_cap solid class="size-6" /> Classes
+  </h2>
+  <button
+    type="button"
+    class="btn btn-success btn-sm"
+    phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewClassDialogLive.id()})}
+  >
+    <span class="flex items-center gap-x-2">
+      <Heroicons.plus class="size-4" />
+      <span>Class</span>
+    </span>
+  </button>
+</div>
 
 <em :if={Enum.empty?(@classes)}>
   No classes found.
 </em>
 
-<ul :if={not Enum.empty?(@classes)}>
-  <%= for class <- @classes do %>
-    <li>{class.name}</li>
-  <% end %>
-</ul>
+<table :if={not Enum.empty?(@classes)} class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>
+        Start <span class="md:hidden">&amp; end</span>
+        <span class="hidden md:inline">date</span>
+      </th>
+      <th class="hidden md:table-cell">
+        End <span class="hidden md:inline">date</span>
+      </th>
+      <th>Active</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr
+      :for={class <- @classes}
+      id={"class-#{class.id}"}
+      class="hover:bg-base-300 even:bg-base-200 cursor-pointer"
+      phx-click={JS.navigate(~p"/admin/classes/#{class.id}")}
+    >
+      <td>{class.name}</td>
+      <td>
+        <span :if={class.start_date != nil and class.end_date == nil} class="md:hidden">
+          From
+        </span>
+        {if class.start_date, do: format_date(class.start_date), else: "-"}
+        <span :if={class.start_date != nil and class.end_date != nil} class="md:hidden">to</span>
+        <span :if={class.end_date} class="md:hidden">
+          {if class.end_date, do: format_date(class.end_date), else: "-"}
+        </span>
+      </td>
+      <td class="hidden md:table-cell">
+        {if class.end_date, do: format_date(class.end_date), else: "-"}
+      </td>
+      <td>
+        <Heroicons.check_circle :if={class.active} class="size-5 text-success" />
+        <Heroicons.x_circle :if={not class.active} class="size-5 text-error" />
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 <.live_component module={NewClassDialogLive} id={NewClassDialogLive.id()} auth={@auth} />

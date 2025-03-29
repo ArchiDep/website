@@ -1,9 +1,6 @@
 defmodule ArchiDepWeb.Admin.Classes.CreateClassForm do
-  @moduledoc """
-  Form data to create a class.
-  """
-
   use Ecto.Schema
+
   import Ecto.Changeset
   alias Ecto.Changeset
 
@@ -22,7 +19,7 @@ defmodule ArchiDepWeb.Admin.Classes.CreateClassForm do
     field(:active, :boolean, default: true)
   end
 
-  @spec changeset(map) :: Changeset.t(__MODULE__.t())
+  @spec changeset(map) :: Changeset.t(t())
   def changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{}
     |> cast(params, [:name, :start_date, :end_date, :active])

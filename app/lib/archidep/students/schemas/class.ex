@@ -62,6 +62,17 @@ defmodule ArchiDep.Students.Schemas.Class do
     end)
   end
 
+  @spec fetch_class(UUID.t()) :: {:ok, t()} | {:error, :class_not_found}
+  def fetch_class(id) do
+    case Repo.get(__MODULE__, id) do
+      nil ->
+        {:error, :class_not_found}
+
+      class ->
+        {:ok, class}
+    end
+  end
+
   defp validate_start_and_end_dates(changeset) do
     if changed?(changeset, :start_date) or changed?(changeset, :end_date) do
       validate_start_and_end_dates(

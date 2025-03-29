@@ -21,14 +21,16 @@ defmodule ArchiDep do
     quote do
       alias ArchiDep.Authentication
       alias Ecto.Changeset
+      alias Ecto.UUID
     end
   end
 
   @spec context :: Macro.t()
   def context do
     quote do
-      alias Ecto.Changeset
       alias ArchiDep.Authentication
+      alias Ecto.Changeset
+      alias Ecto.UUID
     end
   end
 

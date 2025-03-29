@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Events.EventsComponents do
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Students.Schemas.Student
 
   @spec event_context(map) :: Phoenix.LiveView.Rendered.t()
 
@@ -57,6 +58,10 @@ defmodule ArchiDepWeb.Events.EventsComponents do
   defp event_action_and_class(["archidep", "accounts", action]),
     do: [action: action, class: "badge badge-warning"]
 
+  defp event_action_and_class(["archidep", "students", action])
+       when action in ["class-created", "student-created"],
+       do: [action: action, class: "badge badge-success"]
+
   defp event_action_and_class(["archidep", _context, action]),
     do: [action: action, class: "badge badge-info"]
 
@@ -74,6 +79,16 @@ defmodule ArchiDepWeb.Events.EventsComponents do
         ~H"""
         <span class="flex items-center">
           <Heroicons.academic_cap solid class="size-6 mr-1" />
+          <span>{@name}</span>
+        </span>
+        """
+
+      %Student{name: name} ->
+        assigns = assign(assigns, :name, name)
+
+        ~H"""
+        <span class="flex items-center">
+          <Heroicons.user solid class="size-6 mr-1" />
           <span>{@name}</span>
         </span>
         """
