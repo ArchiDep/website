@@ -20,21 +20,33 @@ layout {
     }
   }
 
-  tab name="app" split_direction="vertical" {
-    pane cwd="app" size="65%" borderless=true
-    pane command="mix" cwd="app" size="35%" {
+  tab name="phoenix" {
+    pane command="mix" cwd="app" {
       args "phx.server"
     }
+  }
+
+  tab name="app" {
+    pane cwd="app" borderless=true
   }
 
   tab name="shell" focus=true {
     pane borderless=true
   }
 
-  tab name="course" split_direction="vertical" {
-    pane borderless=true cwd="course" size="65%"
-    pane command="bundle" cwd="course" size="35%" {
+  tab name="course" {
+    pane cwd="course" borderless=true
+  }
+
+  tab name="jekyll" {
+    pane command="bundle" cwd="course" {
       args "exec" "jekyll" "serve" "--config" "_config.yml" "--drafts" "--livereload"
+    }
+  }
+
+  tab name="assets" {
+    pane command="npm" cwd="course" {
+      args "start"
     }
   }
 
