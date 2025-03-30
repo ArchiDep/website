@@ -105,9 +105,17 @@ defmodule ArchiDepWeb.Events.EventsComponents do
         </span>
         """
 
-      _anything_else ->
+      nil ->
         ~H"""
         <span class={"flex items-center text-base-content/50 #{@extra_class}"}>
+          <Heroicons.trash class="size-6 me-1" />
+          <span>deleted</span>
+        </span>
+        """
+
+      _anything_else ->
+        ~H"""
+        <span class={"flex items-center text-warning #{@extra_class}"}>
           <Heroicons.question_mark_circle solid class="size-6 me-1" />
           <span>unknown</span>
         </span>

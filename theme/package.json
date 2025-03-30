@@ -1,5 +1,5 @@
 {
-  "name": "archidep",
+  "name": "@archidep/theme",
   "version": "0.0.0",
   "description": "Media engineering architecture and deployment course",
   "private": true,
@@ -7,8 +7,9 @@
     "start": "tailwindcss -i ./src/app.css -o ../app/priv/static/assets/app.css --watch"
   },
   "dependencies": {
-    "daisyui": "^5.0.9",
     "@tailwindcss/cli": "^4.0.5",
+    "@tailwindcss/typography": "^0.5.16",
+    "daisyui": "^5.0.9",
     "tailwindcss": "^4.0.5"
   },
   "engines": {

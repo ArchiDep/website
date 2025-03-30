@@ -1,17 +1,20 @@
-<header class="p-2 border-b border-gray-800 dark:border-gray-200 flex gap-2">
-  <h1 class="order-2 md:order-1 font-bold">
-    <a href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
-  </h1>
-
-  <nav class="order-1 md:order-2">
-    <input type="checkbox" id="nav-trigger" class="peer hidden" />
-    <label for="nav-trigger" class="block md:hidden">
-      {%- include icons/bars-3.html class="size-6" -%}
+<header class="navbar bg-base-300 shadow-sm w-full">
+  <div class="navbar-start">
+    <label for="sidebar" class="lg:hidden print:hidden btn btn-square btn-ghost">
+      {%- include icons/bars-3.html class="size-5" -%}
     </label>
-
-    <div class="hidden md:block peer-checked:block peer-checked:fixed peer-checked:top-10 peer-checked:bottom-0 peer-checked:left-0 peer-checked:right-0 peer-checked:bg-zinc-200 peer-checked:dark:bg-zinc-800 clear-both">
-      <a class="page-link" href="{{ link index.md }}">Course</a>
-      <a class="page-link" href="{{ site.baseurl }}/app">App</a>
-    </div>
-  </nav>
+    <a class="btn btn-ghost text-xl" href="{{ "/" | relative_url }}">
+      <h1>ArchiDep</h1>
+    </a>
+    <ul class="menu menu-horizontal px-1 print:hidden">
+      <li>
+        <a href="{{ site.baseurl }}/app">
+          <span>
+            {%- include icons/cube.html class="size-5" -%}
+          </span>
+          <span class="hidden md:inline">App</span>
+        </a>
+      </li>
+    </ul>
+  </div>
 </header>

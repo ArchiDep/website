@@ -71,16 +71,24 @@
         </.link>
       </li>
       <li :if={has_role?(@auth, :root)}>
-        <.link navigate={~p"/admin/classes"} class="flex items-center gap-2">
-          <Heroicons.academic_cap class="size-4" />
-          <span>Classes</span>
-        </.link>
-      </li>
-      <li :if={has_role?(@auth, :root)}>
-        <.link navigate={~p"/admin/events"} class="flex items-center gap-2">
-          <Heroicons.book_open class="size-4" />
-          <span>Events</span>
-        </.link>
+        <span class="flex items-center gap-2 text-error cursor-default">
+          <Heroicons.fire class="size-4" />
+          <span>Admin</span>
+        </span>
+        <ul>
+          <li :if={has_role?(@auth, :root)}>
+            <.link navigate={~p"/admin/classes"} class="flex items-center gap-2">
+              <Heroicons.academic_cap class="size-4" />
+              <span>Classes</span>
+            </.link>
+          </li>
+          <li :if={has_role?(@auth, :root)}>
+            <.link navigate={~p"/admin/events"} class="flex items-center gap-2">
+              <Heroicons.book_open class="size-4" />
+              <span>Events</span>
+            </.link>
+          </li>
+        </ul>
       </li>
     </ul>
   </div>

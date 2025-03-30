@@ -26,7 +26,7 @@
   "scripts": {
     "start": "npm --workspace theme start"
   },
-  "workspaces": ["theme"],
+  "workspaces": ["course", "theme"],
   "engines": {
     "node": "^22",
     "npm": ">= 8"

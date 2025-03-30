@@ -1,0 +1,14 @@
+---
+layout: base
+---
+
+<div class="flex flex-wrap xl:flex-nowrap justify-between gap-4">
+  <aside class="w-full xl:order-last xl:w-sm">
+    <nav>
+      {% toc %}
+    </nav>
+  </aside>
+  <main class="w-full xl:flex-grow-1 xl:order-first">
+    {{ content }}
+  </main>
+</div>

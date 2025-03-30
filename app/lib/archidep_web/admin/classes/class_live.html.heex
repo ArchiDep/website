@@ -69,6 +69,7 @@
     <tr>
       <th>Name</th>
       <th>Email</th>
+      <th>User account</th>
     </tr>
   </thead>
   <tbody>
@@ -83,6 +84,16 @@
       </td>
       <td>
         {student.email}
+      </td>
+      <td>
+        <%= if student.user_account do %>
+          <span class="flex items-center gap-x-2">
+            <Heroicons.user solid class="size-5" />
+            {student.user_account.username}
+          </span>
+        <% else %>
+          <.no_data text="Not registered yet" />
+        <% end %>
       </td>
     </tr>
   </tbody>

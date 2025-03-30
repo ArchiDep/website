@@ -2,6 +2,7 @@ defmodule ArchiDep.Students.ListStudents do
   use ArchiDep, :use_case
 
   alias ArchiDep.Students.Policy
+  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Schemas.Student
 
@@ -10,7 +11,15 @@ defmodule ArchiDep.Students.ListStudents do
     authorize!(auth, Policy, :students, :list_students, class)
 
     class_id = class.id
-    Repo.all(from s in Student, where: s.class_id == ^class_id, order_by: s.name)
+
+    Repo.all(
+      from s in Student,
+        left_join: ua in UserAccount,
+        on: s.user_account_id == ua.id,
+        where: s.class_id == ^class_id,
+        order_by: s.name,
+        preload: [user_account: ua]
+    )
   end
 
   @spec list_active_students_for_email(String.t()) :: list(Student.t())

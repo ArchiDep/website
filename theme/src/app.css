@@ -1,9 +1,13 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @plugin "daisyui" {
   themes: nord --default, night --prefersdark;
 }
 
 @source "../../app/lib";
 @source "../../course/_includes";
+@source "../../course/index.md";
 @source "../../course/_layouts";
 @source "../../course/_posts";
+
+@import './highlight.css';
