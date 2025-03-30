@@ -26,37 +26,29 @@
   {@class.name}
 </h2>
 
-<table>
-  <tbody>
-    <tr>
-      <th class="text-left p-2">Start date</th>
-      <td class="p-2">
-        <%= if @class.start_date do %>
-          {format_date(@class.start_date)}
-        <% else %>
-          <span class="text-base-content/50">-</span>
-        <% end %>
-      </td>
-    </tr>
-    <tr>
-      <th class="text-left p-2">End date</th>
-      <td class="p-2">
-        <%= if @class.end_date do %>
-          {format_date(@class.end_date)}
-        <% else %>
-          <span class="text-base-content/50">-</span>
-        <% end %>
-      </td>
-    </tr>
-    <tr>
-      <th class="text-left p-2">Active</th>
-      <td class="p-2">
-        <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
-        <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
-      </td>
-    </tr>
-  </tbody>
-</table>
+<dl class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4">
+  <dt class="font-bold">Start date</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    <%= if @class.start_date do %>
+      {format_date(@class.start_date)}
+    <% else %>
+      <span class="text-base-content/50">-</span>
+    <% end %>
+  </dd>
+  <dt class="font-bold">End date</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    <%= if @class.end_date do %>
+      {format_date(@class.end_date)}
+    <% else %>
+      <span class="text-base-content/50">-</span>
+    <% end %>
+  </dd>
+  <dt class="font-bold">Active</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
+    <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
+  </dd>
+</dl>
 
 <div class="mt-4 mb-2 flex justify-between items-end">
   <h3 class="text-xl font-bold">Students</h3>
@@ -81,8 +73,8 @@
   </thead>
   <tbody>
     <tr :if={Enum.empty?(@students)}>
-      <td class="text-base-content/50" colspan="1000">
-        No student in this class
+      <td colspan="1000">
+        <.no_data text="No students in this class" />
       </td>
     </tr>
     <tr :for={student <- @students} id={"student-#{student.id}"} class="even:bg-base-200">

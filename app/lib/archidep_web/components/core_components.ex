@@ -18,6 +18,16 @@ defmodule ArchiDepWeb.CoreComponents do
 
   alias Phoenix.LiveView.JS
 
+  def no_data(assigns) do
+    assigns = assign_new(assigns, :text, fn -> "-" end)
+
+    ~H"""
+    <span class="text-base-content/50 italic">
+      {@text}
+    </span>
+    """
+  end
+
   @doc """
   Renders flash notices.
 

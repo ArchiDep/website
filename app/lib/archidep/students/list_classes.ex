@@ -8,6 +8,9 @@ defmodule ArchiDep.Students.ListClasses do
   def list_classes(auth) do
     authorize!(auth, Policy, :students, :list_classes, nil)
 
-    Repo.all(from c in Class, order_by: c.name)
+    Repo.all(
+      from c in Class,
+        order_by: [desc: c.active, desc: c.end_date, desc: c.created_at, asc: c.name]
+    )
   end
 end

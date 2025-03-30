@@ -74,7 +74,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
           :error,
           "Your Switch edu-ID account is not authorized to access this application."
         )
-        |> redirect(to: "/app")
+        |> redirect(to: "/login")
     end
   end
 end

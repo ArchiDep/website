@@ -33,19 +33,24 @@ defmodule ArchiDep.Repo.Migrations.AddStudentsContext do
           ),
           null: false
 
+      add :user_account_id,
+          references(:user_accounts,
+            type: :binary_id,
+            on_delete: :restrict,
+            on_update: :update_all
+          )
+
       timestamps(inserted_at: :created_at, required: true, type: :utc_datetime_usec)
     end
 
-    create unique_index(:students, [:class_id, :email], name: :students_unique_email_index)
-    create constraint(:students, :version_is_positive, check: "version >= 1")
+    create unique_index(:students, [:class_id, :email],
+             name: :students_unique_email_in_class_index
+           )
 
-    alter table(:user_accounts, primary_key: false) do
-      add :student_id,
-          references(:students,
-            type: :binary_id,
-            on_delete: :nilify_all,
-            on_update: :update_all
-          )
-    end
+    create unique_index(:students, [:class_id, :user_account_id],
+             name: :students_unique_user_account_in_class_index
+           )
+
+    create constraint(:students, :version_is_positive, check: "version >= 1")
   end
 end

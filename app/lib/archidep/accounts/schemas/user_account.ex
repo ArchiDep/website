@@ -29,7 +29,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
   schema "user_accounts" do
     field(:username, :string)
-    field(:roles, {:array, Ecto.Enum}, values: [:root])
+    field(:roles, {:array, Ecto.Enum}, values: [:root, :student])
     belongs_to(:switch_edu_id, SwitchEduId)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
@@ -61,17 +61,20 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   def event_stream(id) when is_binary(id), do: "user-accounts:#{id}"
   def event_stream(%__MODULE__{id: id}), do: event_stream(id)
 
-  defp fetch_for_switch_edu_id(%SwitchEduId{id: switch_edu_id_id}),
+  @spec fetch_for_switch_edu_id(SwitchEduId.t()) :: t() | nil
+  def fetch_for_switch_edu_id(%SwitchEduId{id: switch_edu_id_id}),
     do:
-      from(ua in __MODULE__,
-        join: sei in SwitchEduId,
-        on: ua.switch_edu_id_id == sei.id,
-        where: sei.id == ^switch_edu_id_id,
-        preload: [switch_edu_id: sei]
+      Repo.one(
+        from(ua in __MODULE__,
+          join: sei in SwitchEduId,
+          on: ua.switch_edu_id_id == sei.id,
+          where: sei.id == ^switch_edu_id_id,
+          preload: [switch_edu_id: sei]
+        )
       )
-      |> Repo.one()
 
-  defp new_switch_edu_id_account(switch_edu_id, roles) do
+  @spec new_switch_edu_id_account(SwitchEduId.t(), list(Types.role())) :: Changeset.t(t())
+  def new_switch_edu_id_account(switch_edu_id, roles) do
     id = UUID.generate()
     now = DateTime.utc_now()
 

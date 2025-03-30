@@ -1,10 +1,29 @@
-<dl>
-  <dt>Username</dt>
-  <dd>{username(@auth)}</dd>
-  <dt>Switch edu-ID email</dt>
-  <dd>{@user_account.switch_edu_id.email}</dd>
-  <dt>Registration date</dt>
-  <dd>{format_date_time(@user_account.created_at)}</dd>
+<div class="breadcrumbs text-xs">
+  <ul>
+    <li>
+      <span class="flex items-center gap-1 !cursor-default !no-underline">
+        <Heroicons.user class="size-4" />
+        <span>Profile</span>
+      </span>
+    </li>
+  </ul>
+</div>
+
+<div class="my-2 flex justify-between items-end">
+  <h2 class="text-2xl font-bold flex items-center gap-x-2">
+    <Heroicons.user solid class="size-6" /> Profile
+  </h2>
+</div>
+
+<dl class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4">
+  <dt class="font-bold">Username</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">{username(@auth)}</dd>
+  <dt class="font-bold">Switch edu-ID email</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">{@user_account.switch_edu_id.email}</dd>
+  <dt class="font-bold">Registration date</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    {format_date_time(@user_account.created_at)}
+  </dd>
 </dl>
 
 <h2 class="mt-5 text-2xl font-bold mb-3">Sessions</h2>

@@ -34,4 +34,7 @@ defmodule ArchiDep.Students.ContextImpl do
 
   @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
   defdelegate list_students(auth, class), to: ListStudents
+
+  @spec list_active_students_for_email(String.t()) :: list(Student.t())
+  defdelegate list_active_students_for_email(email), to: ListStudents
 end

@@ -2,6 +2,7 @@ defmodule ArchiDep.Students.Schemas.Student do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
+  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Types
 
@@ -15,6 +16,8 @@ defmodule ArchiDep.Students.Schemas.Student do
           email: String.t(),
           class: Class.t() | NotLoaded,
           class_id: UUID.t(),
+          user_account: UserAccount.t() | nil | NotLoaded,
+          user_account_id: UUID.t() | nil,
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -24,6 +27,7 @@ defmodule ArchiDep.Students.Schemas.Student do
     field(:name, :binary)
     field(:email, :binary)
     belongs_to(:class, Class)
+    belongs_to(:user_account, UserAccount)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
@@ -58,5 +62,19 @@ defmodule ArchiDep.Students.Schemas.Student do
       )
     end)
     |> assoc_constraint(:class)
+  end
+
+  @spec link_to_user_account(
+          t(),
+          UserAccount.t()
+        ) :: Changeset.t(t())
+  def link_to_user_account(%__MODULE__{user_account_id: nil} = student, user_account) do
+    now = DateTime.utc_now()
+
+    student
+    |> cast(%{user_account_id: user_account.id}, [:user_account_id])
+    |> assoc_constraint(:user_account)
+    |> change(updated_at: now)
+    |> optimistic_lock(:version)
   end
 end

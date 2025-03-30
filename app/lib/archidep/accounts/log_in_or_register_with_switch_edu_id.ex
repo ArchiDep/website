@@ -5,6 +5,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
   """
   use ArchiDep, :use_case
 
+  import Ecto.Changeset
   alias ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId
   alias ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
@@ -12,6 +13,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
   alias ArchiDep.ClientMetadata
+  alias ArchiDep.Students
+  alias ArchiDep.Students.Schemas.Student
 
   @root_users :archidep |> Application.compile_env!(:root_users) |> Keyword.fetch!(:switch_edu_id)
 
@@ -25,25 +28,16 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
         switch_edu_id_data,
         client_metadata
       ) do
-    with {:ok, roles} <- authorize_switch_edu_id_account(switch_edu_id_data),
-         {:ok, %{user_session: session}} <-
-           log_in_or_register(switch_edu_id_data, roles, client_metadata) do
+    with {:ok, %{user_session: session}} <-
+           log_in_or_register(switch_edu_id_data, client_metadata) do
       {:ok, Authentication.for_user_session(session, client_metadata)}
     else
-      error -> error
+      {:error, _operation, :unauthorized_switch_edu_id, _changes} ->
+        {:error, :unauthorized_switch_edu_id}
     end
   end
 
-  defp authorize_switch_edu_id_account(switch_edu_id_data) do
-    if Enum.member?(@root_users, switch_edu_id_data.email) ||
-         Enum.member?(@root_users, switch_edu_id_data.swiss_edu_person_unique_id) do
-      {:ok, [:root]}
-    else
-      {:error, :unauthorized_switch_edu_id}
-    end
-  end
-
-  defp log_in_or_register(switch_edu_id_data, roles, client_metadata) do
+  defp log_in_or_register(switch_edu_id_data, client_metadata) do
     Multi.new()
     |> Multi.insert_or_update(
       :switch_edu_id,
@@ -52,11 +46,50 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
     |> Multi.run(
       :user_account_and_state,
       fn _repo, %{switch_edu_id: switch_edu_id} ->
-        switch_edu_id |> UserAccount.fetch_or_create_for_switch_edu_id(roles) |> ok()
+        case UserAccount.fetch_for_switch_edu_id(switch_edu_id) do
+          nil ->
+            if Enum.member?(@root_users, switch_edu_id_data.email) ||
+                 Enum.member?(@root_users, switch_edu_id_data.swiss_edu_person_unique_id) do
+              {:ok,
+               {:new_root, UserAccount.new_switch_edu_id_account(switch_edu_id, [:root]), nil}}
+            else
+              case Students.list_active_students_for_email(switch_edu_id_data.email) do
+                [student] ->
+                  {:ok,
+                   {:new_student,
+                    UserAccount.new_switch_edu_id_account(switch_edu_id, [:student]), student}}
+
+                _zero_or_multiple_students ->
+                  {:error, :unauthorized_switch_edu_id}
+              end
+            end
+
+          user_account ->
+            {:ok, {:existing_account, change(user_account), nil}}
+        end
       end
     )
-    |> Multi.insert_or_update(:user_account, fn %{user_account_and_state: {_state, changeset}} ->
+    |> Multi.insert_or_update(:user_account, fn %{
+                                                  user_account_and_state:
+                                                    {_state, changeset, _student}
+                                                } ->
       changeset
+    end)
+    |> Multi.merge(fn %{
+                        user_account_and_state: user_account_and_state,
+                        user_account: user_account
+                      } ->
+      case user_account_and_state do
+        {:new_student, _user_account, student} when not is_nil(student) ->
+          Multi.new()
+          |> Multi.update(:student, Student.link_to_user_account(student, user_account))
+
+        _otherwise ->
+          Multi.new()
+          |> Multi.run(:student, fn _repo, _changes ->
+            {:ok, nil}
+          end)
+      end
     end)
     |> Multi.insert(:user_session, fn %{user_account: user_account} ->
       UserSession.new_session(user_account, client_metadata)
@@ -64,20 +97,21 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
     |> insert(:stored_event, fn
       %{
         switch_edu_id: switch_edu_id,
-        user_account_and_state: {state, _changeset},
+        user_account_and_state: {state, _changeset, _student},
         user_account: user_account,
+        student: student,
         user_session: session
       } ->
         case state do
-          :new_account ->
-            UserRegisteredWithSwitchEduId.new(switch_edu_id, user_account, session)
-            |> new_event(client_metadata, occurred_at: session.created_at)
+          s when s in [:new_root, :new_student] ->
+            UserRegisteredWithSwitchEduId.new(switch_edu_id, user_account, session, student)
+            |> new_event(%{}, occurred_at: session.created_at)
             |> add_to_stream(user_account)
             |> initiated_by(user_account)
 
           :existing_account ->
             UserLoggedInWithSwitchEduId.new(switch_edu_id, session, client_metadata)
-            |> new_event(client_metadata, occurred_at: session.created_at)
+            |> new_event(%{}, occurred_at: session.created_at)
             |> add_to_stream(user_account)
             |> initiated_by(user_account)
         end

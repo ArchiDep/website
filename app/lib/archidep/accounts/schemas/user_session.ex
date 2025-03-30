@@ -16,7 +16,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   @timestamps_opts [type: :utc_datetime_usec]
 
   @session_token_bytes 50
-  @session_validity_in_days 60
+  @session_validity_in_days 30
   @one_day_in_seconds 24 * 60 * 60
 
   @type t :: %__MODULE__{

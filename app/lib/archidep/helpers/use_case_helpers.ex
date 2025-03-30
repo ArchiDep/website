@@ -51,7 +51,8 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
     data |> StoredEvent.new(%{}, opts) |> initiated_by(auth.principal)
   end
 
-  def new_event(data, meta, opts) when is_struct(data) and is_map(meta) and is_list(opts) do
+  def new_event(data, meta, opts)
+      when is_struct(data) and is_map(meta) and not is_struct(meta) and is_list(opts) do
     StoredEvent.new(data, meta, opts)
   end
 

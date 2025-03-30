@@ -17,11 +17,11 @@
         <!-- Last used -->
         <td>
           <%= if current_session?(@auth, session) do %>
-            <span class="badge badge-primary">Current session</span>
+            <span class="badge badge-primary whitespace-nowrap">Current session</span>
           <% else %>
             <%= if session.used_at do %>
               <div class="tooltip" data-tip={format_date_time(session.used_at)}>
-                <span class="badge">
+                <span class="badge h-auto">
                   {format_duration(session.used_at)} ago
                 </span>
               </div>
@@ -36,7 +36,7 @@
             <%= if expired?(session) do %>
               <span class="badge badge-error">Expired</span>
             <% else %>
-              <span class={"badge #{if expires_soon?(session), do: "badge-warning", else: "badge-success"}"}>
+              <span class={"badge #{if expires_soon?(session), do: "badge-warning", else: "badge-success"} h-auto"}>
                 {session |> expires_at() |> format_duration()}
               </span>
             <% end %>
@@ -47,7 +47,7 @@
           <%= if session.client_ip_address do %>
             <code>{session.client_ip_address}</code>
           <% else %>
-            <span class="text-slate-500">-</span>
+            <.no_data />
           <% end %>
         </td>
         <!-- Client -->
@@ -55,7 +55,7 @@
           <%= if session.client_user_agent do %>
             {format_user_agent(session.client_user_agent)}
           <% else %>
-            <span class="text-slate-500">-</span>
+            <.no_data />
           <% end %>
         </td>
         <!-- Actions -->

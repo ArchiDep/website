@@ -21,4 +21,6 @@ defmodule ArchiDep.Students.Behaviour do
               {:ok, Student.t()} | {:error, Changeset.t()}
 
   @callback list_students(Authentication.t(), Class.t()) :: list(Student.t())
+
+  @callback list_active_students_for_email(String.t()) :: list(Student.t())
 end

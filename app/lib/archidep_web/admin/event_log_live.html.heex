@@ -18,9 +18,12 @@
 <table class="table table-zebra w-full mt-3">
   <thead>
     <tr>
-      <th>Context</th>
-      <th>Action</th>
-      <th>Entity</th>
+      <th>
+        <span class="md:hidden">Event</span>
+        <span class="hidden md:inline">Context</span>
+      </th>
+      <th class="hidden md:table-cell">Action</th>
+      <th class="hidden md:table-cell">Entity</th>
       <th>Occurred at</th>
     </tr>
   </thead>
@@ -40,9 +43,19 @@
       id={id}
       class="hover:bg-base-200 hover:even:bg-base-300"
     >
-      <td><.event_context event={event} /></td>
-      <th><.event_action event={event} /></th>
-      <td><.event_entity event={event} /></td>
+      <td>
+        <span class="flex flex-wrap gap-2">
+          <.event_context event={event} />
+          <.event_action event={event} extra_class="md:hidden" />
+          <.event_entity event={event} extra_class="md:hidden" />
+        </span>
+      </td>
+      <td class="hidden md:table-cell">
+        <.event_action event={event} />
+      </td>
+      <td class="hidden md:table-cell">
+        <.event_entity event={event} />
+      </td>
       <td>{format_date_time(event.occurred_at)}</td>
     </tr>
   </tbody>

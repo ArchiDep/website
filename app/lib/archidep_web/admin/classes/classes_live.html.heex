@@ -15,7 +15,7 @@
   </ul>
 </div>
 
-<div class="mt-2 mb-2 flex justify-between items-end">
+<div class="my-2 flex justify-between items-end">
   <h2 class="text-2xl font-bold flex items-center gap-x-2">
     <Heroicons.academic_cap solid class="size-6" /> Classes
   </h2>
@@ -31,11 +31,7 @@
   </button>
 </div>
 
-<em :if={Enum.empty?(@classes)}>
-  No classes found.
-</em>
-
-<table :if={not Enum.empty?(@classes)} class="table">
+<table class="table">
   <thead>
     <tr>
       <th>Name</th>
@@ -50,6 +46,11 @@
     </tr>
   </thead>
   <tbody>
+    <tr :if={Enum.empty?(@classes)}>
+      <td colspan="1000">
+        <.no_data text="No classes" />
+      </td>
+    </tr>
     <tr
       :for={class <- @classes}
       id={"class-#{class.id}"}
@@ -61,14 +62,21 @@
         <span :if={class.start_date != nil and class.end_date == nil} class="md:hidden">
           From
         </span>
-        {if class.start_date, do: format_date(class.start_date), else: "-"}
+        <%= if class.start_date do %>
+          {format_date(class.start_date)}
+        <% end %>
         <span :if={class.start_date != nil and class.end_date != nil} class="md:hidden">to</span>
         <span :if={class.end_date} class="md:hidden">
-          {if class.end_date, do: format_date(class.end_date), else: "-"}
+          {format_date(class.end_date)}
         </span>
+        <.no_data :if={class.start_date == nil and class.end_date == nil} />
       </td>
       <td class="hidden md:table-cell">
-        {if class.end_date, do: format_date(class.end_date), else: "-"}
+        <%= if class.end_date do %>
+          {format_date(class.end_date)}
+        <% else %>
+          <.no_data />
+        <% end %>
       </td>
       <td>
         <Heroicons.check_circle :if={class.active} class="size-5 text-success" />

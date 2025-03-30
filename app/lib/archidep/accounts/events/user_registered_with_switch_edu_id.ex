@@ -6,6 +6,7 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
+  alias ArchiDep.Students.Schemas.Student
   alias Ecto.UUID
 
   @derive Jason.Encoder
@@ -20,7 +21,8 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
     :username,
     :session_id,
     :client_ip_address,
-    :client_user_agent
+    :client_user_agent,
+    :student_id
   ]
   defstruct [
     :switch_edu_id,
@@ -32,7 +34,8 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
     :username,
     :session_id,
     :client_ip_address,
-    :client_user_agent
+    :client_user_agent,
+    :student_id
   ]
 
   @type t :: %__MODULE__{
@@ -45,11 +48,12 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
           username: String.t(),
           session_id: UUID.t(),
           client_ip_address: String.t() | nil,
-          client_user_agent: String.t() | nil
+          client_user_agent: String.t() | nil,
+          student_id: UUID.t() | nil
         }
 
-  @spec new(SwitchEduId.t(), UserAccount.t(), UserSession.t()) :: t()
-  def new(switch_edu_id, user_account, user_session) do
+  @spec new(SwitchEduId.t(), UserAccount.t(), UserSession.t(), Student.t() | nil) :: t()
+  def new(switch_edu_id, user_account, user_session, student) do
     %SwitchEduId{
       id: id,
       email: email,
@@ -69,6 +73,12 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
       client_user_agent: client_user_agent
     } = user_session
 
+    student_id =
+      case student do
+        %Student{id: student_id} -> student_id
+        nil -> nil
+      end
+
     %__MODULE__{
       switch_edu_id: id,
       email: email,
@@ -79,7 +89,8 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
       username: username,
       session_id: session_id,
       client_ip_address: client_ip_address,
-      client_user_agent: client_user_agent
+      client_user_agent: client_user_agent,
+      student_id: student_id
     }
   end
 end
