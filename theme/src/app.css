@@ -11,3 +11,4 @@
 @source "../../course/_posts";
 
 @import './highlight.css';
+@import './toc.css';

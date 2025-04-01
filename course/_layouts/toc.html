@@ -4,9 +4,15 @@ layout: base
 
 <div class="flex flex-wrap xl:flex-nowrap justify-between gap-4">
   <aside class="w-full xl:order-last xl:w-sm">
-    <nav>
-      {% toc %}
-    </nav>
+    <div class="max-w-prose mx-auto">
+      <div tabindex="0" class="toc collapse collapse-arrow xl:collapse-open bg-neutral border-base-300 border">
+        <input type="checkbox" />
+        <div class="collapse-title text-xl font-bold">On this page</div>
+        <nav class="collapse-content text-sm">
+          {{ content | toc_only }}
+        </nav>
+      </div>
+    </div>
   </aside>
   <main class="w-full xl:flex-grow-1 xl:order-first">
     {{ content }}

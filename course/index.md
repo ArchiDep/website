@@ -19,6 +19,16 @@ In pursuit of this goal, you will learn:
 This course is a [Media Engineering][comem] web development course taught at
 [HEIG-VD][heig].
 
+{% note class: tips %}
+Hello, Note!
+
+* Foo
+* Bar
+* Baz
+
+*HELLO!*
+{% endnote %}
+
 ## What you will need
 
 - A Unix CLI
