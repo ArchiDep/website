@@ -2,10 +2,8 @@
 title: Command Line
 ---
 
-# Command Line
-
-Learn what a command line interface is
-and learn the basics of navigating and manipulating your filesystem in a Unix shell.
+Learn what a command line interface is and learn the basics of navigating and
+manipulating your filesystem in a Unix shell.
 
 
 

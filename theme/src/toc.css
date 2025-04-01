@@ -1,13 +1,3 @@
 ul#toc > li.toc-h1 > a {
   @apply hidden;
 }
-
-.toc.collapse:not(.collapse-close) {
-  > input[type="checkbox"] {
-    @apply cursor-default;
-  }
-}
-
-.toc.collapse.collapse-arrow > .collapse-title:after {
-  @apply xl:shadow-none;
-}

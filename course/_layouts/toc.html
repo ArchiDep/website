@@ -2,19 +2,30 @@
 layout: base
 ---
 
-<div class="flex flex-wrap xl:flex-nowrap justify-between gap-4">
-  <aside class="w-full xl:order-last xl:w-sm">
-    <div class="max-w-prose mx-auto">
-      <div tabindex="0" class="toc collapse collapse-arrow xl:collapse-open bg-neutral border-base-300 border">
-        <input type="checkbox" />
-        <div class="collapse-title text-xl font-bold">On this page</div>
-        <nav class="collapse-content text-sm">
-          {{ content | toc_only }}
-        </nav>
-      </div>
+<div class="flex flex-wrap xl:flex-nowrap justify-center gap-4">
+  <main class="max-w-prose">
+    {% if page.title %}
+      <h1 class="text-5xl font-bold">{{ page.title }}</h1>
+    {% endif %}
+
+    <div class="my-4 prose">
+      {{ page.excerpt }}
     </div>
-  </aside>
-  <main class="w-full xl:flex-grow-1 xl:order-first">
-    {{ content }}
+
+    <div tabindex="0" class="my-4 toc collapse collapse-arrow bg-neutral border-base-300 border xl:hidden">
+      <input type="checkbox" />
+      <div class="collapse-title text-xl font-bold">On this page</div>
+      <nav class="collapse-content text-sm">
+        {{ content | toc_only }}
+      </nav>
+    </div>
+
+    {{ content | remove_first: page.excerpt }}
   </main>
+  <aside class="hidden xl:block xl:w-xs">
+    <h2 id="on-this-page-title" class="text-xl font-bold">On this page</h2>
+    <nav class="toc" aria-labelledby="on-this-page-title">
+      {{ content | toc_only }}
+    </nav>
+  </aside>
 </div>
