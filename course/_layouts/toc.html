@@ -2,26 +2,28 @@
 layout: base
 ---
 
-<div class="flex flex-wrap xl:flex-nowrap justify-center gap-4">
-  <main class="max-w-prose">
-    {% if page.title %}
-      <h1 class="text-5xl font-bold">{{ page.title }}</h1>
-    {% endif %}
+<div class="flex flex-wrap xl:flex-nowrap justify-center gap-4 mx-auto">
+  <div class="p-4 lg:p-6 xl:p-8 bg-slate-800 rounded md:rounded-lg lg:rounded-xl xl:rounded-2xl w-full md:w-auto">
+    <main class="prose prose-lg xl:prose-xl 2xl:prose-2xl sm:max-md:max-w-none">
+      {% if page.title %}
+      <h1>{{ page.title }}</h1>
+      {% endif %}
 
-    <div class="my-4 prose">
-      {{ page.excerpt }}
-    </div>
+      <div class="my-4">
+        {{ page.excerpt }}
+      </div>
 
-    <div tabindex="0" class="my-4 toc collapse collapse-arrow bg-neutral border-base-300 border xl:hidden">
-      <input type="checkbox" />
-      <div class="collapse-title text-xl font-bold">On this page</div>
-      <nav class="collapse-content text-sm">
-        {{ content | toc_only }}
-      </nav>
-    </div>
+      <div class="my-4 toc collapse collapse-arrow print:collapse-open bg-neutral border-base-300 border xl:hidden">
+        <input type="checkbox" />
+        <div id="on-this-page-inline-title" class="collapse-title text-xl font-bold">On this page</div>
+        <nav class="toc collapse-content text-sm" aria-labelledby="on-this-page-inline-title">
+          {{ content | toc_only }}
+        </nav>
+      </div>
 
-    {{ content | remove_first: page.excerpt }}
-  </main>
+      {{ content | remove_first: page.excerpt }}
+    </main>
+  </div>
   <aside class="hidden xl:block xl:w-xs">
     <h2 id="on-this-page-title" class="text-xl font-bold">On this page</h2>
     <nav class="toc" aria-labelledby="on-this-page-title">

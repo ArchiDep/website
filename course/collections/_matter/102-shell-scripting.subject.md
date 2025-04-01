@@ -2,8 +2,6 @@
 title: Shell Scripting
 ---
 
-# Shell Scripting
-
 Learn the basics of shell scripting with Bash.
 
 <!-- slide-include ../../BANNER.md -->

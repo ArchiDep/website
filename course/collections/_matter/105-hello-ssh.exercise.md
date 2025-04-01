@@ -2,8 +2,6 @@
 title: Hello SSH
 ---
 
-# Hello SSH
-
 In this series of exercises, you will learn to use the `ssh` command to connect
 to a remote server, and how to copy files to and from such a server using
 various tools.

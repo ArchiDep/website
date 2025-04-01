@@ -14,7 +14,9 @@ strict_front_matter: true
 collections:
   matter:
     output: true
-  posts:
+  notices:
+    output: true
+  progress:
     output: true
 
 collections_dir: collections
@@ -49,6 +51,7 @@ exclude:
   - package.json
   - package-lock.json
   - src/
+  - webpack.config.js
 
 keep_files:
   - assets

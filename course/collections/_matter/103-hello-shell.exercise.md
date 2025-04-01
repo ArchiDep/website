@@ -2,8 +2,6 @@
 title: Hello Shell
 ---
 
-# Hello Shell
-
 In this exercise, you'll set up a mini treasure hunt for adventurers navigating your server via the [Command Line][command-line]. You'll automate this hunt using [Shell Scripting][shell-scripting]. This activity aims to help you become more familiar with the command line's fundamental tools and the automation of tasks through basic scripting.
 
 > **:warning: Execute these tasks solely using Terminal or Git Bash. Utilizing GUI tools would defeat the purpose.**

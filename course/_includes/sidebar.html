@@ -17,7 +17,7 @@
   </li>
   {%- for section in site.data.course.sections -%}
     {%- assign current_section = forloop.index -%}
-    {% if section.progress_done %}
+    {% if section.progress == 'done' %}
       {% assign section_color = 'border-r-4 border-success/50 hover:border-success' %}
     {% else %}
       {% assign section_color = '' %}
@@ -34,7 +34,7 @@
         {% assign current_font_weight = '' %}
       {% endif %}
 
-      {% if item.progress_done %}
+      {% if item.progress == 'done' %}
         {% if item.url == page.url %}
           {% assign chapter_color = 'border-r-4 border-success' %}
         {% else %}
@@ -42,7 +42,7 @@
         {% endif %}
         {% assign tooltip = 'tooltip tooltip-top tooltip-success' %}
         {% assign tooltip_text = 'done' %}
-      {% elsif item.progress_due %}
+      {% elsif item.progress == 'due' %}
         {% if item.url == page.url or page.url == '/' %}
           {% assign chapter_color = 'border-r-4 border-warning' %}
         {% else %}
@@ -50,7 +50,7 @@
         {% endif %}
         {% assign tooltip = 'tooltip tooltip-top tooltip-warning' %}
         {% assign tooltip_text = 'due' %}
-      {% elsif item.progress_next %}
+      {% elsif item.progress == 'next' %}
         {% if item.url == page.url %}
           {% assign chapter_color = 'border-r-4 border-info' %}
         {% else %}
@@ -72,18 +72,12 @@
         {% endif %}
 
         <a href="{{ item.url }}" target="{{ link_target }}" class="flex items-center gap-2 {{ current_font_weight }}">
-          <span class="size-4">
-            {%- if item.course_type == "slides" -%}
+          {%- include chapter-title.html doc=item -%}
+          {% if item.slides %}
+            <span>
               :clapper:
-            {%- elsif item.course_type == "exercise" -%}
-              :hammer:
-            {%- else -%}
-              :book:
-            {%- endif -%}
-          </span>
-          <span>
-            {{ item.title }}
-          </span>
+            </span>
+          {% endif %}
           {% if item.course_type == 'slides' %}
             {%- include icons/arrow-top-right-on-square.html class="size-4 text-base-content/25 group-hover:text-base-content/75" -%}
           {% endif %}

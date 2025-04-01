@@ -1,9 +1,15 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const path = require('path');
 
+const production = process.env.NODE_ENV === 'production';
+
 module.exports = {
-  entry: './src/assets/course.js',
-  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+  entry: {
+    course: './src/assets/course.js',
+    slides: './src/assets/slides.js'
+  },
+  mode: production ? 'production' : 'development',
   module: {
     rules: [
       {
@@ -16,12 +22,16 @@ module.exports = {
     ]
   },
   output: {
-    filename: 'course.js',
-    path: path.resolve(__dirname, '..', 'app', 'priv', 'static', 'assets'),
+    filename: production ? '[name].[chunkhash].js' : '[name].js',
+    path: path.resolve(__dirname, '..', 'app', 'priv', 'static', 'assets', 'course'),
+    publicPath: '/assets/course/'
   },
   plugins: [
     new MiniCssExtractPlugin({
-      filename: 'course.css'
+      filename: production ? '[name].[chunkhash].css' : '[name].css'
+    }),
+    new WebpackManifestPlugin({
+      basePath: '/assets/course/'
     })
   ]
 };

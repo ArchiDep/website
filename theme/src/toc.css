@@ -1,3 +1,39 @@
-ul#toc > li.toc-h1 > a {
-  @apply hidden;
+aside .toc {
+  @apply mt-2;
+}
+
+aside .toc ul {
+  @apply flex flex-col;
+}
+
+aside .toc ul li a {
+  @apply inline-block text-base-content/75 hover:text-base-content;
+}
+
+aside .toc a {
+  @apply border-l-2 border-l-gray-300 dark:border-l-gray-600 hover:border-l-gray-800 dark:hover:border-l-gray-200;
+}
+
+aside .toc .toc-h1 > a {
+  @apply pl-2 font-bold;
+}
+
+aside .toc .toc-h2 > a {
+  @apply pl-3;
+}
+
+aside .toc .toc-h3 > a {
+  @apply pl-6;
+}
+
+aside .toc .toc-h4 > a {
+  @apply pl-9;
+}
+
+aside .toc .toc-h5 > a {
+  @apply pl-12;
+}
+
+aside .toc .toc-h6 > a {
+  @apply pl-14;
 }
