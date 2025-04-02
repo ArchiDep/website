@@ -19,7 +19,7 @@ In pursuit of this goal, you will learn:
 This course is a [Media Engineering][comem] web development course taught at
 [HEIG-VD][heig].
 
-{% note class: tips %}
+{% callout type: warning %}
 Hello, Note!
 
 * Foo
@@ -27,7 +27,7 @@ Hello, Note!
 * Baz
 
 *HELLO!*
-{% endnote %}
+{% endcallout %}
 
 ## What you will need
 
