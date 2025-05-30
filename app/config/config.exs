@@ -29,7 +29,7 @@ config :archidep, ArchiDepWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: ArchiDepWeb.ErrorHTML, json: ArchiDepWeb.ErrorJSON],
+    formats: [html: ArchiDepWeb.ErrorHTML],
     layout: false
   ],
   pubsub_server: ArchiDep.PubSub
