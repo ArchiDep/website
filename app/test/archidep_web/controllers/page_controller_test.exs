@@ -3,6 +3,6 @@ defmodule ArchiDepWeb.PageControllerTest do
 
   test "GET /app", %{conn: conn} do
     conn = get(conn, ~p"/app")
-    assert html_response(conn, 200) =~ "ArchiDep"
+    assert redirected_to(conn) =~ "/login"
   end
 end

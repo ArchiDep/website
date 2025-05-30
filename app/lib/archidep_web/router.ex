@@ -14,7 +14,9 @@ defmodule ArchiDepWeb.Router do
       "content-security-policy" => "default-src 'self'; img-src 'self' data:;"
     })
 
-    plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
+    plug Plug.SSL,
+      exclude: ["localhost", "www.example.com"],
+      rewrite_on: [:x_forwarded_proto]
   end
 
   pipeline :dev do
