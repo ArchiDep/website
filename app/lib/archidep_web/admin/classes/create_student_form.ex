@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Admin.Classes.CreateStudentForm do
   use Ecto.Schema
 
   import Ecto.Changeset
+  alias ArchiDep.Students.Types
   alias Ecto.Changeset
   alias Ecto.UUID
 
@@ -23,5 +24,14 @@ defmodule ArchiDepWeb.Admin.Classes.CreateStudentForm do
     %__MODULE__{}
     |> cast(params, [:name, :email, :class_id])
     |> validate_required([:name, :email, :class_id])
+  end
+
+  @spec to_student_data(t()) :: Types.student_data()
+  def to_student_data(%__MODULE__{} = form) do
+    %{
+      name: form.name,
+      email: form.email,
+      class_id: form.class_id
+    }
   end
 end

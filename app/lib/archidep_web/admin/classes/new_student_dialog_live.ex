@@ -48,7 +48,12 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
   def handle_event("validate", %{"student" => params}, socket) do
     with {:ok, form_data} <-
            Changeset.apply_action(CreateStudentForm.changeset(params), :validate) do
-      changeset = Students.validate_student(socket.assigns.auth, Map.from_struct(form_data))
+      changeset =
+        Students.validate_student(
+          socket.assigns.auth,
+          CreateStudentForm.to_student_data(form_data)
+        )
+
       {:noreply, assign(socket, form: to_form(changeset, as: :student, action: :validate))}
     else
       {:error, %Changeset{} = changeset} ->
@@ -62,14 +67,16 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
     with {:ok, form_data} <-
            Changeset.apply_action(CreateStudentForm.changeset(params), :validate),
          {:ok, _student} <-
-           Students.create_student(socket.assigns.auth, Map.from_struct(form_data)) do
+           Students.create_student(
+             socket.assigns.auth,
+             CreateStudentForm.to_student_data(form_data)
+           ) do
       {:noreply,
        socket
        |> put_flash(:info, "Student created")
        |> push_navigate(to: ~p"/admin/classes/#{class.id}")}
     else
       {:error, %Changeset{} = changeset} ->
-        IO.puts("@@@ #{inspect(changeset)}")
         {:noreply, assign(socket, form: to_form(changeset, as: :student))}
     end
   end
