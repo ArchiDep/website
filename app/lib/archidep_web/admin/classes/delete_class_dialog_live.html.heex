@@ -4,7 +4,7 @@
     <p class="mt-4">Are you sure you want to permanently delete this class?</p>
     <p :if={not Enum.empty?(@students)} class="mt-2 text-warning">
       This class has <strong>{length(@students)} {if length(@students) == 1, do:
-      "student", else: "students"}</strong> enrolled, which will also be
+      "student", else: "students"}</strong> enrolled, who will also be
       deleted.  Any non-admin user account linked to {if length(@students) == 1,
       do: "this student", else: "these students"} will lose access.
     </p>

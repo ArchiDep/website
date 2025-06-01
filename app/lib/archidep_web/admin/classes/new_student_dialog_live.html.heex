@@ -32,19 +32,6 @@
         />
         <.errors_for field={@form[:email]} />
 
-        <label class="fieldset-label mt-2">Class</label>
-        <select id={@form[:class_id].id} class="select w-full" name={@form[:class_id].name}>
-          <option disabled selected>Choose a class</option>
-          <option
-            :for={class <- @classes}
-            value={class.id}
-            selected={class.id == @form[:class_id].value}
-          >
-            {class.name}
-          </option>
-        </select>
-        <.errors_for field={@form[:class_id]} />
-
         <div class="mt-2 flex justify-end gap-x-2">
           <button type="button" class="btn btn-secondary" phx-click={close()}>
             <span class="flex items-center gap-x-2">

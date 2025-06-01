@@ -21,7 +21,6 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
       |> assign(
         auth: assigns.auth,
         class: assigns.class,
-        classes: Students.list_classes(assigns.auth),
         form: to_form(CreateStudentForm.changeset(%{}), as: :student)
       )
       |> ok()
@@ -36,12 +35,13 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
 
   def handle_event("validate", %{"student" => params}, socket) do
     auth = socket.assigns.auth
+    class = socket.assigns.class
 
     validate_dialog_form(
       :student,
       CreateStudentForm.changeset(params),
       fn data ->
-        auth |> Students.validate_student(CreateStudentForm.to_student_data(data)) |> ok()
+        auth |> Students.validate_student(CreateStudentForm.to_student_data(data, class)) |> ok()
       end,
       socket
     )
@@ -55,7 +55,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
          {:ok, _student} <-
            Students.create_student(
              socket.assigns.auth,
-             CreateStudentForm.to_student_data(form_data)
+             CreateStudentForm.to_student_data(form_data, class)
            ) do
       {:noreply,
        socket
