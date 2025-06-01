@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
   alias ArchiDep.Students
   alias ArchiDepWeb.Admin.Classes.EditStudentDialogLive
+  alias ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive
 
   @impl LiveView
   def mount(%{"class_id" => class_id, "id" => id}, _session, socket) do

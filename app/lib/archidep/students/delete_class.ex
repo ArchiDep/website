@@ -10,7 +10,7 @@ defmodule ArchiDep.Students.DeleteClass do
           :ok | {:error, :class_not_found}
   def delete_class(auth, id) do
     with {:ok, class} <- Class.fetch_class(id) do
-      authorize!(auth, Policy, :students, :update_class, class)
+      authorize!(auth, Policy, :students, :delete_class, class)
 
       now = DateTime.utc_now()
       user = Authentication.fetch_user_account(auth)

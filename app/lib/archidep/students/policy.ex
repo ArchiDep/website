@@ -57,6 +57,15 @@ defmodule ArchiDep.Students.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Root users can delete classes.
+  def authorize(
+        :students,
+        :delete_class,
+        %Authentication{principal: %UserAccount{roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   # Root users can validate students.
   def authorize(
         :students,
@@ -106,6 +115,15 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :validate_existing_student,
+        %Authentication{principal: %UserAccount{roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
+  # Root users can delete students.
+  def authorize(
+        :students,
+        :delete_student,
         %Authentication{principal: %UserAccount{roles: roles}},
         _params
       ),

@@ -64,4 +64,8 @@ defmodule ArchiDep.Students do
   @spec update_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
           {:ok, Student.t()} | {:error, Changeset.t()} | {:error, :student_not_found}
   defdelegate update_student(auth, id, data), to: @implementation
+
+  @spec delete_student(Authentication.t(), UUID.t()) ::
+          :ok | {:error, :student_not_found}
+  defdelegate delete_student(auth, id), to: @implementation
 end

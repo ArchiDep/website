@@ -36,6 +36,9 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  @spec student?(__MODULE__.t()) :: boolean
+  def student?(%__MODULE__{roles: roles}), do: :student in roles
+
   @spec fetch_or_create_for_switch_edu_id(SwitchEduId.t(), list(Types.role())) ::
           {:existing_account, Changeset.t(t())} | {:new_account, Changeset.t(t())}
   def fetch_or_create_for_switch_edu_id(switch_edu_id, roles) do

@@ -41,4 +41,7 @@ defmodule ArchiDep.Students.Behaviour do
 
   @callback update_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
               {:ok, Student.t()} | {:error, Changeset.t()}
+
+  @callback delete_student(Authentication.t(), UUID.t()) ::
+              :ok | {:error, :student_not_found}
 end
