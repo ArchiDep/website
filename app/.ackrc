@@ -1,3 +1,4 @@
 # https://beyondgrep.com
 --ignore-dir=deps
+--ignore-dir=.elixir_ls
 --ignore-dir=priv/static
