@@ -1,0 +1,80 @@
+defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
+  use ArchiDepWeb, :live_component
+
+  import ArchiDepWeb.Components.FormComponents
+  import ArchiDepWeb.Helpers.DialogHelpers
+  alias ArchiDep.Students
+  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDepWeb.Admin.Classes.CreateStudentForm
+
+  @base_id "edit-student-dialog"
+
+  @spec id(Student.t()) :: String.t()
+  def id(%Student{id: id}), do: "#{@base_id}-#{id}"
+
+  @spec close(Student.t()) :: js
+  def close(student), do: student |> id() |> close_dialog()
+
+  @impl LiveComponent
+  def update(assigns, socket),
+    do:
+      socket
+      |> assign(
+        auth: assigns.auth,
+        student: assigns.student,
+        form: to_form(CreateStudentForm.update_changeset(assigns.student, %{}), as: :student)
+      )
+      |> ok()
+
+  @impl LiveComponent
+
+  def handle_event("closed", _params, socket),
+    do:
+      socket
+      |> assign(
+        form:
+          to_form(CreateStudentForm.update_changeset(socket.assigns.student, %{}), as: :student)
+      )
+      |> noreply()
+
+  def handle_event("validate", %{"student" => params}, socket) do
+    auth = socket.assigns.auth
+    student = socket.assigns.student
+
+    validate_dialog_form(
+      :student,
+      CreateStudentForm.update_changeset(student, params),
+      &Students.validate_existing_student(
+        auth,
+        student.id,
+        CreateStudentForm.to_existing_student_data(&1)
+      ),
+      socket
+    )
+  end
+
+  def handle_event("update", %{"student" => params}, socket) do
+    auth = socket.assigns.auth
+    student = socket.assigns.student
+
+    with {:ok, form_data} <-
+           Changeset.apply_action(
+             CreateStudentForm.update_changeset(student, params),
+             :validate
+           ),
+         {:ok, _student} <-
+           Students.update_student(
+             auth,
+             student.id,
+             CreateStudentForm.to_existing_student_data(form_data)
+           ) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Student updated")
+       |> push_navigate(to: ~p"/admin/classes/#{student.class_id}/students/#{student.id}")}
+    else
+      {:error, %Changeset{} = changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset, as: :student))}
+    end
+  end
+end

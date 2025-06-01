@@ -57,3 +57,23 @@
     <% end %>
   </dd>
 </dl>
+
+<div class="mt-4 join">
+  <button
+    type="button"
+    class="join-item btn btn-warning"
+    phx-click={JS.dispatch("open-dialog", detail: %{dialog: EditStudentDialogLive.id(@student)})}
+  >
+    <span class="flex items-center gap-x-2">
+      <Heroicons.pencil class="size-4" />
+      <span>Edit</span>
+    </span>
+  </button>
+</div>
+
+<.live_component
+  module={EditStudentDialogLive}
+  id={EditStudentDialogLive.id(@student)}
+  auth={@auth}
+  student={@student}
+/>

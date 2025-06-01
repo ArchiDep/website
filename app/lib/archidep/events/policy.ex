@@ -15,5 +15,5 @@ defmodule ArchiDep.Events.Policy do
       ),
       do: Enum.member?(roles, :root)
 
-  def authorize(_action, _principal, _params), do: false
+  def authorize(_context, _action, _principal, _params), do: false
 end

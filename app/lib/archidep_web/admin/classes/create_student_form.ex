@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.CreateStudentForm do
 
   import Ecto.Changeset
   alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Types
   alias Ecto.Changeset
 
@@ -24,12 +25,30 @@ defmodule ArchiDepWeb.Admin.Classes.CreateStudentForm do
     |> validate_required([:name, :email])
   end
 
+  @spec update_changeset(Student.t(), map) :: Changeset.t(t())
+  def update_changeset(student, params \\ %{}) when is_map(params) do
+    %__MODULE__{
+      name: student.name,
+      email: student.email
+    }
+    |> cast(params, [:name, :email])
+    |> validate_required([:name, :email])
+  end
+
   @spec to_create_student_data(t(), Class.t()) :: Types.create_student_data()
   def to_create_student_data(%__MODULE__{} = form, class) do
     %{
       name: form.name,
       email: form.email,
       class_id: class.id
+    }
+  end
+
+  @spec to_existing_student_data(t()) :: Types.existing_student_data()
+  def to_existing_student_data(%__MODULE__{} = form) do
+    %{
+      name: form.name,
+      email: form.email
     }
   end
 end

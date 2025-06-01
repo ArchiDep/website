@@ -12,6 +12,7 @@ defmodule ArchiDep.Students.ContextImpl do
   alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Types
   alias ArchiDep.Students.UpdateClass
+  alias ArchiDep.Students.UpdateStudent
 
   @behaviour ArchiDep.Students.Behaviour
 
@@ -62,4 +63,18 @@ defmodule ArchiDep.Students.ContextImpl do
   @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
           {:ok, Student.t()} | {:error, :student_not_found}
   defdelegate fetch_student_in_class(auth, class_id, id), to: FetchStudentInClass
+
+  @spec validate_existing_student(
+          Authentication.t(),
+          UUID.t(),
+          Types.existing_student_data()
+        ) :: {:ok, Changeset.t()} | {:error, :student_not_found}
+  defdelegate validate_existing_student(auth, id, data), to: UpdateStudent
+
+  @spec update_student(
+          Authentication.t(),
+          UUID.t(),
+          Types.existing_student_data()
+        ) :: {:ok, Student.t()} | {:error, Changeset.t()}
+  defdelegate update_student(auth, id, data), to: UpdateStudent
 end

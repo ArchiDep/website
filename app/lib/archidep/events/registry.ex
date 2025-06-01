@@ -13,6 +13,7 @@ defmodule ArchiDep.Events.Registry do
   alias ArchiDep.Students.Events.ClassDeleted
   alias ArchiDep.Students.Events.ClassUpdated
   alias ArchiDep.Students.Events.StudentCreated
+  alias ArchiDep.Students.Events.StudentUpdated
 
   event(ClassCreated,
     prefix: "classes:",
@@ -36,6 +37,12 @@ defmodule ArchiDep.Events.Registry do
     prefix: "students:",
     by: :id,
     type: :"archidep/students/student-created"
+  )
+
+  event(StudentUpdated,
+    prefix: "students:",
+    by: :id,
+    type: :"archidep/students/student-updated"
   )
 
   event(SessionDeleted,

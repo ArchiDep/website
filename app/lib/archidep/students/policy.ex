@@ -93,5 +93,23 @@ defmodule ArchiDep.Students.Policy do
       ),
       do: Enum.member?(roles, :root)
 
-  def authorize(_action, _principal, _params), do: false
+  # Root users can update students.
+  def authorize(
+        :students,
+        :update_student,
+        %Authentication{principal: %UserAccount{roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
+  # Root users can validate existing students.
+  def authorize(
+        :students,
+        :validate_existing_student,
+        %Authentication{principal: %UserAccount{roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
+  def authorize(_context, _action, _principal, _params), do: false
 end

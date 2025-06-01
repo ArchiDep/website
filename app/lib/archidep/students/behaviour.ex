@@ -35,4 +35,10 @@ defmodule ArchiDep.Students.Behaviour do
 
   @callback fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
               {:ok, Student.t()} | {:error, :student_not_found}
+
+  @callback validate_existing_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
+              {:ok, Changeset.t()} | {:error, :student_not_found}
+
+  @callback update_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
+              {:ok, Student.t()} | {:error, Changeset.t()}
 end

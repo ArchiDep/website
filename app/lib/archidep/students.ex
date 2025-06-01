@@ -56,4 +56,12 @@ defmodule ArchiDep.Students do
   @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
           {:ok, Student.t()} | {:error, :student_not_found}
   defdelegate fetch_student_in_class(auth, class_id, id), to: @implementation
+
+  @spec validate_existing_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
+          {:ok, Changeset.t()} | {:error, :student_not_found}
+  defdelegate validate_existing_student(auth, id, data), to: @implementation
+
+  @spec update_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
+          {:ok, Student.t()} | {:error, Changeset.t()} | {:error, :student_not_found}
+  defdelegate update_student(auth, id, data), to: @implementation
 end

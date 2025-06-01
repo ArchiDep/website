@@ -13,4 +13,9 @@ defmodule ArchiDep.Students.Types do
           email: String.t(),
           class_id: UUID.t()
         }
+
+  @type existing_student_data :: %{
+          name: String.t(),
+          email: String.t()
+        }
 end

@@ -78,6 +78,17 @@ defmodule ArchiDep.Students.Schemas.Student do
     |> optimistic_lock(:version)
   end
 
+  @spec fetch_student(UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
+  def fetch_student(id) do
+    case Repo.get(__MODULE__, id) do
+      nil ->
+        {:error, :student_not_found}
+
+      student ->
+        {:ok, student}
+    end
+  end
+
   @spec fetch_student_in_class(UUID.t(), UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
   def fetch_student_in_class(class_id, id) do
     case Repo.one(
@@ -96,6 +107,33 @@ defmodule ArchiDep.Students.Schemas.Student do
       student ->
         {:ok, student}
     end
+  end
+
+  @spec update(__MODULE__.t(), Types.existing_student_data()) :: Changeset.t(t())
+  def update(student, data) do
+    id = student.id
+    class_id = student.class_id
+    now = DateTime.utc_now()
+
+    student
+    |> cast(data, [:name, :email])
+    |> change(updated_at: now)
+    |> optimistic_lock(:version)
+    |> validate_length(:name, max: 100)
+    |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
+    |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
+    |> validate_required([:name, :email, :class_id])
+    |> unique_constraint(:email, name: :students_unique_email_index)
+    |> unsafe_validate_unique_query(:email, Repo, fn changeset ->
+      email = get_field(changeset, :email)
+
+      from(s in __MODULE__,
+        where:
+          s.id != ^id and s.class_id == ^class_id and
+            fragment("LOWER(?)", s.email) == fragment("LOWER(?)", ^email)
+      )
+    end)
+    |> assoc_constraint(:class)
   end
 
   @spec delete_students_in_class(Class.t()) :: Query.t()

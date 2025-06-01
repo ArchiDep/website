@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   use ArchiDepWeb, :live_view
 
   alias ArchiDep.Students
+  alias ArchiDepWeb.Admin.Classes.EditStudentDialogLive
 
   @impl LiveView
   def mount(%{"class_id" => class_id, "id" => id}, _session, socket) do
