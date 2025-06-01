@@ -15,20 +15,14 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
   def close(), do: close_dialog(@id)
 
   @impl LiveComponent
-  def mount(socket),
-    do:
-      socket
-      |> assign(form: to_form(CreateStudentForm.changeset(%{}), as: :student))
-      |> ok()
-
-  @impl LiveComponent
   def update(assigns, socket),
     do:
       socket
       |> assign(
         auth: assigns.auth,
         class: assigns.class,
-        classes: Students.list_classes(assigns.auth)
+        classes: Students.list_classes(assigns.auth),
+        form: to_form(CreateStudentForm.changeset(%{}), as: :student)
       )
       |> ok()
 
