@@ -82,10 +82,16 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     now = DateTime.utc_now()
 
     %__MODULE__{}
-    |> cast(%{username: switch_edu_id.first_name, roles: roles}, [
-      :username,
-      :roles
-    ])
+    |> cast(
+      %{
+        username: switch_edu_id.first_name || String.replace(switch_edu_id.email, ~r/@.*/, ""),
+        roles: roles
+      },
+      [
+        :username,
+        :roles
+      ]
+    )
     |> change(
       id: id,
       switch_edu_id_id: switch_edu_id.id,

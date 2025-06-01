@@ -6,7 +6,8 @@
       title="Edit Student"
       on_submit="update"
       on_close={close(@student)}
-      target={@myself} />
+      target={@myself}
+    />
   </div>
   <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
     <button type="submit">Close</button>

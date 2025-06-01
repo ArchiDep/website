@@ -14,7 +14,7 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
   @type t :: %__MODULE__{
           id: UUID.t(),
           email: String.t(),
-          first_name: String.t(),
+          first_name: String.t() | nil,
           last_name: String.t() | nil,
           swiss_edu_person_unique_id: String.t(),
           version: pos_integer(),
@@ -73,7 +73,6 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
       |> validate_required([
         :id,
         :email,
-        :first_name,
         :swiss_edu_person_unique_id,
         :version,
         :created_at,

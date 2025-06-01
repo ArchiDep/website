@@ -73,7 +73,9 @@
   <button
     type="button"
     class="join-item btn btn-error"
-    phx-click={JS.dispatch("open-dialog", detail: %{dialog: DeleteStudentDialogLive.id(@student)})}
+    phx-click={
+      JS.dispatch("open-dialog", detail: %{dialog: DeleteStudentDialogLive.id(@student)})
+    }
   >
     <span class="flex items-center gap-x-2">
       <Heroicons.trash class="size-4" />

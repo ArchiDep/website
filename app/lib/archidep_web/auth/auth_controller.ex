@@ -42,11 +42,11 @@ defmodule ArchiDepWeb.Auth.AuthController do
               provider: :switch_edu_id,
               extra: %Ueberauth.Auth.Extra{
                 raw_info: %{
-                  userinfo: %{
-                    "email" => email,
-                    "given_name" => first_name,
-                    "swissEduPersonUniqueID" => swiss_edu_person_unique_id
-                  }
+                  userinfo:
+                    %{
+                      "email" => email,
+                      "swissEduPersonUniqueID" => swiss_edu_person_unique_id
+                    } = userinfo
                 }
               }
             }
@@ -59,7 +59,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
              %{
                swiss_edu_person_unique_id: swiss_edu_person_unique_id,
                email: email,
-               first_name: first_name,
+               first_name: Map.get(userinfo, "given_name"),
                last_name: nil
              },
              conn_metadata(conn)
