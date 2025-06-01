@@ -5,7 +5,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
   import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Students
   alias ArchiDep.Students.Schemas.Student
-  alias ArchiDepWeb.Admin.Classes.CreateStudentForm
+  alias ArchiDepWeb.Admin.Classes.StudentForm
 
   @base_id "edit-student-dialog"
 
@@ -22,7 +22,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
       |> assign(
         auth: assigns.auth,
         student: assigns.student,
-        form: to_form(CreateStudentForm.update_changeset(assigns.student, %{}), as: :student)
+        form: to_form(StudentForm.update_changeset(assigns.student, %{}), as: :student)
       )
       |> ok()
 
@@ -32,8 +32,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
     do:
       socket
       |> assign(
-        form:
-          to_form(CreateStudentForm.update_changeset(socket.assigns.student, %{}), as: :student)
+        form: to_form(StudentForm.update_changeset(socket.assigns.student, %{}), as: :student)
       )
       |> noreply()
 
@@ -43,11 +42,11 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
 
     validate_dialog_form(
       :student,
-      CreateStudentForm.update_changeset(student, params),
+      StudentForm.update_changeset(student, params),
       &Students.validate_existing_student(
         auth,
         student.id,
-        CreateStudentForm.to_existing_student_data(&1)
+        StudentForm.to_existing_student_data(&1)
       ),
       socket
     )
@@ -59,14 +58,14 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
 
     with {:ok, form_data} <-
            Changeset.apply_action(
-             CreateStudentForm.update_changeset(student, params),
+             StudentForm.update_changeset(student, params),
              :validate
            ),
          {:ok, _student} <-
            Students.update_student(
              auth,
              student.id,
-             CreateStudentForm.to_existing_student_data(form_data)
+             StudentForm.to_existing_student_data(form_data)
            ) do
       {:noreply,
        socket

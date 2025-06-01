@@ -4,7 +4,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
   import ArchiDepWeb.Components.FormComponents
   import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Students
-  alias ArchiDepWeb.Admin.Classes.CreateStudentForm
+  alias ArchiDepWeb.Admin.Classes.StudentForm
 
   @id "new-student-dialog"
 
@@ -21,7 +21,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
       |> assign(
         auth: assigns.auth,
         class: assigns.class,
-        form: to_form(CreateStudentForm.changeset(%{}), as: :student)
+        form: to_form(StudentForm.create_changeset(%{}), as: :student)
       )
       |> ok()
 
@@ -29,7 +29,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
 
   def handle_event("closed", _params, socket) do
     socket
-    |> assign(form: to_form(CreateStudentForm.changeset(%{}), as: :student))
+    |> assign(form: to_form(StudentForm.create_changeset(%{}), as: :student))
     |> noreply()
   end
 
@@ -39,10 +39,10 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
 
     validate_dialog_form(
       :student,
-      CreateStudentForm.changeset(params),
+      StudentForm.create_changeset(params),
       fn data ->
         auth
-        |> Students.validate_student(CreateStudentForm.to_create_student_data(data, class))
+        |> Students.validate_student(StudentForm.to_create_student_data(data, class))
         |> ok()
       end,
       socket
@@ -53,11 +53,11 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
     class = socket.assigns.class
 
     with {:ok, form_data} <-
-           Changeset.apply_action(CreateStudentForm.changeset(params), :validate),
+           Changeset.apply_action(StudentForm.create_changeset(params), :validate),
          {:ok, _student} <-
            Students.create_student(
              socket.assigns.auth,
-             CreateStudentForm.to_create_student_data(form_data, class)
+             StudentForm.to_create_student_data(form_data, class)
            ) do
       {:noreply,
        socket

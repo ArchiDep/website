@@ -1,4 +1,4 @@
-defmodule ArchiDepWeb.Admin.Classes.CreateStudentForm do
+defmodule ArchiDepWeb.Admin.Classes.StudentForm do
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -18,8 +18,8 @@ defmodule ArchiDepWeb.Admin.Classes.CreateStudentForm do
     field(:email, :string, default: "")
   end
 
-  @spec changeset(map) :: Changeset.t(t())
-  def changeset(params \\ %{}) when is_map(params) do
+  @spec create_changeset(map) :: Changeset.t(t())
+  def create_changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{}
     |> cast(params, [:name, :email])
     |> validate_required([:name, :email])
