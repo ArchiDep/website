@@ -3,6 +3,8 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
   A new user account was registered based on a Switch edu-ID identity.
   """
 
+  use ArchiDep, :event
+
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
@@ -92,5 +94,14 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
       client_user_agent: client_user_agent,
       student_id: student_id
     }
+  end
+
+  defimpl Event do
+    alias ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId
+
+    def event_stream(%UserRegisteredWithSwitchEduId{user_account_id: user_account_id}),
+      do: "user-accounts:#{user_account_id}"
+
+    def event_type(_event), do: :"archidep/accounts/user-registered-with-switch-edu-id"
   end
 end

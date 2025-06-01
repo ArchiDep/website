@@ -1,4 +1,6 @@
 defmodule ArchiDep.Students.Events.StudentDeleted do
+  use ArchiDep, :event
+
   alias ArchiDep.Students.Schemas.Student
   alias Ecto.UUID
 
@@ -29,5 +31,14 @@ defmodule ArchiDep.Students.Events.StudentDeleted do
       id: id,
       name: name
     }
+  end
+
+  defimpl Event do
+    alias ArchiDep.Students.Events.StudentDeleted
+
+    def event_stream(%StudentDeleted{id: id}),
+      do: "students:#{id}"
+
+    def event_type(_event), do: :"archidep/students/student-deleted"
   end
 end

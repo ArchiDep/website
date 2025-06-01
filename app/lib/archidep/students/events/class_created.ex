@@ -1,4 +1,6 @@
 defmodule ArchiDep.Students.Events.ClassCreated do
+  use ArchiDep, :event
+
   alias ArchiDep.Students.Schemas.Class
   alias Ecto.UUID
 
@@ -44,5 +46,14 @@ defmodule ArchiDep.Students.Events.ClassCreated do
       end_date: end_date,
       active: active
     }
+  end
+
+  defimpl Event do
+    alias ArchiDep.Students.Events.ClassCreated
+
+    def event_stream(%ClassCreated{id: id}),
+      do: "classes:#{id}"
+
+    def event_type(_event), do: :"archidep/students/class-created"
   end
 end

@@ -4,6 +4,8 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
   account.
   """
 
+  use ArchiDep, :event
+
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.ClientMetadata
@@ -77,5 +79,14 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
       client_ip_address: client_ip_address,
       client_user_agent: client_metadata.user_agent
     }
+  end
+
+  defimpl Event do
+    alias ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId
+
+    def event_stream(%UserLoggedInWithSwitchEduId{user_account_id: user_account_id}),
+      do: "user-accounts:#{user_account_id}"
+
+    def event_type(_event), do: :"archidep/accounts/user-logged-in-with-switch-edu-id"
   end
 end

@@ -8,7 +8,7 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   alias Ecto.Multi
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Authentication
-  alias ArchiDep.Events.Registry
+  alias ArchiDep.Events.Store.Event
   alias ArchiDep.Events.Store.StoredEvent
 
   @doc """
@@ -69,7 +69,12 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
       when is_struct(changeset, Changeset) and is_integer(version) and version >= 1 do
     data = Changeset.get_field(changeset, :data)
 
-    StoredEvent.stream(changeset, Registry.event_stream(data), version, Registry.event_type(data))
+    StoredEvent.stream(
+      changeset,
+      Event.event_stream(data),
+      version,
+      data |> Event.event_type() |> Atom.to_string()
+    )
   end
 
   @doc """

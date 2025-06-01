@@ -34,6 +34,14 @@ defmodule ArchiDep do
     end
   end
 
+  @spec event :: Macro.t()
+  def event do
+    quote do
+      alias ArchiDep.Events.Store.Event
+      alias Ecto.UUID
+    end
+  end
+
   @spec policy :: Macro.t()
   def policy do
     quote do
@@ -78,7 +86,6 @@ defmodule ArchiDep do
       alias Ecto.Multi
       alias Ecto.UUID
       alias ArchiDep.Authentication
-      alias ArchiDep.Events.Registry
       alias ArchiDep.Events.Store.StoredEvent
       alias ArchiDep.Repo
     end

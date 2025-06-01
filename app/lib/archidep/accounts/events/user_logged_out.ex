@@ -3,6 +3,8 @@ defmodule ArchiDep.Accounts.Events.UserLoggedOut do
   A user logged out of one session.
   """
 
+  use ArchiDep, :event
+
   alias Ecto.UUID
   alias ArchiDep.Accounts.Schemas.UserSession
 
@@ -22,5 +24,14 @@ defmodule ArchiDep.Accounts.Events.UserLoggedOut do
   @spec new(UserSession.t()) :: __MODULE__.t()
   def new(%UserSession{id: session_id, user_account: %{id: user_account_id}}) do
     %__MODULE__{user_account_id: user_account_id, session_id: session_id}
+  end
+
+  defimpl Event do
+    alias ArchiDep.Accounts.Events.UserLoggedOut
+
+    def event_stream(%UserLoggedOut{user_account_id: user_account_id}),
+      do: "user-accounts:#{user_account_id}"
+
+    def event_type(_event), do: :"archidep/accounts/user-logged-out"
   end
 end
