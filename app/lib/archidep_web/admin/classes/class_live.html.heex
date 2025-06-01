@@ -50,10 +50,10 @@
   </dd>
 </dl>
 
-<div class="mt-4">
+<div class="mt-4 join">
   <button
     type="button"
-    class="btn btn-warning"
+    class="join-item btn btn-warning"
     phx-click={JS.dispatch("open-dialog", detail: %{dialog: EditClassDialogLive.id(@class)})}
   >
     <span class="flex items-center gap-x-2">
@@ -61,11 +61,29 @@
       <span>Edit</span>
     </span>
   </button>
+
+  <button
+    type="button"
+    class="join-item btn btn-error"
+    phx-click={JS.dispatch("open-dialog", detail: %{dialog: DeleteClassDialogLive.id(@class)})}
+  >
+    <span class="flex items-center gap-x-2">
+      <Heroicons.trash class="size-4" />
+      <span>Delete</span>
+    </span>
+  </button>
 </div>
 
 <.live_component
   module={EditClassDialogLive}
   id={EditClassDialogLive.id(@class)}
+  auth={@auth}
+  class={@class}
+/>
+
+<.live_component
+  module={DeleteClassDialogLive}
+  id={DeleteClassDialogLive.id(@class)}
   auth={@auth}
   class={@class}
 />

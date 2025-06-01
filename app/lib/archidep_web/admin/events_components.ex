@@ -63,6 +63,14 @@ defmodule ArchiDepWeb.Events.EventsComponents do
        when action in ["class-created", "student-created"],
        do: [action: action, class: "badge-success"]
 
+  defp event_action_and_class(["archidep", "students", action])
+       when action in ["class-updated"],
+       do: [action: action, class: "badge-warning"]
+
+  defp event_action_and_class(["archidep", "students", action])
+       when action in ["class-deleted"],
+       do: [action: action, class: "badge-error"]
+
   defp event_action_and_class(["archidep", _context, action]),
     do: [action: action, class: "badge-info"]
 

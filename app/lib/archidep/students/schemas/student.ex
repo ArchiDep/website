@@ -77,4 +77,8 @@ defmodule ArchiDep.Students.Schemas.Student do
     |> change(updated_at: now)
     |> optimistic_lock(:version)
   end
+
+  @spec delete_students_in_class(Class.t()) :: Query.t()
+  def delete_students_in_class(%Class{id: class_id}),
+    do: from(s in __MODULE__, where: s.class_id == ^class_id)
 end

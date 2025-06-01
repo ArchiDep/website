@@ -4,6 +4,7 @@ defmodule ArchiDep.Students.DeleteClass do
   alias ArchiDep.Students.Events.ClassDeleted
   alias ArchiDep.Students.Policy
   alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Students.Schemas.Student
 
   @spec delete_class(Authentication.t(), UUID.t()) ::
           :ok | {:error, :class_not_found}
@@ -15,6 +16,7 @@ defmodule ArchiDep.Students.DeleteClass do
       user = Authentication.fetch_user_account(auth)
 
       case Multi.new()
+           |> Multi.delete_all(:students, Student.delete_students_in_class(class))
            |> Multi.delete(:class, class)
            |> Multi.insert(:stored_event, fn %{class: class} ->
              ClassDeleted.new(class)
@@ -23,8 +25,8 @@ defmodule ArchiDep.Students.DeleteClass do
              |> initiated_by(user)
            end)
            |> Repo.transaction() do
-        {:ok, %{class: class}} ->
-          {:ok, class}
+        {:ok, _} ->
+          :ok
 
         {:error, :class, changeset, _} ->
           {:error, changeset}
