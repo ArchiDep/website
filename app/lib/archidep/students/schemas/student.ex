@@ -33,7 +33,7 @@ defmodule ArchiDep.Students.Schemas.Student do
     field(:updated_at, :utc_datetime_usec)
   end
 
-  @spec new(Types.student_data()) :: Changeset.t(t())
+  @spec new(Types.create_student_data()) :: Changeset.t(t())
   def new(data) do
     id = UUID.generate()
     now = DateTime.utc_now()

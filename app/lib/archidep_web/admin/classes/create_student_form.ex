@@ -24,8 +24,8 @@ defmodule ArchiDepWeb.Admin.Classes.CreateStudentForm do
     |> validate_required([:name, :email])
   end
 
-  @spec to_student_data(t(), Class.t()) :: Types.student_data()
-  def to_student_data(%__MODULE__{} = form, class) do
+  @spec to_create_student_data(t(), Class.t()) :: Types.create_student_data()
+  def to_create_student_data(%__MODULE__{} = form, class) do
     %{
       name: form.name,
       email: form.email,

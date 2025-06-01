@@ -6,13 +6,13 @@ defmodule ArchiDep.Students.CreateStudent do
   alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Types
 
-  @spec validate_student(Authentication.t(), Types.student_data()) :: Changeset.t()
+  @spec validate_student(Authentication.t(), Types.create_student_data()) :: Changeset.t()
   def validate_student(auth, data) do
     authorize!(auth, Policy, :students, :validate_student, nil)
     Student.new(data)
   end
 
-  @spec create_student(Authentication.t(), Types.student_data()) ::
+  @spec create_student(Authentication.t(), Types.create_student_data()) ::
           {:ok, Student.t()} | {:error, Changeset.t()}
   def create_student(auth, data) do
     authorize!(auth, Policy, :students, :create_student, nil)

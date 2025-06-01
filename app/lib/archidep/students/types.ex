@@ -8,7 +8,7 @@ defmodule ArchiDep.Students.Types do
           active: boolean()
         }
 
-  @type student_data :: %{
+  @type create_student_data :: %{
           name: String.t(),
           email: String.t(),
           class_id: UUID.t()

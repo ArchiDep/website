@@ -40,10 +40,10 @@ defmodule ArchiDep.Students do
           :ok | {:error, :class_not_found}
   defdelegate delete_class(auth, id), to: @implementation
 
-  @spec validate_student(Authentication.t(), Types.student_data()) :: Changeset.t()
+  @spec validate_student(Authentication.t(), Types.create_student_data()) :: Changeset.t()
   defdelegate validate_student(auth, data), to: @implementation
 
-  @spec create_student(Authentication.t(), Types.student_data()) ::
+  @spec create_student(Authentication.t(), Types.create_student_data()) ::
           {:ok, Student.t()} | {:error, Changeset.t()}
   defdelegate create_student(auth, data), to: @implementation
 
