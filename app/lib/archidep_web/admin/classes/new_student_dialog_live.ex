@@ -2,7 +2,6 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Components.FormComponents
-  alias __MODULE__
   alias ArchiDep.Students
   alias ArchiDepWeb.Admin.Classes.CreateStudentForm
 

@@ -62,6 +62,30 @@ defmodule ArchiDep.Students.Schemas.Class do
     end)
   end
 
+  @spec update(__MODULE__.t(), Types.class_data()) :: Changeset.t(t())
+  def update(class, data) do
+    id = class.id
+    now = DateTime.utc_now()
+
+    class
+    |> cast(data, [:name, :start_date, :end_date, :active])
+    |> change(updated_at: now)
+    |> optimistic_lock(:version)
+    |> validate_length(:name, max: 50)
+    |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
+    |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
+    |> validate_required([:name, :active])
+    |> unique_constraint(:name, name: :classes_unique_name_index)
+    |> validate_start_and_end_dates()
+    |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
+      name = get_field(changeset, :name)
+
+      from(c in __MODULE__,
+        where: c.id != ^id and fragment("LOWER(?)", c.name) == fragment("LOWER(?)", ^name)
+      )
+    end)
+  end
+
   @spec fetch_class(UUID.t()) :: {:ok, t()} | {:error, :class_not_found}
   def fetch_class(id) do
     case Repo.get(__MODULE__, id) do

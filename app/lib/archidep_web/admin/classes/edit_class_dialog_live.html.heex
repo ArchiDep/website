@@ -1,7 +1,7 @@
-<dialog id={id()} class="modal">
+<dialog id={id(@class)} class="modal">
   <div class="modal-box">
     <.form
-      id="new-class-form"
+      id="edit-class-form"
       for={@form}
       phx-change="validate"
       phx-submit="create"
@@ -9,7 +9,7 @@
     >
       <fieldset class="fieldset">
         <legend class="fieldset-legend">
-          <h3 class="text-lg font-bold">New Class</h3>
+          <h3 class="text-lg font-bold">Edit Class</h3>
         </legend>
 
         <label class="fieldset-label mt-2">Name</label>
@@ -55,7 +55,7 @@
         </label>
 
         <div class="mt-2 flex justify-end gap-x-2">
-          <button type="button" class="btn btn-secondary" phx-click={close()}>
+          <button type="button" class="btn btn-secondary" phx-click={close(@class)}>
             <span class="flex items-center gap-x-2">
               <Heroicons.x_mark class="size-4" />
               <span>Close</span>

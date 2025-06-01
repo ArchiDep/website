@@ -1,7 +1,8 @@
-defmodule ArchiDepWeb.Admin.Classes.CreateClassForm do
+defmodule ArchiDepWeb.Admin.Classes.ClassForm do
   use Ecto.Schema
 
   import Ecto.Changeset
+  alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Types
   alias Ecto.Changeset
 
@@ -20,9 +21,21 @@ defmodule ArchiDepWeb.Admin.Classes.CreateClassForm do
     field(:active, :boolean, default: true)
   end
 
-  @spec changeset(map) :: Changeset.t(t())
-  def changeset(params \\ %{}) when is_map(params) do
+  @spec create_changeset(map) :: Changeset.t(t())
+  def create_changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{}
+    |> cast(params, [:name, :start_date, :end_date, :active])
+    |> validate_required([:name, :active])
+  end
+
+  @spec update_changeset(Class.t(), map) :: Changeset.t(t())
+  def update_changeset(class, params \\ %{}) when is_struct(class, Class) and is_map(params) do
+    %__MODULE__{
+      name: class.name,
+      start_date: class.start_date,
+      end_date: class.end_date,
+      active: class.active
+    }
     |> cast(params, [:name, :start_date, :end_date, :active])
     |> validate_required([:name, :active])
   end

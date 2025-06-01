@@ -50,6 +50,26 @@
   </dd>
 </dl>
 
+<div class="mt-4">
+  <button
+    type="button"
+    class="btn btn-warning"
+    phx-click={JS.dispatch("open-dialog", detail: %{dialog: EditClassDialogLive.id(@class)})}
+  >
+    <span class="flex items-center gap-x-2">
+      <Heroicons.pencil class="size-4" />
+      <span>Edit</span>
+    </span>
+  </button>
+</div>
+
+<.live_component
+  module={EditClassDialogLive}
+  id={EditClassDialogLive.id(@class)}
+  auth={@auth}
+  class={@class}
+/>
+
 <div class="mt-4 mb-2 flex justify-between items-end">
   <h3 class="text-xl font-bold">Students</h3>
   <button

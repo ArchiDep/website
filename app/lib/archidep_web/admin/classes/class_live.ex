@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   import ArchiDepWeb.Helpers.DateFormatHelpers
   alias ArchiDep.Students
+  alias ArchiDepWeb.Admin.Classes.EditClassDialogLive
   alias ArchiDepWeb.Admin.Classes.NewStudentDialogLive
 
   @impl LiveView

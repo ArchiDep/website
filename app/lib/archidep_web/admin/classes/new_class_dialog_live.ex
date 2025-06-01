@@ -3,7 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
 
   import ArchiDepWeb.Components.FormComponents
   alias ArchiDep.Students
-  alias ArchiDepWeb.Admin.Classes.CreateClassForm
+  alias ArchiDepWeb.Admin.Classes.ClassForm
 
   @id "new-class-dialog"
   @html_id "##{@id}"
@@ -20,20 +20,20 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
 
   @impl LiveComponent
   def mount(socket),
-    do: socket |> assign(form: to_form(CreateClassForm.changeset(%{}), as: :class)) |> ok()
+    do: socket |> assign(form: to_form(ClassForm.create_changeset(%{}), as: :class)) |> ok()
 
   @impl LiveComponent
 
   def handle_event("closed", _params, socket),
     do:
       socket
-      |> assign(form: to_form(CreateClassForm.changeset(%{}), as: :class))
+      |> assign(form: to_form(ClassForm.create_changeset(%{}), as: :class))
       |> noreply()
 
   def handle_event("validate", %{"class" => params}, socket) do
-    with {:ok, form_data} <- Changeset.apply_action(CreateClassForm.changeset(params), :validate) do
+    with {:ok, form_data} <- Changeset.apply_action(ClassForm.create_changeset(params), :validate) do
       changeset =
-        Students.validate_class(socket.assigns.auth, CreateClassForm.to_class_data(form_data))
+        Students.validate_class(socket.assigns.auth, ClassForm.to_class_data(form_data))
 
       {:noreply, assign(socket, form: to_form(changeset, as: :class, action: :validate))}
     else
@@ -43,9 +43,10 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
   end
 
   def handle_event("create", %{"class" => params}, socket) do
-    with {:ok, form_data} <- Changeset.apply_action(CreateClassForm.changeset(params), :validate),
+    with {:ok, form_data} <-
+           Changeset.apply_action(ClassForm.create_changeset(params), :validate),
          {:ok, _class} <-
-           Students.create_class(socket.assigns.auth, CreateClassForm.to_class_data(form_data)) do
+           Students.create_class(socket.assigns.auth, ClassForm.to_class_data(form_data)) do
       {:noreply,
        socket
        |> put_flash(:info, "Class created")

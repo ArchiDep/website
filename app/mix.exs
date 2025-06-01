@@ -12,6 +12,8 @@ defmodule ArchiDep.MixProject do
       deps: project_dependencies(),
       dialyzer: [plt_add_apps: [:ex_unit, :mix]],
       preferred_cli_env: [
+        check: :test,
+        test: :test,
         "test.watch": :test
       ]
     ]
@@ -69,6 +71,19 @@ defmodule ArchiDep.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
+      "assets.setup": ["esbuild.install --if-missing"],
+      "assets.build": ["esbuild archidep"],
+      "assets.deploy": [
+        "esbuild archidep --minify",
+        "phx.digest"
+      ],
+      check: [
+        "test",
+        "format --check-formatted",
+        "dialyzer"
+      ],
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
       setup: [
         "deps.get",
         "ecto.setup",
@@ -76,15 +91,7 @@ defmodule ArchiDep.MixProject do
         "assets.setup",
         "assets.build"
       ],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.setup": ["esbuild.install --if-missing"],
-      "assets.build": ["esbuild archidep"],
-      "assets.deploy": [
-        "esbuild archidep --minify",
-        "phx.digest"
-      ]
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end
 end
