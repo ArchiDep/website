@@ -12,7 +12,7 @@ defmodule ArchiDepWeb.Helpers.DialogHelpers do
 
   @spec validate_dialog_form(
           atom,
-          (map -> Changeset.t()),
+          Changeset.t(),
           (Changeset.t() -> {:ok, Changeset.t()} | {:error, term}),
           Socket.t()
         ) :: {:noreply, Socket.t()}
