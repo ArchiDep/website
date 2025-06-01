@@ -6,7 +6,8 @@
       title="New Class"
       on_submit="create"
       on_close={close()}
-      target={@myself} />
+      target={@myself}
+    />
   </div>
   <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
     <button type="submit">Close</button>
