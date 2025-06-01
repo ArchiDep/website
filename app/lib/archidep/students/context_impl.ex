@@ -5,6 +5,7 @@ defmodule ArchiDep.Students.ContextImpl do
   alias ArchiDep.Students.CreateStudent
   alias ArchiDep.Students.DeleteClass
   alias ArchiDep.Students.FetchClass
+  alias ArchiDep.Students.FetchStudentInClass
   alias ArchiDep.Students.ListClasses
   alias ArchiDep.Students.ListStudents
   alias ArchiDep.Students.Schemas.Class
@@ -57,4 +58,8 @@ defmodule ArchiDep.Students.ContextImpl do
 
   @spec list_active_students_for_email(String.t()) :: list(Student.t())
   defdelegate list_active_students_for_email(email), to: ListStudents
+
+  @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
+          {:ok, Student.t()} | {:error, :student_not_found}
+  defdelegate fetch_student_in_class(auth, class_id, id), to: FetchStudentInClass
 end

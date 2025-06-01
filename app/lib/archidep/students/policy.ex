@@ -84,5 +84,14 @@ defmodule ArchiDep.Students.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Root users can fetch a student in class.
+  def authorize(
+        :students,
+        :fetch_student_in_class,
+        %Authentication{principal: %UserAccount{roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   def authorize(_action, _principal, _params), do: false
 end

@@ -78,6 +78,26 @@ defmodule ArchiDep.Students.Schemas.Student do
     |> optimistic_lock(:version)
   end
 
+  @spec fetch_student_in_class(UUID.t(), UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
+  def fetch_student_in_class(class_id, id) do
+    case Repo.one(
+           from(s in __MODULE__,
+             where: s.class_id == ^class_id and s.id == ^id,
+             join: c in Class,
+             on: s.class_id == c.id,
+             left_join: ua in UserAccount,
+             on: s.user_account_id == ua.id,
+             preload: [:class, :user_account]
+           )
+         ) do
+      nil ->
+        {:error, :student_not_found}
+
+      student ->
+        {:ok, student}
+    end
+  end
+
   @spec delete_students_in_class(Class.t()) :: Query.t()
   def delete_students_in_class(%Class{id: class_id}),
     do: from(s in __MODULE__, where: s.class_id == ^class_id)

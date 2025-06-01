@@ -1,0 +1,59 @@
+<div class="breadcrumbs text-xs">
+  <ul>
+    <li class="text-error">
+      <span class="flex items-center gap-1 !cursor-default !no-underline">
+        <Heroicons.fire outline class="size-4" />
+        <span>Admin</span>
+      </span>
+    </li>
+    <li>
+      <.link class="flex items-center gap-1" navigate={~p"/admin/classes"}>
+        <Heroicons.academic_cap solid class="size-4" />
+        <span>Classes</span>
+      </.link>
+    </li>
+    <li>
+      <.link class="flex items-center gap-1" navigate={~p"/admin/classes/#{@class.id}"}>
+        <Heroicons.academic_cap solid class="size-4" />
+        <span>{@class.name}</span>
+      </.link>
+    </li>
+    <li>
+      <span class="flex items-center gap-1 !cursor-default !no-underline">
+        <Heroicons.user solid class="size-4" />
+        <span>{@student.name}</span>
+      </span>
+    </li>
+  </ul>
+</div>
+
+<h2 class="text-2xl font-bold my-2 flex items-center gap-x-2">
+  <Heroicons.user solid class="size-6" />
+  {@student.name}
+</h2>
+
+<dl class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4">
+  <dt class="font-bold">Name</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    {@student.name}
+  </dd>
+  <dt class="font-bold">Email</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    {@student.email}
+  </dd>
+  <dt class="font-bold">Class</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    {@student.class.name}
+  </dd>
+  <dt class="font-bold">User account</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    <%= if @student.user_account do %>
+      <span class="flex items-center gap-x-2">
+        <Heroicons.user solid class="size-5" />
+        {@student.user_account.username}
+      </span>
+    <% else %>
+      <.no_data text="Not registered yet" />
+    <% end %>
+  </dd>
+</dl>

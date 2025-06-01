@@ -116,7 +116,12 @@
         <.no_data text="No students in this class" />
       </td>
     </tr>
-    <tr :for={student <- @students} id={"student-#{student.id}"} class="even:bg-base-200">
+    <tr
+      :for={student <- @students}
+      id={"student-#{student.id}"}
+      class="hover:bg-base-300 even:bg-base-200 cursor-pointer"
+      phx-click={JS.navigate(~p"/admin/classes/#{@class.id}/students/#{student.id}")}
+    >
       <td>
         {student.name}
       </td>
