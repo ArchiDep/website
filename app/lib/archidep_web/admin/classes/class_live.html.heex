@@ -53,6 +53,16 @@
 <div class="mt-4 join">
   <button
     type="button"
+    class="join-item btn btn-success"
+    phx-click={JS.dispatch("open-dialog", detail: %{dialog: ImportStudentsDialogLive.id()})}
+  >
+    <span class="flex items-center gap-x-2">
+      <Heroicons.document_arrow_up class="size-4" />
+      <span>Import</span>
+    </span>
+  </button>
+  <button
+    type="button"
     class="join-item btn btn-warning"
     phx-click={JS.dispatch("open-dialog", detail: %{dialog: EditClassDialogLive.id(@class)})}
   >
@@ -73,6 +83,13 @@
     </span>
   </button>
 </div>
+
+<.live_component
+  module={ImportStudentsDialogLive}
+  id={ImportStudentsDialogLive.id()}
+  auth={@auth}
+  class={@class}
+/>
 
 <.live_component
   module={EditClassDialogLive}
