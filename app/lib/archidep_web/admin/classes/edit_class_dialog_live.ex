@@ -1,7 +1,8 @@
 defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
   use ArchiDepWeb, :live_component
 
-  import ArchiDepWeb.Components.FormComponents
+  import ArchiDepWeb.Admin.Classes.ClassFormComponent
+  import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Students
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDepWeb.Admin.Classes.ClassForm
@@ -11,15 +12,8 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
   @spec id(Class.t()) :: String.t()
   def id(%Class{id: id}), do: "#{@base_id}-#{id}"
 
-  @spec html_id(Class.t()) :: String.t()
-  def html_id(class), do: "##{id(class)}"
-
   @spec close(Class.t()) :: js
-  def close(class),
-    do:
-      %JS{}
-      |> JS.push("closed", target: html_id(class))
-      |> JS.dispatch("close-dialog", detail: %{dialog: id(class)})
+  def close(class), do: class |> id() |> close_dialog()
 
   @impl LiveComponent
   def update(assigns, socket),
@@ -44,25 +38,19 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
     auth = socket.assigns.auth
     class = socket.assigns.class
 
-    with {:ok, form_data} <-
-           Changeset.apply_action(
-             ClassForm.update_changeset(class, params),
-             :validate
-           ),
-         {:ok, changeset} <-
-           Students.validate_existing_class(
-             auth,
-             class.id,
-             ClassForm.to_class_data(form_data)
-           ) do
-      {:noreply, assign(socket, form: to_form(changeset, as: :class, action: :validate))}
-    else
-      {:error, %Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: :class))}
-    end
+    validate_dialog_form(
+      :class,
+      ClassForm.update_changeset(class, params),
+      &Students.validate_existing_class(
+        auth,
+        class.id,
+        ClassForm.to_class_data(&1)
+      ),
+      socket
+    )
   end
 
-  def handle_event("create", %{"class" => params}, socket) do
+  def handle_event("update", %{"class" => params}, socket) do
     auth = socket.assigns.auth
     class = socket.assigns.class
 

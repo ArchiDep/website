@@ -1,22 +1,18 @@
 defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
   use ArchiDepWeb, :live_component
 
-  import ArchiDepWeb.Components.FormComponents
+  import ArchiDepWeb.Admin.Classes.ClassFormComponent
+  import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Students
   alias ArchiDepWeb.Admin.Classes.ClassForm
 
   @id "new-class-dialog"
-  @html_id "##{@id}"
 
   @spec id() :: String.t()
   def id, do: @id
 
   @spec close() :: js
-  def close(),
-    do:
-      %JS{}
-      |> JS.push("closed", target: @html_id)
-      |> JS.dispatch("close-dialog", detail: %{dialog: @id})
+  def close(), do: close_dialog(@id)
 
   @impl LiveComponent
   def mount(socket),
@@ -31,15 +27,14 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
       |> noreply()
 
   def handle_event("validate", %{"class" => params}, socket) do
-    with {:ok, form_data} <- Changeset.apply_action(ClassForm.create_changeset(params), :validate) do
-      changeset =
-        Students.validate_class(socket.assigns.auth, ClassForm.to_class_data(form_data))
+    auth = socket.assigns.auth
 
-      {:noreply, assign(socket, form: to_form(changeset, as: :class, action: :validate))}
-    else
-      {:error, %Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: :class))}
-    end
+    validate_dialog_form(
+      :class,
+      ClassForm.create_changeset(params),
+      fn data -> auth |> Students.validate_class(ClassForm.to_class_data(data)) |> ok() end,
+      socket
+    )
   end
 
   def handle_event("create", %{"class" => params}, socket) do

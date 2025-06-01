@@ -47,12 +47,7 @@ defmodule ArchiDep.Students.Schemas.Class do
       created_at: now,
       updated_at: now
     )
-    |> validate_length(:name, max: 50)
-    |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
-    |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
-    |> validate_required([:name, :active])
-    |> unique_constraint(:name, name: :classes_unique_name_index)
-    |> validate_start_and_end_dates()
+    |> validate()
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
 
@@ -71,12 +66,7 @@ defmodule ArchiDep.Students.Schemas.Class do
     |> cast(data, [:name, :start_date, :end_date, :active])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
-    |> validate_length(:name, max: 50)
-    |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
-    |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
-    |> validate_required([:name, :active])
-    |> unique_constraint(:name, name: :classes_unique_name_index)
-    |> validate_start_and_end_dates()
+    |> validate()
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
 
@@ -95,6 +85,16 @@ defmodule ArchiDep.Students.Schemas.Class do
       class ->
         {:ok, class}
     end
+  end
+
+  defp validate(changeset) do
+    changeset
+    |> validate_length(:name, max: 50)
+    |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
+    |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
+    |> validate_required([:name, :active])
+    |> unique_constraint(:name, name: :classes_unique_name_index)
+    |> validate_start_and_end_dates()
   end
 
   defp validate_start_and_end_dates(changeset) do
