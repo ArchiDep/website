@@ -21,6 +21,9 @@ defmodule ArchiDep.Students.Behaviour do
   @callback update_class(Authentication.t(), UUID.t(), Types.class_data()) ::
               {:ok, Class.t()} | {:error, Changeset.t()} | {:error, :class_not_found}
 
+  @callback delete_class(Authentication.t(), UUID.t()) ::
+              :ok | {:error, :class_not_found}
+
   @callback validate_student(Authentication.t(), Types.student_data()) :: Changeset.t()
 
   @callback create_student(Authentication.t(), Types.student_data()) ::

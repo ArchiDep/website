@@ -16,7 +16,7 @@ defmodule ArchiDep.Students.UpdateClass do
   end
 
   @spec update_class(Authentication.t(), UUID.t(), Types.class_data()) ::
-          {:ok, Class.t()} | {:error, Changeset.t()}
+          {:ok, Class.t()} | {:error, Changeset.t()} | {:error, :class_not_found}
   def update_class(auth, id, data) do
     with {:ok, class} <- Class.fetch_class(id) do
       authorize!(auth, Policy, :students, :update_class, class)
