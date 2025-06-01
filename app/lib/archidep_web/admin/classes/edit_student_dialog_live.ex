@@ -1,7 +1,7 @@
 defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
   use ArchiDepWeb, :live_component
 
-  import ArchiDepWeb.Components.FormComponents
+  import ArchiDepWeb.Admin.Classes.StudentFormComponent
   import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Students
   alias ArchiDep.Students.Schemas.Student
