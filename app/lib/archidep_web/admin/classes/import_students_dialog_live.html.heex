@@ -1,6 +1,47 @@
 <dialog id={id()} class="modal">
-  <div class="modal-box">
+  <div class={["modal-box", (if @state == :uploaded, do: "w-11/12 max-w-5xl")]}>
     <h3 class="text-lg font-bold">Import Students</h3>
+
+    <form :if={@state != :uploaded} id="upload-form" phx-change="validate" phx-submit="save" phx-target={@myself}>
+      <fieldset class="fieldset" phx-drop-target={@uploads.students.ref}>
+        <legend class="fieldset-legend mt-2">Pick a file</legend>
+        <.live_file_input class="file-input" upload={@uploads.students} />
+        <label class="label">Max size 2MB</label>
+      </fieldset>
+
+      <button
+        type="submit"
+        class="mt-4 btn btn-primary"
+      >
+        <span class="flex items-center gap-x-2">
+          <Heroicons.document_arrow_up class="size-4" />
+          <span>Import</span>
+        </span>
+      </button>
+    </form>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <%= for column <- @columns do %>
+            <th>
+              {column}
+            </th>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for student <- @students do %>
+          <tr>
+            <%= for column <- @columns do %>
+              <td>
+                {Map.get(student, column)}
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
   <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
     <button type="submit">Close</button>

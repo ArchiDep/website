@@ -35,6 +35,7 @@ defmodule ArchiDep.MixProject do
   defp project_dependencies do
     [
       {:bandit, "~> 1.5"},
+      {:csv, "~> 3.2"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dns_cluster, "~> 0.2.0"},
       {:ecto_sql, "~> 3.10"},
