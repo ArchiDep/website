@@ -15,13 +15,42 @@
       >
         <span class="flex items-center gap-x-2">
           <Heroicons.document_arrow_up class="size-4" />
-          <span>Import</span>
+          <span>Upload</span>
         </span>
       </button>
     </form>
 
-    <div :if={@state == :uploaded} class="overflow-x-auto">
-      <table class="table">
+    <div :if={@state == :uploaded}>
+      <form phx-change="validate" phx-target={@myself}>
+        <fieldset class="mt-4 fieldset">
+          <div class="flex flex-wrap items-end gap-2">
+            <div>
+              <label for={"#{id()}-name-column"} class="fieldset-label">Name column</label>
+              <select id={"#{id()}-name-column"} class="select">
+                <option :for={col <- @columns} value={col} selected={col == @name_column}>
+                  {col}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label for={"#{id()}-email-column"} class="fieldset-label">Email column</label>
+              <select id={"#{id()}-email-column"} class="select">
+                <option :for={col <- @columns} value={col} selected={col == @email_column}>
+                  {col}
+                </option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <span class="flex items-center gap-x-2">
+                <Heroicons.plus class="size-4" />
+                <span>Import</span>
+              </span>
+            </button>
+          </div>
+        </fieldset>
+      </form>
+
+      <table class="mt-4 table">
         <thead>
           <tr>
             <%= for column <- @columns do %>
@@ -29,6 +58,7 @@
                 {column}
               </th>
             <% end %>
+            <th>State</th>
           </tr>
         </thead>
         <tbody>
@@ -39,6 +69,9 @@
                   {Map.get(student, column)}
                 </td>
               <% end %>
+              <td>
+                <div class="badge badge-success">new</div>
+              </td>
             </tr>
           <% end %>
         </tbody>

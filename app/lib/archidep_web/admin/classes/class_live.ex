@@ -17,7 +17,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
         class: class,
         students: Students.list_students(socket.assigns.auth, class)
       )
-      |> allow_upload(:students, accept: ~w(.csv), max_entries: 1)
       |> ok()
     else
       {:error, :class_not_found} ->
