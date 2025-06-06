@@ -49,6 +49,7 @@ defmodule ArchiDep.Students.Schemas.Student do
     |> validate_length(:name, max: 100)
     |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
     |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
+    |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
     |> validate_required([:name, :email, :class_id])
     |> unique_constraint(:email, name: :students_unique_email_index)
     |> unsafe_validate_unique_query(:email, Repo, fn changeset ->
@@ -122,6 +123,7 @@ defmodule ArchiDep.Students.Schemas.Student do
     |> validate_length(:name, max: 100)
     |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
     |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
+    |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
     |> validate_required([:name, :email, :class_id])
     |> unique_constraint(:email, name: :students_unique_email_index)
     |> unsafe_validate_unique_query(:email, Repo, fn changeset ->

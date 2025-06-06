@@ -2,7 +2,9 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Helpers.DialogHelpers
+  import ArchiDepWeb.Components.FormComponents
   alias ArchiDep.Students
+  alias ArchiDepWeb.Admin.Classes.ImportStudentsForm
 
   @id "import-students-dialog"
 
@@ -18,11 +20,9 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     |> assign(
       state: :waiting_for_upload,
       students: [],
-      columns: [],
-      name_column: nil,
-      email_column: nil
+      columns: []
     )
-    |> allow_upload(:students, accept: ~w(.csv), max_entries: 1)
+    |> allow_upload(:students, accept: ~w(.csv), max_entries: 1, max_file_size: 100_000)
     |> ok()
   end
 
@@ -38,6 +38,23 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
 
   def handle_event("closed", _params, socket) do
     {:noreply, socket}
+  end
+
+  def handle_event(
+        "validate",
+        %{"import_students" => params},
+        %Socket{assigns: %{state: :uploaded, students: students}} = socket
+      ) do
+    orig = ImportStudentsForm.changeset(params, students)
+
+    with {:ok, _form_data} <-
+           Changeset.apply_action(orig, :validate) do
+      {:noreply, assign(socket, form: to_form(orig, action: :validate, as: :import_students))}
+    else
+      {:error, %Changeset{} = changeset} ->
+        {:noreply,
+         assign(socket, form: to_form(changeset, action: :validate, as: :import_students))}
+    end
   end
 
   def handle_event("validate", _params, socket) do
@@ -74,8 +91,18 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
           state: :uploaded,
           students: students,
           columns: columns,
-          email_column: email_column_candidate,
-          name_column: name_column_candidate
+          form:
+            to_form(
+              ImportStudentsForm.changeset(
+                %{
+                  name_column: name_column_candidate,
+                  email_column: email_column_candidate
+                },
+                students
+              ),
+              action: :validate,
+              as: :import_students
+            )
         )
     end
     |> noreply()

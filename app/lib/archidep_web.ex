@@ -85,6 +85,7 @@ defmodule ArchiDepWeb do
       alias Ecto.Changeset
       alias Phoenix.LiveComponent
       alias Phoenix.LiveView.JS
+      alias Phoenix.LiveView.Socket
 
       @type js :: %JS{}
 

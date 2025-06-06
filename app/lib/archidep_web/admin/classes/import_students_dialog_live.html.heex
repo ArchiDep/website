@@ -6,7 +6,7 @@
       <fieldset class="fieldset" phx-drop-target={@uploads.students.ref}>
         <legend class="fieldset-legend mt-2">Pick a file</legend>
         <.live_file_input class="file-input" upload={@uploads.students} />
-        <label class="label">Max size 2MB</label>
+        <label class="label">Max size 100KB</label>
       </fieldset>
 
       <button
@@ -21,21 +21,21 @@
     </form>
 
     <div :if={@state == :uploaded}>
-      <form phx-change="validate" phx-target={@myself}>
+      <.form id="import-students" for={@form} phx-change="validate" phx-target={@myself}>
         <fieldset class="mt-4 fieldset">
-          <div class="flex flex-wrap items-end gap-2">
+          <div class="grid grid-cols-3 items-end gap-2">
             <div>
-              <label for={"#{id()}-name-column"} class="fieldset-label">Name column</label>
-              <select id={"#{id()}-name-column"} class="select">
-                <option :for={col <- @columns} value={col} selected={col == @name_column}>
+              <label for={@form[:name_column].id} class="fieldset-label">Name column</label>
+              <select id={@form[:name_column].id} class="select" name={@form[:name_column].name} value={@form[:name_column].value}>
+                <option :for={col <- @columns} value={col} selected={@form[:name_column].value == col}>
                   {col}
                 </option>
               </select>
             </div>
             <div>
-              <label for={"#{id()}-email-column"} class="fieldset-label">Email column</label>
-              <select id={"#{id()}-email-column"} class="select">
-                <option :for={col <- @columns} value={col} selected={col == @email_column}>
+              <label for={@form[:email_column].id} class="fieldset-label">Email column</label>
+              <select id={@form[:email_column].id} class="select" name={@form[:email_column].name} value={@form[:email_column].value}>
+                <option :for={col <- @columns} value={col} selected={@form[:email_column].value == col}>
                   {col}
                 </option>
               </select>
@@ -47,8 +47,18 @@
               </span>
             </button>
           </div>
+          <div class="grid grid-cols-3 items-end gap-2">
+            <div>
+              <.errors_for field={@form[:name_column]} />
+            </div>
+            <div>
+              <.errors_for field={@form[:email_column]} />
+            </div>
+            <div>
+            </div>
+          </div>
         </fieldset>
-      </form>
+      </.form>
 
       <table class="mt-4 table">
         <thead>
