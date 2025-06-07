@@ -32,7 +32,8 @@ config :archidep, ArchiDepWeb.Endpoint,
     formats: [html: ArchiDepWeb.ErrorHTML],
     layout: false
   ],
-  pubsub_server: ArchiDep.PubSub
+  pubsub_server: ArchiDep.PubSub,
+  uploads_directory: Path.expand("../priv/uploads", __DIR__)
 
 # Configures the mailer
 #

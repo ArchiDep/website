@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
   use Ecto.Schema
 
   import ArchiDep.Helpers.DataHelpers, only: [looks_like_an_email?: 1]
+  import ArchiDepWeb.Helpers.I18nHelpers, only: [pluralize: 2]
   import Ecto.Changeset
   alias Ecto.Changeset
 
@@ -23,6 +24,24 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
     %__MODULE__{}
     |> cast(params, [:name_column, :email_column])
     |> validate_required([:name_column, :email_column])
+    |> validate_change(:name_column, fn :name_column, name_column ->
+      unique_student_names = students |> Enum.map(& &1[name_column]) |> Enum.uniq()
+
+      cond do
+        Enum.all?(students, &looks_like_an_email?(&1[name_column])) ->
+          [name_column: "this column looks like it contains emails, not names"]
+
+        (students |> Enum.map(& &1[name_column]) |> Enum.uniq() |> length()) / length(students) <
+            0.9 ->
+          [
+            name_column:
+              "only #{length(unique_student_names)} unique #{pluralize(length(unique_student_names), "name")} out of #{length(students)} in this column"
+          ]
+
+        true ->
+          []
+      end
+    end)
     |> validate_change(:email_column, fn :email_column, email_column ->
       cond do
         !Enum.any?(students, &looks_like_an_email?(&1[email_column])) ->

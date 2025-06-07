@@ -40,10 +40,14 @@
                 </option>
               </select>
             </div>
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary" disabled={!Enum.empty?(@form.errors)}>
               <span class="flex items-center gap-x-2">
                 <Heroicons.plus class="size-4" />
-                <span>Import</span>
+                <%= if @new_students != 0 do %>
+                  <span>Import {@new_students} new {pluralize(@new_students, "student")}</span>
+                <% else %>
+                  <span>Import</span>
+                <% end %>
               </span>
             </button>
           </div>
@@ -75,12 +79,12 @@
           <%= for student <- @students do %>
             <tr>
               <%= for column <- @columns do %>
-                <td>
-                  {Map.get(student, column)}
+                <td class={cell_class(@form, column, Map.get(student, column))}>
+                  {Map.get(student, column, "-")}
                 </td>
               <% end %>
               <td>
-                <div class="badge badge-success">new</div>
+                {state(@form, student, @existing_students)}
               </td>
             </tr>
           <% end %>
