@@ -1,6 +1,7 @@
 defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
   use Ecto.Schema
 
+  import ArchiDep.Helpers.DataHelpers, only: [looks_like_an_email?: 1]
   import Ecto.Changeset
   alias Ecto.Changeset
 
@@ -24,9 +25,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
     |> validate_required([:name_column, :email_column])
     |> validate_change(:email_column, fn :email_column, email_column ->
       cond do
-        !Enum.any?(students, fn student ->
-          String.match?(student[email_column], ~r/\A.+@.+\..+\z/)
-        end) ->
+        !Enum.any?(students, &looks_like_an_email?(&1[email_column])) ->
           [email_column: "no email found in this column"]
 
         students |> Enum.map(fn student -> student[email_column] end) |> Enum.uniq() |> length() !=
