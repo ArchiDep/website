@@ -29,6 +29,9 @@ defmodule ArchiDep.Students.Behaviour do
   @callback create_student(Authentication.t(), Types.create_student_data()) ::
               {:ok, Student.t()} | {:error, Changeset.t()}
 
+  @callback import_students(Authentication.t(), UUID.t(), Types.import_students_data()) ::
+              {:ok, list(Student.t())} | {:error, Changeset.t()} | {:error, :class_not_found}
+
   @callback list_students(Authentication.t(), Class.t()) :: list(Student.t())
 
   @callback list_active_students_for_email(String.t()) :: list(Student.t())

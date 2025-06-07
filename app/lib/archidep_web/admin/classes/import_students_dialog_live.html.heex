@@ -2,7 +2,7 @@
   <div class={["modal-box max-h-11/12", (if @state == :uploaded, do: "w-11/12 max-w-5xl")]}>
     <h3 class="text-lg font-bold">Import Students</h3>
 
-    <form :if={@state != :uploaded} id="upload-form" phx-change="validate" phx-submit="save" phx-target={@myself}>
+    <form :if={@state != :uploaded} id="upload-form" phx-change="validate" phx-submit="upload" phx-target={@myself}>
       <fieldset class="fieldset" phx-drop-target={@uploads.students.ref}>
         <legend class="fieldset-legend mt-2">Pick a file</legend>
         <.live_file_input class="file-input" upload={@uploads.students} />
@@ -21,7 +21,7 @@
     </form>
 
     <div :if={@state == :uploaded}>
-      <.form id="import-students" for={@form} phx-change="validate" phx-target={@myself}>
+      <.form id="import-students" for={@form} phx-change="validate" phx-submit="import" phx-target={@myself}>
         <fieldset class="mt-4 fieldset">
           <div class="grid grid-cols-3 items-end gap-2">
             <div>

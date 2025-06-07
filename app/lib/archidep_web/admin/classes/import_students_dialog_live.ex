@@ -75,22 +75,80 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   @impl LiveComponent
   def mount(socket) do
     socket
-    |> assign(
-      state: :waiting_for_upload,
-      students: [],
-      columns: [],
-      new_students: 0
-    )
     |> allow_upload(:students, accept: ~w(.csv), max_entries: 1, max_file_size: 100_000)
     |> ok()
   end
 
   @impl LiveComponent
   def update(assigns, socket) do
-    socket
-    |> assign(assigns)
-    |> assign(existing_students: Students.list_students(assigns.auth, assigns.class))
-    |> ok()
+    file = uploaded_students_file(assigns.class)
+
+    with true <- File.exists?(file),
+         {:ok, %{columns: columns, students: students}} <- parse_students_csv(file) do
+      email_column_candidate =
+        columns
+        |> Enum.map(fn col ->
+          {col,
+           Enum.count(students, fn student ->
+             student |> Map.get(col, "") |> String.contains?("@")
+           end)}
+        end)
+        |> Enum.sort_by(fn {_col, count} -> -count end)
+        |> Enum.map(&elem(&1, 0))
+        |> Enum.at(0)
+
+      name_column_candidate =
+        Enum.at(columns, if(email_column_candidate == List.first(columns), do: 1, else: 0))
+
+      import_changeset =
+        ImportStudentsForm.changeset(
+          %{
+            name_column: name_column_candidate,
+            email_column: email_column_candidate
+          },
+          students
+        )
+
+      form =
+        to_form(
+          import_changeset,
+          action: :validate,
+          as: :import_students
+        )
+
+      existing_students = Students.list_students(assigns.auth, assigns.class)
+
+      socket
+      |> assign(assigns)
+      |> assign(
+        state: :uploaded,
+        columns: columns,
+        students: students,
+        new_students:
+          if(import_changeset.valid?,
+            do:
+              students
+              |> Enum.filter(&(!student_exists?(form, &1, existing_students)))
+              |> length(),
+            else: 0
+          ),
+        form: form,
+        existing_students: existing_students
+      )
+      |> ok()
+    else
+      _ ->
+        socket
+        |> assign(assigns)
+        |> assign(
+          state: :waiting_for_upload,
+          columns: [],
+          students: [],
+          new_students: 0,
+          existing_students: Students.list_students(assigns.auth, assigns.class)
+        )
+        |> ok()
+    end
   end
 
   @impl LiveComponent
@@ -142,7 +200,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   end
 
   def handle_event(
-        "save",
+        "upload",
         _params,
         %Socket{assigns: %{existing_students: existing_students, state: state}} = socket
       )
@@ -217,12 +275,38 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   end
 
   def handle_event(
-        "save",
+        "import",
         _params,
-        %Socket{assigns: %{form: form, state: :uploaded, students: _students}} = socket
+        %Socket{
+          assigns: %{
+            auth: auth,
+            class: %Class{id: class_id},
+            state: :uploaded,
+            form: form,
+            students: students
+          }
+        } = socket
       ) do
     if Enum.empty?(form.errors) do
-      noreply(socket)
+      name_column = form[:name_column].value
+      email_column = form[:email_column].value
+
+      students_data =
+        Enum.map(students, fn student ->
+          %{
+            name: student[name_column],
+            email: student[email_column]
+          }
+        end)
+
+      with {:ok, _students} <- Students.import_students(auth, class_id, students_data) do
+        socket
+        |> push_event("close-dialog", %{dialog: @id})
+        |> noreply()
+      else
+        _ ->
+          noreply(socket)
+      end
     else
       noreply(socket)
     end

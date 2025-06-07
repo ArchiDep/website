@@ -47,6 +47,10 @@ defmodule ArchiDep.Students do
           {:ok, Student.t()} | {:error, Changeset.t()}
   defdelegate create_student(auth, data), to: @implementation
 
+  @spec import_students(Authentication.t(), UUID.t(), Types.import_students_data()) ::
+          {:ok, list(Student.t())} | {:error, Changeset.t()} | {:error, :class_not_found}
+  defdelegate import_students(auth, class_id, data), to: @implementation
+
   @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
   defdelegate list_students(auth, class), to: @implementation
 

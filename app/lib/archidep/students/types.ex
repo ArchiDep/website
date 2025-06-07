@@ -18,4 +18,6 @@ defmodule ArchiDep.Students.Types do
           name: String.t(),
           email: String.t()
         }
+
+  @type import_students_data :: list(existing_student_data)
 end

@@ -61,10 +61,10 @@ window.addEventListener("open-dialog", event => {
   dialog.showModal();
 });
 
-window.addEventListener("close-dialog", event => {
+window.addEventListener("phx:close-dialog", event => {
   const dialogId = event.detail?.dialog;
   if (!dialogId) {
-    console.warn(`No dialog ID provided in "close-dialog" event detail`);
+    console.warn(`No dialog ID provided in "phx:close-dialog" event detail`);
     return;
   }
 

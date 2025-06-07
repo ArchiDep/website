@@ -7,6 +7,7 @@ defmodule ArchiDep.Students.ContextImpl do
   alias ArchiDep.Students.DeleteStudent
   alias ArchiDep.Students.FetchClass
   alias ArchiDep.Students.FetchStudentInClass
+  alias ArchiDep.Students.ImportStudents
   alias ArchiDep.Students.ListClasses
   alias ArchiDep.Students.ListStudents
   alias ArchiDep.Students.Schemas.Class
@@ -54,6 +55,10 @@ defmodule ArchiDep.Students.ContextImpl do
   @spec create_student(Authentication.t(), Types.create_student_data()) ::
           {:ok, Student.t()} | {:error, Changeset.t()}
   defdelegate create_student(auth, data), to: CreateStudent
+
+  @spec import_students(Authentication.t(), UUID.t(), Types.import_students_data()) ::
+          {:ok, list(Student.t())} | {:error, Changeset.t()} | {:error, :class_not_found}
+  defdelegate import_students(auth, id, data), to: ImportStudents
 
   @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
   defdelegate list_students(auth, class), to: ListStudents

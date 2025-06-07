@@ -84,6 +84,15 @@ defmodule ArchiDep.Students.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Root users can import students.
+  def authorize(
+        :students,
+        :import_students,
+        %Authentication{principal: %UserAccount{roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   # Root users can list students.
   def authorize(
         :students,
