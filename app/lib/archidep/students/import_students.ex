@@ -17,9 +17,12 @@ defmodule ArchiDep.Students.ImportStudents do
 
       with {:ok, import_list} <- Changeset.apply_action(changeset, :validate) do
         case Multi.new()
-             |> Multi.insert_all(:students, Student, import_list.students,
+             |> Multi.insert_all(
+               :students,
+               Student,
+               StudentImportList.to_insert_data(import_list, class),
                on_conflict: :nothing,
-               conflict_target: [:email],
+               conflict_target: [:class_id, :email],
                returning: true
              )
              |> transaction() do

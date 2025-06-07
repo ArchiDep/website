@@ -157,6 +157,19 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     {:noreply, socket}
   end
 
+  def handle_event("clear", _params, %Socket{assigns: %{state: :uploaded}} = socket) do
+    file = uploaded_students_file(socket.assigns.class)
+    File.rm!(file)
+
+    {:noreply,
+     assign(socket,
+       state: :waiting_for_upload,
+       columns: [],
+       students: [],
+       new_students: 0
+     )}
+  end
+
   def handle_event(
         "validate",
         %{"import_students" => params},
@@ -196,6 +209,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   end
 
   def handle_event("validate", _params, socket) do
+    # This validate clause is required to support live view file uploads.
     {:noreply, socket}
   end
 
@@ -205,14 +219,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
         %Socket{assigns: %{existing_students: existing_students, state: state}} = socket
       )
       when state in [:waiting_for_upload, :invalid_upload] do
-    file = uploaded_students_file(socket.assigns.class)
-
-    parsed =
-      if File.exists?(file) do
-        parse_students_csv(file)
-      else
-        consume_uploaded_students(socket)
-      end
+    parsed = consume_uploaded_students(socket)
 
     case parsed do
       nil ->
@@ -318,14 +325,11 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   defp consume_uploaded_students(socket),
     do:
       consume_uploaded_entries(socket, :students, fn %{path: path}, _entry ->
-        file = uploaded_students_file(socket.assigns.class)
-        File.mkdir_p!(Path.dirname(file))
-        File.cp!(path, file)
-        {:ok, parse_students_csv(file)}
+        {:ok, parse_students_csv(path, uploaded_students_file(socket.assigns.class))}
       end)
       |> List.first()
 
-  defp parse_students_csv(path) do
+  defp parse_students_csv(path, dest \\ nil) do
     headers =
       path
       |> File.stream!()
@@ -372,6 +376,11 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
         {:error, :no_valid_rows}
 
       true ->
+        if dest do
+          File.mkdir_p!(Path.dirname(dest))
+          File.cp!(path, dest)
+        end
+
         {:ok, %{columns: headers, students: students}}
     end
   end

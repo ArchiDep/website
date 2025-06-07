@@ -9,6 +9,13 @@
         <label class="label">Max size 100KB</label>
       </fieldset>
 
+      <div :if={@state == :invalid_upload} role="alert" class="mt-2 alert alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>The uploaded CSV file seems invalid.</span>
+      </div>
+
       <button
         type="submit"
         class="mt-4 btn btn-primary"
@@ -40,16 +47,24 @@
                 </option>
               </select>
             </div>
-            <button type="submit" class="btn btn-primary" disabled={!Enum.empty?(@form.errors)}>
-              <span class="flex items-center gap-x-2">
-                <Heroicons.plus class="size-4" />
-                <%= if @new_students != 0 do %>
-                  <span>Import {@new_students} new {pluralize(@new_students, "student")}</span>
-                <% else %>
-                  <span>Import</span>
-                <% end %>
-              </span>
-            </button>
+            <div class="join flex">
+              <button type="button" class="join-item shrink btn btn-danger" phx-click="clear" phx-target={@myself}>
+                <span class="flex items-center gap-x-2">
+                  <Heroicons.trash class="size-4" />
+                  <span>Clear</span>
+                </span>
+              </button>
+              <button type="submit" class="join-item grow btn btn-primary" disabled={!Enum.empty?(@form.errors)}>
+                <span class="flex items-center gap-x-2">
+                  <Heroicons.plus class="size-4" />
+                  <%= if @new_students != 0 do %>
+                    <span>Import {@new_students} new {pluralize(@new_students, "student")}</span>
+                  <% else %>
+                    <span>Import</span>
+                  <% end %>
+                </span>
+              </button>
+            </div>
           </div>
           <div class="grid grid-cols-3 items-end gap-2">
             <div>
