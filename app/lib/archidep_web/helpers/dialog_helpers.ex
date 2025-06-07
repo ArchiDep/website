@@ -7,7 +7,7 @@ defmodule ArchiDepWeb.Helpers.DialogHelpers do
   def close_dialog(id) do
     %JS{}
     |> JS.push("closed", target: "##{id}")
-    |> JS.dispatch("close-dialog", detail: %{dialog: id})
+    |> JS.dispatch("phx:close-dialog", detail: %{dialog: id})
   end
 
   @spec validate_dialog_form(

@@ -40,6 +40,17 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
         />
         <.errors_for field={@form[:email]} />
 
+        <label class="fieldset-label mt-2">Academic class</label>
+        <input
+          type="text"
+          id={@form[:academic_class].id}
+          class="input w-full"
+          name={@form[:academic_class].name}
+          value={@form[:academic_class].value}
+        />
+        <.errors_for field={@form[:academic_class]} />
+        <p class="label">Official name of the student's academic class</p>
+
         <div class="mt-2 flex justify-end gap-x-2">
           <button type="button" class="btn btn-secondary" phx-click={@on_close}>
             <span class="flex items-center gap-x-2">

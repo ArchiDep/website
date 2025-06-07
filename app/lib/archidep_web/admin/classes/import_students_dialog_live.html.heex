@@ -30,51 +30,50 @@
     <div :if={@state == :uploaded}>
       <.form id="import-students" for={@form} phx-change="validate" phx-submit="import" phx-target={@myself}>
         <fieldset class="mt-4 fieldset">
-          <div class="grid grid-cols-3 items-end gap-2">
-            <div>
-              <label for={@form[:name_column].id} class="fieldset-label">Name column</label>
-              <select id={@form[:name_column].id} class="select" name={@form[:name_column].name} value={@form[:name_column].value}>
-                <option :for={col <- @columns} value={col} selected={@form[:name_column].value == col}>
-                  {col}
-                </option>
-              </select>
-            </div>
-            <div>
-              <label for={@form[:email_column].id} class="fieldset-label">Email column</label>
-              <select id={@form[:email_column].id} class="select" name={@form[:email_column].name} value={@form[:email_column].value}>
-                <option :for={col <- @columns} value={col} selected={@form[:email_column].value == col}>
-                  {col}
-                </option>
-              </select>
-            </div>
-            <div class="join flex">
-              <button type="button" class="join-item shrink btn btn-danger" phx-click="clear" phx-target={@myself}>
-                <span class="flex items-center gap-x-2">
-                  <Heroicons.trash class="size-4" />
-                  <span>Clear</span>
-                </span>
-              </button>
-              <button type="submit" class="join-item grow btn btn-primary" disabled={!Enum.empty?(@form.errors)}>
-                <span class="flex items-center gap-x-2">
-                  <Heroicons.plus class="size-4" />
-                  <%= if @new_students != 0 do %>
-                    <span>Import {@new_students} new {pluralize(@new_students, "student")}</span>
-                  <% else %>
-                    <span>Import</span>
-                  <% end %>
-                </span>
-              </button>
-            </div>
-          </div>
-          <div class="grid grid-cols-3 items-end gap-2">
-            <div>
-              <.errors_for field={@form[:name_column]} />
-            </div>
-            <div>
-              <.errors_for field={@form[:email_column]} />
-            </div>
-            <div>
-            </div>
+          <label for={@form[:name_column].id} class="fieldset-label">Name column</label>
+          <select id={@form[:name_column].id} class="select" name={@form[:name_column].name} value={@form[:name_column].value}>
+            <option :for={col <- @columns} value={col} selected={@form[:name_column].value == col}>
+              {col}
+            </option>
+          </select>
+          <.errors_for field={@form[:name_column]} />
+
+          <label for={@form[:email_column].id} class="fieldset-label">Email column</label>
+          <select id={@form[:email_column].id} class="select" name={@form[:email_column].name} value={@form[:email_column].value}>
+            <option :for={col <- @columns} value={col} selected={@form[:email_column].value == col}>
+              {col}
+            </option>
+          </select>
+          <.errors_for field={@form[:email_column]} />
+
+          <label for={@form[:academic_class].id} class="fieldset-label">Academic class</label>
+          <input
+            type="text"
+            id={@form[:academic_class].id}
+            class="input"
+            name={@form[:academic_class].name}
+            value={@form[:academic_class].value}
+          />
+          <.errors_for field={@form[:academic_class]} />
+          <p class="label">Official name of the student's academic class</p>
+
+          <div class="mt-4 join">
+            <button type="button" class="join-item btn btn-danger" phx-click="clear" phx-target={@myself}>
+              <span class="flex items-center gap-x-2">
+                <Heroicons.trash class="size-4" />
+                <span>Clear</span>
+              </span>
+            </button>
+            <button type="submit" class="join-item btn btn-primary" disabled={!Enum.empty?(@form.errors)}>
+              <span class="flex items-center gap-x-2">
+                <Heroicons.plus class="size-4" />
+                <%= if @new_students != 0 do %>
+                  <span>Import {@new_students} new {pluralize(@new_students, "student")}</span>
+                <% else %>
+                  <span>Import</span>
+                <% end %>
+              </span>
+            </button>
           </div>
         </fieldset>
       </.form>

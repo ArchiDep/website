@@ -297,6 +297,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     if Enum.empty?(form.errors) do
       name_column = form[:name_column].value
       email_column = form[:email_column].value
+      academic_class = form[:academic_class].value
 
       students_data =
         Enum.map(students, fn student ->
@@ -306,7 +307,11 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
           }
         end)
 
-      with {:ok, _students} <- Students.import_students(auth, class_id, students_data) do
+      with {:ok, _students} <-
+             Students.import_students(auth, class_id, %{
+               academic_class: academic_class,
+               students: students_data
+             }) do
         socket
         |> push_event("close-dialog", %{dialog: @id})
         |> noreply()

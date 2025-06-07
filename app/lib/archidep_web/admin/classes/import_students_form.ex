@@ -8,13 +8,15 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
 
   @type t :: %__MODULE__{
           name_column: String.t(),
-          email_column: String.t()
+          email_column: String.t(),
+          academic_class: String.t() | nil
         }
 
   @primary_key false
   embedded_schema do
     field(:name_column, :string)
     field(:email_column, :string)
+    field(:academic_class, :string, default: nil)
   end
 
   @spec changeset(map, list(map)) :: Changeset.t(t())
@@ -22,7 +24,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
           Ecto.Changeset.t()
   def changeset(params \\ %{}, students \\ []) when is_map(params) and is_list(students) do
     %__MODULE__{}
-    |> cast(params, [:name_column, :email_column])
+    |> cast(params, [:name_column, :email_column, :academic_class])
     |> validate_required([:name_column, :email_column])
     |> validate_change(:name_column, fn :name_column, name_column ->
       unique_student_names = students |> Enum.map(& &1[name_column]) |> Enum.uniq()

@@ -32,7 +32,7 @@
     <%= if @class.start_date do %>
       {format_date(@class.start_date)}
     <% else %>
-      <span class="text-base-content/50">-</span>
+      <.no_data />
     <% end %>
   </dd>
   <dt class="font-bold">End date</dt>
@@ -40,7 +40,7 @@
     <%= if @class.end_date do %>
       {format_date(@class.end_date)}
     <% else %>
-      <span class="text-base-content/50">-</span>
+      <.no_data />
     <% end %>
   </dd>
   <dt class="font-bold">Active</dt>
@@ -126,6 +126,7 @@
   <thead>
     <tr>
       <th>Name</th>
+      <th>Academic class</th>
       <th>Email</th>
       <th>User account</th>
     </tr>
@@ -144,6 +145,13 @@
     >
       <td>
         {student.name}
+      </td>
+      <td>
+        <%= if student.academic_class do %>
+          {student.academic_class}
+        <% else %>
+          <.no_data />
+        <% end %>
       </td>
       <td>
         {student.email}

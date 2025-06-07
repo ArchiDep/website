@@ -14,6 +14,7 @@ defmodule ArchiDep.Students.Schemas.Student do
           id: UUID.t(),
           name: String.t(),
           email: String.t(),
+          academic_class: String.t() | nil,
           class: Class.t() | NotLoaded,
           class_id: UUID.t(),
           user_account: UserAccount.t() | nil | NotLoaded,
@@ -24,8 +25,9 @@ defmodule ArchiDep.Students.Schemas.Student do
         }
 
   schema "students" do
-    field(:name, :binary)
-    field(:email, :binary)
+    field(:name, :string)
+    field(:email, :string)
+    field(:academic_class, :string)
     belongs_to(:class, Class)
     belongs_to(:user_account, UserAccount)
     field(:version, :integer)
@@ -39,17 +41,19 @@ defmodule ArchiDep.Students.Schemas.Student do
     now = DateTime.utc_now()
 
     %__MODULE__{}
-    |> cast(data, [:name, :email, :class_id])
+    |> cast(data, [:name, :email, :academic_class, :class_id])
     |> change(
       id: id,
       version: 1,
       created_at: now,
       updated_at: now
     )
-    |> validate_length(:name, max: 100)
+    |> validate_length(:name, max: 200)
     |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
     |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
+    |> validate_length(:email, max: 255)
     |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
+    |> validate_length(:academic_class, max: 30)
     |> validate_required([:name, :email, :class_id])
     |> unique_constraint(:email, name: :students_unique_email_index)
     |> unsafe_validate_unique_query(:email, Repo, fn changeset ->
@@ -103,13 +107,15 @@ defmodule ArchiDep.Students.Schemas.Student do
     now = DateTime.utc_now()
 
     student
-    |> cast(data, [:name, :email])
+    |> cast(data, [:name, :email, :academic_class])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
-    |> validate_length(:name, max: 100)
+    |> validate_length(:name, max: 200)
     |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
     |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
+    |> validate_length(:email, max: 255)
     |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
+    |> validate_length(:academic_class, max: 30)
     |> validate_required([:name, :email, :class_id])
     |> unique_constraint(:email, name: :students_unique_email_index)
     |> unsafe_validate_unique_query(:email, Repo, fn changeset ->

@@ -9,19 +9,21 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
 
   @type t :: %__MODULE__{
           name: String.t(),
-          email: String.t()
+          email: String.t(),
+          academic_class: String.t() | nil
         }
 
   @primary_key false
   embedded_schema do
     field(:name, :string, default: "")
     field(:email, :string, default: "")
+    field(:academic_class, :string, default: nil)
   end
 
   @spec create_changeset(map) :: Changeset.t(t())
   def create_changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{}
-    |> cast(params, [:name, :email])
+    |> cast(params, [:name, :email, :academic_class])
     |> validate_required([:name, :email])
   end
 
@@ -29,9 +31,10 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
   def update_changeset(student, params \\ %{}) when is_map(params) do
     %__MODULE__{
       name: student.name,
-      email: student.email
+      email: student.email,
+      academic_class: student.academic_class
     }
-    |> cast(params, [:name, :email])
+    |> cast(params, [:name, :email, :academic_class])
     |> validate_required([:name, :email])
   end
 
@@ -40,6 +43,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
     %{
       name: form.name,
       email: form.email,
+      academic_class: form.academic_class,
       class_id: class.id
     }
   end
@@ -48,7 +52,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
   def to_existing_student_data(%__MODULE__{} = form) do
     %{
       name: form.name,
-      email: form.email
+      email: form.email,
+      academic_class: form.academic_class
     }
   end
 end

@@ -45,6 +45,14 @@
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     {@student.class.name}
   </dd>
+  <dt class="font-bold">Academic class</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    <%= if @student.academic_class do %>
+      {@student.academic_class}
+    <% else %>
+      <.no_data />
+    <% end %>
+  </dd>
   <dt class="font-bold">User account</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     <%= if @student.user_account do %>

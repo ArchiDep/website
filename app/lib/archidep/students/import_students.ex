@@ -16,6 +16,7 @@ defmodule ArchiDep.Students.ImportStudents do
       changeset = StudentImportList.changeset(data)
 
       with {:ok, import_list} <- Changeset.apply_action(changeset, :validate) do
+        # FIXME: add students imported event
         case Multi.new()
              |> Multi.insert_all(
                :students,
