@@ -38,6 +38,7 @@ defmodule ArchiDep.MixProject do
       {:csv, "~> 3.2"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dns_cluster, "~> 0.2.0"},
+      {:ecto_network, "~> 1.5.0"},
       {:ecto_sql, "~> 3.10"},
       {:finch, "~> 0.13"},
       {:heroicons, "~> 0.5.6"},

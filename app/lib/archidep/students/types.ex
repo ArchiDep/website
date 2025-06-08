@@ -23,6 +23,11 @@ defmodule ArchiDep.Students.Types do
 
   @type import_students_data :: %{
           academic_class: String.t() | nil,
-          students: list(existing_student_data)
+          students:
+            list(%{
+              name: String.t(),
+              email: String.t(),
+              academic_class: String.t() | nil
+            })
         }
 end
