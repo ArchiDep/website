@@ -1,0 +1,15 @@
+<dialog id={id()} class="modal">
+  <div class="modal-box">
+    <.server_form
+      id="new-server-form"
+      form={@form}
+      title="New Server"
+      on_submit="create"
+      on_close={close()}
+      target={@myself}
+    />
+  </div>
+  <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
+    <button type="submit">Close</button>
+  </form>
+</dialog>

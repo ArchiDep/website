@@ -1,4 +1,4 @@
-defmodule ArchiDepWeb.Events.EventsComponents do
+defmodule ArchiDepWeb.Admin.Events.EventsComponents do
   @moduledoc """
   Component used to display event-related data.
   """

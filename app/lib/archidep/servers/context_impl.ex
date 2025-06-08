@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.ContextImpl do
   use ArchiDep, :context
 
   alias ArchiDep.Servers.CreateServer
+  alias ArchiDep.Servers.ListServers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
 
@@ -11,4 +12,7 @@ defmodule ArchiDep.Servers.ContextImpl do
   @spec create_server(Authentication.t(), Types.create_server_data()) ::
           {:ok, Server.t()} | {:error, Changeset.t()}
   defdelegate create_server(auth, data), to: CreateServer
+
+  @callback list_my_servers(Authentication.t()) :: list(Server.t())
+  defdelegate list_my_servers(auth), to: ListServers
 end

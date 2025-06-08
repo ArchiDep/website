@@ -22,7 +22,7 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t() | nil,
-          ip_address: :inet.ip_address(),
+          ip_address: String.t(),
           username: String.t()
         }
 
@@ -38,7 +38,7 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
     %__MODULE__{
       id: id,
       name: name,
-      ip_address: ip_address,
+      ip_address: to_string(:inet.ntoa(ip_address.address)),
       username: username
     }
   end

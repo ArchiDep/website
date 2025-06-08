@@ -12,10 +12,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t() | nil,
-          ip_address: :inet.ip_address(),
+          ip_address: Postgrex.INET.t(),
           username: String.t(),
           user_account: UserAccount.t() | nil | NotLoaded,
-          user_account_id: UUID.t() | nil,
+          user_account_id: UUID.t(),
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -31,15 +31,16 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:updated_at, :utc_datetime_usec)
   end
 
-  @spec new(Types.create_server_data()) :: Changeset.t(t())
-  def new(data) do
+  @spec new(Types.create_server_data(), UserAccount.t()) :: Changeset.t(t())
+  def new(data, user) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
     %__MODULE__{}
-    |> cast(data, [:name, :ip_address, :username, :user_account_id])
+    |> cast(data, [:name, :ip_address, :username])
     |> change(
       id: id,
+      user_account_id: user.id,
       version: 1,
       created_at: now,
       updated_at: now
@@ -47,6 +48,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_length(:name, max: 50)
     |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
     |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
+    |> validate_length(:username, max: 32)
     |> validate_required([:ip_address, :username])
     |> unique_constraint(:ip_address)
     |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->

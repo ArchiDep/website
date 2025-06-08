@@ -63,7 +63,12 @@ defmodule ArchiDepWeb.Router do
       live "/classes", Admin.Classes.ClassesLive
       live "/classes/:id", Admin.Classes.ClassLive
       live "/classes/:class_id/students/:id", Admin.Classes.StudentLive
-      live "/events", Admin.EventLogLive
+      live "/events", Admin.Events.EventLogLive
+    end
+
+    scope "/servers" do
+      pipe_through :fetch_authentication
+      live "/", Servers.ServersLive
     end
   end
 

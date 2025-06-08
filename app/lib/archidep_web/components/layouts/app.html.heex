@@ -70,6 +70,12 @@
           <span>Dashboard</span>
         </.link>
       </li>
+      <li>
+        <.link navigate={~p"/servers"} class="flex items-center gap-2">
+          <Heroicons.server_stack class="size-4" />
+          <span>Servers</span>
+        </.link>
+      </li>
       <li :if={has_role?(@auth, :root)}>
         <span class="flex items-center gap-2 text-error cursor-default">
           <Heroicons.fire class="size-4" />

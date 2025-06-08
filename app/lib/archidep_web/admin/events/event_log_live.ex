@@ -1,8 +1,8 @@
-defmodule ArchiDepWeb.Admin.EventLogLive do
+defmodule ArchiDepWeb.Admin.Events.EventLogLive do
   use ArchiDepWeb, :live_view
 
   import ArchiDep.Helpers.PipeHelpers
-  import ArchiDepWeb.Events.EventsComponents
+  import ArchiDepWeb.Admin.Events.EventsComponents
   alias ArchiDep.Events
 
   @limit 15

@@ -8,4 +8,6 @@ defmodule ArchiDep.Servers.Behaviour do
 
   @callback create_server(Authentication.t(), Types.create_server_data()) ::
               {:ok, Server.t()} | {:error, Changeset.t()}
+
+  @callback list_my_servers(Authentication.t()) :: list(Server.t())
 end
