@@ -28,7 +28,7 @@ defmodule ArchiDep.Events.Store.StoredEvent do
 
   @type changeset(data) :: Changeset.t(t(data))
 
-  @type options :: list({:occurred_at, DateTime.t()})
+  @type options :: list({:caused_by, t(struct)} | {:occurred_at, DateTime.t()})
 
   schema "events" do
     field(:stream, :string)
@@ -85,4 +85,20 @@ defmodule ArchiDep.Events.Store.StoredEvent do
   @spec initiated_by(__MODULE__.changeset(map), String.t()) :: __MODULE__.changeset(map)
   def initiated_by(changeset, initiator),
     do: cast(changeset, %{initiator: initiator}, [:initiator])
+
+  @spec to_insert_data(t(struct)) :: map
+  def to_insert_data(%__MODULE__{} = event) do
+    %{
+      id: event.id,
+      stream: event.stream,
+      version: event.version,
+      type: event.type,
+      data: event.data,
+      meta: event.meta,
+      initiator: event.initiator,
+      causation_id: event.causation_id,
+      correlation_id: event.correlation_id,
+      occurred_at: event.occurred_at
+    }
+  end
 end
