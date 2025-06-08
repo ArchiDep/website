@@ -50,6 +50,7 @@ defmodule ArchiDep.Events.Store.StoredEvent do
   def new(data, meta, opts \\ []) when is_map(data) and is_map(meta) and is_list(opts) do
     id = UUID.generate()
     occurred_at = Keyword.get_lazy(opts, :occurred_at, &DateTime.utc_now/0)
+    caused_by = Keyword.get(opts, :caused_by, %{})
 
     %__MODULE__{}
     |> cast(
@@ -57,8 +58,8 @@ defmodule ArchiDep.Events.Store.StoredEvent do
         id: id,
         data: data,
         meta: meta,
-        causation_id: id,
-        correlation_id: id,
+        causation_id: Map.get(caused_by, :id, id),
+        correlation_id: Map.get(caused_by, :correlation_id, id),
         occurred_at: occurred_at
       },
       [:id, :data, :meta, :causation_id, :correlation_id, :occurred_at]

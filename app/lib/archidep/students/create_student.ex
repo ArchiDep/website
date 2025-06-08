@@ -27,7 +27,7 @@ defmodule ArchiDep.Students.CreateStudent do
            |> add_to_stream(student)
            |> initiated_by(user)
          end)
-         |> Repo.transaction() do
+         |> transaction() do
       {:ok, %{student: student}} ->
         {:ok, student}
 

@@ -35,10 +35,14 @@ defmodule ArchiDep.Students.Schemas.StudentImportList do
     |> validate_format(:email, ~r/\A.+@.+\..+\z/)
   end
 
-  @spec to_insert_data(t(), Class.t()) :: list(map())
-  def to_insert_data(%__MODULE__{academic_class: academic_class, students: students}, %Class{
-        id: class_id
-      }),
+  @spec to_insert_data(t(), Class.t(), DateTime.t()) :: list(map())
+  def to_insert_data(
+        %__MODULE__{academic_class: academic_class, students: students},
+        %Class{
+          id: class_id
+        },
+        now
+      ),
       do:
         students
         |> Enum.map(&Map.from_struct/1)
@@ -50,8 +54,8 @@ defmodule ArchiDep.Students.Schemas.StudentImportList do
               academic_class: academic_class,
               class_id: class_id,
               version: 1,
-              created_at: DateTime.utc_now(),
-              updated_at: DateTime.utc_now()
+              created_at: now,
+              updated_at: now
             }))
         )
 end
