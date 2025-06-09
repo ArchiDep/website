@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime_usec]
 
+  # TODO: add optional custom SSH port
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t() | nil,
@@ -49,6 +50,17 @@ defmodule ArchiDep.Servers.Schemas.Server do
         preload: [user_account: ua]
       )
     )
+  end
+
+  @spec fetch_server(UUID.t()) :: {:ok, t()} | {:error, :server_not_found}
+  def fetch_server(id) do
+    case Repo.get(__MODULE__, id) do
+      nil ->
+        {:error, :server_not_found}
+
+      server ->
+        {:ok, server}
+    end
   end
 
   @spec new(Types.create_server_data(), UserAccount.t()) :: Changeset.t(t())

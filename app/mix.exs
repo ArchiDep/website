@@ -25,7 +25,7 @@ defmodule ArchiDep.MixProject do
   def application do
     [
       mod: {ArchiDep.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :ssh]
     ]
   end
 
@@ -50,6 +50,7 @@ defmodule ArchiDep.MixProject do
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:plug_static_index_html, "~> 1.0"},
       {:postgrex, ">= 0.0.0"},
+      {:sshex, "~> 2.2"},
       {:swoosh, "~> 1.5"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
