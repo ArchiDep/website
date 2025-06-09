@@ -105,6 +105,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   defp validate(changeset),
     do:
       changeset
+      |> update_change(:username, &String.trim/1)
       |> validate_required([
         :id,
         :username,

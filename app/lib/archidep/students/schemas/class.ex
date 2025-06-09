@@ -89,6 +89,7 @@ defmodule ArchiDep.Students.Schemas.Class do
 
   defp validate(changeset) do
     changeset
+    |> update_change(:name, &String.trim/1)
     |> validate_length(:name, max: 50)
     |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
     |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")

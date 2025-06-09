@@ -77,9 +77,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
       created_at: now,
       updated_at: now
     )
+    |> update_change(:name, &String.trim/1)
+    |> update_change(:username, &String.trim/1)
     |> validate_length(:name, max: 50)
-    |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
-    |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
     |> validate_length(:username, max: 32)
     |> validate_required([:ip_address, :username])
     |> unique_constraint(:ip_address)
