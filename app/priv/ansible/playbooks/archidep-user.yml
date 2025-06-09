@@ -1,0 +1,25 @@
+---
+- name: ArchiDep user
+  hosts: all
+  vars:
+    archidep_user: "archidep"
+  tasks:
+    - name: Create ArchiDep user
+      ansible.builtin.user:
+        name: "{{ archidep_user }}"
+        comment: "ArchiDep"
+        create_home: true
+        groups: [sudo]
+        home: "/home/{{ archidep_user }}"
+        password: "!"
+        shell: /bin/bash
+        state: present
+      become: true
+
+    - name: Enable passwordless sudo for ArchiDep user
+      community.general.sudoers:
+        name: "{{ archidep_user }}"
+        state: present
+        nopassword: true
+        user: "{{ archidep_user }}"
+        validation: required
