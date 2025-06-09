@@ -13,7 +13,7 @@ defmodule ArchiDep.Servers.ListServers do
 
     Repo.all(
       from s in Server,
-        left_join: ua in UserAccount,
+        join: ua in UserAccount,
         on: s.user_account_id == ua.id,
         where: s.user_account_id == ^user_account_id,
         order_by: [s.name, s.ip_address],

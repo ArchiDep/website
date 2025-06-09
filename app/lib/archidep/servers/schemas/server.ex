@@ -3,6 +3,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
 
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Servers.Types
 
   @primary_key {:id, :binary_id, []}
@@ -29,6 +31,24 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
+  end
+
+  @spec list_active_servers() :: list(t())
+  def list_active_servers do
+    Repo.all(
+      from(s in __MODULE__,
+        distinct: true,
+        join: ua in UserAccount,
+        on: s.user_account_id == ua.id,
+        left_join: st in Student,
+        on: ua.id == st.user_account_id,
+        left_join: c in Class,
+        on: st.class_id == c.id,
+        # TODO: put query fragment determining whether auser is active in the user account schema
+        where: :root in ua.roles or c.active == true,
+        preload: [user_account: ua]
+      )
+    )
   end
 
   @spec new(Types.create_server_data(), UserAccount.t()) :: Changeset.t(t())
