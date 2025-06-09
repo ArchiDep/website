@@ -9,7 +9,8 @@ defmodule ArchiDepWeb.Servers.ServerForm do
   @type t :: %__MODULE__{
           name: String.t() | nil,
           ip_address: String.t(),
-          username: String.t()
+          username: String.t(),
+          ssh_port: integer() | nil
         }
 
   @primary_key false
@@ -17,12 +18,13 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     field(:name, :string)
     field(:ip_address, :string)
     field(:username, :string)
+    field(:ssh_port, :integer)
   end
 
   @spec create_changeset(map) :: Changeset.t(t())
   def create_changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{}
-    |> cast(params, [:name, :ip_address, :username])
+    |> cast(params, [:name, :ip_address, :username, :ssh_port])
     |> validate_required([:ip_address, :username])
   end
 
@@ -31,9 +33,10 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     %__MODULE__{
       name: server.name,
       ip_address: server.ip_address,
-      username: server.username
+      username: server.username,
+      ssh_port: server.ssh_port
     }
-    |> cast(params, [:name, :ip_address, :username])
+    |> cast(params, [:name, :ip_address, :username, :ssh_port])
     |> validate_required([:ip_address, :username])
   end
 
@@ -42,7 +45,8 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     %{
       name: form.name,
       ip_address: form.ip_address,
-      username: form.username
+      username: form.username,
+      ssh_port: form.ssh_port
     }
   end
 end

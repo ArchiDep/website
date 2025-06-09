@@ -1,6 +1,6 @@
 FROM ubuntu:noble
 
-LABEL maintainer="archidep@alphahydrae.ch"
+LABEL maintainer="contact@archidep.ch"
 
 RUN apt update -y && \
     apt install -y \
@@ -19,7 +19,7 @@ RUN apt update -y && \
 RUN useradd --comment "John Doe" --create-home --shell /bin/bash jde && \
     mkdir -p /home/jde/.ssh && \
     chmod 700 /home/jde/.ssh && \
-    echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIxsZfyuRVJsWGYbLaZLTCDahyT9QhnT1ixzfLPILK4A archidep-test" > /home/jde/.ssh/authorized_keys && \
+    echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIESe8EV9p6NFCurndh4T5xdShWrGFhuJP4YCzWatp1Ld archidep-test" > /home/jde/.ssh/authorized_keys && \
     chmod 600 /home/jde/.ssh/authorized_keys && \
     chown -R jde:jde /home/jde/.ssh
 

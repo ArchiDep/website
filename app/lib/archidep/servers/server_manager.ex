@@ -33,7 +33,7 @@ defmodule ArchiDep.Servers.ServerManager do
       Task.async(fn ->
         :ssh.connect(
           server.ip_address.address,
-          2222,
+          server.ssh_port || 22,
           auth_methods: ~c"publickey",
           connect_timeout: 30_000,
           save_accepted_host: false,

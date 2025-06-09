@@ -50,6 +50,20 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:username]} />
 
+        <label class="fieldset-label mt-2">SSH port</label>
+        <input
+          type="number"
+          id={@form[:ssh_port].id}
+          class="input w-full"
+          name={@form[:ssh_port].name}
+          value={@form[:ssh_port].value}
+          min="1"
+          max="65535"
+          step="1"
+          placeholder="22"
+        />
+        <.errors_for field={@form[:ssh_port]} />
+
         <div class="mt-2 flex justify-end gap-x-2">
           <button type="button" class="btn btn-secondary" phx-click={@on_close}>
             <span class="flex items-center gap-x-2">

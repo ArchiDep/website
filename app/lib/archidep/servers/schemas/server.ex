@@ -17,6 +17,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           name: String.t() | nil,
           ip_address: Postgrex.INET.t(),
           username: String.t(),
+          ssh_port: 1..65_535 | nil,
           user_account: UserAccount.t() | nil | NotLoaded,
           user_account_id: UUID.t(),
           version: pos_integer(),
@@ -28,6 +29,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:name, :string)
     field(:ip_address, EctoNetwork.INET)
     field(:username, :string)
+    field(:ssh_port, :integer)
     belongs_to(:user_account, UserAccount)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
@@ -69,7 +71,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     now = DateTime.utc_now()
 
     %__MODULE__{}
-    |> cast(data, [:name, :ip_address, :username])
+    |> cast(data, [:name, :ip_address, :username, :ssh_port])
     |> change(
       id: id,
       user_account_id: user.id,
@@ -81,6 +83,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> update_change(:username, &String.trim/1)
     |> validate_length(:name, max: 50)
     |> validate_length(:username, max: 32)
+    |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
     |> validate_required([:ip_address, :username])
     |> unique_constraint(:ip_address)
     |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
