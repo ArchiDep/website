@@ -13,7 +13,7 @@ defmodule ArchiDep.Servers.Supervisor do
   def init(nil) do
     children = [
       ArchiDep.Servers.ServerManagerSupervisor,
-      ArchiDep.Servers.ServerCommander
+      ArchiDep.Servers.ServerOrchestrator
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

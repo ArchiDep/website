@@ -7,7 +7,7 @@ defmodule ArchiDep.Servers.ServerManager do
   # Client API
 
   @spec name(Server.t()) :: GenServer.name()
-  def name(%Server{id: server_id}), do: {:global, {:server, server_id}}
+  def name(%Server{id: server_id}), do: {:global, {:server_manager, server_id}}
 
   @spec start_link(Server.t()) :: GenServer.on_start()
   def start_link(%Server{id: server_id} = server),
