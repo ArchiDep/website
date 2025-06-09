@@ -73,7 +73,14 @@ defmodule ArchiDep.Servers.ServerManager do
 
   @impl true
   def terminate(_reason, {:connected, _server_id, connection_ref}) do
-    :ssh.close(connection_ref)
+    case :ssh.close(connection_ref) do
+      :ok ->
+        Logger.debug("SSH connection closed successfully")
+
+      {:error, reason} ->
+        Logger.warning("Failed to close SSH connection: #{inspect(reason)}")
+    end
+
     :ok
   end
 
