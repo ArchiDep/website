@@ -3,88 +3,95 @@ defmodule ArchiDep.Servers.ServerManager do
 
   require Logger
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.ServerConnection
+  alias Ecto.UUID
 
   # Client API
 
   @spec name(Server.t()) :: GenServer.name()
-  def name(%Server{id: server_id}), do: {:global, {:server_manager, server_id}}
+  def name(%Server{id: server_id}), do: name(server_id)
+
+  @spec name(UUID.t()) :: GenServer.name()
+  def name(server_id) when is_binary(server_id), do: {:global, {:server_manager, server_id}}
 
   @spec start_link(Server.t()) :: GenServer.on_start()
   def start_link(%Server{id: server_id} = server),
     do: GenServer.start_link(__MODULE__, server_id, name: name(server))
+
+  @spec connection_idle(UUID.t(), pid()) :: :ok
+  def connection_idle(server_id, connection_pid),
+    do: GenServer.cast(name(server_id), {:connection_idle, connection_pid})
 
   # Server callbacks
 
   @impl true
   def init(server_id) do
     Logger.debug("Init server manager for server #{server_id}")
-    {:ok, server_id, {:continue, :connect_to_server}}
+    {:ok, server_id, {:continue, :load_server}}
   end
 
   @impl true
-  def handle_continue(:connect_to_server, server_id) do
+  def handle_continue(:load_server, server_id) do
     {:ok, server} = Server.fetch_server(server_id)
 
-    Logger.info(
-      "Opening SSH connection to server #{server_id} as #{server.username} at #{server.ip_address} on port 22"
-    )
+    {:ok, _ref} =
+      Phoenix.Tracker.track(ArchiDep.Tracker, self(), "servers", server.id, %{
+        state: :idle
+      })
+
+    {:noreply, {:idle, server}}
+  end
+
+  @impl true
+  def handle_cast({:connection_idle, connection_pid}, {:idle, server}) do
+    Process.monitor(connection_pid)
+
+    host = server.ip_address.address
+    port = server.ssh_port || 22
+    username = server.username
 
     connection_task =
       Task.async(fn ->
-        :ssh.connect(
-          server.ip_address.address,
-          server.ssh_port || 22,
-          auth_methods: ~c"publickey",
-          connect_timeout: 30_000,
-          save_accepted_host: false,
-          silently_accept_hosts: true,
-          user: to_charlist(server.username),
-          user_dir: to_charlist("../tmp/jde"),
-          user_interaction: false
+        ServerConnection.connect(
+          server,
+          host,
+          port,
+          username,
+          silently_accept_hosts: true
         )
       end)
 
-    # Logger.info("Opening a channel for server #{server_id}")
-    # {:ok, channel_ref} = :ssh_connection.session_channel(connection_ref, 30_000)
-
-    # :success = :ssh_connection.exec(connection_ref, channel_ref, ~c"pwd", 30_000)
-
-    {:noreply, {:connecting, server_id, connection_task.ref}}
+    ref = make_ref()
+    {:noreply, {:connecting, connection_task.ref, ref, server}}
   end
 
   @impl true
-  def handle_info({ref, result}, {:connecting, server_id, ref}) do
-    Process.demonitor(ref, [:flush])
+  def handle_info({connection_ref, result}, {:connecting, connection_ref, ref, server}) do
+    Process.demonitor(connection_ref, [:flush])
 
     case result do
-      {:ok, connection_ref} ->
-        Process.link(connection_ref)
-        Logger.info("Successfully opened an SSH connection to server #{server_id}")
-        {:noreply, {:connected, server_id, connection_ref}}
+      :ok ->
+        Logger.info("Server manager is connected to server #{server.id}")
+        ServerConnection.ping_load_average(server, ref)
+        {:noreply, {:connected, ref, server}}
 
       {:error, reason} ->
         Logger.info(
-          "Could not open SSH connection to server #{server_id} because #{inspect(reason)}"
+          "Server manager could not connect to server #{server.id} because #{inspect(reason)}"
         )
 
-        {:noreply, {:not_connected, server_id, reason}}
+        {:noreply, {:not_connected, reason, server}}
     end
   end
 
-  @impl true
-  def terminate(_reason, {:connected, _server_id, connection_ref}) do
-    case :ssh.close(connection_ref) do
-      :ok ->
-        Logger.debug("SSH connection closed successfully")
+  def handle_info(
+        {:load_average, ref, {m1, m5, m15, before_call, after_call}},
+        {:connected, ref, server}
+      ) do
+    Logger.info(
+      "Received load average from server #{server.id}: #{m1}, #{m5}, #{m15} (between #{before_call} and #{after_call})"
+    )
 
-      {:error, reason} ->
-        Logger.warning("Failed to close SSH connection: #{inspect(reason)}")
-    end
-
-    :ok
-  end
-
-  def terminate(_reason, _state) do
-    :ok
+    {:noreply, {:connected, ref, server}}
   end
 end

@@ -48,6 +48,7 @@ defmodule ArchiDep.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_view, "~> 1.0.0"},
       {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:phoenix_pubsub, "~> 2.1"},
       {:plug_static_index_html, "~> 1.0"},
       {:postgrex, ">= 0.0.0"},
       {:sshex, "~> 2.2"},

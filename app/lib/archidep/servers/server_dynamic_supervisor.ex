@@ -1,12 +1,12 @@
-defmodule ArchiDep.Servers.ServerManagerSupervisor do
+defmodule ArchiDep.Servers.ServerDynamicSupervisor do
   use DynamicSupervisor
 
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerManager
+  alias ArchiDep.Servers.ServerSupervisor
 
-  @spec start_server_manager(Server.t()) :: DynamicSupervisor.on_start_child()
-  def start_server_manager(server),
-    do: DynamicSupervisor.start_child(__MODULE__, {ServerManager, server})
+  @spec start_server_supervisor(Server.t()) :: DynamicSupervisor.on_start_child()
+  def start_server_supervisor(server),
+    do: DynamicSupervisor.start_child(__MODULE__, {ServerSupervisor, server})
 
   @spec start_link(any()) :: Supervisor.on_start()
   def start_link(_init_arg) do

@@ -7,7 +7,7 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
   use GenServer
 
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerManagerSupervisor
+  alias ArchiDep.Servers.ServerDynamicSupervisor
 
   @name {:global, __MODULE__}
 
@@ -27,7 +27,7 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
   @impl true
   def handle_continue(:load_servers, nil) do
     for server <- Server.list_active_servers() do
-      {:ok, _pid} = ServerManagerSupervisor.start_server_manager(server)
+      {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server)
     end
 
     {:noreply, nil}

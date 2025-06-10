@@ -12,7 +12,7 @@ defmodule ArchiDep.Servers.Supervisor do
   @impl true
   def init(nil) do
     children = [
-      ArchiDep.Servers.ServerManagerSupervisor,
+      ArchiDep.Servers.ServerDynamicSupervisor,
       ArchiDep.Servers.ServerOrchestrator
     ]
 
