@@ -40,6 +40,7 @@ defmodule ArchiDep.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:ecto_network, "~> 1.5.0"},
       {:ecto_sql, "~> 3.10"},
+      {:ex_cmd, "~> 0.15.0"},
       {:finch, "~> 0.13"},
       {:heroicons, "~> 0.5.6"},
       {:jason, "~> 1.2"},

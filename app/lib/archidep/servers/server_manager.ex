@@ -99,6 +99,14 @@ defmodule ArchiDep.Servers.ServerManager do
       :ok ->
         Logger.info("Server manager is connected to server #{server.id}")
         ServerConnection.ping_load_average(server, connection_ref)
+
+        cmd =
+          ~w(echo Hello)
+          |> ExCmd.stream(exit_timeout: 30_000)
+          |> Enum.into([])
+
+        IO.puts(inspect(cmd))
+
         {:noreply, {:connected, {connection_ref, connection_pid}, server}}
 
       {:error, reason} ->
