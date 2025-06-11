@@ -101,8 +101,33 @@ defmodule ArchiDep.Servers.ServerManager do
         ServerConnection.ping_load_average(server, connection_ref)
 
         cmd =
-          ~w(echo Hello)
-          |> ExCmd.stream(exit_timeout: 30_000)
+          [
+            "ansible-playbook",
+            "-e",
+            "ansible_port=#{server.ssh_port || 22}",
+            "-e",
+            "ansible_user=#{server.username}",
+            "-i",
+            "#{:inet.ntoa(server.ip_address.address)},",
+            ArchiDep.Servers.Ansible.playbook!("archidep-user").path
+          ]
+          |> ExCmd.stream(
+            env: [
+              {"ANSIBLE_HOST_KEY_CHECKING", "false"},
+              {"ANSIBLE_STDOUT_CALLBACK", "ansible.posix.jsonl"}
+            ],
+            exit_timeout: 30_000
+          )
+          |> Enum.map(fn line ->
+            if is_binary(line) do
+              for l <- String.split(line, "\n", trime: true),
+                  l != "" do
+                IO.puts("@@@ #{l}")
+              end
+            end
+
+            line
+          end)
           |> Enum.into([])
 
         IO.puts(inspect(cmd))

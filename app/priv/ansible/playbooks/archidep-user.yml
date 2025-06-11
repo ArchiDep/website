@@ -19,7 +19,9 @@
     - name: Enable passwordless sudo for ArchiDep user
       community.general.sudoers:
         name: "{{ archidep_user }}"
-        state: present
+        commands: "ALL"
         nopassword: true
         user: "{{ archidep_user }}"
         validation: required
+        state: present
+      become: true

@@ -55,7 +55,7 @@ defmodule ArchiDep.Servers.ServerConnection do
         port,
         auth_methods: ~c"publickey",
         connect_timeout: 30_000,
-        # key_cb: :ssh_agent,
+        # key_cb: {:ssh_agent, timeout: 5000},
         save_accepted_host: false,
         silently_accept_hosts: Keyword.get(options, :silently_accept_hosts, false),
         user: to_charlist(username),
