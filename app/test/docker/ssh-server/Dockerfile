@@ -17,7 +17,9 @@ RUN apt update -y && \
     mv /etc/ssh/sshd_config /etc/openssh/sshd_config && \
     chmod 644 /etc/openssh/sshd_config
 
-RUN useradd --comment "John Doe" --create-home --shell /bin/bash jde && \
+ARG JDE_UID=1000
+
+RUN useradd --comment "John Doe" --create-home --shell /bin/bash jde --uid "$JDE_UID" && \
     mkdir -p /home/jde/.ssh && \
     chmod 700 /home/jde/.ssh && \
     echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIxsZfyuRVJsWGYbLaZLTCDahyT9QhnT1ixzfLPILK4A archidep-test" > /home/jde/.ssh/authorized_keys && \
