@@ -25,7 +25,7 @@ defmodule ArchiDep.MixProject do
   def application do
     [
       mod: {ArchiDep.Application, []},
-      extra_applications: [:logger, :runtime_tools, :ssh]
+      extra_applications: [:logger, :observer, :runtime_tools, :ssh, :wx]
     ]
   end
 
