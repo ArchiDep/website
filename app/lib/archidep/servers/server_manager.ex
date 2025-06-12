@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.ServerManager do
   use GenServer
 
   require Logger
+  alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
   alias Ecto.UUID
@@ -100,37 +101,10 @@ defmodule ArchiDep.Servers.ServerManager do
         Logger.info("Server manager is connected to server #{server.id}")
         ServerConnection.ping_load_average(server, connection_ref)
 
-        cmd =
-          [
-            "ansible-playbook",
-            "-e",
-            "ansible_port=#{server.ssh_port || 22}",
-            "-e",
-            "ansible_user=#{server.username}",
-            "-i",
-            "#{:inet.ntoa(server.ip_address.address)},",
-            ArchiDep.Servers.Ansible.playbook!("archidep-user").path
-          ]
-          |> ExCmd.stream(
-            env: [
-              {"ANSIBLE_HOST_KEY_CHECKING", "false"},
-              {"ANSIBLE_STDOUT_CALLBACK", "ansible.posix.jsonl"}
-            ],
-            exit_timeout: 30_000
-          )
-          |> Enum.map(fn line ->
-            if is_binary(line) do
-              for l <- String.split(line, "\n", trime: true),
-                  l != "" do
-                IO.puts("@@@ #{l}")
-              end
-            end
+        {:ok, facts} = Ansible.gather_facts(server)
 
-            line
-          end)
-          |> Enum.into([])
-
-        IO.puts(inspect(cmd))
+        archidep_user_playbook = Ansible.playbook!("archidep-user")
+        :ok = Ansible.run_playbook(archidep_user_playbook, server)
 
         {:noreply, {:connected, {connection_ref, connection_pid}, server}}
 
