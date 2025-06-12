@@ -30,25 +30,31 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         />
         <.errors_for field={@form[:name]} />
 
-        <label class="fieldset-label mt-2">Start date</label>
-        <input
-          type="date"
-          id={@form[:start_date].id}
-          class="input w-full"
-          name={@form[:start_date].name}
-          value={@form[:start_date].value}
-        />
-        <.errors_for field={@form[:start_date]} />
+        <div class="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <label class="fieldset-label">Start date</label>
+            <input
+              type="date"
+              id={@form[:start_date].id}
+              class="input w-full"
+              name={@form[:start_date].name}
+              value={@form[:start_date].value}
+            />
+            <.errors_for field={@form[:start_date]} />
+          </div>
 
-        <label class="fieldset-label mt-2">End date</label>
-        <input
-          type="date"
-          id={@form[:end_date].id}
-          class="input w-full"
-          name={@form[:end_date].name}
-          value={@form[:end_date].value}
-        />
-        <.errors_for field={@form[:end_date]} />
+          <div>
+            <label class="fieldset-label">End date</label>
+            <input
+              type="date"
+              id={@form[:end_date].id}
+              class="input w-full"
+              name={@form[:end_date].name}
+              value={@form[:end_date].value}
+            />
+            <.errors_for field={@form[:end_date]} />
+          </div>
+        </div>
 
         <label class="fieldset-label mt-2">
           <input type="hidden" name={@form[:active].name} value="false" />
@@ -65,8 +71,15 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
       <!-- Expected server properties -->
       <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
         <legend class="fieldset-legend">Expected server properties</legend>
+        <div role="alert" class="alert alert-info alert-soft">
+          <span class="text-sm">
+            When a student registers a server for this class, warnings will be
+            issued if the server does not meet these expected properties. This
+            can be overriden for each server.
+          </span>
+        </div>
         <!-- CPU -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="fieldset-label mt-2">CPUs</label>
             <input
@@ -107,7 +120,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
           </div>
         </div>
         <!-- Memory -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="fieldset-label mt-2">Memory</label>
             <label class="input w-full">
@@ -139,7 +152,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
           </div>
         </div>
         <!-- System, OS family & architecture -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="fieldset-label mt-2">System</label>
             <input
@@ -154,19 +167,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">OS family</label>
-            <input
-              type="text"
-              id={@form[:expected_server_os_family].id}
-              class="input w-full"
-              name={@form[:expected_server_os_family].name}
-              value={@form[:expected_server_os_family].value}
-              placeholder="e.g. Debian"
-            />
-            <.errors_for field={@form[:expected_server_os_family]} />
-          </div>
-
-          <div>
             <label class="fieldset-label mt-2">Architecture</label>
             <input
               type="text"
@@ -178,9 +178,22 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
             />
             <.errors_for field={@form[:expected_server_architecture]} />
           </div>
+
+          <div>
+            <label class="fieldset-label mt-2">OS family</label>
+            <input
+              type="text"
+              id={@form[:expected_server_os_family].id}
+              class="input w-full"
+              name={@form[:expected_server_os_family].name}
+              value={@form[:expected_server_os_family].value}
+              placeholder="e.g. Debian"
+            />
+            <.errors_for field={@form[:expected_server_os_family]} />
+          </div>
         </div>
         <!-- Distribution -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="fieldset-label mt-2">Distribution</label>
             <input

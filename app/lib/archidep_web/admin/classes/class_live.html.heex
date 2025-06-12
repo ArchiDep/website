@@ -26,29 +26,51 @@
   {@class.name}
 </h2>
 
-<dl class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4">
-  <dt class="font-bold">Start date</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
-    <%= if @class.start_date do %>
-      {format_date(@class.start_date)}
-    <% else %>
-      <.no_data />
-    <% end %>
-  </dd>
-  <dt class="font-bold">End date</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
-    <%= if @class.end_date do %>
-      {format_date(@class.end_date)}
-    <% else %>
-      <.no_data />
-    <% end %>
-  </dd>
-  <dt class="font-bold">Active</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
-    <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
-    <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
-  </dd>
-</dl>
+<div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
+  <div class="col-span-1 md:col-span-3">
+    <dl class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
+      <dt class="font-bold">Start date</dt>
+      <dd class="col-span-1 md:col-span-2 xl:col-span-3">
+        <%= if @class.start_date do %>
+          {format_date(@class.start_date)}
+        <% else %>
+          <.no_data />
+        <% end %>
+      </dd>
+      <dt class="font-bold">End date</dt>
+      <dd class="col-span-1 md:col-span-2 xl:col-span-3">
+        <%= if @class.end_date do %>
+          {format_date(@class.end_date)}
+        <% else %>
+          <.no_data />
+        <% end %>
+      </dd>
+      <dt class="font-bold">Active</dt>
+      <dd class="col-span-1 md:col-span-2 xl:col-span-4">
+        <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
+        <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
+      </dd>
+    </dl>
+  </div>
+
+  <div class="col-span1 md:col-span-2">
+    <div class="card bg-base-300 card-sm shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title">Expected server properties</h2>
+        <li :if={expected_cpu(@class) != ""}>
+          {expected_cpu(@class)}
+        </li>
+        <li :if={expected_memory(@class) != ""}>
+          {expected_memory(@class)}
+        </li>
+        <li :if={expected_os(@class) != ""}>
+          {expected_os(@class)}
+        </li>
+        <li>Ubuntu 24.04 Noble</li>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="mt-4 join">
   <button

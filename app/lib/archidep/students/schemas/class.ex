@@ -4,19 +4,6 @@ defmodule ArchiDep.Students.Schemas.Class do
   course (e.g. the course for the 2024-2025 academic year).
   """
 
-  # Expected Ansible facts
-  # ansible_processor_count: 1
-  # ansible_processor_cores: 16
-  # ansible_processor_vcpus?
-  # ansible_memory_mb.real.total: 7837
-  # ansible_memory_mb.swap.total: 1023
-  # ansible_system: Linux
-  # ansible_os_family: Debian
-  # ansible_distribution: Ubuntu
-  # ansible_distribution_release: noble
-  # ansible_distribution_version: 24.04
-  # ansible_architecture: x86_64
-
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
@@ -33,13 +20,13 @@ defmodule ArchiDep.Students.Schemas.Class do
           end_date: Date.t() | nil,
           active: boolean(),
           # Expected server properties for students of this class
-          expected_server_cpus: 1..32_767 | nil,
-          expected_server_cores: 1..32_767 | nil,
-          expected_server_vcpus: 1..32_767 | nil,
-          expected_server_memory: 1..2_147_483_647 | nil,
-          expected_server_swap: 1..2_147_483_647 | nil,
-          expected_server_architecture: String.t() | nil,
+          expected_server_cpus: pos_integer() | nil,
+          expected_server_cores: pos_integer() | nil,
+          expected_server_vcpus: pos_integer() | nil,
+          expected_server_memory: pos_integer() | nil,
+          expected_server_swap: pos_integer() | nil,
           expected_server_system: String.t() | nil,
+          expected_server_architecture: String.t() | nil,
           expected_server_os_family: String.t() | nil,
           expected_server_distribution: String.t() | nil,
           expected_server_distribution_release: String.t() | nil,
@@ -60,8 +47,8 @@ defmodule ArchiDep.Students.Schemas.Class do
     field(:expected_server_vcpus, :integer)
     field(:expected_server_memory, :integer)
     field(:expected_server_swap, :integer)
-    field(:expected_server_architecture, :string)
     field(:expected_server_system, :string)
+    field(:expected_server_architecture, :string)
     field(:expected_server_os_family, :string)
     field(:expected_server_distribution, :string)
     field(:expected_server_distribution_release, :string)
@@ -87,8 +74,8 @@ defmodule ArchiDep.Students.Schemas.Class do
       :expected_server_vcpus,
       :expected_server_memory,
       :expected_server_swap,
-      :expected_server_architecture,
       :expected_server_system,
+      :expected_server_architecture,
       :expected_server_os_family,
       :expected_server_distribution,
       :expected_server_distribution_release,
@@ -126,8 +113,8 @@ defmodule ArchiDep.Students.Schemas.Class do
       :expected_server_vcpus,
       :expected_server_memory,
       :expected_server_swap,
-      :expected_server_architecture,
       :expected_server_system,
+      :expected_server_architecture,
       :expected_server_os_family,
       :expected_server_distribution,
       :expected_server_distribution_release,
@@ -180,8 +167,8 @@ defmodule ArchiDep.Students.Schemas.Class do
       greater_than: 0,
       less_than_or_equal_to: 2_147_483_647
     )
-    |> validate_length(:expected_server_architecture, max: 20)
     |> validate_length(:expected_server_system, max: 50)
+    |> validate_length(:expected_server_architecture, max: 20)
     |> validate_length(:expected_server_os_family, max: 50)
     |> validate_length(:expected_server_distribution, max: 50)
     |> validate_length(:expected_server_distribution_release, max: 50)
