@@ -6,14 +6,14 @@ defmodule ArchiDep.Servers.CreateServer do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
 
-  @spec validate_server(Authentication.t(), Types.create_server_data()) :: Changeset.t()
+  @spec validate_server(Authentication.t(), Types.server_data()) :: Changeset.t()
   def validate_server(auth, data) do
     authorize!(auth, Policy, :servers, :validate_server, nil)
     user = Authentication.fetch_user_account(auth)
     Server.new(data, user)
   end
 
-  @spec create_server(Authentication.t(), Types.create_server_data()) ::
+  @spec create_server(Authentication.t(), Types.server_data()) ::
           {:ok, Server.t()} | {:error, Changeset.t()}
   def create_server(auth, data) do
     authorize!(auth, Policy, :servers, :create_server, nil)

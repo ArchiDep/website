@@ -1,6 +1,7 @@
 defmodule ArchiDepWeb.Servers.ServersLive do
   use ArchiDepWeb, :live_view
 
+  import ArchiDepWeb.Servers.ServerComponents
   alias ArchiDep.Servers
   alias ArchiDepWeb.Servers.NewServerDialogLive
 

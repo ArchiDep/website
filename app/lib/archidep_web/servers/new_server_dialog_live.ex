@@ -33,7 +33,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
       :server,
       ServerForm.create_changeset(params),
       fn data ->
-        auth |> Servers.validate_server(ServerForm.to_create_server_data(data)) |> ok()
+        auth |> Servers.validate_server(ServerForm.to_server_data(data)) |> ok()
       end,
       socket
     )
@@ -43,7 +43,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
     with {:ok, form_data} <-
            Changeset.apply_action(ServerForm.create_changeset(params), :validate),
          {:ok, _server} <-
-           Servers.create_server(socket.assigns.auth, ServerForm.to_create_server_data(form_data)) do
+           Servers.create_server(socket.assigns.auth, ServerForm.to_server_data(form_data)) do
       {:noreply,
        socket
        |> put_flash(:info, "Server created")

@@ -105,8 +105,8 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     |> validate_required([:ip_address, :username])
   end
 
-  @spec to_create_server_data(t()) :: Types.create_server_data()
-  def to_create_server_data(%__MODULE__{} = form) do
+  @spec to_server_data(t()) :: Types.server_data()
+  def to_server_data(%__MODULE__{} = form) do
     %{
       name: form.name,
       ip_address: form.ip_address,

@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.Events.ServerCreated do
+defmodule ArchiDep.Servers.Events.ServerUpdated do
   use ArchiDep, :event
 
   alias ArchiDep.Servers.Schemas.Server
@@ -109,11 +109,11 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
   end
 
   defimpl Event do
-    alias ArchiDep.Servers.Events.ServerCreated
+    alias ArchiDep.Servers.Events.ServerUpdated
 
-    def event_stream(%ServerCreated{id: id}),
+    def event_stream(%ServerUpdated{id: id}),
       do: "servers:#{id}"
 
-    def event_type(_event), do: :"archidep/servers/server-created"
+    def event_type(_event), do: :"archidep/servers/server-updated"
   end
 end

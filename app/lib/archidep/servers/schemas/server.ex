@@ -63,6 +63,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  @spec name_or_default(__MODULE__.t()) :: String.t()
+  def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
+  def name_or_default(%__MODULE__{name: name}), do: name
+
+  @spec default_name(Server.t()) :: String.t()
+  def default_name(%__MODULE__{ip_address: ip_address, username: username}),
+    do: "#{username}@#{:inet.ntoa(ip_address.address)}"
+
   @spec list_active_servers() :: list(t())
   def list_active_servers do
     Repo.all(
@@ -92,7 +100,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end
   end
 
-  @spec new(Types.create_server_data(), UserAccount.t()) :: Changeset.t(t())
+  @spec new(Types.server_data(), UserAccount.t()) :: Changeset.t(t())
   def new(data, user) do
     id = UUID.generate()
     now = DateTime.utc_now()
@@ -122,6 +130,53 @@ defmodule ArchiDep.Servers.Schemas.Server do
       created_at: now,
       updated_at: now
     )
+    |> validate()
+    |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
+      ip_address = get_field(changeset, :ip_address)
+
+      from(s in __MODULE__,
+        where: s.ip_address == ^ip_address
+      )
+    end)
+  end
+
+  @spec update(__MODULE__.t(), Types.server_data()) :: Changeset.t(t())
+  def update(server, data) do
+    id = server.id
+    now = DateTime.utc_now()
+
+    server
+    |> cast(data, [
+      :name,
+      :ip_address,
+      :username,
+      :ssh_port,
+      :expected_cpus,
+      :expected_cores,
+      :expected_vcpus,
+      :expected_memory,
+      :expected_swap,
+      :expected_system,
+      :expected_architecture,
+      :expected_os_family,
+      :expected_distribution,
+      :expected_distribution_release,
+      :expected_distribution_version
+    ])
+    |> change(updated_at: now)
+    |> optimistic_lock(:version)
+    |> validate()
+    |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
+      ip_address = get_field(changeset, :ip_address)
+
+      from(s in __MODULE__,
+        where: s.id != ^id and s.ip_address == ^ip_address
+      )
+    end)
+  end
+
+  def validate(changeset) do
+    changeset
     |> update_change(:name, &trim_to_nil/1)
     |> update_change(:username, &trim/1)
     |> update_change(:expected_system, &trim_to_nil/1)
@@ -135,13 +190,6 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
     |> unique_constraint(:ip_address)
-    |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
-      ip_address = get_field(changeset, :ip_address)
-
-      from(s in __MODULE__,
-        where: s.ip_address == ^ip_address
-      )
-    end)
     |> assoc_constraint(:user_account)
     |> validate_number(:expected_cpus, greater_than_or_equal_to: 0, less_than_or_equal_to: 32_767)
     |> validate_number(:expected_cores,

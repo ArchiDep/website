@@ -29,6 +29,10 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           value={@form[:name].value}
         />
         <.errors_for field={@form[:name]} />
+      </fieldset>
+
+      <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
+        <legend class="fieldset-legend">Connection information</legend>
 
         <label class="fieldset-label mt-2">IP address</label>
         <input
