@@ -9,6 +9,7 @@ defmodule ArchiDep.Repo.Migrations.AddExpectedServerPropertiesToClasses do
       add(:expected_server_memory, :integer)
       add(:expected_server_swap, :integer)
       add(:expected_server_architecture, :string, size: 20)
+      add(:expected_server_system, :string, size: 50)
       add(:expected_server_os_family, :string, size: 50)
       add(:expected_server_distribution, :string, size: 50)
       add(:expected_server_distribution_release, :string, size: 50)
@@ -37,6 +38,10 @@ defmodule ArchiDep.Repo.Migrations.AddExpectedServerPropertiesToClasses do
 
     create constraint(:classes, :expected_server_architecture_not_empty,
              check: "expected_server_architecture IS NULL OR expected_server_architecture <> ''"
+           )
+
+    create constraint(:classes, :expected_server_system_not_empty,
+             check: "expected_server_system IS NULL OR expected_server_system <> ''"
            )
 
     create constraint(:classes, :expected_server_os_family_not_empty,

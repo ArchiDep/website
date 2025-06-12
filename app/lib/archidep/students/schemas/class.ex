@@ -39,6 +39,7 @@ defmodule ArchiDep.Students.Schemas.Class do
           expected_server_memory: 1..2_147_483_647 | nil,
           expected_server_swap: 1..2_147_483_647 | nil,
           expected_server_architecture: String.t() | nil,
+          expected_server_system: String.t() | nil,
           expected_server_os_family: String.t() | nil,
           expected_server_distribution: String.t() | nil,
           expected_server_distribution_release: String.t() | nil,
@@ -60,6 +61,7 @@ defmodule ArchiDep.Students.Schemas.Class do
     field(:expected_server_memory, :integer)
     field(:expected_server_swap, :integer)
     field(:expected_server_architecture, :string)
+    field(:expected_server_system, :string)
     field(:expected_server_os_family, :string)
     field(:expected_server_distribution, :string)
     field(:expected_server_distribution_release, :string)
@@ -86,6 +88,7 @@ defmodule ArchiDep.Students.Schemas.Class do
       :expected_server_memory,
       :expected_server_swap,
       :expected_server_architecture,
+      :expected_server_system,
       :expected_server_os_family,
       :expected_server_distribution,
       :expected_server_distribution_release,
@@ -124,6 +127,7 @@ defmodule ArchiDep.Students.Schemas.Class do
       :expected_server_memory,
       :expected_server_swap,
       :expected_server_architecture,
+      :expected_server_system,
       :expected_server_os_family,
       :expected_server_distribution,
       :expected_server_distribution_release,
@@ -156,6 +160,7 @@ defmodule ArchiDep.Students.Schemas.Class do
     changeset
     |> update_change(:name, &trim/1)
     |> update_change(:expected_server_architecture, &trim_to_nil/1)
+    |> update_change(:expected_server_system, &trim_to_nil/1)
     |> update_change(:expected_server_os_family, &trim_to_nil/1)
     |> update_change(:expected_server_distribution, &trim_to_nil/1)
     |> update_change(:expected_server_distribution_release, &trim_to_nil/1)
@@ -176,6 +181,7 @@ defmodule ArchiDep.Students.Schemas.Class do
       less_than_or_equal_to: 2_147_483_647
     )
     |> validate_length(:expected_server_architecture, max: 20)
+    |> validate_length(:expected_server_system, max: 50)
     |> validate_length(:expected_server_os_family, max: 50)
     |> validate_length(:expected_server_distribution, max: 50)
     |> validate_length(:expected_server_distribution_release, max: 50)

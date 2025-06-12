@@ -62,10 +62,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
           /> Active
         </label>
       </fieldset>
-
+      <!-- Expected server properties -->
       <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
         <legend class="fieldset-legend">Expected server properties</legend>
-
+        <!-- CPU -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div>
             <label class="fieldset-label mt-2">CPUs</label>
@@ -104,6 +104,120 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
               placeholder="e.g. 2"
             />
             <.errors_for field={@form[:expected_server_vcpus]} />
+          </div>
+        </div>
+        <!-- Memory -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <label class="fieldset-label mt-2">Memory</label>
+            <label class="input w-full">
+              <input
+                type="text"
+                id={@form[:expected_server_memory].id}
+                name={@form[:expected_server_memory].name}
+                value={@form[:expected_server_memory].value}
+                placeholder="e.g. 2048"
+              />
+              <span class="label">MB</span>
+            </label>
+            <.errors_for field={@form[:expected_server_memory]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">Swap</label>
+            <label class="input w-full">
+              <input
+                type="text"
+                id={@form[:expected_server_swap].id}
+                name={@form[:expected_server_swap].name}
+                value={@form[:expected_server_swap].value}
+                placeholder="e.g. 1000"
+              />
+              <span class="label">MB</span>
+            </label>
+            <.errors_for field={@form[:expected_server_swap]} />
+          </div>
+        </div>
+        <!-- System, OS family & architecture -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div>
+            <label class="fieldset-label mt-2">System</label>
+            <input
+              type="text"
+              id={@form[:expected_server_system].id}
+              class="input w-full"
+              name={@form[:expected_server_system].name}
+              value={@form[:expected_server_system].value}
+              placeholder="e.g. Linux"
+            />
+            <.errors_for field={@form[:expected_server_system]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">OS family</label>
+            <input
+              type="text"
+              id={@form[:expected_server_os_family].id}
+              class="input w-full"
+              name={@form[:expected_server_os_family].name}
+              value={@form[:expected_server_os_family].value}
+              placeholder="e.g. Debian"
+            />
+            <.errors_for field={@form[:expected_server_os_family]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">Architecture</label>
+            <input
+              type="text"
+              id={@form[:expected_server_architecture].id}
+              class="input w-full"
+              name={@form[:expected_server_architecture].name}
+              value={@form[:expected_server_architecture].value}
+              placeholder="e.g. x86_64"
+            />
+            <.errors_for field={@form[:expected_server_architecture]} />
+          </div>
+        </div>
+        <!-- Distribution -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div>
+            <label class="fieldset-label mt-2">Distribution</label>
+            <input
+              type="text"
+              id={@form[:expected_server_distribution].id}
+              class="input w-full"
+              name={@form[:expected_server_distribution].name}
+              value={@form[:expected_server_distribution].value}
+              placeholder="e.g. Ubuntu"
+            />
+            <.errors_for field={@form[:expected_server_distribution]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">Release</label>
+            <input
+              type="text"
+              id={@form[:expected_server_distribution_release].id}
+              class="input w-full"
+              name={@form[:expected_server_distribution_release].name}
+              value={@form[:expected_server_distribution_release].value}
+              placeholder="e.g. noble"
+            />
+            <.errors_for field={@form[:expected_server_distribution_release]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">Version</label>
+            <input
+              type="text"
+              id={@form[:expected_server_distribution_version].id}
+              class="input w-full"
+              name={@form[:expected_server_distribution_version].name}
+              value={@form[:expected_server_distribution_version].value}
+              placeholder="e.g. 24.04"
+            />
+            <.errors_for field={@form[:expected_server_distribution_version]} />
           </div>
         </div>
       </fieldset>
