@@ -146,8 +146,8 @@ defmodule ArchiDep.Students.Schemas.Class do
   defp validate(changeset) do
     changeset
     |> update_change(:name, &trim/1)
-    |> update_change(:expected_server_architecture, &trim_to_nil/1)
     |> update_change(:expected_server_system, &trim_to_nil/1)
+    |> update_change(:expected_server_architecture, &trim_to_nil/1)
     |> update_change(:expected_server_os_family, &trim_to_nil/1)
     |> update_change(:expected_server_distribution, &trim_to_nil/1)
     |> update_change(:expected_server_distribution_release, &trim_to_nil/1)

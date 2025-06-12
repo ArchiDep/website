@@ -74,7 +74,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         <div role="alert" class="alert alert-info alert-soft">
           <span class="text-sm">
             When a student registers a server for this class, warnings will be
-            issued if the server does not meet these expected properties. This
+            issued if the server does not meet these expected properties.
+            Leaving a field empty will disable the check for that property. This
             can be overriden for each server.
           </span>
         </div>

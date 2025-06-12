@@ -10,7 +10,18 @@ defmodule ArchiDepWeb.Servers.ServerForm do
           name: String.t() | nil,
           ip_address: String.t(),
           username: String.t(),
-          ssh_port: integer() | nil
+          ssh_port: integer() | nil,
+          expected_cpus: pos_integer() | nil,
+          expected_cores: pos_integer() | nil,
+          expected_vcpus: pos_integer() | nil,
+          expected_memory: pos_integer() | nil,
+          expected_swap: pos_integer() | nil,
+          expected_system: String.t() | nil,
+          expected_architecture: String.t() | nil,
+          expected_os_family: String.t() | nil,
+          expected_distribution: String.t() | nil,
+          expected_distribution_release: String.t() | nil,
+          expected_distribution_version: String.t() | nil
         }
 
   @primary_key false
@@ -19,12 +30,39 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     field(:ip_address, :string)
     field(:username, :string)
     field(:ssh_port, :integer)
+    field(:expected_cpus, :integer)
+    field(:expected_cores, :integer)
+    field(:expected_vcpus, :integer)
+    field(:expected_memory, :integer)
+    field(:expected_swap, :integer)
+    field(:expected_system, :string)
+    field(:expected_architecture, :string)
+    field(:expected_os_family, :string)
+    field(:expected_distribution, :string)
+    field(:expected_distribution_release, :string)
+    field(:expected_distribution_version, :string)
   end
 
   @spec create_changeset(map) :: Changeset.t(t())
   def create_changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{}
-    |> cast(params, [:name, :ip_address, :username, :ssh_port])
+    |> cast(params, [
+      :name,
+      :ip_address,
+      :username,
+      :ssh_port,
+      :expected_cpus,
+      :expected_cores,
+      :expected_vcpus,
+      :expected_memory,
+      :expected_swap,
+      :expected_system,
+      :expected_architecture,
+      :expected_os_family,
+      :expected_distribution,
+      :expected_distribution_release,
+      :expected_distribution_version
+    ])
     |> validate_required([:ip_address, :username])
   end
 
@@ -34,9 +72,36 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       name: server.name,
       ip_address: server.ip_address,
       username: server.username,
-      ssh_port: server.ssh_port
+      ssh_port: server.ssh_port,
+      expected_cpus: server.expected_cpus,
+      expected_cores: server.expected_cores,
+      expected_vcpus: server.expected_vcpus,
+      expected_memory: server.expected_memory,
+      expected_swap: server.expected_swap,
+      expected_system: server.expected_system,
+      expected_architecture: server.expected_architecture,
+      expected_os_family: server.expected_os_family,
+      expected_distribution: server.expected_distribution,
+      expected_distribution_release: server.expected_distribution_release,
+      expected_distribution_version: server.expected_distribution_version
     }
-    |> cast(params, [:name, :ip_address, :username, :ssh_port])
+    |> cast(params, [
+      :name,
+      :ip_address,
+      :username,
+      :ssh_port,
+      :expected_cpus,
+      :expected_cores,
+      :expected_vcpus,
+      :expected_memory,
+      :expected_swap,
+      :expected_system,
+      :expected_architecture,
+      :expected_os_family,
+      :expected_distribution,
+      :expected_distribution_release,
+      :expected_distribution_version
+    ])
     |> validate_required([:ip_address, :username])
   end
 
@@ -46,7 +111,18 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       name: form.name,
       ip_address: form.ip_address,
       username: form.username,
-      ssh_port: form.ssh_port
+      ssh_port: form.ssh_port,
+      expected_cpus: form.expected_cpus,
+      expected_cores: form.expected_cores,
+      expected_vcpus: form.expected_vcpus,
+      expected_memory: form.expected_memory,
+      expected_swap: form.expected_swap,
+      expected_system: form.expected_system,
+      expected_architecture: form.expected_architecture,
+      expected_os_family: form.expected_os_family,
+      expected_distribution: form.expected_distribution,
+      expected_distribution_release: form.expected_distribution_release,
+      expected_distribution_version: form.expected_distribution_version
     }
   end
 end
