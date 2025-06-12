@@ -9,6 +9,7 @@ defmodule ArchiDep.Events.FetchEvents do
   alias ArchiDep.Events.Policy
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Events.Types
+  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Schemas.Student
 
@@ -76,6 +77,9 @@ defmodule ArchiDep.Events.FetchEvents do
         ["classes", id], map ->
           Map.update(map, "classes", [id], fn ids -> [id | ids] end)
 
+        ["servers", id], map ->
+          Map.update(map, "servers", [id], fn ids -> [id | ids] end)
+
         ["students", id], map ->
           Map.update(map, "students", [id], fn ids -> [id | ids] end)
 
@@ -99,6 +103,9 @@ defmodule ArchiDep.Events.FetchEvents do
   defp fetch_entities_by_type({"classes", ids}) when is_list(ids),
     do: from(c in Class, where: c.id in ^ids)
 
+  defp fetch_entities_by_type({"servers", ids}) when is_list(ids),
+    do: from(s in Server, where: s.id in ^ids)
+
   defp fetch_entities_by_type({"students", ids}) when is_list(ids),
     do: from(s in Student, where: s.id in ^ids)
 
@@ -113,8 +120,13 @@ defmodule ArchiDep.Events.FetchEvents do
             Map.put(acc, "classes:#{class.id}", class)
           end)
 
-        {"students", classes}, map ->
-          Enum.reduce(classes, map, fn class, acc ->
+        {"servers", servers}, map ->
+          Enum.reduce(servers, map, fn class, acc ->
+            Map.put(acc, "servers:#{class.id}", class)
+          end)
+
+        {"students", students}, map ->
+          Enum.reduce(students, map, fn class, acc ->
             Map.put(acc, "students:#{class.id}", class)
           end)
 

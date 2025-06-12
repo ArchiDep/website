@@ -54,6 +54,17 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
     |> Enum.join(", ")
   end
 
+  @spec expected_distribution(Class.t()) :: String.t()
+  def expected_distribution(class) do
+    [
+      class.expected_server_distribution,
+      class.expected_server_distribution_version,
+      class.expected_server_distribution_release
+    ]
+    |> Enum.filter(&(&1 != nil))
+    |> Enum.join(" ")
+  end
+
   @impl LiveView
   def mount(%{"id" => id}, _session, socket) do
     with {:ok, class} <- Students.fetch_class(socket.assigns.auth, id) do

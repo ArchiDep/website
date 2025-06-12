@@ -53,7 +53,7 @@
     </dl>
   </div>
 
-  <div class="col-span1 md:col-span-2">
+  <div :if={expected_cpu(@class) != "" or expected_memory(@class) != "" or expected_os(@class) != "" or expected_distribution(@class) != ""} class="col-span1 md:col-span-2">
     <div class="card bg-base-300 card-sm shadow-sm">
       <div class="card-body">
         <h2 class="card-title">Expected server properties</h2>
@@ -66,7 +66,9 @@
         <li :if={expected_os(@class) != ""}>
           {expected_os(@class)}
         </li>
-        <li>Ubuntu 24.04 Noble</li>
+        <li :if={expected_distribution(@class) != ""}>
+          {expected_distribution(@class)}
+        </li>
       </div>
     </div>
   </div>

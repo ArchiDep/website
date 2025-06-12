@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
 
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Events.Store.StoredEvent
+  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Schemas.Student
 
@@ -27,6 +28,9 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
 
   defp event_context_and_class(["archidep", "accounts", _action]),
     do: [context: "accounts", class: "badge-primary"]
+
+  defp event_context_and_class(["archidep", "servers", _action]),
+    do: [context: "servers", class: "badge-info"]
 
   defp event_context_and_class(["archidep", "students", _action]),
     do: [context: "students", class: "badge-secondary"]
@@ -59,6 +63,14 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
   defp event_action_and_class(["archidep", "accounts", action]),
     do: [action: action, class: "badge-warning"]
 
+  defp event_action_and_class(["archidep", "servers", action])
+       when action in ["server-created"],
+       do: [action: action, class: "badge-success"]
+
+  defp event_action_and_class(["archidep", "servers", action])
+       when action in ["server-updated"],
+       do: [action: action, class: "badge-warning"]
+
   defp event_action_and_class(["archidep", "students", action])
        when action in ["class-created", "student-created"],
        do: [action: action, class: "badge-success"]
@@ -90,6 +102,16 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
         <span class={"flex items-center #{@extra_class}"}>
           <Heroicons.academic_cap solid class="size-6 mr-1" />
           <span>{@name}</span>
+        </span>
+        """
+
+      %Server{} = server ->
+        assigns = assign(assigns, :server, server)
+
+        ~H"""
+        <span class={"flex items-center #{@extra_class}"}>
+          <Heroicons.server solid class="size-6 mr-1" />
+          <span>{Server.name_or_default(@server)}</span>
         </span>
         """
 

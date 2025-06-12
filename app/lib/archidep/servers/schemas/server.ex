@@ -67,7 +67,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
   def name_or_default(%__MODULE__{name: name}), do: name
 
-  @spec default_name(Server.t()) :: String.t()
+  @spec default_name(__MODULE__.t()) :: String.t()
   def default_name(%__MODULE__{ip_address: ip_address, username: username}),
     do: "#{username}@#{:inet.ntoa(ip_address.address)}"
 
