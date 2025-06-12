@@ -31,6 +31,7 @@ defmodule ArchiDep.Students.Schemas.StudentImportList do
   def student_changeset(student, params) do
     student
     |> cast(params, [:name, :email])
+    |> update_change(:name, &trim/1)
     |> validate_required([:name, :email])
     |> validate_format(:email, ~r/\A.+@.+\..+\z/)
   end

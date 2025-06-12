@@ -61,22 +61,67 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
             value="true"
           /> Active
         </label>
+      </fieldset>
 
-        <div class="mt-2 flex justify-end gap-x-2">
-          <button type="button" class="btn btn-secondary" phx-click={@on_close}>
-            <span class="flex items-center gap-x-2">
-              <Heroicons.x_mark class="size-4" />
-              <span>Close</span>
-            </span>
-          </button>
-          <button type="submit" class="btn btn-primary">
-            <span class="flex items-center gap-x-2">
-              <Heroicons.check class="size-4" />
-              <span>Save</span>
-            </span>
-          </button>
+      <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
+        <legend class="fieldset-legend">Expected server properties</legend>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div>
+            <label class="fieldset-label mt-2">CPUs</label>
+            <input
+              type="text"
+              id={@form[:expected_server_cpus].id}
+              class="input w-full"
+              name={@form[:expected_server_cpus].name}
+              value={@form[:expected_server_cpus].value}
+              placeholder="e.g. 1"
+            />
+            <.errors_for field={@form[:expected_server_cpus]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">CPU cores</label>
+            <input
+              type="text"
+              id={@form[:expected_server_cores].id}
+              class="input w-full"
+              name={@form[:expected_server_cores].name}
+              value={@form[:expected_server_cores].value}
+              placeholder="e.g. 2"
+            />
+            <.errors_for field={@form[:expected_server_cores]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">vCPUs</label>
+            <input
+              type="text"
+              id={@form[:expected_server_vcpus].id}
+              class="input w-full"
+              name={@form[:expected_server_vcpus].name}
+              value={@form[:expected_server_vcpus].value}
+              placeholder="e.g. 2"
+            />
+            <.errors_for field={@form[:expected_server_vcpus]} />
+          </div>
         </div>
       </fieldset>
+
+      <div class="mt-2 flex justify-end gap-x-2">
+        <button type="button" class="btn btn-secondary" phx-click={@on_close}>
+          <span class="flex items-center gap-x-2">
+            <Heroicons.x_mark class="size-4" />
+            <span>Close</span>
+          </span>
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <span class="flex items-center gap-x-2">
+            <Heroicons.check class="size-4" />
+            <span>Save</span>
+          </span>
+        </button>
+      </div>
     </.form>
     """
   end

@@ -11,7 +11,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime_usec]
 
-  # TODO: add optional custom SSH port
+  # TODO: store number of consecutive failed connection attemps
+
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t() | nil,
@@ -79,8 +80,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
       created_at: now,
       updated_at: now
     )
-    |> update_change(:name, &String.trim/1)
-    |> update_change(:username, &String.trim/1)
+    |> update_change(:name, &trim_to_nil/1)
+    |> update_change(:username, &trim/1)
     |> validate_length(:name, max: 50)
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)

@@ -4,6 +4,19 @@ defmodule ArchiDep.Students.Schemas.Class do
   course (e.g. the course for the 2024-2025 academic year).
   """
 
+  # Expected Ansible facts
+  # ansible_processor_count: 1
+  # ansible_processor_cores: 16
+  # ansible_processor_vcpus?
+  # ansible_memory_mb.real.total: 7837
+  # ansible_memory_mb.swap.total: 1023
+  # ansible_system: Linux
+  # ansible_os_family: Debian
+  # ansible_distribution: Ubuntu
+  # ansible_distribution_release: noble
+  # ansible_distribution_version: 24.04
+  # ansible_architecture: x86_64
+
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
@@ -19,6 +32,18 @@ defmodule ArchiDep.Students.Schemas.Class do
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
           active: boolean(),
+          # Expected server properties for students of this class
+          expected_server_cpus: 1..32_767 | nil,
+          expected_server_cores: 1..32_767 | nil,
+          expected_server_vcpus: 1..32_767 | nil,
+          expected_server_memory: 1..2_147_483_647 | nil,
+          expected_server_swap: 1..2_147_483_647 | nil,
+          expected_server_architecture: String.t() | nil,
+          expected_server_os_family: String.t() | nil,
+          expected_server_distribution: String.t() | nil,
+          expected_server_distribution_release: String.t() | nil,
+          expected_server_distribution_version: String.t() | nil,
+          # Common metadata
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -29,6 +54,16 @@ defmodule ArchiDep.Students.Schemas.Class do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean)
+    field(:expected_server_cpus, :integer)
+    field(:expected_server_cores, :integer)
+    field(:expected_server_vcpus, :integer)
+    field(:expected_server_memory, :integer)
+    field(:expected_server_swap, :integer)
+    field(:expected_server_architecture, :string)
+    field(:expected_server_os_family, :string)
+    field(:expected_server_distribution, :string)
+    field(:expected_server_distribution_release, :string)
+    field(:expected_server_distribution_version, :string)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
@@ -40,7 +75,22 @@ defmodule ArchiDep.Students.Schemas.Class do
     now = DateTime.utc_now()
 
     %__MODULE__{}
-    |> cast(data, [:name, :start_date, :end_date, :active])
+    |> cast(data, [
+      :name,
+      :start_date,
+      :end_date,
+      :active,
+      :expected_server_cpus,
+      :expected_server_cores,
+      :expected_server_vcpus,
+      :expected_server_memory,
+      :expected_server_swap,
+      :expected_server_architecture,
+      :expected_server_os_family,
+      :expected_server_distribution,
+      :expected_server_distribution_release,
+      :expected_server_distribution_version
+    ])
     |> change(
       id: id,
       version: 1,
@@ -63,7 +113,22 @@ defmodule ArchiDep.Students.Schemas.Class do
     now = DateTime.utc_now()
 
     class
-    |> cast(data, [:name, :start_date, :end_date, :active])
+    |> cast(data, [
+      :name,
+      :start_date,
+      :end_date,
+      :active,
+      :expected_server_cpus,
+      :expected_server_cores,
+      :expected_server_vcpus,
+      :expected_server_memory,
+      :expected_server_swap,
+      :expected_server_architecture,
+      :expected_server_os_family,
+      :expected_server_distribution,
+      :expected_server_distribution_release,
+      :expected_server_distribution_version
+    ])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate()
@@ -89,13 +154,32 @@ defmodule ArchiDep.Students.Schemas.Class do
 
   defp validate(changeset) do
     changeset
-    |> update_change(:name, &String.trim/1)
-    |> validate_length(:name, max: 50)
-    |> validate_format(:name, ~r/\A\S.*\z/, message: "must not start with whitespace")
-    |> validate_format(:name, ~r/\A.*\S\z/, message: "must not end with whitespace")
+    |> update_change(:name, &trim/1)
+    |> update_change(:expected_server_architecture, &trim_to_nil/1)
+    |> update_change(:expected_server_os_family, &trim_to_nil/1)
+    |> update_change(:expected_server_distribution, &trim_to_nil/1)
+    |> update_change(:expected_server_distribution_release, &trim_to_nil/1)
+    |> update_change(:expected_server_distribution_version, &trim_to_nil/1)
     |> validate_required([:name, :active])
+    |> validate_length(:name, max: 50)
     |> unique_constraint(:name, name: :classes_unique_name_index)
     |> validate_start_and_end_dates()
+    |> validate_number(:expected_server_cpus, greater_than: 0, less_than_or_equal_to: 32_767)
+    |> validate_number(:expected_server_cores, greater_than: 0, less_than_or_equal_to: 32_767)
+    |> validate_number(:expected_server_vcpus, greater_than: 0, less_than_or_equal_to: 32_767)
+    |> validate_number(:expected_server_memory,
+      greater_than: 0,
+      less_than_or_equal_to: 2_147_483_647
+    )
+    |> validate_number(:expected_server_swap,
+      greater_than: 0,
+      less_than_or_equal_to: 2_147_483_647
+    )
+    |> validate_length(:expected_server_architecture, max: 20)
+    |> validate_length(:expected_server_os_family, max: 50)
+    |> validate_length(:expected_server_distribution, max: 50)
+    |> validate_length(:expected_server_distribution_release, max: 50)
+    |> validate_length(:expected_server_distribution_version, max: 20)
   end
 
   defp validate_start_and_end_dates(changeset) do
