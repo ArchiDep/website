@@ -13,6 +13,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
           username: String.t(),
           ssh_port: integer() | nil,
           class_id: UUID.t() | nil,
+          app_username: String.t() | nil,
           expected_cpus: pos_integer() | nil,
           expected_cores: pos_integer() | nil,
           expected_vcpus: pos_integer() | nil,
@@ -33,6 +34,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     field(:username, :string)
     field(:ssh_port, :integer)
     field(:class_id, :binary_id)
+    field(:app_username, :string)
     field(:expected_cpus, :integer)
     field(:expected_cores, :integer)
     field(:expected_vcpus, :integer)
@@ -55,6 +57,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :username,
       :ssh_port,
       :class_id,
+      :app_username,
       :expected_cpus,
       :expected_cores,
       :expected_vcpus,
@@ -78,6 +81,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       username: server.username,
       ssh_port: server.ssh_port,
       class_id: server.class_id,
+      app_username: server.app_username,
       expected_cpus: server.expected_cpus,
       expected_cores: server.expected_cores,
       expected_vcpus: server.expected_vcpus,
@@ -95,6 +99,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :ip_address,
       :username,
       :ssh_port,
+      :app_username,
       :expected_cpus,
       :expected_cores,
       :expected_vcpus,
@@ -118,6 +123,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       username: form.username,
       ssh_port: form.ssh_port,
       class_id: form.class_id,
+      app_username: form.app_username,
       expected_cpus: form.expected_cpus,
       expected_cores: form.expected_cores,
       expected_vcpus: form.expected_vcpus,
@@ -139,6 +145,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       ip_address: form.ip_address,
       username: form.username,
       ssh_port: form.ssh_port,
+      app_username: form.app_username,
       expected_cpus: form.expected_cpus,
       expected_cores: form.expected_cores,
       expected_vcpus: form.expected_vcpus,

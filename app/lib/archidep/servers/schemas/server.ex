@@ -17,6 +17,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           name: String.t() | nil,
           ip_address: Postgrex.INET.t(),
           username: String.t(),
+          app_username: String.t() | nil,
           ssh_port: 1..65_535 | nil,
           class: Class.t() | NotLoaded,
           class_id: UUID.t(),
@@ -44,6 +45,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:name, :string)
     field(:ip_address, EctoNetwork.INET)
     field(:username, :string)
+    field(:app_username, :string)
     field(:ssh_port, :integer)
     belongs_to(:class, Class)
     belongs_to(:user_account, UserAccount)
@@ -119,6 +121,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :username,
       :ssh_port,
       :class_id,
+      :app_username,
       :expected_cpus,
       :expected_cores,
       :expected_vcpus,
@@ -159,6 +162,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :ip_address,
       :username,
       :ssh_port,
+      :app_username,
       :expected_cpus,
       :expected_cores,
       :expected_vcpus,
@@ -187,6 +191,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     changeset
     |> update_change(:name, &trim_to_nil/1)
     |> update_change(:username, &trim/1)
+    |> update_change(:app_username, &trim_to_nil/1)
     |> update_change(:expected_system, &trim_to_nil/1)
     |> update_change(:expected_architecture, &trim_to_nil/1)
     |> update_change(:expected_os_family, &trim_to_nil/1)
@@ -199,6 +204,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
     |> unique_constraint(:ip_address)
     |> assoc_constraint(:user_account)
+    |> validate_length(:app_username, max: 32)
     |> validate_number(:expected_cpus, greater_than_or_equal_to: 0, less_than_or_equal_to: 32_767)
     |> validate_number(:expected_cores,
       greater_than_or_equal_to: 0,

@@ -1,10 +1,10 @@
 ---
-- name: ArchiDep user
+- name: Application user
   hosts: all
   vars:
     archidep_user: "archidep"
   tasks:
-    - name: Create ArchiDep user
+    - name: Create application user
       ansible.builtin.user:
         name: "{{ archidep_user }}"
         comment: "ArchiDep"
@@ -13,10 +13,11 @@
         home: "/home/{{ archidep_user }}"
         password: "!"
         shell: /bin/bash
+        system: true
         state: present
       become: true
 
-    - name: Enable passwordless sudo for ArchiDep user
+    - name: Enable passwordless sudo for application user
       community.general.sudoers:
         name: "{{ archidep_user }}"
         commands: "ALL"

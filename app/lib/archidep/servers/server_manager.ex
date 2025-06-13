@@ -99,11 +99,11 @@ defmodule ArchiDep.Servers.ServerManager do
     case result do
       :ok ->
         Logger.info("Server manager is connected to server #{server.id}")
-        ServerConnection.ping_load_average(server, connection_ref)
+        :ok = ServerConnection.ping_load_average(server, connection_ref)
 
         {:ok, facts} = Ansible.gather_facts(server)
 
-        archidep_user_playbook = Ansible.playbook!("archidep-user")
+        archidep_user_playbook = Ansible.playbook!("app-user")
         :ok = Ansible.run_playbook(archidep_user_playbook, server)
 
         {:noreply, {:connected, {connection_ref, connection_pid}, server}}
