@@ -4,7 +4,6 @@ defmodule ArchiDep.Servers.Schemas.Server do
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Servers.Types
 
   @primary_key {:id, :binary_id, []}
@@ -19,6 +18,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
           ip_address: Postgrex.INET.t(),
           username: String.t(),
           ssh_port: 1..65_535 | nil,
+          class: Class.t() | NotLoaded,
+          class_id: UUID.t(),
           user_account: UserAccount.t() | nil | NotLoaded,
           user_account_id: UUID.t(),
           # Expected properties for this server
@@ -44,6 +45,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:ip_address, EctoNetwork.INET)
     field(:username, :string)
     field(:ssh_port, :integer)
+    belongs_to(:class, Class)
     belongs_to(:user_account, UserAccount)
     # Expected properties for this server
     field(:expected_cpus, :integer)
@@ -78,20 +80,25 @@ defmodule ArchiDep.Servers.Schemas.Server do
         distinct: true,
         join: ua in UserAccount,
         on: s.user_account_id == ua.id,
-        left_join: st in Student,
-        on: ua.id == st.user_account_id,
-        left_join: c in Class,
-        on: st.class_id == c.id,
+        join: c in Class,
+        on: s.class_id == c.id,
         # TODO: put query fragment determining whether auser is active in the user account schema
         where: :root in ua.roles or c.active == true,
-        preload: [user_account: ua]
+        preload: [class: c, user_account: ua]
       )
     )
   end
 
   @spec fetch_server(UUID.t()) :: {:ok, t()} | {:error, :server_not_found}
   def fetch_server(id) do
-    case Repo.get(__MODULE__, id) do
+    case Repo.one(
+           from(s in __MODULE__,
+             join: c in Class,
+             on: s.class_id == c.id,
+             where: s.id == ^id,
+             preload: [class: c]
+           )
+         ) do
       nil ->
         {:error, :server_not_found}
 
@@ -100,7 +107,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end
   end
 
-  @spec new(Types.server_data(), UserAccount.t()) :: Changeset.t(t())
+  @spec new(Types.create_server_data(), UserAccount.t()) :: Changeset.t(t())
   def new(data, user) do
     id = UUID.generate()
     now = DateTime.utc_now()
@@ -111,6 +118,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :ip_address,
       :username,
       :ssh_port,
+      :class_id,
       :expected_cpus,
       :expected_cores,
       :expected_vcpus,
@@ -140,7 +148,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end)
   end
 
-  @spec update(__MODULE__.t(), Types.server_data()) :: Changeset.t(t())
+  @spec update(__MODULE__.t(), Types.update_server_data()) :: Changeset.t(t())
   def update(server, data) do
     id = server.id
     now = DateTime.utc_now()
@@ -175,7 +183,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end)
   end
 
-  def validate(changeset) do
+  defp validate(changeset) do
     changeset
     |> update_change(:name, &trim_to_nil/1)
     |> update_change(:username, &trim/1)
@@ -185,7 +193,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> update_change(:expected_distribution, &trim_to_nil/1)
     |> update_change(:expected_distribution_release, &trim_to_nil/1)
     |> update_change(:expected_distribution_version, &trim_to_nil/1)
-    |> validate_required([:ip_address, :username])
+    |> validate_required([:ip_address, :username, :class_id])
     |> validate_length(:name, max: 50)
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)

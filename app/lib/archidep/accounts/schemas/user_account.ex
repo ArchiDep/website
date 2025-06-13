@@ -8,6 +8,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Types
+  alias ArchiDep.Students.Schemas.Class
 
   @derive {Inspect, only: [:id, :username, :roles, :version]}
   @primary_key {:id, :binary_id, []}
@@ -20,6 +21,8 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
           roles: list(Types.role()),
           switch_edu_id: SwitchEduId.t() | NotLoaded,
           switch_edu_id_id: UUID.t(),
+          class: Class.t() | nil | NotLoaded,
+          class_id: UUID.t() | nil,
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -31,6 +34,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     field(:username, :string)
     field(:roles, {:array, Ecto.Enum}, values: [:root, :student])
     belongs_to(:switch_edu_id, SwitchEduId)
+    belongs_to(:class, Class)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
@@ -100,6 +104,20 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       updated_at: now
     )
     |> validate()
+  end
+
+  @spec link_to_class(
+          t(),
+          Class.t()
+        ) :: Changeset.t(t())
+  def link_to_class(%__MODULE__{class_id: nil} = student, class) do
+    now = DateTime.utc_now()
+
+    student
+    |> cast(%{class_id: class.id}, [:class_id])
+    |> assoc_constraint(:class)
+    |> change(updated_at: now)
+    |> optimistic_lock(:version)
   end
 
   defp validate(changeset),

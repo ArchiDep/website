@@ -46,7 +46,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
       &Servers.validate_existing_server(
         auth,
         server.id,
-        ServerForm.to_server_data(&1)
+        ServerForm.to_update_server_data(&1)
       ),
       socket
     )
@@ -62,7 +62,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
              :validate
            ),
          {:ok, _server} <-
-           Servers.update_server(auth, server.id, ServerForm.to_server_data(form_data)) do
+           Servers.update_server(auth, server.id, ServerForm.to_update_server_data(form_data)) do
       {:noreply,
        socket
        |> put_flash(:info, "Server updated")

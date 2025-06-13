@@ -4,9 +4,9 @@ defmodule ArchiDep.Servers.Behaviour do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
 
-  @callback validate_server(Authentication.t(), Types.server_data()) :: Changeset.t()
+  @callback validate_server(Authentication.t(), Types.create_server_data()) :: Changeset.t()
 
-  @callback create_server(Authentication.t(), Types.server_data()) ::
+  @callback create_server(Authentication.t(), Types.create_server_data()) ::
               {:ok, Server.t()} | {:error, Changeset.t()}
 
   @callback list_my_servers(Authentication.t()) :: list(Server.t())
@@ -14,9 +14,9 @@ defmodule ArchiDep.Servers.Behaviour do
   @callback fetch_server(Authentication.t(), UUID.t()) ::
               {:ok, Server.t()} | {:error, :server_not_found}
 
-  @callback validate_existing_server(Authentication.t(), UUID.t(), Types.server_data()) ::
+  @callback validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
               {:ok, Changeset.t()} | {:error, :server_not_found}
 
-  @callback update_server(Authentication.t(), UUID.t(), Types.server_data()) ::
+  @callback update_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
               {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_not_found}
 end

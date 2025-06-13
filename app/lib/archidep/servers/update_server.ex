@@ -6,7 +6,7 @@ defmodule ArchiDep.Servers.UpdateServer do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
 
-  @spec validate_existing_server(Authentication.t(), UUID.t(), Types.server_data()) ::
+  @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Changeset.t()} | {:error, :server_not_found}
   def validate_existing_server(auth, id, data) do
     with {:ok, server} <- Server.fetch_server(id) do
@@ -15,7 +15,7 @@ defmodule ArchiDep.Servers.UpdateServer do
     end
   end
 
-  @spec update_server(Authentication.t(), UUID.t(), Types.server_data()) ::
+  @spec update_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_not_found}
   def update_server(auth, id, data) do
     with {:ok, server} <- Server.fetch_server(id) do

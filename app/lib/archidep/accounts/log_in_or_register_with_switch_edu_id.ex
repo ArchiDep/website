@@ -83,6 +83,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
         {:new_student, _user_account, student} when not is_nil(student) ->
           Multi.new()
           |> Multi.update(:student, Student.link_to_user_account(student, user_account))
+          |> Multi.update(:class, UserAccount.link_to_class(user_account, student.class))
 
         _otherwise ->
           Multi.new()
