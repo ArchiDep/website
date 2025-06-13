@@ -1,6 +1,8 @@
 defmodule ArchiDep.Servers.Types do
   alias Ecto.UUID
 
+  @type ansible_playbook_run_state :: :running | :succeeded | :failed | :interrupted | :timeout
+
   @type create_server_data :: %{
           name: String.t() | nil,
           ip_address: String.t(),

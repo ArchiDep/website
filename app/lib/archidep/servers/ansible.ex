@@ -1,7 +1,11 @@
 defmodule ArchiDep.Servers.Ansible do
   require Logger
+  alias ArchiDep.Repo
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  alias Ecto.Multi
 
   @type ansible_host_stats :: %{
           changed: non_neg_integer(),
@@ -52,7 +56,7 @@ defmodule ArchiDep.Servers.Ansible do
   def gather_facts(server) do
     ansible_host = :inet.ntoa(server.ip_address.address)
     ansible_port = server.ssh_port || 22
-    ansible_user = server.username
+    ansible_user = server.app_username || server.username
 
     results =
       [
@@ -75,7 +79,7 @@ defmodule ArchiDep.Servers.Ansible do
           {"ANSIBLE_LOAD_CALLBACK_PLUGINS", "1"},
           {"ANSIBLE_STDOUT_CALLBACK", "ansible.posix.json"}
         ],
-        exit_timeout: 30_000
+        exit_timeout: 60_000
       )
       |> Enum.into([])
 
@@ -149,7 +153,9 @@ defmodule ArchiDep.Servers.Ansible do
       when is_struct(playbook, AnsiblePlaybook) and is_struct(server, Server) do
     ansible_host = :inet.ntoa(server.ip_address.address)
     ansible_port = server.ssh_port || 22
-    ansible_user = server.username
+    ansible_user = server.app_username || server.username
+
+    run = playbook |> AnsiblePlaybookRun.new(server) |> Repo.insert!()
 
     [
       "ansible-playbook",
@@ -166,7 +172,7 @@ defmodule ArchiDep.Servers.Ansible do
         {"ANSIBLE_HOST_KEY_CHECKING", "false"},
         {"ANSIBLE_STDOUT_CALLBACK", "ansible.posix.jsonl"}
       ],
-      exit_timeout: 30_000
+      exit_timeout: 60_000
     )
     |> Stream.transform(
       fn -> "" end,
@@ -197,7 +203,15 @@ defmodule ArchiDep.Servers.Ansible do
       end,
       fn _acc -> nil end
     )
-    |> Stream.each(&Logger.debug("Ansible playbook event: #{inspect(&1)}"))
+    |> Stream.each(fn
+      {:event, data} ->
+        Multi.new()
+        |> Multi.insert(:event, AnsiblePlaybookEvent.new(data, run))
+        |> Repo.transaction()
+
+      {:exit, reason} ->
+        Logger.info("Ansible playbook run #{run.id} exited with reason: #{inspect(reason)}")
+    end)
     |> Stream.run()
   end
 

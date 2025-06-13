@@ -15,6 +15,14 @@ defmodule ArchiDep.Helpers.SchemaHelpers do
   def trim_to_nil(value), do: value |> String.trim() |> non_empty_string_or_nil()
 
   @doc """
+  Returns the value truncated to the specified maximum length if it is a string,
+  otherwise returns nil.
+  """
+  @spec truncate(String.t() | nil, pos_integer()) :: String.t() | nil
+  def truncate(nil, _max_length), do: nil
+  def truncate(value, max_length) when is_binary(value), do: String.slice(value, 0, max_length)
+
+  @doc """
   Return an OK tuple containing the specified UUID or an error tuple with the
   specified error if the value is not a valid UUID.
   """
