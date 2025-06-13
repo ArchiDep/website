@@ -174,18 +174,18 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="fieldset-label mt-2">Memory</label>
-            <label class="input w-full">
+            <label class={[
+              "input w-full",
+              inherited_input_class(
+                @form,
+                @selected_class,
+                :expected_server_memory,
+                :expected_memory
+              )
+            ]}>
               <input
                 type="number"
                 id={@form[:expected_memory].id}
-                class={[
-                  inherited_input_class(
-                    @form,
-                    @selected_class,
-                    :expected_server_memory,
-                    :expected_memory
-                  )
-                ]}
                 name={@form[:expected_memory].name}
                 value={@form[:expected_memory].value}
                 min={if @class == nil, do: "1", else: "0"}
@@ -201,18 +201,18 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
 
           <div>
             <label class="fieldset-label mt-2">Swap</label>
-            <label class="input w-full">
+            <label class={[
+              "input w-full",
+              inherited_input_class(
+                @form,
+                @selected_class,
+                :expected_server_swap,
+                :expected_swap
+              )
+            ]}>
               <input
                 type="number"
                 id={@form[:expected_swap].id}
-                class={[
-                  inherited_input_class(
-                    @form,
-                    @selected_class,
-                    :expected_server_swap,
-                    :expected_swap
-                  )
-                ]}
                 name={@form[:expected_swap].name}
                 value={@form[:expected_swap].value}
                 min={if @class == nil, do: "1", else: "0"}

@@ -34,7 +34,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
     field(:task_started_at, :utc_datetime_usec)
     field(:task_ended_at, :utc_datetime_usec)
     field(:occurred_at, :utc_datetime_usec)
-    timestamps(inserted_at: :created_at, updated_at: false, type: :utc_datetime_usec)
+    field(:created_at, :utc_datetime_usec)
   end
 
   @spec new(%{String.t() => term()}, AnsiblePlaybookRun.t()) :: Changeset.t(t())
@@ -54,7 +54,8 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
       task_id: binary_or(data, ["task", "id"], nil),
       task_started_at: utc_datetime_or_nil(data, ["task", "start"]),
       task_ended_at: utc_datetime_or_nil(data, ["task", "end"]),
-      occurred_at: now
+      occurred_at: utc_datetime_or_nil(data, ["_timestamp"]) || now,
+      created_at: now
     )
     |> validate()
   end

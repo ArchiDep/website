@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
 
   import Ecto.Query, only: [from: 2]
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
 
@@ -41,11 +42,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     field(:port, :integer)
     field(:user, :string)
     belongs_to(:server, Server, type: :binary_id)
-
-    field(:state, {:array, Ecto.Enum},
-      values: [:running, :succeeded, :failed, :interrupted, :timeout]
-    )
-
+    field(:state, Ecto.Enum, values: [:running, :succeeded, :failed, :interrupted, :timeout])
     field(:started_at, :utc_datetime_usec)
     field(:finished_at, :utc_datetime_usec)
     field(:number_of_events, :integer, default: 0)
@@ -58,6 +55,8 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     field(:stats_rescued, :integer, default: 0)
     field(:stats_skipped, :integer, default: 0)
     field(:stats_unreachable, :integer, default: 0)
+    field(:created_at, :utc_datetime_usec)
+    field(:updated_at, :utc_datetime_usec)
   end
 
   @spec new(AnsiblePlaybook.t(), Server.t()) :: Changeset.t(t())
@@ -68,9 +67,9 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     %__MODULE__{}
     |> change(
       id: id,
-      playbook: playbook.name,
+      playbook: AnsiblePlaybook.name(playbook),
       digest: playbook.digest,
-      host: server.ip_address.address,
+      host: server.ip_address,
       port: server.ssh_port || 22,
       user: server.app_username || server.username,
       server_id: server.id,
@@ -84,18 +83,75 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
 
   def touch_new_event(run, event) do
     id = run.id
-    occurred_at = event.occurred_at
+    created_at = event.created_at
 
     from(r in __MODULE__,
       where: r.id == ^id,
       update: [
         set: [
           number_of_events: fragment("number_of_events + 1"),
-          last_event_at: ^occurred_at,
-          updated_at: ^occurred_at
+          last_event_at: ^created_at,
+          updated_at: ^created_at
         ]
       ]
     )
+  end
+
+  @spec update_stats(t(), AnsiblePlaybookEvent.t()) :: Ecto.Query.t()
+  def update_stats(run, event) do
+    id = run.id
+
+    stats = get_in(event.data, ["stats", "archidep"]) || %{}
+    changed = Map.get(stats, "changed") || 0
+    failures = Map.get(stats, "failures") || 0
+    ignored = Map.get(stats, "ignored") || 0
+    ok = Map.get(stats, "ok") || 0
+    rescued = Map.get(stats, "rescued") || 0
+    skipped = Map.get(stats, "skipped") || 0
+    unreachable = Map.get(stats, "unreachable") || 0
+
+    from(r in __MODULE__,
+      where: r.id == ^id,
+      update: [
+        set: [
+          stats_changed: ^changed,
+          stats_failures: ^failures,
+          stats_ignored: ^ignored,
+          stats_ok: ^ok,
+          stats_rescued: ^rescued,
+          stats_skipped: ^skipped,
+          stats_unreachable: ^unreachable
+        ]
+      ]
+    )
+  end
+
+  @spec succeed(t()) :: Changeset.t(t())
+  def succeed(run) do
+    now = DateTime.utc_now()
+
+    run
+    |> change(
+      state: :succeeded,
+      exit_code: 0,
+      finished_at: now,
+      updated_at: now
+    )
+    |> validate()
+  end
+
+  @spec fail(t(), non_neg_integer() | nil) :: Changeset.t(t())
+  def fail(run, exit_code) when is_nil(exit_code) or (is_integer(exit_code) and exit_code >= 0) do
+    now = DateTime.utc_now()
+
+    run
+    |> change(
+      state: :failed,
+      exit_code: exit_code,
+      finished_at: now,
+      updated_at: now
+    )
+    |> validate()
   end
 
   defp validate(changeset) do

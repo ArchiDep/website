@@ -2,7 +2,9 @@ defmodule ArchiDep.Repo.Migrations.AddAnsiblePlaybookRunsAndEvents do
   use Ecto.Migration
 
   def change do
-    create table(:ansible_playbook_runs) do
+    create table(:ansible_playbook_runs, primary_key: false) do
+      add :id, :uuid, primary_key: true
+
       add :playbook, :string, null: false, size: 50
       add :digest, :binary, null: false
       add :host, :inet, null: false
@@ -74,9 +76,15 @@ defmodule ArchiDep.Repo.Migrations.AddAnsiblePlaybookRunsAndEvents do
              check: "stats_unreachable >= 0"
            )
 
-    create table(:ansible_playbook_events) do
+    create table(:ansible_playbook_events, primary_key: false) do
+      add :id, :uuid, primary_key: true
+
       add :run_id,
-          references(:ansible_playbook_runs, on_update: :update_all, on_delete: :delete_all),
+          references(:ansible_playbook_runs,
+            type: :binary_id,
+            on_update: :update_all,
+            on_delete: :delete_all
+          ),
           null: false
 
       add :name, :string, null: false

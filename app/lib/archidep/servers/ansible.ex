@@ -27,7 +27,6 @@ defmodule ArchiDep.Servers.Ansible do
                  |> File.stream!(2048)
                  |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
                  |> :crypto.hash_final()
-                 |> Base.encode64()
 
                name = String.replace_suffix(filename, ".yml", "")
                playbook = AnsiblePlaybook.new(Path.join(@playbooks_dir, filename), digest)
@@ -160,11 +159,13 @@ defmodule ArchiDep.Servers.Ansible do
     [
       "ansible-playbook",
       "-e",
+      "ansible_host=#{ansible_host}",
+      "-e",
       "ansible_port=#{ansible_port}",
       "-e",
       "ansible_user=#{ansible_user}",
       "-i",
-      "#{ansible_host},",
+      "archidep,",
       playbook.path
     ]
     |> ExCmd.stream(
@@ -206,18 +207,43 @@ defmodule ArchiDep.Servers.Ansible do
     |> Stream.each(fn
       {:event, data} ->
         Multi.new()
-        |> Multi.insert(:event, AnsiblePlaybookEvent.new(data, run))
+        |> Multi.insert(:event, fn _changes -> AnsiblePlaybookEvent.new(data, run) end)
         |> Multi.update_all(
-          :run,
+          :run_touch,
           fn %{event: event} ->
             AnsiblePlaybookRun.touch_new_event(run, event)
           end,
           []
         )
+        |> Multi.merge(fn %{event: event} ->
+          if event.name == "v2_playbook_on_stats" do
+            Multi.new()
+            |> Multi.update_all(
+              :run_stats,
+              fn _changes ->
+                AnsiblePlaybookRun.update_stats(run, event)
+              end,
+              []
+            )
+          else
+            Multi.new()
+          end
+        end)
         |> Repo.transaction()
 
       {:exit, reason} ->
         Logger.info("Ansible playbook run #{run.id} exited with reason: #{inspect(reason)}")
+
+        case reason do
+          {:status, 0} ->
+            run |> AnsiblePlaybookRun.succeed() |> Repo.update!()
+
+          {:status, exit_code} ->
+            run |> AnsiblePlaybookRun.fail(exit_code) |> Repo.update!()
+
+          :epipe ->
+            run |> AnsiblePlaybookRun.fail(nil) |> Repo.update!()
+        end
     end)
     |> Stream.run()
   end
