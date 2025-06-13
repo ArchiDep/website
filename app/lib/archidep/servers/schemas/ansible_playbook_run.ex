@@ -86,22 +86,16 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     id = run.id
     occurred_at = event.occurred_at
 
-    {1, _returning} =
-      Repo.update_all(
-        from(r in __MODULE__,
-          where: r.id == ^id,
-          update: [
-            set: [
-              number_of_events: fragment("number_of_events + 1"),
-              last_event_at: ^occurred_at,
-              updated_at: ^occurred_at
-            ]
-          ]
-        ),
-        []
-      )
-
-    :ok
+    from(r in __MODULE__,
+      where: r.id == ^id,
+      update: [
+        set: [
+          number_of_events: fragment("number_of_events + 1"),
+          last_event_at: ^occurred_at,
+          updated_at: ^occurred_at
+        ]
+      ]
+    )
   end
 
   defp validate(changeset) do

@@ -207,6 +207,13 @@ defmodule ArchiDep.Servers.Ansible do
       {:event, data} ->
         Multi.new()
         |> Multi.insert(:event, AnsiblePlaybookEvent.new(data, run))
+        |> Multi.update_all(
+          :run,
+          fn %{event: event} ->
+            AnsiblePlaybookRun.touch_new_event(run, event)
+          end,
+          []
+        )
         |> Repo.transaction()
 
       {:exit, reason} ->
