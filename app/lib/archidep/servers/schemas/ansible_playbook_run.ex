@@ -18,6 +18,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
           host: Postgrex.INET.t(),
           port: 1..65_535,
           user: String.t(),
+          vars: Types.ansible_variables(),
           server: Server.t() | NotLoaded,
           server_id: UUID.t(),
           state: Types.ansible_playbook_run_state(),
@@ -41,8 +42,13 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     field(:host, EctoNetwork.INET)
     field(:port, :integer)
     field(:user, :string)
+    field(:vars, :map)
     belongs_to(:server, Server, type: :binary_id)
-    field(:state, Ecto.Enum, values: [:running, :succeeded, :failed, :interrupted, :timeout])
+
+    field(:state, Ecto.Enum,
+      values: [:pending, :running, :succeeded, :failed, :interrupted, :timeout]
+    )
+
     field(:started_at, :utc_datetime_usec)
     field(:finished_at, :utc_datetime_usec)
     field(:number_of_events, :integer, default: 0)
@@ -62,15 +68,18 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   @spec successful_playbook_run?(Server.t(), AnsiblePlaybook.t()) :: boolean()
   def successful_playbook_run?(server, playbook) do
     from(r in __MODULE__,
-      where: r.server_id == ^server.id and r.playbook == ^AnsiblePlaybook.name(playbook),
+      where:
+        r.server_id == ^server.id and r.playbook == ^AnsiblePlaybook.name(playbook) and
+          r.state == :succeeded,
       order_by: [desc: r.created_at],
       limit: 1
     )
     |> Repo.exists?()
   end
 
-  @spec new(AnsiblePlaybook.t(), Server.t(), String.t()) :: Changeset.t(t())
-  def new(playbook, server, user) do
+  @spec new_pending(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::
+          Changeset.t(t())
+  def new_pending(playbook, server, user, vars) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
@@ -82,8 +91,9 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       host: server.ip_address,
       port: server.ssh_port || 22,
       user: user,
+      vars: vars,
       server_id: server.id,
-      state: :running,
+      state: :pending,
       started_at: now,
       created_at: now,
       updated_at: now
@@ -168,12 +178,19 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     changeset
     |> update_change(:playbook, &trim/1)
     |> update_change(:user, &trim/1)
-    |> validate_required([:playbook, :digest, :server_id, :state, :started_at])
+    |> validate_required([:playbook, :digest, :vars, :server_id, :state, :started_at])
     |> validate_length(:playbook, max: 50)
     |> validate_number(:port, greater_than: 0, less_than: 65_536)
     |> validate_length(:user, max: 32)
     |> assoc_constraint(:server)
-    |> validate_inclusion(:state, [:running, :succeeded, :failed, :interrupted, :timeout])
+    |> validate_inclusion(:state, [
+      :pending,
+      :running,
+      :succeeded,
+      :failed,
+      :interrupted,
+      :timeout
+    ])
     |> validate_started_at_and_finished_at()
     |> validate_number(:number_of_events, greater_than_or_equal_to: 0)
     |> validate_number(:exit_code, greater_than_or_equal_to: 0)

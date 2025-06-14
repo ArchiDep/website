@@ -22,9 +22,6 @@ defmodule ArchiDep.Students do
   @spec fetch_class(Authentication.t(), UUID.t()) :: {:ok, Class.t()} | {:error, :class_not_found}
   defdelegate fetch_class(auth, id), to: @implementation
 
-  @spec subscribe_class(UUID.t()) :: :ok | {:error, :class_not_found}
-  defdelegate subscribe_class(id), to: @implementation
-
   @spec validate_existing_class(
           Authentication.t(),
           UUID.t(),

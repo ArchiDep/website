@@ -12,6 +12,7 @@ defmodule ArchiDep.Servers.Supervisor do
   @impl true
   def init(nil) do
     children = [
+      ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineSupervisor,
       ArchiDep.Servers.ServerDynamicSupervisor,
       ArchiDep.Servers.ServerOrchestrator
     ]

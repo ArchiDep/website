@@ -2,11 +2,12 @@ defmodule ArchiDep.Servers.Ansible.Runner do
   require Logger
   import ArchiDep.Helpers.NetHelpers, only: [is_ip_address: 1, is_network_port: 1]
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
+  alias ArchiDep.Servers.Types
 
-  @type ansible_host :: :inet.ip_address()
-  @type ansible_port :: 1..65_535
-  @type ansible_user :: String.t()
-  @type ansible_variables :: %{atom() => String.t()}
+  @type ansible_host :: Types.ansible_host()
+  @type ansible_port :: Types.ansible_port()
+  @type ansible_user :: Types.ansible_user()
+  @type ansible_variables :: Types.ansible_variables()
 
   @type ansible_playbook_event_data :: %{String.t() => term()}
   @type ansible_playbook_run_element :: {:event, ansible_playbook_event_data()} | {:exit, term()}

@@ -4,6 +4,8 @@ defmodule ArchiDep.Servers.ServerManager do
   require Logger
   import ArchiDep.Helpers.PipeHelpers
   alias ArchiDep.Servers.Ansible
+  alias ArchiDep.Servers.Ansible.Pipeline
+  alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerManagerState
@@ -19,9 +21,9 @@ defmodule ArchiDep.Servers.ServerManager do
   @spec name(UUID.t()) :: GenServer.name()
   def name(server_id) when is_binary(server_id), do: {:global, {:server_manager, server_id}}
 
-  @spec start_link(Server.t()) :: GenServer.on_start()
-  def start_link(%Server{id: server_id} = server),
-    do: GenServer.start_link(__MODULE__, server_id, name: name(server))
+  @spec start_link({Server.t(), Pipeline.t()}) :: GenServer.on_start()
+  def start_link({%Server{id: server_id} = server, pipeline}),
+    do: GenServer.start_link(__MODULE__, {server_id, pipeline}, name: name(server))
 
   @spec connection_idle(UUID.t(), pid()) :: :ok
   def connection_idle(server_id, connection_pid),
@@ -30,16 +32,16 @@ defmodule ArchiDep.Servers.ServerManager do
   # Server callbacks
 
   @impl true
-  def init(server_id), do: {:ok, server_id, {:continue, :init}}
+  def init({server_id, pipeline}), do: {:ok, {server_id, pipeline}, {:continue, :init}}
 
   @impl true
-  def handle_continue(:init, server_id) do
+  def handle_continue(:init, {server_id, pipeline}) do
     state =
       server_id
-      |> ServerManagerState.init()
+      |> ServerManagerState.init(pipeline)
       |> execute_actions()
 
-    :ok = Students.subscribe_class(state.server.class.id)
+    :ok = Students.PubSub.subscribe_class(state.server.class.id)
 
     noreply(state)
   end
@@ -77,9 +79,6 @@ defmodule ArchiDep.Servers.ServerManager do
         |> ServerManagerState.class_updated(class)
         |> execute_actions()
         |> noreply()
-
-  # {:ok, facts} = Ansible.gather_facts(server)
-  # "app-user" |> Ansible.run_playbook(server) |> Stream.run()
 
   def handle_info(
         {:load_average, connection_ref, result},
@@ -147,10 +146,16 @@ defmodule ArchiDep.Servers.ServerManager do
     end)
   end
 
-  defp execute_action(state, {:run_playbook, factory}) do
-    factory.(state, fn playbook, username, vars ->
-      Task.async(fn -> Ansible.run_playbook(playbook, state.server, username, vars) end)
-    end)
+  defp execute_action(state, {:run_playbook, playbook, playbook_run, ref}) do
+    :ok =
+      AnsiblePipelineQueue.run_playbook(
+        state.pipeline,
+        playbook,
+        playbook_run,
+        ref
+      )
+
+    state
   end
 
   defp execute_action(state, {:track, topic, key, value}) do

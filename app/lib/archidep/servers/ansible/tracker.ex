@@ -6,6 +6,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Types
   alias Ecto.Multi
 
   @type ansible_playbook_run_started :: {:started, AnsiblePlaybookRun.t()}
@@ -18,9 +19,10 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
           | ansible_playbook_run_succeeded()
           | ansible_playbook_run_failed()
 
-  @spec track_playbook!(AnsiblePlaybook.t(), Server.t(), String.t()) :: AnsiblePlaybookRun.t()
-  def track_playbook!(playbook, server, user),
-    do: playbook |> AnsiblePlaybookRun.new(server, user) |> Repo.insert!()
+  @spec track_playbook!(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::
+          AnsiblePlaybookRun.t()
+  def track_playbook!(playbook, server, user, vars),
+    do: playbook |> AnsiblePlaybookRun.new_pending(server, user, vars) |> Repo.insert!()
 
   @spec track_playbook_event(Runner.ansible_playbook_run_element(), AnsiblePlaybookRun.t()) ::
           ansible_playbook_run_element()

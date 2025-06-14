@@ -6,6 +6,7 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
 
   use GenServer
 
+  alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerDynamicSupervisor
 
@@ -13,23 +14,23 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
 
   # Client API
 
-  @spec start_link(any()) :: GenServer.on_start()
-  def start_link(_init_arg),
-    do: GenServer.start_link(__MODULE__, nil, name: @name)
+  @spec start_link(Pipeline.t()) :: GenServer.on_start()
+  def start_link(pipeline),
+    do: GenServer.start_link(__MODULE__, pipeline, name: @name)
 
   # Server callbacks
 
   @impl true
-  def init(nil) do
-    {:ok, nil, {:continue, :load_servers}}
+  def init(pipeline) do
+    {:ok, pipeline, {:continue, :load_servers}}
   end
 
   @impl true
-  def handle_continue(:load_servers, nil) do
+  def handle_continue(:load_servers, pipeline) do
     for server <- Server.list_active_servers() do
-      {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server)
+      {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server, pipeline)
     end
 
-    {:noreply, nil}
+    {:noreply, pipeline}
   end
 end

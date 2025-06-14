@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.Ansible do
   alias ArchiDep.Servers.Ansible.Tracker
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Types
 
   @app_user_playbook PlaybooksRegistry.playbook!("app-user")
 
@@ -23,15 +24,15 @@ defmodule ArchiDep.Servers.Ansible do
     Runner.gather_facts(ansible_host, ansible_port, ansible_user)
   end
 
-  @spec run_playbook(AnsiblePlaybook.t(), Server.t(), String.t(), Runner.ansible_variables()) ::
+  @spec run_playbook(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::
           Enumerable.t(Tracker.ansible_playbook_run_element())
   def run_playbook(playbook, server, user, vars)
       when is_struct(playbook, AnsiblePlaybook) and is_struct(server, Server) and is_binary(user) and
              is_map(vars) do
-    run = Tracker.track_playbook!(playbook, server, user)
+    run = Tracker.track_playbook!(playbook, server, user, vars)
 
     playbook
-    |> Runner.run_playbook(run.host.address, run.port, run.user, vars)
+    |> Runner.run_playbook(run.host.address, run.port, run.user, run.vars)
     |> Stream.map(&Tracker.track_playbook_event(&1, run))
     |> Stream.run()
   end

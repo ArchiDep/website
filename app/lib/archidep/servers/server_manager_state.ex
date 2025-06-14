@@ -4,7 +4,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
   import ArchiDep.Helpers.SchemaHelpers, only: [trim_to_nil: 1]
   alias ArchiDep.Helpers.NetHelpers
   alias ArchiDep.Servers.Ansible
-  alias ArchiDep.Servers.Ansible.Runner
+  alias ArchiDep.Servers.Ansible.Pipeline
+  alias ArchiDep.Servers.Ansible.Tracker
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
@@ -27,8 +28,28 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   Record.defrecord(:connected_state, connection_ref: nil, connection_pid: nil)
 
-  @enforce_keys [:state, :server, :username, :storage, :actions, :tasks, :problems]
-  defstruct [:state, :server, :username, :storage, actions: [], tasks: %{}, problems: []]
+  @enforce_keys [
+    :state,
+    :server,
+    :pipeline,
+    :username,
+    :storage,
+    :actions,
+    :tasks,
+    :ansible_playbooks,
+    :problems
+  ]
+  defstruct [
+    :state,
+    :server,
+    :pipeline,
+    :username,
+    :storage,
+    actions: [],
+    tasks: %{},
+    ansible_playbooks: [],
+    problems: []
+  ]
 
   @type t :: %__MODULE__{
           state:
@@ -38,10 +59,12 @@ defmodule ArchiDep.Servers.ServerManagerState do
             | connected_state()
             | :disconnected,
           server: Server.t(),
+          pipeline: Pipeline.t(),
           username: String.t(),
           storage: :ets.tid(),
           actions: list(action()),
           tasks: %{atom() => reference()},
+          ansible_playbooks: list({AnsiblePlaybookRun.t(), reference()}),
           problems: list(problem()),
           storage: :ets.tid()
         }
@@ -75,8 +98,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
-          {:run_playbook,
-           (t(), (AnsiblePlaybook.t(), String.t(), Runner.ansible_variables() -> Task.t()) -> t())}
+          {:run_playbook, AnsiblePlaybook.t(), AnsiblePlaybookRun.t(), reference()}
   @type track_action :: {:track, String.t(), UUID.t(), map()}
   @type action ::
           demonitor_action()
@@ -96,8 +118,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
           | missing_sudo_access_problem()
           | sudo_access_check_failed_problem()
 
-  @spec init(UUID.t()) :: t()
-  def init(server_id) do
+  @spec init(UUID.t(), Pipeline.t()) :: t()
+  def init(server_id, pipeline) do
     Logger.debug("Init server manager for server #{server_id}")
 
     {:ok, server} = Server.fetch_server(server_id)
@@ -116,12 +138,14 @@ defmodule ArchiDep.Servers.ServerManagerState do
     %__MODULE__{
       state: :not_connected,
       server: server,
+      pipeline: pipeline,
       username: username,
       storage: storage,
       actions: [
         {:track, "servers", server.id, %{state: :not_connected}}
       ],
       tasks: %{},
+      ansible_playbooks: [],
       problems: []
     }
   end
@@ -186,7 +210,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
     case result do
       :ok ->
-        Logger.info("Server manager is connected to server #{server.id}; checking sudo access...")
+        Logger.info(
+          "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
+        )
 
         %__MODULE__{
           state
@@ -206,7 +232,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
       {:error, reason} ->
         Logger.info(
-          "Server manager could not connect to server #{server.id} because #{inspect(reason)}"
+          "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
         )
 
         %__MODULE__{
@@ -231,7 +257,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
     case result do
       {:ok, _stdout, _stderr, 0} ->
-        Logger.info("Server manager has sudo access to server #{server.id}; gathering facts...")
+        Logger.info(
+          "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
+        )
+
+        playbook = Ansible.app_user_playbook()
+        playbook_run = Tracker.track_playbook!(playbook, server, state.username, %{})
+        playbook_ref = make_ref()
 
         %__MODULE__{
           state
@@ -240,19 +272,21 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 connection_ref: connection_ref,
                 connection_pid: connection_pid
               ),
+            ansible_playbooks: [{playbook_run, playbook_ref} | state.ansible_playbooks],
             actions: [
               {:request_load_average, connection_ref},
-              {:gather_facts,
-               fn state, task_factory ->
-                 task = task_factory.(state.username)
-                 %__MODULE__{state | tasks: Map.put(state.tasks, :gather_facts, task.ref)}
-               end}
+              {:run_playbook, playbook, playbook_run, playbook_ref}
+              # {:gather_facts,
+              #  fn state, task_factory ->
+              #    task = task_factory.(state.username)
+              #    %__MODULE__{state | tasks: Map.put(state.tasks, :gather_facts, task.ref)}
+              #  end}
             ]
         }
 
       {:ok, _stdout, stderr, _exit_code} ->
         Logger.info(
-          "Server manager does not have sudo access to server #{server.id}; connected with problems"
+          "Server manager does not have sudo access to server #{server.id} as #{state.username}; connected with problems"
         )
 
         %__MODULE__{
@@ -272,7 +306,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
       {:error, reason} ->
         Logger.error(
-          "Server manager could not check sudo access to server #{server.id} because #{inspect(reason)}; connected with problems"
+          "Server manager could not check sudo access to server #{server.id} as #{state.username} because #{inspect(reason)}; connected with problems"
         )
 
         %__MODULE__{
