@@ -132,7 +132,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
                 value={@form[:expected_server_memory].value}
                 placeholder="e.g. 2048"
               />
-              <span class="label">MB</span>
+              <span class="label">MB (±10%)</span>
             </label>
             <.errors_for field={@form[:expected_server_memory]} />
           </div>
@@ -147,7 +147,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
                 value={@form[:expected_server_swap].value}
                 placeholder="e.g. 1000"
               />
-              <span class="label">MB</span>
+              <span class="label">MB (±10%)</span>
             </label>
             <.errors_for field={@form[:expected_server_swap]} />
           </div>

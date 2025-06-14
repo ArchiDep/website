@@ -1,0 +1,204 @@
+defmodule ArchiDep.Servers.Ansible.Runner do
+  require Logger
+  import ArchiDep.Helpers.NetHelpers, only: [is_ip_address: 1, is_network_port: 1]
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybook
+
+  @type ansible_host :: :inet.ip_address()
+  @type ansible_port :: 1..65_535
+  @type ansible_user :: String.t()
+  @type ansible_variables :: %{atom() => String.t()}
+
+  @type ansible_playbook_event_data :: %{String.t() => term()}
+  @type ansible_playbook_run_element :: {:event, ansible_playbook_event_data()} | {:exit, term()}
+
+  @spec gather_facts(ansible_host(), ansible_port(), ansible_user()) ::
+          {:ok, %{String.t() => term()}}
+          | {:error, :unreachable}
+          | {:error, String.t()}
+          | {:error, :invalid_json_output}
+          | {:error, :unknown}
+  def gather_facts(host, port, user)
+      when is_ip_address(host) and is_network_port(port) and
+             is_binary(user) do
+    results =
+      [
+        "ansible",
+        # Single ad-hoc target host
+        "archidep",
+        # Ad-hoc inventory with only the single host
+        "-i",
+        "archidep,",
+        # Host connection parameters
+        "-e",
+        "ansible_host=#{:inet.ntoa(host)}",
+        "-e",
+        "ansible_port=#{port}",
+        "-e",
+        "ansible_user=#{user}",
+        # Gather facts
+        "-m",
+        "gather_facts"
+      ]
+      |> ExCmd.stream(
+        env: [
+          {"ANSIBLE_HOST_KEY_CHECKING", "false"},
+          # Output in JSON format
+          {"ANSIBLE_LOAD_CALLBACK_PLUGINS", "1"},
+          {"ANSIBLE_STDOUT_CALLBACK", "ansible.posix.json"}
+        ],
+        exit_timeout: 60_000
+      )
+      |> Enum.into([])
+
+    {exit_result, parts} = List.pop_at(results, -1)
+
+    case [Enum.join(parts, ""), exit_result] do
+      [facts, {:exit, {:status, 0}}] when is_binary(facts) ->
+        case JSON.decode(facts) do
+          {:ok,
+           %{
+             "plays" => [
+               %{
+                 "tasks" => [
+                   %{
+                     "hosts" => %{
+                       "archidep" => %{
+                         "action" => "gather_facts",
+                         "ansible_facts" => ansible_facts
+                       }
+                     },
+                     "task" => %{"name" => "gather_facts"}
+                   }
+                 ]
+               }
+             ]
+           }} ->
+            {:ok, ansible_facts}
+
+          {:ok, _} ->
+            Logger.error("Failed to decode Ansible facts #{inspect(facts)}")
+            {:error, :invalid_json_output}
+
+          {:error, reason} ->
+            Logger.error(
+              "Failed to decode Ansible facts #{inspect(facts)} because: #{inspect(reason)}"
+            )
+
+            {:error, :invalid_json_output}
+        end
+
+      [facts, {:exit, reason}] when is_binary(facts) and facts != "" ->
+        case JSON.decode(facts) do
+          {:ok,
+           %{
+             "plays" => [
+               %{
+                 "tasks" => [
+                   %{
+                     "hosts" => %{"archidep" => %{"action" => "gather_facts", "msg" => msg}},
+                     "task" => %{"name" => "gather_facts"}
+                   }
+                 ]
+               }
+             ]
+           }} ->
+            {:error, msg}
+
+          _anything_else ->
+            Logger.warning("Ansible exited with #{inspect(reason)} and output: #{inspect(facts)}")
+            {:error, :unknown}
+        end
+
+      _anything_else ->
+        {:error, :unknown}
+    end
+  end
+
+  @spec run_playbook(
+          AnsiblePlaybook.t(),
+          ansible_host(),
+          ansible_port(),
+          ansible_user(),
+          ansible_variables()
+        ) ::
+          Enumerable.t(ansible_playbook_run_element())
+  def run_playbook(playbook, host, port, user, vars)
+      when is_struct(playbook, AnsiblePlaybook) and is_ip_address(host) and is_network_port(port) and
+             is_binary(user) and is_map(vars) do
+    # Ad-hoc inventory with only a single host
+    # Host connection parameters
+    ([
+       "ansible-playbook",
+       "-i",
+       "archidep,",
+       "-e",
+       "ansible_host=#{:inet.ntoa(host)}",
+       "-e",
+       "ansible_port=#{port}",
+       "-e",
+       "ansible_user=#{user}"
+     ] ++
+       Enum.map(vars, fn {key, value} ->
+         "-e #{Atom.to_string(key)}=#{value}"
+       end) ++
+       [
+         # Playbook to run
+         playbook.path
+       ])
+    |> ExCmd.stream(
+      env: [
+        {"ANSIBLE_HOST_KEY_CHECKING", "false"},
+        # Output each event as a JSON object on a separate line
+        {"ANSIBLE_STDOUT_CALLBACK", "ansible.posix.jsonl"}
+      ],
+      exit_timeout: 60_000
+    )
+    |> Stream.transform(
+      fn -> "" end,
+      fn
+        {:exit, reason}, acc ->
+          {to_ansible_playbook_events([acc || ""]) ++ [{:exit, reason}], ""}
+
+        line, acc when is_binary(line) ->
+          case String.split(line, "\n") do
+            [""] ->
+              {[], acc}
+
+            [first_part] ->
+              {to_ansible_playbook_events([acc <> first_part]), ""}
+
+            [first_part | other_parts] ->
+              {last_part, middle_parts} = List.pop_at(other_parts, -1)
+              events = [acc <> first_part] ++ middle_parts
+              {to_ansible_playbook_events(events), last_part}
+          end
+      end,
+      fn
+        "" ->
+          {:halt, nil}
+
+        acc ->
+          {to_ansible_playbook_events([acc]), nil}
+      end,
+      fn _acc -> nil end
+    )
+  end
+
+  defp to_ansible_playbook_events(lines),
+    do:
+      lines
+      |> Enum.filter(&(&1 != ""))
+      |> Enum.flat_map(fn line ->
+        case JSON.decode(line) do
+          {:ok, event} ->
+            [{:event, event}]
+
+          {:error, reason} ->
+            Logger.error(
+              "Failed to decode Ansible playbook event #{inspect(line)} because: #{inspect(reason)}"
+            )
+
+            []
+        end
+      end)
+end

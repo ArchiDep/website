@@ -59,8 +59,18 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     field(:updated_at, :utc_datetime_usec)
   end
 
-  @spec new(AnsiblePlaybook.t(), Server.t()) :: Changeset.t(t())
-  def new(playbook, server) do
+  @spec successful_playbook_run?(Server.t(), AnsiblePlaybook.t()) :: boolean()
+  def successful_playbook_run?(server, playbook) do
+    from(r in __MODULE__,
+      where: r.server_id == ^server.id and r.playbook == ^AnsiblePlaybook.name(playbook),
+      order_by: [desc: r.created_at],
+      limit: 1
+    )
+    |> Repo.exists?()
+  end
+
+  @spec new(AnsiblePlaybook.t(), Server.t(), String.t()) :: Changeset.t(t())
+  def new(playbook, server, user) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
@@ -71,7 +81,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       digest: playbook.digest,
       host: server.ip_address,
       port: server.ssh_port || 22,
-      user: server.app_username || server.username,
+      user: user,
       server_id: server.id,
       state: :running,
       started_at: now,

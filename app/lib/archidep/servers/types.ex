@@ -9,7 +9,7 @@ defmodule ArchiDep.Servers.Types do
           username: String.t(),
           ssh_port: integer() | nil,
           class_id: UUID.t(),
-          app_username: String.t() | nil,
+          app_username: String.t(),
           # Expected properties for this server
           expected_cpus: non_neg_integer() | nil,
           expected_cores: non_neg_integer() | nil,
@@ -29,7 +29,7 @@ defmodule ArchiDep.Servers.Types do
           ip_address: String.t(),
           username: String.t(),
           ssh_port: integer() | nil,
-          app_username: String.t() | nil,
+          app_username: String.t(),
           # Expected properties for this server
           expected_cpus: non_neg_integer() | nil,
           expected_cores: non_neg_integer() | nil,

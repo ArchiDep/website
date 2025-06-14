@@ -1,6 +1,9 @@
 import Config
 
-config :archidep, root_users: ["example@archidep.ch"]
+config :archidep,
+  public_key:
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIxsZfyuRVJsWGYbLaZLTCDahyT9QhnT1ixz5ghIL0FB archidep",
+  root_users: ["example@archidep.ch"]
 
 config :archidep, ArchiDep.Repo,
   url:

@@ -193,7 +193,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   expected_placeholder(@selected_class, :expected_server_memory, "e.g. 2048")
                 }
               />
-              <span class="label">MB</span>
+              <span class="label">MB (±10%)</span>
             </label>
             <.errors_for field={@form[:expected_memory]} />
             {inherited_notice(@form, @selected_class, :expected_server_memory, :expected_memory)}
@@ -220,7 +220,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   expected_placeholder(@selected_class, :expected_server_swap, "e.g. 1024")
                 }
               />
-              <span class="label">MB</span>
+              <span class="label">MB (±10%)</span>
             </label>
             <.errors_for field={@form[:expected_swap]} />
             {inherited_notice(@form, @selected_class, :expected_server_swap, :expected_swap)}

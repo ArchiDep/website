@@ -13,7 +13,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
           username: String.t(),
           ssh_port: integer() | nil,
           class_id: UUID.t() | nil,
-          app_username: String.t() | nil,
+          app_username: String.t(),
           expected_cpus: pos_integer() | nil,
           expected_cores: pos_integer() | nil,
           expected_vcpus: pos_integer() | nil,

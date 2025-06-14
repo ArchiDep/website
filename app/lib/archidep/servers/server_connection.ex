@@ -47,7 +47,9 @@ defmodule ArchiDep.Servers.ServerConnection do
 
   @impl true
   def handle_call({:connect, host, port, username, options}, _from, {:idle, server_id}) do
-    Logger.debug("Opening SSH connection to server #{server_id}")
+    Logger.debug(
+      "Opening SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port})"
+    )
 
     result =
       :ssh.connect(
@@ -66,12 +68,16 @@ defmodule ArchiDep.Servers.ServerConnection do
     case result do
       {:ok, connection_ref} ->
         Process.link(connection_ref)
-        Logger.info("Successfully opened an SSH connection to server #{server_id}")
+
+        Logger.debug(
+          "Successfully opened an SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port})"
+        )
+
         {:reply, :ok, {:connected, connection_ref, server_id}}
 
       {:error, reason} ->
-        Logger.info(
-          "Could not open SSH connection to server #{server_id} because #{inspect(reason)}"
+        Logger.debug(
+          "Could not open SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port}) because #{inspect(reason)}"
         )
 
         {:reply, {:error, reason}, {:idle, server_id}}

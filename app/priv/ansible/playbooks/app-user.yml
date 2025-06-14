@@ -2,27 +2,35 @@
 - name: Application user
   hosts: all
   vars:
-    archidep_user: "archidep"
+    app_user_name: "archidep"
   tasks:
     - name: Create application user
       ansible.builtin.user:
-        name: "{{ archidep_user }}"
+        name: "{{ app_user_name }}"
         comment: "ArchiDep"
         create_home: true
         groups: [sudo]
-        home: "/home/{{ archidep_user }}"
+        home: "/home/{{ app_user_name }}"
         password: "!"
         shell: /bin/bash
         system: true
         state: present
       become: true
 
+    - name: Set authorized key taken from file
+      ansible.posix.authorized_key:
+        user: "{{ app_user_name }}"
+        comment: ArchiDep
+        exclusive: true
+        key: "{{ app_user_authorized_key }}"
+        state: present
+
     - name: Enable passwordless sudo for application user
       community.general.sudoers:
-        name: "{{ archidep_user }}"
+        name: "{{ app_user_name }}"
         commands: "ALL"
         nopassword: true
-        user: "{{ archidep_user }}"
+        user: "{{ app_user_name }}"
         validation: required
         state: present
       become: true

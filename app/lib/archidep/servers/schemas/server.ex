@@ -17,7 +17,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           name: String.t() | nil,
           ip_address: Postgrex.INET.t(),
           username: String.t(),
-          app_username: String.t() | nil,
+          app_username: String.t(),
           ssh_port: 1..65_535 | nil,
           class: Class.t() | NotLoaded,
           class_id: UUID.t(),
@@ -191,14 +191,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
     changeset
     |> update_change(:name, &trim_to_nil/1)
     |> update_change(:username, &trim/1)
-    |> update_change(:app_username, &trim_to_nil/1)
+    |> update_change(:app_username, &trim/1)
     |> update_change(:expected_system, &trim_to_nil/1)
     |> update_change(:expected_architecture, &trim_to_nil/1)
     |> update_change(:expected_os_family, &trim_to_nil/1)
     |> update_change(:expected_distribution, &trim_to_nil/1)
     |> update_change(:expected_distribution_release, &trim_to_nil/1)
     |> update_change(:expected_distribution_version, &trim_to_nil/1)
-    |> validate_required([:ip_address, :username, :class_id])
+    |> validate_required([:ip_address, :username, :class_id, :app_username])
     |> validate_length(:name, max: 50)
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)

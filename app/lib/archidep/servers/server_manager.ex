@@ -2,9 +2,11 @@ defmodule ArchiDep.Servers.ServerManager do
   use GenServer
 
   require Logger
+  import ArchiDep.Helpers.PipeHelpers
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
+  alias ArchiDep.Servers.ServerManagerState
   alias Ecto.UUID
 
   # Client API
@@ -26,114 +28,116 @@ defmodule ArchiDep.Servers.ServerManager do
   # Server callbacks
 
   @impl true
-  def init(server_id) do
-    Logger.debug("Init server manager for server #{server_id}")
-    {:ok, server_id, {:continue, :load_server}}
-  end
+  def init(server_id), do: {:ok, server_id, {:continue, :init}}
 
   @impl true
-  def handle_continue(:load_server, server_id) do
-    {:ok, server} = Server.fetch_server(server_id)
-
-    {:ok, _ref} =
-      Phoenix.Tracker.track(ArchiDep.Tracker, self(), "servers", server.id, %{
-        state: :idle
-      })
-
-    {:noreply, {:idle, server}}
-  end
+  def handle_continue(:init, server_id),
+    do:
+      server_id
+      |> ServerManagerState.init()
+      |> execute_actions()
+      |> noreply()
 
   @impl true
-  def handle_cast({:connection_idle, connection_pid}, {:idle, server}) do
+  def handle_cast({:connection_idle, connection_pid}, state) do
     Process.monitor(connection_pid)
 
-    host = server.ip_address.address
-    port = server.ssh_port || 22
-    username = server.username
-
-    connection_task =
-      Task.async(fn ->
-        ServerConnection.connect(
-          server,
-          host,
-          port,
-          username,
-          silently_accept_hosts: true
-        )
-      end)
-
-    connection_ref = make_ref()
-    {:noreply, {:connecting, connection_task.ref, {connection_ref, connection_pid}, server}}
-  end
-
-  @impl true
-  def handle_cast({:connection_idle, connection_pid}, {:connection_crashed, _reason, server}) do
-    Process.monitor(connection_pid)
-
-    host = server.ip_address.address
-    port = server.ssh_port || 22
-    username = server.username
-
-    connection_task =
-      Task.async(fn ->
-        ServerConnection.connect(
-          server,
-          host,
-          port,
-          username,
-          silently_accept_hosts: true
-        )
-      end)
-
-    connection_ref = make_ref()
-    {:noreply, {:connecting, connection_task.ref, {connection_ref, connection_pid}, server}}
+    state
+    |> ServerManagerState.connection_idle(connection_pid)
+    |> execute_actions()
+    |> noreply()
   end
 
   @impl true
   def handle_info(
-        {connection_task_ref, result},
-        {:connecting, connection_task_ref, {connection_ref, connection_pid}, server}
-      ) do
-    Process.demonitor(connection_task_ref, [:flush])
+        {task_ref, result},
+        state
+      ),
+      do:
+        state
+        |> ServerManagerState.handle_task_result(task_ref, result)
+        |> execute_actions()
+        |> noreply()
 
-    case result do
-      :ok ->
-        Logger.info("Server manager is connected to server #{server.id}")
-        :ok = ServerConnection.ping_load_average(server, connection_ref)
-
-        {:ok, facts} = Ansible.gather_facts(server)
-
-        archidep_user_playbook = Ansible.playbook!("app-user")
-        :ok = Ansible.run_playbook(archidep_user_playbook, server)
-
-        {:noreply, {:connected, {connection_ref, connection_pid}, server}}
-
-      {:error, reason} ->
-        Logger.info(
-          "Server manager could not connect to server #{server.id} because #{inspect(reason)}"
-        )
-
-        {:noreply, {:not_connected, reason, server}}
-    end
-  end
+  # {:ok, facts} = Ansible.gather_facts(server)
+  # "app-user" |> Ansible.run_playbook(server) |> Stream.run()
 
   def handle_info(
-        {:load_average, connection_ref, {m1, m5, m15, before_call, after_call}},
-        {:connected, {connection_ref, connection_pid}, server}
-      ) do
-    Logger.info(
-      "Received load average from server #{server.id}: #{m1}, #{m5}, #{m15} (between #{before_call} and #{after_call})"
-    )
-
-    {:noreply, {:connected, {connection_ref, connection_pid}, server}}
-  end
+        {:load_average, connection_ref, result},
+        state
+      ),
+      do:
+        state
+        |> ServerManagerState.receive_load_average(connection_ref, result)
+        |> execute_actions()
+        |> noreply()
 
   def handle_info(
         {:DOWN, _ref, :process, connection_pid, reason},
-        {:connected, {_connection_ref, connection_pid}, server}
-      ) do
-    Logger.warning("Connection to server #{server.id} crashed: #{inspect(reason)}")
+        state
+      ),
+      do:
+        state
+        |> ServerManagerState.connection_crashed(connection_pid, reason)
+        |> execute_actions()
+        |> noreply()
 
-    {:noreply, {:connection_crashed, reason, server}}
+  defp execute_actions(%ServerManagerState{actions: [action | remaining_actions]} = state) do
+    %ServerManagerState{state | actions: remaining_actions}
+    |> execute_action(action)
+    |> execute_actions()
+  end
+
+  defp execute_actions(%ServerManagerState{actions: []} = state) do
+    state
+  end
+
+  defp execute_action(state, {:connect, factory}) do
+    factory.(state, fn host, port, username, options ->
+      Task.async(fn ->
+        ServerConnection.connect(
+          state.server,
+          host,
+          port,
+          username,
+          options
+        )
+      end)
+    end)
+  end
+
+  defp execute_action(state, {:demonitor, ref}) do
+    Process.demonitor(ref, [:flush])
+    state
+  end
+
+  defp execute_action(state, {:gather_facts, factory}) do
+    factory.(state, fn username ->
+      Task.async(fn -> Ansible.gather_facts(state.server, username) end)
+    end)
+  end
+
+  defp execute_action(state, {:request_load_average, ref}) do
+    :ok = ServerConnection.ping_load_average(state.server, ref)
+    state
+  end
+
+  defp execute_action(state, {:run_command, factory}) do
+    factory.(state, fn command, timeout ->
+      Task.async(fn -> ServerConnection.run_command(state.server, command, timeout) end)
+    end)
+  end
+
+  defp execute_action(state, {:run_playbook, factory}) do
+    factory.(state, fn playbook, username, vars ->
+      Task.async(fn -> Ansible.run_playbook(playbook, state.server, username, vars) end)
+    end)
+  end
+
+  defp execute_action(state, {:track, topic, key, value}) do
+    {:ok, _ref} =
+      Phoenix.Tracker.track(ArchiDep.Tracker, self(), topic, key, value)
+
+    state
   end
 end

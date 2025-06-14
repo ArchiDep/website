@@ -1,4 +1,6 @@
 defmodule ArchiDep.Helpers.NetHelpers do
+  @type network_port :: 1..65_535
+
   @moduledoc """
   Network-related utility functions.
   """
@@ -71,6 +73,30 @@ defmodule ArchiDep.Helpers.NetHelpers do
   """
   @spec is_ip_address(term) :: Macro.t()
   defguard is_ip_address(value) when is_ipv4_address(value) or is_ipv6_address(value)
+
+  @doc """
+  Returns true if `term` is a valid port number.
+
+  ## Examples
+
+      iex> import ArchiDep.Helpers.NetHelpers
+      iex> is_network_port(80)
+      true
+      iex> is_network_port(5432)
+      true
+      iex> is_network_port(65_535)
+      true
+      iex> is_network_port(0)
+      false
+      iex> is_network_port(-1)
+      false
+      iex> is_network_port(65536)
+      false
+      iex> is_network_port(:foo)
+      false
+  """
+  @spec is_network_port(term) :: Macro.t()
+  defguard is_network_port(value) when is_integer(value) and value > 0 and value < 65_536
 
   @doc """
   Converts an HTTP URI into a WebSocket URI.
