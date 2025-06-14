@@ -7,6 +7,8 @@ defmodule ArchiDep.Servers.ServerManager do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerManagerState
+  alias ArchiDep.Students
+  alias ArchiDep.Students.Schemas.Class
   alias Ecto.UUID
 
   # Client API
@@ -31,12 +33,16 @@ defmodule ArchiDep.Servers.ServerManager do
   def init(server_id), do: {:ok, server_id, {:continue, :init}}
 
   @impl true
-  def handle_continue(:init, server_id),
-    do:
+  def handle_continue(:init, server_id) do
+    state =
       server_id
       |> ServerManagerState.init()
       |> execute_actions()
-      |> noreply()
+
+    :ok = Students.subscribe_class(state.server.class.id)
+
+    noreply(state)
+  end
 
   @impl true
   def handle_cast({:connection_idle, connection_pid}, state) do
@@ -52,10 +58,23 @@ defmodule ArchiDep.Servers.ServerManager do
   def handle_info(
         {task_ref, result},
         state
-      ),
+      )
+      when is_reference(task_ref),
       do:
         state
         |> ServerManagerState.handle_task_result(task_ref, result)
+        |> execute_actions()
+        |> noreply()
+
+  @impl true
+  def handle_info(
+        {:class_updated, class},
+        state
+      )
+      when is_struct(class, Class),
+      do:
+        state
+        |> ServerManagerState.class_updated(class)
         |> execute_actions()
         |> noreply()
 

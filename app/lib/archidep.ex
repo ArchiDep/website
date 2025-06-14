@@ -54,6 +54,16 @@ defmodule ArchiDep do
     end
   end
 
+  @spec pub_sub :: Macro.t()
+  def pub_sub do
+    quote do
+      import ArchiDep.Authorization
+      alias ArchiDep.Authentication
+      alias Ecto.UUID
+      alias Phoenix.PubSub
+    end
+  end
+
   @spec schema :: Macro.t()
   def schema do
     quote do

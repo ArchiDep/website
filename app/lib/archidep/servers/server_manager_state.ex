@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
+  alias ArchiDep.Students.Schemas.Class
   alias Ecto.UUID
 
   Record.defrecord(:connecting_state,
@@ -26,8 +27,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   Record.defrecord(:connected_state, connection_ref: nil, connection_pid: nil)
 
-  @enforce_keys [:state, :server, :username, :actions, :tasks, :problems]
-  defstruct [:state, :server, :username, actions: [], tasks: %{}, problems: []]
+  @enforce_keys [:state, :server, :username, :storage, :actions, :tasks, :problems]
+  defstruct [:state, :server, :username, :storage, actions: [], tasks: %{}, problems: []]
 
   @type t :: %__MODULE__{
           state:
@@ -38,9 +39,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
             | :disconnected,
           server: Server.t(),
           username: String.t(),
+          storage: :ets.tid(),
           actions: list(action()),
           tasks: %{atom() => reference()},
-          problems: list(problem())
+          problems: list(problem()),
+          storage: :ets.tid()
         }
 
   @type network_port :: NetHelpers.network_port()
@@ -98,6 +101,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     Logger.debug("Init server manager for server #{server_id}")
 
     {:ok, server} = Server.fetch_server(server_id)
+    storage = :ets.new(:server_manager, [:set, :private])
 
     app_user_created =
       AnsiblePlaybookRun.successful_playbook_run?(server, Ansible.app_user_playbook())
@@ -113,6 +117,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
       state: :not_connected,
       server: server,
       username: username,
+      storage: storage,
       actions: [
         {:track, "servers", server.id, %{state: :not_connected}}
       ],
@@ -300,13 +305,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
       ) do
     case result do
       {:ok, facts} ->
-        IO.puts(
-          "@@@ server properties mismatches #{inspect(detect_server_properties_mismatches(state.server, facts))}"
-        )
+        :ets.insert(state.storage, {:facts, facts})
 
         %{
           state
-          | problems: [problems ++ detect_server_properties_mismatches(state.server, facts)]
+          | problems: problems ++ detect_server_properties_mismatches(state.server, facts)
         }
 
       _anything_else ->
@@ -315,12 +318,37 @@ defmodule ArchiDep.Servers.ServerManagerState do
     |> drop_task(:gather_facts, gather_facts_ref)
   end
 
+  @spec class_updated(t(), Class.t()) :: t()
+  def class_updated(
+        %__MODULE__{server: %Server{class: %Class{id: class_id}}, problems: problems} = state,
+        %Class{id: class_id} = class
+      ) do
+    facts =
+      case :ets.lookup(state.storage, :facts) do
+        [{:facts, facts}] -> facts
+        [] -> nil
+      end
+
+    %__MODULE__{
+      state
+      | server: %Server{
+          state.server
+          | class: class
+        },
+        problems:
+          problems
+          |> Enum.filter(fn problem -> elem(problem, 0) != :expected_property_mismatch end)
+          |> Enum.concat(detect_server_properties_mismatches(state.server, facts))
+    }
+  end
+
   @spec connection_crashed(t(), pid(), term()) :: t()
   def connection_crashed(
         %__MODULE__{state: connected_state(connection_pid: connection_pid)} = state,
         connection_pid,
         reason
       ) do
+    :ets.delete(state.storage, :facts)
     server = state.server
     Logger.info("Connection to server #{server.id} crashed because: #{inspect(reason)}")
     %__MODULE__{state | state: :disconnected}
@@ -356,32 +384,34 @@ defmodule ArchiDep.Servers.ServerManagerState do
   end
 
   # TODO: perform new check when class/server is modified
-  defp detect_server_properties_mismatches(server, facts) do
-    []
-    |> detect_server_property_mismatch(:cpus, server, facts, ["ansible_processor_count"])
-    |> detect_server_property_mismatch(:cores, server, facts, ["ansible_processor_cores"])
-    |> detect_server_property_mismatch(:vcpus, server, facts, ["ansible_processor_vcpus"])
-    |> detect_server_property_mismatch(:memory, server, facts, [
-      "ansible_memory_mb",
-      "real",
-      "total"
-    ])
-    |> detect_server_property_mismatch(:swap, server, facts, [
-      "ansible_memory_mb",
-      "swap",
-      "total"
-    ])
-    |> detect_server_property_mismatch(:system, server, facts, ["ansible_system"])
-    |> detect_server_property_mismatch(:architecture, server, facts, ["ansible_architecture"])
-    |> detect_server_property_mismatch(:os_family, server, facts, ["ansible_os_family"])
-    |> detect_server_property_mismatch(:distribution, server, facts, ["ansible_distribution"])
-    |> detect_server_property_mismatch(:distribution_release, server, facts, [
-      "ansible_distribution_release"
-    ])
-    |> detect_server_property_mismatch(:distribution_version, server, facts, [
-      "ansible_distribution_version"
-    ])
-  end
+  defp detect_server_properties_mismatches(_server, nil), do: []
+
+  defp detect_server_properties_mismatches(server, facts),
+    do:
+      []
+      |> detect_server_property_mismatch(:cpus, server, facts, ["ansible_processor_count"])
+      |> detect_server_property_mismatch(:cores, server, facts, ["ansible_processor_cores"])
+      |> detect_server_property_mismatch(:vcpus, server, facts, ["ansible_processor_vcpus"])
+      |> detect_server_property_mismatch(:memory, server, facts, [
+        "ansible_memory_mb",
+        "real",
+        "total"
+      ])
+      |> detect_server_property_mismatch(:swap, server, facts, [
+        "ansible_memory_mb",
+        "swap",
+        "total"
+      ])
+      |> detect_server_property_mismatch(:system, server, facts, ["ansible_system"])
+      |> detect_server_property_mismatch(:architecture, server, facts, ["ansible_architecture"])
+      |> detect_server_property_mismatch(:os_family, server, facts, ["ansible_os_family"])
+      |> detect_server_property_mismatch(:distribution, server, facts, ["ansible_distribution"])
+      |> detect_server_property_mismatch(:distribution_release, server, facts, [
+        "ansible_distribution_release"
+      ])
+      |> detect_server_property_mismatch(:distribution_version, server, facts, [
+        "ansible_distribution_version"
+      ])
 
   defp detect_server_property_mismatch(
          problems,

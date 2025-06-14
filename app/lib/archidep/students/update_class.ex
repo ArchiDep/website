@@ -3,6 +3,7 @@ defmodule ArchiDep.Students.UpdateClass do
 
   alias ArchiDep.Students.Events.ClassUpdated
   alias ArchiDep.Students.Policy
+  alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Types
 
@@ -32,8 +33,9 @@ defmodule ArchiDep.Students.UpdateClass do
              |> initiated_by(user)
            end)
            |> Repo.transaction() do
-        {:ok, %{class: class}} ->
-          {:ok, class}
+        {:ok, %{class: updated_class}} ->
+          :ok = PubSub.publish_class(updated_class)
+          {:ok, updated_class}
 
         {:error, :class, changeset, _} ->
           {:error, changeset}

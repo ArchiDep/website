@@ -15,6 +15,8 @@ defmodule ArchiDep.Students.Behaviour do
   @callback fetch_class(Authentication.t(), UUID.t()) ::
               {:ok, Class.t()} | {:error, :class_not_found}
 
+  @callback subscribe_class(UUID.t()) :: :ok | {:error, :class_not_found}
+
   @callback validate_existing_class(Authentication.t(), UUID.t(), Types.class_data()) ::
               {:ok, Changeset.t()} | {:error, :class_not_found}
 

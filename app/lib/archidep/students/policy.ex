@@ -1,6 +1,8 @@
 defmodule ArchiDep.Students.Policy do
   use ArchiDep, :policy
 
+  alias ArchiDep.Students.Schemas.Class
+
   @impl Policy
 
   # Root users can validate classes.
@@ -34,6 +36,24 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :fetch_class,
+        %Authentication{principal: %UserAccount{roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
+  # Students of a class can subscribe to it.
+  def authorize(
+        :students,
+        :subscribe_class,
+        %Authentication{principal: %UserAccount{class_id: class_id, roles: roles}},
+        %Class{id: class_id}
+      ),
+      do: Enum.member?(roles, :student)
+
+  # Root users can subscribe to any class.
+  def authorize(
+        :students,
+        :subscribe_class,
         %Authentication{principal: %UserAccount{roles: roles}},
         _params
       ),

@@ -10,6 +10,7 @@ defmodule ArchiDep.Students.ContextImpl do
   alias ArchiDep.Students.ImportStudents
   alias ArchiDep.Students.ListClasses
   alias ArchiDep.Students.ListStudents
+  alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Types
@@ -30,6 +31,9 @@ defmodule ArchiDep.Students.ContextImpl do
 
   @spec fetch_class(Authentication.t(), UUID.t()) :: {:ok, Class.t()} | {:error, :class_not_found}
   defdelegate fetch_class(auth, id), to: FetchClass
+
+  @spec subscribe_class(UUID.t()) :: :ok | {:error, :class_not_found}
+  defdelegate subscribe_class(id), to: PubSub
 
   @spec validate_existing_class(
           Authentication.t(),
