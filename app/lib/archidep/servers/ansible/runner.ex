@@ -1,7 +1,6 @@
 defmodule ArchiDep.Servers.Ansible.Runner do
   require Logger
   import ArchiDep.Helpers.NetHelpers, only: [is_ip_address: 1, is_network_port: 1]
-  alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Types
 
   @type ansible_host :: Types.ansible_host()
@@ -116,18 +115,16 @@ defmodule ArchiDep.Servers.Ansible.Runner do
   end
 
   @spec run_playbook(
-          AnsiblePlaybook.t(),
+          String.t(),
           ansible_host(),
           ansible_port(),
           ansible_user(),
           ansible_variables()
         ) ::
           Enumerable.t(ansible_playbook_run_element())
-  def run_playbook(playbook, host, port, user, vars)
-      when is_struct(playbook, AnsiblePlaybook) and is_ip_address(host) and is_network_port(port) and
+  def run_playbook(playbook_path, host, port, user, vars)
+      when is_binary(playbook_path) and is_ip_address(host) and is_network_port(port) and
              is_binary(user) and is_map(vars) do
-    # Ad-hoc inventory with only a single host
-    # Host connection parameters
     ([
        "ansible-playbook",
        "-i",
@@ -142,10 +139,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
        Enum.map(vars, fn {key, value} ->
          "-e #{Atom.to_string(key)}=#{value}"
        end) ++
-       [
-         # Playbook to run
-         playbook.path
-       ])
+       [playbook_path])
     |> ExCmd.stream(
       env: [
         {"ANSIBLE_HOST_KEY_CHECKING", "false"},

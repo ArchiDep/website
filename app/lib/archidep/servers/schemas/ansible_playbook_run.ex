@@ -14,6 +14,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   @type t :: %__MODULE__{
           id: UUID.t(),
           playbook: String.t(),
+          playbook_path: String.t(),
           digest: binary(),
           host: Postgrex.INET.t(),
           port: 1..65_535,
@@ -38,6 +39,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
 
   schema "ansible_playbook_runs" do
     field(:playbook, :string)
+    field(:playbook_path, :string)
     field(:digest, :binary)
     field(:host, EctoNetwork.INET)
     field(:port, :integer)
@@ -65,6 +67,14 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  @spec get_pending_run!(UUID.t()) :: t()
+  def get_pending_run!(id) do
+    from(r in __MODULE__,
+      where: r.id == ^id and r.state == :pending
+    )
+    |> Repo.one!()
+  end
+
   @spec successful_playbook_run?(Server.t(), AnsiblePlaybook.t()) :: boolean()
   def successful_playbook_run?(server, playbook) do
     from(r in __MODULE__,
@@ -87,6 +97,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> change(
       id: id,
       playbook: AnsiblePlaybook.name(playbook),
+      playbook_path: playbook.relative_path,
       digest: playbook.digest,
       host: server.ip_address,
       port: server.ssh_port || 22,
@@ -96,6 +107,18 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       state: :pending,
       started_at: now,
       created_at: now,
+      updated_at: now
+    )
+    |> validate()
+  end
+
+  def start_running(run) do
+    now = DateTime.utc_now()
+
+    run
+    |> change(
+      state: :running,
+      started_at: now,
       updated_at: now
     )
     |> validate()
@@ -178,7 +201,15 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     changeset
     |> update_change(:playbook, &trim/1)
     |> update_change(:user, &trim/1)
-    |> validate_required([:playbook, :digest, :vars, :server_id, :state, :started_at])
+    |> validate_required([
+      :playbook,
+      :playbook_path,
+      :digest,
+      :vars,
+      :server_id,
+      :state,
+      :started_at
+    ])
     |> validate_length(:playbook, max: 50)
     |> validate_number(:port, greater_than: 0, less_than: 65_536)
     |> validate_length(:user, max: 32)

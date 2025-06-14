@@ -4,7 +4,8 @@ defmodule ArchiDep.Servers.Types do
   @type ansible_host :: :inet.ip_address()
   @type ansible_port :: 1..65_535
   @type ansible_user :: String.t()
-  @type ansible_playbook_run_state :: :running | :succeeded | :failed | :interrupted | :timeout
+  @type ansible_playbook_run_state ::
+          :pending | :running | :succeeded | :failed | :interrupted | :timeout
   @type ansible_variables :: %{String.t() => String.t()}
 
   @type create_server_data :: %{

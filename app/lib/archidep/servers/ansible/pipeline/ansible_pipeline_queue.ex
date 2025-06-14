@@ -2,17 +2,16 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   use GenStage
 
   require Logger
-  import ArchiDep.Helpers.GenStageHelpers, only: [is_demand: 1]
+  import ArchiDep.Helpers.GenStageHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
-  alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
+  alias Ecto.UUID
 
   defmodule State do
     defstruct [:stored_demand, :pending_playbooks]
 
     @type pending_playbook_item :: {
-            AnsiblePlaybook.t(),
-            AnsiblePlaybookRun.t(),
+            UUID.t(),
             reference()
           }
     @type t :: %__MODULE__{
@@ -36,28 +35,41 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
     @spec run_playbook(
             t(),
-            AnsiblePlaybook.t(),
-            AnsiblePlaybookRun.t(),
+            UUID.t(),
             reference()
           ) :: t()
     def run_playbook(
           state,
-          playbook,
-          playbook_run,
+          playbook_run_id,
           ref
         ) do
-      {number_of_pending_playbooks, pending_playbooks_queue} = state.pending_playbooks
-
-      Logger.debug(
-        "Ansible pipeline queue received a request to run playbook #{AnsiblePlaybook.name(playbook)} for server #{playbook_run.server.id}"
-      )
+      {number_pending, pending_playbooks_queue} = state.pending_playbooks
 
       %__MODULE__{
         state
         | pending_playbooks:
-            {number_of_pending_playbooks + 1,
-             :queue.in({playbook, playbook_run, ref}, pending_playbooks_queue)}
+            {number_pending + 1, :queue.in({playbook_run_id, ref}, pending_playbooks_queue)}
       }
+    end
+
+    @spec consume_events(t()) :: {list(pending_playbook_item()), t()}
+    def consume_events(state) do
+      {events, new_state} = collect_events_to_consume({[], state})
+      {Enum.reverse(events), new_state}
+    end
+
+    defp collect_events_to_consume(
+           {events, %__MODULE__{pending_playbooks: {0, _pending_playbooks_queue}} = state}
+         ) do
+      {events, state}
+    end
+
+    defp collect_events_to_consume(
+           {events,
+            %__MODULE__{pending_playbooks: {number_pending, pending_playbooks_queue}} = state}
+         ) do
+      {{:value, event}, new_queue} = :queue.out(pending_playbooks_queue)
+      {[event | events], %__MODULE__{state | pending_playbooks: {number_pending - 1, new_queue}}}
     end
   end
 
@@ -69,12 +81,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
   @spec run_playbook(
           Pipeline.t(),
-          AnsiblePlaybook.t(),
           AnsiblePlaybookRun.t(),
           reference()
         ) :: :ok
-  def run_playbook(pipeline, playbook, playbook_run, ref),
-    do: GenStage.call(name(pipeline), {:run_playbook, playbook, playbook_run, ref})
+  def run_playbook(pipeline, %AnsiblePlaybookRun{state: :pending} = playbook_run, ref),
+    do: GenStage.call(name(pipeline), {:run_playbook, playbook_run.id, ref})
 
   @impl true
   def init(nil) do
@@ -83,19 +94,18 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   end
 
   @impl true
-  def handle_demand(demand, state) when is_demand(demand) do
-    events = []
-    new_state = State.store_demand(state, demand)
-
-    {:noreply, events, new_state}
-  end
+  def handle_demand(demand, state) when is_demand(demand),
+    do:
+      state
+      |> State.store_demand(demand)
+      |> State.consume_events()
+      |> noreply()
 
   @impl true
-  def handle_call({:run_playbook, playbook, playbook_run, ref}, _from, state) do
-    Logger.debug("Ansible pipeline queue received run_playbook call: #{inspect(playbook)}")
-
-    new_state = State.run_playbook(state, playbook, playbook_run, ref)
-
-    {:reply, :ok, [], new_state}
-  end
+  def handle_call({:run_playbook, playbook_run_id, ref}, _from, state),
+    do:
+      state
+      |> State.run_playbook(playbook_run_id, ref)
+      |> State.consume_events()
+      |> reply(:ok)
 end

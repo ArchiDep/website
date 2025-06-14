@@ -6,7 +6,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Tracker
-  alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
@@ -98,7 +97,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
-          {:run_playbook, AnsiblePlaybook.t(), AnsiblePlaybookRun.t(), reference()}
+          {:run_playbook, AnsiblePlaybookRun.t(), reference()}
   @type track_action :: {:track, String.t(), UUID.t(), map()}
   @type action ::
           demonitor_action()
@@ -275,7 +274,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
             ansible_playbooks: [{playbook_run, playbook_ref} | state.ansible_playbooks],
             actions: [
               {:request_load_average, connection_ref},
-              {:run_playbook, playbook, playbook_run, playbook_ref}
+              {:run_playbook, playbook_run, playbook_ref}
               # {:gather_facts,
               #  fn state, task_factory ->
               #    task = task_factory.(state.username)

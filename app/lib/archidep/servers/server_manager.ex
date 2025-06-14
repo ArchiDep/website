@@ -146,11 +146,10 @@ defmodule ArchiDep.Servers.ServerManager do
     end)
   end
 
-  defp execute_action(state, {:run_playbook, playbook, playbook_run, ref}) do
+  defp execute_action(state, {:run_playbook, playbook_run, ref}) do
     :ok =
       AnsiblePipelineQueue.run_playbook(
         state.pipeline,
-        playbook,
         playbook_run,
         ref
       )

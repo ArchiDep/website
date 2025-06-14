@@ -13,7 +13,9 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
                  |> :crypto.hash_final()
 
                name = String.replace_suffix(filename, ".yml", "")
-               playbook = AnsiblePlaybook.new(Path.join(@playbooks_dir, filename), digest)
+
+               playbook =
+                 AnsiblePlaybook.new(Path.join("priv/ansible/playbooks", filename), digest)
 
                {name, playbook}
              end)
