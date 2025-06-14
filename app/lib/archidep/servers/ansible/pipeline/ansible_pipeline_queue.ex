@@ -48,6 +48,10 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
         ) do
       {number_of_pending_playbooks, pending_playbooks_queue} = state.pending_playbooks
 
+      Logger.debug(
+        "Ansible pipeline queue received a request to run playbook #{AnsiblePlaybook.name(playbook)} for server #{playbook_run.server.id}"
+      )
+
       %__MODULE__{
         state
         | pending_playbooks:

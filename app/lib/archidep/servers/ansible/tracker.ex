@@ -21,8 +21,10 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
 
   @spec track_playbook!(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::
           AnsiblePlaybookRun.t()
-  def track_playbook!(playbook, server, user, vars),
-    do: playbook |> AnsiblePlaybookRun.new_pending(server, user, vars) |> Repo.insert!()
+  def track_playbook!(playbook, server, user, vars) do
+    run = playbook |> AnsiblePlaybookRun.new_pending(server, user, vars) |> Repo.insert!()
+    %AnsiblePlaybookRun{run | server: server}
+  end
 
   @spec track_playbook_event(Runner.ansible_playbook_run_element(), AnsiblePlaybookRun.t()) ::
           ansible_playbook_run_element()
