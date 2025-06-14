@@ -9,13 +9,11 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
   alias ArchiDep.Servers.Types
   alias Ecto.Multi
 
-  @type ansible_playbook_run_started :: {:started, AnsiblePlaybookRun.t()}
   @type ansible_playbook_run_event :: {:event, AnsiblePlaybookEvent.t()}
   @type ansible_playbook_run_succeeded :: {:succeeded, AnsiblePlaybookRun.t()}
   @type ansible_playbook_run_failed :: {:failed, AnsiblePlaybookRun.t()}
   @type ansible_playbook_run_element ::
-          ansible_playbook_run_started()
-          | ansible_playbook_run_event()
+          ansible_playbook_run_event()
           | ansible_playbook_run_succeeded()
           | ansible_playbook_run_failed()
 

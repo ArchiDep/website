@@ -83,8 +83,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     if session =
          Repo.one(
            from(us in __MODULE__,
-             join: ua in UserAccount,
-             on: us.user_account_id == ua.id,
+             join: ua in assoc(us, :user_account),
              where: us.token == ^token and us.created_at > ago(@session_validity_in_days, "day"),
              preload: [user_account: ua]
            )
@@ -108,8 +107,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   defp fetch_by_uuid(uuid),
     do:
       from(us in __MODULE__,
-        join: ua in UserAccount,
-        on: us.user_account_id == ua.id,
+        join: ua in assoc(us, :user_account),
         preload: [user_account: ua]
       )
       |> Repo.get(uuid)
@@ -123,8 +121,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     do:
       Repo.all(
         from(us in __MODULE__,
-          join: ua in UserAccount,
-          on: us.user_account_id == ua.id,
+          join: ua in assoc(us, :user_account),
           where: ua.id == ^id and us.created_at > ago(@session_validity_in_days, "day"),
           order_by: [desc: us.created_at],
           preload: [user_account: ua]

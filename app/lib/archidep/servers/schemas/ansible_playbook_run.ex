@@ -70,7 +70,9 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   @spec get_pending_run!(UUID.t()) :: t()
   def get_pending_run!(id) do
     from(r in __MODULE__,
-      where: r.id == ^id and r.state == :pending
+      where: r.id == ^id and r.state == :pending,
+      join: s in assoc(r, :server),
+      preload: [server: s]
     )
     |> Repo.one!()
   end

@@ -4,7 +4,7 @@
   vars:
     app_user_name: "archidep"
   tasks:
-    - name: Create application user
+    - name: Create the application user
       ansible.builtin.user:
         name: "{{ app_user_name }}"
         comment: "ArchiDep"
@@ -17,15 +17,16 @@
         state: present
       become: true
 
-    - name: Set authorized key taken from file
+    - name: Configure authorized keys for the application user
       ansible.posix.authorized_key:
         user: "{{ app_user_name }}"
         comment: ArchiDep
         exclusive: true
         key: "{{ app_user_authorized_key }}"
         state: present
+      become: true
 
-    - name: Enable passwordless sudo for application user
+    - name: Enable passwordless sudo for the application user
       community.general.sudoers:
         name: "{{ app_user_name }}"
         commands: "ALL"

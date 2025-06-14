@@ -2,7 +2,6 @@ defmodule ArchiDep.Students.ListStudents do
   use ArchiDep, :use_case
 
   alias ArchiDep.Students.Policy
-  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Schemas.Student
 
@@ -14,8 +13,7 @@ defmodule ArchiDep.Students.ListStudents do
 
     Repo.all(
       from s in Student,
-        left_join: ua in UserAccount,
-        on: s.user_account_id == ua.id,
+        left_join: ua in assoc(s, :user_account),
         where: s.class_id == ^class_id,
         order_by: s.name,
         preload: [user_account: ua]

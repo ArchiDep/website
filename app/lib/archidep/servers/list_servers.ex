@@ -13,8 +13,7 @@ defmodule ArchiDep.Servers.ListServers do
 
     Repo.all(
       from s in Server,
-        join: ua in UserAccount,
-        on: s.user_account_id == ua.id,
+        join: ua in assoc(s, :user_account),
         where: s.user_account_id == ^user_account_id,
         order_by: [s.name, s.ip_address],
         preload: [user_account: ua]

@@ -80,10 +80,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     Repo.all(
       from(s in __MODULE__,
         distinct: true,
-        join: ua in UserAccount,
-        on: s.user_account_id == ua.id,
-        join: c in Class,
-        on: s.class_id == c.id,
+        join: ua in assoc(s, :user_account),
+        join: c in assoc(s, :class),
         # TODO: put query fragment determining whether auser is active in the user account schema
         where: :root in ua.roles or c.active == true,
         preload: [class: c, user_account: ua]
@@ -95,8 +93,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def fetch_server(id) do
     case Repo.one(
            from(s in __MODULE__,
-             join: c in Class,
-             on: s.class_id == c.id,
+             join: c in assoc(s, :class),
              where: s.id == ^id,
              preload: [class: c]
            )

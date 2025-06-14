@@ -57,8 +57,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   def get_with_switch_edu_id!(id),
     do:
       from(ua in __MODULE__,
-        join: sei in SwitchEduId,
-        on: ua.switch_edu_id_id == sei.id,
+        join: sei in assoc(ua, :switch_edu_id),
         where: ua.id == ^id,
         preload: [switch_edu_id: sei]
       )
@@ -73,8 +72,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     do:
       Repo.one(
         from(ua in __MODULE__,
-          join: sei in SwitchEduId,
-          on: ua.switch_edu_id_id == sei.id,
+          join: sei in assoc(ua, :switch_edu_id),
           where: sei.id == ^switch_edu_id_id,
           preload: [switch_edu_id: sei]
         )

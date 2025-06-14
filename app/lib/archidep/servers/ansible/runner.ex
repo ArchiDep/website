@@ -136,8 +136,8 @@ defmodule ArchiDep.Servers.Ansible.Runner do
        "-e",
        "ansible_user=#{user}"
      ] ++
-       Enum.map(vars, fn {key, value} ->
-         "-e #{Atom.to_string(key)}=#{value}"
+       Enum.flat_map(vars, fn {key, value} ->
+         ["-e", "#{key}=\"#{shell_escape(value)}\""]
        end) ++
        [playbook_path])
     |> ExCmd.stream(
@@ -196,4 +196,6 @@ defmodule ArchiDep.Servers.Ansible.Runner do
             []
         end
       end)
+
+  defp shell_escape(value) when is_binary(value), do: String.replace(value, "\"", "\\\"")
 end

@@ -6,6 +6,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Tracker
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
@@ -14,8 +15,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   Record.defrecord(:connecting_state,
     connection_ref: nil,
-    connection_pid: nil,
-    connection_task_ref: nil
+    connection_pid: nil
   )
 
   Record.defrecord(:connection_failed_state, reason: "could not connect")
@@ -26,6 +26,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
   )
 
   Record.defrecord(:connected_state, connection_ref: nil, connection_pid: nil)
+
+  Record.defrecord(:reconnecting_state,
+    connection_ref: nil,
+    connection_pid: nil
+  )
 
   @enforce_keys [
     :state,
@@ -84,6 +89,12 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type connected_state ::
           record(:connected_state, connection_ref: reference(), connection_pid: pid())
 
+  @type reconnecting_state ::
+          record(:connecting_state,
+            connection_ref: reference(),
+            connection_pid: pid()
+          )
+
   @type connect_action ::
           {:connect,
            (t(),
@@ -100,7 +111,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
           {:run_playbook, AnsiblePlaybookRun.t(), reference()}
   @type track_action :: {:track, String.t(), UUID.t(), map()}
   @type action ::
-          demonitor_action()
+          connect_action()
+          | demonitor_action()
           | request_load_average()
           | run_command_action()
           | run_playbook_action()
@@ -193,6 +205,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   end
 
   @spec handle_task_result(t(), reference(), term()) :: t()
+
   def handle_task_result(
         %__MODULE__{
           state:
@@ -205,44 +218,24 @@ defmodule ArchiDep.Servers.ServerManagerState do
         connection_task_ref,
         result
       ) do
-    server = state.server
-
-    case result do
-      :ok ->
-        Logger.info(
-          "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
-        )
-
-        %__MODULE__{
-          state
-          | state:
-              checking_access_state(
-                connection_ref: connection_ref,
-                connection_pid: connection_pid
-              ),
-            actions: [
-              {:run_command,
-               fn state, task_factory ->
-                 task = task_factory.("sudo ls", 10_000)
-                 %__MODULE__{state | tasks: Map.put(state.tasks, :check_access, task.ref)}
-               end}
-            ]
-        }
-
-      {:error, reason} ->
-        Logger.info(
-          "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
-        )
-
-        %__MODULE__{
-          state
-          | state: connection_failed_state(reason: reason)
-        }
-    end
-    |> drop_task(:connect, connection_task_ref)
+    handle_connect_task_result(state, connection_ref, connection_pid, connection_task_ref, result)
   end
 
-  @spec handle_task_result(t(), reference(), term()) :: t()
+  def handle_task_result(
+        %__MODULE__{
+          state:
+            reconnecting_state(
+              connection_ref: connection_ref,
+              connection_pid: connection_pid
+            ),
+          tasks: %{connect: connection_task_ref}
+        } = state,
+        connection_task_ref,
+        result
+      ) do
+    handle_connect_task_result(state, connection_ref, connection_pid, connection_task_ref, result)
+  end
+
   def handle_task_result(
         %__MODULE__{
           state:
@@ -256,32 +249,55 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
     case result do
       {:ok, _stdout, _stderr, 0} ->
-        Logger.info(
-          "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
-        )
+        if state.username == server.app_username do
+          Logger.info(
+            "Server manager has sudo access to server #{server.id} as #{state.username}; gathering facts..."
+          )
 
-        playbook = Ansible.app_user_playbook()
-        playbook_run = Tracker.track_playbook!(playbook, server, state.username, %{})
-        playbook_ref = make_ref()
+          %__MODULE__{
+            state
+            | state:
+                connected_state(
+                  connection_ref: connection_ref,
+                  connection_pid: connection_pid
+                ),
+              actions: [
+                {:request_load_average, connection_ref},
+                {:gather_facts,
+                 fn state, task_factory ->
+                   task = task_factory.(state.username)
+                   %__MODULE__{state | tasks: Map.put(state.tasks, :gather_facts, task.ref)}
+                 end}
+              ]
+          }
+        else
+          Logger.info(
+            "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
+          )
 
-        %__MODULE__{
-          state
-          | state:
-              connected_state(
-                connection_ref: connection_ref,
-                connection_pid: connection_pid
-              ),
-            ansible_playbooks: [{playbook_run, playbook_ref} | state.ansible_playbooks],
-            actions: [
-              {:request_load_average, connection_ref},
-              {:run_playbook, playbook_run, playbook_ref}
-              # {:gather_facts,
-              #  fn state, task_factory ->
-              #    task = task_factory.(state.username)
-              #    %__MODULE__{state | tasks: Map.put(state.tasks, :gather_facts, task.ref)}
-              #  end}
-            ]
-        }
+          playbook = Ansible.app_user_playbook()
+
+          playbook_run =
+            Tracker.track_playbook!(playbook, server, state.username, %{
+              "app_user_authorized_key" => ArchiDep.Application.public_key()
+            })
+
+          playbook_ref = make_ref()
+
+          %__MODULE__{
+            state
+            | state:
+                connected_state(
+                  connection_ref: connection_ref,
+                  connection_pid: connection_pid
+                ),
+              ansible_playbooks: [{playbook_run, playbook_ref} | state.ansible_playbooks],
+              actions: [
+                {:request_load_average, connection_ref},
+                {:run_playbook, playbook_run, playbook_ref}
+              ]
+          }
+        end
 
       {:ok, _stdout, stderr, _exit_code} ->
         Logger.info(
@@ -326,7 +342,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
     |> drop_task(:check_access, check_access_ref)
   end
 
-  @spec handle_task_result(t(), reference(), term()) :: t()
   def handle_task_result(
         %__MODULE__{
           state: connected_state(),
@@ -349,6 +364,101 @@ defmodule ArchiDep.Servers.ServerManagerState do
         state
     end
     |> drop_task(:gather_facts, gather_facts_ref)
+  end
+
+  defp handle_connect_task_result(
+         state,
+         connection_ref,
+         connection_pid,
+         connection_task_ref,
+         result
+       ) do
+    server = state.server
+
+    case result do
+      :ok ->
+        Logger.info(
+          "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
+        )
+
+        %__MODULE__{
+          state
+          | state:
+              checking_access_state(
+                connection_ref: connection_ref,
+                connection_pid: connection_pid
+              ),
+            actions: [
+              {:run_command,
+               fn state, task_factory ->
+                 task = task_factory.("sudo ls", 10_000)
+                 %__MODULE__{state | tasks: Map.put(state.tasks, :check_access, task.ref)}
+               end}
+            ]
+        }
+
+      {:error, reason} ->
+        Logger.info(
+          "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
+        )
+
+        %__MODULE__{
+          state
+          | state: connection_failed_state(reason: reason)
+        }
+    end
+    |> drop_task(:connect, connection_task_ref)
+  end
+
+  @spec ansible_playbook_completed(t(), UUID.t(), reference()) :: t()
+  def ansible_playbook_completed(
+        %__MODULE__{
+          state: connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
+          ansible_playbooks: [
+            {%AnsiblePlaybookRun{id: run_id} = run, run_ref} | remaining_playbooks
+          ]
+        } = state,
+        run_id,
+        run_ref
+      ) do
+    server = state.server
+    Logger.info("Ansible playbook #{run.playbook} completed for server #{server.id}")
+
+    {username, actions} =
+      if state.username == server.username and
+           run.playbook == AnsiblePlaybook.name(Ansible.app_user_playbook()) do
+        host = server.ip_address.address
+        port = server.ssh_port || 22
+        new_username = server.app_username
+
+        {new_username,
+         [
+           {:connect,
+            fn s, task_factory ->
+              task = task_factory.(host, port, new_username, silently_accept_hosts: true)
+
+              %__MODULE__{
+                s
+                | state:
+                    reconnecting_state(
+                      connection_pid: connection_pid,
+                      connection_ref: connection_ref
+                    ),
+                  tasks: Map.put(s.tasks, :connect, task.ref)
+              }
+            end}
+           | state.actions
+         ]}
+      else
+        {state.username, state.actions}
+      end
+
+    %__MODULE__{
+      state
+      | username: username,
+        actions: actions,
+        ansible_playbooks: remaining_playbooks
+    }
   end
 
   @spec class_updated(t(), Class.t()) :: t()

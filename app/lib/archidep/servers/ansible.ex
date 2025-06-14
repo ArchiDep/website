@@ -26,22 +26,25 @@ defmodule ArchiDep.Servers.Ansible do
 
   @spec run_playbook(AnsiblePlaybookRun.t()) ::
           Enumerable.t(Tracker.ansible_playbook_run_element())
-  def run_playbook(%AnsiblePlaybookRun{state: :pending} = playbook_run)
+  def run_playbook(%AnsiblePlaybookRun{state: :running} = playbook_run)
       when is_struct(playbook_run, AnsiblePlaybookRun) do
+    ansible_host = playbook_run.host.address
+    ansible_port = playbook_run.port
+    ansible_user = playbook_run.user
+
     Logger.info(
-      "Running Ansible playbook #{playbook_run.playbook} on server #{playbook_run.server.id}"
+      "Running Ansible playbook #{playbook_run.playbook} on server #{playbook_run.server.id} (#{ansible_user}@#{:inet.ntoa(ansible_host)}:#{ansible_port})"
     )
 
     playbook_run.playbook
     |> playbook_path()
     |> Runner.run_playbook(
-      playbook_run.host.address,
-      playbook_run.port,
-      playbook_run.user,
+      ansible_host,
+      ansible_port,
+      ansible_user,
       playbook_run.vars
     )
     |> Stream.map(&Tracker.track_playbook_event(&1, playbook_run))
-    |> Stream.run()
   end
 
   defp playbook_path(name),

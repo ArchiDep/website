@@ -86,10 +86,8 @@ defmodule ArchiDep.Students.Schemas.Student do
     case Repo.one(
            from(s in __MODULE__,
              where: s.class_id == ^class_id and s.id == ^id,
-             join: c in Class,
-             on: s.class_id == c.id,
-             left_join: ua in UserAccount,
-             on: s.user_account_id == ua.id,
+             join: c in assoc(s, :class),
+             left_join: ua in assoc(s, :user_account),
              preload: [:class, :user_account]
            )
          ) do
