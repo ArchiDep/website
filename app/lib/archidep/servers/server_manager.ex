@@ -94,16 +94,6 @@ defmodule ArchiDep.Servers.ServerManager do
         |> noreply()
 
   def handle_info(
-        {:load_average, connection_ref, result},
-        state
-      ),
-      do:
-        state
-        |> ServerManagerState.receive_load_average(connection_ref, result)
-        |> execute_actions()
-        |> noreply()
-
-  def handle_info(
         {:DOWN, _ref, :process, connection_pid, reason},
         state
       ),
@@ -146,11 +136,6 @@ defmodule ArchiDep.Servers.ServerManager do
     factory.(state, fn username ->
       Task.async(fn -> Ansible.gather_facts(state.server, username) end)
     end)
-  end
-
-  defp execute_action(state, {:request_load_average, ref}) do
-    :ok = ServerConnection.ping_load_average(state.server, ref)
-    state
   end
 
   defp execute_action(state, {:run_command, factory}) do

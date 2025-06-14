@@ -27,10 +27,6 @@ defmodule ArchiDep.Servers.ServerConnection do
   def run_command(server, command, timeout),
     do: GenServer.call(name(server), {:run_command, command}, timeout)
 
-  @spec ping_load_average(Server.t(), reference()) :: :ok
-  def ping_load_average(server, ref),
-    do: GenServer.cast(name(server), {:ping_load_average, self(), ref})
-
   # Server callbacks
 
   @impl true
@@ -68,29 +64,6 @@ defmodule ArchiDep.Servers.ServerConnection do
 
   def handle_call({:run_command, _command}, _from, state) do
     {:reply, {:error, :not_connected}, state}
-  end
-
-  @impl true
-  def handle_cast({:ping_load_average, from, ref}, {:connected, connection_ref, server_id}) do
-    before_call = DateTime.utc_now()
-
-    with {:ok, stdout, _stderr, 0} <-
-           SSHEx.run(connection_ref, "cat /proc/loadavg", separate_streams: true),
-         after_call = DateTime.utc_now(),
-         [m1s, m5s, m15s | _rest] <- stdout |> String.trim() |> String.split(~r/\s+/),
-         [{m1, ""}, {m5, ""}, {m15, ""}] <- [
-           Float.parse(m1s),
-           Float.parse(m5s),
-           Float.parse(m15s)
-         ] do
-      send(from, {:load_average, ref, {m1, m5, m15, before_call, after_call}})
-    end
-
-    {:noreply, {:connected, connection_ref, server_id}}
-  end
-
-  def handle_cast({:ping_load_average, _from}, state) do
-    {:noreply, state}
   end
 
   @impl true

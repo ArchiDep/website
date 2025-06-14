@@ -104,7 +104,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type demonitor_action :: {:demonitor, reference()}
   @type gather_facts_action ::
           {:gather_facts, (t(), (String.t() -> Task.t()) -> t())}
-  @type request_load_average :: {:request_load_average, reference()}
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
@@ -113,7 +112,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type action ::
           connect_action()
           | demonitor_action()
-          | request_load_average()
           | run_command_action()
           | run_playbook_action()
           | track_action()
@@ -262,16 +260,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
                   connection_pid: connection_pid
                 ),
               actions: [
-                {:request_load_average, connection_ref},
-                {:gather_facts,
-                 fn task_state, task_factory ->
-                   task = task_factory.(task_state.username)
-
-                   %__MODULE__{
-                     task_state
-                     | tasks: Map.put(task_state.tasks, :gather_facts, task.ref)
-                   }
-                 end}
+                get_load_average(),
+                gather_facts()
               ]
           }
         else
@@ -297,7 +287,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 ),
               ansible_playbooks: [{playbook_run, playbook_ref} | state.ansible_playbooks],
               actions: [
-                {:request_load_average, connection_ref},
                 {:run_playbook, playbook_run, playbook_ref}
               ]
           }
@@ -316,7 +305,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 connection_pid: connection_pid
               ),
             actions: [
-              {:request_load_average, connection_ref}
+              get_load_average()
             ],
             problems: [
               {:missing_sudo_access, server.username, String.trim(stderr)}
@@ -336,7 +325,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 connection_pid: connection_pid
               ),
             actions: [
-              {:request_load_average, connection_ref}
+              get_load_average()
             ],
             problems: [
               {:sudo_access_check_failed, reason}
@@ -344,6 +333,27 @@ defmodule ArchiDep.Servers.ServerManagerState do
         }
     end
     |> drop_task(:check_access, check_access_ref)
+  end
+
+  def handle_task_result(
+        %__MODULE__{
+          state: connected_state(),
+          tasks: %{get_load_average: get_load_average_ref}
+        } = state,
+        get_load_average_ref,
+        result
+      ) do
+    with {:ok, stdout, _stderr, 0} <- result,
+         [m1s, m5s, m15s | _rest] <- stdout |> String.trim() |> String.split(~r/\s+/),
+         [{m1, ""}, {m5, ""}, {m15, ""}] <- [
+           Float.parse(m1s),
+           Float.parse(m5s),
+           Float.parse(m15s)
+         ] do
+      Logger.info("Received load average from server #{state.server.id}: #{m1}, #{m5}, #{m15}")
+    end
+
+    drop_task(state, :get_load_average, get_load_average_ref)
   end
 
   def handle_task_result(
@@ -393,15 +403,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 connection_pid: connection_pid
               ),
             actions: [
-              {:run_command,
-               fn task_state, task_factory ->
-                 task = task_factory.("sudo ls", 10_000)
-
-                 %__MODULE__{
-                   task_state
-                   | tasks: Map.put(task_state.tasks, :check_access, task.ref)
-                 }
-               end}
+              check_sudo_access()
             ]
         }
 
@@ -505,25 +507,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
     %__MODULE__{state | state: :disconnected}
   end
 
-  @spec receive_load_average(
-          t(),
-          reference(),
-          {float(), float(), float(), DateTime.t(), DateTime.t()}
-        ) :: t()
-  def receive_load_average(
-        %__MODULE__{state: connected_state(connection_ref: connection_ref)} = state,
-        connection_ref,
-        {one_minute, five_minutes, fifteen_minutes, before_call, after_call}
-      ) do
-    server = state.server
-
-    Logger.info(
-      "Received load average from server #{server.id}: #{one_minute}, #{five_minutes}, #{fifteen_minutes} (between #{before_call} and #{after_call})"
-    )
-
-    state
-  end
-
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do
     case Map.get(tasks, key) do
       nil ->
@@ -533,6 +516,33 @@ defmodule ArchiDep.Servers.ServerManagerState do
         %__MODULE__{state | tasks: Map.delete(tasks, key), actions: [{:demonitor, ref} | actions]}
     end
   end
+
+  defp gather_facts(),
+    do:
+      {:gather_facts,
+       fn task_state, task_factory ->
+         task = task_factory.(task_state.username)
+
+         %__MODULE__{
+           task_state
+           | tasks: Map.put(task_state.tasks, :gather_facts, task.ref)
+         }
+       end}
+
+  defp get_load_average(), do: run_command(:get_load_average, "cat /proc/loadavg", 10_000)
+  defp check_sudo_access(), do: run_command(:check_access, "sudo ls", 10_000)
+
+  defp run_command(name, command, timeout),
+    do:
+      {:run_command,
+       fn task_state, task_factory ->
+         task = task_factory.(command, timeout)
+
+         %__MODULE__{
+           task_state
+           | tasks: Map.put(task_state.tasks, name, task.ref)
+         }
+       end}
 
   # TODO: perform new check when class/server is modified
   defp detect_server_properties_mismatches(_server, nil), do: []
