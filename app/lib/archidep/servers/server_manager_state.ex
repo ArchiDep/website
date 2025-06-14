@@ -196,9 +196,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
           ),
         actions: [
           {:connect,
-           fn state, task_factory ->
+           fn task_state, task_factory ->
              task = task_factory.(host, port, username, silently_accept_hosts: true)
-             %__MODULE__{state | tasks: Map.put(state.tasks, :connect, task.ref)}
+             %__MODULE__{task_state | tasks: Map.put(task_state.tasks, :connect, task.ref)}
            end}
         ]
     }
@@ -264,9 +264,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
               actions: [
                 {:request_load_average, connection_ref},
                 {:gather_facts,
-                 fn state, task_factory ->
-                   task = task_factory.(state.username)
-                   %__MODULE__{state | tasks: Map.put(state.tasks, :gather_facts, task.ref)}
+                 fn task_state, task_factory ->
+                   task = task_factory.(task_state.username)
+
+                   %__MODULE__{
+                     task_state
+                     | tasks: Map.put(task_state.tasks, :gather_facts, task.ref)
+                   }
                  end}
               ]
           }
@@ -390,9 +394,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
               ),
             actions: [
               {:run_command,
-               fn state, task_factory ->
+               fn task_state, task_factory ->
                  task = task_factory.("sudo ls", 10_000)
-                 %__MODULE__{state | tasks: Map.put(state.tasks, :check_access, task.ref)}
+
+                 %__MODULE__{
+                   task_state
+                   | tasks: Map.put(task_state.tasks, :check_access, task.ref)
+                 }
                end}
             ]
         }
@@ -434,17 +442,17 @@ defmodule ArchiDep.Servers.ServerManagerState do
         {new_username,
          [
            {:connect,
-            fn s, task_factory ->
+            fn task_state, task_factory ->
               task = task_factory.(host, port, new_username, silently_accept_hosts: true)
 
               %__MODULE__{
-                s
+                task_state
                 | state:
                     reconnecting_state(
                       connection_pid: connection_pid,
                       connection_ref: connection_ref
                     ),
-                  tasks: Map.put(s.tasks, :connect, task.ref)
+                  tasks: Map.put(task_state.tasks, :connect, task.ref)
               }
             end}
            | state.actions
