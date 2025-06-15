@@ -31,9 +31,9 @@ defmodule ArchiDep.Servers.ServerManager do
   def connection_idle(server_id, connection_pid),
     do: GenServer.cast(name(server_id), {:connection_idle, connection_pid})
 
-  @spec ansible_playbook_completed(AnsiblePlaybookRun.t(), reference()) :: :ok
-  def ansible_playbook_completed(run, run_ref),
-    do: GenServer.call(name(run.server), {:ansible_playbook_completed, run.id, run_ref})
+  @spec ansible_playbook_completed(AnsiblePlaybookRun.t()) :: :ok
+  def ansible_playbook_completed(run),
+    do: GenServer.call(name(run.server), {:ansible_playbook_completed, run.id})
 
   # Server callbacks
 
@@ -64,9 +64,9 @@ defmodule ArchiDep.Servers.ServerManager do
   end
 
   @impl true
-  def handle_call({:ansible_playbook_completed, run_id, run_ref}, _from, state) do
+  def handle_call({:ansible_playbook_completed, run_id}, _from, state) do
     state
-    |> ServerManagerState.ansible_playbook_completed(run_id, run_ref)
+    |> ServerManagerState.ansible_playbook_completed(run_id)
     |> execute_actions()
     |> reply_with(:ok)
   end
@@ -158,12 +158,11 @@ defmodule ArchiDep.Servers.ServerManager do
     end)
   end
 
-  defp execute_action(state, {:run_playbook, playbook_run, ref}) do
+  defp execute_action(state, {:run_playbook, playbook_run}) do
     :ok =
       AnsiblePipelineQueue.run_playbook(
         state.pipeline,
-        playbook_run,
-        ref
+        playbook_run
       )
 
     state

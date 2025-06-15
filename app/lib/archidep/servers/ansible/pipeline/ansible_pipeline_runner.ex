@@ -9,11 +9,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
 
   @tracker ArchiDep.Tracker
 
-  @spec start_link(any()) :: {:ok, pid()}
-  def start_link({run_id, run_ref}), do: Task.start_link(fn -> process_event(run_id, run_ref) end)
+  @spec start_link(UUID.t()) :: {:ok, pid()}
+  def start_link(run_id), do: Task.start_link(fn -> process_event(run_id) end)
 
-  @spec process_event(UUID.t(), reference()) :: :ok
-  def process_event(run_id, run_ref) do
+  @spec process_event(UUID.t()) :: :ok
+  def process_event(run_id) do
     track!(run_id, %{state: :pending, events: 0})
 
     running_run =
@@ -33,11 +33,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
 
         {:succeeded, succeeded_run} ->
           update_tracking!(run_id, fn meta -> %{meta | state: :succeeded} end)
-          :ok = ServerManager.ansible_playbook_completed(succeeded_run, run_ref)
+          :ok = ServerManager.ansible_playbook_completed(succeeded_run)
 
         {:failed, failed_run} ->
           update_tracking!(run_id, fn meta -> %{meta | state: :failed} end)
-          :ok = ServerManager.ansible_playbook_completed(failed_run, run_ref)
+          :ok = ServerManager.ansible_playbook_completed(failed_run)
       end)
       |> Stream.run()
   end

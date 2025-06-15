@@ -68,7 +68,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
           storage: :ets.tid(),
           actions: list(action()),
           tasks: %{atom() => reference()},
-          ansible_playbooks: list({AnsiblePlaybookRun.t(), reference()}),
+          ansible_playbooks: list(AnsiblePlaybookRun.t()),
           problems: list(problem()),
           storage: :ets.tid()
         }
@@ -107,7 +107,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
-          {:run_playbook, AnsiblePlaybookRun.t(), reference()}
+          {:run_playbook, AnsiblePlaybookRun.t()}
   @type track_action :: {:track, String.t(), UUID.t(), map()}
   @type action ::
           connect_action()
@@ -276,8 +276,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
               "app_user_authorized_key" => ArchiDep.Application.public_key()
             })
 
-          playbook_ref = make_ref()
-
           %__MODULE__{
             state
             | state:
@@ -285,9 +283,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
                   connection_ref: connection_ref,
                   connection_pid: connection_pid
                 ),
-              ansible_playbooks: [{playbook_run, playbook_ref} | state.ansible_playbooks],
+              ansible_playbooks: [playbook_run | state.ansible_playbooks],
               actions: [
-                {:run_playbook, playbook_run, playbook_ref}
+                {:run_playbook, playbook_run}
               ]
           }
         end
@@ -420,16 +418,15 @@ defmodule ArchiDep.Servers.ServerManagerState do
     |> drop_task(:connect, connection_task_ref)
   end
 
-  @spec ansible_playbook_completed(t(), UUID.t(), reference()) :: t()
+  @spec ansible_playbook_completed(t(), UUID.t()) :: t()
   def ansible_playbook_completed(
         %__MODULE__{
           state: connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
           ansible_playbooks: [
-            {%AnsiblePlaybookRun{id: run_id} = run, run_ref} | remaining_playbooks
+            %AnsiblePlaybookRun{id: run_id} = run | remaining_playbooks
           ]
         } = state,
-        run_id,
-        run_ref
+        run_id
       ) do
     server = state.server
     Logger.info("Ansible playbook #{run.playbook} completed for server #{server.id}")

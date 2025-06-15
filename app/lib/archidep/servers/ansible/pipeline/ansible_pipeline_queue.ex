@@ -10,13 +10,9 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   defmodule State do
     defstruct [:stored_demand, :pending_playbooks]
 
-    @type pending_playbook_item :: {
-            UUID.t(),
-            reference()
-          }
     @type t :: %__MODULE__{
             stored_demand: non_neg_integer(),
-            pending_playbooks: {non_neg_integer(), :queue.queue(pending_playbook_item())}
+            pending_playbooks: {non_neg_integer(), :queue.queue(UUID.t())}
           }
 
     @spec init() :: t()
@@ -35,24 +31,22 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
     @spec run_playbook(
             t(),
-            UUID.t(),
-            reference()
+            UUID.t()
           ) :: t()
     def run_playbook(
           state,
-          playbook_run_id,
-          ref
+          playbook_run_id
         ) do
       {number_pending, pending_playbooks_queue} = state.pending_playbooks
 
       %__MODULE__{
         state
         | pending_playbooks:
-            {number_pending + 1, :queue.in({playbook_run_id, ref}, pending_playbooks_queue)}
+            {number_pending + 1, :queue.in(playbook_run_id, pending_playbooks_queue)}
       }
     end
 
-    @spec consume_events(t()) :: {list(pending_playbook_item()), t()}
+    @spec consume_events(t()) :: {list(UUID.t()), t()}
     def consume_events(state) do
       {events, new_state} = collect_events_to_consume({[], state})
       {Enum.reverse(events), new_state}
@@ -81,11 +75,10 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
   @spec run_playbook(
           Pipeline.t(),
-          AnsiblePlaybookRun.t(),
-          reference()
+          AnsiblePlaybookRun.t()
         ) :: :ok
-  def run_playbook(pipeline, %AnsiblePlaybookRun{state: :pending} = playbook_run, ref),
-    do: GenStage.call(name(pipeline), {:run_playbook, playbook_run.id, ref})
+  def run_playbook(pipeline, %AnsiblePlaybookRun{state: :pending} = playbook_run),
+    do: GenStage.call(name(pipeline), {:run_playbook, playbook_run.id})
 
   @impl true
   def init(nil) do
@@ -102,10 +95,10 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       |> noreply()
 
   @impl true
-  def handle_call({:run_playbook, playbook_run_id, ref}, _from, state),
+  def handle_call({:run_playbook, playbook_run_id}, _from, state),
     do:
       state
-      |> State.run_playbook(playbook_run_id, ref)
+      |> State.run_playbook(playbook_run_id)
       |> State.consume_events()
       |> reply(:ok)
 end
