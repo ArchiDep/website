@@ -5,14 +5,16 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   import ArchiDep.Helpers.GenStageHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
+  alias ArchiDep.Servers.Schemas.Server
   alias Ecto.UUID
 
   defmodule State do
     defstruct [:stored_demand, :pending_playbooks]
 
+    @type pending_playbook_data :: %{run_id: UUID.t(), server_id: UUID.t()}
     @type t :: %__MODULE__{
             stored_demand: non_neg_integer(),
-            pending_playbooks: {non_neg_integer(), :queue.queue(UUID.t())}
+            pending_playbooks: {non_neg_integer(), :queue.queue(pending_playbook_data())}
           }
 
     @spec init() :: t()
@@ -31,19 +33,50 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
     @spec run_playbook(
             t(),
+            UUID.t(),
             UUID.t()
           ) :: t()
     def run_playbook(
           state,
-          playbook_run_id
+          playbook_run_id,
+          server_id
         ) do
       {number_pending, pending_playbooks_queue} = state.pending_playbooks
 
       %__MODULE__{
         state
         | pending_playbooks:
-            {number_pending + 1, :queue.in(playbook_run_id, pending_playbooks_queue)}
+            {number_pending + 1,
+             :queue.in(%{run_id: playbook_run_id, server_id: server_id}, pending_playbooks_queue)}
       }
+    end
+
+    @spec server_offline(t(), UUID.t()) :: t()
+
+    def server_offline(
+          %__MODULE__{pending_playbooks: {0, _pending_playbooks_queue}} = state,
+          _server_id
+        ) do
+      state
+    end
+
+    def server_offline(
+          %__MODULE__{pending_playbooks: {number_pending, pending_playbooks_queue}} = state,
+          server_id
+        ) do
+      new_queue =
+        :queue.filter(
+          fn %{server_id: pending_server_id} -> pending_server_id != server_id end,
+          pending_playbooks_queue
+        )
+
+      new_number_pending = :queue.len(new_queue)
+
+      Logger.debug(
+        "Dropped #{number_pending - new_number_pending} playbook(s) for server #{server_id} which is now offline"
+      )
+
+      %__MODULE__{state | pending_playbooks: {new_number_pending, new_queue}}
     end
 
     @spec consume_events(t()) :: {list(UUID.t()), t()}
@@ -62,8 +95,8 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
            {events,
             %__MODULE__{pending_playbooks: {number_pending, pending_playbooks_queue}} = state}
          ) do
-      {{:value, event}, new_queue} = :queue.out(pending_playbooks_queue)
-      {[event | events], %__MODULE__{state | pending_playbooks: {number_pending - 1, new_queue}}}
+      {{:value, %{run_id: run_id}}, new_queue} = :queue.out(pending_playbooks_queue)
+      {[run_id | events], %__MODULE__{state | pending_playbooks: {number_pending - 1, new_queue}}}
     end
   end
 
@@ -78,7 +111,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
           AnsiblePlaybookRun.t()
         ) :: :ok
   def run_playbook(pipeline, %AnsiblePlaybookRun{state: :pending} = playbook_run),
-    do: GenStage.call(name(pipeline), {:run_playbook, playbook_run.id})
+    do: GenStage.call(name(pipeline), {:run_playbook, playbook_run.id, playbook_run.server_id})
+
+  @spec server_offline(Pipeline.t(), Server.t()) :: :ok
+  def server_offline(pipeline, %Server{id: server_id}),
+    do: GenStage.cast(name(pipeline), {:server_offline, server_id})
 
   @impl true
   def init(nil) do
@@ -95,10 +132,18 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       |> noreply()
 
   @impl true
-  def handle_call({:run_playbook, playbook_run_id}, _from, state),
+  def handle_call({:run_playbook, playbook_run_id, server_id}, _from, state),
     do:
       state
-      |> State.run_playbook(playbook_run_id)
+      |> State.run_playbook(playbook_run_id, server_id)
       |> State.consume_events()
       |> reply(:ok)
+
+  @impl true
+  def handle_cast({:server_offline, server_id}, state),
+    do:
+      state
+      |> State.server_offline(server_id)
+      |> State.consume_events()
+      |> noreply()
 end

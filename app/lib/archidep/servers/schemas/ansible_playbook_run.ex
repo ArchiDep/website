@@ -114,7 +114,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> validate()
   end
 
-  def start_running(run) do
+  def start_running(%__MODULE__{state: :pending} = run) do
     now = DateTime.utc_now()
 
     run
@@ -172,7 +172,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   end
 
   @spec succeed(t()) :: Changeset.t(t())
-  def succeed(run) do
+  def succeed(%__MODULE__{state: :running} = run) do
     now = DateTime.utc_now()
 
     run
@@ -186,13 +186,27 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   end
 
   @spec fail(t(), non_neg_integer() | nil) :: Changeset.t(t())
-  def fail(run, exit_code) when is_nil(exit_code) or (is_integer(exit_code) and exit_code >= 0) do
+  def fail(%__MODULE__{state: :running} = run, exit_code)
+      when is_nil(exit_code) or (is_integer(exit_code) and exit_code >= 0) do
     now = DateTime.utc_now()
 
     run
     |> change(
       state: :failed,
       exit_code: exit_code,
+      finished_at: now,
+      updated_at: now
+    )
+    |> validate()
+  end
+
+  @spec interrupt(t()) :: Changeset.t(t())
+  def interrupt(run) do
+    now = DateTime.utc_now()
+
+    run
+    |> change(
+      state: :interrupted,
       finished_at: now,
       updated_at: now
     )

@@ -104,6 +104,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type demonitor_action :: {:demonitor, reference()}
   @type gather_facts_action ::
           {:gather_facts, (t(), (String.t() -> Task.t()) -> t())}
+  @type notify_server_offline :: :notify_server_offline
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
@@ -112,6 +113,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type action ::
           connect_action()
           | demonitor_action()
+          | notify_server_offline()
           | run_command_action()
           | run_playbook_action()
           | track_action()
@@ -158,6 +160,10 @@ defmodule ArchiDep.Servers.ServerManagerState do
       problems: []
     }
   end
+
+  @spec online?(t()) :: boolean()
+  def online?(%__MODULE__{state: connected_state()}), do: true
+  def online?(_state), do: false
 
   @spec connection_idle(t(), pid()) :: t()
 
@@ -369,7 +375,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
         %{
           state
-          | problems: problems ++ detect_server_properties_mismatches(state.server, facts)
+          | problems: detect_server_properties_mismatches(problems, state.server, facts)
         }
 
       _anything_else ->
@@ -493,10 +499,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
           state.server
           | class: class
         },
-        problems:
-          problems
-          |> Enum.filter(fn problem -> elem(problem, 0) != :expected_property_mismatch end)
-          |> Enum.concat(detect_server_properties_mismatches(state.server, facts))
+        problems: detect_server_properties_mismatches(problems, state.server, facts)
     }
   end
 
@@ -524,10 +527,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     %__MODULE__{
       state
       | server: new_server,
-        problems:
-          problems
-          |> Enum.filter(fn problem -> elem(problem, 0) != :expected_property_mismatch end)
-          |> Enum.concat(detect_server_properties_mismatches(state.server, facts))
+        problems: detect_server_properties_mismatches(problems, state.server, facts)
     }
   end
 
@@ -545,7 +545,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     :ets.delete(state.storage, :facts)
     server = state.server
     Logger.info("Connection to server #{server.id} crashed because: #{inspect(reason)}")
-    %__MODULE__{state | state: :disconnected}
+    %__MODULE__{state | state: :disconnected, actions: [:notify_server_offline]}
   end
 
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do
@@ -585,12 +585,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
          }
        end}
 
-  # TODO: perform new check when class/server is modified
-  defp detect_server_properties_mismatches(_server, nil), do: []
+  defp detect_server_properties_mismatches(problems, _server, nil),
+    do: Enum.filter(problems, fn problem -> elem(problem, 0) != :expected_property_mismatch end)
 
-  defp detect_server_properties_mismatches(server, facts),
+  defp detect_server_properties_mismatches(problems, server, facts),
     do:
-      []
+      problems
+      |> Enum.filter(fn problem -> elem(problem, 0) != :expected_property_mismatch end)
       |> detect_server_property_mismatch(:cpus, server, facts, ["ansible_processor_count"])
       |> detect_server_property_mismatch(:cores, server, facts, ["ansible_processor_cores"])
       |> detect_server_property_mismatch(:vcpus, server, facts, ["ansible_processor_vcpus"])

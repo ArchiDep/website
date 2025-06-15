@@ -15,17 +15,20 @@ defmodule ArchiDep.Servers.ServerManager do
   alias ArchiDep.Students.Schemas.Class
   alias Ecto.UUID
 
-  # Client API
-
   @spec name(Server.t()) :: GenServer.name()
   def name(%Server{id: server_id}), do: name(server_id)
 
   @spec name(UUID.t()) :: GenServer.name()
-  def name(server_id) when is_binary(server_id), do: {:global, {:server_manager, server_id}}
+  def name(server_id) when is_binary(server_id), do: {:global, {__MODULE__, server_id}}
 
   @spec start_link({Server.t(), Pipeline.t()}) :: GenServer.on_start()
   def start_link({%Server{id: server_id} = server, pipeline}),
     do: GenServer.start_link(__MODULE__, {server_id, pipeline}, name: name(server))
+
+  # Client API
+
+  @spec online?(Server.t()) :: boolean()
+  def online?(server), do: GenServer.call(name(server), :online?)
 
   @spec connection_idle(UUID.t(), pid()) :: :ok
   def connection_idle(server_id, connection_pid),
@@ -64,14 +67,22 @@ defmodule ArchiDep.Servers.ServerManager do
   end
 
   @impl true
-  def handle_call({:ansible_playbook_completed, run_id}, _from, state) do
-    state
-    |> ServerManagerState.ansible_playbook_completed(run_id)
-    |> execute_actions()
-    |> reply_with(:ok)
-  end
+
+  def handle_call(:online?, _from, state),
+    do:
+      state
+      |> ServerManagerState.online?()
+      |> reply(state)
+
+  def handle_call({:ansible_playbook_completed, run_id}, _from, state),
+    do:
+      state
+      |> ServerManagerState.ansible_playbook_completed(run_id)
+      |> execute_actions()
+      |> reply_with(:ok)
 
   @impl true
+
   def handle_info(
         {task_ref, result},
         state
@@ -83,7 +94,6 @@ defmodule ArchiDep.Servers.ServerManager do
         |> execute_actions()
         |> noreply()
 
-  @impl true
   def handle_info(
         {:class_updated, class},
         state
@@ -95,7 +105,6 @@ defmodule ArchiDep.Servers.ServerManager do
         |> execute_actions()
         |> noreply()
 
-  @impl true
   def handle_info(
         {:server_updated, server},
         state
@@ -150,6 +159,11 @@ defmodule ArchiDep.Servers.ServerManager do
     factory.(state, fn username ->
       Task.async(fn -> Ansible.gather_facts(state.server, username) end)
     end)
+  end
+
+  defp execute_action(state, :notify_server_offline) do
+    :ok = AnsiblePipelineQueue.server_offline(state.pipeline, state.server)
+    state
   end
 
   defp execute_action(state, {:run_command, factory}) do
