@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.ServerManager do
 
   require Logger
   import ArchiDep.Helpers.PipeHelpers
+  alias ArchiDep.Servers
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
@@ -46,6 +47,7 @@ defmodule ArchiDep.Servers.ServerManager do
       |> ServerManagerState.init(pipeline)
       |> execute_actions()
 
+    :ok = Servers.PubSub.subscribe_server(state.server.id)
     :ok = Students.PubSub.subscribe_class(state.server.class.id)
 
     noreply(state)
@@ -90,6 +92,18 @@ defmodule ArchiDep.Servers.ServerManager do
       do:
         state
         |> ServerManagerState.class_updated(class)
+        |> execute_actions()
+        |> noreply()
+
+  @impl true
+  def handle_info(
+        {:server_updated, server},
+        state
+      )
+      when is_struct(server, Server),
+      do:
+        state
+        |> ServerManagerState.server_updated(server)
         |> execute_actions()
         |> noreply()
 

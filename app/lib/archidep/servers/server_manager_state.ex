@@ -473,9 +473,17 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   @spec class_updated(t(), Class.t()) :: t()
   def class_updated(
-        %__MODULE__{server: %Server{class: %Class{id: class_id}}, problems: problems} = state,
-        %Class{id: class_id} = class
-      ) do
+        %__MODULE__{
+          server: %Server{id: server_id, class: %Class{id: class_id, version: version}},
+          problems: problems
+        } = state,
+        %Class{id: class_id, version: new_version} = class
+      )
+      when new_version > version do
+    Logger.info(
+      "Server manager for server #{server_id} received class update to version #{new_version}"
+    )
+
     facts =
       case :ets.lookup(state.storage, :facts) do
         [{:facts, facts}] -> facts
@@ -493,6 +501,42 @@ defmodule ArchiDep.Servers.ServerManagerState do
           |> Enum.filter(fn problem -> elem(problem, 0) != :expected_property_mismatch end)
           |> Enum.concat(detect_server_properties_mismatches(state.server, facts))
     }
+  end
+
+  @spec class_updated(t(), Class.t()) :: t()
+  def class_updated(state, _outdated_class) do
+    state
+  end
+
+  @spec server_updated(t(), Server.t()) :: t()
+  def server_updated(
+        %__MODULE__{server: %Server{id: server_id, version: version}, problems: problems} = state,
+        %Server{id: server_id, version: new_version} = new_server
+      )
+      when new_version > version do
+    Logger.info(
+      "Server manager for server #{server_id} received server update to version #{new_version}"
+    )
+
+    facts =
+      case :ets.lookup(state.storage, :facts) do
+        [{:facts, facts}] -> facts
+        [] -> nil
+      end
+
+    %__MODULE__{
+      state
+      | server: new_server,
+        problems:
+          problems
+          |> Enum.filter(fn problem -> elem(problem, 0) != :expected_property_mismatch end)
+          |> Enum.concat(detect_server_properties_mismatches(state.server, facts))
+    }
+  end
+
+  @spec server_updated(t(), Server.t()) :: t()
+  def server_updated(state, _outdated_server) do
+    state
   end
 
   @spec connection_crashed(t(), pid(), term()) :: t()

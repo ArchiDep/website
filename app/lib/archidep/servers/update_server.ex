@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.UpdateServer do
 
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.Policy
+  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
 
@@ -32,8 +33,9 @@ defmodule ArchiDep.Servers.UpdateServer do
              |> initiated_by(user)
            end)
            |> Repo.transaction() do
-        {:ok, %{server: server}} ->
-          {:ok, server}
+        {:ok, %{server: updated_server}} ->
+          :ok = PubSub.publish_server(updated_server)
+          {:ok, updated_server}
 
         {:error, :server, changeset, _} ->
           {:error, changeset}
