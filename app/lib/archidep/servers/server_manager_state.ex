@@ -38,6 +38,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     :pipeline,
     :username,
     :storage,
+    :steps,
     :actions
   ]
   defstruct [
@@ -46,6 +47,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
     :pipeline,
     :username,
     :storage,
+    :steps,
+    previous_steps: [],
     actions: [],
     tasks: %{},
     ansible_playbooks: [],
@@ -64,6 +67,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
           pipeline: Pipeline.t(),
           username: String.t(),
           storage: :ets.tid(),
+          steps: list(atom()),
+          previous_steps: list({atom(), :succeeded, :failed, :skipped}),
           actions: list(action()),
           tasks: %{atom() => reference()},
           ansible_playbooks: list(AnsiblePlaybookRun.t()),
@@ -156,11 +161,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
     app_user_created =
       AnsiblePlaybookRun.successful_playbook_run?(server, Ansible.app_user_playbook())
 
-    username =
+    {username, steps} =
       if app_user_created do
-        server.app_username
+        {server.app_username, [:connect, :check_access, :gather_facts]}
       else
-        server.username
+        {server.username, [:connect, :check_access, :setup_app_user, :reconnect, :gather_facts]}
       end
 
     %__MODULE__{
@@ -169,6 +174,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
       pipeline: pipeline,
       username: username,
       storage: storage,
+      steps: steps,
       actions: [
         {:track, "servers", server.id, %{state: :not_connected}}
       ]
