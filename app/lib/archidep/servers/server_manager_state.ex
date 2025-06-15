@@ -15,10 +15,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   Record.defrecord(:connecting_state,
     connection_ref: nil,
-    connection_pid: nil
+    connection_pid: nil,
+    retrying: false
   )
-
-  Record.defrecord(:connection_failed_state, reason: "could not connect")
 
   Record.defrecord(:checking_access_state,
     connection_ref: nil,
@@ -29,22 +28,20 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   Record.defrecord(:reconnecting_state,
     connection_ref: nil,
-    connection_pid: nil
+    connection_pid: nil,
+    retrying: false
   )
 
   @enforce_keys [
-    :state,
+    :connection_state,
     :server,
     :pipeline,
     :username,
     :storage,
-    :actions,
-    :tasks,
-    :ansible_playbooks,
-    :problems
+    :actions
   ]
   defstruct [
-    :state,
+    :connection_state,
     :server,
     :pipeline,
     :username,
@@ -52,15 +49,16 @@ defmodule ArchiDep.Servers.ServerManagerState do
     actions: [],
     tasks: %{},
     ansible_playbooks: [],
-    problems: []
+    problems: [],
+    retry_timer: nil
   ]
 
   @type t :: %__MODULE__{
-          state:
+          connection_state:
             :not_connected
             | connecting_state()
-            | connection_failed_state()
             | connected_state()
+            | reconnecting_state()
             | :disconnected,
           server: Server.t(),
           pipeline: Pipeline.t(),
@@ -70,7 +68,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
           tasks: %{atom() => reference()},
           ansible_playbooks: list(AnsiblePlaybookRun.t()),
           problems: list(problem()),
-          storage: :ets.tid()
+          retry_timer: reference() | nil
         }
 
   @type network_port :: NetHelpers.network_port()
@@ -78,10 +76,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type connecting_state ::
           record(:connecting_state,
             connection_ref: reference(),
-            connection_pid: pid()
+            connection_pid: pid(),
+            retrying: false | {pos_integer(), DateTime.t(), pos_integer(), term}
           )
-
-  @type connection_failed_state :: record(:connection_failed_state, reason: term())
 
   @type checking_access_state ::
           record(:checking_access_state, connection_ref: reference(), connection_pid: pid())
@@ -92,7 +89,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type reconnecting_state ::
           record(:connecting_state,
             connection_ref: reference(),
-            connection_pid: pid()
+            connection_pid: pid(),
+            retrying: false | {pos_integer(), DateTime.t(), pos_integer(), term}
           )
 
   @type connect_action ::
@@ -105,6 +103,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type gather_facts_action ::
           {:gather_facts, (t(), (String.t() -> Task.t()) -> t())}
   @type notify_server_offline :: :notify_server_offline
+  @type retry_action :: {:retry, (t(), (pos_integer() -> reference()) -> t())}
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
@@ -114,6 +113,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
           connect_action()
           | demonitor_action()
           | notify_server_offline()
+          | retry_action()
           | run_command_action()
           | run_playbook_action()
           | track_action()
@@ -128,6 +128,21 @@ defmodule ArchiDep.Servers.ServerManagerState do
           | gather_facts_failed_problem()
           | missing_sudo_access_problem()
           | sudo_access_check_failed_problem()
+
+  @retry_intervals_seconds [
+    5,
+    5,
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    300,
+    900,
+    1800,
+    3600
+  ]
 
   @spec init(UUID.t(), Pipeline.t()) :: t()
   def init(server_id, pipeline) do
@@ -147,45 +162,52 @@ defmodule ArchiDep.Servers.ServerManagerState do
       end
 
     %__MODULE__{
-      state: :not_connected,
+      connection_state: :not_connected,
       server: server,
       pipeline: pipeline,
       username: username,
       storage: storage,
       actions: [
         {:track, "servers", server.id, %{state: :not_connected}}
-      ],
-      tasks: %{},
-      ansible_playbooks: [],
-      problems: []
+      ]
     }
   end
 
   @spec online?(t()) :: boolean()
-  def online?(%__MODULE__{state: connected_state()}), do: true
+  def online?(%__MODULE__{connection_state: connected_state()}), do: true
   def online?(_state), do: false
 
   @spec connection_idle(t(), pid()) :: t()
 
   def connection_idle(
-        %__MODULE__{state: :not_connected} = state,
+        %__MODULE__{connection_state: :not_connected} = state,
         connection_pid
       ),
-      do: connect(state, connection_pid)
+      do: connect(state, connection_pid, false)
 
   def connection_idle(
-        %__MODULE__{state: connection_failed_state()} = state,
+        %__MODULE__{connection_state: :disconnected} = state,
         connection_pid
       ),
-      do: connect(state, connection_pid)
+      do: connect(state, connection_pid, false)
 
-  def connection_idle(
-        %__MODULE__{state: :disconnected} = state,
-        connection_pid
-      ),
-      do: connect(state, connection_pid)
+  def retry_connecting(
+        %__MODULE__{
+          connection_state: connecting_state(connection_pid: connection_pid, retrying: retrying)
+        } = state
+      )
+      when retrying != false,
+      do: connect(state, connection_pid, retrying)
 
-  defp connect(state, connection_pid) do
+  def retry_connecting(
+        %__MODULE__{
+          connection_state: reconnecting_state(connection_pid: connection_pid, retrying: retrying)
+        } = state
+      )
+      when retrying != false,
+      do: connect(state, connection_pid, retrying)
+
+  defp connect(state, connection_pid, retrying) do
     server = state.server
     host = server.ip_address.address
     port = server.ssh_port || 22
@@ -193,10 +215,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
     %__MODULE__{
       state
-      | state:
+      | connection_state:
           connecting_state(
             connection_ref: make_ref(),
-            connection_pid: connection_pid
+            connection_pid: connection_pid,
+            retrying: retrying
           ),
         actions: [
           {:connect,
@@ -212,7 +235,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   def handle_task_result(
         %__MODULE__{
-          state:
+          connection_state:
             connecting_state(
               connection_ref: connection_ref,
               connection_pid: connection_pid
@@ -222,12 +245,18 @@ defmodule ArchiDep.Servers.ServerManagerState do
         connection_task_ref,
         result
       ) do
-    handle_connect_task_result(state, connection_ref, connection_pid, connection_task_ref, result)
+    handle_connect_task_result(
+      state,
+      connection_ref,
+      connection_pid,
+      connection_task_ref,
+      result
+    )
   end
 
   def handle_task_result(
         %__MODULE__{
-          state:
+          connection_state:
             reconnecting_state(
               connection_ref: connection_ref,
               connection_pid: connection_pid
@@ -237,12 +266,18 @@ defmodule ArchiDep.Servers.ServerManagerState do
         connection_task_ref,
         result
       ) do
-    handle_connect_task_result(state, connection_ref, connection_pid, connection_task_ref, result)
+    handle_connect_task_result(
+      state,
+      connection_ref,
+      connection_pid,
+      connection_task_ref,
+      result
+    )
   end
 
   def handle_task_result(
         %__MODULE__{
-          state:
+          connection_state:
             checking_access_state(connection_ref: connection_ref, connection_pid: connection_pid),
           tasks: %{check_access: check_access_ref}
         } = state,
@@ -260,7 +295,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
           %__MODULE__{
             state
-            | state:
+            | connection_state:
                 connected_state(
                   connection_ref: connection_ref,
                   connection_pid: connection_pid
@@ -284,7 +319,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
           %__MODULE__{
             state
-            | state:
+            | connection_state:
                 connected_state(
                   connection_ref: connection_ref,
                   connection_pid: connection_pid
@@ -303,7 +338,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
         %__MODULE__{
           state
-          | state:
+          | connection_state:
               connected_state(
                 connection_ref: connection_ref,
                 connection_pid: connection_pid
@@ -323,7 +358,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
         %__MODULE__{
           state
-          | state:
+          | connection_state:
               connected_state(
                 connection_ref: connection_ref,
                 connection_pid: connection_pid
@@ -341,7 +376,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   def handle_task_result(
         %__MODULE__{
-          state: connected_state(),
+          connection_state: connected_state(),
           tasks: %{get_load_average: get_load_average_ref}
         } = state,
         get_load_average_ref,
@@ -362,7 +397,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   def handle_task_result(
         %__MODULE__{
-          state: connected_state(),
+          connection_state: connected_state(),
           tasks: %{gather_facts: gather_facts_ref},
           problems: problems
         } = state,
@@ -401,7 +436,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
         %__MODULE__{
           state
-          | state:
+          | connection_state:
               checking_access_state(
                 connection_ref: connection_ref,
                 connection_pid: connection_pid
@@ -416,18 +451,87 @@ defmodule ArchiDep.Servers.ServerManagerState do
           "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
         )
 
-        %__MODULE__{
-          state
-          | state: connection_failed_state(reason: reason)
-        }
+        retry(state, reason)
     end
     |> drop_task(:connect, connection_task_ref)
   end
 
+  defp retry(
+         %__MODULE__{
+           connection_state:
+             connecting_state(
+               connection_ref: connection_ref,
+               connection_pid: connection_pid,
+               retrying: retrying
+             )
+         } = state,
+         reason
+       ) do
+    retrying = retry(retrying, reason)
+
+    %__MODULE__{
+      state
+      | connection_state:
+          connecting_state(
+            connection_ref: connection_ref,
+            connection_pid: connection_pid,
+            retrying: retrying
+          ),
+        actions: [retry_action(retrying)]
+    }
+  end
+
+  defp retry(
+         %__MODULE__{
+           connection_state:
+             reconnecting_state(
+               connection_ref: connection_ref,
+               connection_pid: connection_pid,
+               retrying: retrying
+             )
+         } = state,
+         reason
+       ) do
+    retrying = retry(retrying, reason)
+
+    %__MODULE__{
+      state
+      | connection_state:
+          reconnecting_state(
+            connection_ref: connection_ref,
+            connection_pid: connection_pid,
+            retrying: retrying
+          ),
+        actions: [retry_action(retrying)]
+    }
+  end
+
+  defp retry(false, reason),
+    do: {1, DateTime.utc_now(), List.first(@retry_intervals_seconds), reason}
+
+  defp retry({previous_retry, _previous_time, _previous_seconds, _previous_reason}, reason) do
+    next_retry = previous_retry + 1
+
+    seconds =
+      Enum.at(@retry_intervals_seconds, previous_retry) ||
+        List.last(@retry_intervals_seconds)
+
+    {next_retry, DateTime.utc_now(), seconds, reason}
+  end
+
+  defp retry_action({_retry, _from_time, seconds, _reason}),
+    do:
+      {:retry,
+       fn retry_state, retry_factory ->
+         retry = retry_factory.(seconds * 1000)
+         %__MODULE__{retry_state | retry_timer: retry}
+       end}
+
   @spec ansible_playbook_completed(t(), UUID.t()) :: t()
   def ansible_playbook_completed(
         %__MODULE__{
-          state: connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
+          connection_state:
+            connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
           ansible_playbooks: [
             %AnsiblePlaybookRun{id: run_id} = run | remaining_playbooks
           ]
@@ -452,7 +556,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
               %__MODULE__{
                 task_state
-                | state:
+                | connection_state:
                     reconnecting_state(
                       connection_pid: connection_pid,
                       connection_ref: connection_ref
@@ -538,14 +642,14 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   @spec connection_crashed(t(), pid(), term()) :: t()
   def connection_crashed(
-        %__MODULE__{state: connected_state(connection_pid: connection_pid)} = state,
+        %__MODULE__{connection_state: connected_state(connection_pid: connection_pid)} = state,
         connection_pid,
         reason
       ) do
     :ets.delete(state.storage, :facts)
     server = state.server
     Logger.info("Connection to server #{server.id} crashed because: #{inspect(reason)}")
-    %__MODULE__{state | state: :disconnected, actions: [:notify_server_offline]}
+    %__MODULE__{state | connection_state: :disconnected, actions: [:notify_server_offline]}
   end
 
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do

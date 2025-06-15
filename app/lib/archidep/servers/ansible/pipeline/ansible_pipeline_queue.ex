@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   defmodule State do
     defstruct [:stored_demand, :pending_playbooks]
 
+    # FIXME: store unique connection ref and drop playbook run if it has changed
     @type pending_playbook_data :: %{run_id: UUID.t(), server_id: UUID.t()}
     @type t :: %__MODULE__{
             stored_demand: non_neg_integer(),

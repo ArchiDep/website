@@ -83,6 +83,13 @@ defmodule ArchiDep.Servers.ServerManager do
 
   @impl true
 
+  def handle_info(:retry, state) do
+    state
+    |> ServerManagerState.retry_connecting()
+    |> execute_actions()
+    |> noreply()
+  end
+
   def handle_info(
         {task_ref, result},
         state
@@ -164,6 +171,12 @@ defmodule ArchiDep.Servers.ServerManager do
   defp execute_action(state, :notify_server_offline) do
     :ok = AnsiblePipelineQueue.server_offline(state.pipeline, state.server)
     state
+  end
+
+  defp execute_action(state, {:retry, factory}) do
+    factory.(state, fn milliseconds ->
+      Process.send_after(self(), :retry, milliseconds)
+    end)
   end
 
   defp execute_action(state, {:run_command, factory}) do

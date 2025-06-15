@@ -52,8 +52,16 @@ defmodule ArchiDep.Servers.ServerConnection do
         _from,
         {:connected, connection_ref, server_id}
       ) do
-    :ok = :ssh.close(connection_ref)
-    Logger.debug("Closed SSH connection to server #{server_id}")
+    case :ssh.close(connection_ref) do
+      :ok ->
+        Logger.debug("Closed SSH connection to server #{server_id}")
+
+      {:error, reason} ->
+        Logger.warning(
+          "Failed to close SSH connection to server #{server_id} because: #{inspect(reason)}"
+        )
+    end
+
     open_ssh_connection(host, port, username, options, server_id)
   end
 
@@ -67,13 +75,15 @@ defmodule ArchiDep.Servers.ServerConnection do
   end
 
   @impl true
-  def terminate(_reason, {:connected, connection_ref, _server_id}) do
+  def terminate(_reason, {:connected, connection_ref, server_id}) do
     case :ssh.close(connection_ref) do
       :ok ->
-        Logger.debug("SSH connection closed successfully")
+        Logger.debug("Closed SSH connection to server #{server_id}")
 
       {:error, reason} ->
-        Logger.warning("Failed to close SSH connection: #{inspect(reason)}")
+        Logger.warning(
+          "Failed to close SSH connection to server #{server_id} because: #{inspect(reason)}"
+        )
     end
 
     :ok
@@ -111,6 +121,14 @@ defmodule ArchiDep.Servers.ServerConnection do
         )
 
         {:reply, :ok, {:connected, connection_ref, server_id}}
+
+      # Yes, Erlang's SSH library actually returns a string for this error.
+      {:error, ~c"Unable to connect using the available authentication methods"} ->
+        Logger.warning(
+          "Could not authenticate SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port})"
+        )
+
+        {:reply, {:error, :authentication_failed}, {:idle, server_id}}
 
       {:error, reason} ->
         Logger.debug(
