@@ -143,6 +143,11 @@ defmodule ArchiDep.Servers.ServerManager do
     state
   end
 
+  defp execute_action(state, {:cancel_timer, ref}) do
+    Process.cancel_timer(ref)
+    state
+  end
+
   defp execute_action(state, {:connect, factory}) do
     factory.(state, fn host, port, username, options ->
       Task.async(fn ->

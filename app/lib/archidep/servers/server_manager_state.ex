@@ -93,6 +93,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
             retrying: false | {pos_integer(), DateTime.t(), pos_integer(), term}
           )
 
+  @type cancel_timer_action :: {:cancel_timer, reference()}
   @type connect_action ::
           {:connect,
            (t(),
@@ -110,7 +111,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
           {:run_playbook, AnsiblePlaybookRun.t()}
   @type track_action :: {:track, String.t(), UUID.t(), map()}
   @type action ::
-          connect_action()
+          cancel_timer_action()
+          | connect_action()
           | demonitor_action()
           | notify_server_offline()
           | retry_action()
@@ -646,10 +648,16 @@ defmodule ArchiDep.Servers.ServerManagerState do
         connection_pid,
         reason
       ) do
-    :ets.delete(state.storage, :facts)
     server = state.server
     Logger.info("Connection to server #{server.id} crashed because: #{inspect(reason)}")
-    %__MODULE__{state | connection_state: :disconnected, actions: [:notify_server_offline]}
+
+    :ets.delete(state.storage, :facts)
+
+    actions =
+      [:notify_server_offline] ++
+        if state.retry_timer, do: {:cancel_timer, state.retry_timer}, else: []
+
+    %__MODULE__{state | connection_state: :disconnected, actions: actions, retry_timer: nil}
   end
 
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do
