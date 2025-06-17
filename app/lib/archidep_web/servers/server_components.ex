@@ -38,7 +38,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
         %ServerRealTimeState{
           connection_state:
-            retry_connecting_state(retrying: %{retry: retry, time: time, in_seconds: in_seconds})
+            retry_connecting_state(
+              retrying: %{retry: retry, time: time, in_seconds: in_seconds, reason: reason}
+            )
         } ->
           {"bg-info text-info-content", "badge-primary", "Reconnecting",
            retry_connecting(%{
@@ -46,7 +48,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
              server: assigns.server,
              retry: retry,
              time: time,
-             in_seconds: in_seconds
+             in_seconds: in_seconds,
+             reason: reason
            })}
 
         %ServerRealTimeState{connection_state: connected_state()} ->
@@ -88,7 +91,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         <p>
           {@status_text}
         </p>
-        <ul>
+        <ul :if={@state} class="flex flex-col gap-2">
           <li :for={problem <- @state.problems}>
             <.server_problem auth={@auth} problem={problem} />
           </li>
@@ -106,6 +109,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
     ~H"""
     <div role="alert" class="alert alert-error alert-soft">
+      <Heroicons.exclamation_circle class="size-4" />
       <span>Authentication failed for user <code>{@username}</code></span>
     </div>
     """
@@ -118,6 +122,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
     ~H"""
     <div role="alert" class="alert alert-error alert-soft">
+      <Heroicons.exclamation_circle class="size-4" />
       <span>
         <%= if has_role?(@auth, :root) do %>
           Authentication failed for application user <code>{@username}</code>
@@ -129,13 +134,147 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
-  def server_problem(assigns) do
+  def server_problem(
+        %{problem: {:server_expected_property_mismatch, property, expected, actual}} = assigns
+      ) do
+    assigns =
+      assigns
+      |> assign(:property, property)
+      |> assign(:expected, expected)
+      |> assign(:actual, actual)
+
     ~H"""
-    <div role="alert" class="alert alert-error alert-soft">
-      <span>Oops, a problem occurred.</span>
+    <div role="alert" class="alert alert-warning alert-soft">
+      <Heroicons.exclamation_triangle class="size-4" />
+      <span>{server_expected_property_mismatch(@property, @expected, @actual)}</span>
     </div>
     """
   end
+
+  def server_problem(%{problem: {:server_fact_gathering_failed, reason}} = assigns) do
+    assigns = assign(assigns, :reason, reason)
+
+    ~H"""
+    <div role="alert" class="alert alert-warning alert-soft">
+      <Heroicons.exclamation_triangle class="size-4" />
+      <div>
+        <span>Could not gather facts from the server</span>
+        <%= if has_role?(@auth, :root) do %>
+          <div>
+            {inspect(@reason)}
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def server_problem(%{problem: {:server_missing_sudo_access, username, stderr}} = assigns) do
+    assigns = assigns |> assign(:username, username) |> assign(:stderr, stderr)
+
+    ~H"""
+    <div role="alert" class="alert alert-error alert-soft">
+      <Heroicons.exclamation_circle class="size-4" />
+      <div>
+        <span>User <code>{@username}</code> does not have <code>sudo</code> access</span>
+        <%= if has_role?(@auth, :root) do %>
+          <div>
+            {inspect(@stderr)}
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def server_problem(%{problem: {:server_sudo_access_check_failed, reason}} = assigns) do
+    assigns = assign(assigns, :reason, reason)
+
+    ~H"""
+    <div role="alert" class="alert alert-error alert-soft">
+      <Heroicons.exclamation_circle class="size-4" />
+      <div>
+        <span>Could not check whether <code>{@username}</code> has <code>sudo</code> access</span>
+        <%= if has_role?(@auth, :root) do %>
+          <div>
+            {inspect(@reason)}
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def server_problem(%{problem: {:server_reconnection_failed, reason}} = assigns) do
+    assigns = assign(assigns, :reason, reason)
+
+    ~H"""
+    <div role="alert" class="alert alert-error alert-soft">
+      <Heroicons.exclamation_circle class="size-4" />
+      <div>
+        <span>Could not reconnect to server after setup</span>
+        <%= if has_role?(@auth, :root) do %>
+          <div>
+            {inspect(@reason)}
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def server_problem(assigns) do
+    ~H"""
+    <div role="alert" class="alert alert-error alert-soft">
+      <Heroicons.exclamation_circle class="size-4" />
+      <div>
+        <span>Oops, an unexpected problem occurred</span>
+        <%= if has_role?(@auth, :root) do %>
+          <div>
+            {inspect(@problem)}
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  defp server_expected_property_mismatch(:cpus, expected, actual),
+    do: "Server has #{actual} CPU(s) when it should have #{expected}"
+
+  defp server_expected_property_mismatch(:cores, expected, actual),
+    do: "Server has #{actual} CPU core(s) when it should have #{expected}"
+
+  defp server_expected_property_mismatch(:vcpus, expected, actual),
+    do: "Server has #{actual} vCPU(s) when it should have #{expected}"
+
+  defp server_expected_property_mismatch(:memory, expected, actual),
+    do: "Server has #{actual} MB of RAM when it should have #{expected}"
+
+  defp server_expected_property_mismatch(:swap, expected, actual),
+    do: "Server has #{actual} MB of swap when it should have #{expected}"
+
+  defp server_expected_property_mismatch(:system, expected, actual),
+    do: "Server is running a #{actual} system when it should be #{expected}"
+
+  defp server_expected_property_mismatch(:architecture, expected, actual),
+    do: "Server is running on an #{actual} architecture when it should be #{expected}"
+
+  defp server_expected_property_mismatch(:os_family, expected, actual),
+    do:
+      "Server is running an operating system of the #{actual} family when it should be #{expected}"
+
+  defp server_expected_property_mismatch(:distribution, expected, actual),
+    do: "Server is running the #{actual} Linux distribution when it should be #{expected}"
+
+  defp server_expected_property_mismatch(:distribution_release, expected, actual),
+    do: "Server is running distribution release #{actual} when it should be #{expected}"
+
+  defp server_expected_property_mismatch(:distribution_version, expected, actual),
+    do: "Server is running distribution version #{actual} when it should be #{expected}"
+
+  defp server_expected_property_mismatch(property, expected, actual),
+    do: "Server has #{actual} #{Atom.to_string(property)} when it should have #{expected}"
 
   defp retry_connecting(assigns) do
     id = "server-#{assigns.server.id}-retry-connecting"
@@ -159,7 +298,10 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       |> Map.put(:remaining_seconds, remaining_seconds)
 
     ~H"""
-    Will retry connecting
+    <%= if @reason == :econnrefused do %>
+      Server unreachable.
+    <% end %>
+    Will retry
     <span id={@id} data-end-time={DateTime.to_iso8601(@end_time)} phx-hook="remainingSeconds">
       in {@remaining_seconds}s
     </span>

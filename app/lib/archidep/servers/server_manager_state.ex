@@ -592,13 +592,15 @@ defmodule ArchiDep.Servers.ServerManagerState do
         [] -> nil
       end
 
+    new_server = %Server{
+      state.server
+      | class: class
+    }
+
     update_tracking(%__MODULE__{
       state
-      | server: %Server{
-          state.server
-          | class: class
-        },
-        problems: detect_server_properties_mismatches(problems, state.server, facts)
+      | server: new_server,
+        problems: detect_server_properties_mismatches(problems, new_server, facts)
     })
   end
 
@@ -626,7 +628,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     update_tracking(%__MODULE__{
       state
       | server: new_server,
-        problems: detect_server_properties_mismatches(problems, state.server, facts)
+        problems: detect_server_properties_mismatches(problems, new_server, facts)
     })
   end
 

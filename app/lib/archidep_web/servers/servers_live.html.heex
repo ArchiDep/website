@@ -28,19 +28,8 @@
 <.no_data :if={Enum.empty?(@servers)} text="You have not registered any server yet." />
 
 <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-  <div :for={server <- @servers} class="card bg-error text-error-content cursor-pointer" phx-click={JS.navigate(~p"/servers/#{server.id}")}>
-    <div class="card-body">
-      <div class="card-title flex justify-between">
-        <h2 class="flex items-center gap-x-2">
-          <Heroicons.server solid class="size-6" />
-          <.server_name server={server} />
-        </h2>
-        <div class="badge badge-soft badge-error">Offline</div>
-      </div>
-      <p>
-        Not connected to this server yet.
-      </p>
-    </div>
+  <div :for={server <- @servers} class="cursor-pointer" phx-click={JS.navigate(~p"/servers/#{server.id}")}>
+    <.server_card server={server} state={Map.get(@server_state_map, server.id)} />
   </div>
 </div>
 

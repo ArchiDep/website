@@ -12,17 +12,18 @@ defmodule ArchiDep.Servers.ServerTracker do
   @pubsub ArchiDep.PubSub
   @tracker ArchiDep.Tracker
 
-  @spec start_link(list(UUID.t())) :: GenServer.on_start()
-  def start_link(server_ids) when is_list(server_ids),
-    do: GenServer.start_link(__MODULE__, {self(), server_ids})
+  @spec start_link(list(Server.t())) :: GenServer.on_start()
+  def start_link(servers) when is_list(servers),
+    do: GenServer.start_link(__MODULE__, {self(), Enum.map(servers, & &1.id)})
 
-  @spec start_link(UUID.t()) :: GenServer.on_start()
-  def start_link(server_id), do: start_link([server_id])
+  @spec start_link(Server.t()) :: GenServer.on_start()
+  def start_link(server),
+    do: GenServer.start_link(__MODULE__, {self(), [server.id]})
 
   # Client API
 
-  @spec server_state_map() :: %{UUID.t() => ServerRealTimeState.t()}
-  def server_state_map(), do: %{}
+  @spec server_state_map(list(Server.t())) :: %{UUID.t() => ServerRealTimeState.t()}
+  def server_state_map(servers), do: servers |> Enum.map(& &1.id) |> get_current_server_states()
 
   @spec update_server_state_map(
           %{UUID.t() => ServerRealTimeState.t()},
