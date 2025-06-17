@@ -13,6 +13,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerConnectionState
+  alias ArchiDep.Servers.Types
   alias ArchiDep.Students.Schemas.Class
   alias Ecto.UUID
 
@@ -59,7 +60,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
           actions: list(action()),
           tasks: %{atom() => reference()},
           ansible_playbooks: list(AnsiblePlaybookRun.t()),
-          problems: list(problem()),
+          problems: list(server_problem()),
           retry_timer: reference() | nil,
           version: non_neg_integer()
         }
@@ -97,18 +98,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
           | track_action()
           | update_tracking_action()
 
-  @type authentication_failed_problem :: :authentication_failed
-  @type expected_property_mismatch_problem ::
-          {:expected_property_mismatch, atom(), term(), term()}
-  @type gather_facts_failed_problem :: {:gather_facts_failed, term()}
-  @type missing_sudo_access_problem :: {:missing_sudo_access, String.t(), String.t()}
-  @type sudo_access_check_failed_problem :: {:sudo_access_check_failed, term()}
-  @type problem ::
-          authentication_failed_problem()
-          | expected_property_mismatch_problem()
-          | gather_facts_failed_problem()
-          | missing_sudo_access_problem()
-          | sudo_access_check_failed_problem()
+  @type server_problem :: Types.server_problem()
 
   @retry_intervals_seconds [
     5,
@@ -136,6 +126,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
       username: server.username,
       app_username: server.app_username,
       current_job: state.current_job,
+      problems: state.problems,
       version: state.version
     }
   end
@@ -173,37 +164,30 @@ defmodule ArchiDep.Servers.ServerManagerState do
   def online?(_state), do: false
 
   # FIXME: try connecting after a while if the connection idle message is not received
+  # FIXME: do not attempt immediate reconnection if the connection crashed, wait a few seconds
   @spec connection_idle(t(), pid()) :: t()
 
   def connection_idle(
         %__MODULE__{connection_state: :not_connected} = state,
         connection_pid
       ),
-      do: connect(state, :connecting, connection_pid, false)
+      do: connect(state, connection_pid, false)
 
   def connection_idle(
         %__MODULE__{connection_state: disconnected_state()} = state,
         connection_pid
       ),
-      do: connect(state, :connecting, connection_pid, false)
+      do: connect(state, connection_pid, false)
 
   def retry_connecting(
         %__MODULE__{
-          connection_state: connecting_state(connection_pid: connection_pid, retrying: retrying)
+          connection_state:
+            retry_connecting_state(connection_pid: connection_pid, retrying: retrying)
         } = state
-      )
-      when retrying != false,
-      do: connect(state, :connecting, connection_pid, retrying)
+      ),
+      do: connect(state, connection_pid, retrying)
 
-  def retry_connecting(
-        %__MODULE__{
-          connection_state: reconnecting_state(connection_pid: connection_pid, retrying: retrying)
-        } = state
-      )
-      when retrying != false,
-      do: connect(state, :reconnecting, connection_pid, retrying)
-
-  defp connect(state, connecting, connection_pid, retrying) do
+  defp connect(state, connection_pid, retrying) do
     server = state.server
     host = server.ip_address.address
     port = server.ssh_port || 22
@@ -212,22 +196,12 @@ defmodule ArchiDep.Servers.ServerManagerState do
     update_tracking(%__MODULE__{
       state
       | connection_state:
-          case connecting do
-            :connecting ->
-              connecting_state(
-                connection_ref: make_ref(),
-                connection_pid: connection_pid,
-                retrying: retrying
-              )
-
-            :reconnecting ->
-              reconnecting_state(
-                connection_ref: make_ref(),
-                connection_pid: connection_pid,
-                retrying: retrying
-              )
-          end,
-        current_job: connecting,
+          connecting_state(
+            connection_ref: make_ref(),
+            connection_pid: connection_pid,
+            retrying: retrying
+          ),
+        current_job: :connecting,
         actions: [
           {:connect,
            fn task_state, task_factory ->
@@ -240,6 +214,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   @spec handle_task_result(t(), reference(), term()) :: t()
 
+  # Handle connection result
   def handle_task_result(
         %__MODULE__{
           connection_state:
@@ -261,6 +236,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     )
   end
 
+  # Handle reconnection result
   def handle_task_result(
         %__MODULE__{
           connection_state:
@@ -282,6 +258,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     )
   end
 
+  # Handle access check result
   def handle_task_result(
         %__MODULE__{
           connection_state: connected_state(),
@@ -341,7 +318,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
               get_load_average()
             ],
             problems: [
-              {:missing_sudo_access, server.username, String.trim(stderr)}
+              {:server_missing_sudo_access, server.username, String.trim(stderr)}
             ]
         })
 
@@ -357,13 +334,14 @@ defmodule ArchiDep.Servers.ServerManagerState do
               get_load_average()
             ],
             problems: [
-              {:sudo_access_check_failed, reason}
+              {:server_sudo_access_check_failed, reason}
             ]
         })
     end
     |> drop_task(:check_access, check_access_ref)
   end
 
+  # Handle load average result
   def handle_task_result(
         %__MODULE__{
           connection_state: connected_state(),
@@ -385,6 +363,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     drop_task(state, :get_load_average, get_load_average_ref)
   end
 
+  # Handle fact gathering result
   def handle_task_result(
         %__MODULE__{
           connection_state: connected_state(),
@@ -407,13 +386,14 @@ defmodule ArchiDep.Servers.ServerManagerState do
         update_tracking(%__MODULE__{
           state
           | problems: [
-              {:gather_facts_failed, reason}
+              {:server_fact_gathering_failed, reason}
             ]
         })
     end
     |> drop_task(:gather_facts, gather_facts_ref)
   end
 
+  # Handle connection result
   defp handle_connect_task_result(
          state,
          connection_ref,
@@ -433,9 +413,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
           state
           | connection_state:
               connected_state(
-                time: DateTime.utc_now(),
                 connection_ref: connection_ref,
-                connection_pid: connection_pid
+                connection_pid: connection_pid,
+                time: DateTime.utc_now()
               ),
             current_job: :checking_access,
             actions: [
@@ -456,7 +436,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 reason: :authentication_failed
               ),
             current_job: nil,
-            problems: [:authentication_failed]
+            problems: [:server_authentication_failed]
         })
 
       {:error, reason} ->
@@ -464,9 +444,22 @@ defmodule ArchiDep.Servers.ServerManagerState do
           "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
         )
 
-        state
-        |> retry(reason)
-        |> update_tracking()
+        if state.current_job == :reconnecting do
+          update_tracking(%__MODULE__{
+            state
+            | connection_state:
+                connection_failed_state(
+                  connection_pid: connection_pid,
+                  reason: reason
+                ),
+              current_job: nil,
+              problems: [{:server_reconnection_failed, reason}]
+          })
+        else
+          state
+          |> retry(reason)
+          |> update_tracking()
+        end
     end
     |> drop_task(:connect, connection_task_ref)
   end
@@ -475,7 +468,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
          %__MODULE__{
            connection_state:
              connecting_state(
-               connection_ref: connection_ref,
                connection_pid: connection_pid,
                retrying: retrying
              )
@@ -487,33 +479,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     %__MODULE__{
       state
       | connection_state:
-          connecting_state(
-            connection_ref: connection_ref,
-            connection_pid: connection_pid,
-            retrying: retrying
-          ),
-        actions: [retry_action(retrying)]
-    }
-  end
-
-  defp retry(
-         %__MODULE__{
-           connection_state:
-             reconnecting_state(
-               connection_ref: connection_ref,
-               connection_pid: connection_pid,
-               retrying: retrying
-             )
-         } = state,
-         reason
-       ) do
-    retrying = retry(retrying, reason)
-
-    %__MODULE__{
-      state
-      | connection_state:
-          reconnecting_state(
-            connection_ref: connection_ref,
+          retry_connecting_state(
             connection_pid: connection_pid,
             retrying: retrying
           ),
@@ -522,23 +488,33 @@ defmodule ArchiDep.Servers.ServerManagerState do
   end
 
   defp retry(false, reason),
-    do: {1, DateTime.utc_now(), List.first(@retry_intervals_seconds), reason}
+    do: %{
+      retry: 1,
+      time: DateTime.utc_now(),
+      in_seconds: List.first(@retry_intervals_seconds),
+      reason: reason
+    }
 
-  defp retry({previous_retry, _previous_time, _previous_seconds, _previous_reason}, reason) do
+  defp retry(%{retry: previous_retry}, reason) do
     next_retry = previous_retry + 1
 
-    seconds =
+    in_seconds =
       Enum.at(@retry_intervals_seconds, previous_retry) ||
         List.last(@retry_intervals_seconds)
 
-    {next_retry, DateTime.utc_now(), seconds, reason}
+    %{
+      retry: next_retry,
+      time: DateTime.utc_now(),
+      in_seconds: in_seconds,
+      reason: reason
+    }
   end
 
-  defp retry_action({_retry, _from_time, seconds, _reason}),
+  defp retry_action(%{in_seconds: in_seconds}),
     do:
       {:retry,
        fn retry_state, retry_factory ->
-         retry = retry_factory.(seconds * 1000)
+         retry = retry_factory.(in_seconds * 1000)
          %__MODULE__{retry_state | retry_timer: retry}
        end}
 
@@ -717,12 +693,15 @@ defmodule ArchiDep.Servers.ServerManagerState do
        end}
 
   defp detect_server_properties_mismatches(problems, _server, nil),
-    do: Enum.filter(problems, fn problem -> elem(problem, 0) != :expected_property_mismatch end)
+    do:
+      Enum.filter(problems, fn problem ->
+        elem(problem, 0) != :server_expected_property_mismatch
+      end)
 
   defp detect_server_properties_mismatches(problems, server, facts),
     do:
       problems
-      |> Enum.filter(fn problem -> elem(problem, 0) != :expected_property_mismatch end)
+      |> Enum.filter(fn problem -> elem(problem, 0) != :server_expected_property_mismatch end)
       |> detect_server_property_mismatch(:cpus, server, facts, ["ansible_processor_count"])
       |> detect_server_property_mismatch(:cores, server, facts, ["ansible_processor_cores"])
       |> detect_server_property_mismatch(:vcpus, server, facts, ["ansible_processor_vcpus"])
@@ -849,7 +828,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     do:
       problems ++
         [
-          {:expected_property_mismatch, property, expected, actual}
+          {:server_expected_property_mismatch, property, expected, actual}
         ]
 
   defp track(state),

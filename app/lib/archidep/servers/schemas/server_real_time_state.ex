@@ -1,5 +1,6 @@
 defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
   alias ArchiDep.Servers.ServerConnectionState
+  alias ArchiDep.Servers.Types
   alias Ecto.UUID
 
   @type t :: %__MODULE__{
@@ -17,6 +18,7 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
             | :gathering_facts
             | {:running_playbook, String.t(), UUID.t()}
             | nil,
+          problems: list(Types.server_problem()),
           version: non_neg_integer()
         }
 
@@ -29,6 +31,7 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
     :username,
     :app_username,
     current_job: nil,
+    problems: [],
     version: 0
   ]
 end

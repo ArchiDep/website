@@ -8,6 +8,22 @@ defmodule ArchiDep.Servers.Types do
           :pending | :running | :succeeded | :failed | :interrupted | :timeout
   @type ansible_variables :: %{String.t() => String.t()}
 
+  @type server_authentication_failed_problem :: :server_authentication_failed
+  @type server_expected_property_mismatch_problem ::
+          {:server_expected_property_mismatch, atom(), term(), term()}
+  @type server_fact_gathering_failed_problem :: {:server_fact_gathering_failed, term()}
+  @type server_missing_sudo_access_problem ::
+          {:server_missing_sudo_access, String.t(), String.t()}
+  @type server_reconnection_failed_problem :: {:server_reconnection_failed, term()}
+  @type server_sudo_access_check_failed_problem :: {:server_sudo_access_check_failed, term()}
+  @type server_problem ::
+          server_authentication_failed_problem()
+          | server_expected_property_mismatch_problem()
+          | server_fact_gathering_failed_problem()
+          | server_missing_sudo_access_problem()
+          | server_reconnection_failed_problem()
+          | server_sudo_access_check_failed_problem()
+
   @type create_server_data :: %{
           name: String.t() | nil,
           ip_address: String.t(),
