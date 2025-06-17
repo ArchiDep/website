@@ -199,7 +199,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
   def retry_connecting(
         %__MODULE__{
           connection_state: connection_failed_state(connection_pid: connection_pid)
-        } = state
+        } = state,
+        _manual
       ),
       do: connect(state, connection_pid, false)
 
