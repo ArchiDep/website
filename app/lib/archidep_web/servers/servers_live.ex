@@ -41,6 +41,8 @@ defmodule ArchiDepWeb.Servers.ServersLive do
       ),
       do:
         socket
-        |> assign(state: ServerTracker.update_server_state_map(server_state_map, update))
+        |> assign(
+          server_state_map: ServerTracker.update_server_state_map(server_state_map, update)
+        )
         |> noreply()
 end

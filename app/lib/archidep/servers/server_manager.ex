@@ -91,12 +91,12 @@ defmodule ArchiDep.Servers.ServerManager do
 
   @impl true
 
-  def handle_info(:retry, state) do
-    state
-    |> ServerManagerState.retry_connecting()
-    |> execute_actions()
-    |> noreply()
-  end
+  def handle_info(:retry_connecting, state),
+    do:
+      state
+      |> ServerManagerState.retry_connecting()
+      |> execute_actions()
+      |> noreply()
 
   def handle_info(
         {task_ref, result},
@@ -105,7 +105,10 @@ defmodule ArchiDep.Servers.ServerManager do
       when is_reference(task_ref),
       do:
         state
-        |> ServerManagerState.handle_task_result(task_ref, result)
+        |> ServerManagerState.handle_task_result(
+          task_ref,
+          result
+        )
         |> execute_actions()
         |> noreply()
 
@@ -119,6 +122,16 @@ defmodule ArchiDep.Servers.ServerManager do
         |> ServerManagerState.class_updated(class)
         |> execute_actions()
         |> noreply()
+
+  def handle_info(
+        :measure_load_average,
+        state
+      ) do
+    state
+    |> ServerManagerState.measure_load_average()
+    |> execute_actions()
+    |> noreply()
+  end
 
   def handle_info(
         {:server_updated, server},
@@ -186,9 +199,9 @@ defmodule ArchiDep.Servers.ServerManager do
     state
   end
 
-  defp execute_action(state, {:retry, factory}) do
+  defp execute_action(state, {:retry_connecting, factory}) do
     factory.(state, fn milliseconds ->
-      Process.send_after(self(), :retry, milliseconds)
+      Process.send_after(self(), :retry_connecting, milliseconds)
     end)
   end
 
@@ -206,6 +219,13 @@ defmodule ArchiDep.Servers.ServerManager do
       )
 
     state
+  end
+
+  defp execute_action(state, {:schedule_load_average_measurement, factory}) do
+    factory.(state, fn milliseconds ->
+      timer = Process.send_after(self(), :measure_load_average, milliseconds)
+      timer
+    end)
   end
 
   defp execute_action(state, {:track, topic, key, value}) do

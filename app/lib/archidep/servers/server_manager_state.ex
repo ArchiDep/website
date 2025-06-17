@@ -39,6 +39,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     ansible_playbooks: [],
     problems: [],
     retry_timer: nil,
+    load_average_timer: nil,
     version: 0
   ]
 
@@ -62,6 +63,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
           ansible_playbooks: list(AnsiblePlaybookRun.t()),
           problems: list(server_problem()),
           retry_timer: reference() | nil,
+          load_average_timer: reference() | nil,
           version: non_neg_integer()
         }
 
@@ -80,21 +82,26 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type gather_facts_action ::
           {:gather_facts, (t(), (String.t() -> Task.t()) -> t())}
   @type notify_server_offline :: :notify_server_offline
-  @type retry_action :: {:retry, (t(), (pos_integer() -> reference()) -> t())}
+  @type retry_connecting_action ::
+          {:retry_connecting, (t(), (pos_integer() -> reference()) -> t())}
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
           {:run_playbook, AnsiblePlaybookRun.t()}
+  @type schedule_load_average_measurement_action ::
+          {:schedule_load_average_measurement, (t(), (pos_integer() -> reference()) -> t())}
   @type track_action :: {:track, String.t(), UUID.t(), map()}
   @type update_tracking_action :: {:update_tracking, String.t(), UUID.t(), map()}
   @type action ::
           cancel_timer_action()
           | connect_action()
           | demonitor_action()
+          | gather_facts_action()
           | notify_server_offline()
-          | retry_action()
+          | retry_connecting_action()
           | run_command_action()
           | run_playbook_action()
+          | schedule_load_average_measurement_action()
           | track_action()
           | update_tracking_action()
 
@@ -269,76 +276,80 @@ defmodule ArchiDep.Servers.ServerManagerState do
       ) do
     server = state.server
 
-    case result do
-      {:ok, _stdout, _stderr, 0} ->
-        if state.username == server.app_username do
+    new_state =
+      case result do
+        {:ok, _stdout, _stderr, 0} ->
+          if state.username == server.app_username do
+            Logger.info(
+              "Server manager has sudo access to server #{server.id} as #{state.username}; gathering facts..."
+            )
+
+            %__MODULE__{
+              state
+              | current_job: :gathering_facts,
+                actions: [
+                  get_load_average(),
+                  gather_facts()
+                ]
+            }
+          else
+            Logger.info(
+              "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
+            )
+
+            playbook = Ansible.app_user_playbook()
+
+            playbook_run =
+              Tracker.track_playbook!(playbook, server, state.username, %{
+                "app_user_authorized_key" => ArchiDep.Application.public_key()
+              })
+
+            %__MODULE__{
+              state
+              | current_job: {:running_playbook, playbook_run.playbook, playbook_run.id},
+                ansible_playbooks: [playbook_run | state.ansible_playbooks],
+                actions: [
+                  {:run_playbook, playbook_run}
+                ]
+            }
+          end
+
+        {:ok, _stdout, stderr, _exit_code} ->
           Logger.info(
-            "Server manager has sudo access to server #{server.id} as #{state.username}; gathering facts..."
+            "Server manager does not have sudo access to server #{server.id} as #{state.username}; connected with problems"
           )
 
-          update_tracking(%__MODULE__{
+          %__MODULE__{
             state
-            | current_job: :gathering_facts,
+            | current_job: nil,
               actions: [
-                get_load_average(),
-                gather_facts()
+                get_load_average()
+              ],
+              problems: [
+                {:server_missing_sudo_access, server.username, String.trim(stderr)}
               ]
-          })
-        else
-          Logger.info(
-            "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
+          }
+
+        {:error, reason} ->
+          Logger.error(
+            "Server manager could not check sudo access to server #{server.id} as #{state.username} because #{inspect(reason)}; connected with problems"
           )
 
-          playbook = Ansible.app_user_playbook()
-
-          playbook_run =
-            Tracker.track_playbook!(playbook, server, state.username, %{
-              "app_user_authorized_key" => ArchiDep.Application.public_key()
-            })
-
-          update_tracking(%__MODULE__{
+          %__MODULE__{
             state
-            | current_job: {:running_playbook, playbook_run.playbook, playbook_run.id},
-              ansible_playbooks: [playbook_run | state.ansible_playbooks],
+            | current_job: nil,
               actions: [
-                {:run_playbook, playbook_run}
+                get_load_average()
+              ],
+              problems: [
+                {:server_sudo_access_check_failed, reason}
               ]
-          })
-        end
+          }
+      end
 
-      {:ok, _stdout, stderr, _exit_code} ->
-        Logger.info(
-          "Server manager does not have sudo access to server #{server.id} as #{state.username}; connected with problems"
-        )
-
-        update_tracking(%__MODULE__{
-          state
-          | current_job: nil,
-            actions: [
-              get_load_average()
-            ],
-            problems: [
-              {:server_missing_sudo_access, server.username, String.trim(stderr)}
-            ]
-        })
-
-      {:error, reason} ->
-        Logger.error(
-          "Server manager could not check sudo access to server #{server.id} as #{state.username} because #{inspect(reason)}; connected with problems"
-        )
-
-        update_tracking(%__MODULE__{
-          state
-          | current_job: nil,
-            actions: [
-              get_load_average()
-            ],
-            problems: [
-              {:server_sudo_access_check_failed, reason}
-            ]
-        })
-    end
+    new_state
     |> drop_task(:check_access, check_access_ref)
+    |> update_tracking()
   end
 
   # Handle load average result
@@ -360,7 +371,20 @@ defmodule ArchiDep.Servers.ServerManagerState do
       Logger.info("Received load average from server #{state.server.id}: #{m1}, #{m5}, #{m15}")
     end
 
-    drop_task(state, :get_load_average, get_load_average_ref)
+    drop_task(
+      %__MODULE__{
+        state
+        | actions: [
+            {:schedule_load_average_measurement,
+             fn schedule_state, schedule_factory ->
+               timer = schedule_factory.(20_000)
+               %__MODULE__{schedule_state | load_average_timer: timer}
+             end}
+          ]
+      },
+      :get_load_average,
+      get_load_average_ref
+    )
   end
 
   # Handle fact gathering result
@@ -373,24 +397,28 @@ defmodule ArchiDep.Servers.ServerManagerState do
         gather_facts_ref,
         result
       ) do
-    case result do
-      {:ok, facts} ->
-        :ets.insert(state.storage, {:facts, facts})
+    new_state =
+      case result do
+        {:ok, facts} ->
+          :ets.insert(state.storage, {:facts, facts})
 
-        update_tracking(%__MODULE__{
-          state
-          | problems: detect_server_properties_mismatches(problems, state.server, facts)
-        })
+          %__MODULE__{
+            state
+            | problems: detect_server_properties_mismatches(problems, state.server, facts)
+          }
 
-      {:error, reason} ->
-        update_tracking(%__MODULE__{
-          state
-          | problems: [
-              {:server_fact_gathering_failed, reason}
-            ]
-        })
-    end
+        {:error, reason} ->
+          %__MODULE__{
+            state
+            | problems: [
+                {:server_fact_gathering_failed, reason}
+              ]
+          }
+      end
+
+    new_state
     |> drop_task(:gather_facts, gather_facts_ref)
+    |> update_tracking()
   end
 
   # Handle connection result
@@ -403,69 +431,73 @@ defmodule ArchiDep.Servers.ServerManagerState do
        ) do
     server = state.server
 
-    case result do
-      :ok ->
-        Logger.info(
-          "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
-        )
+    new_state =
+      case result do
+        :ok ->
+          Logger.info(
+            "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
+          )
 
-        update_tracking(%__MODULE__{
-          state
-          | connection_state:
-              connected_state(
-                connection_ref: connection_ref,
-                connection_pid: connection_pid,
-                time: DateTime.utc_now()
-              ),
-            current_job: :checking_access,
-            actions: [
-              check_sudo_access()
-            ]
-        })
+          %__MODULE__{
+            state
+            | connection_state:
+                connected_state(
+                  connection_ref: connection_ref,
+                  connection_pid: connection_pid,
+                  time: DateTime.utc_now()
+                ),
+              current_job: :checking_access,
+              actions: [
+                check_sudo_access()
+              ]
+          }
 
-      {:error, :authentication_failed} ->
-        Logger.warning(
-          "Server manager could not connect to server #{server.id} as #{state.username} because authentication failed"
-        )
+        {:error, :authentication_failed} ->
+          Logger.warning(
+            "Server manager could not connect to server #{server.id} as #{state.username} because authentication failed"
+          )
 
-        update_tracking(%__MODULE__{
-          state
-          | connection_state:
-              connection_failed_state(
-                connection_pid: connection_pid,
-                reason: :authentication_failed
-              ),
-            current_job: nil,
-            problems: [
-              {:server_authentication_failed,
-               if(state.username == state.server.app_username, do: :app_username, else: :username),
-               state.username}
-            ]
-        })
-
-      {:error, reason} ->
-        Logger.info(
-          "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
-        )
-
-        if state.current_job == :reconnecting do
-          update_tracking(%__MODULE__{
+          %__MODULE__{
             state
             | connection_state:
                 connection_failed_state(
                   connection_pid: connection_pid,
-                  reason: reason
+                  reason: :authentication_failed
                 ),
               current_job: nil,
-              problems: [{:server_reconnection_failed, reason}]
-          })
-        else
-          state
-          |> retry(reason)
-          |> update_tracking()
-        end
-    end
+              problems: [
+                {:server_authentication_failed,
+                 if(state.username == state.server.app_username,
+                   do: :app_username,
+                   else: :username
+                 ), state.username}
+              ]
+          }
+
+        {:error, reason} ->
+          Logger.info(
+            "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
+          )
+
+          if state.current_job == :reconnecting do
+            %__MODULE__{
+              state
+              | connection_state:
+                  connection_failed_state(
+                    connection_pid: connection_pid,
+                    reason: reason
+                  ),
+                current_job: nil,
+                problems: [{:server_reconnection_failed, reason}]
+            }
+          else
+            retry(state, reason)
+          end
+      end
+
+    new_state
     |> drop_task(:connect, connection_task_ref)
+    |> update_tracking()
   end
 
   defp retry(
@@ -516,11 +548,21 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   defp retry_action(%{in_seconds: in_seconds}),
     do:
-      {:retry,
+      {:retry_connecting,
        fn retry_state, retry_factory ->
          retry = retry_factory.(in_seconds * 1000)
          %__MODULE__{retry_state | retry_timer: retry}
        end}
+
+  @spec measure_load_average(t()) :: t()
+  def measure_load_average(%__MODULE__{connection_state: connected_state()} = state),
+    do:
+      update_tracking(%__MODULE__{
+        state
+        | actions: [
+            get_load_average()
+          ]
+      })
 
   @spec ansible_playbook_completed(t(), UUID.t()) :: t()
   def ansible_playbook_completed(
@@ -536,41 +578,49 @@ defmodule ArchiDep.Servers.ServerManagerState do
     server = state.server
     Logger.info("Ansible playbook #{run.playbook} completed for server #{server.id}")
 
-    if state.username == server.username and
-         run.playbook == AnsiblePlaybook.name(Ansible.app_user_playbook()) do
-      host = server.ip_address.address
-      port = server.ssh_port || 22
-      new_username = server.app_username
+    new_state =
+      if state.username == server.username and
+           run.playbook == AnsiblePlaybook.name(Ansible.app_user_playbook()) do
+        host = server.ip_address.address
+        port = server.ssh_port || 22
+        new_username = server.app_username
 
-      update_tracking(%__MODULE__{
-        state
-        | connection_state:
-            reconnecting_state(
-              connection_pid: connection_pid,
-              connection_ref: connection_ref
-            ),
-          username: new_username,
-          current_job: :reconnecting,
-          actions: [
-            {:connect,
-             fn task_state, task_factory ->
-               task = task_factory.(host, port, new_username, silently_accept_hosts: true)
+        %__MODULE__{
+          state
+          | connection_state:
+              reconnecting_state(
+                connection_pid: connection_pid,
+                connection_ref: connection_ref
+              ),
+            username: new_username,
+            current_job: :reconnecting,
+            actions:
+              [
+                {:connect,
+                 fn task_state, task_factory ->
+                   task = task_factory.(host, port, new_username, silently_accept_hosts: true)
 
-               %__MODULE__{
-                 task_state
-                 | tasks: Map.put(task_state.tasks, :connect, task.ref)
-               }
-             end}
-            | state.actions
-          ]
-      })
-    else
-      update_tracking(%__MODULE__{
-        state
-        | current_job: nil,
-          ansible_playbooks: remaining_playbooks
-      })
-    end
+                   %__MODULE__{
+                     task_state
+                     | tasks: Map.put(task_state.tasks, :connect, task.ref)
+                   }
+                 end}
+              ] ++
+                if(state.load_average_timer,
+                  do: [{:cancel_timer, state.load_average_timer}],
+                  else: []
+                ),
+            load_average_timer: nil
+        }
+      else
+        %__MODULE__{
+          state
+          | current_job: nil,
+            ansible_playbooks: remaining_playbooks
+        }
+      end
+
+    update_tracking(new_state)
   end
 
   @spec class_updated(t(), Class.t()) :: t()
@@ -650,14 +700,16 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
     actions =
       [:notify_server_offline] ++
-        if state.retry_timer, do: {:cancel_timer, state.retry_timer}, else: []
+        if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []) ++
+        if state.load_average_timer, do: [{:cancel_timer, state.load_average_timer}], else: []
 
     update_tracking(%__MODULE__{
       state
       | connection_state: disconnected_state(time: DateTime.utc_now()),
         current_job: nil,
         actions: actions,
-        retry_timer: nil
+        retry_timer: nil,
+        load_average_timer: nil
     })
   end
 
@@ -824,7 +876,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     ratio = difference / expected
 
     if ratio > 0.1 do
-      detect_server_property_mismatch(problems, property, {expected, actual})
+      problems ++ [{:server_expected_property_mismatch, property, expected, actual}]
     else
       problems
     end
