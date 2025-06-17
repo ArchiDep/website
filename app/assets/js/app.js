@@ -26,6 +26,13 @@ let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
+  hooks: {
+    remainingSeconds: {
+      mounted() {
+        updateRemainingSeconds(this.el);
+      }
+    }
+  },
   dom: {
     onBeforeElUpdated: (fromEl, toEl) => {
       if (fromEl.tagName !== 'DIALOG') {
@@ -39,6 +46,16 @@ let liveSocket = new LiveSocket("/live", Socket, {
     }
   }
 })
+
+function updateRemainingSeconds(element) {
+  const endTime = new Date(element.dataset.endTime);
+  const remainingSeconds = Math.ceil(Math.max(0, endTime.getTime() - Date.now()) / 1000);
+  element.textContent = remainingSeconds >= 1 ? `in ${remainingSeconds}s` : 'soon';
+
+  if (remainingSeconds >= 1) {
+    setTimeout(() => updateRemainingSeconds(element), 1000);
+  }
+}
 
 // Show progress bar on live navigation and form submits
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})

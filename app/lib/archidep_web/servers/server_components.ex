@@ -2,6 +2,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   use Phoenix.Component
 
   import ArchiDep.Servers.ServerConnectionState
+  import ArchiDepWeb.Helpers.AuthHelpers
+  alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
 
@@ -19,6 +21,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
+  attr :auth, Authentication, doc: "the authentication context"
   attr :server, Server, doc: "the server to display"
   attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
 
@@ -30,19 +33,28 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
            "No connection to this server."}
 
         %ServerRealTimeState{connection_state: connecting_state()} ->
-          {"bg-info text-info-content", "badge-primary", "Connecting",
+          {"bg-info text-info-content animate-pulse", "badge-primary", "Connecting",
            "Connecting to the server..."}
 
-        %ServerRealTimeState{connection_state: retry_connecting_state()} ->
+        %ServerRealTimeState{
+          connection_state:
+            retry_connecting_state(retrying: %{retry: retry, time: time, in_seconds: in_seconds})
+        } ->
           {"bg-info text-info-content", "badge-primary", "Reconnecting",
-           "Will retry connecting soon..."}
+           retry_connecting(%{
+             auth: assigns.auth,
+             server: assigns.server,
+             retry: retry,
+             time: time,
+             in_seconds: in_seconds
+           })}
 
         %ServerRealTimeState{connection_state: connected_state()} ->
           {"bg-success text-success-content", "badge-success", "Connected",
            "Connected to the server."}
 
         %ServerRealTimeState{connection_state: reconnecting_state()} ->
-          {"bg-info text-info-content", "badge-primary", "Reconnecting",
+          {"bg-info text-info-content animate-pulse", "badge-primary", "Reconnecting",
            "Reconnecting to the server..."}
 
         %ServerRealTimeState{connection_state: connection_failed_state()} ->
@@ -78,7 +90,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         </p>
         <ul>
           <li :for={problem <- @state.problems}>
-            <.server_problem problem={problem} />
+            <.server_problem auth={@auth} problem={problem} />
           </li>
         </ul>
       </div>
@@ -86,13 +98,46 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
+  attr :auth, Authentication, doc: "the authentication context"
   attr :problem, :any, doc: "the problem to display"
 
   def server_problem(assigns) do
     ~H"""
     <div role="alert" class="alert alert-error alert-soft">
-      <span>Error! Task failed successfully.</span>
+      <span>Oops, a problem occurred.</span>
     </div>
+    """
+  end
+
+  defp retry_connecting(assigns) do
+    id = "server-#{assigns.server.id}-retry-connecting"
+
+    end_time = DateTime.add(assigns.time, assigns.in_seconds, :second)
+
+    remaining_seconds =
+      max(
+        0,
+        DateTime.diff(
+          end_time,
+          DateTime.utc_now(),
+          :second
+        )
+      )
+
+    assigns =
+      assigns
+      |> Map.put(:id, id)
+      |> Map.put(:end_time, end_time)
+      |> Map.put(:remaining_seconds, remaining_seconds)
+
+    ~H"""
+    Will retry connecting
+    <span id={@id} data-end-time={DateTime.to_iso8601(@end_time)} phx-hook="remainingSeconds">
+      in {@remaining_seconds}s
+    </span>
+    <%= if has_role?(@auth, :root) do %>
+      (attempt #{@retry + 1})
+    <% end %>...
     """
   end
 end
