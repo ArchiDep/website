@@ -854,6 +854,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     %ServerRealTimeState{
       state: state.state,
       connection_state: state.connection_state,
+      name: server.name,
       conn_params: {server.ip_address.address, server.ssh_port || 22, state.username},
       username: server.username,
       app_username: server.app_username,

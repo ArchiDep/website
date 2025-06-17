@@ -20,15 +20,14 @@ defmodule ArchiDep.Tracker do
   @impl true
   def handle_diff(diff, state) do
     for {topic, {joins, leaves}} <- diff do
-      for {key, meta} <- joins do
-        IO.puts("presence join #{topic}: key \"#{key}\" with meta #{inspect(meta)}")
-        PubSub.local_broadcast(@pubsub, topic, {:join, key, meta})
-      end
-
-      for {key, meta} <- leaves do
-        IO.puts("presence leave #{topic}: key \"#{key}\" with meta #{inspect(meta)}")
-        PubSub.local_broadcast(@pubsub, topic, {:leave, key, meta})
-      end
+      (Enum.map(leaves, &{:leave, &1}) ++ Enum.map(joins, &{:join, &1}))
+      |> Enum.reduce(%{}, fn {action, {key, meta}}, acc ->
+        Map.update(acc, key, {action, meta}, fn _existing_meta -> {:update, meta} end)
+      end)
+      |> Enum.each(fn {key, {action, meta}} ->
+        IO.puts("presence #{action} #{topic}: key \"#{key}\" with meta #{inspect(meta)}")
+        PubSub.local_broadcast(@pubsub, topic, {:action, key, meta})
+      end)
     end
 
     {:ok, state}
