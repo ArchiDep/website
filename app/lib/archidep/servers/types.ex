@@ -8,7 +8,8 @@ defmodule ArchiDep.Servers.Types do
           :pending | :running | :succeeded | :failed | :interrupted | :timeout
   @type ansible_variables :: %{String.t() => String.t()}
 
-  @type server_authentication_failed_problem :: :server_authentication_failed
+  @type server_authentication_failed_problem ::
+          {:server_authentication_failed, :username | :app_username, String.t()}
   @type server_expected_property_mismatch_problem ::
           {:server_expected_property_mismatch, atom(), term(), term()}
   @type server_fact_gathering_failed_problem :: {:server_fact_gathering_failed, term()}

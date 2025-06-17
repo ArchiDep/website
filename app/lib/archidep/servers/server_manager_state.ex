@@ -436,7 +436,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 reason: :authentication_failed
               ),
             current_job: nil,
-            problems: [:server_authentication_failed]
+            problems: [
+              {:server_authentication_failed,
+               if(state.username == state.server.app_username, do: :app_username, else: :username),
+               state.username}
+            ]
         })
 
       {:error, reason} ->

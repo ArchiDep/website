@@ -76,9 +76,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     ~H"""
     <div class={["card", @card_class]}>
       <div class="card-body">
-        <div class="card-title flex justify-between">
+        <div class="card-title flex flex-wrap justify-between text-xs sm:text-sm md:text-base">
           <h2 class="flex items-center gap-x-2">
-            <Heroicons.server solid class="size-6" />
+            <Heroicons.server solid class="size-4 sm:size-5 md:size-6" />
             <.server_name server={@server} />
           </h2>
           <div class={["badge badge-soft", @badge_class]}>
@@ -100,6 +100,34 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   attr :auth, Authentication, doc: "the authentication context"
   attr :problem, :any, doc: "the problem to display"
+
+  def server_problem(%{problem: {:server_authentication_failed, :username, username}} = assigns) do
+    assigns = assign(assigns, :username, username)
+
+    ~H"""
+    <div role="alert" class="alert alert-error alert-soft">
+      <span>Authentication failed for user <code>{@username}</code></span>
+    </div>
+    """
+  end
+
+  def server_problem(
+        %{problem: {:server_authentication_failed, :app_username, username}} = assigns
+      ) do
+    assigns = assign(assigns, :username, username)
+
+    ~H"""
+    <div role="alert" class="alert alert-error alert-soft">
+      <span>
+        <%= if has_role?(@auth, :root) do %>
+          Authentication failed for application user <code>{@username}</code>
+        <% else %>
+          Authentication failed
+        <% end %>
+      </span>
+    </div>
+    """
+  end
 
   def server_problem(assigns) do
     ~H"""
