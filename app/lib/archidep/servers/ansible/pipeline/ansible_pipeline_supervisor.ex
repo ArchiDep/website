@@ -1,6 +1,7 @@
 defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineSupervisor do
   use Supervisor
 
+  import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineConsumer
@@ -13,6 +14,8 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineSupervisor do
 
   @impl true
   def init(pipeline) do
+    set_process_label(__MODULE__)
+
     children = [
       {AnsiblePipelineQueue, pipeline},
       {AnsiblePipelineConsumer, pipeline}

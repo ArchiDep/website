@@ -10,7 +10,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   @tracker ArchiDep.Tracker
 
   @spec start_link(UUID.t()) :: {:ok, pid()}
-  def start_link(run_id), do: Task.start_link(fn -> process_event(run_id) end)
+  def start_link(run_id),
+    do:
+      Task.start_link(fn ->
+        process_event(run_id)
+      end)
 
   @spec process_event(UUID.t()) :: :ok
   def process_event(run_id) do

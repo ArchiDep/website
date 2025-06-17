@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.ServerTracker do
 
   require Logger
   import ArchiDep.Helpers.PipeHelpers
+  import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias Ecto.UUID
@@ -47,6 +48,8 @@ defmodule ArchiDep.Servers.ServerTracker do
 
   @impl true
   def init({from, server_ids}) do
+    set_process_label(__MODULE__)
+
     Logger.debug("Init server tracker for server(s): #{inspect(server_ids)}")
 
     :proc_lib.set_label(Atom.to_string(__MODULE__))

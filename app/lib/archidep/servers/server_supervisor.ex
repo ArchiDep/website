@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.ServerSupervisor do
 
   use Supervisor
 
+  import ArchiDep.Servers.Helpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Schemas.Server
 
@@ -13,11 +14,13 @@ defmodule ArchiDep.Servers.ServerSupervisor do
 
   @spec start_link({Server.t(), Pipeline.t()}) :: Supervisor.on_start()
   def start_link({server, pipeline}) do
-    Supervisor.start_link(__MODULE__, {server, pipeline}, name: __MODULE__)
+    Supervisor.start_link(__MODULE__, {server, pipeline}, name: name(server))
   end
 
   @impl true
   def init({server, pipeline}) do
+    set_process_label(__MODULE__, server.id)
+
     children = [
       {ArchiDep.Servers.ServerManager, {server, pipeline}},
       {ArchiDep.Servers.ServerConnection, server}

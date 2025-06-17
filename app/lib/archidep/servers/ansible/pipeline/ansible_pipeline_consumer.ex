@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineConsumer do
   use ConsumerSupervisor
 
   require Logger
+  import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner
@@ -15,6 +16,8 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineConsumer do
 
   @impl true
   def init(pipeline) do
+    set_process_label(__MODULE__)
+
     Logger.info("Init ansible pipeline consumer")
 
     children = [

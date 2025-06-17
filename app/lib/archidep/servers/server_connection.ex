@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.ServerConnection do
   use GenServer
 
   require Logger
+  import ArchiDep.Servers.Helpers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerManager
 
@@ -32,6 +33,7 @@ defmodule ArchiDep.Servers.ServerConnection do
   @impl true
   def init(server_id) do
     Logger.debug("Init server connection for server #{server_id}")
+    set_process_label(__MODULE__, server_id)
     {:ok, server_id, {:continue, :idle}}
   end
 

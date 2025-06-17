@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.ServerManager do
 
   require Logger
   import ArchiDep.Helpers.PipeHelpers
+  import ArchiDep.Servers.Helpers
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
@@ -52,6 +53,8 @@ defmodule ArchiDep.Servers.ServerManager do
 
   @impl true
   def handle_continue(:init, {server_id, pipeline}) do
+    set_process_label(__MODULE__, server_id)
+
     state =
       server_id
       |> ServerManagerState.init(pipeline)

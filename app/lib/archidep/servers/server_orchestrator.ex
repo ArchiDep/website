@@ -6,6 +6,7 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
 
   use GenServer
 
+  import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerDynamicSupervisor
@@ -22,6 +23,7 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
 
   @impl true
   def init(pipeline) do
+    set_process_label(__MODULE__)
     {:ok, pipeline, {:continue, :load_servers}}
   end
 

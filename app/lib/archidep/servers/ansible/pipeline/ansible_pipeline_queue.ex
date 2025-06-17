@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
   require Logger
   import ArchiDep.Helpers.GenStageHelpers
+  import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
@@ -120,6 +121,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
   @impl true
   def init(nil) do
+    set_process_label(__MODULE__)
     Logger.info("Init Ansible pipeline queue")
     {:producer, State.init()}
   end
