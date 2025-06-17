@@ -206,4 +206,11 @@ defmodule ArchiDep.Servers.ServerManager do
 
     state
   end
+
+  defp execute_action(state, {:update_tracking, topic, key, value}) do
+    {:ok, _ref} =
+      Phoenix.Tracker.update(ArchiDep.Tracker, self(), topic, key, value)
+
+    state
+  end
 end

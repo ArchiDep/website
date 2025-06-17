@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   require Logger
   require Record
   import ArchiDep.Helpers.SchemaHelpers, only: [trim_to_nil: 1]
+  import ArchiDep.Servers.ServerConnectionState
   alias ArchiDep.Helpers.NetHelpers
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
@@ -9,46 +10,29 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerConnection
+  alias ArchiDep.Servers.ServerConnectionState
   alias ArchiDep.Students.Schemas.Class
   alias Ecto.UUID
 
-  Record.defrecord(:connecting_state,
-    connection_ref: nil,
-    connection_pid: nil,
-    retrying: false
-  )
-
-  Record.defrecord(:checking_access_state,
-    connection_ref: nil,
-    connection_pid: nil
-  )
-
-  Record.defrecord(:connected_state, connection_ref: nil, connection_pid: nil)
-
-  Record.defrecord(:reconnecting_state,
-    connection_ref: nil,
-    connection_pid: nil,
-    retrying: false
-  )
-
   @enforce_keys [
+    :state,
     :connection_state,
     :server,
     :pipeline,
     :username,
     :storage,
-    :steps,
     :actions
   ]
   defstruct [
+    :state,
     :connection_state,
     :server,
     :pipeline,
     :username,
     :storage,
-    :steps,
-    previous_steps: [],
+    current_job: nil,
     actions: [],
     tasks: %{},
     ansible_playbooks: [],
@@ -57,18 +41,20 @@ defmodule ArchiDep.Servers.ServerManagerState do
   ]
 
   @type t :: %__MODULE__{
-          connection_state:
-            :not_connected
-            | connecting_state()
-            | connected_state()
-            | reconnecting_state()
-            | :disconnected,
+          state: :initial_setup | :tracked | :corrupted,
+          connection_state: connection_state(),
           server: Server.t(),
           pipeline: Pipeline.t(),
           username: String.t(),
           storage: :ets.tid(),
-          steps: list(atom()),
-          previous_steps: list({atom(), :succeeded, :failed, :skipped}),
+          current_job:
+            :connecting
+            | :reconnecting
+            | :checking_access
+            | :setting_up_app_user
+            | :gathering_facts
+            | {:running_playbook, String.t(), UUID.t()}
+            | nil,
           actions: list(action()),
           tasks: %{atom() => reference()},
           ansible_playbooks: list(AnsiblePlaybookRun.t()),
@@ -78,25 +64,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   @type network_port :: NetHelpers.network_port()
 
-  @type connecting_state ::
-          record(:connecting_state,
-            connection_ref: reference(),
-            connection_pid: pid(),
-            retrying: false | {pos_integer(), DateTime.t(), pos_integer(), term}
-          )
-
-  @type checking_access_state ::
-          record(:checking_access_state, connection_ref: reference(), connection_pid: pid())
-
-  @type connected_state ::
-          record(:connected_state, connection_ref: reference(), connection_pid: pid())
-
-  @type reconnecting_state ::
-          record(:connecting_state,
-            connection_ref: reference(),
-            connection_pid: pid(),
-            retrying: false | {pos_integer(), DateTime.t(), pos_integer(), term}
-          )
+  @type connection_state :: ServerConnectionState.connection_state()
 
   @type cancel_timer_action :: {:cancel_timer, reference()}
   @type connect_action ::
@@ -115,6 +83,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type run_playbook_action ::
           {:run_playbook, AnsiblePlaybookRun.t()}
   @type track_action :: {:track, String.t(), UUID.t(), map()}
+  @type update_tracking_action :: {:update_tracking, String.t(), UUID.t(), map()}
   @type action ::
           cancel_timer_action()
           | connect_action()
@@ -124,14 +93,17 @@ defmodule ArchiDep.Servers.ServerManagerState do
           | run_command_action()
           | run_playbook_action()
           | track_action()
+          | update_tracking_action()
 
+  @type authentication_failed_problem :: :authentication_failed
   @type expected_property_mismatch_problem ::
           {:expected_property_mismatch, atom(), term(), term()}
   @type gather_facts_failed_problem :: {:gather_facts_failed, term()}
   @type missing_sudo_access_problem :: {:missing_sudo_access, String.t(), String.t()}
   @type sudo_access_check_failed_problem :: {:sudo_access_check_failed, term()}
   @type problem ::
-          expected_property_mismatch_problem()
+          authentication_failed_problem()
+          | expected_property_mismatch_problem()
           | gather_facts_failed_problem()
           | missing_sudo_access_problem()
           | sudo_access_check_failed_problem()
@@ -161,43 +133,42 @@ defmodule ArchiDep.Servers.ServerManagerState do
     app_user_created =
       AnsiblePlaybookRun.successful_playbook_run?(server, Ansible.app_user_playbook())
 
-    {username, steps} =
+    {state, username} =
       if app_user_created do
-        {server.app_username, [:connect, :check_access, :gather_facts]}
+        {:tracked, server.app_username}
       else
-        {server.username, [:connect, :check_access, :setup_app_user, :reconnect, :gather_facts]}
+        {:initial_setup, server.username}
       end
 
-    %__MODULE__{
+    track(%__MODULE__{
+      state: state,
       connection_state: :not_connected,
       server: server,
       pipeline: pipeline,
       username: username,
       storage: storage,
-      steps: steps,
-      actions: [
-        {:track, "servers", server.id, %{state: :not_connected}}
-      ]
-    }
+      actions: []
+    })
   end
 
   @spec online?(t()) :: boolean()
   def online?(%__MODULE__{connection_state: connected_state()}), do: true
   def online?(_state), do: false
 
+  # FIXME: try connecting after a while if the connection idle message is not received
   @spec connection_idle(t(), pid()) :: t()
 
   def connection_idle(
         %__MODULE__{connection_state: :not_connected} = state,
         connection_pid
       ),
-      do: connect(state, connection_pid, false)
+      do: connect(state, :connecting, connection_pid, false)
 
   def connection_idle(
-        %__MODULE__{connection_state: :disconnected} = state,
+        %__MODULE__{connection_state: disconnected_state()} = state,
         connection_pid
       ),
-      do: connect(state, connection_pid, false)
+      do: connect(state, :connecting, connection_pid, false)
 
   def retry_connecting(
         %__MODULE__{
@@ -205,7 +176,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
         } = state
       )
       when retrying != false,
-      do: connect(state, connection_pid, retrying)
+      do: connect(state, :connecting, connection_pid, retrying)
 
   def retry_connecting(
         %__MODULE__{
@@ -213,22 +184,33 @@ defmodule ArchiDep.Servers.ServerManagerState do
         } = state
       )
       when retrying != false,
-      do: connect(state, connection_pid, retrying)
+      do: connect(state, :reconnecting, connection_pid, retrying)
 
-  defp connect(state, connection_pid, retrying) do
+  defp connect(state, connecting, connection_pid, retrying) do
     server = state.server
     host = server.ip_address.address
     port = server.ssh_port || 22
     username = state.username
 
-    %__MODULE__{
+    update_tracking(%__MODULE__{
       state
       | connection_state:
-          connecting_state(
-            connection_ref: make_ref(),
-            connection_pid: connection_pid,
-            retrying: retrying
-          ),
+          case connecting do
+            :connecting ->
+              connecting_state(
+                connection_ref: make_ref(),
+                connection_pid: connection_pid,
+                retrying: retrying
+              )
+
+            :reconnecting ->
+              reconnecting_state(
+                connection_ref: make_ref(),
+                connection_pid: connection_pid,
+                retrying: retrying
+              )
+          end,
+        current_job: connecting,
         actions: [
           {:connect,
            fn task_state, task_factory ->
@@ -236,7 +218,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
              %__MODULE__{task_state | tasks: Map.put(task_state.tasks, :connect, task.ref)}
            end}
         ]
-    }
+    })
   end
 
   @spec handle_task_result(t(), reference(), term()) :: t()
@@ -285,8 +267,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   def handle_task_result(
         %__MODULE__{
-          connection_state:
-            checking_access_state(connection_ref: connection_ref, connection_pid: connection_pid),
+          connection_state: connected_state(),
           tasks: %{check_access: check_access_ref}
         } = state,
         check_access_ref,
@@ -301,18 +282,14 @@ defmodule ArchiDep.Servers.ServerManagerState do
             "Server manager has sudo access to server #{server.id} as #{state.username}; gathering facts..."
           )
 
-          %__MODULE__{
+          update_tracking(%__MODULE__{
             state
-            | connection_state:
-                connected_state(
-                  connection_ref: connection_ref,
-                  connection_pid: connection_pid
-                ),
+            | current_job: :gathering_facts,
               actions: [
                 get_load_average(),
                 gather_facts()
               ]
-          }
+          })
         else
           Logger.info(
             "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
@@ -325,18 +302,14 @@ defmodule ArchiDep.Servers.ServerManagerState do
               "app_user_authorized_key" => ArchiDep.Application.public_key()
             })
 
-          %__MODULE__{
+          update_tracking(%__MODULE__{
             state
-            | connection_state:
-                connected_state(
-                  connection_ref: connection_ref,
-                  connection_pid: connection_pid
-                ),
+            | current_job: {:running_playbook, playbook_run.playbook, playbook_run.id},
               ansible_playbooks: [playbook_run | state.ansible_playbooks],
               actions: [
                 {:run_playbook, playbook_run}
               ]
-          }
+          })
         end
 
       {:ok, _stdout, stderr, _exit_code} ->
@@ -344,40 +317,32 @@ defmodule ArchiDep.Servers.ServerManagerState do
           "Server manager does not have sudo access to server #{server.id} as #{state.username}; connected with problems"
         )
 
-        %__MODULE__{
+        update_tracking(%__MODULE__{
           state
-          | connection_state:
-              connected_state(
-                connection_ref: connection_ref,
-                connection_pid: connection_pid
-              ),
+          | current_job: nil,
             actions: [
               get_load_average()
             ],
             problems: [
               {:missing_sudo_access, server.username, String.trim(stderr)}
             ]
-        }
+        })
 
       {:error, reason} ->
         Logger.error(
           "Server manager could not check sudo access to server #{server.id} as #{state.username} because #{inspect(reason)}; connected with problems"
         )
 
-        %__MODULE__{
+        update_tracking(%__MODULE__{
           state
-          | connection_state:
-              connected_state(
-                connection_ref: connection_ref,
-                connection_pid: connection_pid
-              ),
+          | current_job: nil,
             actions: [
               get_load_average()
             ],
             problems: [
               {:sudo_access_check_failed, reason}
             ]
-        }
+        })
     end
     |> drop_task(:check_access, check_access_ref)
   end
@@ -416,7 +381,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
       {:ok, facts} ->
         :ets.insert(state.storage, {:facts, facts})
 
-        %{
+        %__MODULE__{
           state
           | problems: detect_server_properties_mismatches(problems, state.server, facts)
         }
@@ -442,24 +407,44 @@ defmodule ArchiDep.Servers.ServerManagerState do
           "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
         )
 
-        %__MODULE__{
+        update_tracking(%__MODULE__{
           state
           | connection_state:
-              checking_access_state(
+              connected_state(
+                time: DateTime.utc_now(),
                 connection_ref: connection_ref,
                 connection_pid: connection_pid
               ),
+            current_job: :checking_access,
             actions: [
               check_sudo_access()
             ]
-        }
+        })
+
+      {:error, :authentication_failed} ->
+        Logger.warning(
+          "Server manager could not connect to server #{server.id} as #{state.username} because authentication failed"
+        )
+
+        update_tracking(%__MODULE__{
+          state
+          | connection_state:
+              connection_failed_state(
+                connection_pid: connection_pid,
+                reason: :authentication_failed
+              ),
+            current_job: nil,
+            problems: [:authentication_failed]
+        })
 
       {:error, reason} ->
         Logger.info(
           "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
         )
 
-        retry(state, reason)
+        state
+        |> retry(reason)
+        |> update_tracking()
     end
     |> drop_task(:connect, connection_task_ref)
   end
@@ -578,12 +563,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
         {state.username, state.actions}
       end
 
-    %__MODULE__{
+    update_tracking(%__MODULE__{
       state
       | username: username,
+        current_job: nil,
         actions: actions,
         ansible_playbooks: remaining_playbooks
-    }
+    })
   end
 
   @spec class_updated(t(), Class.t()) :: t()
@@ -605,14 +591,14 @@ defmodule ArchiDep.Servers.ServerManagerState do
         [] -> nil
       end
 
-    %__MODULE__{
+    update_tracking(%__MODULE__{
       state
       | server: %Server{
           state.server
           | class: class
         },
         problems: detect_server_properties_mismatches(problems, state.server, facts)
-    }
+    })
   end
 
   @spec class_updated(t(), Class.t()) :: t()
@@ -636,11 +622,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
         [] -> nil
       end
 
-    %__MODULE__{
+    update_tracking(%__MODULE__{
       state
       | server: new_server,
         problems: detect_server_properties_mismatches(problems, state.server, facts)
-    }
+    })
   end
 
   @spec server_updated(t(), Server.t()) :: t()
@@ -663,7 +649,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
       [:notify_server_offline] ++
         if state.retry_timer, do: {:cancel_timer, state.retry_timer}, else: []
 
-    %__MODULE__{state | connection_state: :disconnected, actions: actions, retry_timer: nil}
+    update_tracking(%__MODULE__{
+      state
+      | connection_state: disconnected_state(time: DateTime.utc_now()),
+        current_job: nil,
+        actions: actions,
+        retry_timer: nil
+    })
   end
 
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do
@@ -838,4 +830,34 @@ defmodule ArchiDep.Servers.ServerManagerState do
         [
           {:expected_property_mismatch, property, expected, actual}
         ]
+
+  defp track(state),
+    do: %__MODULE__{
+      state
+      | actions: [
+          {:track, "presence:servers", state.server.id, to_real_time_state(state)} | state.actions
+        ]
+    }
+
+  defp update_tracking(state),
+    do: %__MODULE__{
+      state
+      | actions: [
+          {:update_tracking, "presence:servers", state.server.id, to_real_time_state(state)}
+          | state.actions
+        ]
+    }
+
+  defp to_real_time_state(%__MODULE__{} = state) do
+    server = state.server
+
+    %ServerRealTimeState{
+      state: state.state,
+      connection_state: state.connection_state,
+      conn_params: {server.ip_address.address, server.ssh_port || 22, state.username},
+      username: server.username,
+      app_username: server.app_username,
+      current_job: state.current_job
+    }
+  end
 end
