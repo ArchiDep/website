@@ -57,11 +57,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
 
   defp track!(run_id, meta) do
     {:ok, _ref} =
-      Tracker.track(@tracker, self(), "presence:ansible-playbooks", run_id, meta)
+      Tracker.track(@tracker, self(), "ansible-playbooks", run_id, meta)
   end
 
   defp update_tracking!(run_id, update) do
     {:ok, _ref} =
-      Tracker.update(@tracker, self(), "presence:ansible-playbooks", run_id, update)
+      Tracker.update(@tracker, self(), "ansible-playbooks", run_id, update)
   end
 end

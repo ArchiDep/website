@@ -37,7 +37,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
     tasks: %{},
     ansible_playbooks: [],
     problems: [],
-    retry_timer: nil
+    retry_timer: nil,
+    version: 0
   ]
 
   @type t :: %__MODULE__{
@@ -59,7 +60,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
           tasks: %{atom() => reference()},
           ansible_playbooks: list(AnsiblePlaybookRun.t()),
           problems: list(problem()),
-          retry_timer: reference() | nil
+          retry_timer: reference() | nil,
+          version: non_neg_integer()
         }
 
   @type network_port :: NetHelpers.network_port()
@@ -122,6 +124,21 @@ defmodule ArchiDep.Servers.ServerManagerState do
     1800,
     3600
   ]
+
+  def to_real_time_state(%__MODULE__{} = state) do
+    server = state.server
+
+    %ServerRealTimeState{
+      state: state.state,
+      connection_state: state.connection_state,
+      name: server.name,
+      conn_params: {server.ip_address.address, server.ssh_port || 22, state.username},
+      username: server.username,
+      app_username: server.app_username,
+      current_job: state.current_job,
+      version: state.version
+    }
+  end
 
   @spec init(UUID.t(), Pipeline.t()) :: t()
   def init(server_id, pipeline) do
@@ -381,13 +398,18 @@ defmodule ArchiDep.Servers.ServerManagerState do
       {:ok, facts} ->
         :ets.insert(state.storage, {:facts, facts})
 
-        %__MODULE__{
+        update_tracking(%__MODULE__{
           state
           | problems: detect_server_properties_mismatches(problems, state.server, facts)
-        }
+        })
 
-      _anything_else ->
-        state
+      {:error, reason} ->
+        update_tracking(%__MODULE__{
+          state
+          | problems: [
+              {:gather_facts_failed, reason}
+            ]
+        })
     end
     |> drop_task(:gather_facts, gather_facts_ref)
   end
@@ -534,42 +556,41 @@ defmodule ArchiDep.Servers.ServerManagerState do
     server = state.server
     Logger.info("Ansible playbook #{run.playbook} completed for server #{server.id}")
 
-    {username, actions} =
-      if state.username == server.username and
-           run.playbook == AnsiblePlaybook.name(Ansible.app_user_playbook()) do
-        host = server.ip_address.address
-        port = server.ssh_port || 22
-        new_username = server.app_username
+    if state.username == server.username and
+         run.playbook == AnsiblePlaybook.name(Ansible.app_user_playbook()) do
+      host = server.ip_address.address
+      port = server.ssh_port || 22
+      new_username = server.app_username
 
-        {new_username,
-         [
-           {:connect,
-            fn task_state, task_factory ->
-              task = task_factory.(host, port, new_username, silently_accept_hosts: true)
+      update_tracking(%__MODULE__{
+        state
+        | connection_state:
+            reconnecting_state(
+              connection_pid: connection_pid,
+              connection_ref: connection_ref
+            ),
+          username: new_username,
+          current_job: :reconnecting,
+          actions: [
+            {:connect,
+             fn task_state, task_factory ->
+               task = task_factory.(host, port, new_username, silently_accept_hosts: true)
 
-              %__MODULE__{
-                task_state
-                | connection_state:
-                    reconnecting_state(
-                      connection_pid: connection_pid,
-                      connection_ref: connection_ref
-                    ),
-                  tasks: Map.put(task_state.tasks, :connect, task.ref)
-              }
-            end}
-           | state.actions
-         ]}
-      else
-        {state.username, state.actions}
-      end
-
-    update_tracking(%__MODULE__{
-      state
-      | username: username,
-        current_job: nil,
-        actions: actions,
-        ansible_playbooks: remaining_playbooks
-    })
+               %__MODULE__{
+                 task_state
+                 | tasks: Map.put(task_state.tasks, :connect, task.ref)
+               }
+             end}
+            | state.actions
+          ]
+      })
+    else
+      update_tracking(%__MODULE__{
+        state
+        | current_job: nil,
+          ansible_playbooks: remaining_playbooks
+      })
+    end
   end
 
   @spec class_updated(t(), Class.t()) :: t()
@@ -835,7 +856,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
     do: %__MODULE__{
       state
       | actions: [
-          {:track, "presence:servers", state.server.id, to_real_time_state(state)} | state.actions
+          {:track, "servers", state.server.id, %{state: to_real_time_state(state)}}
+          | state.actions
         ]
     }
 
@@ -843,22 +865,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
     do: %__MODULE__{
       state
       | actions: [
-          {:update_tracking, "presence:servers", state.server.id, to_real_time_state(state)}
+          {:update_tracking, "servers", state.server.id, %{state: to_real_time_state(state)}}
           | state.actions
-        ]
+        ],
+        version: state.version + 1
     }
-
-  defp to_real_time_state(%__MODULE__{} = state) do
-    server = state.server
-
-    %ServerRealTimeState{
-      state: state.state,
-      connection_state: state.connection_state,
-      name: server.name,
-      conn_params: {server.ip_address.address, server.ssh_port || 22, state.username},
-      username: server.username,
-      app_username: server.app_username,
-      current_job: state.current_job
-    }
-  end
 end

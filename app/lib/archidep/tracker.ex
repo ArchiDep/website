@@ -5,17 +5,16 @@ defmodule ArchiDep.Tracker do
 
   @pubsub ArchiDep.PubSub
 
-  def start_link(opts) do
-    Phoenix.Tracker.start_link(__MODULE__, [],
-      name: __MODULE__,
-      pubsub_server: Keyword.fetch!(opts, :pubsub_server)
-    )
-  end
+  @spec start_link(keyword()) :: Supervisor.on_start()
+  def start_link(opts),
+    do:
+      Phoenix.Tracker.start_link(__MODULE__, [],
+        name: __MODULE__,
+        pubsub_server: Keyword.fetch!(opts, :pubsub_server)
+      )
 
   @impl true
-  def init([]) do
-    {:ok, nil}
-  end
+  def init([]), do: {:ok, nil}
 
   @impl true
   def handle_diff(diff, state) do
@@ -26,7 +25,7 @@ defmodule ArchiDep.Tracker do
       end)
       |> Enum.each(fn {key, {action, meta}} ->
         IO.puts("presence #{action} #{topic}: key \"#{key}\" with meta #{inspect(meta)}")
-        PubSub.local_broadcast(@pubsub, topic, {:action, key, meta})
+        PubSub.local_broadcast(@pubsub, "tracker:#{topic}", {action, key, meta})
       end)
     end
 

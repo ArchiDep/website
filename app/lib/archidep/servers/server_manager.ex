@@ -38,6 +38,10 @@ defmodule ArchiDep.Servers.ServerManager do
   def ansible_playbook_completed(run),
     do: GenServer.call(name(run.server), {:ansible_playbook_completed, run.id})
 
+  @spec request_server_state(UUID.t()) :: :ok
+  def request_server_state(server_id),
+    do: GenServer.cast(name(server_id), {:request_server_state, self()})
+
   # Server callbacks
 
   @impl true
@@ -57,6 +61,7 @@ defmodule ArchiDep.Servers.ServerManager do
   end
 
   @impl true
+
   def handle_cast({:connection_idle, connection_pid}, state) do
     Process.monitor(connection_pid)
 
@@ -65,6 +70,9 @@ defmodule ArchiDep.Servers.ServerManager do
     |> execute_actions()
     |> noreply()
   end
+
+  def handle_cast({:request_server_state, from}, state),
+    do: send(from, {:server_state, ServerManagerState.to_real_time_state(state)})
 
   @impl true
 

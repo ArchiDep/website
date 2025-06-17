@@ -20,22 +20,27 @@
   <.server_name server={@server} />
 </h2>
 
-<div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
-  <div class="col-span-1 md:col-span-3">
-    <dl class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
-      <dt class="font-bold">IP address</dt>
-      <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
-        {:inet.ntoa(@server.ip_address.address)}
-      </dd>
-      <dt class="font-bold">Username</dt>
-      <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
-        {@server.username}
-      </dd>
-      <dt class="font-bold">SSH port</dt>
-      <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
-        {@server.ssh_port || 22}
-      </dd>
-    </dl>
+<div class="mt-4 grid grid-cols-1 lg:grid-cols-5">
+  <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="col-span-1 md:col-span-3">
+      <dl class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        <dt class="font-bold">IP address</dt>
+        <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
+          {:inet.ntoa(@server.ip_address.address)}
+        </dd>
+        <dt class="font-bold">Username</dt>
+        <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
+          {@server.username}
+        </dd>
+        <dt class="font-bold">SSH port</dt>
+        <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
+          {@server.ssh_port || 22}
+        </dd>
+      </dl>
+    </div>
+  </div>
+  <div class="lg:col-span-2">
+    <.server_card server={@server} state={@state} />
   </div>
 </div>
 

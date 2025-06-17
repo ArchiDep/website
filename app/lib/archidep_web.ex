@@ -69,6 +69,7 @@ defmodule ArchiDepWeb do
       import ArchiDep.Helpers.PipeHelpers
       alias Ecto.Changeset
       alias Phoenix.LiveView
+      alias Phoenix.LiveView.Socket
 
       on_mount(ArchiDepWeb.LiveAuth)
 

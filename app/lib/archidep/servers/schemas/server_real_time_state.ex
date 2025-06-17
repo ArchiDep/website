@@ -16,7 +16,8 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
             | :setting_up_app_user
             | :gathering_facts
             | {:running_playbook, String.t(), UUID.t()}
-            | nil
+            | nil,
+          version: non_neg_integer()
         }
 
   @enforce_keys [:state, :connection_state, :name, :conn_params, :username, :app_username]
@@ -27,6 +28,7 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
     :conn_params,
     :username,
     :app_username,
-    current_job: nil
+    current_job: nil,
+    version: 0
   ]
 end

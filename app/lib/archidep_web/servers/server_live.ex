@@ -4,15 +4,21 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   import ArchiDepWeb.Servers.ServerComponents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.ServerTracker
   alias ArchiDepWeb.Servers.EditServerDialogLive
 
-  @impl LiveView
+  @impl true
   def mount(%{"id" => id}, _session, socket) do
     with {:ok, server} <- Servers.fetch_server(socket.assigns.auth, id) do
+      if connected?(socket) do
+        {:ok, _pid} = ServerTracker.start_link(server.id)
+      end
+
       socket
       |> assign(
         page_title: "ArchiDep > Servers > #{Server.name_or_default(server)}",
-        server: server
+        server: server,
+        state: ServerTracker.get_current_server_state(server)
       )
       |> ok()
     else
@@ -24,8 +30,18 @@ defmodule ArchiDepWeb.Servers.ServerLive do
     end
   end
 
-  @impl LiveView
+  @impl true
   def handle_params(_params, _url, socket) do
     {:noreply, socket}
   end
+
+  @impl true
+  def handle_info(
+        {:server_state, server_id, new_server_state},
+        %Socket{assigns: %{server: %Server{id: server_id}}} = socket
+      ),
+      do:
+        socket
+        |> assign(state: new_server_state)
+        |> noreply()
 end
