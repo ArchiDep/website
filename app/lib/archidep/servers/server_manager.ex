@@ -42,6 +42,9 @@ defmodule ArchiDep.Servers.ServerManager do
   def request_server_state(server_id),
     do: GenServer.cast(name(server_id), {:request_server_state, self()})
 
+  @spec retry_connecting(Server.t() | UUID.t()) :: :ok
+  def retry_connecting(server_id), do: GenServer.call(name(server_id), :retry_connecting)
+
   # Server callbacks
 
   @impl true
@@ -89,12 +92,19 @@ defmodule ArchiDep.Servers.ServerManager do
       |> execute_actions()
       |> reply_with(:ok)
 
+  def handle_call(:retry_connecting, _from, state),
+    do:
+      state
+      |> ServerManagerState.retry_connecting(true)
+      |> execute_actions()
+      |> reply_with(:ok)
+
   @impl true
 
   def handle_info(:retry_connecting, state),
     do:
       state
-      |> ServerManagerState.retry_connecting()
+      |> ServerManagerState.retry_connecting(false)
       |> execute_actions()
       |> noreply()
 

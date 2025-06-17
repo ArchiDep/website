@@ -121,6 +121,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     1800,
     3600
   ]
+  @last_retry_interval_seconds List.last(@retry_intervals_seconds)
 
   def to_real_time_state(%__MODULE__{} = state) do
     server = state.server
@@ -190,9 +191,25 @@ defmodule ArchiDep.Servers.ServerManagerState do
         %__MODULE__{
           connection_state:
             retry_connecting_state(connection_pid: connection_pid, retrying: retrying)
+        } = state,
+        manual
+      ),
+      do: connect(state, connection_pid, if(manual, do: %{retrying | backoff: 0}, else: retrying))
+
+  def retry_connecting(
+        %__MODULE__{
+          connection_state: connection_failed_state(connection_pid: connection_pid)
         } = state
       ),
-      do: connect(state, connection_pid, retrying)
+      do: connect(state, connection_pid, false)
+
+  def retry_connecting(state) do
+    Logger.warning(
+      "Ignore request to retry connecting to server #{state.server.id} in connection state #{inspect(state.connection_state)}"
+    )
+
+    state
+  end
 
   defp connect(state, connection_pid, retrying) do
     server = state.server
@@ -209,13 +226,16 @@ defmodule ArchiDep.Servers.ServerManagerState do
             retrying: retrying
           ),
         current_job: :connecting,
-        actions: [
-          {:connect,
-           fn task_state, task_factory ->
-             task = task_factory.(host, port, username, silently_accept_hosts: true)
-             %__MODULE__{task_state | tasks: Map.put(task_state.tasks, :connect, task.ref)}
-           end}
-        ]
+        actions:
+          [
+            {:connect,
+             fn task_state, task_factory ->
+               task = task_factory.(host, port, username, silently_accept_hosts: true)
+               %__MODULE__{task_state | tasks: Map.put(task_state.tasks, :connect, task.ref)}
+             end}
+          ] ++ if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []),
+        problems: [],
+        retry_timer: nil
     })
   end
 
@@ -526,20 +546,22 @@ defmodule ArchiDep.Servers.ServerManagerState do
   defp retry(false, reason),
     do: %{
       retry: 1,
+      backoff: 1,
       time: DateTime.utc_now(),
       in_seconds: List.first(@retry_intervals_seconds),
       reason: reason
     }
 
-  defp retry(%{retry: previous_retry}, reason) do
+  defp retry(%{retry: previous_retry, backoff: previous_backoff}, reason) do
     next_retry = previous_retry + 1
+    next_backoff = previous_backoff + 1
 
     in_seconds =
-      Enum.at(@retry_intervals_seconds, previous_retry) ||
-        List.last(@retry_intervals_seconds)
+      Enum.at(@retry_intervals_seconds, previous_backoff) || @last_retry_interval_seconds
 
     %{
       retry: next_retry,
+      backoff: next_backoff,
       time: DateTime.utc_now(),
       in_seconds: in_seconds,
       reason: reason

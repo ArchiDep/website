@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias Phoenix.LiveView.JS
 
   attr :server, Server, doc: "the server whose name to display"
 
@@ -24,17 +25,18 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   attr :auth, Authentication, doc: "the authentication context"
   attr :server, Server, doc: "the server to display"
   attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
+  attr :on_retry, JS, doc: "JS command to execute when retrying the connection", default: nil
 
   def server_card(assigns) do
-    {card_class, badge_class, badge_text, status_text} =
+    {card_class, badge_class, badge_text, status_text, retry_text} =
       case assigns.state do
         nil ->
           {"bg-neutral text-neutral-content", "badge-info", "Not connected",
-           "No connection to this server."}
+           "No connection to this server.", nil}
 
         %ServerRealTimeState{connection_state: connecting_state()} ->
           {"bg-info text-info-content animate-pulse", "badge-primary", "Connecting",
-           "Connecting to the server..."}
+           "Connecting to the server...", nil}
 
         %ServerRealTimeState{
           connection_state:
@@ -50,23 +52,23 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
              time: time,
              in_seconds: in_seconds,
              reason: reason
-           })}
+           }), "Retry now"}
 
         %ServerRealTimeState{connection_state: connected_state()} ->
           {"bg-success text-success-content", "badge-success", "Connected",
-           "Connected to the server."}
+           "Connected to the server.", nil}
 
         %ServerRealTimeState{connection_state: reconnecting_state()} ->
           {"bg-info text-info-content animate-pulse", "badge-primary", "Reconnecting",
-           "Reconnecting to the server..."}
+           "Reconnecting to the server...", nil}
 
         %ServerRealTimeState{connection_state: connection_failed_state()} ->
           {"bg-error text-error-content", "badge-error", "Connection failed",
-           "Could not connect to the server."}
+           "Could not connect to the server.", "Retry connecting"}
 
         %ServerRealTimeState{connection_state: disconnected_state()} ->
           {"bg-info text-info-content", "badge-primary", "Disconnected",
-           "The connection to the server was lost."}
+           "The connection to the server was lost.", nil}
       end
 
     assigns =
@@ -75,6 +77,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       |> assign(:badge_class, badge_class)
       |> assign(:badge_text, badge_text)
       |> assign(:status_text, status_text)
+      |> assign(:retry_text, retry_text)
 
     ~H"""
     <div class={["card", @card_class]}>
@@ -96,6 +99,15 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             <.server_problem auth={@auth} problem={problem} />
           </li>
         </ul>
+        <div :if={@retry_text != nil and @on_retry != nil} class="card-actions justify-end">
+          <button
+            type="button"
+            class="btn btn-sm btn-secondary"
+            phx-click={@on_retry |> JS.add_class("btn-disabled")}
+          >
+            {@retry_text}
+          </button>
+        </div>
       </div>
     </div>
     """

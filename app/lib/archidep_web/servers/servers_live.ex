@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
 
   import ArchiDepWeb.Servers.ServerComponents
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.ServerManager
   alias ArchiDep.Servers.ServerTracker
   alias ArchiDep.Students
   alias ArchiDepWeb.Servers.NewServerDialogLive
@@ -33,6 +34,13 @@ defmodule ArchiDepWeb.Servers.ServersLive do
 
   @impl LiveView
   def handle_params(_params, _url, socket), do: {:noreply, socket}
+
+  @impl true
+  def handle_event("retry_connecting", %{"server_id" => server_id}, socket)
+      when is_binary(server_id) do
+    :ok = ServerManager.retry_connecting(server_id)
+    noreply(socket)
+  end
 
   @impl true
   def handle_info(

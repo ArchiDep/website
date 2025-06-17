@@ -25,6 +25,7 @@ defmodule ArchiDep.Servers.ServerConnectionState do
 
   @type retry :: %{
           retry: pos_integer(),
+          backoff: pos_integer(),
           time: DateTime.t(),
           in_seconds: pos_integer(),
           reason: term()
