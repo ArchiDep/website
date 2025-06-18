@@ -8,6 +8,7 @@ defmodule ArchiDep.Servers.ServerSupervisor do
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Schemas.Server
+  alias Ecto.UUID
 
   @spec name(Server.t()) :: GenServer.name()
   def name(%Server{id: server_id}), do: name(server_id)
@@ -16,9 +17,8 @@ defmodule ArchiDep.Servers.ServerSupervisor do
   def name(server_id), do: {:global, {:server_supervisor, server_id}}
 
   @spec start_link({UUID.t(), Pipeline.t()}) :: Supervisor.on_start()
-  def start_link({server_id, pipeline}) do
-    Supervisor.start_link(__MODULE__, {server_id, pipeline}, name: name(server_id))
-  end
+  def start_link({server_id, pipeline}),
+    do: Supervisor.start_link(__MODULE__, {server_id, pipeline}, name: name(server_id))
 
   @impl true
   def init({server_id, pipeline}) do
