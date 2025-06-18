@@ -1,6 +1,7 @@
 defmodule ArchiDepWeb.Servers.ServersLive do
   use ArchiDepWeb, :live_view
 
+  import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.ServerManager
@@ -19,6 +20,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
       ])
 
     if connected?(socket) do
+      set_process_label(__MODULE__, auth)
       {:ok, _pid} = ServerTracker.start_link(servers)
     end
 

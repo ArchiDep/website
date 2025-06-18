@@ -1,13 +1,20 @@
 defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   use ArchiDepWeb, :live_view
 
+  import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Students
   alias ArchiDepWeb.Admin.Classes.EditStudentDialogLive
   alias ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive
 
   @impl LiveView
   def mount(%{"class_id" => class_id, "id" => id}, _session, socket) do
-    with {:ok, student} <- Students.fetch_student_in_class(socket.assigns.auth, class_id, id) do
+    auth = socket.assigns.auth
+
+    with {:ok, student} <- Students.fetch_student_in_class(auth, class_id, id) do
+      if connected?(socket) do
+        set_process_label(__MODULE__, auth, student)
+      end
+
       socket
       |> assign(
         page_title: "ArchiDep > Admin > Classes > #{student.class.name} > #{student.name}",

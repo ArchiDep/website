@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.I18nHelpers
+  import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Students
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDepWeb.Admin.Classes.DeleteClassDialogLive
@@ -67,12 +68,18 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl LiveView
   def mount(%{"id" => id}, _session, socket) do
-    with {:ok, class} <- Students.fetch_class(socket.assigns.auth, id) do
+    auth = socket.assigns.auth
+
+    with {:ok, class} <- Students.fetch_class(auth, id) do
+      if connected?(socket) do
+        set_process_label(__MODULE__, auth, class)
+      end
+
       socket
       |> assign(
         page_title: "ArchiDep > Admin > Classes > #{class.name}",
         class: class,
-        students: Students.list_students(socket.assigns.auth, class)
+        students: Students.list_students(auth, class)
       )
       |> ok()
     else

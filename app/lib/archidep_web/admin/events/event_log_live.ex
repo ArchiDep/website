@@ -3,13 +3,19 @@ defmodule ArchiDepWeb.Admin.Events.EventLogLive do
 
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDepWeb.Admin.Events.EventsComponents
+  import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Events
 
   @limit 15
 
   @impl LiveView
   def mount(_params, _session, socket) do
-    events = Events.fetch_events(socket.assigns.auth, limit: @limit)
+    auth = socket.assigns.auth
+    events = Events.fetch_events(auth, limit: @limit)
+
+    if connected?(socket) do
+      set_process_label(__MODULE__, auth)
+    end
 
     socket
     |> assign(

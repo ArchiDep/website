@@ -1,7 +1,7 @@
 defmodule ArchiDepWeb.Servers.ServerLive do
   use ArchiDepWeb, :live_view
 
-  import ArchiDep.Servers.Helpers
+  import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
@@ -11,9 +11,11 @@ defmodule ArchiDepWeb.Servers.ServerLive do
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    with {:ok, server} <- Servers.fetch_server(socket.assigns.auth, id) do
+    auth = socket.assigns.auth
+
+    with {:ok, server} <- Servers.fetch_server(auth, id) do
       if connected?(socket) do
-        set_process_label(__MODULE__, id)
+        set_process_label(__MODULE__, auth, server)
         {:ok, _pid} = ServerTracker.start_link(server)
       end
 
