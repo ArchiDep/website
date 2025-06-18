@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.ServerConnection do
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerManager
+  alias Ecto.UUID
 
   @type connect_options :: [connect_option()]
   @type connect_option :: {:silently_accept_hosts, boolean()}
@@ -12,11 +13,14 @@ defmodule ArchiDep.Servers.ServerConnection do
   # Client API
 
   @spec name(Server.t()) :: GenServer.name()
-  def name(%Server{id: server_id}), do: {:global, {:server_connection, server_id}}
+  def name(%Server{id: server_id}), do: name(server_id)
 
-  @spec start_link(Server.t()) :: GenServer.on_start()
-  def start_link(%Server{id: server_id} = server),
-    do: GenServer.start_link(__MODULE__, server_id, name: name(server))
+  @spec name(UUID.t()) :: GenServer.name()
+  def name(server_id), do: {:global, {:server_connection, server_id}}
+
+  @spec start_link(UUID.t()) :: GenServer.on_start()
+  def start_link(server_id),
+    do: GenServer.start_link(__MODULE__, server_id, name: name(server_id))
 
   @spec connect(Server.t(), :inet.ip_address(), 1..65_535, String.t(), connect_options) ::
           :ok | {:error, term()}
