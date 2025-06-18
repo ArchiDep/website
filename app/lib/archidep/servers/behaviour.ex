@@ -14,6 +14,8 @@ defmodule ArchiDep.Servers.Behaviour do
   @callback fetch_server(Authentication.t(), UUID.t()) ::
               {:ok, Server.t()} | {:error, :server_not_found}
 
+  @callback notify_server_up(String.t(), UUID.t()) :: :ok | {:error, :server_not_found}
+
   @callback validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
               {:ok, Changeset.t()} | {:error, :server_not_found}
 

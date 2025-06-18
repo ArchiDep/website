@@ -22,6 +22,9 @@ defmodule ArchiDep.Servers do
           {:ok, Server.t()} | {:error, :server_not_found}
   defdelegate fetch_server(auth, id), to: @implementation
 
+  @spec notify_server_up(String.t(), UUID.t()) :: :ok | {:error, :server_not_found}
+  defdelegate notify_server_up(signature, server_id), to: @implementation
+
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Changeset.t()} | {:error, :server_not_found}
   defdelegate validate_existing_server(auth, id, data), to: @implementation

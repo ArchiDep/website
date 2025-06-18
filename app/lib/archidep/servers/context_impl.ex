@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.ContextImpl do
   alias ArchiDep.Servers.FetchServer
   alias ArchiDep.Servers.ListServers
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.ServerCallbacks
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UpdateServer
 
@@ -21,6 +22,9 @@ defmodule ArchiDep.Servers.ContextImpl do
   @spec fetch_server(Authentication.t(), UUID.t()) ::
           {:ok, Server.t()} | {:error, :server_not_found}
   defdelegate fetch_server(auth, id), to: FetchServer
+
+  @spec notify_server_up(String.t(), UUID.t()) :: :ok | {:error, :server_not_found}
+  defdelegate notify_server_up(signature, server_id), to: ServerCallbacks
 
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Changeset.t()} | {:error, :server_not_found}
