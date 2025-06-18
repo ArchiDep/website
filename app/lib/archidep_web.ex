@@ -55,6 +55,7 @@ defmodule ArchiDepWeb do
         layouts: [html: ArchiDepWeb.Layouts]
 
       import Plug.Conn
+      alias Plug.Conn
 
       unquote(verified_routes())
     end

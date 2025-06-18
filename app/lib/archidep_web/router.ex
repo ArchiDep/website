@@ -3,6 +3,14 @@ defmodule ArchiDepWeb.Router do
 
   import ArchiDepWeb.Auth
 
+  pipeline :api do
+    plug :accepts, ["json"]
+
+    plug Plug.SSL,
+      exclude: ["localhost", "www.example.com"],
+      rewrite_on: [:x_forwarded_proto]
+  end
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -70,6 +78,14 @@ defmodule ArchiDepWeb.Router do
       pipe_through :fetch_authentication
       live "/", Servers.ServersLive
       live "/:id", Servers.ServerLive
+    end
+  end
+
+  scope "/api", ArchiDepWeb do
+    pipe_through :api
+
+    scope "/callbacks/servers", Servers do
+      post "/:server_id/up", ServerCallbacksController, :server_up
     end
   end
 

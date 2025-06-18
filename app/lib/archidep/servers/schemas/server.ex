@@ -19,6 +19,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           username: String.t(),
           app_username: String.t(),
           ssh_port: 1..65_535 | nil,
+          shared_secret: binary(),
           class: Class.t() | NotLoaded,
           class_id: UUID.t(),
           user_account: UserAccount.t() | nil | NotLoaded,
@@ -47,6 +48,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:username, :string)
     field(:app_username, :string)
     field(:ssh_port, :integer)
+    field(:shared_secret, :binary)
     belongs_to(:class, Class)
     belongs_to(:user_account, UserAccount)
     # Expected properties for this server
@@ -133,6 +135,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     ])
     |> change(
       id: id,
+      shared_secret: :crypto.strong_rand_bytes(50),
       user_account_id: user.id,
       version: 1,
       created_at: now,
@@ -195,7 +198,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> update_change(:expected_distribution, &trim_to_nil/1)
     |> update_change(:expected_distribution_release, &trim_to_nil/1)
     |> update_change(:expected_distribution_version, &trim_to_nil/1)
-    |> validate_required([:ip_address, :username, :class_id, :app_username])
+    |> validate_required([:ip_address, :username, :shared_secret, :class_id, :app_username])
     |> validate_length(:name, max: 50)
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
