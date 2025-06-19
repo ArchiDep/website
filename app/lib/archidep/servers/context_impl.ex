@@ -23,8 +23,8 @@ defmodule ArchiDep.Servers.ContextImpl do
           {:ok, Server.t()} | {:error, :server_not_found}
   defdelegate fetch_server(auth, id), to: FetchServer
 
-  @spec notify_server_up(String.t(), UUID.t()) :: :ok | {:error, :server_not_found}
-  defdelegate notify_server_up(signature, server_id), to: ServerCallbacks
+  @spec notify_server_up(UUID.t(), binary(), binary()) :: :ok | {:error, :server_not_found}
+  defdelegate notify_server_up(server_id, nonce, signature), to: ServerCallbacks
 
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Changeset.t()} | {:error, :server_not_found}

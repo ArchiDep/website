@@ -1,8 +1,9 @@
 ---
-- name: Application user
+- name: ArchiDep student server initial setup
   hosts: all
   vars:
     app_user_name: "archidep"
+    # app_user_authorized_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC3..."
   tasks:
     - name: Create the application user
       ansible.builtin.user:
@@ -34,4 +35,13 @@
         user: "{{ app_user_name }}"
         validation: required
         state: present
+      become: true
+
+    - name: Create the application configuration directory
+      ansible.builtin.file:
+        path: /etc/archidep
+        owner: "{{ app_user_name }}"
+        group: "{{ app_user_name }}"
+        mode: '0750'
+        state: directory
       become: true

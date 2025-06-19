@@ -146,11 +146,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
     {:ok, server} = Server.fetch_server(server_id)
     storage = :ets.new(:server_manager, [:set, :private])
 
-    app_user_created =
-      AnsiblePlaybookRun.successful_playbook_run?(server, Ansible.app_user_playbook())
+    initial_setup_performed =
+      AnsiblePlaybookRun.successful_playbook_run?(server, Ansible.initial_setup_playbook())
 
     {state, username} =
-      if app_user_created do
+      if initial_setup_performed do
         {:tracked, server.app_username}
       else
         {:initial_setup, server.username}
@@ -318,10 +318,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
               "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
             )
 
-            playbook = Ansible.app_user_playbook()
+            playbook = Ansible.initial_setup_playbook()
 
             playbook_run =
               Tracker.track_playbook!(playbook, server, state.username, %{
+                "app_user_name" => server.app_username,
                 "app_user_authorized_key" => ArchiDep.Application.public_key()
               })
 
@@ -603,7 +604,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
     new_state =
       if state.username == server.username and
-           run.playbook == AnsiblePlaybook.name(Ansible.app_user_playbook()) do
+           run.playbook == AnsiblePlaybook.name(Ansible.initial_setup_playbook()) do
         host = server.ip_address.address
         port = server.ssh_port || 22
         new_username = server.app_username

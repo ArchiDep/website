@@ -8,7 +8,7 @@ defmodule ArchiDep.Repo.Migrations.AddSharedSecretToServer do
       add :shared_secret, :binary
     end
 
-    execute("UPDATE servers SET shared_secret = gen_random_bytes(50);")
+    execute("UPDATE servers SET shared_secret = gen_random_bytes(64);")
 
     alter table(:servers) do
       modify :shared_secret, :binary, null: false

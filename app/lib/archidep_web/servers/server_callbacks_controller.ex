@@ -4,12 +4,11 @@ defmodule ArchiDepWeb.Servers.ServerCallbacksController do
   alias ArchiDep.Servers
 
   @spec server_up(Conn.t(), map) :: Conn.t()
-  def server_up(conn, %{"server_id" => server_id}) do
-    server_signature = get_server_signature(conn)
-
-    with :ok <- Servers.notify_server_up(server_signature, server_id) do
-      IO.puts("Server up: #{server_id}")
-
+  def server_up(conn, %{"server_id" => server_id, "nonce" => nonce, "signature" => signature})
+      when is_binary(server_id) and is_binary(nonce) and is_binary(signature) do
+    with true <- String.length(nonce) >= 64,
+         {:ok, decoded_nonce} <- Base.decode64(nonce),
+         :ok <- Servers.notify_server_up(server_id, decoded_nonce, signature) do
       send_resp(conn, 202, "")
     else
       {:error, :server_not_found} ->
@@ -17,21 +16,8 @@ defmodule ArchiDepWeb.Servers.ServerCallbacksController do
     end
   end
 
-  defp get_server_signature(conn) when is_struct(conn, Conn),
-    do:
-      conn |> get_req_header("authorization") |> get_server_signature_from_authorization_header()
-
-  defp get_server_signature_from_authorization_header(nil), do: ""
-
-  defp get_server_signature_from_authorization_header(authorization) when is_list(authorization),
-    do: authorization |> List.first() |> get_server_signature_from_authorization_header()
-
-  defp get_server_signature_from_authorization_header(authorization)
-       when is_binary(authorization),
-       do: authorization |> String.split(" ") |> get_server_signature_from_authorization_token()
-
-  defp get_server_signature_from_authorization_token(["ArchiDep-Server-Signature", token]),
-    do: token
-
-  defp get_server_signature_from_authorization_token(parts) when is_list(parts), do: ""
+  @spec server_up(Conn.t(), map) :: Conn.t()
+  def server_up(conn, _params) do
+    send_resp(conn, 400, "")
+  end
 end

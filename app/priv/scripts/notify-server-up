@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+server_id="$(cat /etc/archidep/server_id)
