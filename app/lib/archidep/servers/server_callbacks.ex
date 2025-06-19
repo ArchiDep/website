@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.ServerCallbacks do
   alias Ecto.UUID
 
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.ServerManager
 
   @default_shared_secret <<0::512>>
 
@@ -9,15 +10,13 @@ defmodule ArchiDep.Servers.ServerCallbacks do
   def notify_server_up(server_id, nonce, signature) do
     with {:ok, server} <- Server.fetch_server(server_id),
          ^signature <- calculate_server_signature(server, nonce) do
-      :ok
+      ServerManager.notify_server_up(server_id)
     else
-      {:error, :server_not_found} ->
+      _ ->
         # Still calculate the signature for timing attack resistance
         calculate_server_signature(@default_shared_secret, server_id, nonce)
         {:error, :server_not_found}
     end
-
-    if signature == "foo", do: :ok, else: {:error, :server_not_found}
   end
 
   defp calculate_server_signature(%Server{id: server_id, shared_secret: shared_secret}, nonce),

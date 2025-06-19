@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
+config_dir="/etc/archidep"
+server_id_file="${config_dir}/server-id"
+shared_secret_file="${config_dir}/shared-secret"
+
 TMP_FILE="$(mktemp)"
 trap 'rm -- "$TMP_FILE"' EXIT
 
-# server_id="$(head -n 1 /etc/archidep/server-id)
-server_id=67c9b63b-0a33-4fef-b694-f41b31a50fa7
-# server_shared_secret_hex="$(head -n 1 /etc/archidep/shared-secret | base64 --decode | od -A n -t x1 | sed 's/ *//g' | tr -d '\n')"
-server_shared_secret_hex=f58267890e61726d6028589353847001c8ecf30c87552e162f9a2f3dcd740da78c6b4086c64e269d83f996a9844372b4a42acf930c143f074129fefb74eee4fe
+server_id="$(head -n 1 "${server_id_file}")"
+server_shared_secret_hex="$(head -n 1 "${shared_secret_file}" | base64 --decode | od -A n -t x1 | sed 's/ *//g' | tr -d '\n')"
 
 nonce_base64="$(cat /dev/urandom | head -c 64 | base64)"
 
@@ -17,7 +19,7 @@ echo -n "${nonce_base64}" | base64 --decode >> "$TMP_FILE"
 signature_base64="$(cat "$TMP_FILE" | openssl dgst -binary -sha512 -mac hmac -macopt "hexkey:${server_shared_secret_hex}" | base64)"
 echo "$signature"
 
-curl -X POST \
+curl -vv -X POST \
   -H "Content-Type: application/json" \
-  -d "{\"server_id\":\"${server_id}\",\"nonce\":\"${nonce_base64}\",\"signature\":\"${signature_base64}\"}" \
+  -d "{\"nonce\":\"${nonce_base64}\",\"signature\":\"${signature_base64}\"}" \
   "http://localhost:42000/api/callbacks/servers/${server_id}/up"
