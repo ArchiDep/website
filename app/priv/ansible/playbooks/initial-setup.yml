@@ -4,6 +4,7 @@
   vars:
     app_user_name: "archidep"
     # app_user_authorized_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC3..."
+    # server_id: b7e8c2d1-4a3a-4c9b-9f2e-1e6b7a5d2c3f
   tasks:
     - name: Create the application user
       ansible.builtin.user:
@@ -43,5 +44,15 @@
         owner: "{{ app_user_name }}"
         group: "{{ app_user_name }}"
         mode: '0750'
+        state: directory
+      become: true
+
+    - name: Create the server ID file
+      ansible.builtin.copy:
+        content: "{{ server_id }}"
+        path: /etc/archidep/server-id
+        owner: "{{ app_user_name }}"
+        group: "{{ app_user_name }}"
+        mode: '0640'
         state: directory
       become: true
