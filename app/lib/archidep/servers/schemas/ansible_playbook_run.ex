@@ -80,6 +80,16 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> Repo.one!()
   end
 
+  @spec get_completed_run!(UUID.t()) :: t()
+  def get_completed_run!(id) do
+    from(r in __MODULE__,
+      where: r.id == ^id and r.state != :pending and r.state != :running,
+      join: s in assoc(r, :server),
+      preload: [server: s]
+    )
+    |> Repo.one!()
+  end
+
   @spec get_last_playbook_run(Server.t(), AnsiblePlaybook.t()) :: __MODULE__.t() | nil
   def get_last_playbook_run(server, playbook) do
     from(r in __MODULE__,

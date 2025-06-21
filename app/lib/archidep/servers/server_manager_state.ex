@@ -561,12 +561,14 @@ defmodule ArchiDep.Servers.ServerManagerState do
         %__MODULE__{
           connection_state:
             connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
-          ansible_playbook: %AnsiblePlaybookRun{id: run_id, playbook: "setup"} = run
+          ansible_playbook: %AnsiblePlaybookRun{id: run_id, playbook: "setup"}
         } = state,
         run_id
       ) do
     server = state.server
     Logger.info("Ansible setup playbook completed for server #{server.id}")
+
+    run = AnsiblePlaybookRun.get_completed_run!(run_id)
 
     if run.state == :succeeded and state.username == server.username do
       host = server.ip_address.address
