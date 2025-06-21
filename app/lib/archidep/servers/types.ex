@@ -27,6 +27,7 @@ defmodule ArchiDep.Servers.Types do
           | {:running_playbook, String.t(), UUID.t()}
           | nil
 
+  # TODO: add list of failed tasks
   @type server_ansible_playbook_failed ::
           {:server_ansible_playbook_failed, String.t(), ansible_playbook_run_failed_state(),
            ansible_stats()}

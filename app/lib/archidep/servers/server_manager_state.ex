@@ -130,7 +130,10 @@ defmodule ArchiDep.Servers.ServerManagerState do
       problems:
         [] ++
           if(last_setup_run != nil and last_setup_run.state != :succeeded,
-            do: [{:server_setup_playbook_failed, last_setup_run.playbook, last_setup_run.state}],
+            do: [
+              {:server_ansible_playbook_failed, last_setup_run.playbook, last_setup_run.state,
+               AnsiblePlaybookRun.stats(last_setup_run)}
+            ],
             else: []
           )
     })
@@ -971,10 +974,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
   defp track(state),
     do: %__MODULE__{
       state
-      | actions: [
-          {:track, "servers", state.server.id, %{state: to_real_time_state(state)}}
-          | state.actions
-        ]
+      | actions:
+          state.actions ++
+            [{:track, "servers", state.server.id, %{state: to_real_time_state(state)}}]
     }
 
   defp update_tracking(),
