@@ -7,7 +7,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Tracker
-  alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -19,7 +18,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   @enforce_keys [
     :state,
-    :connection_state,
     :server,
     :pipeline,
     :username,
@@ -28,13 +26,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
   ]
   defstruct [
     :state,
-    :connection_state,
     :server,
     :pipeline,
     :username,
     :storage,
+    :actions,
+    connection_state: :not_connected,
     current_job: nil,
-    actions: [],
     tasks: %{},
     ansible_playbook: nil,
     problems: [],
@@ -161,7 +159,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
     track(%__MODULE__{
       state: state,
-      connection_state: :not_connected,
       server: server,
       pipeline: pipeline,
       username: username,
@@ -596,16 +593,15 @@ defmodule ArchiDep.Servers.ServerManagerState do
         %__MODULE__{
           connection_state:
             connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
-          ansible_playbook: %AnsiblePlaybookRun{id: run_id} = run
+          ansible_playbook: %AnsiblePlaybookRun{id: run_id, playbook: "setup"} = run
         } = state,
         run_id
       ) do
     server = state.server
-    Logger.info("Ansible playbook #{run.playbook} completed for server #{server.id}")
+    Logger.info("Ansible setup playbook completed for server #{server.id}")
 
     new_state =
-      if state.username == server.username and
-           run.playbook == AnsiblePlaybook.name(Ansible.setup_playbook()) do
+      if run.state == :succeeded and state.username == server.username do
         host = server.ip_address.address
         port = server.ssh_port || 22
         new_username = server.app_username
@@ -638,10 +634,18 @@ defmodule ArchiDep.Servers.ServerManagerState do
             load_average_timer: nil
         }
       else
+        problem =
+          if run.state !== :succeeded do
+            [{:server_ansible_playbook_failed, run.playbook, run.state}]
+          else
+            []
+          end
+
         %__MODULE__{
           state
           | current_job: nil,
-            ansible_playbook: nil
+            ansible_playbook: nil,
+            problems: state.problems ++ problem
         }
       end
 

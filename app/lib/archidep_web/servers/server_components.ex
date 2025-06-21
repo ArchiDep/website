@@ -120,6 +120,27 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   attr :auth, Authentication, doc: "the authentication context"
   attr :problem, :any, doc: "the problem to display"
 
+  def server_problem(
+        %{problem: {:server_ansible_playbook_failed, playbook, ansible_run_state}} = assigns
+      ) do
+    assigns =
+      assigns |> assign(:playbook, playbook) |> assign(:ansible_run_state, ansible_run_state)
+
+    ~H"""
+    <div role="alert" class="alert alert-error alert-soft">
+      <Heroicons.exclamation_circle class="size-4" />
+      <span>
+        <%= if has_role?(@auth, :root) do %>
+          Ansible playbook <code>{@playbook}</code>
+          failed with state <code>{inspect(@ansible_run_state)}</code>
+        <% else %>
+          <code>{@playbook}</code> provisioning task failed
+        <% end %>
+      </span>
+    </div>
+    """
+  end
+
   def server_problem(%{problem: {:server_authentication_failed, :username, username}} = assigns) do
     assigns = assign(assigns, :username, username)
 

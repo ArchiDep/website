@@ -5,9 +5,12 @@ defmodule ArchiDep.Servers.Types do
   @type ansible_port :: 1..65_535
   @type ansible_user :: String.t()
   @type ansible_playbook_run_state ::
-          :pending | :running | :succeeded | :failed | :interrupted | :timeout
+          :pending | :running | :succeeded | ansible_playbook_run_failed_state()
+  @type ansible_playbook_run_failed_state :: :failed | :interrupted | :timeout
   @type ansible_variables :: %{String.t() => String.t()}
 
+  @type server_ansible_playbook_failed ::
+          {:server_ansible_playbook_failed, String.t(), ansible_playbook_run_failed_state()}
   @type server_authentication_failed_problem ::
           {:server_authentication_failed, :username | :app_username, String.t()}
   @type server_expected_property_mismatch_problem ::
@@ -18,7 +21,8 @@ defmodule ArchiDep.Servers.Types do
   @type server_reconnection_failed_problem :: {:server_reconnection_failed, term()}
   @type server_sudo_access_check_failed_problem :: {:server_sudo_access_check_failed, term()}
   @type server_problem ::
-          server_authentication_failed_problem()
+          server_ansible_playbook_failed()
+          | server_authentication_failed_problem()
           | server_expected_property_mismatch_problem()
           | server_fact_gathering_failed_problem()
           | server_missing_sudo_access_problem()
