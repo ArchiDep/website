@@ -30,7 +30,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
     :storage,
     :actions,
     connection_state: :not_connected,
-    current_job: nil,
     tasks: %{},
     ansible_playbook: nil,
     problems: [],
@@ -45,14 +44,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
           pipeline: Pipeline.t(),
           username: String.t(),
           storage: :ets.tid(),
-          current_job:
-            :connecting
-            | :reconnecting
-            | :checking_access
-            | :setting_up_app_user
-            | :gathering_facts
-            | {:running_playbook, String.t(), UUID.t()}
-            | nil,
           actions: list(action()),
           tasks: %{atom() => reference()},
           ansible_playbook: AnsiblePlaybookRun.t() | nil,
@@ -86,7 +77,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @type schedule_load_average_measurement_action ::
           {:schedule_load_average_measurement, (t(), (pos_integer() -> reference()) -> t())}
   @type track_action :: {:track, String.t(), UUID.t(), map()}
-  @type update_tracking_action :: {:update_tracking, String.t(), UUID.t(), map()}
+  @type update_tracking_action :: {:update_tracking, String.t(), (t() -> {map(), t()})}
   @type action ::
           cancel_timer_action()
           | connect_action()
@@ -118,21 +109,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
   ]
   @last_retry_interval_seconds List.last(@retry_intervals_seconds)
 
-  def to_real_time_state(%__MODULE__{} = state) do
-    server = state.server
-
-    %ServerRealTimeState{
-      connection_state: state.connection_state,
-      name: server.name,
-      conn_params: {server.ip_address.address, server.ssh_port || 22, state.username},
-      username: server.username,
-      app_username: server.app_username,
-      current_job: state.current_job,
-      problems: state.problems,
-      version: state.version
-    }
-  end
-
   @spec init(UUID.t(), Pipeline.t()) :: t()
   def init(server_id, pipeline) do
     Logger.debug("Init server manager for server #{server_id}")
@@ -153,9 +129,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
       actions: [],
       problems:
         [] ++
-          if(last_setup_run.state == :succeeded,
-            do: [],
-            else: [{:server_setup_playbook_failed, last_setup_run.playbook, last_setup_run.state}]
+          if(last_setup_run != nil and last_setup_run.state != :succeeded,
+            do: [{:server_setup_playbook_failed, last_setup_run.playbook, last_setup_run.state}],
+            else: []
           )
     })
   end
@@ -211,7 +187,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     port = server.ssh_port || 22
     username = state.username
 
-    update_tracking(%__MODULE__{
+    %__MODULE__{
       state
       | connection_state:
           connecting_state(
@@ -219,7 +195,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
             connection_pid: connection_pid,
             retrying: retrying
           ),
-        current_job: :connecting,
         actions:
           [
             {:connect,
@@ -227,10 +202,12 @@ defmodule ArchiDep.Servers.ServerManagerState do
                task = task_factory.(host, port, username, silently_accept_hosts: true)
                %__MODULE__{task_state | tasks: Map.put(task_state.tasks, :connect, task.ref)}
              end}
-          ] ++ if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []),
+          ] ++
+            if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []) ++
+            [update_tracking()],
         problems: [],
         retry_timer: nil
-    })
+    }
   end
 
   @spec handle_task_result(t(), reference(), term()) :: t()
@@ -300,8 +277,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
             %__MODULE__{
               state
-              | current_job: :gathering_facts,
-                actions: [
+              | actions: [
                   get_load_average(),
                   gather_facts()
                 ]
@@ -322,10 +298,10 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
             %__MODULE__{
               state
-              | current_job: {:running_playbook, playbook_run.playbook, playbook_run.id},
-                ansible_playbook: playbook_run,
+              | ansible_playbook: playbook_run,
                 actions: [
-                  {:run_playbook, playbook_run}
+                  {:run_playbook, playbook_run},
+                  update_tracking()
                 ]
             }
           end
@@ -337,9 +313,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
           %__MODULE__{
             state
-            | current_job: nil,
-              actions: [
-                get_load_average()
+            | actions: [
+                get_load_average(),
+                update_tracking()
               ],
               problems: [
                 {:server_missing_sudo_access, server.username, String.trim(stderr)}
@@ -353,9 +329,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
           %__MODULE__{
             state
-            | current_job: nil,
-              actions: [
-                get_load_average()
+            | actions: [
+                get_load_average(),
+                update_tracking()
               ],
               problems: [
                 {:server_sudo_access_check_failed, reason}
@@ -363,9 +339,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
           }
       end
 
-    new_state
-    |> drop_task(:check_access, check_access_ref)
-    |> update_tracking()
+    drop_task(new_state, :check_access, check_access_ref)
   end
 
   # Handle load average result
@@ -420,21 +394,21 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
           %__MODULE__{
             state
-            | problems: detect_server_properties_mismatches(problems, state.server, facts)
+            | actions: [update_tracking()],
+              problems: detect_server_properties_mismatches(problems, state.server, facts)
           }
 
         {:error, reason} ->
           %__MODULE__{
             state
-            | problems: [
+            | actions: [update_tracking()],
+              problems: [
                 {:server_fact_gathering_failed, reason}
               ]
           }
       end
 
-    new_state
-    |> drop_task(:gather_facts, gather_facts_ref)
-    |> update_tracking()
+    drop_task(new_state, :gather_facts, gather_facts_ref)
   end
 
   # Handle connection result
@@ -462,9 +436,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
                   connection_pid: connection_pid,
                   time: DateTime.utc_now()
                 ),
-              current_job: :checking_access,
               actions: [
-                check_sudo_access()
+                check_sudo_access(),
+                update_tracking()
               ]
           }
 
@@ -480,7 +454,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
                   connection_pid: connection_pid,
                   reason: :authentication_failed
                 ),
-              current_job: nil,
+              actions: [update_tracking()],
               problems: [
                 {:server_authentication_failed,
                  if(state.username == state.server.app_username,
@@ -495,25 +469,25 @@ defmodule ArchiDep.Servers.ServerManagerState do
             "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
           )
 
-          if state.current_job == :reconnecting do
-            %__MODULE__{
-              state
-              | connection_state:
-                  connection_failed_state(
-                    connection_pid: connection_pid,
-                    reason: reason
-                  ),
-                current_job: nil,
-                problems: [{:server_reconnection_failed, reason}]
-            }
-          else
-            retry(state, reason)
+          case state.connection_state do
+            reconnecting_state() ->
+              %__MODULE__{
+                state
+                | connection_state:
+                    connection_failed_state(
+                      connection_pid: connection_pid,
+                      reason: reason
+                    ),
+                  actions: [update_tracking()],
+                  problems: [{:server_reconnection_failed, reason}]
+              }
+
+            connecting_state() ->
+              retry(state, reason)
           end
       end
 
-    new_state
-    |> drop_task(:connect, connection_task_ref)
-    |> update_tracking()
+    drop_task(new_state, :connect, connection_task_ref)
   end
 
   defp retry(
@@ -535,7 +509,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
             connection_pid: connection_pid,
             retrying: retrying
           ),
-        actions: [retry_action(retrying)]
+        actions: [retry_action(retrying), update_tracking()]
     }
   end
 
@@ -574,13 +548,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
   @spec measure_load_average(t()) :: t()
   def measure_load_average(%__MODULE__{connection_state: connected_state()} = state),
-    do:
-      update_tracking(%__MODULE__{
-        state
-        | actions: [
-            get_load_average()
-          ]
-      })
+    do: %__MODULE__{
+      state
+      | actions: [
+          get_load_average(),
+          update_tracking()
+        ]
+    }
 
   @spec ansible_playbook_completed(t(), UUID.t()) :: t()
   def ansible_playbook_completed(
@@ -594,59 +568,55 @@ defmodule ArchiDep.Servers.ServerManagerState do
     server = state.server
     Logger.info("Ansible setup playbook completed for server #{server.id}")
 
-    new_state =
-      if run.state == :succeeded and state.username == server.username do
-        host = server.ip_address.address
-        port = server.ssh_port || 22
-        new_username = server.app_username
+    if run.state == :succeeded and state.username == server.username do
+      host = server.ip_address.address
+      port = server.ssh_port || 22
+      new_username = server.app_username
 
-        set_up_server = Server.mark_as_set_up!(server)
+      set_up_server = Server.mark_as_set_up!(server)
 
-        %__MODULE__{
-          state
-          | connection_state:
-              reconnecting_state(
-                connection_pid: connection_pid,
-                connection_ref: connection_ref
-              ),
-            server: set_up_server,
-            username: new_username,
-            current_job: :reconnecting,
-            actions:
-              [
-                {:connect,
-                 fn task_state, task_factory ->
-                   task = task_factory.(host, port, new_username, silently_accept_hosts: true)
+      %__MODULE__{
+        state
+        | connection_state:
+            reconnecting_state(
+              connection_pid: connection_pid,
+              connection_ref: connection_ref
+            ),
+          server: set_up_server,
+          username: new_username,
+          actions:
+            [
+              {:connect,
+               fn task_state, task_factory ->
+                 task = task_factory.(host, port, new_username, silently_accept_hosts: true)
 
-                   %__MODULE__{
-                     task_state
-                     | tasks: Map.put(task_state.tasks, :connect, task.ref)
-                   }
-                 end}
-              ] ++
-                if(state.load_average_timer,
-                  do: [{:cancel_timer, state.load_average_timer}],
-                  else: []
-                ),
-            load_average_timer: nil
-        }
-      else
-        problem =
-          if run.state !== :succeeded do
-            [{:server_ansible_playbook_failed, run.playbook, run.state}]
-          else
-            []
-          end
+                 %__MODULE__{
+                   task_state
+                   | tasks: Map.put(task_state.tasks, :connect, task.ref)
+                 }
+               end}
+            ] ++
+              if(state.load_average_timer,
+                do: [{:cancel_timer, state.load_average_timer}],
+                else: []
+              ) ++ [update_tracking()],
+          load_average_timer: nil
+      }
+    else
+      problem =
+        if run.state !== :succeeded do
+          [{:server_ansible_playbook_failed, run.playbook, run.state}]
+        else
+          []
+        end
 
-        %__MODULE__{
-          state
-          | current_job: nil,
-            ansible_playbook: nil,
-            problems: state.problems ++ problem
-        }
-      end
-
-    update_tracking(new_state)
+      %__MODULE__{
+        state
+        | ansible_playbook: nil,
+          actions: [update_tracking()],
+          problems: state.problems ++ problem
+      }
+    end
   end
 
   @spec class_updated(t(), Class.t()) :: t()
@@ -673,11 +643,12 @@ defmodule ArchiDep.Servers.ServerManagerState do
       | class: class
     }
 
-    update_tracking(%__MODULE__{
+    %__MODULE__{
       state
       | server: new_server,
+        actions: [update_tracking()],
         problems: detect_server_properties_mismatches(problems, new_server, facts)
-    })
+    }
   end
 
   @spec class_updated(t(), Class.t()) :: t()
@@ -701,11 +672,12 @@ defmodule ArchiDep.Servers.ServerManagerState do
         [] -> nil
       end
 
-    update_tracking(%__MODULE__{
+    %__MODULE__{
       state
       | server: new_server,
+        actions: [update_tracking()],
         problems: detect_server_properties_mismatches(problems, new_server, facts)
-    })
+    }
   end
 
   @spec server_updated(t(), Server.t()) :: t()
@@ -727,16 +699,16 @@ defmodule ArchiDep.Servers.ServerManagerState do
     actions =
       [:notify_server_offline] ++
         if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []) ++
-        if state.load_average_timer, do: [{:cancel_timer, state.load_average_timer}], else: []
+        if(state.load_average_timer, do: [{:cancel_timer, state.load_average_timer}], else: []) ++
+        [update_tracking()]
 
-    update_tracking(%__MODULE__{
+    %__MODULE__{
       state
       | connection_state: disconnected_state(time: DateTime.utc_now()),
-        current_job: nil,
         actions: actions,
         retry_timer: nil,
         load_average_timer: nil
-    })
+    }
   end
 
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do
@@ -924,13 +896,51 @@ defmodule ArchiDep.Servers.ServerManagerState do
         ]
     }
 
-  defp update_tracking(state),
-    do: %__MODULE__{
-      state
-      | actions: [
-          {:update_tracking, "servers", state.server.id, %{state: to_real_time_state(state)}}
-          | state.actions
-        ],
-        version: state.version + 1
+  defp update_tracking(),
+    do:
+      {:update_tracking, "servers",
+       fn state ->
+         new_state = %__MODULE__{state | version: state.version + 1}
+         real_time_state = to_real_time_state(new_state)
+         {real_time_state, new_state}
+       end}
+
+  defp to_real_time_state(%__MODULE__{} = state) do
+    server = state.server
+
+    current_job =
+      case state do
+        %{connection_state: connecting_state()} ->
+          :connecting
+
+        %{connection_state: reconnecting_state()} ->
+          :reconnecting
+
+        %{connection_state: connected_state(), tasks: %{check_access: _ref}} ->
+          :checking_access
+
+        %{connection_state: connected_state(), tasks: %{gather_facts: _ref}} ->
+          :gathering_facts
+
+        %{
+          connection_state: connected_state(),
+          ansible_playbook: %AnsiblePlaybookRun{id: id, playbook: playbook}
+        } ->
+          {:running_playbook, playbook, id}
+
+        _anything_else ->
+          nil
+      end
+
+    %ServerRealTimeState{
+      connection_state: state.connection_state,
+      name: server.name,
+      conn_params: {server.ip_address.address, server.ssh_port || 22, state.username},
+      username: server.username,
+      app_username: server.app_username,
+      current_job: current_job,
+      problems: state.problems,
+      version: state.version
     }
+  end
 end

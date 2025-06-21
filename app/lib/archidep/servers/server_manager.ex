@@ -39,10 +39,6 @@ defmodule ArchiDep.Servers.ServerManager do
   def ansible_playbook_completed(run),
     do: GenServer.call(name(run.server), {:ansible_playbook_completed, run.id})
 
-  @spec request_server_state(UUID.t()) :: :ok
-  def request_server_state(server_id),
-    do: GenServer.cast(name(server_id), {:request_server_state, self()})
-
   @spec retry_connecting(Server.t() | UUID.t()) :: :ok
   def retry_connecting(server_id), do: GenServer.call(name(server_id), :retry_connecting)
 
@@ -79,9 +75,6 @@ defmodule ArchiDep.Servers.ServerManager do
     |> execute_actions()
     |> noreply()
   end
-
-  def handle_cast({:request_server_state, from}, state),
-    do: send(from, {:server_state, ServerManagerState.to_real_time_state(state)})
 
   def handle_cast(:retry_connecting, state),
     do:
@@ -258,10 +251,14 @@ defmodule ArchiDep.Servers.ServerManager do
     state
   end
 
-  defp execute_action(state, {:update_tracking, topic, key, value}) do
-    {:ok, _ref} =
-      Phoenix.Tracker.update(ArchiDep.Tracker, self(), topic, key, value)
+  defp execute_action(state, {:update_tracking, topic, value_fn}) do
+    {real_time_state, new_state} = value_fn.(state)
 
-    state
+    {:ok, _ref} =
+      Phoenix.Tracker.update(ArchiDep.Tracker, self(), topic, state.server.id, %{
+        state: real_time_state
+      })
+
+    new_state
   end
 end
