@@ -36,7 +36,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     current_job: nil,
     actions: [],
     tasks: %{},
-    ansible_playbooks: [],
+    ansible_playbook: nil,
     problems: [],
     retry_timer: nil,
     load_average_timer: nil,
@@ -60,7 +60,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
             | nil,
           actions: list(action()),
           tasks: %{atom() => reference()},
-          ansible_playbooks: list(AnsiblePlaybookRun.t()),
+          ansible_playbook: AnsiblePlaybookRun.t() | nil,
           problems: list(server_problem()),
           retry_timer: reference() | nil,
           load_average_timer: reference() | nil,
@@ -332,7 +332,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
             %__MODULE__{
               state
               | current_job: {:running_playbook, playbook_run.playbook, playbook_run.id},
-                ansible_playbooks: [playbook_run | state.ansible_playbooks],
+                ansible_playbook: playbook_run,
                 actions: [
                   {:run_playbook, playbook_run}
                 ]
@@ -596,9 +596,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
         %__MODULE__{
           connection_state:
             connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
-          ansible_playbooks: [
-            %AnsiblePlaybookRun{id: run_id} = run | remaining_playbooks
-          ]
+          ansible_playbook: %AnsiblePlaybookRun{id: run_id} = run
         } = state,
         run_id
       ) do
@@ -643,7 +641,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
         %__MODULE__{
           state
           | current_job: nil,
-            ansible_playbooks: remaining_playbooks
+            ansible_playbook: nil
         }
       end
 
