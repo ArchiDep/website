@@ -17,7 +17,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias Ecto.UUID
 
   @enforce_keys [
-    :state,
     :server,
     :pipeline,
     :username,
@@ -25,7 +24,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
     :actions
   ]
   defstruct [
-    :state,
     :server,
     :pipeline,
     :username,
@@ -42,7 +40,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
   ]
 
   @type t :: %__MODULE__{
-          state: :initial_setup | :tracked | :corrupted,
           connection_state: connection_state(),
           server: Server.t(),
           pipeline: Pipeline.t(),
@@ -125,7 +122,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
     server = state.server
 
     %ServerRealTimeState{
-      state: state.state,
       connection_state: state.connection_state,
       name: server.name,
       conn_params: {server.ip_address.address, server.ssh_port || 22, state.username},
@@ -147,23 +143,20 @@ defmodule ArchiDep.Servers.ServerManagerState do
     last_setup_run =
       AnsiblePlaybookRun.get_last_playbook_run(server, Ansible.setup_playbook())
 
-    initial_setup_performed =
-      last_setup_run != nil && last_setup_run.state == :succeeded
-
-    {state, username} =
-      if initial_setup_performed do
-        {:tracked, server.app_username}
-      else
-        {:initial_setup, server.username}
-      end
+    username = if server.set_up_at, do: server.app_username, else: server.username
 
     track(%__MODULE__{
-      state: state,
       server: server,
       pipeline: pipeline,
       username: username,
       storage: storage,
-      actions: []
+      actions: [],
+      problems:
+        [] ++
+          if(last_setup_run.state == :succeeded,
+            do: [],
+            else: [{:server_setup_playbook_failed, last_setup_run.playbook, last_setup_run.state}]
+          )
     })
   end
 
@@ -323,7 +316,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
             playbook_run =
               Tracker.track_playbook!(playbook, server, state.username, %{
                 "app_user_name" => server.app_username,
-                "app_user_authorized_key" => ArchiDep.Application.public_key()
+                "app_user_authorized_key" => ArchiDep.Application.public_key(),
+                "server_id" => server.id
               })
 
             %__MODULE__{
@@ -606,6 +600,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
         port = server.ssh_port || 22
         new_username = server.app_username
 
+        set_up_server = Server.mark_as_set_up!(server)
+
         %__MODULE__{
           state
           | connection_state:
@@ -613,6 +609,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 connection_pid: connection_pid,
                 connection_ref: connection_ref
               ),
+            server: set_up_server,
             username: new_username,
             current_job: :reconnecting,
             actions:

@@ -39,6 +39,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           # Common metadata
           version: pos_integer(),
           created_at: DateTime.t(),
+          set_up_at: DateTime.t() | nil,
           updated_at: DateTime.t()
         }
 
@@ -66,10 +67,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
     # Common metadata
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
+    field(:set_up_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
   end
 
-  @spec name_or_default(__MODULE__.t()) :: String.t()
+  @spec name_or_default(t()) :: String.t()
   def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
   def name_or_default(%__MODULE__{name: name}), do: name
 
@@ -151,7 +153,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end)
   end
 
-  @spec update(__MODULE__.t(), Types.update_server_data()) :: Changeset.t(t())
+  @spec update(t(), Types.update_server_data()) :: Changeset.t(t())
   def update(server, data) do
     id = server.id
     now = DateTime.utc_now()
@@ -185,6 +187,16 @@ defmodule ArchiDep.Servers.Schemas.Server do
         where: s.id != ^id and s.ip_address == ^ip_address
       )
     end)
+  end
+
+  @spec mark_as_set_up!(t()) :: Changeset.t(t())
+  def mark_as_set_up!(%__MODULE__{set_up_at: nil} = server) do
+    now = DateTime.utc_now()
+
+    server
+    |> change(set_up_at: now)
+    |> optimistic_lock(:version)
+    |> Repo.update!()
   end
 
   defp validate(changeset) do
