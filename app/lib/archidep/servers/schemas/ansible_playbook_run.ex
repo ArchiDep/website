@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   use ArchiDep, :schema
 
   import Ecto.Query, only: [from: 2]
+  alias ArchiDep.Git
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.Server
@@ -16,6 +17,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
           playbook: String.t(),
           playbook_path: String.t(),
           digest: binary(),
+          git_revision: String.t(),
           host: Postgrex.INET.t(),
           port: 1..65_535,
           user: String.t(),
@@ -41,6 +43,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     field(:playbook, :string)
     field(:playbook_path, :string)
     field(:digest, :binary)
+    field(:git_revision, :string)
     field(:host, EctoNetwork.INET)
     field(:port, :integer)
     field(:user, :string)
@@ -77,16 +80,14 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> Repo.one!()
   end
 
-  @spec successful_playbook_run?(Server.t(), AnsiblePlaybook.t()) :: boolean()
-  def successful_playbook_run?(server, playbook) do
+  @spec get_last_playbook_run(Server.t(), AnsiblePlaybook.t()) :: __MODULE__.t() | nil
+  def get_last_playbook_run(server, playbook) do
     from(r in __MODULE__,
-      where:
-        r.server_id == ^server.id and r.playbook == ^AnsiblePlaybook.name(playbook) and
-          r.state == :succeeded,
+      where: r.server_id == ^server.id and r.playbook == ^AnsiblePlaybook.name(playbook),
       order_by: [desc: r.created_at],
       limit: 1
     )
-    |> Repo.exists?()
+    |> Repo.one()
   end
 
   @spec new_pending(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::
@@ -101,6 +102,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       playbook: AnsiblePlaybook.name(playbook),
       playbook_path: playbook.relative_path,
       digest: playbook.digest,
+      git_revision: Git.git_revision(),
       host: server.ip_address,
       port: server.ssh_port || 22,
       user: user,

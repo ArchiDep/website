@@ -146,8 +146,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
     {:ok, server} = Server.fetch_server(server_id)
     storage = :ets.new(:server_manager, [:set, :private])
 
+    last_setup_run =
+      AnsiblePlaybookRun.get_last_playbook_run(server, Ansible.setup_playbook())
+
     initial_setup_performed =
-      AnsiblePlaybookRun.successful_playbook_run?(server, Ansible.initial_setup_playbook())
+      last_setup_run != nil && last_setup_run.state == :succeeded
 
     {state, username} =
       if initial_setup_performed do
