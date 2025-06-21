@@ -390,7 +390,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
            Float.parse(m5s),
            Float.parse(m15s)
          ] do
-      Logger.info("Received load average from server #{state.server.id}: #{m1}, #{m5}, #{m15}")
+      Logger.debug("Received load average from server #{state.server.id}: #{m1}, #{m5}, #{m15}")
     end
 
     drop_task(
