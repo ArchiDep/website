@@ -602,12 +602,20 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 do: [{:cancel_timer, state.load_average_timer}],
                 else: []
               ) ++ [update_tracking()],
+          problems:
+            Enum.reject(
+              state.problems,
+              &match?({:server_ansible_playbook_failed, "setup", _state, _stats}, &1)
+            ),
           load_average_timer: nil
       }
     else
       problem =
         if run.state !== :succeeded do
-          [{:server_ansible_playbook_failed, run.playbook, run.state}]
+          [
+            {:server_ansible_playbook_failed, run.playbook, run.state,
+             AnsiblePlaybookRun.stats(run)}
+          ]
         else
           []
         end
@@ -616,9 +624,80 @@ defmodule ArchiDep.Servers.ServerManagerState do
         state
         | ansible_playbook: nil,
           actions: [update_tracking()],
-          problems: state.problems ++ problem
+          problems:
+            Enum.reject(
+              state.problems,
+              &match?({:server_ansible_playbook_failed, "setup", _state, _stats}, &1)
+            ) ++ problem
       }
     end
+  end
+
+  @spec retry_ansible_playbook(t(), String.t()) :: t()
+  def retry_ansible_playbook(
+        %__MODULE__{
+          connection_state: connected_state(),
+          server: server,
+          problems: problems,
+          tasks: %{},
+          ansible_playbook: nil
+        } = state,
+        playbook
+      )
+      when is_binary(playbook) do
+    has_failed_playbook =
+      Enum.any?(problems, fn
+        {:server_ansible_playbook_failed, ^playbook, _state, _stats} -> true
+        _ -> false
+      end)
+
+    if has_failed_playbook do
+      Logger.info("Retrying Ansible playbook #{playbook} for server #{server.id}")
+
+      playbook = Ansible.playbook!(playbook)
+
+      username = if server.set_up_at, do: server.app_username, else: server.username
+
+      playbook_run =
+        Tracker.track_playbook!(playbook, server, username, %{
+          "app_user_name" => server.app_username,
+          "app_user_authorized_key" => ArchiDep.Application.public_key(),
+          "server_id" => server.id
+        })
+
+      %__MODULE__{
+        state
+        | ansible_playbook: playbook_run,
+          actions: [
+            {:run_playbook, playbook_run},
+            update_tracking()
+          ]
+      }
+    else
+      Logger.info(
+        "Ignoring retry request for Ansible playbook #{playbook} for server #{server.id} because there is no such failed run"
+      )
+
+      state
+    end
+  end
+
+  @spec retry_ansible_playbook(t(), String.t()) :: t()
+  def retry_ansible_playbook(%__MODULE__{connection_state: connected_state()} = state, playbook) do
+    Logger.info(
+      "Ignoring retry request for Ansible playbook #{playbook} because the server is busy"
+    )
+
+    state
+  end
+
+  @spec retry_ansible_playbook(t(), String.t()) :: t()
+  def retry_ansible_playbook(%__MODULE__{} = state, playbook) do
+    Logger.info(
+      "Ignoring retry request for Ansible playbook #{playbook} because the server is not connected"
+    )
+
+    state
   end
 
   @spec class_updated(t(), Class.t()) :: t()

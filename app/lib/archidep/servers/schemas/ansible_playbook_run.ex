@@ -70,6 +70,26 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  @spec stats(t()) :: Types.ansible_stats()
+  def stats(%__MODULE__{
+        stats_changed: changed,
+        stats_failures: failures,
+        stats_ignored: ignored,
+        stats_ok: ok,
+        stats_rescued: rescued,
+        stats_skipped: skipped,
+        stats_unreachable: unreachable
+      }),
+      do: %{
+        changed: changed,
+        failures: failures,
+        ignored: ignored,
+        ok: ok,
+        rescued: rescued,
+        skipped: skipped,
+        unreachable: unreachable
+      }
+
   @spec get_pending_run!(UUID.t()) :: t()
   def get_pending_run!(id) do
     from(r in __MODULE__,

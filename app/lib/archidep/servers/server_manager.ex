@@ -42,6 +42,10 @@ defmodule ArchiDep.Servers.ServerManager do
   @spec retry_connecting(Server.t() | UUID.t()) :: :ok
   def retry_connecting(server_id), do: GenServer.call(name(server_id), :retry_connecting)
 
+  @spec retry_ansible_playbook(Server.t(), String.t()) :: :ok
+  def retry_ansible_playbook(server, playbook),
+    do: GenServer.call(name(server), {:retry_ansible_playbook, playbook})
+
   @spec notify_server_up(UUID.t()) :: :ok
   def notify_server_up(server_id), do: GenServer.cast(name(server_id), :retry_connecting)
 
@@ -104,6 +108,18 @@ defmodule ArchiDep.Servers.ServerManager do
       |> ServerManagerState.retry_connecting(true)
       |> execute_actions()
       |> reply_with(:ok)
+
+  def handle_call(
+        {:retry_ansible_playbook, playbook},
+        _from,
+        state
+      )
+      when is_binary(playbook),
+      do:
+        state
+        |> ServerManagerState.retry_ansible_playbook(playbook)
+        |> execute_actions()
+        |> reply_with(:ok)
 
   @impl true
 

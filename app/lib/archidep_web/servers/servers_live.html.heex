@@ -29,7 +29,7 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
   <div :for={server <- @servers} class="cursor-pointer" phx-click={JS.navigate(~p"/servers/#{server.id}")}>
-    <.server_card auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} on_retry={JS.push("retry_connecting", value: %{server_id: server.id})} />
+    <.server_card auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})} />
   </div>
 </div>
 

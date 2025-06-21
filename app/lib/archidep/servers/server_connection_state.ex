@@ -66,4 +66,7 @@ defmodule ArchiDep.Servers.ServerConnectionState do
           | reconnecting_state()
           | disconnected_state()
           | connection_failed_state()
+
+  @spec connected?(connection_state()) :: boolean()
+  def connected?(state), do: Record.is_record(state, :connected_state)
 end

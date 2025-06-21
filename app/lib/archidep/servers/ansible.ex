@@ -9,7 +9,10 @@ defmodule ArchiDep.Servers.Ansible do
 
   @setup_playbook PlaybooksRegistry.playbook!("setup")
 
-  @spec setup_playbook :: AnsiblePlaybook.t()
+  @spec playbook!(String.t()) :: AnsiblePlaybook.t()
+  def playbook!("setup"), do: @setup_playbook
+
+  @spec setup_playbook() :: AnsiblePlaybook.t()
   def setup_playbook, do: @setup_playbook
 
   @spec gather_facts(Server.t(), String.t()) ::

@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   import ArchiDep.Servers.ServerConnectionState
   import ArchiDepWeb.Helpers.AuthHelpers
+  import ArchiDepWeb.Helpers.I18nHelpers
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -25,7 +26,14 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   attr :auth, Authentication, doc: "the authentication context"
   attr :server, Server, doc: "the server to display"
   attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
-  attr :on_retry, JS, doc: "JS command to execute when retrying the connection", default: nil
+
+  attr :on_retry_connection, JS,
+    doc: "JS command to execute when retrying the connection",
+    default: nil
+
+  attr :on_retry_operation, JS,
+    doc: "function to call when retrying an operation",
+    default: nil
 
   def server_card(assigns) do
     {card_class, badge_class, badge_text, status_text, retry_text} =
@@ -58,9 +66,35 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
              reason: reason
            }), "Retry now"}
 
-        %ServerRealTimeState{connection_state: connected_state()} ->
-          {"bg-success text-success-content", "badge-success", "Connected",
-           "Connected to the server.", nil}
+        %ServerRealTimeState{connection_state: connected_state(), current_job: current_job} ->
+          {
+            "bg-success text-success-content",
+            "badge-success",
+            "Connected",
+            case current_job do
+              :checking_access ->
+                "Checking access..."
+
+              :setting_up_app_user ->
+                "Setting up application user..."
+
+              :gathering_facts ->
+                "Gathering facts..."
+
+              {:running_playbook, playbook, _run_id} ->
+                case playbook do
+                  "setup" ->
+                    "Performing initial setup..."
+
+                  _any_other_playbook ->
+                    "Running #{playbook}..."
+                end
+
+              nil ->
+                "Connected to the server."
+            end,
+            nil
+          }
 
         %ServerRealTimeState{connection_state: reconnecting_state()} ->
           {"bg-info text-info-content animate-pulse", "badge-primary", "Reconnecting",
@@ -82,6 +116,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       |> assign(:badge_text, badge_text)
       |> assign(:status_text, status_text)
       |> assign(:retry_text, retry_text)
+      |> assign(:connected, connected?(assigns.state.connection_state))
+      |> assign(:busy, assigns.state.current_job != nil)
 
     ~H"""
     <div class={["card", @card_class]}>
@@ -95,19 +131,27 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             {@badge_text}
           </div>
         </div>
-        <p>
-          {@status_text}
-        </p>
+        <div class="flex items-center gap-x-2">
+          <Heroicons.check_circle :if={!@busy} class="size-4" />
+          <Heroicons.arrow_path :if={@busy} class="size-4 animate-spin" />
+          <span>{@status_text}</span>
+        </div>
         <ul :if={@state} class="flex flex-col gap-2">
           <li :for={problem <- @state.problems}>
-            <.server_problem auth={@auth} problem={problem} />
+            <.server_problem
+              auth={@auth}
+              problem={problem}
+              connected={@connected}
+              current_job={@state.current_job}
+              on_retry_operation={@on_retry_operation}
+            />
           </li>
         </ul>
-        <div :if={@retry_text != nil and @on_retry != nil} class="card-actions justify-end">
+        <div :if={@retry_text != nil and @on_retry_connection != nil} class="card-actions justify-end">
           <button
             type="button"
             class="btn btn-sm btn-secondary"
-            phx-click={@on_retry |> JS.add_class("btn-disabled")}
+            phx-click={@on_retry_connection |> JS.add_class("btn-disabled")}
           >
             {@retry_text}
           </button>
@@ -119,12 +163,49 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   attr :auth, Authentication, doc: "the authentication context"
   attr :problem, :any, doc: "the problem to display"
+  attr :connected, :boolean, doc: "whether the server is connected", default: false
+  attr :current_job, :any, doc: "the current job of the server", default: nil
+
+  attr :on_retry_operation, JS,
+    doc: "function to call when retrying an operation",
+    default: nil
 
   def server_problem(
-        %{problem: {:server_ansible_playbook_failed, playbook, ansible_run_state}} = assigns
+        %{problem: {:server_ansible_playbook_failed, playbook, ansible_run_state, ansible_stats}} =
+          assigns
       ) do
     assigns =
-      assigns |> assign(:playbook, playbook) |> assign(:ansible_run_state, ansible_run_state)
+      assigns
+      |> assign(:playbook, playbook)
+      |> assign(:ansible_run_state, ansible_run_state)
+
+    details = []
+
+    details =
+      if ansible_stats.failures > 0 do
+        details ++
+          ["#{ansible_stats.failures} #{pluralize(ansible_stats.failures, "task")} failed"]
+      else
+        details
+      end
+
+    details =
+      if ansible_stats.unreachable >= 1 do
+        details ++ ["host unreachable"]
+      else
+        details
+      end
+
+    retrying =
+      case assigns.current_job do
+        {:running_playbook, ^playbook, _run_id} ->
+          true
+
+        _anything_else ->
+          false
+      end
+
+    assigns = assigns |> assign(:details, details) |> assign(:retrying, retrying)
 
     ~H"""
     <div role="alert" class="alert alert-error alert-soft">
@@ -133,10 +214,26 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         <%= if has_role?(@auth, :root) do %>
           Ansible playbook <code>{@playbook}</code>
           failed with state <code>{inspect(@ansible_run_state)}</code>
+          <%= if @details != [] do %>
+            ({Enum.join(@details, ", ")})
+          <% end %>
         <% else %>
           <code>{@playbook}</code> provisioning task failed
         <% end %>
       </span>
+      <%= if @on_retry_operation != nil and has_role?(@auth, :root) do %>
+        <button
+          type="button"
+          class="btn btn-xs btn-warning flex items-center gap-x-1"
+          disabled={@current_job != nil}
+          phx-click={@on_retry_operation}
+          phx-value-operation="ansible-playbook"
+          phx-value-playbook={@playbook}
+        >
+          <Heroicons.arrow_path class={["size-4", if(@retrying, do: "animate-spin")]} />
+          <span>Retry</span>
+        </button>
+      <% end %>
     </div>
     """
   end

@@ -8,9 +8,28 @@ defmodule ArchiDep.Servers.Types do
           :pending | :running | :succeeded | ansible_playbook_run_failed_state()
   @type ansible_playbook_run_failed_state :: :failed | :interrupted | :timeout
   @type ansible_variables :: %{String.t() => String.t()}
+  @type ansible_stats :: %{
+          changed: non_neg_integer(),
+          failures: non_neg_integer(),
+          ignored: non_neg_integer(),
+          ok: non_neg_integer(),
+          rescued: non_neg_integer(),
+          skipped: non_neg_integer(),
+          unreachable: non_neg_integer()
+        }
+
+  @type server_job ::
+          :connecting
+          | :reconnecting
+          | :checking_access
+          | :setting_up_app_user
+          | :gathering_facts
+          | {:running_playbook, String.t(), UUID.t()}
+          | nil
 
   @type server_ansible_playbook_failed ::
-          {:server_ansible_playbook_failed, String.t(), ansible_playbook_run_failed_state()}
+          {:server_ansible_playbook_failed, String.t(), ansible_playbook_run_failed_state(),
+           ansible_stats()}
   @type server_authentication_failed_problem ::
           {:server_authentication_failed, :username | :app_username, String.t()}
   @type server_expected_property_mismatch_problem ::

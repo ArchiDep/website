@@ -46,6 +46,17 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   end
 
   @impl true
+  def handle_event(
+        "retry_operation",
+        %{"server_id" => server_id, "operation" => "ansible-playbook", "playbook" => playbook},
+        socket
+      )
+      when is_binary(server_id) do
+    :ok = ServerManager.retry_ansible_playbook(socket.assigns.server, playbook)
+    noreply(socket)
+  end
+
+  @impl true
   def handle_info(
         {:server_state, server_id, new_server_state},
         %Socket{assigns: %{server: %Server{id: server_id}}} = socket
