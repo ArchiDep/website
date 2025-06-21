@@ -318,7 +318,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
               "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
             )
 
-            playbook = Ansible.initial_setup_playbook()
+            playbook = Ansible.setup_playbook()
 
             playbook_run =
               Tracker.track_playbook!(playbook, server, state.username, %{
@@ -604,7 +604,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
     new_state =
       if state.username == server.username and
-           run.playbook == AnsiblePlaybook.name(Ansible.initial_setup_playbook()) do
+           run.playbook == AnsiblePlaybook.name(Ansible.setup_playbook()) do
         host = server.ip_address.address
         port = server.ssh_port || 22
         new_username = server.app_username

@@ -1,5 +1,5 @@
 ---
-- name: ArchiDep student server initial setup
+- name: ArchiDep student server setup
   hosts: all
   vars:
     app_user_name: "archidep"

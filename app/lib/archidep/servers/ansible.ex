@@ -7,10 +7,10 @@ defmodule ArchiDep.Servers.Ansible do
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
 
-  @initial_setup_playbook PlaybooksRegistry.playbook!("initial-setup")
+  @setup_playbook PlaybooksRegistry.playbook!("setup")
 
-  @spec initial_setup_playbook :: AnsiblePlaybook.t()
-  def initial_setup_playbook, do: @initial_setup_playbook
+  @spec setup_playbook :: AnsiblePlaybook.t()
+  def setup_playbook, do: @setup_playbook
 
   @spec gather_facts(Server.t(), String.t()) ::
           {:ok, %{String.t() => term()}}

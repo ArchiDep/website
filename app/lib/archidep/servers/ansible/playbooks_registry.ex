@@ -20,6 +20,17 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
                {name, playbook}
              end)
              |> Enum.into(%{})
+  @playbooks_files_digest :crypto.hash(
+                            :sha256,
+                            Path.join(@playbooks_dir, "**/*")
+                            |> Path.wildcard()
+                            |> Enum.sort()
+                            |> Enum.join("\0")
+                          )
+
+  for playbook <- Map.values(@playbooks) do
+    @external_resource playbook.relative_path
+  end
 
   def playbook!(name) do
     case Map.fetch(@playbooks, name) do
@@ -31,4 +42,16 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
               "Playbook #{name} not found. Available playbooks: #{inspect(Map.keys(@playbooks))}"
     end
   end
+
+  def __mix_recompile__?, do: @playbooks_files_digest != ansible_files_hash()
+
+  defp ansible_files_hash(),
+    do:
+      :crypto.hash(
+        :sha256,
+        Path.join(@playbooks_dir, "**/*")
+        |> Path.wildcard()
+        |> Enum.sort()
+        |> Enum.join("\0")
+      )
 end
