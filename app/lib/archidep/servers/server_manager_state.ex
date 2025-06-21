@@ -208,7 +208,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
           ] ++
             if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []) ++
             [update_tracking()],
-        problems: [],
+        problems:
+          Enum.reject(state.problems, fn problem ->
+            match?({:server_authentication_failed, _username, _reason}, problem) or
+              match?({:server_missing_sudo_access, _username, _stderr}, problem) or
+              match?({:server_reconnection_failed, _reason}, problem) or
+              match?({:server_sudo_access_check_failed, _reason}, problem)
+          end),
         retry_timer: nil
     }
   end
