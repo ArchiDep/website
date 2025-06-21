@@ -34,6 +34,10 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           {"bg-neutral text-neutral-content", "badge-info", "Not connected",
            "No connection to this server.", nil}
 
+        %ServerRealTimeState{connection_state: :not_connected} ->
+          {"bg-neutral text-neutral-content", "badge-info", "Not connected",
+           "No connection to this server.", nil}
+
         %ServerRealTimeState{connection_state: connecting_state()} ->
           {"bg-info text-info-content animate-pulse", "badge-primary", "Connecting",
            "Connecting to the server...", nil}

@@ -97,7 +97,7 @@ defmodule ArchiDep.Servers.ServerTracker do
       send(from, {:server_state, server_id, nil})
 
       server_states
-      |> Map.delete(server_id)
+      |> Map.put(server_id, nil)
       |> pair(from)
       |> noreply()
     else
