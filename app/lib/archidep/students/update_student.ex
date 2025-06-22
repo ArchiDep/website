@@ -3,6 +3,7 @@ defmodule ArchiDep.Students.UpdateStudent do
 
   alias ArchiDep.Students.Events.StudentUpdated
   alias ArchiDep.Students.Policy
+  alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Types
 
@@ -33,6 +34,7 @@ defmodule ArchiDep.Students.UpdateStudent do
            end)
            |> Repo.transaction() do
         {:ok, %{student: student}} ->
+          :ok = PubSub.publish_student(student)
           {:ok, student}
 
         {:error, :student, changeset, _} ->

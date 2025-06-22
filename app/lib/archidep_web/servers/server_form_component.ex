@@ -63,6 +63,18 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           </select>
           <.errors_for field={@form[:class_id]} />
         <% end %>
+
+        <label class="fieldset-label mt-2">
+          <input type="hidden" name={@form[:active].name} value="false" />
+          <input
+            type="checkbox"
+            id={@form[:active].id}
+            class="toggle border-error-content bg-error text-error-content/25 checked:border-success-content checked:bg-success checked:text-success-content/50"
+            name={@form[:active].name}
+            checked={@form[:active].value}
+            value="true"
+          /> Active
+        </label>
       </fieldset>
 
       <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
@@ -87,6 +99,16 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           value={@form[:username].value}
         />
         <.errors_for field={@form[:username]} />
+
+        <label class="fieldset-label mt-2">Application username</label>
+        <input
+          type="text"
+          id={@form[:app_username].id}
+          class="input w-full"
+          name={@form[:app_username].name}
+          value={@form[:app_username].value}
+        />
+        <.errors_for field={@form[:app_username]} />
 
         <label class="fieldset-label mt-2">SSH port</label>
         <input

@@ -33,6 +33,9 @@ defmodule ArchiDep.Servers.Types do
            ansible_stats()}
   @type server_authentication_failed_problem ::
           {:server_authentication_failed, :username | :app_username, String.t()}
+  @type server_connection_timed_out_problem ::
+          {:server_connection_timed_out, :inet.ip_address(), 1..65_535, :username | :app_username,
+           String.t()}
   @type server_expected_property_mismatch_problem ::
           {:server_expected_property_mismatch, atom(), term(), term()}
   @type server_fact_gathering_failed_problem :: {:server_fact_gathering_failed, term()}
@@ -43,6 +46,7 @@ defmodule ArchiDep.Servers.Types do
   @type server_problem ::
           server_ansible_playbook_failed()
           | server_authentication_failed_problem()
+          | server_connection_timed_out_problem()
           | server_expected_property_mismatch_problem()
           | server_fact_gathering_failed_problem()
           | server_missing_sudo_access_problem()
@@ -54,6 +58,7 @@ defmodule ArchiDep.Servers.Types do
           ip_address: String.t(),
           username: String.t(),
           ssh_port: integer() | nil,
+          active: boolean(),
           class_id: UUID.t(),
           app_username: String.t(),
           # Expected properties for this server
@@ -75,6 +80,7 @@ defmodule ArchiDep.Servers.Types do
           ip_address: String.t(),
           username: String.t(),
           ssh_port: integer() | nil,
+          active: boolean(),
           app_username: String.t(),
           # Expected properties for this server
           expected_cpus: non_neg_integer() | nil,

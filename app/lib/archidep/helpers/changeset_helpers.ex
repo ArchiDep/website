@@ -27,10 +27,10 @@ defmodule ArchiDep.Helpers.ChangesetHelpers do
   def unsafe_validate_unique_query(changeset, field, repo, query_fun)
       when is_struct(changeset, Changeset) and is_atom(field) and is_atom(repo) and
              is_function(query_fun, 1) do
-    # No need to query if there is a prior error for the fields
+    # No need to query if there is a prior error for the field
     any_prior_errors_for_fields? = Enum.any?(changeset.errors, &(elem(&1, 0) == field))
 
-    # No need to query if we haven't changed any of the fields in question
+    # No need to query if we haven't changed the field in question
     unrelated_changes? = not Map.has_key?(changeset.changes, field)
 
     if any_prior_errors_for_fields? || unrelated_changes? do

@@ -51,6 +51,18 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
         <.errors_for field={@form[:academic_class]} />
         <p class="label">Official name of the student's academic class</p>
 
+        <label class="fieldset-label mt-2">
+          <input type="hidden" name={@form[:active].name} value="false" />
+          <input
+            type="checkbox"
+            id={@form[:active].id}
+            class="toggle border-error-content bg-error text-error-content/25 checked:border-success-content checked:bg-success checked:text-success-content/50"
+            name={@form[:active].name}
+            checked={@form[:active].value}
+            value="true"
+          /> Active
+        </label>
+
         <div class="mt-2 flex justify-end gap-x-2">
           <button type="button" class="btn btn-secondary" phx-click={@on_close}>
             <span class="flex items-center gap-x-2">

@@ -23,13 +23,15 @@ defmodule ArchiDep.Students.Types do
           name: String.t(),
           email: String.t(),
           academic_class: String.t() | nil,
+          active: boolean(),
           class_id: UUID.t()
         }
 
   @type existing_student_data :: %{
           name: String.t(),
           email: String.t(),
-          academic_class: String.t() | nil
+          academic_class: String.t() | nil,
+          active: boolean()
         }
 
   @type import_students_data :: %{

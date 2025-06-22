@@ -12,6 +12,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
           ip_address: String.t(),
           username: String.t(),
           ssh_port: integer() | nil,
+          active: boolean(),
           class_id: UUID.t() | nil,
           app_username: String.t(),
           expected_cpus: pos_integer() | nil,
@@ -33,6 +34,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     field(:ip_address, :string)
     field(:username, :string)
     field(:ssh_port, :integer)
+    field(:active, :boolean, default: true)
     field(:class_id, :binary_id)
     field(:app_username, :string)
     field(:expected_cpus, :integer)
@@ -50,12 +52,15 @@ defmodule ArchiDepWeb.Servers.ServerForm do
 
   @spec create_changeset(map) :: Changeset.t(t())
   def create_changeset(params \\ %{}) when is_map(params) do
-    %__MODULE__{}
+    %__MODULE__{
+      app_username: "archidep"
+    }
     |> cast(params, [
       :name,
       :ip_address,
       :username,
       :ssh_port,
+      :active,
       :class_id,
       :app_username,
       :expected_cpus,
@@ -70,7 +75,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :expected_distribution_release,
       :expected_distribution_version
     ])
-    |> validate_required([:ip_address, :username, :class_id])
+    |> validate_required([:ip_address, :username, :active, :class_id])
   end
 
   @spec update_changeset(Server.t(), map) :: Changeset.t(t())
@@ -80,6 +85,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       ip_address: server.ip_address,
       username: server.username,
       ssh_port: server.ssh_port,
+      active: server.active,
       class_id: server.class_id,
       app_username: server.app_username,
       expected_cpus: server.expected_cpus,
@@ -99,6 +105,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :ip_address,
       :username,
       :ssh_port,
+      :active,
       :app_username,
       :expected_cpus,
       :expected_cores,
@@ -112,7 +119,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :expected_distribution_release,
       :expected_distribution_version
     ])
-    |> validate_required([:ip_address, :username])
+    |> validate_required([:ip_address, :username, :active])
   end
 
   @spec to_create_server_data(t()) :: Types.create_server_data()
@@ -122,6 +129,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       ip_address: form.ip_address,
       username: form.username,
       ssh_port: form.ssh_port,
+      active: form.active,
       class_id: form.class_id,
       app_username: form.app_username,
       expected_cpus: form.expected_cpus,
@@ -145,6 +153,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       ip_address: form.ip_address,
       username: form.username,
       ssh_port: form.ssh_port,
+      active: form.active,
       app_username: form.app_username,
       expected_cpus: form.expected_cpus,
       expected_cores: form.expected_cores,

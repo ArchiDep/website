@@ -6,11 +6,13 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
   use ArchiDep, :schema
 
+  import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Types
-  alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Students.Schemas.Student
 
-  @derive {Inspect, only: [:id, :username, :roles, :version]}
+  @derive {Inspect,
+           only: [:id, :username, :roles, :active, :switch_edu_id_id, :student_id, :version]}
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime_usec]
@@ -19,10 +21,11 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
           id: UUID.t(),
           username: String.t(),
           roles: list(Types.role()),
+          active: boolean(),
           switch_edu_id: SwitchEduId.t() | NotLoaded,
           switch_edu_id_id: UUID.t(),
-          class: Class.t() | nil | NotLoaded,
-          class_id: UUID.t() | nil,
+          student: Student.t() | nil | NotLoaded,
+          student_id: UUID.t() | nil,
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -33,17 +36,23 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   schema "user_accounts" do
     field(:username, :string)
     field(:roles, {:array, Ecto.Enum}, values: [:root, :student])
+    field(:active, :boolean)
     belongs_to(:switch_edu_id, SwitchEduId)
-    belongs_to(:class, Class)
+    belongs_to(:student, Student)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
   end
 
   @spec active?(t(), DateTime.t()) :: boolean
-  def active?(%__MODULE__{class: class, roles: roles}, now),
+  def active?(%__MODULE__{active: active, roles: roles, student: nil}, _now),
+    do: active and Enum.member?(roles, :root)
+
+  @spec active?(t(), DateTime.t()) :: boolean
+  def active?(%__MODULE__{active: active, roles: roles, student: student}, now),
     do:
-      Enum.member?(roles, :root) or (Enum.member?(roles, :student) and Class.active?(class, now))
+      active and
+        (Enum.member?(roles, :student) and Student.active?(student, now))
 
   @spec student?(t()) :: boolean
   def student?(%__MODULE__{roles: roles}), do: :student in roles
@@ -78,8 +87,10 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       Repo.one(
         from(ua in __MODULE__,
           join: sei in assoc(ua, :switch_edu_id),
+          left_join: s in assoc(ua, :student),
+          left_join: c in assoc(s, :class),
           where: sei.id == ^switch_edu_id_id,
-          preload: [switch_edu_id: sei]
+          preload: [student: {s, class: c}, switch_edu_id: sei]
         )
       )
 
@@ -101,6 +112,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     )
     |> change(
       id: id,
+      active: true,
       switch_edu_id_id: switch_edu_id.id,
       version: 1,
       created_at: now,
@@ -109,18 +121,25 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     |> validate()
   end
 
-  @spec link_to_class(
+  @spec link_to_student(
           t(),
-          Class.t()
+          Student.t()
         ) :: Changeset.t(t())
-  def link_to_class(%__MODULE__{class_id: nil} = student, class) do
+  def link_to_student(%__MODULE__{id: user_account_id, student_id: nil} = user_account, student) do
     now = DateTime.utc_now()
 
-    student
-    |> cast(%{class_id: class.id}, [:class_id])
-    |> assoc_constraint(:class)
+    user_account
+    |> cast(%{student_id: student.id}, [:student_id])
+    |> assoc_constraint(:student)
     |> change(updated_at: now)
     |> optimistic_lock(:version)
+    |> unsafe_validate_unique_query(:student_id, Repo, fn changeset ->
+      student_id = get_field(changeset, :student_id)
+
+      from(ua in __MODULE__,
+        where: ua.id != ^user_account_id and ua.student_id == ^student_id
+      )
+    end)
   end
 
   defp validate(changeset),

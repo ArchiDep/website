@@ -36,19 +36,18 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     default: nil
 
   def server_card(assigns) do
-    {card_class, badge_class, badge_text, status_text, retry_text} =
-      case assigns.state do
+    state = assigns.state
+
+    {badge_class, badge_text, status_text, retry_text} =
+      case state do
         nil ->
-          {"bg-neutral text-neutral-content", "badge-info", "Not connected",
-           "No connection to this server.", nil}
+          {"badge-info", "Not connected", "No connection to this server.", nil}
 
         %ServerRealTimeState{connection_state: not_connected_state()} ->
-          {"bg-neutral text-neutral-content", "badge-info", "Not connected",
-           "No connection to this server.", nil}
+          {"badge-info", "Not connected", "No connection to this server.", nil}
 
         %ServerRealTimeState{connection_state: connecting_state()} ->
-          {"bg-info text-info-content animate-pulse", "badge-primary", "Connecting",
-           "Connecting to the server", nil}
+          {"badge-primary", "Connecting", "Connecting to the server", nil}
 
         %ServerRealTimeState{
           connection_state:
@@ -56,7 +55,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
               retrying: %{retry: retry, time: time, in_seconds: in_seconds, reason: reason}
             )
         } ->
-          {"bg-info text-info-content", "badge-primary", "Reconnecting",
+          {"badge-primary", "Reconnecting",
            retry_connecting(%{
              auth: assigns.auth,
              server: assigns.server,
@@ -68,7 +67,6 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
         %ServerRealTimeState{connection_state: connected_state(), current_job: current_job} ->
           {
-            "bg-success text-success-content",
             "badge-success",
             "Connected",
             case current_job do
@@ -102,16 +100,56 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           }
 
         %ServerRealTimeState{connection_state: reconnecting_state()} ->
-          {"bg-info text-info-content animate-pulse", "badge-primary", "Reconnecting",
-           "Reconnecting to the server", nil}
+          {"badge-primary", "Reconnecting", "Reconnecting to the server", nil}
 
         %ServerRealTimeState{connection_state: connection_failed_state()} ->
-          {"bg-error text-error-content", "badge-error", "Connection failed",
-           "Could not connect to the server.", "Retry connecting"}
+          {"badge-error", "Connection failed", "Could not connect to the server.",
+           "Retry connecting"}
 
         %ServerRealTimeState{connection_state: disconnected_state()} ->
-          {"bg-info text-info-content", "badge-primary", "Disconnected",
-           "The connection to the server was lost.", nil}
+          {"badge-primary", "Disconnected", "The connection to the server was lost.", nil}
+      end
+
+    card_class =
+      case state do
+        nil ->
+          "bg-neutral text-neutral-content"
+
+        %ServerRealTimeState{connection_state: not_connected_state()} ->
+          "bg-neutral text-neutral-content"
+
+        %ServerRealTimeState{connection_state: connecting_state(), problems: []} ->
+          "bg-info text-info-content animate-pulse"
+
+        %ServerRealTimeState{connection_state: connecting_state()} ->
+          "bg-warning text-warning-content animate-pulse"
+
+        %ServerRealTimeState{connection_state: retry_connecting_state(), problems: []} ->
+          "bg-info text-info-content"
+
+        %ServerRealTimeState{connection_state: retry_connecting_state()} ->
+          "bg-warning text-warning-content"
+
+        %ServerRealTimeState{connection_state: connected_state(), problems: []} ->
+          "bg-success text-success-content"
+
+        %ServerRealTimeState{connection_state: connected_state()} ->
+          "bg-warning text-warning-content"
+
+        %ServerRealTimeState{connection_state: reconnecting_state(), problems: []} ->
+          "bg-info text-info-content animate-pulse"
+
+        %ServerRealTimeState{connection_state: reconnecting_state()} ->
+          "bg-warning text-warning-content animate-pulse"
+
+        %ServerRealTimeState{connection_state: connection_failed_state()} ->
+          "bg-error text-error-content"
+
+        %ServerRealTimeState{connection_state: disconnected_state(), problems: []} ->
+          "bg-info text-info-content"
+
+        %ServerRealTimeState{connection_state: disconnected_state()} ->
+          "bg-warning text-warning-content"
       end
 
     assigns =
@@ -121,9 +159,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       |> assign(:badge_text, badge_text)
       |> assign(:status_text, status_text)
       |> assign(:retry_text, retry_text)
-      |> assign(:connected, connected?(assigns.state.connection_state))
-      |> assign(:not_connected, not_connected?(assigns.state.connection_state))
-      |> assign(:busy, assigns.state.current_job != nil)
+      |> assign(:connected, state != nil and connected?(state.connection_state))
+      |> assign(:not_connected, state == nil or not_connected?(state.connection_state))
+      |> assign(:busy, state != nil and state.current_job != nil)
 
     ~H"""
     <div class={["card", @card_class]}>
@@ -271,6 +309,25 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         <% else %>
           Authentication failed
         <% end %>
+      </span>
+    </div>
+    """
+  end
+
+  def server_problem(
+        %{problem: {:server_connection_timed_out, host, port, _user_type, username}} = assigns
+      ) do
+    assigns =
+      assigns
+      |> assign(:host, :inet.ntoa(host))
+      |> assign(:port, port)
+      |> assign(:username, username)
+
+    ~H"""
+    <div role="alert" class="alert alert-warning alert-soft">
+      <Heroicons.exclamation_triangle class="size-4" />
+      <span>
+        Timeout when connecting to <code>{@username}@{@host}:{@port}</code>
       </span>
     </div>
     """

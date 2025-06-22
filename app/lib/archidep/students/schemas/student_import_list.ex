@@ -53,6 +53,7 @@ defmodule ArchiDep.Students.Schemas.StudentImportList do
             |> Map.merge(%{
               id: UUID.generate(),
               academic_class: academic_class,
+              active: true,
               class_id: class_id,
               version: 1,
               created_at: now,

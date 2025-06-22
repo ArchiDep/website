@@ -53,7 +53,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
               {:ok,
                {:new_root, UserAccount.new_switch_edu_id_account(switch_edu_id, [:root]), nil}}
             else
-              case Students.list_active_students_for_email(switch_edu_id_data.email) do
+              case Students.list_active_students_for_email(
+                     switch_edu_id_data.email,
+                     DateTime.utc_now()
+                   ) do
                 [student] ->
                   {:ok,
                    {:new_student,
@@ -64,6 +67,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
               end
             end
 
+          # FIXME: check user account is still active, link to new student if needed
           user_account ->
             {:ok, {:existing_account, change(user_account), nil}}
         end
@@ -83,7 +87,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
         {:new_student, _user_account, student} when not is_nil(student) ->
           Multi.new()
           |> Multi.update(:student, Student.link_to_user_account(student, user_account))
-          |> Multi.update(:class, UserAccount.link_to_class(user_account, student.class))
+          |> Multi.update(:class, UserAccount.link_to_student(user_account, student))
 
         _otherwise ->
           Multi.new()

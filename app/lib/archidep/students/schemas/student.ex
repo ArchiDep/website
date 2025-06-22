@@ -15,6 +15,7 @@ defmodule ArchiDep.Students.Schemas.Student do
           name: String.t(),
           email: String.t(),
           academic_class: String.t() | nil,
+          active: boolean(),
           class: Class.t() | NotLoaded,
           class_id: UUID.t(),
           user_account: UserAccount.t() | nil | NotLoaded,
@@ -28,6 +29,7 @@ defmodule ArchiDep.Students.Schemas.Student do
     field(:name, :string)
     field(:email, :string)
     field(:academic_class, :string)
+    field(:active, :boolean, default: false)
     belongs_to(:class, Class)
     belongs_to(:user_account, UserAccount)
     field(:version, :integer)
@@ -35,13 +37,17 @@ defmodule ArchiDep.Students.Schemas.Student do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  @spec active?(t(), DateTime.t()) :: boolean
+  def active?(%__MODULE__{active: active, class: class}, now),
+    do: active and Class.active?(class, now)
+
   @spec new(Types.create_student_data()) :: Changeset.t(t())
   def new(data) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
     %__MODULE__{}
-    |> cast(data, [:name, :email, :academic_class, :class_id])
+    |> cast(data, [:name, :email, :academic_class, :active, :class_id])
     |> change(
       id: id,
       version: 1,
@@ -55,7 +61,7 @@ defmodule ArchiDep.Students.Schemas.Student do
     |> validate_length(:email, max: 255)
     |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
     |> validate_length(:academic_class, max: 30)
-    |> validate_required([:name, :email, :class_id])
+    |> validate_required([:name, :email, :active, :class_id])
     |> unique_constraint(:email, name: :students_unique_email_index)
     |> unsafe_validate_unique_query(:email, Repo, fn changeset ->
       class_id = get_field(changeset, :class_id)
@@ -72,7 +78,14 @@ defmodule ArchiDep.Students.Schemas.Student do
 
   @spec fetch_student(UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
   def fetch_student(id) do
-    case Repo.get(__MODULE__, id) do
+    case Repo.one(
+           from(s in __MODULE__,
+             join: c in assoc(s, :class),
+             left_join: ua in assoc(s, :user_account),
+             where: s.id == ^id,
+             preload: [:class, :user_account]
+           )
+         ) do
       nil ->
         {:error, :student_not_found}
 
@@ -106,7 +119,7 @@ defmodule ArchiDep.Students.Schemas.Student do
     now = DateTime.utc_now()
 
     student
-    |> cast(data, [:name, :email, :academic_class])
+    |> cast(data, [:name, :email, :academic_class, :active])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> update_change(:name, &trim/1)
@@ -116,7 +129,7 @@ defmodule ArchiDep.Students.Schemas.Student do
     |> validate_length(:email, max: 255)
     |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
     |> validate_length(:academic_class, max: 30)
-    |> validate_required([:name, :email, :class_id])
+    |> validate_required([:name, :email, :active, :class_id])
     |> unique_constraint(:email, name: :students_unique_email_index)
     |> unsafe_validate_unique_query(:email, Repo, fn changeset ->
       email = get_field(changeset, :email)

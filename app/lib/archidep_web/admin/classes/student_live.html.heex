@@ -53,6 +53,11 @@
       <.no_data />
     <% end %>
   </dd>
+  <dt class="font-bold">Active</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    <Heroicons.check_circle :if={@student.active} class="size-5 text-success" />
+    <Heroicons.x_circle :if={not @student.active} class="size-5 text-error" />
+  </dd>
   <dt class="font-bold">User account</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     <%= if @student.user_account do %>

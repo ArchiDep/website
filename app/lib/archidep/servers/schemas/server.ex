@@ -20,6 +20,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           app_username: String.t(),
           ssh_port: 1..65_535 | nil,
           shared_secret: binary(),
+          active: boolean(),
           class: Class.t() | NotLoaded,
           class_id: UUID.t(),
           user_account: UserAccount.t() | NotLoaded,
@@ -50,6 +51,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:app_username, :string)
     field(:ssh_port, :integer)
     field(:shared_secret, :binary)
+    field(:active, :boolean)
     belongs_to(:class, Class)
     belongs_to(:user_account, UserAccount)
     # Expected properties for this server
@@ -73,8 +75,12 @@ defmodule ArchiDep.Servers.Schemas.Server do
 
   # FIXME: track changes to the user account
   @spec active?(t(), DateTime.t()) :: boolean()
-  def active?(%__MODULE__{class: class, user_account: user_account}, now),
-    do: Class.active?(class, now) and UserAccount.active?(user_account, now)
+  def active?(%__MODULE__{active: active, class: class, user_account: user_account}, now),
+    do:
+      active and Class.active?(class, now) and UserAccount.active?(user_account, now) and
+        (Enum.member?(user_account.roles, :root) or
+           (Enum.member?(user_account.roles, :student) and user_account.student != nil and
+              user_account.student.class_id == class.id))
 
   @spec name_or_default(t()) :: String.t()
   def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
@@ -84,15 +90,23 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def default_name(%__MODULE__{ip_address: ip_address, username: username}),
     do: "#{username}@#{:inet.ntoa(ip_address.address)}"
 
-  @spec list_active_servers() :: list(t())
-  def list_active_servers do
+  @spec list_active_servers(DateTime.t()) :: list(t())
+  def list_active_servers(now) do
+    day = DateTime.to_date(now)
+
     Repo.all(
       from(s in __MODULE__,
         distinct: true,
         join: ua in assoc(s, :user_account),
+        left_join: uas in assoc(ua, :student),
         join: c in assoc(s, :class),
-        # TODO: put query fragment determining whether auser is active in the user account schema
-        where: :root in ua.roles or c.active == true,
+        # TODO: put query fragment determining whether a user is active in the user account schema
+        where:
+          s.active and ua.active and
+            (:root in ua.roles or
+               (uas.active and uas.class_id == c.id and c.active == true and
+                  (is_nil(c.start_date) or c.start_date <= ^day) and
+                  (is_nil(c.end_date) or c.end_date >= ^day))),
         preload: [class: c, user_account: ua]
       )
     )
@@ -104,9 +118,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
            from(s in __MODULE__,
              join: c in assoc(s, :class),
              join: ua in assoc(s, :user_account),
-             left_join: uac in assoc(ua, :class),
+             left_join: uas in assoc(ua, :student),
+             left_join: uac in assoc(uas, :class),
              where: s.id == ^id,
-             preload: [class: c, user_account: {ua, class: uac}]
+             preload: [class: c, user_account: {ua, student: {uas, class: uac}}]
            )
          ) do
       nil ->
@@ -128,6 +143,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :ip_address,
       :username,
       :ssh_port,
+      :active,
       :class_id,
       :app_username,
       :expected_cpus,
@@ -172,6 +188,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :username,
       :ssh_port,
       :app_username,
+      :active,
       :expected_cpus,
       :expected_cores,
       :expected_vcpus,
@@ -217,7 +234,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> update_change(:expected_distribution, &trim_to_nil/1)
     |> update_change(:expected_distribution_release, &trim_to_nil/1)
     |> update_change(:expected_distribution_version, &trim_to_nil/1)
-    |> validate_required([:ip_address, :username, :shared_secret, :class_id, :app_username])
+    |> validate_required([
+      :ip_address,
+      :username,
+      :shared_secret,
+      :active,
+      :class_id,
+      :app_username
+    ])
     |> validate_length(:name, max: 50)
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
@@ -247,5 +271,24 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_length(:expected_distribution, max: 50)
     |> validate_length(:expected_distribution_release, max: 50)
     |> validate_length(:expected_distribution_version, max: 20)
+    |> validate_username_and_app_username()
   end
+
+  defp validate_username_and_app_username(changeset) do
+    if changed?(changeset, :username) or changed?(changeset, :app_username) do
+      validate_username_and_app_username(
+        changeset,
+        get_field(changeset, :username),
+        get_field(changeset, :app_username)
+      )
+    else
+      changeset
+    end
+  end
+
+  defp validate_username_and_app_username(changeset, username, app_username)
+       when username != nil and username == app_username,
+       do: add_error(changeset, :app_username, "cannot be the same as the username")
+
+  defp validate_username_and_app_username(changeset, _username, _app_username), do: changeset
 end

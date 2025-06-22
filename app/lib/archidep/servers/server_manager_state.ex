@@ -230,6 +230,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
         problems:
           Enum.reject(state.problems, fn problem ->
             match?({:server_authentication_failed, _username, _reason}, problem) or
+              match?({:server_connection_timed_out, _host, _port, _user_type, _username}, problem) or
               match?({:server_missing_sudo_access, _username, _stderr}, problem) or
               match?({:server_reconnection_failed, _reason}, problem) or
               match?({:server_sudo_access_check_failed, _reason}, problem)
@@ -511,7 +512,25 @@ defmodule ArchiDep.Servers.ServerManagerState do
               }
 
             connecting_state() ->
-              retry(state, reason)
+              retry(
+                %{
+                  state
+                  | problems:
+                      state.problems ++
+                        if(reason == :timeout,
+                          do: [
+                            {:server_connection_timed_out, state.server.ip_address.address,
+                             state.server.ssh_port || 22,
+                             if(state.username == state.server.app_username,
+                               do: :app_username,
+                               else: :username
+                             ), state.username}
+                          ],
+                          else: []
+                        )
+                },
+                reason
+              )
           end
       end
 

@@ -25,7 +25,7 @@ defmodule ArchiDep.Servers.ServerConnection do
   @spec connect(Server.t(), :inet.ip_address(), 1..65_535, String.t(), connect_options) ::
           :ok | {:error, term()}
   def connect(server, host, port, username, options \\ []),
-    do: GenServer.call(name(server), {:connect, host, port, username, options}, 30_000)
+    do: GenServer.call(name(server), {:connect, host, port, username, options}, 45_000)
 
   @spec run_command(Server.t(), String.t(), pos_integer()) ::
           {:ok, String.t(), String.t(), 0..255} | {:error, term()}
