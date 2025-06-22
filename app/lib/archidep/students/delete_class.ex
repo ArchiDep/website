@@ -13,8 +13,8 @@ defmodule ArchiDep.Students.DeleteClass do
       authorize!(auth, Policy, :students, :delete_class, class)
 
       now = DateTime.utc_now()
-      user = Authentication.fetch_user_account(auth)
 
+      # FIXME: shut down servers
       case Multi.new()
            |> Multi.delete_all(:students, Student.delete_students_in_class(class))
            |> Multi.delete(:class, class)
@@ -22,7 +22,7 @@ defmodule ArchiDep.Students.DeleteClass do
              ClassDeleted.new(class)
              |> new_event(auth, occurred_at: now)
              |> add_to_stream(class)
-             |> initiated_by(user)
+             |> initiated_by(auth)
            end)
            |> Repo.transaction() do
         {:ok, _} ->

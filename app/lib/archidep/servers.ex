@@ -40,4 +40,8 @@ defmodule ArchiDep.Servers do
   @spec update_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_not_found}
   defdelegate update_server(auth, id, data), to: @implementation
+
+  @spec delete_server(Authentication.t(), UUID.t()) ::
+          :ok | {:error, :server_busy} | {:error, :server_not_found}
+  defdelegate delete_server(auth, server_id), to: @implementation
 end

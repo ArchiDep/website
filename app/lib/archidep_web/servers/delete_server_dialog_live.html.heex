@@ -1,0 +1,23 @@
+<dialog id={id(@server)} class="modal">
+  <div class="modal-box">
+    <h3 class="text-lg font-bold">Delete Server</h3>
+    <p class="mt-4">Are you sure you want to permanently delete this server?</p>
+    <div class="mt-4 flex justify-end gap-x-2">
+      <button type="button" class="btn btn-secondary" phx-click={close(@server)}>
+        <span class="flex items-center gap-x-2">
+          <Heroicons.x_mark class="size-4" />
+          <span>No</span>
+        </span>
+      </button>
+      <button type="button" class="btn btn-error" disabled={@state != nil and !ServerRealTimeState.deletable?(@state)} phx-click="delete" phx-target={@myself}>
+        <span class="flex items-center gap-x-2">
+          <Heroicons.trash class="size-4" />
+          <span>Yes</span>
+        </span>
+      </button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
+    <button type="submit">Close</button>
+  </form>
+</dialog>

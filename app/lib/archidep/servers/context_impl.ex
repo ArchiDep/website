@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.ContextImpl do
   use ArchiDep, :context
 
   alias ArchiDep.Servers.CreateServer
+  alias ArchiDep.Servers.DeleteServer
   alias ArchiDep.Servers.FetchServer
   alias ArchiDep.Servers.ListServers
   alias ArchiDep.Servers.ManageServer
@@ -42,4 +43,8 @@ defmodule ArchiDep.Servers.ContextImpl do
   @spec update_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_not_found}
   defdelegate update_server(auth, id, data), to: UpdateServer
+
+  @spec delete_server(Authentication.t(), UUID.t()) ::
+          :ok | {:error, :server_busy} | {:error, :server_not_found}
+  defdelegate delete_server(auth, server_id), to: DeleteServer
 end

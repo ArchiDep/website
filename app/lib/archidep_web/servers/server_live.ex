@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracker
+  alias ArchiDepWeb.Servers.DeleteServerDialogLive
   alias ArchiDepWeb.Servers.EditServerDialogLive
 
   @impl true

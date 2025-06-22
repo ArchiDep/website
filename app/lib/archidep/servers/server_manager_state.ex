@@ -8,6 +8,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Tracker
+  alias ArchiDep.Servers.DeleteServer
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -918,6 +919,84 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
       {:error, changeset} ->
         {state, {:error, changeset}}
+    end
+  end
+
+  @spec delete_server(t(), Authentication.t()) :: {t(), :ok | {:error, :server_busy}}
+  def delete_server(
+        state,
+        auth
+      ) do
+    case state do
+      %__MODULE__{connection_state: not_connected_state(), tasks: %{}, ansible_playbook: nil} ->
+        :ok = DeleteServer.delete_server(auth, state.server)
+        {state, :ok}
+
+      %__MODULE__{
+        connection_state: retry_connecting_state(connection_pid: connection_pid),
+        tasks: %{},
+        ansible_playbook: nil
+      } ->
+        :ok = DeleteServer.delete_server(auth, state.server)
+
+        {
+          %__MODULE__{
+            state
+            | connection_state: not_connected_state(connection_pid: connection_pid),
+              actions: [if(state.retry_timer, do: {:cancel_timer, state.retry_timer}, else: [])]
+          },
+          :ok
+        }
+
+      %__MODULE__{
+        connection_state: connected_state(connection_pid: connection_pid),
+        server: server,
+        tasks: %{},
+        ansible_playbook: nil
+      } ->
+        :ok = ServerConnection.disconnect(server)
+        :ok = DeleteServer.delete_server(auth, server)
+
+        {
+          %__MODULE__{
+            state
+            | connection_state: not_connected_state(connection_pid: connection_pid)
+          },
+          :ok
+        }
+
+      %__MODULE__{
+        connection_state: connection_failed_state(connection_pid: connection_pid),
+        tasks: %{},
+        ansible_playbook: nil
+      } ->
+        :ok = DeleteServer.delete_server(auth, state.server)
+
+        {
+          %__MODULE__{
+            state
+            | connection_state: not_connected_state(connection_pid: connection_pid)
+          },
+          :ok
+        }
+
+      %__MODULE__{
+        connection_state: disconnected_state(),
+        tasks: %{},
+        ansible_playbook: nil
+      } ->
+        :ok = DeleteServer.delete_server(auth, state.server)
+
+        {
+          %__MODULE__{
+            state
+            | connection_state: not_connected_state()
+          },
+          :ok
+        }
+
+      _any_other_state ->
+        {state, {:error, :server_busy}}
     end
   end
 

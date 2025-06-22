@@ -28,4 +28,7 @@ defmodule ArchiDep.Servers.Behaviour do
 
   @callback update_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
               {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_not_found}
+
+  @callback delete_server(Authentication.t(), UUID.t()) ::
+              :ok | {:error, :server_busy} | {:error, :server_not_found}
 end

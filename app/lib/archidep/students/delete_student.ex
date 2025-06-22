@@ -14,6 +14,7 @@ defmodule ArchiDep.Students.DeleteStudent do
       now = DateTime.utc_now()
       user = Authentication.fetch_user_account(auth)
 
+      # TODO: shut down server
       case Multi.new()
            |> Multi.delete(:student, student)
            |> Multi.insert(:stored_event, fn %{student: student} ->

@@ -16,8 +16,8 @@ defmodule ArchiDep.Servers.ServerSupervisor do
   @spec name(UUID.t()) :: GenServer.name()
   def name(server_id), do: {:global, {:server_supervisor, server_id}}
 
-  @spec start_link({UUID.t(), Pipeline.t()}) :: Supervisor.on_start()
-  def start_link({server_id, pipeline}),
+  @spec start_link(UUID.t(), Pipeline.t()) :: Supervisor.on_start()
+  def start_link(server_id, pipeline),
     do: Supervisor.start_link(__MODULE__, {server_id, pipeline}, name: name(server_id))
 
   @impl true

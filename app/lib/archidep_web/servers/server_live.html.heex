@@ -56,6 +56,19 @@
             <span>Edit</span>
           </span>
         </button>
+
+        <button
+          type="button"
+          class="join-item btn btn-error"
+          phx-click={
+            JS.dispatch("open-dialog", detail: %{dialog: DeleteServerDialogLive.id(@server)})
+          }
+        >
+          <span class="flex items-center gap-x-2">
+            <Heroicons.trash class="size-4" />
+            <span>Delete</span>
+          </span>
+        </button>
       </div>
     </div>
   </div>
@@ -75,4 +88,12 @@
   id={EditServerDialogLive.id(@server)}
   auth={@auth}
   server={@server}
+/>
+
+<.live_component
+  module={DeleteServerDialogLive}
+  id={DeleteServerDialogLive.id(@server)}
+  auth={@auth}
+  server={@server}
+  state={@state}
 />

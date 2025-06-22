@@ -61,6 +61,9 @@ defmodule ArchiDep.Servers.ServerManager do
   def update_server(server, auth, data),
     do: GenServer.call(name(server), {:update_server, auth, data})
 
+  @spec delete_server(Server.t(), Authentication.t()) :: :ok | {:error, :server_busy}
+  def delete_server(server, auth), do: GenServer.call(name(server), {:delete_server, auth})
+
   # Server callbacks
 
   @impl true
@@ -149,6 +152,25 @@ defmodule ArchiDep.Servers.ServerManager do
     new_state
     |> execute_actions()
     |> reply_with(result)
+  end
+
+  def handle_call(
+        {:delete_server, auth},
+        _from,
+        state
+      ) do
+    {new_state, result} = ServerManagerState.delete_server(state, auth)
+
+    case result do
+      {:error, :server_busy} ->
+        new_state
+        |> execute_actions()
+        |> reply_with(result)
+
+      :ok ->
+        # FIXME: won't work because ServerSupervisor attempts to restart it
+        {:stop, :normal, :ok, new_state}
+    end
   end
 
   @impl true

@@ -10,7 +10,12 @@ defmodule ArchiDep.Servers.ServerDynamicSupervisor do
 
   @spec start_server_supervisor(UUID.t(), Pipeline.t()) :: DynamicSupervisor.on_start_child()
   def start_server_supervisor(server_id, pipeline),
-    do: DynamicSupervisor.start_child(@name, {ServerSupervisor, {server_id, pipeline}})
+    do:
+      DynamicSupervisor.start_child(@name, %{
+        id: ServerSupervisor,
+        start: {ServerSupervisor, :start_link, [server_id, pipeline]},
+        restart: :transient
+      })
 
   @spec start_link(any()) :: Supervisor.on_start()
   def start_link(_init_arg),

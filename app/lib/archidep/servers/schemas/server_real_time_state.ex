@@ -1,4 +1,5 @@
 defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
+  import ArchiDep.Servers.ServerConnectionState
   alias ArchiDep.Servers.ServerConnectionState
   alias ArchiDep.Servers.Types
 
@@ -26,4 +27,17 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
     problems: [],
     version: 0
   ]
+
+  @spec deletable?(t()) :: boolean()
+  def deletable?(%__MODULE__{connection_state: not_connected_state(), current_job: nil}), do: true
+  def deletable?(%__MODULE__{connection_state: connected_state(), current_job: nil}), do: true
+
+  def deletable?(%__MODULE__{connection_state: retry_connecting_state(), current_job: nil}),
+    do: true
+
+  def deletable?(%__MODULE__{connection_state: connection_failed_state(), current_job: nil}),
+    do: true
+
+  def deletable?(%__MODULE__{connection_state: disconnected_state(), current_job: nil}), do: true
+  def deletable?(%__MODULE__{}), do: false
 end

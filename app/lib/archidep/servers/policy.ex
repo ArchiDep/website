@@ -95,5 +95,14 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Root users can delete servers.
+  def authorize(
+        :servers,
+        :delete_server,
+        %Authentication{principal: %UserAccount{roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   def authorize(_context, _action, _principal, _params), do: false
 end
