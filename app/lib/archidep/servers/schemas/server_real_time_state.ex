@@ -10,6 +10,7 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
           app_username: String.t(),
           current_job: Types.server_job(),
           problems: list(Types.server_problem()),
+          set_up_at: DateTime.t() | nil,
           version: non_neg_integer()
         }
 
@@ -20,6 +21,7 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
     :conn_params,
     :username,
     :app_username,
+    :set_up_at,
     current_job: nil,
     problems: [],
     version: 0

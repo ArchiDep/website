@@ -208,6 +208,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     host = server.ip_address.address
     port = server.ssh_port || 22
     username = state.username
+    app_username = server.app_username
 
     %__MODULE__{
       state
@@ -230,7 +231,10 @@ defmodule ArchiDep.Servers.ServerManagerState do
         problems:
           Enum.reject(state.problems, fn problem ->
             match?({:server_authentication_failed, _username, _reason}, problem) or
-              match?({:server_connection_timed_out, _host, _port, _user_type, _username}, problem) or
+              match?(
+                {:server_connection_timed_out, _host, _port, _user_type, ^app_username},
+                problem
+              ) or
               match?({:server_missing_sudo_access, _username, _stderr}, problem) or
               match?({:server_reconnection_failed, _reason}, problem) or
               match?({:server_sudo_access_check_failed, _reason}, problem)
@@ -516,8 +520,14 @@ defmodule ArchiDep.Servers.ServerManagerState do
                 %{
                   state
                   | problems:
-                      state.problems ++
-                        if(reason == :timeout,
+                      Enum.reject(
+                        state.problems,
+                        &match?(
+                          {:server_connection_timed_out, _host, _port, _user_type, _username},
+                          &1
+                        )
+                      ) ++
+                        if(reason == :timeout and state.username == state.server.username,
                           do: [
                             {:server_connection_timed_out, state.server.ip_address.address,
                              state.server.ssh_port || 22,
@@ -1138,6 +1148,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
       username: server.username,
       app_username: server.app_username,
       current_job: current_job,
+      set_up_at: server.set_up_at,
       problems: state.problems,
       version: state.version
     }

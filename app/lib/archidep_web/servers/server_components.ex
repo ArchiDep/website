@@ -38,16 +38,16 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   def server_card(assigns) do
     state = assigns.state
 
-    {badge_class, badge_text, status_text, retry_text} =
+    {badge_class, badge_text, status_text, retry_text, connecting_or_reconnecting} =
       case state do
         nil ->
-          {"badge-info", "Not connected", "No connection to this server.", nil}
+          {"badge-info", "Not connected", "No connection to this server.", nil, false}
 
         %ServerRealTimeState{connection_state: not_connected_state()} ->
-          {"badge-info", "Not connected", "No connection to this server.", nil}
+          {"badge-info", "Not connected", "No connection to this server.", nil, false}
 
         %ServerRealTimeState{connection_state: connecting_state()} ->
-          {"badge-primary", "Connecting", "Connecting to the server", nil}
+          {"badge-primary", "Connecting", "Connecting to the server", nil, true}
 
         %ServerRealTimeState{
           connection_state:
@@ -63,7 +63,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
              time: time,
              in_seconds: in_seconds,
              reason: reason
-           }), "Retry now"}
+           }), "Retry now", false}
 
         %ServerRealTimeState{connection_state: connected_state(), current_job: current_job} ->
           {
@@ -96,59 +96,77 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
               nil ->
                 "Connected to the server."
             end,
-            nil
+            nil,
+            false
           }
 
         %ServerRealTimeState{connection_state: reconnecting_state()} ->
-          {"badge-primary", "Reconnecting", "Reconnecting to the server", nil}
+          {"badge-primary", "Reconnecting", "Reconnecting to the server", nil, true}
 
         %ServerRealTimeState{connection_state: connection_failed_state()} ->
           {"badge-error", "Connection failed", "Could not connect to the server.",
-           "Retry connecting"}
+           "Retry connecting", false}
 
         %ServerRealTimeState{connection_state: disconnected_state()} ->
-          {"badge-primary", "Disconnected", "The connection to the server was lost.", nil}
+          {"badge-primary", "Disconnected", "The connection to the server was lost.", nil, false}
+      end
+
+    filtered_problems =
+      case state do
+        nil ->
+          []
+
+        %ServerRealTimeState{set_up_at: nil} ->
+          state.problems
+
+        %ServerRealTimeState{} ->
+          # Ignore connection timeout problems after the server has been set up.
+          # The server might simply be offline.
+          Enum.reject(
+            state.problems,
+            &match?({:server_connection_timed_out, _host, _port, _user_type, _username}, &1)
+          )
       end
 
     card_class =
-      case state do
-        nil ->
+      case {state, filtered_problems} do
+        {nil, _problems} ->
           "bg-neutral text-neutral-content"
 
-        %ServerRealTimeState{connection_state: not_connected_state()} ->
+        {%ServerRealTimeState{connection_state: not_connected_state()}, _problems} ->
           "bg-neutral text-neutral-content"
 
-        %ServerRealTimeState{connection_state: connecting_state(), problems: []} ->
+        {%ServerRealTimeState{connection_state: connecting_state()}, []} ->
           "bg-info text-info-content animate-pulse"
 
-        %ServerRealTimeState{connection_state: connecting_state()} ->
+        {%ServerRealTimeState{connection_state: connecting_state()}, _problems} ->
           "bg-warning text-warning-content animate-pulse"
 
-        %ServerRealTimeState{connection_state: retry_connecting_state(), problems: []} ->
+        {%ServerRealTimeState{connection_state: retry_connecting_state()}, []} ->
           "bg-info text-info-content"
 
-        %ServerRealTimeState{connection_state: retry_connecting_state()} ->
+        {%ServerRealTimeState{connection_state: retry_connecting_state()}, _problems} ->
           "bg-warning text-warning-content"
 
-        %ServerRealTimeState{connection_state: connected_state(), problems: []} ->
+        {%ServerRealTimeState{connection_state: connected_state()}, []} ->
           "bg-success text-success-content"
 
-        %ServerRealTimeState{connection_state: connected_state()} ->
+        {%ServerRealTimeState{connection_state: connected_state()}, _problems} ->
           "bg-warning text-warning-content"
 
-        %ServerRealTimeState{connection_state: reconnecting_state(), problems: []} ->
+        {%ServerRealTimeState{connection_state: reconnecting_state()}, []} ->
           "bg-info text-info-content animate-pulse"
 
-        %ServerRealTimeState{connection_state: reconnecting_state()} ->
+        {%ServerRealTimeState{connection_state: reconnecting_state()}, _problems} ->
           "bg-warning text-warning-content animate-pulse"
 
-        %ServerRealTimeState{connection_state: connection_failed_state()} ->
+        {%ServerRealTimeState{connection_state: connection_failed_state()}, _problems} ->
           "bg-error text-error-content"
 
-        %ServerRealTimeState{connection_state: disconnected_state(), problems: []} ->
+        {%ServerRealTimeState{connection_state: disconnected_state()}, []} ->
           "bg-info text-info-content"
 
-        %ServerRealTimeState{connection_state: disconnected_state()} ->
+        {%ServerRealTimeState{connection_state: disconnected_state()}, _problems} ->
           "bg-warning text-warning-content"
       end
 
@@ -160,7 +178,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       |> assign(:status_text, status_text)
       |> assign(:retry_text, retry_text)
       |> assign(:connected, state != nil and connected?(state.connection_state))
-      |> assign(:not_connected, state == nil or not_connected?(state.connection_state))
+      |> assign(:connecting_or_reconnecting, connecting_or_reconnecting)
       |> assign(:busy, state != nil and state.current_job != nil)
 
     ~H"""
@@ -176,8 +194,11 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           </div>
         </div>
         <div class="flex items-center gap-x-2">
-          <Heroicons.bolt :if={!@busy and !@not_connected} class="size-4" />
-          <Heroicons.bolt_slash :if={!@busy and @not_connected} class="size-4" />
+          <Heroicons.bolt :if={!@busy and (@connected or @connecting_or_reconnecting)} class="size-4" />
+          <Heroicons.bolt_slash
+            :if={!@busy and !@connected and !@connecting_or_reconnecting}
+            class="size-4"
+          />
           <Heroicons.arrow_path :if={@busy} class="size-4 animate-spin" />
           <span>{@status_text}</span>
         </div>
@@ -499,6 +520,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     ~H"""
     <%= if @reason == :econnrefused do %>
       Server unreachable.
+    <% end %>
+    <%= if @reason == :timeout do %>
+      Connection timed out.
     <% end %>
     Will retry
     <span id={@id} data-end-time={DateTime.to_iso8601(@end_time)} phx-hook="remainingSeconds">
