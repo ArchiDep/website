@@ -24,7 +24,7 @@ defmodule ArchiDep.Servers.Types do
           | :checking_access
           | :setting_up_app_user
           | :gathering_facts
-          | {:running_playbook, String.t(), UUID.t()}
+          | {:running_playbook, String.t(), UUID.t(), String.t() | nil}
           | nil
 
   # TODO: add list of failed tasks

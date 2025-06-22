@@ -45,8 +45,9 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
       running_run
       |> Ansible.run_playbook()
       |> Stream.each(fn
-        {:event, _event} ->
+        {:event, event} ->
           update_tracking!(run_id, fn meta -> %{meta | events: meta.events + 1} end)
+          :ok = ServerManager.ansible_playbook_event(running_run, event)
 
         {:succeeded, succeeded_run} ->
           update_tracking!(run_id, fn meta -> %{meta | state: :succeeded} end)

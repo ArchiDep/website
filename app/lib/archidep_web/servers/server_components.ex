@@ -48,7 +48,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
         %ServerRealTimeState{connection_state: connecting_state()} ->
           {"bg-info text-info-content animate-pulse", "badge-primary", "Connecting",
-           "Connecting to the server...", nil}
+           "Connecting to the server", nil}
 
         %ServerRealTimeState{
           connection_state:
@@ -73,22 +73,27 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             "Connected",
             case current_job do
               :checking_access ->
-                "Checking access..."
+                "Checking access"
 
               :setting_up_app_user ->
-                "Setting up application user..."
+                "Setting up application user"
 
               :gathering_facts ->
-                "Gathering facts..."
+                "Gathering facts"
 
-              {:running_playbook, playbook, _run_id} ->
-                case playbook do
-                  "setup" ->
-                    "Performing initial setup..."
+              {:running_playbook, playbook, _run_id, ongoing_task} ->
+                [
+                  case playbook do
+                    "setup" ->
+                      "Initial setup"
 
-                  _any_other_playbook ->
-                    "Running #{playbook}..."
-                end
+                    _any_other_playbook ->
+                      "Running #{playbook}"
+                  end,
+                  ongoing_task
+                ]
+                |> Enum.reject(&is_nil/1)
+                |> Enum.join(": ")
 
               nil ->
                 "Connected to the server."
@@ -98,7 +103,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
         %ServerRealTimeState{connection_state: reconnecting_state()} ->
           {"bg-info text-info-content animate-pulse", "badge-primary", "Reconnecting",
-           "Reconnecting to the server...", nil}
+           "Reconnecting to the server", nil}
 
         %ServerRealTimeState{connection_state: connection_failed_state()} ->
           {"bg-error text-error-content", "badge-error", "Connection failed",
@@ -198,7 +203,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
     retrying =
       case assigns.current_job do
-        {:running_playbook, ^playbook, _run_id} ->
+        {:running_playbook, ^playbook, _run_id, _ongoing_task} ->
           true
 
         _anything_else ->
@@ -221,7 +226,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           <code>{@playbook}</code> provisioning task failed
         <% end %>
       </span>
-      <%= if @on_retry_operation != nil and has_role?(@auth, :root) do %>
+      <%= if @on_retry_operation != nil and @connected and has_role?(@auth, :root) do %>
         <button
           type="button"
           class="btn btn-xs btn-warning flex items-center gap-x-1"
@@ -441,7 +446,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     </span>
     <%= if has_role?(@auth, :root) do %>
       (attempt #{@retry + 1})
-    <% end %>...
+    <% end %>
     """
   end
 end

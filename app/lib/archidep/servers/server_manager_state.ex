@@ -46,7 +46,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
           storage: :ets.tid(),
           actions: list(action()),
           tasks: %{atom() => reference()},
-          ansible_playbook: AnsiblePlaybookRun.t() | nil,
+          ansible_playbook: {AnsiblePlaybookRun.t(), String.t() | nil} | nil,
           problems: list(server_problem()),
           retry_timer: reference() | nil,
           load_average_timer: reference() | nil,
@@ -307,7 +307,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
             %__MODULE__{
               state
-              | ansible_playbook: playbook_run,
+              | ansible_playbook: {playbook_run, nil},
                 actions: [
                   {:run_playbook, playbook_run},
                   update_tracking()
@@ -565,12 +565,38 @@ defmodule ArchiDep.Servers.ServerManagerState do
         ]
     }
 
+  @spec ansible_playbook_event(t(), UUID.t(), String.t() | nil) :: t()
+  def ansible_playbook_event(
+        %__MODULE__{
+          ansible_playbook: {%AnsiblePlaybookRun{id: run_id} = playbook_run, _previous_task}
+        } = state,
+        run_id,
+        ongoing_task
+      ) do
+    %__MODULE__{
+      state
+      | ansible_playbook: {playbook_run, ongoing_task},
+        actions: [
+          update_tracking()
+        ]
+    }
+  end
+
+  @spec ansible_playbook_event(t(), UUID.t(), String.t() | nil) :: t()
+  def ansible_playbook_event(state, _run_id, _ongoing_task) do
+    Logger.warning(
+      "Ignoring Ansible playbook event for server #{state.server.id} because no playbook is running"
+    )
+
+    state
+  end
+
   @spec ansible_playbook_completed(t(), UUID.t()) :: t()
   def ansible_playbook_completed(
         %__MODULE__{
           connection_state:
             connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
-          ansible_playbook: %AnsiblePlaybookRun{id: run_id, playbook: "setup"}
+          ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task}
         } = state,
         run_id
       ) do
@@ -676,7 +702,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
       %__MODULE__{
         state
-        | ansible_playbook: playbook_run,
+        | ansible_playbook: {playbook_run, nil},
           actions: [
             {:run_playbook, playbook_run},
             update_tracking()
@@ -1013,9 +1039,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
         %{
           connection_state: connected_state(),
-          ansible_playbook: %AnsiblePlaybookRun{id: id, playbook: playbook}
+          ansible_playbook: {%AnsiblePlaybookRun{id: id, playbook: playbook}, task}
         } ->
-          {:running_playbook, playbook, id}
+          {:running_playbook, playbook, id, task}
 
         _anything_else ->
           nil

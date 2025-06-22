@@ -8,6 +8,7 @@ defmodule ArchiDep.Servers.ServerManager do
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
@@ -34,6 +35,10 @@ defmodule ArchiDep.Servers.ServerManager do
   @spec connection_idle(UUID.t(), pid()) :: :ok
   def connection_idle(server_id, connection_pid),
     do: GenServer.cast(name(server_id), {:connection_idle, connection_pid})
+
+  @spec ansible_playbook_event(AnsiblePlaybookRun.t(), AnsiblePlaybookEvent.t()) :: :ok
+  def ansible_playbook_event(run, event),
+    do: GenServer.cast(name(run.server), {:ansible_playbook_event, run.id, event.task_name})
 
   @spec ansible_playbook_completed(AnsiblePlaybookRun.t()) :: :ok
   def ansible_playbook_completed(run),
@@ -84,6 +89,13 @@ defmodule ArchiDep.Servers.ServerManager do
     do:
       state
       |> ServerManagerState.retry_connecting(true)
+      |> execute_actions()
+      |> noreply()
+
+  def handle_cast({:ansible_playbook_event, run_id, ongoing_task}, state),
+    do:
+      state
+      |> ServerManagerState.ansible_playbook_event(run_id, ongoing_task)
       |> execute_actions()
       |> noreply()
 
