@@ -32,6 +32,9 @@ defmodule ArchiDep.Servers.ServerConnection do
   def run_command(server, command, timeout),
     do: GenServer.call(name(server), {:run_command, command}, timeout)
 
+  @spec disconnect(Server.t()) :: :ok
+  def disconnect(server), do: GenServer.call(name(server), :disconnect)
+
   # Server callbacks
 
   @impl true
@@ -58,6 +61,8 @@ defmodule ArchiDep.Servers.ServerConnection do
         _from,
         {:connected, connection_ref, server_id}
       ) do
+    Process.unlink(connection_ref)
+
     case :ssh.close(connection_ref) do
       :ok ->
         Logger.debug("Closed SSH connection to server #{server_id}")
@@ -78,6 +83,17 @@ defmodule ArchiDep.Servers.ServerConnection do
 
   def handle_call({:run_command, _command}, _from, state) do
     {:reply, {:error, :not_connected}, state}
+  end
+
+  def handle_call(:disconnect, _from, {:connected, connection_ref, server_id}) do
+    Process.unlink(connection_ref)
+
+    case :ssh.close(connection_ref) do
+      :ok ->
+        Logger.debug("Closed SSH connection to server #{server_id}")
+    end
+
+    {:reply, :ok, {:idle, server_id}}
   end
 
   @impl true

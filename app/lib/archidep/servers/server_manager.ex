@@ -4,7 +4,7 @@ defmodule ArchiDep.Servers.ServerManager do
   require Logger
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Servers.Helpers
-  alias ArchiDep.Servers
+  alias ArchiDep.Authentication
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
@@ -13,8 +13,10 @@ defmodule ArchiDep.Servers.ServerManager do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerManagerState
+  alias ArchiDep.Servers.Types
   alias ArchiDep.Students
   alias ArchiDep.Students.Schemas.Class
+  alias Ecto.Changeset
   alias Ecto.UUID
 
   @spec name(Server.t()) :: GenServer.name()
@@ -54,6 +56,11 @@ defmodule ArchiDep.Servers.ServerManager do
   @spec notify_server_up(UUID.t()) :: :ok
   def notify_server_up(server_id), do: GenServer.cast(name(server_id), :retry_connecting)
 
+  @spec update_server(Server.t(), Authentication.t(), Types.update_server_data()) ::
+          {:ok, Server.t()} | {:error, Changeset.t()}
+  def update_server(server, auth, data),
+    do: GenServer.call(name(server), {:update_server, auth, data})
+
   # Server callbacks
 
   @impl true
@@ -68,7 +75,6 @@ defmodule ArchiDep.Servers.ServerManager do
       |> ServerManagerState.init(pipeline)
       |> execute_actions()
 
-    :ok = Servers.PubSub.subscribe_server(state.server.id)
     :ok = Students.PubSub.subscribe_class(state.server.class.id)
 
     noreply(state)
@@ -133,6 +139,18 @@ defmodule ArchiDep.Servers.ServerManager do
         |> execute_actions()
         |> reply_with(:ok)
 
+  def handle_call(
+        {:update_server, auth, data},
+        _from,
+        state
+      ) do
+    {new_state, result} = ServerManagerState.update_server(state, auth, data)
+
+    new_state
+    |> execute_actions()
+    |> reply_with(result)
+  end
+
   @impl true
 
   def handle_info(:retry_connecting, state),
@@ -176,17 +194,6 @@ defmodule ArchiDep.Servers.ServerManager do
     |> execute_actions()
     |> noreply()
   end
-
-  def handle_info(
-        {:server_updated, server},
-        state
-      )
-      when is_struct(server, Server),
-      do:
-        state
-        |> ServerManagerState.server_updated(server)
-        |> execute_actions()
-        |> noreply()
 
   def handle_info(
         {:DOWN, _ref, :process, connection_pid, reason},

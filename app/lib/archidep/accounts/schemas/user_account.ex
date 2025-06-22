@@ -40,7 +40,12 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     field(:updated_at, :utc_datetime_usec)
   end
 
-  @spec student?(__MODULE__.t()) :: boolean
+  @spec active?(t(), DateTime.t()) :: boolean
+  def active?(%__MODULE__{class: class, roles: roles}, now),
+    do:
+      Enum.member?(roles, :root) or (Enum.member?(roles, :student) and Class.active?(class, now))
+
+  @spec student?(t()) :: boolean
   def student?(%__MODULE__{roles: roles}), do: :student in roles
 
   @spec fetch_or_create_for_switch_edu_id(SwitchEduId.t(), list(Types.role())) ::
@@ -63,7 +68,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       )
       |> Repo.one!()
 
-  @spec event_stream(String.t() | __MODULE__.t()) :: String.t()
+  @spec event_stream(String.t() | t()) :: String.t()
   def event_stream(id) when is_binary(id), do: "user-accounts:#{id}"
   def event_stream(%__MODULE__{id: id}), do: event_stream(id)
 

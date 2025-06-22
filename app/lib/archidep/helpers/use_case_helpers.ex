@@ -78,8 +78,17 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   end
 
   @doc """
-  Marks a business event as initiated by the specified user account.
+  Marks a business event as initiated by the authenticated or specified user
+  account.
   """
+
+  @spec initiated_by(StoredEvent.changeset(struct), Authentication.t()) ::
+          StoredEvent.changeset(struct)
+  def initiated_by(changeset, %Authentication{principal: user_account}) do
+    initiator = UserAccount.event_stream(user_account)
+    StoredEvent.initiated_by(changeset, initiator)
+  end
+
   @spec initiated_by(StoredEvent.changeset(struct), UserAccount.t()) ::
           StoredEvent.changeset(struct)
   def initiated_by(changeset, user_account) when is_struct(user_account, UserAccount) do

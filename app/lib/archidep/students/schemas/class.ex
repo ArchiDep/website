@@ -58,6 +58,13 @@ defmodule ArchiDep.Students.Schemas.Class do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  @spec active?(t(), DateTime.t()) :: boolean()
+  def active?(%__MODULE__{active: active, start_date: start_date, end_date: end_date}, now),
+    do:
+      active and
+        (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
+        (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
+
   @spec new(Types.class_data()) :: Changeset.t(t())
   def new(data) do
     id = UUID.generate()

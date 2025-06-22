@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   require Record
   import ArchiDep.Helpers.SchemaHelpers, only: [trim_to_nil: 1]
   import ArchiDep.Servers.ServerConnectionState
+  alias ArchiDep.Authentication
   alias ArchiDep.Helpers.NetHelpers
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
@@ -13,7 +14,9 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerConnectionState
   alias ArchiDep.Servers.Types
+  alias ArchiDep.Servers.UpdateServer
   alias ArchiDep.Students.Schemas.Class
+  alias Ecto.Changeset
   alias Ecto.UUID
 
   @enforce_keys [
@@ -148,16 +151,28 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @spec connection_idle(t(), pid()) :: t()
 
   def connection_idle(
-        %__MODULE__{connection_state: :not_connected} = state,
+        %__MODULE__{connection_state: :not_connected, server: server} = state,
         connection_pid
-      ),
-      do: connect(state, connection_pid, false)
+      ) do
+    if Server.active?(server, DateTime.utc_now()) do
+      connect(state, connection_pid, false)
+    else
+      state
+    end
+  end
 
   def connection_idle(
-        %__MODULE__{connection_state: disconnected_state()} = state,
+        %__MODULE__{connection_state: disconnected_state(), server: server} = state,
         connection_pid
-      ),
-      do: connect(state, connection_pid, false)
+      ) do
+    if Server.active?(server, DateTime.utc_now()) do
+      connect(state, connection_pid, false)
+    else
+      %__MODULE__{state | connection_state: :not_connected, actions: [update_tracking()]}
+    end
+  end
+
+  @spec retry_connecting(t(), boolean()) :: t()
 
   def retry_connecting(
         %__MODULE__{
@@ -738,6 +753,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @spec class_updated(t(), Class.t()) :: t()
   def class_updated(
         %__MODULE__{
+          connection_state: connection_state,
           server: %Server{id: server_id, class: %Class{id: class_id, version: version}},
           problems: problems
         } = state,
@@ -759,45 +775,51 @@ defmodule ArchiDep.Servers.ServerManagerState do
       | class: class
     }
 
-    %__MODULE__{
+    new_state = %__MODULE__{
       state
       | server: new_server,
         actions: [update_tracking()],
         problems: detect_server_properties_mismatches(problems, new_server, facts)
     }
+
+    if Server.active?(new_server, DateTime.utc_now()) do
+      case connection_state do
+        # FIXME: reconnect automatically if the server is not connected
+        _any_other_state ->
+          new_state
+      end
+    else
+      case connection_state do
+        connected_state() ->
+          ServerConnection.disconnect(new_server.id)
+          %__MODULE__{new_state | connection_state: :not_connected}
+
+        connecting_state() ->
+          new_state
+
+        reconnecting_state() ->
+          new_state
+
+        retry_connecting_state() ->
+          %__MODULE__{
+            new_state
+            | connection_state: :not_connected,
+              actions:
+                new_state.actions ++
+                  if(new_state.retry_timer,
+                    do: [{:cancel_timer, new_state.retry_timer}],
+                    else: []
+                  )
+          }
+
+        _any_other_state ->
+          %__MODULE__{new_state | connection_state: :not_connected}
+      end
+    end
   end
 
   @spec class_updated(t(), Class.t()) :: t()
   def class_updated(state, _outdated_class) do
-    state
-  end
-
-  @spec server_updated(t(), Server.t()) :: t()
-  def server_updated(
-        %__MODULE__{server: %Server{id: server_id, version: version}, problems: problems} = state,
-        %Server{id: server_id, version: new_version} = new_server
-      )
-      when new_version > version do
-    Logger.info(
-      "Server manager for server #{server_id} received server update to version #{new_version}"
-    )
-
-    facts =
-      case :ets.lookup(state.storage, :facts) do
-        [{:facts, facts}] -> facts
-        [] -> nil
-      end
-
-    %__MODULE__{
-      state
-      | server: new_server,
-        actions: [update_tracking()],
-        problems: detect_server_properties_mismatches(problems, new_server, facts)
-    }
-  end
-
-  @spec server_updated(t(), Server.t()) :: t()
-  def server_updated(state, _outdated_server) do
     state
   end
 
@@ -825,6 +847,30 @@ defmodule ArchiDep.Servers.ServerManagerState do
         retry_timer: nil,
         load_average_timer: nil
     }
+  end
+
+  # FIXME: refuse to update if server is busy
+  @spec update_server(t(), Authentication.t(), Types.update_server_data()) ::
+          {t(), {:ok, Server.t()} | {:error, Changeset.t()}}
+  def update_server(%__MODULE__{problems: problems} = state, auth, data) do
+    case UpdateServer.update_server(auth, state.server, data) do
+      {:ok, updated_server} ->
+        facts =
+          case :ets.lookup(state.storage, :facts) do
+            [{:facts, facts}] -> facts
+            [] -> nil
+          end
+
+        {%__MODULE__{
+           state
+           | server: updated_server,
+             actions: [update_tracking()],
+             problems: detect_server_properties_mismatches(problems, updated_server, facts)
+         }, {:ok, updated_server}}
+
+      {:error, changeset} ->
+        {state, {:error, changeset}}
+    end
   end
 
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do

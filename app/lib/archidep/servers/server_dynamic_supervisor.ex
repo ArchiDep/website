@@ -3,14 +3,14 @@ defmodule ArchiDep.Servers.ServerDynamicSupervisor do
 
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
-  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerSupervisor
+  alias Ecto.UUID
 
   @name {:global, __MODULE__}
 
-  @spec start_server_supervisor(Server.t(), Pipeline.t()) :: DynamicSupervisor.on_start_child()
-  def start_server_supervisor(server, pipeline),
-    do: DynamicSupervisor.start_child(@name, {ServerSupervisor, {server.id, pipeline}})
+  @spec start_server_supervisor(UUID.t(), Pipeline.t()) :: DynamicSupervisor.on_start_child()
+  def start_server_supervisor(server_id, pipeline),
+    do: DynamicSupervisor.start_child(@name, {ServerSupervisor, {server_id, pipeline}})
 
   @spec start_link(any()) :: Supervisor.on_start()
   def start_link(_init_arg),

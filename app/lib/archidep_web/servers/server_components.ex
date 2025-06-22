@@ -137,7 +137,11 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           </div>
         </div>
         <div class="flex items-center gap-x-2">
-          <Heroicons.check_circle :if={!@busy} class="size-4" />
+          <Heroicons.bolt :if={!@busy and @state.connection_state != :not_connected} class="size-4" />
+          <Heroicons.bolt_slash
+            :if={!@busy and @state.connection_state == :not_connected}
+            class="size-4"
+          />
           <Heroicons.arrow_path :if={@busy} class="size-4 animate-spin" />
           <span>{@status_text}</span>
         </div>

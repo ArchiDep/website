@@ -22,7 +22,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           shared_secret: binary(),
           class: Class.t() | NotLoaded,
           class_id: UUID.t(),
-          user_account: UserAccount.t() | nil | NotLoaded,
+          user_account: UserAccount.t() | NotLoaded,
           user_account_id: UUID.t(),
           # Expected properties for this server
           expected_cpus: non_neg_integer() | nil,
@@ -71,6 +71,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  # FIXME: track changes to the user account
+  @spec active?(t(), DateTime.t()) :: boolean()
+  def active?(%__MODULE__{class: class, user_account: user_account}, now),
+    do: Class.active?(class, now) and UserAccount.active?(user_account, now)
+
   @spec name_or_default(t()) :: String.t()
   def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
   def name_or_default(%__MODULE__{name: name}), do: name
@@ -98,8 +103,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
     case Repo.one(
            from(s in __MODULE__,
              join: c in assoc(s, :class),
+             join: ua in assoc(s, :user_account),
+             left_join: uac in assoc(ua, :class),
              where: s.id == ^id,
-             preload: [class: c]
+             preload: [class: c, user_account: {ua, class: uac}]
            )
          ) do
       nil ->

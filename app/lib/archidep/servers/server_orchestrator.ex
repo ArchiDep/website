@@ -13,11 +13,15 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
 
   @name {:global, __MODULE__}
 
-  # Client API
-
   @spec start_link(Pipeline.t()) :: GenServer.on_start()
   def start_link(pipeline),
     do: GenServer.start_link(__MODULE__, pipeline, name: @name)
+
+  # Client API
+
+  @spec ensure_started(Server.t()) ::
+          DynamicSupervisor.on_start_child() | {:error, :server_not_found}
+  def ensure_started(server), do: GenServer.call(@name, {:ensure_started, server.id})
 
   # Server callbacks
 
@@ -30,9 +34,15 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
   @impl true
   def handle_continue(:load_servers, pipeline) do
     for server <- Server.list_active_servers() do
-      {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server, pipeline)
+      {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server.id, pipeline)
     end
 
     {:noreply, pipeline}
+  end
+
+  @impl true
+  def handle_call({:ensure_started, server_id}, _from, pipeline) do
+    result = ServerDynamicSupervisor.start_server_supervisor(server_id, pipeline)
+    {:reply, result, pipeline}
   end
 end
