@@ -229,14 +229,15 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       <%= if @on_retry_operation != nil and @connected and has_role?(@auth, :root) do %>
         <button
           type="button"
-          class="btn btn-xs btn-warning flex items-center gap-x-1"
+          class="btn btn-xs btn-warning flex items-center gap-x-1 tooltip"
+          data-tip="Retry"
           disabled={@current_job != nil}
           phx-click={@on_retry_operation}
           phx-value-operation="ansible-playbook"
           phx-value-playbook={@playbook}
         >
           <Heroicons.arrow_path class={["size-4", if(@retrying, do: "animate-spin")]} />
-          <span>Retry</span>
+          <span class="sr-only">Retry</span>
         </button>
       <% end %>
     </div>
