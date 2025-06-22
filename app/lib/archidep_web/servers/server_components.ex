@@ -42,7 +42,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           {"bg-neutral text-neutral-content", "badge-info", "Not connected",
            "No connection to this server.", nil}
 
-        %ServerRealTimeState{connection_state: :not_connected} ->
+        %ServerRealTimeState{connection_state: not_connected_state()} ->
           {"bg-neutral text-neutral-content", "badge-info", "Not connected",
            "No connection to this server.", nil}
 
@@ -122,6 +122,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       |> assign(:status_text, status_text)
       |> assign(:retry_text, retry_text)
       |> assign(:connected, connected?(assigns.state.connection_state))
+      |> assign(:not_connected, not_connected?(assigns.state.connection_state))
       |> assign(:busy, assigns.state.current_job != nil)
 
     ~H"""
@@ -137,11 +138,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           </div>
         </div>
         <div class="flex items-center gap-x-2">
-          <Heroicons.bolt :if={!@busy and @state.connection_state != :not_connected} class="size-4" />
-          <Heroicons.bolt_slash
-            :if={!@busy and @state.connection_state == :not_connected}
-            class="size-4"
-          />
+          <Heroicons.bolt :if={!@busy and !@not_connected} class="size-4" />
+          <Heroicons.bolt_slash :if={!@busy and @not_connected} class="size-4" />
           <Heroicons.arrow_path :if={@busy} class="size-4 animate-spin" />
           <span>{@status_text}</span>
         </div>

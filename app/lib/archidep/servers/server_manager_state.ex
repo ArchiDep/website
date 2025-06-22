@@ -32,7 +32,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
     :username,
     :storage,
     :actions,
-    connection_state: :not_connected,
+    connection_state: not_connected_state(),
     tasks: %{},
     ansible_playbook: nil,
     problems: [],
@@ -151,13 +151,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @spec connection_idle(t(), pid()) :: t()
 
   def connection_idle(
-        %__MODULE__{connection_state: :not_connected, server: server} = state,
+        %__MODULE__{connection_state: not_connected_state(), server: server} = state,
         connection_pid
       ) do
     if Server.active?(server, DateTime.utc_now()) do
       connect(state, connection_pid, false)
     else
-      state
+      %__MODULE__{state | connection_state: not_connected_state(connection_pid: connection_pid)}
     end
   end
 
@@ -168,7 +168,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
     if Server.active?(server, DateTime.utc_now()) do
       connect(state, connection_pid, false)
     else
-      %__MODULE__{state | connection_state: :not_connected, actions: [update_tracking()]}
+      %__MODULE__{
+        state
+        | connection_state: not_connected_state(connection_pid: connection_pid),
+          actions: [update_tracking()]
+      }
     end
   end
 
@@ -784,15 +788,21 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
     if Server.active?(new_server, DateTime.utc_now()) do
       case connection_state do
-        # FIXME: reconnect automatically if the server is not connected
+        not_connected_state(connection_pid: connection_pid) when connection_pid != nil ->
+          connect(new_state, connection_pid, false)
+
         _any_other_state ->
           new_state
       end
     else
       case connection_state do
-        connected_state() ->
+        connected_state(connection_pid: connection_pid) ->
           ServerConnection.disconnect(new_server.id)
-          %__MODULE__{new_state | connection_state: :not_connected}
+
+          %__MODULE__{
+            new_state
+            | connection_state: not_connected_state(connection_pid: connection_pid)
+          }
 
         connecting_state() ->
           new_state
@@ -800,10 +810,10 @@ defmodule ArchiDep.Servers.ServerManagerState do
         reconnecting_state() ->
           new_state
 
-        retry_connecting_state() ->
+        retry_connecting_state(connection_pid: connection_pid) ->
           %__MODULE__{
             new_state
-            | connection_state: :not_connected,
+            | connection_state: not_connected_state(connection_pid: connection_pid),
               actions:
                 new_state.actions ++
                   if(new_state.retry_timer,
@@ -812,8 +822,17 @@ defmodule ArchiDep.Servers.ServerManagerState do
                   )
           }
 
-        _any_other_state ->
-          %__MODULE__{new_state | connection_state: :not_connected}
+        disconnected_state() ->
+          %__MODULE__{new_state | connection_state: not_connected_state()}
+
+        connection_failed_state(connection_pid: connection_pid) ->
+          %__MODULE__{
+            new_state
+            | connection_state: not_connected_state(connection_pid: connection_pid)
+          }
+
+        not_connected_state() ->
+          new_state
       end
     end
   end

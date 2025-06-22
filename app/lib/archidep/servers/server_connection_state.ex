@@ -1,6 +1,8 @@
 defmodule ArchiDep.Servers.ServerConnectionState do
   require Record
 
+  Record.defrecord(:not_connected_state, connection_pid: nil)
+
   Record.defrecord(:connecting_state,
     connection_ref: nil,
     connection_pid: nil,
@@ -31,6 +33,8 @@ defmodule ArchiDep.Servers.ServerConnectionState do
           reason: term()
         }
 
+  @type not_connected_state :: record(:not_connected_state, connection_pid: pid() | nil)
+
   @type connecting_state ::
           record(:connecting_state,
             connection_ref: reference(),
@@ -59,7 +63,7 @@ defmodule ArchiDep.Servers.ServerConnectionState do
   @type disconnected_state :: record(:disconnected_state, time: DateTime.t())
 
   @type connection_state ::
-          :not_connected
+          not_connected_state()
           | connecting_state()
           | retry_connecting_state()
           | connected_state()
@@ -69,4 +73,7 @@ defmodule ArchiDep.Servers.ServerConnectionState do
 
   @spec connected?(connection_state()) :: boolean()
   def connected?(state), do: Record.is_record(state, :connected_state)
+
+  @spec not_connected?(connection_state()) :: boolean()
+  def not_connected?(state), do: Record.is_record(state, :not_connected_state)
 end
