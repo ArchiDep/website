@@ -14,6 +14,12 @@ defmodule ArchiDep.Servers.Behaviour do
   @callback fetch_server(Authentication.t(), UUID.t()) ::
               {:ok, Server.t()} | {:error, :server_not_found}
 
+  @callback retry_connecting(Authentication.t(), UUID.t()) ::
+              :ok | {:error, :server_not_found}
+
+  @callback retry_ansible_playbook(Authentication.t(), UUID.t(), String.t()) ::
+              :ok | {:error, :server_not_found}
+
   @callback notify_server_up(UUID.t(), binary(), binary()) ::
               :ok | {:error, :server_not_found}
 

@@ -4,6 +4,7 @@ defmodule ArchiDep.Servers.ContextImpl do
   alias ArchiDep.Servers.CreateServer
   alias ArchiDep.Servers.FetchServer
   alias ArchiDep.Servers.ListServers
+  alias ArchiDep.Servers.ManageServer
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerCallbacks
   alias ArchiDep.Servers.Types
@@ -22,6 +23,14 @@ defmodule ArchiDep.Servers.ContextImpl do
   @spec fetch_server(Authentication.t(), UUID.t()) ::
           {:ok, Server.t()} | {:error, :server_not_found}
   defdelegate fetch_server(auth, id), to: FetchServer
+
+  @spec retry_connecting(Authentication.t(), UUID.t()) ::
+          :ok | {:error, :server_not_found}
+  defdelegate retry_connecting(auth, server), to: ManageServer
+
+  @spec retry_ansible_playbook(Authentication.t(), UUID.t(), String.t()) ::
+          :ok | {:error, :server_not_found}
+  defdelegate retry_ansible_playbook(auth, server, playbook), to: ManageServer
 
   @spec notify_server_up(UUID.t(), binary(), binary()) :: :ok | {:error, :server_not_found}
   defdelegate notify_server_up(server_id, nonce, signature), to: ServerCallbacks

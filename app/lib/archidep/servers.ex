@@ -22,6 +22,14 @@ defmodule ArchiDep.Servers do
           {:ok, Server.t()} | {:error, :server_not_found}
   defdelegate fetch_server(auth, id), to: @implementation
 
+  @spec retry_connecting(Authentication.t(), UUID.t()) ::
+          :ok | {:error, :server_not_found}
+  defdelegate retry_connecting(auth, server), to: @implementation
+
+  @spec retry_ansible_playbook(Authentication.t(), UUID.t(), String.t()) ::
+          :ok | {:error, :server_not_found}
+  defdelegate retry_ansible_playbook(auth, server, playbook), to: @implementation
+
   @spec notify_server_up(UUID.t(), binary(), binary()) :: :ok | {:error, :server_not_found}
   defdelegate notify_server_up(server_id, nonce, signature), to: @implementation
 
