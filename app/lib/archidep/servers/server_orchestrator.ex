@@ -19,9 +19,15 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
 
   # Client API
 
+  # TODO: check :server_not_found error possible here
   @spec ensure_started(Server.t()) ::
-          DynamicSupervisor.on_start_child() | {:error, :server_not_found}
-  def ensure_started(server), do: GenServer.call(@name, {:ensure_started, server.id})
+          :ok | {:error, :server_not_found}
+  def ensure_started(server) do
+    case GenServer.call(@name, {:ensure_started, server.id}) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+    end
+  end
 
   # Server callbacks
 

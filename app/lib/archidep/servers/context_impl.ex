@@ -41,7 +41,10 @@ defmodule ArchiDep.Servers.ContextImpl do
   defdelegate validate_existing_server(auth, id, data), to: UpdateServer
 
   @spec update_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
-          {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_not_found}
+          {:ok, Server.t()}
+          | {:error, Changeset.t()}
+          | {:error, :server_busy}
+          | {:error, :server_not_found}
   defdelegate update_server(auth, id, data), to: UpdateServer
 
   @spec delete_server(Authentication.t(), UUID.t()) ::

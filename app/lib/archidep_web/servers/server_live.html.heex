@@ -47,6 +47,7 @@
         <button
           type="button"
           class="join-item btn btn-warning"
+          disabled={ServerRealTimeState.busy?(@state)}
           phx-click={
             JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(@server)})
           }

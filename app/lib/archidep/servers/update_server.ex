@@ -19,19 +19,14 @@ defmodule ArchiDep.Servers.UpdateServer do
   end
 
   @spec update_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
-          {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_not_found}
+          {:ok, Server.t()}
+          | {:error, Changeset.t()}
+          | {:error, :server_busy}
+          | {:error, :server_not_found}
   def update_server(auth, server_id, data) when is_binary(server_id) do
     with {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :update_server, server) do
-      :ok =
-        case ServerOrchestrator.ensure_started(server) do
-          {:ok, _pid} ->
-            :ok
-
-          {:error, {:already_started, _pid}} ->
-            :ok
-        end
-
+      :ok = ServerOrchestrator.ensure_started(server)
       ServerManager.update_server(server, auth, data)
     else
       {:error, {:access_denied, :servers, :update_server}} ->

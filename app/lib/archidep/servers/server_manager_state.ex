@@ -34,9 +34,11 @@ defmodule ArchiDep.Servers.ServerManagerState do
     :storage,
     :actions,
     connection_state: not_connected_state(),
+    # TODO: tasks, ansible playbook and load average timer should be part of the connected state
     tasks: %{},
     ansible_playbook: nil,
     problems: [],
+    # TODO: retry timer should be part of the retry connecting state
     retry_timer: nil,
     load_average_timer: nil,
     version: 0
@@ -787,7 +789,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
   @spec class_updated(t(), Class.t()) :: t()
   def class_updated(
         %__MODULE__{
-          connection_state: connection_state,
           server: %Server{id: server_id, class: %Class{id: class_id, version: version}},
           problems: problems
         } = state,
@@ -809,62 +810,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
       | class: class
     }
 
-    new_state = %__MODULE__{
+    auto_activate_or_deactivate(%__MODULE__{
       state
       | server: new_server,
+        # TODO: do not add update tracking action if there is already one
         actions: [update_tracking()],
         problems: detect_server_properties_mismatches(problems, new_server, facts)
-    }
-
-    if Server.active?(new_server, DateTime.utc_now()) do
-      case connection_state do
-        not_connected_state(connection_pid: connection_pid) when connection_pid != nil ->
-          connect(new_state, connection_pid, false)
-
-        _any_other_state ->
-          new_state
-      end
-    else
-      case connection_state do
-        connected_state(connection_pid: connection_pid) ->
-          ServerConnection.disconnect(new_server.id)
-
-          %__MODULE__{
-            new_state
-            | connection_state: not_connected_state(connection_pid: connection_pid)
-          }
-
-        connecting_state() ->
-          new_state
-
-        reconnecting_state() ->
-          new_state
-
-        retry_connecting_state(connection_pid: connection_pid) ->
-          %__MODULE__{
-            new_state
-            | connection_state: not_connected_state(connection_pid: connection_pid),
-              actions:
-                new_state.actions ++
-                  if(new_state.retry_timer,
-                    do: [{:cancel_timer, new_state.retry_timer}],
-                    else: []
-                  )
-          }
-
-        disconnected_state() ->
-          %__MODULE__{new_state | connection_state: not_connected_state()}
-
-        connection_failed_state(connection_pid: connection_pid) ->
-          %__MODULE__{
-            new_state
-            | connection_state: not_connected_state(connection_pid: connection_pid)
-          }
-
-        not_connected_state() ->
-          new_state
-      end
-    end
+    })
   end
 
   @spec class_updated(t(), Class.t()) :: t()
@@ -898,10 +850,22 @@ defmodule ArchiDep.Servers.ServerManagerState do
     }
   end
 
-  # FIXME: refuse to update if server is busy
   @spec update_server(t(), Authentication.t(), Types.update_server_data()) ::
-          {t(), {:ok, Server.t()} | {:error, Changeset.t()}}
-  def update_server(%__MODULE__{problems: problems} = state, auth, data) do
+          {t(), {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_busy}}
+  def update_server(state, auth, data) do
+    case state do
+      %__MODULE__{connection_state: connecting_state()} ->
+        {:error, :server_busy}
+
+      %__MODULE__{connection_state: reconnecting_state()} ->
+        {:error, :server_busy}
+
+      _any_other_state ->
+        do_update_server(state, auth, data)
+    end
+  end
+
+  defp do_update_server(%__MODULE__{problems: problems} = state, auth, data) do
     case UpdateServer.update_server(auth, state.server, data) do
       {:ok, updated_server} ->
         facts =
@@ -910,12 +874,16 @@ defmodule ArchiDep.Servers.ServerManagerState do
             [] -> nil
           end
 
-        {%__MODULE__{
-           state
-           | server: updated_server,
-             actions: [update_tracking()],
-             problems: detect_server_properties_mismatches(problems, updated_server, facts)
-         }, {:ok, updated_server}}
+        new_state =
+          auto_activate_or_deactivate(%__MODULE__{
+            state
+            | server: updated_server,
+              # TODO: do not add update tracking action if there is already one
+              actions: [update_tracking()],
+              problems: detect_server_properties_mismatches(problems, updated_server, facts)
+          })
+
+        {new_state, {:ok, updated_server}}
 
       {:error, changeset} ->
         {state, {:error, changeset}}
@@ -997,6 +965,60 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
       _any_other_state ->
         {state, {:error, :server_busy}}
+    end
+  end
+
+  defp auto_activate_or_deactivate(
+         %__MODULE__{connection_state: connection_state, server: server} = state
+       ) do
+    if Server.active?(server, DateTime.utc_now()) do
+      case connection_state do
+        not_connected_state(connection_pid: connection_pid) when connection_pid != nil ->
+          connect(state, connection_pid, false)
+
+        _any_other_state ->
+          state
+      end
+    else
+      case connection_state do
+        connected_state(connection_pid: connection_pid) ->
+          ServerConnection.disconnect(server.id)
+
+          %__MODULE__{
+            state
+            | connection_state: not_connected_state(connection_pid: connection_pid)
+          }
+
+        connecting_state() ->
+          state
+
+        reconnecting_state() ->
+          state
+
+        retry_connecting_state(connection_pid: connection_pid) ->
+          %__MODULE__{
+            state
+            | connection_state: not_connected_state(connection_pid: connection_pid),
+              actions:
+                state.actions ++
+                  if(state.retry_timer,
+                    do: [{:cancel_timer, state.retry_timer}],
+                    else: []
+                  )
+          }
+
+        disconnected_state() ->
+          %__MODULE__{state | connection_state: not_connected_state()}
+
+        connection_failed_state(connection_pid: connection_pid) ->
+          %__MODULE__{
+            state
+            | connection_state: not_connected_state(connection_pid: connection_pid)
+          }
+
+        not_connected_state() ->
+          state
+      end
     end
   end
 

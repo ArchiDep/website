@@ -12,15 +12,7 @@ defmodule ArchiDep.Servers.DeleteServer do
   def delete_server(auth, server_id) when is_binary(server_id) do
     with {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :delete_server, server) do
-      :ok =
-        case ServerOrchestrator.ensure_started(server) do
-          {:ok, _pid} ->
-            :ok
-
-          {:error, {:already_started, _pid}} ->
-            :ok
-        end
-
+      :ok = ServerOrchestrator.ensure_started(server)
       ServerManager.delete_server(server, auth)
     else
       {:error, {:access_denied, :servers, :delete_server}} ->
