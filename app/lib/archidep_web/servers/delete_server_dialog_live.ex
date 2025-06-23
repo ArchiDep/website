@@ -38,6 +38,9 @@ defmodule ArchiDepWeb.Servers.DeleteServerDialogLive do
        socket
        |> put_flash(:info, "Server deleted")
        |> push_navigate(to: ~p"/servers")}
+    else
+      {:error, :server_busy} ->
+        {:noreply, socket}
     end
   end
 end

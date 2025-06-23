@@ -60,6 +60,7 @@
         <button
           type="button"
           class="join-item btn btn-error"
+          disabled={!ServerRealTimeState.deletable?(@state)}
           phx-click={
             JS.dispatch("open-dialog", detail: %{dialog: DeleteServerDialogLive.id(@server)})
           }

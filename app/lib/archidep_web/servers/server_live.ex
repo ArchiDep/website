@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   import ArchiDepWeb.Servers.ServerComponents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracker
   alias ArchiDepWeb.Servers.DeleteServerDialogLive
   alias ArchiDepWeb.Servers.EditServerDialogLive

@@ -29,6 +29,6 @@ defmodule ArchiDep.Servers.ServerSupervisor do
       {ArchiDep.Servers.ServerConnection, server_id}
     ]
 
-    Supervisor.init(children, strategy: :rest_for_one)
+    Supervisor.init(children, auto_shutdown: :all_significant, strategy: :rest_for_one)
   end
 end

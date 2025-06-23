@@ -25,8 +25,17 @@ defmodule ArchiDep.Servers.ServerManager do
   @spec name(UUID.t()) :: GenServer.name()
   def name(server_id) when is_binary(server_id), do: {:global, {__MODULE__, server_id}}
 
-  @spec start_link({UUID.t(), Pipeline.t()}) :: GenServer.on_start()
-  def start_link({server_id, pipeline}),
+  @spec child_spec({UUID.t(), Pipeline.t()}) :: Supervisor.child_spec()
+  def child_spec({server_id, pipeline}),
+    do: %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [server_id, pipeline]},
+      restart: :transient,
+      significant: true
+    }
+
+  @spec start_link(UUID.t(), Pipeline.t()) :: GenServer.on_start()
+  def start_link(server_id, pipeline),
     do: GenServer.start_link(__MODULE__, {server_id, pipeline}, name: name(server_id))
 
   # Client API
@@ -168,8 +177,7 @@ defmodule ArchiDep.Servers.ServerManager do
         |> reply_with(result)
 
       :ok ->
-        # FIXME: won't work because ServerSupervisor attempts to restart it
-        {:stop, :normal, :ok, new_state}
+        {:stop, :shutdown, :ok, new_state}
     end
   end
 
