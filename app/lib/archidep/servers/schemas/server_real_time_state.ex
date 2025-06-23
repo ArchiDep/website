@@ -28,17 +28,17 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
     version: 0
   ]
 
-  @spec deletable?(t() | nil) :: boolean()
-  def deletable?(%__MODULE__{connection_state: not_connected_state(), current_job: nil}), do: true
-  def deletable?(%__MODULE__{connection_state: connected_state(), current_job: nil}), do: true
+  @spec busy?(t() | nil) :: boolean()
+  def busy?(nil), do: false
+  def busy?(%__MODULE__{connection_state: not_connected_state(), current_job: nil}), do: false
+  def busy?(%__MODULE__{connection_state: connected_state(), current_job: nil}), do: false
 
-  def deletable?(%__MODULE__{connection_state: retry_connecting_state(), current_job: nil}),
-    do: true
+  def busy?(%__MODULE__{connection_state: retry_connecting_state(), current_job: nil}),
+    do: false
 
-  def deletable?(%__MODULE__{connection_state: connection_failed_state(), current_job: nil}),
-    do: true
+  def busy?(%__MODULE__{connection_state: connection_failed_state(), current_job: nil}),
+    do: false
 
-  def deletable?(%__MODULE__{connection_state: disconnected_state(), current_job: nil}), do: true
-  def deletable?(%__MODULE__{}), do: false
-  def deletable?(nil), do: true
+  def busy?(%__MODULE__{connection_state: disconnected_state(), current_job: nil}), do: false
+  def busy?(%__MODULE__{}), do: true
 end

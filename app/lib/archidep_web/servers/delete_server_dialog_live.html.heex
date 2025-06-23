@@ -2,7 +2,7 @@
   <div class="modal-box">
     <h3 class="text-lg font-bold">Delete Server</h3>
     <p class="mt-4">Are you sure you want to permanently delete this server?</p>
-    <div :if={!ServerRealTimeState.deletable?(@state)} role="alert" class="mt-2 alert alert-error alert-soft">
+    <div :if={ServerRealTimeState.busy?(@state)} role="alert" class="mt-2 alert alert-error alert-soft">
       <Heroicons.arrow_path class="size-4 animate-spin" />
       <span>This server cannot currently be deleted because it is busy.</span>
     </div>
@@ -13,7 +13,7 @@
           <span>No</span>
         </span>
       </button>
-      <button type="button" class="btn btn-error" disabled={!ServerRealTimeState.deletable?(@state)} phx-click="delete" phx-target={@myself}>
+      <button type="button" class="btn btn-error" disabled={ServerRealTimeState.busy?(@state)} phx-click="delete" phx-target={@myself}>
         <span class="flex items-center gap-x-2">
           <Heroicons.trash class="size-4" />
           <span>Yes</span>
