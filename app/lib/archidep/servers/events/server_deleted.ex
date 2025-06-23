@@ -38,7 +38,7 @@ defmodule ArchiDep.Servers.Events.ServerDeleted do
     %__MODULE__{
       id: id,
       name: name,
-      ip_address: :inet.ntoa(ip_address.address),
+      ip_address: to_string(:inet.ntoa(ip_address.address)),
       ssh_port: ssh_port || 22
     }
   end
