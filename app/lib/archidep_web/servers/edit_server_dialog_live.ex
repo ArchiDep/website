@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
   import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDepWeb.Servers.ServerForm
 
   @base_id "edit-server-dialog"
@@ -23,6 +24,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
       |> assign(
         auth: assigns.auth,
         server: assigns.server,
+        state: assigns.state,
         form: to_form(ServerForm.update_changeset(assigns.server, %{}), as: :server)
       )
       |> ok()

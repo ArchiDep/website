@@ -11,9 +11,18 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
   attr :class, Class, default: nil, doc: "the class to which the server belongs"
   attr :classes, :list, default: nil, doc: "the list of classes to choose from"
   attr :title, :string, doc: "the title of the form"
+
+  attr :busy, :boolean,
+    default: false,
+    doc: "whether the server is busy and cannot be updated"
+
   attr :on_submit, :string, doc: "the event to trigger on form submission"
   attr :on_close, JS, default: nil, doc: "optional JS to execute when the form is closed"
   attr :target, :string, default: nil, doc: "the target for the form submission"
+
+  slot :footer,
+    required: false,
+    doc: "optional footer displayed at the bottom of the form, above the actions"
 
   def server_form(assigns) do
     form = assigns[:form]
@@ -426,6 +435,8 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         </div>
       </fieldset>
 
+      {render_slot(@footer)}
+
       <div class="mt-2 flex justify-end gap-x-2">
         <button type="button" class="btn btn-secondary" phx-click={@on_close}>
           <span class="flex items-center gap-x-2">
@@ -433,7 +444,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             <span>Close</span>
           </span>
         </button>
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" class="btn btn-primary" disabled={@busy}>
           <span class="flex items-center gap-x-2">
             <Heroicons.check class="size-4" />
             <span>Save</span>
