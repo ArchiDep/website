@@ -5,6 +5,15 @@ defmodule ArchiDep.Servers.PubSub do
 
   @pubsub ArchiDep.PubSub
 
+  @spec publish_new_server(Server.t()) :: :ok
+  def publish_new_server(server),
+    do: PubSub.broadcast(@pubsub, "servers:new", {:server_created, server})
+
+  @spec subscribe_new_server() :: :ok
+  def subscribe_new_server() do
+    :ok = PubSub.subscribe(@pubsub, "servers:new")
+  end
+
   @spec publish_server(Server.t()) :: :ok
   def publish_server(server),
     do: PubSub.broadcast(@pubsub, "servers:#{server.id}", {:server_updated, server})

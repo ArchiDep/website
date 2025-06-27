@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.CreateServer do
 
   alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.Policy
+  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
 
@@ -30,6 +31,7 @@ defmodule ArchiDep.Servers.CreateServer do
          end)
          |> Repo.transaction() do
       {:ok, %{server: server}} ->
+        :ok = PubSub.publish_new_server(server)
         {:ok, server}
 
       {:error, :server, changeset, _} ->

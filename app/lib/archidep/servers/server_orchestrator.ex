@@ -1,13 +1,14 @@
 defmodule ArchiDep.Servers.ServerOrchestrator do
   @moduledoc """
   GenServer responsible for tracking which servers should be active and tracked,
-  and which servers should be disconnected.
+  and running their manager.
   """
 
   use GenServer
 
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
+  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerDynamicSupervisor
 
@@ -39,6 +40,8 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
 
   @impl true
   def handle_continue(:load_servers, pipeline) do
+    :ok = PubSub.subscribe_new_server()
+
     for server <- Server.list_active_servers(DateTime.utc_now()) do
       {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server.id, pipeline)
     end
@@ -50,5 +53,16 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
   def handle_call({:ensure_started, server_id}, _from, pipeline) do
     result = ServerDynamicSupervisor.start_server_supervisor(server_id, pipeline)
     {:reply, result, pipeline}
+  end
+
+  @impl true
+  def handle_info({:server_created, created_server}, pipeline) do
+    {:ok, server} = Server.fetch_server(created_server.id)
+
+    if Server.active?(server, DateTime.utc_now()) do
+      {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server.id, pipeline)
+    end
+
+    {:noreply, pipeline}
   end
 end
