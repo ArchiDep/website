@@ -6,6 +6,15 @@ defmodule ArchiDep.Students.PubSub do
 
   @pubsub ArchiDep.PubSub
 
+  @spec publish_class_created(Class.t()) :: :ok
+  def publish_class_created(class),
+    do: PubSub.broadcast(@pubsub, "classes", {:class_created, class})
+
+  @spec subscribe_classes() :: :ok
+  def subscribe_classes() do
+    :ok = PubSub.subscribe(@pubsub, "classes")
+  end
+
   @spec publish_class(Class.t()) :: :ok
   def publish_class(class),
     do: PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_updated, class})
@@ -14,9 +23,14 @@ defmodule ArchiDep.Students.PubSub do
   def publish_class_deleted(class),
     do: PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_deleted, class})
 
-  @spec subscribe_class(UUID.t()) :: :ok | {:error, :class_not_found}
+  @spec subscribe_class(UUID.t()) :: :ok
   def subscribe_class(class_id) do
     :ok = PubSub.subscribe(@pubsub, "classes:#{class_id}")
+  end
+
+  @spec unsubscribe_class(UUID.t()) :: :ok
+  def unsubscribe_class(class_id) do
+    :ok = PubSub.unsubscribe(@pubsub, "classes:#{class_id}")
   end
 
   @spec publish_student_created(Student.t()) :: :ok

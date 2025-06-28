@@ -3,6 +3,7 @@ defmodule ArchiDep.Students.CreateClass do
 
   alias ArchiDep.Students.Events.ClassCreated
   alias ArchiDep.Students.Policy
+  alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Types
 
@@ -29,6 +30,7 @@ defmodule ArchiDep.Students.CreateClass do
          end)
          |> Repo.transaction() do
       {:ok, %{class: class}} ->
+        :ok = PubSub.publish_class_created(class)
         {:ok, class}
 
       {:error, :class, changeset, _} ->
