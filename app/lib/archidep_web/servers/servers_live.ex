@@ -26,7 +26,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
         set_process_label(__MODULE__, auth)
 
         for server <- servers do
-          # TODO: move this to context
+          # TODO: add watch_my_servers in context
           :ok = PubSub.subscribe_server(server.id)
         end
 

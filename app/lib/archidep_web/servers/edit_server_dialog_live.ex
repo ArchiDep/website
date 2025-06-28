@@ -66,10 +66,10 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
            ),
          {:ok, _server} <-
            Servers.update_server(auth, server.id, ServerForm.to_update_server_data(form_data)) do
-      {:noreply,
-       socket
-       |> put_flash(:info, "Server updated")
-       |> push_navigate(to: ~p"/servers/#{server.id}")}
+      socket
+      |> put_flash(:info, "Server updated")
+      |> push_event("execute-action", %{to: "##{id(server)}", action: "close"})
+      |> noreply()
     else
       {:error, %Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: :server))}

@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracker
@@ -17,6 +18,8 @@ defmodule ArchiDepWeb.Servers.ServerLive do
     with {:ok, server} <- Servers.fetch_server(auth, id) do
       if connected?(socket) do
         set_process_label(__MODULE__, auth, server)
+        # TODO: add watch_server in context
+        :ok = PubSub.subscribe_server(server.id)
         {:ok, _pid} = ServerTracker.start_link(server)
       end
 
@@ -68,4 +71,15 @@ defmodule ArchiDepWeb.Servers.ServerLive do
         socket
         |> assign(state: new_server_state)
         |> noreply()
+
+  @impl true
+  def handle_info({:server_updated, server}, socket),
+    do: socket |> assign(server: server) |> noreply()
+
+  @impl true
+  def handle_info(
+        {:server_deleted, %Server{id: server_id}},
+        %{assigns: %{server: %Server{id: server_id}}} = socket
+      ),
+      do: socket |> push_navigate(to: ~p"/servers") |> noreply()
 end

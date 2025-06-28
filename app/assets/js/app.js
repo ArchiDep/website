@@ -94,6 +94,30 @@ window.addEventListener("phx:close-dialog", event => {
   dialog.close();
 });
 
+window.addEventListener("phx:execute-action", event => {
+  const to = event.detail?.to;
+  if (!to) {
+    console.warn(`No "to" selector provided in "phx:execute-action" event detail`);
+    return;
+  }
+
+  const actionName = event.detail?.action;
+  if (!actionName) {
+    console.warn(`No "action" provided in "phx:execute-action" event detail`);
+    return;
+  }
+
+  document.querySelectorAll(to).forEach(element => {
+    const action = element.getAttribute(`data-action-${actionName}`) ?? undefined;
+    if (!actionName) {
+      console.warn(`No data-action-${actionName} attribute found on element ${element} for "phx:execute-action" event`);
+      return;
+    }
+
+    liveSocket.execJS(element, action);
+  });
+});
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
