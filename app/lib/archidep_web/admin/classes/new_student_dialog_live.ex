@@ -14,7 +14,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
   @spec close() :: js
   def close(), do: close_dialog(@id)
 
-  @impl LiveComponent
+  @impl true
   def update(assigns, socket),
     do:
       socket
@@ -25,14 +25,14 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
       )
       |> ok()
 
-  @impl LiveComponent
-
+  @impl true
   def handle_event("closed", _params, socket) do
     socket
     |> assign(form: to_form(StudentForm.create_changeset(%{}), as: :student))
     |> noreply()
   end
 
+  @impl true
   def handle_event("validate", %{"student" => params}, socket) do
     auth = socket.assigns.auth
     class = socket.assigns.class
@@ -49,6 +49,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
     )
   end
 
+  @impl true
   def handle_event("create", %{"student" => params}, socket) do
     class = socket.assigns.class
 
@@ -59,13 +60,13 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
              socket.assigns.auth,
              StudentForm.to_create_student_data(form_data, class)
            ) do
-      {:noreply,
-       socket
-       |> put_flash(:info, "Student created")
-       |> push_navigate(to: ~p"/admin/classes/#{class.id}")}
+      socket
+      |> put_flash(:info, "Student created")
+      |> push_event("execute-action", %{to: "##{id()}", action: "close"})
+      |> noreply()
     else
       {:error, %Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: :student))}
+        socket |> assign(form: to_form(changeset, as: :student)) |> noreply()
     end
   end
 end

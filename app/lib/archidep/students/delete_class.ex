@@ -3,6 +3,7 @@ defmodule ArchiDep.Students.DeleteClass do
 
   alias ArchiDep.Students.Events.ClassDeleted
   alias ArchiDep.Students.Policy
+  alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Schemas.Student
 
@@ -26,6 +27,7 @@ defmodule ArchiDep.Students.DeleteClass do
            end)
            |> Repo.transaction() do
         {:ok, _} ->
+          :ok = PubSub.publish_class_deleted(class)
           :ok
 
         {:error, :class, changeset, _} ->

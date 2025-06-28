@@ -5,6 +5,7 @@ defmodule ArchiDep.Students.ImportStudents do
   alias ArchiDep.Students.Events.StudentCreated
   alias ArchiDep.Students.Events.StudentsImported
   alias ArchiDep.Students.Policy
+  alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Schemas.StudentImportList
@@ -47,6 +48,7 @@ defmodule ArchiDep.Students.ImportStudents do
              |> insert_events(auth, user, class, import_list, now)
              |> transaction() do
           {:ok, %{students: students}} ->
+            :ok = PubSub.publish_students_imported(class, students)
             {:ok, students}
 
           {:error, :students, %Changeset{} = changeset, _changes} ->

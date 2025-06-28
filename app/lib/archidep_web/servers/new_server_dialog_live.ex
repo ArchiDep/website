@@ -52,10 +52,10 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
            Changeset.apply_action(ServerForm.create_changeset(params), :validate),
          {:ok, _server} <-
            Servers.create_server(socket.assigns.auth, ServerForm.to_create_server_data(form_data)) do
-      {:noreply,
-       socket
-       |> put_flash(:info, "Server created")
-       |> push_navigate(to: ~p"/servers")}
+      socket
+      |> put_flash(:info, "Server created")
+      |> push_event("execute-action", %{to: "##{id()}", action: "close"})
+      |> noreply()
     else
       {:error, %Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: :server))}

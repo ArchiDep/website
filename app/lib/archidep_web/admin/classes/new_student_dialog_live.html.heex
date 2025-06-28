@@ -1,4 +1,4 @@
-<dialog id={id()} class="modal">
+<dialog id={id()} class="modal" data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id()})}>
   <div class="modal-box">
     <.student_form
       id="new-student-form"

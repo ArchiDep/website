@@ -3,6 +3,7 @@ defmodule ArchiDep.Students.CreateStudent do
 
   alias ArchiDep.Students.Events.StudentCreated
   alias ArchiDep.Students.Policy
+  alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Types
 
@@ -29,6 +30,7 @@ defmodule ArchiDep.Students.CreateStudent do
          end)
          |> transaction() do
       {:ok, %{student: student}} ->
+        :ok = PubSub.publish_student_created(student)
         {:ok, student}
 
       {:error, :student, changeset, _} ->

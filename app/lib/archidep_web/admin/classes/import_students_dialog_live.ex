@@ -313,7 +313,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
                students: students_data
              }) do
         socket
-        |> push_event("close-dialog", %{dialog: @id})
+        |> push_event("execute-action", %{to: "##{@id}", action: "close"})
         |> noreply()
       else
         _ ->

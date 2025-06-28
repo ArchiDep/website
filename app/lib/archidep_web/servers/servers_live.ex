@@ -76,7 +76,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
         {:server_created, %Server{user_account_id: user_id} = server},
         %{
           assigns: %{
-            auth: %Authentication{principal: %UserAccount{id: user_id}},
+            auth: %Authentication{principal: %UserAccount{id: user_id}} = auth,
             server_state_map: server_state_map,
             server_tracker: tracker
           }
@@ -86,6 +86,8 @@ defmodule ArchiDepWeb.Servers.ServersLive do
 
     socket
     |> assign(
+      # TODO: avoid this query
+      servers: Servers.list_my_servers(auth),
       server_state_map:
         ServerTracker.update_server_state_map(
           server_state_map,
