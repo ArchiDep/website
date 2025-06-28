@@ -159,24 +159,27 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
          %Socket{assigns: %{auth: auth, class: class, students: old_students}} = socket
        ) do
     current_students = Students.list_students(auth, class)
-    current_student_ids = MapSet.new(current_students, & &1.id)
 
-    old_student_ids = MapSet.new(old_students, & &1.id)
-    gone_student_ids = MapSet.difference(old_student_ids, current_student_ids)
+    if connected?(socket) do
+      current_student_ids = MapSet.new(current_students, & &1.id)
 
-    # Unsubscribe from events concerning students that are no longer in the
-    # class
-    for gone_student_id <- gone_student_ids do
-      :ok = PubSub.unsubscribe_student(gone_student_id)
+      old_student_ids = MapSet.new(old_students, & &1.id)
+      gone_student_ids = MapSet.difference(old_student_ids, current_student_ids)
+
+      # Unsubscribe from events concerning students that are no longer in the
+      # class
+      for gone_student_id <- gone_student_ids do
+        :ok = PubSub.unsubscribe_student(gone_student_id)
+      end
+
+      new_student_ids = MapSet.difference(current_student_ids, old_student_ids)
+
+      # Subscribe to events concerning new students in the class
+      for new_student_id <- new_student_ids do
+        :ok = PubSub.subscribe_student(new_student_id)
+      end
     end
 
-    new_student_ids = MapSet.difference(current_student_ids, old_student_ids)
-
-    # Subscribe to events concerning new students in the class
-    for new_student_id <- new_student_ids do
-      :ok = PubSub.subscribe_student(new_student_id)
-    end
-
-    assign(socket, :students, Students.list_students(auth, class))
+    assign(socket, :students, current_students)
   end
 end
