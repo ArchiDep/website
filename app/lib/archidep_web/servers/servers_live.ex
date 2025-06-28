@@ -3,7 +3,10 @@ defmodule ArchiDepWeb.Servers.ServersLive do
 
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents
+  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.PubSub
+  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracker
   alias ArchiDep.Students
   alias ArchiDepWeb.Servers.NewServerDialogLive
@@ -18,16 +21,29 @@ defmodule ArchiDepWeb.Servers.ServersLive do
         Task.async(fn -> Students.list_classes(auth) end)
       ])
 
-    if connected?(socket) do
-      set_process_label(__MODULE__, auth)
-      {:ok, _pid} = ServerTracker.start_link(servers)
-    end
+    tracker =
+      if connected?(socket) do
+        set_process_label(__MODULE__, auth)
+
+        for server <- servers do
+          # TODO: move this to context
+          :ok = PubSub.subscribe_server(server.id)
+        end
+
+        :ok = PubSub.subscribe_new_server()
+
+        {:ok, pid} = ServerTracker.start_link(servers)
+        pid
+      else
+        nil
+      end
 
     socket
     |> assign(
       page_title: "ArchiDep > Servers",
       servers: servers,
       server_state_map: ServerTracker.server_state_map(servers),
+      server_tracker: tracker,
       classes: classes
     )
     |> ok()
@@ -54,4 +70,74 @@ defmodule ArchiDepWeb.Servers.ServersLive do
           server_state_map: ServerTracker.update_server_state_map(server_state_map, update)
         )
         |> noreply()
+
+  @impl true
+  def handle_info(
+        {:server_created, %Server{user_account_id: user_id} = server},
+        %{
+          assigns: %{
+            auth: %Authentication{principal: %UserAccount{id: user_id}},
+            server_state_map: server_state_map,
+            server_tracker: tracker
+          }
+        } = socket
+      ) do
+    :ok = PubSub.subscribe_server(server.id)
+
+    socket
+    |> assign(
+      server_state_map:
+        ServerTracker.update_server_state_map(
+          server_state_map,
+          ServerTracker.track(tracker, server)
+        )
+    )
+    |> noreply()
+  end
+
+  def handle_info({:server_created, _unrelated_server}, socket) do
+    noreply(socket)
+  end
+
+  @impl true
+  def handle_info(
+        {:server_updated, %Server{id: server_id} = server},
+        %{assigns: %{servers: servers}} = socket
+      ) do
+    socket
+    |> assign(
+      servers:
+        Enum.map(servers, fn
+          %Server{id: ^server_id} ->
+            server
+
+          other_server ->
+            other_server
+        end)
+    )
+    |> noreply()
+  end
+
+  @impl true
+  def handle_info(
+        {:server_deleted, %Server{id: server_id}},
+        %{
+          assigns: %{
+            servers: servers,
+            server_state_map: server_state_map,
+            server_tracker: tracker
+          }
+        } = socket
+      ) do
+    socket
+    |> assign(
+      servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
+      server_state_map:
+        ServerTracker.update_server_state_map(
+          server_state_map,
+          ServerTracker.untrack(tracker, server_id)
+        )
+    )
+    |> noreply()
+  end
 end

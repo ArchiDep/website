@@ -68,6 +68,7 @@ defmodule ArchiDepWeb do
         layout: {ArchiDepWeb.Layouts, :app}
 
       import ArchiDep.Helpers.PipeHelpers
+      alias ArchiDep.Authentication
       alias Ecto.Changeset
       alias Phoenix.LiveView
       alias Phoenix.LiveView.JS

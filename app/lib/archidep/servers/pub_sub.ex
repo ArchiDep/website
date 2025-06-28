@@ -18,10 +18,12 @@ defmodule ArchiDep.Servers.PubSub do
   def publish_server(server),
     do: PubSub.broadcast(@pubsub, "servers:#{server.id}", {:server_updated, server})
 
-  @spec subscribe_server(UUID.t()) :: :ok | {:error, :server_not_found}
+  @spec publish_server_deleted(Server.t()) :: :ok
+  def publish_server_deleted(server),
+    do: PubSub.broadcast(@pubsub, "servers:#{server.id}", {:server_deleted, server})
+
+  @spec subscribe_server(UUID.t()) :: :ok
   def subscribe_server(server_id) do
-    with {:ok, _server} <- Server.fetch_server(server_id) do
-      :ok = PubSub.subscribe(@pubsub, "servers:#{server_id}")
-    end
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server_id}")
   end
 end

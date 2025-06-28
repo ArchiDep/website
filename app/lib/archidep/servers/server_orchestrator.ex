@@ -20,7 +20,6 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
 
   # Client API
 
-  # TODO: check :server_not_found error possible here
   @spec ensure_started(Server.t()) ::
           :ok | {:error, :server_not_found}
   def ensure_started(server) do
@@ -33,13 +32,12 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
   # Server callbacks
 
   @impl true
-  def init(pipeline) do
-    set_process_label(__MODULE__)
-    {:ok, pipeline, {:continue, :load_servers}}
-  end
+  def init(pipeline), do: {:ok, pipeline, {:continue, :load_servers}}
 
   @impl true
   def handle_continue(:load_servers, pipeline) do
+    set_process_label(__MODULE__)
+
     :ok = PubSub.subscribe_new_server()
 
     for server <- Server.list_active_servers(DateTime.utc_now()) do

@@ -251,7 +251,7 @@ defmodule ArchiDep.Helpers.PipeHelpers do
   def error_map({:error, error}, func), do: {:error, func.(error)}
 
   @doc """
-  Turns a value into a two-element tuple with an atom key.
+  Turns a value into a two-element tuple with a key.
 
   ## Examples
 
@@ -261,7 +261,7 @@ defmodule ArchiDep.Helpers.PipeHelpers do
       iex> ArchiDep.Helpers.PipeHelpers.pair("oops", :error)
       {:error, "oops"}
   """
-  @spec pair(term, atom) :: {atom, term}
+  @spec pair(term, term) :: {term, term}
   def pair(value, key), do: {key, value}
 
   @doc """

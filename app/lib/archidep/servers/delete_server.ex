@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.DeleteServer do
 
   alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Policy
+  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerManager
   alias ArchiDep.Servers.ServerOrchestrator
@@ -34,6 +35,7 @@ defmodule ArchiDep.Servers.DeleteServer do
          end)
          |> Repo.transaction() do
       {:ok, _} ->
+        :ok = PubSub.publish_server_deleted(server)
         :ok
     end
   end

@@ -40,12 +40,12 @@ defmodule ArchiDep.Servers.ServerConnection do
   @impl true
   def init(server_id) do
     Logger.debug("Init server connection for server #{server_id}")
-    set_process_label(__MODULE__, server_id)
     {:ok, server_id, {:continue, :idle}}
   end
 
   @impl true
   def handle_continue(:idle, server_id) do
+    set_process_label(__MODULE__, server_id)
     ServerManager.connection_idle(server_id, self())
     {:noreply, {:idle, server_id}}
   end
