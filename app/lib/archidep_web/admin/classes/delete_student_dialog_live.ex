@@ -33,10 +33,7 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive do
     student = socket.assigns.student
 
     with :ok <- Students.delete_student(auth, student.id) do
-      {:noreply,
-       socket
-       |> put_flash(:info, "Student deleted")
-       |> push_navigate(to: ~p"/admin/classes/#{student.class_id}")}
+      socket |> put_flash(:info, "Student deleted") |> noreply()
     end
   end
 end

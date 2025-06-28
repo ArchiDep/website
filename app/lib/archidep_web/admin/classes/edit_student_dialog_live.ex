@@ -67,13 +67,13 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
              student.id,
              StudentForm.to_existing_student_data(form_data)
            ) do
-      {:noreply,
-       socket
-       |> put_flash(:info, "Student updated")
-       |> push_navigate(to: ~p"/admin/classes/#{student.class_id}/students/#{student.id}")}
+      socket
+      |> put_flash(:info, "Student updated")
+      |> push_event("execute-action", %{to: "##{id(student)}", action: "close"})
+      |> noreply()
     else
       {:error, %Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: :student))}
+        socket |> assign(form: to_form(changeset, as: :student)) |> noreply()
     end
   end
 end

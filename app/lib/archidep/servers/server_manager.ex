@@ -87,6 +87,7 @@ defmodule ArchiDep.Servers.ServerManager do
       |> ServerManagerState.init(pipeline)
       |> execute_actions()
 
+    # TODO: watch user account & student for changes
     :ok = Students.PubSub.subscribe_class(state.server.class.id)
 
     noreply(state)

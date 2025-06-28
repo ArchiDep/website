@@ -3,6 +3,7 @@ defmodule ArchiDep.Students.DeleteStudent do
 
   alias ArchiDep.Students.Events.StudentDeleted
   alias ArchiDep.Students.Policy
+  alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Student
 
   @spec delete_student(Authentication.t(), UUID.t()) ::
@@ -25,6 +26,7 @@ defmodule ArchiDep.Students.DeleteStudent do
            end)
            |> Repo.transaction() do
         {:ok, _} ->
+          :ok = PubSub.publish_student_deleted(student)
           :ok
 
         {:error, :student, changeset, _} ->
