@@ -167,6 +167,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
       updated_at: now
     )
     |> validate()
+    |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
+      name = get_field(changeset, :name)
+      class_id = get_field(changeset, :class_id)
+
+      from(s in __MODULE__,
+        where: s.name == ^name and s.class_id == ^class_id
+      )
+    end)
     |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
       ip_address = get_field(changeset, :ip_address)
 
@@ -204,6 +212,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate()
+    |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
+      name = get_field(changeset, :name)
+      class_id = get_field(changeset, :class_id)
+
+      from(s in __MODULE__,
+        where: s.id != ^id and s.name == ^name and s.class_id == ^class_id
+      )
+    end)
     |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
       ip_address = get_field(changeset, :ip_address)
 
@@ -243,6 +259,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :app_username
     ])
     |> validate_length(:name, max: 50)
+    |> unique_constraint(:name)
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
     |> unique_constraint(:ip_address)
