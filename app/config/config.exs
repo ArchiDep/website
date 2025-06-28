@@ -11,7 +11,10 @@ config :archidep,
   namespace: ArchiDep,
   ecto_repos: [ArchiDep.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true],
-  root_users: []
+  root_users: [],
+  servers: [
+    connection_timeout: 30_000
+  ]
 
 # Configure contexts.
 config :archidep, ArchiDep.Accounts, ArchiDep.Accounts.ContextImpl

@@ -30,7 +30,11 @@ config :archidep, ArchiDepWeb.Endpoint,
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :archidep, dev_routes: true
+config :archidep,
+  dev_routes: true,
+  servers: [
+    connection_timeout: 5_000
+  ]
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

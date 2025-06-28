@@ -10,6 +10,11 @@ defmodule ArchiDep.Servers.ServerConnection do
   @type connect_options :: [connect_option()]
   @type connect_option :: {:silently_accept_hosts, boolean()}
 
+  @connection_timeout Application.compile_env!(
+                        :archidep,
+                        [:servers, :connection_timeout]
+                      )
+
   # Client API
 
   @spec name(Server.t()) :: GenServer.name()
@@ -125,7 +130,7 @@ defmodule ArchiDep.Servers.ServerConnection do
         host,
         port,
         auth_methods: ~c"publickey",
-        connect_timeout: 30_000,
+        connect_timeout: @connection_timeout,
         # key_cb: {:ssh_agent, timeout: 5000},
         save_accepted_host: false,
         silently_accept_hosts: Keyword.get(options, :silently_accept_hosts, false),
