@@ -122,7 +122,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
 
   @impl true
   def handle_info(
-        {:server_deleted, %Server{id: server_id}},
+        {:server_deleted, %Server{id: server_id} = server},
         %{
           assigns: %{
             servers: servers,
@@ -131,13 +131,15 @@ defmodule ArchiDepWeb.Servers.ServersLive do
           }
         } = socket
       ) do
+    :ok = PubSub.unsubscribe_server(server_id)
+
     socket
     |> assign(
       servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
       server_state_map:
         ServerTracker.update_server_state_map(
           server_state_map,
-          ServerTracker.untrack(tracker, server_id)
+          ServerTracker.untrack(tracker, server)
         )
     )
     |> noreply()

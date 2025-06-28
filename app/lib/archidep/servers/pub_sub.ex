@@ -26,4 +26,9 @@ defmodule ArchiDep.Servers.PubSub do
   def subscribe_server(server_id) do
     :ok = PubSub.subscribe(@pubsub, "servers:#{server_id}")
   end
+
+  @spec unsubscribe_server(UUID.t()) :: :ok
+  def unsubscribe_server(server_id) do
+    :ok = PubSub.unsubscribe(@pubsub, "servers:#{server_id}")
+  end
 end
