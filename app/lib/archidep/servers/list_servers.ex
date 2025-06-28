@@ -15,7 +15,7 @@ defmodule ArchiDep.Servers.ListServers do
       from s in Server,
         join: ua in assoc(s, :user_account),
         where: s.user_account_id == ^user_account_id,
-        order_by: [s.name, s.ip_address],
+        order_by: [s.name, s.username, s.ip_address],
         preload: [user_account: ua]
     )
   end
