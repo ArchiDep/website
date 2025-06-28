@@ -73,25 +73,25 @@ defmodule ArchiDepWeb.Servers.ServersLive do
 
   @impl true
   def handle_info(
-        {:server_created, %Server{user_account_id: user_id} = server},
+        {:server_created, %Server{user_account_id: user_id} = created_server},
         %{
           assigns: %{
-            auth: %Authentication{principal: %UserAccount{id: user_id}} = auth,
+            auth: %Authentication{principal: %UserAccount{id: user_id}},
+            servers: servers,
             server_state_map: server_state_map,
             server_tracker: tracker
           }
         } = socket
       ) do
-    :ok = PubSub.subscribe_server(server.id)
+    :ok = PubSub.subscribe_server(created_server.id)
 
     socket
     |> assign(
-      # TODO: avoid this query
-      servers: Servers.list_my_servers(auth),
+      servers: sort_servers([created_server | servers]),
       server_state_map:
         ServerTracker.update_server_state_map(
           server_state_map,
-          ServerTracker.track(tracker, server)
+          ServerTracker.track(tracker, created_server)
         )
     )
     |> noreply()
@@ -109,13 +109,15 @@ defmodule ArchiDepWeb.Servers.ServersLive do
     socket
     |> assign(
       servers:
-        Enum.map(servers, fn
+        servers
+        |> Enum.map(fn
           %Server{id: ^server_id} ->
             server
 
           other_server ->
             other_server
         end)
+        |> sort_servers()
     )
     |> noreply()
   end
@@ -144,4 +146,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
     )
     |> noreply()
   end
+
+  defp sort_servers(servers),
+    do: Enum.sort_by(servers, &{&1.name, &1.username, :inet.ntoa(&1.ip_address.address)})
 end
