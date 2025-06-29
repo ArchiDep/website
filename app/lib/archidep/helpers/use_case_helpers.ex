@@ -6,10 +6,22 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   import ArchiDep.Authentication, only: [is_authentication: 1]
   alias Ecto.Changeset
   alias Ecto.Multi
+  alias Ecto.UUID
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Authentication
   alias ArchiDep.Events.Store.Event
   alias ArchiDep.Events.Store.StoredEvent
+
+  @doc """
+  Ensures that the specified ID is a valid UUID, or returns the specified error.
+  """
+  @spec validate_uuid(binary(), atom()) :: :ok | {:error, atom()}
+  def validate_uuid(id, error) when is_binary(id) do
+    case UUID.cast(id) do
+      {:ok, _uuid} -> :ok
+      :error -> {:error, error}
+    end
+  end
 
   @doc """
   Ensures that the specified limit is not too large.

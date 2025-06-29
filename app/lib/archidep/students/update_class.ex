@@ -10,7 +10,8 @@ defmodule ArchiDep.Students.UpdateClass do
   @spec validate_existing_class(Authentication.t(), UUID.t(), Types.class_data()) ::
           {:ok, Changeset.t()} | {:error, :class_not_found}
   def validate_existing_class(auth, id, data) do
-    with {:ok, class} <- Class.fetch_class(id) do
+    with :ok <- validate_uuid(id, :class_not_found),
+         {:ok, class} <- Class.fetch_class(id) do
       authorize!(auth, Policy, :students, :validate_existing_class, class)
       {:ok, Class.update(class, data)}
     end
@@ -19,7 +20,8 @@ defmodule ArchiDep.Students.UpdateClass do
   @spec update_class(Authentication.t(), UUID.t(), Types.class_data()) ::
           {:ok, Class.t()} | {:error, Changeset.t()} | {:error, :class_not_found}
   def update_class(auth, id, data) do
-    with {:ok, class} <- Class.fetch_class(id) do
+    with :ok <- validate_uuid(id, :class_not_found),
+         {:ok, class} <- Class.fetch_class(id) do
       authorize!(auth, Policy, :students, :update_class, class)
 
       user = Authentication.fetch_user_account(auth)

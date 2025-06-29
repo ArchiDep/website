@@ -23,10 +23,14 @@ defmodule ArchiDep.Servers.ReadServers do
   @spec fetch_server(Authentication.t(), UUID.t()) ::
           {:ok, Server.t()} | {:error, :server_not_found}
   def fetch_server(auth, id) do
-    with {:ok, server} <- Server.fetch_server(id),
+    with :ok <- validate_uuid(id, :server_not_found),
+         {:ok, server} <- Server.fetch_server(id),
          :ok <- authorize(auth, Policy, :servers, :fetch_server, server) do
       {:ok, server}
     else
+      {:error, :server_not_found} ->
+        {:error, :server_not_found}
+
       {:error, {:access_denied, :servers, :fetch_server}} ->
         {:error, :server_not_found}
     end

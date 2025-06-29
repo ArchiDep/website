@@ -11,7 +11,8 @@ defmodule ArchiDep.Servers.DeleteServer do
   @spec delete_server(Authentication.t(), UUID.t()) ::
           :ok | {:error, :server_busy} | {:error, :server_not_found}
   def delete_server(auth, server_id) when is_binary(server_id) do
-    with {:ok, server} <- Server.fetch_server(server_id),
+    with :ok <- validate_uuid(server_id, :server_not_found),
+         {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :delete_server, server) do
       :ok = ServerOrchestrator.ensure_started(server)
       ServerManager.delete_server(server, auth)

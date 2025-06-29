@@ -9,7 +9,8 @@ defmodule ArchiDep.Students.DeleteClass do
   @spec delete_class(Authentication.t(), UUID.t()) ::
           :ok | {:error, :class_not_found} | {:error, :class_has_servers}
   def delete_class(auth, id) do
-    with {:ok, class} <- Class.fetch_class(id) do
+    with :ok <- validate_uuid(id, :class_not_found),
+         {:ok, class} <- Class.fetch_class(id) do
       authorize!(auth, Policy, :students, :delete_class, class)
 
       now = DateTime.utc_now()

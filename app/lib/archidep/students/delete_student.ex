@@ -9,7 +9,8 @@ defmodule ArchiDep.Students.DeleteStudent do
   @spec delete_student(Authentication.t(), UUID.t()) ::
           :ok | {:error, :student_not_found}
   def delete_student(auth, id) do
-    with {:ok, student} <- Student.fetch_student(id) do
+    with :ok <- validate_uuid(id, :student_not_found),
+         {:ok, student} <- Student.fetch_student(id) do
       authorize!(auth, Policy, :students, :delete_student, student)
 
       now = DateTime.utc_now()

@@ -12,7 +12,8 @@ defmodule ArchiDep.Servers.UpdateServer do
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Changeset.t()} | {:error, :server_not_found}
   def validate_existing_server(auth, id, data) do
-    with {:ok, server} <- Server.fetch_server(id) do
+    with :ok <- validate_uuid(id, :server_not_found),
+         {:ok, server} <- Server.fetch_server(id) do
       authorize!(auth, Policy, :servers, :validate_existing_server, server)
       {:ok, Server.update(server, data)}
     end
@@ -24,7 +25,8 @@ defmodule ArchiDep.Servers.UpdateServer do
           | {:error, :server_busy}
           | {:error, :server_not_found}
   def update_server(auth, server_id, data) when is_binary(server_id) do
-    with {:ok, server} <- Server.fetch_server(server_id),
+    with :ok <- validate_uuid(server_id, :server_not_found),
+         {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :update_server, server) do
       :ok = ServerOrchestrator.ensure_started(server)
       ServerManager.update_server(server, auth, data)

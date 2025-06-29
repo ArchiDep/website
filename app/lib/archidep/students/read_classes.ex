@@ -6,10 +6,14 @@ defmodule ArchiDep.Students.ReadClasses do
 
   @spec fetch_class(Authentication.t(), UUID.t()) :: {:ok, Class.t()} | {:error, :class_not_found}
   def fetch_class(auth, id) do
-    with {:ok, class} <- Class.fetch_class(id),
+    with :ok <- validate_uuid(id, :class_not_found),
+         {:ok, class} <- Class.fetch_class(id),
          :ok <- authorize(auth, Policy, :students, :fetch_class, class) do
       {:ok, class}
     else
+      {:error, :class_not_found} ->
+        {:error, :class_not_found}
+
       {:error, {:access_denied, :students, :fetch_class}} ->
         {:error, :class_not_found}
     end

@@ -14,7 +14,8 @@ defmodule ArchiDep.Accounts.DeleteSession do
   @spec delete_session(Authentication.t(), String.t()) ::
           {:ok, UserSession.t()} | {:error, :session_not_found}
   def delete_session(auth, id) do
-    with {:ok, session} <- UserSession.fetch_by_id(id) do
+    with :ok <- validate_uuid(id, :session_not_found),
+         {:ok, session} <- UserSession.fetch_by_id(id) do
       authorize!(auth, Policy, :accounts, :delete_session, session)
       {:ok, _result} = store(session, auth)
       {:ok, session}

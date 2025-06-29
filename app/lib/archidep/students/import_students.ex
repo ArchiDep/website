@@ -14,7 +14,8 @@ defmodule ArchiDep.Students.ImportStudents do
   @spec import_students(Authentication.t(), UUID.t(), Types.import_students_data()) ::
           {:ok, list(Student.t())} | {:error, Changeset.t()} | {:error, :class_not_found}
   def import_students(auth, class_id, data) do
-    with {:ok, class} <- Class.fetch_class(class_id) do
+    with :ok <- validate_uuid(class_id, :class_not_found),
+         {:ok, class} <- Class.fetch_class(class_id) do
       authorize!(auth, Policy, :students, :import_students, class)
       user = Authentication.fetch_user_account(auth)
 
