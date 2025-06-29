@@ -3,9 +3,8 @@ defmodule ArchiDep.Servers.ContextImpl do
 
   alias ArchiDep.Servers.CreateServer
   alias ArchiDep.Servers.DeleteServer
-  alias ArchiDep.Servers.FetchServer
-  alias ArchiDep.Servers.ListServers
   alias ArchiDep.Servers.ManageServer
+  alias ArchiDep.Servers.ReadServers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerCallbacks
   alias ArchiDep.Servers.Types
@@ -19,11 +18,11 @@ defmodule ArchiDep.Servers.ContextImpl do
   defdelegate create_server(auth, data), to: CreateServer
 
   @spec list_my_servers(Authentication.t()) :: list(Server.t())
-  defdelegate list_my_servers(auth), to: ListServers
+  defdelegate list_my_servers(auth), to: ReadServers
 
   @spec fetch_server(Authentication.t(), UUID.t()) ::
           {:ok, Server.t()} | {:error, :server_not_found}
-  defdelegate fetch_server(auth, id), to: FetchServer
+  defdelegate fetch_server(auth, id), to: ReadServers
 
   @spec retry_connecting(Authentication.t(), UUID.t()) ::
           :ok | {:error, :server_not_found}

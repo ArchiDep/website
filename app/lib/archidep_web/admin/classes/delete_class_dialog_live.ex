@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteClassDialogLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Helpers.DialogHelpers
+  import ArchiDepWeb.Helpers.I18nHelpers
   alias ArchiDep.Students
   alias ArchiDep.Students.Schemas.Class
 
@@ -36,6 +37,15 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteClassDialogLive do
       socket
       |> put_flash(:info, "Class deleted")
       |> noreply()
+    else
+      {:error, :class_has_servers} ->
+        socket
+        |> put_flash(
+          :error,
+          "Class cannot be deleted because it has at least one server linked to it."
+        )
+        |> push_navigate(to: ~p"/admin/classes/#{class.id}")
+        |> noreply()
     end
   end
 end

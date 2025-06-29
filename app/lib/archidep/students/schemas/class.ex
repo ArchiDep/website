@@ -7,6 +7,7 @@ defmodule ArchiDep.Students.Schemas.Class do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
+  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Students.Types
 
   @primary_key {:id, :binary_id, []}
@@ -19,6 +20,8 @@ defmodule ArchiDep.Students.Schemas.Class do
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
           active: boolean(),
+          servers: list(Server.t()) | NotLoaded.t(),
+          servers_count: non_neg_integer() | nil,
           # Expected server properties for students of this class
           expected_server_cpus: pos_integer() | nil,
           expected_server_cores: pos_integer() | nil,
@@ -42,6 +45,7 @@ defmodule ArchiDep.Students.Schemas.Class do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean)
+    field(:servers_count, :integer, virtual: true)
     field(:expected_server_cpus, :integer)
     field(:expected_server_cores, :integer)
     field(:expected_server_vcpus, :integer)
@@ -53,6 +57,7 @@ defmodule ArchiDep.Students.Schemas.Class do
     field(:expected_server_distribution, :string)
     field(:expected_server_distribution_release, :string)
     field(:expected_server_distribution_version, :string)
+    has_many(:servers, Server)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
@@ -64,6 +69,29 @@ defmodule ArchiDep.Students.Schemas.Class do
       active and
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
+
+  @spec has_servers?(t()) :: boolean()
+  def has_servers?(%__MODULE__{servers_count: count}), do: count != nil and count >= 1
+
+  @spec fetch_class(UUID.t()) :: {:ok, t()} | {:error, :class_not_found}
+  def fetch_class(id) do
+    query =
+      from(
+        c in __MODULE__,
+        where: c.id == ^id,
+        left_join: s in assoc(c, :servers),
+        group_by: c.id,
+        select: merge(c, %{servers_count: count(s.id)})
+      )
+
+    case Repo.one(query) do
+      nil ->
+        {:error, :class_not_found}
+
+      class ->
+        {:ok, class}
+    end
+  end
 
   @spec new(Types.class_data()) :: Changeset.t(t())
   def new(data) do
@@ -139,15 +167,14 @@ defmodule ArchiDep.Students.Schemas.Class do
     end)
   end
 
-  @spec fetch_class(UUID.t()) :: {:ok, t()} | {:error, :class_not_found}
-  def fetch_class(id) do
-    case Repo.get(__MODULE__, id) do
-      nil ->
-        {:error, :class_not_found}
-
-      class ->
-        {:ok, class}
-    end
+  @spec delete(__MODULE__.t()) :: Changeset.t(t())
+  def delete(class) do
+    class
+    |> change()
+    |> foreign_key_constraint(:servers,
+      name: :servers_class_id_fkey,
+      message: "class has servers"
+    )
   end
 
   defp validate(changeset) do

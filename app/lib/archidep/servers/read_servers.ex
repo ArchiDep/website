@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ListServers do
+defmodule ArchiDep.Servers.ReadServers do
   use ArchiDep, :use_case
 
   alias ArchiDep.Servers.Policy
@@ -18,5 +18,17 @@ defmodule ArchiDep.Servers.ListServers do
         order_by: [s.name, s.username, s.ip_address],
         preload: [user_account: ua]
     )
+  end
+
+  @spec fetch_server(Authentication.t(), UUID.t()) ::
+          {:ok, Server.t()} | {:error, :server_not_found}
+  def fetch_server(auth, id) do
+    with {:ok, server} <- Server.fetch_server(id),
+         :ok <- authorize(auth, Policy, :servers, :fetch_server, server) do
+      {:ok, server}
+    else
+      {:error, {:access_denied, :servers, :fetch_server}} ->
+        {:error, :server_not_found}
+    end
   end
 end

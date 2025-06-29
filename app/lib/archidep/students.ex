@@ -37,7 +37,7 @@ defmodule ArchiDep.Students do
   defdelegate update_class(auth, id, data), to: @implementation
 
   @spec delete_class(Authentication.t(), UUID.t()) ::
-          :ok | {:error, :class_not_found}
+          :ok | {:error, :class_not_found} | {:error, :class_has_servers}
   defdelegate delete_class(auth, id), to: @implementation
 
   @spec validate_student(Authentication.t(), Types.create_student_data()) :: Changeset.t()

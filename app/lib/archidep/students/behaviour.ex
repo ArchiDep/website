@@ -22,7 +22,7 @@ defmodule ArchiDep.Students.Behaviour do
               {:ok, Class.t()} | {:error, Changeset.t()} | {:error, :class_not_found}
 
   @callback delete_class(Authentication.t(), UUID.t()) ::
-              :ok | {:error, :class_not_found}
+              :ok | {:error, :class_not_found} | {:error, :class_has_servers}
 
   @callback validate_student(Authentication.t(), Types.create_student_data()) :: Changeset.t()
 

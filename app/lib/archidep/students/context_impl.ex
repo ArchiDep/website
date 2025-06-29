@@ -5,11 +5,9 @@ defmodule ArchiDep.Students.ContextImpl do
   alias ArchiDep.Students.CreateStudent
   alias ArchiDep.Students.DeleteClass
   alias ArchiDep.Students.DeleteStudent
-  alias ArchiDep.Students.FetchClass
-  alias ArchiDep.Students.FetchStudentInClass
   alias ArchiDep.Students.ImportStudents
-  alias ArchiDep.Students.ListClasses
-  alias ArchiDep.Students.ListStudents
+  alias ArchiDep.Students.ReadClasses
+  alias ArchiDep.Students.ReadStudents
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Students.Types
@@ -26,10 +24,10 @@ defmodule ArchiDep.Students.ContextImpl do
   defdelegate create_class(auth, data), to: CreateClass
 
   @spec list_classes(Authentication.t()) :: list(Class.t())
-  defdelegate list_classes(auth), to: ListClasses
+  defdelegate list_classes(auth), to: ReadClasses
 
   @spec fetch_class(Authentication.t(), UUID.t()) :: {:ok, Class.t()} | {:error, :class_not_found}
-  defdelegate fetch_class(auth, id), to: FetchClass
+  defdelegate fetch_class(auth, id), to: ReadClasses
 
   @spec validate_existing_class(
           Authentication.t(),
@@ -46,7 +44,7 @@ defmodule ArchiDep.Students.ContextImpl do
   defdelegate update_class(auth, id, data), to: UpdateClass
 
   @spec delete_class(Authentication.t(), UUID.t()) ::
-          :ok | {:error, :class_not_found}
+          :ok | {:error, :class_not_found} | {:error, :class_has_servers}
   defdelegate delete_class(auth, id), to: DeleteClass
 
   @spec validate_student(Authentication.t(), Types.create_student_data()) :: Changeset.t()
@@ -61,14 +59,14 @@ defmodule ArchiDep.Students.ContextImpl do
   defdelegate import_students(auth, id, data), to: ImportStudents
 
   @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
-  defdelegate list_students(auth, class), to: ListStudents
+  defdelegate list_students(auth, class), to: ReadStudents
 
   @spec list_active_students_for_email(String.t(), DateTime.t()) :: list(Student.t())
-  defdelegate list_active_students_for_email(email, now), to: ListStudents
+  defdelegate list_active_students_for_email(email, now), to: ReadStudents
 
   @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
           {:ok, Student.t()} | {:error, :student_not_found}
-  defdelegate fetch_student_in_class(auth, class_id, id), to: FetchStudentInClass
+  defdelegate fetch_student_in_class(auth, class_id, id), to: ReadStudents
 
   @spec validate_existing_student(
           Authentication.t(),

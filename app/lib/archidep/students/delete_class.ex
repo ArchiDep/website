@@ -5,20 +5,17 @@ defmodule ArchiDep.Students.DeleteClass do
   alias ArchiDep.Students.Policy
   alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
 
   @spec delete_class(Authentication.t(), UUID.t()) ::
-          :ok | {:error, :class_not_found}
+          :ok | {:error, :class_not_found} | {:error, :class_has_servers}
   def delete_class(auth, id) do
     with {:ok, class} <- Class.fetch_class(id) do
       authorize!(auth, Policy, :students, :delete_class, class)
 
       now = DateTime.utc_now()
 
-      # FIXME: shut down servers
       case Multi.new()
-           |> Multi.delete_all(:students, Student.delete_students_in_class(class))
-           |> Multi.delete(:class, class)
+           |> Multi.delete(:class, Class.delete(class))
            |> Multi.insert(:stored_event, fn %{class: class} ->
              ClassDeleted.new(class)
              |> new_event(auth, occurred_at: now)
@@ -31,7 +28,10 @@ defmodule ArchiDep.Students.DeleteClass do
           :ok
 
         {:error, :class, changeset, _} ->
-          {:error, changeset}
+          case Keyword.get(changeset.errors, :servers) do
+            {"class has servers", _opts} ->
+              {:error, :class_has_servers}
+          end
       end
     end
   end
