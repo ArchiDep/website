@@ -28,7 +28,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
     else
       {:error, :student_not_found} ->
         socket
-        |> put_flash(:error, "Student not found")
+        |> put_notification(Message.new(:error, "Student not found"))
         |> push_navigate(to: ~p"/admin/classes/#{class_id}")
         |> ok()
     end
@@ -55,5 +55,9 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
           assigns: %{student: %Student{id: student_id}}
         } = socket
       ),
-      do: socket |> push_navigate(to: ~p"/admin/classes/#{deleted_student.class_id}") |> noreply()
+      do:
+        socket
+        |> put_notification(Message.new(:success, "Deleted student #{deleted_student.name}"))
+        |> push_navigate(to: ~p"/admin/classes/#{deleted_student.class_id}")
+        |> noreply()
 end

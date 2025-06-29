@@ -4,11 +4,13 @@ defmodule ArchiDepWeb.LiveAuth do
   """
 
   import ArchiDep.Helpers.PipeHelpers
+  import Flashy
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView
   alias ArchiDep.Accounts
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.ClientMetadata
+  alias ArchiDepWeb.Components.Notifications.Message
   alias Phoenix.LiveView.Socket
 
   @doc """
@@ -58,7 +60,7 @@ defmodule ArchiDepWeb.LiveAuth do
       {:cont, socket}
     else
       socket
-      |> put_flash(:error, "You must log in to access this page.")
+      |> put_notification(Message.new(:error, "You must log in to access this page."))
       |> redirect(to: "/login")
       |> pair(:halt)
     end

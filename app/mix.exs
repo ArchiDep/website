@@ -42,6 +42,7 @@ defmodule ArchiDep.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:ex_cmd, "~> 0.15.0"},
       {:finch, "~> 0.13"},
+      {:flashy, "~> 0.3.1"},
       {:gen_stage, "~> 1.2"},
       {:heroicons, "~> 0.5.6"},
       {:jason, "~> 1.2"},

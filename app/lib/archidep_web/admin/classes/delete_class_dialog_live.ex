@@ -34,17 +34,17 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteClassDialogLive do
     class = socket.assigns.class
 
     with :ok <- Students.delete_class(auth, class.id) do
-      socket
-      |> put_flash(:info, "Class deleted")
-      |> noreply()
+      noreply(socket)
     else
       {:error, :class_has_servers} ->
         socket
-        |> put_flash(
-          :error,
-          "Class cannot be deleted because it has at least one server linked to it."
+        |> push_event("execute-action", %{to: "##{id(class)}", action: "close"})
+        |> send_notification(
+          Message.new(
+            :error,
+            "Class #{class.name} cannot be deleted because at least one server is linked to it."
+          )
         )
-        |> push_navigate(to: ~p"/admin/classes/#{class.id}")
         |> noreply()
     end
   end

@@ -1,4 +1,8 @@
-<dialog id={id(@class)} class="modal">
+<dialog
+  id={id(@class)}
+  class="modal"
+  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id(@class)})}
+>
   <div class="modal-box">
     <h3 class="text-lg font-bold">Delete Class</h3>
     <p :if={Class.has_servers?(@class)} class="mt-2 text-error">

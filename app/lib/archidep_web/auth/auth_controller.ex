@@ -31,7 +31,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
     IO.puts("@@@@@@@@@@@@@@@ fails #{inspect(fails)}")
 
     conn
-    |> put_flash(:error, "Failed to authenticate.")
+    |> put_notification(Message.new(:error, "Failed to authenticate."))
     |> redirect(to: "/login")
   end
 
@@ -65,14 +65,16 @@ defmodule ArchiDepWeb.Auth.AuthController do
              conn_metadata(conn)
            ) do
       conn
+      |> put_notification(Message.new(:success, "Welcome!"))
       |> Auth.log_in(auth)
-      |> put_flash(:info, "Welcome!")
     else
       {:error, :unauthorized_switch_edu_id} ->
         conn
-        |> put_flash(
-          :error,
-          "Your Switch edu-ID account is not authorized to access this application."
+        |> put_notification(
+          Message.new(
+            :error,
+            "Your Switch edu-ID account is not authorized to access this application."
+          )
         )
         |> redirect(to: "/login")
     end

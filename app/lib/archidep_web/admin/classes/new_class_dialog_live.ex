@@ -40,10 +40,10 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
   def handle_event("create", %{"class" => params}, socket) do
     with {:ok, form_data} <-
            Changeset.apply_action(ClassForm.create_changeset(params), :validate),
-         {:ok, _class} <-
+         {:ok, created_class} <-
            Students.create_class(socket.assigns.auth, ClassForm.to_class_data(form_data)) do
       socket
-      |> put_flash(:info, "Class created")
+      |> send_notification(Message.new(:success, "Created class #{created_class.name}"))
       |> push_event("execute-action", %{to: "##{id()}", action: "close"})
       |> noreply()
     else

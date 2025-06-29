@@ -64,10 +64,12 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
              ServerForm.update_changeset(server, params),
              :validate
            ),
-         {:ok, _server} <-
+         {:ok, updated_server} <-
            Servers.update_server(auth, server.id, ServerForm.to_update_server_data(form_data)) do
       socket
-      |> put_flash(:info, "Server updated")
+      |> send_notification(
+        Message.new(:success, "Updated server #{Server.name_or_default(updated_server)}")
+      )
       |> push_event("execute-action", %{to: "##{id(server)}", action: "close"})
       |> noreply()
     else

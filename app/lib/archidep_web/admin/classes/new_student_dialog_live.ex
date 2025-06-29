@@ -55,13 +55,13 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
 
     with {:ok, form_data} <-
            Changeset.apply_action(StudentForm.create_changeset(params), :validate),
-         {:ok, _student} <-
+         {:ok, created_student} <-
            Students.create_student(
              socket.assigns.auth,
              StudentForm.to_create_student_data(form_data, class)
            ) do
       socket
-      |> put_flash(:info, "Student created")
+      |> send_notification(Message.new(:success, "Created student #{created_student.name}"))
       |> push_event("execute-action", %{to: "##{id()}", action: "close"})
       |> noreply()
     else

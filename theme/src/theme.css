@@ -4,6 +4,7 @@
   themes: nord --default, night --prefersdark;
 }
 
+@source "../../app/deps/flashy/**/*.*ex";
 @source "../../app/lib";
 @source "../../course/_includes";
 @source "../../course/index.md";

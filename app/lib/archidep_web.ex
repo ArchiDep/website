@@ -55,6 +55,11 @@ defmodule ArchiDepWeb do
         layouts: [html: ArchiDepWeb.Layouts]
 
       import Plug.Conn
+
+      # Flash helpers
+      import Flashy
+
+      alias ArchiDepWeb.Components.Notifications.Message
       alias Plug.Conn
 
       unquote(verified_routes())
@@ -69,6 +74,7 @@ defmodule ArchiDepWeb do
 
       import ArchiDep.Helpers.PipeHelpers
       alias ArchiDep.Authentication
+      alias ArchiDepWeb.Components.Notifications.Message
       alias Ecto.Changeset
       alias Phoenix.LiveView
       alias Phoenix.LiveView.JS
@@ -87,6 +93,7 @@ defmodule ArchiDepWeb do
 
       import ArchiDep.Helpers.PipeHelpers
       import ArchiDepWeb.Helpers.I18nHelpers
+      alias ArchiDepWeb.Components.Notifications.Message
       alias Ecto.Changeset
       alias Phoenix.LiveComponent
       alias Phoenix.LiveView.JS
@@ -120,6 +127,8 @@ defmodule ArchiDepWeb do
       import ArchiDepWeb.CoreComponents
       import ArchiDepWeb.Helpers.AuthHelpers
       import ArchiDepWeb.Helpers.DateFormatHelpers
+      # Flash helpers
+      import Flashy
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

@@ -33,7 +33,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
     else
       {:error, :server_not_found} ->
         socket
-        |> put_flash(:error, "Server not found")
+        |> put_notification(Message.new(:error, "Server not found"))
         |> push_navigate(to: ~p"/servers")
         |> ok()
     end
@@ -78,8 +78,14 @@ defmodule ArchiDepWeb.Servers.ServerLive do
 
   @impl true
   def handle_info(
-        {:server_deleted, %Server{id: server_id}},
+        {:server_deleted, %Server{id: server_id} = deleted_server},
         %{assigns: %{server: %Server{id: server_id}}} = socket
       ),
-      do: socket |> push_navigate(to: ~p"/servers") |> noreply()
+      do:
+        socket
+        |> put_notification(
+          Message.new(:success, "Deleted server #{Server.name_or_default(deleted_server)}")
+        )
+        |> push_navigate(to: ~p"/servers")
+        |> noreply()
 end

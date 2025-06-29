@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
   import ArchiDepWeb.Helpers.DialogHelpers
   import ArchiDepWeb.Servers.ServerFormComponent
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDepWeb.Servers.ServerForm
 
   @id "new-server-dialog"
@@ -50,10 +51,12 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
   def handle_event("create", %{"server" => params}, socket) do
     with {:ok, form_data} <-
            Changeset.apply_action(ServerForm.create_changeset(params), :validate),
-         {:ok, _server} <-
+         {:ok, created_server} <-
            Servers.create_server(socket.assigns.auth, ServerForm.to_create_server_data(form_data)) do
       socket
-      |> put_flash(:info, "Server created")
+      |> send_notification(
+        Message.new(:success, "Created server #{Server.name_or_default(created_server)}")
+      )
       |> push_event("execute-action", %{to: "##{id()}", action: "close"})
       |> noreply()
     else

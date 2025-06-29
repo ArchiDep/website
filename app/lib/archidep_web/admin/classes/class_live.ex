@@ -72,6 +72,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   def mount(%{"id" => id}, _session, socket) do
     auth = socket.assigns.auth
 
+    # TODO: keep servers count up to date in real time
     with {:ok, class} <- Students.fetch_class(auth, id) do
       if connected?(socket) do
         set_process_label(__MODULE__, auth, class)
@@ -90,7 +91,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
     else
       {:error, :class_not_found} ->
         socket
-        |> put_flash(:error, "Class not found")
+        |> put_notification(Message.new(:error, "Class not found"))
         |> push_navigate(to: ~p"/admin/classes")
         |> ok()
     end
@@ -114,10 +115,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   def handle_info(
         {:class_deleted, %Class{id: class_id}},
         %Socket{
-          assigns: %{class: %Class{id: class_id}}
+          assigns: %{class: %Class{id: class_id} = class}
         } = socket
       ),
-      do: socket |> push_navigate(to: ~p"/admin/classes") |> noreply()
+      do:
+        socket
+        |> put_notification(Message.new(:success, "Deleted class #{class.name}"))
+        |> push_navigate(to: ~p"/admin/classes")
+        |> noreply()
 
   @impl true
   def handle_info(

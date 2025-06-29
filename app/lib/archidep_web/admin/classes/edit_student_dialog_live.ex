@@ -61,14 +61,14 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
              StudentForm.update_changeset(student, params),
              :validate
            ),
-         {:ok, _student} <-
+         {:ok, updated_student} <-
            Students.update_student(
              auth,
              student.id,
              StudentForm.to_existing_student_data(form_data)
            ) do
       socket
-      |> put_flash(:info, "Student updated")
+      |> send_notification(Message.new(:success, "Updated student #{updated_student.name}"))
       |> push_event("execute-action", %{to: "##{id(student)}", action: "close"})
       |> noreply()
     else
