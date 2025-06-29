@@ -62,9 +62,6 @@ defmodule ArchiDep.Servers.ServerManager do
   def retry_ansible_playbook(server, playbook),
     do: GenServer.call(name(server), {:retry_ansible_playbook, playbook})
 
-  @spec notify_server_up(UUID.t()) :: :ok
-  def notify_server_up(server_id), do: GenServer.cast(name(server_id), :retry_connecting)
-
   @spec update_server(Server.t(), Authentication.t(), Types.update_server_data()) ::
           {:ok, Server.t()} | {:error, Changeset.t()}
   def update_server(server, auth, data),
@@ -72,6 +69,9 @@ defmodule ArchiDep.Servers.ServerManager do
 
   @spec delete_server(Server.t(), Authentication.t()) :: :ok | {:error, :server_busy}
   def delete_server(server, auth), do: GenServer.call(name(server), {:delete_server, auth})
+
+  @spec notify_server_up(UUID.t()) :: :ok
+  def notify_server_up(server_id), do: GenServer.cast(name(server_id), :retry_connecting)
 
   # Server callbacks
 

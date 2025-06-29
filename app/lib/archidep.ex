@@ -85,6 +85,7 @@ defmodule ArchiDep do
   def use_case do
     quote do
       import ArchiDep.Authorization
+      import ArchiDep.Helpers.DataHelpers, only: [validate_uuid: 2]
       import ArchiDep.Helpers.PipeHelpers
       import ArchiDep.Helpers.UseCaseHelpers
       import ArchiDep.Repo, only: [transaction: 1]
