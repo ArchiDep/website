@@ -1,4 +1,6 @@
 defmodule ArchiDepWeb.Helpers.UserAgentFormatHelpers do
+  use Gettext, backend: ArchiDepWeb.Gettext
+
   @spec format_user_agent(term) :: String.t()
 
   def format_user_agent(user_agent) when is_binary(user_agent),
@@ -11,5 +13,5 @@ defmodule ArchiDepWeb.Helpers.UserAgentFormatHelpers do
        when is_binary(browser_family) and is_binary(os_family),
        do: "#{browser_family} on #{os_family}"
 
-  defp format_parsed_user_agent(_user_agent), do: "Unknown"
+  defp format_parsed_user_agent(_user_agent), do: gettext("Unknown")
 end

@@ -3,32 +3,33 @@
     <li class="text-error">
       <span class="flex items-center gap-1 !cursor-default !no-underline">
         <Heroicons.fire outline class="size-4" />
-        <span>Admin</span>
+        <span>{gettext("Admin")}</span>
       </span>
     </li>
     <li>
       <span class="flex items-center gap-1 !cursor-default !no-underline">
         <Heroicons.book_open solid class="size-4" />
-        <span>Event Log</span>
+        <span>{gettext("Event Log")}</span>
       </span>
     </li>
   </ul>
 </div>
 
 <h2 class="my-2 text-2xl font-bold flex items-center gap-x-2">
-  <Heroicons.book_open solid class="size-6" /> Event Log
+  <Heroicons.book_open solid class="size-6" />
+  {gettext("Event Log")}
 </h2>
 
 <table class="table table-zebra w-full">
   <thead>
     <tr>
       <th>
-        <span class="md:hidden">Event</span>
-        <span class="hidden md:inline">Context</span>
+        <span class="md:hidden">{gettext("Event")}</span>
+        <span class="hidden md:inline">{gettext("Context")}</span>
       </th>
-      <th class="hidden md:table-cell">Action</th>
-      <th class="hidden md:table-cell">Entity</th>
-      <th>Occurred at</th>
+      <th class="hidden md:table-cell">{gettext("Action")}</th>
+      <th class="hidden md:table-cell">{gettext("Entity")}</th>
+      <th>{gettext("Occurred at")}</th>
     </tr>
   </thead>
   <tbody
@@ -66,5 +67,5 @@
 </table>
 
 <div :if={@end_of_timeline?} class="mt-3 mb-5 flex justify-center">
-  <p class="italic text-info">This is the beginning of time.</p>
+  <p class="italic text-info">{gettext("This is the beginning of time.")}</p>
 </div>

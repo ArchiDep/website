@@ -4,7 +4,7 @@
       id="edit-server-form"
       form={@form}
       class={@server.class}
-      title="Edit Server"
+      title={gettext("Edit Server")}
       busy={ServerRealTimeState.busy?(@state)}
       on_submit="update"
       on_close={close(@server)}
@@ -13,12 +13,12 @@
       <:footer>
         <div :if={ServerRealTimeState.busy?(@state)} role="alert" class="mt-2 alert alert-error alert-soft">
           <Heroicons.arrow_path class="size-4 animate-spin" />
-          <span>This server cannot currently be updated because it is busy.</span>
+          <span>{gettext("This server cannot currently be updated because it is busy.")}</span>
         </div>
       </:footer>
     </.server_form>
   </div>
   <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
-    <button type="submit">Close</button>
+    <button type="submit">{gettext("Close")}</button>
   </form>
 </dialog>

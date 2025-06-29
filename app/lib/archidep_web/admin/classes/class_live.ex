@@ -2,7 +2,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   use ArchiDepWeb, :live_view
 
   import ArchiDepWeb.Helpers.DateFormatHelpers
-  import ArchiDepWeb.Helpers.I18nHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Students
   alias ArchiDep.Students.PubSub
@@ -16,12 +15,29 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   @spec expected_cpu(Class.t()) :: String.t()
   def expected_cpu(class) do
     [
-      {gettext("CPU"), class.expected_server_cpus},
-      {gettext("cores"), class.expected_server_cores},
-      {gettext("vCPU"), class.expected_server_vcpus}
+      if(class.expected_server_cpus != nil,
+        do:
+          gettext("{count} {count, plural, =1 {CPU} other {CPUs}}",
+            count: class.expected_server_cpus
+          ),
+        else: nil
+      ),
+      if(class.expected_server_cores != nil,
+        do:
+          gettext("{count} {count, plural, =1 {core} other {cores}}",
+            count: class.expected_server_cores
+          ),
+        else: nil
+      ),
+      if(class.expected_server_vcpus != nil,
+        do:
+          gettext("{count} {count, plural, =1 {vCPU} other {vCPUs}}",
+            count: class.expected_server_vcpus
+          ),
+        else: nil
+      )
     ]
-    |> Enum.filter(fn {_, value} -> value != nil end)
-    |> Enum.map(fn {label, value} -> "#{value} #{pluralize(value, label)}" end)
+    |> Enum.reject(&Kernel.is_nil/1)
     |> Enum.join(", ")
   end
 

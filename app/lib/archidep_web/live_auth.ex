@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.LiveAuth do
   Helpers to handle live view authentication based on session cookies.
   """
 
+  use Gettext, backend: ArchiDepWeb.Gettext
   import ArchiDep.Helpers.PipeHelpers
   import Flashy
   import Phoenix.Component, only: [assign: 3]
@@ -60,7 +61,7 @@ defmodule ArchiDepWeb.LiveAuth do
       {:cont, socket}
     else
       socket
-      |> put_notification(Message.new(:error, "You must log in to access this page."))
+      |> put_notification(Message.new(:error, gettext("You must log in to access this page.")))
       |> redirect(to: "/login")
       |> pair(:halt)
     end

@@ -1,8 +1,8 @@
 defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
   use Ecto.Schema
 
+  use Gettext, backend: ArchiDepWeb.Gettext
   import ArchiDep.Helpers.DataHelpers, only: [looks_like_an_email?: 1]
-  import ArchiDepWeb.Helpers.I18nHelpers, only: [pluralize: 2]
   import Ecto.Changeset
   alias Ecto.Changeset
 
@@ -31,13 +31,17 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
 
       cond do
         Enum.all?(students, &looks_like_an_email?(&1[name_column])) ->
-          [name_column: "this column looks like it contains emails, not names"]
+          [name_column: gettext("this column looks like it contains emails, not names")]
 
         (students |> Enum.map(& &1[name_column]) |> Enum.uniq() |> length()) / length(students) <
             0.9 ->
           [
             name_column:
-              "only #{length(unique_student_names)} unique #{pluralize(length(unique_student_names), "name")} out of #{length(students)} in this column"
+              gettext(
+                "only {count} unique {count, plural, =1 {name} other {names}} out of {total} in this column",
+                count: length(unique_student_names),
+                total: length(students)
+              )
           ]
 
         true ->
@@ -47,11 +51,11 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
     |> validate_change(:email_column, fn :email_column, email_column ->
       cond do
         !Enum.any?(students, &looks_like_an_email?(&1[email_column])) ->
-          [email_column: "no email found in this column"]
+          [email_column: gettext("no email found in this column")]
 
         students |> Enum.map(fn student -> student[email_column] end) |> Enum.uniq() |> length() !=
             length(students) ->
-          [email_column: "duplicate emails found in this column"]
+          [email_column: gettext("duplicate emails found in this column")]
 
         true ->
           []

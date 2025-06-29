@@ -20,7 +20,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
       socket
       |> assign(
-        page_title: "ArchiDep > Admin > Classes > #{student.class.name} > #{student.name}",
+        page_title:
+          "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Classes")} > #{student.class.name} > #{student.name}",
         class: student.class,
         student: student
       )
@@ -28,7 +29,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
     else
       {:error, :student_not_found} ->
         socket
-        |> put_notification(Message.new(:error, "Student not found"))
+        |> put_notification(Message.new(:error, gettext("Student not found")))
         |> push_navigate(to: ~p"/admin/classes/#{class_id}")
         |> ok()
     end
@@ -57,7 +58,12 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
       ),
       do:
         socket
-        |> put_notification(Message.new(:success, "Deleted student #{deleted_student.name}"))
+        |> put_notification(
+          Message.new(
+            :success,
+            gettext("Deleted student {student}", student: deleted_student.name)
+          )
+        )
         |> push_navigate(to: ~p"/admin/classes/#{deleted_student.class_id}")
         |> noreply()
 end

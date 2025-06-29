@@ -1,30 +1,31 @@
 <dialog id={id(@student)} class="modal">
   <div class="modal-box">
-    <h3 class="text-lg font-bold">Delete Student</h3>
-    <p class="mt-4">Are you sure you want to permanently delete this student?</p>
+    <h3 class="text-lg font-bold">{gettext("Delete Student")}</h3>
+    <p class="mt-4">
+      {gettext("Are you sure you want to permanently delete this student?")}
+    </p>
     <p
       :if={!is_nil(@student.user_account) and UserAccount.student?(@student.user_account)}
       class="mt-2 text-warning"
     >
-      This student is linked to user account <strong>{@student.user_account.username}</strong>
-      which will lose its access.
+      {gettext("This student is linked to {ss}user account {account}{se} which will lose its access.", account: @student.user_account.username, ss: "<strong>", se: "</strong>") |> raw()}
     </p>
     <div class="mt-4 flex justify-end gap-x-2">
       <button type="button" class="btn btn-secondary" phx-click={close(@student)}>
         <span class="flex items-center gap-x-2">
           <Heroicons.x_mark class="size-4" />
-          <span>No</span>
+          <span>{gettext("No")}</span>
         </span>
       </button>
       <button type="button" class="btn btn-error" phx-click="delete" phx-target={@myself}>
         <span class="flex items-center gap-x-2">
           <Heroicons.trash class="size-4" />
-          <span>Yes</span>
+          <span>{gettext("Yes")}</span>
         </span>
       </button>
     </div>
   </div>
   <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
-    <button type="submit">Close</button>
+    <button type="submit">{gettext("Close")}</button>
   </form>
 </dialog>

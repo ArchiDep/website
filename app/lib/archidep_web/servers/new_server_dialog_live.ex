@@ -55,7 +55,10 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
            Servers.create_server(socket.assigns.auth, ServerForm.to_create_server_data(form_data)) do
       socket
       |> send_notification(
-        Message.new(:success, "Created server #{Server.name_or_default(created_server)}")
+        Message.new(
+          :success,
+          gettext("Created server {server}", server: Server.name_or_default(created_server))
+        )
       )
       |> push_event("execute-action", %{to: "##{id()}", action: "close"})
       |> noreply()

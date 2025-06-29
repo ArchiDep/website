@@ -51,8 +51,10 @@ let liveSocket = new LiveSocket("/live", Socket, {
 
 function updateRemainingSeconds(element) {
   const endTime = new Date(element.dataset.endTime);
+  const template = element.dataset.template || "in {seconds}s";
+  const doneTemplate = element.dataset.templateDone || "soon";
   const remainingSeconds = Math.ceil(Math.max(0, endTime.getTime() - Date.now()) / 1000);
-  element.textContent = remainingSeconds >= 1 ? `in ${remainingSeconds}s` : 'soon';
+  element.textContent = remainingSeconds >= 1 ? template.replace('{seconds}', remainingSeconds) : doneTemplate;
 
   if (remainingSeconds >= 1) {
     setTimeout(() => updateRemainingSeconds(element), 1000);

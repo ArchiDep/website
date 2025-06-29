@@ -3,13 +3,13 @@
     <.class_form
       id="edit-class-form"
       form={@form}
-      title="Edit Class"
+      title={gettext("Edit Class")}
       on_submit="update"
       on_close={close(@class)}
       target={@myself}
     />
   </div>
   <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
-    <button type="submit">Close</button>
+    <button type="submit">{gettext("Close")}</button>
   </form>
 </dialog>

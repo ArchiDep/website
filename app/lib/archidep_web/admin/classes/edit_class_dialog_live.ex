@@ -62,7 +62,9 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
          {:ok, updated_class} <-
            Students.update_class(auth, class.id, ClassForm.to_class_data(form_data)) do
       socket
-      |> send_notification(Message.new(:success, "Updated class #{updated_class.name}"))
+      |> send_notification(
+        Message.new(:success, gettext("Updated class {class}", class: updated_class.name))
+      )
       |> push_event("execute-action", %{to: "##{id(class)}", action: "close"})
       |> noreply()
     else

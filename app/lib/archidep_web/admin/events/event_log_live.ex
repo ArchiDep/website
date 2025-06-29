@@ -19,7 +19,7 @@ defmodule ArchiDepWeb.Admin.Events.EventLogLive do
 
     socket
     |> assign(
-      page_title: "ArchiDep > Event Log",
+      page_title: "#{gettext("ArchiDep")} > #{gettext("Event Log")}",
       oldest_event: List.last(events),
       newest_event: List.first(events),
       beginning?: true,

@@ -40,7 +40,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
 
     socket
     |> assign(
-      page_title: "ArchiDep > Servers",
+      page_title: "#{gettext("ArchiDep")} > #{gettext("Servers")}",
       servers: servers,
       server_state_map: ServerTracker.server_state_map(servers),
       server_tracker: tracker,

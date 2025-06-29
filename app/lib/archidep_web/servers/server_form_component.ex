@@ -43,7 +43,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           <h3 class="text-lg font-bold">{@title}</h3>
         </legend>
 
-        <label class="fieldset-label mt-2">Name</label>
+        <label class="fieldset-label mt-2">{gettext("Name")}</label>
         <input
           type="text"
           id={@form[:name].id}
@@ -54,14 +54,14 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         <.errors_for field={@form[:name]} />
 
         <%= if @classes do %>
-          <label class="fieldset-label mt-2">Class</label>
+          <label class="fieldset-label mt-2">{gettext("Class")}</label>
           <select
             id={@form[:class_id].id}
             class="select w-full"
             name={@form[:class_id].name}
             value={@form[:class_id].value}
           >
-            <option value="">Select a class</option>
+            <option value="">{gettext("Select a class")}</option>
             <option
               :for={class <- @classes}
               value={class.id}
@@ -82,14 +82,15 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             name={@form[:active].name}
             checked={@form[:active].value}
             value="true"
-          /> Active
+          />
+          {gettext("Active")}
         </label>
       </fieldset>
 
       <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
-        <legend class="fieldset-legend">Connection information</legend>
+        <legend class="fieldset-legend">{gettext("Connection information")}</legend>
 
-        <label class="fieldset-label mt-2">IP address</label>
+        <label class="fieldset-label mt-2">{gettext("IP address")}</label>
         <input
           type="text"
           id={@form[:ip_address].id}
@@ -99,7 +100,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:ip_address]} />
 
-        <label class="fieldset-label mt-2">Username</label>
+        <label class="fieldset-label mt-2">{gettext("Username")}</label>
         <input
           type="text"
           id={@form[:username].id}
@@ -109,7 +110,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:username]} />
 
-        <label class="fieldset-label mt-2">Application username</label>
+        <label class="fieldset-label mt-2">{gettext("Application username")}</label>
         <input
           type="text"
           id={@form[:app_username].id}
@@ -119,7 +120,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:app_username]} />
 
-        <label class="fieldset-label mt-2">SSH port</label>
+        <label class="fieldset-label mt-2">{gettext("SSH port")}</label>
         <input
           type="number"
           id={@form[:ssh_port].id}
@@ -138,17 +139,13 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         <legend class="fieldset-legend">Expected properties</legend>
         <div role="alert" class="alert alert-info alert-soft">
           <span class="text-sm">
-            Warnings will be issued if the server does not meet these expected
-            properties. Default expected properties are inherited from the
-            server's class, but can be overridden here (use <code>0</code>
-            or <code>*</code>
-            to unset an expected property).
+            {gettext("Warnings will be issued if the server does not meet these expected properties. Default expected properties are inherited from the server's class, but can be overridden here (use 0 or * to unset an expected property).")}
           </span>
         </div>
         <!-- CPU -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="fieldset-label mt-2">CPUs</label>
+            <label class="fieldset-label mt-2">{gettext("CPUs")}</label>
             <input
               type="number"
               id={@form[:expected_cpus].id}
@@ -159,14 +156,14 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               name={@form[:expected_cpus].name}
               value={@form[:expected_cpus].value}
               min={if @class == nil, do: "1", else: "0"}
-              placeholder={expected_placeholder(@selected_class, :expected_server_cpus, "e.g. 1")}
+              placeholder={expected_placeholder(@selected_class, :expected_server_cpus, gettext("e.g. 1"))}
             />
             <.errors_for field={@form[:expected_cpus]} />
             {inherited_notice(@form, @selected_class, :expected_server_cpus, :expected_cpus)}
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">CPU cores</label>
+            <label class="fieldset-label mt-2">{gettext("CPU cores")}</label>
             <input
               type="number"
               id={@form[:expected_cores].id}
@@ -177,14 +174,14 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               name={@form[:expected_cores].name}
               value={@form[:expected_cores].value}
               min={if @class == nil, do: "1", else: "0"}
-              placeholder={expected_placeholder(@selected_class, :expected_server_cores, "e.g. 2")}
+              placeholder={expected_placeholder(@selected_class, :expected_server_cores, gettext("e.g. 2"))}
             />
             <.errors_for field={@form[:expected_cores]} />
             {inherited_notice(@form, @selected_class, :expected_server_cores, :expected_cores)}
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">vCPUs</label>
+            <label class="fieldset-label mt-2">{gettext("vCPUs")}</label>
             <input
               type="number"
               id={@form[:expected_vcpus].id}
@@ -195,7 +192,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               name={@form[:expected_vcpus].name}
               value={@form[:expected_vcpus].value}
               min={if @class == nil, do: "1", else: "0"}
-              placeholder={expected_placeholder(@selected_class, :expected_server_vcpus, "e.g. 2")}
+              placeholder={expected_placeholder(@selected_class, :expected_server_vcpus, gettext("e.g. 2"))}
             />
             <.errors_for field={@form[:expected_vcpus]} />
             {inherited_notice(@form, @selected_class, :expected_server_vcpus, :expected_vcpus)}
@@ -204,7 +201,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         <!-- Memory -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="fieldset-label mt-2">Memory</label>
+            <label class="fieldset-label mt-2">{gettext("Memory")}</label>
             <label class={[
               "input w-full",
               inherited_input_class(
@@ -221,17 +218,17 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 value={@form[:expected_memory].value}
                 min={if @class == nil, do: "1", else: "0"}
                 placeholder={
-                  expected_placeholder(@selected_class, :expected_server_memory, "e.g. 2048")
+                  expected_placeholder(@selected_class, :expected_server_memory, gettext("e.g. 2048"))
                 }
               />
-              <span class="label">MB (±10%)</span>
+              <span class="label">{gettext("MB")} (±10%)</span>
             </label>
             <.errors_for field={@form[:expected_memory]} />
             {inherited_notice(@form, @selected_class, :expected_server_memory, :expected_memory)}
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">Swap</label>
+            <label class="fieldset-label mt-2">{gettext("Swap")}</label>
             <label class={[
               "input w-full",
               inherited_input_class(
@@ -248,10 +245,10 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 value={@form[:expected_swap].value}
                 min={if @class == nil, do: "1", else: "0"}
                 placeholder={
-                  expected_placeholder(@selected_class, :expected_server_swap, "e.g. 1024")
+                  expected_placeholder(@selected_class, :expected_server_swap, gettext("e.g. 1024"))
                 }
               />
-              <span class="label">MB (±10%)</span>
+              <span class="label">{gettext("MB")} (±10%)</span>
             </label>
             <.errors_for field={@form[:expected_swap]} />
             {inherited_notice(@form, @selected_class, :expected_server_swap, :expected_swap)}
@@ -260,7 +257,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         <!-- System, OS family & architecture -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="fieldset-label mt-2">System</label>
+            <label class="fieldset-label mt-2">{gettext("System")}</label>
             <input
               type="text"
               id={@form[:expected_system].id}
@@ -276,7 +273,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               name={@form[:expected_system].name}
               value={@form[:expected_system].value}
               placeholder={
-                expected_placeholder(@selected_class, :expected_server_system, "e.g. Linux")
+                expected_placeholder(@selected_class, :expected_server_system, gettext("e.g. Linux"))
               }
             />
             <.errors_for field={@form[:expected_system]} />
@@ -284,7 +281,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">Architecture</label>
+            <label class="fieldset-label mt-2">{gettext("Architecture")}</label>
             <input
               type="text"
               id={@form[:expected_architecture].id}
@@ -300,7 +297,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               name={@form[:expected_architecture].name}
               value={@form[:expected_architecture].value}
               placeholder={
-                expected_placeholder(@selected_class, :expected_server_architecture, "e.g. x86_64")
+                expected_placeholder(@selected_class, :expected_server_architecture, gettext("e.g. x86_64"))
               }
             />
             <.errors_for field={@form[:expected_architecture]} />
@@ -313,7 +310,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">OS family</label>
+            <label class="fieldset-label mt-2">{gettext("OS family")}</label>
             <input
               type="text"
               id={@form[:expected_os_family].id}
@@ -329,7 +326,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               name={@form[:expected_os_family].name}
               value={@form[:expected_os_family].value}
               placeholder={
-                expected_placeholder(@selected_class, :expected_server_os_family, "e.g. Debian")
+                expected_placeholder(@selected_class, :expected_server_os_family, gettext("e.g. Debian"))
               }
             />
             <.errors_for field={@form[:expected_os_family]} />
@@ -339,7 +336,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         <!-- Distribution -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="fieldset-label mt-2">Distribution</label>
+            <label class="fieldset-label mt-2">{gettext("Distribution")}</label>
             <input
               type="text"
               id={@form[:expected_distribution].id}
@@ -355,7 +352,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               name={@form[:expected_distribution].name}
               value={@form[:expected_distribution].value}
               placeholder={
-                expected_placeholder(@selected_class, :expected_server_distribution, "e.g. Ubuntu")
+                expected_placeholder(@selected_class, :expected_server_distribution, gettext("e.g. Ubuntu"))
               }
             />
             <.errors_for field={@form[:expected_distribution]} />
@@ -368,7 +365,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">Release</label>
+            <label class="fieldset-label mt-2">{gettext("Release")}</label>
             <input
               type="text"
               id={@form[:expected_distribution_release].id}
@@ -387,7 +384,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 expected_placeholder(
                   @selected_class,
                   :expected_server_distribution_release,
-                  "e.g. noble"
+                  gettext("e.g. noble")
                 )
               }
             />
@@ -401,7 +398,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">Version</label>
+            <label class="fieldset-label mt-2">{gettext("Version")}</label>
             <input
               type="text"
               id={@form[:expected_distribution_version].id}
@@ -420,7 +417,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 expected_placeholder(
                   @selected_class,
                   :expected_server_distribution_version,
-                  "e.g. 24.04"
+                  gettext("e.g. 24.04")
                 )
               }
             />
@@ -441,13 +438,13 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         <button type="button" class="btn btn-secondary" phx-click={@on_close}>
           <span class="flex items-center gap-x-2">
             <Heroicons.x_mark class="size-4" />
-            <span>Close</span>
+            <span>{gettext("Close")}</span>
           </span>
         </button>
         <button type="submit" class="btn btn-primary" disabled={@busy}>
           <span class="flex items-center gap-x-2">
             <Heroicons.check class="size-4" />
-            <span>Save</span>
+            <span>{gettext("Save")}</span>
           </span>
         </button>
       </div>
@@ -503,9 +500,11 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
     ~H"""
     <p :if={@class_value != nil} class="label mt-1 italic">
       <%= if @form[@server_field].value == nil do %>
-        <span class="text-info/85">Inherited from class</span>
+        <span class="text-info/85">{gettext("Inherited from class")}</span>
       <% else %>
-        <span class="text-base-content/50">Overridden from class (was {@class_value})</span>
+        <span class="text-base-content/50">
+          {gettext("Overridden from class (was {value})", value: @class_value)}
+        </span>
       <% end %>
     </p>
     """

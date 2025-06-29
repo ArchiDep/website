@@ -68,7 +68,10 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
            Servers.update_server(auth, server.id, ServerForm.to_update_server_data(form_data)) do
       socket
       |> send_notification(
-        Message.new(:success, "Updated server #{Server.name_or_default(updated_server)}")
+        Message.new(
+          :success,
+          gettext("Updated server {server}", server: Server.name_or_default(updated_server))
+        )
       )
       |> push_event("execute-action", %{to: "##{id(server)}", action: "close"})
       |> noreply()

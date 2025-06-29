@@ -1,9 +1,8 @@
 defmodule ArchiDepWeb.Servers.ServerComponents do
-  use Phoenix.Component
+  use ArchiDepWeb, :component
 
   import ArchiDep.Servers.ServerConnectionState
   import ArchiDepWeb.Helpers.AuthHelpers
-  import ArchiDepWeb.Helpers.I18nHelpers
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -41,13 +40,15 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     {badge_class, badge_text, status_text, retry_text, connecting_or_reconnecting} =
       case state do
         nil ->
-          {"badge-info", "Not connected", "No connection to this server.", nil, false}
+          {"badge-info", gettext("Not connected"), gettext("No connection to this server."), nil,
+           false}
 
         %ServerRealTimeState{connection_state: not_connected_state()} ->
-          {"badge-info", "Not connected", "No connection to this server.", nil, false}
+          {"badge-info", gettext("Not connected"), gettext("No connection to this server."), nil,
+           false}
 
         %ServerRealTimeState{connection_state: connecting_state()} ->
-          {"badge-primary", "Connecting", "Connecting to the server", nil, true}
+          {"badge-primary", gettext("Connecting"), gettext("Connecting to the server"), nil, true}
 
         %ServerRealTimeState{
           connection_state:
@@ -55,7 +56,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
               retrying: %{retry: retry, time: time, in_seconds: in_seconds, reason: reason}
             )
         } ->
-          {"badge-primary", "Reconnecting",
+          {"badge-primary", gettext("Reconnecting"),
            retry_connecting(%{
              auth: assigns.auth,
              server: assigns.server,
@@ -63,30 +64,30 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
              time: time,
              in_seconds: in_seconds,
              reason: reason
-           }), "Retry now", false}
+           }), gettext("Retry now"), false}
 
         %ServerRealTimeState{connection_state: connected_state(), current_job: current_job} ->
           {
             "badge-success",
-            "Connected",
+            gettext("Connected"),
             case current_job do
               :checking_access ->
-                "Checking access"
+                gettext("Checking access")
 
               :setting_up_app_user ->
-                "Setting up application user"
+                gettext("Setting up application user")
 
               :gathering_facts ->
-                "Gathering facts"
+                gettext("Gathering facts")
 
               {:running_playbook, playbook, _run_id, ongoing_task} ->
                 [
                   case playbook do
                     "setup" ->
-                      "Initial setup"
+                      gettext("Initial setup")
 
                     _any_other_playbook ->
-                      "Running #{playbook}"
+                      gettext("Running {playbook}", playbook: playbook)
                   end,
                   ongoing_task
                 ]
@@ -94,21 +95,23 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
                 |> Enum.join(": ")
 
               nil ->
-                "Connected to the server."
+                gettext("Connected to the server.")
             end,
             nil,
             false
           }
 
         %ServerRealTimeState{connection_state: reconnecting_state()} ->
-          {"badge-primary", "Reconnecting", "Reconnecting to the server", nil, true}
+          {"badge-primary", gettext("Reconnecting"), gettext("Reconnecting to the server"), nil,
+           true}
 
         %ServerRealTimeState{connection_state: connection_failed_state()} ->
-          {"badge-error", "Connection failed", "Could not connect to the server.",
-           "Retry connecting", false}
+          {"badge-error", gettext("Connection failed"),
+           gettext("Could not connect to the server."), gettext("Retry connecting"), false}
 
         %ServerRealTimeState{connection_state: disconnected_state()} ->
-          {"badge-primary", "Disconnected", "The connection to the server was lost.", nil, false}
+          {"badge-primary", gettext("Disconnected"),
+           gettext("The connection to the server was lost."), nil, false}
       end
 
     filtered_problems =
@@ -250,14 +253,18 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     details =
       if ansible_stats.failures > 0 do
         details ++
-          ["#{ansible_stats.failures} #{pluralize(ansible_stats.failures, "task")} failed"]
+          [
+            gettext("{count} {count, plural, =1 {task} other {tasks}} failed",
+              count: ansible_stats.failures
+            )
+          ]
       else
         details
       end
 
     details =
       if ansible_stats.unreachable >= 1 do
-        details ++ ["host unreachable"]
+        details ++ [gettext("host unreachable")]
       else
         details
       end
@@ -278,13 +285,25 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       <Heroicons.exclamation_circle class="size-4" />
       <span>
         <%= if has_role?(@auth, :root) do %>
-          Ansible playbook <code>{@playbook}</code>
-          failed with state <code>{inspect(@ansible_run_state)}</code>
+          {gettext("Ansible playbook {ss}{cs}{playbook}{ce}{se} failed with state {cs}{state}{ce}",
+            playbook: @playbook,
+            state: @ansible_run_state |> inspect() |> html_escape() |> safe_to_string(),
+            cs: "<code>",
+            ce: "</code>",
+            ss: "<strong>",
+            se: "</strong>"
+          )
+          |> raw()}
           <%= if @details != [] do %>
             ({Enum.join(@details, ", ")})
           <% end %>
         <% else %>
-          <code>{@playbook}</code> provisioning task failed
+          {gettext("{cs}{playbook}{ce} provisioning task failed",
+            playbook: @playbook,
+            cs: "<code>",
+            ce: "</code>"
+          )
+          |> raw()}
         <% end %>
       </span>
       <%= if @on_retry_operation != nil and @connected and has_role?(@auth, :root) do %>
@@ -298,7 +317,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           phx-value-playbook={@playbook}
         >
           <Heroicons.arrow_path class={["size-4", if(@retrying, do: "animate-spin")]} />
-          <span class="sr-only">Retry</span>
+          <span class="sr-only">{gettext("Retry")}</span>
         </button>
       <% end %>
     </div>
@@ -311,7 +330,14 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     ~H"""
     <div role="alert" class="alert alert-error alert-soft">
       <Heroicons.exclamation_circle class="size-4" />
-      <span>Authentication failed for user <code>{@username}</code></span>
+      <span>
+        {gettext("Authentication failed for user {cs}{username}{ce}",
+          username: @username |> html_escape() |> safe_to_string(),
+          cs: "<code>",
+          ce: "</code>"
+        )
+        |> raw()}
+      </span>
     </div>
     """
   end
@@ -326,9 +352,14 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       <Heroicons.exclamation_circle class="size-4" />
       <span>
         <%= if has_role?(@auth, :root) do %>
-          Authentication failed for application user <code>{@username}</code>
+          {gettext("Authentication failed for application user {cs}{username}{ce}",
+            username: @username |> html_escape() |> safe_to_string(),
+            cs: "<code>",
+            ce: "</code>"
+          )
+          |> raw()}
         <% else %>
-          Authentication failed
+          {gettext("Authentication failed")}
         <% end %>
       </span>
     </div>
@@ -348,7 +379,12 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div role="alert" class="alert alert-warning alert-soft">
       <Heroicons.exclamation_triangle class="size-4" />
       <span>
-        Timeout when connecting to <code>{@username}@{@host}:{@port}</code>
+        {gettext("Timeout when connecting to {cs}{target}{ce}",
+          target: "#{@username}@#{@host}:#{@port}" |> html_escape() |> safe_to_string(),
+          cs: "<code>",
+          ce: "</code>"
+        )
+        |> raw()}
       </span>
     </div>
     """
@@ -378,7 +414,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div role="alert" class="alert alert-warning alert-soft">
       <Heroicons.exclamation_triangle class="size-4" />
       <div>
-        <span>Could not gather facts from the server</span>
+        <span>{gettext("Could not gather facts from the server")}</span>
         <%= if has_role?(@auth, :root) do %>
           <div>
             {inspect(@reason)}
@@ -396,7 +432,14 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div role="alert" class="alert alert-error alert-soft">
       <Heroicons.exclamation_circle class="size-4" />
       <div>
-        <span>User <code>{@username}</code> does not have <code>sudo</code> access</span>
+        <span>
+          {gettext("User {cs}{username}{ce} does not have sudo access",
+            username: @username |> html_escape() |> safe_to_string(),
+            cs: "<code>",
+            ce: "</code>"
+          )
+          |> raw()}
+        </span>
         <%= if has_role?(@auth, :root) do %>
           <div>
             {inspect(@stderr)}
@@ -414,7 +457,14 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div role="alert" class="alert alert-error alert-soft">
       <Heroicons.exclamation_circle class="size-4" />
       <div>
-        <span>Could not check whether <code>{@username}</code> has <code>sudo</code> access</span>
+        <span>
+          {gettext("Could not check whether {cs}{username}{ce} has sudo access",
+            username: @username |> html_escape() |> safe_to_string(),
+            cs: "<code>",
+            ce: "</code>"
+          )
+          |> raw()}
+        </span>
         <%= if has_role?(@auth, :root) do %>
           <div>
             {inspect(@reason)}
@@ -432,7 +482,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div role="alert" class="alert alert-error alert-soft">
       <Heroicons.exclamation_circle class="size-4" />
       <div>
-        <span>Could not reconnect to server after setup</span>
+        <span>{gettext("Could not reconnect to server after setup")}</span>
         <%= if has_role?(@auth, :root) do %>
           <div>
             {inspect(@reason)}
@@ -448,7 +498,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div role="alert" class="alert alert-error alert-soft">
       <Heroicons.exclamation_circle class="size-4" />
       <div>
-        <span>Oops, an unexpected problem occurred</span>
+        <span>{gettext("Oops, an unexpected problem occurred")}</span>
         <%= if has_role?(@auth, :root) do %>
           <div>
             {inspect(@problem)}
@@ -460,41 +510,93 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   end
 
   defp server_expected_property_mismatch(:cpus, expected, actual),
-    do: "Server has #{actual} CPU(s) when it should have #{expected}"
+    do:
+      gettext(
+        "Server has {actual} {actual, plural, =1 {CPU} other {CPUs}} when it should have {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:cores, expected, actual),
-    do: "Server has #{actual} CPU core(s) when it should have #{expected}"
+    do:
+      gettext(
+        "Server has {actual} CPU {actual, plural, =1 {core} other {cores}} when it should have {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:vcpus, expected, actual),
-    do: "Server has #{actual} vCPU(s) when it should have #{expected}"
+    do:
+      gettext(
+        "Server has {actual} {actual, plural, =1 {vCPU} other {vCPUs}} when it should have {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:memory, expected, actual),
-    do: "Server has #{actual} MB of RAM when it should have #{expected}"
+    do:
+      gettext("Server has {actual} MB of RAM when it should have {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:swap, expected, actual),
-    do: "Server has #{actual} MB of swap when it should have #{expected}"
+    do:
+      gettext("Server has {actual} MB of swap when it should have {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:system, expected, actual),
-    do: "Server is running a #{actual} system when it should be #{expected}"
+    do:
+      gettext("Server is running a system of type {actual} when it should be {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:architecture, expected, actual),
-    do: "Server is running on an #{actual} architecture when it should be #{expected}"
+    do:
+      gettext("Server is running on architecture {actual} when it should be {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:os_family, expected, actual),
     do:
-      "Server is running an operating system of the #{actual} family when it should be #{expected}"
+      gettext(
+        "Server is running an operating system of the {actual} family when it should be {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:distribution, expected, actual),
-    do: "Server is running the #{actual} Linux distribution when it should be #{expected}"
+    do:
+      gettext("Server is running the {actual} Linux distribution when it should be {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:distribution_release, expected, actual),
-    do: "Server is running distribution release #{actual} when it should be #{expected}"
+    do:
+      gettext("Server is running distribution release {actual} when it should be {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(:distribution_version, expected, actual),
-    do: "Server is running distribution version #{actual} when it should be #{expected}"
+    do:
+      gettext("Server is running distribution version {actual} when it should be {expected}",
+        actual: actual,
+        expected: expected
+      )
 
   defp server_expected_property_mismatch(property, expected, actual),
-    do: "Server has #{actual} #{Atom.to_string(property)} when it should have #{expected}"
+    do:
+      gettext("Server property {property} has value {actual} when it should be {expected}",
+        actual: actual,
+        expected: expected,
+        property: Atom.to_string(property)
+      )
 
   defp retry_connecting(assigns) do
     id = "server-#{assigns.server.id}-retry-connecting"
@@ -519,17 +621,22 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
     ~H"""
     <%= if @reason == :econnrefused do %>
-      Server unreachable.
+      {gettext("Server unreachable.")}
     <% end %>
     <%= if @reason == :timeout do %>
-      Connection timed out.
+      {gettext("Connection timed out.")}
     <% end %>
-    Will retry
-    <span id={@id} data-end-time={DateTime.to_iso8601(@end_time)} phx-hook="remainingSeconds">
-      in {@remaining_seconds}s
+    <span
+      id={@id}
+      data-end-time={DateTime.to_iso8601(@end_time)}
+      data-template={gettext("Will retry in \{seconds\}s")}
+      data-template-done={gettext("Will retry soon")}
+      phx-hook="remainingSeconds"
+    >
+      {gettext("Will retry in {count}s", count: @remaining_seconds)}
     </span>
     <%= if has_role?(@auth, :root) do %>
-      (attempt #{@retry + 1})
+      ({gettext("attempt #\{count\}", count: @retry + 1)})
     <% end %>
     """
   end

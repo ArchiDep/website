@@ -46,16 +46,16 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     if form.errors == [] do
       if student_exists?(form, student, existing_students) do
         ~H"""
-        <div class="badge badge-neutral">existing</div>
+        <div class="badge badge-neutral">{gettext("existing")}</div>
         """
       else
         ~H"""
-        <div class="badge badge-success">new</div>
+        <div class="badge badge-success">{gettext("new")}</div>
         """
       end
     else
       ~H"""
-      <div class="badge badge-warning">invalid</div>
+      <div class="badge badge-warning">{gettext("invalid")}</div>
       """
     end
   end

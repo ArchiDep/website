@@ -20,7 +20,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
           <h3 class="text-lg font-bold">{@title}</h3>
         </legend>
 
-        <label class="fieldset-label mt-2">Name</label>
+        <label class="fieldset-label mt-2">{gettext("Name")}</label>
         <input
           type="text"
           id={@form[:name].id}
@@ -30,7 +30,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
         />
         <.errors_for field={@form[:name]} />
 
-        <label class="fieldset-label mt-2">Email</label>
+        <label class="fieldset-label mt-2">{gettext("Email")}</label>
         <input
           type="email"
           id={@form[:email].id}
@@ -40,7 +40,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
         />
         <.errors_for field={@form[:email]} />
 
-        <label class="fieldset-label mt-2">Academic class</label>
+        <label class="fieldset-label mt-2">{gettext("Academic class")}</label>
         <input
           type="text"
           id={@form[:academic_class].id}
@@ -49,7 +49,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
           value={@form[:academic_class].value}
         />
         <.errors_for field={@form[:academic_class]} />
-        <p class="label">Official name of the student's academic class</p>
+        <p class="label">{gettext("Official name of the student's academic class")}</p>
 
         <label class="fieldset-label mt-2">
           <input type="hidden" name={@form[:active].name} value="false" />
@@ -60,20 +60,21 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
             name={@form[:active].name}
             checked={@form[:active].value}
             value="true"
-          /> Active
+          />
+          {gettext("Active")}
         </label>
 
         <div class="mt-2 flex justify-end gap-x-2">
           <button type="button" class="btn btn-secondary" phx-click={@on_close}>
             <span class="flex items-center gap-x-2">
               <Heroicons.x_mark class="size-4" />
-              <span>Close</span>
+              <span>{gettext("Close")}</span>
             </span>
           </button>
           <button type="submit" class="btn btn-primary">
             <span class="flex items-center gap-x-2">
               <Heroicons.check class="size-4" />
-              <span>Save</span>
+              <span>{gettext("Save")}</span>
             </span>
           </button>
         </div>

@@ -1,11 +1,11 @@
 <table id="current-sessions" class="table w-full">
   <thead>
     <tr>
-      <th>Login</th>
-      <th>Last used</th>
-      <th>Expiration</th>
-      <th>IP address</th>
-      <th>Client</th>
+      <th>{gettext("Login")}</th>
+      <th>{gettext("Last used")}</th>
+      <th>{gettext("Expiration")}</th>
+      <th>{gettext("IP address")}</th>
+      <th>{gettext("Client")}</th>
       <th></th>
     </tr>
   </thead>
@@ -17,16 +17,18 @@
         <!-- Last used -->
         <td>
           <%= if current_session?(@auth, session) do %>
-            <span class="badge badge-primary whitespace-nowrap">Current session</span>
+            <span class="badge badge-primary whitespace-nowrap">
+              {gettext("Current session")}
+            </span>
           <% else %>
             <%= if session.used_at do %>
               <div class="tooltip" data-tip={format_date_time(session.used_at)}>
                 <span class="badge h-auto">
-                  {format_duration(session.used_at)} ago
+                  {gettext("{time} ago", time: format_duration(session.used_at))}
                 </span>
               </div>
             <% else %>
-              <span class="badge badge-default">Never</span>
+              <span class="badge badge-default">{gettext("Never")}</span>
             <% end %>
           <% end %>
         </td>
@@ -34,7 +36,7 @@
         <td>
           <div class="tooltip" data-tip={session |> expires_at() |> format_date_time()}>
             <%= if expired?(session) do %>
-              <span class="badge badge-error">Expired</span>
+              <span class="badge badge-error">{gettext("Expired")}</span>
             <% else %>
               <span class={"badge #{if expires_soon?(session), do: "badge-warning", else: "badge-success"} h-auto"}>
                 {session |> expires_at() |> format_duration()}
@@ -61,7 +63,7 @@
         <!-- Actions -->
         <td>
           <%= unless current_session?(@auth, session) do %>
-            <div class="tooltip" data-tip="Delete this session">
+            <div class="tooltip" data-tip={gettext("Delete this session")}>
               <button
                 class="delete-session btn btn-circle btn-outline btn-xs btn-secondary align-middle"
                 type="button"
@@ -69,7 +71,7 @@
                 phx-target={@myself}
               >
                 <Heroicons.x_mark outline class="w-6 h-6" />
-                <span class="sr-only">Delete</span>
+                <span class="sr-only">{gettext("Delete")}</span>
               </button>
             </div>
           <% end %>

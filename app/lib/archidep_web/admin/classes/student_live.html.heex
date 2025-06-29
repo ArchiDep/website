@@ -3,13 +3,13 @@
     <li class="text-error">
       <span class="flex items-center gap-1 !cursor-default !no-underline">
         <Heroicons.fire outline class="size-4" />
-        <span>Admin</span>
+        <span>{gettext("Admin")}</span>
       </span>
     </li>
     <li>
       <.link class="flex items-center gap-1" navigate={~p"/admin/classes"}>
         <Heroicons.academic_cap solid class="size-4" />
-        <span>Classes</span>
+        <span>{gettext("Classes")}</span>
       </.link>
     </li>
     <li>
@@ -33,19 +33,19 @@
 </h2>
 
 <dl class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4">
-  <dt class="font-bold">Name</dt>
+  <dt class="font-bold">{gettext("Name")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     {@student.name}
   </dd>
-  <dt class="font-bold">Email</dt>
+  <dt class="font-bold">{gettext("Email")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     {@student.email}
   </dd>
-  <dt class="font-bold">Class</dt>
+  <dt class="font-bold">{gettext("Class")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     {@student.class.name}
   </dd>
-  <dt class="font-bold">Academic class</dt>
+  <dt class="font-bold">{gettext("Academic class")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     <%= if @student.academic_class do %>
       {@student.academic_class}
@@ -53,12 +53,12 @@
       <.no_data />
     <% end %>
   </dd>
-  <dt class="font-bold">Active</dt>
+  <dt class="font-bold">{gettext("Active")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     <Heroicons.check_circle :if={@student.active} class="size-5 text-success" />
     <Heroicons.x_circle :if={not @student.active} class="size-5 text-error" />
   </dd>
-  <dt class="font-bold">User account</dt>
+  <dt class="font-bold">{gettext("User account")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     <%= if @student.user_account do %>
       <span class="flex items-center gap-x-2">
@@ -66,7 +66,7 @@
         {@student.user_account.username}
       </span>
     <% else %>
-      <.no_data text="Not registered yet" />
+      <.no_data text={gettext("Not registered yet")} />
     <% end %>
   </dd>
 </dl>
@@ -79,7 +79,7 @@
   >
     <span class="flex items-center gap-x-2">
       <Heroicons.pencil class="size-4" />
-      <span>Edit</span>
+      <span>{gettext("Edit")}</span>
     </span>
   </button>
 
@@ -92,7 +92,7 @@
   >
     <span class="flex items-center gap-x-2">
       <Heroicons.trash class="size-4" />
-      <span>Delete</span>
+      <span>{gettext("Delete")}</span>
     </span>
   </button>
 </div>

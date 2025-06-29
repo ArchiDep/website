@@ -43,7 +43,9 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
          {:ok, created_class} <-
            Students.create_class(socket.assigns.auth, ClassForm.to_class_data(form_data)) do
       socket
-      |> send_notification(Message.new(:success, "Created class #{created_class.name}"))
+      |> send_notification(
+        Message.new(:success, gettext("Created class {class}", class: created_class.name))
+      )
       |> push_event("execute-action", %{to: "##{id()}", action: "close"})
       |> noreply()
     else

@@ -25,7 +25,8 @@ defmodule ArchiDepWeb.Servers.ServerLive do
 
       socket
       |> assign(
-        page_title: "ArchiDep > Servers > #{Server.name_or_default(server)}",
+        page_title:
+          "#{gettext("ArchiDep")} > #{gettext("Servers")} > #{Server.name_or_default(server)}",
         server: server,
         state: ServerTracker.get_current_server_state(server)
       )
@@ -33,7 +34,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
     else
       {:error, :server_not_found} ->
         socket
-        |> put_notification(Message.new(:error, "Server not found"))
+        |> put_notification(Message.new(:error, gettext("Server not found")))
         |> push_navigate(to: ~p"/servers")
         |> ok()
     end
@@ -84,7 +85,10 @@ defmodule ArchiDepWeb.Servers.ServerLive do
       do:
         socket
         |> put_notification(
-          Message.new(:success, "Deleted server #{Server.name_or_default(deleted_server)}")
+          Message.new(
+            :success,
+            gettext("Deleted server {server}", server: Server.name_or_default(deleted_server))
+          )
         )
         |> push_navigate(to: ~p"/servers")
         |> noreply()

@@ -54,6 +54,8 @@ defmodule ArchiDepWeb do
         formats: [:html],
         layouts: [html: ArchiDepWeb.Layouts]
 
+      use Gettext, backend: ArchiDepWeb.Gettext
+
       import Plug.Conn
 
       # Flash helpers
@@ -92,7 +94,6 @@ defmodule ArchiDepWeb do
       use Phoenix.LiveComponent
 
       import ArchiDep.Helpers.PipeHelpers
-      import ArchiDepWeb.Helpers.I18nHelpers
       alias ArchiDepWeb.Components.Notifications.Message
       alias Ecto.Changeset
       alias Phoenix.LiveComponent

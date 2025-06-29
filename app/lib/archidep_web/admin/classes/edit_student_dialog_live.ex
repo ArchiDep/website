@@ -68,7 +68,12 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
              StudentForm.to_existing_student_data(form_data)
            ) do
       socket
-      |> send_notification(Message.new(:success, "Updated student #{updated_student.name}"))
+      |> send_notification(
+        Message.new(
+          :success,
+          gettext("Updated student {student}", student: updated_student.name)
+        )
+      )
       |> push_event("execute-action", %{to: "##{id(student)}", action: "close"})
       |> noreply()
     else

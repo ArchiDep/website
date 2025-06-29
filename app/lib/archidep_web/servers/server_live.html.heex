@@ -3,7 +3,7 @@
     <li>
       <.link class="flex items-center gap-1" navigate={~p"/servers"}>
         <Heroicons.server_stack solid class="size-4" />
-        <span>Servers</span>
+        <span>{gettext("Servers")}</span>
       </.link>
     </li>
     <li>
@@ -24,25 +24,25 @@
   <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-5 gap-4">
     <div class="col-span-1 md:col-span-3">
       <dl class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
-        <dt class="font-bold">IP address</dt>
+        <dt class="font-bold">{gettext("IP address")}</dt>
         <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
           {:inet.ntoa(@server.ip_address.address)}
         </dd>
-        <dt class="font-bold">Username</dt>
+        <dt class="font-bold">{gettext("Username")}</dt>
         <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
           {@server.username}
         </dd>
-        <dt class="font-bold">SSH port</dt>
+        <dt class="font-bold">{gettext("SSH port")}</dt>
         <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
           {@server.ssh_port || 22}
         </dd>
-        <dt class="font-bold">Active</dt>
+        <dt class="font-bold">{gettext("Active")}</dt>
         <dd class="col-span-1 md:col-span-2 xl:col-span-3">
           <Heroicons.check_circle :if={@server.active} class="size-5 text-success" />
           <Heroicons.x_circle :if={not @server.active} class="size-5 text-error" />
         </dd>
         <%= if has_role?(@auth, :root) do %>
-          <dt class="font-bold">Class</dt>
+          <dt class="font-bold">{gettext("Class")}</dt>
           <dd class="col-span-1 md:col-span-2 xl:col-span-3">
             {@server.class.name}
           </dd>
@@ -60,7 +60,7 @@
         >
           <span class="flex items-center gap-x-2">
             <Heroicons.pencil class="size-4" />
-            <span>Edit</span>
+            <span>{gettext("Edit")}</span>
           </span>
         </button>
 
@@ -74,7 +74,7 @@
         >
           <span class="flex items-center gap-x-2">
             <Heroicons.trash class="size-4" />
-            <span>Delete</span>
+            <span>{gettext("Delete")}</span>
           </span>
         </button>
       </div>
