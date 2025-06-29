@@ -286,7 +286,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       <span>
         <%= if has_role?(@auth, :root) do %>
           {gettext("Ansible playbook {ss}{cs}{playbook}{ce}{se} failed with state {cs}{state}{ce}",
-            playbook: @playbook,
+            playbook: @playbook |> html_escape() |> safe_to_string(),
             state: @ansible_run_state |> inspect() |> html_escape() |> safe_to_string(),
             cs: "<code>",
             ce: "</code>",
@@ -299,7 +299,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           <% end %>
         <% else %>
           {gettext("{cs}{playbook}{ce} provisioning task failed",
-            playbook: @playbook,
+            playbook: @playbook |> html_escape() |> safe_to_string(),
             cs: "<code>",
             ce: "</code>"
           )

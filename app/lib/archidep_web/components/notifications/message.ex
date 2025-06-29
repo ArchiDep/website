@@ -13,7 +13,7 @@ defmodule ArchiDepWeb.Components.Notifications.Message do
     <Flashy.Normal.render key={@key} notification={@notification}>
       <div role="alert" class={["alert", color(@notification.type)]}>
         <.icon type={@notification.type} />
-        <span>{Phoenix.HTML.raw(@notification.message)}</span>
+        <span>{@notification.message}</span>
         <Heroicons.x_mark
           class="w-4 h-4 cursor-pointer"
           phx-click={JS.exec("data-hide", to: "##{@key}")}
