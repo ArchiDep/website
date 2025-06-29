@@ -24,7 +24,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
 
     socket
     |> assign(
-      page_title: "ArchiDep > Admin > Classes",
+      page_title: "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Classes")}",
       classes: classes
     )
     |> ok()

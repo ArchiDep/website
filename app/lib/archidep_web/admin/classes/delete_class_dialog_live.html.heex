@@ -4,31 +4,24 @@
   data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id(@class)})}
 >
   <div class="modal-box">
-    <h3 class="text-lg font-bold">Delete Class</h3>
+    <h3 class="text-lg font-bold">{gettext("Delete Class")}</h3>
     <p :if={Class.has_servers?(@class)} class="mt-2 text-error">
-      This class cannot be deleted because {@class.servers_count} {pluralize(
-        @class.servers_count,
-        "server is",
-        "servers are"
-      )} linked to it. Delete each server before deleting the class.
+      {gettext(
+        "This class cannot be deleted because {servers_count, plural, =1 {1 server is} other {# servers are}} linked to it. Delete each server before deleting the class.",
+        servers_count: @class.servers_count
+      )}
     </p>
     <p :if={not Class.has_servers?(@class)} class="mt-4">
-      Are you sure you want to permanently delete this class?
+      {gettext("Are you sure you want to permanently delete this class?")}
     </p>
     <p
       :if={not Class.has_servers?(@class) and not Enum.empty?(@students)}
       class="mt-2 text-warning"
     >
-      This class has
-      <strong>
-        {length(@students)} {if length(@students) == 1,
-          do: "student",
-          else: "students"}
-      </strong>
-      enrolled, who will also be
-      deleted.  Any non-admin user account linked to {if length(@students) == 1,
-        do: "this student",
-        else: "these students"} will lose access.
+      {gettext(
+        "This class has {students_count, plural, =1 {1 student} other {# students}} enrolled, who will also be deleted. Any non-admin user account linked to {students_count, plural, =1 {this student} other {these students}} will lose access.",
+        students_count: length(@students)
+      )}
     </p>
     <div class="mt-4 flex justify-end gap-x-2">
       <button type="button" class="btn btn-secondary" phx-click={close(@class)}>

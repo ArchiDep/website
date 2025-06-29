@@ -16,9 +16,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   @spec expected_cpu(Class.t()) :: String.t()
   def expected_cpu(class) do
     [
-      {"CPU", class.expected_server_cpus},
-      {"cores", class.expected_server_cores},
-      {"vCPU", class.expected_server_vcpus}
+      {gettext("CPU"), class.expected_server_cpus},
+      {gettext("cores"), class.expected_server_cores},
+      {gettext("vCPU"), class.expected_server_vcpus}
     ]
     |> Enum.filter(fn {_, value} -> value != nil end)
     |> Enum.map(fn {label, value} -> "#{value} #{pluralize(value, label)}" end)
@@ -28,8 +28,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   @spec expected_memory(Class.t()) :: String.t()
   def expected_memory(class) do
     [
-      {"RAM", class.expected_server_memory},
-      {"Swap", class.expected_server_swap}
+      {gettext("RAM"), class.expected_server_memory},
+      {gettext("Swap"), class.expected_server_swap}
     ]
     |> Enum.filter(fn {_, value} -> value != nil end)
     |> Enum.map(fn {label, value} -> "#{value} MB #{label}" end)
@@ -49,7 +49,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
     os_family =
       case class.expected_server_os_family do
         nil -> nil
-        os_family -> "#{os_family} family"
+        os_family -> gettext("{os_family} family", os_family: os_family)
       end
 
     [system_and_arch, os_family]
@@ -82,7 +82,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
       socket
       |> assign(
-        page_title: "ArchiDep > Admin > Classes > #{class.name}",
+        page_title:
+          "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Classes")} > #{class.name}",
         class: class,
         students: []
       )
@@ -91,7 +92,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
     else
       {:error, :class_not_found} ->
         socket
-        |> put_notification(Message.new(:error, "Class not found"))
+        |> put_notification(Message.new(:error, gettext("Class not found")))
         |> push_navigate(to: ~p"/admin/classes")
         |> ok()
     end
@@ -120,7 +121,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
       ),
       do:
         socket
-        |> put_notification(Message.new(:success, "Deleted class #{class.name}"))
+        |> put_notification(
+          Message.new(:success, gettext("Deleted class {class}", class: class.name))
+        )
         |> push_navigate(to: ~p"/admin/classes")
         |> noreply()
 

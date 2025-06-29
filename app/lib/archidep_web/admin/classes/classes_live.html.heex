@@ -3,13 +3,13 @@
     <li class="text-error">
       <span class="flex items-center gap-1 !cursor-default !no-underline">
         <Heroicons.fire outline class="size-4" />
-        <span>Admin</span>
+        <span>{gettext("Admin")}</span>
       </span>
     </li>
     <li>
       <span class="flex items-center gap-1 !cursor-default !no-underline">
         <Heroicons.academic_cap solid class="size-4" />
-        <span>Classes</span>
+        <span>{gettext("Classes")}</span>
       </span>
     </li>
   </ul>
@@ -17,7 +17,8 @@
 
 <div class="my-2 flex justify-between items-end">
   <h2 class="text-2xl font-bold flex items-center gap-x-2">
-    <Heroicons.academic_cap solid class="size-6" /> Classes
+    <Heroicons.academic_cap solid class="size-6" />
+    {gettext("Classes")}
   </h2>
   <button
     type="button"
@@ -26,7 +27,7 @@
   >
     <span class="flex items-center gap-x-2">
       <Heroicons.plus class="size-4" />
-      <span>Class</span>
+      <span>{gettext("Class")}</span>
     </span>
   </button>
 </div>
@@ -34,21 +35,21 @@
 <table class="table">
   <thead>
     <tr>
-      <th>Name</th>
+      <th>{gettext("Name")}</th>
       <th>
-        Start <span class="md:hidden">&amp; end</span>
-        <span class="hidden md:inline">date</span>
+        <span class="md:hidden">{gettext("Start & end")}</span>
+        <span class="hidden md:inline">{gettext("Start date")}</span>
       </th>
       <th class="hidden md:table-cell">
-        End <span class="hidden md:inline">date</span>
+        {gettext("End date")}
       </th>
-      <th>Active</th>
+      <th>{gettext("Active")}</th>
     </tr>
   </thead>
   <tbody>
     <tr :if={Enum.empty?(@classes)}>
       <td colspan="1000">
-        <.no_data text="No classes" />
+        <.no_data text={gettext("No classes")} />
       </td>
     </tr>
     <tr
@@ -59,15 +60,22 @@
     >
       <td>{class.name}</td>
       <td>
-        <span :if={class.start_date != nil and class.end_date == nil} class="md:hidden">
-          From
+        <span class="md:hidden">
+          <%= if class.start_date != nil and class.end_date != nil do %>
+            {gettext("From {start} until {end}",
+              start: format_date(class.start_date),
+              end: format_date(class.end_date)
+            )}
+          <% end %>
+          <%= if class.start_date != nil and class.end_date == nil do %>
+            {gettext("From {start}", start: format_date(class.start_date))}
+          <% end %>
+          <%= if class.start_date == nil and class.end_date != nil do %>
+            {gettext("Until {end}", end: format_date(class.end_date))}
+          <% end %>
         </span>
-        <%= if class.start_date do %>
+        <span :if={class.start_date != nil} class="hidden md:inline">
           {format_date(class.start_date)}
-        <% end %>
-        <span :if={class.start_date != nil and class.end_date != nil} class="md:hidden">to</span>
-        <span :if={class.end_date} class="md:hidden">
-          {format_date(class.end_date)}
         </span>
         <.no_data :if={class.start_date == nil and class.end_date == nil} />
       </td>

@@ -3,13 +3,13 @@
     <li class="text-error">
       <span class="flex items-center gap-1 !cursor-default !no-underline">
         <Heroicons.fire outline class="size-4" />
-        <span>Admin</span>
+        <span>{gettext("Admin")}</span>
       </span>
     </li>
     <li>
       <.link class="flex items-center gap-1" navigate={~p"/admin/classes"}>
         <Heroicons.academic_cap solid class="size-4" />
-        <span>Classes</span>
+        <span>{gettext("Classes")}</span>
       </.link>
     </li>
     <li>
@@ -29,7 +29,7 @@
 <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
   <div class="col-span-1 md:col-span-3">
     <dl class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
-      <dt class="font-bold">Start date</dt>
+      <dt class="font-bold">{gettext("Start date")}</dt>
       <dd class="col-span-1 md:col-span-2 xl:col-span-3">
         <%= if @class.start_date do %>
           {format_date(@class.start_date)}
@@ -37,7 +37,7 @@
           <.no_data />
         <% end %>
       </dd>
-      <dt class="font-bold">End date</dt>
+      <dt class="font-bold">{gettext("End date")}</dt>
       <dd class="col-span-1 md:col-span-2 xl:col-span-3">
         <%= if @class.end_date do %>
           {format_date(@class.end_date)}
@@ -45,7 +45,7 @@
           <.no_data />
         <% end %>
       </dd>
-      <dt class="font-bold">Active</dt>
+      <dt class="font-bold">{gettext("Active")}</dt>
       <dd class="col-span-1 md:col-span-2 xl:col-span-3">
         <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
         <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
@@ -53,10 +53,16 @@
     </dl>
   </div>
 
-  <div :if={expected_cpu(@class) != "" or expected_memory(@class) != "" or expected_os(@class) != "" or expected_distribution(@class) != ""} class="col-span1 md:col-span-2">
+  <div
+    :if={
+      expected_cpu(@class) != "" or expected_memory(@class) != "" or expected_os(@class) != "" or
+        expected_distribution(@class) != ""
+    }
+    class="col-span1 md:col-span-2"
+  >
     <div class="card bg-base-300 card-sm shadow-sm">
       <div class="card-body">
-        <h2 class="card-title">Expected server properties</h2>
+        <h2 class="card-title">{gettext("Expected server properties")}</h2>
         <li :if={expected_cpu(@class) != ""}>
           {expected_cpu(@class)}
         </li>
@@ -82,7 +88,7 @@
   >
     <span class="flex items-center gap-x-2">
       <Heroicons.pencil class="size-4" />
-      <span>Edit</span>
+      <span>{gettext("Edit")}</span>
     </span>
   </button>
 
@@ -93,7 +99,7 @@
   >
     <span class="flex items-center gap-x-2">
       <Heroicons.trash class="size-4" />
-      <span>Delete</span>
+      <span>{gettext("Delete")}</span>
     </span>
   </button>
 </div>
@@ -113,7 +119,7 @@
 />
 
 <div class="mt-4 mb-2 flex justify-between items-end">
-  <h3 class="text-xl font-bold">Students</h3>
+  <h3 class="text-xl font-bold">{gettext("Students")}</h3>
 
   <div class="join">
     <button
@@ -123,7 +129,7 @@
     >
       <span class="flex items-center gap-x-2">
         <Heroicons.document_arrow_up class="size-4" />
-        <span>Import</span>
+        <span>{gettext("Import")}</span>
       </span>
     </button>
     <button
@@ -133,7 +139,7 @@
     >
       <span class="flex items-center gap-x-2">
         <Heroicons.plus class="size-4" />
-        <span>Student</span>
+        <span>{gettext("Student")}</span>
       </span>
     </button>
   </div>
@@ -156,16 +162,16 @@
 <table class="table">
   <thead>
     <tr>
-      <th>Name</th>
-      <th>Academic class</th>
-      <th>Email</th>
-      <th>User account</th>
+      <th>{gettext("Name")}</th>
+      <th>{gettext("Academic class")}</th>
+      <th>{gettext("Email")}</th>
+      <th>{gettext("User account")}</th>
     </tr>
   </thead>
   <tbody>
     <tr :if={Enum.empty?(@students)}>
       <td colspan="1000">
-        <.no_data text="No students in this class" />
+        <.no_data text={gettext("No students in this class")} />
       </td>
     </tr>
     <tr
@@ -194,7 +200,7 @@
             {student.user_account.username}
           </span>
         <% else %>
-          <.no_data text="Not registered yet" />
+          <.no_data text={gettext("Not registered yet")} />
         <% end %>
       </td>
     </tr>

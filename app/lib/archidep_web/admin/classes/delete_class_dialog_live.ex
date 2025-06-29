@@ -2,7 +2,6 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteClassDialogLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Helpers.DialogHelpers
-  import ArchiDepWeb.Helpers.I18nHelpers
   alias ArchiDep.Students
   alias ArchiDep.Students.Schemas.Class
 
@@ -42,7 +41,10 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteClassDialogLive do
         |> send_notification(
           Message.new(
             :error,
-            "Class #{class.name} cannot be deleted because at least one server is linked to it."
+            gettext(
+              "Class {class} cannot be deleted because at least one server is linked to it.",
+              class: class.name
+            )
           )
         )
         |> noreply()

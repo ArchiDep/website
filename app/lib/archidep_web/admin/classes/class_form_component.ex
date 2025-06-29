@@ -20,7 +20,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
           <h3 class="text-lg font-bold">{@title}</h3>
         </legend>
 
-        <label class="fieldset-label mt-2">Name</label>
+        <label class="fieldset-label mt-2">{gettext("Name")}</label>
         <input
           type="text"
           id={@form[:name].id}
@@ -32,7 +32,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
 
         <div class="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
-            <label class="fieldset-label">Start date</label>
+            <label class="fieldset-label">{gettext("Start date")}</label>
             <input
               type="date"
               id={@form[:start_date].id}
@@ -44,7 +44,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
           </div>
 
           <div>
-            <label class="fieldset-label">End date</label>
+            <label class="fieldset-label">{gettext("End date")}</label>
             <input
               type="date"
               id={@form[:end_date].id}
@@ -65,57 +65,56 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
             name={@form[:active].name}
             checked={@form[:active].value}
             value="true"
-          /> Active
+          /> {gettext("Active")}
         </label>
       </fieldset>
       <!-- Expected server properties -->
       <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
-        <legend class="fieldset-legend">Expected server properties</legend>
+        <legend class="fieldset-legend">{gettext("Expected server properties")}</legend>
         <div role="alert" class="alert alert-info alert-soft">
           <span class="text-sm">
-            When a student registers a server for this class, warnings will be
-            issued if the server does not meet these expected properties.
-            Leaving a field empty will disable the check for that property. This
-            can be overriden for each server.
+            {gettext(
+              "When a student registers a server for this class, warnings will be issued if the server does not meet these expected properties. Leaving a field empty will disable the check for that property. This can be overriden for each server."
+            )}
           </span>
         </div>
         <!-- CPU -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="fieldset-label mt-2">CPUs</label>
+            <label class="fieldset-label mt-2">{gettext("CPUs")}</label>
             <input
               type="text"
               id={@form[:expected_server_cpus].id}
               class="input w-full"
               name={@form[:expected_server_cpus].name}
               value={@form[:expected_server_cpus].value}
-              placeholder="e.g. 1"
+              placeholder={gettext("e.g. 1")}
             />
             <.errors_for field={@form[:expected_server_cpus]} />
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">CPU cores</label>
+            <label class="fieldset-label mt-2">{gettext("CPU cores")}</label>
             <input
               type="text"
               id={@form[:expected_server_cores].id}
               class="input w-full"
               name={@form[:expected_server_cores].name}
               value={@form[:expected_server_cores].value}
-              placeholder="e.g. 2"
+              placeholder={gettext("e.g. 2")}
             />
             <.errors_for field={@form[:expected_server_cores]} />
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">vCPUs</label>
+            <label class="fieldset-label mt-2">{gettext("vCPUs")}</label>
             <input
               type="text"
               id={@form[:expected_server_vcpus].id}
               class="input w-full"
               name={@form[:expected_server_vcpus].name}
               value={@form[:expected_server_vcpus].value}
-              placeholder="e.g. 2"
+              placeholder={gettext("e.g. 2")}
             />
             <.errors_for field={@form[:expected_server_vcpus]} />
           </div>
@@ -123,31 +122,31 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         <!-- Memory -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="fieldset-label mt-2">Memory</label>
+            <label class="fieldset-label mt-2">{gettext("Memory")}</label>
             <label class="input w-full">
               <input
                 type="text"
                 id={@form[:expected_server_memory].id}
                 name={@form[:expected_server_memory].name}
                 value={@form[:expected_server_memory].value}
-                placeholder="e.g. 2048"
+                placeholder={gettext("e.g. 2048")}
               />
-              <span class="label">MB (±10%)</span>
+              <span class="label">{gettext("MB")} (±10%)</span>
             </label>
             <.errors_for field={@form[:expected_server_memory]} />
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">Swap</label>
+            <label class="fieldset-label mt-2">{gettext("Swap")}</label>
             <label class="input w-full">
               <input
                 type="text"
                 id={@form[:expected_server_swap].id}
                 name={@form[:expected_server_swap].name}
                 value={@form[:expected_server_swap].value}
-                placeholder="e.g. 1000"
+                placeholder={gettext("e.g. 1000")}
               />
-              <span class="label">MB (±10%)</span>
+              <span class="label">{gettext("MB")} (±10%)</span>
             </label>
             <.errors_for field={@form[:expected_server_swap]} />
           </div>
@@ -155,40 +154,40 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         <!-- System, OS family & architecture -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="fieldset-label mt-2">System</label>
+            <label class="fieldset-label mt-2">{gettext("System")}</label>
             <input
               type="text"
               id={@form[:expected_server_system].id}
               class="input w-full"
               name={@form[:expected_server_system].name}
               value={@form[:expected_server_system].value}
-              placeholder="e.g. Linux"
+              placeholder={gettext("e.g. Linux")}
             />
             <.errors_for field={@form[:expected_server_system]} />
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">Architecture</label>
+            <label class="fieldset-label mt-2">{gettext("Architecture")}</label>
             <input
               type="text"
               id={@form[:expected_server_architecture].id}
               class="input w-full"
               name={@form[:expected_server_architecture].name}
               value={@form[:expected_server_architecture].value}
-              placeholder="e.g. x86_64"
+              placeholder={gettext("e.g. x86_64")}
             />
             <.errors_for field={@form[:expected_server_architecture]} />
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">OS family</label>
+            <label class="fieldset-label mt-2">{gettext("OS family")}</label>
             <input
               type="text"
               id={@form[:expected_server_os_family].id}
               class="input w-full"
               name={@form[:expected_server_os_family].name}
               value={@form[:expected_server_os_family].value}
-              placeholder="e.g. Debian"
+              placeholder={gettext("e.g. Debian")}
             />
             <.errors_for field={@form[:expected_server_os_family]} />
           </div>
@@ -196,40 +195,40 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         <!-- Distribution -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="fieldset-label mt-2">Distribution</label>
+            <label class="fieldset-label mt-2">{gettext("Distribution")}</label>
             <input
               type="text"
               id={@form[:expected_server_distribution].id}
               class="input w-full"
               name={@form[:expected_server_distribution].name}
               value={@form[:expected_server_distribution].value}
-              placeholder="e.g. Ubuntu"
+              placeholder={gettext("e.g. Ubuntu")}
             />
             <.errors_for field={@form[:expected_server_distribution]} />
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">Release</label>
+            <label class="fieldset-label mt-2">{gettext("Release")}</label>
             <input
               type="text"
               id={@form[:expected_server_distribution_release].id}
               class="input w-full"
               name={@form[:expected_server_distribution_release].name}
               value={@form[:expected_server_distribution_release].value}
-              placeholder="e.g. noble"
+              placeholder={gettext("e.g. noble")}
             />
             <.errors_for field={@form[:expected_server_distribution_release]} />
           </div>
 
           <div>
-            <label class="fieldset-label mt-2">Version</label>
+            <label class="fieldset-label mt-2">{gettext("Version")}</label>
             <input
               type="text"
               id={@form[:expected_server_distribution_version].id}
               class="input w-full"
               name={@form[:expected_server_distribution_version].name}
               value={@form[:expected_server_distribution_version].value}
-              placeholder="e.g. 24.04"
+              placeholder={gettext("e.g. 24.04")}
             />
             <.errors_for field={@form[:expected_server_distribution_version]} />
           </div>
@@ -240,13 +239,13 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         <button type="button" class="btn btn-secondary" phx-click={@on_close}>
           <span class="flex items-center gap-x-2">
             <Heroicons.x_mark class="size-4" />
-            <span>Close</span>
+            <span>{gettext("Close")}</span>
           </span>
         </button>
         <button type="submit" class="btn btn-primary">
           <span class="flex items-center gap-x-2">
             <Heroicons.check class="size-4" />
-            <span>Save</span>
+            <span>{gettext("Save")}</span>
           </span>
         </button>
       </div>

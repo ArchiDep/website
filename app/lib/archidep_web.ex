@@ -121,6 +121,8 @@ defmodule ArchiDepWeb do
 
   defp html_helpers do
     quote do
+      use Gettext, backend: ArchiDepWeb.Gettext
+
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components
