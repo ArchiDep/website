@@ -4,6 +4,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Types
 
   @primary_key {:id, :binary_id, []}
@@ -25,18 +26,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
           class_id: UUID.t(),
           user_account: UserAccount.t() | NotLoaded,
           user_account_id: UUID.t(),
-          # Expected properties for this server
-          expected_cpus: non_neg_integer() | nil,
-          expected_cores: non_neg_integer() | nil,
-          expected_vcpus: non_neg_integer() | nil,
-          expected_memory: non_neg_integer() | nil,
-          expected_swap: non_neg_integer() | nil,
-          expected_system: String.t() | nil,
-          expected_architecture: String.t() | nil,
-          expected_os_family: String.t() | nil,
-          expected_distribution: String.t() | nil,
-          expected_distribution_release: String.t() | nil,
-          expected_distribution_version: String.t() | nil,
+          expected_properties: ServerProperties.t() | NotLoaded,
+          expected_properties_id: UUID.t(),
           # Common metadata
           version: pos_integer(),
           created_at: DateTime.t(),
@@ -54,18 +45,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:active, :boolean)
     belongs_to(:class, Class)
     belongs_to(:user_account, UserAccount)
-    # Expected properties for this server
-    field(:expected_cpus, :integer)
-    field(:expected_cores, :integer)
-    field(:expected_vcpus, :integer)
-    field(:expected_memory, :integer)
-    field(:expected_swap, :integer)
-    field(:expected_system, :string)
-    field(:expected_architecture, :string)
-    field(:expected_os_family, :string)
-    field(:expected_distribution, :string)
-    field(:expected_distribution_release, :string)
-    field(:expected_distribution_version, :string)
+    belongs_to(:expected_properties, ServerProperties)
     # Common metadata
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
@@ -145,19 +125,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :ssh_port,
       :active,
       :class_id,
-      :app_username,
-      :expected_cpus,
-      :expected_cores,
-      :expected_vcpus,
-      :expected_memory,
-      :expected_swap,
-      :expected_system,
-      :expected_architecture,
-      :expected_os_family,
-      :expected_distribution,
-      :expected_distribution_release,
-      :expected_distribution_version
+      :app_username
     ])
+    |> cast_assoc(:expectedProperties, with: &ServerProperties.changeset/2)
     |> change(
       id: id,
       shared_secret: :crypto.strong_rand_bytes(50),
@@ -196,19 +166,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :username,
       :ssh_port,
       :app_username,
-      :active,
-      :expected_cpus,
-      :expected_cores,
-      :expected_vcpus,
-      :expected_memory,
-      :expected_swap,
-      :expected_system,
-      :expected_architecture,
-      :expected_os_family,
-      :expected_distribution,
-      :expected_distribution_release,
-      :expected_distribution_version
+      :active
     ])
+    |> cast_assoc(:expectedProperties, with: &ServerProperties.changeset/2)
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate()
@@ -244,19 +204,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> update_change(:name, &trim_to_nil/1)
     |> update_change(:username, &trim/1)
     |> update_change(:app_username, &trim/1)
-    |> update_change(:expected_system, &trim_to_nil/1)
-    |> update_change(:expected_architecture, &trim_to_nil/1)
-    |> update_change(:expected_os_family, &trim_to_nil/1)
-    |> update_change(:expected_distribution, &trim_to_nil/1)
-    |> update_change(:expected_distribution_release, &trim_to_nil/1)
-    |> update_change(:expected_distribution_version, &trim_to_nil/1)
     |> validate_required([
       :ip_address,
       :username,
       :shared_secret,
       :active,
       :class_id,
-      :app_username
+      :app_username,
+      :expected_properties_id
     ])
     |> validate_length(:name, max: 50)
     |> unique_constraint(:name)
@@ -265,29 +220,6 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> unique_constraint(:ip_address)
     |> assoc_constraint(:user_account)
     |> validate_length(:app_username, max: 32)
-    |> validate_number(:expected_cpus, greater_than_or_equal_to: 0, less_than_or_equal_to: 32_767)
-    |> validate_number(:expected_cores,
-      greater_than_or_equal_to: 0,
-      less_than_or_equal_to: 32_767
-    )
-    |> validate_number(:expected_vcpus,
-      greater_than_or_equal_to: 0,
-      less_than_or_equal_to: 32_767
-    )
-    |> validate_number(:expected_memory,
-      greater_than_or_equal_to: 0,
-      less_than_or_equal_to: 2_147_483_647
-    )
-    |> validate_number(:expected_swap,
-      greater_than_or_equal_to: 0,
-      less_than_or_equal_to: 2_147_483_647
-    )
-    |> validate_length(:expected_system, max: 50)
-    |> validate_length(:expected_architecture, max: 20)
-    |> validate_length(:expected_os_family, max: 50)
-    |> validate_length(:expected_distribution, max: 50)
-    |> validate_length(:expected_distribution_release, max: 50)
-    |> validate_length(:expected_distribution_version, max: 20)
     |> validate_username_and_app_username()
   end
 

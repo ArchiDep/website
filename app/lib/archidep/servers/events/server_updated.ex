@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
   use ArchiDep, :event
 
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerProperties
   alias Ecto.UUID
 
   @derive Jason.Encoder
@@ -13,17 +14,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
     :username,
     :ssh_port,
     :user_account_id,
-    :expected_cpus,
-    :expected_cores,
-    :expected_vcpus,
-    :expected_memory,
-    :expected_swap,
-    :expected_system,
-    :expected_architecture,
-    :expected_os_family,
-    :expected_distribution,
-    :expected_distribution_release,
-    :expected_distribution_version
+    :expected_properties
   ]
   defstruct [
     :id,
@@ -32,17 +23,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
     :username,
     :ssh_port,
     :user_account_id,
-    :expected_cpus,
-    :expected_cores,
-    :expected_vcpus,
-    :expected_memory,
-    :expected_swap,
-    :expected_system,
-    :expected_architecture,
-    :expected_os_family,
-    :expected_distribution,
-    :expected_distribution_release,
-    :expected_distribution_version
+    :expected_properties
   ]
 
   @type t :: %__MODULE__{
@@ -52,17 +33,21 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
           username: String.t(),
           ssh_port: 1..65_535 | nil,
           user_account_id: UUID.t(),
-          expected_cpus: non_neg_integer() | nil,
-          expected_cores: non_neg_integer() | nil,
-          expected_vcpus: non_neg_integer() | nil,
-          expected_memory: non_neg_integer() | nil,
-          expected_swap: non_neg_integer() | nil,
-          expected_system: String.t() | nil,
-          expected_architecture: String.t() | nil,
-          expected_os_family: String.t() | nil,
-          expected_distribution: String.t() | nil,
-          expected_distribution_release: String.t() | nil,
-          expected_distribution_version: String.t() | nil
+          expected_properties: %{
+            hostname: String.t() | nil,
+            machine_id: String.t() | nil,
+            cpus: non_neg_integer() | nil,
+            cores: non_neg_integer() | nil,
+            vcpus: non_neg_integer() | nil,
+            memory: non_neg_integer() | nil,
+            swap: non_neg_integer() | nil,
+            system: String.t() | nil,
+            architecture: String.t() | nil,
+            os_family: String.t() | nil,
+            distribution: String.t() | nil,
+            distribution_release: String.t() | nil,
+            distribution_version: String.t() | nil
+          }
         }
 
   @spec new(Server.t()) :: t()
@@ -74,17 +59,21 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
       username: username,
       ssh_port: ssh_port,
       user_account_id: user_account_id,
-      expected_cpus: expected_cpus,
-      expected_cores: expected_cores,
-      expected_vcpus: expected_vcpus,
-      expected_memory: expected_memory,
-      expected_swap: expected_swap,
-      expected_system: expected_system,
-      expected_architecture: expected_architecture,
-      expected_os_family: expected_os_family,
-      expected_distribution: expected_distribution,
-      expected_distribution_release: expected_distribution_release,
-      expected_distribution_version: expected_distribution_version
+      expected_properties: %ServerProperties{
+        hostname: expected_hostname,
+        machine_id: expected_machine_id,
+        cpus: expected_cpus,
+        cores: expected_cores,
+        vcpus: expected_vcpus,
+        memory: expected_memory,
+        swap: expected_swap,
+        system: expected_system,
+        architecture: expected_architecture,
+        os_family: expected_os_family,
+        distribution: expected_distribution,
+        distribution_release: expected_distribution_release,
+        distribution_version: expected_distribution_version
+      }
     } = server
 
     %__MODULE__{
@@ -94,17 +83,21 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
       username: username,
       ssh_port: ssh_port,
       user_account_id: user_account_id,
-      expected_cpus: expected_cpus,
-      expected_cores: expected_cores,
-      expected_vcpus: expected_vcpus,
-      expected_memory: expected_memory,
-      expected_swap: expected_swap,
-      expected_system: expected_system,
-      expected_architecture: expected_architecture,
-      expected_os_family: expected_os_family,
-      expected_distribution: expected_distribution,
-      expected_distribution_release: expected_distribution_release,
-      expected_distribution_version: expected_distribution_version
+      expected_properties: %{
+        hostname: expected_hostname,
+        machine_id: expected_machine_id,
+        cpus: expected_cpus,
+        cores: expected_cores,
+        vcpus: expected_vcpus,
+        memory: expected_memory,
+        swap: expected_swap,
+        system: expected_system,
+        architecture: expected_architecture,
+        os_family: expected_os_family,
+        distribution: expected_distribution,
+        distribution_release: expected_distribution_release,
+        distribution_version: expected_distribution_version
+      }
     }
   end
 

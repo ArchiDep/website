@@ -95,4 +95,18 @@ defmodule ArchiDep.Servers.Types do
           expected_distribution_release: String.t() | nil,
           expected_distribution_version: String.t() | nil
         }
+
+  @type server_properties :: %{
+          cpus: non_neg_integer() | nil,
+          cores: non_neg_integer() | nil,
+          vcpus: non_neg_integer() | nil,
+          memory: non_neg_integer() | nil,
+          swap: non_neg_integer() | nil,
+          system: String.t() | nil,
+          architecture: String.t() | nil,
+          os_family: String.t() | nil,
+          distribution: String.t() | nil,
+          distribution_release: String.t() | nil,
+          distribution_version: String.t() | nil
+        }
 end
