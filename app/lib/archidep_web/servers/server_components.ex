@@ -629,7 +629,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <span
       id={@id}
       data-end-time={DateTime.to_iso8601(@end_time)}
-      data-template={gettext("Will retry in \{seconds\}s")}
+      data-template={gettext("Will retry in '{seconds}'s")}
       data-template-done={gettext("Will retry soon")}
       phx-hook="remainingSeconds"
     >

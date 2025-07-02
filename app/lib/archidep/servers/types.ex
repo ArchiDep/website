@@ -61,18 +61,19 @@ defmodule ArchiDep.Servers.Types do
           active: boolean(),
           class_id: UUID.t(),
           app_username: String.t(),
-          # Expected properties for this server
-          expected_cpus: non_neg_integer() | nil,
-          expected_cores: non_neg_integer() | nil,
-          expected_vcpus: non_neg_integer() | nil,
-          expected_memory: non_neg_integer() | nil,
-          expected_swap: non_neg_integer() | nil,
-          expected_system: String.t() | nil,
-          expected_architecture: String.t() | nil,
-          expected_os_family: String.t() | nil,
-          expected_distribution: String.t() | nil,
-          expected_distribution_release: String.t() | nil,
-          expected_distribution_version: String.t() | nil
+          expected_properties: %{
+            cpus: non_neg_integer() | nil,
+            cores: non_neg_integer() | nil,
+            vcpus: non_neg_integer() | nil,
+            memory: non_neg_integer() | nil,
+            swap: non_neg_integer() | nil,
+            system: String.t() | nil,
+            architecture: String.t() | nil,
+            os_family: String.t() | nil,
+            distribution: String.t() | nil,
+            distribution_release: String.t() | nil,
+            distribution_version: String.t() | nil
+          }
         }
 
   @type update_server_data :: %{
@@ -82,18 +83,20 @@ defmodule ArchiDep.Servers.Types do
           ssh_port: integer() | nil,
           active: boolean(),
           app_username: String.t(),
-          # Expected properties for this server
-          expected_cpus: non_neg_integer() | nil,
-          expected_cores: non_neg_integer() | nil,
-          expected_vcpus: non_neg_integer() | nil,
-          expected_memory: non_neg_integer() | nil,
-          expected_swap: non_neg_integer() | nil,
-          expected_system: String.t() | nil,
-          expected_architecture: String.t() | nil,
-          expected_os_family: String.t() | nil,
-          expected_distribution: String.t() | nil,
-          expected_distribution_release: String.t() | nil,
-          expected_distribution_version: String.t() | nil
+          expected_properties: %{
+            id: UUID.t(),
+            cpus: non_neg_integer() | nil,
+            cores: non_neg_integer() | nil,
+            vcpus: non_neg_integer() | nil,
+            memory: non_neg_integer() | nil,
+            swap: non_neg_integer() | nil,
+            system: String.t() | nil,
+            architecture: String.t() | nil,
+            os_family: String.t() | nil,
+            distribution: String.t() | nil,
+            distribution_release: String.t() | nil,
+            distribution_version: String.t() | nil
+          }
         }
 
   @type server_properties :: %{

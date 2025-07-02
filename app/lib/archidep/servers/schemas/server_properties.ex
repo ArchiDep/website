@@ -40,9 +40,10 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
     field(:distribution_version, :string)
   end
 
-  @spec new(Types.server_properties()) :: Changeset.t(t())
-  def new(data) do
-    %__MODULE__{}
+  @spec new(t(), UUID.t(), Types.server_properties()) :: Changeset.t(t())
+  def new(server_properties, id, data) do
+    server_properties
+    |> change(id: id)
     |> cast(data, [
       :hostname,
       :machine_id,
@@ -61,8 +62,8 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
     |> validate()
   end
 
-  @spec changeset(t(), Types.server_properties()) :: Changeset.t(t())
-  def changeset(server_properties, data) do
+  @spec update(t(), Types.server_properties()) :: Changeset.t(t())
+  def update(server_properties, data) do
     server_properties
     |> cast(data, [
       :hostname,

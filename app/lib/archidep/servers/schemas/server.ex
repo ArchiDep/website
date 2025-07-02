@@ -80,6 +80,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
         join: ua in assoc(s, :user_account),
         left_join: uas in assoc(ua, :student),
         join: c in assoc(s, :class),
+        join: ep in assoc(s, :expected_properties),
         # TODO: put query fragment determining whether a user is active in the user account schema
         where:
           s.active and ua.active and
@@ -87,7 +88,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
                (uas.active and uas.class_id == c.id and c.active == true and
                   (is_nil(c.start_date) or c.start_date <= ^day) and
                   (is_nil(c.end_date) or c.end_date >= ^day))),
-        preload: [class: c, user_account: ua]
+        preload: [class: c, expected_properties: ep, user_account: ua]
       )
     )
   end
@@ -100,8 +101,13 @@ defmodule ArchiDep.Servers.Schemas.Server do
              join: ua in assoc(s, :user_account),
              left_join: uas in assoc(ua, :student),
              left_join: uac in assoc(uas, :class),
+             join: ep in assoc(s, :expected_properties),
              where: s.id == ^id,
-             preload: [class: c, user_account: {ua, student: {uas, class: uac}}]
+             preload: [
+               class: c,
+               expected_properties: ep,
+               user_account: {ua, student: {uas, class: uac}}
+             ]
            )
          ) do
       nil ->
@@ -127,7 +133,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :class_id,
       :app_username
     ])
-    |> cast_assoc(:expectedProperties, with: &ServerProperties.changeset/2)
+    |> cast_assoc(:expected_properties, with: &ServerProperties.new(&1, id, &2))
     |> change(
       id: id,
       shared_secret: :crypto.strong_rand_bytes(50),
@@ -168,10 +174,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :app_username,
       :active
     ])
-    |> cast_assoc(:expectedProperties, with: &ServerProperties.changeset/2)
+    |> cast_assoc(:expected_properties, with: &ServerProperties.update/2)
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate()
+    |> validate_required([:expected_properties_id])
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
       class_id = get_field(changeset, :class_id)
@@ -211,7 +218,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :active,
       :class_id,
       :app_username,
-      :expected_properties_id
+      :expected_properties
     ])
     |> validate_length(:name, max: 50)
     |> unique_constraint(:name)

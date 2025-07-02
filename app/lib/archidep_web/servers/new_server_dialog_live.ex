@@ -64,7 +64,10 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
       |> noreply()
     else
       {:error, %Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: :server))}
+        socket
+        |> send_notification(Message.new(:error, gettext("The form is invalid.")))
+        |> assign(form: to_form(changeset, as: :server))
+        |> noreply()
     end
   end
 end
