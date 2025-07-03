@@ -7,34 +7,6 @@ defmodule ArchiDepWeb.Servers.ServerForm do
   alias Ecto.Changeset
   alias Ecto.UUID
 
-  @expected_properties_types %{
-    cpus: :integer,
-    cores: :integer,
-    vcpus: :integer,
-    memory: :integer,
-    swap: :integer,
-    system: :string,
-    architecture: :string,
-    os_family: :string,
-    distribution: :string,
-    distribution_release: :string,
-    distribution_version: :string
-  }
-
-  @expected_properties_permitted Map.keys(@expected_properties_types)
-
-  @create_types %{
-    name: :string,
-    ip_address: :string,
-    username: :string,
-    ssh_port: :integer,
-    active: :boolean,
-    class_id: :binary_id,
-    app_username: :string,
-    expected_properties:
-      {:embed, Ecto.Embedded.init(cardinality: :one, related: @expected_properties_types)}
-  }
-
   @type t :: %__MODULE__{
           name: String.t() | nil,
           ip_address: String.t(),
@@ -102,9 +74,11 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     end
   end
 
-  @spec create_changeset(map) :: Changeset.t(map)
+  @spec create_changeset(map) :: Changeset.t(t())
   def create_changeset(params \\ %{}) when is_map(params) do
-    {%{app_username: "archidep", expected_properties: %{}}, @create_types}
+    %__MODULE__{
+      app_username: "archidep"
+    }
     |> cast(params, [
       :name,
       :ip_address,
@@ -114,12 +88,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :class_id,
       :app_username
     ])
-    |> cast_embed(:expected_properties,
-      with: fn props, prop_params ->
-        IO.puts("@@@@@@@@@@@@@@@ #{inspect(props)} #{inspect(prop_params)}")
-        cast(props, prop_params, @expected_properties_permitted)
-      end
-    )
+    |> cast_embed(:expected_properties, with: &__MODULE__.ExpectedProperties.changeset/2)
     |> validate_required([:ip_address, :username, :active, :class_id])
   end
 
