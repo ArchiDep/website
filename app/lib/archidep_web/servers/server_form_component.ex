@@ -145,13 +145,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           </span>
         </div>
         <.inputs_for :let={expected_properties_form} field={@form[:expected_properties]}>
-          <!-- ID (for existing properties) -->
-          <input
-            :if={expected_properties_form[:id].value}
-            type="hidden"
-            name={expected_properties_form[:id].name}
-            value={expected_properties_form[:id].value}
-          />
           <!-- CPU -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>

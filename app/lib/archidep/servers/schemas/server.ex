@@ -165,6 +165,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     id = server.id
     now = DateTime.utc_now()
 
+    data = Map.put(data, :expected_properties, Map.put(data.expected_properties, :id, id))
+
     server
     |> cast(data, [
       :name,
