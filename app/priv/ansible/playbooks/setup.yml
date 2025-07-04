@@ -50,9 +50,8 @@
     - name: Create the server ID file
       ansible.builtin.copy:
         content: "{{ server_id }}"
-        path: /etc/archidep/server-id
+        dest: /etc/archidep/server-id
         owner: "{{ app_user_name }}"
         group: "{{ app_user_name }}"
         mode: '0640'
-        state: directory
       become: true

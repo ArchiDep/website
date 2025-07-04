@@ -28,6 +28,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
           user_account_id: UUID.t(),
           expected_properties: ServerProperties.t() | NotLoaded,
           expected_properties_id: UUID.t(),
+          last_known_properties: ServerProperties.t() | nil | NotLoaded,
+          last_known_properties_id: UUID.t() | nil,
           # Common metadata
           version: pos_integer(),
           created_at: DateTime.t(),
@@ -46,6 +48,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     belongs_to(:class, Class)
     belongs_to(:user_account, UserAccount)
     belongs_to(:expected_properties, ServerProperties)
+    belongs_to(:last_known_properties, ServerProperties)
     # Common metadata
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
@@ -82,6 +85,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
         join: c in assoc(s, :class),
         join: esp in assoc(c, :expected_server_properties),
         join: ep in assoc(s, :expected_properties),
+        left_join: lkp in assoc(s, :last_known_properties),
         # TODO: put query fragment determining whether a user is active in the user account schema
         where:
           s.active and ua.active and
@@ -92,6 +96,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
         preload: [
           class: {c, expected_server_properties: esp},
           expected_properties: ep,
+          last_known_properties: lkp,
           user_account: ua
         ]
       )
@@ -108,10 +113,12 @@ defmodule ArchiDep.Servers.Schemas.Server do
              left_join: uas in assoc(ua, :student),
              left_join: uac in assoc(uas, :class),
              join: ep in assoc(s, :expected_properties),
+             left_join: lkp in assoc(s, :last_known_properties),
              where: s.id == ^id,
              preload: [
                class: {c, expected_server_properties: esp},
                expected_properties: ep,
+               last_known_properties: lkp,
                user_account: {ua, student: {uas, class: uac}}
              ]
            )
@@ -204,7 +211,21 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end)
   end
 
-  @spec mark_as_set_up!(t()) :: Changeset.t(t())
+  @spec update_last_known_properties!(t(), map()) :: t()
+  def update_last_known_properties!(server, ansible_facts) do
+    server
+    |> change(
+      last_known_properties:
+        ServerProperties.update_from_ansible_facts(
+          server.last_known_properties || %ServerProperties{id: UUID.generate()},
+          ansible_facts
+        )
+    )
+    |> optimistic_lock(:version)
+    |> Repo.update!()
+  end
+
+  @spec mark_as_set_up!(t()) :: t()
   def mark_as_set_up!(%__MODULE__{set_up_at: nil} = server) do
     now = DateTime.utc_now()
 

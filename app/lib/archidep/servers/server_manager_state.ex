@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Tracker
   alias ArchiDep.Servers.DeleteServer
+  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -428,10 +429,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
         {:ok, facts} ->
           :ets.insert(state.storage, {:facts, facts})
 
+          updated_server = Server.update_last_known_properties!(state.server, facts)
+          :ok = PubSub.publish_server(updated_server)
+
           %__MODULE__{
             state
             | actions: [update_tracking()],
-              problems: detect_server_properties_mismatches(problems, state.server, facts)
+              problems: detect_server_properties_mismatches(problems, updated_server, facts)
           }
 
         {:error, reason} ->

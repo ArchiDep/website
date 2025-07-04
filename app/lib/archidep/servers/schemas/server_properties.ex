@@ -83,6 +83,49 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
     |> validate()
   end
 
+  @spec update_from_ansible_facts(t(), map) :: Changeset.t(t())
+  def update_from_ansible_facts(server_properties, facts) do
+    server_properties
+    |> cast(
+      %{
+        hostname: facts["ansible_hostname"],
+        machine_id: facts["ansible_machine_id"],
+        cpus: facts["ansible_processor_cores"],
+        cores: facts["ansible_processor_cores"],
+        vcpus: facts["ansible_processor_vcpus"],
+        memory: get_in(facts, ["ansible_memory_mb", "real", "total"]),
+        swap: get_in(facts, ["ansible_memory_mb", "swap", "total"]),
+        system: facts["ansible_system"],
+        architecture: facts["ansible_architecture"],
+        os_family: facts["ansible_os_family"],
+        distribution: facts["ansible_distribution"],
+        distribution_release: facts["ansible_distribution_release"],
+        distribution_version: facts["ansible_distribution_version"]
+      },
+      [
+        :hostname,
+        :machine_id,
+        :cpus,
+        :cores,
+        :vcpus,
+        :memory,
+        :swap,
+        :system,
+        :architecture,
+        :os_family,
+        :distribution,
+        :distribution_release,
+        :distribution_version
+      ]
+    )
+    |> then(fn changeset ->
+      changeset.errors
+      |> Keyword.keys()
+      |> Enum.uniq()
+      |> Enum.reduce(changeset, &put_change(&2, &1, nil))
+    end)
+  end
+
   defp validate(changeset) do
     changeset
     |> update_change(:hostname, &trim_to_nil/1)
