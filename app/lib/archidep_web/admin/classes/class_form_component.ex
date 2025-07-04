@@ -78,161 +78,163 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
             )}
           </span>
         </div>
-        <!-- CPU -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="fieldset-label mt-2">{gettext("CPUs")}</label>
-            <input
-              type="text"
-              id={@form[:expected_server_cpus].id}
-              class="input w-full"
-              name={@form[:expected_server_cpus].name}
-              value={@form[:expected_server_cpus].value}
-              placeholder={gettext("e.g. 1")}
-            />
-            <.errors_for field={@form[:expected_server_cpus]} />
-          </div>
-
-          <div>
-            <label class="fieldset-label mt-2">{gettext("CPU cores")}</label>
-            <input
-              type="text"
-              id={@form[:expected_server_cores].id}
-              class="input w-full"
-              name={@form[:expected_server_cores].name}
-              value={@form[:expected_server_cores].value}
-              placeholder={gettext("e.g. 2")}
-            />
-            <.errors_for field={@form[:expected_server_cores]} />
-          </div>
-
-          <div>
-            <label class="fieldset-label mt-2">{gettext("vCPUs")}</label>
-            <input
-              type="text"
-              id={@form[:expected_server_vcpus].id}
-              class="input w-full"
-              name={@form[:expected_server_vcpus].name}
-              value={@form[:expected_server_vcpus].value}
-              placeholder={gettext("e.g. 2")}
-            />
-            <.errors_for field={@form[:expected_server_vcpus]} />
-          </div>
-        </div>
-        <!-- Memory -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="fieldset-label mt-2">{gettext("Memory")}</label>
-            <label class="input w-full">
+        <.inputs_for :let={expected_server_properties_form} field={@form[:expected_server_properties]}>
+          <!-- CPU -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="fieldset-label mt-2">{gettext("CPUs")}</label>
               <input
                 type="text"
-                id={@form[:expected_server_memory].id}
-                name={@form[:expected_server_memory].name}
-                value={@form[:expected_server_memory].value}
-                placeholder={gettext("e.g. 2048")}
+                id={expected_server_properties_form[:cpus].id}
+                class="input w-full"
+                name={expected_server_properties_form[:cpus].name}
+                value={expected_server_properties_form[:cpus].value}
+                placeholder={gettext("e.g. 1")}
               />
-              <span class="label">{gettext("MB")} (±10%)</span>
-            </label>
-            <.errors_for field={@form[:expected_server_memory]} />
-          </div>
+              <.errors_for field={expected_server_properties_form[:cpus]} />
+            </div>
 
-          <div>
-            <label class="fieldset-label mt-2">{gettext("Swap")}</label>
-            <label class="input w-full">
+            <div>
+              <label class="fieldset-label mt-2">{gettext("CPU cores")}</label>
               <input
                 type="text"
-                id={@form[:expected_server_swap].id}
-                name={@form[:expected_server_swap].name}
-                value={@form[:expected_server_swap].value}
-                placeholder={gettext("e.g. 1000")}
+                id={expected_server_properties_form[:cores].id}
+                class="input w-full"
+                name={expected_server_properties_form[:cores].name}
+                value={expected_server_properties_form[:cores].value}
+                placeholder={gettext("e.g. 2")}
               />
-              <span class="label">{gettext("MB")} (±10%)</span>
-            </label>
-            <.errors_for field={@form[:expected_server_swap]} />
-          </div>
-        </div>
-        <!-- System, OS family & architecture -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="fieldset-label mt-2">{gettext("System")}</label>
-            <input
-              type="text"
-              id={@form[:expected_server_system].id}
-              class="input w-full"
-              name={@form[:expected_server_system].name}
-              value={@form[:expected_server_system].value}
-              placeholder={gettext("e.g. Linux")}
-            />
-            <.errors_for field={@form[:expected_server_system]} />
-          </div>
+              <.errors_for field={expected_server_properties_form[:cores]} />
+            </div>
 
-          <div>
-            <label class="fieldset-label mt-2">{gettext("Architecture")}</label>
-            <input
-              type="text"
-              id={@form[:expected_server_architecture].id}
-              class="input w-full"
-              name={@form[:expected_server_architecture].name}
-              value={@form[:expected_server_architecture].value}
-              placeholder={gettext("e.g. x86_64")}
-            />
-            <.errors_for field={@form[:expected_server_architecture]} />
+            <div>
+              <label class="fieldset-label mt-2">{gettext("vCPUs")}</label>
+              <input
+                type="text"
+                id={expected_server_properties_form[:vcpus].id}
+                class="input w-full"
+                name={expected_server_properties_form[:vcpus].name}
+                value={expected_server_properties_form[:vcpus].value}
+                placeholder={gettext("e.g. 2")}
+              />
+              <.errors_for field={expected_server_properties_form[:vcpus]} />
+            </div>
           </div>
+          <!-- Memory -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="fieldset-label mt-2">{gettext("Memory")}</label>
+              <label class="input w-full">
+                <input
+                  type="text"
+                  id={expected_server_properties_form[:memory].id}
+                  name={expected_server_properties_form[:memory].name}
+                  value={expected_server_properties_form[:memory].value}
+                  placeholder={gettext("e.g. 2048")}
+                />
+                <span class="label">{gettext("MB")} (±10%)</span>
+              </label>
+              <.errors_for field={expected_server_properties_form[:memory]} />
+            </div>
 
-          <div>
-            <label class="fieldset-label mt-2">{gettext("OS family")}</label>
-            <input
-              type="text"
-              id={@form[:expected_server_os_family].id}
-              class="input w-full"
-              name={@form[:expected_server_os_family].name}
-              value={@form[:expected_server_os_family].value}
-              placeholder={gettext("e.g. Debian")}
-            />
-            <.errors_for field={@form[:expected_server_os_family]} />
+            <div>
+              <label class="fieldset-label mt-2">{gettext("Swap")}</label>
+              <label class="input w-full">
+                <input
+                  type="text"
+                  id={expected_server_properties_form[:swap].id}
+                  name={expected_server_properties_form[:swap].name}
+                  value={expected_server_properties_form[:swap].value}
+                  placeholder={gettext("e.g. 1000")}
+                />
+                <span class="label">{gettext("MB")} (±10%)</span>
+              </label>
+              <.errors_for field={expected_server_properties_form[:swap]} />
+            </div>
           </div>
-        </div>
-        <!-- Distribution -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="fieldset-label mt-2">{gettext("Distribution")}</label>
-            <input
-              type="text"
-              id={@form[:expected_server_distribution].id}
-              class="input w-full"
-              name={@form[:expected_server_distribution].name}
-              value={@form[:expected_server_distribution].value}
-              placeholder={gettext("e.g. Ubuntu")}
-            />
-            <.errors_for field={@form[:expected_server_distribution]} />
-          </div>
+          <!-- System, OS family & architecture -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="fieldset-label mt-2">{gettext("System")}</label>
+              <input
+                type="text"
+                id={expected_server_properties_form[:system].id}
+                class="input w-full"
+                name={expected_server_properties_form[:system].name}
+                value={expected_server_properties_form[:system].value}
+                placeholder={gettext("e.g. Linux")}
+              />
+              <.errors_for field={expected_server_properties_form[:system]} />
+            </div>
 
-          <div>
-            <label class="fieldset-label mt-2">{gettext("Release")}</label>
-            <input
-              type="text"
-              id={@form[:expected_server_distribution_release].id}
-              class="input w-full"
-              name={@form[:expected_server_distribution_release].name}
-              value={@form[:expected_server_distribution_release].value}
-              placeholder={gettext("e.g. noble")}
-            />
-            <.errors_for field={@form[:expected_server_distribution_release]} />
-          </div>
+            <div>
+              <label class="fieldset-label mt-2">{gettext("Architecture")}</label>
+              <input
+                type="text"
+                id={expected_server_properties_form[:architecture].id}
+                class="input w-full"
+                name={expected_server_properties_form[:architecture].name}
+                value={expected_server_properties_form[:architecture].value}
+                placeholder={gettext("e.g. x86_64")}
+              />
+              <.errors_for field={expected_server_properties_form[:architecture]} />
+            </div>
 
-          <div>
-            <label class="fieldset-label mt-2">{gettext("Version")}</label>
-            <input
-              type="text"
-              id={@form[:expected_server_distribution_version].id}
-              class="input w-full"
-              name={@form[:expected_server_distribution_version].name}
-              value={@form[:expected_server_distribution_version].value}
-              placeholder={gettext("e.g. 24.04")}
-            />
-            <.errors_for field={@form[:expected_server_distribution_version]} />
+            <div>
+              <label class="fieldset-label mt-2">{gettext("OS family")}</label>
+              <input
+                type="text"
+                id={expected_server_properties_form[:os_family].id}
+                class="input w-full"
+                name={expected_server_properties_form[:os_family].name}
+                value={expected_server_properties_form[:os_family].value}
+                placeholder={gettext("e.g. Debian")}
+              />
+              <.errors_for field={expected_server_properties_form[:os_family]} />
+            </div>
           </div>
-        </div>
+          <!-- Distribution -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="fieldset-label mt-2">{gettext("Distribution")}</label>
+              <input
+                type="text"
+                id={expected_server_properties_form[:distribution].id}
+                class="input w-full"
+                name={expected_server_properties_form[:distribution].name}
+                value={expected_server_properties_form[:distribution].value}
+                placeholder={gettext("e.g. Ubuntu")}
+              />
+              <.errors_for field={expected_server_properties_form[:distribution]} />
+            </div>
+
+            <div>
+              <label class="fieldset-label mt-2">{gettext("Release")}</label>
+              <input
+                type="text"
+                id={expected_server_properties_form[:distribution_release].id}
+                class="input w-full"
+                name={expected_server_properties_form[:distribution_release].name}
+                value={expected_server_properties_form[:distribution_release].value}
+                placeholder={gettext("e.g. noble")}
+              />
+              <.errors_for field={expected_server_properties_form[:distribution_release]} />
+            </div>
+
+            <div>
+              <label class="fieldset-label mt-2">{gettext("Version")}</label>
+              <input
+                type="text"
+                id={expected_server_properties_form[:distribution_version].id}
+                class="input w-full"
+                name={expected_server_properties_form[:distribution_version].name}
+                value={expected_server_properties_form[:distribution_version].value}
+                placeholder={gettext("e.g. 24.04")}
+              />
+              <.errors_for field={expected_server_properties_form[:distribution_version]} />
+            </div>
+          </div>
+        </.inputs_for>
       </fieldset>
 
       <div class="mt-2 flex justify-end gap-x-2">

@@ -1106,10 +1106,10 @@ defmodule ArchiDep.Servers.ServerManagerState do
            problems,
            property,
            Map.get(
-             server.class,
-             String.to_existing_atom("expected_server_#{Atom.to_string(property)}")
+             server.class.expected_server_properties,
+             property
            ),
-           Map.get(server, String.to_existing_atom("expected_#{Atom.to_string(property)}")),
+           Map.get(server.expected_properties, property),
            get_in(facts, path)
          )
 

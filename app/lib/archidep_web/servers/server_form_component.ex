@@ -157,22 +157,18 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   inherited_input_class(
                     expected_properties_form,
                     @selected_class,
-                    :expected_server_cpus,
                     :cpus
                   )
                 ]}
                 name={expected_properties_form[:cpus].name}
                 value={expected_properties_form[:cpus].value}
                 min={if @class == nil, do: "1", else: "0"}
-                placeholder={
-                  expected_placeholder(@selected_class, :expected_server_cpus, gettext("e.g. 1"))
-                }
+                placeholder={expected_placeholder(@selected_class, :cpus, gettext("e.g. 1"))}
               />
               <.errors_for field={expected_properties_form[:cpus]} />
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_cpus,
                 :cpus
               )}
             </div>
@@ -187,22 +183,18 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   inherited_input_class(
                     expected_properties_form,
                     @selected_class,
-                    :expected_server_cores,
                     :cores
                   )
                 ]}
                 name={expected_properties_form[:cores].name}
                 value={expected_properties_form[:cores].value}
                 min={if @class == nil, do: "1", else: "0"}
-                placeholder={
-                  expected_placeholder(@selected_class, :expected_server_cores, gettext("e.g. 2"))
-                }
+                placeholder={expected_placeholder(@selected_class, :cores, gettext("e.g. 2"))}
               />
               <.errors_for field={expected_properties_form[:cores]} />
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_cores,
                 :cores
               )}
             </div>
@@ -217,22 +209,18 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   inherited_input_class(
                     expected_properties_form,
                     @selected_class,
-                    :expected_server_vcpus,
                     :vcpus
                   )
                 ]}
                 name={expected_properties_form[:vcpus].name}
                 value={expected_properties_form[:vcpus].value}
                 min={if @class == nil, do: "1", else: "0"}
-                placeholder={
-                  expected_placeholder(@selected_class, :expected_server_vcpus, gettext("e.g. 2"))
-                }
+                placeholder={expected_placeholder(@selected_class, :vcpus, gettext("e.g. 2"))}
               />
               <.errors_for field={expected_properties_form[:vcpus]} />
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_vcpus,
                 :vcpus
               )}
             </div>
@@ -246,7 +234,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 inherited_input_class(
                   expected_properties_form,
                   @selected_class,
-                  :expected_server_memory,
                   :memory
                 )
               ]}>
@@ -259,7 +246,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   placeholder={
                     expected_placeholder(
                       @selected_class,
-                      :expected_server_memory,
+                      :memory,
                       gettext("e.g. 2048")
                     )
                   }
@@ -270,7 +257,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_memory,
                 :memory
               )}
             </div>
@@ -282,7 +268,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 inherited_input_class(
                   expected_properties_form,
                   @selected_class,
-                  :expected_server_swap,
                   :swap
                 )
               ]}>
@@ -292,9 +277,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   name={expected_properties_form[:swap].name}
                   value={expected_properties_form[:swap].value}
                   min={if @class == nil, do: "1", else: "0"}
-                  placeholder={
-                    expected_placeholder(@selected_class, :expected_server_swap, gettext("e.g. 1024"))
-                  }
+                  placeholder={expected_placeholder(@selected_class, :swap, gettext("e.g. 1024"))}
                 />
                 <span class="label">{gettext("MB")} (±10%)</span>
               </label>
@@ -302,7 +285,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_swap,
                 :swap
               )}
             </div>
@@ -319,7 +301,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   inherited_input_class(
                     expected_properties_form,
                     @selected_class,
-                    :expected_server_system,
                     :system
                   )
                 ]}
@@ -328,7 +309,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 placeholder={
                   expected_placeholder(
                     @selected_class,
-                    :expected_server_system,
+                    :system,
                     gettext("e.g. Linux")
                   )
                 }
@@ -337,7 +318,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_system,
                 :system
               )}
             </div>
@@ -352,7 +332,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   inherited_input_class(
                     expected_properties_form,
                     @selected_class,
-                    :expected_server_architecture,
                     :architecture
                   )
                 ]}
@@ -361,7 +340,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 placeholder={
                   expected_placeholder(
                     @selected_class,
-                    :expected_server_architecture,
+                    :architecture,
                     gettext("e.g. x86_64")
                   )
                 }
@@ -370,7 +349,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_architecture,
                 :architecture
               )}
             </div>
@@ -385,7 +363,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   inherited_input_class(
                     expected_properties_form,
                     @selected_class,
-                    :expected_server_os_family,
                     :os_family
                   )
                 ]}
@@ -394,7 +371,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 placeholder={
                   expected_placeholder(
                     @selected_class,
-                    :expected_server_os_family,
+                    :os_family,
                     gettext("e.g. Debian")
                   )
                 }
@@ -403,7 +380,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_os_family,
                 :os_family
               )}
             </div>
@@ -420,7 +396,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   inherited_input_class(
                     expected_properties_form,
                     @selected_class,
-                    :expected_server_distribution,
                     :distribution
                   )
                 ]}
@@ -429,7 +404,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 placeholder={
                   expected_placeholder(
                     @selected_class,
-                    :expected_server_distribution,
+                    :distribution,
                     gettext("e.g. Ubuntu")
                   )
                 }
@@ -438,7 +413,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_distribution,
                 :distribution
               )}
             </div>
@@ -453,7 +427,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   inherited_input_class(
                     expected_properties_form,
                     @selected_class,
-                    :expected_server_distribution_release,
                     :distribution_release
                   )
                 ]}
@@ -462,7 +435,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 placeholder={
                   expected_placeholder(
                     @selected_class,
-                    :expected_server_distribution_release,
+                    :distribution_release,
                     gettext("e.g. noble")
                   )
                 }
@@ -471,7 +444,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_distribution_release,
                 :distribution_release
               )}
             </div>
@@ -486,7 +458,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   inherited_input_class(
                     expected_properties_form,
                     @selected_class,
-                    :expected_server_distribution_version,
                     :distribution_version
                   )
                 ]}
@@ -495,7 +466,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 placeholder={
                   expected_placeholder(
                     @selected_class,
-                    :expected_server_distribution_version,
+                    :distribution_version,
                     gettext("e.g. 24.04")
                   )
                 }
@@ -504,7 +475,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               {inherited_notice(
                 expected_properties_form,
                 @selected_class,
-                :expected_server_distribution_version,
                 :distribution_version
               )}
             </div>
@@ -532,54 +502,40 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
     """
   end
 
-  @spec expected_placeholder(Class.t(), atom(), String.t()) :: term()
+  defp expected_placeholder(nil, _field, default), do: default
 
-  def expected_placeholder(nil, _class_field, default), do: default
-
-  def expected_placeholder(selected_class, class_field, default) do
-    case Map.get(selected_class, class_field) do
+  defp expected_placeholder(selected_class, field, default) do
+    case Map.get(selected_class.expected_server_properties, field) do
       nil -> default
       value -> value
     end
   end
 
-  @spec inherited_notice(
-          Form.t(),
-          Class.t() | nil,
-          atom(),
-          atom()
-        ) :: String.t() | nil
-  def inherited_input_class(form, selected_class, class_field, server_field) do
-    if selected_class != nil and Map.get(selected_class, class_field) != nil and
-         form[server_field].value == nil do
+  defp inherited_input_class(form, selected_class, field) do
+    if selected_class != nil and Map.get(selected_class.expected_server_properties, field) != nil and
+         form[field].value == nil do
       "border-info/85 text-info"
     else
       nil
     end
   end
 
-  @spec inherited_notice(
-          Form.t(),
-          Class.t() | nil,
-          atom(),
-          atom()
-        ) :: Phoenix.LiveView.Rendered.t()
-  def inherited_notice(form, selected_class, class_field, server_field) do
+  defp inherited_notice(form, selected_class, field) do
     class_value =
       case selected_class do
         nil -> nil
-        class -> Map.get(class, class_field)
+        class -> Map.get(class.expected_server_properties, field)
       end
 
     assigns = %{
       form: form,
       class_value: class_value,
-      server_field: server_field
+      field: field
     }
 
     ~H"""
     <p :if={@class_value != nil} class="label mt-1 italic">
-      <%= if @form[@server_field].value == nil do %>
+      <%= if @form[@field].value == nil do %>
         <span class="text-info/85">{gettext("Inherited from class")}</span>
       <% else %>
         <span class="text-base-content/50">

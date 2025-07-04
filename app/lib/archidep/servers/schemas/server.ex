@@ -80,6 +80,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
         join: ua in assoc(s, :user_account),
         left_join: uas in assoc(ua, :student),
         join: c in assoc(s, :class),
+        join: esp in assoc(c, :expected_server_properties),
         join: ep in assoc(s, :expected_properties),
         # TODO: put query fragment determining whether a user is active in the user account schema
         where:
@@ -88,7 +89,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
                (uas.active and uas.class_id == c.id and c.active == true and
                   (is_nil(c.start_date) or c.start_date <= ^day) and
                   (is_nil(c.end_date) or c.end_date >= ^day))),
-        preload: [class: c, expected_properties: ep, user_account: ua]
+        preload: [
+          class: {c, expected_server_properties: esp},
+          expected_properties: ep,
+          user_account: ua
+        ]
       )
     )
   end
@@ -98,13 +103,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
     case Repo.one(
            from(s in __MODULE__,
              join: c in assoc(s, :class),
+             join: esp in assoc(c, :expected_server_properties),
              join: ua in assoc(s, :user_account),
              left_join: uas in assoc(ua, :student),
              left_join: uac in assoc(uas, :class),
              join: ep in assoc(s, :expected_properties),
              where: s.id == ^id,
              preload: [
-               class: c,
+               class: {c, expected_server_properties: esp},
                expected_properties: ep,
                user_account: {ua, student: {uas, class: uac}}
              ]

@@ -8,6 +8,7 @@ defmodule ArchiDep.Students.Schemas.Class do
 
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Students.Types
 
   @primary_key {:id, :binary_id, []}
@@ -22,18 +23,8 @@ defmodule ArchiDep.Students.Schemas.Class do
           active: boolean(),
           servers: list(Server.t()) | NotLoaded.t(),
           servers_count: non_neg_integer() | nil,
-          # Expected server properties for students of this class
-          expected_server_cpus: pos_integer() | nil,
-          expected_server_cores: pos_integer() | nil,
-          expected_server_vcpus: pos_integer() | nil,
-          expected_server_memory: pos_integer() | nil,
-          expected_server_swap: pos_integer() | nil,
-          expected_server_system: String.t() | nil,
-          expected_server_architecture: String.t() | nil,
-          expected_server_os_family: String.t() | nil,
-          expected_server_distribution: String.t() | nil,
-          expected_server_distribution_release: String.t() | nil,
-          expected_server_distribution_version: String.t() | nil,
+          expected_server_properties: ServerProperties.t() | NotLoaded.t(),
+          expected_server_properties_id: UUID.t() | nil,
           # Common metadata
           version: pos_integer(),
           created_at: DateTime.t(),
@@ -46,17 +37,7 @@ defmodule ArchiDep.Students.Schemas.Class do
     field(:end_date, :date)
     field(:active, :boolean)
     field(:servers_count, :integer, virtual: true)
-    field(:expected_server_cpus, :integer)
-    field(:expected_server_cores, :integer)
-    field(:expected_server_vcpus, :integer)
-    field(:expected_server_memory, :integer)
-    field(:expected_server_swap, :integer)
-    field(:expected_server_system, :string)
-    field(:expected_server_architecture, :string)
-    field(:expected_server_os_family, :string)
-    field(:expected_server_distribution, :string)
-    field(:expected_server_distribution_release, :string)
-    field(:expected_server_distribution_version, :string)
+    belongs_to(:expected_server_properties, ServerProperties)
     has_many(:servers, Server)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
@@ -80,8 +61,10 @@ defmodule ArchiDep.Students.Schemas.Class do
         c in __MODULE__,
         where: c.id == ^id,
         left_join: s in assoc(c, :servers),
-        group_by: c.id,
-        select: merge(c, %{servers_count: count(s.id)})
+        join: esp in assoc(c, :expected_server_properties),
+        group_by: [c.id, esp.id],
+        select: merge(c, %{servers_count: count(s.id)}),
+        preload: [expected_server_properties: esp]
       )
 
     case Repo.one(query) do
@@ -103,19 +86,9 @@ defmodule ArchiDep.Students.Schemas.Class do
       :name,
       :start_date,
       :end_date,
-      :active,
-      :expected_server_cpus,
-      :expected_server_cores,
-      :expected_server_vcpus,
-      :expected_server_memory,
-      :expected_server_swap,
-      :expected_server_system,
-      :expected_server_architecture,
-      :expected_server_os_family,
-      :expected_server_distribution,
-      :expected_server_distribution_release,
-      :expected_server_distribution_version
+      :active
     ])
+    |> cast_assoc(:expected_server_properties, with: &ServerProperties.new(&1, id, &2))
     |> change(
       id: id,
       version: 1,
@@ -137,27 +110,25 @@ defmodule ArchiDep.Students.Schemas.Class do
     id = class.id
     now = DateTime.utc_now()
 
+    data =
+      Map.put(
+        data,
+        :expected_server_properties,
+        Map.put(data.expected_server_properties, :id, id)
+      )
+
     class
     |> cast(data, [
       :name,
       :start_date,
       :end_date,
-      :active,
-      :expected_server_cpus,
-      :expected_server_cores,
-      :expected_server_vcpus,
-      :expected_server_memory,
-      :expected_server_swap,
-      :expected_server_system,
-      :expected_server_architecture,
-      :expected_server_os_family,
-      :expected_server_distribution,
-      :expected_server_distribution_release,
-      :expected_server_distribution_version
+      :active
     ])
+    |> cast_assoc(:expected_server_properties, with: &ServerProperties.update/2)
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate()
+    |> validate_required([:expected_server_properties_id])
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
 
@@ -180,33 +151,10 @@ defmodule ArchiDep.Students.Schemas.Class do
   defp validate(changeset) do
     changeset
     |> update_change(:name, &trim/1)
-    |> update_change(:expected_server_system, &trim_to_nil/1)
-    |> update_change(:expected_server_architecture, &trim_to_nil/1)
-    |> update_change(:expected_server_os_family, &trim_to_nil/1)
-    |> update_change(:expected_server_distribution, &trim_to_nil/1)
-    |> update_change(:expected_server_distribution_release, &trim_to_nil/1)
-    |> update_change(:expected_server_distribution_version, &trim_to_nil/1)
-    |> validate_required([:name, :active])
+    |> validate_required([:name, :active, :expected_server_properties])
     |> validate_length(:name, max: 50)
     |> unique_constraint(:name, name: :classes_unique_name_index)
     |> validate_start_and_end_dates()
-    |> validate_number(:expected_server_cpus, greater_than: 0, less_than_or_equal_to: 32_767)
-    |> validate_number(:expected_server_cores, greater_than: 0, less_than_or_equal_to: 32_767)
-    |> validate_number(:expected_server_vcpus, greater_than: 0, less_than_or_equal_to: 32_767)
-    |> validate_number(:expected_server_memory,
-      greater_than: 0,
-      less_than_or_equal_to: 2_147_483_647
-    )
-    |> validate_number(:expected_server_swap,
-      greater_than: 0,
-      less_than_or_equal_to: 2_147_483_647
-    )
-    |> validate_length(:expected_server_system, max: 50)
-    |> validate_length(:expected_server_architecture, max: 20)
-    |> validate_length(:expected_server_os_family, max: 50)
-    |> validate_length(:expected_server_distribution, max: 50)
-    |> validate_length(:expected_server_distribution_release, max: 50)
-    |> validate_length(:expected_server_distribution_version, max: 20)
   end
 
   defp validate_start_and_end_dates(changeset) do

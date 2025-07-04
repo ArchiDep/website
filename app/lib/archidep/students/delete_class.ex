@@ -17,6 +17,7 @@ defmodule ArchiDep.Students.DeleteClass do
 
       case Multi.new()
            |> Multi.delete(:class, Class.delete(class))
+           |> Multi.delete(:expected_server_properties, class.expected_server_properties)
            |> Multi.insert(:stored_event, fn %{class: class} ->
              ClassDeleted.new(class)
              |> new_event(auth, occurred_at: now)

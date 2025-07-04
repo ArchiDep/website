@@ -28,6 +28,7 @@ defmodule ArchiDep.Servers.DeleteServer do
 
     case Multi.new()
          |> Multi.delete(:server, server)
+         |> Multi.delete(:expected_properties, server.expected_properties)
          |> Multi.insert(:stored_event, fn %{server: server} ->
            ServerDeleted.new(server)
            |> new_event(auth, occurred_at: now)
