@@ -162,4 +162,89 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
     |> validate_length(:distribution_release, max: 50)
     |> validate_length(:distribution_version, max: 20)
   end
+
+  @spec merge(t(), t()) :: t()
+  def merge(properties, overrides) do
+    %__MODULE__{
+      properties
+      | hostname: merge_property(properties, overrides, :hostname),
+        machine_id: merge_property(properties, overrides, :machine_id),
+        cpus: merge_property(properties, overrides, :cpus),
+        cores: merge_property(properties, overrides, :cores),
+        vcpus: merge_property(properties, overrides, :vcpus),
+        memory: merge_property(properties, overrides, :memory),
+        swap: merge_property(properties, overrides, :swap),
+        system: merge_property(properties, overrides, :system),
+        architecture: merge_property(properties, overrides, :architecture),
+        os_family: merge_property(properties, overrides, :os_family),
+        distribution: merge_property(properties, overrides, :distribution),
+        distribution_release: merge_property(properties, overrides, :distribution_release),
+        distribution_version: merge_property(properties, overrides, :distribution_version)
+    }
+  end
+
+  defp merge_property(properties, overrides, property),
+    do: merge_property(Map.get(properties, property), Map.get(overrides, property))
+
+  defp merge_property(value, nil), do: value
+  defp merge_property(value, "*") when is_binary(value), do: nil
+  defp merge_property(value, 0) when is_integer(value), do: nil
+  defp merge_property(_value, override), do: override
+
+  @spec detect_mismatches(t(), t()) :: list({atom(), term(), term()})
+  def detect_mismatches(expected_properties, actual_properties) do
+    [
+      :hostname,
+      :machine_id,
+      :cpus,
+      :cores,
+      :vcpus,
+      :memory,
+      :swap,
+      :system,
+      :architecture,
+      :os_family,
+      :distribution,
+      :distribution_release,
+      :distribution_version
+    ]
+    |> Enum.reduce([], fn property, acc ->
+      expected = expected_properties |> Map.get(property) |> trim_binary_to_nil()
+      actual = actual_properties |> Map.get(property) |> trim_binary_to_nil()
+
+      case detect_mismatch(property, expected, actual) do
+        :ok ->
+          acc
+
+        {:error, {expected, actual}} ->
+          [{property, expected, actual} | acc]
+      end
+    end)
+    |> Enum.reverse()
+  end
+
+  defp trim_binary_to_nil(value) when is_binary(value), do: trim_to_nil(value)
+  defp trim_binary_to_nil(value), do: value
+
+  defp detect_mismatch(property, nil, _actual) when is_atom(property), do: :ok
+
+  defp detect_mismatch(property, 0, _actual) when is_atom(property), do: :ok
+
+  defp detect_mismatch(property, "*", _actual) when is_atom(property), do: :ok
+
+  defp detect_mismatch(property, expected, expected) when is_atom(property), do: :ok
+
+  defp detect_mismatch(property, expected, actual)
+       when property in [:memory, :swap] and expected != 0 do
+    difference = abs(expected - actual)
+    ratio = difference / expected
+
+    if ratio > 0.1 do
+      {:error, {expected, actual}}
+    else
+      :ok
+    end
+  end
+
+  defp detect_mismatch(_property, expected, actual), do: {:error, {expected, actual}}
 end

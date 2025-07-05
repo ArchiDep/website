@@ -1,8 +1,8 @@
 defmodule ArchiDep.Servers.ServerManagerState do
   require Logger
   require Record
-  import ArchiDep.Helpers.SchemaHelpers, only: [trim_to_nil: 1]
   import ArchiDep.Servers.ServerConnectionState
+  alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Authentication
   alias ArchiDep.Helpers.NetHelpers
   alias ArchiDep.Servers.Ansible
@@ -12,6 +12,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerConnectionState
@@ -427,15 +428,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
     new_state =
       case result do
         {:ok, facts} ->
-          :ets.insert(state.storage, {:facts, facts})
-
           updated_server = Server.update_last_known_properties!(state.server, facts)
           :ok = PubSub.publish_server(updated_server)
 
           %__MODULE__{
             state
             | actions: [update_tracking()],
-              problems: detect_server_properties_mismatches(problems, updated_server, facts)
+              problems: detect_server_properties_mismatches(problems, updated_server)
           }
 
         {:error, reason} ->
@@ -803,12 +802,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
       "Server manager for server #{server_id} received class update to version #{new_version}"
     )
 
-    facts =
-      case :ets.lookup(state.storage, :facts) do
-        [{:facts, facts}] -> facts
-        [] -> nil
-      end
-
     new_server = %Server{
       state.server
       | class: class
@@ -819,12 +812,17 @@ defmodule ArchiDep.Servers.ServerManagerState do
       | server: new_server,
         # TODO: do not add update tracking action if there is already one
         actions: [update_tracking()],
-        problems: detect_server_properties_mismatches(problems, new_server, facts)
+        problems: detect_server_properties_mismatches(problems, new_server)
     })
   end
 
   @spec class_updated(t(), Class.t()) :: t()
-  def class_updated(state, _outdated_class) do
+  def class_updated(
+        %__MODULE__{
+          server: %Server{class: %Class{id: class_id}}
+        } = state,
+        %Class{id: class_id}
+      ) do
     state
   end
 
@@ -836,8 +834,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
       ) do
     server = state.server
     Logger.info("Connection to server #{server.id} crashed because: #{inspect(reason)}")
-
-    :ets.delete(state.storage, :facts)
 
     actions =
       [:notify_server_offline] ++
@@ -872,19 +868,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
   defp do_update_server(%__MODULE__{problems: problems} = state, auth, data) do
     case UpdateServer.update_server(auth, state.server, data) do
       {:ok, updated_server} ->
-        facts =
-          case :ets.lookup(state.storage, :facts) do
-            [{:facts, facts}] -> facts
-            [] -> nil
-          end
-
         new_state =
           auto_activate_or_deactivate(%__MODULE__{
             state
             | server: updated_server,
               # TODO: do not add update tracking action if there is already one
               actions: [update_tracking()],
-              problems: detect_server_properties_mismatches(problems, updated_server, facts)
+              problems: detect_server_properties_mismatches(problems, updated_server)
           })
 
         {new_state, {:ok, updated_server}}
@@ -1063,144 +1053,31 @@ defmodule ArchiDep.Servers.ServerManagerState do
          }
        end}
 
-  defp detect_server_properties_mismatches(problems, _server, nil),
-    do:
-      Enum.filter(problems, fn problem ->
-        elem(problem, 0) != :server_expected_property_mismatch
-      end)
-
-  defp detect_server_properties_mismatches(problems, server, facts),
-    do:
-      problems
-      |> Enum.filter(fn problem -> elem(problem, 0) != :server_expected_property_mismatch end)
-      |> detect_server_property_mismatch(:cpus, server, facts, ["ansible_processor_count"])
-      |> detect_server_property_mismatch(:cores, server, facts, ["ansible_processor_cores"])
-      |> detect_server_property_mismatch(:vcpus, server, facts, ["ansible_processor_vcpus"])
-      |> detect_server_property_mismatch(:memory, server, facts, [
-        "ansible_memory_mb",
-        "real",
-        "total"
-      ])
-      |> detect_server_property_mismatch(:swap, server, facts, [
-        "ansible_memory_mb",
-        "swap",
-        "total"
-      ])
-      |> detect_server_property_mismatch(:system, server, facts, ["ansible_system"])
-      |> detect_server_property_mismatch(:architecture, server, facts, ["ansible_architecture"])
-      |> detect_server_property_mismatch(:os_family, server, facts, ["ansible_os_family"])
-      |> detect_server_property_mismatch(:distribution, server, facts, ["ansible_distribution"])
-      |> detect_server_property_mismatch(:distribution_release, server, facts, [
-        "ansible_distribution_release"
-      ])
-      |> detect_server_property_mismatch(:distribution_version, server, facts, [
-        "ansible_distribution_version"
-      ])
-
-  defp detect_server_property_mismatch(
-         problems,
-         property,
-         server,
-         facts,
-         path
-       )
-       when is_struct(server, Server),
-       do:
-         detect_server_property_mismatch(
-           problems,
-           property,
-           Map.get(
-             server.class.expected_server_properties,
-             property
-           ),
-           Map.get(server.expected_properties, property),
-           get_in(facts, path)
-         )
-
-  defp detect_server_property_mismatch(
-         problems,
-         _property,
-         _expected_class_value,
-         0,
-         _actual_value
-       ),
-       do: problems
-
-  defp detect_server_property_mismatch(
-         problems,
-         _property,
-         "*",
-         nil,
-         _actual_value
-       ),
-       do: problems
-
-  defp detect_server_property_mismatch(
-         problems,
-         _property,
-         _expected_class_value,
-         "*",
-         _actual_value
-       ),
-       do: problems
-
-  defp detect_server_property_mismatch(problems, _property, nil, nil, _actual_value), do: problems
-
-  defp detect_server_property_mismatch(
-         problems,
-         property,
-         expected_class_value,
-         expected_server_value,
-         actual_value
-       )
-       when (is_binary(expected_class_value) or is_nil(expected_class_value)) and
-              (is_binary(expected_server_value) or is_nil(expected_server_value)) and
-              (is_binary(actual_value) or is_nil(actual_value)),
-       do:
-         detect_server_property_mismatch(
-           problems,
-           property,
-           {trim_to_nil(expected_server_value || expected_class_value), trim_to_nil(actual_value)}
-         )
-
-  defp detect_server_property_mismatch(
-         problems,
-         property,
-         expected_class_value,
-         expected_server_value,
-         actual_value
-       ),
-       do:
-         detect_server_property_mismatch(
-           problems,
-           property,
-           {expected_server_value || expected_class_value, actual_value}
-         )
-
-  defp detect_server_property_mismatch(problems, _property, {nil, _actual}),
-    do: problems
-
-  defp detect_server_property_mismatch(problems, _property, {expected, expected}),
-    do: problems
-
-  defp detect_server_property_mismatch(problems, property, {expected, actual})
-       when property in [:memory, :swap] and expected != 0 do
-    difference = abs(expected - actual)
-    ratio = difference / expected
-
-    if ratio > 0.1 do
-      problems ++ [{:server_expected_property_mismatch, property, expected, actual}]
-    else
-      problems
-    end
+  defp detect_server_properties_mismatches(problems, %Server{last_known_properties: nil}) do
+    problems
   end
 
-  defp detect_server_property_mismatch(problems, property, {expected, actual}),
-    do:
-      problems ++
-        [
-          {:server_expected_property_mismatch, property, expected, actual}
-        ]
+  defp detect_server_properties_mismatches(problems, %Server{
+         class: %Class{expected_server_properties: expected_server_properties},
+         expected_properties: expected_properties_overrides,
+         last_known_properties: last_known_properties
+       })
+       when last_known_properties != nil do
+    expected_properties =
+      ServerProperties.merge(expected_server_properties, expected_properties_overrides)
+
+    mismatches = ServerProperties.detect_mismatches(expected_properties, last_known_properties)
+
+    problems
+    |> Enum.filter(fn problem ->
+      elem(problem, 0) != :server_expected_property_mismatch
+    end)
+    |> Enum.concat(
+      Enum.map(mismatches, fn {property, expected, actual} ->
+        {:server_expected_property_mismatch, property, expected, actual}
+      end)
+    )
+  end
 
   defp track(state),
     do: %__MODULE__{
