@@ -20,7 +20,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           username: String.t(),
           app_username: String.t(),
           ssh_port: 1..65_535 | nil,
-          shared_secret: binary(),
+          secret_key: binary(),
           active: boolean(),
           class: Class.t() | NotLoaded,
           class_id: UUID.t(),
@@ -43,7 +43,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:username, :string)
     field(:app_username, :string)
     field(:ssh_port, :integer)
-    field(:shared_secret, :binary)
+    field(:secret_key, :binary)
     field(:active, :boolean)
     belongs_to(:class, Class)
     belongs_to(:user_account, UserAccount)
@@ -149,7 +149,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> cast_assoc(:expected_properties, with: &ServerProperties.new(&1, id, &2))
     |> change(
       id: id,
-      shared_secret: :crypto.strong_rand_bytes(50),
+      secret_key: :crypto.strong_rand_bytes(50),
       user_account_id: user.id,
       version: 1,
       created_at: now,
@@ -243,7 +243,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_required([
       :ip_address,
       :username,
-      :shared_secret,
+      :secret_key,
       :active,
       :class_id,
       :app_username,

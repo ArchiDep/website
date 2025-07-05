@@ -21,6 +21,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Students.Schemas.Class
   alias Ecto.Changeset
   alias Ecto.UUID
+  alias Phoenix.Token
 
   @enforce_keys [
     :server,
@@ -200,6 +201,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
       ),
       do: connect(state, connection_pid, false)
 
+  def retry_connecting(state, _manual), do: state
+
   def retry_connecting(state) do
     Logger.warning(
       "Ignore request to retry connecting to server #{state.server.id} in connection state #{inspect(state.connection_state)}"
@@ -325,14 +328,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
               "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
             )
 
-            playbook = Ansible.setup_playbook()
-
-            playbook_run =
-              Tracker.track_playbook!(playbook, server, state.username, %{
-                "app_user_name" => server.app_username,
-                "app_user_authorized_key" => ArchiDep.Application.public_key(),
-                "server_id" => server.id
-              })
+            playbook_run = run_setup_playbook(server)
 
             %__MODULE__{
               state
@@ -431,11 +427,31 @@ defmodule ArchiDep.Servers.ServerManagerState do
           updated_server = Server.update_last_known_properties!(state.server, facts)
           :ok = PubSub.publish_server(updated_server)
 
-          %__MODULE__{
-            state
-            | actions: [update_tracking()],
-              problems: detect_server_properties_mismatches(problems, updated_server)
-          }
+          setup_playbook = Ansible.setup_playbook()
+
+          last_setup_run =
+            AnsiblePlaybookRun.get_last_playbook_run(updated_server, setup_playbook)
+
+          if setup_playbook.digest != last_setup_run.digest do
+            Logger.notice(
+              "Re-running Ansible setup playbook for server #{updated_server.id} because its digest has changed from #{Base.encode16(last_setup_run.digest, case: :lower)} to #{Base.encode16(setup_playbook.digest, case: :lower)}"
+            )
+
+            playbook_run = run_setup_playbook(updated_server)
+
+            %__MODULE__{
+              state
+              | ansible_playbook: {playbook_run, nil},
+                actions: [{:run_playbook, playbook_run}, update_tracking()],
+                problems: detect_server_properties_mismatches(problems, updated_server)
+            }
+          else
+            %__MODULE__{
+              state
+              | actions: [update_tracking()],
+                problems: detect_server_properties_mismatches(problems, updated_server)
+            }
+          end
 
         {:error, reason} ->
           %__MODULE__{
@@ -731,28 +747,18 @@ defmodule ArchiDep.Servers.ServerManagerState do
           tasks: %{},
           ansible_playbook: nil
         } = state,
-        playbook
-      )
-      when is_binary(playbook) do
+        "setup"
+      ) do
     has_failed_playbook =
       Enum.any?(problems, fn
-        {:server_ansible_playbook_failed, ^playbook, _state, _stats} -> true
+        {:server_ansible_playbook_failed, "setup", _state, _stats} -> true
         _ -> false
       end)
 
     if has_failed_playbook do
-      Logger.info("Retrying Ansible playbook #{playbook} for server #{server.id}")
+      Logger.info("Retrying Ansible playbook setup for server #{server.id}")
 
-      playbook = Ansible.playbook!(playbook)
-
-      username = if server.set_up_at, do: server.app_username, else: server.username
-
-      playbook_run =
-        Tracker.track_playbook!(playbook, server, username, %{
-          "app_user_name" => server.app_username,
-          "app_user_authorized_key" => ArchiDep.Application.public_key(),
-          "server_id" => server.id
-        })
+      playbook_run = run_setup_playbook(server)
 
       %__MODULE__{
         state
@@ -764,7 +770,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
       }
     else
       Logger.info(
-        "Ignoring retry request for Ansible playbook #{playbook} for server #{server.id} because there is no such failed run"
+        "Ignoring retry request for Ansible playbook setup for server #{server.id} because there is no such failed run"
       )
 
       state
@@ -1134,5 +1140,19 @@ defmodule ArchiDep.Servers.ServerManagerState do
       problems: state.problems,
       version: state.version
     }
+  end
+
+  defp run_setup_playbook(server) do
+    playbook = Ansible.setup_playbook()
+
+    username = if server.set_up_at, do: server.app_username, else: server.username
+    token = Token.sign(server.secret_key, "server auth", server.id)
+
+    Tracker.track_playbook!(playbook, server, username, %{
+      "app_user_name" => server.app_username,
+      "app_user_authorized_key" => ArchiDep.Application.public_key(),
+      "server_id" => server.id,
+      "server_token" => token
+    })
   end
 end

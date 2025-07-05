@@ -30,8 +30,8 @@ defmodule ArchiDep.Servers do
           :ok | {:error, :server_not_found}
   defdelegate retry_ansible_playbook(auth, server, playbook), to: @implementation
 
-  @spec notify_server_up(UUID.t(), binary(), binary()) :: :ok | {:error, :server_not_found}
-  defdelegate notify_server_up(server_id, nonce, signature), to: @implementation
+  @spec notify_server_up(UUID.t(), binary()) :: :ok | {:error, :server_not_found}
+  defdelegate notify_server_up(server_id, nonce), to: @implementation
 
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Changeset.t()} | {:error, :server_not_found}

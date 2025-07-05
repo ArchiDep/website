@@ -20,7 +20,7 @@ defmodule ArchiDep.Servers.Behaviour do
   @callback retry_ansible_playbook(Authentication.t(), UUID.t(), String.t()) ::
               :ok | {:error, :server_not_found}
 
-  @callback notify_server_up(UUID.t(), binary(), binary()) ::
+  @callback notify_server_up(UUID.t(), binary()) ::
               :ok | {:error, :server_not_found}
 
   @callback validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::

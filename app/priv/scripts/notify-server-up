@@ -3,23 +3,12 @@ set -e
 
 config_dir="/etc/archidep"
 server_id_file="${config_dir}/server-id"
-shared_secret_file="${config_dir}/shared-secret"
-
-TMP_FILE="$(mktemp)"
-trap 'rm -- "$TMP_FILE"' EXIT
+token_file="${config_dir}/token"
 
 server_id="$(head -n 1 "${server_id_file}")"
-server_shared_secret_hex="$(head -n 1 "${shared_secret_file}" | base64 --decode | od -A n -t x1 | sed 's/ *//g' | tr -d '\n')"
-
-nonce_base64="$(cat /dev/urandom | head -c 64 | base64)"
-
-echo -n "${server_id}" > "$TMP_FILE"
-echo -n "${nonce_base64}" | base64 --decode >> "$TMP_FILE"
-
-signature_base64="$(cat "$TMP_FILE" | openssl dgst -binary -sha512 -mac hmac -macopt "hexkey:${server_shared_secret_hex}" | base64)"
-echo "$signature"
+token="$(head -n 1 "${token_file}")"
 
 curl -vv -X POST \
   -H "Content-Type: application/json" \
-  -d "{\"nonce\":\"${nonce_base64}\",\"signature\":\"${signature_base64}\"}" \
+  -H "Authorization: Bearer $token" \
   "http://localhost:42000/api/callbacks/servers/${server_id}/up"

@@ -55,3 +55,12 @@
         group: "{{ app_user_name }}"
         mode: '0640'
       become: true
+
+    - name: Create the server token file
+      ansible.builtin.copy:
+        content: "{{ server_token }}"
+        dest: /etc/archidep/token
+        owner: "{{ app_user_name }}"
+        group: "{{ app_user_name }}"
+        mode: '0640'
+      become: true
