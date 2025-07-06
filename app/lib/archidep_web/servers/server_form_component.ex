@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
   alias Phoenix.LiveView.JS
 
   attr :id, :string, doc: "the id of the form"
+  attr :auth, Authentication, doc: "the authentication context"
   attr :form, Form, doc: "the form to render"
   attr :class, Class, default: nil, doc: "the class to which the server belongs"
   attr :classes, :list, default: nil, doc: "the list of classes to choose from"
@@ -52,6 +53,10 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           value={@form[:name].value}
         />
         <.errors_for field={@form[:name]} />
+
+        <%= if @class do %>
+          <input type="hidden" name={@form[:class_id].name} value={@class.id} />
+        <% end %>
 
         <%= if @classes do %>
           <label class="fieldset-label mt-2">{gettext("Class")}</label>
@@ -134,353 +139,355 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:ssh_port]} />
       </fieldset>
-      <!-- Expected server properties -->
-      <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
-        <legend class="fieldset-legend">Expected properties</legend>
-        <div role="alert" class="alert alert-info alert-soft">
-          <span class="text-sm">
-            {gettext(
-              "Warnings will be issued if the server does not meet these expected properties. Default expected properties are inherited from the server's class, but can be overridden here (use 0 or * to unset an expected property)."
-            )}
-          </span>
-        </div>
-        <.inputs_for :let={expected_properties_form} field={@form[:expected_properties]}>
-          <!-- CPU -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="fieldset-label mt-2">{gettext("CPUs")}</label>
-              <input
-                type="number"
-                id={expected_properties_form[:cpus].id}
-                class={[
-                  "input w-full",
-                  inherited_input_class(
-                    expected_properties_form,
-                    @selected_class,
-                    :cpus
-                  )
-                ]}
-                name={expected_properties_form[:cpus].name}
-                value={expected_properties_form[:cpus].value}
-                min={if @class == nil, do: "1", else: "0"}
-                placeholder={expected_placeholder(@selected_class, :cpus, gettext("e.g. 1"))}
-              />
-              <.errors_for field={expected_properties_form[:cpus]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :cpus
+      <%= if has_role?(@auth, :root) do %>
+        <!-- Expected server properties -->
+        <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
+          <legend class="fieldset-legend">Expected properties</legend>
+          <div role="alert" class="alert alert-info alert-soft">
+            <span class="text-sm">
+              {gettext(
+                "Warnings will be issued if the server does not meet these expected properties. Default expected properties are inherited from the server's class, but can be overridden here (use 0 or * to unset an expected property)."
               )}
-            </div>
-
-            <div>
-              <label class="fieldset-label mt-2">{gettext("CPU cores")}</label>
-              <input
-                type="number"
-                id={expected_properties_form[:cores].id}
-                class={[
-                  "input w-full",
-                  inherited_input_class(
-                    expected_properties_form,
-                    @selected_class,
-                    :cores
-                  )
-                ]}
-                name={expected_properties_form[:cores].name}
-                value={expected_properties_form[:cores].value}
-                min={if @class == nil, do: "1", else: "0"}
-                placeholder={expected_placeholder(@selected_class, :cores, gettext("e.g. 2"))}
-              />
-              <.errors_for field={expected_properties_form[:cores]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :cores
-              )}
-            </div>
-
-            <div>
-              <label class="fieldset-label mt-2">{gettext("vCPUs")}</label>
-              <input
-                type="number"
-                id={expected_properties_form[:vcpus].id}
-                class={[
-                  "input w-full",
-                  inherited_input_class(
-                    expected_properties_form,
-                    @selected_class,
-                    :vcpus
-                  )
-                ]}
-                name={expected_properties_form[:vcpus].name}
-                value={expected_properties_form[:vcpus].value}
-                min={if @class == nil, do: "1", else: "0"}
-                placeholder={expected_placeholder(@selected_class, :vcpus, gettext("e.g. 2"))}
-              />
-              <.errors_for field={expected_properties_form[:vcpus]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :vcpus
-              )}
-            </div>
+            </span>
           </div>
-          <!-- Memory -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="fieldset-label mt-2">{gettext("Memory")}</label>
-              <label class={[
-                "input w-full",
-                inherited_input_class(
+          <.inputs_for :let={expected_properties_form} field={@form[:expected_properties]}>
+            <!-- CPU -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="fieldset-label mt-2">{gettext("CPUs")}</label>
+                <input
+                  type="number"
+                  id={expected_properties_form[:cpus].id}
+                  class={[
+                    "input w-full",
+                    inherited_input_class(
+                      expected_properties_form,
+                      @selected_class,
+                      :cpus
+                    )
+                  ]}
+                  name={expected_properties_form[:cpus].name}
+                  value={expected_properties_form[:cpus].value}
+                  min={if @class == nil, do: "1", else: "0"}
+                  placeholder={expected_placeholder(@selected_class, :cpus, gettext("e.g. 1"))}
+                />
+                <.errors_for field={expected_properties_form[:cpus]} />
+                {inherited_notice(
+                  expected_properties_form,
+                  @selected_class,
+                  :cpus
+                )}
+              </div>
+
+              <div>
+                <label class="fieldset-label mt-2">{gettext("CPU cores")}</label>
+                <input
+                  type="number"
+                  id={expected_properties_form[:cores].id}
+                  class={[
+                    "input w-full",
+                    inherited_input_class(
+                      expected_properties_form,
+                      @selected_class,
+                      :cores
+                    )
+                  ]}
+                  name={expected_properties_form[:cores].name}
+                  value={expected_properties_form[:cores].value}
+                  min={if @class == nil, do: "1", else: "0"}
+                  placeholder={expected_placeholder(@selected_class, :cores, gettext("e.g. 2"))}
+                />
+                <.errors_for field={expected_properties_form[:cores]} />
+                {inherited_notice(
+                  expected_properties_form,
+                  @selected_class,
+                  :cores
+                )}
+              </div>
+
+              <div>
+                <label class="fieldset-label mt-2">{gettext("vCPUs")}</label>
+                <input
+                  type="number"
+                  id={expected_properties_form[:vcpus].id}
+                  class={[
+                    "input w-full",
+                    inherited_input_class(
+                      expected_properties_form,
+                      @selected_class,
+                      :vcpus
+                    )
+                  ]}
+                  name={expected_properties_form[:vcpus].name}
+                  value={expected_properties_form[:vcpus].value}
+                  min={if @class == nil, do: "1", else: "0"}
+                  placeholder={expected_placeholder(@selected_class, :vcpus, gettext("e.g. 2"))}
+                />
+                <.errors_for field={expected_properties_form[:vcpus]} />
+                {inherited_notice(
+                  expected_properties_form,
+                  @selected_class,
+                  :vcpus
+                )}
+              </div>
+            </div>
+            <!-- Memory -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="fieldset-label mt-2">{gettext("Memory")}</label>
+                <label class={[
+                  "input w-full",
+                  inherited_input_class(
+                    expected_properties_form,
+                    @selected_class,
+                    :memory
+                  )
+                ]}>
+                  <input
+                    type="number"
+                    id={expected_properties_form[:memory].id}
+                    name={expected_properties_form[:memory].name}
+                    value={expected_properties_form[:memory].value}
+                    min={if @class == nil, do: "1", else: "0"}
+                    placeholder={
+                      expected_placeholder(
+                        @selected_class,
+                        :memory,
+                        gettext("e.g. 2048")
+                      )
+                    }
+                  />
+                  <span class="label">{gettext("MB")} (±10%)</span>
+                </label>
+                <.errors_for field={expected_properties_form[:memory]} />
+                {inherited_notice(
                   expected_properties_form,
                   @selected_class,
                   :memory
-                )
-              ]}>
-                <input
-                  type="number"
-                  id={expected_properties_form[:memory].id}
-                  name={expected_properties_form[:memory].name}
-                  value={expected_properties_form[:memory].value}
-                  min={if @class == nil, do: "1", else: "0"}
-                  placeholder={
-                    expected_placeholder(
-                      @selected_class,
-                      :memory,
-                      gettext("e.g. 2048")
-                    )
-                  }
-                />
-                <span class="label">{gettext("MB")} (±10%)</span>
-              </label>
-              <.errors_for field={expected_properties_form[:memory]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :memory
-              )}
-            </div>
+                )}
+              </div>
 
-            <div>
-              <label class="fieldset-label mt-2">{gettext("Swap")}</label>
-              <label class={[
-                "input w-full",
-                inherited_input_class(
+              <div>
+                <label class="fieldset-label mt-2">{gettext("Swap")}</label>
+                <label class={[
+                  "input w-full",
+                  inherited_input_class(
+                    expected_properties_form,
+                    @selected_class,
+                    :swap
+                  )
+                ]}>
+                  <input
+                    type="number"
+                    id={expected_properties_form[:swap].id}
+                    name={expected_properties_form[:swap].name}
+                    value={expected_properties_form[:swap].value}
+                    min={if @class == nil, do: "1", else: "0"}
+                    placeholder={expected_placeholder(@selected_class, :swap, gettext("e.g. 1024"))}
+                  />
+                  <span class="label">{gettext("MB")} (±10%)</span>
+                </label>
+                <.errors_for field={expected_properties_form[:swap]} />
+                {inherited_notice(
                   expected_properties_form,
                   @selected_class,
                   :swap
-                )
-              ]}>
+                )}
+              </div>
+            </div>
+            <!-- System, OS family & architecture -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="fieldset-label mt-2">{gettext("System")}</label>
                 <input
-                  type="number"
-                  id={expected_properties_form[:swap].id}
-                  name={expected_properties_form[:swap].name}
-                  value={expected_properties_form[:swap].value}
-                  min={if @class == nil, do: "1", else: "0"}
-                  placeholder={expected_placeholder(@selected_class, :swap, gettext("e.g. 1024"))}
+                  type="text"
+                  id={expected_properties_form[:system].id}
+                  class={[
+                    "input w-full",
+                    inherited_input_class(
+                      expected_properties_form,
+                      @selected_class,
+                      :system
+                    )
+                  ]}
+                  name={expected_properties_form[:system].name}
+                  value={expected_properties_form[:system].value}
+                  placeholder={
+                    expected_placeholder(
+                      @selected_class,
+                      :system,
+                      gettext("e.g. Linux")
+                    )
+                  }
                 />
-                <span class="label">{gettext("MB")} (±10%)</span>
-              </label>
-              <.errors_for field={expected_properties_form[:swap]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :swap
-              )}
-            </div>
-          </div>
-          <!-- System, OS family & architecture -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="fieldset-label mt-2">{gettext("System")}</label>
-              <input
-                type="text"
-                id={expected_properties_form[:system].id}
-                class={[
-                  "input w-full",
-                  inherited_input_class(
-                    expected_properties_form,
-                    @selected_class,
-                    :system
-                  )
-                ]}
-                name={expected_properties_form[:system].name}
-                value={expected_properties_form[:system].value}
-                placeholder={
-                  expected_placeholder(
-                    @selected_class,
-                    :system,
-                    gettext("e.g. Linux")
-                  )
-                }
-              />
-              <.errors_for field={expected_properties_form[:system]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :system
-              )}
-            </div>
+                <.errors_for field={expected_properties_form[:system]} />
+                {inherited_notice(
+                  expected_properties_form,
+                  @selected_class,
+                  :system
+                )}
+              </div>
 
-            <div>
-              <label class="fieldset-label mt-2">{gettext("Architecture")}</label>
-              <input
-                type="text"
-                id={expected_properties_form[:architecture].id}
-                class={[
-                  "input w-full",
-                  inherited_input_class(
-                    expected_properties_form,
-                    @selected_class,
-                    :architecture
-                  )
-                ]}
-                name={expected_properties_form[:architecture].name}
-                value={expected_properties_form[:architecture].value}
-                placeholder={
-                  expected_placeholder(
-                    @selected_class,
-                    :architecture,
-                    gettext("e.g. x86_64")
-                  )
-                }
-              />
-              <.errors_for field={expected_properties_form[:architecture]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :architecture
-              )}
-            </div>
+              <div>
+                <label class="fieldset-label mt-2">{gettext("Architecture")}</label>
+                <input
+                  type="text"
+                  id={expected_properties_form[:architecture].id}
+                  class={[
+                    "input w-full",
+                    inherited_input_class(
+                      expected_properties_form,
+                      @selected_class,
+                      :architecture
+                    )
+                  ]}
+                  name={expected_properties_form[:architecture].name}
+                  value={expected_properties_form[:architecture].value}
+                  placeholder={
+                    expected_placeholder(
+                      @selected_class,
+                      :architecture,
+                      gettext("e.g. x86_64")
+                    )
+                  }
+                />
+                <.errors_for field={expected_properties_form[:architecture]} />
+                {inherited_notice(
+                  expected_properties_form,
+                  @selected_class,
+                  :architecture
+                )}
+              </div>
 
-            <div>
-              <label class="fieldset-label mt-2">{gettext("OS family")}</label>
-              <input
-                type="text"
-                id={expected_properties_form[:os_family].id}
-                class={[
-                  "input w-full",
-                  inherited_input_class(
-                    expected_properties_form,
-                    @selected_class,
-                    :os_family
-                  )
-                ]}
-                name={expected_properties_form[:os_family].name}
-                value={expected_properties_form[:os_family].value}
-                placeholder={
-                  expected_placeholder(
-                    @selected_class,
-                    :os_family,
-                    gettext("e.g. Debian")
-                  )
-                }
-              />
-              <.errors_for field={expected_properties_form[:os_family]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :os_family
-              )}
+              <div>
+                <label class="fieldset-label mt-2">{gettext("OS family")}</label>
+                <input
+                  type="text"
+                  id={expected_properties_form[:os_family].id}
+                  class={[
+                    "input w-full",
+                    inherited_input_class(
+                      expected_properties_form,
+                      @selected_class,
+                      :os_family
+                    )
+                  ]}
+                  name={expected_properties_form[:os_family].name}
+                  value={expected_properties_form[:os_family].value}
+                  placeholder={
+                    expected_placeholder(
+                      @selected_class,
+                      :os_family,
+                      gettext("e.g. Debian")
+                    )
+                  }
+                />
+                <.errors_for field={expected_properties_form[:os_family]} />
+                {inherited_notice(
+                  expected_properties_form,
+                  @selected_class,
+                  :os_family
+                )}
+              </div>
             </div>
-          </div>
-          <!-- Distribution -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="fieldset-label mt-2">{gettext("Distribution")}</label>
-              <input
-                type="text"
-                id={expected_properties_form[:distribution].id}
-                class={[
-                  "input w-full",
-                  inherited_input_class(
-                    expected_properties_form,
-                    @selected_class,
-                    :distribution
-                  )
-                ]}
-                name={expected_properties_form[:distribution].name}
-                value={expected_properties_form[:distribution].value}
-                placeholder={
-                  expected_placeholder(
-                    @selected_class,
-                    :distribution,
-                    gettext("e.g. Ubuntu")
-                  )
-                }
-              />
-              <.errors_for field={expected_properties_form[:distribution]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :distribution
-              )}
-            </div>
+            <!-- Distribution -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="fieldset-label mt-2">{gettext("Distribution")}</label>
+                <input
+                  type="text"
+                  id={expected_properties_form[:distribution].id}
+                  class={[
+                    "input w-full",
+                    inherited_input_class(
+                      expected_properties_form,
+                      @selected_class,
+                      :distribution
+                    )
+                  ]}
+                  name={expected_properties_form[:distribution].name}
+                  value={expected_properties_form[:distribution].value}
+                  placeholder={
+                    expected_placeholder(
+                      @selected_class,
+                      :distribution,
+                      gettext("e.g. Ubuntu")
+                    )
+                  }
+                />
+                <.errors_for field={expected_properties_form[:distribution]} />
+                {inherited_notice(
+                  expected_properties_form,
+                  @selected_class,
+                  :distribution
+                )}
+              </div>
 
-            <div>
-              <label class="fieldset-label mt-2">{gettext("Release")}</label>
-              <input
-                type="text"
-                id={expected_properties_form[:distribution_release].id}
-                class={[
-                  "input w-full",
-                  inherited_input_class(
-                    expected_properties_form,
-                    @selected_class,
-                    :distribution_release
-                  )
-                ]}
-                name={expected_properties_form[:distribution_release].name}
-                value={expected_properties_form[:distribution_release].value}
-                placeholder={
-                  expected_placeholder(
-                    @selected_class,
-                    :distribution_release,
-                    gettext("e.g. noble")
-                  )
-                }
-              />
-              <.errors_for field={expected_properties_form[:distribution_release]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :distribution_release
-              )}
-            </div>
+              <div>
+                <label class="fieldset-label mt-2">{gettext("Release")}</label>
+                <input
+                  type="text"
+                  id={expected_properties_form[:distribution_release].id}
+                  class={[
+                    "input w-full",
+                    inherited_input_class(
+                      expected_properties_form,
+                      @selected_class,
+                      :distribution_release
+                    )
+                  ]}
+                  name={expected_properties_form[:distribution_release].name}
+                  value={expected_properties_form[:distribution_release].value}
+                  placeholder={
+                    expected_placeholder(
+                      @selected_class,
+                      :distribution_release,
+                      gettext("e.g. noble")
+                    )
+                  }
+                />
+                <.errors_for field={expected_properties_form[:distribution_release]} />
+                {inherited_notice(
+                  expected_properties_form,
+                  @selected_class,
+                  :distribution_release
+                )}
+              </div>
 
-            <div>
-              <label class="fieldset-label mt-2">{gettext("Version")}</label>
-              <input
-                type="text"
-                id={expected_properties_form[:distribution_version].id}
-                class={[
-                  "input w-full",
-                  inherited_input_class(
-                    expected_properties_form,
-                    @selected_class,
-                    :distribution_version
-                  )
-                ]}
-                name={expected_properties_form[:distribution_version].name}
-                value={expected_properties_form[:distribution_version].value}
-                placeholder={
-                  expected_placeholder(
-                    @selected_class,
-                    :distribution_version,
-                    gettext("e.g. 24.04")
-                  )
-                }
-              />
-              <.errors_for field={expected_properties_form[:distribution_version]} />
-              {inherited_notice(
-                expected_properties_form,
-                @selected_class,
-                :distribution_version
-              )}
+              <div>
+                <label class="fieldset-label mt-2">{gettext("Version")}</label>
+                <input
+                  type="text"
+                  id={expected_properties_form[:distribution_version].id}
+                  class={[
+                    "input w-full",
+                    inherited_input_class(
+                      expected_properties_form,
+                      @selected_class,
+                      :distribution_version
+                    )
+                  ]}
+                  name={expected_properties_form[:distribution_version].name}
+                  value={expected_properties_form[:distribution_version].value}
+                  placeholder={
+                    expected_placeholder(
+                      @selected_class,
+                      :distribution_version,
+                      gettext("e.g. 24.04")
+                    )
+                  }
+                />
+                <.errors_for field={expected_properties_form[:distribution_version]} />
+                {inherited_notice(
+                  expected_properties_form,
+                  @selected_class,
+                  :distribution_version
+                )}
+              </div>
             </div>
-          </div>
-        </.inputs_for>
-      </fieldset>
+          </.inputs_for>
+        </fieldset>
+      <% end %>
 
       {render_slot(@footer)}
 

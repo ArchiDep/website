@@ -75,6 +75,7 @@ defmodule ArchiDepWeb do
         layout: {ArchiDepWeb.Layouts, :app}
 
       import ArchiDep.Helpers.PipeHelpers
+      import ArchiDepWeb.Helpers.AuthHelpers
       alias ArchiDep.Authentication
       alias ArchiDepWeb.Components.Notifications.Message
       alias Ecto.Changeset

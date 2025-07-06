@@ -84,8 +84,10 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
          Repo.one(
            from(us in __MODULE__,
              join: ua in assoc(us, :user_account),
+             left_join: s in assoc(ua, :student),
+             left_join: c in assoc(s, :class),
              where: us.token == ^token and us.created_at > ago(@session_validity_in_days, "day"),
-             preload: [user_account: ua]
+             preload: [user_account: {ua, student: {s, class: c}}]
            )
          ) do
       {:ok, session}

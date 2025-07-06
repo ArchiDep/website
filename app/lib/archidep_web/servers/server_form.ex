@@ -42,7 +42,14 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     do:
       form
       |> Map.from_struct()
-      |> Map.put(:expected_properties, ServerPropertiesForm.to_data(form.expected_properties))
+      |> Map.put(
+        :expected_properties,
+        form.expected_properties
+        |> then(fn
+          nil -> %{}
+          properties -> ServerPropertiesForm.to_data(properties)
+        end)
+      )
 
   @spec update_changeset(Server.t(), map) :: Changeset.t(Types.update_server_data())
   def update_changeset(server, params \\ %{}) when is_struct(server, Server) and is_map(params) do

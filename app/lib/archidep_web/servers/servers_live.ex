@@ -16,10 +16,14 @@ defmodule ArchiDepWeb.Servers.ServersLive do
     auth = socket.assigns.auth
 
     [servers, classes] =
-      Task.await_many([
-        Task.async(fn -> Servers.list_my_servers(auth) end),
-        Task.async(fn -> Students.list_classes(auth) end)
-      ])
+      if has_role?(auth, :root) do
+        Task.await_many([
+          Task.async(fn -> Servers.list_my_servers(auth) end),
+          Task.async(fn -> Students.list_classes(auth) end)
+        ])
+      else
+        [Servers.list_my_servers(auth), nil]
+      end
 
     tracker =
       if connected?(socket) do

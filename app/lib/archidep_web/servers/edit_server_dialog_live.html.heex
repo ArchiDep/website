@@ -1,7 +1,12 @@
-<dialog id={id(@server)} class="modal" data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id(@server)})}>
+<dialog
+  id={id(@server)}
+  class="modal"
+  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id(@server)})}
+>
   <div class="modal-box w-11/12 max-w-3xl">
     <.server_form
       id="edit-server-form"
+      auth={@auth}
       form={@form}
       class={@server.class}
       title={gettext("Edit Server")}
@@ -11,7 +16,11 @@
       target={@myself}
     >
       <:footer>
-        <div :if={ServerRealTimeState.busy?(@state)} role="alert" class="mt-2 alert alert-error alert-soft">
+        <div
+          :if={ServerRealTimeState.busy?(@state)}
+          role="alert"
+          class="mt-2 alert alert-error alert-soft"
+        >
           <Heroicons.arrow_path class="size-4 animate-spin" />
           <span>{gettext("This server cannot currently be updated because it is busy.")}</span>
         </div>

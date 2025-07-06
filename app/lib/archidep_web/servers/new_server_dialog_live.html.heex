@@ -1,8 +1,14 @@
-<dialog id={id()} class="modal" data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id()})}>
+<dialog
+  id={id()}
+  class="modal"
+  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id()})}
+>
   <div class="modal-box w-11/12 max-w-3xl">
     <.server_form
       id="new-server-form"
+      auth={@auth}
       form={@form}
+      class={get_in(@auth.principal.student.class)}
       classes={@classes}
       title={gettext("New Server")}
       on_submit="create"
