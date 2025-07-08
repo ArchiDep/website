@@ -51,6 +51,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           class="input w-full"
           name={@form[:name].name}
           value={@form[:name].value}
+          placeholder={gettext("Give it a name if you like, e.g. My Precious")}
         />
         <.errors_for field={@form[:name]} />
 
@@ -102,6 +103,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           class="input w-full"
           name={@form[:ip_address].name}
           value={@form[:ip_address].value}
+          placeholder={gettext("e.g. 1.2.3.4")}
         />
         <.errors_for field={@form[:ip_address]} />
 
@@ -112,6 +114,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           class="input w-full"
           name={@form[:username].name}
           value={@form[:username].value}
+          placeholder={gettext("e.g. jde")}
         />
         <.errors_for field={@form[:username]} />
 
@@ -135,7 +138,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           min="1"
           max="65535"
           step="1"
-          placeholder="22"
+          placeholder={gettext("22 by default")}
         />
         <.errors_for field={@form[:ssh_port]} />
       </fieldset>
