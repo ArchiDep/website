@@ -9,7 +9,7 @@ defmodule ArchiDep.Servers.CreateServer do
 
   @spec validate_server(Authentication.t(), Types.create_server_data()) :: Changeset.t()
   def validate_server(auth, data) do
-    authorize!(auth, Policy, :servers, :validate_server, nil)
+    authorize!(auth, Policy, :servers, :validate_server, data)
     user = Authentication.fetch_user_account(auth)
     Server.new(data, user)
   end
