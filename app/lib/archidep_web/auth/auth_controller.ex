@@ -59,7 +59,9 @@ defmodule ArchiDepWeb.Auth.AuthController do
     Logger.warning("Could not authenticate user with Switch edu-ID because #{inspect(failure)}")
 
     conn
-    |> put_notification(Message.new(:error, gettext("Failed to authenticate.")))
+    |> put_notification(
+      Message.new(:error, gettext("Failed to authenticate with Switch edu-ID."))
+    )
     |> redirect(to: "/login")
   end
 
