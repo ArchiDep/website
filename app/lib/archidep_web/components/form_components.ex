@@ -27,9 +27,5 @@ defmodule ArchiDepWeb.Components.FormComponents do
     """
   end
 
-  def translate_error({msg, opts}) do
-    Enum.reduce(opts, msg, fn {key, value}, acc ->
-      String.replace(acc, "%{#{key}}", fn _ -> to_string(value) end)
-    end)
-  end
+  def translate_error({msg, opts}), do: Gettext.dgettext(ArchiDepWeb.Gettext, "errors", msg, opts)
 end

@@ -55,12 +55,8 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:name]} />
 
-        <%= if @class do %>
-          <input type="hidden" name={@form[:class_id].name} value={@class.id} />
-        <% end %>
-
         <%= if @classes do %>
-          <label class="fieldset-label mt-2">{gettext("Class")}</label>
+          <label class="fieldset-label required mt-2">{gettext("Class")}</label>
           <select
             id={@form[:class_id].id}
             class="select w-full"
@@ -91,12 +87,13 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           />
           {gettext("Active")}
         </label>
+        <.errors_for field={@form[:active]} />
       </fieldset>
 
       <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
         <legend class="fieldset-legend">{gettext("Connection information")}</legend>
 
-        <label class="fieldset-label mt-2">{gettext("IP address")}</label>
+        <label class="fieldset-label required mt-2">{gettext("IP address")}</label>
         <input
           type="text"
           id={@form[:ip_address].id}
@@ -107,7 +104,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:ip_address]} />
 
-        <label class="fieldset-label mt-2">{gettext("Username")}</label>
+        <label class="fieldset-label required mt-2">{gettext("Username")}</label>
         <input
           type="text"
           id={@form[:username].id}
@@ -118,15 +115,17 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:username]} />
 
-        <label class="fieldset-label mt-2">{gettext("Application username")}</label>
-        <input
-          type="text"
-          id={@form[:app_username].id}
-          class="input w-full"
-          name={@form[:app_username].name}
-          value={@form[:app_username].value}
-        />
-        <.errors_for field={@form[:app_username]} />
+        <%= if has_role?(@auth, :root) do %>
+          <label class="fieldset-label mt-2">{gettext("Application username")}</label>
+          <input
+            type="text"
+            id={@form[:app_username].id}
+            class="input w-full"
+            name={@form[:app_username].name}
+            value={@form[:app_username].value}
+          />
+          <.errors_for field={@form[:app_username]} />
+        <% end %>
 
         <label class="fieldset-label mt-2">{gettext("SSH port")}</label>
         <input

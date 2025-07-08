@@ -14,10 +14,10 @@ defmodule ArchiDep.Servers.Policy do
           principal: %UserAccount{
             active: true,
             roles: roles,
-            student: %Student{class_id: class_id}
+            student: %Student{}
           }
         },
-        %{class_id: class_id}
+        %{class_id: nil}
       ),
       do: Enum.member?(roles, :student)
 
@@ -38,10 +38,10 @@ defmodule ArchiDep.Servers.Policy do
           principal: %UserAccount{
             active: true,
             roles: roles,
-            student: %Student{class_id: class_id}
+            student: %Student{}
           }
         },
-        %{class_id: class_id}
+        %{class_id: nil}
       ),
       do: Enum.member?(roles, :student)
 

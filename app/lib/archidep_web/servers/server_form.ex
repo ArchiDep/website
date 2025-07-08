@@ -34,7 +34,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :app_username
     ])
     |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
-    |> validate_required([:ip_address, :username, :active, :class_id])
+    |> validate_required([:ip_address, :username, :active])
   end
 
   @spec to_create_data(struct()) :: Types.create_server_data()

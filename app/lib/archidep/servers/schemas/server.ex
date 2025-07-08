@@ -4,6 +4,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Types
 
@@ -155,21 +156,47 @@ defmodule ArchiDep.Servers.Schemas.Server do
       created_at: now,
       updated_at: now
     )
-    |> validate()
-    |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
-      name = get_field(changeset, :name)
-      class_id = get_field(changeset, :class_id)
+    |> validate_new_server()
+  end
 
-      from(s in __MODULE__,
-        where: s.name == ^name and s.class_id == ^class_id
-      )
-    end)
-    |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
-      ip_address = get_field(changeset, :ip_address)
+  @spec new_group_member_server(Types.create_server_data(), UserAccount.t(), ServerOwner.t()) ::
+          Changeset.t(t())
+  def new_group_member_server(data, user, owner) do
+    id = UUID.generate()
+    now = DateTime.utc_now()
 
-      from(s in __MODULE__,
-        where: s.ip_address == ^ip_address
-      )
+    %__MODULE__{}
+    |> cast(data, [
+      :name,
+      :ip_address,
+      :username,
+      :ssh_port,
+      :active
+    ])
+    |> cast_assoc(:expected_properties,
+      with: fn _struct, _params -> ServerProperties.blank(id) end
+    )
+    |> change(
+      id: id,
+      secret_key: :crypto.strong_rand_bytes(50),
+      user_account_id: user.id,
+      class_id: user.student.class_id,
+      app_username: "archidep",
+      version: 1,
+      created_at: now,
+      updated_at: now
+    )
+    |> validate_new_server()
+    |> validate_change(:active, fn :active, active ->
+      if active and ServerOwner.active_server_limit_reached?(owner) do
+        [
+          active:
+            {"active server limit reached (max {current})",
+             current: owner.active_server_count, limit: ServerOwner.active_server_limit()}
+        ]
+      else
+        []
+      end
     end)
   end
 
@@ -192,22 +219,36 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> cast_assoc(:expected_properties, with: &ServerProperties.update/2)
     |> change(updated_at: now)
     |> optimistic_lock(:version)
-    |> validate()
-    |> validate_required([:expected_properties_id])
-    |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
-      name = get_field(changeset, :name)
-      class_id = get_field(changeset, :class_id)
+    |> validate_existing_server(id)
+  end
 
-      from(s in __MODULE__,
-        where: s.id != ^id and s.name == ^name and s.class_id == ^class_id
-      )
-    end)
-    |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
-      ip_address = get_field(changeset, :ip_address)
+  @spec update_group_member_server(t(), Types.update_server_data(), ServerOwner.t()) ::
+          Changeset.t(t())
+  def update_group_member_server(server, data, owner) do
+    id = server.id
+    now = DateTime.utc_now()
 
-      from(s in __MODULE__,
-        where: s.id != ^id and s.ip_address == ^ip_address
-      )
+    server
+    |> cast(data, [
+      :name,
+      :ip_address,
+      :username,
+      :ssh_port,
+      :active
+    ])
+    |> change(updated_at: now)
+    |> optimistic_lock(:version)
+    |> validate_existing_server(id)
+    |> validate_change(:active, fn :active, active ->
+      if active and ServerOwner.active_server_limit_reached?(owner) do
+        [
+          active:
+            {"active server limit reached (max {current})",
+             current: owner.active_server_count, limit: ServerOwner.active_server_limit()}
+        ]
+      else
+        []
+      end
     end)
   end
 
@@ -233,6 +274,46 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> change(set_up_at: now)
     |> optimistic_lock(:version)
     |> Repo.update!()
+  end
+
+  defp validate_new_server(changeset) do
+    changeset
+    |> validate()
+    |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
+      name = get_field(changeset, :name)
+      class_id = get_field(changeset, :class_id)
+
+      from(s in __MODULE__,
+        where: s.name == ^name and s.class_id == ^class_id
+      )
+    end)
+    |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
+      ip_address = get_field(changeset, :ip_address)
+
+      from(s in __MODULE__,
+        where: s.ip_address == ^ip_address
+      )
+    end)
+  end
+
+  defp validate_existing_server(changeset, id) do
+    changeset
+    |> validate_required([:expected_properties_id])
+    |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
+      name = get_field(changeset, :name)
+      class_id = get_field(changeset, :class_id)
+
+      from(s in __MODULE__,
+        where: s.id != ^id and s.name == ^name and s.class_id == ^class_id
+      )
+    end)
+    |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
+      ip_address = get_field(changeset, :ip_address)
+
+      from(s in __MODULE__,
+        where: s.id != ^id and s.ip_address == ^ip_address
+      )
+    end)
   end
 
   defp validate(changeset) do

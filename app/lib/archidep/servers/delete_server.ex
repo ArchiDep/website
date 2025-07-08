@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.DeleteServer do
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.ServerManager
   alias ArchiDep.Servers.ServerOrchestrator
 
@@ -25,20 +26,34 @@ defmodule ArchiDep.Servers.DeleteServer do
   @spec delete_server(Authentication.t(), Server.t()) :: :ok
   def delete_server(auth, server) when is_struct(server, Server) do
     now = DateTime.utc_now()
+    owner = ServerOwner.fetch_authenticated(auth)
 
     case Multi.new()
          |> Multi.delete(:server, server)
          |> Multi.delete(:expected_properties, server.expected_properties)
-         |> Multi.insert(:stored_event, fn %{server: server} ->
-           ServerDeleted.new(server)
-           |> new_event(auth, occurred_at: now)
-           |> add_to_stream(server)
-           |> initiated_by(auth)
-         end)
+         |> Multi.merge(&decrease_active_server_count(owner, &1.server))
+         |> Multi.insert(:stored_event, &server_deleted(auth, &1.server, now))
          |> Repo.transaction() do
       {:ok, _} ->
         :ok = PubSub.publish_server_deleted(server)
         :ok
     end
   end
+
+  defp decrease_active_server_count(owner, %Server{active: true}),
+    do:
+      Multi.update(
+        Multi.new(),
+        :server_limit,
+        ServerOwner.update_active_server_count(owner, -1)
+      )
+
+  defp decrease_active_server_count(_owner, _server), do: Multi.new()
+
+  defp server_deleted(auth, server, now),
+    do:
+      ServerDeleted.new(server)
+      |> new_event(auth, occurred_at: now)
+      |> add_to_stream(server)
+      |> initiated_by(auth)
 end

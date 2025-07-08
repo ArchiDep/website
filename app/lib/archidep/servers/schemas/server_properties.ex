@@ -40,6 +40,13 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
     field(:distribution_version, :string)
   end
 
+  @spec blank(UUID.t()) :: Changeset.t(t())
+  def blank(id),
+    do:
+      %__MODULE__{}
+      |> change(id: id)
+      |> validate()
+
   @spec new(t(), UUID.t(), Types.server_properties()) :: Changeset.t(t())
   def new(server_properties, id, data) do
     server_properties

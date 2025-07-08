@@ -3,6 +3,7 @@ defmodule ArchiDep.Authentication do
   Authentication context containing the user session and logged user.
   """
 
+  import Ecto.Query, only: [from: 2]
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
@@ -77,11 +78,15 @@ defmodule ArchiDep.Authentication do
   Returns a fresh version of the authenticated user account.
   """
   @spec fetch_user_account(__MODULE__.t()) :: UserAccount.t()
-  def fetch_user_account(%__MODULE__{principal: %UserAccount{id: id}}) do
-    UserAccount
-    |> Repo.get(id)
-    |> tap(fn user_account ->
-      unless user_account, do: raise(AuthenticatedUserNotFoundError)
-    end)
-  end
+  def fetch_user_account(%__MODULE__{principal: %UserAccount{id: id}}),
+    do:
+      from(ua in UserAccount,
+        left_join: s in assoc(ua, :student),
+        where: ua.id == ^id,
+        preload: [student: s]
+      )
+      |> Repo.one()
+      |> tap(fn user_account ->
+        unless user_account, do: raise(AuthenticatedUserNotFoundError)
+      end)
 end

@@ -84,6 +84,7 @@ defmodule ArchiDep do
   @spec use_case :: Macro.t()
   def use_case do
     quote do
+      import ArchiDep.Authentication, only: [has_role?: 2]
       import ArchiDep.Authorization
       import ArchiDep.Helpers.DataHelpers, only: [validate_uuid: 2]
       import ArchiDep.Helpers.PipeHelpers

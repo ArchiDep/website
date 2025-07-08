@@ -99,14 +99,14 @@ msgstr ""
 #: lib/archidep_web/admin/classes/classes_live.html.heex:46
 #: lib/archidep_web/admin/classes/student_form_component.ex:64
 #: lib/archidep_web/admin/classes/student_live.html.heex:56
-#: lib/archidep_web/servers/server_form_component.ex:92
+#: lib/archidep_web/servers/server_form_component.ex:88
 #: lib/archidep_web/servers/server_live.html.heex:39
 #, elixir-autogen, icu-format
 msgid "Active"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:171
-#: lib/archidep_web/servers/server_form_component.ex:335
+#: lib/archidep_web/servers/server_form_component.ex:334
 #, elixir-autogen, icu-format
 msgid "Architecture"
 msgstr ""
@@ -117,20 +117,20 @@ msgid "Are you sure you want to permanently delete this class?"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:98
-#: lib/archidep_web/servers/server_form_component.ex:186
+#: lib/archidep_web/servers/server_form_component.ex:185
 #, elixir-autogen, icu-format
 msgid "CPU cores"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:85
-#: lib/archidep_web/servers/server_form_component.ex:160
+#: lib/archidep_web/servers/server_form_component.ex:159
 #, elixir-autogen, icu-format
 msgid "CPUs"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/classes_live.html.heex:30
 #: lib/archidep_web/admin/classes/student_live.html.heex:44
-#: lib/archidep_web/servers/server_form_component.ex:63
+#: lib/archidep_web/servers/server_form_component.ex:59
 #: lib/archidep_web/servers/server_live.html.heex:45
 #, elixir-autogen, icu-format
 msgid "Class"
@@ -159,7 +159,7 @@ msgstr ""
 #: lib/archidep_web/servers/delete_server_dialog_live.html.heex:27
 #: lib/archidep_web/servers/edit_server_dialog_live.html.heex:31
 #: lib/archidep_web/servers/new_server_dialog_live.html.heex:20
-#: lib/archidep_web/servers/server_form_component.ex:501
+#: lib/archidep_web/servers/server_form_component.ex:500
 #, elixir-autogen, icu-format
 msgid "Close"
 msgstr ""
@@ -184,7 +184,7 @@ msgid "Deleted class {class}"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:199
-#: lib/archidep_web/servers/server_form_component.ex:399
+#: lib/archidep_web/servers/server_form_component.ex:398
 #, elixir-autogen, icu-format
 msgid "Distribution"
 msgstr ""
@@ -234,14 +234,14 @@ msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:135
 #: lib/archidep_web/admin/classes/class_form_component.ex:150
-#: lib/archidep_web/servers/server_form_component.ex:263
-#: lib/archidep_web/servers/server_form_component.ex:291
+#: lib/archidep_web/servers/server_form_component.ex:262
+#: lib/archidep_web/servers/server_form_component.ex:290
 #, elixir-autogen, icu-format
 msgid "MB"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:126
-#: lib/archidep_web/servers/server_form_component.ex:240
+#: lib/archidep_web/servers/server_form_component.ex:239
 #, elixir-autogen, icu-format
 msgid "Memory"
 msgstr ""
@@ -273,7 +273,7 @@ msgid "Not registered yet"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:184
-#: lib/archidep_web/servers/server_form_component.ex:366
+#: lib/archidep_web/servers/server_form_component.ex:365
 #, elixir-autogen, icu-format
 msgid "OS family"
 msgstr ""
@@ -284,14 +284,14 @@ msgid "RAM"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:212
-#: lib/archidep_web/servers/server_form_component.ex:430
+#: lib/archidep_web/servers/server_form_component.ex:429
 #, elixir-autogen, icu-format
 msgid "Release"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:250
 #: lib/archidep_web/admin/classes/student_form_component.ex:77
-#: lib/archidep_web/servers/server_form_component.ex:507
+#: lib/archidep_web/servers/server_form_component.ex:506
 #, elixir-autogen, icu-format
 msgid "Save"
 msgstr ""
@@ -320,13 +320,13 @@ msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:141
 #: lib/archidep_web/admin/classes/class_live.ex:48
-#: lib/archidep_web/servers/server_form_component.ex:274
+#: lib/archidep_web/servers/server_form_component.ex:273
 #, elixir-autogen, icu-format
 msgid "Swap"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:158
-#: lib/archidep_web/servers/server_form_component.ex:304
+#: lib/archidep_web/servers/server_form_component.ex:303
 #, elixir-autogen, icu-format
 msgid "System"
 msgstr ""
@@ -343,7 +343,7 @@ msgid "User account"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:225
-#: lib/archidep_web/servers/server_form_component.ex:461
+#: lib/archidep_web/servers/server_form_component.ex:460
 #, elixir-autogen, icu-format
 msgid "Version"
 msgstr ""
@@ -354,7 +354,7 @@ msgid "When a student registers a server for this class, warnings will be issued
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:92
-#: lib/archidep_web/servers/server_form_component.ex:175
+#: lib/archidep_web/servers/server_form_component.ex:174
 #, elixir-autogen, icu-format
 msgid "e.g. 1"
 msgstr ""
@@ -366,56 +366,56 @@ msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:105
 #: lib/archidep_web/admin/classes/class_form_component.ex:118
-#: lib/archidep_web/servers/server_form_component.ex:201
-#: lib/archidep_web/servers/server_form_component.ex:227
+#: lib/archidep_web/servers/server_form_component.ex:200
+#: lib/archidep_web/servers/server_form_component.ex:226
 #, elixir-autogen, icu-format
 msgid "e.g. 2"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:133
-#: lib/archidep_web/servers/server_form_component.ex:259
+#: lib/archidep_web/servers/server_form_component.ex:258
 #, elixir-autogen, icu-format
 msgid "e.g. 2048"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:232
-#: lib/archidep_web/servers/server_form_component.ex:479
+#: lib/archidep_web/servers/server_form_component.ex:478
 #, elixir-autogen, icu-format
 msgid "e.g. 24.04"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:191
-#: lib/archidep_web/servers/server_form_component.ex:384
+#: lib/archidep_web/servers/server_form_component.ex:383
 #, elixir-autogen, icu-format
 msgid "e.g. Debian"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:165
-#: lib/archidep_web/servers/server_form_component.ex:322
+#: lib/archidep_web/servers/server_form_component.ex:321
 #, elixir-autogen, icu-format
 msgid "e.g. Linux"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:206
-#: lib/archidep_web/servers/server_form_component.ex:417
+#: lib/archidep_web/servers/server_form_component.ex:416
 #, elixir-autogen, icu-format
 msgid "e.g. Ubuntu"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:219
-#: lib/archidep_web/servers/server_form_component.ex:448
+#: lib/archidep_web/servers/server_form_component.ex:447
 #, elixir-autogen, icu-format
 msgid "e.g. noble"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:178
-#: lib/archidep_web/servers/server_form_component.ex:353
+#: lib/archidep_web/servers/server_form_component.ex:352
 #, elixir-autogen, icu-format
 msgid "e.g. x86_64"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:111
-#: lib/archidep_web/servers/server_form_component.ex:212
+#: lib/archidep_web/servers/server_form_component.ex:211
 #, elixir-autogen, icu-format
 msgid "vCPUs"
 msgstr ""
@@ -425,7 +425,7 @@ msgstr ""
 msgid "{os_family} family"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:141
+#: lib/archidep_web/servers/server_form_component.ex:140
 #, elixir-autogen, icu-format
 msgid "22 by default"
 msgstr ""
@@ -440,7 +440,7 @@ msgstr ""
 msgid "Ansible playbook {ss}{cs}{playbook}{ce}{se} failed with state {cs}{state}{ce}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:121
+#: lib/archidep_web/servers/server_form_component.ex:119
 #, elixir-autogen, icu-format
 msgid "Application username"
 msgstr ""
@@ -510,7 +510,7 @@ msgstr ""
 msgid "Connection failed"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:97
+#: lib/archidep_web/servers/server_form_component.ex:94
 #, elixir-autogen, icu-format
 msgid "Connection information"
 msgstr ""
@@ -663,7 +663,7 @@ msgid "Give it a name if you like, e.g. My Precious"
 msgstr ""
 
 #: lib/archidep_web/profile/current_sessions_live.html.heex:7
-#: lib/archidep_web/servers/server_form_component.ex:99
+#: lib/archidep_web/servers/server_form_component.ex:96
 #: lib/archidep_web/servers/server_live.html.heex:27
 #, elixir-autogen, icu-format
 msgid "IP address"
@@ -679,7 +679,7 @@ msgstr ""
 msgid "Import {count} new {count, plural, =1 {student} other {students}}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:549
+#: lib/archidep_web/servers/server_form_component.ex:548
 #, elixir-autogen, icu-format
 msgid "Inherited from class"
 msgstr ""
@@ -769,7 +769,7 @@ msgstr ""
 msgid "Oops, we've lost the internet; attempting to reconnect..."
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:552
+#: lib/archidep_web/servers/server_form_component.ex:551
 #, elixir-autogen, icu-format
 msgid "Overridden from class (was {value})"
 msgstr ""
@@ -820,13 +820,13 @@ msgstr ""
 msgid "Running {playbook}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:131
+#: lib/archidep_web/servers/server_form_component.ex:130
 #: lib/archidep_web/servers/server_live.html.heex:35
 #, elixir-autogen, icu-format
 msgid "SSH port"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:70
+#: lib/archidep_web/servers/server_form_component.ex:66
 #, elixir-autogen, icu-format
 msgid "Select a class"
 msgstr ""
@@ -1012,13 +1012,13 @@ msgid "User {cs}{username}{ce} does not have sudo access"
 msgstr ""
 
 #: lib/archidep_web/profile/profile_live.html.heex:20
-#: lib/archidep_web/servers/server_form_component.ex:110
+#: lib/archidep_web/servers/server_form_component.ex:107
 #: lib/archidep_web/servers/server_live.html.heex:31
 #, elixir-autogen, icu-format
 msgid "Username"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:151
+#: lib/archidep_web/servers/server_form_component.ex:150
 #, elixir-autogen, icu-format
 msgid "Warnings will be issued if the server does not meet these expected properties. Default expected properties are inherited from the server's class, but can be overridden here (use 0 or * to unset an expected property)."
 msgstr ""
@@ -1080,17 +1080,17 @@ msgstr ""
 msgid "duplicate emails found in this column"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:106
+#: lib/archidep_web/servers/server_form_component.ex:103
 #, elixir-autogen, icu-format
 msgid "e.g. 1.2.3.4"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:289
+#: lib/archidep_web/servers/server_form_component.ex:288
 #, elixir-autogen, icu-format
 msgid "e.g. 1024"
 msgstr ""
 
-#: lib/archidep_web/servers/server_form_component.ex:117
+#: lib/archidep_web/servers/server_form_component.ex:114
 #, elixir-autogen, icu-format
 msgid "e.g. jde"
 msgstr ""
