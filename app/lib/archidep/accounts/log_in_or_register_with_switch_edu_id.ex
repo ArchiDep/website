@@ -9,12 +9,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
   alias ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId
   alias ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
+  alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
   alias ArchiDep.ClientMetadata
-  alias ArchiDep.Students
-  alias ArchiDep.Students.Schemas.Student
 
   @root_users :archidep |> Application.compile_env!(:root_users) |> Keyword.fetch!(:switch_edu_id)
 
@@ -53,21 +52,22 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
               {:ok,
                {:new_root, UserAccount.new_switch_edu_id_account(switch_edu_id, [:root]), nil}}
             else
-              case Students.list_active_students_for_email(
+              case PreregisteredUser.list_available_preregistered_users_for_email(
                      switch_edu_id_data.email,
                      DateTime.utc_now()
                    ) do
-                [student] ->
+                [preregistered_user] ->
                   {:ok,
                    {:new_student,
-                    UserAccount.new_switch_edu_id_account(switch_edu_id, [:student]), student}}
+                    UserAccount.new_switch_edu_id_account(switch_edu_id, [:student]),
+                    preregistered_user}}
 
-                _zero_or_multiple_students ->
+                _zero_or_multiple_preregistered_users ->
                   {:error, :unauthorized_switch_edu_id}
               end
             end
 
-          # FIXME: check user account is still active, link to new student if needed
+          # FIXME: check user account is still active, link to new preregistered user if needed
           user_account ->
             {:ok, {:existing_account, change(user_account), nil}}
         end
@@ -75,7 +75,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
     )
     |> Multi.insert_or_update(:user_account, fn %{
                                                   user_account_and_state:
-                                                    {_state, changeset, _student}
+                                                    {_state, changeset, _preregistered_user}
                                                 } ->
       changeset
     end)
@@ -84,14 +84,20 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
                         user_account: user_account
                       } ->
       case user_account_and_state do
-        {:new_student, _user_account, student} when not is_nil(student) ->
+        {:new_student, _user_account, preregistered_user} when not is_nil(preregistered_user) ->
           Multi.new()
-          |> Multi.update(:student, Student.link_to_user_account(student, user_account))
-          |> Multi.update(:class, UserAccount.link_to_student(user_account, student))
+          |> Multi.update(
+            :preregistered_user,
+            PreregisteredUser.link_to_user_account(preregistered_user, user_account)
+          )
+          |> Multi.update(
+            :class,
+            UserAccount.link_to_preregistered_user(user_account, preregistered_user)
+          )
 
         _otherwise ->
           Multi.new()
-          |> Multi.run(:student, fn _repo, _changes ->
+          |> Multi.run(:preregistered_user, fn _repo, _changes ->
             {:ok, nil}
           end)
       end
@@ -102,14 +108,19 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
     |> insert(:stored_event, fn
       %{
         switch_edu_id: switch_edu_id,
-        user_account_and_state: {state, _changeset, _student},
+        user_account_and_state: {state, _changeset, _preregistered_user},
         user_account: user_account,
-        student: student,
+        preregistered_user: preregistered_user,
         user_session: session
       } ->
         case state do
           s when s in [:new_root, :new_student] ->
-            UserRegisteredWithSwitchEduId.new(switch_edu_id, user_account, session, student)
+            UserRegisteredWithSwitchEduId.new(
+              switch_edu_id,
+              user_account,
+              session,
+              preregistered_user
+            )
             |> new_event(%{}, occurred_at: session.created_at)
             |> add_to_stream(user_account)
             |> initiated_by(user_account)

@@ -34,8 +34,6 @@ defmodule ArchiDep.Students.Behaviour do
 
   @callback list_students(Authentication.t(), Class.t()) :: list(Student.t())
 
-  @callback list_active_students_for_email(String.t(), DateTime.t()) :: list(Student.t())
-
   @callback fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
               {:ok, Student.t()} | {:error, :student_not_found}
 

@@ -20,21 +20,6 @@ defmodule ArchiDep.Students.ReadStudents do
     )
   end
 
-  @spec list_active_students_for_email(String.t(), DateTime.t()) :: list(Student.t())
-  def list_active_students_for_email(email, now) do
-    from(s in Student,
-      join: c in assoc(s, :class),
-      # TODO: extract class active check to a function in the Class schema
-      where:
-        s.active and
-          c.active and (is_nil(c.start_date) or c.start_date <= ^now) and
-          (is_nil(c.end_date) or c.end_date >= ^now) and is_nil(s.user_account_id) and
-          fragment("LOWER(?)", s.email) == fragment("LOWER(?)", ^email),
-      preload: [class: c]
-    )
-    |> Repo.all()
-  end
-
   @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
           {:ok, Student.t()} | {:error, :student_not_found}
   def fetch_student_in_class(auth, class_id, id) do

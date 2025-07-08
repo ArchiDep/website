@@ -87,15 +87,15 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
          Repo.one(
            from(us in __MODULE__,
              join: ua in assoc(us, :user_account),
-             left_join: s in assoc(ua, :student),
-             left_join: c in assoc(s, :class),
+             left_join: pu in assoc(ua, :preregistered_user),
+             left_join: ug in assoc(pu, :group),
              left_join: iua in assoc(us, :impersonated_user_account),
-             left_join: iuas in assoc(iua, :student),
-             left_join: iuc in assoc(iuas, :class),
+             left_join: iuapu in assoc(iua, :preregistered_user),
+             left_join: iuag in assoc(iuapu, :group),
              where: us.token == ^token and us.created_at > ago(@session_validity_in_days, "day"),
              preload: [
-               user_account: {ua, student: {s, class: c}},
-               impersonated_user_account: {iua, student: {iuas, class: iuc}}
+               user_account: {ua, preregistered_user: {pu, group: ug}},
+               impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}
              ]
            )
          ) do

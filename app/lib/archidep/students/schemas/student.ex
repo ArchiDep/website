@@ -142,18 +142,4 @@ defmodule ArchiDep.Students.Schemas.Student do
     end)
     |> assoc_constraint(:class)
   end
-
-  @spec link_to_user_account(
-          t(),
-          UserAccount.t()
-        ) :: Changeset.t(t())
-  def link_to_user_account(%__MODULE__{user_account_id: nil} = student, user_account) do
-    now = DateTime.utc_now()
-
-    student
-    |> cast(%{user_account_id: user_account.id}, [:user_account_id])
-    |> assoc_constraint(:user_account)
-    |> change(updated_at: now)
-    |> optimistic_lock(:version)
-  end
 end

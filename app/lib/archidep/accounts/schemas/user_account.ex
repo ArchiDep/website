@@ -8,11 +8,19 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
+  alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Types
-  alias ArchiDep.Students.Schemas.Student
 
   @derive {Inspect,
-           only: [:id, :username, :roles, :active, :switch_edu_id_id, :student_id, :version]}
+           only: [
+             :id,
+             :username,
+             :roles,
+             :active,
+             :switch_edu_id_id,
+             :preregistered_user_id,
+             :version
+           ]}
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime_usec]
@@ -22,10 +30,10 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
           username: String.t(),
           roles: list(Types.role()),
           active: boolean(),
-          switch_edu_id: SwitchEduId.t() | NotLoaded,
+          switch_edu_id: SwitchEduId.t() | NotLoaded.t(),
           switch_edu_id_id: UUID.t(),
-          student: Student.t() | nil | NotLoaded,
-          student_id: UUID.t() | nil,
+          preregistered_user: PreregisteredUser.t() | nil | NotLoaded.t(),
+          preregistered_user_id: UUID.t() | nil,
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -38,21 +46,24 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     field(:roles, {:array, Ecto.Enum}, values: [:root, :student])
     field(:active, :boolean)
     belongs_to(:switch_edu_id, SwitchEduId)
-    belongs_to(:student, Student)
+    belongs_to(:preregistered_user, PreregisteredUser, source: :student_id)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
   end
 
   @spec active?(t(), DateTime.t()) :: boolean
-  def active?(%__MODULE__{active: active, roles: roles, student: nil}, _now),
+  def active?(%__MODULE__{active: active, roles: roles, preregistered_user: nil}, _now),
     do: active and Enum.member?(roles, :root)
 
   @spec active?(t(), DateTime.t()) :: boolean
-  def active?(%__MODULE__{active: active, roles: roles, student: student}, now),
-    do:
-      active and
-        (Enum.member?(roles, :student) and Student.active?(student, now))
+  def active?(
+        %__MODULE__{active: active, roles: roles, preregistered_user: preregistered_user},
+        now
+      ),
+      do:
+        active and
+          (Enum.member?(roles, :student) and PreregisteredUser.active?(preregistered_user, now))
 
   @spec student?(t()) :: boolean
   def student?(%__MODULE__{roles: roles}), do: :student in roles
@@ -85,10 +96,10 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   def fetch_by_id(user_account_id) do
     case Repo.one(
            from(ua in __MODULE__,
-             left_join: s in assoc(ua, :student),
-             left_join: c in assoc(s, :class),
+             left_join: pu in assoc(ua, :preregistered_user),
+             left_join: ug in assoc(pu, :group),
              where: ua.id == ^user_account_id,
-             preload: [student: {s, class: c}]
+             preload: [preregistered_user: {pu, group: ug}]
            )
          ) do
       nil -> {:error, :user_account_not_found}
@@ -102,10 +113,10 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       Repo.one(
         from(ua in __MODULE__,
           join: sei in assoc(ua, :switch_edu_id),
-          left_join: s in assoc(ua, :student),
-          left_join: c in assoc(s, :class),
+          left_join: pu in assoc(ua, :preregistered_user),
+          left_join: ug in assoc(pu, :group),
           where: sei.id == ^switch_edu_id_id,
-          preload: [student: {s, class: c}, switch_edu_id: sei]
+          preload: [preregistered_user: {pu, group: ug}, switch_edu_id: sei]
         )
       )
 
@@ -136,23 +147,26 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     |> validate()
   end
 
-  @spec link_to_student(
+  @spec link_to_preregistered_user(
           t(),
-          Student.t()
+          PreregisteredUser.t()
         ) :: Changeset.t(t())
-  def link_to_student(%__MODULE__{id: user_account_id, student_id: nil} = user_account, student) do
+  def link_to_preregistered_user(
+        %__MODULE__{id: user_account_id, preregistered_user_id: nil} = user_account,
+        preregistered_user
+      ) do
     now = DateTime.utc_now()
 
     user_account
-    |> cast(%{student_id: student.id}, [:student_id])
-    |> assoc_constraint(:student)
+    |> cast(%{preregistered_user_id: preregistered_user.id}, [:preregistered_user_id])
+    |> assoc_constraint(:preregistered_user)
     |> change(updated_at: now)
     |> optimistic_lock(:version)
-    |> unsafe_validate_unique_query(:student_id, Repo, fn changeset ->
-      student_id = get_field(changeset, :student_id)
+    |> unsafe_validate_unique_query(:preregistered_user_id, Repo, fn changeset ->
+      preregistered_user_id = get_field(changeset, :preregistered_user_id)
 
       from(ua in __MODULE__,
-        where: ua.id != ^user_account_id and ua.student_id == ^student_id
+        where: ua.id != ^user_account_id and ua.preregistered_user_id == ^preregistered_user_id
       )
     end)
   end

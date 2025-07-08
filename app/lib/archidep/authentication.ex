@@ -88,9 +88,9 @@ defmodule ArchiDep.Authentication do
   def fetch_user_account(%__MODULE__{principal: %UserAccount{id: id}}),
     do:
       from(ua in UserAccount,
-        left_join: s in assoc(ua, :student),
+        left_join: pu in assoc(ua, :preregistered_user),
         where: ua.id == ^id,
-        preload: [student: s]
+        preload: [preregistered_user: pu]
       )
       |> Repo.one()
       |> tap(fn user_account ->

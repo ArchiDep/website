@@ -63,8 +63,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     do:
       active and Class.active?(class, now) and UserAccount.active?(user_account, now) and
         (Enum.member?(user_account.roles, :root) or
-           (Enum.member?(user_account.roles, :student) and user_account.student != nil and
-              user_account.student.class_id == class.id))
+           (Enum.member?(user_account.roles, :student) and user_account.preregistered_user != nil and
+              user_account.preregistered_user.group_id == class.id))
 
   @spec name_or_default(t()) :: String.t()
   def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
@@ -82,7 +82,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       from(s in __MODULE__,
         distinct: true,
         join: ua in assoc(s, :user_account),
-        left_join: uas in assoc(ua, :student),
+        left_join: pu in assoc(ua, :preregistered_user),
         join: c in assoc(s, :class),
         join: esp in assoc(c, :expected_server_properties),
         join: ep in assoc(s, :expected_properties),
@@ -91,7 +91,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
         where:
           s.active and ua.active and
             (:root in ua.roles or
-               (uas.active and uas.class_id == c.id and c.active == true and
+               (pu.active and pu.class_id == c.id and c.active == true and
                   (is_nil(c.start_date) or c.start_date <= ^day) and
                   (is_nil(c.end_date) or c.end_date >= ^day))),
         preload: [
@@ -111,8 +111,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
              join: c in assoc(s, :class),
              join: esp in assoc(c, :expected_server_properties),
              join: ua in assoc(s, :user_account),
-             left_join: uas in assoc(ua, :student),
-             left_join: uac in assoc(uas, :class),
+             left_join: pu in assoc(ua, :preregistered_user),
+             left_join: ug in assoc(pu, :group),
              join: ep in assoc(s, :expected_properties),
              left_join: lkp in assoc(s, :last_known_properties),
              where: s.id == ^id,
@@ -120,7 +120,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
                class: {c, expected_server_properties: esp},
                expected_properties: ep,
                last_known_properties: lkp,
-               user_account: {ua, student: {uas, class: uac}}
+               user_account: {ua, preregistered_user: {pu, group: ug}}
              ]
            )
          ) do

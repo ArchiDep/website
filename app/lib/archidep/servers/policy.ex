@@ -1,7 +1,6 @@
 defmodule ArchiDep.Servers.Policy do
   use ArchiDep, :policy
 
-  alias ArchiDep.Students.Schemas.Student
   alias ArchiDep.Servers.Schemas.Server
 
   @impl Policy
@@ -14,11 +13,12 @@ defmodule ArchiDep.Servers.Policy do
           principal: %UserAccount{
             active: true,
             roles: roles,
-            student: %Student{}
+            preregistered_user: preregistered_user
           }
         },
         %{class_id: nil}
-      ),
+      )
+      when not is_nil(preregistered_user),
       do: Enum.member?(roles, :student)
 
   # Root users can validate any server.
@@ -38,11 +38,12 @@ defmodule ArchiDep.Servers.Policy do
           principal: %UserAccount{
             active: true,
             roles: roles,
-            student: %Student{}
+            preregistered_user: preregistered_user
           }
         },
         %{class_id: nil}
-      ),
+      )
+      when not is_nil(preregistered_user),
       do: Enum.member?(roles, :student)
 
   # Root users can create any server.
