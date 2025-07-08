@@ -65,6 +65,7 @@
         </button>
 
         <button
+          :if={has_role?(@auth, :root)}
           type="button"
           class="join-item btn btn-error"
           disabled={ServerRealTimeState.busy?(@state)}
@@ -99,10 +100,12 @@
   state={@state}
 />
 
-<.live_component
-  module={DeleteServerDialogLive}
-  id={DeleteServerDialogLive.id(@server)}
-  auth={@auth}
-  server={@server}
-  state={@state}
-/>
+<%= if has_role?(@auth, :root) do %>
+  <.live_component
+    module={DeleteServerDialogLive}
+    id={DeleteServerDialogLive.id(@server)}
+    auth={@auth}
+    server={@server}
+    state={@state}
+  />
+<% end %>

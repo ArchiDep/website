@@ -77,7 +77,16 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
-  # Root users can validate existing servers.
+  # Students and root users can validate their own existing servers.
+  def authorize(
+        :servers,
+        :validate_existing_server,
+        %Authentication{principal: %UserAccount{id: principal_id, roles: roles}},
+        %Server{user_account_id: principal_id}
+      ),
+      do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
+
+  # Root users can validate any existing server.
   def authorize(
         :servers,
         :validate_existing_server,
@@ -86,7 +95,16 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
-  # Root users can update servers.
+  # Student and root users can update their own servers.
+  def authorize(
+        :servers,
+        :update_server,
+        %Authentication{principal: %UserAccount{id: principal_id, roles: roles}},
+        %Server{user_account_id: principal_id}
+      ),
+      do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
+
+  # Root users can update any server.
   def authorize(
         :servers,
         :update_server,

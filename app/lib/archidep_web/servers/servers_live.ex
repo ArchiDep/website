@@ -11,7 +11,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
   alias ArchiDep.Students
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
-  @impl LiveView
+  @impl true
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
 
@@ -53,7 +53,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
     |> ok()
   end
 
-  @impl LiveView
+  @impl true
   def handle_params(_params, _url, socket), do: {:noreply, socket}
 
   @impl true
