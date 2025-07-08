@@ -9,7 +9,7 @@ defmodule ArchiDep.Accounts.Policy do
   def authorize(
         :accounts,
         :fetch_active_sessions,
-        %Authentication{principal: %UserAccount{}},
+        %Authentication{principal: %UserAccount{active: true}},
         _params
       ),
       do: true
@@ -18,7 +18,7 @@ defmodule ArchiDep.Accounts.Policy do
   def authorize(
         :accounts,
         :delete_session,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         %UserSession{}
       ),
       do: Enum.member?(roles, :root)
@@ -27,7 +27,7 @@ defmodule ArchiDep.Accounts.Policy do
   def authorize(
         :accounts,
         :delete_session,
-        %Authentication{principal: %UserAccount{id: id}},
+        %Authentication{principal: %UserAccount{id: id, active: true}},
         %UserSession{
           user_account: %UserAccount{id: id}
         }

@@ -7,7 +7,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :validate_class,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -16,7 +16,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :create_class,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -25,7 +25,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :list_classes,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -34,7 +34,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :fetch_class,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -43,7 +43,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :validate_existing_class,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -52,7 +52,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :update_class,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -61,7 +61,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :delete_class,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -70,7 +70,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :validate_student,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -79,7 +79,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :create_student,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -88,7 +88,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :import_students,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -97,7 +97,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :list_students,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -106,7 +106,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :fetch_student_in_class,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -115,7 +115,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :update_student,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -124,7 +124,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :validate_existing_student,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -133,7 +133,7 @@ defmodule ArchiDep.Students.Policy do
   def authorize(
         :students,
         :delete_student,
-        %Authentication{principal: %UserAccount{roles: roles}},
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
         _params
       ),
       do: Enum.member?(roles, :root)
