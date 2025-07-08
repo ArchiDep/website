@@ -26,8 +26,10 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
           used_at: DateTime.t() | nil,
           client_ip_address: String.t() | nil,
           client_user_agent: String.t() | nil,
-          user_account: UserAccount.t() | NotLoaded,
-          user_account_id: UUID.t()
+          user_account: UserAccount.t() | NotLoaded.t(),
+          user_account_id: UUID.t(),
+          impersonated_user_account: UserAccount.t() | nil | NotLoaded.t(),
+          impersonated_user_account_id: UUID.t() | nil
         }
 
   schema "user_sessions" do
@@ -37,6 +39,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     field(:client_ip_address, :string)
     field(:client_user_agent, :string)
     belongs_to(:user_account, UserAccount)
+    belongs_to(:impersonated_user_account, UserAccount, on_replace: :nilify)
   end
 
   @doc """
@@ -86,8 +89,14 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
              join: ua in assoc(us, :user_account),
              left_join: s in assoc(ua, :student),
              left_join: c in assoc(s, :class),
+             left_join: iua in assoc(us, :impersonated_user_account),
+             left_join: iuas in assoc(iua, :student),
+             left_join: iuc in assoc(iuas, :class),
              where: us.token == ^token and us.created_at > ago(@session_validity_in_days, "day"),
-             preload: [user_account: {ua, student: {s, class: c}}]
+             preload: [
+               user_account: {ua, student: {s, class: c}},
+               impersonated_user_account: {iua, student: {iuas, class: iuc}}
+             ]
            )
          ) do
       {:ok, session}
@@ -162,6 +171,38 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
              client_user_agent: client_metadata.user_agent
          }}
     end
+  end
+
+  @spec impersonate(t(), UserAccount.t()) :: t()
+  def impersonate(
+        %__MODULE__{user_account_id: current_user_account_id, impersonated_user_account_id: nil} =
+          session,
+        %UserAccount{id: user_account_id} = user_account
+      )
+      when current_user_account_id != user_account_id,
+      do:
+        session
+        |> change(
+          impersonated_user_account: user_account,
+          impersonated_user_account_id: user_account.id
+        )
+        |> Repo.update!()
+
+  @spec stop_impersonating(t()) :: t()
+
+  def stop_impersonating(%__MODULE__{impersonated_user_account_id: nil} = session),
+    do: session
+
+  def stop_impersonating(
+        %__MODULE__{} =
+          session
+      ) do
+    session
+    |> change(
+      impersonated_user_account: nil,
+      impersonated_user_account_id: nil
+    )
+    |> Repo.update!()
   end
 
   defp generate_session_token do

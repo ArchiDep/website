@@ -51,6 +51,8 @@ defmodule ArchiDepWeb.Router do
 
     scope "/", Auth do
       pipe_through :fetch_authentication
+      post "/auth/impersonate", AuthController, :impersonate
+      post "/auth/stop-impersonating", AuthController, :stop_impersonating
       delete "/logout", AuthController, :logout
     end
 

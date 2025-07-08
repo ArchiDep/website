@@ -81,6 +81,21 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   def event_stream(id) when is_binary(id), do: "user-accounts:#{id}"
   def event_stream(%__MODULE__{id: id}), do: event_stream(id)
 
+  @spec fetch_by_id(UUID.t()) :: {:ok, t()} | {:error, :user_account_not_found}
+  def fetch_by_id(user_account_id) do
+    case Repo.one(
+           from(ua in __MODULE__,
+             left_join: s in assoc(ua, :student),
+             left_join: c in assoc(s, :class),
+             where: ua.id == ^user_account_id,
+             preload: [student: {s, class: c}]
+           )
+         ) do
+      nil -> {:error, :user_account_not_found}
+      user_account -> {:ok, user_account}
+    end
+  end
+
   @spec fetch_for_switch_edu_id(SwitchEduId.t()) :: t() | nil
   def fetch_for_switch_edu_id(%SwitchEduId{id: switch_edu_id_id}),
     do:

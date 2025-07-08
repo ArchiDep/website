@@ -29,9 +29,9 @@ defmodule ArchiDep.Accounts.Sessions do
   end
 
   @spec user_account(Authentication.t()) :: UserAccount.t()
-  def user_account(auth) do
-    auth
-    |> Authentication.user_account_id()
-    |> UserAccount.get_with_switch_edu_id!()
-  end
+  def user_account(auth),
+    do:
+      auth
+      |> Authentication.user_account_id()
+      |> UserAccount.get_with_switch_edu_id!()
 end

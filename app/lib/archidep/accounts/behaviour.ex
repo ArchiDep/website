@@ -10,6 +10,7 @@ defmodule ArchiDep.Accounts.Behaviour do
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
   alias ArchiDep.Authentication
+  alias Ecto.UUID
 
   @doc """
   Logs in the user account with the specified Switch edu-ID, creating a new
@@ -38,6 +39,20 @@ defmodule ArchiDep.Accounts.Behaviour do
   Returns the list of active sessions for the currently authenticated user.
   """
   callback(fetch_active_sessions(auth: Authentication.t()) :: list(UserSession.t()))
+
+  @doc """
+  Impersonates the specified user account. As long as this is active, that
+  session will behave as if the specified user account is the logged-in user.
+  """
+  callback(
+    impersonate(auth: Authentication.t(), user_id: UUID.t()) ::
+      {:ok, UserAccount.t()} | {:error, :user_account_not_found} | {:error, :unauthorized}
+  )
+
+  @doc """
+  Stops impersonating a user account, returning to the original session.
+  """
+  callback(stop_impersonating(auth: Authentication.t()) :: :ok | {:error, :unauthorized})
 
   @doc """
   Deletes the specified session.

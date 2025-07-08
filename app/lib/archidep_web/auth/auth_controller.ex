@@ -13,6 +13,31 @@ defmodule ArchiDepWeb.Auth.AuthController do
     render(conn, "login.html")
   end
 
+  @spec impersonate(Conn.t(), map) :: Conn.t()
+  def impersonate(conn, %{"user_account_id" => user_account_id}) do
+    {:ok, impersonated_user_account} = Accounts.impersonate(conn.assigns.auth, user_account_id)
+
+    conn
+    |> put_notification(
+      Message.new(
+        :success,
+        gettext("You are impersonating user {user}.", user: impersonated_user_account.username)
+      )
+    )
+    |> redirect(to: ~p"/app")
+  end
+
+  @spec stop_impersonating(Conn.t(), map) :: Conn.t()
+  def stop_impersonating(conn, %{}) do
+    :ok = Accounts.stop_impersonating(conn.assigns.auth)
+
+    conn
+    |> put_notification(
+      Message.new(:success, gettext("You are no longer impersonating another user."))
+    )
+    |> redirect(to: ~p"/app")
+  end
+
   @spec logout(Conn.t(), map) :: Conn.t()
   def logout(conn, %{}) do
     Auth.log_out(conn)

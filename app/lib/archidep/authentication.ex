@@ -29,7 +29,7 @@ defmodule ArchiDep.Authentication do
   def for_user_session(session, metadata),
     do: %__MODULE__{
       session: session,
-      principal: session.user_account,
+      principal: session.impersonated_user_account || session.user_account,
       metadata: metadata
     }
 
