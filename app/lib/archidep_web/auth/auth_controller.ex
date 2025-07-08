@@ -1,6 +1,7 @@
 defmodule ArchiDepWeb.Auth.AuthController do
   use ArchiDepWeb, :controller
 
+  require Logger
   import ArchiDepWeb.Helpers.ConnHelpers
   alias ArchiDep.Accounts
   alias ArchiDepWeb.Auth
@@ -54,8 +55,8 @@ defmodule ArchiDepWeb.Auth.AuthController do
 
   @spec callback(Conn.t(), map) :: Conn.t()
 
-  def callback(%{assigns: %{ueberauth_failure: fails}} = conn, _params) do
-    IO.puts("@@@@@@@@@@@@@@@ fails #{inspect(fails)}")
+  def callback(%{assigns: %{ueberauth_failure: failure}} = conn, _params) do
+    Logger.warning("Could not authenticate user with Switch edu-ID because #{inspect(failure)}")
 
     conn
     |> put_notification(Message.new(:error, gettext("Failed to authenticate.")))
