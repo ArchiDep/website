@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Auth do
   import Plug.Conn
   alias ArchiDep.Accounts
   alias ArchiDep.Authentication
+  alias ArchiDepWeb.Endpoint
   alias Plug.Conn
 
   # Make the session cookie valid for 60 days. If you want bump or reduce
@@ -32,6 +33,7 @@ defmodule ArchiDepWeb.Auth do
     conn
     |> renew_session()
     |> put_session(:session_token, token)
+    |> put_session(:live_socket_id, live_socket_id(auth))
     |> maybe_write_remember_me_cookie(token, remember_me)
     |> redirect(to: user_return_to || signed_in_path())
   end
@@ -44,7 +46,8 @@ defmodule ArchiDepWeb.Auth do
   @spec log_out(Conn.t()) :: Conn.t()
   def log_out(conn) do
     if auth = conn.assigns[:auth] do
-      Accounts.log_out(auth)
+      :ok = Accounts.log_out(auth)
+      disconnect_session(auth)
     end
 
     conn
@@ -52,6 +55,13 @@ defmodule ArchiDepWeb.Auth do
     |> delete_resp_cookie(@remember_me_cookie)
     |> redirect(to: "/login")
   end
+
+  @spec disconnect_session(Authentication.t()) :: :ok
+  def disconnect_session(auth) do
+    :ok = Endpoint.broadcast(live_socket_id(auth), "disconnect", %{})
+  end
+
+  defp live_socket_id(auth), do: "auth:#{Authentication.session_id(auth)}"
 
   defp maybe_write_remember_me_cookie(conn, token, true),
     do: put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)

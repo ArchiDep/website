@@ -9,6 +9,7 @@ defmodule ArchiDep.Authentication do
   alias ArchiDep.Accounts.Types
   alias ArchiDep.Errors.AuthenticatedUserNotFoundError
   alias ArchiDep.Repo
+  alias Ecto.UUID
 
   @spec is_authentication(term) :: Macro.t()
   defguard is_authentication(value) when is_struct(value, __MODULE__)
@@ -51,6 +52,12 @@ defmodule ArchiDep.Authentication do
   """
   @spec user_account_id(__MODULE__.t()) :: String.t()
   def user_account_id(%__MODULE__{principal: %UserAccount{id: id}}), do: id
+
+  @doc """
+  Returns the ID of the current session.
+  """
+  @spec session_id(t()) :: UUID.t()
+  def session_id(%__MODULE__{session: %UserSession{id: id}}), do: id
 
   @doc """
   Returns the token identifying the current session.

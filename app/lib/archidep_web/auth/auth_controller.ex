@@ -16,6 +16,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
   @spec impersonate(Conn.t(), map) :: Conn.t()
   def impersonate(conn, %{"user_account_id" => user_account_id}) do
     {:ok, impersonated_user_account} = Accounts.impersonate(conn.assigns.auth, user_account_id)
+    :ok = Auth.disconnect_session(conn.assigns.auth)
 
     conn
     |> put_notification(
@@ -30,6 +31,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
   @spec stop_impersonating(Conn.t(), map) :: Conn.t()
   def stop_impersonating(conn, %{}) do
     :ok = Accounts.stop_impersonating(conn.assigns.auth)
+    :ok = Auth.disconnect_session(conn.assigns.auth)
 
     conn
     |> put_notification(
