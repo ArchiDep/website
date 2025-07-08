@@ -87,7 +87,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
                swiss_edu_person_unique_id: swiss_edu_person_unique_id,
                email: email,
                first_name: Map.get(userinfo, "given_name"),
-               last_name: nil
+               last_name: Map.get(userinfo, "family_name")
              },
              conn_metadata(conn)
            ) do
