@@ -14,8 +14,6 @@ defmodule ArchiDep.Servers.ServerManager do
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerManagerState
   alias ArchiDep.Servers.Types
-  alias ArchiDep.Students
-  alias ArchiDep.Students.Schemas.Class
   alias Ecto.Changeset
   alias Ecto.UUID
 
@@ -88,7 +86,8 @@ defmodule ArchiDep.Servers.ServerManager do
       |> execute_actions()
 
     # TODO: watch user account & student for changes
-    :ok = Students.PubSub.subscribe_class(state.server.class.id)
+    # FIXME: watch server group for changes
+    # :ok = Students.PubSub.subscribe_class(state.server.class.id)
 
     noreply(state)
   end
@@ -205,16 +204,16 @@ defmodule ArchiDep.Servers.ServerManager do
         |> execute_actions()
         |> noreply()
 
-  def handle_info(
-        {:class_updated, class},
-        state
-      )
-      when is_struct(class, Class),
-      do:
-        state
-        |> ServerManagerState.class_updated(class)
-        |> execute_actions()
-        |> noreply()
+  # def handle_info(
+  #       {:class_updated, class},
+  #       state
+  #     )
+  #     when is_struct(class, Class),
+  #     do:
+  #       state
+  #       |> ServerManagerState.class_updated(class)
+  #       |> execute_actions()
+  #       |> noreply()
 
   def handle_info(
         :measure_load_average,

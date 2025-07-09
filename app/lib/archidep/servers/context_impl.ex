@@ -6,6 +6,7 @@ defmodule ArchiDep.Servers.ContextImpl do
   alias ArchiDep.Servers.ManageServer
   alias ArchiDep.Servers.ReadServers
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.ServerCallbacks
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UpdateServer
@@ -19,6 +20,9 @@ defmodule ArchiDep.Servers.ContextImpl do
 
   @spec list_my_servers(Authentication.t()) :: list(Server.t())
   defdelegate list_my_servers(auth), to: ReadServers
+
+  @spec list_server_groups(Authentication.t()) :: list(ServerGroup.t())
+  defdelegate list_server_groups(auth), to: ReadServers
 
   @spec fetch_server(Authentication.t(), UUID.t()) ::
           {:ok, Server.t()} | {:error, :server_not_found}

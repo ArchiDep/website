@@ -4,6 +4,7 @@ defmodule ArchiDep.Servers do
   @behaviour ArchiDep.Servers.Behaviour
 
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Types
 
   @implementation Application.compile_env!(:archidep, __MODULE__)
@@ -17,6 +18,9 @@ defmodule ArchiDep.Servers do
 
   @spec list_my_servers(Authentication.t()) :: list(Server.t())
   defdelegate list_my_servers(auth), to: @implementation
+
+  @spec list_server_groups(Authentication.t()) :: list(ServerGroup.t())
+  defdelegate list_server_groups(auth), to: @implementation
 
   @spec fetch_server(Authentication.t(), UUID.t()) ::
           {:ok, Server.t()} | {:error, :server_not_found}

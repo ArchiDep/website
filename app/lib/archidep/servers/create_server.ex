@@ -13,10 +13,9 @@ defmodule ArchiDep.Servers.CreateServer do
   def validate_server(auth, data) do
     authorize!(auth, Policy, :servers, :validate_server, data)
 
-    user = Authentication.fetch_user_account(auth)
     owner = ServerOwner.fetch_authenticated(auth)
 
-    new_server(auth, data, user, owner)
+    new_server(auth, data, owner)
   end
 
   @spec create_server(Authentication.t(), Types.create_server_data()) ::
@@ -26,11 +25,10 @@ defmodule ArchiDep.Servers.CreateServer do
   def create_server(auth, data) do
     authorize!(auth, Policy, :servers, :create_server, data)
 
-    user = Authentication.fetch_user_account(auth)
     owner = ServerOwner.fetch_authenticated(auth)
 
     case Multi.new()
-         |> Multi.insert(:server, new_server(auth, data, user, owner))
+         |> Multi.insert(:server, new_server(auth, data, owner))
          |> Multi.merge(&increase_active_server_count(owner, &1.server))
          |> Multi.insert(:stored_event, &server_created(auth, &1.server))
          |> Repo.transaction() do
@@ -43,11 +41,11 @@ defmodule ArchiDep.Servers.CreateServer do
     end
   end
 
-  defp new_server(auth, data, user, owner) do
+  defp new_server(auth, data, owner) do
     if has_role?(auth, :root) do
-      Server.new(data, user)
+      Server.new(data, owner)
     else
-      Server.new_group_member_server(data, user, owner)
+      Server.new_group_member_server(data, owner)
     end
   end
 

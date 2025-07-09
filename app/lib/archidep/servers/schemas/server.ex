@@ -2,8 +2,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
-  alias ArchiDep.Accounts.Schemas.UserAccount
-  alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Types
@@ -23,10 +22,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
           ssh_port: 1..65_535 | nil,
           secret_key: binary(),
           active: boolean(),
-          class: Class.t() | NotLoaded,
-          class_id: UUID.t(),
-          user_account: UserAccount.t() | NotLoaded,
-          user_account_id: UUID.t(),
+          group: ServerGroup.t() | NotLoaded,
+          group_id: UUID.t(),
+          owner: ServerOwner.t() | NotLoaded,
+          owner_id: UUID.t(),
           expected_properties: ServerProperties.t() | NotLoaded,
           expected_properties_id: UUID.t(),
           last_known_properties: ServerProperties.t() | nil | NotLoaded,
@@ -46,8 +45,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:ssh_port, :integer)
     field(:secret_key, :binary)
     field(:active, :boolean)
-    belongs_to(:class, Class)
-    belongs_to(:user_account, UserAccount)
+    belongs_to(:group, ServerGroup, source: :class_id)
+    belongs_to(:owner, ServerOwner, source: :user_account_id)
     belongs_to(:expected_properties, ServerProperties)
     belongs_to(:last_known_properties, ServerProperties)
     # Common metadata
@@ -57,14 +56,13 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:updated_at, :utc_datetime_usec)
   end
 
-  # FIXME: track changes to the user account
+  # FIXME: track changes to the group and owner
   @spec active?(t(), DateTime.t()) :: boolean()
-  def active?(%__MODULE__{active: active, class: class, user_account: user_account}, now),
+  def active?(%__MODULE__{active: active, group: group, owner: owner}, now),
     do:
-      active and Class.active?(class, now) and UserAccount.active?(user_account, now) and
-        (Enum.member?(user_account.roles, :root) or
-           (Enum.member?(user_account.roles, :student) and user_account.preregistered_user != nil and
-              user_account.preregistered_user.group_id == class.id))
+      active and ServerGroup.active?(group, now) and ServerOwner.active?(owner, now) and
+        (owner.group_member == nil or
+           (owner.group_member != nil and owner.group_member.group_id == group.id))
 
   @spec name_or_default(t()) :: String.t()
   def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
@@ -81,24 +79,25 @@ defmodule ArchiDep.Servers.Schemas.Server do
     Repo.all(
       from(s in __MODULE__,
         distinct: true,
-        join: ua in assoc(s, :user_account),
-        left_join: pu in assoc(ua, :preregistered_user),
-        join: c in assoc(s, :class),
-        join: esp in assoc(c, :expected_server_properties),
+        join: o in assoc(s, :owner),
+        left_join: ogm in assoc(o, :group_member),
+        left_join: ogmg in assoc(ogm, :group),
+        join: g in assoc(s, :group),
+        join: gesp in assoc(g, :expected_server_properties),
         join: ep in assoc(s, :expected_properties),
         left_join: lkp in assoc(s, :last_known_properties),
         # TODO: put query fragment determining whether a user is active in the user account schema
         where:
-          s.active and ua.active and
-            (:root in ua.roles or
-               (pu.active and pu.class_id == c.id and c.active == true and
-                  (is_nil(c.start_date) or c.start_date <= ^day) and
-                  (is_nil(c.end_date) or c.end_date >= ^day))),
+          s.active and o.active and
+            (is_nil(o.group_member_id) or
+               (ogm.active and ogm.group_id == g.id and g.active == true and
+                  (is_nil(g.start_date) or g.start_date <= ^day) and
+                  (is_nil(g.end_date) or g.end_date >= ^day))),
         preload: [
-          class: {c, expected_server_properties: esp},
+          group: {g, expected_server_properties: gesp},
           expected_properties: ep,
           last_known_properties: lkp,
-          user_account: ua
+          owner: {o, group_member: {ogm, group: ogmg}}
         ]
       )
     )
@@ -108,19 +107,19 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def fetch_server(id) do
     case Repo.one(
            from(s in __MODULE__,
-             join: c in assoc(s, :class),
-             join: esp in assoc(c, :expected_server_properties),
-             join: ua in assoc(s, :user_account),
-             left_join: pu in assoc(ua, :preregistered_user),
-             left_join: ug in assoc(pu, :group),
+             join: o in assoc(s, :owner),
+             left_join: ogm in assoc(o, :group_member),
+             left_join: ogmg in assoc(ogm, :group),
+             join: g in assoc(s, :group),
+             join: gesp in assoc(g, :expected_server_properties),
              join: ep in assoc(s, :expected_properties),
              left_join: lkp in assoc(s, :last_known_properties),
              where: s.id == ^id,
              preload: [
-               class: {c, expected_server_properties: esp},
+               group: {g, expected_server_properties: gesp},
                expected_properties: ep,
                last_known_properties: lkp,
-               user_account: {ua, preregistered_user: {pu, group: ug}}
+               owner: {o, group_member: {ogm, group: ogmg}}
              ]
            )
          ) do
@@ -132,8 +131,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end
   end
 
-  @spec new(Types.create_server_data(), UserAccount.t()) :: Changeset.t(t())
-  def new(data, user) do
+  @spec new(Types.create_server_data(), ServerOwner.t()) :: Changeset.t(t())
+  def new(data, owner) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
@@ -144,14 +143,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :username,
       :ssh_port,
       :active,
-      :class_id,
+      :group_id,
       :app_username
     ])
     |> cast_assoc(:expected_properties, with: &ServerProperties.new(&1, id, &2))
     |> change(
       id: id,
       secret_key: :crypto.strong_rand_bytes(50),
-      user_account_id: user.id,
+      owner_id: owner.id,
       version: 1,
       created_at: now,
       updated_at: now
@@ -159,9 +158,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_new_server()
   end
 
-  @spec new_group_member_server(Types.create_server_data(), UserAccount.t(), ServerOwner.t()) ::
+  @spec new_group_member_server(Types.create_server_data(), ServerOwner.t()) ::
           Changeset.t(t())
-  def new_group_member_server(data, user, owner) do
+  def new_group_member_server(data, owner) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
@@ -179,8 +178,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> change(
       id: id,
       secret_key: :crypto.strong_rand_bytes(50),
-      user_account_id: user.id,
-      class_id: user.student.class_id,
+      owner_id: owner.id,
+      group_id: owner.group_member.group_id,
       app_username: "archidep",
       version: 1,
       created_at: now,
@@ -281,10 +280,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate()
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
-      class_id = get_field(changeset, :class_id)
+      group_id = get_field(changeset, :group_id)
 
       from(s in __MODULE__,
-        where: s.name == ^name and s.class_id == ^class_id
+        where: s.name == ^name and s.group_id == ^group_id
       )
     end)
     |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
@@ -301,10 +300,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_required([:expected_properties_id])
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
-      class_id = get_field(changeset, :class_id)
+      group_id = get_field(changeset, :group_id)
 
       from(s in __MODULE__,
-        where: s.id != ^id and s.name == ^name and s.class_id == ^class_id
+        where: s.id != ^id and s.name == ^name and s.group_id == ^group_id
       )
     end)
     |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
@@ -326,7 +325,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :username,
       :secret_key,
       :active,
-      :class_id,
+      :group_id,
       :app_username,
       :expected_properties
     ])
@@ -335,7 +334,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
     |> unique_constraint(:ip_address)
-    |> assoc_constraint(:user_account)
+    |> assoc_constraint(:owner)
     |> validate_length(:app_username, max: 32)
     |> validate_username_and_app_username()
   end

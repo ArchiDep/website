@@ -7,8 +7,6 @@ defmodule ArchiDep.Students.Schemas.Class do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
-  alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Students.Types
 
   @primary_key {:id, :binary_id, []}
@@ -21,10 +19,6 @@ defmodule ArchiDep.Students.Schemas.Class do
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
           active: boolean(),
-          servers: list(Server.t()) | NotLoaded.t(),
-          servers_count: non_neg_integer() | nil,
-          expected_server_properties: ServerProperties.t() | NotLoaded.t(),
-          expected_server_properties_id: UUID.t() | nil,
           # Common metadata
           version: pos_integer(),
           created_at: DateTime.t(),
@@ -36,9 +30,6 @@ defmodule ArchiDep.Students.Schemas.Class do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean)
-    field(:servers_count, :integer, virtual: true)
-    belongs_to(:expected_server_properties, ServerProperties)
-    has_many(:servers, Server)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
@@ -51,23 +42,9 @@ defmodule ArchiDep.Students.Schemas.Class do
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
 
-  @spec has_servers?(t()) :: boolean()
-  def has_servers?(%__MODULE__{servers_count: count}), do: count != nil and count >= 1
-
   @spec fetch_class(UUID.t()) :: {:ok, t()} | {:error, :class_not_found}
   def fetch_class(id) do
-    query =
-      from(
-        c in __MODULE__,
-        where: c.id == ^id,
-        left_join: s in assoc(c, :servers),
-        join: esp in assoc(c, :expected_server_properties),
-        group_by: [c.id, esp.id],
-        select: merge(c, %{servers_count: count(s.id)}),
-        preload: [expected_server_properties: esp]
-      )
-
-    case Repo.one(query) do
+    case Repo.one(from c in __MODULE__, where: c.id == ^id) do
       nil ->
         {:error, :class_not_found}
 
@@ -88,7 +65,6 @@ defmodule ArchiDep.Students.Schemas.Class do
       :end_date,
       :active
     ])
-    |> cast_assoc(:expected_server_properties, with: &ServerProperties.new(&1, id, &2))
     |> change(
       id: id,
       version: 1,
@@ -110,13 +86,6 @@ defmodule ArchiDep.Students.Schemas.Class do
     id = class.id
     now = DateTime.utc_now()
 
-    data =
-      Map.put(
-        data,
-        :expected_server_properties,
-        Map.put(data.expected_server_properties, :id, id)
-      )
-
     class
     |> cast(data, [
       :name,
@@ -124,11 +93,9 @@ defmodule ArchiDep.Students.Schemas.Class do
       :end_date,
       :active
     ])
-    |> cast_assoc(:expected_server_properties, with: &ServerProperties.update/2)
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate()
-    |> validate_required([:expected_server_properties_id])
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
 
@@ -151,7 +118,7 @@ defmodule ArchiDep.Students.Schemas.Class do
   defp validate(changeset) do
     changeset
     |> update_change(:name, &trim/1)
-    |> validate_required([:name, :active, :expected_server_properties])
+    |> validate_required([:name, :active])
     |> validate_length(:name, max: 50)
     |> unique_constraint(:name, name: :classes_unique_name_index)
     |> validate_start_and_end_dates()

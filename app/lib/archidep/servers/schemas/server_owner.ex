@@ -7,6 +7,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
 
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Errors.ServerOwnerNotFoundError
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
@@ -14,6 +15,9 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
+          active: boolean(),
+          group_member: ServerGroupMember.t() | nil | NotLoaded.t(),
+          group_member_id: UUID.t() | nil,
           active_server_count: non_neg_integer(),
           active_server_count_lock: pos_integer()
         }
@@ -21,16 +25,35 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
   @active_server_limit 2
 
   schema "user_accounts" do
+    field(:active, :boolean)
+    belongs_to(:group_member, ServerGroupMember, source: :student_id)
     field(:active_server_count, :integer)
     field(:active_server_count_lock, :integer)
   end
+
+  @spec active?(t(), DateTime.t()) :: boolean
+  def active?(%__MODULE__{active: true, group_member: nil}, _now), do: true
+
+  def active?(
+        %__MODULE__{active: true, group_member: group_member},
+        now
+      ),
+      do: ServerGroupMember.active?(group_member, now)
+
+  def active?(%__MODULE__{}, _now), do: false
 
   @spec active_server_limit() :: pos_integer()
   def active_server_limit, do: @active_server_limit
 
   @spec fetch_authenticated(Authentication.t()) :: t()
   def fetch_authenticated(auth) do
-    case Repo.one(from(so in __MODULE__, where: so.id == ^auth.principal.id)) do
+    case Repo.one(
+           from(so in __MODULE__,
+             left_join: gm in assoc(so, :group_member),
+             where: so.id == ^auth.principal.id,
+             preload: [group_member: gm]
+           )
+         ) do
       nil ->
         raise ServerOwnerNotFoundError
 

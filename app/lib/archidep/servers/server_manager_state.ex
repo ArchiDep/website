@@ -12,13 +12,13 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerConnectionState
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UpdateServer
-  alias ArchiDep.Students.Schemas.Class
   alias Ecto.Changeset
   alias Ecto.UUID
   alias Phoenix.Token
@@ -795,42 +795,43 @@ defmodule ArchiDep.Servers.ServerManagerState do
     state
   end
 
-  @spec class_updated(t(), Class.t()) :: t()
-  def class_updated(
-        %__MODULE__{
-          server: %Server{id: server_id, class: %Class{id: class_id, version: version}},
-          problems: problems
-        } = state,
-        %Class{id: class_id, version: new_version} = class
-      )
-      when new_version > version do
-    Logger.info(
-      "Server manager for server #{server_id} received class update to version #{new_version}"
-    )
+  # FIXME decouple: handle server group updates
+  # @spec class_updated(t(), Class.t()) :: t()
+  # def class_updated(
+  #       %__MODULE__{
+  #         server: %Server{id: server_id, class: %Class{id: class_id, version: version}},
+  #         problems: problems
+  #       } = state,
+  #       %Class{id: class_id, version: new_version} = class
+  #     )
+  #     when new_version > version do
+  #   Logger.info(
+  #     "Server manager for server #{server_id} received class update to version #{new_version}"
+  #   )
 
-    new_server = %Server{
-      state.server
-      | class: class
-    }
+  #   new_server = %Server{
+  #     state.server
+  #     | class: class
+  #   }
 
-    auto_activate_or_deactivate(%__MODULE__{
-      state
-      | server: new_server,
-        # TODO: do not add update tracking action if there is already one
-        actions: [update_tracking()],
-        problems: detect_server_properties_mismatches(problems, new_server)
-    })
-  end
+  #   auto_activate_or_deactivate(%__MODULE__{
+  #     state
+  #     | server: new_server,
+  #       # TODO: do not add update tracking action if there is already one
+  #       actions: [update_tracking()],
+  #       problems: detect_server_properties_mismatches(problems, new_server)
+  #   })
+  # end
 
-  @spec class_updated(t(), Class.t()) :: t()
-  def class_updated(
-        %__MODULE__{
-          server: %Server{class: %Class{id: class_id}}
-        } = state,
-        %Class{id: class_id}
-      ) do
-    state
-  end
+  # @spec class_updated(t(), Class.t()) :: t()
+  # def class_updated(
+  #       %__MODULE__{
+  #         server: %Server{class: %Class{id: class_id}}
+  #       } = state,
+  #       %Class{id: class_id}
+  #     ) do
+  #   state
+  # end
 
   @spec connection_crashed(t(), pid(), term()) :: t()
   def connection_crashed(
@@ -1064,7 +1065,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
   end
 
   defp detect_server_properties_mismatches(problems, %Server{
-         class: %Class{expected_server_properties: expected_server_properties},
+         group: %ServerGroup{expected_server_properties: expected_server_properties},
          expected_properties: expected_properties_overrides,
          last_known_properties: last_known_properties
        })

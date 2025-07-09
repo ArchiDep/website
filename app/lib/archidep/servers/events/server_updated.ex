@@ -13,7 +13,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
     :ip_address,
     :username,
     :ssh_port,
-    :user_account_id,
+    :group_id,
     :expected_properties
   ]
   defstruct [
@@ -22,7 +22,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
     :ip_address,
     :username,
     :ssh_port,
-    :user_account_id,
+    :group_id,
     :expected_properties
   ]
 
@@ -32,7 +32,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
           ip_address: String.t(),
           username: String.t(),
           ssh_port: 1..65_535 | nil,
-          user_account_id: UUID.t(),
+          group_id: UUID.t(),
           expected_properties: %{
             hostname: String.t() | nil,
             machine_id: String.t() | nil,
@@ -58,7 +58,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
       ip_address: ip_address,
       username: username,
       ssh_port: ssh_port,
-      user_account_id: user_account_id,
+      group_id: group_id,
       expected_properties: %ServerProperties{
         hostname: expected_hostname,
         machine_id: expected_machine_id,
@@ -82,7 +82,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
       ip_address: to_string(:inet.ntoa(ip_address.address)),
       username: username,
       ssh_port: ssh_port,
-      user_account_id: user_account_id,
+      group_id: group_id,
       expected_properties: %{
         hostname: expected_hostname,
         machine_id: expected_machine_id,

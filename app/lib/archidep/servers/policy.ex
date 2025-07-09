@@ -5,7 +5,7 @@ defmodule ArchiDep.Servers.Policy do
 
   @impl Policy
 
-  # Students can validate servers for themselves (in their own class).
+  # Server group members can validate servers for their own group.
   def authorize(
         :servers,
         :validate_server,
@@ -16,7 +16,7 @@ defmodule ArchiDep.Servers.Policy do
             preregistered_user: preregistered_user
           }
         },
-        %{class_id: nil}
+        %{group_id: nil}
       )
       when not is_nil(preregistered_user),
       do: Enum.member?(roles, :student)
@@ -30,7 +30,7 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
-  # Students can create servers for themselves (in their own class).
+  # Server group members can create servers in their own group.
   def authorize(
         :servers,
         :create_server,
@@ -41,7 +41,7 @@ defmodule ArchiDep.Servers.Policy do
             preregistered_user: preregistered_user
           }
         },
-        %{class_id: nil}
+        %{group_id: nil}
       )
       when not is_nil(preregistered_user),
       do: Enum.member?(roles, :student)
@@ -55,7 +55,7 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
 
-  # Students and root users can list their servers.
+  # Server group members and root users can list their own servers.
   def authorize(
         :servers,
         :list_my_servers,
@@ -64,12 +64,21 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
 
-  # Students and root users can fetch a server that belongs to them.
+  # Root users can list server groups.
+  def authorize(
+        :servers,
+        :list_server_groups,
+        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
+  # Server group members and root users can fetch a server that belongs to them.
   def authorize(
         :servers,
         :fetch_server,
         %Authentication{principal: %UserAccount{id: principal_id, active: true, roles: roles}},
-        %Server{user_account_id: principal_id}
+        %Server{owner_id: principal_id}
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
 
@@ -82,12 +91,12 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
-  # Students can retry connecting to their own servers.
+  # Server group members can retry connecting to their own servers.
   def authorize(
         :servers,
         :retry_connecting,
         %Authentication{principal: %UserAccount{id: principal_id, active: true, roles: roles}},
-        %Server{user_account_id: principal_id}
+        %Server{owner_id: principal_id}
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
 
@@ -109,12 +118,12 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
-  # Students and root users can validate their own existing servers.
+  # Server group members and root users can validate their own existing servers.
   def authorize(
         :servers,
         :validate_existing_server,
         %Authentication{principal: %UserAccount{id: principal_id, active: true, roles: roles}},
-        %Server{user_account_id: principal_id}
+        %Server{owner_id: principal_id}
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
 
@@ -127,12 +136,12 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
-  # Student and root users can update their own servers.
+  # Server group members and root users can update their own servers.
   def authorize(
         :servers,
         :update_server,
         %Authentication{principal: %UserAccount{id: principal_id, active: true, roles: roles}},
-        %Server{user_account_id: principal_id}
+        %Server{owner_id: principal_id}
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
 

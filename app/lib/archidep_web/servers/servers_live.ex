@@ -3,27 +3,26 @@ defmodule ArchiDepWeb.Servers.ServersLive do
 
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents
-  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Servers
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.ServerTracker
-  alias ArchiDep.Students
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
   @impl true
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
 
-    [servers, classes] =
-      if has_role?(auth, :root) do
-        Task.await_many([
-          Task.async(fn -> Servers.list_my_servers(auth) end),
-          Task.async(fn -> Students.list_classes(auth) end)
-        ])
-      else
-        [Servers.list_my_servers(auth), nil]
-      end
+    [owner, servers, groups] =
+      Task.await_many([
+        Task.async(fn -> ServerOwner.fetch_authenticated(auth) end),
+        Task.async(fn -> Servers.list_my_servers(auth) end),
+        if(has_role?(auth, :root),
+          do: Task.async(fn -> Servers.list_server_groups(auth) end),
+          else: Task.completed(nil)
+        )
+      ])
 
     tracker =
       if connected?(socket) do
@@ -48,7 +47,8 @@ defmodule ArchiDepWeb.Servers.ServersLive do
       servers: servers,
       server_state_map: ServerTracker.server_state_map(servers),
       server_tracker: tracker,
-      classes: classes
+      owner: owner,
+      groups: groups
     )
     |> ok()
   end
@@ -77,10 +77,10 @@ defmodule ArchiDepWeb.Servers.ServersLive do
 
   @impl true
   def handle_info(
-        {:server_created, %Server{user_account_id: user_id} = created_server},
+        {:server_created, %Server{owner_id: owner_id} = created_server},
         %{
           assigns: %{
-            auth: %Authentication{principal: %UserAccount{id: user_id}},
+            owner: %ServerOwner{id: owner_id},
             servers: servers,
             server_state_map: server_state_map,
             server_tracker: tracker

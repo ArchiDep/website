@@ -4,7 +4,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
   import Ecto.Changeset
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Types
-  alias ArchiDepWeb.Servers.ServerPropertiesForm
   alias Ecto.Changeset
 
   @primary_key false
@@ -13,7 +12,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean, default: true)
-    embeds_one(:expected_server_properties, ServerPropertiesForm, on_replace: :update)
   end
 
   @spec create_changeset(map) :: Changeset.t(Types.class_data())
@@ -25,7 +23,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       :end_date,
       :active
     ])
-    |> cast_embed(:expected_server_properties, with: &ServerPropertiesForm.changeset/2)
     |> validate_required([:name, :active])
   end
 
@@ -35,8 +32,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       name: class.name,
       start_date: class.start_date,
       end_date: class.end_date,
-      active: class.active,
-      expected_server_properties: ServerPropertiesForm.from(class.expected_server_properties)
+      active: class.active
     }
     |> cast(params, [
       :name,
@@ -44,17 +40,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       :end_date,
       :active
     ])
-    |> cast_embed(:expected_server_properties, with: &ServerPropertiesForm.changeset/2)
     |> validate_required([:name, :active])
   end
 
   @spec to_class_data(struct()) :: Types.class_data()
-  def to_class_data(%__MODULE__{} = form),
-    do:
-      form
-      |> Map.from_struct()
-      |> Map.put(
-        :expected_server_properties,
-        ServerPropertiesForm.to_data(form.expected_server_properties)
-      )
+  def to_class_data(%__MODULE__{} = form), do: Map.from_struct(form)
 end

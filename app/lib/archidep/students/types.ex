@@ -1,13 +1,11 @@
 defmodule ArchiDep.Students.Types do
-  alias ArchiDep.Servers
   alias Ecto.UUID
 
   @type class_data :: %{
           name: String.t(),
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
-          active: boolean(),
-          expected_server_properties: Servers.Types.server_properties()
+          active: boolean()
         }
 
   @type create_student_data :: %{
