@@ -8,7 +8,7 @@
       id="edit-server-form"
       auth={@auth}
       form={@form}
-      class={@server.class}
+      group={@server.group}
       title={gettext("Edit Server")}
       busy={ServerRealTimeState.busy?(@state)}
       on_submit="update"

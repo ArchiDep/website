@@ -20,7 +20,6 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
           end_date: Date.t() | nil,
           active: boolean(),
           servers: list(Server.t()) | NotLoaded.t(),
-          servers_count: non_neg_integer() | nil,
           expected_server_properties: ServerProperties.t() | nil | NotLoaded.t(),
           expected_server_properties_id: UUID.t() | nil,
           # Common metadata
@@ -34,7 +33,6 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean)
-    field(:servers_count, :integer, virtual: true)
     belongs_to(:expected_server_properties, ServerProperties)
     has_many(:servers, Server, foreign_key: :group_id)
     field(:version, :integer)
@@ -49,8 +47,26 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
 
-  @spec has_servers?(t()) :: boolean()
-  def has_servers?(%__MODULE__{servers_count: count}), do: count != nil and count >= 1
+  @spec refresh(t(), map()) :: t()
+  def refresh(%__MODULE__{id: id, version: current_version} = group, %{
+        id: id,
+        name: name,
+        start_date: start_date,
+        end_date: end_date,
+        active: active,
+        version: version,
+        updated_at: updated_at
+      })
+      when version > current_version,
+      do: %__MODULE__{
+        group
+        | name: name,
+          start_date: start_date,
+          end_date: end_date,
+          active: active,
+          version: version,
+          updated_at: updated_at
+      }
 
   @spec update_expected_server_properties(t(), Types.server_properties()) :: Changeset.t(t())
   def update_expected_server_properties(group, data) do

@@ -2,7 +2,6 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Helpers.DialogHelpers
-  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Students
   alias ArchiDep.Students.Schemas.Student
 

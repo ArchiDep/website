@@ -441,14 +441,16 @@ defmodule ArchiDep.Servers.ServerManagerState do
 
             %__MODULE__{
               state
-              | ansible_playbook: {playbook_run, nil},
+              | server: updated_server,
+                ansible_playbook: {playbook_run, nil},
                 actions: [{:run_playbook, playbook_run}, update_tracking()],
                 problems: detect_server_properties_mismatches(problems, updated_server)
             }
           else
             %__MODULE__{
               state
-              | actions: [update_tracking()],
+              | server: updated_server,
+                actions: [update_tracking()],
                 problems: detect_server_properties_mismatches(problems, updated_server)
             }
           end
@@ -691,6 +693,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
             ),
           server: set_up_server,
           username: new_username,
+          ansible_playbook: nil,
           actions:
             [
               {:connect,
@@ -795,43 +798,45 @@ defmodule ArchiDep.Servers.ServerManagerState do
     state
   end
 
-  # FIXME decouple: handle server group updates
-  # @spec class_updated(t(), Class.t()) :: t()
-  # def class_updated(
-  #       %__MODULE__{
-  #         server: %Server{id: server_id, class: %Class{id: class_id, version: version}},
-  #         problems: problems
-  #       } = state,
-  #       %Class{id: class_id, version: new_version} = class
-  #     )
-  #     when new_version > version do
-  #   Logger.info(
-  #     "Server manager for server #{server_id} received class update to version #{new_version}"
-  #   )
+  @spec group_updated(t(), map) :: t()
+  def group_updated(
+        %__MODULE__{
+          server: %Server{
+            id: server_id,
+            group: %ServerGroup{id: group_id, version: current_version} = current_group
+          },
+          problems: problems
+        } = state,
+        %{id: group_id, version: version} = group
+      )
+      when version > current_version do
+    Logger.info(
+      "Server manager for server #{server_id} received group update to version #{version}"
+    )
 
-  #   new_server = %Server{
-  #     state.server
-  #     | class: class
-  #   }
+    new_server = %Server{
+      state.server
+      | group: ServerGroup.refresh(current_group, group)
+    }
 
-  #   auto_activate_or_deactivate(%__MODULE__{
-  #     state
-  #     | server: new_server,
-  #       # TODO: do not add update tracking action if there is already one
-  #       actions: [update_tracking()],
-  #       problems: detect_server_properties_mismatches(problems, new_server)
-  #   })
-  # end
+    auto_activate_or_deactivate(%__MODULE__{
+      state
+      | server: new_server,
+        # TODO: do not add update tracking action if there is already one
+        actions: [update_tracking()],
+        problems: detect_server_properties_mismatches(problems, new_server)
+    })
+  end
 
-  # @spec class_updated(t(), Class.t()) :: t()
-  # def class_updated(
-  #       %__MODULE__{
-  #         server: %Server{class: %Class{id: class_id}}
-  #       } = state,
-  #       %Class{id: class_id}
-  #     ) do
-  #   state
-  # end
+  @spec group_updated(t(), map) :: t()
+  def group_updated(
+        %__MODULE__{
+          server: %Server{group: %ServerGroup{id: group_id}}
+        } = state,
+        %{id: group_id}
+      ) do
+    state
+  end
 
   @spec connection_crashed(t(), pid(), term()) :: t()
   def connection_crashed(

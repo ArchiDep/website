@@ -2,15 +2,15 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
   use ArchiDepWeb, :component
 
   import ArchiDepWeb.Components.FormComponents
-  alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Servers.Schemas.ServerGroup
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
   attr :id, :string, doc: "the id of the form"
   attr :auth, Authentication, doc: "the authentication context"
   attr :form, Form, doc: "the form to render"
-  attr :class, Class, default: nil, doc: "the class to which the server belongs"
-  attr :classes, :list, default: nil, doc: "the list of classes to choose from"
+  attr :group, ServerGroup, default: nil, doc: "the group to which the server belongs"
+  attr :groups, :list, default: nil, doc: "a list of server groups to choose from"
   attr :title, :string, doc: "the title of the form"
 
   attr :busy, :boolean,
@@ -27,14 +27,14 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
 
   def server_form(assigns) do
     form = assigns[:form]
-    provided_class = assigns[:class]
-    provided_classes = assigns[:classes] || []
+    provided_group = assigns[:group]
+    provided_groups = assigns[:groups] || []
 
     assigns =
       assigns
-      |> assign_new(:selected_class, fn ->
-        provided_class ||
-          Enum.find(provided_classes, fn class -> class.id == form[:class_id].value end)
+      |> assign_new(:selected_group, fn ->
+        provided_group ||
+          Enum.find(provided_groups, fn group -> group.id == form[:group_id].value end)
       end)
 
     ~H"""
@@ -55,24 +55,24 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:name]} />
 
-        <%= if @classes do %>
-          <label class="fieldset-label required mt-2">{gettext("Class")}</label>
+        <%= if @groups do %>
+          <label class="fieldset-label required mt-2">{gettext("Group")}</label>
           <select
-            id={@form[:class_id].id}
+            id={@form[:group_id].id}
             class="select w-full"
-            name={@form[:class_id].name}
-            value={@form[:class_id].value}
+            name={@form[:group_id].name}
+            value={@form[:group_id].value}
           >
-            <option value="">{gettext("Select a class")}</option>
+            <option value="">{gettext("Select a group")}</option>
             <option
-              :for={class <- @classes}
-              value={class.id}
-              selected={@form[:class_id].value == class.id}
+              :for={group <- @groups}
+              value={group.id}
+              selected={@form[:group_id].value == group.id}
             >
-              {class.name}
+              {group.name}
             </option>
           </select>
-          <.errors_for field={@form[:class_id]} />
+          <.errors_for field={@form[:group_id]} />
         <% end %>
 
         <label class="fieldset-label mt-2">
@@ -148,7 +148,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           <div role="alert" class="alert alert-info alert-soft">
             <span class="text-sm">
               {gettext(
-                "Warnings will be issued if the server does not meet these expected properties. Default expected properties are inherited from the server's class, but can be overridden here (use 0 or * to unset an expected property)."
+                "Warnings will be issued if the server does not meet these expected properties. Default expected properties are inherited from the server's group, but can be overridden here (use 0 or * to unset an expected property)."
               )}
             </span>
           </div>
@@ -164,19 +164,19 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     "input w-full",
                     inherited_input_class(
                       expected_properties_form,
-                      @selected_class,
+                      @selected_group,
                       :cpus
                     )
                   ]}
                   name={expected_properties_form[:cpus].name}
                   value={expected_properties_form[:cpus].value}
-                  min={if @class == nil, do: "1", else: "0"}
-                  placeholder={expected_placeholder(@selected_class, :cpus, gettext("e.g. 1"))}
+                  min={if @group == nil, do: "1", else: "0"}
+                  placeholder={expected_placeholder(@selected_group, :cpus, gettext("e.g. 1"))}
                 />
                 <.errors_for field={expected_properties_form[:cpus]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :cpus
                 )}
               </div>
@@ -190,19 +190,19 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     "input w-full",
                     inherited_input_class(
                       expected_properties_form,
-                      @selected_class,
+                      @selected_group,
                       :cores
                     )
                   ]}
                   name={expected_properties_form[:cores].name}
                   value={expected_properties_form[:cores].value}
-                  min={if @class == nil, do: "1", else: "0"}
-                  placeholder={expected_placeholder(@selected_class, :cores, gettext("e.g. 2"))}
+                  min={if @group == nil, do: "1", else: "0"}
+                  placeholder={expected_placeholder(@selected_group, :cores, gettext("e.g. 2"))}
                 />
                 <.errors_for field={expected_properties_form[:cores]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :cores
                 )}
               </div>
@@ -216,19 +216,19 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     "input w-full",
                     inherited_input_class(
                       expected_properties_form,
-                      @selected_class,
+                      @selected_group,
                       :vcpus
                     )
                   ]}
                   name={expected_properties_form[:vcpus].name}
                   value={expected_properties_form[:vcpus].value}
-                  min={if @class == nil, do: "1", else: "0"}
-                  placeholder={expected_placeholder(@selected_class, :vcpus, gettext("e.g. 2"))}
+                  min={if @group == nil, do: "1", else: "0"}
+                  placeholder={expected_placeholder(@selected_group, :vcpus, gettext("e.g. 2"))}
                 />
                 <.errors_for field={expected_properties_form[:vcpus]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :vcpus
                 )}
               </div>
@@ -241,7 +241,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   "input w-full",
                   inherited_input_class(
                     expected_properties_form,
-                    @selected_class,
+                    @selected_group,
                     :memory
                   )
                 ]}>
@@ -250,10 +250,10 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     id={expected_properties_form[:memory].id}
                     name={expected_properties_form[:memory].name}
                     value={expected_properties_form[:memory].value}
-                    min={if @class == nil, do: "1", else: "0"}
+                    min={if @group == nil, do: "1", else: "0"}
                     placeholder={
                       expected_placeholder(
-                        @selected_class,
+                        @selected_group,
                         :memory,
                         gettext("e.g. 2048")
                       )
@@ -264,7 +264,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 <.errors_for field={expected_properties_form[:memory]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :memory
                 )}
               </div>
@@ -275,7 +275,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   "input w-full",
                   inherited_input_class(
                     expected_properties_form,
-                    @selected_class,
+                    @selected_group,
                     :swap
                   )
                 ]}>
@@ -284,15 +284,15 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     id={expected_properties_form[:swap].id}
                     name={expected_properties_form[:swap].name}
                     value={expected_properties_form[:swap].value}
-                    min={if @class == nil, do: "1", else: "0"}
-                    placeholder={expected_placeholder(@selected_class, :swap, gettext("e.g. 1024"))}
+                    min={if @group == nil, do: "1", else: "0"}
+                    placeholder={expected_placeholder(@selected_group, :swap, gettext("e.g. 1024"))}
                   />
                   <span class="label">{gettext("MB")} (±10%)</span>
                 </label>
                 <.errors_for field={expected_properties_form[:swap]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :swap
                 )}
               </div>
@@ -308,7 +308,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     "input w-full",
                     inherited_input_class(
                       expected_properties_form,
-                      @selected_class,
+                      @selected_group,
                       :system
                     )
                   ]}
@@ -316,7 +316,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   value={expected_properties_form[:system].value}
                   placeholder={
                     expected_placeholder(
-                      @selected_class,
+                      @selected_group,
                       :system,
                       gettext("e.g. Linux")
                     )
@@ -325,7 +325,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 <.errors_for field={expected_properties_form[:system]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :system
                 )}
               </div>
@@ -339,7 +339,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     "input w-full",
                     inherited_input_class(
                       expected_properties_form,
-                      @selected_class,
+                      @selected_group,
                       :architecture
                     )
                   ]}
@@ -347,7 +347,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   value={expected_properties_form[:architecture].value}
                   placeholder={
                     expected_placeholder(
-                      @selected_class,
+                      @selected_group,
                       :architecture,
                       gettext("e.g. x86_64")
                     )
@@ -356,7 +356,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 <.errors_for field={expected_properties_form[:architecture]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :architecture
                 )}
               </div>
@@ -370,7 +370,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     "input w-full",
                     inherited_input_class(
                       expected_properties_form,
-                      @selected_class,
+                      @selected_group,
                       :os_family
                     )
                   ]}
@@ -378,7 +378,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   value={expected_properties_form[:os_family].value}
                   placeholder={
                     expected_placeholder(
-                      @selected_class,
+                      @selected_group,
                       :os_family,
                       gettext("e.g. Debian")
                     )
@@ -387,7 +387,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 <.errors_for field={expected_properties_form[:os_family]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :os_family
                 )}
               </div>
@@ -403,7 +403,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     "input w-full",
                     inherited_input_class(
                       expected_properties_form,
-                      @selected_class,
+                      @selected_group,
                       :distribution
                     )
                   ]}
@@ -411,7 +411,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   value={expected_properties_form[:distribution].value}
                   placeholder={
                     expected_placeholder(
-                      @selected_class,
+                      @selected_group,
                       :distribution,
                       gettext("e.g. Ubuntu")
                     )
@@ -420,7 +420,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 <.errors_for field={expected_properties_form[:distribution]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :distribution
                 )}
               </div>
@@ -434,7 +434,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     "input w-full",
                     inherited_input_class(
                       expected_properties_form,
-                      @selected_class,
+                      @selected_group,
                       :distribution_release
                     )
                   ]}
@@ -442,7 +442,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   value={expected_properties_form[:distribution_release].value}
                   placeholder={
                     expected_placeholder(
-                      @selected_class,
+                      @selected_group,
                       :distribution_release,
                       gettext("e.g. noble")
                     )
@@ -451,7 +451,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 <.errors_for field={expected_properties_form[:distribution_release]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :distribution_release
                 )}
               </div>
@@ -465,7 +465,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                     "input w-full",
                     inherited_input_class(
                       expected_properties_form,
-                      @selected_class,
+                      @selected_group,
                       :distribution_version
                     )
                   ]}
@@ -473,7 +473,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                   value={expected_properties_form[:distribution_version].value}
                   placeholder={
                     expected_placeholder(
-                      @selected_class,
+                      @selected_group,
                       :distribution_version,
                       gettext("e.g. 24.04")
                     )
@@ -482,7 +482,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                 <.errors_for field={expected_properties_form[:distribution_version]} />
                 {inherited_notice(
                   expected_properties_form,
-                  @selected_class,
+                  @selected_group,
                   :distribution_version
                 )}
               </div>
@@ -513,15 +513,19 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
 
   defp expected_placeholder(nil, _field, default), do: default
 
-  defp expected_placeholder(selected_class, field, default) do
-    case Map.get(selected_class.expected_server_properties, field) do
+  defp expected_placeholder(selected_group, field, default) do
+    case Map.get(selected_group.expected_server_properties || %{}, field) do
       nil -> default
       value -> value
     end
   end
 
-  defp inherited_input_class(form, selected_class, field) do
-    if selected_class != nil and Map.get(selected_class.expected_server_properties, field) != nil and
+  defp inherited_input_class(_form, nil, _field) do
+    nil
+  end
+
+  defp inherited_input_class(form, selected_group, field) do
+    if Map.get(selected_group.expected_server_properties || %{}, field) != nil and
          form[field].value == nil do
       "border-info/85 text-info"
     else
@@ -529,26 +533,26 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
     end
   end
 
-  defp inherited_notice(form, selected_class, field) do
-    class_value =
-      case selected_class do
+  defp inherited_notice(form, selected_group, field) do
+    group_value =
+      case selected_group do
         nil -> nil
-        class -> Map.get(class.expected_server_properties, field)
+        group -> Map.get(group.expected_server_properties || %{}, field)
       end
 
     assigns = %{
       form: form,
-      class_value: class_value,
+      group_value: group_value,
       field: field
     }
 
     ~H"""
-    <p :if={@class_value != nil} class="label mt-1 italic">
+    <p :if={@group_value != nil} class="label mt-1 italic">
       <%= if @form[@field].value == nil do %>
-        <span class="text-info/85">{gettext("Inherited from class")}</span>
+        <span class="text-info/85">{gettext("Inherited from group")}</span>
       <% else %>
         <span class="text-base-content/50">
-          {gettext("Overridden from class (was {value})", value: @class_value)}
+          {gettext("Overridden from group (was {value})", value: @group_value)}
         </span>
       <% end %>
     </p>

@@ -8,8 +8,8 @@
       id="new-server-form"
       auth={@auth}
       form={@form}
-      class={get_in(@auth.principal.student.class)}
-      classes={@classes}
+      group={get_in(@owner.group_member.group)}
+      groups={@groups}
       title={gettext("New Server")}
       on_submit="create"
       on_close={close()}

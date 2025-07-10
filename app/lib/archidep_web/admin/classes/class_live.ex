@@ -12,77 +12,78 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   alias ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive
   alias ArchiDepWeb.Admin.Classes.NewStudentDialogLive
 
-  @spec expected_cpu(Class.t()) :: String.t()
-  def expected_cpu(class) do
-    [
-      if(class.expected_server_properties.cpus != nil,
-        do:
-          gettext("{count} {count, plural, =1 {CPU} other {CPUs}}",
-            count: class.expected_server_properties.cpus
-          ),
-        else: nil
-      ),
-      if(class.expected_server_properties.cores != nil,
-        do:
-          gettext("{count} {count, plural, =1 {core} other {cores}}",
-            count: class.expected_server_properties.cores
-          ),
-        else: nil
-      ),
-      if(class.expected_server_properties.vcpus != nil,
-        do:
-          gettext("{count} {count, plural, =1 {vCPU} other {vCPUs}}",
-            count: class.expected_server_properties.vcpus
-          ),
-        else: nil
-      )
-    ]
-    |> Enum.reject(&Kernel.is_nil/1)
-    |> Enum.join(", ")
-  end
+  # FIXME decoupling: show expected server properties
+  # @spec expected_cpu(Class.t()) :: String.t()
+  # def expected_cpu(class) do
+  #   [
+  #     if(class.expected_server_properties.cpus != nil,
+  #       do:
+  #         gettext("{count} {count, plural, =1 {CPU} other {CPUs}}",
+  #           count: class.expected_server_properties.cpus
+  #         ),
+  #       else: nil
+  #     ),
+  #     if(class.expected_server_properties.cores != nil,
+  #       do:
+  #         gettext("{count} {count, plural, =1 {core} other {cores}}",
+  #           count: class.expected_server_properties.cores
+  #         ),
+  #       else: nil
+  #     ),
+  #     if(class.expected_server_properties.vcpus != nil,
+  #       do:
+  #         gettext("{count} {count, plural, =1 {vCPU} other {vCPUs}}",
+  #           count: class.expected_server_properties.vcpus
+  #         ),
+  #       else: nil
+  #     )
+  #   ]
+  #   |> Enum.reject(&Kernel.is_nil/1)
+  #   |> Enum.join(", ")
+  # end
 
-  @spec expected_memory(Class.t()) :: String.t()
-  def expected_memory(class) do
-    [
-      {gettext("RAM"), class.expected_server_properties.memory},
-      {gettext("Swap"), class.expected_server_properties.swap}
-    ]
-    |> Enum.filter(fn {_, value} -> value != nil end)
-    |> Enum.map(fn {label, value} -> "#{value} MB #{label}" end)
-    |> Enum.join(", ")
-  end
+  # @spec expected_memory(Class.t()) :: String.t()
+  # def expected_memory(class) do
+  #   [
+  #     {gettext("RAM"), class.expected_server_properties.memory},
+  #     {gettext("Swap"), class.expected_server_properties.swap}
+  #   ]
+  #   |> Enum.filter(fn {_, value} -> value != nil end)
+  #   |> Enum.map(fn {label, value} -> "#{value} MB #{label}" end)
+  #   |> Enum.join(", ")
+  # end
 
-  @spec expected_os(Class.t()) :: String.t()
-  def expected_os(class) do
-    system_and_arch =
-      [
-        class.expected_server_properties.system,
-        class.expected_server_properties.architecture
-      ]
-      |> Enum.filter(&(&1 != nil))
-      |> Enum.join(" ")
+  # @spec expected_os(Class.t()) :: String.t()
+  # def expected_os(class) do
+  #   system_and_arch =
+  #     [
+  #       class.expected_server_properties.system,
+  #       class.expected_server_properties.architecture
+  #     ]
+  #     |> Enum.filter(&(&1 != nil))
+  #     |> Enum.join(" ")
 
-    os_family =
-      case class.expected_server_properties.os_family do
-        nil -> nil
-        os_family -> gettext("{os_family} family", os_family: os_family)
-      end
+  #   os_family =
+  #     case class.expected_server_properties.os_family do
+  #       nil -> nil
+  #       os_family -> gettext("{os_family} family", os_family: os_family)
+  #     end
 
-    [system_and_arch, os_family]
-    |> Enum.filter(&(&1 != nil and &1 != ""))
-    |> Enum.join(", ")
-  end
+  #   [system_and_arch, os_family]
+  #   |> Enum.filter(&(&1 != nil and &1 != ""))
+  #   |> Enum.join(", ")
+  # end
 
-  @spec expected_distribution(Class.t()) :: String.t()
-  def expected_distribution(class) do
-    [
-      class.expected_server_properties.distribution,
-      class.expected_server_properties.distribution_version,
-      class.expected_server_properties.distribution_release
-    ]
-    |> Enum.filter(&(&1 != nil))
-    |> Enum.join(" ")
-  end
+  # @spec expected_distribution(Class.t()) :: String.t()
+  # def expected_distribution(class) do
+  #   [
+  #     class.expected_server_properties.distribution,
+  #     class.expected_server_properties.distribution_version,
+  #     class.expected_server_properties.distribution_release
+  #   ]
+  #   |> Enum.filter(&(&1 != nil))
+  #   |> Enum.join(" ")
+  # end
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do

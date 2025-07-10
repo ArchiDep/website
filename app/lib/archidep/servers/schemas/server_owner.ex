@@ -50,8 +50,10 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
     case Repo.one(
            from(so in __MODULE__,
              left_join: gm in assoc(so, :group_member),
+             left_join: gmg in assoc(gm, :group),
+             left_join: gmgesp in assoc(gmg, :expected_server_properties),
              where: so.id == ^auth.principal_id,
-             preload: [group_member: gm]
+             preload: [group_member: {gm, group: {gmg, expected_server_properties: gmgesp}}]
            )
          ) do
       nil ->

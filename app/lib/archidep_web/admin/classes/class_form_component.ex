@@ -69,7 +69,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         </label>
       </fieldset>
       <!-- Expected server properties -->
-      <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
+      <!-- FIXME decoupling: allow updating expected server properties -->
+      <%!-- <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
         <legend class="fieldset-legend">{gettext("Expected server properties")}</legend>
         <div role="alert" class="alert alert-info alert-soft">
           <span class="text-sm">
@@ -235,7 +236,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
             </div>
           </div>
         </.inputs_for>
-      </fieldset>
+      </fieldset> --%>
 
       <div class="mt-2 flex justify-end gap-x-2">
         <button type="button" class="btn btn-secondary" phx-click={@on_close}>

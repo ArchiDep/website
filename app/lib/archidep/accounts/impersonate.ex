@@ -10,7 +10,8 @@ defmodule ArchiDep.Accounts.Impersonate do
     with :ok <- validate_uuid(user_id, :user_account_not_found),
          {:ok, user_account} <- UserAccount.fetch_by_id(user_id),
          :ok <- authorize(auth, Policy, :accounts, :impersonate, user_account) do
-      UserSession.impersonate(auth.session, user_account)
+      {:ok, session} = UserSession.fetch_by_id(auth.session_id)
+      UserSession.impersonate(session, user_account)
       {:ok, user_account}
     else
       {:error, :user_account_not_found} ->
@@ -24,7 +25,8 @@ defmodule ArchiDep.Accounts.Impersonate do
   @spec stop_impersonating(Authentication.t()) :: :ok | {:error, :unauthorized}
   def stop_impersonating(auth) do
     with :ok <- authorize(auth, Policy, :accounts, :stop_impersonating, nil) do
-      UserSession.stop_impersonating(auth.session)
+      {:ok, session} = UserSession.fetch_by_id(auth.session_id)
+      UserSession.stop_impersonating(session)
       :ok
     else
       {:error, {:access_denied, :accounts, :stop_impersonating}} ->

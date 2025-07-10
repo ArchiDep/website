@@ -86,8 +86,7 @@ defmodule ArchiDep.Servers.ServerManager do
       |> execute_actions()
 
     # TODO: watch user account & student for changes
-    # FIXME: watch server group for changes
-    # :ok = Students.PubSub.subscribe_class(state.server.class.id)
+    :ok = ArchiDep.Students.PubSub.subscribe_class(state.server.group_id)
 
     noreply(state)
   end
@@ -204,16 +203,15 @@ defmodule ArchiDep.Servers.ServerManager do
         |> execute_actions()
         |> noreply()
 
-  # def handle_info(
-  #       {:class_updated, class},
-  #       state
-  #     )
-  #     when is_struct(class, Class),
-  #     do:
-  #       state
-  #       |> ServerManagerState.class_updated(class)
-  #       |> execute_actions()
-  #       |> noreply()
+  def handle_info(
+        {:class_updated, class},
+        state
+      ),
+      do:
+        state
+        |> ServerManagerState.group_updated(class)
+        |> execute_actions()
+        |> noreply()
 
   def handle_info(
         :measure_load_average,

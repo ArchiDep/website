@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
   import ArchiDepWeb.Servers.ServerFormComponent
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDepWeb.Servers.ServerForm
 
   @id "new-server-dialog"
@@ -23,7 +24,10 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
   def update(assigns, socket) do
     socket
     |> assign(assigns)
-    |> assign(form: to_form(ServerForm.create_changeset(%{}), as: :server))
+    |> assign(
+      form: to_form(ServerForm.create_changeset(%{}), as: :server),
+      owner: ServerOwner.fetch_authenticated(assigns.auth)
+    )
     |> ok()
   end
 

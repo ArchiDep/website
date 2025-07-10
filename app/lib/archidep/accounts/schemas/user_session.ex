@@ -134,7 +134,8 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     do:
       from(us in __MODULE__,
         join: ua in assoc(us, :user_account),
-        preload: [user_account: ua]
+        left_join: iua in assoc(us, :impersonated_user_account),
+        preload: [user_account: ua, impersonated_user_account: iua]
       )
       |> Repo.get(uuid)
       |> truthy_or(:session_not_found)

@@ -42,9 +42,9 @@
           <Heroicons.x_circle :if={not @server.active} class="size-5 text-error" />
         </dd>
         <%= if has_role?(@auth, :root) do %>
-          <dt class="font-bold">{gettext("Class")}</dt>
+          <dt class="font-bold">{gettext("Group")}</dt>
           <dd class="col-span-1 md:col-span-2 xl:col-span-3">
-            {@server.class.name}
+            {@server.group.name}
           </dd>
         <% end %>
       </dl>

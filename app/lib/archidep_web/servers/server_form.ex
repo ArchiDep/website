@@ -14,7 +14,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     field(:username, :string)
     field(:ssh_port, :integer)
     field(:active, :boolean, default: true)
-    field(:class_id, :binary_id)
+    field(:group_id, :binary_id)
     field(:app_username, :string)
     embeds_one(:expected_properties, ServerPropertiesForm, on_replace: :update)
   end
@@ -30,7 +30,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :username,
       :ssh_port,
       :active,
-      :class_id,
+      :group_id,
       :app_username
     ])
     |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
@@ -59,7 +59,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       username: server.username,
       ssh_port: server.ssh_port,
       active: server.active,
-      class_id: server.class_id,
+      group_id: server.group_id,
       app_username: server.app_username,
       expected_properties: ServerPropertiesForm.from(server.expected_properties)
     }

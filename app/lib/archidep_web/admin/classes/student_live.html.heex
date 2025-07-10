@@ -60,20 +60,20 @@
   </dd>
   <dt class="font-bold">{gettext("User account")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
-    <%= if @student.user_account do %>
+    <%= if @student.user do %>
       <span class="flex items-center gap-x-4">
         <span class="flex items-center gap-x-2">
           <Heroicons.user solid class="size-5" />
-          {@student.user_account.username}
+          {@student.user.username}
         </span>
         <.form for={%{}} action={~p"/auth/impersonate"} method="POST" class="flex items-center">
           <button
-            :if={can_impersonate?(@auth, @student.user_account)}
+            :if={can_impersonate?(@auth, @student.user)}
             type="submit"
             class="tooltip"
             data-tip={gettext("Impersonate")}
             name="user_account_id"
-            value={@student.user_account.id}
+            value={@student.user.id}
           >
             <Heroicons.eye solid class="size-4 cursor-pointer hover:opacity-85" />
           </button>

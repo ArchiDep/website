@@ -3,8 +3,6 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
   Authentication-related helpers for the web application.
   """
 
-  alias ArchiDep.Accounts.Schemas.UserAccount
-  alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
   alias ArchiDep.Authentication
 
@@ -16,7 +14,7 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
   def has_role?(nil, _role), do: false
   def has_role?(auth, role), do: Authentication.has_role?(auth, role)
 
-  @spec can_impersonate?(Authentication.t(), UserAccount.t()) :: boolean()
+  @spec can_impersonate?(Authentication.t(), struct()) :: boolean()
   def can_impersonate?(nil, _user_account), do: false
 
   def can_impersonate?(
@@ -24,7 +22,7 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
           principal_id: principal_id,
           impersonated_id: impersonated_id
         },
-        %UserAccount{id: user_account_id}
+        %{id: user_account_id}
       ),
       do: impersonated_id == nil and user_account_id != principal_id
 
