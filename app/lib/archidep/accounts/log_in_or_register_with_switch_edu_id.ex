@@ -28,9 +28,15 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
         switch_edu_id_data,
         client_metadata
       ) do
-    with {:ok, %{user_session: session}} <-
+    with {:ok, %{user_account: user_account, user_session: session}} <-
            log_in_or_register(switch_edu_id_data, client_metadata) do
-      {:ok, UserSession.authentication(session)}
+      enriched_session = %UserSession{
+        session
+        | user_account: user_account,
+          impersonated_user_account: nil
+      }
+
+      {:ok, UserSession.authentication(enriched_session)}
     else
       {:error, _operation, :unauthorized_switch_edu_id, _changes} ->
         {:error, :unauthorized_switch_edu_id}

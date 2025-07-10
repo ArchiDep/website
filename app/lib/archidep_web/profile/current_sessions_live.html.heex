@@ -16,7 +16,7 @@
         <td>{format_date_time(session.created_at)}</td>
         <!-- Last used -->
         <td>
-          <%= if current_session?(@auth, session) do %>
+          <%= if current_session?(session, @auth) do %>
             <span class="badge badge-primary whitespace-nowrap">
               {gettext("Current session")}
             </span>
@@ -62,7 +62,7 @@
         </td>
         <!-- Actions -->
         <td>
-          <%= unless current_session?(@auth, session) do %>
+          <%= unless current_session?(session, @auth) do %>
             <div class="tooltip" data-tip={gettext("Delete this session")}>
               <button
                 class="delete-session btn btn-circle btn-outline btn-xs btn-secondary align-middle"

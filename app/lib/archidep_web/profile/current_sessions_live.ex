@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Profile.CurrentSessionsLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Helpers.UserAgentFormatHelpers
+  import ArchiDep.Accounts.Schemas.UserSession, only: [current_session?: 2]
   alias ArchiDep.Accounts
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDepWeb.LiveAuth

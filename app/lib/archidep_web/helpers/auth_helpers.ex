@@ -38,7 +38,4 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
 
   @spec username(Authentication.t()) :: String.t()
   defdelegate username(auth), to: Authentication
-
-  @spec current_session?(Authentication.t(), UserSession.t()) :: boolean()
-  def current_session?(auth, session), do: UserSession.current_session?(session, auth)
 end
