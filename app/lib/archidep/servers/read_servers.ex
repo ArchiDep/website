@@ -9,15 +9,14 @@ defmodule ArchiDep.Servers.ReadServers do
   def list_my_servers(auth) do
     authorize!(auth, Policy, :servers, :list_my_servers, nil)
 
-    user = Authentication.fetch_user_account(auth)
-    user_account_id = user.id
+    principal_id = auth.principal.id
 
     Repo.all(
       from s in Server,
-        join: ua in assoc(s, :user_account),
-        where: s.user_account_id == ^user_account_id,
+        join: o in assoc(s, :owner),
+        where: s.owner_id == ^principal_id,
         order_by: [s.name, s.username, s.ip_address],
-        preload: [user_account: ua]
+        preload: [owner: o]
     )
   end
 

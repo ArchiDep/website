@@ -15,7 +15,7 @@ defmodule ArchiDep.Accounts.Events.SessionDeleted do
 
   @type t :: %__MODULE__{user_account_id: UUID.t(), session_id: UUID.t()}
 
-  @spec new(UserSession.t()) :: __MODULE__.t()
+  @spec new(UserSession.t()) :: t()
   def new(%UserSession{id: session_id, user_account: %UserAccount{id: user_account_id}}) do
     %__MODULE__{user_account_id: user_account_id, session_id: session_id}
   end

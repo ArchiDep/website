@@ -17,26 +17,28 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
   def has_role?(auth, role), do: Authentication.has_role?(auth, role)
 
   @spec can_impersonate?(Authentication.t(), UserAccount.t()) :: boolean()
+  def can_impersonate?(nil, _user_account), do: false
+
   def can_impersonate?(
         %Authentication{
-          principal: %UserAccount{id: principal_id},
-          session: %UserSession{impersonated_user_account_id: impersonated_user_account_id}
+          principal_id: principal_id,
+          impersonated_id: impersonated_id
         },
         %UserAccount{id: user_account_id}
       ),
-      do: impersonated_user_account_id == nil and user_account_id != principal_id
+      do: impersonated_id == nil and user_account_id != principal_id
 
   @spec is_impersonating?(Authentication.t()) :: boolean()
   def is_impersonating?(nil), do: false
 
-  def is_impersonating?(%Authentication{session: %UserSession{impersonated_user_account_id: nil}}),
+  def is_impersonating?(%Authentication{impersonated_id: nil}),
     do: false
 
   def is_impersonating?(_auth), do: true
 
   @spec username(Authentication.t()) :: String.t()
-  def username(auth), do: Authentication.username(auth)
+  defdelegate username(auth), to: Authentication
 
   @spec current_session?(Authentication.t(), UserSession.t()) :: boolean()
-  defdelegate current_session?(auth, session), to: Authentication
+  def current_session?(auth, session), do: UserSession.current_session?(session, auth)
 end

@@ -8,6 +8,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   use ArchiDep, :schema
 
   alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Authentication
   alias ArchiDep.ClientMetadata
 
   @derive {Inspect, only: [:id, :created_at, :user_account]}
@@ -42,18 +43,38 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     belongs_to(:impersonated_user_account, UserAccount, on_replace: :nilify)
   end
 
-  @doc """
-  Returns the expiration date of the specified session.
-  """
-  @spec expires_at(__MODULE__.t()) :: DateTime.t()
+  @spec authentication(t()) :: Authentication.t()
+  def authentication(%__MODULE__{
+        id: id,
+        token: token,
+        user_account: user_account,
+        impersonated_user_account: impersonated_user_account,
+        impersonated_user_account_id: impersonated_user_account_id
+      }) do
+    principal = impersonated_user_account || user_account
+
+    %Authentication{
+      principal_id: principal.id,
+      username: principal.username,
+      roles: principal.roles,
+      session_id: id,
+      session_token: token,
+      impersonated_id: impersonated_user_account_id
+    }
+  end
+
+  @spec current_session?(t(), Authentication.t()) :: boolean
+  def current_session?(%__MODULE__{id: session_id}, %Authentication{session_id: session_id}),
+    do: true
+
+  def current_session?(%__MODULE__{}, %Authentication{}), do: false
+
+  @spec expires_at(t()) :: DateTime.t()
   def expires_at(%__MODULE__{created_at: created_at}),
     do: DateTime.add(created_at, @session_validity_in_days * @one_day_in_seconds, :second)
 
-  @doc """
-  Creates a new session.
-  """
   @spec new_session(UserAccount.t(), ClientMetadata.t()) ::
-          Changeset.t(__MODULE__.t())
+          Changeset.t(t())
   def new_session(user_account, client_metadata) do
     id = UUID.generate()
     now = DateTime.utc_now()
@@ -77,11 +98,8 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     |> validate_length(:client_ip_address, max: 50)
   end
 
-  @doc """
-  Creates a query to find a session that has not yet expired by token.
-  """
   @spec fetch_active_session_by_token(String.t()) ::
-          {:ok, __MODULE__.t()} | {:error, :session_not_found}
+          {:ok, t()} | {:error, :session_not_found}
   def fetch_active_session_by_token(token) do
     if session =
          Repo.one(
@@ -105,10 +123,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     end
   end
 
-  @doc """
-  Finds the session with the specified ID.
-  """
-  @spec fetch_by_id(String.t()) :: {:ok, __MODULE__.t()} | {:error, :session_not_found}
+  @spec fetch_by_id(String.t()) :: {:ok, t()} | {:error, :session_not_found}
   def fetch_by_id(id),
     do:
       id
@@ -124,10 +139,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       |> Repo.get(uuid)
       |> truthy_or(:session_not_found)
 
-  @doc """
-  Find active sessions (that have not yet expired) by token.
-  """
-  @spec fetch_active_sessions_by_user_account_id(String.t()) :: list(__MODULE__.t())
+  @spec fetch_active_sessions_by_user_account_id(String.t()) :: list(t())
   def fetch_active_sessions_by_user_account_id(id),
     do:
       Repo.all(
@@ -139,11 +151,8 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
         )
       )
 
-  @doc """
-  Updates the date at which the specified session was last used.
-  """
-  @spec touch(__MODULE__.t(), ClientMetadata.t()) ::
-          {:ok, __MODULE__.t()} | {:error, :session_not_found}
+  @spec touch(t(), ClientMetadata.t()) ::
+          {:ok, t()} | {:error, :session_not_found}
   def touch(session, client_metadata) do
     now = DateTime.utc_now()
 

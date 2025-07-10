@@ -24,15 +24,13 @@ defmodule ArchiDep.Students.UpdateStudent do
          {:ok, student} <- Student.fetch_student(id) do
       authorize!(auth, Policy, :students, :update_student, student)
 
-      user = Authentication.fetch_user_account(auth)
-
       case Multi.new()
            |> Multi.update(:student, Student.update(student, data))
            |> Multi.insert(:stored_event, fn %{student: student} ->
              StudentUpdated.new(student)
              |> new_event(auth, occurred_at: student.updated_at)
              |> add_to_stream(student)
-             |> initiated_by(user)
+             |> initiated_by(auth)
            end)
            |> Repo.transaction() do
         {:ok, %{student: student}} ->

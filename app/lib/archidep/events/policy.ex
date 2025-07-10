@@ -10,7 +10,7 @@ defmodule ArchiDep.Events.Policy do
   def authorize(
         :events,
         :fetch_events,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         nil
       ),
       do: Enum.member?(roles, :root)

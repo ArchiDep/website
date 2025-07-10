@@ -13,6 +13,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
+  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.ClientMetadata
 
   @root_users :archidep |> Application.compile_env!(:root_users) |> Keyword.fetch!(:switch_edu_id)
@@ -29,7 +30,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
       ) do
     with {:ok, %{user_session: session}} <-
            log_in_or_register(switch_edu_id_data, client_metadata) do
-      {:ok, Authentication.for_user_session(session, client_metadata)}
+      {:ok, UserSession.authentication(session)}
     else
       {:error, _operation, :unauthorized_switch_edu_id, _changes} ->
         {:error, :unauthorized_switch_edu_id}
@@ -123,13 +124,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
             )
             |> new_event(%{}, occurred_at: session.created_at)
             |> add_to_stream(user_account)
-            |> initiated_by(user_account)
+            |> StoredEvent.initiated_by(UserAccount.event_stream(user_account))
 
           :existing_account ->
             UserLoggedInWithSwitchEduId.new(switch_edu_id, session, client_metadata)
             |> new_event(%{}, occurred_at: session.created_at)
             |> add_to_stream(user_account)
-            |> initiated_by(user_account)
+            |> StoredEvent.initiated_by(UserAccount.event_stream(user_account))
         end
     end)
     |> transaction()

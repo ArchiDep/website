@@ -32,7 +32,7 @@ defmodule ArchiDep.Config.ConfigValue do
   @doc """
   Create a new configuration value.
   """
-  @spec new(String.t()) :: __MODULE__.t()
+  @spec new(String.t()) :: t()
   def new(description) when is_binary(description) do
     %__MODULE__{description: description}
   end
@@ -41,7 +41,7 @@ defmodule ArchiDep.Config.ConfigValue do
   Add a description of the expected format of the value. This description will
   be included in error messages.
   """
-  @spec format(__MODULE__.t(), String.t()) :: __MODULE__.t()
+  @spec format(t(), String.t()) :: t()
   def format(config_value, description) when is_binary(description) do
     %__MODULE__{config_value | format_description: description}
   end
@@ -49,8 +49,8 @@ defmodule ArchiDep.Config.ConfigValue do
   @doc """
   Read the value from an environment variable.
   """
-  @spec env_var(__MODULE__.t(), %{String.t() => String.t()}, String.t(), env_var_parser) ::
-          __MODULE__.t()
+  @spec env_var(t(), %{String.t() => String.t()}, String.t(), env_var_parser) ::
+          t()
   def env_var(
         config_value,
         env,
@@ -92,7 +92,7 @@ defmodule ArchiDep.Config.ConfigValue do
   Read the value from the application's configuration. Has no effect if the
   value is already set.
   """
-  @spec default_to(__MODULE__.t(), list, atom | list(atom)) :: __MODULE__.t()
+  @spec default_to(t(), list, atom | list(atom)) :: t()
   def default_to(%__MODULE__{value: nil} = config_value, default_config, key)
       when is_list(default_config) and is_atom(key) do
     default_to(config_value, default_config, [key])
@@ -119,7 +119,7 @@ defmodule ArchiDep.Config.ConfigValue do
   @doc """
   Validate the value with a custom function.
   """
-  @spec validate(__MODULE__.t(), (term -> boolean)) :: __MODULE__.t()
+  @spec validate(t(), (term -> boolean)) :: t()
   def validate(%__MODULE__{value: nil} = config_value, validator) when is_function(validator, 1),
     do: config_value
 
@@ -137,7 +137,7 @@ defmodule ArchiDep.Config.ConfigValue do
   @doc """
   Get the configuration value, raising an error if it is not set.
   """
-  @spec required_value(__MODULE__.t()) :: term
+  @spec required_value(t()) :: term
   def required_value(%__MODULE__{value: nil} = config_value),
     do: raise(ConfigError, required_error_message(config_value))
 
@@ -146,7 +146,7 @@ defmodule ArchiDep.Config.ConfigValue do
   @doc """
   Get the configuration value or nil if it is not set.
   """
-  @spec optional_value(__MODULE__.t()) :: term
+  @spec optional_value(t()) :: term
   def optional_value(%__MODULE__{value: value}), do: value
 
   defp no_op_parser(value), do: {:ok, value}

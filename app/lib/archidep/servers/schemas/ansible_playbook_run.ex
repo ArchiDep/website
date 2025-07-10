@@ -110,7 +110,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> Repo.one!()
   end
 
-  @spec get_last_playbook_run(Server.t(), AnsiblePlaybook.t()) :: __MODULE__.t() | nil
+  @spec get_last_playbook_run(Server.t(), AnsiblePlaybook.t()) :: t() | nil
   def get_last_playbook_run(server, playbook) do
     from(r in __MODULE__,
       where: r.server_id == ^server.id and r.playbook == ^AnsiblePlaybook.name(playbook),

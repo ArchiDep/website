@@ -9,7 +9,7 @@ defmodule ArchiDep.Accounts.Policy do
   def authorize(
         :accounts,
         :fetch_active_sessions,
-        %Authentication{principal: %UserAccount{active: true}},
+        %Authentication{},
         _params
       ),
       do: true
@@ -18,7 +18,7 @@ defmodule ArchiDep.Accounts.Policy do
   def authorize(
         :accounts,
         :impersonate,
-        %Authentication{principal: %UserAccount{id: principal_id, active: true, roles: roles}},
+        %Authentication{principal_id: principal_id, roles: roles},
         %UserAccount{id: impersonated_user_id}
       )
       when principal_id != impersonated_user_id,
@@ -29,17 +29,17 @@ defmodule ArchiDep.Accounts.Policy do
         :accounts,
         :stop_impersonating,
         %Authentication{
-          session: %UserSession{impersonated_user_account_id: impersonated_user_account_id}
+          impersonated_id: impersonated_id
         },
         _params
       ),
-      do: impersonated_user_account_id != nil
+      do: impersonated_id != nil
 
   # A root user can delete any user's session.
   def authorize(
         :accounts,
         :delete_session,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         %UserSession{}
       ),
       do: Enum.member?(roles, :root)
@@ -48,9 +48,9 @@ defmodule ArchiDep.Accounts.Policy do
   def authorize(
         :accounts,
         :delete_session,
-        %Authentication{principal: %UserAccount{id: id, active: true}},
+        %Authentication{principal_id: principal_id},
         %UserSession{
-          user_account: %UserAccount{id: id}
+          user_account: %UserAccount{id: principal_id}
         }
       ),
       do: true

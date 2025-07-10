@@ -9,23 +9,16 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :validate_server,
-        %Authentication{
-          principal: %UserAccount{
-            active: true,
-            roles: roles,
-            preregistered_user: preregistered_user
-          }
-        },
+        %Authentication{roles: roles},
         %{group_id: nil}
-      )
-      when not is_nil(preregistered_user),
+      ),
       do: Enum.member?(roles, :student)
 
   # Root users can validate any server.
   def authorize(
         :servers,
         :validate_server,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -34,23 +27,16 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :create_server,
-        %Authentication{
-          principal: %UserAccount{
-            active: true,
-            roles: roles,
-            preregistered_user: preregistered_user
-          }
-        },
+        %Authentication{roles: roles},
         %{group_id: nil}
-      )
-      when not is_nil(preregistered_user),
+      ),
       do: Enum.member?(roles, :student)
 
   # Root users can create any server.
   def authorize(
         :servers,
         :create_server,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
@@ -59,7 +45,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :list_my_servers,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
@@ -68,7 +54,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :list_server_groups,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -77,7 +63,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :fetch_server,
-        %Authentication{principal: %UserAccount{id: principal_id, active: true, roles: roles}},
+        %Authentication{principal_id: principal_id, roles: roles},
         %Server{owner_id: principal_id}
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
@@ -86,7 +72,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :fetch_server,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -95,7 +81,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :retry_connecting,
-        %Authentication{principal: %UserAccount{id: principal_id, active: true, roles: roles}},
+        %Authentication{principal_id: principal_id, roles: roles},
         %Server{owner_id: principal_id}
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
@@ -104,7 +90,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :retry_connecting,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -113,7 +99,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :retry_ansible_playbook,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -122,7 +108,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :validate_existing_server,
-        %Authentication{principal: %UserAccount{id: principal_id, active: true, roles: roles}},
+        %Authentication{principal_id: principal_id, roles: roles},
         %Server{owner_id: principal_id}
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
@@ -131,7 +117,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :validate_existing_server,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -140,7 +126,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :update_server,
-        %Authentication{principal: %UserAccount{id: principal_id, active: true, roles: roles}},
+        %Authentication{principal_id: principal_id, roles: roles},
         %Server{owner_id: principal_id}
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
@@ -149,7 +135,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :update_server,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :root)
@@ -158,7 +144,7 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :delete_server,
-        %Authentication{principal: %UserAccount{active: true, roles: roles}},
+        %Authentication{roles: roles},
         _params
       ),
       do: Enum.member?(roles, :root)

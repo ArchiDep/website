@@ -18,15 +18,13 @@ defmodule ArchiDep.Students.CreateClass do
   def create_class(auth, data) do
     authorize!(auth, Policy, :students, :create_class, nil)
 
-    user = Authentication.fetch_user_account(auth)
-
     case Multi.new()
          |> Multi.insert(:class, Class.new(data))
          |> Multi.insert(:stored_event, fn %{class: class} ->
            ClassCreated.new(class)
            |> new_event(auth, occurred_at: class.created_at)
            |> add_to_stream(class)
-           |> initiated_by(user)
+           |> initiated_by(auth)
          end)
          |> Repo.transaction() do
       {:ok, %{class: class}} ->

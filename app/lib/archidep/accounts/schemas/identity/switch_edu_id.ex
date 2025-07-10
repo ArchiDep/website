@@ -37,7 +37,7 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
   @doc """
   Returns the event stream for the specified Switch edu-ID entity.
   """
-  @spec event_stream(String.t() | __MODULE__.t()) :: String.t()
+  @spec event_stream(String.t() | t()) :: String.t()
   def event_stream(id) when is_binary(id), do: "switch-edu-id:#{id}"
   def event_stream(%__MODULE__{id: id}), do: event_stream(id)
 

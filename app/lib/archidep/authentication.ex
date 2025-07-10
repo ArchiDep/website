@@ -3,97 +3,41 @@ defmodule ArchiDep.Authentication do
   Authentication context containing the user session and logged user.
   """
 
-  import Ecto.Query, only: [from: 2]
-  alias ArchiDep.Accounts.Schemas.UserAccount
-  alias ArchiDep.Accounts.Schemas.UserSession
-  alias ArchiDep.Accounts.Types
-  alias ArchiDep.Errors.AuthenticatedUserNotFoundError
-  alias ArchiDep.Repo
+  alias ArchiDep.Types
   alias Ecto.UUID
 
   @spec is_authentication(term) :: Macro.t()
   defguard is_authentication(value) when is_struct(value, __MODULE__)
 
-  @enforce_keys [:session, :principal, :metadata]
-  defstruct [:session, :principal, :metadata]
+  @enforce_keys [:principal_id, :username, :roles, :session_id, :session_token]
+  defstruct [:principal_id, :username, :roles, :session_id, :session_token, impersonated_id: nil]
 
   @type t :: %__MODULE__{
-          session: UserSession.t(),
-          principal: UserAccount.t(),
-          metadata: map
+          principal_id: UUID.t(),
+          username: String.t(),
+          roles: list(Types.role()),
+          session_id: UUID.t(),
+          session_token: String.t(),
+          impersonated_id: UUID.t() | nil
         }
 
-  @doc """
-  Creates an authentication context for the specified user session.
-  """
-  @spec for_user_session(UserSession.t(), map) :: __MODULE__.t()
-  def for_user_session(session, metadata),
-    do: %__MODULE__{
-      session: session,
-      principal: session.impersonated_user_account || session.user_account,
-      metadata: metadata
-    }
+  @spec username(t()) :: String.t()
+  def username(%__MODULE__{username: username}), do: username
 
-  @doc """
-  Returns the username of the currently authenticated user.
-  """
-  @spec username(__MODULE__.t()) :: String.t()
-  def username(%__MODULE__{principal: %UserAccount{username: username}}), do: username
-
-  @doc """
-  Indicates whether the authenticated user has the specified role.
-  """
-  @spec has_role?(__MODULE__.t(), Types.role()) :: boolean
-  def has_role?(%__MODULE__{principal: %UserAccount{roles: roles}}, role),
+  @spec has_role?(t(), Types.role()) :: boolean
+  def has_role?(%__MODULE__{roles: roles}, role),
     do: Enum.member?(roles, role)
 
-  @doc """
-  Returns the ID of the authenticated user account.
-  """
-  @spec user_account_id(__MODULE__.t()) :: String.t()
-  def user_account_id(%__MODULE__{principal: %UserAccount{id: id}}), do: id
+  @spec principal_id(t()) :: String.t()
+  def principal_id(%__MODULE__{principal_id: principal_id}), do: principal_id
 
-  @doc """
-  Returns the ID of the current session.
-  """
   @spec session_id(t()) :: UUID.t()
-  def session_id(%__MODULE__{session: %UserSession{id: id}}), do: id
+  def session_id(%__MODULE__{session_id: session_id}), do: session_id
 
-  @doc """
-  Returns the token identifying the current session.
-  """
-  @spec session_token(__MODULE__.t()) :: String.t()
-  def session_token(%__MODULE__{session: %UserSession{token: token}}) when is_binary(token),
-    do: token
+  @spec session_token(t()) :: String.t()
+  def session_token(%__MODULE__{session_token: session_token}) when is_binary(session_token),
+    do: session_token
 
-  @doc """
-  Indicates whether the specified session is the same as the current one.
-  """
-  @spec current_session?(__MODULE__.t(), UserSession.t()) :: boolean
-  def current_session?(%__MODULE__{session: %UserSession{id: id}}, %UserSession{id: id}),
-    do: true
-
-  def current_session?(%__MODULE__{}, %UserSession{}), do: false
-
-  @doc """
-  Returns the metadata associated with the authenticated user.
-  """
-  @spec metadata(__MODULE__.t()) :: map
-  def metadata(%__MODULE__{metadata: metadata}), do: metadata
-
-  @doc """
-  Returns a fresh version of the authenticated user account.
-  """
-  @spec fetch_user_account(__MODULE__.t()) :: UserAccount.t()
-  def fetch_user_account(%__MODULE__{principal: %UserAccount{id: id}}),
-    do:
-      from(ua in UserAccount,
-        left_join: pu in assoc(ua, :preregistered_user),
-        where: ua.id == ^id,
-        preload: [preregistered_user: pu]
-      )
-      |> Repo.one()
-      |> tap(fn user_account ->
-        unless user_account, do: raise(AuthenticatedUserNotFoundError)
-      end)
+  @spec event_stream(t()) :: String.t()
+  def event_stream(%__MODULE__{principal_id: principal_id}), do: "user-accounts:#{principal_id}"
 end

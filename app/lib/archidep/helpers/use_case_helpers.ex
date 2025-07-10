@@ -6,7 +6,6 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   import ArchiDep.Authentication, only: [is_authentication: 1]
   alias Ecto.Changeset
   alias Ecto.Multi
-  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Authentication
   alias ArchiDep.Events.Store.Event
   alias ArchiDep.Events.Store.StoredEvent
@@ -48,7 +47,7 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
 
   def new_event(data, auth, opts)
       when is_struct(data) and is_authentication(auth) and is_list(opts) do
-    data |> StoredEvent.new(%{}, opts) |> initiated_by(auth.principal)
+    data |> StoredEvent.new(%{}, opts) |> initiated_by(auth)
   end
 
   def new_event(data, meta, opts)
@@ -84,15 +83,8 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
 
   @spec initiated_by(StoredEvent.changeset(struct), Authentication.t()) ::
           StoredEvent.changeset(struct)
-  def initiated_by(changeset, %Authentication{principal: user_account}) do
-    initiator = UserAccount.event_stream(user_account)
-    StoredEvent.initiated_by(changeset, initiator)
-  end
-
-  @spec initiated_by(StoredEvent.changeset(struct), UserAccount.t()) ::
-          StoredEvent.changeset(struct)
-  def initiated_by(changeset, user_account) when is_struct(user_account, UserAccount) do
-    initiator = UserAccount.event_stream(user_account)
+  def initiated_by(changeset, auth) when is_authentication(auth) do
+    initiator = Authentication.event_stream(auth)
     StoredEvent.initiated_by(changeset, initiator)
   end
 

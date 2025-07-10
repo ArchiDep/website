@@ -68,7 +68,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
   def name_or_default(%__MODULE__{name: name}), do: name
 
-  @spec default_name(__MODULE__.t()) :: String.t()
+  @spec default_name(t()) :: String.t()
   def default_name(%__MODULE__{ip_address: ip_address, username: username}),
     do: "#{username}@#{:inet.ntoa(ip_address.address)}"
 
@@ -83,7 +83,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
         left_join: ogm in assoc(o, :group_member),
         left_join: ogmg in assoc(ogm, :group),
         join: g in assoc(s, :group),
-        join: gesp in assoc(g, :expected_server_properties),
+        left_join: gesp in assoc(g, :expected_server_properties),
         join: ep in assoc(s, :expected_properties),
         left_join: lkp in assoc(s, :last_known_properties),
         # TODO: put query fragment determining whether a user is active in the user account schema
@@ -111,7 +111,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
              left_join: ogm in assoc(o, :group_member),
              left_join: ogmg in assoc(ogm, :group),
              join: g in assoc(s, :group),
-             join: gesp in assoc(g, :expected_server_properties),
+             left_join: gesp in assoc(g, :expected_server_properties),
              join: ep in assoc(s, :expected_properties),
              left_join: lkp in assoc(s, :last_known_properties),
              where: s.id == ^id,

@@ -21,7 +21,7 @@ defmodule ArchiDep.Accounts.Events.UserLoggedOut do
   @doc """
   Creates a new logout event for the specified session.
   """
-  @spec new(UserSession.t()) :: __MODULE__.t()
+  @spec new(UserSession.t()) :: t()
   def new(%UserSession{id: session_id, user_account: %{id: user_account_id}}) do
     %__MODULE__{user_account_id: user_account_id, session_id: session_id}
   end

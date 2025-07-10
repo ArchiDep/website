@@ -17,7 +17,6 @@ defmodule ArchiDep.Students.ImportStudents do
     with :ok <- validate_uuid(class_id, :class_not_found),
          {:ok, class} <- Class.fetch_class(class_id) do
       authorize!(auth, Policy, :students, :import_students, class)
-      user = Authentication.fetch_user_account(auth)
 
       now = DateTime.utc_now()
       changeset = StudentImportList.changeset(data)
@@ -46,7 +45,7 @@ defmodule ArchiDep.Students.ImportStudents do
 
                {:ok, new_students}
              end)
-             |> insert_events(auth, user, class, import_list, now)
+             |> insert_events(auth, class, import_list, now)
              |> transaction() do
           {:ok, %{students: students}} ->
             :ok = PubSub.publish_students_imported(class, students)
@@ -59,7 +58,7 @@ defmodule ArchiDep.Students.ImportStudents do
     end
   end
 
-  defp insert_events(multi, auth, user, class, import_list, now) do
+  defp insert_events(multi, auth, class, import_list, now) do
     multi
     |> Multi.merge(fn
       %{students: {0, _students}, new_students: []} ->
@@ -75,7 +74,7 @@ defmodule ArchiDep.Students.ImportStudents do
           )
           |> new_event(auth, occurred_at: now)
           |> add_to_stream(class)
-          |> initiated_by(user)
+          |> initiated_by(auth)
         end)
         |> Multi.insert_all(:student_created_events, StoredEvent, fn %{
                                                                        students_imported_event:
@@ -85,7 +84,7 @@ defmodule ArchiDep.Students.ImportStudents do
             StudentCreated.new(student)
             |> new_event(auth, occurred_at: now, caused_by: cause)
             |> add_to_stream(student)
-            |> initiated_by(user)
+            |> initiated_by(auth)
             |> Changeset.apply_action!(:insert)
             |> to_insert_data()
           end)

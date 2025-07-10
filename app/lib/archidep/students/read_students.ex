@@ -13,10 +13,10 @@ defmodule ArchiDep.Students.ReadStudents do
 
     Repo.all(
       from s in Student,
-        left_join: ua in assoc(s, :user_account),
+        left_join: u in assoc(s, :user),
         where: s.class_id == ^class_id,
         order_by: s.name,
-        preload: [user_account: ua]
+        preload: [user: u]
     )
   end
 

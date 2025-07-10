@@ -1,5 +1,4 @@
 defmodule ArchiDepWeb.Helpers.LiveViewHelpers do
-  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Students.Schemas.Class
@@ -8,11 +7,10 @@ defmodule ArchiDepWeb.Helpers.LiveViewHelpers do
   @spec set_process_label(atom(), Authentication.t()) :: :ok
   def set_process_label(
         module,
-        %Authentication{principal: %UserAccount{id: user_account_id}}
+        %Authentication{principal_id: principal_id}
       )
       when is_atom(module),
-      do:
-        :proc_lib.set_label("#{Atom.to_string(module)}|ua:#{String.slice(user_account_id, 0, 5)}")
+      do: :proc_lib.set_label("#{Atom.to_string(module)}|ua:#{String.slice(principal_id, 0, 5)}")
 
   @spec set_process_label(atom(), Authentication.t(), Class.t()) :: :ok
   def set_process_label(
@@ -44,12 +42,12 @@ defmodule ArchiDepWeb.Helpers.LiveViewHelpers do
   @spec set_process_label(atom(), Authentication.t(), String.t()) :: :ok
   def set_process_label(
         module,
-        %Authentication{principal: %UserAccount{id: user_account_id}},
+        %Authentication{principal_id: principal_id},
         context
       )
       when is_atom(module) and is_binary(context),
       do:
         :proc_lib.set_label(
-          "#{Atom.to_string(module)}|u:#{String.slice(user_account_id, 0, 5)}@#{context}"
+          "#{Atom.to_string(module)}|u:#{String.slice(principal_id, 0, 5)}@#{context}"
         )
 end

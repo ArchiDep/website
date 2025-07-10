@@ -18,15 +18,13 @@ defmodule ArchiDep.Students.CreateStudent do
   def create_student(auth, data) do
     authorize!(auth, Policy, :students, :create_student, nil)
 
-    user = Authentication.fetch_user_account(auth)
-
     case Multi.new()
          |> Multi.insert(:student, Student.new(data))
          |> Multi.insert(:stored_event, fn %{student: student} ->
            StudentCreated.new(student)
            |> new_event(auth, occurred_at: student.created_at)
            |> add_to_stream(student)
-           |> initiated_by(user)
+           |> initiated_by(auth)
          end)
          |> transaction() do
       {:ok, %{student: student}} ->

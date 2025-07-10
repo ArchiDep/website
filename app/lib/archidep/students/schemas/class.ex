@@ -81,7 +81,7 @@ defmodule ArchiDep.Students.Schemas.Class do
     end)
   end
 
-  @spec update(__MODULE__.t(), Types.class_data()) :: Changeset.t(t())
+  @spec update(t(), Types.class_data()) :: Changeset.t(t())
   def update(class, data) do
     id = class.id
     now = DateTime.utc_now()
@@ -105,7 +105,7 @@ defmodule ArchiDep.Students.Schemas.Class do
     end)
   end
 
-  @spec delete(__MODULE__.t()) :: Changeset.t(t())
+  @spec delete(t()) :: Changeset.t(t())
   def delete(class) do
     class
     |> change()

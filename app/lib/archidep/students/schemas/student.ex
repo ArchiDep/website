@@ -2,8 +2,8 @@ defmodule ArchiDep.Students.Schemas.Student do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
-  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Students.Schemas.User
   alias ArchiDep.Students.Types
 
   @primary_key {:id, :binary_id, []}
@@ -16,10 +16,10 @@ defmodule ArchiDep.Students.Schemas.Student do
           email: String.t(),
           academic_class: String.t() | nil,
           active: boolean(),
-          class: Class.t() | NotLoaded,
+          class: Class.t() | NotLoaded.t(),
           class_id: UUID.t(),
-          user_account: UserAccount.t() | nil | NotLoaded,
-          user_account_id: UUID.t() | nil,
+          user: User.t() | nil | NotLoaded.t(),
+          user_id: UUID.t() | nil,
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -31,15 +31,11 @@ defmodule ArchiDep.Students.Schemas.Student do
     field(:academic_class, :string)
     field(:active, :boolean, default: false)
     belongs_to(:class, Class)
-    belongs_to(:user_account, UserAccount)
+    belongs_to(:user, User, source: :user_account_id)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
   end
-
-  @spec active?(t(), DateTime.t()) :: boolean
-  def active?(%__MODULE__{active: active, class: class}, now),
-    do: active and Class.active?(class, now)
 
   @spec new(Types.create_student_data()) :: Changeset.t(t())
   def new(data) do
@@ -81,9 +77,9 @@ defmodule ArchiDep.Students.Schemas.Student do
     case Repo.one(
            from(s in __MODULE__,
              join: c in assoc(s, :class),
-             left_join: ua in assoc(s, :user_account),
+             left_join: ua in assoc(s, :user),
              where: s.id == ^id,
-             preload: [:class, :user_account]
+             preload: [:class, :user]
            )
          ) do
       nil ->
@@ -100,8 +96,8 @@ defmodule ArchiDep.Students.Schemas.Student do
            from(s in __MODULE__,
              where: s.class_id == ^class_id and s.id == ^id,
              join: c in assoc(s, :class),
-             left_join: ua in assoc(s, :user_account),
-             preload: [:class, :user_account]
+             left_join: u in assoc(s, :user),
+             preload: [:class, :user]
            )
          ) do
       nil ->
@@ -112,7 +108,7 @@ defmodule ArchiDep.Students.Schemas.Student do
     end
   end
 
-  @spec update(__MODULE__.t(), Types.existing_student_data()) :: Changeset.t(t())
+  @spec update(t(), Types.existing_student_data()) :: Changeset.t(t())
   def update(student, data) do
     id = student.id
     class_id = student.class_id

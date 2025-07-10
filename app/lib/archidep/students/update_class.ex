@@ -24,15 +24,13 @@ defmodule ArchiDep.Students.UpdateClass do
          {:ok, class} <- Class.fetch_class(id) do
       authorize!(auth, Policy, :students, :update_class, class)
 
-      user = Authentication.fetch_user_account(auth)
-
       case Multi.new()
            |> Multi.update(:class, Class.update(class, data))
            |> Multi.insert(:stored_event, fn %{class: class} ->
              ClassUpdated.new(class)
              |> new_event(auth, occurred_at: class.updated_at)
              |> add_to_stream(class)
-             |> initiated_by(user)
+             |> initiated_by(auth)
            end)
            |> Repo.transaction() do
         {:ok, %{class: updated_class}} ->
