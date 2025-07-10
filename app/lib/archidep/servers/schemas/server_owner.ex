@@ -50,7 +50,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
     case Repo.one(
            from(so in __MODULE__,
              left_join: gm in assoc(so, :group_member),
-             where: so.id == ^auth.principal.id,
+             where: so.id == ^auth.principal_id,
              preload: [group_member: gm]
            )
          ) do

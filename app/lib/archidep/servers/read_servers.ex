@@ -9,7 +9,7 @@ defmodule ArchiDep.Servers.ReadServers do
   def list_my_servers(auth) do
     authorize!(auth, Policy, :servers, :list_my_servers, nil)
 
-    principal_id = auth.principal.id
+    principal_id = auth.principal_id
 
     Repo.all(
       from s in Server,
