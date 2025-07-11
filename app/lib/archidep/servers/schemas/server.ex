@@ -173,7 +173,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :active
     ])
     |> cast_assoc(:expected_properties,
-      with: fn _struct, _params -> ServerProperties.blank(id) end
+      with: fn _struct, _params -> ServerProperties.blank_changeset(id) end
     )
     |> change(
       id: id,

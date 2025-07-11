@@ -3,8 +3,9 @@ defmodule ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive do
 
   import ArchiDepWeb.Helpers.DialogHelpers
   import ArchiDepWeb.Components.FormComponents
-  alias ArchiDep.Servers.Schemas.ServerProperties
+  alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDepWeb.Servers.ServerPropertiesForm
 
   @base_id "edit-server-group-expected-properties-dialog"
 
@@ -20,11 +21,10 @@ defmodule ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive do
     group = assigns.group
 
     changeset =
-      if group.expected_server_properties == nil do
-        ServerProperties.blank(group.id)
-      else
-        ServerProperties.update(group.expected_server_properties)
-      end
+      group
+      |> ServerGroup.expected_server_properties()
+      |> ServerPropertiesForm.from()
+      |> ServerPropertiesForm.changeset()
 
     socket
     |> assign(
@@ -41,59 +41,74 @@ defmodule ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive do
     group = socket.assigns.group
 
     changeset =
-      if group.expected_server_properties do
-        ServerProperties.update(group.expected_server_properties)
-      else
-        ServerProperties.blank(group.id)
-      end
+      group
+      |> ServerGroup.expected_server_properties()
+      |> ServerPropertiesForm.from()
+      |> ServerPropertiesForm.changeset()
 
     socket
     |> assign(form: to_form(changeset, as: :expected_server_properties))
     |> noreply()
   end
 
-  # def handle_event("validate", %{"expected_server_properties" => params}, socket) do
-  #   auth = socket.assigns.auth
-  #   server = socket.assigns.server
+  def handle_event("validate", %{"expected_server_properties" => params}, socket) do
+    auth = socket.assigns.auth
+    group = socket.assigns.group
 
-  #   validate_dialog_form(
-  #     :server,
-  #     ServerForm.update_changeset(server, params),
-  #     &Servers.validate_existing_server(
-  #       auth,
-  #       server.id,
-  #       ServerForm.to_update_data(&1)
-  #     ),
-  #     socket
-  #   )
-  # end
+    changeset =
+      group
+      |> ServerGroup.expected_server_properties()
+      |> ServerPropertiesForm.from()
+      |> ServerPropertiesForm.changeset(params)
 
-  # def handle_event("update", %{"server" => params}, socket) do
-  #   auth = socket.assigns.auth
-  #   server = socket.assigns.server
+    validate_dialog_form(
+      :expected_server_properties,
+      changeset,
+      &Servers.validate_server_group_expected_properties(
+        auth,
+        group.id,
+        ServerPropertiesForm.to_data(&1)
+      ),
+      socket
+    )
+  end
 
-  #   with {:ok, form_data} <-
-  #          Changeset.apply_action(
-  #            ServerForm.update_changeset(server, params),
-  #            :validate
-  #          ),
-  #        {:ok, updated_server} <-
-  #          Servers.update_server(auth, server.id, ServerForm.to_update_data(form_data)) do
-  #     socket
-  #     |> send_notification(
-  #       Message.new(
-  #         :success,
-  #         gettext("Updated server {server}", server: Server.name_or_default(updated_server))
-  #       )
-  #     )
-  #     |> push_event("execute-action", %{to: "##{id(server)}", action: "close"})
-  #     |> noreply()
-  #   else
-  #     {:error, %Changeset{} = changeset} ->
-  #       socket
-  #       |> send_notification(Message.new(:error, gettext("The form is invalid.")))
-  #       |> assign(form: to_form(changeset, as: :server))
-  #       |> noreply()
-  #   end
-  # end
+  def handle_event("update", %{"expected_server_properties" => params}, socket) do
+    auth = socket.assigns.auth
+    group = socket.assigns.group
+
+    changeset =
+      group
+      |> ServerGroup.expected_server_properties()
+      |> ServerPropertiesForm.from()
+      |> ServerPropertiesForm.changeset(params)
+
+    with {:ok, form_data} <-
+           Changeset.apply_action(
+             changeset,
+             :validate
+           ),
+         {:ok, _updated_props} <-
+           Servers.update_server_group_expected_properties(
+             auth,
+             group.id,
+             ServerPropertiesForm.to_data(form_data)
+           ) do
+      socket
+      |> send_notification(
+        Message.new(
+          :success,
+          gettext("Updated expected server properties for {group}", group: group.name)
+        )
+      )
+      |> push_event("execute-action", %{to: "##{id(group)}", action: "close"})
+      |> noreply()
+    else
+      {:error, %Changeset{} = changeset} ->
+        socket
+        |> send_notification(Message.new(:error, gettext("The form is invalid.")))
+        |> assign(form: to_form(changeset, as: :expected_server_properties))
+        |> noreply()
+    end
+  end
 end

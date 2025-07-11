@@ -32,12 +32,14 @@
           <div>
             <label class="fieldset-label mt-2">{gettext("CPUs")}</label>
             <input
-              type="text"
+              type="number"
               id={@form[:cpus].id}
               class="input w-full"
               name={@form[:cpus].name}
               value={@form[:cpus].value}
               placeholder={gettext("e.g. 1")}
+              min="1"
+              step="1"
             />
             <.errors_for field={@form[:cpus]} />
           </div>
@@ -45,12 +47,14 @@
           <div>
             <label class="fieldset-label mt-2">{gettext("CPU cores")}</label>
             <input
-              type="text"
+              type="number"
               id={@form[:cores].id}
               class="input w-full"
               name={@form[:cores].name}
               value={@form[:cores].value}
               placeholder={gettext("e.g. 2")}
+              min="1"
+              step="1"
             />
             <.errors_for field={@form[:cores]} />
           </div>
@@ -58,12 +62,14 @@
           <div>
             <label class="fieldset-label mt-2">{gettext("vCPUs")}</label>
             <input
-              type="text"
+              type="number"
               id={@form[:vcpus].id}
               class="input w-full"
               name={@form[:vcpus].name}
               value={@form[:vcpus].value}
               placeholder={gettext("e.g. 2")}
+              min="1"
+              step="1"
             />
             <.errors_for field={@form[:vcpus]} />
           </div>
@@ -74,11 +80,13 @@
             <label class="fieldset-label mt-2">{gettext("Memory")}</label>
             <label class="input w-full">
               <input
-                type="text"
+                type="number"
                 id={@form[:memory].id}
                 name={@form[:memory].name}
                 value={@form[:memory].value}
                 placeholder={gettext("e.g. 2048")}
+                min="1"
+                step="128"
               />
               <span class="label">{gettext("MB")} (±10%)</span>
             </label>
@@ -89,11 +97,13 @@
             <label class="fieldset-label mt-2">{gettext("Swap")}</label>
             <label class="input w-full">
               <input
-                type="text"
+                type="number"
                 id={@form[:swap].id}
                 name={@form[:swap].name}
                 value={@form[:swap].value}
                 placeholder={gettext("e.g. 1000")}
+                min="1"
+                step="128"
               />
               <span class="label">{gettext("MB")} (±10%)</span>
             </label>

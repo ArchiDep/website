@@ -6,6 +6,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
   alias ArchiDep.Students.Types
   alias Ecto.Changeset
 
+  @type t :: struct()
+
   @primary_key false
   embedded_schema do
     field(:name, :string, default: "")
@@ -14,7 +16,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
     field(:active, :boolean, default: true)
   end
 
-  @spec create_changeset(map) :: Changeset.t(Types.class_data())
+  @spec create_changeset(map()) :: Changeset.t(Types.class_data())
   def create_changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{}
     |> cast(params, [
@@ -26,7 +28,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
     |> validate_required([:name, :active])
   end
 
-  @spec update_changeset(Class.t(), map) :: Changeset.t(Types.class_data())
+  @spec update_changeset(Class.t(), map()) :: Changeset.t(Types.class_data())
   def update_changeset(class, params \\ %{}) when is_struct(class, Class) and is_map(params) do
     %__MODULE__{
       name: class.name,
@@ -43,6 +45,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
     |> validate_required([:name, :active])
   end
 
-  @spec to_class_data(struct()) :: Types.class_data()
+  @spec to_class_data(t()) :: Types.class_data()
   def to_class_data(%__MODULE__{} = form), do: Map.from_struct(form)
 end

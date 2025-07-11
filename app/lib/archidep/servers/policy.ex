@@ -23,6 +23,24 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Root users can validate a server group's expected properties.
+  def authorize(
+        :servers,
+        :validate_server_group_expected_properties,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
+  # Root users can update a server group's expected properties.
+  def authorize(
+        :servers,
+        :update_server_group_expected_properties,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   # Server group members can validate servers for their own group.
   def authorize(
         :servers,

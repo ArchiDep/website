@@ -7,6 +7,8 @@ defmodule ArchiDepWeb.Servers.ServerForm do
   alias ArchiDepWeb.Servers.ServerPropertiesForm
   alias Ecto.Changeset
 
+  @type t :: struct()
+
   @primary_key false
   embedded_schema do
     field(:name, :string)
@@ -37,7 +39,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     |> validate_required([:ip_address, :username, :active])
   end
 
-  @spec to_create_data(struct()) :: Types.create_server_data()
+  @spec to_create_data(t()) :: Types.create_server_data()
   def to_create_data(form),
     do:
       form
@@ -75,7 +77,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     |> validate_required([:ip_address, :username, :active])
   end
 
-  @spec to_update_data(struct()) :: Types.update_server_data()
+  @spec to_update_data(t()) :: Types.update_server_data()
   def to_update_data(form),
     do:
       form

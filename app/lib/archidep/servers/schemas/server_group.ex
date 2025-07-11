@@ -47,6 +47,13 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
 
+  @spec expected_server_properties(t()) :: ServerProperties.t()
+
+  def expected_server_properties(%__MODULE__{id: id, expected_server_properties: nil}),
+    do: ServerProperties.blank(id)
+
+  def expected_server_properties(%__MODULE__{expected_server_properties: props}), do: props
+
   @spec fetch_server_group(UUID.t()) :: {:ok, t()} | {:error, :server_group_not_found}
   def fetch_server_group(id),
     do:
@@ -80,23 +87,25 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
           updated_at: updated_at
       }
 
-  @spec update_expected_server_properties(t(), Types.server_properties()) :: Changeset.t(t())
+  @spec update_expected_server_properties(t(), Types.server_properties_data()) :: Changeset.t(t())
   def update_expected_server_properties(group, data) do
-    id = group.id
     now = DateTime.utc_now()
 
-    data =
-      Map.put(
-        data,
-        :expected_server_properties,
-        Map.put(data.expected_server_properties, :id, id)
-      )
-
     group
-    |> cast(data, [])
-    |> cast_assoc(:expected_server_properties, with: &ServerProperties.update/2)
+    |> change(expected_server_properties: expected_server_properties(group))
+    |> cast(
+      %{
+        expected_server_properties: data
+      },
+      []
+    )
+    |> cast_assoc(:expected_server_properties,
+      with: fn props, params ->
+        props |> ServerProperties.update(params) |> change(%{id: group.id})
+      end
+    )
     |> change(updated_at: now)
     |> optimistic_lock(:version)
-    |> validate_required([:expected_server_properties, :expected_server_properties_id])
+    |> validate_required([:expected_server_properties])
   end
 end

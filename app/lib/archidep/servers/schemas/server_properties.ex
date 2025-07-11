@@ -40,77 +40,22 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
     field(:distribution_version, :string)
   end
 
-  @spec blank(UUID.t()) :: Changeset.t(t())
-  def blank(id),
+  @spec blank(UUID.t()) :: t()
+  def blank(id), do: %__MODULE__{id: id}
+
+  @spec blank_changeset(UUID.t()) :: Changeset.t(t())
+  def blank_changeset(id),
     do:
       %__MODULE__{}
       |> change(id: id)
       |> validate()
 
   @spec new(t(), UUID.t(), Types.server_properties()) :: Changeset.t(t())
-  def new(server_properties, id, data) do
-    server_properties
-    |> change(id: id)
-    |> cast(data, [
-      :hostname,
-      :machine_id,
-      :cpus,
-      :cores,
-      :vcpus,
-      :memory,
-      :swap,
-      :system,
-      :architecture,
-      :os_family,
-      :distribution,
-      :distribution_release,
-      :distribution_version
-    ])
-    |> validate()
-  end
-
-  @spec update(t()) :: Changeset.t(t())
-  @spec update(t(), Types.server_properties_data()) :: Changeset.t(t())
-  def update(server_properties, data \\ %{}) do
-    server_properties
-    |> cast(data, [
-      :hostname,
-      :machine_id,
-      :cpus,
-      :cores,
-      :vcpus,
-      :memory,
-      :swap,
-      :system,
-      :architecture,
-      :os_family,
-      :distribution,
-      :distribution_release,
-      :distribution_version
-    ])
-    |> validate()
-  end
-
-  @spec update_from_ansible_facts(t(), map) :: Changeset.t(t())
-  def update_from_ansible_facts(server_properties, facts) do
-    server_properties
-    |> cast(
-      %{
-        hostname: facts["ansible_hostname"],
-        machine_id: facts["ansible_machine_id"],
-        cpus: facts["ansible_processor_cores"],
-        cores: facts["ansible_processor_cores"],
-        vcpus: facts["ansible_processor_vcpus"],
-        memory: get_in(facts, ["ansible_memory_mb", "real", "total"]),
-        swap: get_in(facts, ["ansible_memory_mb", "swap", "total"]),
-        system: facts["ansible_system"],
-        architecture: facts["ansible_architecture"],
-        os_family: facts["ansible_os_family"],
-        distribution: facts["ansible_distribution"],
-        distribution_release: facts["ansible_distribution_release"],
-        distribution_version: facts["ansible_distribution_version"]
-      },
-      [
+  def new(server_properties, id, data),
+    do:
+      server_properties
+      |> change(id: id)
+      |> cast(data, [
         :hostname,
         :machine_id,
         :cpus,
@@ -124,56 +69,123 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
         :distribution,
         :distribution_release,
         :distribution_version
-      ]
-    )
-    |> then(fn changeset ->
-      changeset.errors
-      |> Keyword.keys()
-      |> Enum.uniq()
-      |> Enum.reduce(changeset, &put_change(&2, &1, nil))
-    end)
-  end
+      ])
+      |> validate()
 
-  defp validate(changeset) do
-    changeset
-    |> update_change(:hostname, &trim_to_nil/1)
-    |> update_change(:machine_id, &trim_to_nil/1)
-    |> update_change(:system, &trim_to_nil/1)
-    |> update_change(:architecture, &trim_to_nil/1)
-    |> update_change(:os_family, &trim_to_nil/1)
-    |> update_change(:distribution, &trim_to_nil/1)
-    |> update_change(:distribution_release, &trim_to_nil/1)
-    |> update_change(:distribution_version, &trim_to_nil/1)
-    |> validate_length(:hostname, max: 255)
-    |> validate_length(:machine_id, max: 255)
-    |> validate_number(:cpus, greater_than_or_equal_to: 0, less_than_or_equal_to: 32_767)
-    |> validate_number(:cores,
-      greater_than_or_equal_to: 0,
-      less_than_or_equal_to: 32_767
-    )
-    |> validate_number(:vcpus,
-      greater_than_or_equal_to: 0,
-      less_than_or_equal_to: 32_767
-    )
-    |> validate_number(:memory,
-      greater_than_or_equal_to: 0,
-      less_than_or_equal_to: 2_147_483_647
-    )
-    |> validate_number(:swap,
-      greater_than_or_equal_to: 0,
-      less_than_or_equal_to: 2_147_483_647
-    )
-    |> validate_length(:system, max: 50)
-    |> validate_length(:architecture, max: 20)
-    |> validate_length(:os_family, max: 50)
-    |> validate_length(:distribution, max: 50)
-    |> validate_length(:distribution_release, max: 50)
-    |> validate_length(:distribution_version, max: 20)
-  end
+  @spec update(t()) :: Changeset.t(t())
+  @spec update(t(), Types.server_properties_data()) :: Changeset.t(t())
+  def update(server_properties, data \\ %{}),
+    do:
+      server_properties
+      |> cast(data, [
+        :hostname,
+        :machine_id,
+        :cpus,
+        :cores,
+        :vcpus,
+        :memory,
+        :swap,
+        :system,
+        :architecture,
+        :os_family,
+        :distribution,
+        :distribution_release,
+        :distribution_version
+      ])
+      |> validate()
+
+  @spec update_from_ansible_facts(t(), map) :: Changeset.t(t())
+  def update_from_ansible_facts(server_properties, facts),
+    do:
+      server_properties
+      |> cast(
+        %{
+          hostname: facts["ansible_hostname"],
+          machine_id: facts["ansible_machine_id"],
+          cpus: facts["ansible_processor_cores"],
+          cores: facts["ansible_processor_cores"],
+          vcpus: facts["ansible_processor_vcpus"],
+          memory: get_in(facts, ["ansible_memory_mb", "real", "total"]),
+          swap: get_in(facts, ["ansible_memory_mb", "swap", "total"]),
+          system: facts["ansible_system"],
+          architecture: facts["ansible_architecture"],
+          os_family: facts["ansible_os_family"],
+          distribution: facts["ansible_distribution"],
+          distribution_release: facts["ansible_distribution_release"],
+          distribution_version: facts["ansible_distribution_version"]
+        },
+        [
+          :hostname,
+          :machine_id,
+          :cpus,
+          :cores,
+          :vcpus,
+          :memory,
+          :swap,
+          :system,
+          :architecture,
+          :os_family,
+          :distribution,
+          :distribution_release,
+          :distribution_version
+        ]
+      )
+      |> then(fn changeset ->
+        changeset.errors
+        |> Keyword.keys()
+        |> Enum.uniq()
+        |> Enum.reduce(changeset, &put_change(&2, &1, nil))
+      end)
+
+  # TODO: adapt minimum and allow/deny "*" depending on the context
+  defp validate(changeset),
+    do:
+      changeset
+      |> update_change(:hostname, &trim_to_nil/1)
+      |> update_change(:machine_id, &trim_to_nil/1)
+      |> update_change(:system, &trim_to_nil/1)
+      |> update_change(:architecture, &trim_to_nil/1)
+      |> update_change(:os_family, &trim_to_nil/1)
+      |> update_change(:distribution, &trim_to_nil/1)
+      |> update_change(:distribution_release, &trim_to_nil/1)
+      |> update_change(:distribution_version, &trim_to_nil/1)
+      |> validate_length(:hostname, max: 255)
+      |> validate_length(:machine_id, max: 255)
+      |> validate_number(:cpus,
+        greater_than_or_equal_to: 0,
+        less_than_or_equal_to: 32_767,
+        message: "must be between 0 and {number}"
+      )
+      |> validate_number(:cores,
+        greater_than_or_equal_to: 0,
+        less_than_or_equal_to: 32_767,
+        message: "must be between 0 and {number}"
+      )
+      |> validate_number(:vcpus,
+        greater_than_or_equal_to: 0,
+        less_than_or_equal_to: 32_767,
+        message: "must be between 0 and {number}"
+      )
+      |> validate_number(:memory,
+        greater_than_or_equal_to: 0,
+        less_than_or_equal_to: 2_147_483_647,
+        message: "must be between 0 and {number}"
+      )
+      |> validate_number(:swap,
+        greater_than_or_equal_to: 0,
+        less_than_or_equal_to: 2_147_483_647,
+        message: "must be between 0 and {number}"
+      )
+      |> validate_length(:system, max: 50)
+      |> validate_length(:architecture, max: 20)
+      |> validate_length(:os_family, max: 50)
+      |> validate_length(:distribution, max: 50)
+      |> validate_length(:distribution_release, max: 50)
+      |> validate_length(:distribution_version, max: 20)
 
   @spec merge(t(), t()) :: t()
-  def merge(properties, overrides) do
-    %__MODULE__{
+  def merge(properties, overrides),
+    do: %__MODULE__{
       properties
       | hostname: merge_property(properties, overrides, :hostname),
         machine_id: merge_property(properties, overrides, :machine_id),
@@ -189,7 +201,6 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
         distribution_release: merge_property(properties, overrides, :distribution_release),
         distribution_version: merge_property(properties, overrides, :distribution_version)
     }
-  end
 
   defp merge_property(properties, overrides, property),
     do: merge_property(Map.get(properties, property), Map.get(overrides, property))
@@ -200,36 +211,36 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
   defp merge_property(_value, override), do: override
 
   @spec detect_mismatches(t(), t()) :: list({atom(), term(), term()})
-  def detect_mismatches(expected_properties, actual_properties) do
-    [
-      :hostname,
-      :machine_id,
-      :cpus,
-      :cores,
-      :vcpus,
-      :memory,
-      :swap,
-      :system,
-      :architecture,
-      :os_family,
-      :distribution,
-      :distribution_release,
-      :distribution_version
-    ]
-    |> Enum.reduce([], fn property, acc ->
-      expected = expected_properties |> Map.get(property) |> trim_binary_to_nil()
-      actual = actual_properties |> Map.get(property) |> trim_binary_to_nil()
+  def detect_mismatches(expected_properties, actual_properties),
+    do:
+      [
+        :hostname,
+        :machine_id,
+        :cpus,
+        :cores,
+        :vcpus,
+        :memory,
+        :swap,
+        :system,
+        :architecture,
+        :os_family,
+        :distribution,
+        :distribution_release,
+        :distribution_version
+      ]
+      |> Enum.reduce([], fn property, acc ->
+        expected = expected_properties |> Map.get(property) |> trim_binary_to_nil()
+        actual = actual_properties |> Map.get(property) |> trim_binary_to_nil()
 
-      case detect_mismatch(property, expected, actual) do
-        :ok ->
-          acc
+        case detect_mismatch(property, expected, actual) do
+          :ok ->
+            acc
 
-        {:error, {expected, actual}} ->
-          [{property, expected, actual} | acc]
-      end
-    end)
-    |> Enum.reverse()
-  end
+          {:error, {expected, actual}} ->
+            [{property, expected, actual} | acc]
+        end
+      end)
+      |> Enum.reverse()
 
   defp trim_binary_to_nil(value) when is_binary(value), do: trim_to_nil(value)
   defp trim_binary_to_nil(value), do: value

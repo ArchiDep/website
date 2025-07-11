@@ -75,6 +75,8 @@ defmodule ArchiDep.Servers.Types do
         }
 
   @type server_properties :: %{
+          hostname: String.t() | nil,
+          machine_id: String.t() | nil,
           cpus: non_neg_integer() | nil,
           cores: non_neg_integer() | nil,
           vcpus: non_neg_integer() | nil,
@@ -89,6 +91,8 @@ defmodule ArchiDep.Servers.Types do
         }
 
   @type server_properties_data :: %{
+          optional(:hostname) => String.t() | nil,
+          optional(:machine_id) => String.t() | nil,
           optional(:cpus) => non_neg_integer() | nil,
           optional(:cores) => non_neg_integer() | nil,
           optional(:vcpus) => non_neg_integer() | nil,

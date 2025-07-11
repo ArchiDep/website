@@ -3,6 +3,10 @@ defmodule ArchiDepWeb.Servers.ServerPropertiesForm do
 
   import Ecto.Changeset
   alias ArchiDep.Servers.Schemas.ServerProperties
+  alias ArchiDep.Servers.Types
+  alias Ecto.Changeset
+
+  @type t :: struct()
 
   @primary_key false
   embedded_schema do
@@ -19,25 +23,28 @@ defmodule ArchiDepWeb.Servers.ServerPropertiesForm do
     field(:distribution_version, :string)
   end
 
-  def changeset(expected_properties, params \\ %{}) do
-    expected_properties
-    |> cast(params, [
-      :cpus,
-      :cores,
-      :vcpus,
-      :memory,
-      :swap,
-      :system,
-      :architecture,
-      :os_family,
-      :distribution,
-      :distribution_release,
-      :distribution_version
-    ])
-  end
+  @spec changeset(t()) :: Changeset.t(Types.server_properties())
+  @spec changeset(t(), map()) :: Changeset.t(Types.server_properties())
+  def changeset(expected_properties, params \\ %{}),
+    do:
+      expected_properties
+      |> cast(params, [
+        :cpus,
+        :cores,
+        :vcpus,
+        :memory,
+        :swap,
+        :system,
+        :architecture,
+        :os_family,
+        :distribution,
+        :distribution_release,
+        :distribution_version
+      ])
 
-  def from(%ServerProperties{} = properties) do
-    %__MODULE__{
+  @spec from(ServerProperties.t()) :: t()
+  def from(%ServerProperties{} = properties),
+    do: %__MODULE__{
       cpus: properties.cpus,
       cores: properties.cores,
       vcpus: properties.vcpus,
@@ -50,7 +57,7 @@ defmodule ArchiDepWeb.Servers.ServerPropertiesForm do
       distribution_release: properties.distribution_release,
       distribution_version: properties.distribution_version
     }
-  end
 
+  @spec to_data(t()) :: Types.server_properties()
   def to_data(form), do: Map.from_struct(form)
 end
