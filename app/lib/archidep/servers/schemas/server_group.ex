@@ -33,7 +33,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean)
-    belongs_to(:expected_server_properties, ServerProperties)
+    belongs_to(:expected_server_properties, ServerProperties, on_replace: :update)
     has_many(:servers, Server, foreign_key: :group_id)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)

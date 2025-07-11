@@ -56,36 +56,49 @@
   <div class="col-span1 md:col-span-2">
     <div class="card bg-base-300 card-sm shadow-sm">
       <div class="card-body">
-        <h2 class="card-title">{gettext("Expected server properties")}</h2>
-        <button
-          :if={@server_group.expected_server_properties_id == nil}
-          type="button"
-          class="join-item btn btn-accent"
-          alias
-          ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive
-          phx-click={
-            JS.dispatch("open-dialog",
-              detail: %{dialog: EditServerGroupExpectedPropertiesDialogLive.id(@server_group)}
-            )
-          }
-        >
-          <span class="flex items-center gap-x-2">
-            <Heroicons.server_stack class="size-4" />
-            <span>{gettext("Define expected properties")}</span>
-          </span>
-        </button>
-        <%!-- <li :if={expected_cpu(@class) != ""}>
-          {expected_cpu(@class)}
-        </li>
-        <li :if={expected_memory(@class) != ""}>
-          {expected_memory(@class)}
-        </li>
-        <li :if={expected_os(@class) != ""}>
-          {expected_os(@class)}
-        </li>
-        <li :if={expected_distribution(@class) != ""}>
-          {expected_distribution(@class)}
-        </li> --%>
+        <div class="card-title flex justify-between gap-x-4">
+          <h2>{gettext("Expected server properties")}</h2>
+          <button
+            :if={@server_group.expected_server_properties_id != nil}
+            type="button"
+            class="btn btn-warning btn-xs"
+            alias
+            ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive
+            phx-click={
+              JS.dispatch("open-dialog",
+                detail: %{dialog: EditServerGroupExpectedPropertiesDialogLive.id(@server_group)}
+              )
+            }
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.pencil class="size-4" />
+              <span>
+                {gettext("Edit")}
+              </span>
+            </span>
+          </button>
+        </div>
+        <.expected_server_properties properties={@server_group.expected_server_properties} />
+        <div :if={@server_group.expected_server_properties_id == nil} class="flex">
+          <button
+            type="button"
+            class="btn btn-accent"
+            alias
+            ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive
+            phx-click={
+              JS.dispatch("open-dialog",
+                detail: %{dialog: EditServerGroupExpectedPropertiesDialogLive.id(@server_group)}
+              )
+            }
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.server_stack class="size-4" />
+              <span>
+                {gettext("Define expected properties")}
+              </span>
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
