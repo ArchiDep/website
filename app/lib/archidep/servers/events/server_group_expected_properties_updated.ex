@@ -1,0 +1,104 @@
+defmodule ArchiDep.Servers.Events.ServerGroupExpectedPropertiesUpdated do
+  use ArchiDep, :event
+
+  alias ArchiDep.Servers.Schemas.ServerProperties
+  alias Ecto.UUID
+
+  @derive Jason.Encoder
+
+  @enforce_keys [
+    :id,
+    :hostname,
+    :machine_id,
+    :cpus,
+    :cores,
+    :vcpus,
+    :memory,
+    :swap,
+    :system,
+    :architecture,
+    :os_family,
+    :distribution,
+    :distribution_release,
+    :distribution_version
+  ]
+  defstruct [
+    :id,
+    :hostname,
+    :machine_id,
+    :cpus,
+    :cores,
+    :vcpus,
+    :memory,
+    :swap,
+    :system,
+    :architecture,
+    :os_family,
+    :distribution,
+    :distribution_release,
+    :distribution_version
+  ]
+
+  @type t :: %__MODULE__{
+          id: UUID.t(),
+          hostname: String.t() | nil,
+          machine_id: String.t() | nil,
+          cpus: non_neg_integer() | nil,
+          cores: non_neg_integer() | nil,
+          vcpus: non_neg_integer() | nil,
+          memory: non_neg_integer() | nil,
+          swap: non_neg_integer() | nil,
+          system: String.t() | nil,
+          architecture: String.t() | nil,
+          os_family: String.t() | nil,
+          distribution: String.t() | nil,
+          distribution_release: String.t() | nil,
+          distribution_version: String.t() | nil
+        }
+
+  @spec new(ServerProperties.t()) :: t()
+  def new(properties) do
+    %ServerProperties{
+      id: id,
+      hostname: expected_hostname,
+      machine_id: expected_machine_id,
+      cpus: expected_cpus,
+      cores: expected_cores,
+      vcpus: expected_vcpus,
+      memory: expected_memory,
+      swap: expected_swap,
+      system: expected_system,
+      architecture: expected_architecture,
+      os_family: expected_os_family,
+      distribution: expected_distribution,
+      distribution_release: expected_distribution_release,
+      distribution_version: expected_distribution_version
+    } = properties
+
+    %__MODULE__{
+      id: id,
+      hostname: expected_hostname,
+      machine_id: expected_machine_id,
+      cpus: expected_cpus,
+      cores: expected_cores,
+      vcpus: expected_vcpus,
+      memory: expected_memory,
+      swap: expected_swap,
+      system: expected_system,
+      architecture: expected_architecture,
+      os_family: expected_os_family,
+      distribution: expected_distribution,
+      distribution_release: expected_distribution_release,
+      distribution_version: expected_distribution_version
+    }
+  end
+
+  defimpl Event do
+    alias ArchiDep.Servers.Events.ServerGroupExpectedPropertiesUpdated
+
+    def event_stream(%ServerGroupExpectedPropertiesUpdated{id: id}),
+      do: "servers-groups:#{id}"
+
+    def event_type(_event), do: :"archidep/servers/server-group-expected-properties-updated"
+  end
+end

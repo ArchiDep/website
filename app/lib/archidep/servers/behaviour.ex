@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.Behaviour do
 
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Types
 
   # Server groups
@@ -11,6 +12,15 @@ defmodule ArchiDep.Servers.Behaviour do
 
   @callback fetch_server_group(Authentication.t(), UUID.t()) ::
               {:ok, ServerGroup.t()} | {:error, :server_group_not_found}
+
+  @callback update_server_group_expected_properties(
+              Authentication.t(),
+              UUID.t(),
+              Types.server_properties_data()
+            ) ::
+              {:ok, ServerProperties.t()}
+              | {:error, Changeset.t()}
+              | {:error, :server_group_not_found}
 
   # Servers
 
