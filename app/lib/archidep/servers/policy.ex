@@ -5,6 +5,24 @@ defmodule ArchiDep.Servers.Policy do
 
   @impl Policy
 
+  # Root users can list server groups.
+  def authorize(
+        :servers,
+        :list_server_groups,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
+  # Root users can fetch a server group.
+  def authorize(
+        :servers,
+        :fetch_server_group,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   # Server group members can validate servers for their own group.
   def authorize(
         :servers,
@@ -49,15 +67,6 @@ defmodule ArchiDep.Servers.Policy do
         _params
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
-
-  # Root users can list server groups.
-  def authorize(
-        :servers,
-        :list_server_groups,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
 
   # Server group members and root users can fetch a server that belongs to them.
   def authorize(

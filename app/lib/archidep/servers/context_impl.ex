@@ -4,12 +4,24 @@ defmodule ArchiDep.Servers.ContextImpl do
   alias ArchiDep.Servers.CreateServer
   alias ArchiDep.Servers.DeleteServer
   alias ArchiDep.Servers.ManageServer
+  alias ArchiDep.Servers.ReadServerGroups
   alias ArchiDep.Servers.ReadServers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.ServerCallbacks
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UpdateServer
+
+  # Server groups
+
+  @spec list_server_groups(Authentication.t()) :: list(ServerGroup.t())
+  defdelegate list_server_groups(auth), to: ReadServerGroups
+
+  @spec fetch_server_group(Authentication.t(), UUID.t()) ::
+          {:ok, ServerGroup.t()} | {:error, :server_group_not_found}
+  defdelegate fetch_server_group(auth, id), to: ReadServerGroups
+
+  # Servers
 
   @spec validate_server(Authentication.t(), Types.create_server_data()) :: Changeset.t()
   defdelegate validate_server(auth, data), to: CreateServer
@@ -21,23 +33,9 @@ defmodule ArchiDep.Servers.ContextImpl do
   @spec list_my_servers(Authentication.t()) :: list(Server.t())
   defdelegate list_my_servers(auth), to: ReadServers
 
-  @spec list_server_groups(Authentication.t()) :: list(ServerGroup.t())
-  defdelegate list_server_groups(auth), to: ReadServers
-
   @spec fetch_server(Authentication.t(), UUID.t()) ::
           {:ok, Server.t()} | {:error, :server_not_found}
   defdelegate fetch_server(auth, id), to: ReadServers
-
-  @spec retry_connecting(Authentication.t(), UUID.t()) ::
-          :ok | {:error, :server_not_found}
-  defdelegate retry_connecting(auth, server), to: ManageServer
-
-  @spec retry_ansible_playbook(Authentication.t(), UUID.t(), String.t()) ::
-          :ok | {:error, :server_not_found}
-  defdelegate retry_ansible_playbook(auth, server, playbook), to: ManageServer
-
-  @spec notify_server_up(UUID.t(), binary()) :: :ok | {:error, :server_not_found}
-  defdelegate notify_server_up(server_id, nonce), to: ServerCallbacks
 
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
           {:ok, Changeset.t()} | {:error, :server_not_found}
@@ -53,4 +51,17 @@ defmodule ArchiDep.Servers.ContextImpl do
   @spec delete_server(Authentication.t(), UUID.t()) ::
           :ok | {:error, :server_busy} | {:error, :server_not_found}
   defdelegate delete_server(auth, server_id), to: DeleteServer
+
+  # Connected servers
+
+  @spec retry_connecting(Authentication.t(), UUID.t()) ::
+          :ok | {:error, :server_not_found}
+  defdelegate retry_connecting(auth, server), to: ManageServer
+
+  @spec retry_ansible_playbook(Authentication.t(), UUID.t(), String.t()) ::
+          :ok | {:error, :server_not_found}
+  defdelegate retry_ansible_playbook(auth, server, playbook), to: ManageServer
+
+  @spec notify_server_up(UUID.t(), binary()) :: :ok | {:error, :server_not_found}
+  defdelegate notify_server_up(server_id, nonce), to: ServerCallbacks
 end

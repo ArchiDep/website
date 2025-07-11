@@ -87,4 +87,18 @@ defmodule ArchiDep.Servers.Types do
           distribution_release: String.t() | nil,
           distribution_version: String.t() | nil
         }
+
+  @type server_properties_data :: %{
+          optional(:cpus) => non_neg_integer() | nil,
+          optional(:cores) => non_neg_integer() | nil,
+          optional(:vcpus) => non_neg_integer() | nil,
+          optional(:memory) => non_neg_integer() | nil,
+          optional(:swap) => non_neg_integer() | nil,
+          optional(:system) => String.t() | nil,
+          optional(:architecture) => String.t() | nil,
+          optional(:os_family) => String.t() | nil,
+          optional(:distribution) => String.t() | nil,
+          optional(:distribution_release) => String.t() | nil,
+          optional(:distribution_version) => String.t() | nil
+        }
 end

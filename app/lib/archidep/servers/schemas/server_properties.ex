@@ -69,8 +69,9 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
     |> validate()
   end
 
-  @spec update(t(), Types.server_properties()) :: Changeset.t(t())
-  def update(server_properties, data) do
+  @spec update(t()) :: Changeset.t(t())
+  @spec update(t(), Types.server_properties_data()) :: Changeset.t(t())
+  def update(server_properties, data \\ %{}) do
     server_properties
     |> cast(data, [
       :hostname,

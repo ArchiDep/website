@@ -3,7 +3,6 @@ defmodule ArchiDep.Servers.ReadServers do
 
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.Schemas.ServerGroup
 
   @spec list_my_servers(Authentication.t()) :: list(Server.t())
   def list_my_servers(auth) do
@@ -17,17 +16,6 @@ defmodule ArchiDep.Servers.ReadServers do
         where: s.owner_id == ^principal_id,
         order_by: [s.name, s.username, s.ip_address],
         preload: [owner: o]
-    )
-  end
-
-  @spec list_server_groups(Authentication.t()) ::
-          list(ServerGroup.t())
-  def list_server_groups(auth) do
-    authorize!(auth, Policy, :servers, :list_server_groups, nil)
-
-    Repo.all(
-      from g in ServerGroup,
-        order_by: [desc: g.active, desc: g.end_date, desc: g.created_at, asc: g.name]
     )
   end
 

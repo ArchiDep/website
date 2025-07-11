@@ -1,0 +1,206 @@
+<dialog
+  id={id(@group)}
+  class="modal"
+  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id(@group)})}
+>
+  <div class="modal-box w-11/12 max-w-3xl">
+    <.form
+      id={"#{id(@group)}-form"}
+      for={@form}
+      phx-change="validate"
+      phx-submit="update"
+      phx-target={@myself}
+    >
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend w-full flex justify-between gap-4">
+          <h3 class="text-lg font-bold">{gettext("Edit Expected Server Properties")}</h3>
+          <div class="badge badge-outline badge-info">
+            <Heroicons.server_stack class="size-4" />
+            {@group.name}
+          </div>
+        </legend>
+        <!-- Expected server properties -->
+        <div role="alert" class="mb-2 alert alert-info alert-soft">
+          <span class="text-sm">
+            {gettext(
+              "Warnings will be issued for servers in this group that do not meet these expected properties. Leaving a field empty will disable the check for that property. This can be overriden for each server."
+            )}
+          </span>
+        </div>
+        <!-- CPU -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="fieldset-label mt-2">{gettext("CPUs")}</label>
+            <input
+              type="text"
+              id={@form[:cpus].id}
+              class="input w-full"
+              name={@form[:cpus].name}
+              value={@form[:cpus].value}
+              placeholder={gettext("e.g. 1")}
+            />
+            <.errors_for field={@form[:cpus]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">{gettext("CPU cores")}</label>
+            <input
+              type="text"
+              id={@form[:cores].id}
+              class="input w-full"
+              name={@form[:cores].name}
+              value={@form[:cores].value}
+              placeholder={gettext("e.g. 2")}
+            />
+            <.errors_for field={@form[:cores]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">{gettext("vCPUs")}</label>
+            <input
+              type="text"
+              id={@form[:vcpus].id}
+              class="input w-full"
+              name={@form[:vcpus].name}
+              value={@form[:vcpus].value}
+              placeholder={gettext("e.g. 2")}
+            />
+            <.errors_for field={@form[:vcpus]} />
+          </div>
+        </div>
+        <!-- Memory -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="fieldset-label mt-2">{gettext("Memory")}</label>
+            <label class="input w-full">
+              <input
+                type="text"
+                id={@form[:memory].id}
+                name={@form[:memory].name}
+                value={@form[:memory].value}
+                placeholder={gettext("e.g. 2048")}
+              />
+              <span class="label">{gettext("MB")} (±10%)</span>
+            </label>
+            <.errors_for field={@form[:memory]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">{gettext("Swap")}</label>
+            <label class="input w-full">
+              <input
+                type="text"
+                id={@form[:swap].id}
+                name={@form[:swap].name}
+                value={@form[:swap].value}
+                placeholder={gettext("e.g. 1000")}
+              />
+              <span class="label">{gettext("MB")} (±10%)</span>
+            </label>
+            <.errors_for field={@form[:swap]} />
+          </div>
+        </div>
+        <!-- System, OS family & architecture -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="fieldset-label mt-2">{gettext("System")}</label>
+            <input
+              type="text"
+              id={@form[:system].id}
+              class="input w-full"
+              name={@form[:system].name}
+              value={@form[:system].value}
+              placeholder={gettext("e.g. Linux")}
+            />
+            <.errors_for field={@form[:system]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">{gettext("Architecture")}</label>
+            <input
+              type="text"
+              id={@form[:architecture].id}
+              class="input w-full"
+              name={@form[:architecture].name}
+              value={@form[:architecture].value}
+              placeholder={gettext("e.g. x86_64")}
+            />
+            <.errors_for field={@form[:architecture]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">{gettext("OS family")}</label>
+            <input
+              type="text"
+              id={@form[:os_family].id}
+              class="input w-full"
+              name={@form[:os_family].name}
+              value={@form[:os_family].value}
+              placeholder={gettext("e.g. Debian")}
+            />
+            <.errors_for field={@form[:os_family]} />
+          </div>
+        </div>
+        <!-- Distribution -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="fieldset-label mt-2">{gettext("Distribution")}</label>
+            <input
+              type="text"
+              id={@form[:distribution].id}
+              class="input w-full"
+              name={@form[:distribution].name}
+              value={@form[:distribution].value}
+              placeholder={gettext("e.g. Ubuntu")}
+            />
+            <.errors_for field={@form[:distribution]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">{gettext("Release")}</label>
+            <input
+              type="text"
+              id={@form[:distribution_release].id}
+              class="input w-full"
+              name={@form[:distribution_release].name}
+              value={@form[:distribution_release].value}
+              placeholder={gettext("e.g. noble")}
+            />
+            <.errors_for field={@form[:distribution_release]} />
+          </div>
+
+          <div>
+            <label class="fieldset-label mt-2">{gettext("Version")}</label>
+            <input
+              type="text"
+              id={@form[:distribution_version].id}
+              class="input w-full"
+              name={@form[:distribution_version].name}
+              value={@form[:distribution_version].value}
+              placeholder={gettext("e.g. 24.04")}
+            />
+            <.errors_for field={@form[:distribution_version]} />
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="mt-2 flex justify-end gap-x-2">
+        <button type="button" class="btn btn-secondary" phx-click={close(@group)}>
+          <span class="flex items-center gap-x-2">
+            <Heroicons.x_mark class="size-4" />
+            <span>{gettext("Close")}</span>
+          </span>
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <span class="flex items-center gap-x-2">
+            <Heroicons.check class="size-4" />
+            <span>{gettext("Save")}</span>
+          </span>
+        </button>
+      </div>
+    </.form>
+  </div>
+  <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
+    <button type="submit">{gettext("Close")}</button>
+  </form>
+</dialog>

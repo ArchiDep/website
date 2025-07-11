@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
+  alias ArchiDep.Servers
   alias ArchiDep.Students
   alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Class
@@ -11,6 +12,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   alias ArchiDepWeb.Admin.Classes.EditClassDialogLive
   alias ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive
   alias ArchiDepWeb.Admin.Classes.NewStudentDialogLive
+  alias ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive
 
   # FIXME decoupling: show expected server properties
   # @spec expected_cpu(Class.t()) :: String.t()
@@ -89,8 +91,15 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   def mount(%{"id" => id}, _session, socket) do
     auth = socket.assigns.auth
 
+    [class_result, server_group_result] =
+      Task.await_many([
+        Task.async(fn -> Students.fetch_class(auth, id) end),
+        Task.async(fn -> Servers.fetch_server_group(auth, id) end)
+      ])
+
     # TODO: keep servers count up to date in real time
-    with {:ok, class} <- Students.fetch_class(auth, id) do
+    with {:ok, class} <- class_result,
+         {:ok, server_group} <- server_group_result do
       if connected?(socket) do
         set_process_label(__MODULE__, auth, class)
         :ok = PubSub.subscribe_class(class.id)
@@ -102,12 +111,13 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
         page_title:
           "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Classes")} > #{class.name}",
         class: class,
+        server_group: server_group,
         students: []
       )
       |> load_students()
       |> ok()
     else
-      {:error, :class_not_found} ->
+      {:error, not_found} when not_found in [:class_not_found, :server_group_not_found] ->
         socket
         |> put_notification(Message.new(:error, gettext("Class not found")))
         |> push_navigate(to: ~p"/admin/classes")

@@ -1,4 +1,3 @@
-# FIXME: track server state and disallow updates when busy
 defmodule ArchiDepWeb.Servers.EditServerDialogLive do
   use ArchiDepWeb, :live_component
 

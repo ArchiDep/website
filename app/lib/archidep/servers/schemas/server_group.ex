@@ -47,6 +47,18 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
 
+  @spec fetch_server_group(UUID.t()) :: {:ok, t()} | {:error, :server_group_not_found}
+  def fetch_server_group(id),
+    do:
+      from(g in __MODULE__,
+        left_join: esp in assoc(g, :expected_server_properties),
+        where: g.id == ^id,
+        group_by: [g.id, esp.id],
+        preload: [expected_server_properties: esp]
+      )
+      |> Repo.one()
+      |> truthy_or(:server_group_not_found)
+
   @spec refresh(t(), map()) :: t()
   def refresh(%__MODULE__{id: id, version: current_version} = group, %{
         id: id,
