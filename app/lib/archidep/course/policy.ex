@@ -1,11 +1,11 @@
-defmodule ArchiDep.Students.Policy do
+defmodule ArchiDep.Course.Policy do
   use ArchiDep, :policy
 
   @impl Policy
 
   # Root users can validate classes.
   def authorize(
-        :students,
+        :course,
         :validate_class,
         %Authentication{roles: roles},
         _params
@@ -14,7 +14,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can create classes.
   def authorize(
-        :students,
+        :course,
         :create_class,
         %Authentication{roles: roles},
         _params
@@ -23,7 +23,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can list classes.
   def authorize(
-        :students,
+        :course,
         :list_classes,
         %Authentication{roles: roles},
         _params
@@ -32,7 +32,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can fetch a class.
   def authorize(
-        :students,
+        :course,
         :fetch_class,
         %Authentication{roles: roles},
         _params
@@ -41,7 +41,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can validate existing classes.
   def authorize(
-        :students,
+        :course,
         :validate_existing_class,
         %Authentication{roles: roles},
         _params
@@ -50,7 +50,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can update classes.
   def authorize(
-        :students,
+        :course,
         :update_class,
         %Authentication{roles: roles},
         _params
@@ -59,7 +59,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can delete classes.
   def authorize(
-        :students,
+        :course,
         :delete_class,
         %Authentication{roles: roles},
         _params
@@ -68,7 +68,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can validate students.
   def authorize(
-        :students,
+        :course,
         :validate_student,
         %Authentication{roles: roles},
         _params
@@ -77,7 +77,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can create students.
   def authorize(
-        :students,
+        :course,
         :create_student,
         %Authentication{roles: roles},
         _params
@@ -86,7 +86,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can import students.
   def authorize(
-        :students,
+        :course,
         :import_students,
         %Authentication{roles: roles},
         _params
@@ -95,7 +95,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can list students.
   def authorize(
-        :students,
+        :course,
         :list_students,
         %Authentication{roles: roles},
         _params
@@ -104,7 +104,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can fetch a student in class.
   def authorize(
-        :students,
+        :course,
         :fetch_student_in_class,
         %Authentication{roles: roles},
         _params
@@ -113,7 +113,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can update students.
   def authorize(
-        :students,
+        :course,
         :update_student,
         %Authentication{roles: roles},
         _params
@@ -122,7 +122,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can validate existing students.
   def authorize(
-        :students,
+        :course,
         :validate_existing_student,
         %Authentication{roles: roles},
         _params
@@ -131,7 +131,7 @@ defmodule ArchiDep.Students.Policy do
 
   # Root users can delete students.
   def authorize(
-        :students,
+        :course,
         :delete_student,
         %Authentication{roles: roles},
         _params

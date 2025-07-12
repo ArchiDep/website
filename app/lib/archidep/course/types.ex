@@ -1,4 +1,4 @@
-defmodule ArchiDep.Students.Types do
+defmodule ArchiDep.Course.Types do
   alias Ecto.UUID
 
   @type class_data :: %{

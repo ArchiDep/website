@@ -1,4 +1,4 @@
-defmodule ArchiDep.Students.Schemas.Class do
+defmodule ArchiDep.Course.Schemas.Class do
   @moduledoc """
   A class is a group of students participating in a specific instance of the
   course (e.g. the course for the 2024-2025 academic year).
@@ -7,7 +7,7 @@ defmodule ArchiDep.Students.Schemas.Class do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Types
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id

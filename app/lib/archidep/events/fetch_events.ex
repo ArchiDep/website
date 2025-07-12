@@ -10,8 +10,8 @@ defmodule ArchiDep.Events.FetchEvents do
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Events.Types
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
 
   @spec fetch_events(Authentication.t(), list(Types.fetch_events_option())) ::
           list(StoredEvent.t(struct))

@@ -1,10 +1,10 @@
-defmodule ArchiDep.Students.Schemas.Student do
+defmodule ArchiDep.Course.Schemas.Student do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.User
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Course.Types
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id

@@ -3,8 +3,8 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
 
   import ArchiDepWeb.Admin.Classes.StudentFormComponent
   import ArchiDepWeb.Helpers.DialogHelpers
-  alias ArchiDep.Students
-  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDep.Course
+  alias ArchiDep.Course.Schemas.Student
   alias ArchiDepWeb.Admin.Classes.StudentForm
 
   @base_id "edit-student-dialog"
@@ -43,7 +43,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
     validate_dialog_form(
       :student,
       StudentForm.update_changeset(student, params),
-      &Students.validate_existing_student(
+      &Course.validate_existing_student(
         auth,
         student.id,
         StudentForm.to_existing_student_data(&1)
@@ -62,7 +62,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
              :validate
            ),
          {:ok, updated_student} <-
-           Students.update_student(
+           Course.update_student(
              auth,
              student.id,
              StudentForm.to_existing_student_data(form_data)

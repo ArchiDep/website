@@ -4,10 +4,10 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
   alias ArchiDep.Accounts
-  alias ArchiDep.Students
-  alias ArchiDep.Students.PubSub
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDep.Course
+  alias ArchiDep.Course.PubSub
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
   alias ArchiDepWeb.Admin.Classes.EditStudentDialogLive
   alias ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive
 
@@ -15,7 +15,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   def mount(%{"class_id" => class_id, "id" => id}, _session, socket) do
     auth = socket.assigns.auth
 
-    with {:ok, student} <- Students.fetch_student_in_class(auth, class_id, id) do
+    with {:ok, student} <- Course.fetch_student_in_class(auth, class_id, id) do
       if connected?(socket) do
         set_process_label(__MODULE__, auth, student)
         :ok = PubSub.subscribe_student(student.id)

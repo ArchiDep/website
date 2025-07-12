@@ -1,9 +1,9 @@
-defmodule ArchiDep.Students.Behaviour do
+defmodule ArchiDep.Course.Behaviour do
   use ArchiDep, :behaviour
 
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Types
 
   @callback validate_class(Authentication.t(), Types.class_data()) :: Changeset.t()
 

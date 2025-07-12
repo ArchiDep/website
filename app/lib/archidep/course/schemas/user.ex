@@ -1,4 +1,4 @@
-defmodule ArchiDep.Students.Schemas.User do
+defmodule ArchiDep.Course.Schemas.User do
   @moduledoc """
   A user account for someone who can log in to the application. The user may be
   an administrator or not.
@@ -6,7 +6,7 @@ defmodule ArchiDep.Students.Schemas.User do
 
   use ArchiDep, :schema
 
-  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDep.Course.Schemas.Student
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id

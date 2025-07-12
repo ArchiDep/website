@@ -3,8 +3,8 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
 
   import ArchiDepWeb.Admin.Classes.ClassFormComponent
   import ArchiDepWeb.Helpers.DialogHelpers
-  alias ArchiDep.Students
-  alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Course
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDepWeb.Admin.Classes.ClassForm
 
   @base_id "edit-class-dialog"
@@ -41,7 +41,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
     validate_dialog_form(
       :class,
       ClassForm.update_changeset(class, params),
-      &Students.validate_existing_class(
+      &Course.validate_existing_class(
         auth,
         class.id,
         ClassForm.to_class_data(&1)
@@ -60,7 +60,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
              :validate
            ),
          {:ok, updated_class} <-
-           Students.update_class(auth, class.id, ClassForm.to_class_data(form_data)) do
+           Course.update_class(auth, class.id, ClassForm.to_class_data(form_data)) do
       socket
       |> send_notification(
         Message.new(:success, gettext("Updated class {class}", class: updated_class.name))

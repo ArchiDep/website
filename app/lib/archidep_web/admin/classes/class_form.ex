@@ -2,8 +2,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
   use Ecto.Schema
 
   import Ecto.Changeset
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Types
   alias Ecto.Changeset
 
   @type t :: struct()

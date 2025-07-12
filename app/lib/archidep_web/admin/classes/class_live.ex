@@ -6,11 +6,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
   import ArchiDepWeb.Servers.ServerComponents, only: [expected_server_properties: 1]
   alias ArchiDep.Accounts
+  alias ArchiDep.Course
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerGroup
-  alias ArchiDep.Students
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
   alias ArchiDepWeb.Admin.Classes.DeleteClassDialogLive
   alias ArchiDepWeb.Admin.Classes.EditClassDialogLive
   alias ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive
@@ -23,7 +23,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
     [class_result, server_group_result] =
       Task.await_many([
-        Task.async(fn -> Students.fetch_class(auth, id) end),
+        Task.async(fn -> Course.fetch_class(auth, id) end),
         Task.async(fn -> Servers.fetch_server_group(auth, id) end)
       ])
 
@@ -33,8 +33,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
       {server_ids, server_ids_reducer} =
         if connected?(socket) do
           set_process_label(__MODULE__, auth, class)
-          :ok = Students.PubSub.subscribe_class(id)
-          :ok = Students.PubSub.subscribe_class_students(id)
+          :ok = Course.PubSub.subscribe_class(id)
+          :ok = Course.PubSub.subscribe_class_students(id)
           :ok = Accounts.PubSub.subscribe_user_group_preregistered_users(id)
           :ok = Servers.PubSub.subscribe_server_group(id)
           {:ok, server_ids, server_ids_reducer} = Servers.watch_server_ids(auth, server_group)
@@ -180,7 +180,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   defp load_students(
          %Socket{assigns: %{auth: auth, class: class, students: old_students}} = socket
        ) do
-    current_students = Students.list_students(auth, class)
+    current_students = Course.list_students(auth, class)
 
     if connected?(socket) do
       current_student_ids = MapSet.new(current_students, & &1.id)
@@ -191,14 +191,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
       # Unsubscribe from events concerning students that are no longer in the
       # class
       for gone_student_id <- gone_student_ids do
-        :ok = Students.PubSub.unsubscribe_student(gone_student_id)
+        :ok = Course.PubSub.unsubscribe_student(gone_student_id)
       end
 
       new_student_ids = MapSet.difference(current_student_ids, old_student_ids)
 
       # Subscribe to events concerning new students in the class
       for new_student_id <- new_student_ids do
-        :ok = Students.PubSub.subscribe_student(new_student_id)
+        :ok = Course.PubSub.subscribe_student(new_student_id)
       end
     end
 

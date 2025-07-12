@@ -1,7 +1,7 @@
-defmodule ArchiDep.Students.Events.StudentCreated do
+defmodule ArchiDep.Course.Events.StudentCreated do
   use ArchiDep, :event
 
-  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDep.Course.Schemas.Student
   alias Ecto.UUID
 
   @derive Jason.Encoder
@@ -44,7 +44,7 @@ defmodule ArchiDep.Students.Events.StudentCreated do
   end
 
   defimpl Event do
-    alias ArchiDep.Students.Events.StudentCreated
+    alias ArchiDep.Course.Events.StudentCreated
 
     def event_stream(%StudentCreated{id: id}),
       do: "students:#{id}"

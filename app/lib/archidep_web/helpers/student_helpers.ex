@@ -1,9 +1,9 @@
 defmodule ArchiDepWeb.Helpers.StudentHelpers do
   use Gettext, backend: ArchiDepWeb.Gettext
 
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
-  alias ArchiDep.Students.Schemas.User
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Schemas.User
 
   @spec student_not_in_class_tooltip(Student.t()) :: String.t() | nil
 

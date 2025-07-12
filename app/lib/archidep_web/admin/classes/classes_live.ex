@@ -3,10 +3,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
 
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
+  alias ArchiDep.Course
+  alias ArchiDep.Course.PubSub
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Servers
-  alias ArchiDep.Students
-  alias ArchiDep.Students.PubSub
-  alias ArchiDep.Students.Schemas.Class
   alias ArchiDepWeb.Admin.Classes.NewClassDialogLive
 
   @impl true
@@ -18,7 +18,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
       :ok = PubSub.subscribe_classes()
     end
 
-    classes = Students.list_classes(auth)
+    classes = Course.list_classes(auth)
 
     if connected?(socket) do
       for class <- classes do

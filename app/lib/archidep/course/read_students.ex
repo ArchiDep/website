@@ -1,13 +1,13 @@
-defmodule ArchiDep.Students.ReadStudents do
+defmodule ArchiDep.Course.ReadStudents do
   use ArchiDep, :use_case
 
-  alias ArchiDep.Students.Policy
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDep.Course.Policy
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
 
   @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
   def list_students(auth, class) do
-    authorize!(auth, Policy, :students, :list_students, class)
+    authorize!(auth, Policy, :course, :list_students, class)
 
     class_id = class.id
 
@@ -29,13 +29,13 @@ defmodule ArchiDep.Students.ReadStudents do
     with :ok <- validate_uuid(class_id, :student_not_found),
          :ok <- validate_uuid(id, :student_not_found),
          {:ok, student} <- Student.fetch_student_in_class(class_id, id),
-         :ok <- authorize(auth, Policy, :students, :fetch_student_in_class, student) do
+         :ok <- authorize(auth, Policy, :course, :fetch_student_in_class, student) do
       {:ok, student}
     else
       {:error, :student_not_found} ->
         {:error, :student_not_found}
 
-      {:error, {:access_denied, :students, :fetch_student_in_class}} ->
+      {:error, {:access_denied, :course, :fetch_student_in_class}} ->
         {:error, :student_not_found}
     end
   end

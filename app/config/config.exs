@@ -18,9 +18,9 @@ config :archidep,
 
 # Configure contexts.
 config :archidep, ArchiDep.Accounts, ArchiDep.Accounts.ContextImpl
+config :archidep, ArchiDep.Course, ArchiDep.Course.ContextImpl
 config :archidep, ArchiDep.Events, ArchiDep.Events.ContextImpl
 config :archidep, ArchiDep.Servers, ArchiDep.Servers.ContextImpl
-config :archidep, ArchiDep.Students, ArchiDep.Students.ContextImpl
 
 config :archidep, ArchiDep.Repo, pool_size: 10, socket_options: []
 

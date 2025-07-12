@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.ServerManager do
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Authentication
+  alias ArchiDep.Course
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
@@ -15,7 +16,6 @@ defmodule ArchiDep.Servers.ServerManager do
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerManagerState
   alias ArchiDep.Servers.Types
-  alias ArchiDep.Students
   alias Ecto.Changeset
   alias Ecto.UUID
 
@@ -89,7 +89,7 @@ defmodule ArchiDep.Servers.ServerManager do
 
     # TODO: watch user account & student for changes
     :ok = PubSub.subscribe_server_group(state.server.group_id)
-    :ok = Students.PubSub.subscribe_class(state.server.group_id)
+    :ok = Course.PubSub.subscribe_class(state.server.group_id)
 
     noreply(state)
   end

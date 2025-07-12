@@ -1,18 +1,18 @@
-defmodule ArchiDep.Students.UpdateStudent do
+defmodule ArchiDep.Course.UpdateStudent do
   use ArchiDep, :use_case
 
-  alias ArchiDep.Students.Events.StudentUpdated
-  alias ArchiDep.Students.Policy
-  alias ArchiDep.Students.PubSub
-  alias ArchiDep.Students.Schemas.Student
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Events.StudentUpdated
+  alias ArchiDep.Course.Policy
+  alias ArchiDep.Course.PubSub
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Types
 
   @spec validate_existing_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
           {:ok, Changeset.t()} | {:error, :student_not_found}
   def validate_existing_student(auth, id, data) do
     with :ok <- validate_uuid(id, :student_not_found),
          {:ok, student} <- Student.fetch_student(id) do
-      authorize!(auth, Policy, :students, :validate_existing_student, student)
+      authorize!(auth, Policy, :course, :validate_existing_student, student)
       {:ok, Student.update(student, data)}
     end
   end
@@ -22,7 +22,7 @@ defmodule ArchiDep.Students.UpdateStudent do
   def update_student(auth, id, data) do
     with :ok <- validate_uuid(id, :student_not_found),
          {:ok, student} <- Student.fetch_student(id) do
-      authorize!(auth, Policy, :students, :update_student, student)
+      authorize!(auth, Policy, :course, :update_student, student)
 
       case Multi.new()
            |> Multi.update(:student, Student.update(student, data))

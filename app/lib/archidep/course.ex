@@ -1,11 +1,11 @@
-defmodule ArchiDep.Students do
+defmodule ArchiDep.Course do
   use ArchiDep, :context
 
-  @behaviour ArchiDep.Students.Behaviour
+  @behaviour ArchiDep.Course.Behaviour
 
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Types
 
   @implementation Application.compile_env!(:archidep, __MODULE__)
 

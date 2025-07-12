@@ -1,8 +1,8 @@
-defmodule ArchiDep.Students.Schemas.StudentImportList do
+defmodule ArchiDep.Course.Schemas.StudentImportList do
   use ArchiDep, :schema
 
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Types
 
   @type t :: %__MODULE__{
           academic_class: String.t() | nil,

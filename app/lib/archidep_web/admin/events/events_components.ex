@@ -8,8 +8,8 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
 
   @spec event_context(map) :: Phoenix.LiveView.Rendered.t()
 

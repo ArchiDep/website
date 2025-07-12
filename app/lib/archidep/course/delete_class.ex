@@ -1,17 +1,17 @@
-defmodule ArchiDep.Students.DeleteClass do
+defmodule ArchiDep.Course.DeleteClass do
   use ArchiDep, :use_case
 
-  alias ArchiDep.Students.Events.ClassDeleted
-  alias ArchiDep.Students.Policy
-  alias ArchiDep.Students.PubSub
-  alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Course.Events.ClassDeleted
+  alias ArchiDep.Course.Policy
+  alias ArchiDep.Course.PubSub
+  alias ArchiDep.Course.Schemas.Class
 
   @spec delete_class(Authentication.t(), UUID.t()) ::
           :ok | {:error, :class_not_found} | {:error, :class_has_servers}
   def delete_class(auth, id) do
     with :ok <- validate_uuid(id, :class_not_found),
          {:ok, class} <- Class.fetch_class(id) do
-      authorize!(auth, Policy, :students, :delete_class, class)
+      authorize!(auth, Policy, :course, :delete_class, class)
 
       now = DateTime.utc_now()
 

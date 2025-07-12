@@ -2,8 +2,8 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Helpers.DialogHelpers
-  alias ArchiDep.Students
-  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDep.Course
+  alias ArchiDep.Course.Schemas.Student
 
   @base_id "delete-student-dialog"
 
@@ -31,7 +31,7 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive do
     auth = socket.assigns.auth
     student = socket.assigns.student
 
-    with :ok <- Students.delete_student(auth, student.id) do
+    with :ok <- Course.delete_student(auth, student.id) do
       noreply(socket)
     end
   end

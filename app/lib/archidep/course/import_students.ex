@@ -1,22 +1,22 @@
-defmodule ArchiDep.Students.ImportStudents do
+defmodule ArchiDep.Course.ImportStudents do
   use ArchiDep, :use_case
 
   import ArchiDep.Events.Store.StoredEvent, only: [to_insert_data: 1]
-  alias ArchiDep.Students.Events.StudentCreated
-  alias ArchiDep.Students.Events.StudentsImported
-  alias ArchiDep.Students.Policy
-  alias ArchiDep.Students.PubSub
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
-  alias ArchiDep.Students.Schemas.StudentImportList
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Events.StudentCreated
+  alias ArchiDep.Course.Events.StudentsImported
+  alias ArchiDep.Course.Policy
+  alias ArchiDep.Course.PubSub
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Schemas.StudentImportList
+  alias ArchiDep.Course.Types
 
   @spec import_students(Authentication.t(), UUID.t(), Types.import_students_data()) ::
           {:ok, list(Student.t())} | {:error, Changeset.t()} | {:error, :class_not_found}
   def import_students(auth, class_id, data) do
     with :ok <- validate_uuid(class_id, :class_not_found),
          {:ok, class} <- Class.fetch_class(class_id) do
-      authorize!(auth, Policy, :students, :import_students, class)
+      authorize!(auth, Policy, :course, :import_students, class)
 
       now = DateTime.utc_now()
       changeset = StudentImportList.changeset(data)

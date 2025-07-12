@@ -1,22 +1,22 @@
-defmodule ArchiDep.Students.CreateStudent do
+defmodule ArchiDep.Course.CreateStudent do
   use ArchiDep, :use_case
 
-  alias ArchiDep.Students.Events.StudentCreated
-  alias ArchiDep.Students.Policy
-  alias ArchiDep.Students.PubSub
-  alias ArchiDep.Students.Schemas.Student
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Events.StudentCreated
+  alias ArchiDep.Course.Policy
+  alias ArchiDep.Course.PubSub
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Types
 
   @spec validate_student(Authentication.t(), Types.create_student_data()) :: Changeset.t()
   def validate_student(auth, data) do
-    authorize!(auth, Policy, :students, :validate_student, nil)
+    authorize!(auth, Policy, :course, :validate_student, nil)
     Student.new(data)
   end
 
   @spec create_student(Authentication.t(), Types.create_student_data()) ::
           {:ok, Student.t()} | {:error, Changeset.t()}
   def create_student(auth, data) do
-    authorize!(auth, Policy, :students, :create_student, nil)
+    authorize!(auth, Policy, :course, :create_student, nil)
 
     case Multi.new()
          |> Multi.insert(:student, Student.new(data))

@@ -1,18 +1,18 @@
-defmodule ArchiDep.Students.UpdateClass do
+defmodule ArchiDep.Course.UpdateClass do
   use ArchiDep, :use_case
 
-  alias ArchiDep.Students.Events.ClassUpdated
-  alias ArchiDep.Students.Policy
-  alias ArchiDep.Students.PubSub
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Types
+  alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Policy
+  alias ArchiDep.Course.PubSub
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Types
 
   @spec validate_existing_class(Authentication.t(), UUID.t(), Types.class_data()) ::
           {:ok, Changeset.t()} | {:error, :class_not_found}
   def validate_existing_class(auth, id, data) do
     with :ok <- validate_uuid(id, :class_not_found),
          {:ok, class} <- Class.fetch_class(id) do
-      authorize!(auth, Policy, :students, :validate_existing_class, class)
+      authorize!(auth, Policy, :course, :validate_existing_class, class)
       {:ok, Class.update(class, data)}
     end
   end
@@ -22,7 +22,7 @@ defmodule ArchiDep.Students.UpdateClass do
   def update_class(auth, id, data) do
     with :ok <- validate_uuid(id, :class_not_found),
          {:ok, class} <- Class.fetch_class(id) do
-      authorize!(auth, Policy, :students, :update_class, class)
+      authorize!(auth, Policy, :course, :update_class, class)
 
       case Multi.new()
            |> Multi.update(:class, Class.update(class, data))

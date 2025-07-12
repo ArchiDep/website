@@ -4,8 +4,8 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   import ArchiDep.Helpers.DataHelpers, only: [looks_like_an_email?: 1]
   import ArchiDepWeb.Helpers.DialogHelpers
   import ArchiDepWeb.Components.FormComponents
-  alias ArchiDep.Students
-  alias ArchiDep.Students.Schemas.Class
+  alias ArchiDep.Course
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDepWeb.Admin.Classes.ImportStudentsForm
   alias Phoenix.HTML.Form
 
@@ -116,7 +116,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
           as: :import_students
         )
 
-      existing_students = Students.list_students(assigns.auth, assigns.class)
+      existing_students = Course.list_students(assigns.auth, assigns.class)
 
       socket
       |> assign(assigns)
@@ -145,7 +145,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
           columns: [],
           students: [],
           new_students: 0,
-          existing_students: Students.list_students(assigns.auth, assigns.class)
+          existing_students: Course.list_students(assigns.auth, assigns.class)
         )
         |> ok()
     end
@@ -308,7 +308,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
         end)
 
       with {:ok, _students} <-
-             Students.import_students(auth, class_id, %{
+             Course.import_students(auth, class_id, %{
                academic_class: academic_class,
                students: students_data
              }) do

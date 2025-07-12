@@ -1,8 +1,8 @@
-defmodule ArchiDep.Students.PubSub do
+defmodule ArchiDep.Course.PubSub do
   use ArchiDep, :pub_sub
 
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
 
   @pubsub ArchiDep.PubSub
 

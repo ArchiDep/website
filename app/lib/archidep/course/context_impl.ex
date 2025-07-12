@@ -1,20 +1,20 @@
-defmodule ArchiDep.Students.ContextImpl do
+defmodule ArchiDep.Course.ContextImpl do
   use ArchiDep, :context
 
-  alias ArchiDep.Students.CreateClass
-  alias ArchiDep.Students.CreateStudent
-  alias ArchiDep.Students.DeleteClass
-  alias ArchiDep.Students.DeleteStudent
-  alias ArchiDep.Students.ImportStudents
-  alias ArchiDep.Students.ReadClasses
-  alias ArchiDep.Students.ReadStudents
-  alias ArchiDep.Students.Schemas.Class
-  alias ArchiDep.Students.Schemas.Student
-  alias ArchiDep.Students.Types
-  alias ArchiDep.Students.UpdateClass
-  alias ArchiDep.Students.UpdateStudent
+  alias ArchiDep.Course.CreateClass
+  alias ArchiDep.Course.CreateStudent
+  alias ArchiDep.Course.DeleteClass
+  alias ArchiDep.Course.DeleteStudent
+  alias ArchiDep.Course.ImportStudents
+  alias ArchiDep.Course.ReadClasses
+  alias ArchiDep.Course.ReadStudents
+  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Types
+  alias ArchiDep.Course.UpdateClass
+  alias ArchiDep.Course.UpdateStudent
 
-  @behaviour ArchiDep.Students.Behaviour
+  @behaviour ArchiDep.Course.Behaviour
 
   @spec validate_class(Authentication.t(), Types.class_data()) :: Changeset.t()
   defdelegate validate_class(auth, data), to: CreateClass

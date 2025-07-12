@@ -3,7 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
 
   import ArchiDepWeb.Admin.Classes.StudentFormComponent
   import ArchiDepWeb.Helpers.DialogHelpers
-  alias ArchiDep.Students
+  alias ArchiDep.Course
   alias ArchiDepWeb.Admin.Classes.StudentForm
 
   @id "new-student-dialog"
@@ -42,7 +42,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
       StudentForm.create_changeset(params),
       fn data ->
         auth
-        |> Students.validate_student(StudentForm.to_create_student_data(data, class))
+        |> Course.validate_student(StudentForm.to_create_student_data(data, class))
         |> ok()
       end,
       socket
@@ -56,7 +56,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
     with {:ok, form_data} <-
            Changeset.apply_action(StudentForm.create_changeset(params), :validate),
          {:ok, created_student} <-
-           Students.create_student(
+           Course.create_student(
              socket.assigns.auth,
              StudentForm.to_create_student_data(form_data, class)
            ) do
