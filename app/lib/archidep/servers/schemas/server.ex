@@ -61,8 +61,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def active?(%__MODULE__{active: active, group: group, owner: owner}, now),
     do:
       active and ServerGroup.active?(group, now) and ServerOwner.active?(owner, now) and
-        (owner.group_member == nil or
-           (owner.group_member != nil and owner.group_member.group_id == group.id))
+        (owner.group_member == nil or owner.group_member.group_id == group.id)
 
   @spec name_or_default(t()) :: String.t()
   def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
