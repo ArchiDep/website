@@ -199,6 +199,7 @@
       <th>{gettext("Name")}</th>
       <th>{gettext("Academic class")}</th>
       <th>{gettext("Email")}</th>
+      <th>{gettext("Active")}</th>
       <th>{gettext("User account")}</th>
     </tr>
   </thead>
@@ -228,8 +229,27 @@
         {student.email}
       </td>
       <td>
+        <Heroicons.check_circle :if={student.active} class="size-5 text-success" />
+        <Heroicons.x_circle :if={not student.active} class="size-5 text-error" />
+      </td>
+      <td>
         <%= if student.user do %>
-          <span class="flex items-center gap-x-2">
+          <span
+            class={[
+              "flex items-center gap-x-2",
+              if(student.user.student_id != student.id,
+                do: "text-base-content/50 line-through tooltip tooltip-left",
+                else: nil
+              )
+            ]}
+            data-tip={
+              if(student.user.student_id != student.id,
+                do:
+                  gettext("Student now in class {class}", class: student.user.student.class.name),
+                else: nil
+              )
+            }
+          >
             <Heroicons.user solid class="size-5" />
             {student.user.username}
           </span>

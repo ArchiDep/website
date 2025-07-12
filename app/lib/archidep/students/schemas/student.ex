@@ -97,7 +97,9 @@ defmodule ArchiDep.Students.Schemas.Student do
              where: s.class_id == ^class_id and s.id == ^id,
              join: c in assoc(s, :class),
              left_join: u in assoc(s, :user),
-             preload: [:class, :user]
+             left_join: us in assoc(u, :student),
+             left_join: usc in assoc(us, :class),
+             preload: [:class, user: {u, student: {us, class: usc}}]
            )
          ) do
       nil ->
