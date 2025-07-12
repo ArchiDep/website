@@ -8,6 +8,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
   import Ecto.Changeset
   alias ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId
   alias ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId
+  alias ArchiDep.Accounts.PubSub
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
@@ -28,8 +29,17 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
         switch_edu_id_data,
         client_metadata
       ) do
-    with {:ok, %{user_account: user_account, user_session: session}} <-
+    with {:ok,
+          %{
+            user_account: user_account,
+            user_session: session,
+            linked_preregistered_user: preregistered_user
+          }} <-
            log_in_or_register(switch_edu_id_data, client_metadata) do
+      if preregistered_user != nil do
+        :ok = PubSub.publish_preregistered_user_updated(preregistered_user)
+      end
+
       enriched_session = %UserSession{
         session
         | user_account: user_account,
@@ -69,6 +79,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
               # email...
               case PreregisteredUser.list_available_preregistered_users_for_email(
                      switch_edu_id_data.email,
+                     nil,
                      DateTime.utc_now()
                    ) do
                 # If there is exactly one active preregistered user with a
@@ -106,13 +117,14 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
               # a new class)...
               case PreregisteredUser.list_available_preregistered_users_for_email(
                      switch_edu_id_data.email,
+                     user_account.id,
                      DateTime.utc_now()
                    ) do
                 # If there is exactly one active preregistered user with a
                 # matching email that is not yet linked to a user account,
                 # link the user account to it.
-                [preregistered_user] ->
-                  {:ok, {:existing_student, change(user_account), preregistered_user}}
+                [exactly_one_preregistered_user] ->
+                  {:ok, {:existing_student, change(user_account), exactly_one_preregistered_user}}
 
                 # If there are no preregistered users or more than one matches,
                 # deny access.
@@ -139,8 +151,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
         {:new_student, _user_account, preregistered_user} when not is_nil(preregistered_user) ->
           Multi.new()
           |> Multi.update(
-            :preregistered_user,
-            PreregisteredUser.link_to_user_account(preregistered_user, user_account)
+            :linked_preregistered_user,
+            PreregisteredUser.link_to_user_account(
+              preregistered_user,
+              user_account,
+              DateTime.utc_now()
+            )
           )
           # TODO: remove this update which should not be necessary (the account
           # should be linked to the student directly at insertion time)
@@ -152,8 +168,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
         {:existing_student, _user_account, preregistered_user} ->
           Multi.new()
           |> Multi.update(
-            :preregistered_user,
-            PreregisteredUser.link_to_user_account(preregistered_user, user_account)
+            :linked_preregistered_user,
+            PreregisteredUser.link_to_user_account(
+              preregistered_user,
+              user_account,
+              DateTime.utc_now()
+            )
           )
           |> Multi.update(
             :linked_user_account,
@@ -162,7 +182,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
 
         _otherwise ->
           Multi.new()
-          |> Multi.put(:preregistered_user, nil)
+          |> Multi.put(:linked_preregistered_user, nil)
           |> Multi.put(:linked_user_account, nil)
       end
     end)
@@ -173,7 +193,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
       %{
         switch_edu_id: switch_edu_id,
         user_account_and_state: {state, _changeset, _preregistered_user},
-        preregistered_user: preregistered_user,
+        linked_preregistered_user: preregistered_user,
         user_session: session
       } ->
         case state do

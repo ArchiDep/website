@@ -95,6 +95,27 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
 
   def refresh!(%__MODULE__{id: id, version: current_version} = group, %{
         id: id,
+        name: name,
+        start_date: start_date,
+        end_date: end_date,
+        active: active,
+        version: version,
+        updated_at: updated_at
+      })
+      when version == current_version + 1 do
+    %__MODULE__{
+      group
+      | name: name,
+        start_date: start_date,
+        end_date: end_date,
+        active: active,
+        version: version,
+        updated_at: updated_at
+    }
+  end
+
+  def refresh!(%__MODULE__{id: id, version: current_version} = group, %{
+        id: id,
         version: version
       })
       when version <= current_version do

@@ -65,6 +65,46 @@ defmodule ArchiDep.Students.Schemas.Student do
       |> Repo.one()
       |> truthy_or(:student_not_found)
 
+  @spec refresh!(t(), map()) :: t()
+  def refresh!(
+        %__MODULE__{id: id, class: class, user: user, version: current_version} = student,
+        %{
+          id: id,
+          email: email,
+          active: active,
+          group: group,
+          user_account: user_account,
+          user_account_id: user_account_id,
+          version: version,
+          updated_at: updated_at
+        }
+      )
+      when version == current_version + 1 and not is_nil(user) and not is_nil(user_account) do
+    %__MODULE__{
+      student
+      | email: email,
+        active: active,
+        class: Class.refresh!(class, group),
+        user: User.refresh!(user, user_account),
+        user_id: user_account_id,
+        version: version,
+        updated_at: updated_at
+    }
+  end
+
+  def refresh!(%__MODULE__{id: id, version: current_version} = student, %{
+        id: id,
+        version: version
+      })
+      when version <= current_version do
+    student
+  end
+
+  def refresh!(%__MODULE__{id: id}, %{id: id}) do
+    {:ok, fresh_student} = fetch_student(id)
+    fresh_student
+  end
+
   @spec new(Types.create_student_data()) :: Changeset.t(t())
   def new(data) do
     id = UUID.generate()

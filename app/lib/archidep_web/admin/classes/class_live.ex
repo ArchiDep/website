@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
   import ArchiDepWeb.Servers.ServerComponents, only: [expected_server_properties: 1]
+  alias ArchiDep.Accounts
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Students
@@ -34,6 +35,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
           set_process_label(__MODULE__, auth, class)
           :ok = Students.PubSub.subscribe_class(id)
           :ok = Students.PubSub.subscribe_class_students(id)
+          :ok = Accounts.PubSub.subscribe_user_group_preregistered_users(id)
           :ok = Servers.PubSub.subscribe_server_group(id)
           {:ok, server_ids, server_ids_reducer} = Servers.watch_server_ids(auth, server_group)
           {server_ids, server_ids_reducer}
@@ -147,6 +149,15 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   @impl true
   def handle_info(
         {:student_deleted, %Student{class_id: id}},
+        %Socket{
+          assigns: %{class: %Class{id: id}}
+        } = socket
+      ),
+      do: socket |> load_students() |> noreply()
+
+  @impl true
+  def handle_info(
+        {:preregistered_user_updated, %{group_id: id}},
         %Socket{
           assigns: %{class: %Class{id: id}}
         } = socket

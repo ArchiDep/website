@@ -33,31 +33,39 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
   def active?(%__MODULE__{active: active, group: group}, now),
     do: active and UserGroup.active?(group, now)
 
-  @spec list_available_preregistered_users_for_email(String.t(), DateTime.t()) :: list(t())
-  def list_available_preregistered_users_for_email(email, now) do
-    from(pu in __MODULE__,
-      join: ug in assoc(pu, :group),
-      where:
-        pu.active and
-          ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
-          (is_nil(ug.end_date) or ug.end_date >= ^now) and is_nil(pu.user_account_id) and
-          fragment("LOWER(?)", pu.email) == fragment("LOWER(?)", ^email),
-      preload: [group: ug]
-    )
-    |> Repo.all()
-  end
+  @spec list_available_preregistered_users_for_email(String.t(), UUID.t() | nil, DateTime.t()) ::
+          list(t())
+  def list_available_preregistered_users_for_email(email, user_account_id, now),
+    do:
+      from(pu in __MODULE__,
+        join: ug in assoc(pu, :group),
+        left_join: ua in assoc(pu, :user_account),
+        where:
+          pu.active and
+            ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
+            (is_nil(ug.end_date) or ug.end_date >= ^now) and
+            (is_nil(ua) or ua.id == ^user_account_id) and
+            fragment("LOWER(?)", pu.email) == fragment("LOWER(?)", ^email),
+        preload: [group: ug, user_account: ua]
+      )
+      |> Repo.all()
 
   @spec link_to_user_account(
           t(),
-          UserAccount.t()
+          UserAccount.t(),
+          DateTime.t()
         ) :: Changeset.t(t())
-  def link_to_user_account(%__MODULE__{user_account_id: nil} = preregistered_user, user_account) do
-    now = DateTime.utc_now()
-
-    preregistered_user
-    |> cast(%{user_account_id: user_account.id}, [:user_account_id])
-    |> assoc_constraint(:user_account)
-    |> change(updated_at: now)
-    |> optimistic_lock(:version)
-  end
+  def link_to_user_account(
+        %__MODULE__{user_account_id: current_user_account_id} = preregistered_user,
+        %UserAccount{id: new_user_account_id} = user_account,
+        now
+      )
+      when is_nil(current_user_account_id) or current_user_account_id == new_user_account_id,
+      do:
+        preregistered_user
+        |> change()
+        |> put_assoc(:user_account, user_account)
+        |> assoc_constraint(:user_account)
+        |> change(updated_at: now)
+        |> optimistic_lock(:version)
 end

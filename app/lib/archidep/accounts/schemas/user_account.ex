@@ -175,11 +175,9 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
           PreregisteredUser.t()
         ) :: Changeset.t(t())
   def relink_to_preregistered_user(
-        %__MODULE__{id: user_account_id, preregistered_user_id: previous_preregistered_user_id} =
-          user_account,
+        %__MODULE__{id: user_account_id} = user_account,
         new_preregistered_user
-      )
-      when not is_nil(previous_preregistered_user_id),
+      ),
       do:
         user_account
         |> cast(%{preregistered_user_id: new_preregistered_user.id}, [:preregistered_user_id])
