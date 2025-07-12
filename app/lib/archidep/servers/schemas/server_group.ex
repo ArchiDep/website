@@ -66,26 +66,45 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
       |> Repo.one()
       |> truthy_or(:server_group_not_found)
 
-  @spec refresh(t(), map()) :: t()
-  def refresh(%__MODULE__{id: id, version: current_version} = group, %{
+  @spec refresh!(t(), map()) :: t()
+
+  def refresh!(%__MODULE__{id: id, version: current_version} = group, %__MODULE__{
         id: id,
         name: name,
         start_date: start_date,
         end_date: end_date,
         active: active,
+        expected_server_properties: expected_server_properties,
+        expected_server_properties_id: expected_server_properties_id,
         version: version,
         updated_at: updated_at
       })
-      when version > current_version,
-      do: %__MODULE__{
-        group
-        | name: name,
-          start_date: start_date,
-          end_date: end_date,
-          active: active,
-          version: version,
-          updated_at: updated_at
-      }
+      when version == current_version + 1 do
+    %__MODULE__{
+      group
+      | name: name,
+        start_date: start_date,
+        end_date: end_date,
+        active: active,
+        expected_server_properties: expected_server_properties,
+        expected_server_properties_id: expected_server_properties_id,
+        version: version,
+        updated_at: updated_at
+    }
+  end
+
+  def refresh!(%__MODULE__{id: id, version: current_version} = group, %{
+        id: id,
+        version: version
+      })
+      when version <= current_version do
+    group
+  end
+
+  def refresh!(%__MODULE__{id: id}, %{id: id}) do
+    {:ok, fresh_group} = fetch_server_group(id)
+    fresh_group
+  end
 
   @spec update_expected_server_properties(t(), Types.server_properties_data()) :: Changeset.t(t())
   def update_expected_server_properties(group, data) do

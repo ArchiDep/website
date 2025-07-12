@@ -3,8 +3,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
 
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
+  alias ArchiDep.Servers
   alias ArchiDep.Students
   alias ArchiDep.Students.PubSub
+  alias ArchiDep.Students.Schemas.Class
   alias ArchiDepWeb.Admin.Classes.NewClassDialogLive
 
   @impl true
@@ -18,8 +20,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
 
     classes = Students.list_classes(auth)
 
-    for class <- classes do
-      :ok = PubSub.subscribe_class(class.id)
+    if connected?(socket) do
+      for class <- classes do
+        :ok = PubSub.subscribe_class(class.id)
+        :ok = Servers.PubSub.subscribe_server_group(class.id)
+      end
     end
 
     socket
@@ -47,20 +52,21 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
 
   @impl true
   def handle_info(
-        {:class_updated, updated_class},
+        {event, %{id: id} = updated},
         %Socket{assigns: %{classes: classes}} = socket
-      ),
+      )
+      when event in [:class_updated, :server_group_updated],
       do:
         socket
         |> assign(
           :classes,
           classes
-          |> Enum.map(fn c ->
-            if c.id == updated_class.id do
-              updated_class
-            else
+          |> Enum.map(fn
+            %Class{id: ^id} = c ->
+              Class.refresh!(c, updated)
+
+            c ->
               c
-            end
           end)
           |> sort_classes()
         )
@@ -72,6 +78,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
         %Socket{assigns: %{classes: classes}} = socket
       ) do
     :ok = PubSub.unsubscribe_class(deleted_class.id)
+    :ok = Servers.PubSub.unsubscribe_server_group(deleted_class.id)
 
     socket
     |> assign(

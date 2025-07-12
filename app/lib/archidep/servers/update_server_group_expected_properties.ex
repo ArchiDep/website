@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.UpdateServerGroupExpectedProperties do
 
   alias ArchiDep.Servers.Events.ServerGroupExpectedPropertiesUpdated
   alias ArchiDep.Servers.Policy
+  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Types
@@ -55,6 +56,7 @@ defmodule ArchiDep.Servers.UpdateServerGroupExpectedProperties do
          )
          |> Repo.transaction() do
       {:ok, %{group: updated_group}} ->
+        PubSub.publish_server_group(updated_group)
         {:ok, updated_group.expected_server_properties}
 
       {:error, :group, changeset, _} ->

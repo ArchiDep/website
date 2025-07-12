@@ -105,6 +105,42 @@ defmodule ArchiDep.Students.Schemas.Class do
     end)
   end
 
+  @spec refresh!(t(), map()) :: t()
+
+  def refresh!(%__MODULE__{id: id, version: current_version} = class, %{
+        id: id,
+        name: name,
+        start_date: start_date,
+        end_date: end_date,
+        active: active,
+        version: version,
+        updated_at: updated_at
+      })
+      when version == current_version + 1 do
+    %__MODULE__{
+      class
+      | name: name,
+        start_date: start_date,
+        end_date: end_date,
+        active: active,
+        version: version,
+        updated_at: updated_at
+    }
+  end
+
+  def refresh!(%__MODULE__{id: id, version: current_version} = class, %{
+        id: id,
+        version: version
+      })
+      when version <= current_version do
+    class
+  end
+
+  def refresh!(%__MODULE__{id: id}, %{id: id}) do
+    {:ok, fresh_class} = fetch_class(id)
+    fresh_class
+  end
+
   @spec delete(t()) :: Changeset.t(t())
   def delete(class) do
     class

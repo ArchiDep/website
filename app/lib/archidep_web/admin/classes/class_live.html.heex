@@ -78,7 +78,9 @@
             </span>
           </button>
         </div>
+
         <.expected_server_properties properties={@server_group.expected_server_properties} />
+
         <div :if={@server_group.expected_server_properties_id == nil} class="flex">
           <button
             type="button"
@@ -92,9 +94,9 @@
             }
           >
             <span class="flex items-center gap-x-2">
-              <Heroicons.server_stack class="size-4" />
+              <Heroicons.cog class="size-4" />
               <span>
-                {gettext("Define expected properties")}
+                {gettext("Define")}
               </span>
             </span>
           </button>

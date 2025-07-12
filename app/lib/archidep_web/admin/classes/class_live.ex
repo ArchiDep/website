@@ -5,8 +5,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents, only: [expected_server_properties: 1]
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Students
-  alias ArchiDep.Students.PubSub
   alias ArchiDep.Students.Schemas.Class
   alias ArchiDep.Students.Schemas.Student
   alias ArchiDepWeb.Admin.Classes.DeleteClassDialogLive
@@ -30,8 +30,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
          {:ok, server_group} <- server_group_result do
       if connected?(socket) do
         set_process_label(__MODULE__, auth, class)
-        :ok = PubSub.subscribe_class(class.id)
-        :ok = PubSub.subscribe_class_students(class.id)
+        :ok = Students.PubSub.subscribe_class(class.id)
+        :ok = Students.PubSub.subscribe_class_students(class.id)
+        :ok = Servers.PubSub.subscribe_server_group(server_group.id)
       end
 
       socket
@@ -60,18 +61,45 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl true
   def handle_info(
-        {:class_updated, %Class{id: class_id} = updated_class},
+        {:class_updated, %Class{id: id} = updated_class},
         %Socket{
-          assigns: %{class: %Class{id: class_id}}
+          assigns: %{
+            class: %Class{id: id, version: current_version} = class,
+            server_group: %ServerGroup{id: id, version: current_version} = server_group
+          }
         } = socket
       ),
-      do: socket |> assign(class: updated_class) |> noreply()
+      do:
+        socket
+        |> assign(
+          class: Class.refresh!(class, updated_class),
+          server_group: ServerGroup.refresh!(server_group, updated_class)
+        )
+        |> noreply()
 
   @impl true
   def handle_info(
-        {:class_deleted, %Class{id: class_id}},
+        {:server_group_updated, %{id: id} = updated_group},
         %Socket{
-          assigns: %{class: %Class{id: class_id} = class}
+          assigns: %{
+            class: %Class{id: id, version: current_version} = class,
+            server_group: %ServerGroup{id: id, version: current_version} = server_group
+          }
+        } = socket
+      ),
+      do:
+        socket
+        |> assign(
+          class: Class.refresh!(class, updated_group),
+          server_group: ServerGroup.refresh!(server_group, updated_group)
+        )
+        |> noreply()
+
+  @impl true
+  def handle_info(
+        {:class_deleted, %Class{id: id}},
+        %Socket{
+          assigns: %{class: %Class{id: id} = class}
         } = socket
       ),
       do:
@@ -84,36 +112,36 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl true
   def handle_info(
-        {:student_created, %Student{class_id: class_id}},
+        {:student_created, %Student{class_id: id}},
         %Socket{
-          assigns: %{class: %Class{id: class_id}}
+          assigns: %{class: %Class{id: id}}
         } = socket
       ),
       do: socket |> load_students() |> noreply()
 
   @impl true
   def handle_info(
-        {:students_imported, %Class{id: class_id}, _students},
+        {:students_imported, %Class{id: id}, _students},
         %Socket{
-          assigns: %{class: %Class{id: class_id}}
+          assigns: %{class: %Class{id: id}}
         } = socket
       ),
       do: socket |> load_students() |> noreply()
 
   @impl true
   def handle_info(
-        {:student_updated, %Student{class_id: class_id}},
+        {:student_updated, %Student{class_id: id}},
         %Socket{
-          assigns: %{class: %Class{id: class_id}}
+          assigns: %{class: %Class{id: id}}
         } = socket
       ),
       do: socket |> load_students() |> noreply()
 
   @impl true
   def handle_info(
-        {:student_deleted, %Student{class_id: class_id}},
+        {:student_deleted, %Student{class_id: id}},
         %Socket{
-          assigns: %{class: %Class{id: class_id}}
+          assigns: %{class: %Class{id: id}}
         } = socket
       ),
       do: socket |> load_students() |> noreply()
@@ -132,14 +160,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
       # Unsubscribe from events concerning students that are no longer in the
       # class
       for gone_student_id <- gone_student_ids do
-        :ok = PubSub.unsubscribe_student(gone_student_id)
+        :ok = Students.PubSub.unsubscribe_student(gone_student_id)
       end
 
       new_student_ids = MapSet.difference(current_student_ids, old_student_ids)
 
       # Subscribe to events concerning new students in the class
       for new_student_id <- new_student_ids do
-        :ok = PubSub.subscribe_student(new_student_id)
+        :ok = Students.PubSub.subscribe_student(new_student_id)
       end
     end
 

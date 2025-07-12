@@ -8,12 +8,14 @@ defmodule ArchiDep.Servers.ServerManager do
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
+  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerManagerState
   alias ArchiDep.Servers.Types
+  alias ArchiDep.Students
   alias Ecto.Changeset
   alias Ecto.UUID
 
@@ -86,7 +88,8 @@ defmodule ArchiDep.Servers.ServerManager do
       |> execute_actions()
 
     # TODO: watch user account & student for changes
-    :ok = ArchiDep.Students.PubSub.subscribe_class(state.server.group_id)
+    :ok = PubSub.subscribe_server_group(state.server.group_id)
+    :ok = Students.PubSub.subscribe_class(state.server.group_id)
 
     noreply(state)
   end
@@ -210,6 +213,16 @@ defmodule ArchiDep.Servers.ServerManager do
       do:
         state
         |> ServerManagerState.group_updated(class)
+        |> execute_actions()
+        |> noreply()
+
+  def handle_info(
+        {:server_group_updated, group},
+        state
+      ),
+      do:
+        state
+        |> ServerManagerState.group_updated(group)
         |> execute_actions()
         |> noreply()
 

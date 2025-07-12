@@ -808,15 +808,48 @@ defmodule ArchiDep.Servers.ServerManagerState do
           problems: problems
         } = state,
         %{id: group_id, version: version} = group
-      )
-      when version > current_version do
+      ) do
     Logger.info(
-      "Server manager for server #{server_id} received group update to version #{version}"
+      "Server manager for server #{server_id} received group update from version #{current_version} to version #{version}"
     )
+
+    new_group = ServerGroup.refresh!(current_group, group)
+
+    if new_group == current_group do
+      state
+    else
+      new_server = %Server{state.server | group: new_group}
+
+      auto_activate_or_deactivate(%__MODULE__{
+        state
+        | server: new_server,
+          # TODO: do not add update tracking action if there is already one
+          actions: [update_tracking()],
+          problems: detect_server_properties_mismatches(problems, new_server)
+      })
+    end
+  end
+
+  @spec group_updated(t(), map) :: t()
+  def group_updated(
+        %__MODULE__{
+          server: %Server{
+            id: server_id,
+            group: %ServerGroup{id: group_id}
+          },
+          problems: problems
+        } = state,
+        %{id: group_id, version: version}
+      ) do
+    Logger.info(
+      "Server manager for server #{server_id} received early group update to version #{version}"
+    )
+
+    {:ok, fresh_group} = ServerGroup.fetch_server_group(group_id)
 
     new_server = %Server{
       state.server
-      | group: ServerGroup.refresh(current_group, group)
+      | group: fresh_group
     }
 
     auto_activate_or_deactivate(%__MODULE__{
