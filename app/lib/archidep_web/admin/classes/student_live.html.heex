@@ -70,14 +70,7 @@
               else: nil
             )
           ]}
-          data-tip={
-            if(
-              @student.user.student_id != @student.id,
-              do:
-                gettext("Student now in class {class}", class: @student.user.student.class.name),
-              else: nil
-            )
-          }
+          data-tip={student_not_in_class_tooltip(@student)}
         >
           <Heroicons.user solid class="size-5" />
           {@student.user.username}

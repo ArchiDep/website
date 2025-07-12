@@ -19,7 +19,7 @@
     </p>
     <p :if={@servers_count == 0 and not Enum.empty?(@students)} class="mt-2 text-warning">
       {gettext(
-        "This class has {ss}{students_count, plural, =1 {1 student} other {# students}}{se} enrolled, who will also be deleted. Any non-admin user account linked to {students_count, plural, =1 {this student} other {these students}} will lose access.",
+        "This class has {ss}{students_count, plural, =1 {1 student} other {# students}}{se} enrolled, who will also be deleted. Any user account linked to {students_count, plural, =1 {this student} other {these students}} will lose access.",
         students_count: length(@students),
         ss: "<strong>",
         se: "</strong>"

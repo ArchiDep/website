@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
+  import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
   import ArchiDepWeb.Servers.ServerComponents, only: [expected_server_properties: 1]
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerGroup

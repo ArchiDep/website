@@ -88,8 +88,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
         # TODO: put query fragment determining whether a user is active in the user account schema
         where:
           s.active and o.active and
-            (is_nil(o.group_member_id) or
-               (ogm.active and ogm.group_id == g.id and g.active == true and
+            ((:root in o.roles and is_nil(ogm)) or
+               (:student in o.roles and not is_nil(ogm) and ogm.active and ogm.group_id == g.id and
+                  g.active and
                   (is_nil(g.start_date) or g.start_date <= ^day) and
                   (is_nil(g.end_date) or g.end_date >= ^day))),
         preload: [

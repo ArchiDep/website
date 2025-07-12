@@ -8,6 +8,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Errors.ServerOwnerNotFoundError
   alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Types
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
@@ -15,6 +16,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
+          roles: list(Types.role()),
           active: boolean(),
           group_member: ServerGroupMember.t() | nil | NotLoaded.t(),
           group_member_id: UUID.t() | nil,
@@ -26,13 +28,15 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
 
   schema "user_accounts" do
     field(:active, :boolean)
+    field(:roles, {:array, Ecto.Enum}, values: [:root, :student])
     belongs_to(:group_member, ServerGroupMember, source: :student_id)
     field(:active_server_count, :integer)
     field(:active_server_count_lock, :integer)
   end
 
   @spec active?(t(), DateTime.t()) :: boolean
-  def active?(%__MODULE__{active: true, group_member: nil}, _now), do: true
+  def active?(%__MODULE__{active: true, roles: roles, group_member: nil}, _now),
+    do: Enum.member?(roles, :root)
 
   def active?(
         %__MODULE__{active: true, group_member: group_member},

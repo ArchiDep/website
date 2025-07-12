@@ -112,9 +112,9 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
              left_join: iuag in assoc(iuapu, :group),
              where:
                us.token == ^token and us.created_at > ago(@session_validity_in_days, "day") and
-                 ua.active == true and
-                 (is_nil(pu) or
-                    (pu.active == true and ug.active == true and
+                 ua.active and
+                 ((:root in ua.roles and is_nil(pu)) or
+                    (:student in ua.roles and not is_nil(pu) and pu.active and ug.active and
                        (is_nil(ug.start_date) or ug.start_date <= ^now) and
                        (is_nil(ug.end_date) or ug.end_date >= ^now))),
              preload: [

@@ -9,7 +9,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
-  alias ArchiDep.Accounts.Types
+  alias ArchiDep.Types
 
   @derive {Inspect,
            only: [
