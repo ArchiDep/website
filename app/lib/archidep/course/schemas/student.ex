@@ -37,6 +37,10 @@ defmodule ArchiDep.Course.Schemas.Student do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  @spec active?(t(), DateTime.t()) :: boolean()
+  def active?(%__MODULE__{active: active, class: %Class{} = class}, now),
+    do: active and Class.active?(class, now)
+
   @spec fetch_student(UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
   def fetch_student(id),
     do:

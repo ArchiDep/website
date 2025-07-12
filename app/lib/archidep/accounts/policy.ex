@@ -35,15 +35,6 @@ defmodule ArchiDep.Accounts.Policy do
       ),
       do: impersonated_id != nil
 
-  # A root user can delete any user's session.
-  def authorize(
-        :accounts,
-        :delete_session,
-        %Authentication{roles: roles},
-        %UserSession{}
-      ),
-      do: Enum.member?(roles, :root)
-
   # A user can delete one of their own sessions.
   def authorize(
         :accounts,
@@ -54,6 +45,15 @@ defmodule ArchiDep.Accounts.Policy do
         }
       ),
       do: true
+
+  # A root user can delete any user's session.
+  def authorize(
+        :accounts,
+        :delete_session,
+        %Authentication{roles: roles},
+        %UserSession{}
+      ),
+      do: Enum.member?(roles, :root)
 
   def authorize(_context, _action, _principal, _params), do: false
 end

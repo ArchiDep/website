@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Auth do
   """
 
   import ArchiDepWeb.Helpers.ConnHelpers
+  import ArchiDep.Authentication, only: [is_authentication: 1]
   import Phoenix.Controller
   import Plug.Conn
   alias ArchiDep.Accounts
@@ -61,7 +62,8 @@ defmodule ArchiDepWeb.Auth do
     :ok = Endpoint.broadcast(live_socket_id(auth), "disconnect", %{})
   end
 
-  defp live_socket_id(auth), do: "auth:#{Authentication.session_id(auth)}"
+  defp live_socket_id(auth) when is_authentication(auth),
+    do: "auth:#{Authentication.principal_id(auth)}"
 
   defp maybe_write_remember_me_cookie(conn, token, true),
     do: put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
