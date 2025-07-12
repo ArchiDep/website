@@ -128,7 +128,12 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     %__MODULE__{}
     |> cast(
       %{
-        username: switch_edu_id.first_name || String.replace(switch_edu_id.email, ~r/@.*/, ""),
+        username:
+          String.slice(
+            switch_edu_id.first_name || String.replace(switch_edu_id.email, ~r/@.*/, ""),
+            0,
+            @max_username_length
+          ),
         roles: roles
       },
       [
