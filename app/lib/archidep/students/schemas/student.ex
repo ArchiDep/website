@@ -37,6 +37,34 @@ defmodule ArchiDep.Students.Schemas.Student do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  @spec fetch_student(UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
+  def fetch_student(id),
+    do:
+      from(s in __MODULE__,
+        join: c in assoc(s, :class),
+        left_join: u in assoc(s, :user),
+        left_join: us in assoc(u, :student),
+        left_join: usc in assoc(us, :class),
+        where: s.id == ^id,
+        preload: [class: c, user: {u, student: {us, class: usc}}]
+      )
+      |> Repo.one()
+      |> truthy_or(:student_not_found)
+
+  @spec fetch_student_in_class(UUID.t(), UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
+  def fetch_student_in_class(class_id, id),
+    do:
+      from(s in __MODULE__,
+        where: s.class_id == ^class_id and s.id == ^id,
+        join: c in assoc(s, :class),
+        left_join: u in assoc(s, :user),
+        left_join: us in assoc(u, :student),
+        left_join: usc in assoc(us, :class),
+        preload: [class: c, user: {u, student: {us, class: usc}}]
+      )
+      |> Repo.one()
+      |> truthy_or(:student_not_found)
+
   @spec new(Types.create_student_data()) :: Changeset.t(t())
   def new(data) do
     id = UUID.generate()
@@ -70,44 +98,6 @@ defmodule ArchiDep.Students.Schemas.Student do
       )
     end)
     |> assoc_constraint(:class)
-  end
-
-  @spec fetch_student(UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
-  def fetch_student(id) do
-    case Repo.one(
-           from(s in __MODULE__,
-             join: c in assoc(s, :class),
-             left_join: ua in assoc(s, :user),
-             where: s.id == ^id,
-             preload: [:class, :user]
-           )
-         ) do
-      nil ->
-        {:error, :student_not_found}
-
-      student ->
-        {:ok, student}
-    end
-  end
-
-  @spec fetch_student_in_class(UUID.t(), UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
-  def fetch_student_in_class(class_id, id) do
-    case Repo.one(
-           from(s in __MODULE__,
-             where: s.class_id == ^class_id and s.id == ^id,
-             join: c in assoc(s, :class),
-             left_join: u in assoc(s, :user),
-             left_join: us in assoc(u, :student),
-             left_join: usc in assoc(us, :class),
-             preload: [:class, user: {u, student: {us, class: usc}}]
-           )
-         ) do
-      nil ->
-        {:error, :student_not_found}
-
-      student ->
-        {:ok, student}
-    end
   end
 
   @spec update(t(), Types.existing_student_data()) :: Changeset.t(t())
