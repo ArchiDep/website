@@ -425,7 +425,7 @@ defmodule ArchiDep.Servers.ServerManagerState do
       case result do
         {:ok, facts} ->
           updated_server = Server.update_last_known_properties!(state.server, facts)
-          :ok = PubSub.publish_server(updated_server)
+          :ok = PubSub.publish_server_updated(updated_server)
 
           setup_playbook = Ansible.setup_playbook()
 

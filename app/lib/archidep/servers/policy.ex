@@ -41,6 +41,10 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Root users can watch the server IDs of a server group.
+  def authorize(:servers, :watch_server_ids, %Authentication{roles: roles}, _params),
+    do: Enum.member?(roles, :root)
+
   # Server group members can validate servers for their own group.
   def authorize(
         :servers,

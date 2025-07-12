@@ -51,7 +51,7 @@ defmodule ArchiDep.Servers.UpdateServer do
          |> Multi.insert(:stored_event, &server_updated(auth, &1.server))
          |> Repo.transaction() do
       {:ok, %{server: updated_server}} ->
-        :ok = PubSub.publish_server(updated_server)
+        :ok = PubSub.publish_server_updated(updated_server)
         {:ok, updated_server}
 
       {:error, :server, changeset, _} ->

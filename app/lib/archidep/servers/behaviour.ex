@@ -30,6 +30,11 @@ defmodule ArchiDep.Servers.Behaviour do
               | {:error, Changeset.t()}
               | {:error, :server_group_not_found}
 
+  @callback watch_server_ids(Authentication.t(), ServerGroup.t()) ::
+              {:ok, MapSet.t(UUID.t()),
+               (MapSet.t(UUID.t()), {atom(), term()} -> MapSet.t(UUID.t()))}
+              | {:error, :unauthorized}
+
   # Servers
 
   @callback validate_server(Authentication.t(), Types.create_server_data()) :: Changeset.t()

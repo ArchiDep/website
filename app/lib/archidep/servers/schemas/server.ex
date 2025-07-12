@@ -102,6 +102,16 @@ defmodule ArchiDep.Servers.Schemas.Server do
     )
   end
 
+  @spec list_server_ids_in_group(UUID.t()) :: list(UUID.t())
+  def list_server_ids_in_group(group_id),
+    do:
+      Repo.all(
+        from(s in __MODULE__,
+          select: s.id,
+          where: s.group_id == ^group_id
+        )
+      )
+
   @spec fetch_server(UUID.t()) :: {:ok, t()} | {:error, :server_not_found}
   def fetch_server(id) do
     case Repo.one(

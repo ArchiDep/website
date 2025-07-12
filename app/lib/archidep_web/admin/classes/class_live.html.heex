@@ -149,6 +149,7 @@
   id={DeleteClassDialogLive.id(@class)}
   auth={@auth}
   class={@class}
+  servers_count={@server_ids |> elem(0) |> MapSet.size()}
 />
 
 <div class="mt-4 mb-2 flex justify-between items-end">

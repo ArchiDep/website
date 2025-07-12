@@ -33,7 +33,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
           :ok = PubSub.subscribe_server(server.id)
         end
 
-        :ok = PubSub.subscribe_new_server()
+        :ok = PubSub.subscribe_server_created()
 
         {:ok, pid} = ServerTracker.start_link(servers)
         pid

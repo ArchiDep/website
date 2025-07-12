@@ -6,9 +6,10 @@ defmodule ArchiDep.Servers.PubSub do
 
   @pubsub ArchiDep.PubSub
 
-  @spec publish_server_group(ServerGroup.t()) :: :ok
-  def publish_server_group(group),
-    do: PubSub.broadcast(@pubsub, "server-groups:#{group.id}", {:server_group_updated, group})
+  @spec publish_server_group_updated(ServerGroup.t()) :: :ok
+  def publish_server_group_updated(group) do
+    :ok = PubSub.broadcast(@pubsub, "server-groups:#{group.id}", {:server_group_updated, group})
+  end
 
   @spec subscribe_server_group(UUID.t()) :: :ok
   def subscribe_server_group(group_id) do
@@ -20,22 +21,56 @@ defmodule ArchiDep.Servers.PubSub do
     :ok = PubSub.unsubscribe(@pubsub, "server-groups:#{group_id}")
   end
 
-  @spec publish_new_server(Server.t()) :: :ok
-  def publish_new_server(server),
-    do: PubSub.broadcast(@pubsub, "servers:new", {:server_created, server})
+  @spec subscribe_server_group_servers(UUID.t()) :: :ok
+  def subscribe_server_group_servers(group_id) do
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{group_id}:servers")
+  end
 
-  @spec subscribe_new_server() :: :ok
-  def subscribe_new_server() do
+  @spec unsubscribe_server_group_servers(UUID.t()) :: :ok
+  def unsubscribe_server_group_servers(group_id) do
+    :ok = PubSub.unsubscribe(@pubsub, "server-groups:#{group_id}:servers")
+  end
+
+  @spec publish_server_created(Server.t()) :: :ok
+  def publish_server_created(server) do
+    :ok = PubSub.broadcast(@pubsub, "servers:new", {:server_created, server})
+
+    :ok =
+      PubSub.broadcast(
+        @pubsub,
+        "server-groups:#{server.group_id}:servers",
+        {:server_created, server}
+      )
+  end
+
+  @spec subscribe_server_created() :: :ok
+  def subscribe_server_created() do
     :ok = PubSub.subscribe(@pubsub, "servers:new")
   end
 
-  @spec publish_server(Server.t()) :: :ok
-  def publish_server(server),
-    do: PubSub.broadcast(@pubsub, "servers:#{server.id}", {:server_updated, server})
+  @spec publish_server_updated(Server.t()) :: :ok
+  def publish_server_updated(server) do
+    :ok = PubSub.broadcast(@pubsub, "servers:#{server.id}", {:server_updated, server})
+
+    :ok =
+      PubSub.broadcast(
+        @pubsub,
+        "server-groups:#{server.group_id}:servers",
+        {:server_updated, server}
+      )
+  end
 
   @spec publish_server_deleted(Server.t()) :: :ok
-  def publish_server_deleted(server),
-    do: PubSub.broadcast(@pubsub, "servers:#{server.id}", {:server_deleted, server})
+  def publish_server_deleted(server) do
+    :ok = PubSub.broadcast(@pubsub, "servers:#{server.id}", {:server_deleted, server})
+
+    :ok =
+      PubSub.broadcast(
+        @pubsub,
+        "server-groups:#{server.group_id}:servers",
+        {:server_deleted, server}
+      )
+  end
 
   @spec subscribe_server(UUID.t()) :: :ok
   def subscribe_server(server_id) do

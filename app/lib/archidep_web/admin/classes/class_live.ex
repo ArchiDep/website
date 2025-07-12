@@ -28,12 +28,17 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
     # TODO: keep servers count up to date in real time
     with {:ok, class} <- class_result,
          {:ok, server_group} <- server_group_result do
-      if connected?(socket) do
-        set_process_label(__MODULE__, auth, class)
-        :ok = Students.PubSub.subscribe_class(class.id)
-        :ok = Students.PubSub.subscribe_class_students(class.id)
-        :ok = Servers.PubSub.subscribe_server_group(server_group.id)
-      end
+      {server_ids, server_ids_reducer} =
+        if connected?(socket) do
+          set_process_label(__MODULE__, auth, class)
+          :ok = Students.PubSub.subscribe_class(id)
+          :ok = Students.PubSub.subscribe_class_students(id)
+          :ok = Servers.PubSub.subscribe_server_group(id)
+          {:ok, server_ids, server_ids_reducer} = Servers.watch_server_ids(auth, server_group)
+          {server_ids, server_ids_reducer}
+        else
+          {MapSet.new(), fn ids, _event -> ids end}
+        end
 
       socket
       |> assign(
@@ -41,6 +46,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
           "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Classes")} > #{class.name}",
         class: class,
         server_group: server_group,
+        server_ids: {server_ids, server_ids_reducer},
         students: []
       )
       |> load_students()
@@ -145,6 +151,19 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
         } = socket
       ),
       do: socket |> load_students() |> noreply()
+
+  @impl true
+  def handle_info(
+        {server_event, _server} = event,
+        %Socket{assigns: %{server_ids: {server_ids, reducer}}} = socket
+      )
+      when server_event in [:server_created, :server_updated, :server_deleted] do
+    new_server_ids = reducer.(server_ids, event)
+
+    socket
+    |> assign(:server_ids, {new_server_ids, reducer})
+    |> noreply()
+  end
 
   defp load_students(
          %Socket{assigns: %{auth: auth, class: class, students: old_students}} = socket

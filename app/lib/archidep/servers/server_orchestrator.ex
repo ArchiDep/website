@@ -38,7 +38,7 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
   def handle_continue(:load_servers, pipeline) do
     set_process_label(__MODULE__)
 
-    :ok = PubSub.subscribe_new_server()
+    :ok = PubSub.subscribe_server_created()
 
     for server <- Server.list_active_servers(DateTime.utc_now()) do
       {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server.id, pipeline)

@@ -44,6 +44,11 @@ defmodule ArchiDep.Servers.ContextImpl do
   defdelegate update_server_group_expected_properties(auth, id, data),
     to: UpdateServerGroupExpectedProperties
 
+  @spec watch_server_ids(Authentication.t(), ServerGroup.t()) ::
+          {:ok, MapSet.t(UUID.t()), (MapSet.t(UUID.t()), {atom(), term()} -> MapSet.t(UUID.t()))}
+          | {:error, :unauthorized}
+  defdelegate watch_server_ids(auth, group), to: ReadServerGroups
+
   # Servers
 
   @spec validate_server(Authentication.t(), Types.create_server_data()) :: Changeset.t()

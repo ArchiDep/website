@@ -20,6 +20,7 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteClassDialogLive do
       |> assign(
         auth: assigns.auth,
         class: assigns.class,
+        servers_count: assigns.servers_count,
         students: Students.list_students(assigns.auth, assigns.class)
       )
       |> ok()

@@ -56,7 +56,7 @@ defmodule ArchiDep.Servers.UpdateServerGroupExpectedProperties do
          )
          |> Repo.transaction() do
       {:ok, %{group: updated_group}} ->
-        PubSub.publish_server_group(updated_group)
+        PubSub.publish_server_group_updated(updated_group)
         {:ok, updated_group.expected_server_properties}
 
       {:error, :group, changeset, _} ->

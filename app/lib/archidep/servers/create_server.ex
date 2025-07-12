@@ -33,7 +33,7 @@ defmodule ArchiDep.Servers.CreateServer do
          |> Multi.insert(:stored_event, &server_created(auth, &1.server))
          |> Repo.transaction() do
       {:ok, %{server: server}} ->
-        :ok = PubSub.publish_new_server(server)
+        :ok = PubSub.publish_server_created(server)
         {:ok, server}
 
       {:error, :server, changeset, _} ->
