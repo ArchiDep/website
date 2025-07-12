@@ -98,9 +98,9 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     |> validate_length(:client_ip_address, max: 50)
   end
 
-  @spec fetch_active_session_by_token(String.t()) ::
+  @spec fetch_active_session_by_token(String.t(), DateTime.t()) ::
           {:ok, t()} | {:error, :session_not_found}
-  def fetch_active_session_by_token(token) do
+  def fetch_active_session_by_token(token, now) do
     if session =
          Repo.one(
            from(us in __MODULE__,
@@ -110,7 +110,13 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
              left_join: iua in assoc(us, :impersonated_user_account),
              left_join: iuapu in assoc(iua, :preregistered_user),
              left_join: iuag in assoc(iuapu, :group),
-             where: us.token == ^token and us.created_at > ago(@session_validity_in_days, "day"),
+             where:
+               us.token == ^token and us.created_at > ago(@session_validity_in_days, "day") and
+                 ua.active == true and
+                 (is_nil(pu) or
+                    (pu.active == true and ug.active == true and
+                       (is_nil(ug.start_date) or ug.start_date <= ^now) and
+                       (is_nil(ug.end_date) or ug.end_date >= ^now))),
              preload: [
                user_account: {ua, preregistered_user: {pu, group: ug}},
                impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}

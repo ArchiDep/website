@@ -22,7 +22,9 @@ defmodule ArchiDep.Accounts.Sessions do
   @spec validate_session(String.t(), ClientMetadata.t()) ::
           {:ok, Authentication.t()} | {:error, :session_not_found}
   def validate_session(token, client_metadata) do
-    with {:ok, session} <- UserSession.fetch_active_session_by_token(token),
+    now = DateTime.utc_now()
+
+    with {:ok, session} <- UserSession.fetch_active_session_by_token(token, now),
          {:ok, touched_session} <- UserSession.touch(session, client_metadata) do
       {:ok, UserSession.authentication(touched_session)}
     end

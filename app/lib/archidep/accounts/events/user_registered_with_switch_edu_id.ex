@@ -54,8 +54,8 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
           preregistered_user_id: UUID.t() | nil
         }
 
-  @spec new(SwitchEduId.t(), UserAccount.t(), UserSession.t(), PreregisteredUser.t() | nil) :: t()
-  def new(switch_edu_id, user_account, user_session, preregistered_user) do
+  @spec new(SwitchEduId.t(), UserSession.t(), PreregisteredUser.t() | nil) :: t()
+  def new(switch_edu_id, user_session, preregistered_user) do
     %SwitchEduId{
       id: id,
       email: email,
@@ -64,16 +64,17 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
       swiss_edu_person_unique_id: swiss_edu_person_unique_id
     } = switch_edu_id
 
+    %UserSession{
+      id: session_id,
+      client_ip_address: client_ip_address,
+      client_user_agent: client_user_agent,
+      user_account: user_account
+    } = user_session
+
     %UserAccount{
       id: user_account_id,
       username: username
     } = user_account
-
-    %UserSession{
-      id: session_id,
-      client_ip_address: client_ip_address,
-      client_user_agent: client_user_agent
-    } = user_session
 
     preregistered_user_id =
       case preregistered_user do

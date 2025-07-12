@@ -20,7 +20,8 @@ defmodule ArchiDep.Accounts.LogOut do
     end
   end
 
-  defp fetch_session_by_token(token), do: UserSession.fetch_active_session_by_token(token)
+  defp fetch_session_by_token(token),
+    do: UserSession.fetch_active_session_by_token(token, DateTime.utc_now())
 
   defp delete_session(session, auth) do
     %UserSession{user_account: user_account} = session

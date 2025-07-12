@@ -154,22 +154,46 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   def link_to_preregistered_user(
         %__MODULE__{id: user_account_id, preregistered_user_id: nil} = user_account,
         preregistered_user
-      ) do
-    now = DateTime.utc_now()
+      ),
+      do:
+        user_account
+        |> cast(%{preregistered_user_id: preregistered_user.id}, [:preregistered_user_id])
+        |> assoc_constraint(:preregistered_user)
+        |> change(updated_at: DateTime.utc_now())
+        |> optimistic_lock(:version)
+        |> unsafe_validate_unique_query(:preregistered_user_id, Repo, fn changeset ->
+          preregistered_user_id = get_field(changeset, :preregistered_user_id)
 
-    user_account
-    |> cast(%{preregistered_user_id: preregistered_user.id}, [:preregistered_user_id])
-    |> assoc_constraint(:preregistered_user)
-    |> change(updated_at: now)
-    |> optimistic_lock(:version)
-    |> unsafe_validate_unique_query(:preregistered_user_id, Repo, fn changeset ->
-      preregistered_user_id = get_field(changeset, :preregistered_user_id)
+          from(ua in __MODULE__,
+            where:
+              ua.id != ^user_account_id and ua.preregistered_user_id == ^preregistered_user_id
+          )
+        end)
 
-      from(ua in __MODULE__,
-        where: ua.id != ^user_account_id and ua.preregistered_user_id == ^preregistered_user_id
+  @spec relink_to_preregistered_user(
+          t(),
+          PreregisteredUser.t()
+        ) :: Changeset.t(t())
+  def relink_to_preregistered_user(
+        %__MODULE__{id: user_account_id, preregistered_user_id: previous_preregistered_user_id} =
+          user_account,
+        new_preregistered_user
       )
-    end)
-  end
+      when not is_nil(previous_preregistered_user_id),
+      do:
+        user_account
+        |> cast(%{preregistered_user_id: new_preregistered_user.id}, [:preregistered_user_id])
+        |> assoc_constraint(:preregistered_user)
+        |> change(updated_at: DateTime.utc_now())
+        |> optimistic_lock(:version)
+        |> unsafe_validate_unique_query(:preregistered_user_id, Repo, fn changeset ->
+          preregistered_user_id = get_field(changeset, :preregistered_user_id)
+
+          from(ua in __MODULE__,
+            where:
+              ua.id != ^user_account_id and ua.preregistered_user_id == ^preregistered_user_id
+          )
+        end)
 
   defp validate(changeset),
     do:

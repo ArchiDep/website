@@ -45,47 +45,92 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
 
   defp log_in_or_register(switch_edu_id_data, client_metadata) do
     Multi.new()
+    # Create or update the Switch edu-ID identity. It might or might not already
+    # exist and be linked to a user account.
     |> Multi.insert_or_update(
       :switch_edu_id,
       SwitchEduId.create_or_update(switch_edu_id_data)
     )
+    # Determine whether the user account already exists or needs to be
+    # created...
     |> Multi.run(
       :user_account_and_state,
       fn _repo, %{switch_edu_id: switch_edu_id} ->
         case UserAccount.fetch_for_switch_edu_id(switch_edu_id) do
           nil ->
-            if Enum.member?(@root_users, switch_edu_id_data.email) ||
-                 Enum.member?(@root_users, switch_edu_id_data.swiss_edu_person_unique_id) do
+            # If the user account does not exist but the email of the Switch
+            # edu-ID account has been configured as a root user, create a new
+            # root user account.
+            if is_configured_root_user?(switch_edu_id) do
               {:ok,
                {:new_root, UserAccount.new_switch_edu_id_account(switch_edu_id, [:root]), nil}}
             else
+              # Otherwise check whether there is a preregistered user for that
+              # email...
               case PreregisteredUser.list_available_preregistered_users_for_email(
                      switch_edu_id_data.email,
                      DateTime.utc_now()
                    ) do
-                [preregistered_user] ->
+                # If there is exactly one active preregistered user with a
+                # matching email that is not yet linked to a user account,
+                # create a new student user account.
+                [exactly_one_preregistered_user] ->
                   {:ok,
-                   {:new_student,
-                    UserAccount.new_switch_edu_id_account(switch_edu_id, [:student]),
-                    preregistered_user}}
+                   {
+                     :new_student,
+                     # TODO: split this function into one for new root accounts
+                     # and one for new student accounts. Directly link the
+                     # account to the student in the latter.
+                     UserAccount.new_switch_edu_id_account(switch_edu_id, [:student]),
+                     exactly_one_preregistered_user
+                   }}
 
+                # If there are no preregistered users or more than one matches,
+                # deny access.
                 _zero_or_multiple_preregistered_users ->
                   {:error, :unauthorized_switch_edu_id}
               end
             end
 
-          # FIXME: check user account is still active, link to new preregistered user if needed
+          # If the user account already exists, check whether it is still active
+          # (it might be linked to a class from the previous year, or it or its
+          # linked preregistered user might have been deactivated)...
           user_account ->
-            {:ok, {:existing_account, change(user_account), nil}}
+            # If the user account is active, log it in.
+            if UserAccount.active?(user_account, DateTime.utc_now()) do
+              {:ok, {:existing_account, change(user_account), nil}}
+            else
+              # Otherwise, check whether there is a new preregistered user for
+              # the same email (e.g. a student might be repeating a year, in
+              # which case a new preregistered user will have been created in
+              # a new class)...
+              case PreregisteredUser.list_available_preregistered_users_for_email(
+                     switch_edu_id_data.email,
+                     DateTime.utc_now()
+                   ) do
+                # If there is exactly one active preregistered user with a
+                # matching email that is not yet linked to a user account,
+                # link the user account to it.
+                [preregistered_user] ->
+                  {:ok, {:existing_student, change(user_account), preregistered_user}}
+
+                # If there are no preregistered users or more than one matches,
+                # deny access.
+                _zero_or_multiple_preregistered_users ->
+                  {:error, :unauthorized_switch_edu_id}
+              end
+            end
         end
       end
     )
+    # Create or apply any updates to the user account.
     |> Multi.insert_or_update(:user_account, fn %{
                                                   user_account_and_state:
                                                     {_state, changeset, _preregistered_user}
                                                 } ->
       changeset
     end)
+    # Link the user account and preregistered user together if necessary.
     |> Multi.merge(fn %{
                         user_account_and_state: user_account_and_state,
                         user_account: user_account
@@ -97,48 +142,83 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
             :preregistered_user,
             PreregisteredUser.link_to_user_account(preregistered_user, user_account)
           )
+          # TODO: remove this update which should not be necessary (the account
+          # should be linked to the student directly at insertion time)
           |> Multi.update(
-            :class,
+            :linked_user_account,
             UserAccount.link_to_preregistered_user(user_account, preregistered_user)
+          )
+
+        {:existing_student, _user_account, preregistered_user} ->
+          Multi.new()
+          |> Multi.update(
+            :preregistered_user,
+            PreregisteredUser.link_to_user_account(preregistered_user, user_account)
+          )
+          |> Multi.update(
+            :linked_user_account,
+            UserAccount.relink_to_preregistered_user(user_account, preregistered_user)
           )
 
         _otherwise ->
           Multi.new()
-          |> Multi.run(:preregistered_user, fn _repo, _changes ->
-            {:ok, nil}
-          end)
+          |> Multi.put(:preregistered_user, nil)
+          |> Multi.put(:linked_user_account, nil)
       end
     end)
-    |> Multi.insert(:user_session, fn %{user_account: user_account} ->
-      UserSession.new_session(user_account, client_metadata)
-    end)
+    # Create a new session for the user account which is logging in.
+    |> Multi.insert(:user_session, &UserSession.new_session(&1.user_account, client_metadata))
+    # Store either a registration or a login event as appropriate.
     |> insert(:stored_event, fn
       %{
         switch_edu_id: switch_edu_id,
         user_account_and_state: {state, _changeset, _preregistered_user},
-        user_account: user_account,
         preregistered_user: preregistered_user,
         user_session: session
       } ->
         case state do
           s when s in [:new_root, :new_student] ->
-            UserRegisteredWithSwitchEduId.new(
+            user_registered_with_switch_edu_id(
               switch_edu_id,
-              user_account,
               session,
               preregistered_user
             )
-            |> new_event(%{}, occurred_at: session.created_at)
-            |> add_to_stream(user_account)
-            |> StoredEvent.initiated_by(UserAccount.event_stream(user_account))
 
-          :existing_account ->
-            UserLoggedInWithSwitchEduId.new(switch_edu_id, session, client_metadata)
-            |> new_event(%{}, occurred_at: session.created_at)
-            |> add_to_stream(user_account)
-            |> StoredEvent.initiated_by(UserAccount.event_stream(user_account))
+          s when s in [:existing_account, :existing_student] ->
+            user_logged_in_with_switch_edu_id(switch_edu_id, session, client_metadata)
         end
     end)
     |> transaction()
   end
+
+  defp is_configured_root_user?(switch_edu_id) when is_struct(switch_edu_id, SwitchEduId),
+    do:
+      Enum.member?(@root_users, switch_edu_id.email) ||
+        Enum.member?(@root_users, switch_edu_id.swiss_edu_person_unique_id)
+
+  defp user_registered_with_switch_edu_id(
+         switch_edu_id,
+         session,
+         preregistered_user
+       ),
+       do:
+         UserRegisteredWithSwitchEduId.new(
+           switch_edu_id,
+           session,
+           preregistered_user
+         )
+         |> new_event(%{}, occurred_at: session.created_at)
+         |> add_to_stream(session.user_account)
+         |> StoredEvent.initiated_by(UserAccount.event_stream(session.user_account))
+
+  defp user_logged_in_with_switch_edu_id(
+         switch_edu_id,
+         session,
+         client_metadata
+       ),
+       do:
+         UserLoggedInWithSwitchEduId.new(switch_edu_id, session, client_metadata)
+         |> new_event(%{}, occurred_at: session.created_at)
+         |> add_to_stream(session.user_account)
+         |> StoredEvent.initiated_by(UserAccount.event_stream(session.user_account))
 end
