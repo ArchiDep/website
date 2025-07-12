@@ -662,7 +662,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             @expected_cpu == "" and @expected_memory == "" and @expected_os == "" and
             @expected_distribution == ""
         }
-        class="italic text-neutral-content/50"
+        class="italic text-base-content/50"
       >
         {gettext("No restrictions placed on any property")}
       </li>
