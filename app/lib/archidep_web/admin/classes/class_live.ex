@@ -1,6 +1,7 @@
 defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   use ArchiDepWeb, :live_view
 
+  import ArchiDepWeb.Admin.Classes.StudentComponents
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]

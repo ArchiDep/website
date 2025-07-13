@@ -6,8 +6,11 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
 
   @type t :: %__MODULE__{
           academic_class: String.t() | nil,
-          students: list(Types.existing_student_data())
+          students: list(Types.import_student_data())
         }
+
+  @alpha ?a..?z
+  @alphanumeric Enum.concat([?a..?z, ?0..?9])
 
   @primary_key false
   embedded_schema do
@@ -36,28 +39,113 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
     |> validate_format(:email, ~r/\A.+@.+\..+\z/)
   end
 
-  @spec to_insert_data(t(), Class.t(), DateTime.t()) :: list(map())
+  @spec to_insert_data(t(), Class.t(), DateTime.t()) :: list(Types.import_student_data())
   def to_insert_data(
         %__MODULE__{academic_class: academic_class, students: students},
         %Class{
           id: class_id
         },
         now
-      ),
-      do:
-        students
-        |> Enum.map(&Map.from_struct/1)
-        |> Enum.uniq_by(& &1.email)
-        |> Enum.map(
-          &(&1
-            |> Map.merge(%{
-              id: UUID.generate(),
-              academic_class: academic_class,
-              active: true,
-              class_id: class_id,
-              version: 1,
-              created_at: now,
-              updated_at: now
-            }))
+      ) do
+    students
+    |> Enum.map(&Map.from_struct/1)
+    |> Enum.uniq_by(& &1.email)
+    |> Enum.map(
+      &(&1
+        |> Map.merge(%{
+          id: UUID.generate(),
+          academic_class: academic_class,
+          active: true,
+          class_id: class_id,
+          version: 1,
+          created_at: now,
+          updated_at: now
+        }))
+    )
+    |> Enum.reduce({[], MapSet.new()}, fn student, {list, usernames} ->
+      suggested_username = generate_suggested_username(student, usernames)
+
+      {
+        [Map.put(student, :suggested_username, suggested_username) | list],
+        MapSet.put(usernames, suggested_username)
+      }
+    end)
+    |> then(&elem(&1, 0))
+    |> Enum.reverse()
+  end
+
+  defp generate_suggested_username(student, taken) do
+    email_name = String.replace(student.email, ~r/@.*/, "")
+
+    if String.length(email_name) >= 4 and
+         String.match?(
+           email_name,
+           ~r/\A[a-z][a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)*\Z/
+         ) do
+      generate_suggested_username_from_email(student.email, taken)
+    else
+      Stream.repeatedly(fn -> 3 end)
+      |> Stream.scan(fn acc, _ -> acc + 1 end)
+      |> Stream.flat_map(&Enum.map(1..10, fn _ -> &1 end))
+      |> Stream.map(fn size ->
+        first_char = List.to_string([Enum.random(@alpha)])
+
+        remaining_chars =
+          Range.new(1, size - 1)
+          |> Enum.map(fn _ -> Enum.random(@alphanumeric) end)
+          |> List.to_string()
+
+        "#{first_char}#{remaining_chars}"
+      end)
+      |> Stream.filter(&(!MapSet.member?(taken, &1)))
+      |> Enum.take(1)
+      |> List.first()
+    end
+  end
+
+  defp generate_suggested_username_from_email(email, taken) do
+    email_name = String.replace(email, ~r/@.*/, "")
+    email_name_parts = String.split(email_name, ".", parts: 2)
+
+    case email_name_parts do
+      [first_name, last_names] ->
+        sanitized_first_name = String.replace(first_name, ~r/[^a-z0-9]/, "")
+        sanitized_last_names = String.replace(last_names, ~r/[^a-z0-9]/, "")
+        last_names_tail_chars = String.length(sanitized_last_names) - 1
+
+        Range.new(1, last_names_tail_chars)
+        |> Stream.map(
+          &"#{String.slice(sanitized_first_name, 0, 1)}#{String.slice(sanitized_last_names, 0, 1)}#{String.slice(sanitized_last_names, -&1, 1)}"
         )
+        |> Stream.concat(
+          Stream.repeatedly(fn -> 1 end)
+          |> Stream.scan(fn acc, _ -> acc + 1 end)
+          |> Stream.map(
+            &"#{String.slice(sanitized_first_name, 0, 1)}#{String.slice(sanitized_last_names, 0, 1)}#{String.slice(sanitized_last_names, -1, 1)}#{&1}"
+          )
+        )
+        |> Stream.filter(&(!MapSet.member?(taken, &1)))
+        |> Enum.take(1)
+        |> List.first()
+
+      [name] ->
+        sanitized_name = String.replace(name, ~r/[^a-z0-9]/, "")
+        name_tail_chars = String.length(sanitized_name) - 2
+
+        Range.new(1, name_tail_chars)
+        |> Stream.map(
+          &"#{String.slice(sanitized_name, 0, 2)}#{String.slice(sanitized_name, -&1, 1)}"
+        )
+        |> Stream.concat(
+          Stream.repeatedly(fn -> 1 end)
+          |> Stream.scan(fn acc, _ -> acc + 1 end)
+          |> Stream.map(
+            &"#{String.slice(sanitized_name, 0, 2)}#{String.slice(sanitized_name, -1, 1)}#{&1}"
+          )
+        )
+        |> Stream.filter(&(!MapSet.member?(taken, &1)))
+        |> Enum.take(1)
+        |> List.first()
+    end
+  end
 end

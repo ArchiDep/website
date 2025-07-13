@@ -61,6 +61,10 @@ defmodule ArchiDep.Course.ContextImpl do
   @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
   defdelegate list_students(auth, class), to: ReadStudents
 
+  @spec fetch_authenticated_student(Authentication.t()) ::
+          {:ok, Student.t()} | {:error, :not_a_student}
+  defdelegate fetch_authenticated_student(auth), to: ReadStudents
+
   @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
           {:ok, Student.t()} | {:error, :student_not_found}
   defdelegate fetch_student_in_class(auth, class_id, id), to: ReadStudents

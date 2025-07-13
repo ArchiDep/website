@@ -20,7 +20,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
           <h3 class="text-lg font-bold">{@title}</h3>
         </legend>
 
-        <label class="fieldset-label mt-2">{gettext("Name")}</label>
+        <label class="fieldset-label required mt-2">{gettext("Name")}</label>
         <input
           type="text"
           id={@form[:name].id}
@@ -30,7 +30,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
         />
         <.errors_for field={@form[:name]} />
 
-        <label class="fieldset-label mt-2">{gettext("Email")}</label>
+        <label class="fieldset-label required mt-2">{gettext("Email")}</label>
         <input
           type="email"
           id={@form[:email].id}
@@ -49,7 +49,22 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
           value={@form[:academic_class].value}
         />
         <.errors_for field={@form[:academic_class]} />
-        <p class="label">{gettext("Official name of the student's academic class")}</p>
+        <.field_help>
+          {gettext("Official name of the student's academic class")}
+        </.field_help>
+
+        <label class="fieldset-label required mt-2">{gettext("Suggested username")}</label>
+        <input
+          type="text"
+          id={@form[:suggested_username].id}
+          class="input w-full"
+          name={@form[:suggested_username].name}
+          value={@form[:suggested_username].value}
+        />
+        <.errors_for field={@form[:suggested_username]} />
+        <.field_help>
+          {gettext("Username that will be suggested to the student for the course (alphanumeric)")}
+        </.field_help>
 
         <label class="fieldset-label mt-2">
           <input type="hidden" name={@form[:active].name} value="false" />
@@ -63,6 +78,11 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
           />
           {gettext("Active")}
         </label>
+        <.field_help>
+          {gettext(
+            "Only active students may log in (their class and user account must also be active)"
+          )}
+        </.field_help>
 
         <div class="mt-2 flex justify-end gap-x-2">
           <button type="button" class="btn btn-secondary" phx-click={@on_close}>

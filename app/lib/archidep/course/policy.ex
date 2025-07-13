@@ -102,6 +102,15 @@ defmodule ArchiDep.Course.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Any user can fetch their authenticated student.
+  def authorize(
+        :course,
+        :fetch_authenticated_student,
+        %Authentication{},
+        _params
+      ),
+      do: true
+
   # Root users can fetch a student in class.
   def authorize(
         :course,

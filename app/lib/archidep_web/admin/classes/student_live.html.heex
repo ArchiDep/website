@@ -53,6 +53,10 @@
       <.no_data />
     <% end %>
   </dd>
+  <dt class="font-bold">{gettext("Username")}</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    <.student_username student={@student} />
+  </dd>
   <dt class="font-bold">{gettext("Active")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     <Heroicons.check_circle :if={@student.active} class="size-5 text-success" />

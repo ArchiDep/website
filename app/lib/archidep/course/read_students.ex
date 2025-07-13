@@ -23,6 +23,22 @@ defmodule ArchiDep.Course.ReadStudents do
     )
   end
 
+  @spec fetch_authenticated_student(Authentication.t()) ::
+          {:ok, Student.t()} | {:error, :not_a_student}
+  def fetch_authenticated_student(auth) do
+    with {:ok, student} <-
+           auth |> Authentication.principal_id() |> Student.fetch_student_for_user_account_id(),
+         :ok <- authorize(auth, Policy, :course, :fetch_authenticated_student, student) do
+      {:ok, student}
+    else
+      {:error, :student_not_found} ->
+        {:error, :not_a_student}
+
+      {:error, {:access_denied, :course, :fetch_authenticated_student}} ->
+        {:error, :not_a_student}
+    end
+  end
+
   @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
           {:ok, Student.t()} | {:error, :student_not_found}
   def fetch_student_in_class(auth, class_id, id) do

@@ -1,6 +1,17 @@
 defmodule ArchiDepWeb.Components.FormComponents do
   use Phoenix.Component
 
+  slot :inner_block, required: true, doc: "the help text to display"
+
+  def field_help(assigns) do
+    ~H"""
+    <p class="flex items-start gap-x-1 text-info/85">
+      <Heroicons.information_circle class="size-4" />
+      {render_slot(@inner_block)}
+    </p>
+    """
+  end
+
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from a form, for example: @form[:email]"
 

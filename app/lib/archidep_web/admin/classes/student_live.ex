@@ -1,6 +1,7 @@
 defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   use ArchiDepWeb, :live_view
 
+  import ArchiDepWeb.Admin.Classes.StudentComponents
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
   alias ArchiDep.Accounts

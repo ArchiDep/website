@@ -90,6 +90,7 @@ defmodule ArchiDep.Servers.Types do
           distribution_version: String.t() | nil
         }
 
+  # TODO: remove this type and force all properties to be present
   @type server_properties_data :: %{
           optional(:hostname) => String.t() | nil,
           optional(:machine_id) => String.t() | nil,

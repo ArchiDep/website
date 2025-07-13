@@ -1,1 +1,16 @@
 <h1>{gettext("Dashboard")}</h1>
+
+<div :if={@student != nil and @student.username == nil} class="hero bg-base-300 mt-4">
+  <div class="hero-content p-10 text-center">
+    <div class="max-w-md">
+      <h1 class="text-5xl font-bold">
+        {gettext("What is your username?")}
+      </h1>
+      <p class="py-6">
+        Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem
+        quasi. In deleniti eaque aut repudiandae et a id nisi.
+      </p>
+      <button class="btn btn-primary">Get Started</button>
+    </div>
+  </div>
+</div>

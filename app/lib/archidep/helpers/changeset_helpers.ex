@@ -7,6 +7,21 @@ defmodule ArchiDep.Helpers.ChangesetHelpers do
   alias Ecto.Changeset
   alias Ecto.Query
 
+  @spec validate_not_nil(Changeset.t(), list(atom())) :: Changeset.t()
+  def validate_not_nil(changeset, fields)
+      when is_struct(changeset, Changeset) and is_list(fields),
+      do: Enum.reduce(fields, changeset, &validate_not_nil(&2, &1))
+
+  @spec validate_not_nil(Changeset.t(), atom()) :: Changeset.t()
+  def validate_not_nil(changeset, field)
+      when is_struct(changeset, Changeset) and is_atom(field) do
+    if get_field(changeset, field) == nil do
+      add_error(changeset, field, "cannot be nil", validation: :not_nil)
+    else
+      changeset
+    end
+  end
+
   @doc """
   Validates that no existing record has the same value for the specified field.
 

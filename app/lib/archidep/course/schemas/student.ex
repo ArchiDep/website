@@ -15,6 +15,8 @@ defmodule ArchiDep.Course.Schemas.Student do
           name: String.t(),
           email: String.t(),
           academic_class: String.t() | nil,
+          suggested_username: String.t(),
+          username: String.t() | nil,
           active: boolean(),
           class: Class.t() | NotLoaded.t(),
           class_id: UUID.t(),
@@ -29,6 +31,8 @@ defmodule ArchiDep.Course.Schemas.Student do
     field(:name, :string)
     field(:email, :string)
     field(:academic_class, :string)
+    field(:suggested_username, :string)
+    field(:username, :string)
     field(:active, :boolean, default: false)
     belongs_to(:class, Class)
     belongs_to(:user, User, source: :user_account_id)
@@ -55,6 +59,18 @@ defmodule ArchiDep.Course.Schemas.Student do
       |> Repo.one()
       |> truthy_or(:student_not_found)
 
+  @spec fetch_student_for_user_account_id(UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
+  def fetch_student_for_user_account_id(id),
+    do:
+      from(s in __MODULE__,
+        join: c in assoc(s, :class),
+        join: u in assoc(s, :user),
+        where: u.id == ^id and u.student_id == s.id,
+        preload: [class: c, user: u]
+      )
+      |> Repo.one()
+      |> truthy_or(:student_not_found)
+
   @spec fetch_student_in_class(UUID.t(), UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
   def fetch_student_in_class(class_id, id),
     do:
@@ -75,6 +91,8 @@ defmodule ArchiDep.Course.Schemas.Student do
         %{
           id: id,
           email: email,
+          suggested_username: suggested_username,
+          username: username,
           active: active,
           group: group,
           user_account: user_account,
@@ -87,6 +105,8 @@ defmodule ArchiDep.Course.Schemas.Student do
     %__MODULE__{
       student
       | email: email,
+        suggested_username: suggested_username,
+        username: username,
         active: active,
         class: Class.refresh!(class, group),
         user: User.refresh!(user, user_account),
@@ -112,36 +132,26 @@ defmodule ArchiDep.Course.Schemas.Student do
   @spec new(Types.create_student_data()) :: Changeset.t(t())
   def new(data) do
     id = UUID.generate()
+    class_id = data.class_id
     now = DateTime.utc_now()
 
     %__MODULE__{}
-    |> cast(data, [:name, :email, :academic_class, :active, :class_id])
+    |> cast(data, [
+      :name,
+      :email,
+      :academic_class,
+      :suggested_username,
+      :username,
+      :active,
+      :class_id
+    ])
     |> change(
       id: id,
       version: 1,
       created_at: now,
       updated_at: now
     )
-    |> update_change(:name, &trim/1)
-    |> update_change(:email, &trim/1)
-    |> update_change(:academic_class, &trim_to_nil/1)
-    |> validate_length(:name, max: 200)
-    |> validate_length(:email, max: 255)
-    |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
-    |> validate_length(:academic_class, max: 30)
-    |> validate_required([:name, :email, :active, :class_id])
-    |> unique_constraint(:email, name: :students_unique_email_index)
-    |> unsafe_validate_unique_query(:email, Repo, fn changeset ->
-      class_id = get_field(changeset, :class_id)
-      email = get_field(changeset, :email)
-
-      from(s in __MODULE__,
-        where:
-          s.class_id == ^class_id and
-            fragment("LOWER(?)", s.email) == fragment("LOWER(?)", ^email)
-      )
-    end)
-    |> assoc_constraint(:class)
+    |> validate(id, class_id)
   end
 
   @spec update(t(), Types.existing_student_data()) :: Changeset.t(t())
@@ -151,27 +161,81 @@ defmodule ArchiDep.Course.Schemas.Student do
     now = DateTime.utc_now()
 
     student
-    |> cast(data, [:name, :email, :academic_class, :active])
+    |> cast(data, [:name, :email, :academic_class, :suggested_username, :username, :active])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
-    |> update_change(:name, &trim/1)
-    |> update_change(:email, &trim/1)
-    |> update_change(:academic_class, &trim_to_nil/1)
-    |> validate_length(:name, max: 200)
-    |> validate_length(:email, max: 255)
-    |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
-    |> validate_length(:academic_class, max: 30)
-    |> validate_required([:name, :email, :active, :class_id])
-    |> unique_constraint(:email, name: :students_unique_email_index)
-    |> unsafe_validate_unique_query(:email, Repo, fn changeset ->
-      email = get_field(changeset, :email)
-
-      from(s in __MODULE__,
-        where:
-          s.id != ^id and s.class_id == ^class_id and
-            fragment("LOWER(?)", s.email) == fragment("LOWER(?)", ^email)
-      )
-    end)
-    |> assoc_constraint(:class)
+    |> validate(id, class_id)
   end
+
+  defp validate(changeset, _id, nil), do: validate(changeset)
+
+  defp validate(changeset, id, class_id),
+    do:
+      changeset
+      |> validate()
+      |> unsafe_validate_email_unique(id, class_id)
+      |> unsafe_validate_suggested_username_unique(id, class_id)
+      |> unsafe_validate_username_unique(id, class_id)
+
+  defp validate(changeset),
+    do:
+      changeset
+      |> update_change(:name, &trim/1)
+      |> update_change(:email, &trim/1)
+      |> update_change(:academic_class, &trim_to_nil/1)
+      |> update_change(:suggested_username, &trim/1)
+      |> update_change(:username, &trim_to_nil/1)
+      |> validate_length(:name, max: 200)
+      |> validate_length(:email, max: 255)
+      |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
+      |> validate_length(:academic_class, max: 30)
+      |> validate_length(:suggested_username, max: 10)
+      |> validate_format(:suggested_username, ~r/\A[a-z][a-z0-9]*\z/i,
+        message:
+          "must contain only letters (without accents) and numbers, and start with a letter"
+      )
+      |> validate_length(:username, max: 10)
+      |> validate_format(:username, ~r/\A[a-z][a-z0-9]*\z/i,
+        message:
+          "must contain only letters (without accents) and numbers, and start with a letter"
+      )
+      |> validate_required([:name, :email, :suggested_username, :active, :class_id])
+      |> unique_constraint(:email, name: :students_unique_email_index)
+      |> unique_constraint(:suggested_username, name: :students_suggested_username_unique)
+      |> unique_constraint(:username, name: :students_username_unique)
+      |> assoc_constraint(:class)
+
+  defp unsafe_validate_email_unique(changeset, id, class_id),
+    do:
+      unsafe_validate_unique_query(changeset, :email, Repo, fn changeset ->
+        email = get_field(changeset, :email)
+
+        from(s in __MODULE__,
+          where:
+            s.id != ^id and s.class_id == ^class_id and
+              fragment("LOWER(?)", s.email) == fragment("LOWER(?)", ^email)
+        )
+      end)
+
+  defp unsafe_validate_suggested_username_unique(changeset, id, class_id),
+    do:
+      unsafe_validate_unique_query(changeset, :suggested_username, Repo, fn changeset ->
+        suggested_username = get_field(changeset, :suggested_username)
+
+        from(s in __MODULE__,
+          where:
+            s.id != ^id and s.class_id == ^class_id and
+              s.suggested_username == ^suggested_username
+        )
+      end)
+
+  defp unsafe_validate_username_unique(changeset, id, class_id),
+    do:
+      unsafe_validate_unique_query(changeset, :username, Repo, fn changeset ->
+        username = get_field(changeset, :username)
+
+        from(s in __MODULE__,
+          where: s.id != ^id and s.class_id == ^class_id and s.username == ^username
+        )
+      end)
 end

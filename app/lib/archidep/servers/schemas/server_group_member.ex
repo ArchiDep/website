@@ -10,6 +10,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
+          name: String.t(),
+          suggested_username: String.t(),
+          username: String.t() | nil,
           active: boolean(),
           group: ServerGroup.t() | NotLoaded,
           group_id: UUID.t(),
@@ -22,6 +25,8 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
 
   schema "students" do
     field(:name, :string)
+    field(:suggested_username, :string)
+    field(:username, :string)
     field(:active, :boolean)
     belongs_to(:group, ServerGroup, source: :class_id)
     belongs_to(:owner, ServerOwner, source: :user_account_id)
