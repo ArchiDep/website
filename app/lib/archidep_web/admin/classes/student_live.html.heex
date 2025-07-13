@@ -60,16 +60,6 @@
       suggested_username={@student.suggested_username}
     />
   </dd>
-  <dt class="font-bold">{gettext("Server domain")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
-    <a
-      href={"http://#{server_fqdn(@server_group_member, @student.suggested_username, @student.domain)}"}
-      target="_blank"
-      class="link hover:text-accent"
-    >
-      {server_fqdn(@server_group_member, @student.suggested_username, @student.domain)}
-    </a>
-  </dd>
   <dt class="font-bold">{gettext("Active")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     <Heroicons.check_circle :if={@student.active} class="size-5 text-success" />

@@ -43,21 +43,41 @@ defmodule ArchiDep.Course.Schemas.User do
       |> truthy_or(:user_not_found)
 
   @spec refresh!(t(), map()) :: t()
-  def refresh!(%__MODULE__{id: id, student: student, version: current_version} = user, %{
-        id: id,
-        username: username,
-        preregistered_user: preregistered_user,
-        preregistered_user_id: preregistered_user_id,
-        version: version,
-        updated_at: updated_at
-      })
-      when version == current_version + 1 and not is_nil(student) and
-             not is_nil(preregistered_user) do
+  def refresh!(
+        %__MODULE__{id: id, student: %Student{id: student_id} = student, version: current_version} =
+          user,
+        %{
+          id: id,
+          username: username,
+          preregistered_user: %{id: student_id} = preregistered_user,
+          version: version,
+          updated_at: updated_at
+        }
+      )
+      when version == current_version + 1 do
     %__MODULE__{
       user
       | username: username,
         student: Student.refresh!(student, preregistered_user),
-        student_id: preregistered_user_id,
+        version: version,
+        updated_at: updated_at
+    }
+  end
+
+  def refresh!(
+        %__MODULE__{id: id, student: %Student{id: student_id} = student, version: current_version} =
+          user,
+        %{
+          id: id,
+          group_member: %{id: student_id} = member,
+          version: version,
+          updated_at: updated_at
+        }
+      )
+      when version == current_version + 1 do
+    %__MODULE__{
+      user
+      | student: Student.refresh!(student, member),
         version: version,
         updated_at: updated_at
     }

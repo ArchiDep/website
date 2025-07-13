@@ -14,17 +14,17 @@
           </a>
         </div>
       </details>
-      <p class="mt-4">
-        {gettext(
-          "It is said there are {sa}only two hard things in Computer Science:{ea} cache invalidation and naming things. Here's the name we have generated for you:",
-          sa:
-            "<a href=\"https://martinfowler.com/bliki/TwoHardThings.html\" class=\"link hover:text-accent\" target=\"_blank\">",
-          ea: "</a>"
-        )
-        |> raw()}
-      </p>
-      <form class="mt-2">
-        <fieldset class="fieldset flex justify-center">
+      <.form for={@form} phx-change="validate" phx-submit="configure" phx-target={@myself}>
+        <p class="hide-on-change mt-4">
+          {gettext(
+            "It is said there are {sa}only two hard things in Computer Science:{ea} cache invalidation and naming things. Here's the name we have generated for you:",
+            sa:
+              "<a href=\"https://martinfowler.com/bliki/TwoHardThings.html\" class=\"link hover:text-accent\" target=\"_blank\">",
+            ea: "</a>"
+          )
+          |> raw()}
+        </p>
+        <fieldset class="fieldset hide-on-change mt-2 flex justify-center">
           <label class="fieldset-label sr-only mt-2">{gettext("Suggested username")}</label>
           <input
             type="text"
@@ -33,39 +33,6 @@
             value={@student.suggested_username}
           />
         </fieldset>
-      </form>
-      <ul class="mt-2 list-disc text-left flex flex-col gap-y-2">
-        <li>
-          {gettext("It will be the name of your Unix user account on your virtual server.")}
-        </li>
-        <li>
-          {gettext(
-            "It will be part of the subdomain pointing to your server, e.g. {sc}{subdomain}.{domain}{ec}.",
-            subdomain: @student.suggested_username |> html_escape() |> safe_to_string(),
-            domain: @student.domain |> html_escape() |> safe_to_string(),
-            sc: "<code class=\"font-bold\">",
-            ec: "</code>"
-          )
-          |> raw()}
-        </li>
-        <li>
-          {gettext(
-            "To be valid in both of these contexts, it must only contain letter without accents, numbers and hyphens, and it must start with a letter."
-          )}
-        </li>
-        <li>
-          {gettext("It must also be unique in your class.")}
-        </li>
-        <li>
-          {gettext(
-            "It is in your interest to keep it short, because you will have to type it {sb}a lot{eb} when using the command line.",
-            sb: "<strong>",
-            eb: "</strong>"
-          )
-          |> raw()}
-        </li>
-      </ul>
-      <.form for={@form} phx-change="validate" phx-submit="configure" phx-target={@myself}>
         <div
           :if={not @change}
           class="hide-on-change mt-2 flex flex-col md:flex-row justify-center gap-2"
@@ -76,6 +43,7 @@
             phx-click={
               JS.remove_class("hidden", to: "##{id()} form .hidden")
               |> JS.add_class("hidden", to: "##{id()} form .hide-on-change")
+              |> JS.add_class("flex", to: "##{id()} form .flex-on-change")
             }
           >
             {gettext("I want to change it")}
@@ -84,9 +52,9 @@
             {gettext("Fine by me")}
           </button>
         </div>
-        <fieldset class="fieldset mt-2 hidden">
+        <fieldset class="fieldset hidden mt-2">
           <label class="fieldset-label required mt-2">
-            {gettext("Unix user account name on your virtual server")}
+            {gettext("Your username and subdomain")}
           </label>
           <input
             type="text"
@@ -96,23 +64,41 @@
             value={@form[:username].value}
           />
           <.errors_for field={@form[:username]} />
-
-          <label class="fieldset-label required mt-2">
-            {gettext("Subdomain that will point to your virtual server")}
-          </label>
-          <label class="input w-full">
-            <input
-              type="text"
-              id={@form[:subdomain].id}
-              name={@form[:subdomain].name}
-              value={@form[:subdomain].value}
-            />
-            <span class="label">.{@student.domain}</span>
-          </label>
-          <.errors_for field={@form[:subdomain]} />
         </fieldset>
+        <div class="hidden flex-on-change mt-2 flex-col gap-y-2 text-left">
+          <.field_help>
+            <span>
+              {gettext(
+                "You will use this name as the username of your Unix user account on your virtual server. It will also be part of the subdomain pointing to your server, e.g. {sc}{subdomain}.{domain}{ec}.",
+                subdomain: @student.suggested_username |> html_escape() |> safe_to_string(),
+                domain: @student.domain |> html_escape() |> safe_to_string(),
+                sc: "<code class=\"font-bold\">",
+                ec: "</code>"
+              )
+              |> raw()}
+            </span>
+          </.field_help>
+          <.field_help>
+            {gettext(
+              "To be valid in both of these contexts, it must only contain letter without accents, numbers and hyphens, and it must start with a letter."
+            )}
+          </.field_help>
+          <.field_help>
+            {gettext("It must be unique among all the students in your class.")}
+          </.field_help>
+          <.field_help>
+            <span>
+              {gettext(
+                "It is in your interest to keep it short, because you will have to type it {sb}a lot{eb} when using the command line.",
+                sb: "<strong>",
+                eb: "</strong>"
+              )
+              |> raw()}
+            </span>
+          </.field_help>
+        </div>
 
-        <div class="hidden mt-2">
+        <div class="hidden mt-4">
           <button type="submit" class="btn btn-primary w-full">
             {gettext("Save")}
           </button>

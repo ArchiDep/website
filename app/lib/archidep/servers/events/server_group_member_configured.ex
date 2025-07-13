@@ -7,33 +7,28 @@ defmodule ArchiDep.Servers.Events.ServerGroupMemberConfigured do
 
   @enforce_keys [
     :id,
-    :username,
-    :subdomain
+    :username
   ]
   defstruct [
     :id,
-    :username,
-    :subdomain
+    :username
   ]
 
   @type t :: %__MODULE__{
           id: UUID.t(),
-          username: String.t(),
-          subdomain: String.t()
+          username: String.t()
         }
 
   @spec new(ServerGroupMember.t()) :: t()
   def new(member) do
     %ServerGroupMember{
       id: id,
-      username: username,
-      subdomain: subdomain
+      username: username
     } = member
 
     %__MODULE__{
       id: id,
-      username: username,
-      subdomain: subdomain
+      username: username
     }
   end
 
@@ -43,6 +38,6 @@ defmodule ArchiDep.Servers.Events.ServerGroupMemberConfigured do
     def event_stream(%ServerGroupMemberConfigured{id: id}),
       do: "servers:server-group-members:#{id}"
 
-    def event_type(_event), do: :"archidep/servers/server-group-member-updated"
+    def event_type(_event), do: :"archidep/servers/server-group-member-configured"
   end
 end

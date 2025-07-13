@@ -5,8 +5,8 @@ defmodule ArchiDepWeb.Components.FormComponents do
 
   def field_help(assigns) do
     ~H"""
-    <p class="flex items-start gap-x-1 text-info/85">
-      <Heroicons.information_circle class="size-4" />
+    <p class="flex items-start gap-x-1 text-sm text-info/85">
+      <Heroicons.information_circle class="size-4 shrink-0" />
       {render_slot(@inner_block)}
     </p>
     """
@@ -29,9 +29,9 @@ defmodule ArchiDepWeb.Components.FormComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="fieldset-label text-error text-left">
+    <p class="fieldset-label text-error text-sm text-left">
       <span class="flex items-start gap-x-1">
-        <Heroicons.exclamation_circle class="size-4" />
+        <Heroicons.exclamation_circle class="size-4 shrink-0" />
         <span>{render_slot(@inner_block)}</span>
       </span>
     </p>

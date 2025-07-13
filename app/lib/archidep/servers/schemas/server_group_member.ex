@@ -14,8 +14,8 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
           id: UUID.t(),
           name: String.t(),
           username: String.t() | nil,
+          username_confirmed: boolean(),
           domain: String.t(),
-          subdomain: String.t() | nil,
           active: boolean(),
           group: ServerGroup.t() | NotLoaded,
           group_id: UUID.t(),
@@ -29,8 +29,8 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
   schema "students" do
     field(:name, :string)
     field(:username, :string)
+    field(:username_confirmed, :boolean, default: false)
     field(:domain, :string)
-    field(:subdomain, :string)
     field(:active, :boolean)
     belongs_to(:group, ServerGroup, source: :class_id)
     belongs_to(:owner, ServerOwner, source: :user_account_id)
@@ -89,19 +89,19 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
   def refresh!(
         %__MODULE__{
           id: id,
-          group: %ServerGroup{id: group_id} = group,
-          owner: %ServerOwner{id: owner_id} = owner,
+          group: %ServerGroup{id: group_id, version: group_version},
+          owner: %ServerOwner{id: owner_id, version: owner_version},
           version: current_version
         } = member,
         %__MODULE__{
           id: id,
           name: name,
           username: username,
+          username_confirmed: username_confirmed,
           domain: domain,
-          subdomain: subdomain,
           active: active,
-          group: %ServerGroup{id: group_id} = updated_group,
-          owner: %ServerOwner{id: owner_id} = updated_owner,
+          group: %ServerGroup{id: group_id, version: group_version},
+          owner: %ServerOwner{id: owner_id, version: owner_version},
           version: version,
           updated_at: updated_at
         }
@@ -111,11 +111,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
       member
       | name: name,
         username: username,
+        username_confirmed: username_confirmed,
         domain: domain,
-        subdomain: subdomain,
         active: active,
-        group: ServerGroup.refresh!(group, updated_group),
-        owner: ServerOwner.refresh!(owner, updated_owner),
         version: version,
         updated_at: updated_at
     }
@@ -125,8 +123,8 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
   def refresh!(
         %__MODULE__{
           id: id,
-          group: %ServerGroup{id: group_id} = group,
-          owner: %ServerOwner{id: owner_id} = owner,
+          group: %ServerGroup{id: group_id, version: group_version},
+          owner: %ServerOwner{id: owner_id, version: owner_version},
           version: current_version
         } = member,
         %{
@@ -134,8 +132,8 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
           name: name,
           domain: domain,
           active: active,
-          class: %{id: group_id} = class,
-          user: %{id: owner_id} = user,
+          class: %{id: group_id, version: group_version},
+          user: %{id: owner_id, version: owner_version},
           version: version,
           updated_at: updated_at
         }
@@ -146,8 +144,6 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
       | name: name,
         domain: domain,
         active: active,
-        group: ServerGroup.refresh!(group, class),
-        owner: ServerOwner.refresh!(owner, user),
         version: version,
         updated_at: updated_at
     }
@@ -171,8 +167,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
     now = DateTime.utc_now()
 
     member
-    |> cast(data, [:username, :subdomain])
-    |> validate_required([:username, :subdomain])
+    |> cast(data, [:username])
+    |> change(username_confirmed: true)
+    |> validate_required([:username])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     # Username
@@ -184,28 +181,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
     )
     |> unique_constraint(:username, name: :students_username_unique)
     |> unsafe_validate_username_unique(member.id, member.group_id)
-    # Subdomain
-    |> update_change(:subdomain, &trim/1)
-    |> validate_length(:subdomain, max: 20, message: "must be at most {count} characters long")
-    |> validate_format(:domain, ~r/\A[a-z0-9][\-a-z0-9]*\z/i,
-      message:
-        "must contain only letters (without accents), numbers and hyphens, and start with a letter or a number"
-    )
-    |> unique_constraint(:subdomain, name: :students_subdomain_unique)
-    |> unsafe_validate_subdomain_unique(member.id, member.group_id)
   end
-
-  defp unsafe_validate_subdomain_unique(changeset, id, group_id),
-    do:
-      unsafe_validate_unique_query(changeset, :subdomain, Repo, fn changeset ->
-        subdomain = get_field(changeset, :subdomain)
-
-        from(m in __MODULE__,
-          where:
-            m.id != ^id and m.group_id == ^group_id and
-              fragment("LOWER(?)", m.subdomain) == fragment("LOWER(?)", ^subdomain)
-        )
-      end)
 
   defp unsafe_validate_username_unique(changeset, id, group_id),
     do:

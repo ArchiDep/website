@@ -87,28 +87,64 @@ defmodule ArchiDep.Course.Schemas.Student do
 
   @spec refresh!(t(), map()) :: t()
   def refresh!(
-        %__MODULE__{id: id, class: class, user: user, version: current_version} = student,
-        %{
+        %__MODULE__{
           id: id,
+          class: %Class{id: class_id, version: class_version},
+          user: %User{id: user_id, version: user_version},
+          version: current_version
+        } = student,
+        %__MODULE__{
+          id: id,
+          name: name,
           email: email,
+          academic_class: academic_class,
+          suggested_username: suggested_username,
           domain: domain,
           active: active,
-          group: group,
-          user_account: user_account,
-          user_account_id: user_account_id,
+          class: %Class{id: class_id, version: class_version},
+          user: %User{id: user_id, version: user_version},
           version: version,
           updated_at: updated_at
         }
       )
-      when version == current_version + 1 and not is_nil(user) and not is_nil(user_account) do
+      when version == current_version + 1 do
     %__MODULE__{
       student
-      | email: email,
+      | name: name,
+        email: email,
+        academic_class: academic_class,
+        suggested_username: suggested_username,
         domain: domain,
         active: active,
-        class: Class.refresh!(class, group),
-        user: User.refresh!(user, user_account),
-        user_id: user_account_id,
+        version: version,
+        updated_at: updated_at
+    }
+  end
+
+  def refresh!(
+        %__MODULE__{
+          id: id,
+          class: %Class{id: class_id, version: class_version},
+          user: %User{id: user_id, version: user_version},
+          version: current_version
+        } = student,
+        %{
+          id: id,
+          name: name,
+          domain: domain,
+          active: active,
+          group: %{id: class_id, version: class_version},
+          owner: %{id: user_id, version: user_version},
+          version: version,
+          updated_at: updated_at
+        }
+      )
+      when version == current_version + 1 do
+    %__MODULE__{
+      student
+      | name: name,
+        domain: domain,
+        active: active,
         version: version,
         updated_at: updated_at
     }

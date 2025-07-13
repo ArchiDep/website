@@ -108,7 +108,6 @@ defmodule ArchiDep.Servers.Types do
         }
 
   @type server_group_member_config :: %{
-          username: String.t(),
-          subdomain: String.t()
+          username: String.t()
         }
 end

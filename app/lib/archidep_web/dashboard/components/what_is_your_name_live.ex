@@ -16,8 +16,7 @@ defmodule ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive do
 
     form =
       WhatIsYourNameForm.changeset(server_group_member, %{
-        username: student.suggested_username,
-        subdomain: student.suggested_username
+        username: student.suggested_username
       })
 
     socket

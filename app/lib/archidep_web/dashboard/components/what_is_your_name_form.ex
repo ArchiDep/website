@@ -8,16 +8,14 @@ defmodule ArchiDepWeb.Dashboard.Components.WhatIsYourNameForm do
   alias Ecto.Changeset
 
   @type t :: %__MODULE__{
-          username: String.t(),
-          subdomain: String.t()
+          username: String.t()
         }
 
-  @fields ~w(username subdomain)a
+  @fields ~w(username)a
 
   @primary_key false
   embedded_schema do
     field(:username, :string, default: "")
-    field(:subdomain, :string, default: "")
   end
 
   @spec changeset(ServerGroupMember.t(), map()) :: Changeset.t(t())
