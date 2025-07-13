@@ -66,6 +66,20 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
           {gettext("Username that will be suggested to the student for the course (alphanumeric)")}
         </.field_help>
 
+        <label class="fieldset-label required mt-2">{gettext("Domain")}</label>
+        <input
+          type="text"
+          id={@form[:domain].id}
+          class="input w-full"
+          name={@form[:domain].name}
+          value={@form[:domain].value}
+          placeholder={gettext("e.g. archidep.ch")}
+        />
+        <.errors_for field={@form[:domain]} />
+        <.field_help>
+          {gettext("Domain under which the student will create a subdomain for their server")}
+        </.field_help>
+
         <label class="fieldset-label mt-2">
           <input type="hidden" name={@form[:active].name} value="false" />
           <input

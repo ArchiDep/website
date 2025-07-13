@@ -21,7 +21,10 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
           group_member: ServerGroupMember.t() | nil | NotLoaded.t(),
           group_member_id: UUID.t() | nil,
           active_server_count: non_neg_integer(),
-          active_server_count_lock: pos_integer()
+          active_server_count_lock: pos_integer(),
+          version: pos_integer(),
+          created_at: DateTime.t(),
+          updated_at: DateTime.t()
         }
 
   @active_server_limit 2
@@ -32,6 +35,9 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
     belongs_to(:group_member, ServerGroupMember, source: :student_id)
     field(:active_server_count, :integer)
     field(:active_server_count_lock, :integer)
+    field(:version, :integer)
+    field(:created_at, :utc_datetime_usec)
+    field(:updated_at, :utc_datetime_usec)
   end
 
   @spec active?(t(), DateTime.t()) :: boolean
@@ -68,6 +74,19 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
     end
   end
 
+  @spec fetch_server_owner(UUID.t()) :: {:ok, t()} | {:error, :server_owner_not_found}
+  def fetch_server_owner(id),
+    do:
+      from(o in __MODULE__,
+        left_join: gm in assoc(o, :group_member),
+        left_join: gmg in assoc(gm, :group),
+        left_join: gmgesp in assoc(gmg, :expected_server_properties),
+        where: o.id == ^id,
+        preload: [group_member: {gm, group: {gmg, expected_server_properties: gmgesp}}]
+      )
+      |> Repo.one()
+      |> truthy_or(:server_owner_not_found)
+
   @spec active_server_limit_reached?(t()) :: boolean()
   def active_server_limit_reached?(%__MODULE__{active_server_count: count}),
     do: count >= @active_server_limit
@@ -78,4 +97,42 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
       owner
       |> cast(%{active_server_count: owner.active_server_count + n}, [:active_server_count])
       |> optimistic_lock(:active_server_count_lock)
+
+  @spec refresh!(t(), map()) :: t()
+  def refresh!(
+        %__MODULE__{
+          id: id,
+          group_member: %ServerGroupMember{id: group_member_id} = group_member,
+          version: current_version
+        } = owner,
+        %{
+          id: id,
+          student: %{id: group_member_id} = student,
+          version: version,
+          updated_at: updated_at
+        }
+      )
+      when version == current_version + 1 do
+    %__MODULE__{
+      owner
+      | group_member: ServerGroupMember.refresh!(group_member, student),
+        version: version,
+        updated_at: updated_at
+    }
+  end
+
+  @spec refresh!(t(), map()) :: t()
+  def refresh!(%__MODULE__{id: id, version: current_version} = user, %{
+        id: id,
+        version: version
+      })
+      when version <= current_version do
+    user
+  end
+
+  @spec refresh!(t(), map()) :: t()
+  def refresh!(%__MODULE__{id: id}, %{id: id}) do
+    {:ok, fresh_server_owner} = fetch_server_owner(id)
+    fresh_server_owner
+  end
 end

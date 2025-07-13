@@ -298,6 +298,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       name_column = form[:name_column].value
       email_column = form[:email_column].value
       academic_class = form[:academic_class].value
+      domain = form[:domain].value
 
       students_data =
         Enum.map(students, fn student ->
@@ -310,6 +311,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       with {:ok, _students} <-
              Course.import_students(auth, class_id, %{
                academic_class: academic_class,
+               domain: domain,
                students: students_data
              }) do
         socket

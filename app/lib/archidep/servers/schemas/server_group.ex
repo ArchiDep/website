@@ -60,7 +60,6 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
       from(g in __MODULE__,
         left_join: esp in assoc(g, :expected_server_properties),
         where: g.id == ^id,
-        group_by: [g.id, esp.id],
         preload: [expected_server_properties: esp]
       )
       |> Repo.one()

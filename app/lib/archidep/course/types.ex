@@ -13,7 +13,7 @@ defmodule ArchiDep.Course.Types do
           email: String.t(),
           academic_class: String.t() | nil,
           suggested_username: String.t(),
-          username: String.t() | nil,
+          domain: String.t() | nil,
           active: boolean(),
           class_id: UUID.t()
         }
@@ -23,12 +23,13 @@ defmodule ArchiDep.Course.Types do
           email: String.t(),
           academic_class: String.t() | nil,
           suggested_username: String.t(),
-          username: String.t() | nil,
+          domain: String.t() | nil,
           active: boolean()
         }
 
   @type import_students_data :: %{
           academic_class: String.t() | nil,
+          domain: String.t(),
           students: list(import_student_data())
         }
 

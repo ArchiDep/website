@@ -106,4 +106,9 @@ defmodule ArchiDep.Servers.Types do
           optional(:distribution_release) => String.t() | nil,
           optional(:distribution_version) => String.t() | nil
         }
+
+  @type server_group_member_config :: %{
+          username: String.t(),
+          subdomain: String.t()
+        }
 end

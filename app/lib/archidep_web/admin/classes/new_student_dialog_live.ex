@@ -51,13 +51,14 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
 
   @impl true
   def handle_event("create", %{"student" => params}, socket) do
+    auth = socket.assigns.auth
     class = socket.assigns.class
 
     with {:ok, form_data} <-
            Changeset.apply_action(StudentForm.create_changeset(params), :validate),
          {:ok, created_student} <-
            Course.create_student(
-             socket.assigns.auth,
+             auth,
              StudentForm.to_create_student_data(form_data, class)
            ) do
       socket

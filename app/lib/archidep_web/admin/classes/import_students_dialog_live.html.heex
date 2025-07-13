@@ -1,8 +1,18 @@
-<dialog id={id()} class="modal" data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id()})}>
-  <div class={["modal-box max-h-11/12", (if @state == :uploaded, do: "w-11/12 max-w-5xl")]}>
+<dialog
+  id={id()}
+  class="modal"
+  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id()})}
+>
+  <div class={["modal-box max-h-11/12", if(@state == :uploaded, do: "w-11/12 max-w-5xl")]}>
     <h3 class="text-lg font-bold">{gettext("Import Students")}</h3>
 
-    <form :if={@state != :uploaded} id="upload-form" phx-change="validate" phx-submit="upload" phx-target={@myself}>
+    <form
+      :if={@state != :uploaded}
+      id="upload-form"
+      phx-change="validate"
+      phx-submit="upload"
+      phx-target={@myself}
+    >
       <fieldset class="fieldset" phx-drop-target={@uploads.students.ref}>
         <legend class="fieldset-legend mt-2">{gettext("Pick a file")}</legend>
         <.live_file_input class="file-input" upload={@uploads.students} />
@@ -10,16 +20,23 @@
       </fieldset>
 
       <div :if={@state == :invalid_upload} role="alert" class="mt-2 alert alert-error">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 shrink-0 stroke-current"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         <span>{gettext("The uploaded CSV file seems invalid.")}</span>
       </div>
 
-      <button
-        type="submit"
-        class="mt-4 btn btn-primary"
-      >
+      <button type="submit" class="mt-4 btn btn-primary">
         <span class="flex items-center gap-x-2">
           <Heroicons.document_arrow_up class="size-4" />
           <span>{gettext("Upload")}</span>
@@ -28,12 +45,23 @@
     </form>
 
     <div :if={@state == :uploaded}>
-      <.form id="import-students" for={@form} phx-change="validate" phx-submit="import" phx-target={@myself}>
+      <.form
+        id="import-students"
+        for={@form}
+        phx-change="validate"
+        phx-submit="import"
+        phx-target={@myself}
+      >
         <fieldset class="mt-4 fieldset">
           <label for={@form[:name_column].id} class="fieldset-label">
             {gettext("Name column")}
           </label>
-          <select id={@form[:name_column].id} class="select" name={@form[:name_column].name} value={@form[:name_column].value}>
+          <select
+            id={@form[:name_column].id}
+            class="select"
+            name={@form[:name_column].name}
+            value={@form[:name_column].value}
+          >
             <option :for={col <- @columns} value={col} selected={@form[:name_column].value == col}>
               {col}
             </option>
@@ -43,8 +71,17 @@
           <label for={@form[:email_column].id} class="fieldset-label">
             {gettext("Email column")}
           </label>
-          <select id={@form[:email_column].id} class="select" name={@form[:email_column].name} value={@form[:email_column].value}>
-            <option :for={col <- @columns} value={col} selected={@form[:email_column].value == col}>
+          <select
+            id={@form[:email_column].id}
+            class="select"
+            name={@form[:email_column].name}
+            value={@form[:email_column].value}
+          >
+            <option
+              :for={col <- @columns}
+              value={col}
+              selected={@form[:email_column].value == col}
+            >
               {col}
             </option>
           </select>
@@ -61,21 +98,45 @@
             value={@form[:academic_class].value}
           />
           <.errors_for field={@form[:academic_class]} />
-          <p class="label">{gettext("Official name of the student's academic class")}</p>
+          <.field_help>{gettext("Official name of the student's academic class")}</.field_help>
+
+          <label for={@form[:domain].id} class="fieldset-label required">
+            {gettext("Domain")}
+          </label>
+          <input
+            type="text"
+            id={@form[:domain].id}
+            class="input"
+            name={@form[:domain].name}
+            value={@form[:domain].value}
+            placeholder={gettext("e.g. archidep1.ch or archidep2.ch")}
+          />
+          <.errors_for field={@form[:domain]} />
 
           <div class="mt-4 join">
-            <button type="button" class="join-item btn btn-danger" phx-click="clear" phx-target={@myself}>
+            <button
+              type="button"
+              class="join-item btn btn-danger"
+              phx-click="clear"
+              phx-target={@myself}
+            >
               <span class="flex items-center gap-x-2">
                 <Heroicons.trash class="size-4" />
                 <span>{gettext("Clear")}</span>
               </span>
             </button>
-            <button type="submit" class="join-item btn btn-primary" disabled={!Enum.empty?(@form.errors)}>
+            <button
+              type="submit"
+              class="join-item btn btn-primary"
+              disabled={!Enum.empty?(@form.errors)}
+            >
               <span class="flex items-center gap-x-2">
                 <Heroicons.plus class="size-4" />
                 <%= if @new_students != 0 do %>
                   <span>
-                    {gettext("Import {count} new {count, plural, =1 {student} other {students}}", count: @new_students)}
+                    {gettext("Import {count} new {count, plural, =1 {student} other {students}}",
+                      count: @new_students
+                    )}
                   </span>
                 <% else %>
                   <span>{gettext("Import")}</span>

@@ -53,9 +53,22 @@
       <.no_data />
     <% end %>
   </dd>
-  <dt class="font-bold">{gettext("Username")}</dt>
+  <dt class="font-bold">{gettext("Server username")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
-    <.student_username student={@student} />
+    <.server_username
+      server_group_member={@server_group_member}
+      suggested_username={@student.suggested_username}
+    />
+  </dd>
+  <dt class="font-bold">{gettext("Server domain")}</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    <a
+      href={"http://#{server_fqdn(@server_group_member, @student.suggested_username, @student.domain)}"}
+      target="_blank"
+      class="link hover:text-accent"
+    >
+      {server_fqdn(@server_group_member, @student.suggested_username, @student.domain)}
+    </a>
   </dd>
   <dt class="font-bold">{gettext("Active")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">

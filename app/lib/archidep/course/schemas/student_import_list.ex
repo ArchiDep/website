@@ -15,6 +15,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
   @primary_key false
   embedded_schema do
     field :academic_class, :string
+    field :domain, :string
 
     embeds_many :students, Student, primary_key: false do
       field :name, :string
@@ -25,9 +26,15 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
   @spec changeset(Types.import_students_data()) :: Ecto.Changeset.t(t())
   def changeset(data) do
     %__MODULE__{}
-    |> cast(data, [:academic_class])
+    |> cast(data, [:academic_class, :domain])
     |> change(%{students: data.students})
     |> cast_embed(:students, required: true, with: &student_changeset/2)
+    |> validate_required([:domain])
+    |> validate_length(:domain, max: 20)
+    |> validate_format(:domain, ~r/\A[a-z0-9][\-a-z0-9]*(?:\.[a-z][\-a-z0-9]*)+\z/i,
+      message:
+        "must be a valid domain name containing only letters (without accents), numbers and hyphens"
+    )
   end
 
   @spec student_changeset(struct, map) :: Ecto.Changeset.t()
@@ -41,7 +48,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
 
   @spec to_insert_data(t(), Class.t(), DateTime.t()) :: list(Types.import_student_data())
   def to_insert_data(
-        %__MODULE__{academic_class: academic_class, students: students},
+        %__MODULE__{academic_class: academic_class, domain: domain, students: students},
         %Class{
           id: class_id
         },
@@ -55,6 +62,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         |> Map.merge(%{
           id: UUID.generate(),
           academic_class: academic_class,
+          domain: domain,
           active: true,
           class_id: class_id,
           version: 1,

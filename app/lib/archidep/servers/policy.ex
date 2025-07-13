@@ -2,6 +2,8 @@ defmodule ArchiDep.Servers.Policy do
   use ArchiDep, :policy
 
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.Schemas.ServerOwner
 
   @impl Policy
 
@@ -18,6 +20,43 @@ defmodule ArchiDep.Servers.Policy do
   def authorize(
         :servers,
         :fetch_server_group,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
+  # Root users can list members of a server group.
+  def authorize(
+        :servers,
+        :list_server_group_members,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
+  # Any user can fetch their authenticated server group member.
+  def authorize(
+        :course,
+        :fetch_authenticated_server_group_member,
+        %Authentication{},
+        _params
+      ),
+      do: true
+
+  # Students can configure their own server group member.
+  def authorize(
+        :servers,
+        :configure_server_group_member,
+        %Authentication{roles: roles},
+        {%ServerOwner{id: owner_id, group_member_id: member_id},
+         %ServerGroupMember{id: member_id, owner_id: owner_id}}
+      ),
+      do: Enum.member?(roles, :student)
+
+  # Root users can fetch a server group member.
+  def authorize(
+        :servers,
+        :fetch_server_group_member,
         %Authentication{roles: roles},
         _params
       ),

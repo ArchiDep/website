@@ -16,7 +16,7 @@ defmodule ArchiDep.Course.Schemas.Student do
           email: String.t(),
           academic_class: String.t() | nil,
           suggested_username: String.t(),
-          username: String.t() | nil,
+          domain: String.t(),
           active: boolean(),
           class: Class.t() | NotLoaded.t(),
           class_id: UUID.t(),
@@ -32,7 +32,7 @@ defmodule ArchiDep.Course.Schemas.Student do
     field(:email, :string)
     field(:academic_class, :string)
     field(:suggested_username, :string)
-    field(:username, :string)
+    field(:domain, :string)
     field(:active, :boolean, default: false)
     belongs_to(:class, Class)
     belongs_to(:user, User, source: :user_account_id)
@@ -91,8 +91,7 @@ defmodule ArchiDep.Course.Schemas.Student do
         %{
           id: id,
           email: email,
-          suggested_username: suggested_username,
-          username: username,
+          domain: domain,
           active: active,
           group: group,
           user_account: user_account,
@@ -105,8 +104,7 @@ defmodule ArchiDep.Course.Schemas.Student do
     %__MODULE__{
       student
       | email: email,
-        suggested_username: suggested_username,
-        username: username,
+        domain: domain,
         active: active,
         class: Class.refresh!(class, group),
         user: User.refresh!(user, user_account),
@@ -141,7 +139,7 @@ defmodule ArchiDep.Course.Schemas.Student do
       :email,
       :academic_class,
       :suggested_username,
-      :username,
+      :domain,
       :active,
       :class_id
     ])
@@ -161,7 +159,7 @@ defmodule ArchiDep.Course.Schemas.Student do
     now = DateTime.utc_now()
 
     student
-    |> cast(data, [:name, :email, :academic_class, :suggested_username, :username, :active])
+    |> cast(data, [:name, :email, :academic_class, :suggested_username, :domain, :active])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate(id, class_id)
@@ -175,7 +173,6 @@ defmodule ArchiDep.Course.Schemas.Student do
       |> validate()
       |> unsafe_validate_email_unique(id, class_id)
       |> unsafe_validate_suggested_username_unique(id, class_id)
-      |> unsafe_validate_username_unique(id, class_id)
 
   defp validate(changeset),
     do:
@@ -184,25 +181,24 @@ defmodule ArchiDep.Course.Schemas.Student do
       |> update_change(:email, &trim/1)
       |> update_change(:academic_class, &trim_to_nil/1)
       |> update_change(:suggested_username, &trim/1)
-      |> update_change(:username, &trim_to_nil/1)
+      |> update_change(:domain, &trim/1)
       |> validate_length(:name, max: 200)
       |> validate_length(:email, max: 255)
       |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
       |> validate_length(:academic_class, max: 30)
-      |> validate_length(:suggested_username, max: 10)
+      |> validate_length(:suggested_username, max: 20)
       |> validate_format(:suggested_username, ~r/\A[a-z][a-z0-9]*\z/i,
         message:
-          "must contain only letters (without accents) and numbers, and start with a letter"
+          "must contain only letters (without accents), numbers and hyphens, and start with a letter"
       )
-      |> validate_length(:username, max: 10)
-      |> validate_format(:username, ~r/\A[a-z][a-z0-9]*\z/i,
+      |> validate_length(:domain, max: 20)
+      |> validate_format(:domain, ~r/\A[a-z0-9][\-a-z0-9]*(?:\.[a-z][\-a-z0-9]*)+\z/i,
         message:
-          "must contain only letters (without accents) and numbers, and start with a letter"
+          "must be a valid domain name containing only letters (without accents), numbers and hyphens"
       )
       |> validate_required([:name, :email, :suggested_username, :active, :class_id])
       |> unique_constraint(:email, name: :students_unique_email_index)
       |> unique_constraint(:suggested_username, name: :students_suggested_username_unique)
-      |> unique_constraint(:username, name: :students_username_unique)
       |> assoc_constraint(:class)
 
   defp unsafe_validate_email_unique(changeset, id, class_id),
@@ -225,17 +221,8 @@ defmodule ArchiDep.Course.Schemas.Student do
         from(s in __MODULE__,
           where:
             s.id != ^id and s.class_id == ^class_id and
-              s.suggested_username == ^suggested_username
-        )
-      end)
-
-  defp unsafe_validate_username_unique(changeset, id, class_id),
-    do:
-      unsafe_validate_unique_query(changeset, :username, Repo, fn changeset ->
-        username = get_field(changeset, :username)
-
-        from(s in __MODULE__,
-          where: s.id != ^id and s.class_id == ^class_id and s.username == ^username
+              fragment("LOWER(?)", s.suggested_username) ==
+                fragment("LOWER(?)", ^suggested_username)
         )
       end)
 end

@@ -29,9 +29,9 @@ defmodule ArchiDepWeb.Components.FormComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="fieldset-label text-error">
-      <span class="flex items-center gap-x-1">
-        <Heroicons.exclamation_circle class="size-3" />
+    <p class="fieldset-label text-error text-left">
+      <span class="flex items-start gap-x-1">
+        <Heroicons.exclamation_circle class="size-4" />
         <span>{render_slot(@inner_block)}</span>
       </span>
     </p>

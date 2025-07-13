@@ -1,6 +1,7 @@
 defmodule ArchiDep.Servers.ContextImpl do
   use ArchiDep, :context
 
+  alias ArchiDep.Servers.ConfigureServerGroupMember
   alias ArchiDep.Servers.CreateServer
   alias ArchiDep.Servers.DeleteServer
   alias ArchiDep.Servers.ManageServer
@@ -8,11 +9,14 @@ defmodule ArchiDep.Servers.ContextImpl do
   alias ArchiDep.Servers.ReadServers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.ServerCallbacks
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UpdateServer
   alias ArchiDep.Servers.UpdateServerGroupExpectedProperties
+
+  @behaviour ArchiDep.Servers.Behaviour
 
   # Server groups
 
@@ -48,6 +52,40 @@ defmodule ArchiDep.Servers.ContextImpl do
           {:ok, MapSet.t(UUID.t()), (MapSet.t(UUID.t()), {atom(), term()} -> MapSet.t(UUID.t()))}
           | {:error, :unauthorized}
   defdelegate watch_server_ids(auth, group), to: ReadServerGroups
+
+  # Server group members
+
+  @spec list_server_group_members(Authentication.t(), UUID.t()) ::
+          {:ok, list(ServerGroupMember.t())} | {:error, :server_group_not_found}
+  defdelegate list_server_group_members(auth, id), to: ReadServerGroups
+
+  @spec fetch_authenticated_server_group_member(Authentication.t()) ::
+          {:ok, ServerGroupMember.t()} | {:error, :not_a_server_group_member}
+  defdelegate fetch_authenticated_server_group_member(auth), to: ReadServerGroups
+
+  @spec fetch_server_group_member(Authentication.t(), UUID.t()) ::
+          {:ok, ServerGroupMember.t()} | {:error, :server_group_member_not_found}
+  defdelegate fetch_server_group_member(auth, id), to: ReadServerGroups
+
+  @spec validate_server_group_member_config(
+          Authentication.t(),
+          UUID.t(),
+          Types.server_group_member_config()
+        ) ::
+          {:ok, Changeset.t()} | {:error, :server_group_member_not_found}
+  defdelegate validate_server_group_member_config(auth, id, data),
+    to: ConfigureServerGroupMember
+
+  @spec configure_server_group_member(
+          Authentication.t(),
+          UUID.t(),
+          Types.server_group_member_config()
+        ) ::
+          {:ok, ServerGroupMember.t()}
+          | {:error, Changeset.t()}
+          | {:error, :server_group_member_not_found}
+  defdelegate configure_server_group_member(auth, id, data),
+    to: ConfigureServerGroupMember
 
   # Servers
 

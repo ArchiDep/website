@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.ReadServerGroups do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
 
   @spec list_server_groups(Authentication.t()) ::
           list(ServerGroup.t())
@@ -30,6 +31,63 @@ defmodule ArchiDep.Servers.ReadServerGroups do
 
       {:error, {:access_denied, :servers, :fetch_server_group}} ->
         {:error, :server_group_not_found}
+    end
+  end
+
+  @spec list_server_group_members(Authentication.t(), UUID.t()) ::
+          {:ok, list(ServerGroupMember.t())} | {:error, :server_group_not_found}
+  def list_server_group_members(auth, id) do
+    with :ok <- validate_uuid(id, :server_group_not_found),
+         {:ok, group} <- ServerGroup.fetch_server_group(id),
+         :ok <- authorize(auth, Policy, :servers, :list_server_group_members, group) do
+      {:ok, ServerGroupMember.list_members_in_server_group(id)}
+    else
+      {:error, :server_group_not_found} ->
+        {:error, :server_group_not_found}
+
+      {:error, {:access_denied, :servers, :list_server_group_members}} ->
+        {:error, :server_group_not_found}
+    end
+  end
+
+  @spec fetch_authenticated_server_group_member(Authentication.t()) ::
+          {:ok, ServerGroupMember.t()} | {:error, :not_a_server_group_member}
+  def fetch_authenticated_server_group_member(auth) do
+    with {:ok, server_group_member} <-
+           auth
+           |> Authentication.principal_id()
+           |> ServerGroupMember.fetch_server_group_member_for_user_account_id(),
+         :ok <-
+           authorize(
+             auth,
+             Policy,
+             :course,
+             :fetch_authenticated_server_group_member,
+             server_group_member
+           ) do
+      {:ok, server_group_member}
+    else
+      {:error, :server_group_member_not_found} ->
+        {:error, :not_a_server_group_member}
+
+      {:error, {:access_denied, :course, :fetch_authenticated_server_group_member}} ->
+        {:error, :not_a_server_group_member}
+    end
+  end
+
+  @spec fetch_server_group_member(Authentication.t(), UUID.t()) ::
+          {:ok, ServerGroupMember.t()} | {:error, :server_group_member_not_found}
+  def fetch_server_group_member(auth, id) do
+    with :ok <- validate_uuid(id, :server_group_member_not_found),
+         {:ok, member} <- ServerGroupMember.fetch_server_group_member(id),
+         :ok <- authorize(auth, Policy, :servers, :fetch_server_group_member, member) do
+      {:ok, member}
+    else
+      {:error, :server_group_member_not_found} ->
+        {:error, :server_group_member_not_found}
+
+      {:error, {:access_denied, :servers, :fetch_server_group_member}} ->
+        {:error, :server_group_member_not_found}
     end
   end
 

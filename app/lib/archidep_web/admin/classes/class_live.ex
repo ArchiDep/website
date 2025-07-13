@@ -1,7 +1,7 @@
 defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   use ArchiDepWeb, :live_view
 
-  import ArchiDepWeb.Admin.Classes.StudentComponents
+  import ArchiDepWeb.Admin.AdminComponents
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
@@ -12,11 +12,17 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDepWeb.Admin.Classes.DeleteClassDialogLive
   alias ArchiDepWeb.Admin.Classes.EditClassDialogLive
   alias ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive
   alias ArchiDepWeb.Admin.Classes.NewStudentDialogLive
   alias ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive
+
+  @spec server_group_member_for(list(ServerGroupMember.t()), Student.t()) ::
+          ServerGroupMember.t() | nil
+  def server_group_member_for(members, %Student{id: id}),
+    do: Enum.find(members, &match?(%ServerGroupMember{id: ^id}, &1))
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -38,6 +44,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
           :ok = Course.PubSub.subscribe_class_students(id)
           :ok = Accounts.PubSub.subscribe_user_group_preregistered_users(id)
           :ok = Servers.PubSub.subscribe_server_group(id)
+          :ok = Servers.PubSub.subscribe_server_group_members(id)
           {:ok, server_ids, server_ids_reducer} = Servers.watch_server_ids(auth, server_group)
           {server_ids, server_ids_reducer}
         else
@@ -51,7 +58,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
         class: class,
         server_group: server_group,
         server_ids: {server_ids, server_ids_reducer},
-        students: []
+        students: [],
+        server_group_members: []
       )
       |> load_students()
       |> ok()
@@ -122,11 +130,12 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl true
   def handle_info(
-        {:student_created, %Student{class_id: id}},
+        {student_event, %Student{class_id: id}},
         %Socket{
           assigns: %{class: %Class{id: id}}
         } = socket
-      ),
+      )
+      when student_event in [:student_created, :student_updated, :student_deleted],
       do: socket |> load_students() |> noreply()
 
   @impl true
@@ -140,19 +149,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl true
   def handle_info(
-        {:student_updated, %Student{class_id: id}},
-        %Socket{
-          assigns: %{class: %Class{id: id}}
-        } = socket
-      ),
-      do: socket |> load_students() |> noreply()
-
-  @impl true
-  def handle_info(
-        {:student_deleted, %Student{class_id: id}},
-        %Socket{
-          assigns: %{class: %Class{id: id}}
-        } = socket
+        {:server_group_member_updated, %ServerGroupMember{group_id: id}},
+        %Socket{assigns: %{class: %Class{id: id}}} = socket
       ),
       do: socket |> load_students() |> noreply()
 
@@ -181,7 +179,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   defp load_students(
          %Socket{assigns: %{auth: auth, class: class, students: old_students}} = socket
        ) do
-    current_students = Course.list_students(auth, class)
+    [current_students, {:ok, server_group_members}] =
+      Task.await_many([
+        Task.async(fn -> Course.list_students(auth, class) end),
+        Task.async(fn -> Servers.list_server_group_members(auth, class.id) end)
+      ])
 
     if connected?(socket) do
       current_student_ids = MapSet.new(current_students, & &1.id)
@@ -203,6 +205,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
       end
     end
 
-    assign(socket, :students, current_students)
+    assign(socket, students: current_students, server_group_members: server_group_members)
   end
 end

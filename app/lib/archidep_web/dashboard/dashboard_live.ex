@@ -3,24 +3,62 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Course
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Servers
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive
 
   @impl true
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
 
-    {:ok, student} =
+    [{:ok, student}, {:ok, server_group_member}] =
       if has_role?(auth, :student) do
-        Course.fetch_authenticated_student(auth)
+        Task.await_many([
+          Task.async(fn -> Course.fetch_authenticated_student(auth) end),
+          Task.async(fn -> Servers.fetch_authenticated_server_group_member(auth) end)
+        ])
       else
-        {:ok, nil}
+        [{:ok, nil}, {:ok, nil}]
       end
 
     if connected?(socket) do
       set_process_label(__MODULE__, auth)
+
+      if student != nil do
+        :ok = Course.PubSub.subscribe_student(student.id)
+        :ok = Servers.PubSub.subscribe_server_group_member(server_group_member.id)
+      end
     end
 
     socket
-    |> assign(student: student)
+    |> assign(student: student, server_group_member: server_group_member)
     |> ok()
   end
+
+  @impl true
+  def handle_info(
+        {:student_updated, updated_student},
+        %Socket{assigns: %{student: student, server_group_member: member}} = socket
+      ),
+      do:
+        socket
+        |> assign(
+          student: Student.refresh!(student, updated_student),
+          server_group_member: ServerGroupMember.refresh!(member, updated_student)
+        )
+        |> noreply()
+
+  @impl true
+  def handle_info(
+        {:server_group_member_updated, updated_member},
+        %Socket{assigns: %{student: student, server_group_member: member}} = socket
+      ),
+      do:
+        socket
+        |> assign(
+          student: Student.refresh!(student, member),
+          server_group_member: ServerGroupMember.refresh!(member, updated_member)
+        )
+        |> noreply()
 end

@@ -35,12 +35,6 @@ defmodule ArchiDepWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
-  scope "/app", ArchiDepWeb do
-    pipe_through [:browser, :fetch_authentication]
-
-    live "/", Dashboard.DashboardLive
-  end
-
   scope "/", ArchiDepWeb do
     pipe_through :browser
 
@@ -67,6 +61,11 @@ defmodule ArchiDepWeb.Router do
       scope "/" do
         pipe_through :fetch_authentication
         live "/profile", Profile.ProfileLive
+      end
+
+      scope "/app" do
+        pipe_through :fetch_authentication
+        live "/", Dashboard.DashboardLive
       end
 
       scope "/admin" do
