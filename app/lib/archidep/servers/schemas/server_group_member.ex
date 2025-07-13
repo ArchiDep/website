@@ -17,6 +17,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
           username_confirmed: boolean(),
           domain: String.t(),
           active: boolean(),
+          servers_enabled: boolean(),
           group: ServerGroup.t() | NotLoaded,
           group_id: UUID.t(),
           owner: ServerOwner.t() | nil | NotLoaded,
@@ -32,6 +33,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
     field(:username_confirmed, :boolean, default: false)
     field(:domain, :string)
     field(:active, :boolean)
+    field(:servers_enabled, :boolean)
     belongs_to(:group, ServerGroup, source: :class_id)
     belongs_to(:owner, ServerOwner, source: :user_account_id)
     field(:version, :integer)
@@ -42,6 +44,16 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
   @spec active?(t(), DateTime.t()) :: boolean
   def active?(%__MODULE__{active: active, group: group}, now),
     do: active and ServerGroup.active?(group, now)
+
+  @spec can_create_servers?(t()) :: boolean
+  @spec can_create_servers?(t(), DateTime.t()) :: boolean
+  def can_create_servers?(
+        %__MODULE__{servers_enabled: servers_enabled, group: group} = member,
+        now \\ DateTime.utc_now()
+      ),
+      do:
+        active?(member, now) and
+          (servers_enabled or ServerGroup.allows_server_creation?(group, now))
 
   @spec list_members_in_server_group(UUID.t()) :: list(t())
   def list_members_in_server_group(group_id),
@@ -100,6 +112,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
           username_confirmed: username_confirmed,
           domain: domain,
           active: active,
+          servers_enabled: servers_enabled,
           group: %ServerGroup{id: group_id, version: group_version},
           owner: %ServerOwner{id: owner_id, version: owner_version},
           version: version,
@@ -114,6 +127,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
         username_confirmed: username_confirmed,
         domain: domain,
         active: active,
+        servers_enabled: servers_enabled,
         version: version,
         updated_at: updated_at
     }
@@ -132,6 +146,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
           name: name,
           domain: domain,
           active: active,
+          servers_enabled: servers_enabled,
           class: %{id: group_id, version: group_version},
           user: %{id: owner_id, version: owner_version},
           version: version,
@@ -144,6 +159,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
       | name: name,
         domain: domain,
         active: active,
+        servers_enabled: servers_enabled,
         version: version,
         updated_at: updated_at
     }

@@ -1,7 +1,10 @@
 <h1>{gettext("Dashboard")}</h1>
 
 <.live_component
-  :if={@server_group_member != nil and not @server_group_member.username_confirmed}
+  :if={
+    @server_group_member != nil and ServerGroupMember.can_create_servers?(@server_group_member) and
+      not @server_group_member.username_confirmed
+  }
   module={WhatIsYourNameLive}
   id={WhatIsYourNameLive.id()}
   auth={@auth}

@@ -19,6 +19,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
           active: boolean(),
+          servers_enabled: boolean(),
           servers: list(Server.t()) | NotLoaded.t(),
           expected_server_properties: ServerProperties.t() | nil | NotLoaded.t(),
           expected_server_properties_id: UUID.t() | nil,
@@ -33,6 +34,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean)
+    field(:servers_enabled, :boolean)
     belongs_to(:expected_server_properties, ServerProperties, on_replace: :update)
     has_many(:servers, Server, foreign_key: :group_id)
     field(:version, :integer)
@@ -46,6 +48,10 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
       active and
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
+
+  @spec allows_server_creation?(t(), DateTime.t()) :: boolean()
+  def allows_server_creation?(%__MODULE__{servers_enabled: servers_enabled} = group, now),
+    do: servers_enabled and active?(group, now)
 
   @spec expected_server_properties(t()) :: ServerProperties.t()
 
@@ -73,6 +79,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         start_date: start_date,
         end_date: end_date,
         active: active,
+        servers_enabled: servers_enabled,
         expected_server_properties: expected_server_properties,
         expected_server_properties_id: expected_server_properties_id,
         version: version,
@@ -85,6 +92,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         start_date: start_date,
         end_date: end_date,
         active: active,
+        servers_enabled: servers_enabled,
         expected_server_properties: expected_server_properties,
         expected_server_properties_id: expected_server_properties_id,
         version: version,
@@ -98,6 +106,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         start_date: start_date,
         end_date: end_date,
         active: active,
+        servers_enabled: servers_enabled,
         version: version,
         updated_at: updated_at
       })
@@ -108,6 +117,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         start_date: start_date,
         end_date: end_date,
         active: active,
+        servers_enabled: servers_enabled,
         version: version,
         updated_at: updated_at
     }

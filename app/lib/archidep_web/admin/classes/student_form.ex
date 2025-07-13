@@ -14,7 +14,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
           academic_class: String.t() | nil,
           suggested_username: String.t(),
           domain: String.t(),
-          active: boolean()
+          active: boolean(),
+          servers_enabled: boolean()
         }
 
   @primary_key false
@@ -25,13 +26,22 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
     field(:suggested_username, :string, default: "")
     field(:domain, :string, default: "")
     field(:active, :boolean, default: true)
+    field(:servers_enabled, :boolean, default: false)
   end
 
   @spec create_changeset(map()) :: Changeset.t(t())
   def create_changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{}
-    |> cast(params, [:name, :email, :academic_class, :suggested_username, :domain, :active])
-    |> validate_not_nil([:name, :email, :suggested_username, :domain, :active])
+    |> cast(params, [
+      :name,
+      :email,
+      :academic_class,
+      :suggested_username,
+      :domain,
+      :active,
+      :servers_enabled
+    ])
+    |> validate_not_nil([:name, :email, :suggested_username, :domain, :active, :servers_enabled])
   end
 
   @spec update_changeset(Student.t(), map()) :: Changeset.t(t())
@@ -42,10 +52,19 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
       academic_class: student.academic_class,
       suggested_username: student.suggested_username,
       domain: student.domain,
-      active: student.active
+      active: student.active,
+      servers_enabled: student.servers_enabled
     }
-    |> cast(params, [:name, :email, :academic_class, :suggested_username, :domain, :active])
-    |> validate_required([:name, :email, :suggested_username, :domain, :active])
+    |> cast(params, [
+      :name,
+      :email,
+      :academic_class,
+      :suggested_username,
+      :domain,
+      :active,
+      :servers_enabled
+    ])
+    |> validate_required([:name, :email, :suggested_username, :domain, :active, :servers_enabled])
   end
 
   @spec to_create_student_data(t(), Class.t()) :: Types.create_student_data()
@@ -57,6 +76,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
       suggested_username: form.suggested_username,
       domain: form.domain,
       active: form.active,
+      servers_enabled: form.servers_enabled,
       class_id: class.id
     }
   end
@@ -69,7 +89,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
       academic_class: form.academic_class,
       suggested_username: form.suggested_username,
       domain: form.domain,
-      active: form.active
+      active: form.active,
+      servers_enabled: form.servers_enabled
     }
   end
 end

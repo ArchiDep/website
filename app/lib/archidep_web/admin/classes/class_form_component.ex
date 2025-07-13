@@ -67,6 +67,26 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
             value="true"
           /> {gettext("Active")}
         </label>
+        <.field_help>
+          {gettext(
+            "Students can only log in when enrolled in an active class that has not reached its end date."
+          )}
+        </.field_help>
+
+        <label class="fieldset-label mt-2">
+          <input type="hidden" name={@form[:servers_enabled].name} value="false" />
+          <input
+            type="checkbox"
+            id={@form[:servers_enabled].id}
+            class="toggle border-error-content bg-error text-error-content/25 checked:border-success-content checked:bg-success checked:text-success-content/50"
+            name={@form[:servers_enabled].name}
+            checked={@form[:servers_enabled].value}
+            value="true"
+          /> {gettext("Servers enabled")}
+        </label>
+        <.field_help>
+          {gettext("Students can only register new servers if their class has servers enabled.")}
+        </.field_help>
       </fieldset>
 
       <div class="mt-2 flex justify-end gap-x-2">

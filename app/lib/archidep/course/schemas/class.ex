@@ -19,6 +19,7 @@ defmodule ArchiDep.Course.Schemas.Class do
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
           active: boolean(),
+          servers_enabled: boolean(),
           # Common metadata
           version: pos_integer(),
           created_at: DateTime.t(),
@@ -30,6 +31,7 @@ defmodule ArchiDep.Course.Schemas.Class do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean)
+    field(:servers_enabled, :boolean, default: false)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
@@ -63,7 +65,8 @@ defmodule ArchiDep.Course.Schemas.Class do
       :name,
       :start_date,
       :end_date,
-      :active
+      :active,
+      :servers_enabled
     ])
     |> change(
       id: id,
@@ -91,7 +94,8 @@ defmodule ArchiDep.Course.Schemas.Class do
       :name,
       :start_date,
       :end_date,
-      :active
+      :active,
+      :servers_enabled
     ])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
@@ -113,6 +117,7 @@ defmodule ArchiDep.Course.Schemas.Class do
         start_date: start_date,
         end_date: end_date,
         active: active,
+        servers_enabled: servers_enabled,
         version: version,
         updated_at: updated_at
       })
@@ -123,6 +128,7 @@ defmodule ArchiDep.Course.Schemas.Class do
         start_date: start_date,
         end_date: end_date,
         active: active,
+        servers_enabled: servers_enabled,
         version: version,
         updated_at: updated_at
     }
@@ -154,7 +160,7 @@ defmodule ArchiDep.Course.Schemas.Class do
   defp validate(changeset) do
     changeset
     |> update_change(:name, &trim/1)
-    |> validate_required([:name, :active])
+    |> validate_required([:name, :active, :servers_enabled])
     |> validate_length(:name, max: 50)
     |> unique_constraint(:name, name: :classes_unique_name_index)
     |> validate_start_and_end_dates()

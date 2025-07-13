@@ -5,7 +5,8 @@ defmodule ArchiDep.Course.Types do
           name: String.t(),
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
-          active: boolean()
+          active: boolean(),
+          servers_enabled: boolean()
         }
 
   @type create_student_data :: %{
@@ -15,6 +16,7 @@ defmodule ArchiDep.Course.Types do
           suggested_username: String.t(),
           domain: String.t() | nil,
           active: boolean(),
+          servers_enabled: boolean(),
           class_id: UUID.t()
         }
 
@@ -24,7 +26,8 @@ defmodule ArchiDep.Course.Types do
           academic_class: String.t() | nil,
           suggested_username: String.t(),
           domain: String.t() | nil,
-          active: boolean()
+          active: boolean(),
+          servers_enabled: boolean()
         }
 
   @type import_students_data :: %{

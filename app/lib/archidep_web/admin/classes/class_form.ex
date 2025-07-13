@@ -13,7 +13,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
     field(:name, :string, default: "")
     field(:start_date, :date)
     field(:end_date, :date)
-    field(:active, :boolean, default: true)
+    field(:active, :boolean, default: false)
+    field(:servers_enabled, :boolean, default: false)
   end
 
   @spec create_changeset(map()) :: Changeset.t(Types.class_data())
@@ -23,9 +24,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       :name,
       :start_date,
       :end_date,
-      :active
+      :active,
+      :servers_enabled
     ])
-    |> validate_required([:name, :active])
+    |> validate_required([:name, :active, :servers_enabled])
   end
 
   @spec update_changeset(Class.t(), map()) :: Changeset.t(Types.class_data())
@@ -34,15 +36,17 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       name: class.name,
       start_date: class.start_date,
       end_date: class.end_date,
-      active: class.active
+      active: class.active,
+      servers_enabled: class.servers_enabled
     }
     |> cast(params, [
       :name,
       :start_date,
       :end_date,
-      :active
+      :active,
+      :servers_enabled
     ])
-    |> validate_required([:name, :active])
+    |> validate_required([:name, :active, :servers_enabled])
   end
 
   @spec to_class_data(t()) :: Types.class_data()

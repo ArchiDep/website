@@ -94,7 +94,25 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
         </label>
         <.field_help>
           {gettext(
-            "Only active students may log in (their class and user account must also be active)"
+            "Students can only log in if active (their class and user account must also be active)."
+          )}
+        </.field_help>
+
+        <label class="fieldset-label mt-2">
+          <input type="hidden" name={@form[:servers_enabled].name} value="false" />
+          <input
+            type="checkbox"
+            id={@form[:servers_enabled].id}
+            class="toggle border-error-content bg-error text-error-content/25 checked:border-success-content checked:bg-success checked:text-success-content/50"
+            name={@form[:servers_enabled].name}
+            checked={@form[:servers_enabled].value}
+            value="true"
+          />
+          {gettext("Servers enabled")}
+        </label>
+        <.field_help>
+          {gettext(
+            "Students with this flag can register new servers even if not enabled in their class."
           )}
         </.field_help>
 
