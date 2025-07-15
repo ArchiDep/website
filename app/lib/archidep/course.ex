@@ -3,94 +3,27 @@ defmodule ArchiDep.Course do
 
   @behaviour ArchiDep.Course.Behaviour
 
-  alias ArchiDep.Course.Schemas.Class
-  alias ArchiDep.Course.Schemas.Student
-  alias ArchiDep.Course.Types
+  import ArchiDep.Helpers.ContextHelpers, only: [delegate: 1]
+  alias ArchiDep.Course.Behaviour
 
   @implementation Application.compile_env!(:archidep, __MODULE__)
 
-  @spec validate_class(Authentication.t(), Types.class_data()) :: Changeset.t()
-  defdelegate validate_class(auth, data), to: @implementation
-
-  @spec create_class(Authentication.t(), Types.class_data()) ::
-          {:ok, Class.t()} | {:error, Changeset.t()}
-  defdelegate create_class(auth, data), to: @implementation
-
-  @spec list_classes(Authentication.t()) :: list(Class.t())
-  defdelegate list_classes(auth), to: @implementation
-
-  @spec fetch_class(Authentication.t(), UUID.t()) :: {:ok, Class.t()} | {:error, :class_not_found}
-  defdelegate fetch_class(auth, id), to: @implementation
-
-  @spec validate_existing_class(
-          Authentication.t(),
-          UUID.t(),
-          Types.class_data()
-        ) :: {:ok, Changeset.t()} | {:error, :class_not_found}
-  defdelegate validate_existing_class(auth, id, data), to: @implementation
-
-  @spec update_class(
-          Authentication.t(),
-          UUID.t(),
-          Types.class_data()
-        ) :: {:ok, Class.t()} | {:error, Changeset.t()} | {:error, :class_not_found}
-  defdelegate update_class(auth, id, data), to: @implementation
-
-  @spec delete_class(Authentication.t(), UUID.t()) ::
-          :ok | {:error, :class_not_found} | {:error, :class_has_servers}
-  defdelegate delete_class(auth, id), to: @implementation
-
-  @spec validate_student(Authentication.t(), Types.create_student_data()) :: Changeset.t()
-  defdelegate validate_student(auth, data), to: @implementation
-
-  @spec create_student(Authentication.t(), Types.create_student_data()) ::
-          {:ok, Student.t()} | {:error, Changeset.t()}
-  defdelegate create_student(auth, data), to: @implementation
-
-  @spec import_students(Authentication.t(), UUID.t(), Types.import_students_data()) ::
-          {:ok, list(Student.t())} | {:error, Changeset.t()} | {:error, :class_not_found}
-  defdelegate import_students(auth, class_id, data), to: @implementation
-
-  @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
-  defdelegate list_students(auth, class), to: @implementation
-
-  @spec fetch_authenticated_student(Authentication.t()) ::
-          {:ok, Student.t()} | {:error, :not_a_student}
-  defdelegate fetch_authenticated_student(auth), to: @implementation
-
-  @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
-          {:ok, Student.t()} | {:error, :student_not_found}
-  defdelegate fetch_student_in_class(auth, class_id, id), to: @implementation
-
-  @spec validate_existing_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
-          {:ok, Changeset.t()} | {:error, :student_not_found}
-  defdelegate validate_existing_student(auth, id, data), to: @implementation
-
-  @spec update_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
-          {:ok, Student.t()} | {:error, Changeset.t()} | {:error, :student_not_found}
-  defdelegate update_student(auth, id, data), to: @implementation
-
-  @spec validate_student_config(
-          Authentication.t(),
-          UUID.t(),
-          Types.student_config()
-        ) ::
-          {:ok, Changeset.t()} | {:error, :student_not_found}
-  defdelegate validate_student_config(auth, id, data),
-    to: @implementation
-
-  @spec configure_student(
-          Authentication.t(),
-          UUID.t(),
-          Types.student_config()
-        ) ::
-          {:ok, Student.t()}
-          | {:error, Changeset.t()}
-          | {:error, :student_not_found}
-  defdelegate configure_student(auth, id, data),
-    to: @implementation
-
-  @spec delete_student(Authentication.t(), UUID.t()) ::
-          :ok | {:error, :student_not_found}
-  defdelegate delete_student(auth, id), to: @implementation
+  delegate(&Behaviour.validate_class/2)
+  delegate(&Behaviour.create_class/2)
+  delegate(&Behaviour.list_classes/1)
+  delegate(&Behaviour.fetch_class/2)
+  delegate(&Behaviour.validate_existing_class/3)
+  delegate(&Behaviour.update_class/3)
+  delegate(&Behaviour.delete_class/2)
+  delegate(&Behaviour.validate_student/2)
+  delegate(&Behaviour.create_student/2)
+  delegate(&Behaviour.import_students/3)
+  delegate(&Behaviour.list_students/2)
+  delegate(&Behaviour.fetch_authenticated_student/1)
+  delegate(&Behaviour.fetch_student_in_class/3)
+  delegate(&Behaviour.validate_existing_student/3)
+  delegate(&Behaviour.update_student/3)
+  delegate(&Behaviour.validate_student_config/3)
+  delegate(&Behaviour.configure_student/3)
+  delegate(&Behaviour.delete_student/2)
 end
