@@ -1,7 +1,12 @@
 defmodule ArchiDep.Servers.Behaviour do
-  use ArchiDep.Helpers.ContextHelpers, :behaviour
+  @moduledoc """
+  Specification for the servers context, which manages server groups and
+  individual servers. This includes operations such as creating, updating,
+  tracking, and deleting servers.
+  """
 
-  import ArchiDep.Helpers.ContextHelpers, only: [callback: 1]
+  use ArchiDep, :behaviour
+
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember

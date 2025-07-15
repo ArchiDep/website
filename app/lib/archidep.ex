@@ -1,15 +1,11 @@
 defmodule ArchiDep do
   @moduledoc """
-  This module keeps the contexts that define your domain
-  and business logic.
-
-  Contexts are also responsible for managing your data, regardless
-  if it comes from the database, an external API or others.
+  ArchiDep is an application for an Architecture & Deployment system
+  administration course, allowing teachers to manage classes and students, and
+  students to follow the course and register their own servers (typically
+  virtual machines hosted in a cloud) for exercises.
   """
 
-  @doc """
-  Returns the current version of the application.
-  """
   @spec version() :: Version.t()
   def version do
     {:ok, vsn} = :application.get_key(:archidep, :vsn)
@@ -19,6 +15,9 @@ defmodule ArchiDep do
   @spec behaviour :: Macro.t()
   def behaviour do
     quote do
+      use ArchiDep.Helpers.ContextHelpers, :behaviour
+
+      import ArchiDep.Helpers.ContextHelpers, only: [callback: 1]
       alias ArchiDep.Authentication
       alias Ecto.Changeset
       alias Ecto.UUID

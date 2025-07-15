@@ -1,12 +1,11 @@
 defmodule ArchiDep.Events.Behaviour do
   @moduledoc """
-  Specification of the events context.
+  Specification for the events context, which handles event sourcing and event
+  storage.
   """
 
-  use ArchiDep.Helpers.ContextHelpers, :behaviour
+  use ArchiDep, :behaviour
 
-  import ArchiDep.Helpers.ContextHelpers, only: [callback: 1]
-  alias ArchiDep.Authentication
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Events.Types
 

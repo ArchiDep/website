@@ -1,16 +1,15 @@
 defmodule ArchiDep.Accounts.Behaviour do
   @moduledoc """
-  Specification of the user account management context.
+  Specification for the accounts context, which concerns everything related to
+  user accounts, including authentication, user sessions, and account
+  management.
   """
 
-  use ArchiDep.Helpers.ContextHelpers, :behaviour
+  use ArchiDep, :behaviour
 
-  import ArchiDep.Helpers.ContextHelpers, only: [callback: 1]
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
-  alias ArchiDep.Authentication
-  alias Ecto.UUID
 
   @doc """
   Logs in the user account with the specified Switch edu-ID, creating a new
