@@ -308,13 +308,27 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
           }
         end)
 
-      with {:ok, _students} <-
+      with {:ok, imported_students} <-
              Course.import_students(auth, class_id, %{
                academic_class: academic_class,
                domain: domain,
                students: students_data
              }) do
         socket
+        |> assign(
+          state: :waiting_for_upload,
+          columns: [],
+          students: [],
+          new_students: 0
+        )
+        |> send_notification(
+          Message.new(
+            :success,
+            gettext("{count, plural, =1 {1 student} other {# students}} imported",
+              count: length(imported_students)
+            )
+          )
+        )
         |> push_event("execute-action", %{to: "##{@id}", action: "close"})
         |> noreply()
       else

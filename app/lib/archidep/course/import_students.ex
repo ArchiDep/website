@@ -21,8 +21,14 @@ defmodule ArchiDep.Course.ImportStudents do
       now = DateTime.utc_now()
       changeset = StudentImportList.changeset(data)
 
+      existing_usernames =
+        class.id
+        |> Student.list_students_in_class()
+        |> Enum.map(& &1.username)
+
       with {:ok, import_list} <- Changeset.apply_action(changeset, :validate) do
-        insert_data = StudentImportList.to_insert_data(import_list, class, now)
+        insert_data =
+          StudentImportList.to_insert_data(import_list, class, existing_usernames, now)
 
         case Multi.new()
              |> Multi.insert_all(
@@ -47,9 +53,9 @@ defmodule ArchiDep.Course.ImportStudents do
              end)
              |> insert_events(auth, class, import_list, now)
              |> transaction() do
-          {:ok, %{students: students}} ->
-            :ok = PubSub.publish_students_imported(class, students)
-            {:ok, students}
+          {:ok, %{new_students: new_students}} ->
+            :ok = PubSub.publish_students_imported(class, new_students)
+            {:ok, new_students}
 
           {:error, :students, %Changeset{} = changeset, _changes} ->
             {:error, changeset}

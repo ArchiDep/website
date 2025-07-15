@@ -28,6 +28,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
     %__MODULE__{}
     |> cast(params, [:name_column, :email_column, :academic_class, :domain])
     |> validate_required([:name_column, :email_column, :domain])
+    # Name column
     |> validate_change(:name_column, fn :name_column, name_column ->
       unique_student_names = students |> Enum.map(& &1[name_column]) |> Enum.uniq()
 
@@ -50,6 +51,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
           []
       end
     end)
+    # Email column
     |> validate_change(:email_column, fn :email_column, email_column ->
       cond do
         !Enum.any?(students, &looks_like_an_email?(&1[email_column])) ->
@@ -63,5 +65,13 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
           []
       end
     end)
+    # Academic class
+    |> validate_length(:academic_class, max: 30)
+    # Domain
+    |> validate_length(:domain, max: 20)
+    |> validate_format(:domain, ~r/\A[a-z0-9][\-a-z0-9]*(?:\.[a-z][\-a-z0-9]*)+\z/i,
+      message:
+        "must be a valid domain name containing only letters (without accents), numbers and hyphens"
+    )
   end
 end

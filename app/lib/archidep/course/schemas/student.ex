@@ -59,6 +59,20 @@ defmodule ArchiDep.Course.Schemas.Student do
         active?(member, now) and
           (servers_enabled or Class.allows_server_creation?(class, now))
 
+  @spec list_students_in_class(UUID.t()) :: list(t())
+  def list_students_in_class(class_id),
+    do:
+      Repo.all(
+        from s in __MODULE__,
+          join: c in assoc(s, :class),
+          left_join: u in assoc(s, :user),
+          left_join: us in assoc(u, :student),
+          left_join: usc in assoc(us, :class),
+          where: s.class_id == ^class_id,
+          order_by: s.name,
+          preload: [class: c, user: {u, student: {us, class: usc}}]
+      )
+
   @spec fetch_student(UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
   def fetch_student(id),
     do:

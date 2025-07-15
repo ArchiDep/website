@@ -46,13 +46,14 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
     |> validate_format(:email, ~r/\A.+@.+\..+\z/)
   end
 
-  # FIXME: consider usernames already in the database for this class
-  @spec to_insert_data(t(), Class.t(), DateTime.t()) :: list(Types.import_student_data())
+  @spec to_insert_data(t(), Class.t(), list(String.t()), DateTime.t()) ::
+          list(Types.import_student_data())
   def to_insert_data(
         %__MODULE__{academic_class: academic_class, domain: domain, students: students},
         %Class{
           id: class_id
         },
+        existing_usernames,
         now
       ) do
     students
@@ -63,15 +64,17 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         |> Map.merge(%{
           id: UUID.generate(),
           academic_class: academic_class,
+          username_confirmed: false,
           domain: domain,
           active: true,
+          servers_enabled: false,
           class_id: class_id,
           version: 1,
           created_at: now,
           updated_at: now
         }))
     )
-    |> Enum.reduce({[], MapSet.new()}, fn student, {list, usernames} ->
+    |> Enum.reduce({[], MapSet.new(existing_usernames)}, fn student, {list, usernames} ->
       username = generate_suggested_username(student, usernames)
 
       {

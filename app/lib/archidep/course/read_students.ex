@@ -8,19 +8,7 @@ defmodule ArchiDep.Course.ReadStudents do
   @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
   def list_students(auth, class) do
     authorize!(auth, Policy, :course, :list_students, class)
-
-    class_id = class.id
-
-    Repo.all(
-      from s in Student,
-        join: c in assoc(s, :class),
-        left_join: u in assoc(s, :user),
-        left_join: us in assoc(u, :student),
-        left_join: usc in assoc(us, :class),
-        where: s.class_id == ^class_id,
-        order_by: s.name,
-        preload: [class: c, user: {u, student: {us, class: usc}}]
-    )
+    Student.list_students_in_class(class.id)
   end
 
   @spec fetch_authenticated_student(Authentication.t()) ::
