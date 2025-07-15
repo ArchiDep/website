@@ -184,6 +184,9 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
       |> validate_length(:distribution_version, max: 20)
 
   @spec merge(t(), t()) :: t()
+  # TODO: remove clause
+  def merge(nil, overrides), do: overrides
+
   def merge(properties, overrides),
     do: %__MODULE__{
       properties
