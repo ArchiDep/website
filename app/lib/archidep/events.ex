@@ -1,14 +1,14 @@
 defmodule ArchiDep.Events do
   @moduledoc """
-  Business events context.
+  Events context, which handles event sourcing and event storage.
   """
 
+  use ArchiDep, :context
+
   @behaviour ArchiDep.Events.Behaviour
-
-  import ArchiDep.Helpers.ContextHelpers, only: [delegate: 1]
-  alias ArchiDep.Events.Behaviour
-
   @implementation Application.compile_env!(:archidep, __MODULE__)
+
+  alias ArchiDep.Events.Behaviour
 
   delegate(&Behaviour.fetch_events/2)
 end

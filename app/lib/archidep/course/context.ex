@@ -1,9 +1,10 @@
 defmodule ArchiDep.Course.Context do
-  use ArchiDep, :context
+  @moduledoc false
+
+  use ArchiDep, :context_impl
 
   @behaviour ArchiDep.Course.Behaviour
 
-  import ArchiDep.Helpers.ContextHelpers, only: [implement: 2]
   alias ArchiDep.Course.Behaviour
 
   implement(&Behaviour.validate_class/2, ArchiDep.Course.CreateClass)

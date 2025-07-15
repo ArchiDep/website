@@ -1,12 +1,16 @@
 defmodule ArchiDep.Servers do
+  @moduledoc """
+  Servers context, which manages server groups and individual servers. This
+  includes operations such as creating, updating, tracking, and deleting
+  servers.
+  """
+
   use ArchiDep, :context
 
   @behaviour ArchiDep.Servers.Behaviour
-
-  import ArchiDep.Helpers.ContextHelpers, only: [delegate: 1]
-  alias ArchiDep.Servers.Behaviour
-
   @implementation Application.compile_env!(:archidep, __MODULE__)
+
+  alias ArchiDep.Servers.Behaviour
 
   # Server groups
   delegate(&Behaviour.list_server_groups/1)

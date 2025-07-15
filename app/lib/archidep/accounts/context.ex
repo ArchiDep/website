@@ -1,9 +1,10 @@
 defmodule ArchiDep.Accounts.Context do
   @moduledoc false
 
+  use ArchiDep, :context_impl
+
   @behaviour ArchiDep.Accounts.Behaviour
 
-  import ArchiDep.Helpers.ContextHelpers, only: [implement: 2]
   alias ArchiDep.Accounts.Behaviour
 
   implement(

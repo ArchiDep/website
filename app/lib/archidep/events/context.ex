@@ -1,11 +1,11 @@
 defmodule ArchiDep.Events.Context do
   @moduledoc false
 
-  import ArchiDep.Helpers.ContextHelpers, only: [implement: 2]
-  alias ArchiDep.Events.Behaviour
-  alias ArchiDep.Events.FetchEvents
+  use ArchiDep, :context_impl
 
   @behaviour ArchiDep.Events.Behaviour
 
-  implement(&Behaviour.fetch_events/2, FetchEvents)
+  alias ArchiDep.Events.Behaviour
+
+  implement(&Behaviour.fetch_events/2, ArchiDep.Events.FetchEvents)
 end

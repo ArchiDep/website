@@ -1,9 +1,10 @@
 defmodule ArchiDep.Servers.Context do
   @moduledoc false
 
+  use ArchiDep, :context_impl
+
   @behaviour ArchiDep.Servers.Behaviour
 
-  import ArchiDep.Helpers.ContextHelpers, only: [implement: 2]
   alias ArchiDep.Servers.Behaviour
 
   # Server groups

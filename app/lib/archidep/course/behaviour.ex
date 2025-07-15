@@ -1,9 +1,7 @@
 defmodule ArchiDep.Course.Behaviour do
-  @moduledoc """
-  Specification for the course context, which manages classes and students.
-  """
+  @moduledoc false
 
-  use ArchiDep, :behaviour
+  use ArchiDep, :context_behaviour
 
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student

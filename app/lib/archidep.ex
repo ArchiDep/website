@@ -12,8 +12,18 @@ defmodule ArchiDep do
     vsn |> List.to_string() |> Version.parse!()
   end
 
-  @spec behaviour :: Macro.t()
-  def behaviour do
+  @spec context :: Macro.t()
+  def context do
+    quote do
+      import ArchiDep.Helpers.ContextHelpers, only: [delegate: 1]
+      alias ArchiDep.Authentication
+      alias Ecto.Changeset
+      alias Ecto.UUID
+    end
+  end
+
+  @spec context_behaviour :: Macro.t()
+  def context_behaviour do
     quote do
       use ArchiDep.Helpers.ContextHelpers, :behaviour
 
@@ -24,12 +34,10 @@ defmodule ArchiDep do
     end
   end
 
-  @spec context :: Macro.t()
-  def context do
+  @spec context_impl :: Macro.t()
+  def context_impl do
     quote do
-      alias ArchiDep.Authentication
-      alias Ecto.Changeset
-      alias Ecto.UUID
+      import ArchiDep.Helpers.ContextHelpers, only: [implement: 2]
     end
   end
 

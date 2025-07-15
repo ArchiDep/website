@@ -1,11 +1,7 @@
 defmodule ArchiDep.Accounts.Behaviour do
-  @moduledoc """
-  Specification for the accounts context, which concerns everything related to
-  user accounts, including authentication, user sessions, and account
-  management.
-  """
+  @moduledoc false
 
-  use ArchiDep, :behaviour
+  use ArchiDep, :context_behaviour
 
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession

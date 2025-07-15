@@ -1,11 +1,7 @@
 defmodule ArchiDep.Servers.Behaviour do
-  @moduledoc """
-  Specification for the servers context, which manages server groups and
-  individual servers. This includes operations such as creating, updating,
-  tracking, and deleting servers.
-  """
+  @moduledoc false
 
-  use ArchiDep, :behaviour
+  use ArchiDep, :context_behaviour
 
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup

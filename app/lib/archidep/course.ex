@@ -1,12 +1,14 @@
 defmodule ArchiDep.Course do
+  @moduledoc """
+  Course context, which manages classes and students.
+  """
+
   use ArchiDep, :context
 
   @behaviour ArchiDep.Course.Behaviour
-
-  import ArchiDep.Helpers.ContextHelpers, only: [delegate: 1]
-  alias ArchiDep.Course.Behaviour
-
   @implementation Application.compile_env!(:archidep, __MODULE__)
+
+  alias ArchiDep.Course.Behaviour
 
   delegate(&Behaviour.validate_class/2)
   delegate(&Behaviour.create_class/2)
