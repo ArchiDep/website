@@ -6,7 +6,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
   alias ArchiDep.Course
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
-  alias ArchiDep.Servers
   alias ArchiDepWeb.Admin.Classes.NewClassDialogLive
 
   @impl true
