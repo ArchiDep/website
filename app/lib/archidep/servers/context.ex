@@ -17,16 +17,6 @@ defmodule ArchiDep.Servers.Context do
     ArchiDep.Servers.ReadServerGroups
   )
 
-  implement(
-    &Behaviour.validate_server_group_expected_properties/3,
-    ArchiDep.Servers.UpdateServerGroupExpectedProperties
-  )
-
-  implement(
-    &Behaviour.update_server_group_expected_properties/3,
-    ArchiDep.Servers.UpdateServerGroupExpectedProperties
-  )
-
   implement(&Behaviour.watch_server_ids/2, ArchiDep.Servers.ReadServerGroups)
 
   # Server group members

@@ -15,8 +15,6 @@ defmodule ArchiDep.Servers do
   # Server groups
   delegate(&Behaviour.list_server_groups/1)
   delegate(&Behaviour.fetch_server_group/2)
-  delegate(&Behaviour.validate_server_group_expected_properties/3)
-  delegate(&Behaviour.update_server_group_expected_properties/3)
   delegate(&Behaviour.watch_server_ids/2)
 
   # Server group members

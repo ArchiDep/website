@@ -7,7 +7,6 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
 
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerProperties
-  alias ArchiDep.Servers.Types
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
@@ -49,13 +48,6 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
 
-  @spec expected_server_properties(t()) :: ServerProperties.t()
-
-  def expected_server_properties(%__MODULE__{id: id, expected_server_properties: nil}),
-    do: ServerProperties.blank(id)
-
-  def expected_server_properties(%__MODULE__{expected_server_properties: props}), do: props
-
   @spec fetch_server_group(UUID.t()) :: {:ok, t()} | {:error, :server_group_not_found}
   def fetch_server_group(id),
     do:
@@ -96,16 +88,24 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
     }
   end
 
-  def refresh!(%__MODULE__{id: id, version: current_version} = group, %{
-        id: id,
-        name: name,
-        start_date: start_date,
-        end_date: end_date,
-        active: active,
-        servers_enabled: servers_enabled,
-        version: version,
-        updated_at: updated_at
-      })
+  def refresh!(
+        %__MODULE__{
+          id: id,
+          expected_server_properties: expected_server_properties,
+          version: current_version
+        } = group,
+        %{
+          id: id,
+          name: name,
+          start_date: start_date,
+          end_date: end_date,
+          active: active,
+          servers_enabled: servers_enabled,
+          expected_server_properties: new_expected_server_properties,
+          version: version,
+          updated_at: updated_at
+        }
+      )
       when version == current_version + 1 do
     %__MODULE__{
       group
@@ -114,6 +114,8 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         end_date: end_date,
         active: active,
         servers_enabled: servers_enabled,
+        expected_server_properties:
+          ServerProperties.refresh(expected_server_properties, new_expected_server_properties),
         version: version,
         updated_at: updated_at
     }
@@ -130,27 +132,5 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
   def refresh!(%__MODULE__{id: id}, %{id: id}) do
     {:ok, fresh_group} = fetch_server_group(id)
     fresh_group
-  end
-
-  @spec update_expected_server_properties(t(), Types.server_properties_data()) :: Changeset.t(t())
-  def update_expected_server_properties(group, data) do
-    now = DateTime.utc_now()
-
-    group
-    |> change(expected_server_properties: expected_server_properties(group))
-    |> cast(
-      %{
-        expected_server_properties: data
-      },
-      []
-    )
-    |> cast_assoc(:expected_server_properties,
-      with: fn props, params ->
-        props |> ServerProperties.update(params) |> change(%{id: group.id})
-      end
-    )
-    |> change(updated_at: now)
-    |> optimistic_lock(:version)
-    |> validate_required([:expected_server_properties])
   end
 end

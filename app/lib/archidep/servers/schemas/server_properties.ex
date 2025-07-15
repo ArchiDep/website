@@ -43,6 +43,40 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
   @spec blank(UUID.t()) :: t()
   def blank(id), do: %__MODULE__{id: id}
 
+  @spec refresh(t(), map()) :: t()
+  def refresh(%__MODULE__{id: id} = properties, %{
+        id: id,
+        hostname: hostname,
+        machine_id: machine_id,
+        cpus: cpus,
+        cores: cores,
+        vcpus: vcpus,
+        memory: memory,
+        swap: swap,
+        system: system,
+        architecture: architecture,
+        os_family: os_family,
+        distribution: distribution,
+        distribution_release: distribution_release,
+        distribution_version: distribution_version
+      }),
+      do: %__MODULE__{
+        properties
+        | hostname: hostname,
+          machine_id: machine_id,
+          cpus: cpus,
+          cores: cores,
+          vcpus: vcpus,
+          memory: memory,
+          swap: swap,
+          system: system,
+          architecture: architecture,
+          os_family: os_family,
+          distribution: distribution,
+          distribution_release: distribution_release,
+          distribution_version: distribution_version
+      }
+
   @spec blank_changeset(UUID.t()) :: Changeset.t(t())
   def blank_changeset(id),
     do:
@@ -72,9 +106,8 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
       ])
       |> validate()
 
-  @spec update(t()) :: Changeset.t(t())
-  @spec update(t(), Types.server_properties_data()) :: Changeset.t(t())
-  def update(server_properties, data \\ %{}),
+  @spec update(t(), Types.server_properties()) :: Changeset.t(t())
+  def update(server_properties, data),
     do:
       server_properties
       |> cast(data, [

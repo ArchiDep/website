@@ -4,6 +4,7 @@ defmodule ArchiDep.Course.Behaviour do
   use ArchiDep, :context_behaviour
 
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Types
 
@@ -51,6 +52,33 @@ defmodule ArchiDep.Course.Behaviour do
   callback(
     update_class(auth: Authentication.t(), class_id: UUID.t(), data: Types.class_data()) ::
       {:ok, Class.t()} | {:error, Changeset.t()} | {:error, :class_not_found}
+  )
+
+  @doc """
+  Validates the expected server properties of a class.
+  """
+  callback(
+    validate_expected_server_properties_for_class(
+      auth: Authentication.t(),
+      class_id: UUID.t(),
+      data: Types.expected_server_properties()
+    ) ::
+      {:ok, Changeset.t()}
+      | {:error, :class_not_found}
+  )
+
+  @doc """
+  Updates the expected properties of a server group.
+  """
+  callback(
+    update_expected_server_properties_for_class(
+      auth: Authentication.t(),
+      class_id: UUID.t(),
+      data: Types.expected_server_properties()
+    ) ::
+      {:ok, ExpectedServerProperties.t()}
+      | {:error, Changeset.t()}
+      | {:error, :class_not_found}
   )
 
   @doc """

@@ -15,8 +15,8 @@ defmodule ArchiDep.Course.PubSub do
     :ok = PubSub.subscribe(@pubsub, "classes")
   end
 
-  @spec publish_class(Class.t()) :: :ok
-  def publish_class(class),
+  @spec publish_class_updated(Class.t()) :: :ok
+  def publish_class_updated(class),
     do: PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_updated, class})
 
   @spec publish_class_deleted(Class.t()) :: :ok

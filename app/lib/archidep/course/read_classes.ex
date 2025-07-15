@@ -22,10 +22,6 @@ defmodule ArchiDep.Course.ReadClasses do
   @spec list_classes(Authentication.t()) :: list(Class.t())
   def list_classes(auth) do
     authorize!(auth, Policy, :course, :list_classes, nil)
-
-    Repo.all(
-      from c in Class,
-        order_by: [desc: c.active, desc: c.end_date, desc: c.created_at, asc: c.name]
-    )
+    Class.list_classes()
   end
 end

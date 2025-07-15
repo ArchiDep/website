@@ -5,18 +5,18 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
-  import ArchiDepWeb.Servers.ServerComponents, only: [expected_server_properties: 1]
   alias ArchiDep.Accounts
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDepWeb.Admin.Classes.DeleteClassDialogLive
   alias ArchiDepWeb.Admin.Classes.EditClassDialogLive
+  alias ArchiDepWeb.Admin.Classes.EditClassExpectedServerPropertiesDialogLive
   alias ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive
   alias ArchiDepWeb.Admin.Classes.NewStudentDialogLive
-  alias ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do

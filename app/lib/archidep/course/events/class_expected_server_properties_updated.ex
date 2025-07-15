@@ -1,7 +1,7 @@
-defmodule ArchiDep.Servers.Events.ServerGroupExpectedPropertiesUpdated do
+defmodule ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated do
   use ArchiDep, :event
 
-  alias ArchiDep.Servers.Schemas.ServerProperties
+  alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias Ecto.UUID
 
   @derive Jason.Encoder
@@ -43,11 +43,11 @@ defmodule ArchiDep.Servers.Events.ServerGroupExpectedPropertiesUpdated do
           id: UUID.t(),
           hostname: String.t() | nil,
           machine_id: String.t() | nil,
-          cpus: non_neg_integer() | nil,
-          cores: non_neg_integer() | nil,
-          vcpus: non_neg_integer() | nil,
-          memory: non_neg_integer() | nil,
-          swap: non_neg_integer() | nil,
+          cpus: pos_integer() | nil,
+          cores: pos_integer() | nil,
+          vcpus: pos_integer() | nil,
+          memory: pos_integer() | nil,
+          swap: pos_integer() | nil,
           system: String.t() | nil,
           architecture: String.t() | nil,
           os_family: String.t() | nil,
@@ -56,9 +56,9 @@ defmodule ArchiDep.Servers.Events.ServerGroupExpectedPropertiesUpdated do
           distribution_version: String.t() | nil
         }
 
-  @spec new(ServerProperties.t()) :: t()
+  @spec new(ExpectedServerProperties.t()) :: t()
   def new(properties) do
-    %ServerProperties{
+    %ExpectedServerProperties{
       id: id,
       hostname: expected_hostname,
       machine_id: expected_machine_id,
@@ -94,11 +94,11 @@ defmodule ArchiDep.Servers.Events.ServerGroupExpectedPropertiesUpdated do
   end
 
   defimpl Event do
-    alias ArchiDep.Servers.Events.ServerGroupExpectedPropertiesUpdated
+    alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
 
-    def event_stream(%ServerGroupExpectedPropertiesUpdated{id: id}),
-      do: "servers-groups:#{id}"
+    def event_stream(%ClassExpectedServerPropertiesUpdated{id: id}),
+      do: "classes:#{id}"
 
-    def event_type(_event), do: :"archidep/servers/server-group-expected-properties-updated"
+    def event_type(_event), do: :"archidep/course/class-expected-server-properties-updated"
   end
 end

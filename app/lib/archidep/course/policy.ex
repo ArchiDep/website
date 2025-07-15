@@ -60,6 +60,15 @@ defmodule ArchiDep.Course.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Root users can update a class's expected server properties.
+  def authorize(
+        :course,
+        :update_expected_server_properties_for_class,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   # Root users can delete classes.
   def authorize(
         :course,

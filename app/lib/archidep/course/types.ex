@@ -45,4 +45,20 @@ defmodule ArchiDep.Course.Types do
   @type student_config :: %{
           username: String.t()
         }
+
+  @type expected_server_properties :: %{
+          hostname: String.t() | nil,
+          machine_id: String.t() | nil,
+          cpus: pos_integer() | nil,
+          cores: pos_integer() | nil,
+          vcpus: pos_integer() | nil,
+          memory: pos_integer() | nil,
+          swap: pos_integer() | nil,
+          system: String.t() | nil,
+          architecture: String.t() | nil,
+          os_family: String.t() | nil,
+          distribution: String.t() | nil,
+          distribution_release: String.t() | nil,
+          distribution_version: String.t() | nil
+        }
 end

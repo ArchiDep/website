@@ -59,14 +59,12 @@
         <div class="card-title flex justify-between gap-x-4">
           <h2>{gettext("Expected server properties")}</h2>
           <button
-            :if={@server_group.expected_server_properties_id != nil}
+            :if={not ExpectedServerProperties.blank?(@class.expected_server_properties)}
             type="button"
             class="btn btn-warning btn-xs"
-            alias
-            ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive
             phx-click={
               JS.dispatch("open-dialog",
-                detail: %{dialog: EditServerGroupExpectedPropertiesDialogLive.id(@server_group)}
+                detail: %{dialog: EditClassExpectedServerPropertiesDialogLive.id(@class)}
               )
             }
           >
@@ -79,17 +77,15 @@
           </button>
         </div>
 
-        <.expected_server_properties properties={@server_group.expected_server_properties} />
+        <.expected_server_properties properties={@class.expected_server_properties} />
 
-        <div :if={@server_group.expected_server_properties_id == nil} class="flex">
+        <div :if={ExpectedServerProperties.blank?(@class.expected_server_properties)} class="flex">
           <button
             type="button"
             class="btn btn-accent"
-            alias
-            ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive
             phx-click={
               JS.dispatch("open-dialog",
-                detail: %{dialog: EditServerGroupExpectedPropertiesDialogLive.id(@server_group)}
+                detail: %{dialog: EditClassExpectedServerPropertiesDialogLive.id(@class)}
               )
             }
           >
@@ -107,10 +103,10 @@
 </div>
 
 <.live_component
-  module={EditServerGroupExpectedPropertiesDialogLive}
-  id={EditServerGroupExpectedPropertiesDialogLive.id(@server_group)}
+  module={EditClassExpectedServerPropertiesDialogLive}
+  id={EditClassExpectedServerPropertiesDialogLive.id(@class)}
   auth={@auth}
-  group={@server_group}
+  class={@class}
 />
 
 <div class="mt-4 join">

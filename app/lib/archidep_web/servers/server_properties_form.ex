@@ -2,11 +2,27 @@ defmodule ArchiDepWeb.Servers.ServerPropertiesForm do
   use Ecto.Schema
 
   import Ecto.Changeset
+  alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Servers.Schemas.ServerProperties
-  alias ArchiDep.Servers.Types
   alias Ecto.Changeset
 
   @type t :: struct()
+
+  @type server_properties :: %{
+          hostname: String.t() | nil,
+          machine_id: String.t() | nil,
+          cpus: integer() | nil,
+          cores: integer() | nil,
+          vcpus: integer() | nil,
+          memory: integer() | nil,
+          swap: integer() | nil,
+          system: String.t() | nil,
+          architecture: String.t() | nil,
+          os_family: String.t() | nil,
+          distribution: String.t() | nil,
+          distribution_release: String.t() | nil,
+          distribution_version: String.t() | nil
+        }
 
   @primary_key false
   embedded_schema do
@@ -23,8 +39,8 @@ defmodule ArchiDepWeb.Servers.ServerPropertiesForm do
     field(:distribution_version, :string)
   end
 
-  @spec changeset(t()) :: Changeset.t(Types.server_properties())
-  @spec changeset(t(), map()) :: Changeset.t(Types.server_properties())
+  @spec changeset(t()) :: Changeset.t(server_properties())
+  @spec changeset(t(), map()) :: Changeset.t(server_properties())
   def changeset(expected_properties, params \\ %{}),
     do:
       expected_properties
@@ -42,6 +58,22 @@ defmodule ArchiDepWeb.Servers.ServerPropertiesForm do
         :distribution_version
       ])
 
+  @spec from(ExpectedServerProperties.t()) :: t()
+  def from(%ExpectedServerProperties{} = properties),
+    do: %__MODULE__{
+      cpus: properties.cpus,
+      cores: properties.cores,
+      vcpus: properties.vcpus,
+      memory: properties.memory,
+      swap: properties.swap,
+      system: properties.system,
+      architecture: properties.architecture,
+      os_family: properties.os_family,
+      distribution: properties.distribution,
+      distribution_release: properties.distribution_release,
+      distribution_version: properties.distribution_version
+    }
+
   @spec from(ServerProperties.t()) :: t()
   def from(%ServerProperties{} = properties),
     do: %__MODULE__{
@@ -58,6 +90,6 @@ defmodule ArchiDepWeb.Servers.ServerPropertiesForm do
       distribution_version: properties.distribution_version
     }
 
-  @spec to_data(t()) :: Types.server_properties()
+  @spec to_data(t()) :: server_properties()
   def to_data(form), do: Map.from_struct(form)
 end

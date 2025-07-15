@@ -1,11 +1,11 @@
 <dialog
-  id={id(@group)}
+  id={id(@class)}
   class="modal"
-  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id(@group)})}
+  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id(@class)})}
 >
   <div class="modal-box w-11/12 max-w-3xl">
     <.form
-      id={"#{id(@group)}-form"}
+      id={"#{id(@class)}-form"}
       for={@form}
       phx-change="validate"
       phx-submit="update"
@@ -16,14 +16,14 @@
           <h3 class="text-lg font-bold">{gettext("Edit Expected Server Properties")}</h3>
           <div class="badge badge-outline badge-info">
             <Heroicons.server_stack class="size-4" />
-            {@group.name}
+            {@class.name}
           </div>
         </legend>
         <!-- Expected server properties -->
         <div role="alert" class="mb-2 alert alert-info alert-soft">
           <span class="text-sm">
             {gettext(
-              "Warnings will be issued for servers in this group that do not meet these expected properties. Leaving a field empty will disable the check for that property. This can be overriden for each server."
+              "Warnings will be issued for servers in this class that do not meet these expected properties. Leaving a field empty will disable the check for that property. This can be overriden for each server."
             )}
           </span>
         </div>
@@ -86,7 +86,6 @@
                 value={@form[:memory].value}
                 placeholder={gettext("e.g. 2048")}
                 min="1"
-                step="128"
               />
               <span class="label">{gettext("MB")} (±10%)</span>
             </label>
@@ -103,7 +102,6 @@
                 value={@form[:swap].value}
                 placeholder={gettext("e.g. 1000")}
                 min="1"
-                step="128"
               />
               <span class="label">{gettext("MB")} (±10%)</span>
             </label>
@@ -195,7 +193,7 @@
       </fieldset>
 
       <div class="mt-2 flex justify-end gap-x-2">
-        <button type="button" class="btn btn-secondary" phx-click={close(@group)}>
+        <button type="button" class="btn btn-secondary" phx-click={close(@class)}>
           <span class="flex items-center gap-x-2">
             <Heroicons.x_mark class="size-4" />
             <span>{gettext("Close")}</span>

@@ -20,7 +20,7 @@ defmodule ArchiDep.Course.DeleteClass do
            # Make sure to delete the expected server properties. This is
            # necessary because the foreign key is on the "classes" table, not
            # the "server_properties" table, so the properties would be orphaned.
-           |> Multi.delete_all(:expected_server_properties, linked_server_properties(class))
+           |> Multi.delete(:expected_server_properties, class.expected_server_properties)
            |> Multi.insert(:stored_event, &class_deleted(auth, &1.class, now))
            |> Repo.transaction() do
         {:ok, _} ->
@@ -35,12 +35,6 @@ defmodule ArchiDep.Course.DeleteClass do
       end
     end
   end
-
-  # Build the query with the raw table name to avoid a code dependency on the
-  # schemas in the Servers context (although the dependency still exists in the
-  # database).
-  defp linked_server_properties(class),
-    do: from(sp in "server_properties", where: sp.id == ^UUID.dump!(class.id))
 
   defp class_deleted(auth, class, now),
     do:

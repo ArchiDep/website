@@ -1,35 +1,34 @@
-defmodule ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive do
+defmodule ArchiDepWeb.Admin.Classes.EditClassExpectedServerPropertiesDialogLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Helpers.DialogHelpers
   import ArchiDepWeb.Components.FormComponents
-  alias ArchiDep.Servers
-  alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Course
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDepWeb.Servers.ServerPropertiesForm
 
-  @base_id "edit-server-group-expected-properties-dialog"
+  @base_id "edit-class-expected-server-properties-dialog"
 
-  @spec id(ServerGroup.t()) :: String.t()
-  def id(%ServerGroup{id: id}), do: "#{@base_id}-#{id}"
+  @spec id(Class.t()) :: String.t()
+  def id(%Class{id: id}), do: "#{@base_id}-#{id}"
 
-  @spec close(ServerGroup.t()) :: js
-  def close(group), do: group |> id() |> close_dialog()
+  @spec close(Class.t()) :: js
+  def close(class), do: class |> id() |> close_dialog()
 
   @impl LiveComponent
   def update(assigns, socket) do
     auth = assigns.auth
-    group = assigns.group
+    class = assigns.class
 
     changeset =
-      group
-      |> ServerGroup.expected_server_properties()
+      class.expected_server_properties
       |> ServerPropertiesForm.from()
       |> ServerPropertiesForm.changeset()
 
     socket
     |> assign(
       auth: auth,
-      group: group,
+      class: class,
       form: to_form(changeset, as: :expected_server_properties)
     )
     |> ok()
@@ -38,11 +37,10 @@ defmodule ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive do
   @impl LiveComponent
 
   def handle_event("closed", _params, socket) do
-    group = socket.assigns.group
+    class = socket.assigns.class
 
     changeset =
-      group
-      |> ServerGroup.expected_server_properties()
+      class.expected_server_properties
       |> ServerPropertiesForm.from()
       |> ServerPropertiesForm.changeset()
 
@@ -53,20 +51,19 @@ defmodule ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive do
 
   def handle_event("validate", %{"expected_server_properties" => params}, socket) do
     auth = socket.assigns.auth
-    group = socket.assigns.group
+    class = socket.assigns.class
 
     changeset =
-      group
-      |> ServerGroup.expected_server_properties()
+      class.expected_server_properties
       |> ServerPropertiesForm.from()
       |> ServerPropertiesForm.changeset(params)
 
     validate_dialog_form(
       :expected_server_properties,
       changeset,
-      &Servers.validate_server_group_expected_properties(
+      &Course.validate_expected_server_properties_for_class(
         auth,
-        group.id,
+        class.id,
         ServerPropertiesForm.to_data(&1)
       ),
       socket
@@ -75,11 +72,10 @@ defmodule ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive do
 
   def handle_event("update", %{"expected_server_properties" => params}, socket) do
     auth = socket.assigns.auth
-    group = socket.assigns.group
+    class = socket.assigns.class
 
     changeset =
-      group
-      |> ServerGroup.expected_server_properties()
+      class.expected_server_properties
       |> ServerPropertiesForm.from()
       |> ServerPropertiesForm.changeset(params)
 
@@ -89,19 +85,19 @@ defmodule ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive do
              :validate
            ),
          {:ok, _updated_props} <-
-           Servers.update_server_group_expected_properties(
+           Course.update_expected_server_properties_for_class(
              auth,
-             group.id,
+             class.id,
              ServerPropertiesForm.to_data(form_data)
            ) do
       socket
       |> send_notification(
         Message.new(
           :success,
-          gettext("Updated expected server properties for {group}", group: group.name)
+          gettext("Updated expected server properties for {class}", class: class.name)
         )
       )
-      |> push_event("execute-action", %{to: "##{id(group)}", action: "close"})
+      |> push_event("execute-action", %{to: "##{id(class)}", action: "close"})
       |> noreply()
     else
       {:error, %Changeset{} = changeset} ->

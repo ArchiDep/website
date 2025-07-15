@@ -34,7 +34,7 @@ defmodule ArchiDep.Course.UpdateClass do
            end)
            |> Repo.transaction() do
         {:ok, %{class: updated_class}} ->
-          :ok = PubSub.publish_class(updated_class)
+          :ok = PubSub.publish_class_updated(updated_class)
           {:ok, updated_class}
 
         {:error, :class, changeset, _} ->
