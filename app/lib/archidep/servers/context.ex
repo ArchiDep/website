@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ContextImpl do
+defmodule ArchiDep.Servers.Context do
   use ArchiDep, :context
 
   alias ArchiDep.Servers.CreateServer

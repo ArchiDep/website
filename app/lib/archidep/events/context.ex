@@ -1,4 +1,4 @@
-defmodule ArchiDep.Events.ContextImpl do
+defmodule ArchiDep.Events.Context do
   @moduledoc false
 
   import ArchiDep.Helpers.ContextHelpers, only: [implement: 2]

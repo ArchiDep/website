@@ -1,4 +1,4 @@
-defmodule ArchiDep.Course.ContextImpl do
+defmodule ArchiDep.Course.Context do
   use ArchiDep, :context
 
   alias ArchiDep.Course.ConfigureStudent

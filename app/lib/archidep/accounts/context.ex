@@ -1,4 +1,4 @@
-defmodule ArchiDep.Accounts.ContextImpl do
+defmodule ArchiDep.Accounts.Context do
   @moduledoc false
 
   @behaviour ArchiDep.Accounts.Behaviour
