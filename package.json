@@ -28,7 +28,7 @@
   },
   "workspaces": ["course", "theme"],
   "engines": {
-    "node": "^22",
+    "node": "^24",
     "npm": ">= 8"
   }
 }

@@ -18,7 +18,7 @@
     "webpack-manifest-plugin": "^5.0.1"
   },
   "engines": {
-    "node": "^22",
+    "node": "^24",
     "npm": ">= 8"
   }
 }
