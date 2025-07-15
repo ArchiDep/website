@@ -2,26 +2,10 @@ defmodule ArchiDep.Servers.PubSub do
   use ArchiDep, :pub_sub
 
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.Schemas.ServerGroup
 
   @pubsub ArchiDep.PubSub
 
   # Server groups
-
-  @spec publish_server_group_updated(ServerGroup.t()) :: :ok
-  def publish_server_group_updated(group) do
-    :ok = PubSub.broadcast(@pubsub, "server-groups:#{group.id}", {:server_group_updated, group})
-  end
-
-  @spec subscribe_server_group(UUID.t()) :: :ok
-  def subscribe_server_group(group_id) do
-    :ok = PubSub.subscribe(@pubsub, "server-groups:#{group_id}")
-  end
-
-  @spec unsubscribe_server_group(UUID.t()) :: :ok
-  def unsubscribe_server_group(group_id) do
-    :ok = PubSub.unsubscribe(@pubsub, "server-groups:#{group_id}")
-  end
 
   @spec subscribe_server_group_servers(UUID.t()) :: :ok
   def subscribe_server_group_servers(group_id) do

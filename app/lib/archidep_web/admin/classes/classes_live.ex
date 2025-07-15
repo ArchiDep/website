@@ -23,7 +23,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
     if connected?(socket) do
       for class <- classes do
         :ok = PubSub.subscribe_class(class.id)
-        :ok = Servers.PubSub.subscribe_server_group(class.id)
       end
     end
 
@@ -52,10 +51,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
 
   @impl true
   def handle_info(
-        {event, %{id: id} = updated},
+        {:class_updated, %{id: id} = updated},
         %Socket{assigns: %{classes: classes}} = socket
-      )
-      when event in [:class_updated, :server_group_updated],
+      ),
       do:
         socket
         |> assign(
@@ -78,7 +76,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
         %Socket{assigns: %{classes: classes}} = socket
       ) do
     :ok = PubSub.unsubscribe_class(deleted_class.id)
-    :ok = Servers.PubSub.unsubscribe_server_group(deleted_class.id)
 
     socket
     |> assign(

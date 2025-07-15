@@ -36,7 +36,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
           :ok = Course.PubSub.subscribe_class(id)
           :ok = Course.PubSub.subscribe_class_students(id)
           :ok = Accounts.PubSub.subscribe_user_group_preregistered_users(id)
-          :ok = Servers.PubSub.subscribe_server_group(id)
           {:ok, server_ids, server_ids_reducer} = Servers.watch_server_ids(auth, server_group)
           {server_ids, server_ids_reducer}
         else
@@ -83,24 +82,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
         |> assign(
           class: Class.refresh!(class, updated_class),
           server_group: ServerGroup.refresh!(server_group, updated_class)
-        )
-        |> noreply()
-
-  @impl true
-  def handle_info(
-        {:server_group_updated, %{id: id} = updated_group},
-        %Socket{
-          assigns: %{
-            class: %Class{id: id, version: current_version} = class,
-            server_group: %ServerGroup{id: id, version: current_version} = server_group
-          }
-        } = socket
-      ),
-      do:
-        socket
-        |> assign(
-          class: Class.refresh!(class, updated_group),
-          server_group: ServerGroup.refresh!(server_group, updated_group)
         )
         |> noreply()
 
