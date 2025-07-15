@@ -1,10 +1,8 @@
 defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
   use ArchiDep, :schema
 
-  import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
-  alias ArchiDep.Servers.Types
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
@@ -44,16 +42,6 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
   @spec active?(t(), DateTime.t()) :: boolean
   def active?(%__MODULE__{active: active, group: group}, now),
     do: active and ServerGroup.active?(group, now)
-
-  @spec can_create_servers?(t()) :: boolean
-  @spec can_create_servers?(t(), DateTime.t()) :: boolean
-  def can_create_servers?(
-        %__MODULE__{servers_enabled: servers_enabled, group: group} = member,
-        now \\ DateTime.utc_now()
-      ),
-      do:
-        active?(member, now) and
-          (servers_enabled or ServerGroup.allows_server_creation?(group, now))
 
   @spec list_members_in_server_group(UUID.t()) :: list(t())
   def list_members_in_server_group(group_id),
@@ -177,37 +165,4 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
     {:ok, fresh_server_group_member} = fetch_server_group_member(id)
     fresh_server_group_member
   end
-
-  @spec configure_changeset(t(), Types.server_group_member_config()) :: Changeset.t()
-  def configure_changeset(%__MODULE__{} = member, data) do
-    now = DateTime.utc_now()
-
-    member
-    |> cast(data, [:username])
-    |> change(username_confirmed: true)
-    |> validate_required([:username])
-    |> change(updated_at: now)
-    |> optimistic_lock(:version)
-    # Username
-    |> update_change(:username, &trim/1)
-    |> validate_length(:username, max: 20, message: "must be at most {count} characters long")
-    |> validate_format(:username, ~r/\A[a-z][\-a-z0-9]*\z/i,
-      message:
-        "must contain only letters (without accents), numbers and hyphens, and start with a letter"
-    )
-    |> unique_constraint(:username, name: :students_username_unique)
-    |> unsafe_validate_username_unique(member.id, member.group_id)
-  end
-
-  defp unsafe_validate_username_unique(changeset, id, group_id),
-    do:
-      unsafe_validate_unique_query(changeset, :username, Repo, fn changeset ->
-        username = get_field(changeset, :username)
-
-        from(m in __MODULE__,
-          where:
-            m.id != ^id and m.group_id == ^group_id and
-              fragment("LOWER(?)", m.username) == fragment("LOWER(?)", ^username)
-        )
-      end)
 end

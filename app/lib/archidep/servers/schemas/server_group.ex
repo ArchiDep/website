@@ -49,10 +49,6 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
 
-  @spec allows_server_creation?(t(), DateTime.t()) :: boolean()
-  def allows_server_creation?(%__MODULE__{servers_enabled: servers_enabled} = group, now),
-    do: servers_enabled and active?(group, now)
-
   @spec expected_server_properties(t()) :: ServerProperties.t()
 
   def expected_server_properties(%__MODULE__{id: id, expected_server_properties: nil}),

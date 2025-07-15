@@ -44,25 +44,6 @@ defmodule ArchiDep.Servers.Behaviour do
   @callback fetch_authenticated_server_group_member(Authentication.t()) ::
               {:ok, ServerGroupMember.t()} | {:error, :not_a_server_group_member}
 
-  @callback fetch_server_group_member(Authentication.t(), UUID.t()) ::
-              {:ok, ServerGroupMember.t()} | {:error, :server_group_member_not_found}
-
-  @callback validate_server_group_member_config(
-              Authentication.t(),
-              UUID.t(),
-              Types.server_group_member_config()
-            ) ::
-              {:ok, Changeset.t()} | {:error, :server_group_member_not_found}
-
-  @callback configure_server_group_member(
-              Authentication.t(),
-              UUID.t(),
-              Types.server_group_member_config()
-            ) ::
-              {:ok, ServerGroupMember.t()}
-              | {:error, Changeset.t()}
-              | {:error, :server_group_member_not_found}
-
   # Servers
 
   @callback validate_server(Authentication.t(), Types.create_server_data()) :: Changeset.t()

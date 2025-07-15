@@ -75,22 +75,6 @@ defmodule ArchiDep.Servers.ReadServerGroups do
     end
   end
 
-  @spec fetch_server_group_member(Authentication.t(), UUID.t()) ::
-          {:ok, ServerGroupMember.t()} | {:error, :server_group_member_not_found}
-  def fetch_server_group_member(auth, id) do
-    with :ok <- validate_uuid(id, :server_group_member_not_found),
-         {:ok, member} <- ServerGroupMember.fetch_server_group_member(id),
-         :ok <- authorize(auth, Policy, :servers, :fetch_server_group_member, member) do
-      {:ok, member}
-    else
-      {:error, :server_group_member_not_found} ->
-        {:error, :server_group_member_not_found}
-
-      {:error, {:access_denied, :servers, :fetch_server_group_member}} ->
-        {:error, :server_group_member_not_found}
-    end
-  end
-
   @spec watch_server_ids(Authentication.t(), ServerGroup.t()) ::
           {:ok, MapSet.t(UUID.t()), (MapSet.t(UUID.t()), {atom(), term()} -> list(UUID.t()))}
           | {:error, :unauthorized}

@@ -2,12 +2,10 @@
 
 <.live_component
   :if={
-    @server_group_member != nil and ServerGroupMember.can_create_servers?(@server_group_member) and
-      not @server_group_member.username_confirmed
+    @student != nil and Student.can_create_servers?(@student) and not @student.username_confirmed
   }
   module={WhatIsYourNameLive}
   id={WhatIsYourNameLive.id()}
   auth={@auth}
-  server_group_member={@server_group_member}
   student={@student}
 />

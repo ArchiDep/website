@@ -53,17 +53,17 @@ defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
           {gettext("Official name of the student's academic class")}
         </.field_help>
 
-        <label class="fieldset-label required mt-2">{gettext("Suggested username")}</label>
+        <label class="fieldset-label required mt-2">{gettext("Username")}</label>
         <input
           type="text"
-          id={@form[:suggested_username].id}
+          id={@form[:username].id}
           class="input w-full"
-          name={@form[:suggested_username].name}
-          value={@form[:suggested_username].value}
+          name={@form[:username].name}
+          value={@form[:username].value}
         />
-        <.errors_for field={@form[:suggested_username]} />
+        <.errors_for field={@form[:username]} />
         <.field_help>
-          {gettext("Username that will be suggested to the student for the course (alphanumeric)")}
+          {gettext("Username of the student for the course (alphanumeric)")}
         </.field_help>
 
         <label class="fieldset-label required mt-2">{gettext("Domain")}</label>

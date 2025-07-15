@@ -12,7 +12,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
           name: String.t(),
           email: String.t(),
           academic_class: String.t() | nil,
-          suggested_username: String.t(),
+          username: String.t(),
           domain: String.t(),
           active: boolean(),
           servers_enabled: boolean()
@@ -23,7 +23,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
     field(:name, :string, default: "")
     field(:email, :string, default: "")
     field(:academic_class, :string)
-    field(:suggested_username, :string, default: "")
+    field(:username, :string, default: "")
     field(:domain, :string, default: "")
     field(:active, :boolean, default: true)
     field(:servers_enabled, :boolean, default: false)
@@ -36,12 +36,12 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
       :name,
       :email,
       :academic_class,
-      :suggested_username,
+      :username,
       :domain,
       :active,
       :servers_enabled
     ])
-    |> validate_not_nil([:name, :email, :suggested_username, :domain, :active, :servers_enabled])
+    |> validate_not_nil([:name, :email, :username, :domain, :active, :servers_enabled])
   end
 
   @spec update_changeset(Student.t(), map()) :: Changeset.t(t())
@@ -50,7 +50,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
       name: student.name,
       email: student.email,
       academic_class: student.academic_class,
-      suggested_username: student.suggested_username,
+      username: student.username,
       domain: student.domain,
       active: student.active,
       servers_enabled: student.servers_enabled
@@ -59,12 +59,12 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
       :name,
       :email,
       :academic_class,
-      :suggested_username,
+      :username,
       :domain,
       :active,
       :servers_enabled
     ])
-    |> validate_required([:name, :email, :suggested_username, :domain, :active, :servers_enabled])
+    |> validate_not_nil([:name, :email, :username, :domain, :active, :servers_enabled])
   end
 
   @spec to_create_student_data(t(), Class.t()) :: Types.create_student_data()
@@ -73,7 +73,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
       name: form.name,
       email: form.email,
       academic_class: form.academic_class,
-      suggested_username: form.suggested_username,
+      username: form.username,
       domain: form.domain,
       active: form.active,
       servers_enabled: form.servers_enabled,
@@ -87,7 +87,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
       name: form.name,
       email: form.email,
       academic_class: form.academic_class,
-      suggested_username: form.suggested_username,
+      username: form.username,
       domain: form.domain,
       active: form.active,
       servers_enabled: form.servers_enabled

@@ -44,6 +44,10 @@ defmodule ArchiDep.Course.Schemas.Class do
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
 
+  @spec allows_server_creation?(t(), DateTime.t()) :: boolean()
+  def allows_server_creation?(%__MODULE__{servers_enabled: servers_enabled} = class, now),
+    do: servers_enabled and active?(class, now)
+
   @spec fetch_class(UUID.t()) :: {:ok, t()} | {:error, :class_not_found}
   def fetch_class(id) do
     case Repo.one(from c in __MODULE__, where: c.id == ^id) do

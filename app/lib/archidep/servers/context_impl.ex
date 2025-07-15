@@ -1,7 +1,6 @@
 defmodule ArchiDep.Servers.ContextImpl do
   use ArchiDep, :context
 
-  alias ArchiDep.Servers.ConfigureServerGroupMember
   alias ArchiDep.Servers.CreateServer
   alias ArchiDep.Servers.DeleteServer
   alias ArchiDep.Servers.ManageServer
@@ -62,30 +61,6 @@ defmodule ArchiDep.Servers.ContextImpl do
   @spec fetch_authenticated_server_group_member(Authentication.t()) ::
           {:ok, ServerGroupMember.t()} | {:error, :not_a_server_group_member}
   defdelegate fetch_authenticated_server_group_member(auth), to: ReadServerGroups
-
-  @spec fetch_server_group_member(Authentication.t(), UUID.t()) ::
-          {:ok, ServerGroupMember.t()} | {:error, :server_group_member_not_found}
-  defdelegate fetch_server_group_member(auth, id), to: ReadServerGroups
-
-  @spec validate_server_group_member_config(
-          Authentication.t(),
-          UUID.t(),
-          Types.server_group_member_config()
-        ) ::
-          {:ok, Changeset.t()} | {:error, :server_group_member_not_found}
-  defdelegate validate_server_group_member_config(auth, id, data),
-    to: ConfigureServerGroupMember
-
-  @spec configure_server_group_member(
-          Authentication.t(),
-          UUID.t(),
-          Types.server_group_member_config()
-        ) ::
-          {:ok, ServerGroupMember.t()}
-          | {:error, Changeset.t()}
-          | {:error, :server_group_member_not_found}
-  defdelegate configure_server_group_member(auth, id, data),
-    to: ConfigureServerGroupMember
 
   # Servers
 

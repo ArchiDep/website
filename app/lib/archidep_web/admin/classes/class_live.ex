@@ -1,7 +1,7 @@
 defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   use ArchiDepWeb, :live_view
 
-  import ArchiDepWeb.Admin.AdminComponents
+  import ArchiDepWeb.Components.CourseComponents
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
@@ -12,17 +12,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerGroup
-  alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDepWeb.Admin.Classes.DeleteClassDialogLive
   alias ArchiDepWeb.Admin.Classes.EditClassDialogLive
   alias ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive
   alias ArchiDepWeb.Admin.Classes.NewStudentDialogLive
   alias ArchiDepWeb.Servers.EditServerGroupExpectedPropertiesDialogLive
-
-  @spec server_group_member_for(list(ServerGroupMember.t()), Student.t()) ::
-          ServerGroupMember.t() | nil
-  def server_group_member_for(members, %Student{id: id}),
-    do: Enum.find(members, &match?(%ServerGroupMember{id: ^id}, &1))
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -34,7 +28,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
         Task.async(fn -> Servers.fetch_server_group(auth, id) end)
       ])
 
-    # TODO: keep servers count up to date in real time
     with {:ok, class} <- class_result,
          {:ok, server_group} <- server_group_result do
       {server_ids, server_ids_reducer} =
@@ -44,7 +37,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
           :ok = Course.PubSub.subscribe_class_students(id)
           :ok = Accounts.PubSub.subscribe_user_group_preregistered_users(id)
           :ok = Servers.PubSub.subscribe_server_group(id)
-          :ok = Servers.PubSub.subscribe_server_group_members(id)
           {:ok, server_ids, server_ids_reducer} = Servers.watch_server_ids(auth, server_group)
           {server_ids, server_ids_reducer}
         else
@@ -58,8 +50,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
         class: class,
         server_group: server_group,
         server_ids: {server_ids, server_ids_reducer},
-        students: [],
-        server_group_members: []
+        students: []
       )
       |> load_students()
       |> ok()
@@ -149,13 +140,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl true
   def handle_info(
-        {:server_group_member_updated, %ServerGroupMember{group_id: id}},
-        %Socket{assigns: %{class: %Class{id: id}}} = socket
-      ),
-      do: socket |> load_students() |> noreply()
-
-  @impl true
-  def handle_info(
         {:preregistered_user_updated, %{group_id: id}},
         %Socket{
           assigns: %{class: %Class{id: id}}
@@ -176,35 +160,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
     |> noreply()
   end
 
-  defp load_students(
-         %Socket{assigns: %{auth: auth, class: class, students: old_students}} = socket
-       ) do
-    [current_students, {:ok, server_group_members}] =
-      Task.await_many([
-        Task.async(fn -> Course.list_students(auth, class) end),
-        Task.async(fn -> Servers.list_server_group_members(auth, class.id) end)
-      ])
-
-    if connected?(socket) do
-      current_student_ids = MapSet.new(current_students, & &1.id)
-
-      old_student_ids = MapSet.new(old_students, & &1.id)
-      gone_student_ids = MapSet.difference(old_student_ids, current_student_ids)
-
-      # Unsubscribe from events concerning students that are no longer in the
-      # class
-      for gone_student_id <- gone_student_ids do
-        :ok = Course.PubSub.unsubscribe_student(gone_student_id)
-      end
-
-      new_student_ids = MapSet.difference(current_student_ids, old_student_ids)
-
-      # Subscribe to events concerning new students in the class
-      for new_student_id <- new_student_ids do
-        :ok = Course.PubSub.subscribe_student(new_student_id)
-      end
-    end
-
-    assign(socket, students: current_students, server_group_members: server_group_members)
-  end
+  defp load_students(%Socket{assigns: %{auth: auth, class: class}} = socket),
+    do: assign(socket, students: Course.list_students(auth, class))
 end

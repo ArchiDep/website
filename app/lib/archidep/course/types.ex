@@ -13,7 +13,7 @@ defmodule ArchiDep.Course.Types do
           name: String.t(),
           email: String.t(),
           academic_class: String.t() | nil,
-          suggested_username: String.t(),
+          username: String.t(),
           domain: String.t() | nil,
           active: boolean(),
           servers_enabled: boolean(),
@@ -24,7 +24,7 @@ defmodule ArchiDep.Course.Types do
           name: String.t(),
           email: String.t(),
           academic_class: String.t() | nil,
-          suggested_username: String.t(),
+          username: String.t(),
           domain: String.t() | nil,
           active: boolean(),
           servers_enabled: boolean()
@@ -39,6 +39,10 @@ defmodule ArchiDep.Course.Types do
   @type import_student_data :: %{
           name: String.t(),
           email: String.t(),
-          suggested_username: String.t()
+          username: String.t()
+        }
+
+  @type student_config :: %{
+          username: String.t()
         }
 end

@@ -1,6 +1,7 @@
 defmodule ArchiDep.Course.ContextImpl do
   use ArchiDep, :context
 
+  alias ArchiDep.Course.ConfigureStudent
   alias ArchiDep.Course.CreateClass
   alias ArchiDep.Course.CreateStudent
   alias ArchiDep.Course.DeleteClass
@@ -82,6 +83,24 @@ defmodule ArchiDep.Course.ContextImpl do
           Types.existing_student_data()
         ) :: {:ok, Student.t()} | {:error, Changeset.t()}
   defdelegate update_student(auth, id, data), to: UpdateStudent
+
+  @spec validate_student_config(
+          Authentication.t(),
+          UUID.t(),
+          Types.student_config()
+        ) ::
+          {:ok, Changeset.t()} | {:error, :student_not_found}
+  defdelegate validate_student_config(auth, id, data), to: ConfigureStudent
+
+  @spec configure_student(
+          Authentication.t(),
+          UUID.t(),
+          Types.student_config()
+        ) ::
+          {:ok, Student.t()}
+          | {:error, Changeset.t()}
+          | {:error, :student_not_found}
+  defdelegate configure_student(auth, id, data), to: ConfigureStudent
 
   @spec delete_student(Authentication.t(), UUID.t()) ::
           :ok | {:error, :student_not_found}

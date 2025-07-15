@@ -1,6 +1,9 @@
 defmodule ArchiDep.Course.Policy do
   use ArchiDep, :policy
 
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Schemas.User
+
   @impl Policy
 
   # Root users can validate classes.
@@ -137,6 +140,16 @@ defmodule ArchiDep.Course.Policy do
         _params
       ),
       do: Enum.member?(roles, :root)
+
+  # Students can confirm their own username.
+  def authorize(
+        :course,
+        :configure_student,
+        %Authentication{principal_id: principal_id, roles: roles},
+        {%User{id: principal_id, student_id: student_id},
+         %Student{id: student_id, user_id: principal_id}}
+      ),
+      do: Enum.member?(roles, :student)
 
   # Root users can delete students.
   def authorize(

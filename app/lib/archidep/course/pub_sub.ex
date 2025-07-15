@@ -51,21 +51,32 @@ defmodule ArchiDep.Course.PubSub do
     :ok = PubSub.subscribe(@pubsub, "classes:#{class_id}:students")
   end
 
-  @spec publish_student(Student.t()) :: :ok
-  def publish_student(student),
-    do: PubSub.broadcast(@pubsub, "students:#{student.id}", {:student_updated, student})
+  @spec publish_student_updated(Student.t()) :: :ok
+  def publish_student_updated(student) do
+    :ok = PubSub.broadcast(@pubsub, "students:#{student.id}", {:student_updated, student})
+
+    :ok =
+      PubSub.broadcast(
+        @pubsub,
+        "classes:#{student.class_id}:students",
+        {:student_updated, student}
+      )
+  end
 
   @spec publish_student_deleted(Student.t()) :: :ok
-  def publish_student_deleted(student),
-    do: PubSub.broadcast(@pubsub, "students:#{student.id}", {:student_deleted, student})
+  def publish_student_deleted(student) do
+    :ok = PubSub.broadcast(@pubsub, "students:#{student.id}", {:student_deleted, student})
+
+    :ok =
+      PubSub.broadcast(
+        @pubsub,
+        "classes:#{student.class_id}:students",
+        {:student_deleted, student}
+      )
+  end
 
   @spec subscribe_student(UUID.t()) :: :ok
   def subscribe_student(student_id) do
     :ok = PubSub.subscribe(@pubsub, "students:#{student_id}")
-  end
-
-  @spec unsubscribe_student(UUID.t()) :: :ok
-  def unsubscribe_student(student_id) do
-    :ok = PubSub.unsubscribe(@pubsub, "students:#{student_id}")
   end
 end

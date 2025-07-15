@@ -70,6 +70,26 @@ defmodule ArchiDep.Course do
           {:ok, Student.t()} | {:error, Changeset.t()} | {:error, :student_not_found}
   defdelegate update_student(auth, id, data), to: @implementation
 
+  @spec validate_student_config(
+          Authentication.t(),
+          UUID.t(),
+          Types.student_config()
+        ) ::
+          {:ok, Changeset.t()} | {:error, :student_not_found}
+  defdelegate validate_student_config(auth, id, data),
+    to: @implementation
+
+  @spec configure_student(
+          Authentication.t(),
+          UUID.t(),
+          Types.student_config()
+        ) ::
+          {:ok, Student.t()}
+          | {:error, Changeset.t()}
+          | {:error, :student_not_found}
+  defdelegate configure_student(auth, id, data),
+    to: @implementation
+
   @spec delete_student(Authentication.t(), UUID.t()) ::
           :ok | {:error, :student_not_found}
   defdelegate delete_student(auth, id), to: @implementation

@@ -230,10 +230,7 @@
         {student.email}
       </td>
       <td>
-        <.server_username
-          server_group_member={server_group_member_for(@server_group_members, student)}
-          suggested_username={student.suggested_username}
-        />
+        <.student_username student={student} />
       </td>
       <td>
         <Heroicons.check_circle :if={student.active} class="size-5 text-success" />

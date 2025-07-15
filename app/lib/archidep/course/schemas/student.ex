@@ -15,9 +15,8 @@ defmodule ArchiDep.Course.Schemas.Student do
           name: String.t(),
           email: String.t(),
           academic_class: String.t() | nil,
-          suggested_username: String.t(),
-          # FIXME: set this to suggested username by default
           username: String.t(),
+          username_confirmed: boolean(),
           domain: String.t(),
           active: boolean(),
           servers_enabled: boolean(),
@@ -34,8 +33,8 @@ defmodule ArchiDep.Course.Schemas.Student do
     field(:name, :string)
     field(:email, :string)
     field(:academic_class, :string)
-    field(:suggested_username, :string)
     field(:username, :string)
+    field(:username_confirmed, :boolean, default: false)
     field(:domain, :string)
     field(:active, :boolean, default: false)
     field(:servers_enabled, :boolean, default: false)
@@ -49,6 +48,16 @@ defmodule ArchiDep.Course.Schemas.Student do
   @spec active?(t(), DateTime.t()) :: boolean()
   def active?(%__MODULE__{active: active, class: %Class{} = class}, now),
     do: active and Class.active?(class, now)
+
+  @spec can_create_servers?(t()) :: boolean
+  @spec can_create_servers?(t(), DateTime.t()) :: boolean
+  def can_create_servers?(
+        %__MODULE__{servers_enabled: servers_enabled, class: class} = member,
+        now \\ DateTime.utc_now()
+      ),
+      do:
+        active?(member, now) and
+          (servers_enabled or Class.allows_server_creation?(class, now))
 
   @spec fetch_student(UUID.t()) :: {:ok, t()} | {:error, :student_not_found}
   def fetch_student(id),
@@ -103,8 +112,8 @@ defmodule ArchiDep.Course.Schemas.Student do
           name: name,
           email: email,
           academic_class: academic_class,
-          suggested_username: suggested_username,
           username: username,
+          username_confirmed: username_confirmed,
           domain: domain,
           active: active,
           servers_enabled: servers_enabled,
@@ -120,8 +129,8 @@ defmodule ArchiDep.Course.Schemas.Student do
       | name: name,
         email: email,
         academic_class: academic_class,
-        suggested_username: suggested_username,
         username: username,
+        username_confirmed: username_confirmed,
         domain: domain,
         active: active,
         servers_enabled: servers_enabled,
@@ -187,7 +196,6 @@ defmodule ArchiDep.Course.Schemas.Student do
       :name,
       :email,
       :academic_class,
-      :suggested_username,
       :username,
       :domain,
       :active,
@@ -196,6 +204,7 @@ defmodule ArchiDep.Course.Schemas.Student do
     ])
     |> change(
       id: id,
+      username_confirmed: false,
       version: 1,
       created_at: now,
       updated_at: now
@@ -214,7 +223,6 @@ defmodule ArchiDep.Course.Schemas.Student do
       :name,
       :email,
       :academic_class,
-      :suggested_username,
       :username,
       :domain,
       :active,
@@ -225,6 +233,27 @@ defmodule ArchiDep.Course.Schemas.Student do
     |> validate(id, class_id)
   end
 
+  @spec configure_changeset(t(), Types.student_config()) :: Changeset.t()
+  def configure_changeset(%__MODULE__{} = student, data) do
+    now = DateTime.utc_now()
+
+    student
+    |> cast(data, [:username])
+    |> change(username_confirmed: true)
+    |> validate_required([:username])
+    |> change(updated_at: now)
+    |> optimistic_lock(:version)
+    # Username
+    |> update_change(:username, &trim/1)
+    |> validate_length(:username, max: 20, message: "must be at most {count} characters long")
+    |> validate_format(:username, ~r/\A[a-z][\-a-z0-9]*\z/i,
+      message:
+        "must contain only letters (without accents), numbers and hyphens, and start with a letter"
+    )
+    |> unique_constraint(:username, name: :students_username_unique)
+    |> unsafe_validate_username_unique(student.id, student.class_id)
+  end
+
   defp validate(changeset, _id, nil), do: validate(changeset)
 
   defp validate(changeset, id, class_id),
@@ -232,7 +261,6 @@ defmodule ArchiDep.Course.Schemas.Student do
       changeset
       |> validate()
       |> unsafe_validate_email_unique(id, class_id)
-      |> unsafe_validate_suggested_username_unique(id, class_id)
       |> unsafe_validate_username_unique(id, class_id)
 
   defp validate(changeset),
@@ -241,14 +269,14 @@ defmodule ArchiDep.Course.Schemas.Student do
       |> update_change(:name, &trim/1)
       |> update_change(:email, &trim/1)
       |> update_change(:academic_class, &trim_to_nil/1)
-      |> update_change(:suggested_username, &trim/1)
       |> update_change(:username, &trim/1)
       |> update_change(:domain, &trim/1)
       |> validate_required([
         :name,
         :email,
-        :suggested_username,
         :username,
+        :username_confirmed,
+        :domain,
         :active,
         :servers_enabled,
         :class_id
@@ -261,13 +289,6 @@ defmodule ArchiDep.Course.Schemas.Student do
       |> unique_constraint(:email, name: :students_unique_email_index)
       # Academic class
       |> validate_length(:academic_class, max: 30)
-      # Suggested username
-      |> validate_length(:suggested_username, max: 20)
-      |> validate_format(:suggested_username, ~r/\A[a-z][a-z0-9]*\z/i,
-        message:
-          "must contain only letters (without accents), numbers and hyphens, and start with a letter"
-      )
-      |> unique_constraint(:suggested_username, name: :students_suggested_username_unique)
       # Username
       |> validate_length(:username, max: 20)
       |> validate_format(:username, ~r/\A[a-z][a-z0-9]*\z/i,
@@ -293,19 +314,6 @@ defmodule ArchiDep.Course.Schemas.Student do
           where:
             s.id != ^id and s.class_id == ^class_id and
               fragment("LOWER(?)", s.email) == fragment("LOWER(?)", ^email)
-        )
-      end)
-
-  defp unsafe_validate_suggested_username_unique(changeset, id, class_id),
-    do:
-      unsafe_validate_unique_query(changeset, :suggested_username, Repo, fn changeset ->
-        suggested_username = get_field(changeset, :suggested_username)
-
-        from(s in __MODULE__,
-          where:
-            s.id != ^id and s.class_id == ^class_id and
-              fragment("LOWER(?)", s.suggested_username) ==
-                fragment("LOWER(?)", ^suggested_username)
         )
       end)
 

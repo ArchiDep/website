@@ -54,30 +54,6 @@ defmodule ArchiDep.Servers do
           {:ok, ServerGroupMember.t()} | {:error, :not_a_server_group_member}
   defdelegate fetch_authenticated_server_group_member(auth), to: @implementation
 
-  @spec fetch_server_group_member(Authentication.t(), UUID.t()) ::
-          {:ok, ServerGroupMember.t()} | {:error, :server_group_member_not_found}
-  defdelegate fetch_server_group_member(auth, id), to: @implementation
-
-  @spec validate_server_group_member_config(
-          Authentication.t(),
-          UUID.t(),
-          Types.server_group_member_config()
-        ) ::
-          {:ok, Changeset.t()} | {:error, :server_group_member_not_found}
-  defdelegate validate_server_group_member_config(auth, id, data),
-    to: @implementation
-
-  @spec configure_server_group_member(
-          Authentication.t(),
-          UUID.t(),
-          Types.server_group_member_config()
-        ) ::
-          {:ok, ServerGroupMember.t()}
-          | {:error, Changeset.t()}
-          | {:error, :server_group_member_not_found}
-  defdelegate configure_server_group_member(auth, id, data),
-    to: @implementation
-
   # Servers
 
   @spec validate_server(Authentication.t(), Types.create_server_data()) :: Changeset.t()

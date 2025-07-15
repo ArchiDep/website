@@ -6,6 +6,7 @@ defmodule ArchiDep.Course.Schemas.User do
 
   use ArchiDep, :schema
 
+  alias ArchiDep.Authentication
   alias ArchiDep.Course.Schemas.Student
 
   @primary_key {:id, :binary_id, []}
@@ -41,6 +42,18 @@ defmodule ArchiDep.Course.Schemas.User do
       )
       |> Repo.one()
       |> truthy_or(:user_not_found)
+
+  @spec fetch_authenticated(Authentication.t()) :: {:ok, t()} | {:error, :not_a_user}
+  def fetch_authenticated(auth),
+    do:
+      from(u in __MODULE__,
+        left_join: s in assoc(u, :student),
+        left_join: sc in assoc(s, :class),
+        where: u.id == ^auth.principal_id,
+        preload: [student: {s, class: sc}]
+      )
+      |> Repo.one()
+      |> truthy_or(:not_a_user)
 
   @spec refresh!(t(), map()) :: t()
   def refresh!(

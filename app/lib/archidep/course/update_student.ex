@@ -34,7 +34,7 @@ defmodule ArchiDep.Course.UpdateStudent do
            end)
            |> Repo.transaction() do
         {:ok, %{student: student}} ->
-          :ok = PubSub.publish_student(student)
+          :ok = PubSub.publish_student_updated(student)
           {:ok, student}
 
         {:error, :student, changeset, _} ->

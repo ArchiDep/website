@@ -25,12 +25,12 @@
           |> raw()}
         </p>
         <fieldset class="fieldset hide-on-change mt-2 flex justify-center">
-          <label class="fieldset-label sr-only mt-2">{gettext("Suggested username")}</label>
+          <label class="fieldset-label sr-only mt-2">{gettext("Username")}</label>
           <input
             type="text"
             class="input w-full md:w-1/2 text-lg text-center font-mono"
             readonly
-            value={@student.suggested_username}
+            value={@student.username}
           />
         </fieldset>
         <div
@@ -70,7 +70,7 @@
             <span>
               {gettext(
                 "You will use this name as the username of your Unix user account on your virtual server. It will also be part of the subdomain pointing to your server, e.g. {sc}{subdomain}.{domain}{ec}.",
-                subdomain: @student.suggested_username |> html_escape() |> safe_to_string(),
+                subdomain: @student.username |> html_escape() |> safe_to_string(),
                 domain: @student.domain |> html_escape() |> safe_to_string(),
                 sc: "<code class=\"font-bold\">",
                 ec: "</code>"
