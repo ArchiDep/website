@@ -1,4 +1,11 @@
 defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
+  @moduledoc """
+  The state of a server manager for a single server. It contains the server's
+  connection state and various other information about the server. It is also
+  responsible for determining the next actions to be performed on the server
+  depending on its state.
+  """
+
   require Logger
   require Record
   import ArchiDep.Servers.ServerTracking.ServerConnectionState

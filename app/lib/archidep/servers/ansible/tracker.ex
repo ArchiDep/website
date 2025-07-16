@@ -1,4 +1,9 @@
 defmodule ArchiDep.Servers.Ansible.Tracker do
+  @moduledoc """
+  Tracks the execution of Ansible playbooks, handling events during playbook
+  runs, and saving them to the database.
+  """
+
   require Logger
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible.Runner

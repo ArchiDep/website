@@ -1,4 +1,14 @@
 defmodule ArchiDep.Servers.Schemas.Server do
+  @moduledoc """
+  A server tracked by the application. A persistent SSH connection is
+  established to the server to run Ansible playbooks and track its state. If the
+  connection drops, the application will attempt to reconnect to the server.
+
+  The application initially connects to the server with the IP address and
+  username provided by the user who created the server. Once initial setup (an
+  Ansible playbook) is complete, the application disconnects and then reconnects
+  with its own username.
+  """
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers

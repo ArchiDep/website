@@ -1,4 +1,6 @@
 defmodule ArchiDep.Authorization do
+  # TODO: move to helpers
+
   import ArchiDep.Authentication, only: [is_authentication: 1]
   alias ArchiDep.Authentication
   alias ArchiDep.Errors.UnauthorizedError

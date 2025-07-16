@@ -1,7 +1,8 @@
 defmodule ArchiDep.Accounts.Schemas.UserGroup do
   @moduledoc """
-  A user group represents a number of users that can be activated/deactivated
-  together and that may only be active for a given period of time.
+  A user group represents a number of user accounts that can be
+  activated/deactivated together and that may only be active for a given period
+  of time.
   """
 
   use ArchiDep, :schema

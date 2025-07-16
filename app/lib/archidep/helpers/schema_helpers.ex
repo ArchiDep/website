@@ -1,6 +1,6 @@
 defmodule ArchiDep.Helpers.SchemaHelpers do
   @moduledoc """
-  Utilities to manipulate Ecto schemas.
+  Helpers to manipulate `Ecto.Schema`s.
   """
 
   alias Ecto.UUID

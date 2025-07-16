@@ -1,7 +1,7 @@
 defmodule ArchiDep.Config.ConfigValue do
   @moduledoc """
-  This module reads a configuration value from an environment variable or from
-  the application's configuration.
+  A configuration value from an environment variable or from the application's
+  configuration files.
   """
 
   alias ArchiDep.Config.ConfigError

@@ -1,4 +1,11 @@
 defmodule ArchiDep.Servers.Ansible do
+  @moduledoc """
+  Ansible module that provides functions to interact with Ansible playbooks
+  and run them on remote servers.
+
+  See https://docs.ansible.com.
+  """
+
   require Logger
   alias ArchiDep.Servers.Ansible.PlaybooksRegistry
   alias ArchiDep.Servers.Ansible.Runner

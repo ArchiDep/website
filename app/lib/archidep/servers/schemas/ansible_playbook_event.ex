@@ -1,4 +1,10 @@
 defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
+  @moduledoc """
+  An event that occurred during the execution of an Ansible playbook run on a
+  server. This schema captures the details of the event, including its name,
+  action, whether it changed the state of the server, and any associated data.
+  """
+
   use ArchiDep, :schema
 
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun

@@ -1,4 +1,11 @@
 defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
+  @moduledoc """
+  A preregistered user account which grants someone the right to log in to the
+  application. The actual user account is created automatically when the person
+  logs in with the corresponding email, at which point the preregistered user is
+  linked to the user account.
+  """
+
   use ArchiDep, :schema
 
   alias ArchiDep.Accounts.Schemas.UserAccount

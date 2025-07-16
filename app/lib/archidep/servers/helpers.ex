@@ -1,4 +1,8 @@
 defmodule ArchiDep.Servers.Helpers do
+  @moduledoc """
+  Helpers for servers.
+  """
+
   alias ArchiDep.Helpers.ProcessHelpers
   alias Ecto.UUID
 

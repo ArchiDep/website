@@ -1,4 +1,10 @@
 defmodule ArchiDep.Course.Schemas.Student do
+  @moduledoc """
+  A student enrolled in a class, with a user account for accessing the course.
+  Initially, only the student exists until that person logs in with the
+  corresponding email, which automatically creates their user account.
+  """
+
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers

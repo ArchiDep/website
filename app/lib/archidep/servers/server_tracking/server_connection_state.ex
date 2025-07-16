@@ -1,4 +1,9 @@
 defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
+  @moduledoc """
+  The state of a server connection, which can be in various states such as not
+  connected yet, connecting, connected, retrying to connect, or disconnected.
+  """
+
   require Record
 
   Record.defrecord(:not_connected_state, connection_pid: nil)

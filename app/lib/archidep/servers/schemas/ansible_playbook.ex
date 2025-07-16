@@ -1,6 +1,9 @@
 defmodule ArchiDep.Servers.Schemas.AnsiblePlaybook do
   @moduledoc """
   One of the Ansible playbooks bundled with this application.
+
+  Also see `ArchiDep.Servers.Ansible.PlaybooksRegistry` which compiles playbooks
+  into the application.
   """
 
   @type t :: %__MODULE__{

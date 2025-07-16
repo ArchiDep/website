@@ -1,4 +1,10 @@
 defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
+  @moduledoc """
+  A registry of the Ansible playbooks bundled with this application in the
+  "priv/ansible/playbooks" directory. The names and paths of the playbooks are
+  baked into the application at compile time.
+  """
+
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
 
   @playbooks_dir Path.expand("../../../../priv/ansible/playbooks", __DIR__)

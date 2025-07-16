@@ -1,9 +1,9 @@
 defmodule ArchiDep.Helpers.NetHelpers do
-  @type network_port :: 1..65_535
-
   @moduledoc """
-  Network-related utility functions.
+  Network-related helper functions.
   """
+
+  @type network_port :: 1..65_535
 
   defguardp is_ipv4_address_part(value) when is_integer(value) and value >= 0 and value <= 255
   defguardp is_ipv6_address_part(value) when is_integer(value) and value >= 0 and value <= 65_535

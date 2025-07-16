@@ -1,4 +1,9 @@
 defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
+  @moduledoc """
+  Tracks the real-time state of servers in the system. It listens to changes in
+  the server states and notifies interested parties.
+  """
+
   use GenServer
 
   require Logger

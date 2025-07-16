@@ -1,7 +1,7 @@
 defmodule ArchiDep.Course.Schemas.Class do
   @moduledoc """
-  A class is a group of students participating in a specific instance of the
-  course (e.g. the course for the 2024-2025 academic year).
+  A group of students participating in a specific instance of the course (e.g.
+  the course for the 2024-2025 academic year).
   """
 
   use ArchiDep, :schema

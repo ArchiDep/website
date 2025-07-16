@@ -1,4 +1,9 @@
 defmodule ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor do
+  @moduledoc """
+  The dynamic supervisor responsible for starting and managing individual server
+  supervisors.
+  """
+
   use DynamicSupervisor
 
   import ArchiDep.Helpers.ProcessHelpers

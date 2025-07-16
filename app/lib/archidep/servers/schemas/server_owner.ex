@@ -1,6 +1,6 @@
 defmodule ArchiDep.Servers.Schemas.ServerOwner do
   @moduledoc """
-  The owner of a server.
+  The owner who registered a server with the application.
   """
 
   use ArchiDep, :schema

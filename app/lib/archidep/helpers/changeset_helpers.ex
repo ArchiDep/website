@@ -1,6 +1,6 @@
 defmodule ArchiDep.Helpers.ChangesetHelpers do
   @moduledoc """
-  Helper functions to manipulate `Ecto.Changeset`.
+  Helper functions to manipulate `Ecto.Changeset`s.
   """
 
   import Ecto.Changeset

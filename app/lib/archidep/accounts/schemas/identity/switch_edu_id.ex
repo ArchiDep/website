@@ -1,6 +1,10 @@
 defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
   @moduledoc """
-  A Switch edu-ID account.
+  A Switch edu-ID account that has been used to log in to the application. A
+  user account is created automatically the first time a Switch edu-ID account
+  is used to log in. Further logins with the same Switch edu-ID account will
+  update the user account with the latest information from the Switch edu-ID
+  service.
   """
 
   use ArchiDep, :schema

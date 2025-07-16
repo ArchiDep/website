@@ -1,4 +1,9 @@
 defmodule ArchiDep.Course.Schemas.StudentImportList do
+  @moduledoc """
+  A list of students to be imported into a course, including their academic
+  class and the domain (e.g. "archidep1.ch") they will use.
+  """
+
   use ArchiDep, :schema
 
   alias ArchiDep.Course.Schemas.Class
@@ -6,6 +11,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
 
   @type t :: %__MODULE__{
           academic_class: String.t() | nil,
+          domain: String.t(),
           students: list(Types.import_student_data())
         }
 

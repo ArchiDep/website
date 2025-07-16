@@ -1,6 +1,8 @@
 defmodule ArchiDep.Helpers.ContextHelpers do
   @moduledoc """
   Helpers to implement application contexts.
+
+  See https://hexdocs.pm/phoenix/contexts.html.
   """
 
   @doc """

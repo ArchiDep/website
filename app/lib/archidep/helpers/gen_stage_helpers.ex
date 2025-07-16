@@ -1,6 +1,8 @@
 defmodule ArchiDep.Helpers.GenStageHelpers do
   @moduledoc """
   Helper functions for `GenStage` stages.
+
+  See https://hexdocs.pm/gen_stage/GenStage.html.
   """
 
   @doc """

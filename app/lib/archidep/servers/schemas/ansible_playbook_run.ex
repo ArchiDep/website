@@ -1,4 +1,11 @@
 defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
+  @moduledoc """
+  An Ansible playbook run on a server, which may consist of multiple events (see
+  `ArchiDep.Servers.Schemas.AnsiblePlaybookEvent`). This schema represents the
+  state of the playbook run, including its configuration, execution state, and
+  statistics about the run.
+  """
+
   use ArchiDep, :schema
 
   import Ecto.Query, only: [from: 2]

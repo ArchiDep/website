@@ -1,6 +1,6 @@
 defmodule ArchiDep.Events.Store.StoredEvent do
   @moduledoc """
-  A business event that has occurred and has been stored in the database.
+  A business event that has occurred and has been stored into the database.
   """
 
   use Ecto.Schema

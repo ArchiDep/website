@@ -1,4 +1,10 @@
 defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
+  @moduledoc """
+  The real-time state of a server, including its connection status and any
+  current job or problems. Used to communicate the server's current state to the
+  UI.
+  """
+
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.Types

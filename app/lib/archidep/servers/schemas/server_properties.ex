@@ -1,4 +1,11 @@
 defmodule ArchiDep.Servers.Schemas.ServerProperties do
+  @moduledoc """
+  The properties of a server, such as its hardware specifications and operating
+  system details. This schema is used both to store the configured expected
+  properties of a server and the detected actual properties of a server that the
+  application has connected to.
+  """
+
   use ArchiDep, :schema
 
   alias ArchiDep.Servers.Types

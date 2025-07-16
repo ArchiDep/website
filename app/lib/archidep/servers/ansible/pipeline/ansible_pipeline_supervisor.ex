@@ -1,4 +1,9 @@
 defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineSupervisor do
+  @moduledoc """
+  Supervisor for the Ansible pipeline that manages the queue and consumer
+  responsible for processing playbook runs.
+  """
+
   use Supervisor
 
   import ArchiDep.Helpers.ProcessHelpers

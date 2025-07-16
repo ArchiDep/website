@@ -1,4 +1,10 @@
 defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
+  @moduledoc """
+  Ansible pipeline queue that tracks pending playbook runs and manages their
+  execution based on the demand from consumers. It handles the state of playbook
+  runs and ensures that playbooks are run only when the server is online.
+  """
+
   use GenStage
 
   require Logger
@@ -10,6 +16,8 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   alias Ecto.UUID
 
   defmodule State do
+    @moduledoc false
+
     defstruct [:stored_demand, :pending_playbooks]
 
     # FIXME: store unique connection ref and drop playbook run if it has changed

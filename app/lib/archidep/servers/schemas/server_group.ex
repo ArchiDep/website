@@ -1,6 +1,7 @@
 defmodule ArchiDep.Servers.Schemas.ServerGroup do
   @moduledoc """
-  A group of servers that share common properties and configurations.
+  A group of servers that share common properties and can be
+  activated/deactivated together.
   """
 
   use ArchiDep, :schema

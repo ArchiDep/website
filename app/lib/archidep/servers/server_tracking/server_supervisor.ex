@@ -25,7 +25,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerSupervisor do
     set_process_label(__MODULE__, server_id)
 
     children = [
+      # The server manager is responsible for keeping track of the server's
+      # state, performing actions like connecting, running commands, etc.
       {ArchiDep.Servers.ServerTracking.ServerManager, {server_id, pipeline}},
+      # The server connection handles the actual SSH connection to the server.
+      # It may crash at any time and the manager will handle reconnections.
       {ArchiDep.Servers.ServerTracking.ServerConnection, server_id}
     ]
 

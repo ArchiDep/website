@@ -1,4 +1,8 @@
 defmodule ArchiDep.Helpers.DataHelpers do
+  @moduledoc """
+  Helper functions for data validation and manipulation.
+  """
+
   alias Ecto.UUID
 
   def looks_like_an_email?(email) when is_binary(email),

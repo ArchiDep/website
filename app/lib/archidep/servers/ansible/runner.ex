@@ -1,4 +1,9 @@
 defmodule ArchiDep.Servers.Ansible.Runner do
+  @moduledoc """
+  Ansible runner module that provides functions to gather facts and run
+  playbooks on remote servers using the Ansible command line interface.
+  """
+
   require Logger
   import ArchiDep.Helpers.NetHelpers, only: [is_ip_address: 1, is_network_port: 1]
   alias ArchiDep.Servers.Types

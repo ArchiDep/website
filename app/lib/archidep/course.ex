@@ -1,6 +1,6 @@
 defmodule ArchiDep.Course do
   @moduledoc """
-  Course context, which manages classes and students.
+  Course context to manage classes and students and all related configuration.
   """
 
   use ArchiDep, :context

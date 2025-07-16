@@ -1,4 +1,11 @@
 defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
+  @moduledoc """
+  Runner that processes playbook runs from the queue. It starts a task for each
+  playbook run and ensures that the playbook is executed only if the server is
+  online. This module is responsible for managing the execution of playbooks and
+  tracking their state in the database.
+  """
+
   require Logger
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible

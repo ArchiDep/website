@@ -1,7 +1,7 @@
 defmodule ArchiDep.Course.Schemas.User do
   @moduledoc """
-  A user account for someone who can log in to the application. The user may be
-  an administrator or not.
+  A user of the application who can log in to access the course and track
+  servers. A user may be a student enrolled in a class.
   """
 
   use ArchiDep, :schema

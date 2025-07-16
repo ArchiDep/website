@@ -1,4 +1,8 @@
 defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
+  @moduledoc """
+  A member of a server group, authorized to create a server for themselves
+  within that group.
+  """
   use ArchiDep, :schema
 
   alias ArchiDep.Servers.Schemas.ServerGroup

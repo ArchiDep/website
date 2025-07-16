@@ -1,4 +1,11 @@
 defmodule ArchiDep.Servers.ServerTracking.ServerManager do
+  @moduledoc """
+  Manager of a specific server, responsible for handling its state, performing
+  actions like connecting and running commands. The actual connection is
+  abstracted by the sibling `ArchiDep.Servers.ServerTracking.ServerConnection`
+  process.
+  """
+
   use GenServer
 
   require Logger

@@ -1,6 +1,6 @@
 defmodule ArchiDep.Authentication do
   @moduledoc """
-  Authentication context containing the user session and logged user.
+  Represents an authenticated user session in the application.
   """
 
   alias ArchiDep.Types

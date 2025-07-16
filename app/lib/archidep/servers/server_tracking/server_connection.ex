@@ -1,4 +1,12 @@
 defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
+  @moduledoc """
+  SSH connection to a specifiec server, used for tracking state and running
+  commands. This process is linked to the SSH connection process and will crash
+  if the connection is lost. It will then be restarted by its supervisor and
+  instructed to open a new connection by the sibling
+  `ArchiDep.Servers.ServerTracking.ServerManager` process.
+  """
+
   use GenServer
 
   require Logger

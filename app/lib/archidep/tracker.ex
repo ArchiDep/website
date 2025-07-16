@@ -1,4 +1,8 @@
 defmodule ArchiDep.Tracker do
+  @moduledoc """
+  Presence tracking for the application.
+  """
+
   use Phoenix.Tracker
 
   alias Phoenix.PubSub

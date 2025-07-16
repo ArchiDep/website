@@ -1,4 +1,10 @@
 defmodule ArchiDep.Course.Schemas.ExpectedServerProperties do
+  @moduledoc """
+  The properties that a server is expected to have when it is created for a
+  course. This data is used to detect problems with the configuration of a
+  server by a student (e.g. the server is not large enough because it has too
+  little memory, or is too costly because it has too many CPUs).
+  """
   use ArchiDep, :schema
 
   alias ArchiDep.Course.Types

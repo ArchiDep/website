@@ -1,7 +1,5 @@
 defmodule ArchiDep.Events.UseCases.FetchEvents do
-  @moduledoc """
-  Business events use case to fetch the latest events that have occurred.
-  """
+  @moduledoc false
 
   use ArchiDep, :use_case
 

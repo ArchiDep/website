@@ -1,4 +1,5 @@
 defmodule ArchiDep.Accounts.Types do
+  # TODO: remove and replace by ArchiDep.Types
   @type role :: :root | :student
 
   @type switch_edu_id_data :: %{
