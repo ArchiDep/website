@@ -1,3 +1,6 @@
 {
-  "elixirLS.projectDir": "./app"
+  "elixirLS.projectDir": "./app",
+  "elixirLS.dialyzerWarnOpts": [
+    "no_opaque"
+  ],
 }

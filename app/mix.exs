@@ -10,7 +10,13 @@ defmodule ArchiDep.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: project_dependencies(),
-      dialyzer: [plt_add_apps: [:ex_unit, :mix]],
+      dialyzer: [
+        # Remove :no_opaque warnings to avoid issues with Dialyzer in OTP 28.
+        # This should no longer be necessary once Elixir 1.19 is released. (Make
+        # sure to also remove it from ".vscode/settings.json).
+        flags: [:no_opaque],
+        plt_add_apps: [:ex_unit, :mix]
+      ],
       preferred_cli_env: [
         check: :test,
         test: :test,
