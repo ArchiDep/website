@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ReadServers do
+defmodule ArchiDep.Servers.UseCases.ReadServers do
   use ArchiDep, :use_case
 
   alias ArchiDep.Servers.Policy

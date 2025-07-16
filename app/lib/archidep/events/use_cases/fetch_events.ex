@@ -1,4 +1,4 @@
-defmodule ArchiDep.Events.FetchEvents do
+defmodule ArchiDep.Events.UseCases.FetchEvents do
   @moduledoc """
   Business events use case to fetch the latest events that have occurred.
   """

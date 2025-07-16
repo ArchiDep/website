@@ -1,4 +1,4 @@
-defmodule ArchiDep.Accounts.Impersonate do
+defmodule ArchiDep.Accounts.UseCases.Impersonate do
   use ArchiDep, :use_case
 
   alias ArchiDep.Accounts.Policy

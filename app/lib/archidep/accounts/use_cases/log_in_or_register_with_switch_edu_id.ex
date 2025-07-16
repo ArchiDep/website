@@ -1,4 +1,4 @@
-defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduId do
+defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   @moduledoc """
   User account management use case for a user to log in, creating a valid
   authentication object that can be used for authorization in other use cases.

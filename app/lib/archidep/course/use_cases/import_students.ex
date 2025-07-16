@@ -1,4 +1,4 @@
-defmodule ArchiDep.Course.ImportStudents do
+defmodule ArchiDep.Course.UseCases.ImportStudents do
   use ArchiDep, :use_case
 
   import ArchiDep.Events.Store.StoredEvent, only: [to_insert_data: 1]

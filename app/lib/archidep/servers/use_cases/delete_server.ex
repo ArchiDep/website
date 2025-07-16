@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.DeleteServer do
+defmodule ArchiDep.Servers.UseCases.DeleteServer do
   use ArchiDep, :use_case
 
   alias ArchiDep.Servers.Events.ServerDeleted

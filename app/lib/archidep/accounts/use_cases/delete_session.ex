@@ -1,4 +1,4 @@
-defmodule ArchiDep.Accounts.DeleteSession do
+defmodule ArchiDep.Accounts.UseCases.DeleteSession do
   @moduledoc """
   User account management use case for a user to delete one of their sessions
   (typically a session they logged into on another browser). An administrator

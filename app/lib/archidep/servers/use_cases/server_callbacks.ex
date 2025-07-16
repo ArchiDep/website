@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ServerCallbacks do
+defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
   require Logger
   import ArchiDep.Helpers.DataHelpers
   alias ArchiDep.Servers.Schemas.Server

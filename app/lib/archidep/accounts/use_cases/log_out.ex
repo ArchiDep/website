@@ -1,4 +1,4 @@
-defmodule ArchiDep.Accounts.LogOut do
+defmodule ArchiDep.Accounts.UseCases.LogOut do
   @moduledoc """
   User account management use case for a user to log out (i.e. deleting one of
   their sessions).

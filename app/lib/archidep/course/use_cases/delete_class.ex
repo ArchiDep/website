@@ -1,4 +1,4 @@
-defmodule ArchiDep.Course.DeleteClass do
+defmodule ArchiDep.Course.UseCases.DeleteClass do
   use ArchiDep, :use_case
 
   alias ArchiDep.Course.Events.ClassDeleted

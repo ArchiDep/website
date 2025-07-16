@@ -8,7 +8,6 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Tracker
-  alias ArchiDep.Servers.DeleteServer
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
@@ -18,7 +17,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.ServerConnection
   alias ArchiDep.Servers.ServerConnectionState
   alias ArchiDep.Servers.Types
-  alias ArchiDep.Servers.UpdateServer
+  alias ArchiDep.Servers.UseCases.DeleteServer
+  alias ArchiDep.Servers.UseCases.UpdateServer
   alias Ecto.Changeset
   alias Ecto.UUID
   alias Phoenix.Token

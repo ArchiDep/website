@@ -1,4 +1,4 @@
-defmodule ArchiDep.Course.CreateStudent do
+defmodule ArchiDep.Course.UseCases.CreateStudent do
   use ArchiDep, :use_case
 
   alias ArchiDep.Course.Events.StudentCreated

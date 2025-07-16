@@ -1,4 +1,4 @@
-defmodule ArchiDep.Course.UpdateClass do
+defmodule ArchiDep.Course.UseCases.UpdateClass do
   use ArchiDep, :use_case
 
   alias ArchiDep.Course.Events.ClassUpdated

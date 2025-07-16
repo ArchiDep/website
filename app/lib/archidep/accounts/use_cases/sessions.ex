@@ -1,4 +1,4 @@
-defmodule ArchiDep.Accounts.Sessions do
+defmodule ArchiDep.Accounts.UseCases.Sessions do
   @moduledoc """
   User account management use cases to check and read session-related
   information.
