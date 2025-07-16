@@ -3,7 +3,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
-  alias ArchiDep.Servers.ServerManager
+  alias ArchiDep.Servers.ServerTracking.ServerManager
   alias Ecto.UUID
   alias Phoenix.Tracker
 

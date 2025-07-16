@@ -3,7 +3,7 @@ defmodule ArchiDep.Servers.UseCases.ManageServer do
 
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerManager
+  alias ArchiDep.Servers.ServerTracking.ServerManager
 
   @spec retry_connecting(Authentication.t(), UUID.t()) ::
           :ok | {:error, :server_not_found}

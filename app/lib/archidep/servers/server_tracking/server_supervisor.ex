@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ServerSupervisor do
+defmodule ArchiDep.Servers.ServerTracking.ServerSupervisor do
   @moduledoc """
   Supervisor responsible for running everything related to a specific server.
   """
@@ -25,8 +25,8 @@ defmodule ArchiDep.Servers.ServerSupervisor do
     set_process_label(__MODULE__, server_id)
 
     children = [
-      {ArchiDep.Servers.ServerManager, {server_id, pipeline}},
-      {ArchiDep.Servers.ServerConnection, server_id}
+      {ArchiDep.Servers.ServerTracking.ServerManager, {server_id, pipeline}},
+      {ArchiDep.Servers.ServerTracking.ServerConnection, server_id}
     ]
 
     Supervisor.init(children, auto_shutdown: :all_significant, strategy: :rest_for_one)

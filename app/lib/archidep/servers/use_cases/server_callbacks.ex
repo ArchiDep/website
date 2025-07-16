@@ -2,7 +2,7 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
   require Logger
   import ArchiDep.Helpers.DataHelpers
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerManager
+  alias ArchiDep.Servers.ServerTracking.ServerManager
   alias Ecto.UUID
   alias Phoenix.Token
 

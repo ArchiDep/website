@@ -1,9 +1,9 @@
-defmodule ArchiDep.Servers.ServerDynamicSupervisor do
+defmodule ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor do
   use DynamicSupervisor
 
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
-  alias ArchiDep.Servers.ServerSupervisor
+  alias ArchiDep.Servers.ServerTracking.ServerSupervisor
   alias Ecto.UUID
 
   @name {:global, __MODULE__}

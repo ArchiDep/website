@@ -6,8 +6,8 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
-  alias ArchiDep.Servers.ServerManager
-  alias ArchiDep.Servers.ServerOrchestrator
+  alias ArchiDep.Servers.ServerTracking.ServerManager
+  alias ArchiDep.Servers.ServerTracking.ServerOrchestrator
 
   @spec delete_server(Authentication.t(), UUID.t()) ::
           :ok | {:error, :server_busy} | {:error, :server_not_found}

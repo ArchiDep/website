@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ServerConnectionState do
+defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
   require Record
 
   Record.defrecord(:not_connected_state, connection_pid: nil)

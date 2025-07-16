@@ -6,8 +6,8 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
-  alias ArchiDep.Servers.ServerManager
-  alias ArchiDep.Servers.ServerOrchestrator
+  alias ArchiDep.Servers.ServerTracking.ServerManager
+  alias ArchiDep.Servers.ServerTracking.ServerOrchestrator
   alias ArchiDep.Servers.Types
 
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::

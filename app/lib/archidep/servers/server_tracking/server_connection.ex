@@ -1,10 +1,10 @@
-defmodule ArchiDep.Servers.ServerConnection do
+defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   use GenServer
 
   require Logger
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerManager
+  alias ArchiDep.Servers.ServerTracking.ServerManager
   alias Ecto.UUID
 
   @type connect_options :: [connect_option()]

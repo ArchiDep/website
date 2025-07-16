@@ -1,7 +1,7 @@
 defmodule ArchiDepWeb.Servers.ServerComponents do
   use ArchiDepWeb, :component
 
-  import ArchiDep.Servers.ServerConnectionState
+  import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDepWeb.Helpers.AuthHelpers
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server

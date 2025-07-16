@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ServerOrchestrator do
+defmodule ArchiDep.Servers.ServerTracking.ServerOrchestrator do
   @moduledoc """
   GenServer responsible for tracking which servers should be active and tracked,
   and running their manager.
@@ -10,7 +10,7 @@ defmodule ArchiDep.Servers.ServerOrchestrator do
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerDynamicSupervisor
+  alias ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor
 
   @name {:global, __MODULE__}
 

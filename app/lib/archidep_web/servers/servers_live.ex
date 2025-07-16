@@ -7,7 +7,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
-  alias ArchiDep.Servers.ServerTracker
+  alias ArchiDep.Servers.ServerTracking.ServerTracker
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
   @impl true

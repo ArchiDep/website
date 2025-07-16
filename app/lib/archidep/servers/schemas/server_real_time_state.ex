@@ -1,6 +1,6 @@
 defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
-  import ArchiDep.Servers.ServerConnectionState
-  alias ArchiDep.Servers.ServerConnectionState
+  import ArchiDep.Servers.ServerTracking.ServerConnectionState
+  alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.Types
 
   @type t :: %__MODULE__{

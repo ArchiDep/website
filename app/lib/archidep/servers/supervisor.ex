@@ -13,8 +13,8 @@ defmodule ArchiDep.Servers.Supervisor do
   def init(nil) do
     children = [
       ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineSupervisor,
-      ArchiDep.Servers.ServerDynamicSupervisor,
-      ArchiDep.Servers.ServerOrchestrator
+      ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor,
+      ArchiDep.Servers.ServerTracking.ServerOrchestrator
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ServerManager do
+defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   use GenServer
 
   require Logger
@@ -12,8 +12,8 @@ defmodule ArchiDep.Servers.ServerManager do
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerConnection
-  alias ArchiDep.Servers.ServerManagerState
+  alias ArchiDep.Servers.ServerTracking.ServerConnection
+  alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Servers.Types
   alias Ecto.Changeset
   alias Ecto.UUID

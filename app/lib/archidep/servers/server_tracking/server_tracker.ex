@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ServerTracker do
+defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   use GenServer
 
   require Logger

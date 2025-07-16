@@ -1,7 +1,7 @@
-defmodule ArchiDep.Servers.ServerManagerState do
+defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   require Logger
   require Record
-  import ArchiDep.Servers.ServerConnectionState
+  import ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Authentication
   alias ArchiDep.Helpers.NetHelpers
@@ -14,8 +14,8 @@ defmodule ArchiDep.Servers.ServerManagerState do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
-  alias ArchiDep.Servers.ServerConnection
-  alias ArchiDep.Servers.ServerConnectionState
+  alias ArchiDep.Servers.ServerTracking.ServerConnection
+  alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UseCases.DeleteServer
   alias ArchiDep.Servers.UseCases.UpdateServer
