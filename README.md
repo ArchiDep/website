@@ -44,6 +44,12 @@ cp config/local.sample.exs config/local.exs
 
 # Perform initial setup (create the database, run migrations, etc)
 mix setup
+
+# Generate an SSH key (with no password) for testing
+cd ..
+mkdir -p tmp/jde
+cd tmp/jde
+ssh-keygen -t ed25519 -C archidep
 ```
 
 # Run in development
@@ -75,6 +81,23 @@ These ports are used by default:
 - 42000 (app, main entrypoint)
 - 42001 (Jekyll)
 - 42002 (Jekyll live reload)
+
+## Simulate a student VM with a Docker container
+
+From the root of the repository:
+
+```bash
+# Add the test SSH key to your SSH agent
+cat tmp/jde/id_ed25519 | ssh-add -
+
+# Build an SSH server image
+cd app/test/docker/ssh-server
+docker build -t archidep/ssh-server --build-arg JDE_UID="$(id -u)" .
+
+# Run a container with an SSH server and expose it on local port 2222
+cd ../../../
+docker run --rm -it --init -p 2222:22 -v "$PWD/tmp/jde/id_ed25519.pub:/home/jde/.ssh/authorized_keys:ro" archidep/ssh-server
+```
 
 [asdf]: https://asdf-vm.com
 [elixir]: https://elixir-lang.org
