@@ -101,6 +101,10 @@ jobs:
         run: mix coveralls.html --raise
         working-directory: app
 
+      - name: Perform static code analysis
+        run: mix dialyzer
+        working-directory: app
+
       - name: Check code formatting
         run: mix format --check-formatted
         working-directory: app
