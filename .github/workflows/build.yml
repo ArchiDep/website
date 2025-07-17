@@ -15,8 +15,29 @@ jobs:
     runs-on: ubuntu-24.04
     name: Build app
     env:
+      ARCHIDEP_REPO_URL: ecto://archidep:archidep@127.0.0.1:5432/archidep
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID: id
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_SECRET: secret
+      ARCHIDEP_WEB_ENDPOINT_LIVE_VIEW_SIGNING_SALT: U1IE4sj1tN+RjK239nUCtj1kCPZwFW/nJSNlrx6DwSV9jut1q8yPPfxaZPc7aNnV
+      ARCHIDEP_WEB_ENDPOINT_SECRET_KEY_BASE: YdxkmjX6DMzwlOXvzoDpz+F3rPskbgjghvFn21sBeXlZt8sWRWm7nIRq7Mhg+tmF
+      ARCHIDEP_WEB_ENDPOINT_SESSION_SIGNING_SALT: gpWUEtqY2/8uMQq33419KZQmu1iAnZgKIaMEIQl9TIgmyknRYhFyXwEiuc2tJucb
       ELIXIR_VERSION: 1.18.4
       ERLANG_VERSION: 28.0.1
+      MIX_ENV: test
+    services:
+      postgres:
+        image: postgres:17.5-alpine
+        env:
+          POSTGRES_DB: archidep
+          POSTGRES_PASSWORD: archidep
+          POSTGRES_USER: archidep
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - '5432:5432'
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -47,6 +68,10 @@ jobs:
 
       - name: Download user agent database
         run: mix ua_inspector.download --force
+        working-directory: app
+
+      - name: Migrate the database
+        run: mix ecto.migrate
         working-directory: app
 
       - name: Download course, assets & theme
