@@ -14,6 +14,7 @@ jobs:
   build-app:
     runs-on: ubuntu-24.04
     name: Build app
+    needs: [build-assets, build-course, build-theme]
     env:
       ARCHIDEP_REPO_URL: ecto://archidep:archidep@127.0.0.1:5432/archidep
       ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID: id
@@ -51,6 +52,24 @@ jobs:
           key: ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-
+
+      - name: Download course
+        uses: actions/download-artifact@v4
+        with:
+          name: course
+          path: app/priv/static
+
+      - name: Download course assets
+        uses: actions/download-artifact@v4
+        with:
+          name: course_assets
+          path: app/priv/static/assets/course
+
+      - name: Download theme
+        uses: actions/download-artifact@v4
+        with:
+          name: theme
+          path: app/priv/static/assets/theme
 
       - name: Install Erlang/OTP & Elixir
         uses: erlef/setup-beam@v1
