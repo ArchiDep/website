@@ -101,5 +101,5 @@ jobs:
       - name: Upload theme
         uses: actions/upload-artifact@v4
         with:
-          name: course
+          name: theme
           path: app/priv/static/assets/theme
