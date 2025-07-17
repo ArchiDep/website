@@ -1,6 +1,7 @@
 import Config
 
 config :archidep,
+  root_users: [switch_edu_id: ["root@archidep.ch"]],
   servers: [
     connection_timeout: 5_000,
     track_on_boot: false
