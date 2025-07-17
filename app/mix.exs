@@ -85,7 +85,8 @@ defmodule ArchiDep.MixProject do
       {:excoveralls, "~> 0.18.1", only: :test},
       {:floki, ">= 0.30.0", only: :test},
       {:hammox, git: "https://github.com/AlphaHydrae/hammox.git", branch: "records", only: :test},
-      {:mix_test_watch, "~> 1.0", only: :test, runtime: false}
+      {:mix_test_watch, "~> 1.0", only: :test, runtime: false},
+      {:sobelow, "~> 0.8", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -107,6 +108,9 @@ defmodule ArchiDep.MixProject do
         "coveralls.html --raise",
         "format --check-formatted",
         "dialyzer"
+      ],
+      "check.security": [
+        "sobelow --exit --ignore-files config/local.exs,config/local.sample.exs --skip"
       ],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
