@@ -107,7 +107,9 @@ defmodule ArchiDep.MixProject do
       check: [
         "coveralls.html --raise",
         "format --check-formatted",
-        "dialyzer"
+        "dialyzer",
+        "deps.unlock --check-unused",
+        "hex.audit"
       ],
       "check.security": [
         "sobelow --exit --ignore-files config/local.exs,config/local.sample.exs --skip"
