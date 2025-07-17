@@ -11,6 +11,46 @@ on:
   workflow_dispatch:
 
 jobs:
+  build-app:
+    runs-on: ubuntu-24.04
+    name: Build app
+    env:
+      ELIXIR_VERSION: 1.18.4
+      ERLANG_VERSION: 28.0.1
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Cache app build
+        uses: actions/cache@v3
+        with:
+          path: |
+            app/deps
+            app/_build
+          key: ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-
+
+      - name: Install Erlang/OTP & Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.ERLANG_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Install dependencies
+        run: mix deps.get
+        working-directory: app
+
+      - name: Compile the app
+        run: mix compile
+
+      - name: Download course, assets & theme
+        uses: actions/download-artifact@v4
+
+      - name: Ensure there are no uncommitted changes
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"
   build-assets:
     runs-on: ubuntu-24.04
     name: Build course assets
