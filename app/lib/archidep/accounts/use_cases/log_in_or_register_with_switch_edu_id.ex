@@ -3,6 +3,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   User account management use case for a user to log in, creating a valid
   authentication object that can be used for authorization in other use cases.
   """
+
   use ArchiDep, :use_case
 
   import Ecto.Changeset

@@ -1,4 +1,6 @@
 defmodule ArchiDep.Course.UseCases.ImportStudents do
+  @moduledoc false
+
   use ArchiDep, :use_case
 
   import ArchiDep.Events.Store.StoredEvent, only: [to_insert_data: 1]
@@ -86,15 +88,17 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
                                                                        students_imported_event:
                                                                          cause
                                                                      } ->
-          Enum.map(new_students, fn student ->
-            StudentCreated.new(student)
-            |> new_event(auth, occurred_at: now, caused_by: cause)
-            |> add_to_stream(student)
-            |> initiated_by(auth)
-            |> Changeset.apply_action!(:insert)
-            |> to_insert_data()
-          end)
+          Enum.map(new_students, &student_created(auth, &1, cause, now))
         end)
     end)
   end
+
+  defp student_created(auth, student, cause, now),
+    do:
+      StudentCreated.new(student)
+      |> new_event(auth, occurred_at: now, caused_by: cause)
+      |> add_to_stream(student)
+      |> initiated_by(auth)
+      |> Changeset.apply_action!(:insert)
+      |> to_insert_data()
 end

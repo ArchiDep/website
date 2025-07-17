@@ -1,4 +1,6 @@
 defmodule ArchiDepWeb.Components.CourseComponents do
+  @moduledoc false
+
   use ArchiDepWeb, :component
 
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
@@ -96,8 +98,7 @@ defmodule ArchiDepWeb.Components.CourseComponents do
       {gettext("Swap"), properties.swap}
     ]
     |> Enum.filter(fn {_, value} -> value != nil end)
-    |> Enum.map(fn {label, value} -> "#{value} MB #{label}" end)
-    |> Enum.join(", ")
+    |> Enum.map_join(", ", fn {label, value} -> "#{value} MB #{label}" end)
   end
 
   defp expected_os(properties) do

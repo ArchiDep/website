@@ -79,6 +79,7 @@ defmodule ArchiDep.MixProject do
       {:ueberauth, "~> 0.10.8"},
       {:ueberauth_oidcc, "~> 0.4.1"},
       # Development & test dependencies
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:excoveralls, "~> 0.18.1", only: :test},
       {:floki, ">= 0.30.0", only: :test},

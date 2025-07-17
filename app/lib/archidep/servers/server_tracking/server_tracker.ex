@@ -105,9 +105,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
         {from, server_states} = state
       )
       when action in [:join, :update] do
-    if !Map.has_key?(server_states, server_id) do
-      noreply(state)
-    else
+    if Map.has_key?(server_states, server_id) do
       old_server_state = Map.get(server_states, server_id)
 
       if more_recent_server_state?(old_server_state, server_state) do
@@ -118,6 +116,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
       end
       |> pair(from)
       |> noreply()
+    else
+      noreply(state)
     end
   end
 
