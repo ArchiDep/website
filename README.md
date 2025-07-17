@@ -1,5 +1,7 @@
 # Architecture & Deployment Course Website
 
+[![build](https://github.com/ArchiDep/website/actions/workflows/build.yml/badge.svg)](https://github.com/ArchiDep/website/actions/workflows/build.yml)
+
 This repository contains the source code for the Media Engineering Architecture
 & Deployment course website, composed of:
 
