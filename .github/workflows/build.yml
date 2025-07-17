@@ -43,6 +43,7 @@ jobs:
 
       - name: Compile the app
         run: mix compile
+        working-directory: app
 
       - name: Download course, assets & theme
         uses: actions/download-artifact@v4
