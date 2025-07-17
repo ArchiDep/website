@@ -74,13 +74,15 @@ jobs:
         run: mix ecto.migrate
         working-directory: app
 
-      - name: Download course, assets & theme
-        uses: actions/download-artifact@v4
+      - name: Run automated tests & measure code coverage
+        run: mix coveralls.html --raise
+        working-directory: app
 
       - name: Ensure there are no uncommitted changes
         run: |
           git status --porcelain
           test -z "$(git status --porcelain)"
+
   build-assets:
     runs-on: ubuntu-24.04
     name: Build course assets

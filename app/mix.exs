@@ -19,9 +19,12 @@ defmodule ArchiDep.MixProject do
       ],
       preferred_cli_env: [
         check: :test,
+        coveralls: :test,
+        "coveralls.html": :test,
         test: :test,
         "test.watch": :test
-      ]
+      ],
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -79,6 +82,7 @@ defmodule ArchiDep.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       # Test
+      {:excoveralls, "~> 0.18.1", only: :test},
       {:floki, ">= 0.30.0", only: :test},
       {:hammox, git: "https://github.com/AlphaHydrae/hammox.git", branch: "records", only: :test},
       {:mix_test_watch, "~> 1.0", only: :test, runtime: false}
@@ -100,7 +104,7 @@ defmodule ArchiDep.MixProject do
         "phx.digest"
       ],
       check: [
-        "test",
+        "coveralls.html --raise",
         "format --check-formatted",
         "dialyzer"
       ],
