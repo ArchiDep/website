@@ -4,6 +4,7 @@
   "description": "Media engineering architecture and deployment course",
   "private": true,
   "scripts": {
+    "build": "tailwindcss -i ./src/theme.css -o ../app/priv/static/assets/theme/theme.css",
     "start": "tailwindcss -i ./src/theme.css -o ../app/priv/static/assets/theme/theme.css --watch"
   },
   "dependencies": {
