@@ -80,6 +80,7 @@ defmodule ArchiDep.MixProject do
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       # Test
       {:floki, ">= 0.30.0", only: :test},
+      {:hammox, git: "https://github.com/AlphaHydrae/hammox.git", branch: "records", only: :test},
       {:mix_test_watch, "~> 1.0", only: :test, runtime: false}
     ]
   end

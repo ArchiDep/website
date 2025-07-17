@@ -13,6 +13,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerOrchestrator do
   alias ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor
 
   @name {:global, __MODULE__}
+  @track_on_boot Application.compile_env!(:archidep, [:servers, :track_on_boot])
 
   @spec start_link(Pipeline.t()) :: GenServer.on_start()
   def start_link(pipeline),
@@ -40,8 +41,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerOrchestrator do
 
     :ok = PubSub.subscribe_server_created()
 
-    for server <- Server.list_active_servers(DateTime.utc_now()) do
-      {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server.id, pipeline)
+    if @track_on_boot do
+      for server <- Server.list_active_servers(DateTime.utc_now()) do
+        {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server.id, pipeline)
+      end
     end
 
     {:noreply, pipeline}

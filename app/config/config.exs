@@ -13,7 +13,8 @@ config :archidep,
   generators: [timestamp_type: :utc_datetime, binary_id: true],
   root_users: [],
   servers: [
-    connection_timeout: 30_000
+    connection_timeout: 30_000,
+    track_on_boot: true
   ]
 
 # Configure contexts.

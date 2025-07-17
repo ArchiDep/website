@@ -1,8 +1,10 @@
 defmodule ArchiDepWeb.ErrorHTMLTest do
   use ArchiDepWeb.ConnCase, async: true
 
-  # Bring render_to_string/4 for testing custom views
+  import Hammox
   import Phoenix.Template
+
+  setup :verify_on_exit!
 
   test "renders 404.html" do
     assert render_to_string(ArchiDepWeb.ErrorHTML, "404", "html", []) == "Not Found"

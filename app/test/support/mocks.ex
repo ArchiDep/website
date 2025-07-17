@@ -1,0 +1,27 @@
+Hammox.defmock(ArchiDep.Accounts.ContextMock,
+  for: ArchiDep.Accounts.Behaviour,
+  moduledoc: """
+  Mock of the accounts context.
+  """
+)
+
+Hammox.defmock(ArchiDep.Course.ContextMock,
+  for: ArchiDep.Course.Behaviour,
+  moduledoc: """
+  Mock of the course context.
+  """
+)
+
+Hammox.defmock(ArchiDep.Events.ContextMock,
+  for: ArchiDep.Events.Behaviour,
+  moduledoc: """
+  Mock of the events context.
+  """
+)
+
+Hammox.defmock(ArchiDep.Servers.ContextMock,
+  for: ArchiDep.Servers.Behaviour,
+  moduledoc: """
+  Mock of the servers context.
+  """
+)

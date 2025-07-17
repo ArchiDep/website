@@ -1,5 +1,11 @@
 import Config
 
+config :archidep,
+  servers: [
+    connection_timeout: 5_000,
+    track_on_boot: false
+  ]
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
@@ -9,14 +15,19 @@ config :archidep, ArchiDep.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
-# We don't run a server during test. If one is required,
-# you can enable the server option below.
+# Do not run a server when testing.
 config :archidep, ArchiDepWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 42003],
   server: false
 
-# In test we don't send emails
+# Do not send emails when testing.
 config :archidep, ArchiDep.Mailer, adapter: Swoosh.Adapters.Test
+
+# Mock application contexts.
+config :archidep, ArchiDep.Accounts, ArchiDep.Accounts.ContextMock
+config :archidep, ArchiDep.Course, ArchiDep.Course.ContextMock
+config :archidep, ArchiDep.Events, ArchiDep.Events.ContextMock
+config :archidep, ArchiDep.Servers, ArchiDep.Servers.ContextMock
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
