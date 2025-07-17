@@ -78,14 +78,13 @@ defmodule ArchiDep.MixProject do
        git: "https://github.com/elixir-inspector/ua_inspector.git", branch: "master"},
       {:ueberauth, "~> 0.10.8"},
       {:ueberauth_oidcc, "~> 0.4.1"},
-      # Development
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      # Development & test dependencies
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      # Test
       {:excoveralls, "~> 0.18.1", only: :test},
       {:floki, ">= 0.30.0", only: :test},
       {:hammox, git: "https://github.com/AlphaHydrae/hammox.git", branch: "records", only: :test},
       {:mix_test_watch, "~> 1.0", only: :test, runtime: false},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:sobelow, "~> 0.8", only: [:dev, :test], runtime: false}
     ]
   end
