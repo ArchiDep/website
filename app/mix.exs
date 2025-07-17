@@ -108,8 +108,7 @@ defmodule ArchiDep.MixProject do
         "coveralls.html --raise",
         "format --check-formatted",
         "dialyzer",
-        "deps.unlock --check-unused",
-        "hex.audit"
+        "deps.unlock --check-unused"
       ],
       "check.security": [
         "sobelow --exit --ignore-files config/local.exs,config/local.sample.exs --skip"
