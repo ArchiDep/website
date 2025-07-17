@@ -97,6 +97,10 @@ jobs:
         run: mix coveralls.html --raise
         working-directory: app
 
+      - name: Check code formatting
+        run: mix format --check-formatted
+        working-directory: app
+
       - name: Ensure there are no uncommitted changes
         run: |
           git status --porcelain
