@@ -1,6 +1,7 @@
 # Architecture & Deployment Course Website
 
 [![build](https://github.com/ArchiDep/website/actions/workflows/build.yml/badge.svg)](https://github.com/ArchiDep/website/actions/workflows/build.yml)
+[![MIT License](https://img.shields.io/static/v1?label=license&message=MIT&color=informational)](https://opensource.org/licenses/MIT)
 
 This repository contains the source code for the Media Engineering Architecture
 & Deployment course website, composed of:
