@@ -1,4 +1,5 @@
 # https://git-scm.com/docs/gitignore
+/.bundle
 /.jekyll-cache
 /.jekyll-metadata
 /node_modules
