@@ -4,11 +4,14 @@
     <p class="mt-4">
       {gettext("Are you sure you want to permanently delete this student?")}
     </p>
-    <p
-      :if={@student.user != nil}
-      class="mt-2 text-warning"
-    >
-      {gettext("This student is linked to {ss}user account {account}{se} which will lose its access.", account: @student.user.username |> html_escape() |> safe_to_string(), ss: "<strong>", se: "</strong>") |> raw()}
+    <p :if={@student.user != nil} class="mt-2 text-warning">
+      {gettext(
+        "This student is linked to {ss}user account {account}{se} which will lose its access.",
+        account: @student.user.username |> html_escape() |> safe_to_string(),
+        ss: "<strong>",
+        se: "</strong>"
+      )
+      |> raw()}
     </p>
     <div class="mt-4 flex justify-end gap-x-2">
       <button type="button" class="btn btn-secondary" phx-click={close(@student)}>
