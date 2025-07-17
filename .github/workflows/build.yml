@@ -27,6 +27,7 @@ jobs:
 
       - name: Build the course
         run: bundle exec jekyll build
+        working-directory: course
 
       - name: Ensure there are no uncommitted changes
         run: |
