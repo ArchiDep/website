@@ -159,8 +159,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def online?(%__MODULE__{connection_state: connected_state()}), do: true
   def online?(_state), do: false
 
-  # FIXME: try connecting after a while if the connection idle message is not received
-  # FIXME: do not attempt immediate reconnection if the connection crashed, wait a few seconds
+  # TODO: try connecting after a while if the connection idle message is not received
+  # TODO: do not attempt immediate reconnection if the connection crashed, wait a few seconds
   @spec connection_idle(t(), pid()) :: t()
 
   def connection_idle(
@@ -483,99 +483,116 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          connection_task_ref,
          result
        ) do
-    server = state.server
-
     new_state =
       case result do
         :ok ->
-          Logger.info(
-            "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
-          )
-
-          %__MODULE__{
-            state
-            | connection_state:
-                connected_state(
-                  connection_ref: connection_ref,
-                  connection_pid: connection_pid,
-                  time: DateTime.utc_now()
-                ),
-              actions: [
-                check_sudo_access(),
-                update_tracking()
-              ]
-          }
+          handle_successful_connection(state, connection_ref, connection_pid)
 
         {:error, :authentication_failed} ->
-          Logger.warning(
-            "Server manager could not connect to server #{server.id} as #{state.username} because authentication failed"
-          )
-
-          %__MODULE__{
-            state
-            | connection_state:
-                connection_failed_state(
-                  connection_pid: connection_pid,
-                  reason: :authentication_failed
-                ),
-              actions: [update_tracking()],
-              problems: [
-                {:server_authentication_failed,
-                 if(state.username == state.server.app_username,
-                   do: :app_username,
-                   else: :username
-                 ), state.username}
-              ]
-          }
+          handle_connection_authentication_failed(state, connection_pid)
 
         {:error, reason} ->
-          Logger.info(
-            "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
-          )
-
-          case state.connection_state do
-            reconnecting_state() ->
-              %__MODULE__{
-                state
-                | connection_state:
-                    connection_failed_state(
-                      connection_pid: connection_pid,
-                      reason: reason
-                    ),
-                  actions: [update_tracking()],
-                  problems: [{:server_reconnection_failed, reason}]
-              }
-
-            connecting_state() ->
-              retry(
-                %{
-                  state
-                  | problems:
-                      Enum.reject(
-                        state.problems,
-                        &match?(
-                          {:server_connection_timed_out, _host, _port, _user_type, _username},
-                          &1
-                        )
-                      ) ++
-                        if(reason == :timeout and state.username == state.server.username,
-                          do: [
-                            {:server_connection_timed_out, state.server.ip_address.address,
-                             state.server.ssh_port || 22,
-                             if(state.username == state.server.app_username,
-                               do: :app_username,
-                               else: :username
-                             ), state.username}
-                          ],
-                          else: []
-                        )
-                },
-                reason
-              )
-          end
+          handle_connection_failed(state, connection_pid, reason)
       end
 
     drop_task(new_state, :connect, connection_task_ref)
+  end
+
+  defp handle_successful_connection(
+         %__MODULE__{server: server} = state,
+         connection_ref,
+         connection_pid
+       ) do
+    Logger.info(
+      "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
+    )
+
+    %__MODULE__{
+      state
+      | connection_state:
+          connected_state(
+            connection_ref: connection_ref,
+            connection_pid: connection_pid,
+            time: DateTime.utc_now()
+          ),
+        actions: [
+          check_sudo_access(),
+          update_tracking()
+        ]
+    }
+  end
+
+  defp handle_connection_authentication_failed(
+         %__MODULE__{server: server} = state,
+         connection_pid
+       ) do
+    Logger.warning(
+      "Server manager could not connect to server #{server.id} as #{state.username} because authentication failed"
+    )
+
+    %__MODULE__{
+      state
+      | connection_state:
+          connection_failed_state(
+            connection_pid: connection_pid,
+            reason: :authentication_failed
+          ),
+        actions: [update_tracking()],
+        problems: [
+          {:server_authentication_failed,
+           if(state.username == state.server.app_username,
+             do: :app_username,
+             else: :username
+           ), state.username}
+        ]
+    }
+  end
+
+  defp handle_connection_failed(%__MODULE__{server: server} = state, connection_pid, reason) do
+    Logger.info(
+      "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
+    )
+
+    case state.connection_state do
+      reconnecting_state() ->
+        %__MODULE__{
+          state
+          | connection_state:
+              connection_failed_state(
+                connection_pid: connection_pid,
+                reason: reason
+              ),
+            actions: [update_tracking()],
+            problems: [{:server_reconnection_failed, reason}]
+        }
+
+      connecting_state() ->
+        retry(
+          %{
+            state
+            | problems:
+                Enum.reject(
+                  state.problems,
+                  &match?(
+                    {:server_connection_timed_out, _host, _port, _user_type, _username},
+                    &1
+                  )
+                ) ++
+                  if(reason == :timeout and state.username == state.server.username,
+                    do: [
+                      {:server_connection_timed_out, state.server.ip_address.address,
+                       state.server.ssh_port || 22,
+                       if(state.username == state.server.app_username,
+                         do: :app_username,
+                         else: :username
+                       ), state.username}
+                    ],
+                    else: []
+                  )
+          },
+          reason
+        )
+    end
   end
 
   defp retry(
@@ -1026,46 +1043,56 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           state
       end
     else
-      case connection_state do
-        connected_state(connection_pid: connection_pid) ->
-          ServerConnection.disconnect(server.id)
-
-          %__MODULE__{
-            state
-            | connection_state: not_connected_state(connection_pid: connection_pid)
-          }
-
-        connecting_state() ->
-          state
-
-        reconnecting_state() ->
-          state
-
-        retry_connecting_state(connection_pid: connection_pid) ->
-          %__MODULE__{
-            state
-            | connection_state: not_connected_state(connection_pid: connection_pid),
-              actions:
-                state.actions ++
-                  if(state.retry_timer,
-                    do: [{:cancel_timer, state.retry_timer}],
-                    else: []
-                  )
-          }
-
-        disconnected_state() ->
-          %__MODULE__{state | connection_state: not_connected_state()}
-
-        connection_failed_state(connection_pid: connection_pid) ->
-          %__MODULE__{
-            state
-            | connection_state: not_connected_state(connection_pid: connection_pid)
-          }
-
-        not_connected_state() ->
-          state
-      end
+      deactivate(state)
     end
+  end
+
+  defp deactivate(
+         %__MODULE__{
+           connection_state: connected_state(connection_pid: connection_pid),
+           server: server
+         } = state
+       ) do
+    ServerConnection.disconnect(server.id)
+
+    %__MODULE__{
+      state
+      | connection_state: not_connected_state(connection_pid: connection_pid)
+    }
+  end
+
+  defp deactivate(
+         %__MODULE__{connection_state: retry_connecting_state(connection_pid: connection_pid)} =
+           state
+       ) do
+    %__MODULE__{
+      state
+      | connection_state: not_connected_state(connection_pid: connection_pid),
+        actions:
+          state.actions ++
+            if(state.retry_timer,
+              do: [{:cancel_timer, state.retry_timer}],
+              else: []
+            )
+    }
+  end
+
+  defp deactivate(%__MODULE__{connection_state: disconnected_state()} = state) do
+    %__MODULE__{state | connection_state: not_connected_state()}
+  end
+
+  defp deactivate(
+         %__MODULE__{connection_state: connection_failed_state(connection_pid: connection_pid)} =
+           state
+       ) do
+    %__MODULE__{
+      state
+      | connection_state: not_connected_state(connection_pid: connection_pid)
+    }
+  end
+
+  defp deactivate(%__MODULE__{} = state) do
+    state
   end
 
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do

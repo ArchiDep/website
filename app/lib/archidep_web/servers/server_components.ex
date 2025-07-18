@@ -1,4 +1,6 @@
 defmodule ArchiDepWeb.Servers.ServerComponents do
+  @moduledoc false
+
   use ArchiDepWeb, :component
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
