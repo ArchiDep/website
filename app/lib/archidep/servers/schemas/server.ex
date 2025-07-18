@@ -13,6 +13,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
+  import ArchiDep.Servers.Schemas.ServerOwner, only: [where_server_owner_active: 1]
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
@@ -86,32 +87,32 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def list_active_servers(now) do
     day = DateTime.to_date(now)
 
+    where =
+      dynamic(
+        [s, owner_group_member: ogm, server_group: sg],
+        s.active and ogm.id == sg.id and ^where_server_owner_active(day)
+      )
+
     Repo.all(
       from(s in __MODULE__,
         distinct: true,
         join: o in assoc(s, :owner),
-        as: :server_owner,
+        as: :owner,
         left_join: ogm in assoc(o, :group_member),
-        as: :server_group_member,
-        left_join: ogmg in assoc(ogm, :group),
+        as: :owner_group_member,
+        left_join: og in assoc(ogm, :group),
+        as: :owner_group,
+        join: sg in assoc(s, :group),
         as: :server_group,
-        join: g in assoc(s, :group),
-        left_join: gesp in assoc(g, :expected_server_properties),
+        left_join: sgesp in assoc(sg, :expected_server_properties),
         join: ep in assoc(s, :expected_properties),
         left_join: lkp in assoc(s, :last_known_properties),
-        # TODO: put query fragment determining whether a user is active in the user account schema
-        where:
-          s.active and o.active and
-            ((:root in o.roles and is_nil(ogm)) or
-               (:student in o.roles and not is_nil(ogm) and ogm.active and ogm.group_id == g.id and
-                  g.active and
-                  (is_nil(g.start_date) or g.start_date <= ^day) and
-                  (is_nil(g.end_date) or g.end_date >= ^day))),
+        where: ^where,
         preload: [
-          group: {g, expected_server_properties: gesp},
+          group: {sg, expected_server_properties: sgesp},
           expected_properties: ep,
           last_known_properties: lkp,
-          owner: {o, group_member: {ogm, group: ogmg}}
+          owner: {o, group_member: {ogm, group: og}}
         ]
       )
     )

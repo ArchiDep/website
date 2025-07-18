@@ -5,7 +5,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
 
   use ArchiDep, :schema
 
-  import ArchiDep.Servers.Schemas.ServerGroup, only: [where_server_group_active: 1]
+  import ArchiDep.Servers.Schemas.ServerGroup, only: [where_server_group_active: 2]
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Errors.ServerOwnerNotFoundError
   alias ArchiDep.Servers.Schemas.ServerGroupMember
@@ -60,11 +60,11 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
   def where_server_owner_active(day),
     do:
       dynamic(
-        [server_owner: o, owner_group_member: ogm, server_group: g],
+        [owner: o, owner_group_member: gm, owner_group: g],
         o.active and
-          ((:root in o.roles and is_nil(ogm)) or
-             (:student in o.roles and not is_nil(ogm) and ogm.active and ogm.group_id == g.id and
-                ^where_server_group_active(day)))
+          ((:root in o.roles and is_nil(gm)) or
+             (:student in o.roles and not is_nil(gm) and gm.active and
+                ^where_server_group_active(:owner_group, day)))
       )
 
   @spec fetch_authenticated(Authentication.t()) :: t()

@@ -49,11 +49,11 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
 
-  @spec where_server_group_active(Date.t()) :: Queryable.t()
-  def where_server_group_active(day),
+  @spec where_server_group_active(atom(), Date.t()) :: Queryable.t()
+  def where_server_group_active(binding, day),
     do:
       dynamic(
-        [g],
+        [{^binding, g}],
         g.active and
           (is_nil(g.start_date) or g.start_date <= ^day) and
           (is_nil(g.end_date) or g.end_date >= ^day)
