@@ -32,4 +32,14 @@ defmodule ArchiDep.Accounts.Schemas.UserGroup do
       active and
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
+
+  @spec where_user_group_active(DateTime.t()) :: Queryable.t()
+  def where_user_group_active(now),
+    do:
+      dynamic(
+        [user_group: ug],
+        ug.active and
+          (is_nil(ug.start_date) or ug.start_date <= ^now) and
+          (is_nil(ug.end_date) or ug.end_date >= ^now)
+      )
 end

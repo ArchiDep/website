@@ -7,6 +7,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
 
   use ArchiDep, :schema
 
+  import ArchiDep.Accounts.Schemas.UserAccount, only: [where_user_account_active: 1]
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Authentication
   alias ArchiDep.ClientMetadata
@@ -101,22 +102,27 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   @spec fetch_active_session_by_token(String.t(), DateTime.t()) ::
           {:ok, t()} | {:error, :session_not_found}
   def fetch_active_session_by_token(token, now) do
+    where =
+      dynamic(
+        [user_session: us],
+        us.token == ^token and us.created_at > ago(@session_validity_in_days, "day") and
+          ^where_user_account_active(now)
+      )
+
     if session =
          Repo.one(
            from(us in __MODULE__,
+             as: :user_session,
              join: ua in assoc(us, :user_account),
+             as: :user_account,
              left_join: pu in assoc(ua, :preregistered_user),
+             as: :preregistered_user,
              left_join: ug in assoc(pu, :group),
+             as: :user_group,
              left_join: iua in assoc(us, :impersonated_user_account),
              left_join: iuapu in assoc(iua, :preregistered_user),
              left_join: iuag in assoc(iuapu, :group),
-             where:
-               us.token == ^token and us.created_at > ago(@session_validity_in_days, "day") and
-                 ua.active and
-                 ((:root in ua.roles and is_nil(pu)) or
-                    (:student in ua.roles and not is_nil(pu) and pu.active and ug.active and
-                       (is_nil(ug.start_date) or ug.start_date <= ^now) and
-                       (is_nil(ug.end_date) or ug.end_date >= ^now))),
+             where: ^where,
              preload: [
                user_account: {ua, preregistered_user: {pu, group: ug}},
                impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}

@@ -6,6 +6,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
   use ArchiDep, :schema
 
+  import ArchiDep.Accounts.Schemas.UserGroup, only: [where_user_group_active: 1]
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
@@ -67,6 +68,16 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
   @spec student?(t()) :: boolean
   def student?(%__MODULE__{roles: roles}), do: :student in roles
+
+  @spec where_user_account_active(DateTime.t()) :: Queryable.t()
+  def where_user_account_active(now),
+    do:
+      dynamic(
+        [user_account: ua, preregistered_user: pu, user_group: ug],
+        (ua.active and (:root in ua.roles and is_nil(pu))) or
+          (:student in ua.roles and not is_nil(pu) and pu.active and
+             ^where_user_group_active(now))
+      )
 
   @spec fetch_or_create_for_switch_edu_id(SwitchEduId.t(), list(Types.role())) ::
           {:existing_account, Changeset.t(t())} | {:new_account, Changeset.t(t())}

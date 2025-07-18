@@ -79,11 +79,12 @@ defmodule ArchiDep do
       import ArchiDep.Helpers.PipeHelpers
       import ArchiDep.Helpers.SchemaHelpers
       import Ecto.Changeset
-      import Ecto.Query, only: [from: 2]
+      import Ecto.Query, only: [dynamic: 2, from: 2]
       alias ArchiDep.Repo
       alias Ecto.Association.NotLoaded
       alias Ecto.Changeset
       alias Ecto.Query
+      alias Ecto.Queryable
       alias Ecto.UUID
     end
   end
