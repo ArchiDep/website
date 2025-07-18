@@ -39,151 +39,30 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   def server_card(assigns) do
     state = assigns.state
 
-    {badge_class, badge_text, status_text, retry_text, connecting_or_reconnecting} =
-      case state do
-        nil ->
-          {"badge-info", gettext("Not connected"), gettext("No connection to this server."), nil,
-           false}
+    {badge_class, badge_text} = server_card_badge(state && state.connection_state)
 
-        %ServerRealTimeState{connection_state: not_connected_state()} ->
-          {"badge-info", gettext("Not connected"), gettext("No connection to this server."), nil,
-           false}
+    body =
+      server_card_body(
+        state && state.connection_state,
+        state && state.current_job,
+        assigns.auth,
+        assigns.server
+      )
 
-        %ServerRealTimeState{connection_state: connecting_state()} ->
-          {"badge-primary", gettext("Connecting"), gettext("Connecting to the server"), nil, true}
+    retry_text = server_card_retry_text(state && state.connection_state)
 
-        %ServerRealTimeState{
-          connection_state:
-            retry_connecting_state(
-              retrying: %{retry: retry, time: time, in_seconds: in_seconds, reason: reason}
-            )
-        } ->
-          {"badge-primary", gettext("Reconnecting"),
-           retry_connecting(%{
-             auth: assigns.auth,
-             server: assigns.server,
-             retry: retry,
-             time: time,
-             in_seconds: in_seconds,
-             reason: reason
-           }), gettext("Retry now"), false}
-
-        %ServerRealTimeState{connection_state: connected_state(), current_job: current_job} ->
-          {
-            "badge-success",
-            gettext("Connected"),
-            case current_job do
-              :checking_access ->
-                gettext("Checking access")
-
-              :setting_up_app_user ->
-                gettext("Setting up application user")
-
-              :gathering_facts ->
-                gettext("Gathering facts")
-
-              {:running_playbook, playbook, _run_id, ongoing_task} ->
-                [
-                  case playbook do
-                    "setup" ->
-                      gettext("Initial setup")
-
-                    _any_other_playbook ->
-                      gettext("Running {playbook}", playbook: playbook)
-                  end,
-                  ongoing_task
-                ]
-                |> Enum.reject(&is_nil/1)
-                |> Enum.join(": ")
-
-              nil ->
-                gettext("Connected to the server.")
-            end,
-            nil,
-            false
-          }
-
-        %ServerRealTimeState{connection_state: reconnecting_state()} ->
-          {"badge-primary", gettext("Reconnecting"), gettext("Reconnecting to the server"), nil,
-           true}
-
-        %ServerRealTimeState{connection_state: connection_failed_state()} ->
-          {"badge-error", gettext("Connection failed"),
-           gettext("Could not connect to the server."), gettext("Retry connecting"), false}
-
-        %ServerRealTimeState{connection_state: disconnected_state()} ->
-          {"badge-primary", gettext("Disconnected"),
-           gettext("The connection to the server was lost."), nil, false}
-      end
-
-    filtered_problems =
-      case state do
-        nil ->
-          []
-
-        %ServerRealTimeState{set_up_at: nil} ->
-          state.problems
-
-        %ServerRealTimeState{} ->
-          # Ignore connection timeout problems after the server has been set up.
-          # The server might simply be offline.
-          Enum.reject(
-            state.problems,
-            &match?({:server_connection_timed_out, _host, _port, _user_type, _username}, &1)
-          )
-      end
-
-    card_class =
-      case {state, filtered_problems} do
-        {nil, _problems} ->
-          "bg-neutral text-neutral-content"
-
-        {%ServerRealTimeState{connection_state: not_connected_state()}, _problems} ->
-          "bg-neutral text-neutral-content"
-
-        {%ServerRealTimeState{connection_state: connecting_state()}, []} ->
-          "bg-info text-info-content animate-pulse"
-
-        {%ServerRealTimeState{connection_state: connecting_state()}, _problems} ->
-          "bg-warning text-warning-content animate-pulse"
-
-        {%ServerRealTimeState{connection_state: retry_connecting_state()}, []} ->
-          "bg-info text-info-content"
-
-        {%ServerRealTimeState{connection_state: retry_connecting_state()}, _problems} ->
-          "bg-warning text-warning-content"
-
-        {%ServerRealTimeState{connection_state: connected_state()}, []} ->
-          "bg-success text-success-content"
-
-        {%ServerRealTimeState{connection_state: connected_state()}, _problems} ->
-          "bg-warning text-warning-content"
-
-        {%ServerRealTimeState{connection_state: reconnecting_state()}, []} ->
-          "bg-info text-info-content animate-pulse"
-
-        {%ServerRealTimeState{connection_state: reconnecting_state()}, _problems} ->
-          "bg-warning text-warning-content animate-pulse"
-
-        {%ServerRealTimeState{connection_state: connection_failed_state()}, _problems} ->
-          "bg-error text-error-content"
-
-        {%ServerRealTimeState{connection_state: disconnected_state()}, []} ->
-          "bg-info text-info-content"
-
-        {%ServerRealTimeState{connection_state: disconnected_state()}, _problems} ->
-          "bg-warning text-warning-content"
-      end
+    filtered_problems = filter_problems(state)
+    card_class = server_card_class(state && state.connection_state, filtered_problems)
 
     assigns =
       assigns
       |> assign(:card_class, card_class)
       |> assign(:badge_class, badge_class)
       |> assign(:badge_text, badge_text)
-      |> assign(:status_text, status_text)
+      |> assign(:body, body)
       |> assign(:retry_text, retry_text)
       |> assign(:connected, state != nil and connected?(state.connection_state))
-      |> assign(:connecting_or_reconnecting, connecting_or_reconnecting)
+      |> assign(:connecting_or_reconnecting, server_connecting_or_reconnecting?(state))
       |> assign(:busy, state != nil and state.current_job != nil)
 
     ~H"""
@@ -205,7 +84,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             class="size-4"
           />
           <Heroicons.arrow_path :if={@busy} class="size-4 animate-spin" />
-          <span>{@status_text}</span>
+          <span>{@body}</span>
         </div>
         <ul :if={@state} class="flex flex-col gap-2">
           <li :for={problem <- @state.problems}>
@@ -231,6 +110,136 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     </div>
     """
   end
+
+  defp filter_problems(nil), do: []
+  defp filter_problems(%ServerRealTimeState{set_up_at: nil, problems: problems}), do: problems
+  # Ignore connection timeout problems after the server has been set up. The
+  # server might simply be offline.
+  defp filter_problems(%ServerRealTimeState{problems: problems}),
+    do:
+      Enum.reject(
+        problems,
+        &match?({:server_connection_timed_out, _host, _port, _user_type, _username}, &1)
+      )
+
+  defp server_card_class(nil, _problems), do: "bg-neutral text-neutral-content"
+  defp server_card_class(not_connected_state(), _problems), do: "bg-neutral text-neutral-content"
+  defp server_card_class(connecting_state(), []), do: "bg-info text-info-content animate-pulse"
+
+  defp server_card_class(connecting_state(), _problems),
+    do: "bg-warning text-warning-content animate-pulse"
+
+  defp server_card_class(retry_connecting_state(), []), do: "bg-info text-info-content"
+
+  defp server_card_class(retry_connecting_state(), _problems),
+    do: "bg-warning text-warning-content"
+
+  defp server_card_class(connected_state(), []), do: "bg-success text-success-content"
+  defp server_card_class(connected_state(), _problems), do: "bg-warning text-warning-content"
+  defp server_card_class(reconnecting_state(), []), do: "bg-info text-info-content animate-pulse"
+
+  defp server_card_class(reconnecting_state(), _problems),
+    do: "bg-warning text-warning-content animate-pulse"
+
+  defp server_card_class(connection_failed_state(), _problems), do: "bg-error text-error-content"
+  defp server_card_class(disconnected_state(), []), do: "bg-info text-info-content"
+  defp server_card_class(disconnected_state(), _problems), do: "bg-warning text-warning-content"
+
+  defp server_card_badge(nil), do: {"badge-info", gettext("Not connected")}
+  defp server_card_badge(not_connected_state()), do: {"badge-info", gettext("Not connected")}
+  defp server_card_badge(connecting_state()), do: {"badge-primary", gettext("Connecting")}
+  defp server_card_badge(retry_connecting_state()), do: {"badge-primary", gettext("Reconnecting")}
+  defp server_card_badge(connected_state()), do: {"badge-success", gettext("Connected")}
+  defp server_card_badge(reconnecting_state()), do: {"badge-primary", gettext("Reconnecting")}
+
+  defp server_card_badge(connection_failed_state()),
+    do: {"badge-error", gettext("Connection failed")}
+
+  defp server_card_badge(disconnected_state()), do: {"badge-primary", gettext("Disconnected")}
+
+  defp server_card_body(nil, _current_job, _auth, _server),
+    do: gettext("No connection to this server.")
+
+  defp server_card_body(not_connected_state(), _current_job, _auth, _server),
+    do: gettext("No connection to this server.")
+
+  defp server_card_body(connecting_state(), _current_job, _auth, _server),
+    do: gettext("Connecting to the server")
+
+  defp server_card_body(
+         retry_connecting_state(
+           retrying: %{retry: retry, time: time, in_seconds: in_seconds, reason: reason}
+         ),
+         _current_job,
+         auth,
+         server
+       ),
+       do:
+         retry_connecting(%{
+           auth: auth,
+           server: server,
+           retry: retry,
+           time: time,
+           in_seconds: in_seconds,
+           reason: reason
+         })
+
+  defp server_card_body(connected_state(), :checking_access, _auth, _server),
+    do: gettext("Checking access")
+
+  defp server_card_body(connected_state(), :setting_up_app_user, _auth, _server),
+    do: gettext("Setting up application user")
+
+  defp server_card_body(connected_state(), :gathering_facts, _auth, _server),
+    do: gettext("Gathering facts")
+
+  defp server_card_body(
+         connected_state(),
+         {:running_playbook, playbook, _run_id, ongoing_task},
+         _auth,
+         _server
+       ),
+       do:
+         [
+           case playbook do
+             "setup" ->
+               gettext("Initial setup")
+
+             _any_other_playbook ->
+               gettext("Running {playbook}", playbook: playbook)
+           end,
+           ongoing_task
+         ]
+         |> Enum.reject(&is_nil/1)
+         |> Enum.join(": ")
+
+  defp server_card_body(connected_state(), nil, _auth, _server),
+    do: gettext("Connected to the server.")
+
+  defp server_card_body(reconnecting_state(), _current_job, _auth, _server),
+    do: gettext("Reconnecting to the server")
+
+  defp server_card_body(connection_failed_state(), _current_job, _auth, _server),
+    do: gettext("Could not connect to the server.")
+
+  defp server_card_body(disconnected_state(), _current_job, _auth, _server),
+    do: gettext("The connection to the server was lost.")
+
+  defp server_card_retry_text(retry_connecting_state()), do: gettext("Retry now")
+  defp server_card_retry_text(connection_failed_state()), do: gettext("Retry connecting")
+  defp server_card_retry_text(_connection_state), do: nil
+
+  defp server_connecting_or_reconnecting?(%ServerRealTimeState{
+         connection_state: connecting_state()
+       }),
+       do: true
+
+  defp server_connecting_or_reconnecting?(%ServerRealTimeState{
+         connection_state: reconnecting_state()
+       }),
+       do: true
+
+  defp server_connecting_or_reconnecting?(_state), do: false
 
   attr :auth, Authentication, doc: "the authentication context"
   attr :problem, :any, doc: "the problem to display"
