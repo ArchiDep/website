@@ -101,7 +101,11 @@ jobs:
         run: mix coveralls.html --raise
         working-directory: app
 
-      - name: Perform static code analysis
+      - name: Perform static code analysis with Credo
+        run: mix credo --strict
+        working-directory: app
+
+      - name: Perform static code analysis with Dialyzer
         run: mix dialyzer
         working-directory: app
 
