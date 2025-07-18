@@ -2,9 +2,9 @@ defmodule ArchiDepWeb.Helpers.LiveViewHelpers do
   @moduledoc false
 
   alias ArchiDep.Authentication
-  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Servers.Schemas.Server
 
   @spec set_process_label(atom(), Authentication.t()) :: :ok
   def set_process_label(

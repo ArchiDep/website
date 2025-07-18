@@ -12,7 +12,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
   def id, do: @id
 
   @spec close() :: js
-  def close(), do: close_dialog(@id)
+  def close, do: close_dialog(@id)
 
   @impl true
   def update(assigns, socket),

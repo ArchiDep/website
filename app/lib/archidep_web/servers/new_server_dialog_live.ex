@@ -14,7 +14,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
   def id, do: @id
 
   @spec close() :: js
-  def close(), do: close_dialog(@id)
+  def close, do: close_dialog(@id)
 
   @impl true
   def mount(socket),

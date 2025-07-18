@@ -36,7 +36,7 @@ defmodule ArchiDep.Servers.PubSub do
   end
 
   @spec subscribe_server_created() :: :ok
-  def subscribe_server_created() do
+  def subscribe_server_created do
     :ok = PubSub.subscribe(@pubsub, "servers:new")
   end
 

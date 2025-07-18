@@ -9,8 +9,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
-  alias ArchiDepWeb.Admin.Classes.EditStudentDialogLive
   alias ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive
+  alias ArchiDepWeb.Admin.Classes.EditStudentDialogLive
 
   @impl true
   def mount(%{"class_id" => class_id, "id" => id}, _session, socket) do

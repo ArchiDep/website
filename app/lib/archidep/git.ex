@@ -10,7 +10,7 @@ defmodule ArchiDep.Git do
                    end)
 
   @spec git_revision() :: String.t()
-  def git_revision(), do: @git_revision
+  def git_revision, do: @git_revision
 
   def __mix_recompile__?,
     do:

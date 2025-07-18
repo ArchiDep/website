@@ -5,8 +5,8 @@ defmodule ArchiDepWeb.Helpers.DialogHelpers do
 
   import Phoenix.Component, only: [assign: 2, to_form: 2]
   alias Ecto.Changeset
-  alias Phoenix.LiveView.Socket
   alias Phoenix.LiveView.JS
+  alias Phoenix.LiveView.Socket
 
   def close_dialog(id) do
     %JS{}

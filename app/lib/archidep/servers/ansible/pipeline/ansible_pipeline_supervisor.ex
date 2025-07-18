@@ -8,8 +8,8 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineSupervisor do
 
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
-  alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineConsumer
+  alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
 
   @spec name(Pipeline.t()) :: GenServer.name()
   def name(pipeline), do: {:global, {__MODULE__, pipeline}}

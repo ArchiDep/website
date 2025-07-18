@@ -9,7 +9,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   require Logger
   require Record
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
-  alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Authentication
   alias ArchiDep.Helpers.NetHelpers
   alias ArchiDep.Servers.Ansible
@@ -1105,7 +1104,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
-  defp gather_facts(),
+  defp gather_facts,
     do:
       {:gather_facts,
        fn task_state, task_factory ->
@@ -1117,8 +1116,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          }
        end}
 
-  defp get_load_average(), do: run_command(:get_load_average, "cat /proc/loadavg", 10_000)
-  defp check_sudo_access(), do: run_command(:check_access, "sudo ls", 10_000)
+  defp get_load_average, do: run_command(:get_load_average, "cat /proc/loadavg", 10_000)
+  defp check_sudo_access, do: run_command(:check_access, "sudo ls", 10_000)
 
   defp run_command(name, command, timeout),
     do:
@@ -1166,7 +1165,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             [{:track, "servers", state.server.id, %{state: to_real_time_state(state)}}]
     }
 
-  defp update_tracking(),
+  defp update_tracking,
     do:
       {:update_tracking, "servers",
        fn state ->

@@ -4,11 +4,11 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   """
 
   import ArchiDep.Authentication, only: [is_authentication: 1]
-  alias Ecto.Changeset
-  alias Ecto.Multi
   alias ArchiDep.Authentication
   alias ArchiDep.Events.Store.Event
   alias ArchiDep.Events.Store.StoredEvent
+  alias Ecto.Changeset
+  alias Ecto.Multi
 
   @doc """
   Ensures that the specified limit is not too large.

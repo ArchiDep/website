@@ -15,8 +15,8 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
-  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.ClientMetadata
+  alias ArchiDep.Events.Store.StoredEvent
 
   @root_users :archidep |> Application.compile_env!(:root_users) |> Keyword.fetch!(:switch_edu_id)
 

@@ -51,7 +51,7 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
 
   def __mix_recompile__?, do: @playbooks_files_digest != ansible_files_hash()
 
-  defp ansible_files_hash(),
+  defp ansible_files_hash,
     do:
       :crypto.hash(
         :sha256,

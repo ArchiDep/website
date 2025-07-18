@@ -28,7 +28,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
           }
 
     @spec init() :: t()
-    def init(), do: %__MODULE__{stored_demand: 0, pending_playbooks: {0, :queue.new()}}
+    def init, do: %__MODULE__{stored_demand: 0, pending_playbooks: {0, :queue.new()}}
 
     @spec store_demand(t, pos_integer) :: t
     def store_demand(state, demand) when is_demand(demand) do

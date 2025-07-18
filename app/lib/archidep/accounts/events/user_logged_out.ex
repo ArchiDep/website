@@ -5,8 +5,8 @@ defmodule ArchiDep.Accounts.Events.UserLoggedOut do
 
   use ArchiDep, :event
 
-  alias Ecto.UUID
   alias ArchiDep.Accounts.Schemas.UserSession
+  alias Ecto.UUID
 
   @derive Jason.Encoder
 

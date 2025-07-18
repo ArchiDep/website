@@ -19,7 +19,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   def id, do: @id
 
   @spec close() :: js
-  def close(), do: close_dialog(@id)
+  def close, do: close_dialog(@id)
 
   def cell_class(form, column, value) do
     name_column = form[:name_column].value

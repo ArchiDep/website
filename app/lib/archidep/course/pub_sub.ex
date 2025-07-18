@@ -15,7 +15,7 @@ defmodule ArchiDep.Course.PubSub do
     do: PubSub.broadcast(@pubsub, "classes", {:class_created, class})
 
   @spec subscribe_classes() :: :ok
-  def subscribe_classes() do
+  def subscribe_classes do
     :ok = PubSub.subscribe(@pubsub, "classes")
   end
 

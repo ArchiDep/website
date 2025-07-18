@@ -53,7 +53,7 @@ defmodule ArchiDep.Course.Schemas.Class do
     do: servers_enabled and active?(class, now)
 
   @spec list_classes() :: list(t())
-  def list_classes(),
+  def list_classes,
     do:
       Repo.all(
         from c in __MODULE__,
