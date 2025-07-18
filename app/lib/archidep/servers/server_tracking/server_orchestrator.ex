@@ -6,6 +6,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerOrchestrator do
 
   use GenServer
 
+  require Logger
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.PubSub
@@ -42,7 +43,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerOrchestrator do
     :ok = PubSub.subscribe_server_created()
 
     if @track_on_boot do
-      for server <- Server.list_active_servers(DateTime.utc_now()) do
+      active_servers = Server.list_active_servers(DateTime.utc_now())
+      Logger.notice("Tracking #{length(active_servers)} active server(s)")
+
+      for server <- active_servers do
         {:ok, _pid} = ServerDynamicSupervisor.start_server_supervisor(server.id, pipeline)
       end
     end
