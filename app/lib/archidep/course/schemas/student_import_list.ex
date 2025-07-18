@@ -107,12 +107,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
       |> Stream.flat_map(&Enum.map(1..10, fn _ -> &1 end))
       |> Stream.map(fn size ->
         first_char = List.to_string([Enum.random(@alpha)])
-
-        remaining_chars =
-          Range.new(1, size - 1)
-          |> Enum.map(fn _ -> Enum.random(@alphanumeric) end)
-          |> List.to_string()
-
+        remaining_chars = random_alphanumeric(size)
         "#{first_char}#{remaining_chars}"
       end)
       |> Stream.filter(&(!MapSet.member?(taken, &1)))
@@ -166,4 +161,10 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         |> List.first()
     end
   end
+
+  defp random_alphanumeric(size),
+    do:
+      Range.new(1, size - 1)
+      |> Enum.map(fn _ -> Enum.random(@alphanumeric) end)
+      |> List.to_string()
 end

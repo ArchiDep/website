@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   Ansible playbook) is complete, the application disconnects and then reconnects
   with its own username.
   """
+
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
@@ -66,7 +67,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:updated_at, :utc_datetime_usec)
   end
 
-  # FIXME: track changes to the group and owner
+  # TODO: track changes to the group and owner
   @spec active?(t(), DateTime.t()) :: boolean()
   def active?(%__MODULE__{active: active, group: group, owner: owner}, now),
     do:
@@ -89,8 +90,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
       from(s in __MODULE__,
         distinct: true,
         join: o in assoc(s, :owner),
+        as: :server_owner,
         left_join: ogm in assoc(o, :group_member),
+        as: :server_group_member,
         left_join: ogmg in assoc(ogm, :group),
+        as: :server_group,
         join: g in assoc(s, :group),
         left_join: gesp in assoc(g, :expected_server_properties),
         join: ep in assoc(s, :expected_properties),

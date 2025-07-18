@@ -49,6 +49,16 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         (is_nil(start_date) or now |> DateTime.to_date() |> Date.compare(start_date) != :lt) and
         (is_nil(end_date) or now |> DateTime.to_date() |> Date.compare(end_date) != :gt)
 
+  @spec where_server_group_active(Date.t()) :: Queryable.t()
+  def where_server_group_active(day),
+    do:
+      dynamic(
+        [g],
+        g.active and
+          (is_nil(g.start_date) or g.start_date <= ^day) and
+          (is_nil(g.end_date) or g.end_date >= ^day)
+      )
+
   @spec fetch_server_group(UUID.t()) :: {:ok, t()} | {:error, :server_group_not_found}
   def fetch_server_group(id),
     do:

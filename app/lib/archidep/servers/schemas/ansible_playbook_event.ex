@@ -51,6 +51,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
     %__MODULE__{}
     |> change(
       id: id,
+      run: run,
       run_id: run.id,
       name: binary_or(data, ["_event"], "_"),
       action: binary_or(data, ["hosts", "archidep", "action"], nil),

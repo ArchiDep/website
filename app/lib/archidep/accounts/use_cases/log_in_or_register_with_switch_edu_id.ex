@@ -30,25 +30,25 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
         switch_edu_id_data,
         client_metadata
       ) do
-    with {:ok,
-          %{
-            user_account: user_account,
-            user_session: session,
-            linked_preregistered_user: preregistered_user
-          }} <-
-           log_in_or_register(switch_edu_id_data, client_metadata) do
-      if preregistered_user != nil do
-        :ok = PubSub.publish_preregistered_user_updated(preregistered_user)
-      end
+    case log_in_or_register(switch_edu_id_data, client_metadata) do
+      {:ok,
+       %{
+         user_account: user_account,
+         user_session: session,
+         linked_preregistered_user: preregistered_user
+       }} ->
+        if preregistered_user != nil do
+          :ok = PubSub.publish_preregistered_user_updated(preregistered_user)
+        end
 
-      enriched_session = %UserSession{
-        session
-        | user_account: user_account,
-          impersonated_user_account: nil
-      }
+        enriched_session = %UserSession{
+          session
+          | user_account: user_account,
+            impersonated_user_account: nil
+        }
 
-      {:ok, UserSession.authentication(enriched_session)}
-    else
+        {:ok, UserSession.authentication(enriched_session)}
+
       {:error, _operation, :unauthorized_switch_edu_id, _changes} ->
         {:error, :unauthorized_switch_edu_id}
     end
@@ -69,70 +69,10 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       fn _repo, %{switch_edu_id: switch_edu_id} ->
         case UserAccount.fetch_for_switch_edu_id(switch_edu_id) do
           nil ->
-            # If the user account does not exist but the email of the Switch
-            # edu-ID account has been configured as a root user, create a new
-            # root user account.
-            if is_configured_root_user?(switch_edu_id) do
-              {:ok,
-               {:new_root, UserAccount.new_switch_edu_id_account(switch_edu_id, [:root]), nil}}
-            else
-              # Otherwise check whether there is a preregistered user for that
-              # email...
-              case PreregisteredUser.list_available_preregistered_users_for_email(
-                     switch_edu_id_data.email,
-                     nil,
-                     DateTime.utc_now()
-                   ) do
-                # If there is exactly one active preregistered user with a
-                # matching email that is not yet linked to a user account,
-                # create a new student user account.
-                [exactly_one_preregistered_user] ->
-                  {:ok,
-                   {
-                     :new_student,
-                     # TODO: split this function into one for new root accounts
-                     # and one for new student accounts. Directly link the
-                     # account to the student in the latter.
-                     UserAccount.new_switch_edu_id_account(switch_edu_id, [:student]),
-                     exactly_one_preregistered_user
-                   }}
+            new_user_account(switch_edu_id)
 
-                # If there are no preregistered users or more than one matches,
-                # deny access.
-                _zero_or_multiple_preregistered_users ->
-                  {:error, :unauthorized_switch_edu_id}
-              end
-            end
-
-          # If the user account already exists, check whether it is still active
-          # (it might be linked to a class from the previous year, or it or its
-          # linked preregistered user might have been deactivated)...
           user_account ->
-            # If the user account is active, log it in.
-            if UserAccount.active?(user_account, DateTime.utc_now()) do
-              {:ok, {:existing_account, change(user_account), nil}}
-            else
-              # Otherwise, check whether there is a new preregistered user for
-              # the same email (e.g. a student might be repeating a year, in
-              # which case a new preregistered user will have been created in
-              # a new class)...
-              case PreregisteredUser.list_available_preregistered_users_for_email(
-                     switch_edu_id_data.email,
-                     user_account.id,
-                     DateTime.utc_now()
-                   ) do
-                # If there is exactly one active preregistered user with a
-                # matching email that is not yet linked to a user account,
-                # link the user account to it.
-                [exactly_one_preregistered_user] ->
-                  {:ok, {:existing_student, change(user_account), exactly_one_preregistered_user}}
-
-                # If there are no preregistered users or more than one matches,
-                # deny access.
-                _zero_or_multiple_preregistered_users ->
-                  {:error, :unauthorized_switch_edu_id}
-              end
-            end
+            existing_user_account(switch_edu_id, user_account)
         end
       end
     )
@@ -210,6 +150,74 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
         end
     end)
     |> transaction()
+  end
+
+  defp new_user_account(switch_edu_id) do
+    # If the user account does not exist but the email of the Switch
+    # edu-ID account has been configured as a root user, create a new
+    # root user account.
+    if is_configured_root_user?(switch_edu_id) do
+      {:ok, {:new_root, UserAccount.new_switch_edu_id_account(switch_edu_id, [:root]), nil}}
+    else
+      # Otherwise check whether there is a preregistered user for that
+      # email...
+      case PreregisteredUser.list_available_preregistered_users_for_email(
+             switch_edu_id.email,
+             nil,
+             DateTime.utc_now()
+           ) do
+        # If there is exactly one active preregistered user with a
+        # matching email that is not yet linked to a user account,
+        # create a new student user account.
+        [exactly_one_preregistered_user] ->
+          {:ok,
+           {
+             :new_student,
+             # TODO: split this function into one for new root accounts
+             # and one for new student accounts. Directly link the
+             # account to the student in the latter.
+             UserAccount.new_switch_edu_id_account(switch_edu_id, [:student]),
+             exactly_one_preregistered_user
+           }}
+
+        # If there are no preregistered users or more than one matches,
+        # deny access.
+        _zero_or_multiple_preregistered_users ->
+          {:error, :unauthorized_switch_edu_id}
+      end
+    end
+  end
+
+  defp existing_user_account(switch_edu_id, user_account) do
+    # If the user account already exists, check whether it is still active (it
+    # might be linked to a class from the previous year, or it or its linked
+    # preregistered user might have been deactivated).
+    #
+    # If the user account is active, log it in.
+    if UserAccount.active?(user_account, DateTime.utc_now()) do
+      {:ok, {:existing_account, change(user_account), nil}}
+    else
+      # Otherwise, check whether there is a new preregistered user for
+      # the same email (e.g. a student might be repeating a year, in
+      # which case a new preregistered user will have been created in
+      # a new class)...
+      case PreregisteredUser.list_available_preregistered_users_for_email(
+             switch_edu_id.email,
+             user_account.id,
+             DateTime.utc_now()
+           ) do
+        # If there is exactly one active preregistered user with a
+        # matching email that is not yet linked to a user account,
+        # link the user account to it.
+        [exactly_one_preregistered_user] ->
+          {:ok, {:existing_student, change(user_account), exactly_one_preregistered_user}}
+
+        # If there are no preregistered users or more than one matches,
+        # deny access.
+        _zero_or_multiple_preregistered_users ->
+          {:error, :unauthorized_switch_edu_id}
+      end
+    end
   end
 
   defp is_configured_root_user?(switch_edu_id) when is_struct(switch_edu_id, SwitchEduId),

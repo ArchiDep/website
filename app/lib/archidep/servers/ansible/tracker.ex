@@ -44,20 +44,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
             end,
             []
           )
-          |> Multi.merge(fn %{event: event} ->
-            if event.name == "v2_playbook_on_stats" do
-              Multi.new()
-              |> Multi.update_all(
-                :run_stats,
-                fn _changes ->
-                  AnsiblePlaybookRun.update_stats(run, event)
-                end,
-                []
-              )
-            else
-              Multi.new()
-            end
-          end)
+          |> Multi.merge(&update_playbook_stats(&1.event))
           |> Repo.transaction()
 
         {:event, event}
@@ -77,4 +64,17 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
         end
     end
   end
+
+  defp update_playbook_stats(%AnsiblePlaybookEvent{name: "v2_playbook_on_stats"} = event),
+    do:
+      Multi.new()
+      |> Multi.update_all(
+        :update_stats,
+        fn _changes ->
+          AnsiblePlaybookRun.update_stats(event.run, event)
+        end,
+        []
+      )
+
+  defp update_playbook_stats(%AnsiblePlaybookEvent{}), do: Multi.new()
 end
