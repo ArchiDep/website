@@ -56,67 +56,71 @@ defmodule ArchiDep.Servers.Ansible.Runner do
       |> Enum.into([])
 
     {exit_result, parts} = List.pop_at(results, -1)
+    facts = Enum.join(parts, "")
 
-    case [Enum.join(parts, ""), exit_result] do
-      [facts, {:exit, {:status, 0}}] when is_binary(facts) ->
-        case JSON.decode(facts) do
-          {:ok,
+    decode_facts(facts, exit_result)
+  end
+
+  defp decode_facts(facts, {:exit, {:status, 0}}) when is_binary(facts) do
+    case JSON.decode(facts) do
+      {:ok,
+       %{
+         "plays" => [
            %{
-             "plays" => [
+             "tasks" => [
                %{
-                 "tasks" => [
-                   %{
-                     "hosts" => %{
-                       "archidep" => %{
-                         "action" => "gather_facts",
-                         "ansible_facts" => ansible_facts
-                       }
-                     },
-                     "task" => %{"name" => "gather_facts"}
+                 "hosts" => %{
+                   "archidep" => %{
+                     "action" => "gather_facts",
+                     "ansible_facts" => ansible_facts
                    }
-                 ]
+                 },
+                 "task" => %{"name" => "gather_facts"}
                }
              ]
-           }} ->
-            {:ok, ansible_facts}
+           }
+         ]
+       }} ->
+        {:ok, ansible_facts}
 
-          {:ok, _} ->
-            Logger.error("Failed to decode Ansible facts #{inspect(facts)}")
-            {:error, :invalid_json_output}
+      {:ok, _} ->
+        Logger.error("Failed to decode Ansible facts #{inspect(facts)}")
+        {:error, :invalid_json_output}
 
-          {:error, reason} ->
-            Logger.error(
-              "Failed to decode Ansible facts #{inspect(facts)} because: #{inspect(reason)}"
-            )
+      {:error, reason} ->
+        Logger.error(
+          "Failed to decode Ansible facts #{inspect(facts)} because: #{inspect(reason)}"
+        )
 
-            {:error, :invalid_json_output}
-        end
+        {:error, :invalid_json_output}
+    end
+  end
 
-      [facts, {:exit, reason}] when is_binary(facts) and facts != "" ->
-        case JSON.decode(facts) do
-          {:ok,
+  defp decode_facts(facts, {:exit, reason}) when is_binary(facts) and facts != "" do
+    case JSON.decode(facts) do
+      {:ok,
+       %{
+         "plays" => [
            %{
-             "plays" => [
+             "tasks" => [
                %{
-                 "tasks" => [
-                   %{
-                     "hosts" => %{"archidep" => %{"action" => "gather_facts", "msg" => msg}},
-                     "task" => %{"name" => "gather_facts"}
-                   }
-                 ]
+                 "hosts" => %{"archidep" => %{"action" => "gather_facts", "msg" => msg}},
+                 "task" => %{"name" => "gather_facts"}
                }
              ]
-           }} ->
-            {:error, msg}
-
-          _anything_else ->
-            Logger.warning("Ansible exited with #{inspect(reason)} and output: #{inspect(facts)}")
-            {:error, :unknown}
-        end
+           }
+         ]
+       }} ->
+        {:error, msg}
 
       _anything_else ->
+        Logger.warning("Ansible exited with #{inspect(reason)} and output: #{inspect(facts)}")
         {:error, :unknown}
     end
+  end
+
+  defp decode_facts(_facts, _exit_result) do
+    {:error, :unknown}
   end
 
   @spec run_playbook(
