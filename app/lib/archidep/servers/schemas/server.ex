@@ -89,8 +89,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
 
     where =
       dynamic(
-        [s, owner_group_member: ogm, server_group: sg],
-        s.active and ogm.id == sg.id and ^where_server_owner_active(day)
+        [s, owner_group_member: ogm, owner_group: og, server_group: sg],
+        s.active and (is_nil(og) or og.id == sg.id) and ^where_server_owner_active(day)
       )
 
     Repo.all(
