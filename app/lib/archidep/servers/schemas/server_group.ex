@@ -21,8 +21,8 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
           active: boolean(),
           servers_enabled: boolean(),
           servers: list(Server.t()) | NotLoaded.t(),
-          expected_server_properties: ServerProperties.t() | nil | NotLoaded.t(),
-          expected_server_properties_id: UUID.t() | nil,
+          expected_server_properties: ServerProperties.t() | NotLoaded.t(),
+          expected_server_properties_id: UUID.t(),
           # Common metadata
           version: pos_integer(),
           created_at: DateTime.t(),
@@ -35,7 +35,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
     field(:end_date, :date)
     field(:active, :boolean)
     field(:servers_enabled, :boolean)
-    belongs_to(:expected_server_properties, ServerProperties, on_replace: :update)
+    belongs_to(:expected_server_properties, ServerProperties)
     has_many(:servers, Server, foreign_key: :group_id)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
