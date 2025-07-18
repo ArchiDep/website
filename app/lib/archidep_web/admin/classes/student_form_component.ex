@@ -1,4 +1,8 @@
 defmodule ArchiDepWeb.Admin.Classes.StudentFormComponent do
+  @moduledoc """
+  Form component for creating and updating students in the admin interface.
+  """
+
   use ArchiDepWeb, :component
 
   import ArchiDepWeb.Components.FormComponents

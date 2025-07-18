@@ -33,9 +33,10 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteClassDialogLive do
     auth = socket.assigns.auth
     class = socket.assigns.class
 
-    with :ok <- Course.delete_class(auth, class.id) do
-      noreply(socket)
-    else
+    case Course.delete_class(auth, class.id) do
+      :ok ->
+        noreply(socket)
+
       {:error, :class_has_servers} ->
         socket
         |> push_event("execute-action", %{to: "##{id(class)}", action: "close"})

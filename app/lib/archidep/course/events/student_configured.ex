@@ -1,4 +1,9 @@
 defmodule ArchiDep.Course.Events.StudentConfigured do
+  @moduledoc """
+  Event representing the fact that a student has confirmed their configuration,
+  which consists (for now) of the username that was suggested for them.
+  """
+
   use ArchiDep, :event
 
   alias ArchiDep.Course.Schemas.Student

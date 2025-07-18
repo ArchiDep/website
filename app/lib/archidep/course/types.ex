@@ -1,4 +1,6 @@
 defmodule ArchiDep.Course.Types do
+  @moduledoc false
+
   alias Ecto.UUID
 
   @type class_data :: %{

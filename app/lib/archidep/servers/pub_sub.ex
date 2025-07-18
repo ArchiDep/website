@@ -1,4 +1,8 @@
 defmodule ArchiDep.Servers.PubSub do
+  @moduledoc """
+  Publication and subscription of events related to servers.
+  """
+
   use ArchiDep, :pub_sub
 
   alias ArchiDep.Servers.Schemas.Server

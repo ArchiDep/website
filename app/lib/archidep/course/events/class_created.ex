@@ -1,4 +1,6 @@
 defmodule ArchiDep.Course.Events.ClassCreated do
+  @moduledoc false
+
   use ArchiDep, :event
 
   alias ArchiDep.Course.Schemas.Class

@@ -84,20 +84,20 @@ defmodule ArchiDepWeb.Auth.AuthController do
         } = conn,
         _params
       ) do
-    with {:ok, auth} <-
-           Accounts.log_in_or_register_with_switch_edu_id(
-             %{
-               swiss_edu_person_unique_id: swiss_edu_person_unique_id,
-               email: email,
-               first_name: Map.get(userinfo, "given_name"),
-               last_name: Map.get(userinfo, "family_name")
-             },
-             conn_metadata(conn)
-           ) do
-      conn
-      |> put_notification(Message.new(:success, gettext("Welcome!")))
-      |> Auth.log_in(auth)
-    else
+    case Accounts.log_in_or_register_with_switch_edu_id(
+           %{
+             swiss_edu_person_unique_id: swiss_edu_person_unique_id,
+             email: email,
+             first_name: Map.get(userinfo, "given_name"),
+             last_name: Map.get(userinfo, "family_name")
+           },
+           conn_metadata(conn)
+         ) do
+      {:ok, auth} ->
+        conn
+        |> put_notification(Message.new(:success, gettext("Welcome!")))
+        |> Auth.log_in(auth)
+
       {:error, :unauthorized_switch_edu_id} ->
         conn
         |> put_notification(

@@ -1,4 +1,8 @@
 defmodule ArchiDepWeb.Components.FormComponents do
+  @moduledoc """
+  Common components and helper functions for rendering forms.
+  """
+
   use Phoenix.Component
 
   slot :inner_block, required: true, doc: "the help text to display"

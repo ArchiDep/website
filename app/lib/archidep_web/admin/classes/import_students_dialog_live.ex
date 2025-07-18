@@ -184,21 +184,21 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       ) do
     orig = ImportStudentsForm.changeset(params, students)
 
-    with {:ok, _form_data} <-
-           Changeset.apply_action(orig, :validate) do
-      {:noreply,
-       assign(socket,
-         form: to_form(orig, action: :validate, as: :import_students),
-         new_students:
-           if(orig.valid?,
-             do:
-               students
-               |> Enum.filter(&(!student_exists?(form, &1, existing_students)))
-               |> length(),
-             else: 0
-           )
-       )}
-    else
+    case Changeset.apply_action(orig, :validate) do
+      {:ok, _form_data} ->
+        {:noreply,
+         assign(socket,
+           form: to_form(orig, action: :validate, as: :import_students),
+           new_students:
+             if(orig.valid?,
+               do:
+                 students
+                 |> Enum.filter(&(!student_exists?(form, &1, existing_students)))
+                 |> length(),
+               else: 0
+             )
+         )}
+
       {:error, %Changeset{} = changeset} ->
         {:noreply,
          assign(socket,
@@ -308,30 +308,30 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
           }
         end)
 
-      with {:ok, imported_students} <-
-             Course.import_students(auth, class_id, %{
-               academic_class: academic_class,
-               domain: domain,
-               students: students_data
-             }) do
-        socket
-        |> assign(
-          state: :waiting_for_upload,
-          columns: [],
-          students: [],
-          new_students: 0
-        )
-        |> send_notification(
-          Message.new(
-            :success,
-            gettext("{count, plural, =1 {1 student} other {# students}} imported",
-              count: length(imported_students)
+      case Course.import_students(auth, class_id, %{
+             academic_class: academic_class,
+             domain: domain,
+             students: students_data
+           }) do
+        {:ok, imported_students} ->
+          socket
+          |> assign(
+            state: :waiting_for_upload,
+            columns: [],
+            students: [],
+            new_students: 0
+          )
+          |> send_notification(
+            Message.new(
+              :success,
+              gettext("{count, plural, =1 {1 student} other {# students}} imported",
+                count: length(imported_students)
+              )
             )
           )
-        )
-        |> push_event("execute-action", %{to: "##{@id}", action: "close"})
-        |> noreply()
-      else
+          |> push_event("execute-action", %{to: "##{@id}", action: "close"})
+          |> noreply()
+
         _ ->
           noreply(socket)
       end

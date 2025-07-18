@@ -1,9 +1,9 @@
 defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   @moduledoc """
-  Runner that processes playbook runs from the queue. It starts a task for each
+  Runner that executes playbook runs from the queue. It starts a task for each
   playbook run and ensures that the playbook is executed only if the server is
-  online. This module is responsible for managing the execution of playbooks and
-  tracking their state in the database.
+  online. It then runs the actual Ansible playbook and saves the events as they
+  come in.
   """
 
   require Logger

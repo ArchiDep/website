@@ -1,5 +1,5 @@
-defmodule ArchiDep.Authorization do
-  # TODO: move to helpers
+defmodule ArchiDep.Helpers.AuthHelpers do
+  @moduledoc false
 
   import ArchiDep.Authentication, only: [is_authentication: 1]
   alias ArchiDep.Authentication

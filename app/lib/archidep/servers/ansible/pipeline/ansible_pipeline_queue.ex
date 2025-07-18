@@ -1,8 +1,8 @@
 defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   @moduledoc """
   Ansible pipeline queue that tracks pending playbook runs and manages their
-  execution based on the demand from consumers. It handles the state of playbook
-  runs and ensures that playbooks are run only when the server is online.
+  execution based on the demand from consumers. If a server goes offline, its
+  pending playbook runs are dropped.
   """
 
   use GenStage
@@ -20,7 +20,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
     defstruct [:stored_demand, :pending_playbooks]
 
-    # FIXME: store unique connection ref and drop playbook run if it has changed
+    # TODO: store unique connection ref and drop playbook run if it has changed
     @type pending_playbook_data :: %{run_id: UUID.t(), server_id: UUID.t()}
     @type t :: %__MODULE__{
             stored_demand: non_neg_integer(),

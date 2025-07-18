@@ -1,4 +1,6 @@
 defmodule ArchiDep.Course.UseCases.UpdateExpectedServerPropertiesForClass do
+  @moduledoc false
+
   use ArchiDep, :use_case
 
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated

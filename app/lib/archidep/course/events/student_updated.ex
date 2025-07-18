@@ -1,4 +1,6 @@
 defmodule ArchiDep.Course.Events.StudentUpdated do
+  @moduledoc false
+
   use ArchiDep, :event
 
   alias ArchiDep.Course.Schemas.Student

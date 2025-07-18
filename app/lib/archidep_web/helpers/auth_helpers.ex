@@ -26,13 +26,13 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
       ),
       do: impersonated_id == nil and user_account_id != principal_id
 
-  @spec is_impersonating?(Authentication.t()) :: boolean()
-  def is_impersonating?(nil), do: false
+  @spec impersonating?(Authentication.t()) :: boolean()
+  def impersonating?(nil), do: false
 
-  def is_impersonating?(%Authentication{impersonated_id: nil}),
+  def impersonating?(%Authentication{impersonated_id: nil}),
     do: false
 
-  def is_impersonating?(_auth), do: true
+  def impersonating?(_auth), do: true
 
   @spec username(Authentication.t()) :: String.t()
   defdelegate username(auth), to: Authentication

@@ -1,4 +1,6 @@
 defmodule ArchiDep.Course.UseCases.ReadClasses do
+  @moduledoc false
+
   use ArchiDep, :use_case
 
   alias ArchiDep.Course.Policy

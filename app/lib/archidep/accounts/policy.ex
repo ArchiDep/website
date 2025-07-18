@@ -1,4 +1,8 @@
 defmodule ArchiDep.Accounts.Policy do
+  @moduledoc """
+  Authorization policy for user account management actions.
+  """
+
   use ArchiDep, :policy
 
   alias ArchiDep.Accounts.Schemas.UserSession

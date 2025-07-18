@@ -1,4 +1,8 @@
 defmodule ArchiDepWeb.Helpers.DialogHelpers do
+  @moduledoc """
+  Helper functions for managing modal dialog interactions.
+  """
+
   import Phoenix.Component, only: [assign: 2, to_form: 2]
   alias Ecto.Changeset
   alias Phoenix.LiveView.Socket

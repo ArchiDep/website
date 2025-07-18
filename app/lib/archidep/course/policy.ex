@@ -1,4 +1,8 @@
 defmodule ArchiDep.Course.Policy do
+  @moduledoc """
+  Authorization policy for class- and student-related actions.
+  """
+
   use ArchiDep, :policy
 
   alias ArchiDep.Course.Schemas.Student

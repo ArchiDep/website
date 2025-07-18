@@ -1,4 +1,10 @@
 defmodule ArchiDepWeb.Servers.ServerForm do
+  @moduledoc """
+  Server form schema and changeset functions for creating and updating server
+  data. This schema only validates the basic structure and types of the fields.
+  Business validations are handled in the servers context.
+  """
+
   use Ecto.Schema
 
   import Ecto.Changeset

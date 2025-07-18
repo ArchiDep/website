@@ -16,23 +16,24 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   def mount(%{"class_id" => class_id, "id" => id}, _session, socket) do
     auth = socket.assigns.auth
 
-    with {:ok, student} <- Course.fetch_student_in_class(auth, class_id, id) do
-      if connected?(socket) do
-        set_process_label(__MODULE__, auth, student)
-        :ok = PubSub.subscribe_student(student.id)
-        :ok = PubSub.subscribe_class(student.class_id)
-        :ok = Accounts.PubSub.subscribe_preregistered_user(id)
-      end
+    case Course.fetch_student_in_class(auth, class_id, id) do
+      {:ok, student} ->
+        if connected?(socket) do
+          set_process_label(__MODULE__, auth, student)
+          :ok = PubSub.subscribe_student(student.id)
+          :ok = PubSub.subscribe_class(student.class_id)
+          :ok = Accounts.PubSub.subscribe_preregistered_user(id)
+        end
 
-      socket
-      |> assign(
-        page_title:
-          "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Classes")} > #{student.class.name} > #{student.name}",
-        class: student.class,
-        student: student
-      )
-      |> ok()
-    else
+        socket
+        |> assign(
+          page_title:
+            "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Classes")} > #{student.class.name} > #{student.name}",
+          class: student.class,
+          student: student
+        )
+        |> ok()
+
       {:error, :student_not_found} ->
         socket
         |> put_notification(Message.new(:error, gettext("Student not found")))

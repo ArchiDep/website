@@ -1,4 +1,9 @@
 defmodule ArchiDep.Accounts.UseCases.Impersonate do
+  @moduledoc """
+  Use case for impersonating a user account, i.e. allowing an administrator to
+  act as another user. This is typically used for support or debugging purposes.
+  """
+
   use ArchiDep, :use_case
 
   alias ArchiDep.Accounts.Policy
@@ -24,11 +29,12 @@ defmodule ArchiDep.Accounts.UseCases.Impersonate do
 
   @spec stop_impersonating(Authentication.t()) :: :ok | {:error, :unauthorized}
   def stop_impersonating(auth) do
-    with :ok <- authorize(auth, Policy, :accounts, :stop_impersonating, nil) do
-      {:ok, session} = UserSession.fetch_by_id(auth.session_id)
-      UserSession.stop_impersonating(session)
-      :ok
-    else
+    case authorize(auth, Policy, :accounts, :stop_impersonating, nil) do
+      :ok ->
+        {:ok, session} = UserSession.fetch_by_id(auth.session_id)
+        UserSession.stop_impersonating(session)
+        :ok
+
       {:error, {:access_denied, :accounts, :stop_impersonating}} ->
         {:error, :unauthorized}
     end

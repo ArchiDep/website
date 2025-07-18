@@ -1,4 +1,6 @@
 defmodule ArchiDep.Servers.Events.ServerCreated do
+  @moduledoc false
+
   use ArchiDep, :event
 
   alias ArchiDep.Servers.Schemas.Server

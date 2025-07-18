@@ -1,4 +1,9 @@
 defmodule ArchiDepWeb.Admin.Classes.ImportStudentsForm do
+  @moduledoc """
+  Form schema for importing students from a CSV file, validating name and email
+  unicity.
+  """
+
   use Ecto.Schema
 
   use Gettext, backend: ArchiDepWeb.Gettext

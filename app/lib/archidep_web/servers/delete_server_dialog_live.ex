@@ -33,9 +33,10 @@ defmodule ArchiDepWeb.Servers.DeleteServerDialogLive do
     auth = socket.assigns.auth
     server = socket.assigns.server
 
-    with :ok <- Servers.delete_server(auth, server.id) do
-      noreply(socket)
-    else
+    case Servers.delete_server(auth, server.id) do
+      :ok ->
+        noreply(socket)
+
       {:error, :server_busy} ->
         noreply(socket)
     end

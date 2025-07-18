@@ -1,4 +1,8 @@
 defmodule ArchiDep.Servers.Policy do
+  @moduledoc """
+  Authorization policy for server-related actions in ArchiDep.
+  """
+
   use ArchiDep, :policy
 
   alias ArchiDep.Servers.Schemas.Server

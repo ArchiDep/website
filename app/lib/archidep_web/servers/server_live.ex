@@ -15,23 +15,24 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   def mount(%{"id" => id}, _session, socket) do
     auth = socket.assigns.auth
 
-    with {:ok, server} <- Servers.fetch_server(auth, id) do
-      if connected?(socket) do
-        set_process_label(__MODULE__, auth, server)
-        # TODO: add watch_server in context
-        :ok = PubSub.subscribe_server(server.id)
-        {:ok, _pid} = ServerTracker.start_link(server)
-      end
+    case Servers.fetch_server(auth, id) do
+      {:ok, server} ->
+        if connected?(socket) do
+          set_process_label(__MODULE__, auth, server)
+          # TODO: add watch_server in context
+          :ok = PubSub.subscribe_server(server.id)
+          {:ok, _pid} = ServerTracker.start_link(server)
+        end
 
-      socket
-      |> assign(
-        page_title:
-          "#{gettext("ArchiDep")} > #{gettext("Servers")} > #{Server.name_or_default(server)}",
-        server: server,
-        state: ServerTracker.get_current_server_state(server)
-      )
-      |> ok()
-    else
+        socket
+        |> assign(
+          page_title:
+            "#{gettext("ArchiDep")} > #{gettext("Servers")} > #{Server.name_or_default(server)}",
+          server: server,
+          state: ServerTracker.get_current_server_state(server)
+        )
+        |> ok()
+
       {:error, :server_not_found} ->
         socket
         |> put_notification(Message.new(:error, gettext("Server not found")))

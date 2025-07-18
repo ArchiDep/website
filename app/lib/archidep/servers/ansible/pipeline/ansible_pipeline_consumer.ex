@@ -1,4 +1,10 @@
 defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineConsumer do
+  @moduledoc """
+  Consumer of the Ansible pipeline queue. It processes pending playbook runs
+  from the pipeline queue as they become available, starting a new process for
+  each run.
+  """
+
   use ConsumerSupervisor
 
   require Logger

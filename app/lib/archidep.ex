@@ -64,7 +64,7 @@ defmodule ArchiDep do
   @spec pub_sub :: Macro.t()
   def pub_sub do
     quote do
-      import ArchiDep.Authorization
+      import ArchiDep.Helpers.AuthHelpers
       alias ArchiDep.Authentication
       alias Ecto.UUID
       alias Phoenix.PubSub
@@ -93,7 +93,7 @@ defmodule ArchiDep do
   def use_case do
     quote do
       import ArchiDep.Authentication, only: [has_role?: 2]
-      import ArchiDep.Authorization
+      import ArchiDep.Helpers.AuthHelpers
       import ArchiDep.Helpers.DataHelpers, only: [validate_uuid: 2]
       import ArchiDep.Helpers.PipeHelpers
       import ArchiDep.Helpers.UseCaseHelpers

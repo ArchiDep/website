@@ -1,4 +1,6 @@
 defmodule ArchiDep.Servers.UseCases.UpdateServer do
+  @moduledoc false
+
   use ArchiDep, :use_case
 
   alias ArchiDep.Servers.Events.ServerUpdated

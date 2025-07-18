@@ -1,4 +1,8 @@
 defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
+  @moduledoc """
+  Use cases for reading server groups and their members.
+  """
+
   use ArchiDep, :use_case
 
   alias ArchiDep.Servers.Policy
@@ -79,21 +83,22 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
           {:ok, MapSet.t(UUID.t()), (MapSet.t(UUID.t()), {atom(), term()} -> list(UUID.t()))}
           | {:error, :unauthorized}
   def watch_server_ids(auth, group) do
-    with :ok <- authorize(auth, Policy, :servers, :watch_server_ids, group) do
-      :ok = PubSub.subscribe_server_group_servers(group.id)
+    case authorize(auth, Policy, :servers, :watch_server_ids, group) do
+      :ok ->
+        :ok = PubSub.subscribe_server_group_servers(group.id)
 
-      server_ids = group.id |> Server.list_server_ids_in_group() |> MapSet.new()
+        server_ids = group.id |> Server.list_server_ids_in_group() |> MapSet.new()
 
-      reducer = fn
-        ids, {event, %Server{id: id}} when event in [:server_created, :server_updated] ->
-          MapSet.put(ids, id)
+        reducer = fn
+          ids, {event, %Server{id: id}} when event in [:server_created, :server_updated] ->
+            MapSet.put(ids, id)
 
-        ids, {:server_deleted, %Server{id: id}} ->
-          MapSet.delete(ids, id)
-      end
+          ids, {:server_deleted, %Server{id: id}} ->
+            MapSet.delete(ids, id)
+        end
 
-      {:ok, server_ids, reducer}
-    else
+        {:ok, server_ids, reducer}
+
       {:error, {:access_denied, :servers, :watch_server_ids}} ->
         {:error, :unauthorized}
     end

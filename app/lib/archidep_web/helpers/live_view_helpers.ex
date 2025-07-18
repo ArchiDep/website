@@ -1,4 +1,6 @@
 defmodule ArchiDepWeb.Helpers.LiveViewHelpers do
+  @moduledoc false
+
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Course.Schemas.Class

@@ -1,4 +1,9 @@
 defmodule ArchiDep.Servers.UseCases.ManageServer do
+  @moduledoc """
+  Use cases for managing operations on connected servers, such as retrying to
+  connect when the connection failed, or retrying a failed Ansible playbook.
+  """
+
   use ArchiDep, :use_case
 
   alias ArchiDep.Servers.Policy

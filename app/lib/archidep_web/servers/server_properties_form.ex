@@ -1,4 +1,10 @@
 defmodule ArchiDepWeb.Servers.ServerPropertiesForm do
+  @moduledoc """
+  Server properties form schema and changeset functions for updating server
+  properties. This schema only validates the basic structure and types of the
+  fields. Business validations are handled in the servers context.
+  """
+
   use Ecto.Schema
 
   import Ecto.Changeset

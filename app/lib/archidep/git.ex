@@ -1,4 +1,9 @@
 defmodule ArchiDep.Git do
+  @moduledoc """
+  Holder of Git metadata about the application (currently the current Git
+  revision), retrieved and baked in at compile time.
+  """
+
   @git_revision System.get_env("ARCHIDEP_GIT_REVISION") ||
                   (case(System.cmd("git", ["rev-parse", "HEAD"])) do
                      {revision, 0} -> String.trim(revision)

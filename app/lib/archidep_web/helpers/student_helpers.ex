@@ -1,4 +1,6 @@
 defmodule ArchiDepWeb.Helpers.StudentHelpers do
+  @moduledoc false
+
   use Gettext, backend: ArchiDepWeb.Gettext
 
   alias ArchiDep.Course.Schemas.Class

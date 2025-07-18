@@ -1,6 +1,6 @@
 defmodule ArchiDep.Events.Policy do
   @moduledoc """
-  Authorization rules for the events context.
+  Authorization policy for event-related actions.
   """
 
   use ArchiDep, :policy

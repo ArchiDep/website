@@ -1,4 +1,8 @@
 defmodule ArchiDep.Accounts.PubSub do
+  @moduledoc """
+  Publication and subscription of events related to user account management.
+  """
+
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias Ecto.UUID
   alias Phoenix.PubSub

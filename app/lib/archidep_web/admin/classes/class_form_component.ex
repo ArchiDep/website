@@ -1,4 +1,8 @@
 defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
+  @moduledoc """
+  Form component for creating or editing classes in the admin interface.
+  """
+
   use ArchiDepWeb, :component
 
   import ArchiDepWeb.Components.FormComponents

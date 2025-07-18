@@ -1,4 +1,9 @@
 defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
+  @moduledoc """
+  Use cases to handle external callbacks by registered servers, such as
+  notifying the system when a server comes online.
+  """
+
   require Logger
   import ArchiDep.Helpers.DataHelpers
   alias ArchiDep.Servers.Schemas.Server

@@ -1,4 +1,6 @@
 defmodule ArchiDepWeb.Helpers.UserAgentFormatHelpers do
+  @moduledoc false
+
   use Gettext, backend: ArchiDepWeb.Gettext
 
   @spec format_user_agent(term) :: String.t()

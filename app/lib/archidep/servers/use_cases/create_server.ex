@@ -1,4 +1,6 @@
 defmodule ArchiDep.Servers.UseCases.CreateServer do
+  @moduledoc false
+
   use ArchiDep, :use_case
 
   import Authentication, only: [has_role?: 2]

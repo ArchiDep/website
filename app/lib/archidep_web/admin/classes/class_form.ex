@@ -1,4 +1,10 @@
 defmodule ArchiDepWeb.Admin.Classes.ClassForm do
+  @moduledoc """
+  Class form schema and changeset functions for creating and updating class
+  data. This schema only validates the basic structure and types of the fields.
+  Business validations are handled in the course context.
+  """
+
   use Ecto.Schema
 
   import Ecto.Changeset

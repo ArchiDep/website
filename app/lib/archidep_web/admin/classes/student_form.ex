@@ -1,4 +1,10 @@
 defmodule ArchiDepWeb.Admin.Classes.StudentForm do
+  @moduledoc """
+  Student form schema and changeset functions for creating and updating student
+  data. This schema only validates the basic structure and types of the fields.
+  Business validations are handled in the course context.
+  """
+
   use Ecto.Schema
 
   import ArchiDep.Helpers.ChangesetHelpers, only: [validate_not_nil: 2]

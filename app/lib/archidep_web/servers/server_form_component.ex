@@ -1,4 +1,8 @@
 defmodule ArchiDepWeb.Servers.ServerFormComponent do
+  @moduledoc """
+  Form component for creating or updating servers.
+  """
+
   use ArchiDepWeb, :component
 
   import ArchiDepWeb.Components.FormComponents

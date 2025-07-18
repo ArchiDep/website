@@ -1,4 +1,10 @@
 defmodule ArchiDepWeb.Dashboard.Components.WhatIsYourNameForm do
+  @moduledoc """
+  Form schema and changeset functions for the form used by students to confirm
+  their username. This schema only validates the basic structure and types of
+  the fields. Business validations are handled in the course context.
+  """
+
   use Ecto.Schema
 
   import ArchiDep.Helpers.ChangesetHelpers, only: [validate_not_nil: 2]

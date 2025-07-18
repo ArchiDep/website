@@ -1,4 +1,8 @@
 defmodule ArchiDep.Course.PubSub do
+  @moduledoc """
+  Publication and subscription of events related to course classes and students.
+  """
+
   use ArchiDep, :pub_sub
 
   alias ArchiDep.Course.Schemas.Class
