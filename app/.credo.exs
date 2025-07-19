@@ -156,14 +156,19 @@
               extension = Path.extname(filename)
 
               case {Path.split(root), parts, extension, is_test} do
-                # Special naming for the "mix.exs" file which contains the module "ArchiDep.MixProject".
+                # Special case for "mix.exs"
                 {["mix.exs"], ["archidep", "mix_project"], ".exs", false} ->
                   valid_filename = "mix.exs"
                   {filename == valid_filename, [valid_filename]}
 
+                # Special case for the support module
+                {["test"], ["archi_dep", "support"], ".ex", false} ->
+                  valid_filename = "test/support/support.ex"
+                  {filename == valid_filename, [valid_filename]}
+
+                # Special case for other support modules
                 {["test"], [base_module, "support" | remaining_parts], _extension, _is_test}
                 when base_module in ["archi_dep", "archi_dep_web"] ->
-                  # Special case for support files, which can have any name.
                   valid_filename = Path.join(["test", "support"] ++ remaining_parts) <> extension
                   {filename == valid_filename, [valid_filename]}
 

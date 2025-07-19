@@ -33,14 +33,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     :server,
     :pipeline,
     :username,
-    :storage,
     :actions
   ]
   defstruct [
     :server,
     :pipeline,
     :username,
-    :storage,
     :actions,
     connection_state: not_connected_state(),
     # TODO: tasks, ansible playbook and load average timer should be part of the connected state
@@ -58,7 +56,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           server: Server.t(),
           pipeline: Pipeline.t(),
           username: String.t(),
-          storage: :ets.tid(),
           actions: list(action()),
           tasks: %{atom() => reference()},
           ansible_playbook: {AnsiblePlaybookRun.t(), String.t() | nil} | nil,
@@ -91,7 +88,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           {:run_playbook, AnsiblePlaybookRun.t()}
   @type schedule_load_average_measurement_action ::
           {:schedule_load_average_measurement, (t(), (pos_integer() -> reference()) -> t())}
-  @type track_action :: {:track, String.t(), UUID.t(), map()}
+  @type track_action :: {:track, String.t(), UUID.t(), ServerRealTimeState.t()}
   @type update_tracking_action :: {:update_tracking, String.t(), (t() -> {map(), t()})}
   @type action ::
           cancel_timer_action()
@@ -129,7 +126,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     Logger.debug("Init server manager for server #{server_id}")
 
     {:ok, server} = Server.fetch_server(server_id)
-    storage = :ets.new(:server_manager, [:set, :private])
 
     last_setup_run =
       AnsiblePlaybookRun.get_last_playbook_run(server, Ansible.setup_playbook())
@@ -140,7 +136,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       server: server,
       pipeline: pipeline,
       username: username,
-      storage: storage,
       actions: [],
       problems:
         [] ++
@@ -1163,7 +1158,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       state
       | actions:
           state.actions ++
-            [{:track, "servers", state.server.id, %{state: to_real_time_state(state)}}]
+            [{:track, "servers", state.server.id, to_real_time_state(state)}]
     }
 
   defp update_tracking,
@@ -1177,6 +1172,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp to_real_time_state(%__MODULE__{} = state) do
     server = state.server
+
+    conn_username =
+      if server.set_up_at, do: server.app_username, else: state.username
 
     current_job =
       case state do
@@ -1205,7 +1203,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     %ServerRealTimeState{
       connection_state: state.connection_state,
       name: server.name,
-      conn_params: {server.ip_address.address, server.ssh_port || 22, state.username},
+      conn_params: {server.ip_address.address, server.ssh_port || 22, conn_username},
       username: server.username,
       app_username: server.app_username,
       current_job: current_job,

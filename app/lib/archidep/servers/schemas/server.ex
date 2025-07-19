@@ -34,13 +34,13 @@ defmodule ArchiDep.Servers.Schemas.Server do
           ssh_port: 1..65_535 | nil,
           secret_key: binary(),
           active: boolean(),
-          group: ServerGroup.t() | NotLoaded,
+          group: ServerGroup.t() | NotLoaded.t(),
           group_id: UUID.t(),
-          owner: ServerOwner.t() | NotLoaded,
+          owner: ServerOwner.t() | NotLoaded.t(),
           owner_id: UUID.t(),
-          expected_properties: ServerProperties.t() | NotLoaded,
+          expected_properties: ServerProperties.t() | NotLoaded.t(),
           expected_properties_id: UUID.t(),
-          last_known_properties: ServerProperties.t() | nil | NotLoaded,
+          last_known_properties: ServerProperties.t() | nil | NotLoaded.t(),
           last_known_properties_id: UUID.t() | nil,
           # Common metadata
           version: pos_integer(),
@@ -129,32 +129,26 @@ defmodule ArchiDep.Servers.Schemas.Server do
       )
 
   @spec fetch_server(UUID.t()) :: {:ok, t()} | {:error, :server_not_found}
-  def fetch_server(id) do
-    case Repo.one(
-           from(s in __MODULE__,
-             join: o in assoc(s, :owner),
-             left_join: ogm in assoc(o, :group_member),
-             left_join: ogmg in assoc(ogm, :group),
-             join: g in assoc(s, :group),
-             join: gesp in assoc(g, :expected_server_properties),
-             join: ep in assoc(s, :expected_properties),
-             left_join: lkp in assoc(s, :last_known_properties),
-             where: s.id == ^id,
-             preload: [
-               group: {g, expected_server_properties: gesp},
-               expected_properties: ep,
-               last_known_properties: lkp,
-               owner: {o, group_member: {ogm, group: ogmg}}
-             ]
-           )
-         ) do
-      nil ->
-        {:error, :server_not_found}
-
-      server ->
-        {:ok, server}
-    end
-  end
+  def fetch_server(id),
+    do:
+      from(s in __MODULE__,
+        join: o in assoc(s, :owner),
+        left_join: ogm in assoc(o, :group_member),
+        left_join: ogmg in assoc(ogm, :group),
+        join: g in assoc(s, :group),
+        join: gesp in assoc(g, :expected_server_properties),
+        join: ep in assoc(s, :expected_properties),
+        left_join: lkp in assoc(s, :last_known_properties),
+        where: s.id == ^id,
+        preload: [
+          group: {g, expected_server_properties: gesp},
+          expected_properties: ep,
+          last_known_properties: lkp,
+          owner: {o, group_member: {ogm, group: ogmg}}
+        ]
+      )
+      |> Repo.one()
+      |> truthy_or(:server_not_found)
 
   @spec new(Types.create_server_data(), ServerOwner.t()) :: Changeset.t(t())
   def new(data, owner) do

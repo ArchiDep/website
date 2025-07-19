@@ -44,7 +44,9 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
           stats_ok: non_neg_integer(),
           stats_rescued: non_neg_integer(),
           stats_skipped: non_neg_integer(),
-          stats_unreachable: non_neg_integer()
+          stats_unreachable: non_neg_integer(),
+          created_at: DateTime.t(),
+          updated_at: DateTime.t()
         }
 
   schema "ansible_playbook_runs" do

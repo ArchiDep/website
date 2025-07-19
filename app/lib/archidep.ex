@@ -114,6 +114,7 @@ defmodule ArchiDep do
   @doc """
   When used, dispatch to the appropriate function.
   """
+  @spec __using__(atom()) :: Macro.t()
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
   end

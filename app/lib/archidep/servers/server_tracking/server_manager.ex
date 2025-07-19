@@ -315,9 +315,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     end)
   end
 
-  defp execute_action(state, {:track, topic, key, value}) do
+  defp execute_action(state, {:track, topic, key, real_time_state}) do
     {:ok, _ref} =
-      Phoenix.Tracker.track(ArchiDep.Tracker, self(), topic, key, value)
+      Phoenix.Tracker.track(ArchiDep.Tracker, self(), topic, key, %{state: real_time_state})
 
     state
   end
