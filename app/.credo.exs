@@ -72,6 +72,15 @@
           {Credo.Check.Readability.UnnecessaryAliasExpansion, []},
           {Credo.Check.Readability.VariableNames, []},
           {Credo.Check.Readability.WithSingleClause, []},
+          # {Credo.Check.Readability.NestedFunctionCalls, []},
+          # {Credo.Check.Readability.OneArityFunctionInPipe, []},
+          # {Credo.Check.Readability.OnePipePerLine, []},
+          # {Credo.Check.Readability.SeparateAliasRequire, []},
+          # {Credo.Check.Readability.SingleFunctionToBlockPipe, []},
+          # {Credo.Check.Readability.SinglePipe, []},
+          # {Credo.Check.Readability.Specs, []},
+          # {Credo.Check.Readability.StrictModuleLayout, []},
+          # {Credo.Check.Readability.WithCustomTaggedTuple, []},
 
           # Refactoring Opportunities
           {Credo.Check.Refactor.Apply, []},
@@ -91,6 +100,18 @@
           {Credo.Check.Refactor.UnlessWithElse, []},
           {Credo.Check.Refactor.WithClauses, []},
           {Credo.Check.Refactor.UtcNowTruncate, []},
+          # {Credo.Check.Refactor.ABCSize, []},
+          # {Credo.Check.Refactor.AppendSingleItem, []},
+          # {Credo.Check.Refactor.DoubleBooleanNegation, []},
+          # {Credo.Check.Refactor.FilterReject, []},
+          # {Credo.Check.Refactor.IoPuts, []},
+          # {Credo.Check.Refactor.MapMap, []},
+          # {Credo.Check.Refactor.ModuleDependencies, []},
+          # {Credo.Check.Refactor.NegatedIsNil, []},
+          # {Credo.Check.Refactor.PassAsyncInTestCases, []},
+          # {Credo.Check.Refactor.PipeChainStart, []},
+          # {Credo.Check.Refactor.RejectFilter, []},
+          # {Credo.Check.Refactor.VariableRebinding, []},
 
           # Warnings
           {Credo.Check.Warning.ApplicationConfigInModuleAttribute, []},
@@ -113,52 +134,18 @@
           {Credo.Check.Warning.UnusedRegexOperation, []},
           {Credo.Check.Warning.UnusedStringOperation, []},
           {Credo.Check.Warning.UnusedTupleOperation, []},
-          {Credo.Check.Warning.WrongTestFileExtension, []}
-        ],
-        disabled: [
-          #
-          # Controversial and experimental checks (opt-in, just move the check to `:enabled`
-          #   and be sure to use `mix credo --strict` to see low priority checks)
-          #
-          {Credo.Check.Design.DuplicatedCode, []},
-          {Credo.Check.Readability.NestedFunctionCalls, []},
-          {Credo.Check.Readability.OneArityFunctionInPipe, []},
-          {Credo.Check.Readability.OnePipePerLine, []},
-          {Credo.Check.Readability.SeparateAliasRequire, []},
-          {Credo.Check.Readability.SingleFunctionToBlockPipe, []},
-          {Credo.Check.Readability.SinglePipe, []},
-          {Credo.Check.Readability.Specs, []},
-          {Credo.Check.Readability.StrictModuleLayout, []},
-          {Credo.Check.Readability.WithCustomTaggedTuple, []},
-          {Credo.Check.Refactor.ABCSize, []},
-          {Credo.Check.Refactor.AppendSingleItem, []},
-          {Credo.Check.Refactor.DoubleBooleanNegation, []},
-          {Credo.Check.Refactor.FilterReject, []},
-          {Credo.Check.Refactor.IoPuts, []},
-          {Credo.Check.Refactor.MapMap, []},
-          {Credo.Check.Refactor.ModuleDependencies, []},
-          {Credo.Check.Refactor.NegatedIsNil, []},
-          {Credo.Check.Refactor.PassAsyncInTestCases, []},
-          {Credo.Check.Refactor.PipeChainStart, []},
-          {Credo.Check.Refactor.RejectFilter, []},
-          {Credo.Check.Refactor.VariableRebinding, []},
-          {Credo.Check.Warning.LazyLogging, []},
-          {Credo.Check.Warning.LeakyEnvironment, []},
-          {Credo.Check.Warning.MapGetUnsafePass, []},
-          {Credo.Check.Warning.MixEnv, []},
-          {Credo.Check.Warning.UnsafeToAtom, []},
-
-          # {Credo.Check.Refactor.MapInto, []},
-
-          #
-          # Custom checks can be created using `mix credo.gen.check`.
-          #
+          {Credo.Check.Warning.WrongTestFileExtension, []},
+          # {Credo.Check.Warning.LazyLogging, []},
+          # {Credo.Check.Warning.LeakyEnvironment, []},
+          # {Credo.Check.Warning.MapGetUnsafePass, []},
+          # {Credo.Check.Warning.MixEnv, []},
+          # {Credo.Check.Warning.UnsafeToAtom, []},
 
           # https://github.com/xtian/credo_contrib
           {CredoContrib.Check.DocWhitespace, []},
           {CredoContrib.Check.EmptyDocString, []},
           {CredoContrib.Check.EmptyTestBlock, []},
-          {CredoContrib.Check.FunctionBlockSyntax, []},
+          # {CredoContrib.Check.FunctionBlockSyntax, []},
           {CredoContrib.Check.FunctionNameUnderscorePrefix, []},
           {CredoContrib.Check.ModuleAlias, []},
           {CredoContrib.Check.ModuleDirectivesOrder, []},
@@ -169,6 +156,7 @@
           {CredoNaming.Check.Warning.AvoidSpecificTermsInModuleNames, terms: []},
           {
             CredoNaming.Check.Consistency.ModuleFilename,
+            acronyms: [{"ArchiDep", "archidep"}],
             valid_filename_callback: fn filename, module_name, params ->
               root = CredoNaming.Check.Consistency.ModuleFilename.root_path(filename, params)
               parts = module_name |> Macro.underscore() |> Path.split()
@@ -179,6 +167,12 @@
                 # Special naming for the "mix.exs" file which contains the module "ArchiDep.MixProject".
                 {["mix.exs"], ["archidep", "mix_project"], ".exs", false} ->
                   valid_filename = "mix.exs"
+                  {filename == valid_filename, [valid_filename]}
+
+                {["test"], [base_module, "support" | remaining_parts], _extension, _is_test}
+                when base_module in ["archi_dep", "archi_dep_web"] ->
+                  # Special case for support files, which can have any name.
+                  valid_filename = Path.join(["test", "support"] ++ remaining_parts) <> extension
                   {filename == valid_filename, [valid_filename]}
 
                 # Otherwise default to original behavior.
@@ -207,6 +201,10 @@
           {Nicene.TestsInTestFolder, false},
           {Nicene.TrueFalseCaseStatements, []},
           {Nicene.UnnecessaryPatternMatching, false}
+        ],
+        disabled: [
+          {Credo.Check.Design.DuplicatedCode, []},
+          {Credo.Check.Refactor.MapInto, []}
         ]
       }
     }

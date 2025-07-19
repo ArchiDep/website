@@ -1,4 +1,4 @@
-defmodule ArchiDepWeb.ConnCase do
+defmodule ArchiDepWeb.Support.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -25,14 +25,14 @@ defmodule ArchiDepWeb.ConnCase do
       use ArchiDepWeb, :verified_routes
 
       # Import conveniences for testing with connections
-      import Plug.Conn
+      import ArchiDepWeb.Support.ConnCase
       import Phoenix.ConnTest
-      import ArchiDepWeb.ConnCase
+      import Plug.Conn
     end
   end
 
   setup tags do
-    ArchiDep.DataCase.setup_sandbox(tags)
+    ArchiDep.Support.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

@@ -1,16 +1,18 @@
-defmodule ArchiDepWeb.ErrorHTMLTest do
-  use ArchiDepWeb.ConnCase, async: true
+defmodule ArchiDepWeb.Controllers.ErrorHTMLTest do
+  use ArchiDepWeb.Support.ConnCase, async: true
 
   import Hammox
   import Phoenix.Template
+  alias ArchiDepWeb.Controllers.ErrorHTML
 
   setup :verify_on_exit!
 
   test "renders 404.html" do
-    assert render_to_string(ArchiDepWeb.ErrorHTML, "404", "html", []) == "Not Found"
+    assert render_to_string(ErrorHTML, "404", "html", []) == "Not Found"
   end
 
   test "renders 500.html" do
-    assert render_to_string(ArchiDepWeb.ErrorHTML, "500", "html", []) == "Internal Server Error"
+    assert render_to_string(ErrorHTML, "500", "html", []) ==
+             "Internal Server Error"
   end
 end

@@ -1,4 +1,4 @@
-defmodule ArchiDepWeb.CoreComponents do
+defmodule ArchiDepWeb.Components.CoreComponents do
   @moduledoc """
   Provides core UI components.
 

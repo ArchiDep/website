@@ -1,4 +1,4 @@
-defmodule ArchiDepWeb.Layouts do
+defmodule ArchiDepWeb.Components.Layouts do
   @moduledoc """
   This module holds different layouts used by your application.
 

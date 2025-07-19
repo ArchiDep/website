@@ -1,4 +1,4 @@
-defmodule ArchiDep.DataCase do
+defmodule ArchiDep.Support.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -25,12 +25,12 @@ defmodule ArchiDep.DataCase do
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-      import ArchiDep.DataCase
+      import ArchiDep.Support.DataCase
     end
   end
 
   setup tags do
-    ArchiDep.DataCase.setup_sandbox(tags)
+    ArchiDep.Support.DataCase.setup_sandbox(tags)
     :ok
   end
 

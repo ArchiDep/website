@@ -52,7 +52,7 @@ defmodule ArchiDepWeb do
     quote do
       use Phoenix.Controller,
         formats: [:html],
-        layouts: [html: ArchiDepWeb.Layouts]
+        layouts: [html: ArchiDepWeb.Components.Layouts]
 
       use Gettext, backend: ArchiDepWeb.Gettext
 
@@ -72,7 +72,7 @@ defmodule ArchiDepWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {ArchiDepWeb.Layouts, :app}
+        layout: {ArchiDepWeb.Components.Layouts, :app}
 
       import ArchiDep.Helpers.PipeHelpers
       import ArchiDepWeb.Helpers.AuthHelpers
@@ -128,7 +128,7 @@ defmodule ArchiDepWeb do
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components
-      import ArchiDepWeb.CoreComponents
+      import ArchiDepWeb.Components.CoreComponents
       import ArchiDepWeb.Helpers.AuthHelpers
       import ArchiDepWeb.Helpers.DateFormatHelpers
       # Flash helpers
