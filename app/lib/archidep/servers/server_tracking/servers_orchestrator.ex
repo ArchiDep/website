@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ServerTracking.ServerOrchestrator do
+defmodule ArchiDep.Servers.ServerTracking.ServersOrchestrator do
   @moduledoc """
   GenServer responsible for tracking which servers should be active and tracked,
   and running their supervisors.

@@ -1,5 +1,13 @@
 defmodule ArchiDep.Servers.UseCases.UpdateServer do
-  @moduledoc false
+  @moduledoc """
+  Use case for updating servers.
+
+  Note that this use case exposes two public functions because operations that
+  affect a server are serialized through the server manager. The first function
+  sends the modification request to the server manager, which then calls the
+  second function to perform the actual changes in the database. This gives the
+  server manager a chance to refuse the operation if the server is busy.
+  """
 
   use ArchiDep, :use_case
 
@@ -9,7 +17,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.ServerTracking.ServerManager
-  alias ArchiDep.Servers.ServerTracking.ServerOrchestrator
+  alias ArchiDep.Servers.ServerTracking.ServersOrchestrator
   alias ArchiDep.Servers.Types
 
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
@@ -34,7 +42,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
     with :ok <- validate_uuid(server_id, :server_not_found),
          {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :update_server, server) do
-      :ok = ServerOrchestrator.ensure_started(server)
+      :ok = ServersOrchestrator.ensure_started(server)
       ServerManager.update_server(server, auth, data)
     else
       {:error, {:access_denied, :servers, :update_server}} ->
