@@ -20,12 +20,7 @@ defmodule ArchiDep.Course.UseCases.DeleteStudent do
       # TODO: shut down server
       case Multi.new()
            |> Multi.delete(:student, student)
-           |> Multi.insert(:stored_event, fn %{student: student} ->
-             StudentDeleted.new(student)
-             |> new_event(auth, occurred_at: now)
-             |> add_to_stream(student)
-             |> initiated_by(auth)
-           end)
+           |> Multi.insert(:stored_event, &student_deleted(auth, &1.student, now))
            |> Repo.transaction() do
         {:ok, _changes} ->
           :ok = PubSub.publish_student_deleted(student)
@@ -36,4 +31,12 @@ defmodule ArchiDep.Course.UseCases.DeleteStudent do
       end
     end
   end
+
+  defp student_deleted(auth, student, now),
+    do:
+      student
+      |> StudentDeleted.new()
+      |> new_event(auth, occurred_at: now)
+      |> add_to_stream(student)
+      |> initiated_by(auth)
 end

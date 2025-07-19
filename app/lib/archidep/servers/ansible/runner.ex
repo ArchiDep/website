@@ -161,7 +161,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
       fn -> "" end,
       fn
         {:exit, reason}, acc ->
-          {to_ansible_playbook_events([acc || ""]) ++ [{:exit, reason}], ""}
+          {[to_ansible_playbook_events([acc || ""]) | [{:exit, reason}]], ""}
 
         line, acc when is_binary(line) ->
           case String.split(line, "\n") do

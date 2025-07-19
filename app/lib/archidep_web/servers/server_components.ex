@@ -258,31 +258,16 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         %{problem: {:server_ansible_playbook_failed, playbook, ansible_run_state, ansible_stats}} =
           assigns
       ) do
-    assigns =
-      assigns
-      |> assign(:playbook, playbook)
-      |> assign(:ansible_run_state, ansible_run_state)
-
-    details = []
-
     details =
-      if ansible_stats.failures > 0 do
-        details ++
-          [
-            gettext("{count} {count, plural, =1 {task} other {tasks}} failed",
-              count: ansible_stats.failures
-            )
-          ]
-      else
-        details
-      end
-
-    details =
-      if ansible_stats.unreachable >= 1 do
-        details ++ [gettext("host unreachable")]
-      else
-        details
-      end
+      [
+        ansible_stats.failures > 0 &&
+          gettext("{count} {count, plural, =1 {task} other {tasks}} failed",
+            count: ansible_stats.failures
+          ),
+        ansible_stats.unreachable >= 1 && gettext("host unreachable")
+      ]
+      |> Enum.reject(&(&1 == false))
+      |> Enum.join(", ")
 
     retrying =
       case assigns.current_job do
@@ -293,7 +278,12 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           false
       end
 
-    assigns = assigns |> assign(:details, details) |> assign(:retrying, retrying)
+    assigns =
+      assigns
+      |> assign(:playbook, playbook)
+      |> assign(:ansible_run_state, ansible_run_state)
+      |> assign(:details, details)
+      |> assign(:retrying, retrying)
 
     ~H"""
     <div role="alert" class="alert alert-error alert-soft">
@@ -309,8 +299,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             se: "</strong>"
           )
           |> raw()}
-          <%= if @details != [] do %>
-            ({Enum.join(@details, ", ")})
+          <%= if @details != "" do %>
+            ({@details})
           <% end %>
         <% else %>
           {gettext("{cs}{playbook}{ce} provisioning task failed",

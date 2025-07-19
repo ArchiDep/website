@@ -22,12 +22,7 @@ defmodule ArchiDep.Course.UseCases.CreateStudent do
 
     case Multi.new()
          |> Multi.insert(:student, Student.new(data))
-         |> Multi.insert(:stored_event, fn %{student: student} ->
-           StudentCreated.new(student)
-           |> new_event(auth, occurred_at: student.created_at)
-           |> add_to_stream(student)
-           |> initiated_by(auth)
-         end)
+         |> Multi.insert(:stored_event, &student_created(auth, &1.student))
          |> transaction() do
       {:ok, %{student: student}} ->
         :ok = PubSub.publish_student_created(student)
@@ -37,4 +32,12 @@ defmodule ArchiDep.Course.UseCases.CreateStudent do
         {:error, changeset}
     end
   end
+
+  defp student_created(auth, student),
+    do:
+      student
+      |> StudentCreated.new()
+      |> new_event(auth, occurred_at: student.created_at)
+      |> add_to_stream(student)
+      |> initiated_by(auth)
 end

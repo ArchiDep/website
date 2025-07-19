@@ -54,7 +54,8 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
 
   defp server_deleted(auth, server, now),
     do:
-      ServerDeleted.new(server)
+      server
+      |> ServerDeleted.new()
       |> new_event(auth, occurred_at: now)
       |> add_to_stream(server)
       |> initiated_by(auth)

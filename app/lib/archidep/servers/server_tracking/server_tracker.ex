@@ -112,12 +112,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
     if Map.has_key?(server_states, server_id) do
       old_server_state = Map.get(server_states, server_id)
 
-      if more_recent_server_state?(old_server_state, server_state) do
-        send(from, {:server_state, server_id, server_state})
-        Map.put(server_states, server_id, server_state)
-      else
-        server_states
-      end
+      new_server_states =
+        if more_recent_server_state?(old_server_state, server_state) do
+          send(from, {:server_state, server_id, server_state})
+          Map.put(server_states, server_id, server_state)
+        else
+          server_states
+        end
+
+      new_server_states
       |> pair(from)
       |> noreply()
     else

@@ -28,12 +28,7 @@ defmodule ArchiDep.Course.UseCases.UpdateClass do
 
       case Multi.new()
            |> Multi.update(:class, Class.update(class, data))
-           |> Multi.insert(:stored_event, fn %{class: class} ->
-             ClassUpdated.new(class)
-             |> new_event(auth, occurred_at: class.updated_at)
-             |> add_to_stream(class)
-             |> initiated_by(auth)
-           end)
+           |> Multi.insert(:stored_event, &class_updated(auth, &1.class))
            |> Repo.transaction() do
         {:ok, %{class: updated_class}} ->
           :ok = PubSub.publish_class_updated(updated_class)
@@ -44,4 +39,12 @@ defmodule ArchiDep.Course.UseCases.UpdateClass do
       end
     end
   end
+
+  defp class_updated(auth, class),
+    do:
+      class
+      |> ClassUpdated.new()
+      |> new_event(auth, occurred_at: class.updated_at)
+      |> add_to_stream(class)
+      |> initiated_by(auth)
 end

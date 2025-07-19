@@ -81,7 +81,8 @@ defmodule ArchiDep.Course.UseCases.ConfigureStudent do
 
   defp student_configured(auth, student),
     do:
-      StudentConfigured.new(student)
+      student
+      |> StudentConfigured.new()
       |> new_event(auth, occurred_at: student.updated_at)
       |> add_to_stream(student)
       |> initiated_by(auth)

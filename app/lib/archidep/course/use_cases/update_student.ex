@@ -28,12 +28,7 @@ defmodule ArchiDep.Course.UseCases.UpdateStudent do
 
       case Multi.new()
            |> Multi.update(:student, Student.update(student, data))
-           |> Multi.insert(:stored_event, fn %{student: student} ->
-             StudentUpdated.new(student)
-             |> new_event(auth, occurred_at: student.updated_at)
-             |> add_to_stream(student)
-             |> initiated_by(auth)
-           end)
+           |> Multi.insert(:stored_event, &student_updated(auth, &1.student))
            |> Repo.transaction() do
         {:ok, %{student: student}} ->
           :ok = PubSub.publish_student_updated(student)
@@ -44,4 +39,12 @@ defmodule ArchiDep.Course.UseCases.UpdateStudent do
       end
     end
   end
+
+  defp student_updated(auth, student),
+    do:
+      student
+      |> StudentUpdated.new()
+      |> new_event(auth, occurred_at: student.updated_at)
+      |> add_to_stream(student)
+      |> initiated_by(auth)
 end

@@ -22,12 +22,7 @@ defmodule ArchiDep.Course.UseCases.CreateClass do
 
     case Multi.new()
          |> Multi.insert(:class, Class.new(data))
-         |> Multi.insert(:stored_event, fn %{class: class} ->
-           ClassCreated.new(class)
-           |> new_event(auth, occurred_at: class.created_at)
-           |> add_to_stream(class)
-           |> initiated_by(auth)
-         end)
+         |> Multi.insert(:stored_event, &class_created(auth, &1.class))
          |> Repo.transaction() do
       {:ok, %{class: class}} ->
         :ok = PubSub.publish_class_created(class)
@@ -37,4 +32,12 @@ defmodule ArchiDep.Course.UseCases.CreateClass do
         {:error, changeset}
     end
   end
+
+  defp class_created(auth, class),
+    do:
+      class
+      |> ClassCreated.new()
+      |> new_event(auth, occurred_at: class.created_at)
+      |> add_to_stream(class)
+      |> initiated_by(auth)
 end

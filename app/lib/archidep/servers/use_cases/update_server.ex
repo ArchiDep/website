@@ -82,7 +82,8 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
 
   defp server_updated(auth, server),
     do:
-      ServerUpdated.new(server)
+      server
+      |> ServerUpdated.new()
       |> new_event(auth, occurred_at: server.updated_at)
       |> add_to_stream(server)
       |> initiated_by(auth)

@@ -1,5 +1,5 @@
 defmodule ArchiDepWeb.Controllers.PageControllerTest do
-  use ArchiDepWeb.Support.ConnCase
+  use ArchiDepWeb.Support.ConnCase, async: true
 
   test "GET /app", %{conn: conn} do
     conn = get(conn, ~p"/app")

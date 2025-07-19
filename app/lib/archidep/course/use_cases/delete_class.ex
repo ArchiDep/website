@@ -40,7 +40,8 @@ defmodule ArchiDep.Course.UseCases.DeleteClass do
 
   defp class_deleted(auth, class, now),
     do:
-      ClassDeleted.new(class)
+      class
+      |> ClassDeleted.new()
       |> new_event(auth, occurred_at: now)
       |> add_to_stream(class)
       |> initiated_by(auth)

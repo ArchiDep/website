@@ -63,7 +63,8 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
 
   defp server_created(auth, server),
     do:
-      ServerCreated.new(server)
+      server
+      |> ServerCreated.new()
       |> new_event(auth, occurred_at: server.created_at)
       |> add_to_stream(server)
       |> initiated_by(auth)

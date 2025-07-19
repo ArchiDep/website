@@ -74,16 +74,12 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
 
         %{students: {inserted, _students}, new_students: new_students} ->
           Multi.new()
-          |> Multi.insert(:students_imported_event, fn %{} ->
-            StudentsImported.new(
-              class,
-              import_list.academic_class,
-              inserted
-            )
-            |> new_event(auth, occurred_at: now)
-            |> add_to_stream(class)
-            |> initiated_by(auth)
-          end)
+          |> Multi.insert(
+            :students_imported_event,
+            fn %{} ->
+              students_imported(auth, class, import_list.academic_class, inserted, now)
+            end
+          )
           |> Multi.insert_all(:student_created_events, StoredEvent, fn %{
                                                                          students_imported_event:
                                                                            cause
@@ -92,9 +88,21 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
           end)
       end)
 
+  defp students_imported(auth, class, academic_class, inserted, now),
+    do:
+      class
+      |> StudentsImported.new(
+        academic_class,
+        inserted
+      )
+      |> new_event(auth, occurred_at: now)
+      |> add_to_stream(class)
+      |> initiated_by(auth)
+
   defp student_created(auth, student, cause, now),
     do:
-      StudentCreated.new(student)
+      student
+      |> StudentCreated.new()
       |> new_event(auth, occurred_at: now, caused_by: cause)
       |> add_to_stream(student)
       |> initiated_by(auth)

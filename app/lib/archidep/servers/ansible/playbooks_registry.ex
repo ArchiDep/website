@@ -13,7 +13,8 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
              |> Enum.filter(&String.ends_with?(&1, ".yml"))
              |> Enum.map(fn filename ->
                digest =
-                 Path.join(@playbooks_dir, filename)
+                 @playbooks_dir
+                 |> Path.join(filename)
                  |> File.stream!(2048)
                  |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
                  |> :crypto.hash_final()
@@ -30,7 +31,8 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
              |> Enum.into(%{})
   @playbooks_files_digest :crypto.hash(
                             :sha256,
-                            Path.join(@playbooks_dir, "**/*")
+                            @playbooks_dir
+                            |> Path.join("**/*")
                             |> Path.wildcard()
                             |> Enum.sort()
                             |> Enum.join("\0")
@@ -59,7 +61,8 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
     do:
       :crypto.hash(
         :sha256,
-        Path.join(@playbooks_dir, "**/*")
+        @playbooks_dir
+        |> Path.join("**/*")
         |> Path.wildcard()
         |> Enum.sort()
         |> Enum.join("\0")

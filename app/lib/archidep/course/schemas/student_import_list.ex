@@ -101,7 +101,8 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
          ) do
       generate_suggested_username_from_email(student.email, taken)
     else
-      Stream.repeatedly(fn -> 3 end)
+      fn -> 3 end
+      |> Stream.repeatedly()
       |> Stream.scan(fn acc, _n -> acc + 1 end)
       |> Stream.flat_map(&Enum.map(1..10, fn _n -> &1 end))
       |> Stream.map(fn size ->
@@ -125,12 +126,14 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         sanitized_last_names = String.replace(last_names, ~r/[^a-z0-9]/, "")
         last_names_tail_chars = String.length(sanitized_last_names) - 1
 
-        Range.new(1, last_names_tail_chars)
+        1
+        |> Range.new(last_names_tail_chars)
         |> Stream.map(
           &"#{String.slice(sanitized_first_name, 0, 1)}#{String.slice(sanitized_last_names, 0, 1)}#{String.slice(sanitized_last_names, -&1, 1)}"
         )
         |> Stream.concat(
-          Stream.repeatedly(fn -> 1 end)
+          fn -> 1 end
+          |> Stream.repeatedly()
           |> Stream.scan(fn acc, _n -> acc + 1 end)
           |> Stream.map(
             &"#{String.slice(sanitized_first_name, 0, 1)}#{String.slice(sanitized_last_names, 0, 1)}#{String.slice(sanitized_last_names, -1, 1)}#{&1}"
@@ -144,12 +147,14 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         sanitized_name = String.replace(name, ~r/[^a-z0-9]/, "")
         name_tail_chars = String.length(sanitized_name) - 2
 
-        Range.new(1, name_tail_chars)
+        1
+        |> Range.new(name_tail_chars)
         |> Stream.map(
           &"#{String.slice(sanitized_name, 0, 2)}#{String.slice(sanitized_name, -&1, 1)}"
         )
         |> Stream.concat(
-          Stream.repeatedly(fn -> 1 end)
+          fn -> 1 end
+          |> Stream.repeatedly()
           |> Stream.scan(fn acc, _n -> acc + 1 end)
           |> Stream.map(
             &"#{String.slice(sanitized_name, 0, 2)}#{String.slice(sanitized_name, -1, 1)}#{&1}"
@@ -163,7 +168,8 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
 
   defp random_alphanumeric(size),
     do:
-      Range.new(1, size - 1)
+      1
+      |> Range.new(size - 1)
       |> Enum.map(fn _n -> Enum.random(@alphanumeric) end)
       |> List.to_string()
 end

@@ -89,7 +89,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
                         user_account: user_account
                       } ->
       case user_account_and_state do
-        {:new_student, _user_account, preregistered_user} when not is_nil(preregistered_user) ->
+        {:new_student, _user_account, %PreregisteredUser{} = preregistered_user} ->
           Multi.new()
           |> Multi.update(
             :linked_preregistered_user,
@@ -231,8 +231,8 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
          preregistered_user
        ),
        do:
-         UserRegisteredWithSwitchEduId.new(
-           switch_edu_id,
+         switch_edu_id
+         |> UserRegisteredWithSwitchEduId.new(
            session,
            preregistered_user
          )
@@ -246,7 +246,8 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
          client_metadata
        ),
        do:
-         UserLoggedInWithSwitchEduId.new(switch_edu_id, session, client_metadata)
+         switch_edu_id
+         |> UserLoggedInWithSwitchEduId.new(session, client_metadata)
          |> new_event(%{}, occurred_at: session.created_at)
          |> add_to_stream(session.user_account)
          |> StoredEvent.initiated_by(UserAccount.event_stream(session.user_account))
