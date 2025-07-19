@@ -106,9 +106,11 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
   defimpl Event do
     alias ArchiDep.Servers.Events.ServerUpdated
 
+    @spec event_stream(ServerUpdated.t()) :: String.t()
     def event_stream(%ServerUpdated{id: id}),
       do: "servers:#{id}"
 
+    @spec event_type(ServerUpdated.t()) :: atom()
     def event_type(_event), do: :"archidep/servers/server-updated"
   end
 end

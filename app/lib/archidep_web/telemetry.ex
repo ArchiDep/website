@@ -1,10 +1,11 @@
 defmodule ArchiDepWeb.Telemetry do
   use Supervisor
-  import Telemetry.Metrics
 
-  def start_link(arg) do
-    Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
-  end
+  import Telemetry.Metrics
+  alias Telemetry.Metrics.Summary
+
+  @spec start_link(term()) :: Supervisor.on_start()
+  def start_link(arg), do: Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
 
   @impl Supervisor
   def init(_arg) do
@@ -19,6 +20,7 @@ defmodule ArchiDepWeb.Telemetry do
     Supervisor.init(children, strategy: :one_for_one)
   end
 
+  @spec metrics() :: list(Summary.t())
   def metrics do
     [
       # Phoenix Metrics

@@ -43,9 +43,11 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
   defimpl Event do
     alias ArchiDep.Course.Events.StudentUpdated
 
+    @spec event_stream(StudentUpdated.t()) :: String.t()
     def event_stream(%StudentUpdated{id: id}),
       do: "students:#{id}"
 
+    @spec event_type(StudentUpdated.t()) :: atom()
     def event_type(_event), do: :"archidep/students/student-updated"
   end
 end

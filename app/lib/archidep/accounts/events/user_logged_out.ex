@@ -29,9 +29,11 @@ defmodule ArchiDep.Accounts.Events.UserLoggedOut do
   defimpl Event do
     alias ArchiDep.Accounts.Events.UserLoggedOut
 
+    @spec event_stream(UserLoggedOut.t()) :: String.t()
     def event_stream(%UserLoggedOut{user_account_id: user_account_id}),
       do: "user-accounts:#{user_account_id}"
 
+    @spec event_type(UserLoggedOut.t()) :: atom()
     def event_type(_event), do: :"archidep/accounts/user-logged-out"
   end
 end

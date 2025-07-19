@@ -46,9 +46,13 @@ defmodule ArchiDep.Servers.Events.ServerDeleted do
   end
 
   defimpl Event do
-    def event_stream(%ArchiDep.Servers.Events.ServerDeleted{id: id}),
+    alias ArchiDep.Servers.Events.ServerDeleted
+
+    @spec event_stream(ServerDeleted.t()) :: String.t()
+    def event_stream(%ServerDeleted{id: id}),
       do: "servers:#{id}"
 
+    @spec event_type(ServerDeleted.t()) :: atom()
     def event_type(_event), do: :"archidep/servers/server-deleted"
   end
 end

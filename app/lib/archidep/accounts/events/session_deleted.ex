@@ -23,9 +23,11 @@ defmodule ArchiDep.Accounts.Events.SessionDeleted do
   defimpl Event do
     alias ArchiDep.Accounts.Events.SessionDeleted
 
+    @spec event_stream(SessionDeleted.t()) :: String.t()
     def event_stream(%SessionDeleted{user_account_id: user_account_id}),
       do: "user-accounts:#{user_account_id}"
 
+    @spec event_type(SessionDeleted.t()) :: atom()
     def event_type(_event), do: :"archidep/accounts/session-deleted"
   end
 end

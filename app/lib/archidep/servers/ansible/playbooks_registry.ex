@@ -20,8 +20,10 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
 
                name = String.replace_suffix(filename, ".yml", "")
 
+               playbook_file = Path.join("priv/ansible/playbooks", filename)
+
                playbook =
-                 AnsiblePlaybook.new(Path.join("priv/ansible/playbooks", filename), digest)
+                 AnsiblePlaybook.new(playbook_file, digest)
 
                {name, playbook}
              end)
@@ -49,6 +51,7 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
     end
   end
 
+  @spec __mix_recompile__?() :: boolean()
   def __mix_recompile__?, do: @playbooks_files_digest != ansible_files_hash()
 
   defp ansible_files_hash,

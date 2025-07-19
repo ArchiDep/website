@@ -98,9 +98,11 @@ defmodule ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated do
   defimpl Event do
     alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
 
+    @spec event_stream(ClassExpectedServerPropertiesUpdated.t()) :: String.t()
     def event_stream(%ClassExpectedServerPropertiesUpdated{id: id}),
       do: "classes:#{id}"
 
+    @spec event_type(ClassExpectedServerPropertiesUpdated.t()) :: atom()
     def event_type(_event), do: :"archidep/course/class-expected-server-properties-updated"
   end
 end

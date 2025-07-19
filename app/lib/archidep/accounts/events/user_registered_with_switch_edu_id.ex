@@ -100,9 +100,11 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
   defimpl Event do
     alias ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId
 
+    @spec event_stream(UserRegisteredWithSwitchEduId.t()) :: String.t()
     def event_stream(%UserRegisteredWithSwitchEduId{user_account_id: user_account_id}),
       do: "user-accounts:#{user_account_id}"
 
+    @spec event_type(UserRegisteredWithSwitchEduId.t()) :: atom()
     def event_type(_event), do: :"archidep/accounts/user-registered-with-switch-edu-id"
   end
 end

@@ -106,9 +106,11 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
   defimpl Event do
     alias ArchiDep.Servers.Events.ServerCreated
 
+    @spec event_stream(ServerCreated.t()) :: String.t()
     def event_stream(%ServerCreated{id: id}),
       do: "servers:#{id}"
 
+    @spec event_type(ServerCreated.t()) :: atom()
     def event_type(_event), do: :"archidep/servers/server-created"
   end
 end
