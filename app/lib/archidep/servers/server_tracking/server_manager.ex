@@ -8,7 +8,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
 
   use GenServer
 
-  require Logger
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Authentication
@@ -24,6 +23,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   alias ArchiDep.Servers.Types
   alias Ecto.Changeset
   alias Ecto.UUID
+  require Logger
 
   @spec name(Server.t()) :: GenServer.name()
   def name(%Server{id: server_id}), do: name(server_id)

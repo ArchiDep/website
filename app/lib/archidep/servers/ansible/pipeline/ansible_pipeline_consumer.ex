@@ -7,11 +7,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineConsumer do
 
   use ConsumerSupervisor
 
-  require Logger
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner
+  require Logger
 
   @spec name(Pipeline.t()) :: GenServer.name()
   def name(pipeline), do: {:global, {__MODULE__, pipeline}}

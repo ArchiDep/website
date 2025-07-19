@@ -44,31 +44,33 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
           list(t())
   def list_available_preregistered_users_for_email(email, nil, now),
     do:
-      from(pu in __MODULE__,
-        join: ug in assoc(pu, :group),
-        left_join: ua in assoc(pu, :user_account),
-        where:
-          pu.active and
-            ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
-            (is_nil(ug.end_date) or ug.end_date >= ^now) and is_nil(ua) and
-            fragment("LOWER(?)", pu.email) == fragment("LOWER(?)", ^email),
-        preload: [group: ug, user_account: ua]
+      Repo.all(
+        from(pu in __MODULE__,
+          join: ug in assoc(pu, :group),
+          left_join: ua in assoc(pu, :user_account),
+          where:
+            pu.active and
+              ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
+              (is_nil(ug.end_date) or ug.end_date >= ^now) and is_nil(ua) and
+              fragment("LOWER(?)", pu.email) == fragment("LOWER(?)", ^email),
+          preload: [group: ug, user_account: ua]
+        )
       )
-      |> Repo.all()
 
   def list_available_preregistered_users_for_email(email, user_account_id, now),
     do:
-      from(pu in __MODULE__,
-        join: ug in assoc(pu, :group),
-        left_join: ua in assoc(pu, :user_account),
-        where:
-          pu.active and
-            ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
-            (is_nil(ug.end_date) or ug.end_date >= ^now) and ua.id == ^user_account_id and
-            fragment("LOWER(?)", pu.email) == fragment("LOWER(?)", ^email),
-        preload: [group: ug, user_account: ua]
+      Repo.all(
+        from(pu in __MODULE__,
+          join: ug in assoc(pu, :group),
+          left_join: ua in assoc(pu, :user_account),
+          where:
+            pu.active and
+              ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
+              (is_nil(ug.end_date) or ug.end_date >= ^now) and ua.id == ^user_account_id and
+              fragment("LOWER(?)", pu.email) == fragment("LOWER(?)", ^email),
+          preload: [group: ug, user_account: ua]
+        )
       )
-      |> Repo.all()
 
   @spec link_to_user_account(
           t(),

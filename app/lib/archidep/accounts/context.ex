@@ -1,9 +1,9 @@
 defmodule ArchiDep.Accounts.Context do
   @moduledoc false
 
-  use ArchiDep, :context_impl
-
   @behaviour ArchiDep.Accounts.Behaviour
+
+  use ArchiDep, :context_impl
 
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.UseCases

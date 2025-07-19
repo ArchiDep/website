@@ -35,8 +35,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
     provided_groups = assigns[:groups] || []
 
     assigns =
-      assigns
-      |> assign_new(:selected_group, fn ->
+      assign_new(assigns, :selected_group, fn ->
         provided_group ||
           Enum.find(provided_groups, fn group -> group.id == form[:group_id].value end)
       end)

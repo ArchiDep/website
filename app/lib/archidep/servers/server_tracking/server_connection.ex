@@ -9,11 +9,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
 
   use GenServer
 
-  require Logger
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManager
   alias Ecto.UUID
+  require Logger
 
   @type connect_options :: [connect_option()]
   @type connect_option :: {:silently_accept_hosts, boolean()}

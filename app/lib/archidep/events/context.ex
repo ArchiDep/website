@@ -1,9 +1,9 @@
 defmodule ArchiDep.Events.Context do
   @moduledoc false
 
-  use ArchiDep, :context_impl
-
   @behaviour ArchiDep.Events.Behaviour
+
+  use ArchiDep, :context_impl
 
   alias ArchiDep.Events.Behaviour
   alias ArchiDep.Events.UseCases

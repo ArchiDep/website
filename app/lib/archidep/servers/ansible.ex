@@ -6,13 +6,13 @@ defmodule ArchiDep.Servers.Ansible do
   See https://docs.ansible.com.
   """
 
-  require Logger
   alias ArchiDep.Servers.Ansible.PlaybooksRegistry
   alias ArchiDep.Servers.Ansible.Runner
   alias ArchiDep.Servers.Ansible.Tracker
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  require Logger
 
   @setup_playbook PlaybooksRegistry.playbook!("setup")
 

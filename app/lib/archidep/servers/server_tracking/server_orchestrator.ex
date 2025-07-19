@@ -6,12 +6,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerOrchestrator do
 
   use GenServer
 
-  require Logger
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor
+  require Logger
 
   @name {:global, __MODULE__}
   @track_on_boot Application.compile_env!(:archidep, [:servers, :track_on_boot])

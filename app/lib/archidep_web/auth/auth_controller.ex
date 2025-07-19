@@ -1,11 +1,11 @@
 defmodule ArchiDepWeb.Auth.AuthController do
   use ArchiDepWeb, :controller
 
-  require Logger
   import ArchiDepWeb.Helpers.ConnHelpers
   alias ArchiDep.Accounts
   alias ArchiDepWeb.Auth
   alias Plug.Conn
+  require Logger
 
   plug Ueberauth
 

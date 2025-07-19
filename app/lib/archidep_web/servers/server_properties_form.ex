@@ -49,8 +49,7 @@ defmodule ArchiDepWeb.Servers.ServerPropertiesForm do
   @spec changeset(t(), map()) :: Changeset.t(server_properties())
   def changeset(expected_properties, params \\ %{}),
     do:
-      expected_properties
-      |> cast(params, [
+      cast(expected_properties, params, [
         :cpus,
         :cores,
         :vcpus,

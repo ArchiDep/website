@@ -52,8 +52,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       |> Map.from_struct()
       |> Map.put(
         :expected_properties,
-        form.expected_properties
-        |> then(fn
+        then(form.expected_properties, fn
           nil -> %{}
           properties -> ServerPropertiesForm.to_data(properties)
         end)

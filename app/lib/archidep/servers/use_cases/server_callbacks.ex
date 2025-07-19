@@ -4,12 +4,12 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
   notifying the system when a server comes online.
   """
 
-  require Logger
   import ArchiDep.Helpers.DataHelpers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManager
   alias Ecto.UUID
   alias Phoenix.Token
+  require Logger
 
   @one_year_in_seconds 60 * 60 * 24 * 365
   @default_secret_key :crypto.strong_rand_bytes(50)

@@ -1,9 +1,9 @@
 defmodule ArchiDep.Servers.Context do
   @moduledoc false
 
-  use ArchiDep, :context_impl
-
   @behaviour ArchiDep.Servers.Behaviour
+
+  use ArchiDep, :context_impl
 
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.UseCases

@@ -66,19 +66,18 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
     |> Enum.map(&Map.from_struct/1)
     |> Enum.uniq_by(& &1.email)
     |> Enum.map(
-      &(&1
-        |> Map.merge(%{
-          id: UUID.generate(),
-          academic_class: academic_class,
-          username_confirmed: false,
-          domain: domain,
-          active: true,
-          servers_enabled: false,
-          class_id: class_id,
-          version: 1,
-          created_at: now,
-          updated_at: now
-        }))
+      &Map.merge(&1, %{
+        id: UUID.generate(),
+        academic_class: academic_class,
+        username_confirmed: false,
+        domain: domain,
+        active: true,
+        servers_enabled: false,
+        class_id: class_id,
+        version: 1,
+        created_at: now,
+        updated_at: now
+      })
     )
     |> Enum.reduce({[], MapSet.new(existing_usernames)}, fn student, {list, usernames} ->
       username = generate_suggested_username(student, usernames)

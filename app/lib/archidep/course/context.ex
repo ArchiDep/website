@@ -1,9 +1,9 @@
 defmodule ArchiDep.Course.Context do
   @moduledoc false
 
-  use ArchiDep, :context_impl
-
   @behaviour ArchiDep.Course.Behaviour
+
+  use ArchiDep, :context_impl
 
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.UseCases

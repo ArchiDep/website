@@ -3,12 +3,13 @@ defmodule ArchiDep.Course do
   Course context to manage classes and students and all related configuration.
   """
 
+  @behaviour ArchiDep.Course.Behaviour
+
   use ArchiDep, :context
 
-  @behaviour ArchiDep.Course.Behaviour
-  @implementation Application.compile_env!(:archidep, __MODULE__)
-
   alias ArchiDep.Course.Behaviour
+
+  @implementation Application.compile_env!(:archidep, __MODULE__)
 
   delegate(&Behaviour.validate_class/2)
   delegate(&Behaviour.create_class/2)

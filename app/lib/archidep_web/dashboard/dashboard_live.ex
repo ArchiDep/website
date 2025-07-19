@@ -1,5 +1,4 @@
 defmodule ArchiDepWeb.Dashboard.DashboardLive do
-  alias ArchiDep.Course.Schemas.Class
   use ArchiDepWeb, :live_view
 
   import ArchiDepWeb.Helpers.LiveViewHelpers

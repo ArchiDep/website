@@ -92,12 +92,13 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   @spec get_with_switch_edu_id!(UUID.t()) :: t
   def get_with_switch_edu_id!(id),
     do:
-      from(ua in __MODULE__,
-        join: sei in assoc(ua, :switch_edu_id),
-        where: ua.id == ^id,
-        preload: [switch_edu_id: sei]
+      Repo.one!(
+        from(ua in __MODULE__,
+          join: sei in assoc(ua, :switch_edu_id),
+          where: ua.id == ^id,
+          preload: [switch_edu_id: sei]
+        )
       )
-      |> Repo.one!()
 
   @spec event_stream(String.t() | t()) :: String.t()
   def event_stream(id) when is_binary(id), do: "user-accounts:#{id}"

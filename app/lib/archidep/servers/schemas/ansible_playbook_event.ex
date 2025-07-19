@@ -104,12 +104,12 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
     utc_datetime_or_nil(get_in(data, path))
   end
 
-  def utc_datetime_or_nil(value) when is_binary(value) do
+  defp utc_datetime_or_nil(value) when is_binary(value) do
     case DateTime.from_iso8601(value) do
       {:ok, datetime, 0} -> datetime
       _anything_else -> nil
     end
   end
 
-  def utc_datetime_or_nil(_value), do: nil
+  defp utc_datetime_or_nil(_value), do: nil
 end

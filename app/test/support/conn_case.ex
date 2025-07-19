@@ -17,6 +17,8 @@ defmodule ArchiDepWeb.Support.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  alias ArchiDep.Support.DataCase
+
   using do
     quote do
       # The default endpoint for testing
@@ -32,7 +34,7 @@ defmodule ArchiDepWeb.Support.ConnCase do
   end
 
   setup tags do
-    ArchiDep.Support.DataCase.setup_sandbox(tags)
+    DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

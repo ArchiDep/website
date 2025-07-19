@@ -4,7 +4,6 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
   runs, and saving them to the database.
   """
 
-  require Logger
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible.Runner
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
@@ -13,6 +12,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
   alias Ecto.Multi
+  require Logger
 
   @type ansible_playbook_run_event :: {:event, AnsiblePlaybookEvent.t()}
   @type ansible_playbook_run_succeeded :: {:succeeded, AnsiblePlaybookRun.t()}
@@ -67,8 +67,8 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
 
   defp update_playbook_stats(%AnsiblePlaybookEvent{name: "v2_playbook_on_stats"} = event),
     do:
-      Multi.new()
-      |> Multi.update_all(
+      Multi.update_all(
+        Multi.new(),
         :update_stats,
         fn _changes ->
           AnsiblePlaybookRun.update_stats(event.run, event)

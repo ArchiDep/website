@@ -6,8 +6,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   depending on its state.
   """
 
-  require Logger
-  require Record
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Authentication
   alias ArchiDep.Helpers.NetHelpers
@@ -28,6 +26,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias Ecto.Changeset
   alias Ecto.UUID
   alias Phoenix.Token
+  require Logger
+  require Record
 
   @enforce_keys [
     :server,

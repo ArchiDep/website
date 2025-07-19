@@ -6,7 +6,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
 
   use GenServer
 
-  require Logger
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Schemas.Server
@@ -14,6 +13,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   alias Ecto.UUID
   alias Phoenix.PubSub
   alias Phoenix.Tracker
+  require Logger
 
   @pubsub ArchiDep.PubSub
   @tracker ArchiDep.Tracker

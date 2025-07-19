@@ -98,34 +98,37 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       }
 
   @spec get_pending_run!(UUID.t()) :: t()
-  def get_pending_run!(id) do
-    from(r in __MODULE__,
-      where: r.id == ^id and r.state == :pending,
-      join: s in assoc(r, :server),
-      preload: [server: s]
-    )
-    |> Repo.one!()
-  end
+  def get_pending_run!(id),
+    do:
+      Repo.one!(
+        from(r in __MODULE__,
+          where: r.id == ^id and r.state == :pending,
+          join: s in assoc(r, :server),
+          preload: [server: s]
+        )
+      )
 
   @spec get_completed_run!(UUID.t()) :: t()
-  def get_completed_run!(id) do
-    from(r in __MODULE__,
-      where: r.id == ^id and r.state != :pending and r.state != :running,
-      join: s in assoc(r, :server),
-      preload: [server: s]
-    )
-    |> Repo.one!()
-  end
+  def get_completed_run!(id),
+    do:
+      Repo.one!(
+        from(r in __MODULE__,
+          where: r.id == ^id and r.state != :pending and r.state != :running,
+          join: s in assoc(r, :server),
+          preload: [server: s]
+        )
+      )
 
   @spec get_last_playbook_run(Server.t(), AnsiblePlaybook.t()) :: t() | nil
-  def get_last_playbook_run(server, playbook) do
-    from(r in __MODULE__,
-      where: r.server_id == ^server.id and r.playbook == ^AnsiblePlaybook.name(playbook),
-      order_by: [desc: r.created_at],
-      limit: 1
-    )
-    |> Repo.one()
-  end
+  def get_last_playbook_run(server, playbook),
+    do:
+      Repo.one(
+        from(r in __MODULE__,
+          where: r.server_id == ^server.id and r.playbook == ^AnsiblePlaybook.name(playbook),
+          order_by: [desc: r.created_at],
+          limit: 1
+        )
+      )
 
   @spec new_pending(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::
           Changeset.t(t())

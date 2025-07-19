@@ -7,17 +7,18 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
   use GenStage
 
-  require Logger
   import ArchiDep.Helpers.GenStageHelpers
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias Ecto.UUID
+  require Logger
 
   defmodule State do
     @moduledoc false
 
+    @enforce_keys [:stored_demand, :pending_playbooks]
     defstruct [:stored_demand, :pending_playbooks]
 
     # TODO: store unique connection ref and drop playbook run if it has changed

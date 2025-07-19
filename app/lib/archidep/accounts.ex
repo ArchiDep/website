@@ -4,12 +4,13 @@ defmodule ArchiDep.Accounts do
   including authentication, user sessions, and account management.
   """
 
+  @behaviour ArchiDep.Accounts.Behaviour
+
   use ArchiDep, :context
 
-  @behaviour ArchiDep.Accounts.Behaviour
-  @implementation Application.compile_env!(:archidep, __MODULE__)
-
   alias ArchiDep.Accounts.Behaviour
+
+  @implementation Application.compile_env!(:archidep, __MODULE__)
 
   delegate(&Behaviour.log_in_or_register_with_switch_edu_id/2)
   delegate(&Behaviour.validate_session/2)

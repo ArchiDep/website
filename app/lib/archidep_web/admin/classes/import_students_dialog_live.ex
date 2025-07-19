@@ -221,64 +221,66 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       when state in [:waiting_for_upload, :invalid_upload] do
     parsed = consume_uploaded_students(socket)
 
-    case parsed do
-      nil ->
-        assign(socket, :state, :waiting_for_upload)
+    new_socket =
+      case parsed do
+        nil ->
+          assign(socket, :state, :waiting_for_upload)
 
-      [] ->
-        assign(socket, :state, :invalid_upload)
+        [] ->
+          assign(socket, :state, :invalid_upload)
 
-      {:error, _error} ->
-        assign(socket, :state, :invalid_upload)
+        {:error, _error} ->
+          assign(socket, :state, :invalid_upload)
 
-      {:ok, %{columns: columns, students: students}} ->
-        email_column_candidate =
-          columns
-          |> Enum.map(fn col ->
-            {col,
-             Enum.count(students, fn student ->
-               student |> Map.get(col, "") |> String.contains?("@")
-             end)}
-          end)
-          |> Enum.sort_by(fn {_col, count} -> -count end)
-          |> Enum.map(&elem(&1, 0))
-          |> Enum.at(0)
+        {:ok, %{columns: columns, students: students}} ->
+          email_column_candidate =
+            columns
+            |> Enum.map(fn col ->
+              {col,
+               Enum.count(students, fn student ->
+                 student |> Map.get(col, "") |> String.contains?("@")
+               end)}
+            end)
+            |> Enum.sort_by(fn {_col, count} -> -count end)
+            |> Enum.map(&elem(&1, 0))
+            |> Enum.at(0)
 
-        name_column_candidate =
-          Enum.at(columns, if(email_column_candidate == List.first(columns), do: 1, else: 0))
+          name_column_candidate =
+            Enum.at(columns, if(email_column_candidate == List.first(columns), do: 1, else: 0))
 
-        import_changeset =
-          ImportStudentsForm.changeset(
-            %{
-              name_column: name_column_candidate,
-              email_column: email_column_candidate
-            },
-            students
+          import_changeset =
+            ImportStudentsForm.changeset(
+              %{
+                name_column: name_column_candidate,
+                email_column: email_column_candidate
+              },
+              students
+            )
+
+          form =
+            to_form(
+              import_changeset,
+              action: :validate,
+              as: :import_students
+            )
+
+          assign(socket,
+            state: :uploaded,
+            students: students,
+            new_students:
+              if(import_changeset.valid?,
+                do:
+                  students
+                  |> Enum.filter(&(!student_exists?(form, &1, existing_students)))
+                  |> length(),
+                else: 0
+              ),
+            columns: columns,
+            form: form
           )
+      end
 
-        form =
-          to_form(
-            import_changeset,
-            action: :validate,
-            as: :import_students
-          )
-
-        assign(socket,
-          state: :uploaded,
-          students: students,
-          new_students:
-            if(import_changeset.valid?,
-              do:
-                students
-                |> Enum.filter(&(!student_exists?(form, &1, existing_students)))
-                |> length(),
-              else: 0
-            ),
-          columns: columns,
-          form: form
-        )
-    end
-    |> noreply()
+    noreply(new_socket)
   end
 
   def handle_event(
@@ -345,7 +347,8 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
 
   defp consume_uploaded_students(socket),
     do:
-      consume_uploaded_entries(socket, :students, fn %{path: path}, _entry ->
+      socket
+      |> consume_uploaded_entries(:students, fn %{path: path}, _entry ->
         {:ok, parse_students_csv(path, uploaded_students_file(socket.assigns.class))}
       end)
       |> List.first()

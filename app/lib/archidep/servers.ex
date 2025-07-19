@@ -5,12 +5,13 @@ defmodule ArchiDep.Servers do
   servers.
   """
 
+  @behaviour ArchiDep.Servers.Behaviour
+
   use ArchiDep, :context
 
-  @behaviour ArchiDep.Servers.Behaviour
-  @implementation Application.compile_env!(:archidep, __MODULE__)
-
   alias ArchiDep.Servers.Behaviour
+
+  @implementation Application.compile_env!(:archidep, __MODULE__)
 
   # Server groups
   delegate(&Behaviour.list_server_groups/1)

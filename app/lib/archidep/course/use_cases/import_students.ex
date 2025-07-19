@@ -66,32 +66,31 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
     end
   end
 
-  defp insert_events(multi, auth, class, import_list, now) do
-    multi
-    |> Multi.merge(fn
-      %{students: {0, _students}, new_students: []} ->
-        Multi.new()
+  defp insert_events(multi, auth, class, import_list, now),
+    do:
+      Multi.merge(multi, fn
+        %{students: {0, _students}, new_students: []} ->
+          Multi.new()
 
-      %{students: {inserted, _students}, new_students: new_students} ->
-        Multi.new()
-        |> Multi.insert(:students_imported_event, fn %{} ->
-          StudentsImported.new(
-            class,
-            import_list.academic_class,
-            inserted
-          )
-          |> new_event(auth, occurred_at: now)
-          |> add_to_stream(class)
-          |> initiated_by(auth)
-        end)
-        |> Multi.insert_all(:student_created_events, StoredEvent, fn %{
-                                                                       students_imported_event:
-                                                                         cause
-                                                                     } ->
-          Enum.map(new_students, &student_created(auth, &1, cause, now))
-        end)
-    end)
-  end
+        %{students: {inserted, _students}, new_students: new_students} ->
+          Multi.new()
+          |> Multi.insert(:students_imported_event, fn %{} ->
+            StudentsImported.new(
+              class,
+              import_list.academic_class,
+              inserted
+            )
+            |> new_event(auth, occurred_at: now)
+            |> add_to_stream(class)
+            |> initiated_by(auth)
+          end)
+          |> Multi.insert_all(:student_created_events, StoredEvent, fn %{
+                                                                         students_imported_event:
+                                                                           cause
+                                                                       } ->
+            Enum.map(new_students, &student_created(auth, &1, cause, now))
+          end)
+      end)
 
   defp student_created(auth, student, cause, now),
     do:

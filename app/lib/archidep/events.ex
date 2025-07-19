@@ -3,12 +3,13 @@ defmodule ArchiDep.Events do
   Events context, which handles event sourcing and event storage.
   """
 
+  @behaviour ArchiDep.Events.Behaviour
+
   use ArchiDep, :context
 
-  @behaviour ArchiDep.Events.Behaviour
-  @implementation Application.compile_env!(:archidep, __MODULE__)
-
   alias ArchiDep.Events.Behaviour
+
+  @implementation Application.compile_env!(:archidep, __MODULE__)
 
   delegate(&Behaviour.fetch_events/2)
 end

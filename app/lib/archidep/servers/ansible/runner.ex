@@ -4,9 +4,9 @@ defmodule ArchiDep.Servers.Ansible.Runner do
   playbooks on remote servers using the Ansible command line interface.
   """
 
-  require Logger
   import ArchiDep.Helpers.NetHelpers, only: [is_ip_address: 1, is_network_port: 1]
   alias ArchiDep.Servers.Types
+  require Logger
 
   @type ansible_host :: Types.ansible_host()
   @type ansible_port :: Types.ansible_port()
