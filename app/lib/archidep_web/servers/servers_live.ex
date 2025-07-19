@@ -10,7 +10,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
   alias ArchiDep.Servers.ServerTracking.ServerTracker
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
-  @impl true
+  @impl LiveView
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
 
@@ -53,17 +53,17 @@ defmodule ArchiDepWeb.Servers.ServersLive do
     |> ok()
   end
 
-  @impl true
+  @impl LiveView
   def handle_params(_params, _url, socket), do: {:noreply, socket}
 
-  @impl true
+  @impl LiveView
   def handle_event("retry_connecting", %{"server_id" => server_id}, socket)
       when is_binary(server_id) do
     :ok = Servers.retry_connecting(socket.assigns.auth, server_id)
     noreply(socket)
   end
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:server_state, _server_id, _new_server_state} = update,
         %{assigns: %{server_state_map: server_state_map}} = socket
@@ -75,7 +75,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
         )
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:server_created, %Server{owner_id: owner_id} = created_server},
         %{
@@ -105,7 +105,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
     noreply(socket)
   end
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:server_updated, %Server{id: server_id} = server},
         %{assigns: %{servers: servers}} = socket
@@ -126,7 +126,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
     |> noreply()
   end
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:server_deleted, %Server{id: server_id} = server},
         %{

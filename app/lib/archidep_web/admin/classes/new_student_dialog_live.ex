@@ -14,7 +14,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
   @spec close() :: js
   def close, do: close_dialog(@id)
 
-  @impl true
+  @impl LiveComponent
   def update(assigns, socket),
     do:
       socket
@@ -25,14 +25,14 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
       )
       |> ok()
 
-  @impl true
+  @impl LiveComponent
   def handle_event("closed", _params, socket) do
     socket
     |> assign(form: to_form(StudentForm.create_changeset(%{}), as: :student))
     |> noreply()
   end
 
-  @impl true
+  @impl LiveComponent
   def handle_event("validate", %{"student" => params}, socket) do
     auth = socket.assigns.auth
     class = socket.assigns.class
@@ -49,7 +49,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
     )
   end
 
-  @impl true
+  @impl LiveComponent
   def handle_event("create", %{"student" => params}, socket) do
     auth = socket.assigns.auth
     class = socket.assigns.class

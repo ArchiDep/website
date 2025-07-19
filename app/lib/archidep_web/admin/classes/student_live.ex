@@ -12,7 +12,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   alias ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive
   alias ArchiDepWeb.Admin.Classes.EditStudentDialogLive
 
-  @impl true
+  @impl LiveView
   def mount(%{"class_id" => class_id, "id" => id}, _session, socket) do
     auth = socket.assigns.auth
 
@@ -42,12 +42,12 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
     end
   end
 
-  @impl true
+  @impl LiveView
   def handle_params(_params, _url, socket) do
     {:noreply, socket}
   end
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:student_updated, %Student{id: id} = updated_student},
         %Socket{
@@ -61,7 +61,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
         |> assign(student: Student.refresh!(student, updated_student))
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:student_deleted, %Student{id: student_id} = deleted_student},
         %Socket{
@@ -79,7 +79,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
         |> push_navigate(to: ~p"/admin/classes/#{deleted_student.class_id}")
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:class_updated, %Class{id: class_id} = updated_class},
         %Socket{
@@ -91,7 +91,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
         |> assign(student: %Student{class: Class.refresh!(class, updated_class)})
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:class_deleted, %Class{id: class_id}},
         %Socket{
@@ -109,7 +109,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
         |> push_navigate(to: ~p"/admin/classes")
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:preregistered_user_updated, %{id: id} = update},
         %Socket{

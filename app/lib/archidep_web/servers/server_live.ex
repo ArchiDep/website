@@ -11,7 +11,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   alias ArchiDepWeb.Servers.DeleteServerDialogLive
   alias ArchiDepWeb.Servers.EditServerDialogLive
 
-  @impl true
+  @impl LiveView
   def mount(%{"id" => id}, _session, socket) do
     auth = socket.assigns.auth
 
@@ -41,10 +41,10 @@ defmodule ArchiDepWeb.Servers.ServerLive do
     end
   end
 
-  @impl true
+  @impl LiveView
   def handle_params(_params, _url, socket), do: noreply(socket)
 
-  @impl true
+  @impl LiveView
   def handle_event(
         "retry_connecting",
         %{"server_id" => server_id},
@@ -54,7 +54,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
     noreply(socket)
   end
 
-  @impl true
+  @impl LiveView
   def handle_event(
         "retry_operation",
         %{"server_id" => server_id, "operation" => "ansible-playbook", "playbook" => playbook},
@@ -64,7 +64,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
     noreply(socket)
   end
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:server_state, server_id, new_server_state},
         %Socket{assigns: %{server: %Server{id: server_id}}} = socket
@@ -74,11 +74,11 @@ defmodule ArchiDepWeb.Servers.ServerLive do
         |> assign(state: new_server_state)
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info({:server_updated, server}, socket),
     do: socket |> assign(server: server) |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:server_deleted, %Server{id: server_id} = deleted_server},
         %{assigns: %{server: %Server{id: server_id}}} = socket

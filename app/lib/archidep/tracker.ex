@@ -6,6 +6,7 @@ defmodule ArchiDep.Tracker do
   use Phoenix.Tracker
 
   alias Phoenix.PubSub
+  alias Phoenix.Tracker
 
   @pubsub ArchiDep.PubSub
 

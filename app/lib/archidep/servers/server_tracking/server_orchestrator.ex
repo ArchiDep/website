@@ -33,10 +33,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerOrchestrator do
 
   # Server callbacks
 
-  @impl true
+  @impl GenServer
   def init(pipeline), do: {:ok, pipeline, {:continue, :load_servers}}
 
-  @impl true
+  @impl GenServer
   def handle_continue(:load_servers, pipeline) do
     set_process_label(__MODULE__)
 
@@ -54,13 +54,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerOrchestrator do
     {:noreply, pipeline}
   end
 
-  @impl true
+  @impl GenServer
   def handle_call({:ensure_started, server_id}, _from, pipeline) do
     result = ServerDynamicSupervisor.start_server_supervisor(server_id, pipeline)
     {:reply, result, pipeline}
   end
 
-  @impl true
+  @impl GenServer
   def handle_info({:server_created, created_server}, pipeline) do
     {:ok, server} = Server.fetch_server(created_server.id)
 

@@ -8,7 +8,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive
 
-  @impl true
+  @impl LiveView
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
 
@@ -33,7 +33,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     |> ok()
   end
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:student_updated, %Student{id: student_id} = updated_student},
         %Socket{assigns: %{student: %Student{id: student_id} = student}} = socket
@@ -43,7 +43,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         |> assign(student: Student.refresh!(student, updated_student))
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:student_deleted, %Student{id: student_id}},
         %Socket{
@@ -57,7 +57,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         |> assign(student: nil, server_group_member: nil)
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:class_updated, %Class{id: id} = updated_class},
         %Socket{
@@ -71,7 +71,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         |> assign(student: %Student{student | class: Class.refresh!(class, updated_class)})
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:class_deleted, %Class{id: id}},
         %Socket{

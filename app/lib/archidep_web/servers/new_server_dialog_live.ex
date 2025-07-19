@@ -16,11 +16,11 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
   @spec close() :: js
   def close, do: close_dialog(@id)
 
-  @impl true
+  @impl LiveComponent
   def mount(socket),
     do: ok(socket)
 
-  @impl true
+  @impl LiveComponent
   def update(assigns, socket) do
     socket
     |> assign(assigns)
@@ -31,7 +31,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
     |> ok()
   end
 
-  @impl true
+  @impl LiveComponent
 
   def handle_event("closed", _params, socket),
     do:

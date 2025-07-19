@@ -66,14 +66,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
 
   # Server callbacks
 
-  @impl true
+  @impl GenServer
   def init({from, server_ids}) do
     Logger.debug("Init server tracker for server(s): #{inspect(server_ids)}")
 
     {:ok, {from, server_ids}, {:continue, :init}}
   end
 
-  @impl true
+  @impl GenServer
   def handle_continue(:init, {from, server_ids}) do
     set_process_label(__MODULE__)
 
@@ -85,7 +85,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
     |> noreply()
   end
 
-  @impl true
+  @impl GenServer
   def handle_call({:track, server_id}, {from, _tag}, {from, server_states}) do
     current_state = get_current_server_state(server_id)
 
@@ -95,7 +95,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
     |> reply_with({:server_state, server_id, current_state})
   end
 
-  @impl true
+  @impl GenServer
   def handle_call({:untrack, server_id}, {from, _tag}, {from, server_states}) do
     server_states
     |> Map.delete(server_id)
@@ -103,7 +103,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
     |> reply_with({:server_state, server_id, nil})
   end
 
-  @impl true
+  @impl GenServer
   def handle_info(
         {action, server_id, %{state: %ServerRealTimeState{} = server_state}},
         {from, server_states} = state
@@ -125,7 +125,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_info(
         {:leave, server_id, %{state: %ServerRealTimeState{}}},
         {from, server_states} = state

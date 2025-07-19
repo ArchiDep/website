@@ -8,7 +8,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDepWeb.Admin.Classes.NewClassDialogLive
 
-  @impl true
+  @impl LiveView
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
 
@@ -33,10 +33,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
     |> ok()
   end
 
-  @impl true
+  @impl LiveView
   def handle_params(_params, _url, socket), do: noreply(socket)
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:class_created, created_class},
         %Socket{assigns: %{classes: classes}} = socket
@@ -48,7 +48,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
     |> noreply()
   end
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:class_updated, %{id: id} = updated},
         %Socket{assigns: %{classes: classes}} = socket
@@ -69,7 +69,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
         )
         |> noreply()
 
-  @impl true
+  @impl LiveView
   def handle_info(
         {:class_deleted, deleted_class},
         %Socket{assigns: %{classes: classes}} = socket
