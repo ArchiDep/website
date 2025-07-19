@@ -255,10 +255,10 @@ defmodule ArchiDep.Helpers.PipeHelpers do
 
   ## Examples
 
-      iex> ArchiDep.Helpers.PipeHelpers.pair(42, :ok)
+      iex> import ArchiDep.Helpers.PipeHelpers
+      iex> pair(42, :ok)
       {:ok, 42}
-
-      iex> ArchiDep.Helpers.PipeHelpers.pair("oops", :error)
+      iex> pair("oops", :error)
       {:error, "oops"}
   """
   @spec pair(term, term) :: {term, term}
@@ -269,13 +269,16 @@ defmodule ArchiDep.Helpers.PipeHelpers do
 
   ## Examples
 
-      iex> ArchiDep.Helpers.PipeHelpers.unpair_ok({:ok, 42})
+      iex> import ArchiDep.Helpers.PipeHelpers
+      iex> unpair_ok({:ok, 42})
       42
 
-      iex> ArchiDep.Helpers.PipeHelpers.unpair_ok({:error, :oops})
+      iex> import ArchiDep.Helpers.PipeHelpers
+      iex> unpair_ok({:error, :oops})
       ** (ArgumentError) {:error, :oops} is not an ok tuple
 
-      iex> ArchiDep.Helpers.PipeHelpers.unpair_ok(:foo)
+      iex> import ArchiDep.Helpers.PipeHelpers
+      iex> unpair_ok(:foo)
       ** (ArgumentError) :foo is not an ok tuple
   """
   @spec unpair_ok({:ok, term}) :: term
