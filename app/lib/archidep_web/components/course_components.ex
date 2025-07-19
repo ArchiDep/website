@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Components.CourseComponents do
     required: true,
     doc: "the student whose username to display"
 
+  @spec student_username(map()) :: Rendered.t()
   def student_username(assigns) do
     ~H"""
     <div class="flex flex-col lg:flex-row lg:items-center gap-x-2">
@@ -27,6 +28,7 @@ defmodule ArchiDepWeb.Components.CourseComponents do
     required: true,
     doc: "the expected server properties to display"
 
+  @spec expected_server_properties(map()) :: Rendered.t()
   def expected_server_properties(assigns) do
     properties = assigns.properties
 

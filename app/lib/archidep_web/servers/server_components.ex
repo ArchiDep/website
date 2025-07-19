@@ -12,6 +12,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   attr :server, Server, doc: "the server whose name to display"
 
+  @spec server_name(map()) :: Rendered.t()
   def server_name(assigns) do
     ~H"""
     <%= if @server.name do %>
@@ -36,6 +37,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     doc: "function to call when retrying an operation",
     default: nil
 
+  @spec server_card(map()) :: Rendered.t()
   def server_card(assigns) do
     state = assigns.state
 
@@ -249,6 +251,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   attr :on_retry_operation, JS,
     doc: "function to call when retrying an operation",
     default: nil
+
+  @spec server_problem(map()) :: Rendered.t()
 
   def server_problem(
         %{problem: {:server_ansible_playbook_failed, playbook, ansible_run_state, ansible_stats}} =

@@ -5,9 +5,8 @@ defmodule ArchiDep.Servers.Supervisor do
 
   use Supervisor
 
-  def start_link(_init_arg) do
-    Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
-  end
+  @spec start_link(term()) :: Supervisor.on_start()
+  def start_link(_init_arg), do: Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
 
   @impl Supervisor
   def init(nil) do

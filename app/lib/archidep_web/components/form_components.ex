@@ -3,10 +3,11 @@ defmodule ArchiDepWeb.Components.FormComponents do
   Common components and helper functions for rendering forms.
   """
 
-  use Phoenix.Component
+  use ArchiDepWeb, :component
 
   slot :inner_block, required: true, doc: "the help text to display"
 
+  @spec field_help(map()) :: Rendered.t()
   def field_help(assigns) do
     ~H"""
     <div class="flex items-start gap-x-1">
@@ -19,6 +20,7 @@ defmodule ArchiDepWeb.Components.FormComponents do
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from a form, for example: @form[:email]"
 
+  @spec errors_for(map()) :: Rendered.t()
   def errors_for(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
 
@@ -31,6 +33,7 @@ defmodule ArchiDepWeb.Components.FormComponents do
 
   slot :inner_block, required: true
 
+  @spec error(map()) :: Rendered.t()
   def error(assigns) do
     ~H"""
     <p class="fieldset-label text-error text-sm text-left">
@@ -42,5 +45,6 @@ defmodule ArchiDepWeb.Components.FormComponents do
     """
   end
 
+  @spec translate_error({String.t(), Keyword.t()}) :: String.t()
   def translate_error({msg, opts}), do: Gettext.dgettext(ArchiDepWeb.Gettext, "errors", msg, opts)
 end

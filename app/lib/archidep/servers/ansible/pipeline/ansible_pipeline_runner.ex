@@ -38,7 +38,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
     :ok
   end
 
-  def run_playbook(%AnsiblePlaybookRun{id: run_id} = pending_run) do
+  defp run_playbook(%AnsiblePlaybookRun{id: run_id} = pending_run) do
     track!(run_id, %{state: :pending, events: 0})
 
     running_run =

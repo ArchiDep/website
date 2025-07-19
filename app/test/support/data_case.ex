@@ -16,6 +16,7 @@ defmodule ArchiDep.Support.DataCase do
 
   alias ArchiDep.Support.DataCase
   alias Ecto.Adapters.SQL.Sandbox
+  alias Ecto.Changeset
 
   using do
     quote do
@@ -36,6 +37,7 @@ defmodule ArchiDep.Support.DataCase do
   @doc """
   Sets up the sandbox based on the test tags.
   """
+  @spec setup_sandbox(map()) :: :ok
   def setup_sandbox(tags) do
     pid = Sandbox.start_owner!(ArchiDep.Repo, shared: not tags[:async])
     on_exit(fn -> Sandbox.stop_owner(pid) end)
@@ -48,11 +50,12 @@ defmodule ArchiDep.Support.DataCase do
       assert "password is too short" in errors_on(changeset).password
       assert %{password: ["password is too short"]} = errors_on(changeset)
   """
-  def errors_on(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
-      Regex.replace(~r"%{(\w+)}", message, fn _whole_match, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+  @spec errors_on(Changeset.t()) :: %{optional(atom()) => [String.t()]}
+  def errors_on(changeset),
+    do:
+      Changeset.traverse_errors(changeset, fn {message, opts} ->
+        Regex.replace(~r"%{(\w+)}", message, fn _whole_match, key ->
+          opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+        end)
       end)
-    end)
-  end
 end

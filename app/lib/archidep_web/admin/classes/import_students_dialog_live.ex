@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   import ArchiDepWeb.Components.FormComponents
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
   alias ArchiDepWeb.Admin.Classes.ImportStudentsForm
   alias Phoenix.HTML.Form
 
@@ -21,6 +22,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   @spec close() :: js
   def close, do: close_dialog(@id)
 
+  @spec cell_class(Form.t(), atom(), String.t()) :: String.t()
   def cell_class(form, column, value) do
     name_column = form[:name_column].value
     name_column_valid = !Keyword.has_key?(form.errors, :name_column)
@@ -40,6 +42,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     end
   end
 
+  @spec state(Form.t(), map(), list(Student.t())) :: Rendered.t()
   def state(form, student, existing_students) do
     assigns = %{}
 
@@ -59,6 +62,8 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       """
     end
   end
+
+  @spec student_exists?(Form.t(), map(), list(Student.t())) :: boolean()
 
   def student_exists?(%Form{errors: []} = form, student, existing_students) do
     email_column = form[:email_column].value
@@ -152,11 +157,11 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   end
 
   @impl LiveComponent
-
   def handle_event("closed", _params, socket) do
     {:noreply, socket}
   end
 
+  @impl LiveComponent
   def handle_event("clear", _params, %Socket{assigns: %{state: :uploaded}} = socket) do
     file = uploaded_students_file(socket.assigns.class)
     File.rm!(file)
@@ -170,6 +175,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
      )}
   end
 
+  @impl LiveComponent
   def handle_event(
         "validate",
         %{"import_students" => params},
@@ -208,11 +214,13 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     end
   end
 
+  @impl LiveComponent
   def handle_event("validate", _params, socket) do
     # This validate clause is required to support live view file uploads.
     {:noreply, socket}
   end
 
+  @impl LiveComponent
   def handle_event(
         "upload",
         _params,
@@ -283,6 +291,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     noreply(new_socket)
   end
 
+  @impl LiveComponent
   def handle_event(
         "import",
         _params,

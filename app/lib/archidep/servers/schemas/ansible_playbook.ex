@@ -17,6 +17,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybook do
   @spec name(t()) :: String.t()
   def name(%__MODULE__{relative_path: relative_path}), do: Path.basename(relative_path, ".yml")
 
+  @spec new(String.t(), binary()) :: t()
   def new(relative_path, digest) when is_binary(relative_path) and is_binary(digest) do
     %__MODULE__{
       relative_path: relative_path,

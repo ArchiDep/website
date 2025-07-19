@@ -12,7 +12,7 @@ defmodule ArchiDepWeb.Config do
   @doc """
   Read the web endpoint configuration.
   """
-  @spec endpoint(%{String.t() => String.t()}, keyword) :: keyword
+  @spec endpoint(%{String.t() => String.t()}, Keyword.t()) :: Keyword.t()
   def endpoint(
         env \\ System.get_env(),
         default_config \\ Application.fetch_env!(:archidep, Endpoint)
@@ -31,7 +31,8 @@ defmodule ArchiDepWeb.Config do
   @doc """
   Read the credentials for the Switch edu-ID authentication provider.
   """
-  @spec switch_edu_id_auth_credentials(%{String.t() => String.t()}) :: keyword
+  @spec switch_edu_id_auth_credentials(%{String.t() => String.t()}) :: Keyword.t()
+  @spec switch_edu_id_auth_credentials(%{String.t() => String.t()}, Keyword.t()) :: Keyword.t()
   def switch_edu_id_auth_credentials(
         env \\ System.get_env(),
         default_config \\ Application.fetch_env!(:ueberauth_oidcc, :providers)

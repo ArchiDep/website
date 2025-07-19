@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Components.Notifications.Disconnected do
 
   attr :key, :string, required: true
 
+  @spec render(map()) :: Rendered.t()
   def render(assigns) do
     ~H"""
     <Flashy.Disconnected.render key={@key}>

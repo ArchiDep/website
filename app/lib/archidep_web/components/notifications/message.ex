@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Components.Notifications.Message do
   attr :key, :string, required: true
   attr :notification, Flashy.Normal, required: true
 
+  @spec render(map()) :: Rendered.t()
   def render(assigns) do
     ~H"""
     <Flashy.Normal.render key={@key} notification={@notification}>

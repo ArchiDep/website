@@ -14,6 +14,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
+  alias Ecto.Query
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
@@ -156,6 +157,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> validate()
   end
 
+  @spec start_running(t()) :: Changeset.t(t())
   def start_running(%__MODULE__{state: :pending} = run) do
     now = DateTime.utc_now()
 
@@ -168,6 +170,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> validate()
   end
 
+  @spec touch_new_event(t(), AnsiblePlaybookEvent.t()) :: Query.t()
   def touch_new_event(run, event) do
     id = run.id
     created_at = event.created_at

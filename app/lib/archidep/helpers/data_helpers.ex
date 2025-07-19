@@ -5,6 +5,7 @@ defmodule ArchiDep.Helpers.DataHelpers do
 
   alias Ecto.UUID
 
+  @spec looks_like_an_email?(String.t()) :: boolean()
   def looks_like_an_email?(email) when is_binary(email),
     do: String.match?(email, ~r/\A.+@.+\..+\z/)
 

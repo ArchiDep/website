@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Profile.ProfileLive do
   alias ArchiDep.Accounts
   alias ArchiDepWeb.Profile.CurrentSessionsLive
 
+  @impl LiveView
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
     user_account = Accounts.user_account(auth)
@@ -18,6 +19,7 @@ defmodule ArchiDepWeb.Profile.ProfileLive do
     |> ok()
   end
 
+  @impl LiveView
   def handle_params(_params, _url, socket) do
     {:noreply, socket}
   end

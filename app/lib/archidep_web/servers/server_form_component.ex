@@ -29,6 +29,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
     required: false,
     doc: "optional footer displayed at the bottom of the form, above the actions"
 
+  @spec server_form(map()) :: Rendered.t()
   def server_form(assigns) do
     form = assigns[:form]
     provided_group = assigns[:group]

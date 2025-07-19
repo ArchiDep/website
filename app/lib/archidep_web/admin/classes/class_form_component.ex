@@ -16,6 +16,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
   attr :on_close, JS, default: nil, doc: "optional JS to execute when the form is closed"
   attr :target, :string, default: nil, doc: "the target for the form submission"
 
+  @spec class_form(map()) :: Rendered.t()
   def class_form(assigns) do
     ~H"""
     <.form id={@id} for={@form} phx-change="validate" phx-submit={@on_submit} phx-target={@target}>

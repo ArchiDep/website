@@ -17,6 +17,7 @@ defmodule ArchiDepWeb do
   those modules here.
   """
 
+  @spec static_paths :: list(String.t())
   def static_paths, do: ~w(assets favicon.ico course fonts images index.html robots.txt)
 
   @spec router :: Macro.t()
@@ -42,6 +43,8 @@ defmodule ArchiDepWeb do
   def component do
     quote do
       use Phoenix.Component
+
+      alias Phoenix.LiveView.Rendered
 
       unquote(html_helpers())
     end
@@ -99,6 +102,7 @@ defmodule ArchiDepWeb do
       alias Ecto.Changeset
       alias Phoenix.LiveComponent
       alias Phoenix.LiveView.JS
+      alias Phoenix.LiveView.Rendered
       alias Phoenix.LiveView.Socket
 
       @type js :: %JS{}
@@ -115,6 +119,8 @@ defmodule ArchiDepWeb do
       # Import convenience functions from controllers
       import Phoenix.Controller,
         only: [get_csrf_token: 0, view_module: 1, view_template: 1]
+
+      alias Phoenix.LiveView.Rendered
 
       # Include general helpers for rendering HTML
       unquote(html_helpers())
@@ -142,6 +148,7 @@ defmodule ArchiDepWeb do
     end
   end
 
+  @spec verified_routes :: Macro.t()
   def verified_routes do
     quote do
       use Phoenix.VerifiedRoutes,
@@ -154,6 +161,7 @@ defmodule ArchiDepWeb do
   @doc """
   When used, dispatch to the appropriate controller/live_view/etc.
   """
+  @spec __using__(atom) :: Macro.t()
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
   end

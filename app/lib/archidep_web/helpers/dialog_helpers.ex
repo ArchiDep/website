@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Helpers.DialogHelpers do
   alias Phoenix.LiveView.JS
   alias Phoenix.LiveView.Socket
 
+  @spec close_dialog(String.t()) :: JS.t()
   def close_dialog(id) do
     %JS{}
     |> JS.push("closed", target: "##{id}")

@@ -209,6 +209,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   def retry_connecting(state, _manual), do: state
 
+  @spec retry_connecting(t()) :: t()
   def retry_connecting(state) do
     Logger.warning(
       "Ignore request to retry connecting to server #{state.server.id} in connection state #{inspect(state.connection_state)}"

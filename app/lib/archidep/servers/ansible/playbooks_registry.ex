@@ -40,6 +40,7 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
     @external_resource playbook.relative_path
   end
 
+  @spec playbook!(String.t()) :: AnsiblePlaybook.t()
   def playbook!(name) do
     case Map.fetch(@playbooks, name) do
       {:ok, playbook} ->
