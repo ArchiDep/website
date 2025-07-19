@@ -61,7 +61,7 @@ defmodule ArchiDep.Course.UseCases.UpdateExpectedServerPropertiesForClass do
         :ok = PubSub.publish_class_updated(updated_class)
         {:ok, updated_class.expected_server_properties}
 
-      {:error, :class, changeset, _} ->
+      {:error, :class, changeset, _changes} ->
         {:error, Changeset.fetch_change!(changeset, :expected_server_properties)}
     end
   end

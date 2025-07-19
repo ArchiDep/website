@@ -17,7 +17,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineSupervisor do
   @spec start_link(Pipeline.t()) :: Supervisor.on_start()
   def start_link(pipeline), do: Supervisor.start_link(__MODULE__, pipeline, name: name(pipeline))
 
-  @impl true
+  @impl Supervisor
   def init(pipeline) do
     set_process_label(__MODULE__)
 

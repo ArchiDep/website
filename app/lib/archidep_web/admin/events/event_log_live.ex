@@ -32,7 +32,7 @@ defmodule ArchiDepWeb.Admin.Events.EventLogLive do
 
   @impl LiveView
 
-  def handle_event("next-page", _, socket) do
+  def handle_event("next-page", _params, socket) do
     {:noreply, paginate_events(socket, {:older_than, socket.assigns.oldest_event})}
   end
 
@@ -40,7 +40,7 @@ defmodule ArchiDepWeb.Admin.Events.EventLogLive do
     {:noreply, paginate_events(socket)}
   end
 
-  def handle_event("prev-page", _, socket) do
+  def handle_event("prev-page", _params, socket) do
     {:noreply, paginate_events(socket, {:newer_than, socket.assigns.newest_event})}
   end
 

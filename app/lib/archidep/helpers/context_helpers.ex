@@ -81,7 +81,7 @@ defmodule ArchiDep.Helpers.ContextHelpers do
            when is_list(opts!) do
     behaviour = Macro.expand(m, __CALLER__)
     callbacks = behaviour.__context_callbacks__()
-    {_mfa, meta} = Enum.find(callbacks, fn {mfa, _} -> mfa == {behaviour, f, a} end)
+    {_mfa, meta} = Enum.find(callbacks, fn {mfa, _o} -> mfa == {behaviour, f, a} end)
 
     {delegate_target, opts!} =
       Keyword.pop_lazy(opts!, :to, fn ->
@@ -113,7 +113,7 @@ defmodule ArchiDep.Helpers.ContextHelpers do
            ) do
     behaviour = Macro.expand(m, __CALLER__)
     callbacks = behaviour.__context_callbacks__()
-    {_mfa, meta} = Enum.find(callbacks, fn {mfa, _} -> mfa == {behaviour, f, a} end)
+    {_mfa, meta} = Enum.find(callbacks, fn {mfa, _o} -> mfa == {behaviour, f, a} end)
 
     {as, opts!} = Keyword.pop(opts!, :as, f)
 

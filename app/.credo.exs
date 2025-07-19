@@ -1,26 +1,14 @@
-# This file contains the configuration for Credo and you are probably reading
-# this after creating it with `mix credo.gen.config`.
-#
-# If you find anything wrong or unclear in this file, please report an
-# issue on GitHub: https://github.com/rrrene/credo/issues
-#
+# This file contains the configuration for Credo.
 %{
-  #
-  # You can have as many configs as you like in the `configs:` field.
   configs: [
     %{
-      #
       # Run any config using `mix credo -C <name>`. If no config name is given
       # "default" is used.
-      #
       name: "default",
-      #
       # These are the files included in the analysis:
       files: %{
-        #
-        # You can give explicit globs or simply directories.
-        # In the latter case `**/*.{ex,exs}` will be used.
-        #
+        # You can give explicit globs or simply directories. In the latter case
+        # `**/*.{ex,exs}` will be used.
         included: [
           "lib/",
           "src/",
@@ -33,74 +21,43 @@
         ],
         excluded: [~r"/_build/", ~r"/deps/", ~r"/node_modules/"]
       },
-      #
-      # Load and configure plugins here:
-      #
       plugins: [],
-      #
-      # If you create your own checks, you must specify the source files for
-      # them here, so they can be loaded by Credo before running the analysis.
-      #
       requires: [],
-      #
-      # If you want to enforce a style guide and need a more traditional linting
-      # experience, you can change `strict` to `true` below:
-      #
-      strict: false,
-      #
-      # To modify the timeout for parsing files, change this value:
-      #
+      strict: true,
+      # File parsing timeout in milliseconds.
       parse_timeout: 5000,
-      #
-      # If you want to use uncolored output by default, you can change `color`
-      # to `false` below:
-      #
       color: true,
-      #
-      # You can customize the parameters of any check by adding a second element
-      # to the tuple.
-      #
-      # To disable a check put `false` as second element:
-      #
-      #     {Credo.Check.Design.DuplicatedCode, false}
-      #
       checks: %{
         enabled: [
-          #
-          ## Consistency Checks
-          #
+          # Consistency Checks
           {Credo.Check.Consistency.ExceptionNames, []},
           {Credo.Check.Consistency.LineEndings, []},
+          {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
           {Credo.Check.Consistency.ParameterPatternMatching, []},
           {Credo.Check.Consistency.SpaceAroundOperators, []},
           {Credo.Check.Consistency.SpaceInParentheses, []},
           {Credo.Check.Consistency.TabsOrSpaces, []},
+          {Credo.Check.Consistency.UnusedVariableNames, []},
 
-          #
-          ## Design Checks
-          #
-          # You can customize the priority of any check
-          # Priority values are: `low, normal, high, higher`
-          #
+          # Design Checks
           {Credo.Check.Design.AliasUsage,
            [priority: :low, if_nested_deeper_than: 2, if_called_more_often_than: 0]},
           {Credo.Check.Design.TagFIXME, []},
-          # You can also customize the exit_status of each check.
-          # If you don't want TODO comments to cause `mix credo` to fail, just
-          # set this value to 0 (zero).
-          #
-          {Credo.Check.Design.TagTODO, [exit_status: 0]},
+          # {Credo.Check.Design.TagTODO, [exit_status: 0]},
+          {Credo.Check.Design.SkipTestWithoutComment, []},
 
-          #
-          ## Readability Checks
-          #
+          # Readability Checks
+          {Credo.Check.Readability.AliasAs, []},
           {Credo.Check.Readability.AliasOrder, []},
+          {Credo.Check.Readability.BlockPipe, []},
           {Credo.Check.Readability.FunctionNames, []},
+          {Credo.Check.Readability.ImplTrue, []},
           {Credo.Check.Readability.LargeNumbers, []},
           {Credo.Check.Readability.MaxLineLength, [priority: :low, max_length: 120]},
           {Credo.Check.Readability.ModuleAttributeNames, []},
           {Credo.Check.Readability.ModuleDoc, []},
           {Credo.Check.Readability.ModuleNames, []},
+          {Credo.Check.Readability.MultiAlias, []},
           {Credo.Check.Readability.ParenthesesInCondition, []},
           {Credo.Check.Readability.ParenthesesOnZeroArityDefs, []},
           {Credo.Check.Readability.PipeIntoAnonymousFunctions, []},
@@ -116,9 +73,7 @@
           {Credo.Check.Readability.VariableNames, []},
           {Credo.Check.Readability.WithSingleClause, []},
 
-          #
-          ## Refactoring Opportunities
-          #
+          # Refactoring Opportunities
           {Credo.Check.Refactor.Apply, []},
           {Credo.Check.Refactor.CondStatements, []},
           {Credo.Check.Refactor.CyclomaticComplexity, []},
@@ -135,10 +90,9 @@
           {Credo.Check.Refactor.RejectReject, []},
           {Credo.Check.Refactor.UnlessWithElse, []},
           {Credo.Check.Refactor.WithClauses, []},
+          {Credo.Check.Refactor.UtcNowTruncate, []},
 
-          #
-          ## Warnings
-          #
+          # Warnings
           {Credo.Check.Warning.ApplicationConfigInModuleAttribute, []},
           {Credo.Check.Warning.BoolOperationOnSameValues, []},
           {Credo.Check.Warning.Dbg, []},
@@ -163,21 +117,10 @@
         ],
         disabled: [
           #
-          # Checks scheduled for next check update (opt-in for now)
-          {Credo.Check.Refactor.UtcNowTruncate, []},
-
-          #
           # Controversial and experimental checks (opt-in, just move the check to `:enabled`
           #   and be sure to use `mix credo --strict` to see low priority checks)
           #
-          {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
-          {Credo.Check.Consistency.UnusedVariableNames, []},
           {Credo.Check.Design.DuplicatedCode, []},
-          {Credo.Check.Design.SkipTestWithoutComment, []},
-          {Credo.Check.Readability.AliasAs, []},
-          {Credo.Check.Readability.BlockPipe, []},
-          {Credo.Check.Readability.ImplTrue, []},
-          {Credo.Check.Readability.MultiAlias, []},
           {Credo.Check.Readability.NestedFunctionCalls, []},
           {Credo.Check.Readability.OneArityFunctionInPipe, []},
           {Credo.Check.Readability.OnePipePerLine, []},
@@ -203,13 +146,67 @@
           {Credo.Check.Warning.LeakyEnvironment, []},
           {Credo.Check.Warning.MapGetUnsafePass, []},
           {Credo.Check.Warning.MixEnv, []},
-          {Credo.Check.Warning.UnsafeToAtom, []}
+          {Credo.Check.Warning.UnsafeToAtom, []},
 
           # {Credo.Check.Refactor.MapInto, []},
 
           #
           # Custom checks can be created using `mix credo.gen.check`.
           #
+
+          # https://github.com/xtian/credo_contrib
+          {CredoContrib.Check.DocWhitespace, []},
+          {CredoContrib.Check.EmptyDocString, []},
+          {CredoContrib.Check.EmptyTestBlock, []},
+          {CredoContrib.Check.FunctionBlockSyntax, []},
+          {CredoContrib.Check.FunctionNameUnderscorePrefix, []},
+          {CredoContrib.Check.ModuleAlias, []},
+          {CredoContrib.Check.ModuleDirectivesOrder, []},
+          {CredoContrib.Check.PublicPrivateFunctionName, []},
+          {CredoContrib.Check.SingleFunctionPipe, []},
+
+          # https://github.com/mirego/credo_naming
+          {CredoNaming.Check.Warning.AvoidSpecificTermsInModuleNames, terms: []},
+          {
+            CredoNaming.Check.Consistency.ModuleFilename,
+            valid_filename_callback: fn filename, module_name, params ->
+              root = CredoNaming.Check.Consistency.ModuleFilename.root_path(filename, params)
+              parts = module_name |> Macro.underscore() |> Path.split()
+              is_test = String.ends_with?(filename, "_test.exs")
+              extension = Path.extname(filename)
+
+              case {Path.split(root), parts, extension, is_test} do
+                # Special naming for the "mix.exs" file which contains the module "ArchiDep.MixProject".
+                {["mix.exs"], ["archidep", "mix_project"], ".exs", false} ->
+                  valid_filename = "mix.exs"
+                  {filename == valid_filename, [valid_filename]}
+
+                # Otherwise default to original behavior.
+                _anything_else ->
+                  CredoNaming.Check.Consistency.ModuleFilename.valid_filename?(
+                    filename,
+                    module_name,
+                    params
+                  )
+              end
+            end
+          },
+
+          # https://hex.pm/packages/nicene
+          {Nicene.AliasImportGrouping, []},
+          {Nicene.AvoidForbiddenNamespaces, false},
+          {Nicene.AvoidImportsFromCurrentApplication, []},
+          {Nicene.ConsistentFunctionDefinitions, false},
+          {Nicene.DocumentGraphqlSchema, false},
+          {Nicene.EctoSchemaDirectories, false},
+          {Nicene.EnsureTestFilePattern, []},
+          {Nicene.FileAndModuleName, false},
+          {Nicene.FileTopToBottom, []},
+          {Nicene.NoSpecsPrivateFunctions, false},
+          {Nicene.PublicFunctionsFirst, false},
+          {Nicene.TestsInTestFolder, false},
+          {Nicene.TrueFalseCaseStatements, []},
+          {Nicene.UnnecessaryPatternMatching, false}
         ]
       }
     }

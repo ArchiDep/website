@@ -80,11 +80,14 @@ defmodule ArchiDep.MixProject do
       {:ueberauth_oidcc, "~> 0.4.1"},
       # Development & test dependencies
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:credo_contrib, "~> 0.2.0", only: [:dev, :test], runtime: false},
+      {:credo_naming, "~> 2.1", only: [:dev, :test], runtime: false},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:excoveralls, "~> 0.18.1", only: :test},
       {:floki, ">= 0.30.0", only: :test},
       {:hammox, git: "https://github.com/AlphaHydrae/hammox.git", branch: "records", only: :test},
       {:mix_test_watch, "~> 1.0", only: :test, runtime: false},
+      {:nicene, "~> 0.7.0", only: [:dev, :test], runtime: false},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:sobelow, "~> 0.8", only: [:dev, :test], runtime: false}
     ]

@@ -17,10 +17,10 @@ defmodule ArchiDep.Tracker do
         pubsub_server: Keyword.fetch!(opts, :pubsub_server)
       )
 
-  @impl true
+  @impl Tracker
   def init([]), do: {:ok, nil}
 
-  @impl true
+  @impl Tracker
   def handle_diff(diff, state) do
     for {topic, {joins, leaves}} <- diff do
       # Merge leave-pairs for the same key into updates.

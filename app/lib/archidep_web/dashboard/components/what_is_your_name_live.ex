@@ -9,7 +9,7 @@ defmodule ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive do
   @spec id() :: String.t()
   def id, do: "what-is-your-name"
 
-  @impl true
+  @impl LiveComponent
   def update(assigns, socket) do
     student = assigns.student
 
@@ -24,7 +24,7 @@ defmodule ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive do
     |> ok()
   end
 
-  @impl true
+  @impl LiveComponent
   def handle_event("validate", %{"student_config" => params}, socket) when is_map(params) do
     auth = socket.assigns.auth
     student = socket.assigns.student
@@ -43,7 +43,7 @@ defmodule ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive do
     end
   end
 
-  @impl true
+  @impl LiveComponent
   def handle_event("configure", %{"student_config" => params}, socket) when is_map(params) do
     auth = socket.assigns.auth
     student = socket.assigns.student

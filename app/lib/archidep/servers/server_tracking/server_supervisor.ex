@@ -20,7 +20,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerSupervisor do
   def start_link(server_id, pipeline),
     do: Supervisor.start_link(__MODULE__, {server_id, pipeline}, name: name(server_id))
 
-  @impl true
+  @impl Supervisor
   def init({server_id, pipeline}) do
     set_process_label(__MODULE__, server_id)
 

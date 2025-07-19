@@ -778,7 +778,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     has_failed_playbook =
       Enum.any?(problems, fn
         {:server_ansible_playbook_failed, "setup", _state, _stats} -> true
-        _ -> false
+        _any_other_problem -> false
       end)
 
     if has_failed_playbook do

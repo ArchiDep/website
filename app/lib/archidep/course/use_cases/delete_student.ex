@@ -27,11 +27,11 @@ defmodule ArchiDep.Course.UseCases.DeleteStudent do
              |> initiated_by(auth)
            end)
            |> Repo.transaction() do
-        {:ok, _} ->
+        {:ok, _changes} ->
           :ok = PubSub.publish_student_deleted(student)
           :ok
 
-        {:error, :student, changeset, _} ->
+        {:error, :student, changeset, _changes} ->
           {:error, changeset}
       end
     end

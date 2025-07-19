@@ -74,7 +74,7 @@ defmodule ArchiDep.Course.UseCases.ConfigureStudent do
       {:ok, %{student: updated_student}} ->
         {:ok, updated_student}
 
-      {:error, :student, changeset, _} ->
+      {:error, :student, changeset, _changes} ->
         {:error, changeset}
     end
   end

@@ -137,7 +137,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       )
       |> ok()
     else
-      _ ->
+      _anything_else ->
         socket
         |> assign(assigns)
         |> assign(
@@ -332,7 +332,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
           |> push_event("execute-action", %{to: "##{@id}", action: "close"})
           |> noreply()
 
-        _ ->
+        _anything_else ->
           noreply(socket)
       end
     else
@@ -360,11 +360,11 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       )
       |> Enum.filter(fn
         {:ok, _row} -> true
-        _ -> false
+        _anything_else -> false
       end)
       |> Enum.reduce([], fn
         {:ok, row}, acc -> [row | acc]
-        _, acc -> acc
+        _value, acc -> acc
       end)
       |> Enum.reverse()
       |> Enum.take(1)
@@ -380,11 +380,11 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       )
       |> Enum.filter(fn
         {:ok, _row} -> true
-        _ -> false
+        _not_a_row -> false
       end)
       |> Enum.reduce([], fn
         {:ok, row}, acc -> [Map.filter(row, fn {key, _val} -> key != "" end) | acc]
-        _, acc -> acc
+        _not_a_row, acc -> acc
       end)
       |> Enum.reverse()
       |> Enum.to_list()

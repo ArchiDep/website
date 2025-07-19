@@ -83,7 +83,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
        }} ->
         {:ok, ansible_facts}
 
-      {:ok, _} ->
+      {:ok, _anything_else} ->
         Logger.error("Failed to decode Ansible facts #{inspect(facts)}")
         {:error, :invalid_json_output}
 

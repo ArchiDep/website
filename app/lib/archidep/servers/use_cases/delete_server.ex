@@ -36,7 +36,7 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
          |> Multi.merge(&decrease_active_server_count(owner, &1.server))
          |> Multi.insert(:stored_event, &server_deleted(auth, &1.server, now))
          |> Repo.transaction() do
-      {:ok, _} ->
+      {:ok, _changes} ->
         :ok = PubSub.publish_server_deleted(server)
         :ok
     end

@@ -56,7 +56,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
         :ok = PubSub.publish_server_updated(updated_server)
         {:ok, updated_server}
 
-      {:error, :server, changeset, _} ->
+      {:error, :server, changeset, _changes} ->
         {:error, changeset}
     end
   end

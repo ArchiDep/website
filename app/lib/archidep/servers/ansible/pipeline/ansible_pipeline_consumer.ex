@@ -20,7 +20,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineConsumer do
   def start_link(pipeline),
     do: ConsumerSupervisor.start_link(__MODULE__, pipeline, name: name(pipeline))
 
-  @impl true
+  @impl GenStage
   def init(pipeline) do
     set_process_label(__MODULE__)
 

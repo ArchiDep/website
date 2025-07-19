@@ -50,20 +50,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
 
   # Server callbacks
 
-  @impl true
+  @impl GenServer
   def init(server_id) do
     Logger.debug("Init server connection for server #{server_id}")
     {:ok, server_id, {:continue, :idle}}
   end
 
-  @impl true
+  @impl GenServer
   def handle_continue(:idle, server_id) do
     set_process_label(__MODULE__, server_id)
     ServerManager.connection_idle(server_id, self())
     {:noreply, {:idle, server_id}}
   end
 
-  @impl true
+  @impl GenServer
 
   def handle_call({:connect, host, port, username, options}, _from, {:idle, server_id}) do
     open_ssh_connection(host, port, username, options, server_id)
@@ -109,7 +109,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
     {:reply, :ok, {:idle, server_id}}
   end
 
-  @impl true
+  @impl GenServer
   def terminate(_reason, {:connected, connection_ref, server_id}) do
     case :ssh.close(connection_ref) do
       :ok ->

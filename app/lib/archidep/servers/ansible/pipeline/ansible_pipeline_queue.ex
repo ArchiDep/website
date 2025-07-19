@@ -127,14 +127,14 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   def server_offline(pipeline, %Server{id: server_id}),
     do: GenStage.cast(name(pipeline), {:server_offline, server_id})
 
-  @impl true
+  @impl GenStage
   def init(nil) do
     set_process_label(__MODULE__)
     Logger.info("Init Ansible pipeline queue")
     {:producer, State.init()}
   end
 
-  @impl true
+  @impl GenStage
   def handle_demand(demand, state) when is_demand(demand),
     do:
       state
@@ -142,7 +142,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       |> State.consume_events()
       |> noreply()
 
-  @impl true
+  @impl GenStage
   def handle_call({:run_playbook, playbook_run_id, server_id}, _from, state),
     do:
       state
@@ -150,7 +150,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       |> State.consume_events()
       |> reply(:ok)
 
-  @impl true
+  @impl GenStage
   def handle_cast({:server_offline, server_id}, state),
     do:
       state

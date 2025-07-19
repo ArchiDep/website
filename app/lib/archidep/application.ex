@@ -6,7 +6,7 @@ defmodule ArchiDep.Application do
   @spec public_key() :: String.t()
   def public_key, do: Application.fetch_env!(:archidep, :public_key)
 
-  @impl true
+  @impl Application
   def start(_type, _args) do
     children = [
       ArchiDepWeb.Telemetry,
@@ -29,7 +29,7 @@ defmodule ArchiDep.Application do
 
   # Tell Phoenix to update the endpoint configuration whenever the application
   # is updated.
-  @impl true
+  @impl Application
   def config_change(changed, _new, removed) do
     ArchiDepWeb.Endpoint.config_change(changed, removed)
     :ok

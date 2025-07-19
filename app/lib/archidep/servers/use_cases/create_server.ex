@@ -38,7 +38,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
         :ok = PubSub.publish_server_created(server)
         {:ok, server}
 
-      {:error, :server, changeset, _} ->
+      {:error, :server, changeset, _changes} ->
         {:error, changeset}
     end
   end

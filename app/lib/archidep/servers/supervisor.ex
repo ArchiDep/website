@@ -9,7 +9,7 @@ defmodule ArchiDep.Servers.Supervisor do
     Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
-  @impl true
+  @impl Supervisor
   def init(nil) do
     children = [
       ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineSupervisor,

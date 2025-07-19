@@ -103,8 +103,8 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
       generate_suggested_username_from_email(student.email, taken)
     else
       Stream.repeatedly(fn -> 3 end)
-      |> Stream.scan(fn acc, _ -> acc + 1 end)
-      |> Stream.flat_map(&Enum.map(1..10, fn _ -> &1 end))
+      |> Stream.scan(fn acc, _n -> acc + 1 end)
+      |> Stream.flat_map(&Enum.map(1..10, fn _n -> &1 end))
       |> Stream.map(fn size ->
         first_char = List.to_string([Enum.random(@alpha)])
         remaining_chars = random_alphanumeric(size)
@@ -132,7 +132,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         )
         |> Stream.concat(
           Stream.repeatedly(fn -> 1 end)
-          |> Stream.scan(fn acc, _ -> acc + 1 end)
+          |> Stream.scan(fn acc, _n -> acc + 1 end)
           |> Stream.map(
             &"#{String.slice(sanitized_first_name, 0, 1)}#{String.slice(sanitized_last_names, 0, 1)}#{String.slice(sanitized_last_names, -1, 1)}#{&1}"
           )
@@ -151,7 +151,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         )
         |> Stream.concat(
           Stream.repeatedly(fn -> 1 end)
-          |> Stream.scan(fn acc, _ -> acc + 1 end)
+          |> Stream.scan(fn acc, _n -> acc + 1 end)
           |> Stream.map(
             &"#{String.slice(sanitized_name, 0, 2)}#{String.slice(sanitized_name, -1, 1)}#{&1}"
           )
@@ -165,6 +165,6 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
   defp random_alphanumeric(size),
     do:
       Range.new(1, size - 1)
-      |> Enum.map(fn _ -> Enum.random(@alphanumeric) end)
+      |> Enum.map(fn _n -> Enum.random(@alphanumeric) end)
       |> List.to_string()
 end

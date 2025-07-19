@@ -26,7 +26,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor do
   def start_link(_init_arg),
     do: DynamicSupervisor.start_link(__MODULE__, nil, name: @name)
 
-  @impl true
+  @impl DynamicSupervisor
   def init(nil) do
     set_process_label(__MODULE__)
     DynamicSupervisor.init(strategy: :one_for_one)

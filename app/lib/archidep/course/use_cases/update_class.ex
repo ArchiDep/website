@@ -39,7 +39,7 @@ defmodule ArchiDep.Course.UseCases.UpdateClass do
           :ok = PubSub.publish_class_updated(updated_class)
           {:ok, updated_class}
 
-        {:error, :class, changeset, _} ->
+        {:error, :class, changeset, _changes} ->
           {:error, changeset}
       end
     end

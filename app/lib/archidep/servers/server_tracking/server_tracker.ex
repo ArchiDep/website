@@ -48,17 +48,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
 
   @spec get_current_server_state(Server.t() | UUID.t()) :: ServerRealTimeState.t() | nil
 
-  def get_current_server_state(%Server{id: server_id}), do: get_current_server_state(server_id)
+  def get_current_server_state(%Server{id: server_id}) do
+    get_current_server_state(server_id)
+  end
 
-  def get_current_server_state(server_id),
-    do:
+  def get_current_server_state(server_id) do
+    tracked =
       @tracker
       |> Tracker.list("servers")
       |> Enum.find(fn {key, _meta} -> key == server_id end)
-      |> (case do
-            {^server_id, %{state: %ServerRealTimeState{} = server_state}} -> server_state
-            nil -> nil
-          end)
+
+    case tracked do
+      {^server_id, %{state: %ServerRealTimeState{} = server_state}} -> server_state
+      nil -> nil
+    end
+  end
 
   # Server callbacks
 

@@ -81,10 +81,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
 
   # Server callbacks
 
-  @impl true
+  @impl GenServer
   def init({server_id, pipeline}), do: {:ok, {server_id, pipeline}, {:continue, :init}}
 
-  @impl true
+  @impl GenServer
   def handle_continue(:init, {server_id, pipeline}) do
     set_process_label(__MODULE__, server_id)
 
@@ -99,7 +99,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     noreply(state)
   end
 
-  @impl true
+  @impl GenServer
 
   def handle_cast({:connection_idle, connection_pid}, state) do
     Process.monitor(connection_pid)
@@ -124,7 +124,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
       |> execute_actions()
       |> noreply()
 
-  @impl true
+  @impl GenServer
 
   def handle_call(:online?, _from, state),
     do:
@@ -188,7 +188,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     end
   end
 
-  @impl true
+  @impl GenServer
 
   def handle_info(:retry_connecting, state),
     do:

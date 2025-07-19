@@ -33,7 +33,7 @@ defmodule ArchiDep.Course.UseCases.CreateClass do
         :ok = PubSub.publish_class_created(class)
         {:ok, class}
 
-      {:error, :class, changeset, _} ->
+      {:error, :class, changeset, _changes} ->
         {:error, changeset}
     end
   end

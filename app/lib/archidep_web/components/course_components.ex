@@ -97,7 +97,7 @@ defmodule ArchiDepWeb.Components.CourseComponents do
       {gettext("RAM"), properties.memory},
       {gettext("Swap"), properties.swap}
     ]
-    |> Enum.filter(fn {_, value} -> value != nil end)
+    |> Enum.filter(fn {_text, value} -> value != nil end)
     |> Enum.map_join(", ", fn {label, value} -> "#{value} MB #{label}" end)
   end
 
