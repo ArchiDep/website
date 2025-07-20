@@ -25,3 +25,10 @@ Hammox.defmock(ArchiDep.Servers.ContextMock,
   Mock of the servers context.
   """
 )
+
+Hammox.defmock(ArchiDep.Servers.ServerTracking.ServerManagerMock,
+  for: ArchiDep.Servers.ServerTracking.ServerManagerBehaviour,
+  moduledoc: """
+  Mock of the module responsible for managing interactions with a registered server.
+  """
+)

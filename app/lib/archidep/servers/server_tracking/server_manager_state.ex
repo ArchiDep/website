@@ -6,8 +6,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   depending on its state.
   """
 
+  @behaviour ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
+
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
-  alias ArchiDep.Authentication
   alias ArchiDep.Helpers.NetHelpers
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
@@ -20,10 +21,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
+  alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UseCases.DeleteServer
   alias ArchiDep.Servers.UseCases.UpdateServer
-  alias Ecto.Changeset
   alias Ecto.UUID
   alias Phoenix.Token
   require Logger
@@ -121,7 +122,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   ]
   @last_retry_interval_seconds List.last(@retry_intervals_seconds)
 
-  @spec init(UUID.t(), Pipeline.t()) :: t()
+  @impl ServerManagerBehaviour
   def init(server_id, pipeline) do
     Logger.debug("Init server manager for server #{server_id}")
 
@@ -149,14 +150,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     })
   end
 
-  @spec online?(t()) :: boolean()
+  @impl ServerManagerBehaviour
   def online?(%__MODULE__{connection_state: connected_state()}), do: true
   def online?(_state), do: false
 
   # TODO: try connecting after a while if the connection idle message is not received
   # TODO: do not attempt immediate reconnection if the connection crashed, wait a few seconds
-  @spec connection_idle(t(), pid()) :: t()
-
+  @impl ServerManagerBehaviour
   def connection_idle(
         %__MODULE__{connection_state: not_connected_state(), server: server} = state,
         connection_pid
@@ -183,8 +183,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
-  @spec retry_connecting(t(), boolean()) :: t()
-
+  @impl ServerManagerBehaviour
   def retry_connecting(
         %__MODULE__{
           connection_state:
@@ -202,10 +201,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       ),
       do: connect(state, connection_pid, false)
 
-  def retry_connecting(state, _manual), do: state
-
-  @spec retry_connecting(t()) :: t()
-  def retry_connecting(state) do
+  def retry_connecting(state, _manual) do
     Logger.warning(
       "Ignore request to retry connecting to server #{state.server.id} in connection state #{inspect(state.connection_state)}"
     )
@@ -253,8 +249,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     }
   end
 
-  @spec handle_task_result(t(), reference(), term()) :: t()
-
+  @impl ServerManagerBehaviour
   # Handle connection result
   def handle_task_result(
         %__MODULE__{
@@ -646,7 +641,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          %__MODULE__{retry_state | retry_timer: retry}
        end}
 
-  @spec measure_load_average(t()) :: t()
+  @impl ServerManagerBehaviour
   def measure_load_average(%__MODULE__{connection_state: connected_state()} = state),
     do: %__MODULE__{
       state
@@ -656,7 +651,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         ]
     }
 
-  @spec ansible_playbook_event(t(), UUID.t(), String.t() | nil) :: t()
+  @impl ServerManagerBehaviour
   def ansible_playbook_event(
         %__MODULE__{
           ansible_playbook: {%AnsiblePlaybookRun{id: run_id} = playbook_run, _previous_task}
@@ -673,7 +668,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     }
   end
 
-  @spec ansible_playbook_event(t(), UUID.t(), String.t() | nil) :: t()
   def ansible_playbook_event(state, _run_id, _ongoing_task) do
     Logger.warning(
       "Ignoring Ansible playbook event for server #{state.server.id} because no playbook is running"
@@ -682,7 +676,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     state
   end
 
-  @spec ansible_playbook_completed(t(), UUID.t()) :: t()
+  @impl ServerManagerBehaviour
   def ansible_playbook_completed(
         %__MODULE__{
           connection_state:
@@ -760,7 +754,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
-  @spec retry_ansible_playbook(t(), String.t()) :: t()
+  @impl ServerManagerBehaviour
   def retry_ansible_playbook(
         %__MODULE__{
           connection_state: connected_state(),
@@ -799,7 +793,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
-  @spec retry_ansible_playbook(t(), String.t()) :: t()
   def retry_ansible_playbook(%__MODULE__{connection_state: connected_state()} = state, playbook) do
     Logger.info(
       "Ignoring retry request for Ansible playbook #{playbook} because the server is busy"
@@ -808,7 +801,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     state
   end
 
-  @spec retry_ansible_playbook(t(), String.t()) :: t()
   def retry_ansible_playbook(%__MODULE__{} = state, playbook) do
     Logger.info(
       "Ignoring retry request for Ansible playbook #{playbook} because the server is not connected"
@@ -817,7 +809,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     state
   end
 
-  @spec group_updated(t(), map) :: t()
+  @impl ServerManagerBehaviour
   def group_updated(
         %__MODULE__{
           server: %Server{
@@ -849,48 +841,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
-  @spec group_updated(t(), map) :: t()
-  def group_updated(
-        %__MODULE__{
-          server: %Server{
-            id: server_id,
-            group: %ServerGroup{id: group_id}
-          },
-          problems: problems
-        } = state,
-        %{id: group_id, version: version}
-      ) do
-    Logger.info(
-      "Server manager for server #{server_id} received early group update to version #{version}"
-    )
-
-    {:ok, fresh_group} = ServerGroup.fetch_server_group(group_id)
-
-    new_server = %Server{
-      state.server
-      | group: fresh_group
-    }
-
-    auto_activate_or_deactivate(%__MODULE__{
-      state
-      | server: new_server,
-        # TODO: do not add update tracking action if there is already one
-        actions: [update_tracking()],
-        problems: detect_server_properties_mismatches(problems, new_server)
-    })
-  end
-
-  @spec group_updated(t(), map) :: t()
-  def group_updated(
-        %__MODULE__{
-          server: %Server{group: %ServerGroup{id: group_id}}
-        } = state,
-        %{id: group_id}
-      ) do
-    state
-  end
-
-  @spec connection_crashed(t(), pid(), term()) :: t()
+  @impl ServerManagerBehaviour
   def connection_crashed(
         %__MODULE__{connection_state: connected_state(connection_pid: connection_pid)} = state,
         connection_pid,
@@ -914,8 +865,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     }
   end
 
-  @spec update_server(t(), Authentication.t(), Types.update_server_data()) ::
-          {t(), {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_busy}}
+  @impl ServerManagerBehaviour
   def update_server(state, auth, data) do
     case state do
       %__MODULE__{connection_state: connecting_state()} ->
@@ -948,7 +898,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
-  @spec delete_server(t(), Authentication.t()) :: {t(), :ok | {:error, :server_busy}}
+  @impl ServerManagerBehaviour
   def delete_server(
         state,
         auth

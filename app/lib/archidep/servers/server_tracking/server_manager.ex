@@ -19,11 +19,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerConnection
+  alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Servers.Types
   alias Ecto.Changeset
   alias Ecto.UUID
   require Logger
+
+  @type server_manager_option :: {:state, ServerManagerBehaviour.t()}
+  @type server_manager_options :: list(server_manager_option())
 
   @spec name(Server.t()) :: GenServer.name()
   def name(%Server{id: server_id}), do: name(server_id)
@@ -31,18 +35,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   @spec name(UUID.t()) :: GenServer.name()
   def name(server_id) when is_binary(server_id), do: {:global, {__MODULE__, server_id}}
 
-  @spec child_spec({UUID.t(), Pipeline.t()}) :: Supervisor.child_spec()
-  def child_spec({server_id, pipeline}),
+  @spec child_spec({UUID.t(), Pipeline.t(), server_manager_options()}) :: Supervisor.child_spec()
+  def child_spec({server_id, pipeline, opts}),
     do: %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [server_id, pipeline]},
+      start: {__MODULE__, :start_link, [server_id, pipeline, opts]},
       restart: :transient,
       significant: true
     }
 
-  @spec start_link(UUID.t(), Pipeline.t()) :: GenServer.on_start()
-  def start_link(server_id, pipeline),
-    do: GenServer.start_link(__MODULE__, {server_id, pipeline}, name: name(server_id))
+  @spec start_link(UUID.t(), Pipeline.t(), server_manager_options()) :: GenServer.on_start()
+  def start_link(server_id, pipeline, opts),
+    do: GenServer.start_link(__MODULE__, {server_id, pipeline, opts}, name: name(server_id))
 
   # Client API
 
@@ -82,163 +86,181 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   # Server callbacks
 
   @impl GenServer
-  def init({server_id, pipeline}), do: {:ok, {server_id, pipeline}, {:continue, :init}}
+  def init({server_id, pipeline, opts}),
+    do: {:ok, {server_id, pipeline, opts}, {:continue, :init}}
 
   @impl GenServer
-  def handle_continue(:init, {server_id, pipeline}) do
+  def handle_continue(:init, {server_id, pipeline, opts}) do
     set_process_label(__MODULE__, server_id)
+
+    state_factory = Keyword.fetch!(opts, :state)
+    state_module = state_factory.()
 
     state =
       server_id
-      |> ServerManagerState.init(pipeline)
+      |> state_module.init(pipeline)
       |> execute_actions()
 
     # TODO: watch user account & student for changes
     :ok = Course.PubSub.subscribe_class(state.server.group_id)
 
-    noreply(state)
+    noreply({state_module, state})
   end
 
   @impl GenServer
 
-  def handle_cast({:connection_idle, connection_pid}, state) do
+  def handle_cast({:connection_idle, connection_pid}, {state_module, state}) do
     Process.monitor(connection_pid)
 
     state
-    |> ServerManagerState.connection_idle(connection_pid)
+    |> state_module.connection_idle(connection_pid)
     |> execute_actions()
+    |> pair(state_module)
     |> noreply()
   end
 
-  def handle_cast(:retry_connecting, state),
+  def handle_cast(:retry_connecting, {state_module, state}),
     do:
       state
-      |> ServerManagerState.retry_connecting(true)
+      |> state_module.retry_connecting(true)
       |> execute_actions()
+      |> pair(state_module)
       |> noreply()
 
-  def handle_cast({:ansible_playbook_event, run_id, ongoing_task}, state),
+  def handle_cast({:ansible_playbook_event, run_id, ongoing_task}, {state_module, state}),
     do:
       state
-      |> ServerManagerState.ansible_playbook_event(run_id, ongoing_task)
+      |> state_module.ansible_playbook_event(run_id, ongoing_task)
       |> execute_actions()
+      |> pair(state_module)
       |> noreply()
 
   @impl GenServer
 
-  def handle_call(:online?, _from, state),
+  def handle_call(:online?, _from, {state_module, state}),
     do:
       state
-      |> ServerManagerState.online?()
+      |> state_module.online?()
+      |> pair(state_module)
       |> reply(state)
 
-  def handle_call({:ansible_playbook_completed, run_id}, _from, state),
+  def handle_call({:ansible_playbook_completed, run_id}, _from, {state_module, state}),
     do:
       state
-      |> ServerManagerState.ansible_playbook_completed(run_id)
+      |> state_module.ansible_playbook_completed(run_id)
       |> execute_actions()
+      |> pair(state_module)
       |> reply_with(:ok)
 
-  def handle_call(:retry_connecting, _from, state),
+  def handle_call(:retry_connecting, _from, {state_module, state}),
     do:
       state
-      |> ServerManagerState.retry_connecting(true)
+      |> state_module.retry_connecting(true)
       |> execute_actions()
+      |> pair(state_module)
       |> reply_with(:ok)
 
   def handle_call(
         {:retry_ansible_playbook, playbook},
         _from,
-        state
+        {state_module, state}
       )
       when is_binary(playbook),
       do:
         state
-        |> ServerManagerState.retry_ansible_playbook(playbook)
+        |> state_module.retry_ansible_playbook(playbook)
         |> execute_actions()
+        |> pair(state_module)
         |> reply_with(:ok)
 
   def handle_call(
         {:update_server, auth, data},
         _from,
-        state
+        {state_module, state}
       ) do
-    {new_state, result} = ServerManagerState.update_server(state, auth, data)
+    {new_state, result} = state_module.update_server(state, auth, data)
 
     new_state
     |> execute_actions()
+    |> pair(state_module)
     |> reply_with(result)
   end
 
   def handle_call(
         {:delete_server, auth},
         _from,
-        state
+        {state_module, state}
       ) do
-    {new_state, result} = ServerManagerState.delete_server(state, auth)
+    {new_state, result} = state_module.delete_server(state, auth)
 
     case result do
       {:error, :server_busy} ->
         new_state
         |> execute_actions()
+        |> pair(state_module)
         |> reply_with(result)
 
       :ok ->
-        {:stop, :shutdown, :ok, new_state}
+        {:stop, :shutdown, :ok, {state_module, new_state}}
     end
   end
 
   @impl GenServer
 
-  def handle_info(:retry_connecting, state),
+  def handle_info(:retry_connecting, {state_module, state}),
     do:
       state
-      |> ServerManagerState.retry_connecting(false)
+      |> state_module.retry_connecting(false)
       |> execute_actions()
+      |> pair(state_module)
       |> noreply()
 
   def handle_info(
         {task_ref, result},
-        state
+        {state_module, state}
       )
       when is_reference(task_ref),
       do:
         state
-        |> ServerManagerState.handle_task_result(
+        |> state_module.handle_task_result(
           task_ref,
           result
         )
         |> execute_actions()
+        |> pair(state_module)
         |> noreply()
 
   def handle_info(
         {:class_updated, class},
-        state
+        {state_module, state}
       ),
       do:
         state
-        |> ServerManagerState.group_updated(class)
+        |> state_module.group_updated(class)
         |> execute_actions()
+        |> pair(state_module)
         |> noreply()
 
   def handle_info(
         :measure_load_average,
-        state
+        {state_module, state}
       ) do
     state
-    |> ServerManagerState.measure_load_average()
+    |> state_module.measure_load_average()
     |> execute_actions()
+    |> pair(state_module)
     |> noreply()
   end
 
   def handle_info(
         {:DOWN, _ref, :process, connection_pid, reason},
-        state
+        {state_module, state}
       ),
       do:
         state
-        |> ServerManagerState.connection_crashed(connection_pid, reason)
+        |> state_module.connection_crashed(connection_pid, reason)
         |> execute_actions()
+        |> pair(state_module)
         |> noreply()
 
   defp execute_actions(%ServerManagerState{actions: [action | remaining_actions]} = state) do
