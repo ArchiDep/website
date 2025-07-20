@@ -80,6 +80,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @type demonitor_action :: {:demonitor, reference()}
   @type gather_facts_action ::
           {:gather_facts, (t(), (String.t() -> Task.t()) -> t())}
+  @type monitor_action :: {:monitor, pid()}
   @type notify_server_offline :: :notify_server_offline
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
@@ -94,6 +95,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           | connect_action()
           | demonitor_action()
           | gather_facts_action()
+          | monitor_action()
           | notify_server_offline()
           | run_command_action()
           | run_playbook_action()
@@ -161,7 +163,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     if Server.active?(server, DateTime.utc_now()) do
       connect(state, connection_pid, false)
     else
-      %__MODULE__{state | connection_state: not_connected_state(connection_pid: connection_pid)}
+      %__MODULE__{
+        state
+        | connection_state: not_connected_state(connection_pid: connection_pid),
+          actions: [monitor(connection_pid)]
+      }
     end
   end
 
@@ -175,7 +181,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       %__MODULE__{
         state
         | connection_state: not_connected_state(connection_pid: connection_pid),
-          actions: [update_tracking()]
+          actions: [monitor(connection_pid), update_tracking()]
       }
     end
   end
@@ -223,6 +229,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           ),
         actions:
           [
+            monitor(connection_pid),
             {:connect,
              fn task_state, task_factory ->
                task = task_factory.(host, port, username, silently_accept_hosts: true)
@@ -1115,6 +1122,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          real_time_state = to_real_time_state(new_state)
          {real_time_state, new_state}
        end}
+
+  defp monitor(pid), do: {:monitor, pid}
 
   defp send_message(msg, ms, timer_key),
     do:

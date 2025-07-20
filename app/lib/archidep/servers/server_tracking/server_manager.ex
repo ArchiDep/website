@@ -113,15 +113,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
 
   @impl GenServer
 
-  def handle_cast({:connection_idle, connection_pid}, {state_module, state}) do
-    Process.monitor(connection_pid)
-
-    state
-    |> state_module.connection_idle(connection_pid)
-    |> execute_actions()
-    |> pair(state_module)
-    |> noreply()
-  end
+  def handle_cast({:connection_idle, connection_pid}, {state_module, state}),
+    do:
+      state
+      |> state_module.connection_idle(connection_pid)
+      |> execute_actions()
+      |> pair(state_module)
+      |> noreply()
 
   def handle_cast(:retry_connecting, {state_module, state}),
     do:
@@ -312,6 +310,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     factory.(state, fn username ->
       Task.async(fn -> Ansible.gather_facts(state.server, username) end)
     end)
+  end
+
+  defp execute_action(state, {:monitor, pid}) do
+    Process.monitor(pid)
+    state
   end
 
   defp execute_action(state, :notify_server_offline) do

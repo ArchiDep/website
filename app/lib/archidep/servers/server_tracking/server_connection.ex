@@ -29,7 +29,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   def name(%Server{id: server_id}), do: name(server_id)
 
   @spec name(UUID.t()) :: GenServer.name()
-  def name(server_id), do: {:global, {:server_connection, server_id}}
+  def name(server_id), do: {:global, {__MODULE__, server_id}}
 
   @spec start_link(UUID.t()) :: GenServer.on_start()
   def start_link(server_id),
