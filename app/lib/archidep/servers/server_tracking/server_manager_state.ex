@@ -58,7 +58,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           pipeline: Pipeline.t(),
           username: String.t(),
           actions: list(action()),
-          tasks: %{atom() => reference()},
+          tasks: %{optional(atom()) => reference()},
           ansible_playbook: {AnsiblePlaybookRun.t(), String.t() | nil} | nil,
           problems: list(server_problem()),
           retry_timer: reference() | nil,
