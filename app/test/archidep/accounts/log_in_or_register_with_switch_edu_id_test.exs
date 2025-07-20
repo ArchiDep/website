@@ -75,6 +75,50 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     |> assert_user_session(auth, "bob", "bob@archidep.ch", :student, student)
   end
 
+  test "an unknown user cannot register even if their Switch edu-ID account is valid", %{
+    log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
+  } do
+    switch_edu_id_data =
+      AccountsFactory.build(:switch_edu_id_data)
+
+    metadata = Factory.build(:client_metadata)
+
+    assert {:error, :unauthorized_switch_edu_id} =
+             log_in_or_register_with_switch_edu_id.(
+               switch_edu_id_data,
+               metadata
+             )
+
+    assert [] = Repo.all(SwitchEduId)
+    assert [] = Repo.all(UserAccount)
+    assert [] = Repo.all(UserSession)
+  end
+
+  test "an unknown user cannot register even if their Switch edu-ID account is known", %{
+    log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
+  } do
+    switch_edu_id =
+      AccountsFactory.insert(:switch_edu_id)
+
+    switch_edu_id_data =
+      AccountsFactory.build(:switch_edu_id_data,
+        email: switch_edu_id.email,
+        swiss_edu_person_unique_id: switch_edu_id.swiss_edu_person_unique_id
+      )
+
+    metadata = Factory.build(:client_metadata)
+
+    assert {:error, :unauthorized_switch_edu_id} =
+             log_in_or_register_with_switch_edu_id.(
+               switch_edu_id_data,
+               metadata
+             )
+
+    assert [^switch_edu_id] = Repo.all(SwitchEduId)
+    assert [] = Repo.all(UserAccount)
+    assert [] = Repo.all(UserSession)
+  end
+
   defp assert_auth(auth, username, role) do
     assert %Authentication{
              principal_id: user_account_id,
