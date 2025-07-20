@@ -12,6 +12,7 @@ defmodule ArchiDep.Support.ServersFactory do
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Types
+  alias ArchiDep.Support.NetFactory
 
   @playbooks [AnsiblePlaybook.name(Ansible.setup_playbook())]
   @finished_ansible_playbook_run_states [:succeeded, :failed, :interrupted, :timeout]
@@ -38,7 +39,7 @@ defmodule ArchiDep.Support.ServersFactory do
       )
 
     {host, attrs!} = Map.pop_lazy(attrs!, :host, &server_ip_address/0)
-    {port, attrs!} = Map.pop_lazy(attrs!, :port, &port/0)
+    {port, attrs!} = Map.pop_lazy(attrs!, :port, &NetFactory.port/0)
 
     {user, attrs!} =
       Map.pop_lazy(attrs!, :user, fn -> sequence(:ansible_playbook_run_user, &"user#{&1}") end)
@@ -166,7 +167,7 @@ defmodule ArchiDep.Support.ServersFactory do
         sequence(:server_app_username, &"appuser#{&1}")
       end)
 
-    {ssh_port, attrs!} = Map.pop_lazy(attrs!, :ssh_port, optionally(&port/0))
+    {ssh_port, attrs!} = Map.pop_lazy(attrs!, :ssh_port, optionally(&NetFactory.port/0))
 
     {secret_key, attrs!} =
       Map.pop_lazy(attrs!, :secret_key, fn -> Faker.random_bytes(20) end)
@@ -291,29 +292,5 @@ defmodule ArchiDep.Support.ServersFactory do
     do: Enum.random([:pending, :running, :succeeded, :failed, :interrupted, :timeout])
 
   @spec server_ip_address() :: Postgrex.INET.t()
-  def server_ip_address, do: %Postgrex.INET{address: ip_address(), netmask: nil}
-
-  @spec ip_address() :: :inet.ip_address()
-  def ip_address, do: if(bool(), do: ipv4_address(), else: ipv6_address())
-
-  @spec ipv4_address() :: :inet.ip4_address()
-  def ipv4_address,
-    do:
-      1..4
-      |> Enum.map(fn _byte ->
-        Faker.random_between(0, 255)
-      end)
-      |> List.to_tuple()
-
-  @spec ipv6_address() :: :inet.ip6_address()
-  def ipv6_address,
-    do:
-      1..8
-      |> Enum.map(fn _byte ->
-        Faker.random_between(0, 65_535)
-      end)
-      |> List.to_tuple()
-
-  @spec port() :: 1..65_535
-  def port, do: Faker.random_between(1, 65_535)
+  def server_ip_address, do: %Postgrex.INET{address: NetFactory.ip_address(), netmask: nil}
 end

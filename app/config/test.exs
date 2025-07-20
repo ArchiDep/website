@@ -1,6 +1,8 @@
 import Config
 
 config :archidep,
+  public_key:
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHbV+M6SR+flT3XhFhQv2DsyBs1+ORZU4qv9SLTqIFEs archidep",
   root_users: [switch_edu_id: ["root@archidep.ch"]],
   servers: [
     connection_timeout: 5_000,

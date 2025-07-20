@@ -32,7 +32,9 @@ defmodule ArchiDep.ClientMetadata do
       %ClientMetadata{ip_address: nil, user_agent: "Mozilla/5.0"}
   """
   @spec new(:inet.ip_address(), String.t()) :: t()
-  def new(ip_address, user_agent) when is_ip_address(ip_address) do
+  def new(ip_address, user_agent)
+      when (is_nil(ip_address) or is_ip_address(ip_address)) and
+             (is_nil(user_agent) or is_binary(user_agent)) do
     %__MODULE__{
       ip_address: validate_ip_address(ip_address),
       user_agent: user_agent

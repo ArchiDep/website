@@ -10,6 +10,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   alias ArchiDep.Support.NoOpGenServer
   alias ArchiDep.Support.ServersFactory
 
+  setup :verify_on_exit!
+
   setup %{test: test} do
     test_pid = self()
 

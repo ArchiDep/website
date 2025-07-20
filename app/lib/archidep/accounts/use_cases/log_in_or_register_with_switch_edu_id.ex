@@ -236,7 +236,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
            session,
            preregistered_user
          )
-         |> new_event(%{}, occurred_at: session.created_at)
+         |> new_event(%{}, occurred_at: session.user_account.created_at)
          |> add_to_stream(session.user_account)
          |> StoredEvent.initiated_by(UserAccount.event_stream(session.user_account))
 

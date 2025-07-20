@@ -7,40 +7,34 @@ defmodule ArchiDep.Support.AccountsFactory do
 
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Accounts.Types
 
   @roles [:root, :student]
 
-  @spec user_account_factory(map()) :: UserAccount.t()
-  def user_account_factory(attrs!) do
-    {id, attrs!} = pop_entity_id(attrs!)
+  @spec switch_edu_id_data_factory(map()) :: Types.switch_edu_id_data()
+  def switch_edu_id_data_factory(attrs!) do
+    {email, attrs!} = Map.pop_lazy(attrs!, :email, &Faker.Internet.email/0)
 
-    {username, attrs!} =
-      Map.pop_lazy(attrs!, :user_account_username, fn ->
-        sequence(:user_account_username, &"user-account-#{&1}")
+    {first_name, attrs!} =
+      Map.pop_lazy(attrs!, :first_name, fn ->
+        if(bool(), do: Faker.Person.first_name(), else: nil)
       end)
 
-    {roles, attrs!} = Map.pop_lazy(attrs!, :roles, &roles/0)
-    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+    {last_name, attrs!} =
+      Map.pop_lazy(attrs!, :last_name, fn ->
+        if(bool(), do: Faker.Person.last_name(), else: nil)
+      end)
 
-    {switch_edu_id, attrs!} =
-      Map.pop_lazy(attrs!, :switch_edu_id, fn -> build(:switch_edu_id) end)
-
-    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+    {swiss_edu_person_unique_id, attrs!} =
+      Map.pop_lazy(attrs!, :swiss_edu_person_unique_id, &Faker.String.base64/0)
 
     [] = Map.keys(attrs!)
 
-    %UserAccount{
-      id: id,
-      username: username,
-      roles: roles,
-      active: active,
-      switch_edu_id: switch_edu_id,
-      switch_edu_id_id: switch_edu_id.id,
-      preregistered_user: nil,
-      preregistered_user_id: nil,
-      version: version,
-      created_at: created_at,
-      updated_at: updated_at
+    %{
+      email: email,
+      first_name: first_name,
+      last_name: last_name,
+      swiss_edu_person_unique_id: swiss_edu_person_unique_id
     }
   end
 
@@ -81,6 +75,40 @@ defmodule ArchiDep.Support.AccountsFactory do
       created_at: created_at,
       updated_at: updated_at,
       used_at: used_at
+    }
+  end
+
+  @spec user_account_factory(map()) :: UserAccount.t()
+  def user_account_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :user_account_username, fn ->
+        sequence(:user_account_username, &"user-account-#{&1}")
+      end)
+
+    {roles, attrs!} = Map.pop_lazy(attrs!, :roles, &roles/0)
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+
+    {switch_edu_id, attrs!} =
+      Map.pop_lazy(attrs!, :switch_edu_id, fn -> build(:switch_edu_id) end)
+
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+
+    [] = Map.keys(attrs!)
+
+    %UserAccount{
+      id: id,
+      username: username,
+      roles: roles,
+      active: active,
+      switch_edu_id: switch_edu_id,
+      switch_edu_id_id: switch_edu_id.id,
+      preregistered_user: nil,
+      preregistered_user_id: nil,
+      version: version,
+      created_at: created_at,
+      updated_at: updated_at
     }
   end
 
