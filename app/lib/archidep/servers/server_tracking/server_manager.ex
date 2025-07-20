@@ -29,6 +29,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   @type server_manager_option :: {:state, ServerManagerBehaviour.t()}
   @type server_manager_options :: list(server_manager_option())
 
+  @tracker ArchiDep.Tracker
+
   @spec name(Server.t()) :: GenServer.name()
   def name(%Server{id: server_id}), do: name(server_id)
 
@@ -104,7 +106,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     # TODO: watch user account & student for changes
     :ok = Course.PubSub.subscribe_class(state.server.group_id)
 
-    noreply({state_module, state})
+    state
+    |> pair(state_module)
+    |> noreply()
   end
 
   @impl GenServer
@@ -141,8 +145,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     do:
       state
       |> state_module.online?()
-      |> pair(state_module)
-      |> reply(state)
+      |> reply({state_module, state})
 
   def handle_call({:ansible_playbook_completed, run_id}, _from, {state_module, state}),
     do:
@@ -252,6 +255,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     |> noreply()
   end
 
+  def handle_info({:server_manager_message, message}, {state_module, state}) do
+    state
+    |> state_module.on_message(message)
+    |> execute_actions()
+    |> pair(state_module)
+    |> noreply()
+  end
+
   def handle_info(
         {:DOWN, _ref, :process, connection_pid, reason},
         {state_module, state}
@@ -308,12 +319,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     state
   end
 
-  defp execute_action(state, {:retry_connecting, factory}) do
-    factory.(state, fn milliseconds ->
-      Process.send_after(self(), :retry_connecting, milliseconds)
-    end)
-  end
-
   defp execute_action(state, {:run_command, factory}) do
     factory.(state, fn command, timeout ->
       Task.async(fn -> ServerConnection.run_command(state.server, command, timeout) end)
@@ -330,16 +335,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     state
   end
 
-  defp execute_action(state, {:schedule_load_average_measurement, factory}) do
-    factory.(state, fn milliseconds ->
-      timer = Process.send_after(self(), :measure_load_average, milliseconds)
-      timer
+  defp execute_action(state, {:send_message, factory}) do
+    factory.(state, fn message, milliseconds ->
+      Process.send_after(self(), {:server_manager_message, message}, milliseconds)
     end)
   end
 
   defp execute_action(state, {:track, topic, key, real_time_state}) do
     {:ok, _ref} =
-      Phoenix.Tracker.track(ArchiDep.Tracker, self(), topic, key, %{state: real_time_state})
+      Phoenix.Tracker.track(@tracker, self(), topic, key, %{state: real_time_state})
 
     state
   end
@@ -348,7 +352,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     {real_time_state, new_state} = value_fn.(state)
 
     {:ok, _ref} =
-      Phoenix.Tracker.update(ArchiDep.Tracker, self(), topic, state.server.id, %{
+      Phoenix.Tracker.update(@tracker, self(), topic, state.server.id, %{
         state: real_time_state
       })
 

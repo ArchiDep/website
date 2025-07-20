@@ -7,7 +7,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.ServersFactory
 
-  setup do
+  setup %{test: test} do
     test_pid = self()
 
     state_factory = fn ->
@@ -17,63 +17,69 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
 
     opts = [state: state_factory]
 
-    {:ok, opts: opts, pid: test_pid}
+    server = ServersFactory.build(:server)
+
+    initialize_fn = fn actions -> initialize_server_manager(server, opts, test, actions) end
+
+    {:ok, initialize: initialize_fn, pid: test_pid, server: server}
   end
 
-  test "start a server manager", %{opts: opts, pid: test_pid, test: test} do
-    server = ServersFactory.build(:server)
-    id = server.id
-
-    expect(ServerManagerMock, :init, fn ^id, ^test ->
-      send(test_pid, :initialized)
-      %ServerManagerState{server: server, pipeline: test, username: "alice", actions: []}
-    end)
-
-    start_supervised!(%{id: ServerManager, start: {ServerManager, :start_link, [id, test, opts]}})
-
-    assert_receive :initialized
+  test "initialize a server manager", %{initialize: initialize} do
+    initialize.([])
     refute_received _anything_else
   end
 
-  test "cancel a timer when starting a server manager", %{opts: opts, pid: test_pid, test: test} do
-    server = ServersFactory.build(:server)
-    id = server.id
-
+  test "cancel a timer when starting a server manager", %{
+    initialize: initialize,
+    pid: test_pid
+  } do
     timer_ref = Process.send_after(self(), :timer, 5000)
     timer_remaining = Process.read_timer(timer_ref)
     assert is_integer(timer_remaining) and timer_remaining > 4000
 
-    expect(ServerManagerMock, :init, fn ^id, ^test ->
-      send(test_pid, :initialized)
-
-      %ServerManagerState{
-        server: server,
-        pipeline: test,
-        username: "alice",
-        actions: [
-          cancel_timer(timer_ref),
-          {:retry_connecting,
-           fn retry_state, retry_factory ->
-             retry_factory.(0)
-             retry_state
-           end}
-        ]
-      }
-    end)
-
-    expect(ServerManagerMock, :retry_connecting, fn state, _manual ->
-      send(test_pid, :retry_connecting)
+    expect(ServerManagerMock, :on_message, fn state, :done ->
+      send(test_pid, :done)
       state
     end)
 
-    start_supervised!(%{id: ServerManager, start: {ServerManager, :start_link, [id, test, opts]}})
+    initialize.([cancel_timer(timer_ref), send_message(:done)])
 
-    assert_receive :initialized
-    assert_receive :retry_connecting, 1000
+    assert_receive :done, 1000
     refute_received _anything_else
 
     assert Process.read_timer(timer_ref) == false
   end
 
+  defp initialize_server_manager(server, opts, pipeline, actions) do
+    id = server.id
+    test_pid = self()
+
+    expect(ServerManagerMock, :init, fn ^id, ^pipeline ->
+      send(test_pid, :initialized)
+
+      %ServerManagerState{
+        server: server,
+        pipeline: pipeline,
+        username: "alice",
+        actions: actions
+      }
+    end)
+
+    start_supervised!(%{
+      id: ServerManager,
+      start: {ServerManager, :start_link, [id, pipeline, opts]}
+    })
+
+    assert_receive :initialized
+  end
+
   defp cancel_timer(ref), do: {:cancel_timer, ref}
+
+  defp send_message(message, ms \\ 0),
+    do:
+      {:send_message,
+       fn state, factory ->
+         factory.(message, ms)
+         state
+       end}
 end

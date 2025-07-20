@@ -20,7 +20,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
   @callback connection_idle(state(), pid()) :: state()
   @callback retry_connecting(state(), boolean()) :: state()
   @callback handle_task_result(state(), reference(), result) :: state() when result: term()
-  @callback measure_load_average(state()) :: state()
   @callback ansible_playbook_event(state(), UUID.t(), String.t() | nil) :: state()
   @callback ansible_playbook_completed(state(), UUID.t()) :: state()
   @callback retry_ansible_playbook(state(), String.t()) :: state()
@@ -29,4 +28,5 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
   @callback update_server(state(), Authentication.t(), Types.update_server_data()) ::
               {state(), {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_busy}}
   @callback delete_server(state(), Authentication.t()) :: {state(), :ok | {:error, :server_busy}}
+  @callback on_message(state(), term()) :: state()
 end

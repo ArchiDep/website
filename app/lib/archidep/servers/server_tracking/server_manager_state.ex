@@ -81,14 +81,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @type gather_facts_action ::
           {:gather_facts, (t(), (String.t() -> Task.t()) -> t())}
   @type notify_server_offline :: :notify_server_offline
-  @type retry_connecting_action ::
-          {:retry_connecting, (t(), (pos_integer() -> reference()) -> t())}
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
           {:run_playbook, AnsiblePlaybookRun.t()}
-  @type schedule_load_average_measurement_action ::
-          {:schedule_load_average_measurement, (t(), (pos_integer() -> reference()) -> t())}
+  @type send_message_action ::
+          {:send_message, (t(), (term(), pos_integer() -> reference()) -> t())}
   @type track_action :: {:track, String.t(), UUID.t(), ServerRealTimeState.t()}
   @type update_tracking_action :: {:update_tracking, String.t(), (t() -> {map(), t()})}
   @type action ::
@@ -97,10 +95,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           | demonitor_action()
           | gather_facts_action()
           | notify_server_offline()
-          | retry_connecting_action()
           | run_command_action()
           | run_playbook_action()
-          | schedule_load_average_measurement_action()
+          | send_message_action()
           | track_action()
           | update_tracking_action()
 
@@ -395,13 +392,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     drop_task(
       %__MODULE__{
         state
-        | actions: [
-            {:schedule_load_average_measurement,
-             fn schedule_state, schedule_factory ->
-               timer = schedule_factory.(20_000)
-               %__MODULE__{schedule_state | load_average_timer: timer}
-             end}
-          ]
+        | actions: [send_message(:measure_load_average, 20_000, :load_average_timer)]
       },
       :get_load_average,
       get_load_average_ref
@@ -634,22 +625,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   end
 
   defp retry_action(%{in_seconds: in_seconds}),
-    do:
-      {:retry_connecting,
-       fn retry_state, retry_factory ->
-         retry = retry_factory.(in_seconds * 1000)
-         %__MODULE__{retry_state | retry_timer: retry}
-       end}
-
-  @impl ServerManagerBehaviour
-  def measure_load_average(%__MODULE__{connection_state: connected_state()} = state),
-    do: %__MODULE__{
-      state
-      | actions: [
-          get_load_average(),
-          update_tracking()
-        ]
-    }
+    do: send_message(:retry_connecting, in_seconds * 1000, :retry_timer)
 
   @impl ServerManagerBehaviour
   def ansible_playbook_event(
@@ -1040,6 +1016,26 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     state
   end
 
+  @impl ServerManagerBehaviour
+  def on_message(%__MODULE__{connection_state: connected_state()} = state, :measure_load_average),
+    do: %__MODULE__{
+      state
+      | actions: [
+          get_load_average(),
+          update_tracking()
+        ]
+    }
+
+  def on_message(state, :measure_load_average) do
+    Logger.warning(
+      "Ignoring message :measure_load_average sent to server manager for server #{state.server.id} because the server is no longer connected"
+    )
+
+    state
+  end
+
+  def on_message(state, :retry_connecting), do: retry_connecting(state, false)
+
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do
     case Map.get(tasks, key) do
       nil ->
@@ -1118,6 +1114,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          new_state = %__MODULE__{state | version: state.version + 1}
          real_time_state = to_real_time_state(new_state)
          {real_time_state, new_state}
+       end}
+
+  defp send_message(msg, ms, timer_key),
+    do:
+      {:send_message,
+       fn state, factory ->
+         timer = factory.(msg, ms)
+         Map.put(state, timer_key, timer)
        end}
 
   defp to_real_time_state(%__MODULE__{} = state) do
