@@ -83,7 +83,7 @@ defmodule ArchiDep.Support.AccountsFactory do
     {id, attrs!} = pop_entity_id(attrs!)
 
     {username, attrs!} =
-      Map.pop_lazy(attrs!, :user_account_username, fn ->
+      Map.pop_lazy(attrs!, :username, fn ->
         sequence(:user_account_username, &"user-account-#{&1}")
       end)
 

@@ -7,6 +7,8 @@ defmodule ArchiDep.Support.CourseFactory do
 
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
+  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Schemas.User
 
   @spec class_factory(map()) :: Class.t()
   def class_factory(attrs!) do
@@ -107,6 +109,113 @@ defmodule ArchiDep.Support.CourseFactory do
       distribution: distribution,
       distribution_release: distribution_release,
       distribution_version: distribution_version
+    }
+  end
+
+  @spec student_factory(map()) :: Student.t()
+  def student_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+
+    {name, attrs!} =
+      Map.pop_lazy(attrs!, :name, fn ->
+        sequence(:student_name, &"Student #{&1}")
+      end)
+
+    {email, attrs!} = Map.pop_lazy(attrs!, :email, &Faker.Internet.email/0)
+
+    {academic_class, attrs!} =
+      Map.pop_lazy(
+        attrs!,
+        :academic_class,
+        optionally(fn -> sequence(:student_academic_class, &"Academic class #{&1}") end)
+      )
+
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn -> sequence(:student_username, &"student-#{&1}") end)
+
+    {username_confirmed, attrs!} = Map.pop_lazy(attrs!, :username_confirmed, &bool/0)
+    {domain, attrs!} = Map.pop_lazy(attrs!, :domain, &Faker.Internet.domain_name/0)
+
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+    {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
+    {class, attrs!} = Map.pop_lazy(attrs!, :class, fn -> build(:class) end)
+
+    {class_id, attrs!} =
+      Map.pop_lazy(attrs!, :class_id, fn ->
+        case class do
+          %Class{} -> class.id
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {user, attrs!} = Map.pop_lazy(attrs!, :user, optionally(fn -> build(:user) end))
+
+    {user_id, attrs!} =
+      Map.pop_lazy(attrs!, :user_id, fn ->
+        case user do
+          %User{} -> user.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+
+    [] = Map.keys(attrs!)
+
+    %Student{
+      id: id,
+      name: name,
+      email: email,
+      academic_class: academic_class,
+      username: username,
+      username_confirmed: username_confirmed,
+      domain: domain,
+      active: active,
+      servers_enabled: servers_enabled,
+      class: class,
+      class_id: class_id,
+      user: user,
+      user_id: user_id,
+      version: version,
+      created_at: created_at,
+      updated_at: updated_at
+    }
+  end
+
+  @spec user_factory(map()) :: User.t()
+  def user_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn ->
+        sequence(:user_username, &"user-account-#{&1}")
+      end)
+
+    {student, attrs!} =
+      Map.pop_lazy(attrs!, :student, fn -> build(:student) end)
+
+    {student_id, attrs!} =
+      Map.pop_lazy(attrs!, :student_id, fn ->
+        case student do
+          %Student{} -> student.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+
+    [] = Map.keys(attrs!)
+
+    %User{
+      id: id,
+      username: username,
+      student: student,
+      student_id: student_id,
+      version: version,
+      created_at: created_at,
+      updated_at: updated_at
     }
   end
 end

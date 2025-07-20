@@ -3,7 +3,6 @@ defmodule ArchiDep.Support.FactoryHelpers do
   Helper functions for generating test fixtures in factories.
   """
 
-  alias Ecto.Association.NotLoaded
   alias Ecto.UUID
 
   @booleans [true, false]
@@ -13,10 +12,6 @@ defmodule ArchiDep.Support.FactoryHelpers do
 
   @spec optionally((-> term())) :: (-> term() | nil)
   def optionally(fun), do: fn -> optional(fun) end
-
-  @spec not_loaded(atom(), module()) :: NotLoaded.t()
-  def not_loaded(field, owner),
-    do: %NotLoaded{__field__: field, __owner__: owner, __cardinality__: :one}
 
   @spec pop_entity_version_and_timestamps(map()) ::
           {pos_integer(), DateTime.t(), DateTime.t(), map()}

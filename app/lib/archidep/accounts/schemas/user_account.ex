@@ -79,16 +79,6 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
              ^where_user_group_active(now))
       )
 
-  @spec fetch_or_create_for_switch_edu_id(SwitchEduId.t(), list(Types.role())) ::
-          {:existing_account, Changeset.t(t())} | {:new_account, Changeset.t(t())}
-  def fetch_or_create_for_switch_edu_id(switch_edu_id, roles) do
-    if existing_account = fetch_for_switch_edu_id(switch_edu_id) do
-      {:existing_account, change(existing_account)}
-    else
-      {:new_account, new_switch_edu_id_account(switch_edu_id, roles)}
-    end
-  end
-
   @spec get_with_switch_edu_id!(UUID.t()) :: t
   def get_with_switch_edu_id!(id),
     do:
@@ -132,8 +122,8 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
         )
       )
 
-  @spec new_switch_edu_id_account(SwitchEduId.t(), list(Types.role())) :: Changeset.t(t())
-  def new_switch_edu_id_account(switch_edu_id, roles) do
+  @spec new_root_switch_edu_id_account(SwitchEduId.t()) :: Changeset.t(t())
+  def new_root_switch_edu_id_account(switch_edu_id) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
@@ -146,7 +136,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
             0,
             @max_username_length
           ),
-        roles: roles
+        roles: [:root]
       },
       [
         :username,
@@ -164,28 +154,42 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     |> validate()
   end
 
-  @spec link_to_preregistered_user(
-          t(),
+  @spec new_preregistered_switch_edu_id_account(
+          SwitchEduId.t(),
           PreregisteredUser.t()
         ) :: Changeset.t(t())
-  def link_to_preregistered_user(
-        %__MODULE__{id: user_account_id, preregistered_user_id: nil} = user_account,
-        preregistered_user
-      ),
-      do:
-        user_account
-        |> cast(%{preregistered_user_id: preregistered_user.id}, [:preregistered_user_id])
-        |> assoc_constraint(:preregistered_user)
-        |> change(updated_at: DateTime.utc_now())
-        |> optimistic_lock(:version)
-        |> unsafe_validate_unique_query(:preregistered_user_id, Repo, fn changeset ->
-          preregistered_user_id = get_field(changeset, :preregistered_user_id)
+  def new_preregistered_switch_edu_id_account(switch_edu_id, preregistered_user) do
+    id = UUID.generate()
+    now = DateTime.utc_now()
 
-          from(ua in __MODULE__,
-            where:
-              ua.id != ^user_account_id and ua.preregistered_user_id == ^preregistered_user_id
-          )
-        end)
+    %__MODULE__{}
+    |> cast(
+      %{
+        username:
+          String.slice(
+            switch_edu_id.first_name || String.replace(switch_edu_id.email, ~r/@.*/, ""),
+            0,
+            @max_username_length
+          ),
+        roles: [:student]
+      },
+      [
+        :username,
+        :roles
+      ]
+    )
+    |> change(
+      id: id,
+      active: true,
+      switch_edu_id_id: switch_edu_id.id,
+      preregistered_user: preregistered_user,
+      preregistered_user_id: preregistered_user.id,
+      version: 1,
+      created_at: now,
+      updated_at: now
+    )
+    |> validate()
+  end
 
   @spec relink_to_preregistered_user(
           t(),

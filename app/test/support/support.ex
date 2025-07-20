@@ -7,6 +7,7 @@ defmodule ArchiDep.Support do
   def factory do
     quote do
       use ExMachina.Ecto, repo: ArchiDep.Repo
+      import ArchiDep.Support.DataCase, only: [not_loaded: 2]
       import ArchiDep.Support.FactoryHelpers
       alias Ecto.Association.NotLoaded
       alias Ecto.UUID

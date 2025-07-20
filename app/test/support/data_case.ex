@@ -16,7 +16,9 @@ defmodule ArchiDep.Support.DataCase do
 
   alias ArchiDep.Support.DataCase
   alias Ecto.Adapters.SQL.Sandbox
+  alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
+  alias Ecto.Schema.Metadata
 
   using do
     quote do
@@ -25,6 +27,7 @@ defmodule ArchiDep.Support.DataCase do
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
+      import ArchiDep.Helpers.PipeHelpers
       import ArchiDep.Support.DataCase
     end
   end
@@ -33,6 +36,13 @@ defmodule ArchiDep.Support.DataCase do
     DataCase.setup_sandbox(tags)
     :ok
   end
+
+  @spec loaded(module(), String.t()) :: Metadata.t()
+  def loaded(schema, source), do: %Metadata{state: :loaded, schema: schema, source: source}
+
+  @spec not_loaded(atom(), module()) :: NotLoaded.t()
+  def not_loaded(field, owner),
+    do: %NotLoaded{__field__: field, __owner__: owner, __cardinality__: :one}
 
   @doc """
   Sets up the sandbox based on the test tags.
