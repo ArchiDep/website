@@ -17,7 +17,18 @@ defmodule ArchiDepWeb.Support.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  import Hammox
+  import Phoenix.ConnTest
+  import Plug.Conn
+  alias ArchiDep.Accounts
+  alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Accounts.Schemas.UserSession
+  alias ArchiDep.Authentication
+  alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.DataCase
+  alias ArchiDep.Support.Factory
+  alias Phoenix.ConnTest
+  alias Plug.Conn
 
   using do
     quote do
@@ -27,14 +38,59 @@ defmodule ArchiDepWeb.Support.ConnCase do
       use ArchiDepWeb, :verified_routes
 
       # Import conveniences for testing with connections
+      import ArchiDep.Helpers.PipeHelpers
       import ArchiDepWeb.Support.ConnCase
       import Phoenix.ConnTest
       import Plug.Conn
+      alias Plug.Conn
     end
   end
 
   setup tags do
     DataCase.setup_sandbox(tags)
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    {:ok, conn: ConnTest.build_conn()}
   end
+
+  @spec conn_with_auth(Conn.t()) :: %{
+          conn: Conn.t(),
+          auth: Authentication.t(),
+          session: UserSession.t(),
+          user_account: UserAccount.t()
+        }
+  def conn_with_auth(conn) when is_struct(conn, Conn) do
+    session =
+      AccountsFactory.build(:user_session,
+        client_user_agent: Factory.user_agent(),
+        impersonated_user_account: nil
+      )
+
+    session_token = session.token
+
+    auth =
+      Factory.build(:authentication,
+        principal_id: session.user_account_id,
+        username: session.user_account.username,
+        roles: session.user_account.roles,
+        session_id: session.id,
+        session_token: session_token,
+        impersonated_id: session.impersonated_user_account_id
+      )
+
+    stub(Accounts.ContextMock, :validate_session, fn ^session_token, %{} ->
+      {:ok, auth}
+    end)
+
+    authenticated_conn =
+      conn
+      |> init_test_session(%{
+        session_token: session_token,
+        live_socket_id: live_socket_id(session)
+      })
+      |> put_req_header("user-agent", session.client_user_agent)
+      |> put_private(__MODULE__, auth: auth, session: session, user_account: session.user_account)
+
+    %{conn: authenticated_conn, auth: auth, session: session, user_account: session.user_account}
+  end
+
+  defp live_socket_id(session), do: "auth:#{session.user_account_id}"
 end

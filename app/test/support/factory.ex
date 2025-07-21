@@ -5,7 +5,9 @@ defmodule ArchiDep.Support.Factory do
 
   use ArchiDep.Support, :factory
 
+  alias ArchiDep.Authentication
   alias ArchiDep.ClientMetadata
+  alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.NetFactory
 
   @sample_user_agents [
@@ -15,6 +17,38 @@ defmodule ArchiDep.Support.Factory do
     "Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405",
     "Googlebot/2.1 (+http://www.google.com/bot.html)"
   ]
+
+  @spec authentication_factory(map()) :: Authentication.t()
+  def authentication_factory(attrs!) do
+    {principal_id, attrs!} = Map.pop_lazy(attrs!, :principal_id, &UUID.generate/0)
+
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn ->
+        sequence(:authentication_username, &"auth-user-#{&1}")
+      end)
+
+    {roles, attrs!} = Map.pop_lazy(attrs!, :roles, &AccountsFactory.role/0)
+    {session_id, attrs!} = Map.pop_lazy(attrs!, :session_id, &UUID.generate/0)
+
+    {session_token, attrs!} =
+      Map.pop_lazy(attrs!, :session_token, fn ->
+        sequence(:authentication_session_token, &"auth-session-token-#{&1}")
+      end)
+
+    {impersonated_id, attrs!} =
+      Map.pop_lazy(attrs!, :impersonated_id, optionally(&UUID.generate/0))
+
+    [] = Map.keys(attrs!)
+
+    %Authentication{
+      principal_id: principal_id,
+      username: username,
+      roles: roles,
+      session_id: session_id,
+      session_token: session_token,
+      impersonated_id: impersonated_id
+    }
+  end
 
   @spec client_metadata_factory(map()) :: ClientMetadata.t()
   def client_metadata_factory(attrs!) do
