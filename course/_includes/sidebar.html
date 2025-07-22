@@ -1,88 +1,99 @@
-<ul class="menu bg-base-200 text-base-content min-h-full w-80 p-4">
-  <li class="mb-4 lg:hidden">
-    <div class="flex justify-between">
-      <a href="/" class="text-xl font-bold inline">ArchiDep</a>
-      <label for="sidebar" class="btn btn-square btn-ghost">
-        {%- include icons/x-mark.html class="size-5" -%}
-      </label>
-    </div>
-  </li>
-  <li>
-    <a href="/" class="flex items-center gap-2">
-      <span class="size-4">
-        :house:
-      </span>
-      <span>Course</span>
-    </a>
-  </li>
-  {%- for section in site.data.course.sections -%}
-    {%- assign current_section = forloop.index -%}
-    {% if section.progress == 'done' %}
-      {% assign section_color = 'border-r-4 border-success/50 hover:border-success' %}
-    {% else %}
-      {% assign section_color = '' %}
-    {% endif %}
-    <li class="{{ section_color }}">
-      <span class="text-base-content/50 cursor-default">{{ section.title }}</span>
-    </li>
-    {%- for item in section.items -%}
-      {% if item.url == page.url %}
-        {% assign current_background = 'bg-base-300' %}
-        {% assign current_font_weight = 'font-bold' %}
-      {% else %}
-        {% assign current_background = '' %}
-        {% assign current_font_weight = '' %}
-      {% endif %}
-
-      {% if item.progress == 'done' %}
-        {% if item.url == page.url %}
-          {% assign chapter_color = 'border-r-4 border-success' %}
-        {% else %}
-          {% assign chapter_color = 'border-r-4 border-success/50 hover:border-success' %}
+<div class="w-80 max-w-full bg-base-200 text-base-content min-h-full">
+  <div class="lg:hidden w-full flex justify-between items-center pl-6 pr-2 pt-4">
+    <a href="/" class="text-xl font-bold inline">ArchiDep</a>
+    <label for="sidebar" class="btn btn-square btn-ghost">
+      {%- include icons/x-mark.html class="size-5" -%}
+    </label>
+  </div>
+  <div class="px-4">
+    <ul class="menu menu-horizontal grid grid-cols-5 gap-2">
+      <li>
+        {% if page.url == "/" %}
+          {% assign home_background = 'bg-primary/50' %}
         {% endif %}
-        {% assign tooltip = 'tooltip tooltip-top tooltip-success' %}
-        {% assign tooltip_text = 'done' %}
-      {% elsif item.progress == 'due' %}
-        {% if item.url == page.url or page.url == '/' %}
-          {% assign chapter_color = 'border-r-4 border-warning' %}
-        {% else %}
-          {% assign chapter_color = 'border-r-4 border-warning/50 hover:border-warning' %}
-        {% endif %}
-        {% assign tooltip = 'tooltip tooltip-top tooltip-warning' %}
-        {% assign tooltip_text = 'due' %}
-      {% elsif item.progress == 'next' %}
-        {% if item.url == page.url %}
-          {% assign chapter_color = 'border-r-4 border-info' %}
-        {% else %}
-          {% assign chapter_color = 'border-r-4 border-info/50 hover:border-info' %}
-        {% endif %}
-        {% assign tooltip = 'tooltip tooltip-top tooltip-info' %}
-        {% assign tooltip_text = 'next' %}
-      {% else %}
-        {% assign chapter_color = 'opacity-25 hover:opacity-100' %}
-        {% assign tooltip = '' %}
-        {% assign tooltip_text = '' %}
-      {% endif %}
-
-      <li class="group {{ current_background }} {{ chapter_color }} {{ tooltip }}" data-tip="{{ tooltip_text }}">
-        {% if item.course_type == 'slides' %}
-          {% assign link_target = '_blank' %}
-        {% else %}
-          {% assign link_target = '_self' %}
-        {% endif %}
-
-        <a href="{{ item.url }}" target="{{ link_target }}" class="flex items-center gap-2 {{ current_font_weight }}">
-          {%- include chapter-title.html doc=item -%}
-          {% if item.slides %}
-            <span>
-              :clapper:
-            </span>
-          {% endif %}
-          {% if item.course_type == 'slides' %}
-            {%- include icons/arrow-top-right-on-square.html class="size-4 text-base-content/25 group-hover:text-base-content/75" -%}
-          {% endif %}
+        <a href="/" class="{{ home_background }} tooltip tooltip-bottom" data-tip="Course">
+          {%- include icons/home.html class="w-full" -%}
+          <span class="sr-only">Course</span>
         </a>
       </li>
+      <li>
+        <a href="/app" class="tooltip tooltip-bottom" data-tip="Dashboard">
+          {%- include icons/cube.html class="w-full" -%}
+          <span class="sr-only">Dashboard</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+  <ul class="w-full menu px-4 pt-0 pb-4">
+    {%- for section in site.data.course.sections -%}
+      {%- assign current_section = forloop.index -%}
+      {% if section.progress == 'done' %}
+        {% assign section_color = 'border-r-4 border-success/50 hover:border-success' %}
+      {% else %}
+        {% assign section_color = '' %}
+      {% endif %}
+      <li class="{{ section_color }}">
+        <span class="text-base-content/50 cursor-default">{{ section.title }}</span>
+      </li>
+      {%- for item in section.items -%}
+        {% if item.url == page.url %}
+          {% assign current_background = 'bg-neutral' %}
+          {% assign current_font_weight = 'font-bold' %}
+        {% else %}
+          {% assign current_background = '' %}
+          {% assign current_font_weight = '' %}
+        {% endif %}
+
+        {% if item.progress == 'done' %}
+          {% if item.url == page.url %}
+            {% assign chapter_color = 'border-r-4 border-success' %}
+          {% else %}
+            {% assign chapter_color = 'border-r-4 border-success/50 hover:border-success' %}
+          {% endif %}
+          {% assign tooltip = 'tooltip tooltip-top tooltip-success' %}
+          {% assign tooltip_text = 'done' %}
+        {% elsif item.progress == 'due' %}
+          {% if item.url == page.url or page.url == '/' %}
+            {% assign chapter_color = 'border-r-4 border-warning' %}
+          {% else %}
+            {% assign chapter_color = 'border-r-4 border-warning/50 hover:border-warning' %}
+          {% endif %}
+          {% assign tooltip = 'tooltip tooltip-top tooltip-warning' %}
+          {% assign tooltip_text = 'due' %}
+        {% elsif item.progress == 'next' %}
+          {% if item.url == page.url %}
+            {% assign chapter_color = 'border-r-4 border-info' %}
+          {% else %}
+            {% assign chapter_color = 'border-r-4 border-info/50 hover:border-info' %}
+          {% endif %}
+          {% assign tooltip = 'tooltip tooltip-top tooltip-info' %}
+          {% assign tooltip_text = 'next' %}
+        {% else %}
+          {% assign chapter_color = 'opacity-25 hover:opacity-100' %}
+          {% assign tooltip = '' %}
+          {% assign tooltip_text = '' %}
+        {% endif %}
+
+        <li class="group {{ current_background }} {{ chapter_color }} {{ tooltip }}" data-tip="{{ tooltip_text }}">
+          {% if item.course_type == 'slides' %}
+            {% assign link_target = '_blank' %}
+          {% else %}
+            {% assign link_target = '_self' %}
+          {% endif %}
+
+          <a href="{{ item.url }}" target="{{ link_target }}" class="flex items-center gap-2 {{ current_font_weight }}">
+            {%- include chapter-title.html doc=item -%}
+            {% if item.slides %}
+              <span>
+                :clapper:
+              </span>
+            {% endif %}
+            {% if item.course_type == 'slides' %}
+              {%- include icons/arrow-top-right-on-square.html class="size-4 text-base-content/25 group-hover:text-base-content/75" -%}
+            {% endif %}
+          </a>
+        </li>
+      {%- endfor -%}
     {%- endfor -%}
-  {%- endfor -%}
-</ul>
+  </ul>
+</div>

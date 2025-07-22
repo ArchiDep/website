@@ -6,14 +6,6 @@
     <a class="btn btn-ghost text-xl" href="/">
       <h1>{gettext("ArchiDep")}</h1>
     </a>
-    <ul class="menu menu-horizontal px-1">
-      <li>
-        <.link navigate={~p"/app"}>
-          <span><Heroicons.cube class="size-5" /></span>
-          <span class="hidden md:inline">{gettext("App")}</span>
-        </.link>
-      </li>
-    </ul>
   </div>
 
   <div :if={logged_in?(@auth)} class="navbar-end">
@@ -62,49 +54,57 @@
   </div>
   <div class="drawer-side">
     <label for="sidebar" aria-label="close sidebar" class="drawer-overlay"></label>
-    <ul :if={logged_in?(@auth)} class="menu bg-base-200 text-base-content min-h-full w-80 p-4">
-      <li class="mb-4 lg:hidden">
-        <div class="flex justify-between">
-          <.link href="/" class="text-xl font-bold inline">
-            {gettext("ArchiDep")}
-          </.link>
-          <label for="sidebar" class="btn btn-square btn-ghost">
-            <Heroicons.x_mark class="size-5" />
-          </label>
-        </div>
-      </li>
-      <li>
-        <.link navigate={~p"/app"} class="flex items-center gap-2">
-          <Heroicons.cube class="size-4" />
-          <span>{gettext("Dashboard")}</span>
-        </.link>
-      </li>
-      <li>
-        <.link navigate={~p"/servers"} class="flex items-center gap-2">
-          <Heroicons.server_stack class="size-4" />
-          <span>{gettext("Servers")}</span>
-        </.link>
-      </li>
-      <li :if={has_role?(@auth, :root)}>
-        <span class="flex items-center gap-2 text-error cursor-default">
-          <Heroicons.fire class="size-4" />
-          <span>{gettext("Admin")}</span>
-        </span>
-        <ul>
-          <li :if={has_role?(@auth, :root)}>
-            <.link navigate={~p"/admin/classes"} class="flex items-center gap-2">
-              <Heroicons.academic_cap class="size-4" />
-              <span>{gettext("Classes")}</span>
-            </.link>
+    <div class="w-80 max-w-full bg-base-200 text-base-content min-h-full">
+      <div class="lg:hidden w-full flex justify-between items-center pl-6 pr-2 pt-4">
+        <a href="/" class="text-xl font-bold inline">ArchiDep</a>
+        <label for="sidebar" class="btn btn-square btn-ghost">
+          <Heroicons.x_mark class="size-5" />
+        </label>
+      </div>
+      <div class="px-4">
+        <ul class="menu menu-horizontal grid grid-cols-5 gap-2">
+          <li>
+            <a href="/" class="tooltip tooltip-bottom" data-tip="Course">
+              <Heroicons.home class="w-full" />
+              <span class="sr-only">Course</span>
+            </a>
           </li>
-          <li :if={has_role?(@auth, :root)}>
-            <.link navigate={~p"/admin/events"} class="flex items-center gap-2">
-              <Heroicons.book_open class="size-4" />
-              <span>{gettext("Events")}</span>
-            </.link>
+          <li>
+            <a href="/app" class="bg-primary/50 tooltip tooltip-bottom" data-tip="Dashboard">
+              <Heroicons.cube class="w-full" />
+              <span class="sr-only">Dashboard</span>
+            </a>
           </li>
         </ul>
-      </li>
-    </ul>
+      </div>
+      <ul :if={logged_in?(@auth)} class="w-full menu px-4 pt-0 pb-4">
+        <li>
+          <.link navigate={~p"/servers"} class="flex items-center gap-2">
+            <Heroicons.server_stack class="size-4" />
+            <span>{gettext("Servers")}</span>
+          </.link>
+        </li>
+        <li :if={has_role?(@auth, :root)}>
+          <span class="flex items-center gap-2 text-error cursor-default">
+            <Heroicons.fire class="size-4" />
+            <span>{gettext("Admin")}</span>
+          </span>
+          <ul>
+            <li :if={has_role?(@auth, :root)}>
+              <.link navigate={~p"/admin/classes"} class="flex items-center gap-2">
+                <Heroicons.academic_cap class="size-4" />
+                <span>{gettext("Classes")}</span>
+              </.link>
+            </li>
+            <li :if={has_role?(@auth, :root)}>
+              <.link navigate={~p"/admin/events"} class="flex items-center gap-2">
+                <Heroicons.book_open class="size-4" />
+                <span>{gettext("Events")}</span>
+              </.link>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
   </div>
 </div>
