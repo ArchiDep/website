@@ -55,27 +55,49 @@ cd tmp/jde
 ssh-keygen -t ed25519 -C archidep
 ```
 
-# Run in development
+## Run the course and application in development
 
-Run all these commands in separate terminals:
+Run all these commands in parallel:
 
 ```bash
-# Build assets with Webpack
+# Build and watch assets with Webpack
 cd website/course
 npm start
 
-# Build the CSS theme with Tailwind
+# Build and watch the CSS theme with Tailwind
 cd website/theme
 npm start
 
-# Build and serve the course with Jekyll
+# Serve the course with Jekyll
 cd website/course
-bundle exec jekyll server --config _config.yml --drafts --livereload
+bundle exec jekyll server --config _config.yml,_config.proxied.yml --drafts --livereload
 
 # Run the Phoenix web application (also proxies to Jekyll)
 cd website/app
 mix phx.server
 ```
+
+Visit http://localhost:42000
+
+## Run the course in development
+
+If you only need to work on course material, run these commands in parallel:
+
+```bash
+# Build and watch assets with Webpack
+cd website/course
+npm start
+
+# Build and watch the CSS theme with Tailwind
+cd website/theme
+npm start
+
+# Serve the course with Jekyll
+cd website/course
+bundle exec jekyll server --config _config.yml --drafts --livereload
+```
+
+Visit http://localhost:42001
 
 ## Configuration
 

@@ -6,4 +6,8 @@
   <link rel="stylesheet" href="{{ "/assets/theme/theme.css" | relative_asset_url }}">
   <script src="{{ "/assets/course/course.js" | relative_asset_url }}" defer></script>
   {%- feed_meta -%}
+  {% if site.livereload_script_forced %}
+  <!-- https://github.com/jekyll/jekyll/blob/1f319fb273b6cdf876bc6edd38d7477935cdda8c/lib/jekyll/commands/serve/servlet.rb#L93-L111 -->
+  <script src="{{ site.livereload_base_url }}/livereload.js?snipver=1&port={{ site.livereload_port }}" defer></script>
+  {% endif %}
 </head>
