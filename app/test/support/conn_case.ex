@@ -24,11 +24,15 @@ defmodule ArchiDepWeb.Support.ConnCase do
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Authentication
+  alias ArchiDep.ClientMetadata
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.DataCase
   alias ArchiDep.Support.Factory
   alias Phoenix.ConnTest
   alias Plug.Conn
+
+  @type conn_with_auth_session_option :: {:session, UserSession.t()}
+  @type conn_with_auth_option :: conn_with_auth_session_option()
 
   using do
     quote do
@@ -51,18 +55,23 @@ defmodule ArchiDepWeb.Support.ConnCase do
     {:ok, conn: ConnTest.build_conn()}
   end
 
-  @spec conn_with_auth(Conn.t()) :: %{
+  @spec conn_with_auth(Conn.t(), Keyword.t(conn_with_auth_option())) :: %{
           conn: Conn.t(),
           auth: Authentication.t(),
           session: UserSession.t(),
           user_account: UserAccount.t()
         }
-  def conn_with_auth(conn) when is_struct(conn, Conn) do
-    session =
-      AccountsFactory.build(:user_session,
-        client_user_agent: Factory.user_agent(),
-        impersonated_user_account: nil
-      )
+  def conn_with_auth(conn, opts! \\ []) when is_struct(conn, Conn) and is_list(opts!) do
+    {session, opts!} =
+      Keyword.pop_lazy(opts!, :session, fn ->
+        AccountsFactory.build(:user_session,
+          created_at: DateTime.add(DateTime.utc_now(), -1, :hour),
+          client_user_agent: Factory.user_agent(),
+          impersonated_user_account: nil
+        )
+      end)
+
+    [] = Keyword.keys(opts!)
 
     session_token = session.token
 
@@ -76,7 +85,9 @@ defmodule ArchiDepWeb.Support.ConnCase do
         impersonated_id: session.impersonated_user_account_id
       )
 
-    stub(Accounts.ContextMock, :validate_session, fn ^session_token, %{} ->
+    client_metadata = ClientMetadata.new({127, 0, 0, 1}, session.client_user_agent)
+
+    stub(Accounts.ContextMock, :validate_session, fn ^session_token, ^client_metadata ->
       {:ok, auth}
     end)
 

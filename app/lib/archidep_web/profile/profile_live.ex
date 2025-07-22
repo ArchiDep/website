@@ -15,7 +15,7 @@ defmodule ArchiDepWeb.Profile.ProfileLive do
     end
 
     socket
-    |> assign(:user_account, user_account)
+    |> assign(page_title: "Profile", user_account: user_account)
     |> ok()
   end
 

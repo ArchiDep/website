@@ -20,6 +20,22 @@ defmodule ArchiDep.Support.AccountsFactory do
   @spec client_user_agent() :: String.t()
   defdelegate client_user_agent, to: Factory, as: :user_agent
 
+  @spec current_session_factory(map()) :: UserSession.t()
+  def current_session_factory(attrs) do
+    attrs_with_defaults =
+      Map.merge(
+        %{
+          created_at: Faker.DateTime.backward(30),
+          used_at: DateTime.utc_now(),
+          client_user_agent: Factory.user_agent(),
+          impersonated_user_account: nil
+        },
+        attrs
+      )
+
+    user_session_factory(attrs_with_defaults)
+  end
+
   @spec switch_edu_id_data_factory(map()) :: Types.switch_edu_id_data()
   def switch_edu_id_data_factory(attrs!) do
     {email, attrs!} = Map.pop_lazy(attrs!, :email, &Faker.Internet.email/0)
