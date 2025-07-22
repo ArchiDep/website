@@ -107,7 +107,7 @@ defmodule ArchiDep.MixProject do
       "assets.build": ["esbuild archidep"],
       "assets.deploy": [
         "esbuild archidep --minify",
-        "phx.digest priv/static/assets/app"
+        "phx.digest"
       ],
       check: [
         "coveralls.html --raise",
