@@ -82,6 +82,27 @@ module ArchiDep
       next_chapter_nums = progress_docs.reverse.find{ |doc| doc.data['next'] }&.data&.[]('next') || []
       next_chapters = matter_docs.select{ |doc| doc.data['subject'] == nil && next_chapter_nums.include?(doc.data['num']) }
       home_page_doc.data['next_chapters'] = next_chapters
+
+      site.pages << DataPage.new(site)
+    end
+  end
+
+  class DataPage < Jekyll::Page
+    def initialize(site)
+      @site = site
+      @base = site.source
+      @dir  = '/'
+      @content = JSON.pretty_generate(site.data['course']['sections'].map do |section|
+        {
+          'title' => section['title']
+        }
+      end)
+      @data = {}
+
+      # All pages have the same filename, so define attributes straight away.
+      @basename = 'archidep'
+      @ext      = '.json'
+      @name     = 'archidep.json'
     end
   end
 end
