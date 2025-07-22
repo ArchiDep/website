@@ -42,7 +42,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     |> assert_html_title("Profile · ArchiDep")
     |> with_current_sessions_table_rows(fn rows ->
       assert [
-               [_, @current_session_text, _, _, _, @no_actions]
+               [_login, @current_session_text, _exp, _ip, _client, @no_actions]
              ] = rows
     end)
   end
@@ -90,8 +90,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
       expired_session
     ]
 
-    %{conn: conn!, auth: auth, user_account: user_account} =
-      conn_with_auth(conn!, session: current_session)
+    %{conn: conn!, auth: auth} = conn_with_auth(conn!, session: current_session)
 
     expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
@@ -105,22 +104,29 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
       forty_two_days_ago = gettext("{time} ago", time: "42 days")
 
       assert [
-               [_, ^one_day_ago, _, "1.2.3.4", _, @delete_session_text],
+               [_login, ^one_day_ago, _exp, "1.2.3.4", _client, @delete_session_text],
                [
-                 _,
+                 _login1,
                  @never_used_session_text,
-                 _,
-                 _,
+                 _exp1,
+                 _ip1,
                  @unknown_user_agent_text,
                  @delete_session_text
                ],
-               [_, @current_session_text, _, _, "Firefox on Mac", @no_actions],
-               [_, ^forty_two_days_ago, @expired_session_text, _, "-", @delete_session_text]
+               [_login2, @current_session_text, _exp2, _ip2, "Firefox on Mac", @no_actions],
+               [
+                 _login3,
+                 ^forty_two_days_ago,
+                 @expired_session_text,
+                 _ip3,
+                 "-",
+                 @delete_session_text
+               ]
              ] = rows
     end)
   end
 
-  test "delete a session", %{conn: conn!} do
+  test "delete a session in the profile page", %{conn: conn!} do
     user_account = AccountsFactory.build(:user_account)
     current_session = AccountsFactory.build(:current_session, user_account: user_account)
 
@@ -149,8 +155,8 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
       eight_days_ago = gettext("{time} ago", time: "8 days")
 
       assert [
-               [_, @current_session_text, _, _, _, @no_actions],
-               [_, ^eight_days_ago, _, _, _, @delete_session_text]
+               [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
+               [_login2, ^eight_days_ago, _exp2, _ip2, _client2, @delete_session_text]
              ] = rows
     end)
 
@@ -162,7 +168,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     |> render_click()
     |> with_current_sessions_table_rows(fn rows ->
       assert [
-               [_, @current_session_text, _, _, _, @no_actions]
+               [_login, @current_session_text, _exp, _ip, _client, @no_actions]
              ] = rows
     end)
   end
@@ -195,27 +201,34 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     |> assert_html_title("Profile · ArchiDep")
     |> with_current_sessions_table_rows(fn rows ->
       assert [
-               [_, @current_session_text, _, _, _, @no_actions],
-               [_, _, _, _, _, @delete_session_text]
+               [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
+               [_login2, _last_used2, _exp2, _ip2, _client2, @delete_session_text]
              ] = rows
     end)
 
     id = other_session.id
 
-    # expect(Accounts.ContextMock, :delete_session, fn ^auth, ^id ->
-    #   {:error, :session_not_found}
-    # end)
+    expect(Accounts.ContextMock, :delete_session, fn ^auth, ^id ->
+      {:error, :session_not_found}
+    end)
 
-    # view_pid = view.pid
-    # :erlang.trace(view_pid, true, [:receive])
+    view
+    |> element("tr:nth-child(2) button.delete-session")
+    |> render_click()
+    |> with_current_sessions_table_rows(fn rows ->
+      assert [
+               [_login, @current_session_text, _exp, _ip, _client, @no_actions]
+             ] = rows
+    end)
 
-    # assert [[_, "Current session", _, _, _, _]] =
-    #          view
-    #          |> element("tr:nth-child(2) button.delete-session")
-    #          |> render_click()
-    #          |> get_session_rows()
-
-    # assert_receive {:trace, ^view_pid, :receive, :session_to_delete_not_found}
+    wait_for_socket_assigns!(
+      view,
+      &match?(
+        [%{message: "Session no longer exists", type: :warning}],
+        Map.values(&1.flash)
+      ),
+      "session no longer exists notification"
+    )
   end
 
   test "accessing the profile page redirects to the login page without authentication", %{

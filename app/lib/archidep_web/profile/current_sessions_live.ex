@@ -72,10 +72,9 @@ defmodule ArchiDepWeb.Profile.CurrentSessionsLive do
         |> noreply()
 
       {:error, :session_not_found} ->
-        send(self(), :session_to_delete_not_found)
-
         socket
         |> remove_session(session_id)
+        |> send_notification(Message.new(:warning, gettext("Session no longer exists")))
         |> noreply()
     end
   end

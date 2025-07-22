@@ -1,11 +1,17 @@
 defmodule ArchiDepWeb.Support.LiveCase do
+  @moduledoc """
+  Test case template for testing live views and components.
+  """
+
   use ExUnit.CaseTemplate
 
+  import ArchiDep.Support.ProcessTestHelpers
   import Hammox
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
   alias ArchiDep.Accounts
   alias ArchiDepWeb.Endpoint
+  alias Phoenix.LiveViewTest.View
   alias Plug.Conn
   alias Plug.Crypto
 
@@ -18,6 +24,7 @@ defmodule ArchiDepWeb.Support.LiveCase do
       use Gettext, backend: ArchiDepWeb.Gettext
       import ArchiDep.Helpers.PipeHelpers
       import ArchiDep.Support.DateTestHelpers
+      import ArchiDep.Support.ProcessTestHelpers
       import ArchiDepWeb.Support.ConnCase
       import ArchiDepWeb.Support.HtmlTestHelpers
       import ArchiDepWeb.Support.LiveCase
@@ -96,4 +103,17 @@ defmodule ArchiDepWeb.Support.LiveCase do
   @spec secret_key_base() :: String.t()
   def secret_key_base,
     do: :archidep |> Application.fetch_env!(Endpoint) |> Keyword.fetch!(:secret_key_base)
+
+  @doc """
+  Wait for a view socket's assigns to match a custom condition.
+  """
+  @spec wait_for_socket_assigns!(struct(), (term -> boolean()), String.t()) :: :ok
+  def wait_for_socket_assigns!(view, fun, description)
+      when is_struct(view, View) and is_function(fun, 1),
+      do:
+        wait_for_state!(
+          view.pid,
+          fn state -> fun.(state.socket.assigns) end,
+          "socket assigns never matched #{description}"
+        )
 end
