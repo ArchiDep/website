@@ -11,6 +11,7 @@ defmodule ArchiDepWeb.Components.Layouts do
   use ArchiDepWeb, :html
 
   import ArchiDepWeb.Helpers.AuthHelpers
+  alias ArchiDep.Course.Material
 
   embed_templates "layouts/*"
 end

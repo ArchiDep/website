@@ -53,10 +53,10 @@
           {% assign tooltip = 'tooltip tooltip-top tooltip-success' %}
           {% assign tooltip_text = 'done' %}
         {% elsif item.progress == 'due' %}
-          {% if item.url == page.url or page.url == '/' %}
+          {% if item.url == page.url %}
             {% assign chapter_color = 'border-r-4 border-warning' %}
           {% else %}
-            {% assign chapter_color = 'border-r-4 border-warning/50 hover:border-warning' %}
+            {% assign chapter_color = 'border-r-4 border-warning/85 hover:border-warning' %}
           {% endif %}
           {% assign tooltip = 'tooltip tooltip-top tooltip-warning' %}
           {% assign tooltip_text = 'due' %}
@@ -85,7 +85,7 @@
             {%- include chapter-title.html doc=item -%}
             {% if item.slides %}
               <span>
-                :clapper:
+                🎬
               </span>
             {% endif %}
             {% if item.course_type == 'slides' %}

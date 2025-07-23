@@ -28,6 +28,8 @@ module ArchiDep
           'due'
         when *next_chapters
           'next'
+        else
+          'future'
         end
 
         base_permalink = "/course/#{section}.#{section_chapter}/#{slug}/"
@@ -83,20 +85,25 @@ module ArchiDep
       next_chapters = matter_docs.select{ |doc| doc.data['subject'] == nil && next_chapter_nums.include?(doc.data['num']) }
       home_page_doc.data['next_chapters'] = next_chapters
 
-      site.pages << DataPage.new(site)
+      site.pages << JsonPage.new(site, {
+        'sections' => site.data['course']['sections'].each_with_index.map do |section,i|
+          {
+            'title' => section['title'],
+            'num' => section['num'],
+            'progress' => section['progress'],
+            'docs' => section['items'].map{ |item| item.data.merge({"url" => item.url}) }
+          }
+        end
+      })
     end
   end
 
-  class DataPage < Jekyll::Page
-    def initialize(site)
+  class JsonPage < Jekyll::Page
+    def initialize(site, data)
       @site = site
       @base = site.source
       @dir  = '/'
-      @content = JSON.pretty_generate(site.data['course']['sections'].map do |section|
-        {
-          'title' => section['title']
-        }
-      end)
+      @content = JSON.pretty_generate(data)
       @data = {}
 
       # All pages have the same filename, so define attributes straight away.

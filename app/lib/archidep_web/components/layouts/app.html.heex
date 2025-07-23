@@ -77,8 +77,54 @@
           </li>
         </ul>
       </div>
-      <ul :if={logged_in?(@auth)} class="w-full menu px-4 pt-0 pb-4">
-        <li>
+      <ul id="course-material-menu" class="w-full menu px-4 pt-0 pb-4">
+        <%= for section <- Material.course_sections() do %>
+          <li class={[
+            if(section["progress"],
+              do: "course-section-#{section["progress"]}",
+              else: nil
+            )
+          ]}>
+            <span class="text-base-content/50 cursor-default">
+              {section["title"]}
+            </span>
+          </li>
+          <%= for item <- section["docs"] do %>
+            <li class={[
+              "group",
+              if(item["progress"], do: "course-item-#{item["progress"]}", else: nil)
+            ]}>
+              <.link
+                href={item["url"]}
+                target={if item["course_type"] == "slides", do: "_target", else: "_self"}
+                class="flex items-center gap-2"
+              >
+                <span class="flex items-center gap-x-2">
+                  <span class="size-4">
+                    <%= if item["course_type"] == "slides" do %>
+                      🎬
+                    <% end %>
+                    <%= if item["course_type"] == "exercise" do %>
+                      🔨
+                    <% end %>
+                    <%= if item["course_type"] != "slides" and item["course_type"] != "exercise" do %>
+                      📖
+                    <% end %>
+                  </span>
+                  <span>
+                    {item["title"]}
+                  </span>
+                </span>
+                <%= if item["slides"] do %>
+                  <span>
+                    🎬
+                  </span>
+                <% end %>
+              </.link>
+            </li>
+          <% end %>
+        <% end %>
+        <li :if={logged_in?(@auth)}>
           <.link navigate={~p"/servers"} class="flex items-center gap-2">
             <Heroicons.server_stack class="size-4" />
             <span>{gettext("Servers")}</span>

@@ -22,3 +22,25 @@ main > .highlighter-rouge {
 .callout-warning .icon {
   @apply text-red-400 dark:text-red-800;
 }
+
+#course-material-menu {
+  .course-section-done {
+    @apply border-r-4 border-success/50 hover:border-success;
+  }
+
+  .course-item-done {
+    @apply border-r-4 border-success/50 hover:border-success;
+  }
+
+  .course-item-due {
+    @apply border-r-4 border-warning/85 hover:border-warning;
+  }
+
+  .course-item-next {
+    @apply border-r-4 border-info/50 hover:border-info;
+  }
+
+  .course-item-future {
+    @apply opacity-25 hover:opacity-100;
+  }
+}
