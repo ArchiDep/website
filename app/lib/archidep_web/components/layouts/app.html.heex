@@ -70,12 +70,66 @@
             </a>
           </li>
           <li>
-            <a href="/app" class="bg-primary/50 tooltip tooltip-bottom" data-tip="Dashboard">
+            <a
+              href="/app"
+              class={[
+                "tooltip tooltip-bottom",
+                if(@current_path == "/app", do: "bg-primary/50", else: nil)
+              ]}
+              data-tip="Dashboard"
+            >
               <Heroicons.cube class="w-full" />
               <span class="sr-only">Dashboard</span>
             </a>
           </li>
+          <li>
+            <a
+              href="/admin"
+              class={[
+                "tooltip tooltip-bottom",
+                if(@current_path == "/admin" or String.starts_with?(@current_path, "/admin/"),
+                  do: "bg-error",
+                  else: nil
+                )
+              ]}
+              data-tip="Admin"
+            >
+              <Heroicons.fire class={[
+                "w-full",
+                if(@current_path == "/admin" or String.starts_with?(@current_path, "/admin/"),
+                  do: "text-error-content",
+                  else: "text-error"
+                )
+              ]} />
+              <span class="sr-only">Admin</span>
+            </a>
+          </li>
         </ul>
+      </div>
+      <ul class="w-full menu px-4 py-0">
+        <li :if={logged_in?(@auth) and String.starts_with?(@current_path, "/admin")}>
+          <.link navigate={~p"/servers"} class="flex items-center gap-2">
+            <Heroicons.server_stack class="size-4" />
+            <span>{gettext("Servers")}</span>
+          </.link>
+        </li>
+        <li :if={has_role?(@auth, :root) and String.starts_with?(@current_path, "/admin")}>
+          <.link navigate={~p"/admin/classes"} class="flex items-center gap-2">
+            <Heroicons.academic_cap class="size-4" />
+            <span>{gettext("Classes")}</span>
+          </.link>
+        </li>
+        <li :if={has_role?(@auth, :root) and String.starts_with?(@current_path, "/admin")}>
+          <.link navigate={~p"/admin/events"} class="flex items-center gap-2">
+            <Heroicons.book_open class="size-4" />
+            <span>{gettext("Events")}</span>
+          </.link>
+        </li>
+      </ul>
+      <div
+        :if={@current_path == "/admin" or String.starts_with?(@current_path, "/admin/")}
+        class="divider m-0"
+      >
       </div>
       <ul id="course-material-menu" class="w-full menu px-4 pt-0 pb-4">
         <%= for section <- Material.course_sections() do %>
@@ -120,36 +174,13 @@
                     🎬
                   </span>
                 <% end %>
+                <%= if item["course_type"] == "slides" do %>
+                  <Heroicons.arrow_top_right_on_square class="size-4 text-base-content/25 group-hover:text-base-content/75" />
+                <% end %>
               </.link>
             </li>
           <% end %>
         <% end %>
-        <li :if={logged_in?(@auth)}>
-          <.link navigate={~p"/servers"} class="flex items-center gap-2">
-            <Heroicons.server_stack class="size-4" />
-            <span>{gettext("Servers")}</span>
-          </.link>
-        </li>
-        <li :if={has_role?(@auth, :root)}>
-          <span class="flex items-center gap-2 text-error cursor-default">
-            <Heroicons.fire class="size-4" />
-            <span>{gettext("Admin")}</span>
-          </span>
-          <ul>
-            <li :if={has_role?(@auth, :root)}>
-              <.link navigate={~p"/admin/classes"} class="flex items-center gap-2">
-                <Heroicons.academic_cap class="size-4" />
-                <span>{gettext("Classes")}</span>
-              </.link>
-            </li>
-            <li :if={has_role?(@auth, :root)}>
-              <.link navigate={~p"/admin/events"} class="flex items-center gap-2">
-                <Heroicons.book_open class="size-4" />
-                <span>{gettext("Events")}</span>
-              </.link>
-            </li>
-          </ul>
-        </li>
       </ul>
     </div>
   </div>

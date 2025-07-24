@@ -91,7 +91,11 @@ module ArchiDep
             'title' => section['title'],
             'num' => section['num'],
             'progress' => section['progress'],
-            'docs' => section['items'].map{ |item| item.data.merge({"url" => item.url}) }
+            'docs' => section['items'].map{
+              |item| item.data.merge({"url" => item.url}).select{ |k,v|
+                ["course_type", "num", "progress", "section", "section_chapter", "slides", "title", "url"].include?(k)
+              }
+            }
           }
         end
       })

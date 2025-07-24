@@ -57,7 +57,7 @@ defmodule ArchiDepWeb.Router do
       get "/switch-edu-id/callback", AuthController, :callback
     end
 
-    live_session :default, on_mount: [Flashy.Hook] do
+    live_session :default, on_mount: [Flashy.Hook, ArchiDepWeb.LiveHooks] do
       scope "/" do
         pipe_through :fetch_authentication
         live "/profile", Profile.ProfileLive
@@ -70,6 +70,7 @@ defmodule ArchiDepWeb.Router do
 
       scope "/admin" do
         pipe_through :fetch_authentication
+        live "/", Admin.AdminLive
         live "/classes", Admin.Classes.ClassesLive
         live "/classes/:id", Admin.Classes.ClassLive
         live "/classes/:class_id/students/:id", Admin.Classes.StudentLive
