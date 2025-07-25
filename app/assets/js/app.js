@@ -16,17 +16,19 @@
 //
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
-import "phoenix_html"
-import FlashyHooks from "flashy"
+import 'phoenix_html';
+import FlashyHooks from 'flashy';
 // Establish Phoenix Socket and LiveView configuration.
-import {Socket} from "phoenix"
-import {LiveSocket} from "phoenix_live_view"
-import topbar from "../vendor/topbar"
+import { Socket } from 'phoenix';
+import { LiveSocket } from 'phoenix_live_view';
+import topbar from '../vendor/topbar';
 
-const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-const liveSocket = new LiveSocket("/live", Socket, {
+const csrfToken = document
+  .querySelector("meta[name='csrf-token']")
+  .getAttribute('content');
+const liveSocket = new LiveSocket('/live', Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken},
+  params: { _csrf_token: csrfToken },
   hooks: {
     remainingSeconds: {
       mounted() {
@@ -38,28 +40,33 @@ const liveSocket = new LiveSocket("/live", Socket, {
   dom: {
     onBeforeElUpdated: (fromEl, toEl) => {
       if (fromEl.tagName !== 'DIALOG') {
-        return true
+        return true;
       }
 
       // Prevent DOM updates from nuking the dialog state.
       toEl.open = fromEl.open;
 
-      return false
+      return false;
     }
   }
 });
 
 // Always clear the cached session on the login page.
 if (window.location.pathname === '/login') {
-  localStorage.removeItem("archidep:session");
+  localStorage.removeItem('archidep:session');
 }
 
 function updateRemainingSeconds(element) {
   const endTime = new Date(element.dataset.endTime);
-  const template = element.dataset.template || "in {seconds}s";
-  const doneTemplate = element.dataset.templateDone || "soon";
-  const remainingSeconds = Math.ceil(Math.max(0, endTime.getTime() - Date.now()) / 1000);
-  element.textContent = remainingSeconds >= 1 ? template.replace('{seconds}', remainingSeconds) : doneTemplate;
+  const template = element.dataset.template || 'in {seconds}s';
+  const doneTemplate = element.dataset.templateDone || 'soon';
+  const remainingSeconds = Math.ceil(
+    Math.max(0, endTime.getTime() - Date.now()) / 1000
+  );
+  element.textContent =
+    remainingSeconds >= 1
+      ? template.replace('{seconds}', remainingSeconds)
+      : doneTemplate;
 
   if (remainingSeconds >= 1) {
     setTimeout(() => updateRemainingSeconds(element), 1000);
@@ -67,18 +74,18 @@ function updateRemainingSeconds(element) {
 }
 
 // Show progress bar on live navigation and form submits
-topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
-window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
-window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
+topbar.config({ barColors: { 0: '#29d' }, shadowColor: 'rgba(0, 0, 0, .3)' });
+window.addEventListener('phx:page-loading-start', _info => topbar.show(300));
+window.addEventListener('phx:page-loading-stop', _info => topbar.hide());
 
-window.addEventListener("open-dialog", event => {
+window.addEventListener('open-dialog', event => {
   const dialogId = event.detail?.dialog;
   if (!dialogId) {
     console.warn(`No dialog ID provided in "open-dialog" event detail`);
     return;
   }
 
-  const dialog = document.getElementById(dialogId)
+  const dialog = document.getElementById(dialogId);
   if (!dialog) {
     console.warn(`Dialog with ID ${dialogId} not found`);
     return;
@@ -88,7 +95,7 @@ window.addEventListener("open-dialog", event => {
 });
 
 // Cache session data relevant to the client in local storage.
-window.addEventListener("phx:authenticated", event => {
+window.addEventListener('phx:authenticated', event => {
   if (!event.detail) {
     console.warn('No event detail provided in "phx:authenticated" event');
     return;
@@ -96,20 +103,20 @@ window.addEventListener("phx:authenticated", event => {
 
   const sessionExpiresAt = new Date(event.detail.sessionExpiresAt);
   if (sessionExpiresAt.getTime() > Date.now()) {
-    localStorage.setItem("archidep:session", JSON.stringify(event.detail))
+    localStorage.setItem('archidep:session', JSON.stringify(event.detail));
   } else {
-    localStorage.removeItem("archidep:session");
+    localStorage.removeItem('archidep:session');
   }
 });
 
-window.addEventListener("phx:close-dialog", event => {
+window.addEventListener('phx:close-dialog', event => {
   const dialogId = event.detail?.dialog;
   if (!dialogId) {
     console.warn(`No dialog ID provided in "phx:close-dialog" event detail`);
     return;
   }
 
-  const dialog = document.getElementById(dialogId)
+  const dialog = document.getElementById(dialogId);
   if (!dialog) {
     console.warn(`Dialog with ID ${dialogId} not found`);
     return;
@@ -118,10 +125,12 @@ window.addEventListener("phx:close-dialog", event => {
   dialog.close();
 });
 
-window.addEventListener("phx:execute-action", event => {
+window.addEventListener('phx:execute-action', event => {
   const to = event.detail?.to;
   if (!to) {
-    console.warn(`No "to" selector provided in "phx:execute-action" event detail`);
+    console.warn(
+      `No "to" selector provided in "phx:execute-action" event detail`
+    );
     return;
   }
 
@@ -132,9 +141,12 @@ window.addEventListener("phx:execute-action", event => {
   }
 
   document.querySelectorAll(to).forEach(element => {
-    const action = element.getAttribute(`data-action-${actionName}`) ?? undefined;
+    const action =
+      element.getAttribute(`data-action-${actionName}`) ?? undefined;
     if (!actionName) {
-      console.warn(`No data-action-${actionName} attribute found on element ${element} for "phx:execute-action" event`);
+      console.warn(
+        `No data-action-${actionName} attribute found on element ${element} for "phx:execute-action" event`
+      );
       return;
     }
 
@@ -143,10 +155,10 @@ window.addEventListener("phx:execute-action", event => {
 });
 
 // connect if there are any LiveViews on the page
-liveSocket.connect()
+liveSocket.connect();
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
-window.liveSocket = liveSocket
+window.liveSocket = liveSocket;

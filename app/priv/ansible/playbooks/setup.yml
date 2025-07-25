@@ -2,18 +2,18 @@
 - name: ArchiDep student server setup
   hosts: all
   vars:
-    app_user_name: "archidep"
+    app_user_name: 'archidep'
     # app_user_authorized_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC3..."
     # server_id: b7e8c2d1-4a3a-4c9b-9f2e-1e6b7a5d2c3f
   tasks:
     - name: Create the application user
       ansible.builtin.user:
-        name: "{{ app_user_name }}"
-        comment: "ArchiDep"
+        name: '{{ app_user_name }}'
+        comment: 'ArchiDep'
         create_home: true
         groups: [sudo]
-        home: "/home/{{ app_user_name }}"
-        password: "!"
+        home: '/home/{{ app_user_name }}'
+        password: '!'
         shell: /bin/bash
         system: true
         state: present
@@ -21,19 +21,19 @@
 
     - name: Configure authorized keys for the application user
       ansible.posix.authorized_key:
-        user: "{{ app_user_name }}"
+        user: '{{ app_user_name }}'
         comment: ArchiDep
         exclusive: true
-        key: "{{ app_user_authorized_key }}"
+        key: '{{ app_user_authorized_key }}'
         state: present
       become: true
 
     - name: Enable passwordless sudo for the application user
       community.general.sudoers:
-        name: "{{ app_user_name }}"
-        commands: "ALL"
+        name: '{{ app_user_name }}'
+        commands: 'ALL'
         nopassword: true
-        user: "{{ app_user_name }}"
+        user: '{{ app_user_name }}'
         validation: required
         state: present
       become: true
@@ -41,26 +41,26 @@
     - name: Create the application configuration directory
       ansible.builtin.file:
         path: /etc/archidep
-        owner: "{{ app_user_name }}"
-        group: "{{ app_user_name }}"
+        owner: '{{ app_user_name }}'
+        group: '{{ app_user_name }}'
         mode: '0750'
         state: directory
       become: true
 
     - name: Create the server ID file
       ansible.builtin.copy:
-        content: "{{ server_id }}"
+        content: '{{ server_id }}'
         dest: /etc/archidep/server-id
-        owner: "{{ app_user_name }}"
-        group: "{{ app_user_name }}"
+        owner: '{{ app_user_name }}'
+        group: '{{ app_user_name }}'
         mode: '0640'
       become: true
 
     - name: Create the server token file
       ansible.builtin.copy:
-        content: "{{ server_token }}"
+        content: '{{ server_token }}'
         dest: /etc/archidep/token
-        owner: "{{ app_user_name }}"
-        group: "{{ app_user_name }}"
+        owner: '{{ app_user_name }}'
+        group: '{{ app_user_name }}'
         mode: '0640'
       become: true

@@ -1,5 +1,11 @@
 # https://prettier.io/docs/en/ignore.html
-/app
+/app/assets/vendor/topbar.js
+/app/_build
+/app/.elixir_ls
+/app/cover
+/app/deps
+/app/priv/static
+/app/priv/uploads
 /course/**/*.html
 /course/.jekyll-cache
 /node_modules

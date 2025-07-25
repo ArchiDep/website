@@ -2,15 +2,15 @@
 - name: ArchiDep student server hooks installation
   hosts: all
   vars:
-    app_user_name: "archidep"
+    app_user_name: 'archidep'
     # server_shared_secret: "changeme"
   tasks:
     - name: Create the server shared secret file
       ansible.builtin.copy:
         path: /etc/archidep/shared-secret
-        content: "{{ server_shared_secret }}"
-        owner: "{{ app_user_name }}"
-        group: "{{ app_user_name }}"
+        content: '{{ server_shared_secret }}'
+        owner: '{{ app_user_name }}'
+        group: '{{ app_user_name }}'
         mode: '0640'
         force: false
         state: directory
