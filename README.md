@@ -12,10 +12,10 @@ This repository contains the source code for the Media Engineering Architecture
 
 ## Requirements
 
-* [Elixir][elixir] 1.18.x
-* [Erlang/OTP][erlang] 28.x
-* [Node.js][node] 24.x
-* [Ruby][ruby] 3.4
+- [Elixir][elixir] 1.18.x
+- [Erlang/OTP][erlang] 28.x
+- [Node.js][node] 24.x
+- [Ruby][ruby] 3.4
 
 > Use [asdf] or [mise] to install everything based on
 > [`.tool-versions`](./.tool-versions).

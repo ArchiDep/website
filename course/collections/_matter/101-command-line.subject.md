@@ -5,15 +5,11 @@ title: Command Line
 Learn what a command line interface is and learn the basics of navigating and
 manipulating your filesystem in a Unix shell.
 
-
-
 ## Back to the command line
 
 <!-- slide-front-matter class: center, middle -->
 
 [Command line interfaces][cli] are still in wide use today.
-
-
 
 ### What is a Command Line Interface (CLI)?
 
@@ -25,25 +21,21 @@ something like this:
 
 <p class='center'><img src='images/cli.jpg' width='100%' /></p>
 
-
-
 ### Why use it?
 
 A CLI is not very user-friendly or visually appealing but it has several advantages:
 
-* It requires very **few resources** (e.g. memory),
+- It requires very **few resources** (e.g. memory),
   which is convenient where resources are scarce
   (e.g. embedded systems, web servers).
-* It can be easily **automated** through scripting.
-* Is is ultimately **more powerful and efficient** than any GUI for many computing tasks.
+- It can be easily **automated** through scripting.
+- Is is ultimately **more powerful and efficient** than any GUI for many computing tasks.
 
 For these reasons, a lot of tools, **especially development tools**,
 don't have any GUI and are only usable through a CLI.
 Or they have a limited GUI that does not have as many options as the CLI.
 
 **Thus, using a CLI is a requirement for any developer today.**
-
-
 
 ### Open a CLI
 
@@ -71,8 +63,6 @@ CLI either.
 > Software terminals are an emulation of old physical terminals like [TTYs][tty] or the [VT100][vt100].
 > You will still find references to the term "TTY" in the documentation of some modern command line tools.
 
-
-
 ### Install Git Bash (Windows users only)
 
 You're going to install **Git Bash**, a software terminal that emulates the popular [Bourne-again shell (Bash)][bash] on Windows.
@@ -95,8 +85,6 @@ Then, search and open the **Git Bash** software.
 
 As an alternative, you may also use the [Windows Subsystem for Linux][windows-subsystem-for-linux],
 but it sometimes has issues when integrating with other programs not installed in that CLI.
-
-
 
 ## How to use the CLI
 
@@ -156,8 +144,6 @@ by showing the prompt again.
 
 <p class='center'><img src='images/sleep-done.png' width='100%' /></p>
 
-
-
 ### Writing commands
 
 A command is a **word** that you have to type in the CLI that will **tell the computer what to do**.
@@ -167,12 +153,11 @@ The syntax for using commands looks like this:
 ```bash
 $> name arg1 arg2 arg3 ...
 ```
+
 Note the use of **spaces** to separate the differents **arguments** of a command.
 
-* `name` represents the **command** you want to execute.
-* `arg1 arg2 arg3 ...` represent the **arguments of the command**, each of them **separated by a space**.
-
-
+- `name` represents the **command** you want to execute.
+- `arg1 arg2 arg3 ...` represent the **arguments of the command**, each of them **separated by a space**.
 
 ### Options vs. values
 
@@ -190,8 +175,8 @@ $> ls `-a` `-l`
 We use the `ls` command to **l**i**s**t the content of the current directory.
 The options tell `ls` **how** it should do so:
 
-* `-a` tells it to print **a**ll elements (including hidden ones).
-* `-l` tells it to print elements in a **l**ist format, rather than on one line.
+- `-a` tells it to print **a**ll elements (including hidden ones).
+- `-l` tells it to print elements in a **l**ist format, rather than on one line.
 
 <!-- slide-column -->
 
@@ -214,8 +199,8 @@ In the **first example**, we use the `ls` command to **l**i**s**t elements in
 the current directory. We also use options to tell `ls` how it should print
 elements:
 
-* `--all` tells it to print all elements.
-* `-l` tells it to print elements in a list format, rather than on one line..
+- `--all` tells it to print all elements.
+- `-l` tells it to print elements in a list format, rather than on one line..
 
 #### Options with values
 
@@ -228,26 +213,24 @@ tar -c -v `-f compressed.tar.gz` file-to-compress
 The [`tar` (**t**ape **ar**chive)][tar] command bundles and compresses files. In
 this example, it takes **three options**:
 
-* `-c` tells it to **c**ompress (instead of uncompressing).
-* `-v` tells it to be **v**erbose (print more information to the CLI).
-* `-f` tells it where to store the compressed **f**ile; this is followed
+- `-c` tells it to **c**ompress (instead of uncompressing).
+- `-v` tells it to be **v**erbose (print more information to the CLI).
+- `-f` tells it where to store the compressed **f**ile; this is followed
   **immediately** by `compressed.tar.gz` which is the **value** of that option.
 
 It then takes **one value**:
 
-* `file-to-compress` is the file (or directory) to compress
+- `file-to-compress` is the file (or directory) to compress
 
 There are two values in this example: one linked to the `-f` option, and one
 used by the overall command.
-
-
 
 ### Naming things when using CLI
 
 You should avoid the following characters in directories and file names you want to manipulate with the CLI:
 
-* **spaces** _(they're used to separate arguments in command)_.
-* **accents** (e.g. `é`, `à`, `ç`, etc).
+- **spaces** _(they're used to separate arguments in command)_.
+- **accents** (e.g. `é`, `à`, `ç`, etc).
 
 They can cause **errors** in some scripts or tools, and will inevitably complicate using the CLI.
 If you have a `Why So Serious` directory, this **WILL NOT work**:
@@ -255,6 +238,7 @@ If you have a `Why So Serious` directory, this **WILL NOT work**:
 ```bash
 $> ls `Why` `So` `Serious`
 ```
+
 This command will be interpreted as a call to the `ls` command with **three arguments**: `Why`, `So` and `Serious`.
 
 You **can** use arguments containing spaces, but you have to **escape** them first, either with **quotation marks** or **backslashes**:
@@ -270,8 +254,6 @@ $> ls `"Why So Serious"`
 ```bash
 $> ls `Why\ So\ Serious`
 ```
-
-
 
 ### Auto-completion
 
@@ -298,8 +280,6 @@ You need hit `Tab` **a second time** to display the list of available choices:
 You can type just enough characters so that the CLI can determine which one you want (in this case `c` or `w`),
 then hit `Tab` again to get the full path.
 
-
-
 ### Getting help
 
 You can get help on most advanced commands by executing them with the `--help` option.
@@ -310,10 +290,10 @@ As the option's name implies, it's designed to **give you some help** on how to 
 Some commands don't have the `--help` option, but there are alternative sources
 of information depending on what operating system you're on:
 
-* On Linux or macOS, use `man ls` to display the **manual** for the `ls` command.
-* On Windows, use `help cd` to display help for the `cd` command;
+- On Linux or macOS, use `man ls` to display the **manual** for the `ls` command.
+- On Windows, use `help cd` to display help for the `cd` command;
   you can also type `help` to list available commands (only system commands).
-* If you have [Node.js and npm][node] installed, there is also [tldr
+- If you have [Node.js and npm][node] installed, there is also [tldr
   pages][tldr-pages]: a cross-platform tool that provides simplified and
   community-driven manual pages.
 
@@ -340,25 +320,21 @@ ls [-ABCFGHLOPRSTUW@abcdefghiklmnopqrstuwx1] [file ...]
 
 Here are some explanations:
 
-* `[]`: Whatever's inside is **optional** (ex: `[-e]`).
-* `|`: You have to **choose between** options (ex: `-L|-P`).
-* `...`: Whatever's before can be **repeated** (ex: `[file ...]`).
+- `[]`: Whatever's inside is **optional** (ex: `[-e]`).
+- `|`: You have to **choose between** options (ex: `-L|-P`).
+- `...`: Whatever's before can be **repeated** (ex: `[file ...]`).
 
 Depending on the documentation, you will also see symbols like this:
 
-* `<value>`
-* `--option=VALUE`
+- `<value>`
+- `--option=VALUE`
 
 **DON'T WRITE `<value>` or `VALUE`**.
 Replace it by an appropriate value for that option or argument.
 
-
-
 ## Using the filesystem
 
 <!-- slide-front-matter class: center, middle -->
-
-
 
 ### The `pwd` command
 
@@ -376,8 +352,6 @@ $> pwd
 > `pwd` means "**p**rint **w**orking **d**irectory": it gives you the absolute
 > path to the directory you're currently in.
 
-
-
 ### The `ls` command
 
 Now that you know where you are, you might want to know **what your current directory is containing**.
@@ -388,6 +362,7 @@ Use the `ls` command:
 $> ls
 (lots and lots of files)
 ```
+
 > `ls` means "**l**i**s**t": it lists the contents of a directory.
 
 By default, `ls` doesn't list **hidden elements**.
@@ -399,8 +374,6 @@ If you want it to do that, you need to pass the `-a` (**a**ll) option:
 $> ls -a
 (lots and lots of files, including the hidden ones)
 ```
-
-
 
 ### The `cd` command
 
@@ -458,7 +431,7 @@ $> cd ./Documents/TopSecret
 
 <!-- slide-container -->
 
-You can also *not go anywhere*:
+You can also _not go anywhere_:
 
 ```bash
 $> pwd
@@ -519,22 +492,23 @@ $> pwd
 <!-- slide-notes -->
 
 > To type the `~` character, use this combination:
-> * `AltGr-^` on **Windows**
-> * `Alt-N` on **Mac**
+>
+> - `AltGr-^` on **Windows**
+> - `Alt-N` on **Mac**
 
 #### Path reference
 
 <!-- slide-front-matter class: commands-table -->
 
-Path        | Where
-:---------- | :----------------------------------------------------------------------------------------------------------------
-`.`         | The current directory.
-`..`        | The parent directory.
-`foo/bar`   | The file/directory `bar` inside the directory `foo` in the current directory. This is a **relative path**.
-`./foo/bar` | *Same as the above*
-`/foo/bar`  | The file/directory `bar` inside the directory `foo` at the root of your filesystem. This is an **absolute path**.
-`~`         | Your home directory. This is an **absolute path**.
-`~/foo/bar` | The file/directory `bar` inside the directory `foo` in your home directory. This is an **absolute path**.
+| Path        | Where                                                                                                             |
+| :---------- | :---------------------------------------------------------------------------------------------------------------- |
+| `.`         | The current directory.                                                                                            |
+| `..`        | The parent directory.                                                                                             |
+| `foo/bar`   | The file/directory `bar` inside the directory `foo` in the current directory. This is a **relative path**.        |
+| `./foo/bar` | _Same as the above_                                                                                               |
+| `/foo/bar`  | The file/directory `bar` inside the directory `foo` at the root of your filesystem. This is an **absolute path**. |
+| `~`         | Your home directory. This is an **absolute path**.                                                                |
+| `~/foo/bar` | The file/directory `bar` inside the directory `foo` in your home directory. This is an **absolute path**.         |
 
 #### Your projects directory
 
@@ -554,8 +528,6 @@ For example, on John Doe's macOS system, it could be `/Users/jdoe/Projects`.
 **WARNING:** if your Windows/Linux/macOS username contains **spaces** or **accents**, you should **NOT** store your projects under your home directory.
 You should find a path elsewhere on your filesystem.
 This will save you **a lot of needless pain and suffering**.
-
-
 
 ### The `mkdir` command
 
@@ -583,8 +555,6 @@ option:
 $> mkdir -p ~/Documents/TopSecret/BatmobileSchematics
 ```
 
-
-
 ### The `touch` command
 
 The `touch` command updates the last modification date of a file.
@@ -599,8 +569,6 @@ $> ls
 foo.txt
 ```
 
-
-
 ### The `echo` command
 
 The `echo` command simply **echo**es its arguments back to you:
@@ -613,7 +581,7 @@ Hello World
 This seems useless, but can be quite powerful when combined with Unix features like [redirection][redirection].
 For example, you can **redirect the output to a file**.
 
-The `>` operator means *"**write** the output of the previous command into a file"*.
+The `>` operator means _"**write** the output of the previous command into a file"_.
 This allows you to quickly create a simple text file:
 
 ```bash
@@ -624,13 +592,11 @@ bar.txt
 ```
 
 If the file already exists, it is overwritten.
-You can also use the `>>` operator, which means *"**append** the output of the previous command to the end of a file"*:
+You can also use the `>>` operator, which means _"**append** the output of the previous command to the end of a file"_:
 
 ```bash
 $> echo bar `>>` bar.txt
 ```
-
-
 
 ### The `cat` command
 
@@ -654,8 +620,6 @@ bar
 World
 ```
 
-
-
 ### Stopping running commands
 
 Sometimes a command will take too long to execute.
@@ -676,8 +640,6 @@ typing `Ctrl-C` (press the **C** key while holding the **C**on**tr**o**l** key).
 > Note that `Ctrl-C` **forces termination** of a running command.
 > It might not have finished what it was doing.
 
-
-
 ### Windows users
 
 This is how you reference or use your **drives** (`C:`, `D:`, etc) in Git Bash on Windows:
@@ -695,15 +657,14 @@ Since `Ctrl-C` is used to stop the current process, it **can't** be used as a
 shortcut to copy things from the CLI. Instead, Git Bash has two custom
 shortcuts:
 
-* `Ctrl-Insert` to **copy** things from the CLI
+- `Ctrl-Insert` to **copy** things from the CLI
 
   > You can also simply **select any text** in Git Bash and it will
   > automatically be copied to your clipboard.
-* `Shift-Insert` to **paste** things to the CLI
+
+- `Shift-Insert` to **paste** things to the CLI
 
   > Or use **Right-click & Paste** if you don't have an `Insert` key.
-
-
 
 ## Vim
 
@@ -714,8 +675,6 @@ shortcuts:
 >
 > The name comes from "**vi** i**m**proved", because Vim is an improved clone of
 > an earlier editor: [vi][vi] (from **vi**sual).
-
-
 
 ### WHY?!
 
@@ -735,8 +694,6 @@ create/edit:
 vim test.txt
 ```
 
-
-
 ### How Vim works
 
 Vim can be unsettling at first, until you know how it works.
@@ -744,21 +701,19 @@ Vim can be unsettling at first, until you know how it works.
 **Let go of your fear. And your mouse**, it's mostly useless in Vim.
 You control Vim by **typing**.
 
-The first thing to understand whith Vim is that it has *3 modes*:
+The first thing to understand whith Vim is that it has _3 modes_:
 
-* **Normal** mode (the one you're in when Vim starts).
-* **Command** mode (the one to use to save and/or quit).
-* **Insert** mode (the one to use to insert text).
+- **Normal** mode (the one you're in when Vim starts).
+- **Command** mode (the one to use to save and/or quit).
+- **Insert** mode (the one to use to insert text).
 
 To go into each mode use this keys:
 
-| From           | Type    | To go to |
-| :------------- | :------ | :----    |
-| Normal         | `:`     | Command  |
-| Normal         | `i`     | Insert   |
-| Command/Insert | `Esc`   | Normal   |
-
-
+| From           | Type  | To go to |
+| :------------- | :---- | :------- |
+| Normal         | `:`   | Command  |
+| Normal         | `i`   | Insert   |
+| Command/Insert | `Esc` | Normal   |
 
 ### Normal mode
 
@@ -767,18 +722,16 @@ In this mode, you can move the cursor around with the arrow keys.
 
 You can also use some commands to interact with the text:
 
-| Command | Effect                                                           |
-| :------ | :--------------------------------------------------------------- |
-| `x`     | Delete the character under the cursor                            |
-| `dw`    | Delete a word, with the cursor standing before the first letter  |
-| `dd`    | Delete the complete line the cursor is on                        |
-| `u`     | Undo the last command                                            |
-| `:`     | Enter **Command** mode (to save and/or quit)                     |
-| `i`     | Enter **Insert** mode (to type text)                             |
+| Command | Effect                                                          |
+| :------ | :-------------------------------------------------------------- |
+| `x`     | Delete the character under the cursor                           |
+| `dw`    | Delete a word, with the cursor standing before the first letter |
+| `dd`    | Delete the complete line the cursor is on                       |
+| `u`     | Undo the last command                                           |
+| `:`     | Enter **Command** mode (to save and/or quit)                    |
+| `i`     | Enter **Insert** mode (to type text)                            |
 
 > At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
-
-
 
 ### Command mode
 
@@ -797,8 +750,6 @@ From there, you can use some commands:
 
 <!-- TODO: add link http://www.openvim.com/ -->
 
-
-
 ## Nano
 
 <!-- slide-front-matter class: center, middle, image-header -->
@@ -806,8 +757,6 @@ From there, you can use some commands:
 <img src='images/nano.jpg' class='w40' />
 
 > Nano: a simpler CLI editor to keep your sanity.
-
-
 
 ### An alternative to Vim
 
@@ -821,8 +770,6 @@ command instead:
 ```bash
 $> nano test.txt
 ```
-
-
 
 ### Editing files with nano
 
@@ -855,11 +802,9 @@ the changes should be saved:
 
 As you can see, it tells you the name of the file you opened. Now you can:
 
-* Simply press `Enter` to save the file.
-* Or, change the name to save your changes to another file (and keep the
+- Simply press `Enter` to save the file.
+- Or, change the name to save your changes to another file (and keep the
   unmodified original).
-
-
 
 ### Setting nano as the default editor
 
@@ -896,8 +841,6 @@ following command:
 $> sudo update-alternatives --config editor
 ```
 
-
-
 ## The `PATH` variable
 
 When you type a command in the CLI, it will try to see **if it knows this command** by looking in some directories to see if there is an **executable file that matches the command name**.
@@ -906,6 +849,7 @@ When you type a command in the CLI, it will try to see **if it knows this comman
 $> rubbish
 bash: rubbish: command not found
 ```
+
 > This means that the CLI failed to find the executable named `rubbish` in any
 > of the directories where it looked.
 
@@ -917,8 +861,6 @@ You can print the content of your `PATH` variable to see this list:
 $> echo $PATH
 /usr/local/bin:/bin:/usr/bin:/custom/dir
 ```
-
-
 
 ### Understanding the `PATH`
 
@@ -935,10 +877,10 @@ What happens when you run the following command?
 $> ls -a -l
 ```
 
-1. The shell will look in the `/usr/local/bin` directory. *There is no
-   executable named `ls` there, moving on...*
-2.  The shell will look in the `/bin` directory. **There is an executable named
-    `ls` there!** Execute it with arguments `-a` and `-l`.
+1. The shell will look in the `/usr/local/bin` directory. _There is no
+   executable named `ls` there, moving on..._
+2. The shell will look in the `/bin` directory. **There is an executable named
+   `ls` there!** Execute it with arguments `-a` and `-l`.
 3. We're done here. No need to look at the rest of the `PATH`. If there happens
    to be an `ls` executable in the `/custom/dir` directory, it will **not be
    used**.
@@ -964,8 +906,6 @@ $> which -a git
 > Remember, the shell will use the first one it finds, so in this example it
 > would use `/opt/homebrew/bin/git` if you type `git`, completely ignoring
 > `/usr/bin/git`.
-
-
 
 ### Using non-system commands
 
@@ -1026,8 +966,6 @@ Hello World
 
 But, ideally, you want to be able to **just type `hello`**, and have the script be executed.
 For this, you need to **add the directory containing the executable** to your `PATH` variable.
-
-
 
 ### Updating the `PATH` variable
 
@@ -1109,16 +1047,16 @@ export PATH="~/hello-program/bin:$PATH"
 
 This line says:
 
-* Modify the `PATH` variable.
-* In it, put the new directory `~/hello-program/bin` and the previous value of the `PATH`, separated by `:`.
+- Modify the `PATH` variable.
+- In it, put the new directory `~/hello-program/bin` and the previous value of the `PATH`, separated by `:`.
 
 The next time you run a command, your shell will **first look** in this directory for executables, then in the **rest of the `PATH`**.
 
 **Common mistakes**
 
-* What you must put in the `PATH` is **NOT** the path to the executable,
+- What you must put in the `PATH` is **NOT** the path to the executable,
   but the path to the **directory containing the executable**.
-* You must re-open your CLI for the change to take effect:
+- You must re-open your CLI for the change to take effect:
   the shell configuration file (e.g. `~/.bash_profile`) is only applied when the shell starts.
 
 ## Unleash your terminal
@@ -1144,12 +1082,12 @@ Oh My Zsh as well][oh-my-zsh-windows].
 
 ### Other tools for the command line lover
 
-* [`bat`](https://github.com/sharkdp/bat): a `cat` clone with wings
-* [`tldr`](https://github.com/tldr-pages/tldr): better `man` pages
-* [`fzf`](https://junegunn.github.io/fzf/) to quickly find files
-* [`ack`](https://beyondgrep.com) to search for text in files (`grep`
+- [`bat`](https://github.com/sharkdp/bat): a `cat` clone with wings
+- [`tldr`](https://github.com/tldr-pages/tldr): better `man` pages
+- [`fzf`](https://junegunn.github.io/fzf/) to quickly find files
+- [`ack`](https://beyondgrep.com) to search for text in files (`grep`
   alternative)
-* [`rsync`](https://rsync.samba.org) for incremental file transfers (`cp` &
+- [`rsync`](https://rsync.samba.org) for incremental file transfers (`cp` &
   `scp` alternative)
 
 <!-- slide-column 30 -->
@@ -1160,11 +1098,9 @@ Oh My Zsh as well][oh-my-zsh-windows].
 
 A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 
-  * [tmux](https://github.com/tmux/tmux/wiki)
-  * [screen](https://www.gnu.org/software/screen/)
-  * [zellij](https://zellij.dev) 💙
-
-
+- [tmux](https://github.com/tmux/tmux/wiki)
+- [screen](https://www.gnu.org/software/screen/)
+- [zellij](https://zellij.dev) 💙
 
 [ace]: https://en.wikipedia.org/wiki/Automatic_Computing_Engine
 [ada-lovelace]: https://en.wikipedia.org/wiki/Ada_Lovelace

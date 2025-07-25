@@ -96,7 +96,7 @@ computers are based on.
 
 <p class='center'><img class='w55' src='images/bug.jpg' /></p>
 
-When you had a bug in one of these computers, *debugging* meant getting your
+When you had a bug in one of these computers, _debugging_ meant getting your
 hands dirty and finding the [actual bug][bug] in the physical machine.
 
 ---
@@ -209,16 +209,14 @@ They are one of the most common end user computer interface today.
 
 Today:
 
-* [Touch user interface][tui]
-* [Voice user interface][vui]
-* [Motion sensing][motion-sensing]
-* [Augmented][augmented-reality] and [virtual][virtual-reality] reality
+- [Touch user interface][tui]
+- [Voice user interface][vui]
+- [Motion sensing][motion-sensing]
+- [Augmented][augmented-reality] and [virtual][virtual-reality] reality
 
 Tomorrow:
 
-* [Brain-computer interface?][brain-interface]
-
-
+- [Brain-computer interface?][brain-interface]
 
 [ace]: https://en.wikipedia.org/wiki/Automatic_Computing_Engine
 [ada-lovelace]: https://en.wikipedia.org/wiki/Ada_Lovelace

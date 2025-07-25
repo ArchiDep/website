@@ -8,22 +8,20 @@ Learn the basics of shell scripting with Bash.
 
 **You will need**
 
-* A Unix CLI
+- A Unix CLI
 
 **Recommended reading**
 
-* [Command Line Introduction](../cli/)
-
-
+- [Command Line Introduction](../cli/)
 
 ## What is a script?
 
 In a Unix-like operating system, a file that can be executed should be one of
 the following:
 
-* A **binary file**, which contains machine-readable binary code that has been
+- A **binary file**, which contains machine-readable binary code that has been
   compiled from source code.
-* A **script**, which is a file containing code that is dynamically interpreted.
+- A **script**, which is a file containing code that is dynamically interpreted.
 
 ### How is a script executed?
 
@@ -94,21 +92,19 @@ Hello World
 
 The following are a few examples of shebangs, but it is nowhere near exhaustive:
 
-Shebang             | Script contents
-:---                | :---
-`#!/bin/sh`         | [Bourne shell][sh] commands
-`#!/bin/bash`       | [Bash shell][bash] commands
-`#!/bin/zsh`        | [Z shell][zsh] commands
-`#!/usr/bin/node`   | [Node.js][node] code
-`#!/usr/bin/php`    | [PHP][php] code
-`#!/usr/bin/python` | [Python][python] code
-`#!/usr/bin/ruby`   | [Ruby][ruby] code
+| Shebang             | Script contents             |
+| :------------------ | :-------------------------- |
+| `#!/bin/sh`         | [Bourne shell][sh] commands |
+| `#!/bin/bash`       | [Bash shell][bash] commands |
+| `#!/bin/zsh`        | [Z shell][zsh] commands     |
+| `#!/usr/bin/node`   | [Node.js][node] code        |
+| `#!/usr/bin/php`    | [PHP][php] code             |
+| `#!/usr/bin/python` | [Python][python] code       |
+| `#!/usr/bin/ruby`   | [Ruby][ruby] code           |
 
 > Of course, the path to the interpreter must correspond to the actual path of
 > the command used (`sh`, `bash`, `php`, etc). It might differ on your machine.
 > Use `which bash` to find the location of the Bash executable, for example.
-
-
 
 ## What is shell scripting?
 
@@ -119,8 +115,6 @@ Any script with a shell as the interpreter is a "shell script".
 
 > A script using PHP as the interpreter is still a script, but it's not a "shell
 > script". It's a PHP script.
-
-
 
 ## Shell script basics
 
@@ -292,12 +286,12 @@ three
 
 Bash has a number of [special variables][bash-special-vars] which are always available:
 
-Variable | Description
-:---     | :---
-`$0`     | Name of the command being executed.
-`$1`     | First argument passed to the script on the command line (and so on with `$2`, `$3`, etc).
-`$@`     | All arguments passed to the script.
-`$?`     | Exit value of the last executed command.
+| Variable | Description                                                                               |
+| :------- | :---------------------------------------------------------------------------------------- |
+| `$0`     | Name of the command being executed.                                                       |
+| `$1`     | First argument passed to the script on the command line (and so on with `$2`, `$3`, etc). |
+| `$@`     | All arguments passed to the script.                                                       |
+| `$?`     | Exit value of the last executed command.                                                  |
 
 For example, this script says hello to the name passed as the first argument:
 
@@ -374,22 +368,18 @@ echo $name
 This script would print `Hello World` and an empty line,
 since `$name` is only defined within the `print_hello` function.
 
-
-
 ## References
 
-* [Shell Style Guide](https://google.github.io/styleguide/shellguide.html)
-* [Advanced Bash Scripting Guide](https://www.tldp.org/LDP/abs/html/)
-  * [Test Constructs][bash-test-constructs]
-  * [File Test Operators][bash-file-test-operators]
-  * [Other Comparison Operators][bash-comparison-operators]
-  * [Loops & Branches][bash-loops]
-  * [Local Variables][bash-locals]
-  * [Special Shell Variables][bash-special-vars]
-  * [Starting Off With a Sha-Bang][bash-shebang]
-* [Shell Script][shell-script]
-
-
+- [Shell Style Guide](https://google.github.io/styleguide/shellguide.html)
+- [Advanced Bash Scripting Guide](https://www.tldp.org/LDP/abs/html/)
+  - [Test Constructs][bash-test-constructs]
+  - [File Test Operators][bash-file-test-operators]
+  - [Other Comparison Operators][bash-comparison-operators]
+  - [Loops & Branches][bash-loops]
+  - [Local Variables][bash-locals]
+  - [Special Shell Variables][bash-special-vars]
+  - [Starting Off With a Sha-Bang][bash-shebang]
+- [Shell Script][shell-script]
 
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [bash-comparison-operators]: https://www.tldp.org/LDP/abs/html/comparison-ops.html

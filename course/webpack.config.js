@@ -22,13 +22,21 @@ module.exports = {
       {
         test: /\.tsx?$/,
         use: 'ts-loader',
-        exclude: /node_modules/,
+        exclude: /node_modules/
       }
     ]
   },
   output: {
     filename: production ? '[name].[chunkhash].js' : '[name].js',
-    path: path.resolve(__dirname, '..', 'app', 'priv', 'static', 'assets', 'course'),
+    path: path.resolve(
+      __dirname,
+      '..',
+      'app',
+      'priv',
+      'static',
+      'assets',
+      'course'
+    ),
     publicPath: '/assets/course/'
   },
   plugins: [

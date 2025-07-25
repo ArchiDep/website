@@ -22,11 +22,11 @@ This course is a [Media Engineering][comem] web development course taught at
 {% callout type: warning %}
 Hello, Note!
 
-* Foo
-* Bar
-* Baz
+- Foo
+- Bar
+- Baz
 
-*HELLO!*
+_HELLO!_
 {% endcallout %}
 
 ## What you will need
@@ -38,7 +38,7 @@ Hello, Note!
   - macOS users should [install the command-line tools][macos-cli]
   - Windows users should install [Git for Windows][git-for-windows]
   - Linux users on Debian/Ubuntu-based systems can [install Git with the `sudo
-    apt install git` command][install-git-on-linux], or with their other
+apt install git` command][install-git-on-linux], or with their other
     distributions' package managers.
 - A free [GitHub][github] account
 - [Google Chrome][chrome] (recommended, any browser with developer tools will do)

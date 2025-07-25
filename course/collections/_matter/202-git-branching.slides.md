@@ -13,14 +13,12 @@ which you should read if you want more detailed information on the subject.
 
 **You will need**
 
-* A Unix CLI
-* [Git][git]
+- A Unix CLI
+- [Git][git]
 
 **Recommended reading**
 
-* [Version control with Git](../git/)
-
-
+- [Version control with Git](../git/)
 
 ## What is branching?
 
@@ -30,8 +28,6 @@ which you should read if you want more detailed information on the subject.
 
 > Branching means you diverge from the main line of development and continue to do work without messing with that main line.
 
-
-
 ### Why use branches?
 
 Git has a very powerful branching model that is very **lightweight and fast**: it encourages workflows that branch and merge often.
@@ -39,12 +35,10 @@ Git has a very powerful branching model that is very **lightweight and fast**: i
 Many teams using Git create a **separate branch** to develop **each feature**.
 This has many advantages:
 
-* Each developer can work on his own feature, **isolated** from changes going on
+- Each developer can work on his own feature, **isolated** from changes going on
   elsewhere.
-* Each developer can pull in changes from the main line **at their own pace**.
-* The team can choose **which features to release** and when.
-
-
+- Each developer can pull in changes from the main line **at their own pace**.
+- The team can choose **which features to release** and when.
 
 ### What is a branch?
 
@@ -54,13 +48,13 @@ Remember that Git stores data as a series of snapshots.
 
 Each **commit** (the circles above) contains a pointer to the snapshot of the
 content you staged, represented by the blue **T**ree rectangles (as they
-refer to a *tree* of file snapshots).
+refer to a _tree_ of file snapshots).
 
 Each commit also contains:
 
-* The user name and e-mail or the author
-* The date at which the commit was created
-* A pointer to the previous commit (or commits)
+- The user name and e-mail or the author
+- The date at which the commit was created
+- A pointer to the previous commit (or commits)
 
 #### Branches point to commits
 
@@ -72,8 +66,6 @@ The default branch is `main`.
 The special `HEAD` pointer indicates the current branch.
 
 As you start making commits, the current branch pointer **automatically moves** forward to your latest commit.
-
-
 
 ### Example repository
 
@@ -97,13 +89,9 @@ $> git remote rm origin
 As you can see if you type `git log`, there are some commits already.
 Open the project with your favorite editor and open the `index.html` page in a browser.
 
-
-
 ## Working with branches
 
 <!-- slide-front-matter class: center, middle -->
-
-
 
 ### Showing branches on the command line
 
@@ -128,14 +116,13 @@ $> git graph
  * 387f12 First version
 ```
 
-
-
 ### Create a new branch
 
 .exercise[
+
 > **Exercise:** our JavaScript calculator is missing some code. Let's create a
 > branch to implement subtraction.
-]
+> ]
 
 It's very fast and simple to create a new branch. Run the following command to
 create a branch called "feature-sub":
@@ -162,8 +149,6 @@ $> git branch
 
 > The star is displayed next to the current branch.
 
-
-
 ### Switch branches
 
 Now let's switch to the `feature-sub` branch:
@@ -179,10 +164,9 @@ This moves `HEAD` to point to the `feature-sub` branch. Nothing else happened
 because `HEAD` is still pointing to the same commit as `main`.
 
 .exercise[
+
 > **Exercise:** you can now implement the subtraction in `subtraction.js`.
-]
-
-
+> ]
 
 ### Commit on a branch
 
@@ -201,15 +185,14 @@ to the new commit:
 
 <git-memoir name='branchingOneLine' chapter='commit-on-a-branch' svg-height='137px'></git-memoir>
 
-
-
 ### Switch back to `main`
 
 .exercise[
+
 > **Exercise:** oops, you just noticed that addition is not working correctly.
 > You need to make a bug fix, but you don't want to mix that code with the new
 > subtraction feature. Let's **go back to `main`**:
-]
+> ]
 
 ```bash
 $> git switch main  # or git checkout main
@@ -220,22 +203,21 @@ Switched to branch 'main'
 
 Two things happened when you ran `git switch main` (or `git checkout main`):
 
-* The `HEAD` pointer was **moved** back to the `main` branch.
-* The files in your working directory were **reverted** back to the snapshot that `main` points to.
+- The `HEAD` pointer was **moved** back to the `main` branch.
+- The files in your working directory were **reverted** back to the snapshot that `main` points to.
 
 <git-memoir name='branchingOneLine' chapter='back-to-main' svg-height='137px'></git-memoir>
 
 You have essentially **rewinded** the work you've done in `feature-sub`, and are working on an **older version** of the project.
 
-
-
 ### Create another branch
 
 .exercise[
-> **Exercise:** let's create a new branch to fix the bug.
-]
 
-You can create a new branch *and* switch to it in one command with the `-c`
+> **Exercise:** let's create a new branch to fix the bug.
+> ]
+
+You can create a new branch _and_ switch to it in one command with the `-c`
 (**c**reate) option of the `switch` command or the `-b` (new **b**ranch) option
 of the `checkout` command:
 
@@ -248,13 +230,12 @@ Switched to a new branch 'fix-add'
 
 Nothing changed yet because `fix-add` still points to the same commit as `main`.
 
-
-
 ### Work on a separate branch
 
 .exercise[
+
 > **Exercise:** fix addition in `addition.js` and commit your changes.
-]
+> ]
 
 ```bash
 $> git add addition.js
@@ -277,8 +258,6 @@ back and forth** between the branches with `git switch` or `git checkout`:
 Every time you switch to one of these branches, the files in your **working
 directory** are updated to reflect the state of the corresponding commit, or
 snapshot.
-
-
 
 ### Merging
 
@@ -318,15 +297,14 @@ This is what is called a **fast-forward**.
 
 <git-memoir name='branching' chapter='fast-forward-merge' svg-height='275px'></git-memoir>
 
-
-
 ### Delete a branch
 
 .exercise[
+
 > **Exercise:** now that we've brought our fix back into `main`, we don't need
 > the `fix-add` branch anymore. Let's delete it with the `-d` (**d**elete)
 > option of the `branch` command:
-]
+> ]
 
 ```bash
 $> git branch -d fix-add
@@ -335,14 +313,13 @@ Deleted branch fix-add (was 2817bc).
 
 <git-memoir name='branching' chapter='delete-branch' svg-height='275px'></git-memoir>
 
-
-
 ### Continue working on a feature branch
 
 .exercise[
+
 > **Exercise:** let's switch back to our `feature-sub` branch and finish our
 > work. Write a comment for the subtract function and commit your changes.
-]
+> ]
 
 ```bash
 $> git switch feature-sub  # or git checkout feature-sub
@@ -353,8 +330,6 @@ $> git commit -m "Comment subtract function"
 
 <git-memoir name='branching' chapter='work-on-feature-branch' svg-height='225px'></git-memoir>
 
-
-
 ### Merging a divergent history
 
 <git-memoir name='branching' chapter='work-on-feature-branch' controls='false' svg-height='200px'></git-memoir>
@@ -362,9 +337,9 @@ $> git commit -m "Comment subtract function"
 Now that we're happy with our new subtraction feature, we want to **merge** it into `main` as well.
 But the `feature-sub` branch has **diverged from some older point compared to `main`**, so Git cannot do a fast-forward:
 
-* `feature-sub` points to commit `f92ab0` which contains our feature.
-* `main` points to commit `2817bc` which contains the addition fix.
-* Commit `4f94fa` is the common ancestor.
+- `feature-sub` points to commit `f92ab0` which contains our feature.
+- `main` points to commit `2817bc` which contains the addition fix.
+- Commit `4f94fa` is the common ancestor.
 
 Git will do a **three-way merge** instead, combining together the changes of `main` and `feature-sub` (compared to the common ancestor).
 A **new commit** will be created representing that state.
@@ -372,9 +347,10 @@ A **new commit** will be created representing that state.
 #### Merge commit message
 
 .exercise[
+
 > **Exercise:** switch back to the `main` branch and merge `feature-sub` into
 > it.
-]
+> ]
 
 ```bash
 $> git switch main  # or git checkout main
@@ -418,8 +394,6 @@ $> git branch -d feature-sub
 
 <git-memoir name='branching' chapter='delete-feature-sub' svg-height='275px'></git-memoir>
 
-
-
 ## Merge conflicts
 
 Occasionally, the merge process doesn't go smoothly:
@@ -427,8 +401,6 @@ if the **same line(s) in the same file(s)** was modified in two diverging branch
 Git can't know which is the correct version.
 
 Let's pretend that a colleague of yours also implemented the subtraction function but in a different way than you did.
-
-
 
 ### Find the common ancestor
 
@@ -454,8 +426,6 @@ Make a copy of that commit hash.
 > Note that the actual hash of the commit on your machine may be different than
 > the one in this slide.
 
-
-
 ### Create a branch "in the past"
 
 You can create a branch at any point in the project's history by passing an
@@ -468,8 +438,6 @@ $> git switch -c better-sub 4f94fa  # or git checkout -b better-sub 4f94fa
 <git-memoir name='branching' chapter='checkout-past' svg-height='250px'></git-memoir>
 
 The `HEAD` has now moved to that point in the project's past history.
-
-
 
 ### Make a conflicting change
 
@@ -506,8 +474,6 @@ Viewing the graph of commits, it's clear that the change has been made **in para
 
 <git-memoir name='branching' chapter='conflicting-change' svg-height='300px'></git-memoir>
 
-
-
 ### Merge the conflicting branch
 
 Go back to `main` and merge the `better-sub` branch:
@@ -524,8 +490,6 @@ Automatic merge failed; fix conflicts and then commit the result.
 Git tells you that a **content conflict** has occurred in `subtraction.js`.
 
 The merge has failed and no new commit has been created.
-
-
 
 ### Check the status of the conflict
 
@@ -546,14 +510,12 @@ Unmerged paths:
 no changes added to commit (use "git add" and/or "git commit -a")
 ```
 
-* Git tells you that the merge is **not complete**:
-  * You can either fix the conflicts and run `git commit` to end the merge, or
+- Git tells you that the merge is **not complete**:
+  - You can either fix the conflicts and run `git commit` to end the merge, or
     cancel the whole thing with `git merge --abort`.
-* `subtraction.js` was modified in **both** the **current branch** and the
+- `subtraction.js` was modified in **both** the **current branch** and the
   **branch we are trying to merge in**.
-* You can use `git add` to **mark the conflicts in a file as resolved**.
-
-
+- You can use `git add` to **mark the conflicts in a file as resolved**.
 
 ### Inspect the conflicted file
 
@@ -576,11 +538,9 @@ calculate('subtraction', subtract);
 
 Notice two things here:
 
-* Git has **successfully merged the comment** on the subtract function, since only one person changed these lines.
-* Git could not merge the line with the computation, because the changes in the two branches conflict.
+- Git has **successfully merged the comment** on the subtract function, since only one person changed these lines.
+- Git could not merge the line with the computation, because the changes in the two branches conflict.
   It has added **conflict markers** to help you solve the issue.
-
-
 
 ### Conflict markers
 
@@ -594,19 +554,17 @@ Take a closer look at the conflict markers:
 >>>>>>> better-sub
 ```
 
-* The section between `<<<<<<< HEAD` and `=======` is the content that was present in the current branch (`HEAD`) before you merged.
-* The section between `=======` and `>>>>>>> better-sub` is the content that is being merged in from the `better-sub` branch.
+- The section between `<<<<<<< HEAD` and `=======` is the content that was present in the current branch (`HEAD`) before you merged.
+- The section between `=======` and `>>>>>>> better-sub` is the content that is being merged in from the `better-sub` branch.
 
 Since Git cannot know which is better, it's **your responsibility** to:
 
-* Remove the version you don't want, and...
-* Remove the marker conflicts.
+- Remove the version you don't want, and...
+- Remove the marker conflicts.
 
 ```js
 return -b + a;
 ```
-
-
 
 ### Mark the conflict as resolved
 
@@ -647,10 +605,6 @@ The latest commit on `main` now includes the changes from all lines of developme
 
 <git-memoir name='branching' chapter='merge-conflicting-change' svg-height='300px'></git-memoir>
 
-
-
-
-
 ## Merge file conflicts
 
 Sometimes it's not just the contents of the file that are in conflict:
@@ -663,8 +617,6 @@ $> git switch -c cleanup 4f94fa  # or git checkout -b cleanup 4f94fa
 
 <git-memoir name='branching' chapter='conflicting-file-change-checkout' svg-height='250px'></git-memoir>
 
-
-
 ### Make a conflicting file change
 
 This time, this colleague decided to delete `subtraction.js` in his branch because he doesn't like to see files with incomplete code:
@@ -676,8 +628,6 @@ $> git commit -m "Remove incomplete implementation"
 ```
 
 <git-memoir name='branching' chapter='conflicting-file-change' svg-height='300px'></git-memoir>
-
-
 
 ### Merge the conflicting branch
 
@@ -693,12 +643,10 @@ Automatic merge failed; fix conflicts and then commit the result.
 
 Git tells you immediately that there is a conflict and that:
 
-* `subtraction.js` was **deleted** in the `cleanup` branch.
-* `subtraction.js` was **modified** in the current branch (`HEAD`).
-* Git **doesn't know** whether it should apply the deletion or the modification,
+- `subtraction.js` was **deleted** in the `cleanup` branch.
+- `subtraction.js` was **modified** in the current branch (`HEAD`).
+- Git **doesn't know** whether it should apply the deletion or the modification,
   so it left the modified file for you to check.
-
-
 
 ### Check the status of the file conflict
 
@@ -721,19 +669,17 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
 Again, Git gives us some information:
 
-* `subtraction.js` was **deleted by "them"**, meaning that it was deleted in the
+- `subtraction.js` was **deleted by "them"**, meaning that it was deleted in the
   branch you're trying to merge in (if it had been deleted in the current branch
-  and modified in the other branch, it would be *deleted by "us"*).
-* Use either `git add` or `git rm` to mark the conflict as resolved.
-
-
+  and modified in the other branch, it would be _deleted by "us"_).
+- Use either `git add` or `git rm` to mark the conflict as resolved.
 
 ### Resolve the file conflict
 
 You have to choose whether you want to either:
 
-* Keep the modified file (use `git add`), or...
-* Remove it (use `git rm`)
+- Keep the modified file (use `git add`), or...
+- Remove it (use `git rm`)
 
 Let's keep it:
 
@@ -763,20 +709,16 @@ And you're done!
 
 <git-memoir name='branching' chapter='merge-conflicting-file-change' svg-height='325px'></git-memoir>
 
-
-
 ## Resources
 
-* [Git branching][branching]
-* [Advanced merging][advanced-merging]
-* [Understanding branches in Git][understanding-branches]
-* [Branching workflows](https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows)
-  * [A successful branching model](http://nvie.com/posts/a-successful-git-branching-model/) (for large teams)
-  * [A successful branching model considered harmful](https://barro.github.io/2016/02/a-succesful-git-branching-model-considered-harmful/)
-  * [Branch-per-feature](http://dymitruk.com/blog/2012/02/05/branch-per-feature/)
-  * [Trunk-based development](https://trunkbaseddevelopment.com)
-
-
+- [Git branching][branching]
+- [Advanced merging][advanced-merging]
+- [Understanding branches in Git][understanding-branches]
+- [Branching workflows](https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows)
+  - [A successful branching model](http://nvie.com/posts/a-successful-git-branching-model/) (for large teams)
+  - [A successful branching model considered harmful](https://barro.github.io/2016/02/a-succesful-git-branching-model-considered-harmful/)
+  - [Branch-per-feature](http://dymitruk.com/blog/2012/02/05/branch-per-feature/)
+  - [Trunk-based development](https://trunkbaseddevelopment.com)
 
 [advanced-merging]: https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging
 [branching]: https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell

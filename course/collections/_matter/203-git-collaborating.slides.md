@@ -10,14 +10,14 @@ Learn how to collaborate on [GitHub][github] with [Git][git].
 
 **You will need**
 
-* [Git][git]
-* A free [GitHub][github] account
-* A Unix CLI
+- [Git][git]
+- A free [GitHub][github] account
+- A Unix CLI
 
 **Recommended reading**
 
-* [Version control with Git](../git/)
-* [Git branching](../git-branching/)
+- [Version control with Git](../git/)
+- [Git branching](../git-branching/)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -73,15 +73,11 @@ Throughout the rest of the document, the members of the group will be referred t
 
 The tutorial assumes that you have followed the [previous Git tutorial][git-tutorial] and have kept your calculator repository.
 
-
-
 ## Distributed version control system
 
 <!-- slide-front-matter class: center, middle -->
 
 Working with remote repositories
-
-
 
 ### What is a remote?
 
@@ -92,8 +88,6 @@ Collaborating with others involves **pushing** and **pulling** data to and from 
 
 <p class='center'><img src='images/remotes.png' width='70%' /></p>
 
-
-
 ### Centralized workflow
 
 There are [many ways][distributed-workflows] to work with Git as a team.
@@ -103,11 +97,9 @@ Here we will use a simple **centralized workflow**:
 
 In this workflow:
 
-* A **shared central repository** is hosted on GitHub.
-* Each developer has a **repository on their local machine**.
-  * Each developer will add the shared repository as a **remote**.
-
-
+- A **shared central repository** is hosted on GitHub.
+- Each developer has a **repository on their local machine**.
+  - Each developer will add the shared repository as a **remote**.
 
 ### Working with GitHub
 
@@ -149,7 +141,7 @@ the **private** key, `id_ed25519.pub` is the **public** key, or it might be
 
 #### Create an SSH key
 
-If you don't have a key yet (or see a *"No such file or directory"* error), use
+If you don't have a key yet (or see a _"No such file or directory"_ error), use
 the `ssh-keygen` command to generate a new key pair (press Enter at every prompt
 to keep the defaults):
 
@@ -200,15 +192,11 @@ On GitHub, find the **SSH and GPG keys** section of your account settings and pa
 
 (The title of the key is not important. It's useful when you have multiple keys, to remember which is which.)
 
-
-
 ## Sharing changes
 
 <!-- slide-front-matter class: center, middle -->
 
 Clone repositories, push and pull commits
-
-
 
 ### Bob: create a repository on GitHub
 
@@ -222,8 +210,6 @@ Clone repositories, push and pull commits
 
 <img src='images/github-new-repo.jpg' width='90%' />
 
-
-
 ### Bob: add Alice as a collaborator
 
 For this tutorial, both team members will need push access to the repository.
@@ -234,8 +220,6 @@ and add the GitHub username of **Alice** as a collaborator:
 
 **Alice** must then **_accept the invitation sent by e-mail_** for the change to be effective.
 
-
-
 ### Bob: copy the remote SSH URL
 
 **Bob** should copy the SSH URL of the GitHub repository:
@@ -244,8 +228,6 @@ and add the GitHub username of **Alice** as a collaborator:
 
 **WARNING:** be sure to select the **SSH** URL, not the **HTTPS** URL
 (which might be selected by default).
-
-
 
 ### Bob: add the remote to your local repository
 
@@ -271,8 +253,6 @@ origin  git@github.com:bob/github-demo.git (push)
 > The `-v` (**v**erbose) option makes the `git remote` command display more
 > information. Without it, the URLs are not shown.
 
-
-
 ### Bob: push your commits to the shared repository
 
 It's time for **Bob** to put the code in the shared GitHub repository.
@@ -295,8 +275,6 @@ by `<branch>` to the remote named `<remote>`.
 
 The `-u` option (or `--set-upstream`) tells Git to remember that you have linked this branch to that remote.
 
-
-
 ### Bob: remote branches
 
 <!-- slide-column 60 -->
@@ -315,8 +293,6 @@ Note the **origin/main** branch that has appeared in your local repository.
 This is a **remote-tracking branch**.
 It tells you where the **main** branch points to on the **origin** remote (the GitHub repository in this case).
 
-
-
 ### Alice: get the remote repository's SSH URL
 
 **Alice** can now go to the repository's page on GitHub (under **Bob**'s account) and copy the SSH URL:
@@ -325,8 +301,6 @@ It tells you where the **main** branch points to on the **origin** remote (the G
 
 **WARNING:** again, be sure to select the **SSH** URL, not the **HTTPS** URL
 (which might be selected by default).
-
-
 
 ### Alice: clone the shared repository
 
@@ -347,8 +321,6 @@ $> cd github-demo
 
 The `git clone [url]` command copies the **remote** repository to your machine.
 
-
-
 ### Alice: remote branches
 
 <!-- slide-column 60 -->
@@ -366,8 +338,6 @@ directory so you have something to work from.
 Again, Git has created a **remote-tracking branch** in Alice's repository,
 so that you can know what the current state of the remote is.
 
-
-
 ### Alice: make local changes
 
 **Alice** thinks that the project's file names are too long. Let's fix that:
@@ -378,8 +348,6 @@ $> mv subtraction.js sub.js
 $> git add .
 $> git commit -m "Shorter file names"
 ```
-
-
 
 ### Alice: check the state of branches
 
@@ -393,8 +361,6 @@ This is now the state of the shared repository and **Alice**'s local repository.
 
 There is a new commit in **Alice**'s repository that is not in the shared GitHub repository.
 
-
-
 ### Alice: push to the shared repository
 
 Push to update the shared repository:
@@ -404,8 +370,6 @@ $> git push origin main
 ```
 
 <git-memoir name='github' chapter='alice-push' svg-height='275px'></git-memoir>
-
-
 
 ### Bob: check the state of branches
 
@@ -425,8 +389,6 @@ but that the remote-tracking branch origin/main **is not up-to-date** in **Bob**
 Git does not automatically synchronize repositories. **As far as Bob knows**
 looking at information from his local repository, the main branch still points
 to `4f94ba` in the shared repository.
-
-
 
 ### Bob: fetch changes from the shared repository
 
@@ -452,8 +414,6 @@ The new commit is now here and the remote-tracking branch has been updated.
 
 However, the local main branch **has not moved** and the working directory has **not been updated**.
 
-
-
 ### Bob: check the state of branches
 
 Now you can use `git merge` like in the previous tutorial to bring the changes of origin/main into main:
@@ -477,8 +437,6 @@ As expected, main has been fast-forwarded to the commit pointed to by origin/mai
 
 **Bob**'s repository is now up-to-date.
 
-
-
 ### Using git pull
 
 You can also use `git pull [remote] [branch]` to save time.
@@ -496,13 +454,9 @@ $> git fetch origin
 $> git merge origin/main
 ```
 
-
-
 ## Managing conflicting commit histories
 
 <!-- slide-front-matter class: center, middle -->
-
-
 
 ### Bob: fix the bug
 
@@ -519,27 +473,27 @@ $> git push origin main
 
 <git-memoir name='github' chapter='bob-fix' svg-height='250px'></git-memoir>
 
-
-
 ### Alice: make other changes
 
 **Alice**, not having noticed the bug, proceeds to make 2 changes on `index.html`:
 
-* Add an `<h2>` title before each computation.
-* Put the two last `<script>` tags on one line.
+- Add an `<h2>` title before each computation.
+- Put the two last `<script>` tags on one line.
 
 ```html
-*<h2>Addition</h2>
+*
+<h2>Addition</h2>
 <p id="addition">...</p>
 
-*<h2>Subtraction</h2>
+*
+<h2>Subtraction</h2>
 <p id="subtraction">...</p>
 
 <script src="calculations.js"></script>
-*<script src="addition.js"></script><script src="subtraction.js"></script>
+*
+<script src="addition.js"></script>
+<script src="subtraction.js"></script>
 ```
-
-
 
 ### Alice: push the other changes
 
@@ -555,8 +509,6 @@ $> git commit -m "Improve layout"
 ```bash
 $> git push origin main
 ```
-
-
 
 ### Rejected pushes
 
@@ -614,9 +566,6 @@ The push was **rejected again**! **Why?**
 
 This is the state of **Alice**'s repository right now.
 
-
-
-
 ### Divergent history
 
 <!-- slide-column 70 -->
@@ -629,8 +578,6 @@ It's for the same reason as in the previous tutorial: **Bob** and **Alice**'s
 work have diverged from a common ancestor (`92fb8c` in this example).
 
 A remote repository will **only accept fast-forward pushes** by default.
-
-
 
 ### Alice: pull changes from the shared repository
 
@@ -656,8 +603,6 @@ The fetch succeeded, but the merge failed because of a **conflict** on
 
 > As we've seen before, a `pull` is equivalent to a `fetch` followed by a
 > `merge`.
-
-
 
 ### Alice: check the conflict markers
 
@@ -686,8 +631,6 @@ $> git add index.html
 $> git commit -m "Merge origin/main"
 ```
 
-
-
 ### Alice: check the state of branches
 
 Now the state of **Alice**'s local repository is consistent with the state of
@@ -695,8 +638,6 @@ the shared repository: the commit pointed to by `main` is ahead of the commit
 pointed to by `origin/main`.
 
 <git-memoir name='github' chapter='alice-pull-changes' svg-height='325px'></git-memoir>
-
-
 
 ### Alice: push the changes
 
@@ -708,8 +649,6 @@ $> git push origin main
 
 <git-memoir name='github' chapter='alice-push-merge' svg-height='335px'></git-memoir>
 
-
-
 ### Bob: pull the changes
 
 **Bob** can now pull those latest changes to keep up-to-date:
@@ -720,14 +659,10 @@ $> git pull origin main
 
 <git-memoir name='github' chapter='bob-pull-merge' svg-height='335px'></git-memoir>
 
-
-
 ## Resources
 
-* [Git Branching - Remote Branches](https://git-scm.com/book/en/v2/Git-Branching-Remote-Branches)
-* [Distributed Git](https://git-scm.com/book/en/v2/Distributed-Git-Distributed-Workflows)
-
-
+- [Git Branching - Remote Branches](https://git-scm.com/book/en/v2/Git-Branching-Remote-Branches)
+- [Distributed Git](https://git-scm.com/book/en/v2/Distributed-Git-Distributed-Workflows)
 
 [distributed-workflows]: https://git-scm.com/book/en/v2/Distributed-Git-Distributed-Workflows
 [git]: https://git-scm.com

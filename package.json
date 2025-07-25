@@ -24,12 +24,17 @@
   },
   "homepage": "https://github.com/ArchiDep/website#readme",
   "scripts": {
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
     "start": "npm --workspace theme start"
   },
   "workspaces": [
     "course",
     "theme"
   ],
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  },
   "engines": {
     "node": "^24",
     "npm": ">= 8"

@@ -1,7 +1,9 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @plugin "@tailwindcss/typography";
 @plugin "daisyui" {
-  themes: nord --default, night --prefersdark;
+  themes:
+    nord --default,
+    night --prefersdark;
 }
 
 @source "../../app/deps/flashy/**/*.*ex";
