@@ -48,11 +48,15 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   def authentication(%__MODULE__{
         id: id,
         token: token,
+        created_at: created_at,
         user_account: user_account,
         impersonated_user_account: impersonated_user_account,
         impersonated_user_account_id: impersonated_user_account_id
       }) do
     principal = impersonated_user_account || user_account
+
+    session_expires_at =
+      DateTime.add(created_at, @session_validity_in_days * @one_day_in_seconds, :second)
 
     %Authentication{
       principal_id: principal.id,
@@ -60,6 +64,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       roles: principal.roles,
       session_id: id,
       session_token: token,
+      session_expires_at: session_expires_at,
       impersonated_id: impersonated_user_account_id
     }
   end
@@ -97,6 +102,42 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     )
     |> validate_required([:id, :token, :user_account, :created_at])
     |> validate_length(:client_ip_address, max: 50)
+  end
+
+  @spec fetch_active_session_by_id(UUID.t(), DateTime.t()) ::
+          {:ok, t()} | {:error, :session_not_found}
+  def fetch_active_session_by_id(id, now) do
+    where =
+      dynamic(
+        [user_session: us],
+        us.id == ^id and us.created_at > ago(@session_validity_in_days, "day") and
+          ^where_user_account_active(now)
+      )
+
+    if session =
+         Repo.one(
+           from(us in __MODULE__,
+             as: :user_session,
+             join: ua in assoc(us, :user_account),
+             as: :user_account,
+             left_join: pu in assoc(ua, :preregistered_user),
+             as: :preregistered_user,
+             left_join: ug in assoc(pu, :group),
+             as: :user_group,
+             left_join: iua in assoc(us, :impersonated_user_account),
+             left_join: iuapu in assoc(iua, :preregistered_user),
+             left_join: iuag in assoc(iuapu, :group),
+             where: ^where,
+             preload: [
+               user_account: {ua, preregistered_user: {pu, group: ug}},
+               impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}
+             ]
+           )
+         ) do
+      {:ok, session}
+    else
+      {:error, :session_not_found}
+    end
   end
 
   @spec fetch_active_session_by_token(String.t(), DateTime.t()) ::

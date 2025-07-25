@@ -11,8 +11,21 @@
     "reveal.js": "^5.2.1"
   },
   "devDependencies": {
+    "@mobily/ts-belt": "^4.0.0-rc.5",
+    "@preact/signals-core": "^1.11.0",
+    "@types/luxon": "^3.6.2",
+    "@types/phoenix": "^1.6.6",
+    "@types/reveal.js": "^5.2.0",
     "css-loader": "^7.1.2",
+    "fp-ts": "^2.16.10",
+    "io-ts": "^2.2.22",
+    "loglevel": "^1.9.2",
+    "loglevel-plugin-prefix": "^0.8.4",
+    "luxon": "^3.7.1",
     "mini-css-extract-plugin": "^2.9.2",
+    "phoenix": "^1.7.21",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1",
     "webpack-manifest-plugin": "^5.0.1"

@@ -1,4 +1,9 @@
 defmodule ArchiDep.Course.Material do
+  @moduledoc """
+  Provides access to the course material data, compiled by the Jekyll build
+  process.
+  """
+
   @course_material_dir Path.expand("../../../priv/static", __DIR__)
   @course_material_file Path.join(@course_material_dir, "archidep.json")
   @course_material_file_contents File.read!(@course_material_file)

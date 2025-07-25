@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Router do
   use ArchiDepWeb, :router
 
   import ArchiDepWeb.Auth
+  alias Plug.Conn
 
   pipeline :api do
     plug :accepts, ["json"]
@@ -39,12 +40,14 @@ defmodule ArchiDepWeb.Router do
     pipe_through :browser
 
     scope "/", Auth do
-      pipe_through [:fetch_authentication, :redirect_if_user_is_authenticated]
+      pipe_through [:fetch_authentication, :set_current_path, :redirect_if_user_is_authenticated]
       get "/login", AuthController, :login
     end
 
     scope "/", Auth do
       pipe_through :fetch_authentication
+      get "/auth/generate-csrf-token", AuthController, :generate_csrf_token
+      get "/auth/generate-socket-token", AuthController, :generate_socket_token
       post "/auth/impersonate", AuthController, :impersonate
       post "/auth/stop-impersonating", AuthController, :stop_impersonating
       delete "/logout", AuthController, :logout
@@ -109,4 +112,7 @@ defmodule ArchiDepWeb.Router do
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
+
+  @spec set_current_path(Conn.t(), keyword) :: Conn.t()
+  def set_current_path(conn, _opts), do: assign(conn, :current_path, conn.request_path)
 end

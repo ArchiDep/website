@@ -31,6 +31,15 @@ defmodule ArchiDep.Accounts.Behaviour do
   )
 
   @doc """
+  Authenticates using the specified session ID. The ID must be that of an active
+  session.
+  """
+  callback(
+    validate_session_id(id: UUID.t(), meta: map) ::
+      {:ok, Authentication.t()} | {:error, :session_not_found}
+  )
+
+  @doc """
   Returns the list of active sessions for the currently authenticated user.
   """
   callback(fetch_active_sessions(auth: Authentication.t()) :: list(UserSession.t()))

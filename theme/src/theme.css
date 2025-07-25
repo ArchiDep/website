@@ -11,6 +11,7 @@
 @source "../../course/_layouts";
 @source "../../course/plugins";
 @source "../../course/_posts";
+@source "../../course/src/assets";
 
 @import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 

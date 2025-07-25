@@ -30,6 +30,17 @@ defmodule ArchiDep.Accounts.UseCases.Sessions do
     end
   end
 
+  @spec validate_session_id(UUID.t(), ClientMetadata.t()) ::
+          {:ok, Authentication.t()} | {:error, :session_not_found}
+  def validate_session_id(id, client_metadata) do
+    now = DateTime.utc_now()
+
+    with {:ok, session} <- UserSession.fetch_active_session_by_id(id, now),
+         {:ok, touched_session} <- UserSession.touch(session, client_metadata) do
+      {:ok, UserSession.authentication(touched_session)}
+    end
+  end
+
   @spec user_account(Authentication.t()) :: UserAccount.t()
   def user_account(auth),
     do:

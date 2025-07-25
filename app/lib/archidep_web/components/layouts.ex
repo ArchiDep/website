@@ -12,6 +12,7 @@ defmodule ArchiDepWeb.Components.Layouts do
 
   import ArchiDepWeb.Helpers.AuthHelpers
   alias ArchiDep.Course.Material
+  alias Phoenix.LiveView.JS
 
   embed_templates "layouts/*"
 end

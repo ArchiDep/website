@@ -14,6 +14,7 @@ defmodule ArchiDep.Accounts.Context do
   )
 
   implement(&Behaviour.validate_session/2, UseCases.Sessions)
+  implement(&Behaviour.validate_session_id/2, UseCases.Sessions)
   implement(&Behaviour.fetch_active_sessions/1, UseCases.Sessions)
   implement(&Behaviour.impersonate/2, UseCases.Impersonate)
   implement(&Behaviour.stop_impersonating/1, UseCases.Impersonate)

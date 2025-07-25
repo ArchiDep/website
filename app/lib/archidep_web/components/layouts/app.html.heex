@@ -8,8 +8,12 @@
     </a>
   </div>
 
-  <div :if={logged_in?(@auth)} class="navbar-end">
-    <div class="dropdown dropdown-end">
+  <div class="navbar-end">
+    <a :if={not logged_in?(@auth)} href="/auth/switch-edu-id/configure" class="btn btn-ghost p-2">
+      <Heroicons.arrow_right_end_on_rectangle class="size-6" />
+      <span class="sr-only">{gettext("Log in")}</span>
+    </a>
+    <div :if={logged_in?(@auth)} class="dropdown dropdown-end">
       <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
         <div class="w-10 rounded-full">
           <Heroicons.user_circle :if={not impersonating?(@auth)} />
@@ -70,8 +74,8 @@
             </a>
           </li>
           <li>
-            <a
-              href="/app"
+            <.link
+              navigate={~p"/app"}
               class={[
                 "tooltip tooltip-bottom",
                 if(@current_path == "/app", do: "bg-primary/50", else: nil)
@@ -80,11 +84,11 @@
             >
               <Heroicons.cube class="w-full" />
               <span class="sr-only">Dashboard</span>
-            </a>
+            </.link>
           </li>
-          <li>
-            <a
-              href="/admin"
+          <li :if={has_role?(@auth, :root)}>
+            <.link
+              navigate={~p"/admin"}
               class={[
                 "tooltip tooltip-bottom",
                 if(@current_path == "/admin" or String.starts_with?(@current_path, "/admin/"),
@@ -102,7 +106,7 @@
                 )
               ]} />
               <span class="sr-only">Admin</span>
-            </a>
+            </.link>
           </li>
         </ul>
       </div>
@@ -128,8 +132,9 @@
       </ul>
       <div
         :if={@current_path == "/admin" or String.starts_with?(@current_path, "/admin/")}
-        class="divider m-0"
+        class="divider m-0 uppercase text-xs"
       >
+        Course
       </div>
       <ul id="course-material-menu" class="w-full menu px-4 pt-0 pb-4">
         <%= for section <- Material.course_sections() do %>

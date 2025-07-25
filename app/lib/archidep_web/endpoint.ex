@@ -10,10 +10,18 @@ defmodule ArchiDepWeb.Endpoint do
     signing_salt: {__MODULE__, :session_signing_salt, []}
   ]
 
+  # Phoenix LiveView
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [:peer_data, :user_agent, session: @session_options]],
     longpoll: [connect_info: [:peer_data, :user_agent, session: @session_options]]
 
+  # Phoenix Channels
+  socket "/socket", ArchiDepWeb.Channels.UserSocket,
+    websocket: [connect_info: [:peer_data, :user_agent, session: @session_options]],
+    longpoll: [connect_info: [:peer_data, :user_agent, session: @session_options]],
+    error_handler: {ArchiDepWeb.Channels.UserSocket, :handle_error, []}
+
+  # Serve course material in the "priv/static" directory.
   plug Plug.Static.IndexHtml
 
   # Serve at "/" the static files from "priv/static" directory.

@@ -1,0 +1,231 @@
+import { G, O, pipe } from '@mobily/ts-belt';
+import { computed, effect, signal } from '@preact/signals-core';
+import { isRight } from 'fp-ts/lib/Either';
+import * as t from 'io-ts';
+import log from 'loglevel';
+import logPrefix from 'loglevel-plugin-prefix';
+import { Socket } from 'phoenix';
+
+import { iso8601DateTime } from './codecs/iso8601-date-time';
+import { parseJsonSafe } from './utils';
+import { DateTime } from 'luxon';
+
+log.setDefaultLevel(
+  window.location.hostname === 'localhost' ? log.levels.DEBUG : log.levels.INFO
+);
+
+logPrefix.reg(log);
+logPrefix.apply(log, {
+  template: '[%t] %l <%n>:'
+});
+
+const logger = log.getLogger('app');
+logger.info('ArchiDep 🚀');
+
+window['logOut'] = logOut;
+
+const roleType = t.union([t.literal('root'), t.literal('student')]);
+
+const sessionType = t.readonly(
+  t.exact(
+    t.type({
+      username: t.string,
+      roles: t.readonlyArray(roleType),
+      impersonating: t.boolean,
+      sessionExpiresAt: iso8601DateTime
+    })
+  )
+);
+
+type Session = t.TypeOf<typeof sessionType>;
+
+const cachedSessionString = window.localStorage.getItem('archidep:session');
+const decodedCachedSession = pipe(
+  O.fromNullable(cachedSessionString),
+  O.mapNullable(parseJsonSafe),
+  O.map(sessionType.decode),
+  O.flatMap(decoded => (isRight(decoded) ? O.Some(decoded.right) : O.None)),
+  O.filter(session => session.sessionExpiresAt > DateTime.now()),
+  O.toUndefined
+);
+
+const me = signal<Session | undefined>(decodedCachedSession);
+const root = computed(() => me.value?.roles.includes('root'));
+
+const $sidebarAdminItem = required(
+  document.getElementById('sidebar-admin-item'),
+  'Sidebar admin item not found'
+);
+const $navbarProfile = required(
+  document.getElementById('navbar-profile'),
+  'Navbar profile not found'
+);
+const $navbarProfileUser = required(
+  $navbarProfile.querySelector('.user'),
+  'Navbar profile user not found'
+);
+const $navbarProfileImpersonator = required(
+  $navbarProfile.querySelector('.impersonator'),
+  'Navbar profile impersonator not found'
+);
+const $loginButton = required(
+  document.getElementById('login-button'),
+  'Login button not found'
+);
+const $logoutButton = required(
+  document.getElementById('logout-button'),
+  'Logout button not found'
+);
+
+effect(() => {
+  toggleClass($sidebarAdminItem, 'hidden', !root.value);
+});
+
+effect(() => {
+  toggleClass($loginButton, 'flex', me.value === undefined);
+  toggleClass($loginButton, 'hidden', me.value !== undefined);
+  toggleClass($navbarProfile, 'hidden', me.value === undefined);
+});
+
+effect(() => {
+  toggleClass($navbarProfileUser, 'hidden', me.value?.impersonating === true);
+  toggleClass($navbarProfileImpersonator, 'hidden', !me.value?.impersonating);
+});
+
+const retryIntervals = [
+  500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 10_000, 20_000
+];
+const defaultRetryInterval = 30_000;
+let connectionAttempt = 0;
+const socketLogger = log.getLogger('socket');
+
+connectSocket();
+
+$logoutButton.addEventListener('click', logOut);
+
+function connectSocket(): void {
+  const retryInterval =
+    retryIntervals[connectionAttempt] ?? defaultRetryInterval;
+
+  socketLogger.debug('Connecting...');
+
+  fetch('/auth/generate-socket-token')
+    .then(res => {
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('archidep:session');
+        }
+
+        throw new Error(`Connection request failed with status ${res.status}`);
+      }
+
+      return res;
+    })
+    .then(res => res.json())
+    .then((data: { readonly token: string }) => {
+      const token = data.token;
+      const socket = new Socket('/socket', {
+        params: { token }
+      });
+
+      socket.onOpen(() => {
+        connectionAttempt = 0;
+      });
+
+      socket.onError(error => {
+        socketLogger.warn(
+          `Connection error ${G.isString(error) || G.isNumber(error) ? String(error) : '(unknown)'}`
+        );
+      });
+
+      socket.onClose(() => {
+        socket.disconnect();
+        socketLogger.info(
+          `Connection closed; will reconnect in ${retryInterval / 1000} seconds`
+        );
+        me.value = undefined;
+        connectionAttempt++;
+        setTimeout(connectSocket, retryInterval);
+      });
+
+      socket.connect();
+
+      const channel = socket.channel('me', {});
+      channel
+        .join()
+        .receive('ok', resp => {
+          const decodedMe = sessionType.decode(resp);
+          if (isRight(decodedMe)) {
+            const payload = decodedMe.right;
+            me.value = payload;
+            socketLogger.debug(`Welcome, ${payload.username}!`);
+            if (localStorage.getItem('archidep:session') === null) {
+              localStorage.setItem('archidep:session', JSON.stringify(payload));
+            }
+          } else {
+            socketLogger.error(
+              `Failed to decode 'me' channel payload: ${JSON.stringify(resp)}`
+            );
+          }
+        })
+        .receive('error', resp => {
+          socketLogger.warn(
+            `Failed to join 'me' channel: ${JSON.stringify(resp)}`
+          );
+        });
+    })
+    .catch(err => {
+      socketLogger.warn(
+        `Failed to connect because: ${err.message}; will retry in ${retryInterval / 1000} second(s)`
+      );
+      connectionAttempt++;
+      setTimeout(connectSocket, retryInterval);
+    });
+}
+
+function logOut(): void {
+  log.debug('Logging out...');
+
+  fetch('/auth/generate-csrf-token')
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`Connection request failed with status ${res.status}`);
+      }
+
+      return res;
+    })
+    .then(res => res.json())
+    .then(resp =>
+      fetch('/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          _method: 'delete',
+          _csrf_token: resp.token
+        })
+      })
+    )
+    .then(() => {
+      localStorage.removeItem('archidep:session');
+      logger.info('Logout successful');
+    })
+    .catch(err => logger.warn(`Logout failed: ${err.message}`));
+}
+
+function toggleClass(element: Element, className: string, enabled: boolean) {
+  if (enabled) {
+    element.classList.add(className);
+  } else {
+    element.classList.remove(className);
+  }
+}
+
+function required<T>(value: T, errorMessage: string): NonNullable<T> {
+  if (value === null || value === undefined) {
+    throw new Error(errorMessage);
+  }
+
+  return value;
+}

@@ -4,7 +4,9 @@ defmodule ArchiDepWeb.Auth.AuthController do
   import ArchiDepWeb.Helpers.ConnHelpers
   alias ArchiDep.Accounts
   alias ArchiDepWeb.Auth
+  alias Phoenix.Token
   alias Plug.Conn
+  alias Plug.CSRFProtection
   require Logger
 
   plug Ueberauth
@@ -12,6 +14,30 @@ defmodule ArchiDepWeb.Auth.AuthController do
   @spec login(Conn.t(), map) :: Conn.t()
   def login(conn, _params) do
     render(conn, "login.html")
+  end
+
+  @spec generate_csrf_token(Conn.t(), map) :: Conn.t()
+  def generate_csrf_token(conn, _params) do
+    auth = conn.assigns.auth
+
+    if auth == nil do
+      send_resp(conn, 401, "")
+    else
+      token = CSRFProtection.get_csrf_token()
+      json(conn, %{token: token})
+    end
+  end
+
+  @spec generate_socket_token(Conn.t(), map) :: Conn.t()
+  def generate_socket_token(conn, _params) do
+    auth = conn.assigns.auth
+
+    if auth == nil do
+      send_resp(conn, 401, "")
+    else
+      token = Token.sign(conn, "user socket", auth.session_id, max_age: 300)
+      json(conn, %{token: token})
+    end
   end
 
   @spec impersonate(Conn.t(), map) :: Conn.t()
@@ -42,15 +68,14 @@ defmodule ArchiDepWeb.Auth.AuthController do
   end
 
   @spec logout(Conn.t(), map) :: Conn.t()
-  def logout(conn, %{}) do
-    Auth.log_out(conn)
-  end
+  def logout(conn, %{}), do: Auth.log_out(conn)
 
   @spec configure_switch_edu_id_login(Conn.t(), map) :: Conn.t()
   def configure_switch_edu_id_login(conn, params),
     do:
       conn
       |> put_session(:remember_me, Map.has_key?(params, "remember-me"))
+      |> put_session(:user_return_to, Map.get(params, "to"))
       |> redirect(to: "/auth/switch-edu-id")
 
   @spec callback(Conn.t(), map) :: Conn.t()

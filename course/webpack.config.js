@@ -6,8 +6,8 @@ const production = process.env.NODE_ENV === 'production';
 
 module.exports = {
   entry: {
-    course: './src/assets/course.js',
-    slides: './src/assets/slides.js'
+    course: './src/assets/course.ts',
+    slides: './src/assets/slides.ts'
   },
   mode: production ? 'production' : 'development',
   module: {
@@ -18,6 +18,11 @@ module.exports = {
           MiniCssExtractPlugin.loader,
           { loader: 'css-loader', options: { sourceMap: false } }
         ]
+      },
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
       }
     ]
   },
@@ -33,5 +38,8 @@ module.exports = {
     new WebpackManifestPlugin({
       basePath: '/assets/course/'
     })
-  ]
+  ],
+  resolve: {
+    extensions: ['.js', '.ts']
+  }
 };

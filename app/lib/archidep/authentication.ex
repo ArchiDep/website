@@ -9,8 +9,23 @@ defmodule ArchiDep.Authentication do
   @spec is_authentication(term) :: Macro.t()
   defguard is_authentication(value) when is_struct(value, __MODULE__)
 
-  @enforce_keys [:principal_id, :username, :roles, :session_id, :session_token]
-  defstruct [:principal_id, :username, :roles, :session_id, :session_token, impersonated_id: nil]
+  @enforce_keys [
+    :principal_id,
+    :username,
+    :roles,
+    :session_id,
+    :session_token,
+    :session_expires_at
+  ]
+  defstruct [
+    :principal_id,
+    :username,
+    :roles,
+    :session_id,
+    :session_token,
+    :session_expires_at,
+    impersonated_id: nil
+  ]
 
   @type t :: %__MODULE__{
           principal_id: UUID.t(),
@@ -18,6 +33,7 @@ defmodule ArchiDep.Authentication do
           roles: list(Types.role()),
           session_id: UUID.t(),
           session_token: String.t(),
+          session_expires_at: DateTime.t(),
           impersonated_id: UUID.t() | nil
         }
 

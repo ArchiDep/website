@@ -23,8 +23,8 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
-let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-let liveSocket = new LiveSocket("/live", Socket, {
+const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
   hooks: {
@@ -47,7 +47,12 @@ let liveSocket = new LiveSocket("/live", Socket, {
       return false
     }
   }
-})
+});
+
+// Always clear the cached session on the login page.
+if (window.location.pathname === '/login') {
+  localStorage.removeItem("archidep:session");
+}
 
 function updateRemainingSeconds(element) {
   const endTime = new Date(element.dataset.endTime);
@@ -80,6 +85,21 @@ window.addEventListener("open-dialog", event => {
   }
 
   dialog.showModal();
+});
+
+// Cache session data relevant to the client in local storage.
+window.addEventListener("phx:authenticated", event => {
+  if (!event.detail) {
+    console.warn('No event detail provided in "phx:authenticated" event');
+    return;
+  }
+
+  const sessionExpiresAt = new Date(event.detail.sessionExpiresAt);
+  if (sessionExpiresAt.getTime() > Date.now()) {
+    localStorage.setItem("archidep:session", JSON.stringify(event.detail))
+  } else {
+    localStorage.removeItem("archidep:session");
+  }
 });
 
 window.addEventListener("phx:close-dialog", event => {
@@ -130,4 +150,3 @@ liveSocket.connect()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
-
