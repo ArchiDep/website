@@ -1,15 +1,15 @@
-<!DOCTYPE html>
-<html lang="{{ page.lang | default: site.lang | default: "en" }}">
+<!doctype html>
+<html lang='{{ page.lang | default: site.lang | default: "en" }}'>
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
     {%- seo -%}
-    <link rel="stylesheet" href="{{ "/assets/course/slides.css" | relative_url }}">
+    <link rel='stylesheet' href='{{ "/assets/course/slides.css" | relative_url }}'>
   </head>
   <body>
-    <div class="reveal">
-      <div class="slides">
+    <div class='reveal'>
+      <div class='slides'>
         <section data-markdown>
           <textarea data-template>
             {{ page.raw_markdown }}
@@ -18,8 +18,6 @@
       </div>
     </div>
 
-    <script src="{{ "/assets/course/slides.js" | relative_url }}"></script>
+    <script src='{{ "/assets/course/slides.js" | relative_url }}'></script>
   </body>
-
 </html>
-

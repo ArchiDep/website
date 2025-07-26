@@ -1,22 +1,21 @@
 ---
 layout: base
 ---
-
-<div class="flex flex-wrap xl:flex-nowrap justify-center gap-4 mx-auto">
-  <div class="p-4 lg:p-6 xl:p-8 rounded md:rounded-lg lg:rounded-xl xl:rounded-2xl w-full bg-linear-to-br from-slate-200 to-zinc-200 dark:from-slate-800 dark:to-zinc-800 md:w-auto">
-    <main class="prose prose-lg xl:prose-xl 2xl:prose-2xl sm:max-md:max-w-none">
+<div class='flex flex-wrap xl:flex-nowrap justify-center gap-4 mx-auto'>
+  <div class='p-4 lg:p-6 xl:p-8 rounded md:rounded-lg lg:rounded-xl xl:rounded-2xl w-full bg-linear-to-br from-slate-200 to-zinc-200 dark:from-slate-800 dark:to-zinc-800 md:w-auto'>
+    <main class='prose prose-lg xl:prose-xl 2xl:prose-2xl sm:max-md:max-w-none'>
       {% if page.title %}
-      <h1>{{ page.title }}</h1>
+        <h1>{{ page.title }}</h1>
       {% endif %}
 
-      <div class="my-4">
+      <div class='my-4'>
         {{ page.excerpt }}
       </div>
 
-      <div class="my-4 toc collapse collapse-arrow print:collapse-open bg-neutral border-base-300 border xl:hidden">
-        <input type="checkbox" />
-        <div id="on-this-page-inline-title" class="collapse-title text-xl font-bold">On this page</div>
-        <nav class="toc collapse-content text-sm" aria-labelledby="on-this-page-inline-title">
+      <div class='my-4 toc collapse collapse-arrow print:collapse-open bg-neutral border-base-300 border xl:hidden'>
+        <input type='checkbox'>
+        <div id='on-this-page-inline-title' class='collapse-title text-xl font-bold'>On this page</div>
+        <nav class='toc collapse-content text-sm' aria-labelledby='on-this-page-inline-title'>
           {{ content | toc_only }}
         </nav>
       </div>
@@ -24,9 +23,9 @@ layout: base
       {{ content | remove_first: page.excerpt }}
     </main>
   </div>
-  <aside class="hidden xl:block xl:w-xs">
-    <h2 id="on-this-page-title" class="text-xl font-bold">On this page</h2>
-    <nav class="toc" aria-labelledby="on-this-page-title">
+  <aside class='hidden xl:block xl:w-xs'>
+    <h2 id='on-this-page-title' class='text-xl font-bold'>On this page</h2>
+    <nav class='toc' aria-labelledby='on-this-page-title'>
       {{ content | toc_only }}
     </nav>
   </aside>

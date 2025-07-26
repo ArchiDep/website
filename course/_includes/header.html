@@ -1,43 +1,43 @@
-<header class="navbar bg-base-300 shadow-sm w-full">
-  <div class="navbar-start">
-    <label for="sidebar" class="lg:hidden print:hidden btn btn-square btn-ghost">
+<header class='navbar bg-base-300 shadow-sm w-full'>
+  <div class='navbar-start'>
+    <label for='sidebar' class='lg:hidden print:hidden btn btn-square btn-ghost'>
       {%- include icons/bars-3.html class="size-5" -%}
     </label>
-    <a class="btn btn-ghost text-xl" href="{{ "/" | relative_url }}">
+    <a class='btn btn-ghost text-xl' href='{{ "/" | relative_url }}'>
       <h1>ArchiDep</h1>
     </a>
   </div>
 
-  <div class="navbar-end">
+  <div class='navbar-end'>
     <a
-      href="/auth/switch-edu-id/configure?to=%2F"
-      id="login-button"
-      class="hidden btn btn-ghost p-2"
+      href='/auth/switch-edu-id/configure?to=%2F'
+      id='login-button'
+      class='hidden btn btn-ghost p-2'
     >
       {%- include icons/arrow-right-end-on-rectangle.html class="size-6" -%}
-      <span class="sr-only">Log in</span>
+      <span class='sr-only'>Log in</span>
     </a>
 
-    <div id="navbar-profile" class="hidden dropdown dropdown-end">
-      <button type="button" class="btn btn-ghost btn-circle">
-        <div class="user hidden w-10 rounded-full">
+    <div id='navbar-profile' class='hidden dropdown dropdown-end'>
+      <button type='button' class='btn btn-ghost btn-circle'>
+        <div class='user hidden w-10 rounded-full'>
           {%- include icons/user-circle.html class="w-full" -%}
         </div>
-        <div class="impersonator hidden w-10 rounded-full">
+        <div class='impersonator hidden w-10 rounded-full'>
           {%- include icons/eye.html class="w-full" -%}
         </div>
       </button>
       <ul
-        class="menu menu-sm dropdown-content bg-base-300 rounded-box z-1 mt-3 w-52 p-2 shadow"
+        class='menu menu-sm dropdown-content bg-base-300 rounded-box z-1 mt-3 w-52 p-2 shadow'
       >
         <li>
-          <a href="/profile" class="flex items-center gap-1">
+          <a href='/profile' class='flex items-center gap-1'>
             {%- include icons/user.html class="size-3.5" -%}
             <span>Profile</span>
           </a>
         </li>
         <li>
-          <button type="button" id="logout-button" class="flex items-center gap-1" onclick="logOut" disabled>
+          <button type='button' id='logout-button' class='flex items-center gap-1' onclick='logOut' disabled>
             {%- include icons/arrow-right-start-on-rectangle.html class="size-3.5" -%}
             <span>Log out</span>
           </button>

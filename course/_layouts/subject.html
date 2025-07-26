@@ -1,18 +1,22 @@
 ---
 layout: toc
 ---
-
 {% if page.slides %}
-<div class="not-prose print:hidden">
-  <div class="mt-4 mb-2 flex justify-between items-end gap-x-2">
-    <h2 class="text-4xl font-bold">Presentation</h2>
-    <a href="{{ page.slides.url }}" target="_blank" class="flex items-center gap-x-2 opacity-75 hover:opacity-100 tooltip" data-tip="Open">
-      {%- include icons/presentation-chart.html class="size-8" -%}
-    </a>
-  </div>
+  <div class='not-prose print:hidden'>
+    <div class='mt-4 mb-2 flex justify-between items-end gap-x-2'>
+      <h2 class='text-4xl font-bold'>Presentation</h2>
+      <a
+        href='{{ page.slides.url }}'
+        target='_blank'
+        class='flex items-center gap-x-2 opacity-75 hover:opacity-100 tooltip'
+        data-tip='Open'
+      >
+        {%- include icons/presentation-chart.html class="size-8" -%}
+      </a>
+    </div>
 
-  <iframe class="w-full aspect-video" src="{{ page.slides.url }}?view=scroll" title="Slides"></iframe>
-</div>
+    <iframe class='w-full aspect-video' src='{{ page.slides.url }}?view=scroll' title='Slides'></iframe>
+  </div>
 {% endif %}
 
 {{ content }}

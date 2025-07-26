@@ -1,4 +1,8 @@
 {
   "elixirLS.projectDir": "./app",
-  "elixirLS.dialyzerWarnOpts": ["no_opaque"]
+  "elixirLS.dialyzerWarnOpts": ["no_opaque"],
+  "files.associations": {
+    "**/course/_includes/**/*.html": "liquid",
+    "**/course/_layouts/**/*.html": "liquid"
+  }
 }

@@ -1,36 +1,36 @@
-<div class="w-80 max-w-full bg-base-200 text-base-content min-h-full">
-  <div class="lg:hidden w-full flex justify-between items-center pl-6 pr-2 pt-4">
-    <a href="/" class="text-xl font-bold inline">ArchiDep</a>
-    <label for="sidebar" class="btn btn-square btn-ghost">
+<div class='w-80 max-w-full bg-base-200 text-base-content min-h-full'>
+  <div class='lg:hidden w-full flex justify-between items-center pl-6 pr-2 pt-4'>
+    <a href='/' class='text-xl font-bold inline'>ArchiDep</a>
+    <label for='sidebar' class='btn btn-square btn-ghost'>
       {%- include icons/x-mark.html class="size-5" -%}
     </label>
   </div>
-  <div class="px-4">
-    <ul class="menu menu-horizontal grid grid-cols-5 gap-2">
+  <div class='px-4'>
+    <ul class='menu menu-horizontal grid grid-cols-5 gap-2'>
       <li>
-        {% if page.url == "/" %}
+        {% if page.url == '/' %}
           {% assign home_background = 'bg-primary/50' %}
         {% endif %}
-        <a href="/" class="{{ home_background }} tooltip tooltip-bottom" data-tip="Course">
+        <a href='/' class='{{ home_background }} tooltip tooltip-bottom' data-tip='Course'>
           {%- include icons/home.html class="w-full" -%}
-          <span class="sr-only">Course</span>
+          <span class='sr-only'>Course</span>
         </a>
       </li>
       <li>
-        <a href="/app" class="tooltip tooltip-bottom" data-tip="Dashboard">
+        <a href='/app' class='tooltip tooltip-bottom' data-tip='Dashboard'>
           {%- include icons/cube.html class="w-full" -%}
-          <span class="sr-only">Dashboard</span>
+          <span class='sr-only'>Dashboard</span>
         </a>
       </li>
       <li>
-        <a href="/admin" id="sidebar-admin-item" class="hidden tooltip tooltip-bottom" data-tip="Admin">
+        <a href='/admin' id='sidebar-admin-item' class='hidden tooltip tooltip-bottom' data-tip='Admin'>
           {%- include icons/fire.html class="text-error w-full" -%}
-          <span class="sr-only">Admin</span>
+          <span class='sr-only'>Admin</span>
         </a>
       </li>
     </ul>
   </div>
-  <ul class="w-full menu px-4 pt-0 pb-4">
+  <ul class='w-full menu px-4 pt-0 pb-4'>
     {%- for section in site.data.course.sections -%}
       {%- assign current_section = forloop.index -%}
       {% if section.progress == 'done' %}
@@ -38,8 +38,8 @@
       {% else %}
         {% assign section_color = '' %}
       {% endif %}
-      <li class="{{ section_color }}">
-        <span class="text-base-content/50 cursor-default">{{ section.title }}</span>
+      <li class='{{ section_color }}'>
+        <span class='text-base-content/50 cursor-default'>{{ section.title }}</span>
       </li>
       {%- for item in section.items -%}
         {% if item.url == page.url %}
@@ -80,19 +80,17 @@
           {% assign tooltip_text = '' %}
         {% endif %}
 
-        <li class="group {{ current_background }} {{ chapter_color }} {{ tooltip }}" data-tip="{{ tooltip_text }}">
+        <li class='group {{ current_background }} {{ chapter_color }} {{ tooltip }}' data-tip='{{ tooltip_text }}'>
           {% if item.course_type == 'slides' %}
             {% assign link_target = '_blank' %}
           {% else %}
             {% assign link_target = '_self' %}
           {% endif %}
 
-          <a href="{{ item.url }}" target="{{ link_target }}" class="flex items-center gap-2 {{ current_font_weight }}">
+          <a href='{{ item.url }}' target='{{ link_target }}' class='flex items-center gap-2 {{ current_font_weight }}'>
             {%- include chapter-title.html doc=item -%}
             {% if item.slides %}
-              <span>
-                🎬
-              </span>
+              <span> 🎬 </span>
             {% endif %}
             {% if item.course_type == 'slides' %}
               {%- include icons/arrow-top-right-on-square.html class="size-4 text-base-content/25 group-hover:text-base-content/75" -%}
