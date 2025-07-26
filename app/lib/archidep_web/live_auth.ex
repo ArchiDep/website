@@ -12,6 +12,7 @@ defmodule ArchiDepWeb.LiveAuth do
   alias ArchiDep.Accounts
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.ClientMetadata
+  alias ArchiDepWeb.ClientSessionData
   alias ArchiDepWeb.Components.Notifications.Message
   alias Phoenix.LiveView.Socket
 
@@ -49,13 +50,7 @@ defmodule ArchiDepWeb.LiveAuth do
       {:ok, auth} ->
         socket
         |> assign(:auth, auth)
-        |> push_event("authenticated", %{
-          username: auth.username,
-          roles: auth.roles,
-          impersonating: auth.impersonated_id != nil,
-          sessionId: auth.session_id,
-          sessionExpiresAt: DateTime.to_iso8601(auth.session_expires_at)
-        })
+        |> push_event("authenticated", ClientSessionData.new(auth))
 
       {:error, :session_not_found} ->
         socket
