@@ -25,6 +25,7 @@ collections_dir: collections
 # Build settings
 plugins:
   - jekyll-feed
+  - jekyll-target-blank
   - jekyll-toc
   - jemoji
 
