@@ -118,13 +118,25 @@
           </.link>
         </li>
         <li :if={has_role?(@auth, :root) and String.starts_with?(@current_path, "/admin")}>
-          <.link navigate={~p"/admin/classes"} class="flex items-center gap-2">
+          <.link
+            navigate={~p"/admin/classes"}
+            class={[
+              "flex items-center gap-2",
+              if(@current_path == "/admin/classes", do: "bg-neutral font-bold", else: nil)
+            ]}
+          >
             <Heroicons.academic_cap class="size-4" />
             <span>{gettext("Classes")}</span>
           </.link>
         </li>
         <li :if={has_role?(@auth, :root) and String.starts_with?(@current_path, "/admin")}>
-          <.link navigate={~p"/admin/events"} class="flex items-center gap-2">
+          <.link
+            navigate={~p"/admin/events"}
+            class={[
+              "flex items-center gap-2",
+              if(@current_path == "/admin/events", do: "bg-neutral font-bold", else: nil)
+            ]}
+          >
             <Heroicons.book_open class="size-4" />
             <span>{gettext("Events")}</span>
           </.link>
