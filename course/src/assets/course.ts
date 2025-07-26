@@ -121,7 +121,7 @@ function connectSocket(): void {
 
   socketLogger.debug('Connecting...');
 
-  fetch('/auth/generate-socket-token')
+  fetch('/auth/socket')
     .then(res => {
       if (!res.ok) {
         if (res.status === 401) {
@@ -215,7 +215,7 @@ function connectSocket(): void {
 function logOut(): void {
   log.debug('Logging out...');
 
-  fetch('/auth/generate-csrf-token')
+  fetch('/auth/csrf')
     .then(res => {
       if (!res.ok) {
         throw new Error(`Connection request failed with status ${res.status}`);
