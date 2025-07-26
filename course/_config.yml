@@ -13,7 +13,7 @@ destination: '../app/priv/static'
 strict_front_matter: true
 
 collections:
-  matter:
+  course:
     output: true
   notices:
     output: true

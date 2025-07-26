@@ -2,10 +2,7 @@
 title: Command Line
 ---
 
-## Command Line Introduction
-
-Learn what a command line interface is and learn the basics of navigating and
-manipulating your filesystem in a Unix shell.
+## Command Line
 
 ---
 
@@ -19,34 +16,55 @@ For old time's sake.
 
 ### In the beginning (1830s)
 
-<!-- slide-front-matter class: center -->
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-35">
+    <img src="{{ 'images/charles-babbage.jpg' | relative_file_url }}" alt="Charles Babbage">
+    Charles Babbage
+  </div>
+  <div class="grid-5">&nbsp;</div>
+  <div class="grid-35">
+    <img src="{{ 'images/ada-lovelace.png' | relative_file_url }}" alt="Ada Lovelace">
+    Ada Lovelace
+  </div>
+</div>
 
-<!-- slide-column -->
+**Notes:**
 
-<p class='center'><img class='w80' src='images/charles-babbage.jpg' /></p>
+[**Charles Babbage**][charles-babbage] originated the concept of a
+[digital][digital] [programmable][programmable], [general-purpose
+computer][general-purpose-computer].
 
-[**Charles Babbage**][charles-babbage]
+[**Ada Lovelace**][ada-lovelace] published the first [algorithm][algorithm] to
+be carried out by such a machine.
 
-Originated the concept of a [digital][digital] [programmable][programmable],
-[general-purpose computer][general-purpose-computer].
-
-<!-- slide-column -->
-
-<p class='center'><img class='w80' src='images/ada-lovelace.png' /></p>
-
-[**Ada Lovelace**][ada-lovelace]
-
-Published the first [algorithm][algorithm] to be carried out by such a machine.
+[ada-lovelace]: https://en.wikipedia.org/wiki/Ada_Lovelace
+[algorithm]: https://en.wikipedia.org/wiki/Algorithm
+[charles-babbage]: https://en.wikipedia.org/wiki/Charles_Babbage
+[digital]: https://en.wikipedia.org/wiki/Digital_data
+[general-purpose-computer]: https://en.wikipedia.org/wiki/Computer
+[programmable]: https://en.wikipedia.org/wiki/Computer_program
 
 ---
 
 ### Analytical engine (1837)
 
-<!-- slide-column -->
+<div class="grid-container">
+  <div class="grid-40">
+    <img src="{{ 'images/analytical-engine.jpg' | relative_file_url }}" alt="Analytical Engine">
+  </div>
+  <div class="grid-60">
 
-<p class='center'><img class='w100' src='images/analytical-engine.jpg' /></p>
+Charles Babbage proposes a [general-purpose
+computer](https://en.wikipedia.org/wiki/Computer).
 
-<!-- slide-column -->
+In 1842, Ada Lovelace writes the [first
+program](https://en.wikipedia.org/wiki/Note_G) for such a machine.
+
+  </div>
+</div>
+
+**Notes:**
 
 The [Analytical Engine][analytical-engine] was a proposed mechanical
 [general-purpose computer][general-purpose-computer] designed by English
@@ -57,6 +75,10 @@ annotated a description of the engine, including a way to calculate [Bernoulli
 numbers][bernoulli-numbers] using the machine (widely considered to be the
 [first complete computer program][note-g]). She has been described as the first
 computer programmer.
+
+[analytical-engine]: https://en.wikipedia.org/wiki/Analytical_Engine
+[general-purpose-computer]: https://en.wikipedia.org/wiki/Computer
+[note-g]: https://en.wikipedia.org/wiki/Note_G
 
 ---
 

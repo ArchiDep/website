@@ -9,6 +9,10 @@ import 'reveal.js/dist/theme/moon.css';
 import './slides.css';
 
 const deck = new Reveal({
+  hash: true,
+  markdown: {
+    notesSeparator: '^\\*\\*Notes:\\*\\*'
+  },
   plugins: [Highlight, Markdown, Notes, Search],
   slideNumber: 'c/t'
 });

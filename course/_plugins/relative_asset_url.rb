@@ -2,6 +2,13 @@ module ArchiDep
   module RelativeAssetUrlFilter
     include Jekyll::Filters::URLFilters
 
+    def relative_file_url(path)
+      page = @context.registers[:page]
+      return path unless page && page.respond_to?(:permalink)
+
+      relative_url("#{page.permalink}#{path}")
+    end
+
     def relative_asset_url(path)
       dest_dir = @context.registers[:site].dest
       asset_file = File.join(dest_dir, path)
