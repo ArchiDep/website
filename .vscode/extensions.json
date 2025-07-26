@@ -1,0 +1,15 @@
+{
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=827846
+  "recommendations": [
+    "bradlc.vscode-tailwindcss",
+    "dbaeumer.vscode-eslint",
+    "EditorConfig.EditorConfig",
+    "esbenp.prettier-vscode",
+    "jakebecker.elixir-ls",
+    "pgourlain.erlang",
+    "phoenixframework.phoenix",
+    "redhat.vscode-yaml",
+    "shopify.ruby-lsp",
+    "shopify.theme-check-vscode"
+  ]
+}
