@@ -123,7 +123,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert %Authentication{
              principal_id: user_account_id,
              session_id: session_id,
-             session_token: session_token
+             session_token: session_token,
+             session_expires_at: session_expires_at
            } = auth
 
     assert auth == %Authentication{
@@ -132,8 +133,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              roles: [role],
              session_id: session_id,
              session_token: session_token,
+             session_expires_at: session_expires_at,
              impersonated_id: nil
            }
+
+    assert DateTime.diff(session_expires_at, DateTime.utc_now(), :day) >= 29
 
     auth
   end

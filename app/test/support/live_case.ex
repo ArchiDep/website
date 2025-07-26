@@ -77,7 +77,8 @@ defmodule ArchiDepWeb.Support.LiveCase do
   """
   @spec assert_live_redirected_to_login(Conn.t(), String.t()) :: Conn.t()
   def assert_live_redirected_to_login(conn, path) do
-    {:error, {:redirect, %{flash: flash, to: "/login"}}} = live(conn, path)
+    expected_redirect = "/login?#{URI.encode_query(to: path)}"
+    {:error, {:redirect, %{flash: flash, to: ^expected_redirect}}} = live(conn, path)
     assert [%{message: "You must log in to access this page.", type: :error}] = Map.values(flash)
 
     conn

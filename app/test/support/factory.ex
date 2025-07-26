@@ -35,6 +35,9 @@ defmodule ArchiDep.Support.Factory do
         sequence(:authentication_session_token, &"auth-session-token-#{&1}")
       end)
 
+    {session_expires_at, attrs!} =
+      Map.pop_lazy(attrs!, :session_expires_at, fn -> Faker.DateTime.forward(60) end)
+
     {impersonated_id, attrs!} =
       Map.pop_lazy(attrs!, :impersonated_id, optionally(&UUID.generate/0))
 
@@ -46,6 +49,7 @@ defmodule ArchiDep.Support.Factory do
       roles: roles,
       session_id: session_id,
       session_token: session_token,
+      session_expires_at: session_expires_at,
       impersonated_id: impersonated_id
     }
   end
