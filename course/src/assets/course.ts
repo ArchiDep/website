@@ -86,6 +86,7 @@ effect(() => {
   toggleClass($loginButton, 'flex', me.value === undefined);
   toggleClass($loginButton, 'hidden', me.value !== undefined);
   toggleClass($navbarProfile, 'hidden', me.value === undefined);
+  $logoutButton.removeAttribute('disabled');
 });
 
 effect(() => {
@@ -238,6 +239,8 @@ function logOut(): void {
     .then(() => {
       localStorage.removeItem('archidep:session');
       logger.info('Logout successful');
+      connectionAttempt = 0;
+      clearTimeout(connectionTimeout);
     })
     .catch(err => logger.warn(`Logout failed: ${err.message}`));
 }
