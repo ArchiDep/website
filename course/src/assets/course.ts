@@ -101,6 +101,16 @@ let connectionAttempt = 0;
 const socketLogger = log.getLogger('socket');
 
 connectSocket();
+let connectionTimeout: NodeJS.Timeout | undefined;
+
+window.addEventListener('storage', event => {
+  if (event.key !== 'archidep:session' || event.newValue === null) {
+    return;
+  }
+
+  clearTimeout(connectionTimeout);
+  connectSocket();
+});
 
 $logoutButton.addEventListener('click', logOut);
 
@@ -146,8 +156,14 @@ function connectSocket(): void {
           `Connection closed; will reconnect in ${retryInterval / 1000} seconds`
         );
         me.value = undefined;
-        connectionAttempt++;
-        setTimeout(connectSocket, retryInterval);
+
+        if (localStorage.getItem('archidep:session') !== null) {
+          connectionAttempt++;
+          connectionTimeout = setTimeout(connectSocket, retryInterval);
+        } else {
+          connectionAttempt = 0;
+          clearTimeout(connectionTimeout);
+        }
       });
 
       socket.connect();
@@ -187,9 +203,10 @@ function connectSocket(): void {
         // reconnect. The user will have to leave the page to log in again.
         connectionAttempt = 0;
         socketLogger.info('Authentication failed, giving up on reconnecting');
+        clearTimeout(connectionTimeout);
       } else {
         connectionAttempt++;
-        setTimeout(connectSocket, retryInterval);
+        connectionTimeout = setTimeout(connectSocket, retryInterval);
       }
     });
 }
