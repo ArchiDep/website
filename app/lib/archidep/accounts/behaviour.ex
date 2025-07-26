@@ -26,7 +26,7 @@ defmodule ArchiDep.Accounts.Behaviour do
   an active session.
   """
   callback(
-    validate_session(token: String.t(), meta: map) ::
+    validate_session_token(token: String.t(), meta: map) ::
       {:ok, Authentication.t()} | {:error, :session_not_found}
   )
 

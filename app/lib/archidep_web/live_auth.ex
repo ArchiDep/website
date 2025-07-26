@@ -45,7 +45,7 @@ defmodule ArchiDepWeb.LiveAuth do
 
   defp authenticate_with_token(%Socket{assigns: %{session_token: token}} = socket)
        when is_binary(token) do
-    case Accounts.validate_session(token, socket_metadata(socket)) do
+    case Accounts.validate_session_token(token, socket_metadata(socket)) do
       {:ok, auth} ->
         socket
         |> assign(:auth, auth)

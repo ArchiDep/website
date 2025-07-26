@@ -131,7 +131,7 @@ defmodule ArchiDepWeb.Auth do
 
   defp authenticate_with_token(%Conn{assigns: %{session_token: token}} = conn)
        when is_binary(token) do
-    case Accounts.validate_session(token, conn_metadata(conn)) do
+    case Accounts.validate_session_token(token, conn_metadata(conn)) do
       {:ok, auth} -> assign(conn, :auth, auth)
       {:error, :session_not_found} -> assign(conn, :auth, nil)
     end

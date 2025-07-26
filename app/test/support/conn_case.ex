@@ -87,7 +87,7 @@ defmodule ArchiDepWeb.Support.ConnCase do
 
     client_metadata = ClientMetadata.new({127, 0, 0, 1}, session.client_user_agent)
 
-    stub(Accounts.ContextMock, :validate_session, fn ^session_token, ^client_metadata ->
+    stub(Accounts.ContextMock, :validate_session_token, fn ^session_token, ^client_metadata ->
       {:ok, auth}
     end)
 

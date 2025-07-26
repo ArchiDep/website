@@ -19,9 +19,9 @@ defmodule ArchiDep.Accounts.UseCases.Sessions do
       |> Authentication.principal_id()
       |> UserSession.fetch_active_sessions_by_user_account_id()
 
-  @spec validate_session(String.t(), ClientMetadata.t()) ::
+  @spec validate_session_token(String.t(), ClientMetadata.t()) ::
           {:ok, Authentication.t()} | {:error, :session_not_found}
-  def validate_session(token, client_metadata) do
+  def validate_session_token(token, client_metadata) do
     now = DateTime.utc_now()
 
     with {:ok, session} <- UserSession.fetch_active_session_by_token(token, now),

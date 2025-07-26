@@ -56,7 +56,7 @@ defmodule ArchiDepWeb.Support.LiveCase do
   def assert_live_anonymous_user_redirected_to_login(conn, path) do
     assert_live_redirected_to_login(conn, path)
 
-    stub(Accounts.ContextMock, :validate_session, fn "foo", _metadata ->
+    stub(Accounts.ContextMock, :validate_session_token, fn "foo", _metadata ->
       {:error, :session_not_found}
     end)
 
