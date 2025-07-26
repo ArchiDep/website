@@ -9,6 +9,7 @@ import { Socket } from 'phoenix';
 import { iso8601DateTime } from './codecs/iso8601-date-time';
 import { parseJsonSafe } from './utils';
 import { DateTime } from 'luxon';
+import { HttpAuthenticationError } from './errors';
 
 log.setDefaultLevel(
   window.location.hostname === 'localhost' ? log.levels.DEBUG : log.levels.INFO
@@ -114,6 +115,7 @@ function connectSocket(): void {
       if (!res.ok) {
         if (res.status === 401) {
           localStorage.removeItem('archidep:session');
+          throw new HttpAuthenticationError(res);
         }
 
         throw new Error(`Connection request failed with status ${res.status}`);
@@ -178,8 +180,17 @@ function connectSocket(): void {
       socketLogger.warn(
         `Failed to connect because: ${err.message}; will retry in ${retryInterval / 1000} second(s)`
       );
-      connectionAttempt++;
-      setTimeout(connectSocket, retryInterval);
+
+      if (err instanceof HttpAuthenticationError) {
+        // If authentication failed, this presumably means that the session is
+        // no longer valid. Clear the session and give up attempting to
+        // reconnect. The user will have to leave the page to log in again.
+        connectionAttempt = 0;
+        socketLogger.info('Authentication failed, giving up on reconnecting');
+      } else {
+        connectionAttempt++;
+        setTimeout(connectSocket, retryInterval);
+      }
     });
 }
 
