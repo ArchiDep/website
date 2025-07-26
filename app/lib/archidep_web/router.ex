@@ -20,7 +20,8 @@ defmodule ArchiDepWeb.Router do
     plug :protect_from_forgery
 
     plug(:put_secure_browser_headers, %{
-      "content-security-policy" => "default-src 'self'; img-src 'self' data:;"
+      "content-security-policy" =>
+        "default-src 'self'; font-src 'self' fonts.gstatic.com; img-src 'self' data:; style-src-elem 'self' fonts.googleapis.com;"
     })
 
     plug Plug.SSL,

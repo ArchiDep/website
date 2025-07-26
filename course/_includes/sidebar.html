@@ -56,31 +56,23 @@
           {% else %}
             {% assign chapter_color = 'border-r-4 border-success/50 hover:border-success' %}
           {% endif %}
-          {% assign tooltip = 'tooltip tooltip-top tooltip-success' %}
-          {% assign tooltip_text = 'done' %}
         {% elsif item.progress == 'due' %}
           {% if item.url == page.url %}
             {% assign chapter_color = 'border-r-4 border-warning' %}
           {% else %}
             {% assign chapter_color = 'border-r-4 border-warning/85 hover:border-warning' %}
           {% endif %}
-          {% assign tooltip = 'tooltip tooltip-top tooltip-warning' %}
-          {% assign tooltip_text = 'due' %}
         {% elsif item.progress == 'next' %}
           {% if item.url == page.url %}
             {% assign chapter_color = 'border-r-4 border-info' %}
           {% else %}
             {% assign chapter_color = 'border-r-4 border-info/50 hover:border-info' %}
           {% endif %}
-          {% assign tooltip = 'tooltip tooltip-top tooltip-info' %}
-          {% assign tooltip_text = 'next' %}
         {% else %}
           {% assign chapter_color = 'opacity-25 hover:opacity-100' %}
-          {% assign tooltip = '' %}
-          {% assign tooltip_text = '' %}
         {% endif %}
 
-        <li class='group {{ current_background }} {{ chapter_color }} {{ tooltip }}' data-tip='{{ tooltip_text }}'>
+        <li class='group {{ current_background }} {{ chapter_color }}'>
           {% if item.course_type == 'slides' %}
             {% assign link_target = '_blank' %}
           {% else %}

@@ -6,6 +6,7 @@ import Search from 'reveal.js/plugin/search/search.esm.js';
 
 import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/moon.css';
+import './slides.css';
 
 const deck = new Reveal({
   plugins: [Highlight, Markdown, Notes, Search],

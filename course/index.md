@@ -1,5 +1,6 @@
 ---
-title: Media Engineering Architecture & Deployment Course
+title: Architecture & Deployment
+title_include: main-title.html
 layout: home
 toc: true
 ---
