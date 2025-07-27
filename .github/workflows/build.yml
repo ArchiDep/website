@@ -253,7 +253,7 @@ jobs:
         run: npm ci
 
       - name: Check formatting
-        run: npm run format
+        run: npm run format:root
 
       - name: Ensure there are no uncommitted changes
         run: |
