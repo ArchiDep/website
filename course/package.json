@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "webpack --config webpack.config.js",
+    "build": "webpack --config webpack.config.cjs",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "pdf": "npm run pdf:clear && npm run pdf:generate",
