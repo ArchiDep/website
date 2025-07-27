@@ -68,11 +68,19 @@ module ArchiDep
               .reverse
               .map { |line| line.strip }
               .reject { |line| line.empty? }
-              .take_while { |line| line.match?(/\A\[[^\]]+\]: .+\z/) }
+              .take_while { |line| line.match?(/\A\[[^\]]+\]: ?.+\z/) }
+              .map do |line|
+                m = line.match(/\A\[([^\]]+)\]: ?(.+)\z/)
+                {reference: m[1], url: m[2]}
+              end
               .reverse
           unless link_references.empty?
-            addition = link_references.join("\n")
-            item.content = item.content.gsub(/^---$/m, "#{addition}\n\n---")
+            item.content = link_references.reduce(item.content) do |content, link_reference|
+              content.gsub(
+                /\]\[#{link_reference[:reference]}\]/,
+                "](#{link_reference[:url]})"
+              )
+            end
           end
         end
       end
