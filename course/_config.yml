@@ -52,6 +52,7 @@ exclude:
   - .editorconfig
   - package.json
   - package-lock.json
+  - scripts/
   - src/
   - tsconfig.json
   - webpack.config.js

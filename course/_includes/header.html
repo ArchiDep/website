@@ -3,12 +3,13 @@
     <label for='sidebar' class='lg:hidden print:hidden btn btn-square btn-ghost'>
       {%- include icons/bars-3.html class="size-5" -%}
     </label>
-    <a class='btn btn-ghost text-xl' href='{{ "/" | relative_url }}'>
-      <h1>ArchiDep</h1>
+    <a class='btn btn-ghost text-xl print:text-3xl print:pl-0' href='{{ "/" | relative_url }}'>
+      <h1 class='print:hidden'>ArchiDep</h1>
+      <h1 class='hidden print:block'>Architecture & Deployment</h1>
     </a>
   </div>
 
-  <div class='navbar-end'>
+  <div class='navbar-end print:hidden'>
     <a
       href='/auth/switch-edu-id/configure?to=%2F'
       id='login-button'

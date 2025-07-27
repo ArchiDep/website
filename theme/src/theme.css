@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Fjalla+One&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 @import 'tailwindcss';
 @plugin "@tailwindcss/typography";
@@ -27,6 +26,8 @@
 @import './course.css';
 @import './highlight.css';
 @import './toc.css';
+
+@custom-variant screen (@media screen);
 
 :root {
   --default-font-family: 'PT Sans';

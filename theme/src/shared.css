@@ -1,9 +1,15 @@
-h1,
+h1 {
+  font-family: 'Bitcount Prop Single', 'PT Sans', sans-serif;
+  font-weight: 600;
+  @apply dark:text-white;
+}
+
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-family: 'Bitcount Prop Single', 'PT Sans', sans-serif;
-  font-weight: 600;
+  font-family: 'Fjalla One', 'PT Sans', sans-serif;
+  font-weight: 400;
+  @apply dark:text-white font-normal pb-1 border-b border-black/10 dark:border-white/10 print:break-after-avoid;
 }

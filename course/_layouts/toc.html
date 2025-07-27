@@ -17,9 +17,12 @@ layout: base
         {{ page.excerpt }}
       </div>
 
-      <div class='my-4 toc collapse collapse-arrow print:collapse-open bg-neutral border-base-300 border xl:hidden'>
+      <div class='my-4 toc collapse screen:collapse-arrow print:collapse-open bg-neutral border-base-300 border xl:hidden'>
         <input type='checkbox'>
-        <div id='on-this-page-inline-title' class='collapse-title text-xl font-bold'>On this page</div>
+        <div id='on-this-page-inline-title' class='collapse-title text-xl font-bold'>
+          <span class='print:hidden'>On this page</span>
+          <span class='hidden print:inline'>Table of contents</span>
+        </div>
         <nav class='toc collapse-content text-sm' aria-labelledby='on-this-page-inline-title'>
           {{ content | toc_only }}
         </nav>
