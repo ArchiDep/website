@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "es6"
+  },
+  "include": ["./src/assets/**/*.{ts,mts}", "./src/utils/**/*.ts"]
+}

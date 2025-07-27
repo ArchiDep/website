@@ -6,7 +6,7 @@ import log from 'loglevel';
 import logPrefix from 'loglevel-plugin-prefix';
 import { Socket } from 'phoenix';
 
-import { iso8601DateTime } from './codecs/iso8601-date-time';
+import { iso8601DateTime } from '../utils/codecs/iso8601-date-time';
 import { parseJsonSafe } from './utils';
 import { DateTime } from 'luxon';
 import { HttpAuthenticationError } from './errors';

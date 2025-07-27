@@ -52,6 +52,7 @@ exclude:
   - .editorconfig
   - package.json
   - package-lock.json
+  - pdf/
   - scripts/
   - src/
   - tsconfig.json

@@ -6,7 +6,8 @@
 /app/deps
 /app/priv/static
 /app/priv/uploads
-/course
+/course/**/*.html
+/course/**/*.rb
 /node_modules
 /theme/src/highlight.css
 /tmp
