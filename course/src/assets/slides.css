@@ -1,7 +1,26 @@
 @import url('https://cdnjs.cloudflare.com/ajax/libs/unsemantic/1.2.3/unsemantic-grid-desktop.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 body {
   background-color: #002b36;
+}
+
+.reveal .slides section:first-child {
+  h1 {
+    font-family: 'Bitcount Prop Single', sans-serif;
+    font-size: 1.8em;
+    text-transform: none;
+  }
+
+  .subtitle {
+    font-family: 'Bitcount Prop Single', sans-serif;
+    font-size: 1em;
+    text-transform: none;
+  }
+}
+
+.italic {
+  font-style: italic;
 }
 
 .reveal .grid-container {
@@ -13,4 +32,18 @@ body {
 .reveal .subtitle {
   margin-top: -0.6em;
   font-size: 0.8em;
+}
+
+.reveal blockquote {
+  border-left: 0.2em solid #586e75;
+  border-right: 0.2em solid #586e75;
+  font-size: 0.8em;
+
+  > :first-child {
+    margin-top: 0.2em;
+  }
+
+  > :last-child {
+    margin-bottom: 0.2em;
+  }
 }

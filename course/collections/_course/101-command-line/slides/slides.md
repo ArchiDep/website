@@ -2,13 +2,13 @@
 title: Command Line
 ---
 
-## Command Line
+# Command Line
+
+Architecture & Deployment <!-- .element: class="subtitle" -->
 
 ---
 
 ## A short history of computers & computer interfaces
-
-<!-- slide-front-matter class: center, middle -->
 
 For old time's sake.
 
@@ -23,7 +23,7 @@ The Analytical Engine, proposed by Charles Babbage <!-- .element: class="subtitl
   <div class="grid-35">
     <img src="{{ 'images/analytical-engine.jpg' | relative_file_url }}" alt="Analytical Engine">
   </div>
-  <div class="grid-5">&nbsp;</div>
+  <div class="grid-10">&nbsp;</div>
   <div class="grid-35">
     <img src="{{ 'images/charles-babbage.jpg' | relative_file_url }}" alt="Charles Babbage">
   </div>
@@ -71,7 +71,7 @@ Alan Turing formalizes algorithms and computation <!-- .element: class="subtitle
   <div class="grid-30">&nbsp;</div>
 </div>
 
-<br style="clear:both;" />
+{% clear %}
 
 > Did you see [The Imitation Game][the-imitation-game]?
 
@@ -87,31 +87,54 @@ intelligence][artificial-intelligence].
 
 ### ENIAC (1946)
 
-At that time, there was no such thing as a stored computer program.
-Programs were **physically hard-coded**.
-On the [ENIAC][eniac], this was done using function tables with **hundreds of ten-way switches**, which took weeks.
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-80">
+    <img src="{{ 'images/eniac.jpg' | relative_file_url }}" alt="ENIAC">
+  </div>
+</div>
 
-<p class='center'><img class='w75' src='images/eniac.jpg' /></p>
+**Notes:**
+
+At that time, there was no such thing as a stored computer program. Programs
+were **physically hard-coded**. On the [ENIAC][eniac], this was done using
+function tables with **hundreds of ten-way switches**, which took weeks.
 
 ---
 
-### The first computer bug (1947)
+### The first bug that was caught (1947)
+
+<div class="grid-container">
+  <div class="grid-15">&nbsp;</div>
+  <div class="grid-70">
+    <img src="{{ 'images/bug.jpg' | relative_file_url }}" alt="Bug">
+  </div>
+</div>
+
+**Notes:**
 
 Computers like these are [electro-mechanical
 computers][electro-mechanical-computers] because they were based on switches and
 relays, as opposed to the [transistors][transistor] our current electronic
 computers are based on.
 
-<p class='center'><img class='w55' src='images/bug.jpg' /></p>
-
 When you had a bug in one of these computers, _debugging_ meant getting your
 hands dirty and finding the [actual bug][bug] in the physical machine.
 
 ---
 
-### Automated Computing Engine (1950s)
+### Stored computer programs (1950s)
 
-<p class='center'><img class='w85' src='images/ace.jpg' /></p>
+The Automated Computing Engine, designed by Alan Turing <!-- .element: class="subtitle" -->
+
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-80">
+    <img src="{{ 'images/ace.jpg' | relative_file_url }}" alt="Automated Computing Engine">
+  </div>
+</div>
+
+**Notes:**
 
 The [Automatic Computing Engine (ACE)][ace] was a British early electronic
 serial [stored-program computer][stored-program-computer] designed by [Alan
@@ -120,111 +143,263 @@ memory][delay-line-memory].
 
 ---
 
-### Punched cards for computers (1950s)
+### Mercury delay line memory (1950s)
 
-<!-- slide-column -->
+Better not spill it... <!-- .element: class="subtitle italic" -->
+
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-80">
+    <img src="{{ 'images/mercury-delay-line-memory.jpg' | relative_file_url }}" alt="Mercury Delay Line Memory">
+  </div>
+</div>
+
+---
+
+### Punched cards (1950s)
+
+One of the first user interfaces <!-- .element: class="subtitle" -->
+
+<div class="grid-container">
+  <div class="grid-5">&nbsp;</div>
+  <div class="grid-40">
+    <img src="{{ 'images/punched-card.jpg' | relative_file_url }}" alt="Punched Card">
+
+Invented in 1725 <!-- .element: style="margin-top: 0;" -->
+
+  </div>
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-40">
+    <img src="{{ 'images/keypunch-machine.jpg' | relative_file_url }}" alt="Keypunch Machine">
+  </div>
+</div>
+
+**Notes:**
 
 Many early general-purpose digital computers used [punched cards][punched-card]
-for data input, output and storage.
+for data input, output and storage. Someone had to use a [keypunch][keypunch]
+machine to write your cards, then feed them to the computer.
 
-Someone had to use a [keypunch][keypunch] machine to write your cards, then feed them to the computer.
+Punched cards are much older than computers. They were first invented around
+1725 to control mechanical [looms][loom].
 
-This is what a **program** looked like:
+---
 
-<p class='center'><img class='w80' src='images/punched-cards-program.jpg' /></p>
+### A typical program (1950s)
 
-<!-- slide-column 40 -->
+<p class="subtitle italic">Whatever you do, <strong>DON'T</strong> drop it!</p>
 
-<img class='w100' src='images/punched-card.jpg' />
-
-<img class='w100' src='images/keypunch-machine.jpg' />
-
-> Punched cards are much older than computers.
-> They were first invented around 1725.
+<div class="grid-container">
+  <div class="grid-15">&nbsp;</div>
+  <div class="grid-70">
+    <img src="{{ 'images/punched-cards-program.jpg' | relative_file_url }}" alt="Punched Card Program">
+  </div>
+</div>
 
 ---
 
 ### TeleTYpewriter (1960s)
 
-Teletypewriters (TTYs) became the most popular **computer terminals** in the 1960s.
-They were basically electromechanical typewriters adapted as a user interface for early [mainframe computers][mainframe].
+<p class="subtitle">The first <strong>command line interfaces (CLI)</strong></p>
 
-This is when the first **command line interfaces (CLI)** were created.
-As you typed commands, a program running on the computer would interpret that input,
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-80">
+    <img src="{{ 'images/tty.jpg' | relative_file_url }}" alt="TeleTYpewriter">
+  </div>
+</div>
+
+**Notes:**
+
+Teletypewriters (TTYs) became the most popular **computer terminals** in the
+1960s. They were basically electromechanical typewriters adapted as a user
+interface for early [mainframe computers][mainframe].
+
+This is when the first **command line interfaces (CLI)** were created. As you
+typed commands, a program running on the computer would interpret that input,
 and the output would be printed on physical paper.
-
-<p class='center'><img class='w70' src='images/tty.jpg' /></p>
 
 ---
 
 ### Video terminals (1970s)
 
-<!-- slide-column -->
+<div class="grid-container">
+  <div class="grid-20">&nbsp;</div>
+  <div class="grid-60">
+    <img src="{{ 'images/vt102.jpg' | relative_file_url }}" alt="VT102">
+  </div>
+</div>
 
-As available memory increased, **video terminals** such as the [VT100][vt100] replaced TTYs in the 1970s.
+**Notes:**
 
-Initially they only displayed text.
-Hence they were fundamentally the same as TTYs: textual input/output devices.
-
-<!-- slide-column 65 -->
-
-<p class='center'><img class='w100' src='images/vt102.jpg' /></p>
+As available memory increased, **video terminals** such as the [VT100][vt100]
+replaced TTYs in the 1970s. Initially they only displayed text. Hence they were
+fundamentally the same as TTYs: textual input/output devices.
 
 ---
 
-#### Unix & shells
+### Unix (1970s)
+
+The first portable operating system <!-- .element: class="subtitle" -->
+
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-80">
+    <img src="{{ 'images/unix.png' | relative_file_url }}" alt="Unix">
+  </div>
+</div>
+
+**Notes:**
 
 It's also in this period that the [Unix][unix] operating system was developed.
 Compared to earlier systems, Unix was the first **portable operating system**
-because it was written in the [C programming language][c], allowing it to be installed on multiple platforms.
+because it was written in the [C programming language][c], allowing it to be
+installed on multiple platforms.
 
-Unix is the ancestor of [Linux][linux].
-[FreeBSD][freebsd], a Unix-like system, is also used as the basis for [macOS][macos] (since Mac OS X).
+Unix is the ancestor of [Linux][linux]. [FreeBSD][freebsd], a Unix-like system,
+is also used as the basis for [macOS][macos] (since Mac OS X).
 
-<!-- slide-column -->
+---
+
+### Shells (1970s)
+
+Text-based at that time <!-- .element: class="subtitle" -->
+
+<div class="grid-container">
+  <div class="grid-15">&nbsp;</div>
+  <div class="grid-70">
+    <img src="{{ 'images/shell.png' | relative_file_url }}" alt="Shell">
+  </div>
+</div>
+
+**Notes:**
 
 In Unix-like systems, the program serving as the **command line interpreter**
 (handling input/output from the terminal) is called a [**shell**][unix-shell].
-
-> It is called this way because it is the outermost layer around the operating
-> system; it wraps and hides the lower-level kernel interface.
-
-<!-- slide-column 40 -->
-
-<img class='w100' src='images/shell.png' />
+It is called this way because it is the outermost layer around the operating
+system; it wraps and hides the lower-level kernel interface.
 
 ---
 
 ### Graphical User Interfaces (1980s)
 
-<!-- slide-column -->
+Also a type of shell <!-- .element: class="subtitle" -->
 
-Eventually, [graphical user interfaces (GUIs)][gui] were introduced
-in reaction to the perceived steep learning curve of command line interfaces.
+<div class="grid-container">
+  <div class="grid-20">&nbsp;</div>
+  <div class="grid-60">
+    <img src="{{ 'images/xerox-star.jpg' | relative_file_url }}" alt="Shell">
+  </div>
+</div>
 
-They are one of the most common end user computer interface today.
+**Notes:**
 
-> Note that the GUI of a computer is also a shell. It's simply a different way
-> to interact with the kernel.
+Eventually, [graphical user interfaces (GUIs)][gui] were introduced in reaction
+to the perceived steep learning curve of command line interfaces. They are one
+of the most common end user computer interface today.
 
-<!-- slide-column 60 -->
-
-<img class='w100' src='images/xerox-star.jpg' />
+Note that the GUI of a computer is also a shell. It's simply a different way to
+interact with the kernel (graphical instead of textual).
 
 ---
 
-### More user interfaces
+### Motion sensing user interfaces (2000s)
 
-Today:
+Invented 1940s, on TV 1950s, in wise use 2000s
 
-- [Touch user interface][tui]
-- [Voice user interface][vui]
-- [Motion sensing][motion-sensing]
-- [Augmented][augmented-reality] and [virtual][virtual-reality] reality
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-80">
+    <img src="{{ 'images/motion-sensing-interface.png' | relative_file_url }}" alt="Motion Sensing User Interface">
+  </div>
+</div>
 
-Tomorrow:
+**Notes:**
 
-- [Brain-computer interface?][brain-interface]
+[Motion sensing][motion-sensing]
+
+---
+
+### Touch user interfaces (2000s)
+
+Invented 1960s, on TV 1980s, in wise use 2000s
+
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-80">
+    <img src="{{ 'images/touch-user-interface.jpg' | relative_file_url }}" alt="Touch User Interface">
+  </div>
+</div>
+
+**Notes:**
+
+[Touch user interface][tui]
+
+---
+
+### Voice user interfaces (2010s)
+
+Invented 1950s, on TV 1960s, in wise use 2010s
+
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-80">
+    <img src="{{ 'images/voice-user-interface.png' | relative_file_url }}" alt="Voice User Interface">
+  </div>
+</div>
+
+**Notes:**
+
+[Voice user interface][vui]
+
+---
+
+### Augmented reality (2010s)
+
+Invented 1960s, on TV 1970s, in wise use 2010s
+
+<div class="grid-container">
+  <div class="grid-10">&nbsp;</div>
+  <div class="grid-80">
+    <img src="{{ 'images/augmented-reality.webp' | relative_file_url }}" alt="Augmented Reality">
+  </div>
+</div>
+
+**Notes:**
+
+[Augmented reality][augmented-reality]
+
+---
+
+### Virtual reality (2010s)
+
+Invented 1960s, on TV 1980s, in wise use 2010s
+
+<div class="grid-container">
+  <div class="grid-5">&nbsp;</div>
+  <div class="grid-90">
+    <img src="{{ 'images/virtual-reality.webp' | relative_file_url }}" alt="Virtual Reality">
+  </div>
+</div>
+
+**Notes:**
+
+[Virtual reality][virtual-reality]
+
+---
+
+### Tomorrow?
+
+<div class="grid-container">
+  <div class="grid-15">&nbsp;</div>
+  <div class="grid-70">
+    <img src="{{ 'images/brain-computer-interface.png' | relative_file_url }}" alt="Brain Computer Interface">
+  </div>
+</div>
+
+**Notes:**
+
+[Brain-computer interface?][brain-interface]
 
 [ace]: https://en.wikipedia.org/wiki/Automatic_Computing_Engine
 [ada-lovelace]: https://en.wikipedia.org/wiki/Ada_Lovelace
@@ -239,7 +414,6 @@ Tomorrow:
 [bug]: https://en.wikipedia.org/wiki/Bug_(engineering)#History
 [building-the-future-of-the-command-line]: https://github.com/readme/featured/future-of-the-command-line
 [c]: https://en.wikipedia.org/wiki/C_(programming_language)
-[cat]: https://en.wikipedia.org/wiki/Cat_(Unix)
 [charles-babbage]: https://en.wikipedia.org/wiki/Charles_Babbage
 [cli]: https://en.wikipedia.org/wiki/Command-line_interface
 [computation]: https://en.wikipedia.org/wiki/Computation
@@ -250,41 +424,25 @@ Tomorrow:
 [eniac]: https://en.wikipedia.org/wiki/ENIAC
 [freebsd]: https://en.wikipedia.org/wiki/FreeBSD
 [general-purpose-computer]: https://en.wikipedia.org/wiki/Computer
-[gitbash]: https://gitforwindows.org
 [gui]: https://en.wikipedia.org/wiki/Graphical_user_interface
 [keypunch]: https://en.wikipedia.org/wiki/Keypunch
-[lfm]: https://en.wikipedia.org/wiki/Luigi_Federico_Menabrea
 [linux]: https://en.wikipedia.org/wiki/Linux
+[loom]: https://en.wikipedia.org/wiki/Loom
 [macos]: https://en.wikipedia.org/wiki/MacOS
 [mainframe]: https://en.wikipedia.org/wiki/Mainframe_computer
 [motion-sensing]: https://en.wikipedia.org/wiki/Motion_detection
-[nano]: https://en.wikipedia.org/wiki/GNU_nano
-[node]: https://nodejs.org
 [note-g]: https://en.wikipedia.org/wiki/Note_G
-[oh-my-zsh]: https://ohmyz.sh
-[oh-my-zsh-plugins]: https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
-[oh-my-zsh-windows]: http://kevinprogramming.com/using-zsh-in-windows-terminal/
 [powershell]: https://en.wikipedia.org/wiki/PowerShell
 [programmable]: https://en.wikipedia.org/wiki/Computer_program
 [punched-card]: https://en.wikipedia.org/wiki/Punched_card
-[redirection]: https://en.wikipedia.org/wiki/Redirection_(computing)
-[slide-git]: ../git
 [stored-program-computer]: https://en.wikipedia.org/wiki/Stored-program_computer
-[tar]: https://en.wikipedia.org/wiki/Tar_(computing)
 [the-imitation-game]: https://en.wikipedia.org/wiki/The_Imitation_Game
-[tldr-pages]: https://tldr.sh
 [transistor]: https://en.wikipedia.org/wiki/Transistor
 [tty]: https://en.wikipedia.org/wiki/Teleprinter
 [tui]: https://en.wikipedia.org/wiki/Touch_user_interface
 [turing-machine]: https://en.wikipedia.org/wiki/Turing_machine
 [unix]: https://en.wikipedia.org/wiki/Unix
 [unix-shell]: https://en.wikipedia.org/wiki/Unix_shell
-[vi]: https://en.wikipedia.org/wiki/Vi_(text_editor)
-[vim]: https://en.wikipedia.org/wiki/Vim_(text_editor)
 [virtual-reality]: https://en.wikipedia.org/wiki/Virtual_reality
 [vt100]: https://en.wikipedia.org/wiki/VT100
 [vui]: https://en.wikipedia.org/wiki/Voice_user_interface
-[windows-subsystem-for-linux]: https://docs.microsoft.com/en-us/windows/wsl/about
-[wsl]: https://learn.microsoft.com/en-us/windows/wsl/install
-[zsh]: https://en.wikipedia.org/wiki/Z_shell
-[zsh-site]: http://zsh.sourceforge.net/
