@@ -173,7 +173,7 @@ module ArchiDep
                   section["items"].map do |item|
                     item
                       .data
-                      .merge({ "url" => item.url })
+                      .merge({ "url" => item.url, "slides" => !!item.data["slides"] })
                       .select do |k, v|
                         %w[
                           course_type
