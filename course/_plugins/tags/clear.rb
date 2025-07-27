@@ -1,6 +1,5 @@
 module Jekyll
   class ClearTag < Liquid::Tag
-
     def initialize(tag_name, text, tokens)
       super
       @text = text
@@ -12,4 +11,4 @@ module Jekyll
   end
 end
 
-Liquid::Template.register_tag('clear', Jekyll::ClearTag)
+Liquid::Template.register_tag("clear", Jekyll::ClearTag)

@@ -8,7 +8,7 @@ import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/moon.css';
 import './slides.css';
 
-const urlSearch  = new URLSearchParams(window.location.search);
+const urlSearch = new URLSearchParams(window.location.search);
 const printPdfMode = urlSearch.has('print-pdf');
 
 const deck = new Reveal({

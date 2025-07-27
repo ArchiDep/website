@@ -71,16 +71,17 @@ module ArchiDep
               .take_while { |line| line.match?(/\A\[[^\]]+\]: ?.+\z/) }
               .map do |line|
                 m = line.match(/\A\[([^\]]+)\]: ?(.+)\z/)
-                {reference: m[1], url: m[2]}
+                { reference: m[1], url: m[2] }
               end
               .reverse
           unless link_references.empty?
-            item.content = link_references.reduce(item.content) do |content, link_reference|
-              content.gsub(
-                /\]\[#{link_reference[:reference]}\]/,
-                "](#{link_reference[:url]})"
-              )
-            end
+            item.content =
+              link_references.reduce(item.content) do |content, link_reference|
+                content.gsub(
+                  /\]\[#{link_reference[:reference]}\]/,
+                  "](#{link_reference[:url]})"
+                )
+              end
           end
         end
       end
@@ -173,7 +174,9 @@ module ArchiDep
                   section["items"].map do |item|
                     item
                       .data
-                      .merge({ "url" => item.url, "slides" => !!item.data["slides"] })
+                      .merge(
+                        { "url" => item.url, "slides" => !!item.data["slides"] }
+                      )
                       .select do |k, v|
                         %w[
                           course_type
