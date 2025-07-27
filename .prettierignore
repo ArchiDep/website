@@ -9,5 +9,6 @@
 /course/**/*.html
 /course/**/*.rb
 /node_modules
-/theme/src/highlight.css
+/theme/src/highlight-dark.css
+/theme/src/highlight-light.css
 /tmp

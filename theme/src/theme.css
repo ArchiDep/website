@@ -24,7 +24,8 @@
 @import './shared.css';
 @import './app.css';
 @import './course.css';
-@import './highlight.css';
+@import './highlight-light.css';
+@import './highlight-dark.css';
 @import './toc.css';
 
 @custom-variant screen (@media screen);
