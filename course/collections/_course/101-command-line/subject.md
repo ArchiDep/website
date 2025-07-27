@@ -13,13 +13,14 @@ manipulating your filesystem in a Unix shell.
 
 ### What is a Command Line Interface (CLI)?
 
-A CLI is a tool that allows you to use your computer by **writing** what you want to do (i.e. **commands**), instead of clicking on things.
+A CLI is a tool that allows you to use your computer by **writing** what you
+want to do (i.e. **commands**), instead of clicking on things.
 
 It's been installed on computers for a long time, but it has evolved ["a
 little"][building-the-future-of-the-command-line] since then. It usually looks
 something like this:
 
-<p class='center'><img src='images/cli.jpg' width='100%' /></p>
+![CLI](images/cli.jpg)
 
 ### Why use it?
 
@@ -63,28 +64,21 @@ CLI either.
 > Software terminals are an emulation of old physical terminals like [TTYs][tty] or the [VT100][vt100].
 > You will still find references to the term "TTY" in the documentation of some modern command line tools.
 
-### Install Git Bash (Windows users only)
+### Install WSL (Windows users only)
 
-You're going to install **Git Bash**, a software terminal that emulates the popular [Bourne-again shell (Bash)][bash] on Windows.
+You're going to install the [**Windows Subsystem for Linux (WSL)**][wsl], a tool
+that allows you to run a Linux environment on your Windows machine, without
+using a virtual machine or setting up a dual boot.
 
-<!-- slide-column 30 -->
+![WSL](images/wsl-ubuntu.jpg)
 
-<p class='center'><img src='images/gitbashlogo.png' class='w80' /></p>
+Follow [the installation instructions for the WSL][wsl-install]. The default
+Linux distribution installed will be Ubuntu, which is perfect for the purposes
+of this course.
 
-<!-- slide-column -->
-
-You can download the **Git Bash Installer** on the [Git for Windows website][gitbash].
-
-When it's done, install the software, without changing any default options.
-
-Then, search and open the **Git Bash** software.
-
-<!-- slide-container -->
-
-> Installing **Git Bash** will also install **Git** and **Git GUI** _(see the [Git tutorial][slide-git] for more information)_.
-
-As an alternative, you may also use the [Windows Subsystem for Linux][windows-subsystem-for-linux],
-but it sometimes has issues when integrating with other programs not installed in that CLI.
+It will ask you for a **username** and a **password**. We suggest you use the
+same username as for the rest of the course, and that you use the same password
+as your Windows user account's.
 
 ## How to use the CLI
 
@@ -98,8 +92,6 @@ These symbols represent **the prompt** and are used to indicate that you have
 the lead. **The computer is waiting for you to type something** for it to
 execute.
 
-<!-- slide-column -->
-
 > The prompt is not always `$>`.
 >
 > For example, on earlier macOS versions, it used to be `bash3.2$`, indicating the
@@ -109,13 +101,10 @@ execute.
 > indicate your computer's name, your username and the current directory, e.g.
 > `MyComputer:~ root#`.
 
-<!-- slide-column 30 -->
-
-<p class='center'><img src='images/bash-prompt.png' width='100%' /></p>
-
-<p class='center'><img src='images/zsh-prompt.png' width='100%' /></p>
-
-<!-- slide-container -->
+<div class="grid grid-cols-2 gap-4">
+  <div><img src='images/bash-prompt.png' class="w-full" /></div>
+  <div><img src='images/zsh-prompt.png' class="w-full" /></div>
+</div>
 
 **For consistency, we will always use `$>` to represent the prompt.**
 
@@ -129,20 +118,12 @@ lead.
 > The `sleep` command tells the computer to do nothing for the specified number
 > of seconds.
 
-<!-- slide-column -->
-
-<p class='center'><img src='images/sleep.png' width='100%' /></p>
-
-<!-- slide-container -->
-
-<!-- slide-column -->
+<img src='images/sleep.png' class="w-1/2" />
 
 When the computer is done working, it will indicate that you are back in control
 by showing the prompt again.
 
-<!-- slide-column -->
-
-<p class='center'><img src='images/sleep-done.png' width='100%' /></p>
+<img src='images/sleep-done.png' class="w-1/2" />
 
 ### Writing commands
 
@@ -169,7 +150,7 @@ There are two types of arguments to use with a command (if needed):
 By convention, they are preceded by `-` or `--`:
 
 ```bash
-$> ls `-a` `-l`
+$> ls -a -l
 ```
 
 We use the `ls` command to **l**i**s**t the content of the current directory.
@@ -184,7 +165,7 @@ The options tell `ls` **how** it should do so:
 command:
 
 ```bash
-$> cd `/Users/Batman`
+$> cd /Users/Batman
 ```
 
 Here, we use the `cd` command to move to another directory (or **c**hange
@@ -207,7 +188,7 @@ elements:
 **Values** can also be linked to an option:
 
 ```bash
-tar -c -v `-f compressed.tar.gz` file-to-compress
+tar -c -v -f compressed.tar.gz file-to-compress
 ```
 
 The [`tar` (**t**ape **ar**chive)][tar] command bundles and compresses files. In
@@ -236,7 +217,7 @@ They can cause **errors** in some scripts or tools, and will inevitably complica
 If you have a `Why So Serious` directory, this **WILL NOT work**:
 
 ```bash
-$> ls `Why` `So` `Serious`
+$> ls Why So Serious
 ```
 
 This command will be interpreted as a call to the `ls` command with **three arguments**: `Why`, `So` and `Serious`.
@@ -246,13 +227,13 @@ You **can** use arguments containing spaces, but you have to **escape** them fir
 <!-- slide-column -->
 
 ```bash
-$> ls `"Why So Serious"`
+$> ls "Why So Serious"
 ```
 
 <!-- slide-column -->
 
 ```bash
-$> ls `Why\ So\ Serious`
+$> ls Why\ So\ Serious
 ```
 
 ### Auto-completion
@@ -263,11 +244,11 @@ need, then hit the `Tab` key:
 
 <!-- slide-column -->
 
-<img src='images/auto-complete.png' width='100%' />
+<img src='images/auto-complete.png' />
 
 <!-- slide-column -->
 
-<img src='images/auto-complete-tab.png' width='100%' />
+<img src='images/auto-complete-tab.png' />
 
 <!-- slide-container -->
 
@@ -275,7 +256,7 @@ If there are multiple files or directories that begin with the **same characters
 pressing `Tab` will not display anything.
 You need hit `Tab` **a second time** to display the list of available choices:
 
-<p class='center'><img src='images/auto-complete-multiple.png' width='50%' /></p>
+<p class='center'><img src='images/auto-complete-multiple.png'/></p>
 
 You can type just enough characters so that the CLI can determine which one you want (in this case `c` or `w`),
 then hit `Tab` again to get the full path.
@@ -285,7 +266,7 @@ then hit `Tab` again to get the full path.
 You can get help on most advanced commands by executing them with the `--help` option.
 As the option's name implies, it's designed to **give you some help** on how to use the command:
 
-<p class='center'><img src='images/tar-help.png' width='60%' /></p>
+<p class='center'><img src='images/tar-help.png'/></p>
 
 Some commands don't have the `--help` option, but there are alternative sources
 of information depending on what operating system you're on:
@@ -306,7 +287,7 @@ You can "scroll" up and down line-by-line using the arrow keys or the `Enter` ke
 
 To quit these interactive documentations, use the `q` (**q**uit) key.
 
-<p class='center'><img src='images/interactive-help.png' width='80%' /></p>
+<p class='center'><img src='images/interactive-help.png' /></p>
 
 #### Unix Command Syntax
 
@@ -433,20 +414,20 @@ $> cd ./Documents/TopSecret
 
 You can also _not go anywhere_:
 
-```bash
+{% highlight bash mark_lines="4" %}
 $> pwd
 /Users/Batman
 
-$> `cd .`
+$> cd .
 
 $> pwd
 /Users/Batman
-```
+{% endhighlight %}
 
 Or compress the current directory:
 
 ```bash
-tar -c -v -f /somewhere/compressed.tar.gz `.`
+tar -c -v -f /somewhere/compressed.tar.gz .
 ```
 
 This does not seem very useful now, but it will be in further tutorials.
@@ -455,13 +436,15 @@ This does not seem very useful now, but it will be in further tutorials.
 
 To go up into the parent directory, use the `..` path (**don't forget the space between `cd` and `..`**):
 
-```bash
+{% highlight bash mark_lines="4" %}
 $> pwd
 /Users/Batman/Documents
-$> `cd ..`
+
+$> cd ..
+
 $> pwd
 /Users/Batman
-```
+{% endhighlight %}
 
 You can also drag and drop a directory from your Explorer or your Finder to the CLI to see its absolute path automaticaly written:
 
@@ -515,7 +498,7 @@ $> pwd
 Throughout this course, you will often see the following command (_or something resembling it_):
 
 ```bash
-$> cd `/path/to/projects`
+$> cd /path/to/projects
 ```
 
 This means that you use **the path to the directory in which you store your projects**.
@@ -585,7 +568,7 @@ The `>` operator means _"**write** the output of the previous command into a fil
 This allows you to quickly create a simple text file:
 
 ```bash
-$> echo foo `>` bar.txt
+$> echo foo > bar.txt
 
 $> ls
 bar.txt
@@ -595,7 +578,7 @@ If the file already exists, it is overwritten.
 You can also use the `>>` operator, which means _"**append** the output of the previous command to the end of a file"_:
 
 ```bash
-$> echo bar `>>` bar.txt
+$> echo bar >> bar.txt
 ```
 
 ### The `cat` command
@@ -1161,6 +1144,7 @@ A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 [vt100]: https://en.wikipedia.org/wiki/VT100
 [vui]: https://en.wikipedia.org/wiki/Voice_user_interface
 [windows-subsystem-for-linux]: https://docs.microsoft.com/en-us/windows/wsl/about
-[wsl]: https://learn.microsoft.com/en-us/windows/wsl/install
+[wsl]: https://learn.microsoft.com/en-us/windows/wsl/about
+[wsl-install]: https://learn.microsoft.com/en-us/windows/wsl/install
 [zsh]: https://en.wikipedia.org/wiki/Z_shell
 [zsh-site]: http://zsh.sourceforge.net/
