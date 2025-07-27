@@ -1,4 +1,4 @@
-<div class='w-80 max-w-full bg-base-200 text-base-content min-h-full'>
+<div class='w-80 max-w-full bg-base-200 text-base-content min-h-full pb-16'>
   <div class='lg:hidden w-full flex justify-between items-center pl-6 pr-2 pt-4'>
     <a href='/' class='text-xl font-bold inline'>ArchiDep</a>
     <label for='sidebar' class='btn btn-square btn-ghost'>
@@ -79,7 +79,11 @@
             {% assign link_target = '_self' %}
           {% endif %}
 
-          <a href='{{ item.url }}' target='{{ link_target }}' class='flex items-center gap-2 {{ current_font_weight }}'>
+          <a
+            href='{{ item.url }}'
+            target='{{ link_target }}'
+            class='flex items-center gap-2 {{ current_font_weight }}'
+          >
             {%- include chapter-title.html doc=item -%}
             {% if item.slides %}
               <span> 🎬 </span>
@@ -92,4 +96,6 @@
       {%- endfor -%}
     {%- endfor -%}
   </ul>
+
+  {%- include footer.html -%}
 </div>
