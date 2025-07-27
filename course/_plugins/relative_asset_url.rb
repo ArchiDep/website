@@ -15,19 +15,29 @@ module ArchiDep
 
       asset_dir = File.dirname(asset_file)
 
-      phoenix_cache_manifest_file = File.join(asset_dir, 'cache_manifest.json')
-      webpack_manifest_file = File.join(asset_dir, 'manifest.json')
-      manifest_file = File.exist?(webpack_manifest_file) ? webpack_manifest_file : phoenix_cache_manifest_file
-      manifest = if File.exist?(manifest_file)
-        JSON.parse(File.read(manifest_file))
-      else
-        raise "No manifest file found for asset #{path.inspect}" if Jekyll.env == 'production'
-        {}
-      end
+      phoenix_cache_manifest_file = File.join(asset_dir, "cache_manifest.json")
+      webpack_manifest_file = File.join(asset_dir, "manifest.json")
+      manifest_file =
+        (
+          if File.exist?(webpack_manifest_file)
+            webpack_manifest_file
+          else
+            phoenix_cache_manifest_file
+          end
+        )
+      manifest =
+        if File.exist?(manifest_file)
+          JSON.parse(File.read(manifest_file))
+        else
+          if Jekyll.env == "production"
+            raise "No manifest file found for asset #{path.inspect}"
+          end
+          {}
+        end
 
       asset_basename = File.basename(path)
-      if asset_basename_with_digest = manifest.dig('latest', asset_basename)
-        relative_url(path.sub(/\/[^\/]+\z/, "/#{asset_basename_with_digest}"))
+      if asset_basename_with_digest = manifest.dig("latest", asset_basename)
+        relative_url(path.sub(%r{/[^/]+\z}, "/#{asset_basename_with_digest}"))
       elsif asset_path_with_digest = manifest[path]
         relative_url(asset_path_with_digest)
       else

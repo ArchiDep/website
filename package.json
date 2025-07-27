@@ -24,8 +24,10 @@
   },
   "homepage": "https://github.com/ArchiDep/website#readme",
   "scripts": {
-    "format": "prettier --check .",
-    "format:write": "prettier --write .",
+    "format": "npm run format:root && npm run --workspace course format",
+    "format:root": "prettier --check .",
+    "format:root:write": "prettier --write .",
+    "format:write": "npm run format:root:write && npm run --workspace course format:write",
     "start": "npm --workspace theme start"
   },
   "workspaces": [
@@ -33,7 +35,6 @@
     "theme"
   ],
   "devDependencies": {
-    "@shopify/prettier-plugin-liquid": "^1.9.3",
     "prettier": "^3.6.2"
   },
   "engines": {

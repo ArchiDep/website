@@ -1,29 +1,28 @@
 module Jekyll
   class CalloutTagBlock < Liquid::Block
-
     Syntax = /(#{Liquid::QuotedFragment}+)?/
 
     def initialize(tag_name, markup, tokens)
-        @attributes = {}
+      @attributes = {}
 
-        @attributes['type'] = '';
+      @attributes["type"] = ""
 
-        # Parse parameters
-        if markup =~ Syntax
-          markup.scan(Liquid::TagAttributes) do |key, value|
-            @attributes[key] = value
-          end
-        else
-          raise SyntaxError.new("Bad options given to 'loop_directory' plugin.")
+      # Parse parameters
+      if markup =~ Syntax
+        markup.scan(Liquid::TagAttributes) do |key, value|
+          @attributes[key] = value
         end
+      else
+        raise SyntaxError.new("Bad options given to 'loop_directory' plugin.")
+      end
 
-        super
+      super
     end
 
     def render(context)
       text = super
 
-      callout_theme_class = "callout-#{@attributes['type']}"
+      callout_theme_class = "callout-#{@attributes["type"]}"
       callout_class = "callout #{callout_theme_class}"
 
       %|<div class="#{callout_class}">
@@ -32,14 +31,15 @@ module Jekyll
         </svg>
 
         <div class="content">
-          #{context.registers[:site].find_converter_instance(
-            Jekyll::Converters::Markdown
-          ).convert(text)}
+          #{
+        context.registers[:site].find_converter_instance(
+          Jekyll::Converters::Markdown
+        ).convert(text)
+      }
         </div>
       </div>|
     end
-
   end
 end
 
-Liquid::Template.register_tag('callout', Jekyll::CalloutTagBlock)
+Liquid::Template.register_tag("callout", Jekyll::CalloutTagBlock)

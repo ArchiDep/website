@@ -6,7 +6,7 @@
 /app/deps
 /app/priv/static
 /app/priv/uploads
-/course/.jekyll-cache
+/course
 /node_modules
 /theme/src/highlight.css
 /tmp

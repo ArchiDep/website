@@ -53,6 +53,7 @@ exclude:
   - package.json
   - package-lock.json
   - src/
+  - tsconfig.json
   - webpack.config.js
 
 keep_files:

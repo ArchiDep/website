@@ -14,61 +14,42 @@ For old time's sake.
 
 ---
 
-### In the beginning (1830s)
+### The first general-purpose computer (1837)
+
+The Analytical Engine, proposed by Charles Babbage <!-- .element: class="subtitle" -->
 
 <div class="grid-container">
   <div class="grid-10">&nbsp;</div>
   <div class="grid-35">
-    <img src="{{ 'images/charles-babbage.jpg' | relative_file_url }}" alt="Charles Babbage">
-    Charles Babbage
+    <img src="{{ 'images/analytical-engine.jpg' | relative_file_url }}" alt="Analytical Engine">
   </div>
   <div class="grid-5">&nbsp;</div>
   <div class="grid-35">
-    <img src="{{ 'images/ada-lovelace.png' | relative_file_url }}" alt="Ada Lovelace">
-    Ada Lovelace
+    <img src="{{ 'images/charles-babbage.jpg' | relative_file_url }}" alt="Charles Babbage">
   </div>
 </div>
 
 **Notes:**
 
-[**Charles Babbage**][charles-babbage] originated the concept of a
-[digital][digital] [programmable][programmable], [general-purpose
+[Charles Babbage][charles-babbage], an English mathematician, proposed the
+mechanical [Analytical Engine][analytical-engine]: the first [digital][digital]
+[programmable][programmable], [general-purpose
 computer][general-purpose-computer].
-
-[**Ada Lovelace**][ada-lovelace] published the first [algorithm][algorithm] to
-be carried out by such a machine.
-
-[ada-lovelace]: https://en.wikipedia.org/wiki/Ada_Lovelace
-[algorithm]: https://en.wikipedia.org/wiki/Algorithm
-[charles-babbage]: https://en.wikipedia.org/wiki/Charles_Babbage
-[digital]: https://en.wikipedia.org/wiki/Digital_data
-[general-purpose-computer]: https://en.wikipedia.org/wiki/Computer
-[programmable]: https://en.wikipedia.org/wiki/Computer_program
 
 ---
 
-### Analytical engine (1837)
+### The first programmer (1842)
+
+Ada Lovelace publishes the first algorithm <!-- .element: class="subtitle" -->
 
 <div class="grid-container">
+  <div class="grid-30">&nbsp;</div>
   <div class="grid-40">
-    <img src="{{ 'images/analytical-engine.jpg' | relative_file_url }}" alt="Analytical Engine">
-  </div>
-  <div class="grid-60">
-
-Charles Babbage proposes a [general-purpose
-computer](https://en.wikipedia.org/wiki/Computer).
-
-In 1842, Ada Lovelace writes the [first
-program](https://en.wikipedia.org/wiki/Note_G) for such a machine.
-
+    <img src="{{ 'images/ada-lovelace.png' | relative_file_url }}" alt="Ada Lovelace">
   </div>
 </div>
 
 **Notes:**
-
-The [Analytical Engine][analytical-engine] was a proposed mechanical
-[general-purpose computer][general-purpose-computer] designed by English
-mathematician and computer pioneer [Charles Babbage][charles-babbage].
 
 In 1842, [Ada Lovelace][ada-lovelace] translated into English and extensively
 annotated a description of the engine, including a way to calculate [Bernoulli
@@ -76,26 +57,31 @@ numbers][bernoulli-numbers] using the machine (widely considered to be the
 [first complete computer program][note-g]). She has been described as the first
 computer programmer.
 
-[analytical-engine]: https://en.wikipedia.org/wiki/Analytical_Engine
-[general-purpose-computer]: https://en.wikipedia.org/wiki/Computer
-[note-g]: https://en.wikipedia.org/wiki/Note_G
-
 ---
 
 ### A century later (1940s)
 
-<!-- slide-front-matter class: center -->
+Alan Turing formalizes algorithms and computation <!-- .element: class="subtitle" -->
 
-<p class='center'><img class='w40' src='images/alan-turing.jpg' /></p>
+<div class="grid-container">
+  <div class="grid-30">&nbsp;</div>
+  <div class="grid-40">
+    <img src="{{ 'images/alan-turing.jpg' | relative_file_url }}" alt="Alan Turing">
+  </div>
+  <div class="grid-30">&nbsp;</div>
+</div>
 
-[**Alan Turing**][alan-turing]
-
-Formalized the concepts of [algorithm][algorithm] and [computation][computation]
-with the [Turing machine][turing-machine]. He is widely considered to be the
-father of theoretical [computer science][computer-science] and [artificial
-intelligence][artificial-intelligence].
+<br style="clear:both;" />
 
 > Did you see [The Imitation Game][the-imitation-game]?
+
+**Notes:**
+
+[**Alan Turing**][alan-turing] formalized the concepts of [algorithm][algorithm]
+and [computation][computation] with the [Turing machine][turing-machine]. He is
+widely considered to be the father of theoretical [computer
+science][computer-science] and [artificial
+intelligence][artificial-intelligence].
 
 ---
 

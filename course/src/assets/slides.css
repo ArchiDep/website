@@ -3,3 +3,14 @@
 body {
   background-color: #002b36;
 }
+
+.reveal .grid-container {
+  display: block;
+  width: 100%;
+  clear: both;
+}
+
+.reveal .subtitle {
+  margin-top: -0.6em;
+  font-size: 0.8em;
+}
