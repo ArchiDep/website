@@ -5,7 +5,8 @@ body {
   background-color: #002b36;
 }
 
-.reveal .slides section:first-child {
+.reveal .slides section:first-child,
+.reveal .slides .scroll-page:first-child .scroll-page-content section {
   h1 {
     font-family: 'Bitcount Prop Single', sans-serif;
     font-size: 1.8em;
