@@ -12,7 +12,6 @@ import searchDialogTemplate from './search-dialog.template.html';
 import searchResultTemplate from './search-result.template.html';
 
 const quickSearch = {
-  a: 'app',
   c: 'course',
   d: 'dashboard',
   h: 'home'
