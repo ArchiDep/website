@@ -4,7 +4,9 @@ defmodule ArchiDepWeb do
   """
 
   @spec static_paths :: list(String.t())
-  def static_paths, do: ~w(assets favicon.ico course fonts images index.html robots.txt)
+  def static_paths,
+    do:
+      ~w(assets favicon.ico course feed.xml fonts images index.html lunr.json robots.txt search.json)
 
   @spec router :: Macro.t()
   def router do

@@ -13,3 +13,7 @@ h6 {
   font-weight: 400;
   @apply dark:text-white font-normal pb-1 border-b border-black/10 dark:border-white/10 print:break-after-avoid;
 }
+
+#search-dialog #search-results .active {
+  @apply bg-primary/50;
+}

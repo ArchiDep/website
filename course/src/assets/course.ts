@@ -2,28 +2,22 @@ import { G, O, pipe } from '@mobily/ts-belt';
 import { computed, effect, signal } from '@preact/signals-core';
 import { isRight } from 'fp-ts/lib/Either';
 import * as t from 'io-ts';
-import log from 'loglevel';
-import logPrefix from 'loglevel-plugin-prefix';
+import { DateTime } from 'luxon';
 import { Socket } from 'phoenix';
 
-import { iso8601DateTime } from '../utils/codecs/iso8601-date-time';
-import { parseJsonSafe } from './utils';
-import { DateTime } from 'luxon';
+import { iso8601DateTime } from '../shared/codecs/iso8601-date-time';
+import { parseJsonSafe, required, toggleClass } from './utils';
 import { HttpAuthenticationError } from './errors';
-
-log.setDefaultLevel(
-  window.location.hostname === 'localhost' ? log.levels.DEBUG : log.levels.INFO
-);
-
-logPrefix.reg(log);
-logPrefix.apply(log, {
-  template: '[%t] %l <%n>:'
-});
+import { setUpSearch } from './course/search';
+import log from './logging';
 
 const logger = log.getLogger('app');
+
 logger.info('ArchiDep 🚀');
 
 window['logOut'] = logOut;
+
+setUpSearch();
 
 const roleType = t.union([t.literal('root'), t.literal('student')]);
 
@@ -243,20 +237,4 @@ function logOut(): void {
       clearTimeout(connectionTimeout);
     })
     .catch(err => logger.warn(`Logout failed: ${err.message}`));
-}
-
-function toggleClass(element: Element, className: string, enabled: boolean) {
-  if (enabled) {
-    element.classList.add(className);
-  } else {
-    element.classList.remove(className);
-  }
-}
-
-function required<T>(value: T, errorMessage: string): NonNullable<T> {
-  if (value === null || value === undefined) {
-    throw new Error(errorMessage);
-  }
-
-  return value;
 }

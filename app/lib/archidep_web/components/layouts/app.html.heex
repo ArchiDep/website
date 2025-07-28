@@ -14,8 +14,8 @@
       <span class="sr-only">{gettext("Log in")}</span>
     </a>
     <div :if={logged_in?(@auth)} class="dropdown dropdown-end">
-      <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
-        <div class="w-10 rounded-full">
+      <div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-neutral">
+        <div class="w-6 sm:w-8 rounded-full">
           <Heroicons.user_circle :if={not impersonating?(@auth)} />
           <Heroicons.eye :if={impersonating?(@auth)} />
         </div>

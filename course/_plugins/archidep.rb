@@ -197,3 +197,18 @@ Jekyll::Hooks.register :documents, :pre_render do |doc, payload|
   # render the content into a new property
   doc.data["raw_markdown"] = template.render!(payload, info)
 end
+
+# Pretty-print JSON files after writing
+Jekyll::Hooks.register :documents, :post_write do |doc|
+  next unless /\.json.liquid$/.match(doc.path) and doc.data["pretty_print"]
+  dest_path = doc.destination(doc.site.dest)
+  contents = File.read(dest_path)
+  decoded = JSON.parse(contents)
+  pretty = JSON.pretty_generate(decoded)
+  File.write(dest_path, pretty)
+  Jekyll.logger.info "Formatted JSON file #{dest_path}"
+end
+
+Jekyll::Hooks.register :site, :post_write do |site|
+  system("npm run idx")
+end

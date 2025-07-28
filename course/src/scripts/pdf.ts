@@ -1,14 +1,14 @@
+import { G, N } from '@mobily/ts-belt';
 import { isLeft } from 'fp-ts/lib/Either.js';
 import * as t from 'io-ts';
+import { mkdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
+import ProgressBar from 'progress';
 import puppeteer, { Page, PDFOptions } from 'puppeteer';
 import { match } from 'ts-pattern';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { G, N, pipe } from '@mobily/ts-belt';
-import { mkdir, readFile } from 'node:fs/promises';
 
-import { getValidationErrorDetails } from '../utils/codecs/utils';
-import ProgressBar from 'progress';
+import { getValidationErrorDetails } from '../shared/codecs/utils';
+import { courseDataFile, courseRoot } from './utils/constants';
 
 const courseType = t.union([
   t.literal('exercise'),
@@ -45,19 +45,7 @@ const courseDataType = t.readonly(
   )
 );
 
-const courseRoot = pipe(
-  import.meta.url,
-  fileURLToPath,
-  path.dirname,
-  path.dirname,
-  path.dirname
-);
-
 const pdfExportDir = path.join(courseRoot, 'pdf');
-
-const repoRoot = path.dirname(courseRoot);
-const destDir = path.resolve(repoRoot, 'app', 'priv', 'static');
-const courseDataFile = path.join(destDir, 'archidep.json');
 
 await mkdir(pdfExportDir, { recursive: true });
 
