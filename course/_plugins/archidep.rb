@@ -212,7 +212,6 @@ end
 Jekyll::Hooks.register :site, :post_render do |site|
   docs = []
   site.pages.each { |page| docs << page if page.data["search"] }
-
   site.collections["course"].docs.each { |doc| docs << doc }
 
   search_elements =
@@ -228,7 +227,8 @@ Jekyll::Hooks.register :site, :post_render do |site|
         url: doc.url,
         title: doc.data["title"].sub(/^:[^:]+:\s*/, ""),
         subtitle: doc.data["title"],
-        elements: []
+        elements: [],
+        extra_search_text: doc.data["extra_search_text"] || ""
       }
 
       doc_search_elements = []
@@ -238,9 +238,7 @@ Jekyll::Hooks.register :site, :post_render do |site|
         # If tag is a heading, start a new search element
         if element.name.match?(/^h[1-6]$/) and element["id"] and
              not current_search_element[:elements].empty?
-          unless current_search_element[:elements].empty?
-            doc_search_elements << current_search_element
-          end
+          doc_search_elements << current_search_element
 
           current_search_element = {
             id: "#{doc.url}##{element["id"]}",
@@ -248,7 +246,8 @@ Jekyll::Hooks.register :site, :post_render do |site|
             url: "#{doc.url}##{element["id"]}",
             title: element.text.sub(/^:[^:]+:\s*/, ""),
             subtitle: doc.data["title"],
-            elements: []
+            elements: [],
+            extra_search_text: ""
           }
         end
 
@@ -260,11 +259,8 @@ Jekyll::Hooks.register :site, :post_render do |site|
       end
 
       doc_search_elements.map do |group|
-        group[:text] = group[:elements]
-          .map(&:text)
-          .join(" ")
-          .gsub(/\s+/, " ")
-          .strip
+        group[:text] = group[:extra_search_text] + " " +
+          (group[:elements].map(&:text).join(" ")).gsub(/\s+/, " ").strip
         group.delete :elements
         group
       end

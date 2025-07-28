@@ -7,8 +7,10 @@ const production = process.env.NODE_ENV === 'production';
 module.exports = {
   entry: {
     course: './src/assets/course.ts',
+    search: './src/assets/course/search.ts',
     slides: './src/assets/slides.ts'
   },
+  devtool: 'source-map',
   mode: production ? 'production' : 'development',
   module: {
     rules: [
@@ -18,6 +20,10 @@ module.exports = {
           MiniCssExtractPlugin.loader,
           { loader: 'css-loader', options: { sourceMap: false } }
         ]
+      },
+      {
+        test: /\.template\.html$/u,
+        type: 'asset/source'
       },
       {
         test: /\.tsx?$/,

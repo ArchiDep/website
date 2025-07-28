@@ -9,6 +9,15 @@
   </div>
 
   <div class="navbar-end">
+    <button
+      type="button"
+      id="search-button"
+      class="hidden btn btn-ghost max-sm:btn-circle hover:bg-neutral"
+    >
+      <Heroicons.magnifying_glass class="size-4 sm:size-6" />
+      <kbd class="kbd kbd-xs sm:kbd-sm macos hidden">⌘K</kbd>
+      <kbd class="kbd kbd-xs sm:kbd-sm hidden sm:inline">Ctrl K</kbd>
+    </button>
     <a :if={not logged_in?(@auth)} href="/auth/switch-edu-id/configure" class="btn btn-ghost p-2">
       <Heroicons.arrow_right_end_on_rectangle class="size-6" />
       <span class="sr-only">{gettext("Log in")}</span>

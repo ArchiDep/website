@@ -4,6 +4,7 @@ title: Architecture & Deployment
 title_include: main-title.html
 layout: home
 search: true
+extra_search_text: home
 ---
 
 In this course you will learn:

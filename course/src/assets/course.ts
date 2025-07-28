@@ -8,7 +8,7 @@ import { Socket } from 'phoenix';
 import { iso8601DateTime } from '../shared/codecs/iso8601-date-time';
 import { parseJsonSafe, required, toggleClass } from './utils';
 import { HttpAuthenticationError } from './errors';
-import { setUpSearch } from './course/search';
+import './course/search';
 import log from './logging';
 
 const logger = log.getLogger('app');
@@ -16,8 +16,6 @@ const logger = log.getLogger('app');
 logger.info('ArchiDep 🚀');
 
 window['logOut'] = logOut;
-
-setUpSearch();
 
 const roleType = t.union([t.literal('root'), t.literal('student')]);
 

@@ -8,6 +8,8 @@ import { match } from 'ts-pattern';
 import { getValidationErrorDetails } from '../../shared/codecs/utils';
 import log from '../logging';
 import { isMacOs, required, toggleClass } from '../utils';
+import searchDialogTemplate from './search-dialog.template.html';
+import searchResultTemplate from './search-result.template.html';
 
 const searchElementType = t.union([
   t.literal('exercise'),
@@ -36,6 +38,12 @@ type SearchResult = lunr.Index.Result & {
 };
 
 const searchData = t.readonlyArray(searchElement);
+
+const body = document.querySelector('body');
+
+const testNode = document.createElement('div');
+testNode.innerHTML = searchDialogTemplate;
+body?.append(testNode.childNodes[0]!);
 
 const logger = log.getLogger('search');
 
@@ -91,13 +99,10 @@ const $searchResultsCount = required(
   'Search results count element not found'
 );
 
-const $searchResultSample = required(
-  document.getElementById('search-result-sample'),
-  'Search result sample element not found'
-) as HTMLTemplateElement;
-
 let searchActive = false;
 let searchResults: readonly SearchResult[] = [];
+
+setUpSearch();
 
 export function setUpSearch(): void {
   Promise.all([loadSearchIndex(), loadSearchData()])
@@ -279,7 +284,10 @@ function renderSearchResults(
   toggleClass($searchResults, 'hidden', results.length === 0);
 
   for (const result of results) {
-    const element = $searchResultSample.content.cloneNode(true) as HTMLElement;
+    const ul = document.createElement('ul');
+    ul.innerHTML = searchResultTemplate;
+
+    const element = ul.querySelector('li')!;
     element.querySelector('.icon')!.textContent = match(result.datum.type)
       .with('exercise', () => '🔨')
       .with('home', () => '🏠')
