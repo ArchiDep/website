@@ -1,8 +1,8 @@
 ---
+id: home
 title: Architecture & Deployment
 title_include: main-title.html
 layout: home
-toc: true
 ---
 
 In this course you will learn:

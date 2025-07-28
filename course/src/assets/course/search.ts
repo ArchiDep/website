@@ -11,6 +11,7 @@ import { isMacOs, required, toggleClass } from '../utils';
 
 const searchElementType = t.union([
   t.literal('exercise'),
+  t.literal('home'),
   t.literal('slides'),
   t.literal('subject')
 ]);
@@ -262,6 +263,7 @@ function renderSearchResults(
     const element = $searchResultSample.content.cloneNode(true) as HTMLElement;
     element.querySelector('.icon')!.textContent = match(result.datum.type)
       .with('exercise', () => '🔨')
+      .with('home', () => '🏠')
       .with('slides', () => '🎬')
       .with('subject', () => '📖')
       .exhaustive();
