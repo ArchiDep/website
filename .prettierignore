@@ -6,6 +6,7 @@
 /app/deps
 /app/priv/static
 /app/priv/uploads
+/course/Gemfile
 /course/**/*.html
 /course/**/*.rb
 /node_modules
