@@ -58,7 +58,9 @@ exclude:
   - scripts/
   - src/
   - tsconfig.json
-  - webpack.config.js
+  - tsconfig.assets.json
+  - tsconfig.scripts.json
+  - webpack.config.cjs
 
 keep_files:
   - assets

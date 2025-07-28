@@ -21,6 +21,7 @@ const searchElement = t.readonly(
     t.type({
       id: t.string,
       title: t.string,
+      subtitle: t.string,
       url: t.string,
       type: searchElementType,
       text: t.string
@@ -122,7 +123,11 @@ function setUpSearchListeners(
     }
   });
 
-  $searchDialog.addEventListener('close', () => ($searchInput.value = ''));
+  $searchDialog.addEventListener('close', () => {
+    $searchInput.value = '';
+    renderSearchResults();
+    searchActive = false;
+  });
 
   $searchInput.addEventListener('keyup', handleSearchInputKeyup(idx, data));
 
@@ -182,22 +187,36 @@ function handleSearchInputKeydown(event: KeyboardEvent): void {
 function selectPreviousSearchResult(): void {
   const activeElement = $searchResults.querySelector('.search-result.active');
   activeElement?.classList.remove('active');
-  (
+
+  const newActiveElement =
     activeElement?.previousElementSibling ??
-    $searchResults.querySelector('.search-result:last-child')
-  )?.classList.add('active');
+    $searchResults.querySelector('.search-result:last-child');
+  if (newActiveElement) {
+    newActiveElement.classList.add('active');
+    if (!elementIsVisibleInViewport(newActiveElement)) {
+      newActiveElement.scrollIntoView();
+    }
+  }
 }
 
 function selectNextSearchResult(): void {
   const activeElement = $searchResults.querySelector('.search-result.active');
   activeElement?.classList.remove('active');
-  (
+
+  const newActiveElement =
     activeElement?.nextElementSibling ??
-    $searchResults.querySelector('.search-result')
-  )?.classList.add('active');
+    $searchResults.querySelector('.search-result');
+  if (newActiveElement) {
+    newActiveElement.classList.add('active');
+    if (!elementIsVisibleInViewport(newActiveElement)) {
+      newActiveElement.scrollIntoView();
+    }
+  }
 }
 
 function goToSelectedSearchResult(): void {
+  $searchDialog.close();
+
   $searchResults
     .querySelector<HTMLAnchorElement>('.search-result.active a')
     ?.click();
@@ -230,7 +249,7 @@ function performSearch(idx: lunr.Index, data: readonly SearchElement[]): void {
 
   const results = idx
     .search(query)
-    .slice(0, 10)
+    .slice(0, 20)
     .reduce((acc, result) => {
       const element = data.find(e => e.id === result.ref);
       return element ? [...acc, { ...result, datum: element }] : acc;
@@ -268,10 +287,7 @@ function renderSearchResults(
       .with('subject', () => '📖')
       .exhaustive();
     element.querySelector('.title')!.textContent = result.datum.title;
-    element.querySelector('.subtitle')!.textContent = result.datum.text.slice(
-      0,
-      50
-    );
+    element.querySelector('.subtitle')!.textContent = result.datum.subtitle;
     element.querySelector('.link')!.setAttribute('href', result.datum.url);
     $searchResults.append(element);
   }
@@ -390,4 +406,14 @@ function showSearchDialog(): void {
   $searchDialog.showModal();
   searchActive = true;
   setTimeout(() => $searchInput.focus(), 100);
+}
+
+function elementIsVisibleInViewport(el, partiallyVisible = false): boolean {
+  const { top, left, bottom, right } = el.getBoundingClientRect();
+  const { innerHeight, innerWidth } = window;
+  return partiallyVisible
+    ? ((top > 0 && top < innerHeight) ||
+        (bottom > 0 && bottom < innerHeight)) &&
+        ((left > 0 && left < innerWidth) || (right > 0 && right < innerWidth))
+    : top >= 0 && left >= 0 && bottom <= innerHeight && right <= innerWidth;
 }

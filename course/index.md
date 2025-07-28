@@ -3,6 +3,7 @@ id: home
 title: Architecture & Deployment
 title_include: main-title.html
 layout: home
+search: true
 ---
 
 In this course you will learn:

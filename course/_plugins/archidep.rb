@@ -209,6 +209,74 @@ Jekyll::Hooks.register :documents, :post_write do |doc|
   Jekyll.logger.info "Formatted JSON file #{dest_path}"
 end
 
+Jekyll::Hooks.register :site, :post_render do |site|
+  docs = []
+  site.pages.each { |page| docs << page if page.data["search"] }
+
+  site.collections["course"].docs.each { |doc| docs << doc }
+
+  search_elements =
+    docs.flat_map do |doc|
+      html_doc = Nokogiri.HTML(doc.content)
+
+      type = doc.data["course_type"]
+      type = "home" if doc.data["layout"] == "home"
+
+      current_search_element = {
+        id: doc.url,
+        type: type,
+        url: doc.url,
+        title: doc.data["title"].sub(/^:[^:]+:\s*/, ""),
+        subtitle: doc.data["title"],
+        elements: []
+      }
+
+      doc_search_elements = []
+
+      top_level_elements = html_doc.css("body > *")
+      top_level_elements.each do |element|
+        # If tag is a heading, start a new search element
+        if element.name.match?(/^h[1-6]$/) and element["id"] and
+             not current_search_element[:elements].empty?
+          unless current_search_element[:elements].empty?
+            doc_search_elements << current_search_element
+          end
+
+          current_search_element = {
+            id: "#{doc.url}##{element["id"]}",
+            type: type,
+            url: "#{doc.url}##{element["id"]}",
+            title: element.text.sub(/^:[^:]+:\s*/, ""),
+            subtitle: doc.data["title"],
+            elements: []
+          }
+        end
+
+        current_search_element[:elements] << element
+      end
+
+      unless current_search_element.empty?
+        doc_search_elements << current_search_element
+      end
+
+      doc_search_elements.map do |group|
+        group[:text] = group[:elements]
+          .map(&:text)
+          .join(" ")
+          .gsub(/\s+/, " ")
+          .strip
+        group.delete :elements
+        group
+      end
+    end
+
+  site.data["search_elements"] = search_elements
+end
+
 Jekyll::Hooks.register :site, :post_write do |site|
+  File.write(
+    File.join(site.dest, "search.json"),
+    JSON.pretty_generate(site.data["search_elements"])
+  )
   system("npm run idx")
 end
