@@ -1,4 +1,5 @@
-main > .highlight, main > .highlighter-rouge {
+main > .highlight,
+main > .highlighter-rouge {
   @apply -ml-4 lg:-ml-6 xl:-ml-8 -mr-4 lg:-mr-6 xl:-mr-8;
 }
 
