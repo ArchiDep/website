@@ -272,7 +272,7 @@ Jekyll::Hooks.register :site, :post_render do |site|
         url: "/app",
         title: "Dashboard",
         subtitle: "Dashboard",
-        text: "App Dash Dashboard",
+        text: "app dash dashboard",
         extra_search_text: ""
       })
 

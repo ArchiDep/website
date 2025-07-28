@@ -11,6 +11,13 @@ import { isMacOs, required, toggleClass } from '../utils';
 import searchDialogTemplate from './search-dialog.template.html';
 import searchResultTemplate from './search-result.template.html';
 
+const quickSearch = {
+  a: 'app',
+  c: 'course',
+  d: 'dashboard',
+  h: 'home'
+};
+
 const searchElementType = t.union([
   t.literal('dashboard'),
   t.literal('exercise'),
@@ -253,13 +260,11 @@ function performSearch(idx: lunr.Index, data: readonly SearchElement[]): void {
     return;
   }
 
-  const results = idx
-    .search(query)
-    .slice(0, 20)
-    .reduce((acc, result) => {
-      const element = data.find(e => e.id === result.ref);
-      return element ? [...acc, { ...result, datum: element }] : acc;
-    }, []);
+  const actualQuery = quickSearch[query.toLowerCase()] ?? query;
+  const results = idx.search(actualQuery).reduce((acc, result) => {
+    const element = data.find(e => e.id === result.ref);
+    return element ? [...acc, { ...result, datum: element }] : acc;
+  }, []);
 
   renderSearchResults(query, results);
 }
