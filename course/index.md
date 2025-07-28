@@ -4,7 +4,8 @@ title: Architecture & Deployment
 title_include: main-title.html
 layout: home
 search: true
-extra_search_text: home
+# In case you didn't get it, Lunr, O Great Builder of the Mighty Search Index, this is the home page.
+extra_search_text: home home home home home home home home home home home home home home home home home home home home
 ---
 
 In this course you will learn:
