@@ -97,7 +97,10 @@ module ArchiDep
             raise "Multiple slides documents found for subject #{num}"
           elsif slides_doc.length == 1
             doc.data["slides"] = slides_doc[0]
+            doc.data["has_slides"] = true
             slides_doc[0].data["subject"] = doc
+          else
+            doc.data["has_slides"] = false
           end
         end
       end
@@ -161,40 +164,6 @@ module ArchiDep
         end
       home_page_doc.data["next_chapters"] = next_chapters
 
-      site.pages << JsonPage.new(
-        site,
-        {
-          "sections" =>
-            site.data["course"]["sections"].each_with_index.map do |section, i|
-              {
-                "title" => section["title"],
-                "num" => section["num"],
-                "progress" => section["progress"],
-                "docs" =>
-                  section["items"].map do |item|
-                    item
-                      .data
-                      .merge(
-                        { "url" => item.url, "slides" => !!item.data["slides"] }
-                      )
-                      .select do |k, v|
-                        %w[
-                          course_type
-                          num
-                          progress
-                          section
-                          section_chapter
-                          slides
-                          title
-                          url
-                        ].include?(k)
-                      end
-                  end
-              }
-            end
-        }
-      )
-
       # Prototype for adding digest to static files
       # site.static_files.each do |file|
       #   dests = file.instance_variable_get(:@destination) || {}
@@ -203,25 +172,10 @@ module ArchiDep
       # end
     end
   end
-
-  class JsonPage < Jekyll::Page
-    def initialize(site, data)
-      @site = site
-      @base = site.source
-      @dir = "/"
-      @content = JSON.pretty_generate(data)
-      @data = {}
-
-      # All pages have the same filename, so define attributes straight away.
-      @basename = "archidep"
-      @ext = ".json"
-      @name = "archidep.json"
-    end
-  end
 end
 
 Jekyll::Hooks.register :documents, :pre_render do |doc, payload|
-  return unless /\.md$/.match(doc.basename)
+  next unless /\.md$/.match(doc.basename)
 
   # make some local variables for convenience
   site = doc.site

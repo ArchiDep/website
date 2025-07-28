@@ -1,0 +1,14 @@
+---
+permalink: /lunr.json
+---
+[
+{%- for section in site.data.course.sections -%}
+  {%- unless section.items == empty or forloop.first %},{% endunless -%}
+  {%- for item in section.items -%}
+    {"id":{{ item.url | jsonify }},"title":{{ item.title | jsonify }},"url":{{ item.url | jsonify }},"content":
+    {{- item.content | strip_html | jsonify -}}
+    }
+    {%- unless forloop.last %},{% endunless -%}
+  {%- endfor -%}
+{%- endfor -%}
+]

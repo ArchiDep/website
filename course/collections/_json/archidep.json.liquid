@@ -1,0 +1,20 @@
+---
+permalink: /archidep.json
+---
+{"sections":[
+{%- for section in site.data.course.sections -%}
+  {"title":{{ section.title | jsonify }},"num":{{ section.num | jsonify }},"progress":
+  {{- section.progress | jsonify -}}
+  ,"docs":[
+  {%- for item in section.items -%}
+    {"title":{{ item.title | jsonify }},"num":{{ item.num | jsonify }},"course_type":
+    {{- item.course_type | jsonify -}}
+    ,"section":{{ item.section | jsonify }},"section_chapter":{{ item.section_chapter | jsonify }},"progress":
+    {{- item.progress | jsonify -}}
+    ,"slides":{{ item.has_slides | jsonify }},"url":{{ item.url | jsonify }}}
+    {%- unless forloop.last %},{% endunless -%}
+  {%- endfor -%}
+  ]}
+  {%- unless forloop.last %},{% endunless -%}
+{%- endfor -%}
+]}
