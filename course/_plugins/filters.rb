@@ -1,7 +1,7 @@
 module ArchiDep
   module Filters
     def collapse_whitespace(text)
-      text.gsub(/\s+/, ' ')
+      text.gsub(/\s+/, " ")
     end
   end
 end
