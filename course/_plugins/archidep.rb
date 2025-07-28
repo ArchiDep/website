@@ -266,6 +266,16 @@ Jekyll::Hooks.register :site, :post_render do |site|
       end
     end
 
+  search_elements.prepend({
+        id: "/app",
+        type: "dashboard",
+        url: "/app",
+        title: "Dashboard",
+        subtitle: "Dashboard",
+        text: "App Dash Dashboard",
+        extra_search_text: ""
+      })
+
   site.data["search_elements"] = search_elements
 end
 

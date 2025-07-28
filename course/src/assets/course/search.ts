@@ -12,6 +12,7 @@ import searchDialogTemplate from './search-dialog.template.html';
 import searchResultTemplate from './search-result.template.html';
 
 const searchElementType = t.union([
+  t.literal('dashboard'),
   t.literal('exercise'),
   t.literal('home'),
   t.literal('slides'),
@@ -289,6 +290,7 @@ function renderSearchResults(
 
     const element = ul.querySelector('li')!;
     element.querySelector('.icon')!.textContent = match(result.datum.type)
+      .with('dashboard', () => '🚀')
       .with('exercise', () => '🔨')
       .with('home', () => '🏠')
       .with('slides', () => '🎬')
