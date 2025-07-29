@@ -61,16 +61,15 @@ Follow these steps to script and automate your entire treasure hunt:
 $> sh auto_hunt
 ```
 
-<details>
-<summary>Solution</summary>
+{% solution %}
 
 ```bash
 #!/bin/bash
 cd ~/treasure_hunt
 
 read_clue() {
-        cat $1
-        sleep 2
+  cat $1
+  sleep 2
 }
 
 read_clue cave/echo.txt
@@ -82,7 +81,7 @@ read_clue forest/tree.txt
 sh forest/tree.txt
 ```
 
-</details>
+{% endsolution %}
 
 ## :exclamation: Make `auto_hunt` executable
 
