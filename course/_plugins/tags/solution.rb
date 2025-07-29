@@ -32,10 +32,10 @@ module ArchiDep
           </div>
           <div class="collapse-content">
           #{
-            context.registers[:site].find_converter_instance(
-              Jekyll::Converters::Markdown
-            ).convert(text)
-          }
+        context.registers[:site].find_converter_instance(
+          Jekyll::Converters::Markdown
+        ).convert(text)
+      }
           </div>
         </div>|
     end
