@@ -7,6 +7,22 @@ main a {
   @apply hover:text-accent;
 }
 
+main blockquote {
+  @apply not-italic text-lg 2xl:text-xl text-base-content/50;
+}
+
+main blockquote a {
+  @apply text-base-content/75;
+}
+
+main blockquote p:first-of-type {
+  @apply before:content-none;
+}
+
+main blockquote p:last-of-type {
+  @apply after:content-none;
+}
+
 main img.emoji {
   @apply size-5 xl:size-6 2xl:size-7;
 }
