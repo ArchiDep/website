@@ -1,4 +1,4 @@
-import { O, pipe, S } from '@mobily/ts-belt';
+import { N, O, pipe, S } from '@mobily/ts-belt';
 import { isLeft } from 'fp-ts/lib/Either';
 import * as t from 'io-ts';
 import { debounce } from 'lodash-es';
@@ -43,6 +43,8 @@ type SearchElement = t.TypeOf<typeof searchElement>;
 type SearchResult = lunr.Index.Result & {
   readonly datum: SearchElement;
 };
+
+type SearchPosition = readonly [number, number];
 
 const searchData = t.readonlyArray(searchElement);
 
@@ -189,11 +191,11 @@ function handleSearchInputKeydown(event: KeyboardEvent): void {
   switch (event.code) {
     case 'ArrowUp':
       event.preventDefault();
-      selectPreviousSearchResult();
+      requestAnimationFrame(() => selectPreviousSearchResult());
       return;
     case 'ArrowDown':
       event.preventDefault();
-      selectNextSearchResult();
+      requestAnimationFrame(() => selectNextSearchResult());
       return;
     case 'Enter':
       event.preventDefault();
@@ -295,12 +297,14 @@ function goToSelectedSearchResult(): void {
 
 function showMoreSearchResults(): void {
   if ($searchMoreResults.classList.contains('active')) {
-    $searchResults.querySelector('.hidden')?.classList.add('active');
+    $searchResults
+      .querySelector('.search-result.hidden')
+      ?.classList.add('active');
     $searchMoreResults.classList.remove('active');
   }
 
   $searchResults
-    .querySelectorAll('.hidden')
+    .querySelectorAll('.search-result.hidden')
     .forEach(el => el.classList.remove('hidden'));
   $searchMoreResults.classList.add('hidden');
 
@@ -366,15 +370,50 @@ function renderSearchResults(
     ul.innerHTML = searchResultTemplate;
 
     const element = ul.querySelector('li')!;
-    element.querySelector('.icon')!.textContent = match(result.datum.type)
-      .with('dashboard', () => '🚀')
+    element.querySelector('.icon')!.innerHTML = match(result.datum.type)
+      .with(
+        'dashboard',
+        () => `
+        <svg
+          class="size-6"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"
+          />
+        </svg>
+      `
+      )
       .with('exercise', () => '🔨')
       .with('home', () => '🏠')
       .with('slides', () => '🎬')
       .with('subject', () => '📖')
       .exhaustive();
-    element.querySelector('.title')!.textContent = result.datum.title;
+
+    const titleHtml = pipe(
+      O.fromNullable(query),
+      O.mapNullable(q => result.matchData.metadata[q]?.['title']?.['position']),
+      O.map(positions => highlight(result.datum.title, positions)),
+      O.getWithDefault(result.datum.title)
+    );
+    element.querySelector('.title')!.innerHTML = titleHtml;
+
     element.querySelector('.subtitle')!.textContent = result.datum.subtitle;
+
+    const textHtml = pipe(
+      O.fromNullable(query),
+      O.mapNullable(q => result.matchData.metadata[q]?.['text']?.['position']),
+      O.map(positions => highlight(result.datum.text, positions)),
+      O.getWithDefault(result.datum.text)
+    );
+    element.querySelectorAll('.text').forEach(el => (el.innerHTML = textHtml));
+
     element.querySelector('.link')!.setAttribute('href', result.datum.url);
 
     if (i >= 10) {
@@ -390,6 +429,50 @@ function renderSearchResults(
   if (results.length <= 10) {
     $searchMoreResults.classList.remove('active');
   }
+}
+
+function highlight(text: string, positions: readonly SearchPosition[]): string {
+  const container = document.createElement('p');
+
+  let relevantStart = pipe(
+    O.fromNullable(positions[0]),
+    O.map(pos => pos[0]),
+    O.map(N.subtract(25)),
+    O.map(i => Math.max(0, i)),
+    O.getWithDefault(0)
+  );
+
+  const relevantEnd = Math.min(text.length, relevantStart + 250);
+
+  if (relevantEnd - relevantStart < 150) {
+    relevantStart = Math.max(
+      0,
+      relevantStart - (150 - (relevantEnd - relevantStart))
+    );
+  }
+
+  let offset = relevantStart;
+  for (const [start, len] of positions) {
+    if (start + len > relevantEnd) {
+      break;
+    }
+
+    const before = text.slice(offset, start);
+    const match = text.slice(start, start + len);
+    offset = start + len;
+
+    const span = document.createElement('span');
+    span.className = 'highlight';
+    span.textContent = match;
+
+    container.append(before, span);
+  }
+
+  if (offset < relevantEnd) {
+    container.append(text.slice(offset, relevantEnd));
+  }
+
+  return container.innerHTML;
 }
 
 function loadSearchIndex(): Promise<lunr.Index> {

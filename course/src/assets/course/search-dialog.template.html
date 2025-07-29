@@ -3,7 +3,7 @@
   class="modal modal-bottom sm:modal-middle"
   phx-update="ignore"
 >
-  <div class="modal-box p-0">
+  <div class="modal-box sm:w-11/12 sm:max-w-3xl p-0">
     <label
       class="input w-full border-0 focus-within:outline-0 border-b border-b-black/20 dark:border-b-white/20 rounded-b-none"
     >
@@ -61,6 +61,7 @@
         N results found:
       </p>
       <ul id="search-results" class="list hidden"></ul>
+      <p class="hidden max-md:list-col-wrap"></p>
       <p
         id="search-more-results"
         class="px-4 pt-2 pb-4 text-xs opacity-60 uppercase text-center cursor-pointer hover:bg-primary/25 hidden"

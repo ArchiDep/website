@@ -16,6 +16,7 @@ const idx = lunr(function () {
   this.ref('id');
   this.field('title');
   this.field('text');
+  this.field('extraText', { boost: 10 });
   this.metadataWhitelist = ['position'];
 
   for (const [i, doc] of documents.entries()) {

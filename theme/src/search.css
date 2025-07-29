@@ -2,3 +2,15 @@
 #search-dialog #search-more-results.active {
   @apply bg-primary/50;
 }
+
+#search-dialog #search-results .highlight {
+  @apply px-1 font-bold;
+}
+
+#search-dialog #search-results .title .highlight {
+  @apply bg-primary text-primary-content;
+}
+
+#search-dialog #search-results .text .highlight {
+  @apply bg-info/85 text-info-content;
+}

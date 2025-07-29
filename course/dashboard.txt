@@ -1,0 +1,10 @@
+---
+id: dashboard
+title: Dashboard
+permalink: /integration/dashboard
+search: true
+search_subtitle: User & server dashboard
+search_url: /app
+---
+
+Manage your user account for the course and register a server for the exercises.

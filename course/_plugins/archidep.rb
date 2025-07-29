@@ -218,17 +218,16 @@ Jekyll::Hooks.register :site, :post_render do |site|
     docs.flat_map do |doc|
       html_doc = Nokogiri.HTML(doc.content)
 
-      type = doc.data["course_type"]
-      type = "home" if doc.data["layout"] == "home"
+      type = doc.data["course_type"] || doc.data["id"]
 
       current_search_element = {
-        id: doc.url,
+        id: doc.data["search_url"] || doc.url,
         type: type,
-        url: doc.url,
-        title: doc.data["title"].sub(/^:[^:]+:\s*/, ""),
-        subtitle: doc.data["title"],
+        url: doc.data["search_url"] || doc.url,
+        title: doc.data["title"].sub(/:[^:]+:\s*/, "").strip,
+        subtitle: doc.data["search_subtitle"] || doc.data["title"],
         elements: [],
-        extra_search_text: doc.data["extra_search_text"] || ""
+        extra_search_text: doc.data["search_extra_text"] || ""
       }
 
       doc_search_elements = []
@@ -251,7 +250,11 @@ Jekyll::Hooks.register :site, :post_render do |site|
           }
         end
 
-        current_search_element[:elements] << element
+        unless element.name.match?(/^h[1-6]$/) and
+                 element.text.sub(/:[^:]+:\s*/, "").strip ==
+                   current_search_element[:title]
+          current_search_element[:elements] << element
+        end
       end
 
       unless current_search_element.empty?
@@ -259,24 +262,17 @@ Jekyll::Hooks.register :site, :post_render do |site|
       end
 
       doc_search_elements.map do |group|
-        group[:text] = group[:extra_search_text] + " " +
-          (group[:elements].map(&:text).join(" ")).gsub(/\s+/, " ").strip
+        group[:text] = group[:elements]
+          .map(&:text)
+          .join(" ")
+          .gsub(/\s+/, " ")
+          .strip
+        group[:extraText] = group[:extra_search_text]
         group.delete :elements
+        group.delete :extra_search_text
         group
       end
     end
-
-  search_elements.prepend(
-    {
-      id: "/app",
-      type: "dashboard",
-      url: "/app",
-      title: "Dashboard",
-      subtitle: "Dashboard",
-      text: "dash dashboard",
-      extra_search_text: ""
-    }
-  )
 
   site.data["search_elements"] = search_elements
 end
