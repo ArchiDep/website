@@ -15,5 +15,5 @@ h6 {
 }
 
 img.emoji {
-  @apply inline my-0 h-6 lg:h-7 xl:h-8 2xl:h-9;
+  @apply inline my-0;
 }

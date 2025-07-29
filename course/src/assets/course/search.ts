@@ -390,7 +390,7 @@ function renderSearchResults(
         </svg>
       `
       )
-      .with('exercise', () => '🔨')
+      .with('exercise', () => '🛠️')
       .with('home', () => '🏠')
       .with('slides', () => '🎬')
       .with('subject', () => '📖')

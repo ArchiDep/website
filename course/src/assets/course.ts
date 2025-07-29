@@ -8,7 +8,9 @@ import { Socket } from 'phoenix';
 import { iso8601DateTime } from '../shared/codecs/iso8601-date-time';
 import { parseJsonSafe, required, toggleClass } from './utils';
 import { HttpAuthenticationError } from './errors';
+import './course/back-to-top';
 import './course/search';
+import './course/toc';
 import log from './logging';
 
 const logger = log.getLogger('app');

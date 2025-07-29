@@ -7,6 +7,52 @@ main a {
   @apply hover:text-accent;
 }
 
+main img.emoji {
+  @apply size-5 xl:size-6 2xl:size-7;
+}
+
+main h2 {
+  &:has(> img.emoji) {
+    @apply pl-[calc(var(--spacing)*10)] 2xl:pl-[calc(var(--spacing)*13)];
+  }
+
+  & > img.emoji {
+    @apply size-9 lg:size-9 xl:size-9 2xl:size-11 float-left -ml-[calc(var(--spacing)*10)] 2xl:-ml-[calc(var(--spacing)*13)];
+  }
+}
+
+main h3 {
+  &:has(> img.emoji) {
+    @apply pl-[calc(var(--spacing)*9)] 2xl:pl-[calc(var(--spacing)*12)];
+  }
+
+  & > img.emoji {
+    @apply size-8 lg:size-8 xl:size-8 2xl:size-10 float-left -ml-[calc(var(--spacing)*9)] 2xl:-ml-[calc(var(--spacing)*12)];
+  }
+}
+
+main h4, main h5, main h6 {
+  &:has(> img.emoji) {
+    @apply pl-[calc(var(--spacing)*7)] 2xl:pl-[calc(var(--spacing)*10)];
+  }
+
+  & > img.emoji {
+    @apply size-6 lg:size-6 xl:size-6 2xl:size-8 float-left -ml-[calc(var(--spacing)*7)] 2xl:-ml-[calc(var(--spacing)*10)];
+  }
+}
+
+main .solution pre.highlight {
+  @apply -mx-4;
+}
+
+main .solution .highlighter-rouge:first-child pre.highlight {
+  @apply mt-0 rounded-t-none;
+}
+
+main .solution .highlighter-rouge:last-child pre.highlight {
+  @apply -mb-4;
+}
+
 .callout {
   @apply shadow-lg p-4 -ml-4 md:-ml-6 lg:-ml-9 xl:-ml-11 relative rounded-tr-lg rounded-br-lg md:before:content-[''] md:before:size-2 lg:before:size-3 md:before:left-0 md:before:-top-2 lg:before:-top-3 md:before:absolute md:before:border-[0.25rem] lg:before:border-[0.375rem] md:before:border-solid md:before:border-white md:before:border-t-transparent md:before:border-l-transparent;
   @apply flex items-start gap-6;

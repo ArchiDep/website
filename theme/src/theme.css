@@ -18,7 +18,7 @@
 @source "../../course/_includes";
 @source "../../course/index.md";
 @source "../../course/_layouts";
-@source "../../course/plugins";
+@source "../../course/_plugins";
 @source "../../course/_posts";
 @source "../../course/src/assets";
 

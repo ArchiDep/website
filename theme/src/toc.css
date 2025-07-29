@@ -10,30 +10,78 @@ aside .toc ul li a {
   @apply inline-block text-base-content/75 hover:text-base-content;
 }
 
-aside .toc a {
-  @apply border-l-2 border-l-gray-300 dark:border-l-gray-600 hover:border-l-gray-800 dark:hover:border-l-gray-200;
+aside .toc ul a {
+  @apply border-l-2 border-l-gray-300 dark:border-l-gray-600 hover:border-l-gray-800 dark:hover:border-l-gray-200 py-0.5;
 }
 
 aside .toc .toc-h1 > a {
   @apply pl-2 font-bold;
+
+  &:has(> img.emoji) {
+    @apply pl-[calc(var(--spacing)*2+25px)];
+  }
+
+  & > img.emoji {
+    @apply float-left -ml-[25px];
+  }
 }
 
 aside .toc .toc-h2 > a {
   @apply pl-3;
+
+  &:has(> img.emoji) {
+    @apply pl-[calc(var(--spacing)*3+25px)];
+  }
+
+  & > img.emoji {
+    @apply float-left -ml-[25px];
+  }
 }
 
 aside .toc .toc-h3 > a {
   @apply pl-6;
+
+  &:has(> img.emoji) {
+    @apply pl-[calc(var(--spacing)*6+25px)];
+  }
+
+  & > img.emoji {
+    @apply float-left -ml-[25px];
+  }
 }
 
 aside .toc .toc-h4 > a {
   @apply pl-9;
+
+  &:has(> img.emoji) {
+    @apply pl-[calc(var(--spacing)*9+25px)];
+  }
+
+  & > img.emoji {
+    @apply float-left -ml-[25px];
+  }
 }
 
 aside .toc .toc-h5 > a {
   @apply pl-12;
+
+  &:has(> img.emoji) {
+    @apply pl-[calc(var(--spacing)*12+25px)];
+  }
+
+  & > img.emoji {
+    @apply float-left -ml-[25px];
+  }
 }
 
 aside .toc .toc-h6 > a {
   @apply pl-14;
+
+  &:has(> img.emoji) {
+    @apply pl-[calc(var(--spacing)*14+25px)];
+  }
+
+  & > img.emoji {
+    @apply float-left -ml-[25px];
+  }
 }
