@@ -22,7 +22,7 @@ module ArchiDep
     def render(context)
       text = super
 
-      %|<div class="solution collapse screen:collapse-arrow print:collapse-open border border-neutral">
+      %|<div class="solution collapse screen:collapse-arrow print:collapse-open border border-neutral hover:bg-primary/25">
           <input type="checkbox" />
           <div class="collapse-title font-semibold">
             <div class="flex items-center gap-2">
