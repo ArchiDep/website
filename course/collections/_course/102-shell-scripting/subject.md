@@ -116,9 +116,7 @@ Any script with a shell as the interpreter is a "shell script".
 
 ## Shell script basics
 
-<!-- slide-front-matter class: center, middle -->
-
-> A few pointers on writing Bash scripts (compatible with most POSIX shells).
+A few pointers on writing Bash scripts (compatible with most POSIX shells).
 
 ### Commands
 

@@ -47,6 +47,7 @@ On **Unix-like** systems _(like macOS or Linux)_, it's an application called the
 
 You can use it right away, as it's the _de-facto_ standard.
 {% endmarkdown %}
+
   </div>
   <div>
 {% markdown %}
@@ -58,7 +59,9 @@ You also have [PowerShell](https://en.wikipedia.org/wiki/PowerShell) which is
 better, but is not a Unix-like CLI either.
 
 > **You'll need to install an alternative.**
+
 {% endmarkdown %}
+
   </div>
 </div>
 
@@ -244,12 +247,12 @@ need, then hit the `Tab` key:
 
 <div class="flex flex-col sm:flex-row items-center gap-4">
   <div class="grow">
-    <img src='images/auto-complete.png' class="!m-0" />
+    <img src='images/auto-complete.png' class="w-full !m-0" />
   </div>
   <kbd class="kbd shrink-0 hidden sm:inline-flex animate-pulse">- Tab -></kbd>
   <kbd class="kbd shrink-0 sm:hidden animate-pulse">v Tab v</kbd>
   <div class="grow">
-    <img src='images/auto-complete-tab.png' class="!m-0" />
+    <img src='images/auto-complete-tab.png' class="w-full !m-0" />
   </div>
 </div>
 
@@ -315,8 +318,6 @@ Depending on the documentation, you will also see symbols like this:
 Replace it by an appropriate value for that option or argument.
 
 ## Using the filesystem
-
-<!-- slide-front-matter class: center, middle -->
 
 ### The `pwd` command
 
@@ -396,22 +397,25 @@ at the root of your filesystem so it does not matter where you are now.
 
 #### The `.` path
 
-The `.` path represents the current directory. The following sequences of
-commands are strictly equivalent:
+The `.` path represents the current directory. The following commands are
+strictly equivalent:
 
-<!-- slide-column -->
-
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+{% markdown %}
 ```bash
 $> cd Documents/TopSecret
 ```
-
-<!-- slide-column -->
-
+{% endmarkdown %}
+  </div>
+  <div>
+{% markdown %}
 ```bash
 $> cd ./Documents/TopSecret
 ```
-
-<!-- slide-container -->
+{% endmarkdown %}
+  </div>
+</div>
 
 You can also _not go anywhere_:
 
@@ -455,25 +459,29 @@ $> cd
 $> cd /Users/Batman/Pictures/
 ```
 
-At anytime and from anywhere, you can return to your **home directory** with the `cd` command, without any argument or with a `~` (tilde):
+At any time and from anywhere, you can return to your **home directory** with
+the `cd` command, without any argument or with a `~` (tilde):
 
-<!-- slide-column -->
-
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+{% markdown %}
 ```bash
 $> cd
 $> pwd
 /Users/Batman
 ```
-
-<!-- slide-column -->
-
+{% endmarkdown %}
+  </div>
+  <div>
+{% markdown %}
 ```bash
 $> cd ~
 $> pwd
 /Users/Batman
 ```
-
-<!-- slide-notes -->
+{% endmarkdown %}
+  </div>
+</div>
 
 > To type the `~` character, use this combination:
 >
@@ -509,9 +517,10 @@ For example, on John Doe's macOS system, it could be `/Users/jdoe/Projects`.
 > happen to have a `path` directory that contains a `to` directory that contains
 > a `projects` directory...
 
-**WARNING:** if your Windows/Linux/macOS username contains **spaces** or **accents**, you should **NOT** store your projects under your home directory.
-You should find a path elsewhere on your filesystem.
-This will save you **a lot of needless pain and suffering**.
+**WARNING:** if your Windows/Linux/macOS username contains **spaces** or
+**accents**, you should **NOT** store your projects under your home directory.
+You should find a path elsewhere on your filesystem. This will save you **a lot
+of needless pain and suffering**.
 
 ### The `mkdir` command
 
@@ -652,11 +661,9 @@ shortcuts:
 
 ## Vim
 
-<!-- slide-front-matter class: center, middle -->
+[**Vim**][vim] is an infamous CLI editor originally developed in 1976 (WHAT?!)
+for the Unix operating system.
 
-> [**Vim**][vim] is an infamous CLI editor originally developed in 1976 (WHAT?!)
-> for the Unix operating system.
->
 > The name comes from "**vi** i**m**proved", because Vim is an improved clone of
 > an earlier editor: [vi][vi] (from **vi**sual).
 
@@ -736,8 +743,6 @@ From there, you can use some commands:
 
 ## Nano
 
-<!-- slide-front-matter class: center, middle, image-header -->
-
 <img src='images/nano.jpg' class='w40' />
 
 > Nano: a simpler CLI editor to keep your sanity.
@@ -816,18 +821,18 @@ bash
 > **Hint:** now that you know how to use nano, you can edit your Bash profile
 > file with the following command: `nano ~/.bash_profile`.
 
-<!-- slide-notes -->
-
-On Ubuntu, you can list available editors and choose the default one with the
-following command:
-
-```bash
-$> sudo update-alternatives --config editor
-```
+> On Ubuntu, you can list available editors and choose the default one with the
+> following command:
+>
+> ```bash
+> $> sudo update-alternatives --config editor
+> ```
 
 ## The `PATH` variable
 
-When you type a command in the CLI, it will try to see **if it knows this command** by looking in some directories to see if there is an **executable file that matches the command name**.
+When you type a command in the CLI, it will try to see **if it knows this
+command** by looking in some directories to see if there is an **executable file
+that matches the command name**.
 
 ```bash
 $> rubbish
@@ -981,22 +986,31 @@ the filename.
 
 #### Does it work?
 
-> Remember to **close and re-open your CLI** to have the shell reload its configuration file.
+> Remember to **close and re-open your CLI** to have the shell reload its
+> configuration file.
 
-<!-- slide-column -->
-
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="order-1 md:order-none flex items-end">
+{% markdown %}
 You should now be able to run the Hello World shell script as a command simply
 by typing `hello`:
-
+{% endmarkdown %}
+  </div>
+  <div class="order-3 md:order-none flex items-end">
+{% markdown %}
+You don't even have to be in the correct directory:
+{% endmarkdown %}
+  </div>
+  <div class="order-2 md:order-none">
+{% markdown %}
 ```bash
 $> hello
 Hello World
 ```
-
-<!-- slide-column -->
-
-You don't even have to be in the correct directory:
-
+{% endmarkdown %}
+  </div>
+  <div class="order-4 md:order-none">
+{% markdown %}
 ```bash
 $> cd
 $> pwd
@@ -1004,8 +1018,9 @@ $> pwd
 $> hello
 Hello World
 ```
-
-<!-- slide-container -->
+{% endmarkdown %}
+  </div>
+</div>
 
 And your CLI knows where it is:
 
@@ -1045,8 +1060,6 @@ The next time you run a command, your shell will **first look** in this director
 
 ## Unleash your terminal
 
-<!-- slide-front-matter class: center, middle -->
-
 <img class='w100' src='images/unleash-your-terminal.png' />
 
 ### Oh My Zsh
@@ -1073,10 +1086,6 @@ Oh My Zsh as well][oh-my-zsh-windows].
   alternative)
 - [`rsync`](https://rsync.samba.org) for incremental file transfers (`cp` &
   `scp` alternative)
-
-<!-- slide-column 30 -->
-
-<!-- slide-column -->
 
 <div class="grid grid-cols-1 md:grid-cols-2">
   <div>
