@@ -1,5 +1,5 @@
 .highlight pre { background-color: #fdf6e3; color: #586e75 }
-.highlight .hll { background-color: #eeee00; padding-top: 0.5em; padding-right: 0.5em; padding-bottom: 0.5em } /* Highlight */
+.highlight .hll { background-color: #eeee00; margin-left: -0.5em; padding-left: 0.5em; padding-top: 0.5em; padding-right: 0.5em; padding-bottom: 0.5em } /* Highlight */
 .highlight .c { color: #93a1a1 } /* Comment */
 .highlight .err { color: #586e75 } /* Error */
 .highlight .g { color: #586e75 } /* Generic */
