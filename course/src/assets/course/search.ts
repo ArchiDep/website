@@ -1,8 +1,8 @@
 import { O, pipe, S } from '@mobily/ts-belt';
-import * as t from 'io-ts';
-import lunr from 'lunr';
 import { isLeft } from 'fp-ts/lib/Either';
+import * as t from 'io-ts';
 import { debounce } from 'lodash-es';
+import lunr from 'lunr';
 import { match } from 'ts-pattern';
 
 import { getValidationErrorDetails } from '../../shared/codecs/utils';
@@ -106,6 +106,11 @@ const $searchResultsCount = required(
   'Search results count element not found'
 );
 
+const $searchMoreResults = required(
+  document.getElementById('search-more-results'),
+  'Show more results element not found'
+);
+
 let searchActive = false;
 let searchResults: readonly SearchResult[] = [];
 
@@ -141,8 +146,9 @@ function setUpSearchListeners(
     searchActive = false;
   });
 
-  $searchInput.addEventListener('keyup', handleSearchInputKeyup(idx, data));
+  $searchMoreResults.addEventListener('click', showMoreSearchResults);
 
+  $searchInput.addEventListener('keyup', handleSearchInputKeyup(idx, data));
   $searchInput.addEventListener('keydown', handleSearchInputKeydown);
 }
 
@@ -197,12 +203,36 @@ function handleSearchInputKeydown(event: KeyboardEvent): void {
 }
 
 function selectPreviousSearchResult(): void {
-  const activeElement = $searchResults.querySelector('.search-result.active');
+  const activeElement =
+    $searchResults.querySelector('.search-result.active') ??
+    pipe(
+      O.fromNullable($searchMoreResults),
+      O.filter(el => el.classList.contains('active')),
+      O.toUndefined
+    );
   activeElement?.classList.remove('active');
 
   const newActiveElement =
-    activeElement?.previousElementSibling ??
-    $searchResults.querySelector('.search-result:last-child');
+    pipe(
+      O.fromNullable(activeElement?.previousElementSibling),
+      O.filter(
+        el =>
+          el.classList.contains('search-result') &&
+          !el.classList.contains('hidden')
+      ),
+      O.toUndefined
+    ) ??
+    pipe(
+      O.fromNullable($searchMoreResults),
+      O.filter(
+        el =>
+          activeElement?.previousElementSibling === null &&
+          !el.classList.contains('hidden')
+      ),
+      O.toUndefined
+    ) ??
+    $searchResults.querySelector('.search-result:not(.hidden):has(+.hidden)') ??
+    $searchResults.querySelector('.search-result:not(.hidden):last-child');
   if (newActiveElement) {
     newActiveElement.classList.add('active');
     if (!elementIsVisibleInViewport(newActiveElement)) {
@@ -212,12 +242,36 @@ function selectPreviousSearchResult(): void {
 }
 
 function selectNextSearchResult(): void {
-  const activeElement = $searchResults.querySelector('.search-result.active');
+  const activeElement =
+    $searchResults.querySelector('.search-result.active') ??
+    pipe(
+      O.fromNullable($searchMoreResults),
+      O.filter(el => el.classList.contains('active')),
+      O.toUndefined
+    );
   activeElement?.classList.remove('active');
 
   const newActiveElement =
-    activeElement?.nextElementSibling ??
-    $searchResults.querySelector('.search-result');
+    pipe(
+      O.fromNullable(activeElement?.nextElementSibling),
+      O.filter(
+        el =>
+          el.classList.contains('search-result') &&
+          !el.classList.contains('hidden')
+      ),
+      O.toUndefined
+    ) ??
+    pipe(
+      O.fromNullable($searchMoreResults),
+      O.filter(
+        el =>
+          activeElement !== undefined &&
+          activeElement.classList.contains('search-result') &&
+          !el.classList.contains('hidden')
+      ),
+      O.toUndefined
+    ) ??
+    $searchResults.querySelector('.search-result:not(.hidden');
   if (newActiveElement) {
     newActiveElement.classList.add('active');
     if (!elementIsVisibleInViewport(newActiveElement)) {
@@ -227,11 +281,30 @@ function selectNextSearchResult(): void {
 }
 
 function goToSelectedSearchResult(): void {
+  if ($searchMoreResults.classList.contains('active')) {
+    showMoreSearchResults();
+    return;
+  }
+
   $searchDialog.close();
 
   $searchResults
     .querySelector<HTMLAnchorElement>('.search-result.active a')
     ?.click();
+}
+
+function showMoreSearchResults(): void {
+  if ($searchMoreResults.classList.contains('active')) {
+    $searchResults.querySelector('.hidden')?.classList.add('active');
+    $searchMoreResults.classList.remove('active');
+  }
+
+  $searchResults
+    .querySelectorAll('.hidden')
+    .forEach(el => el.classList.remove('hidden'));
+  $searchMoreResults.classList.add('hidden');
+
+  $searchInput.focus();
 }
 
 const performSearchDebounced = debounce(performSearch, 250, {
@@ -288,7 +361,7 @@ function renderSearchResults(
   $searchResults.innerHTML = '';
   toggleClass($searchResults, 'hidden', results.length === 0);
 
-  for (const result of results) {
+  for (const [i, result] of results.entries()) {
     const ul = document.createElement('ul');
     ul.innerHTML = searchResultTemplate;
 
@@ -303,7 +376,19 @@ function renderSearchResults(
     element.querySelector('.title')!.textContent = result.datum.title;
     element.querySelector('.subtitle')!.textContent = result.datum.subtitle;
     element.querySelector('.link')!.setAttribute('href', result.datum.url);
+
+    if (i >= 10) {
+      element.classList.add('hidden');
+    }
+
     $searchResults.append(element);
+  }
+
+  $searchMoreResults.innerText = `Show ${results.length - 10} more result${results.length - 10 === 1 ? '' : 's'}`;
+  toggleClass($searchMoreResults, 'hidden', results.length <= 10);
+
+  if (results.length <= 10) {
+    $searchMoreResults.classList.remove('active');
   }
 }
 

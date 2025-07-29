@@ -23,6 +23,7 @@
 @source "../../course/src/assets";
 
 @import './shared.css';
+@import './search.css';
 @import './app.css';
 @import './course.css';
 @import './highlight-light.css';

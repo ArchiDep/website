@@ -1,0 +1,4 @@
+#search-dialog #search-results .active,
+#search-dialog #search-more-results.active {
+  @apply bg-primary/50;
+}
