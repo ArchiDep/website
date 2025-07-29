@@ -4,15 +4,13 @@ title: Shell Scripting
 
 Learn the basics of shell scripting with Bash.
 
-<!-- slide-include ../../BANNER.md -->
-
 **You will need**
 
 - A Unix CLI
 
 **Recommended reading**
 
-- [Command Line Introduction](../cli/)
+- [Command Line Introduction]({% link _course/101-command-line/subject.md %})
 
 ## What is a script?
 
@@ -29,7 +27,7 @@ When an executable text file is run, a Unix-like operating system looks for a
 **shebang** on the first line. A shebang is a line with the following format:
 
 ```
-#!`interpreter` optional-args
+#!interpreter optional-args
 ```
 
 For example, the following is a valid shebang:
@@ -188,8 +186,8 @@ You can store the result of a command in a variable by wrapping it with backtick
 
 ```bash
 #!/bin/bash
-FILES=\`ls -1`
-NUMBER_OF_FILES=\`echo "$FILES" | wc -l`
+FILES=`ls -1`
+NUMBER_OF_FILES=`echo "$FILES" | wc -l`
 echo There are $NUMBER_OF_FILES files
 ```
 

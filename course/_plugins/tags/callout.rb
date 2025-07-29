@@ -1,4 +1,4 @@
-module Jekyll
+module ArchiDep
   class CalloutTagBlock < Liquid::Block
     Syntax = /(#{Liquid::QuotedFragment}+)?/
 
@@ -13,7 +13,7 @@ module Jekyll
           @attributes[key] = value
         end
       else
-        raise SyntaxError.new("Bad options given to 'loop_directory' plugin.")
+        raise SyntaxError.new("Bad options given to 'callout' plugin.")
       end
 
       super
@@ -42,4 +42,4 @@ module Jekyll
   end
 end
 
-Liquid::Template.register_tag("callout", Jekyll::CalloutTagBlock)
+Liquid::Template.register_tag("callout", ArchiDep::CalloutTagBlock)

@@ -7,8 +7,6 @@ manipulating your filesystem in a Unix shell.
 
 ## Back to the command line
 
-<!-- slide-front-matter class: center, middle -->
-
 [Command line interfaces][cli] are still in wide use today.
 
 ### What is a Command Line Interface (CLI)?
@@ -42,24 +40,27 @@ Or they have a limited GUI that does not have as many options as the CLI.
 
 **CLIs are available on every operating system.**
 
-<!-- slide-column 50 -->
-
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+{% markdown %}
 On **Unix-like** systems _(like macOS or Linux)_, it's an application called the **Terminal**.
 
 You can use it right away, as it's the _de-facto_ standard.
-
-<!-- slide-column -->
-
+{% endmarkdown %}
+  </div>
+  <div>
+{% markdown %}
 On **Windows**, the default CLI is called **cmd** (or **Invite de commandes** in
 French) However, it does not use the same syntax as Unix-like CLIs _(plus, it's
 bad)_.
 
-You also have [PowerShell][powershell] which is better, but is not a Unix-like
-CLI either.
+You also have [PowerShell](https://en.wikipedia.org/wiki/PowerShell) which is
+better, but is not a Unix-like CLI either.
 
 > **You'll need to install an alternative.**
-
-<!-- slide-container -->
+{% endmarkdown %}
+  </div>
+</div>
 
 > Software terminals are an emulation of old physical terminals like [TTYs][tty] or the [VT100][vt100].
 > You will still find references to the term "TTY" in the documentation of some modern command line tools.
@@ -110,20 +111,27 @@ execute.
 
 ### Work in progress...
 
-<!-- slide-column -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+{% markdown %}
+When the computer is working, the prompt disappear and you no longer have
+control.
 
-When the computer is working, the prompt disappear and you no longer have the
-lead.
-
-> The `sleep` command tells the computer to do nothing for the specified number
-> of seconds.
-
-<img src='images/sleep.png' class="w-1/2" />
-
+<img src='images/sleep.png' class="!m-0" />
+{% endmarkdown %}
+  </div>
+  <div>
+{% markdown %}
 When the computer is done working, it will indicate that you are back in control
 by showing the prompt again.
 
-<img src='images/sleep-done.png' class="w-1/2" />
+<img src='images/sleep-done.png' class="!m-0" />
+{% endmarkdown %}
+  </div>
+</div>
+
+> The `sleep` command tells the computer to do nothing for the specified number
+> of seconds.
 
 ### Writing commands
 
@@ -144,8 +152,6 @@ Note the use of **spaces** to separate the differents **arguments** of a command
 
 There are two types of arguments to use with a command (if needed):
 
-<!-- slide-column -->
-
 **Options** usually specify **how** the command will behave.
 By convention, they are preceded by `-` or `--`:
 
@@ -158,8 +164,6 @@ The options tell `ls` **how** it should do so:
 
 - `-a` tells it to print **a**ll elements (including hidden ones).
 - `-l` tells it to print elements in a **l**ist format, rather than on one line.
-
-<!-- slide-column -->
 
 **Values** not preceded by anything usually specify **what** will be used by the
 command:
@@ -174,21 +178,12 @@ Here, we use the `cd` command to move to another directory (or **c**hange
 And the argument `/Users/Batman` tells the command **what** directory we want to
 move to.
 
-<!-- slide-notes -->
-
-In the **first example**, we use the `ls` command to **l**i**s**t elements in
-the current directory. We also use options to tell `ls` how it should print
-elements:
-
-- `--all` tells it to print all elements.
-- `-l` tells it to print elements in a list format, rather than on one line..
-
 #### Options with values
 
 **Values** can also be linked to an option:
 
 ```bash
-tar -c -v -f compressed.tar.gz file-to-compress
+$> tar -c -v -f compressed.tar.gz file-to-compress
 ```
 
 The [`tar` (**t**ape **ar**chive)][tar] command bundles and compresses files. In
@@ -224,17 +219,22 @@ This command will be interpreted as a call to the `ls` command with **three argu
 
 You **can** use arguments containing spaces, but you have to **escape** them first, either with **quotation marks** or **backslashes**:
 
-<!-- slide-column -->
-
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+{% markdown %}
 ```bash
 $> ls "Why So Serious"
 ```
-
-<!-- slide-column -->
-
+{% endmarkdown %}
+  </div>
+  <div>
+{% markdown %}
 ```bash
 $> ls Why\ So\ Serious
 ```
+{% endmarkdown %}
+  </div>
+</div>
 
 ### Auto-completion
 
@@ -242,15 +242,16 @@ It's not fun to type directory names, especially when they have spaces you must 
 so the CLI has **auto-completion**. Type the first few characters of the file or directory you
 need, then hit the `Tab` key:
 
-<!-- slide-column -->
-
-<img src='images/auto-complete.png' />
-
-<!-- slide-column -->
-
-<img src='images/auto-complete-tab.png' />
-
-<!-- slide-container -->
+<div class="flex flex-col sm:flex-row items-center gap-4">
+  <div class="grow">
+    <img src='images/auto-complete.png' class="!m-0" />
+  </div>
+  <kbd class="kbd shrink-0 hidden sm:inline-flex animate-pulse">- Tab -></kbd>
+  <kbd class="kbd shrink-0 sm:hidden animate-pulse">v Tab v</kbd>
+  <div class="grow">
+    <img src='images/auto-complete-tab.png' class="!m-0" />
+  </div>
+</div>
 
 If there are multiple files or directories that begin with the **same characters**,
 pressing `Tab` will not display anything.
@@ -1075,15 +1076,22 @@ Oh My Zsh as well][oh-my-zsh-windows].
 
 <!-- slide-column 30 -->
 
-<img class='w100' src='images/terminal-multiplexer.png' />
-
 <!-- slide-column -->
 
+<div class="grid grid-cols-1 md:grid-cols-2">
+  <div>
+{% markdown %}
 A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 
 - [tmux](https://github.com/tmux/tmux/wiki)
 - [screen](https://www.gnu.org/software/screen/)
 - [zellij](https://zellij.dev) 💙
+{% endmarkdown %}
+  </div>
+  <div>
+    <img class="!m-0" src='images/terminal-multiplexer.png' />
+  </div>
+</div>
 
 [ace]: https://en.wikipedia.org/wiki/Automatic_Computing_Engine
 [ada-lovelace]: https://en.wikipedia.org/wiki/Ada_Lovelace
@@ -1123,7 +1131,6 @@ A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 [oh-my-zsh]: https://ohmyz.sh
 [oh-my-zsh-plugins]: https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
 [oh-my-zsh-windows]: http://kevinprogramming.com/using-zsh-in-windows-terminal/
-[powershell]: https://en.wikipedia.org/wiki/PowerShell
 [programmable]: https://en.wikipedia.org/wiki/Computer_program
 [punched-card]: https://en.wikipedia.org/wiki/Punched_card
 [redirection]: https://en.wikipedia.org/wiki/Redirection_(computing)

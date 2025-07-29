@@ -28,6 +28,14 @@ main a {
   @apply text-red-400 dark:text-red-800;
 }
 
+.markdown :first-child {
+  @apply mt-0;
+}
+
+.markdown :last-child {
+  @apply mb-0;
+}
+
 #course-material-menu {
   .course-section-done {
     @apply border-r-4 border-success/50 hover:border-success;
