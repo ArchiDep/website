@@ -21,5 +21,13 @@ document.addEventListener('click', event => {
       $alwaysTellMeMore.remove();
       localStorage.removeItem('archidep.alwaysTellMeMore');
     }
+
+    document
+      .querySelectorAll('.callout input[type="checkbox"]')
+      .forEach(checkbox => {
+        if (checkbox instanceof HTMLInputElement) {
+          checkbox.checked = false;
+        }
+      });
   }
 });
