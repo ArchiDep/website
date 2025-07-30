@@ -2,8 +2,17 @@
 <html lang='{{ page.lang | default: site.lang | default: "en" }}'>
   {%- include head.html -%}
 
-  <body>
+  <body class='group/body'>
     <div id='top' class='top-0 h-0'></div>
+
+    <script type='text/javascript'>
+      if (localStorage.getItem('archidep.alwaysTellMeMore')) {
+        const alwaysTellMeMore = document.createElement('div');
+        alwaysTellMeMore.id = 'always-tell-me-more';
+        alwaysTellMeMore.classList.add('hidden');
+        document.body.prepend(alwaysTellMeMore);
+      }
+    </script>
 
     {%- include header.html -%}
 

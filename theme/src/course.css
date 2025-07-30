@@ -73,7 +73,7 @@ main .note {
     }
   }
 
-  &.note-details {
+  &.note-more {
     @apply border-success/50 from-success/10 dark:from-success/5 to-success/1;
     .title {
       @apply text-success;
@@ -84,6 +84,13 @@ main .note {
     @apply border-info/50 from-info/10 dark:from-info/5 to-info/1;
     .title {
       @apply text-info;
+    }
+  }
+
+  &.note-troubleshooting {
+    @apply border-error/50 from-error/10 dark:from-error/5 to-error/1;
+    .title {
+      @apply text-error;
     }
   }
 
@@ -107,6 +114,10 @@ main .note .content > :last-child {
   @apply mb-0;
 }
 
+main .solution {
+  @apply my-5;
+}
+
 main .solution pre.highlight {
   @apply -mx-4;
 }
@@ -120,28 +131,97 @@ main .solution .highlighter-rouge:last-child pre.highlight {
 }
 
 .callout {
-  @apply shadow-lg p-4 -ml-4 md:-ml-6 lg:-ml-9 xl:-ml-11 relative rounded-tr-lg rounded-br-lg md:before:content-[''] md:before:size-2 lg:before:size-3 md:before:left-0 md:before:-top-2 lg:before:-top-3 md:before:absolute md:before:border-[0.25rem] lg:before:border-[0.375rem] md:before:border-solid md:before:border-white md:before:border-t-transparent md:before:border-l-transparent;
-  @apply my-5 flex items-start gap-4 text-white;
+  @apply shadow-lg p-4 relative md:before:content-[''] md:before:size-2 lg:before:size-3 md:before:-top-2 lg:before:-top-3 md:before:absolute md:before:border-[0.25rem] lg:before:border-[0.375rem] md:before:border-solid md:before:border-white;
+  @apply my-5 text-white;
+  @apply flex items-start gap-4;
 
   & strong {
-    @apply font-bold text-sky-200;
+    @apply font-bold text-yellow-200;
+  }
+
+  &.callout-exercise strong {
+    @apply font-bold text-orange-300;
+  }
+
+  &.callout-more strong {
+    @apply font-bold text-red-200;
+  }
+
+  &.callout-warning strong {
+    @apply font-bold text-blue-300;
+  }
+
+  &.callout-more {
+    @apply md:ml-[10%] lg:ml-[15%] has-checked:ml-0 group-has-[#always-tell-me-more]/body:ml-0 -mr-4 md:-mr-6 lg:-mr-9 xl:-mr-11 rounded-tl-lg rounded-bl-lg md:before:right-0 md:before:border-t-transparent md:before:border-r-transparent;
+  }
+
+  &:not(.callout-more) {
+    @apply -ml-4 md:-ml-6 lg:-ml-9 xl:-ml-11 rounded-tr-lg rounded-br-lg md:before:left-0 md:before:border-t-transparent md:before:border-l-transparent;
+  }
+
+  & .more, & .less, & .always-tell-me-more, & .stop-telling-me-more {
+    @apply btn font-title;
+  }
+
+  & .more {
+    @apply mt-4 btn-xs md:btn-sm text-xs md:text-sm bg-emerald-600 hover:bg-emerald-700 border-white/50 text-white group-has-checked/callout:hidden group-has-[#always-tell-me-more]/body:hidden;
+  }
+
+  & .controls {
+    @apply group-has-checked/callout:mt-4 group-has-[#always-tell-me-more]/body:mt-4 join join-vertical sm:join-horizontal;
+  }
+
+  & .less {
+    @apply hidden group-has-checked/callout:inline-flex group-has-[#always-tell-me-more]/body:hidden btn-accent opacity-90 items-center;
+  }
+
+  & .always-tell-me-more {
+    @apply hidden group-has-checked/callout:inline-flex group-has-[#always-tell-me-more]/body:hidden btn-secondary opacity-90 items-center;
+  }
+
+  & .stop-telling-me-more {
+    @apply hidden group-has-[#always-tell-me-more]/body:inline-flex btn-secondary btn-xs md:btn-sm text-xs md:text-sm items-center;
   }
 }
 
+.callout .container {
+  @apply flex flex-col items-end group-has-checked/callout:items-center group-has-[#always-tell-me-more]/body:items-end;
+}
+
 .callout .icon {
-  @apply size-10 !my-0 shrink-0 text-white;
+  @apply size-6 md:size-10 shrink-0;
+}
+
+.callout .icon.text {
+  @apply text-white text-[2rem] leading-10 text-center;
+}
+
+.callout .icon.image > img.emoji {
+  @apply size-full !my-0;
+}
+
+.callout.callout-more .content {
+  @apply line-clamp-3 peer-checked:line-clamp-none group-has-[#always-tell-me-more]/body:line-clamp-none;
 }
 
 .callout .content > * {
   @apply first:mt-0 last:mb-0;
 }
 
-.callout-warning {
-  @apply bg-linear-to-b from-yellow-600 to-yellow-800 md:before:border-r-yellow-600/50 md:before:border-b-yellow-600/50;
-}
-
 .callout-danger {
   @apply bg-linear-to-b from-red-700 to-red-900 md:before:border-r-red-700/50 md:before:border-b-red-700/50;
+}
+
+.callout-exercise {
+  @apply bg-linear-to-b from-indigo-600 to-indigo-800 md:before:border-r-indigo-600/50 md:before:border-b-indigo-600/50;
+}
+
+.callout-more {
+  @apply bg-linear-to-b from-emerald-700 to-emerald-900 md:before:border-l-emerald-700/50 md:before:border-b-emerald-700/50;
+}
+
+.callout-warning {
+  @apply bg-linear-to-b from-yellow-600 to-yellow-800 md:before:border-r-yellow-600/50 md:before:border-b-yellow-600/50;
 }
 
 .callout.animate {
@@ -152,7 +232,9 @@ main .solution .highlighter-rouge:last-child pre.highlight {
 }
 
 .markdown {
-  @apply first:mt-0 last:mb-0;
+  & > * {
+    @apply first:mt-0 last:mb-0;
+  }
 }
 
 #course-material-menu {
