@@ -1,15 +1,20 @@
-require 'securerandom'
+require "securerandom"
 
 module ArchiDep
   class CalloutTagBlock < Liquid::Block
     SYNTAX = /(#{Liquid::TagAttributes})?/
     TYPES = %w[danger exercise more warning]
-    CLOSE = ["Amazing!", "Awesome!", "Cool!", "Fabulous!", "Great!", "Outstanding!", "Terrific!", "Wonderful!"]
-    AMAZING_EMOJIS = [
-      '🎉',
-      '🎊', '🚀', '👍',
-      '👏', '🌟', '✨', '💫', '😎'
+    CLOSE = %w[
+      Amazing!
+      Awesome!
+      Cool!
+      Fabulous!
+      Great!
+      Outstanding!
+      Terrific!
+      Wonderful!
     ]
+    AMAZING_EMOJIS = %w[🎉 🎊 🚀 👍 👏 🌟 ✨ 💫 😎]
 
     def initialize(tag_name, markup, tokens)
       @attributes = {}
@@ -54,7 +59,14 @@ module ArchiDep
 
       callout_class = "callout callout-#{@type} group/callout"
       callout_class += " animate" if @animate
-      icon_html = @icon.start_with?('<') ? @icon : render_icon(@icon, context, class: "icon")
+      icon_html =
+        (
+          if @icon.start_with?("<")
+            @icon
+          else
+            render_icon(@icon, context, class: "icon")
+          end
+        )
       markdown = ArchiDep::Utils.render_markdown(text, context)
 
       more = ""
@@ -62,8 +74,10 @@ module ArchiDep
       more_control = ""
       if @type == "more"
         more_id = SecureRandom.hex
-        more_control = %|<input id="#{more_id}" type="checkbox" class="peer hidden" />|
-        more = %|
+        more_control =
+          %|<input id="#{more_id}" type="checkbox" class="peer hidden" />|
+        more =
+          %|
           <label for="#{more_id}" class="more">
             Would you like to know more?
           </label>

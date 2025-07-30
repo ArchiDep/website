@@ -159,7 +159,10 @@ main .solution .highlighter-rouge:last-child pre.highlight {
     @apply -ml-4 md:-ml-6 lg:-ml-9 xl:-ml-11 rounded-tr-lg rounded-br-lg md:before:left-0 md:before:border-t-transparent md:before:border-l-transparent;
   }
 
-  & .more, & .less, & .always-tell-me-more, & .stop-telling-me-more {
+  & .more,
+  & .less,
+  & .always-tell-me-more,
+  & .stop-telling-me-more {
     @apply btn font-title;
   }
 
