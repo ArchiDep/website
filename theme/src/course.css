@@ -167,7 +167,7 @@ main .solution .highlighter-rouge:last-child pre.highlight {
   }
 
   & .more {
-    @apply mt-4 btn-xs md:btn-sm text-xs md:text-sm bg-emerald-600 hover:bg-emerald-700 border-white/50 text-white group-has-checked/callout:hidden group-has-[#always-tell-me-more]/body:hidden;
+    @apply mt-4 btn-xs md:btn-sm text-xs md:text-sm bg-success/50 hover:bg-success/40 border-white/50 text-success-content/75 group-has-checked/callout:hidden group-has-[#always-tell-me-more]/body:hidden;
   }
 
   & .controls {
@@ -220,7 +220,9 @@ main .solution .highlighter-rouge:last-child pre.highlight {
 }
 
 .callout-more {
-  @apply bg-linear-to-b from-emerald-700 to-emerald-900 md:before:border-l-emerald-700/50 md:before:border-b-emerald-700/50;
+  @apply bg-linear-to-b from-success/65 to-success/50 md:before:border-l-success/40 md:before:border-b-success/40 text-success-content;
+  @apply has-checked:from-emerald-700 has-checked:to-emerald-900 has-checked:md:before:border-l-emerald-700/50 has-checked:md:before:border-b-emerald-700/50 has-checked:text-white;
+  @apply group-has-[#always-tell-me-more]/body:from-emerald-700 group-has-[#always-tell-me-more]/body:to-emerald-900 group-has-[#always-tell-me-more]/body:md:before:border-l-emerald-700/50 group-has-[#always-tell-me-more]/body:md:before:border-b-emerald-700/50 group-has-[#always-tell-me-more]/body:text-white;
 }
 
 .callout-warning {

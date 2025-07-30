@@ -90,7 +90,7 @@ module ArchiDep
             </button>
           </div>
           <button type="button" class="stop-telling-me-more">
-            <span class="mr-1">😵‍💫</span> Stop telling me more
+            <span class="mr-1">😵‍💫</span> Stop telling me more...
           </button>
         |
       end
