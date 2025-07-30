@@ -17,19 +17,22 @@ module ArchiDep
         raise SyntaxError.new("Bad options given to 'callout' plugin.")
       end
 
-      @type = @attributes['type']
-      raise SyntaxError.new("Unknown callout type: #{@type}") unless TYPES.include?(@type)
-
-      @icon = case @type
-      when "danger"
-        "exclamation-circle"
-      when "warning"
-        "exclamation-triangle"
-      else
+      @type = @attributes["type"]
+      unless TYPES.include?(@type)
         raise SyntaxError.new("Unknown callout type: #{@type}")
       end
 
-      @animate = @attributes['animate'] == 'true'
+      @icon =
+        case @type
+        when "danger"
+          "exclamation-circle"
+        when "warning"
+          "exclamation-triangle"
+        else
+          raise SyntaxError.new("Unknown callout type: #{@type}")
+        end
+
+      @animate = @attributes["animate"] == "true"
 
       super
     end

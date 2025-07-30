@@ -61,7 +61,8 @@ module ArchiDep
         item.data["toc"] = course_type == "exercise" || course_type == "subject"
 
         if course_type == "slides"
-          item.content = ArchiDep::Utils.replace_markdown_link_references(item.content, item)
+          item.content =
+            ArchiDep::Utils.replace_markdown_link_references(item.content, item)
         end
       end
 

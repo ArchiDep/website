@@ -23,39 +23,41 @@ module ArchiDep
     def render(context)
       text = super
 
-      type = @attributes['type']
-      icon = case type
-      when "advanced"
-        ':space_invader:'
-      when "details"
-        ':books:'
-      when "info"
-        render_icon("info-circle", context)
-      when "tip"
-        ':gem:'
-      when "warning"
-        render_icon("exclamation-triangle", context)
-      else
-        raise SyntaxError.new("Unknown note type: #{type}")
-      end
+      type = @attributes["type"]
+      icon =
+        case type
+        when "advanced"
+          ":space_invader:"
+        when "details"
+          ":books:"
+        when "info"
+          render_icon("info-circle", context)
+        when "tip"
+          ":gem:"
+        when "warning"
+          render_icon("exclamation-triangle", context)
+        else
+          raise SyntaxError.new("Unknown note type: #{type}")
+        end
 
-      title = @attributes['title']
+      title = @attributes["title"]
       title = title.strip unless title.nil?
       if title.nil? or title.empty?
-        title = case type
-        when "advanced"
-          "Advanced"
-        when "details"
-          "More information"
-        when "info"
-          "Note"
-        when "tip"
-          "Tip"
-        when "warning"
-          "Warning"
-        end
+        title =
+          case type
+          when "advanced"
+            "Advanced"
+          when "details"
+            "More information"
+          when "info"
+            "Note"
+          when "tip"
+            "Tip"
+          when "warning"
+            "Warning"
+          end
       else
-        title = title.sub(/^["']/, '').sub(/["']$/, '')
+        title = title.sub(/^["']/, "").sub(/["']$/, "")
       end
 
       markdown = ArchiDep::Utils.render_markdown(text, context)
