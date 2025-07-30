@@ -82,6 +82,8 @@ module ArchiDep
           else
             doc.data["has_slides"] = false
           end
+        else
+          doc.data["has_slides"] = false
         end
       end
 
