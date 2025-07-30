@@ -537,7 +537,7 @@ happen to have a `path` directory that contains a `to` directory that contains a
 {% endnote %}
 
 {% callout %}
-If your Windows/Linux/macOS username contains **spaces** or **accents**, you
+**Windows users:** if your username contains **spaces** or **accents**, you
 should **NOT** store your projects under your home directory. You should find a
 path elsewhere on your filesystem. This will save you **a lot of needless pain
 and suffering**.

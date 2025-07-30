@@ -39,8 +39,10 @@ For example, the following is a valid shebang:
 In this example, it tells the operating system that the **interpreter** which
 should run this file is `/bin/bash`, meaning that this is a [Bash][bash] script.
 
-> Note that there must not be any space between `#!` and the path of the
-> interpreter `/bin/bash`.
+{% note %}
+Note that there must not be any space between `#!` and the path of the
+interpreter `/bin/bash`.
+{% endnote %}
 
 ### What can I put in a script?
 
@@ -70,8 +72,10 @@ Simply create your script:
 $> printf '#!/bin/bash\necho Hello World' > test.sh
 ```
 
-> The `printf` (**print** **f**ormat) command is similar to the `echo` command
-> but it has better support for special characters like new lines (`\n`).
+{% note type: more %}
+The `printf` (**print** **f**ormat) command is similar to the `echo` command
+but it has better support for special characters like new lines (`\n`).
+{% endnote %}
 
 Make it executable:
 
@@ -100,9 +104,11 @@ The following are a few examples of shebangs, but it is nowhere near exhaustive:
 | `#!/usr/bin/python` | [Python][python] code       |
 | `#!/usr/bin/ruby`   | [Ruby][ruby] code           |
 
-> Of course, the path to the interpreter must correspond to the actual path of
-> the command used (`sh`, `bash`, `php`, etc). It might differ on your machine.
-> Use `which bash` to find the location of the Bash executable, for example.
+{% note %}
+Of course, the path to the interpreter must correspond to the actual path of the
+command used (`sh`, `bash`, `php`, etc). It might differ on your machine. Use
+`which bash` to find the location of the Bash executable, for example.
+{% endnote %}
 
 ## What is shell scripting?
 
@@ -111,8 +117,8 @@ shell commands that you want to be able to reuse.
 
 Any script with a shell as the interpreter is a "shell script".
 
-> A script using PHP as the interpreter is still a script, but it's not a "shell
-> script". It's a PHP script.
+A script using PHP as the interpreter is still a script, but it's not a "shell
+script". It's a PHP script.
 
 ## Shell script basics
 
@@ -207,7 +213,10 @@ To set an environment variable, do it like you would in any Bash shell:
 export FOO=bar
 ```
 
-> Of course, the `$FOO` environment variable in this example will only be set in the context of this script and its child processes (if any).
+{% note %}
+The `$FOO` environment variable in this example will only be set in the context
+of this script and its child processes.
+{% endnote %}
 
 ### Conditionals
 
@@ -226,8 +235,10 @@ else
 fi
 ```
 
-> The `[[  ]]` syntax is a Bash [test construct][bash-test-constructs].
-> Also see Bash [other comparison operators][bash-comparison-operators].
+{% note type: more %}
+The `[[  ]]` syntax is a Bash [test construct][bash-test-constructs]. Also see
+Bash [other comparison operators][bash-comparison-operators].
+{% endnote %}
 
 #### The `test` built-in command
 
@@ -255,7 +266,10 @@ else
 fi
 ```
 
-> See Bash [file test operators][bash-file-test-operators] and [other comparison operators][bash-comparison-operators].
+{% note type: more %}
+See Bash [file test operators][bash-file-test-operators] and [other comparison
+operators][bash-comparison-operators].
+{% endnote %}
 
 ### Loops
 
@@ -275,8 +289,9 @@ two
 three
 ```
 
-> Bash also has `while` and `until`.
-> See [loops & branches][bash-loops].
+{% note type: more %}
+Bash also has `while` and `until`. See [loops & branches][bash-loops].
+{% endnote %}
 
 ### Special variables
 
@@ -321,9 +336,9 @@ Hello World
 cat: file-that-does-not-exist: No such file or directory
 ```
 
-> Note that each command is printed with a leading `+` before being executed,
-> and that the script stops as soon as an error occurs
-> (which is **not the case by default**).
+Note that each command is printed with a leading `+` before being executed, and
+that the script stops as soon as an error occurs (which is **not the case by
+default**).
 
 ### Functions
 
