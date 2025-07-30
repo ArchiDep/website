@@ -43,7 +43,7 @@
       </li>
       {%- for item in section.items -%}
         {% if item.url == page.url %}
-          {% assign current_background = 'bg-neutral' %}
+          {% assign current_background = 'bg-neutral/25 dark:bg-neutral' %}
           {% assign current_font_weight = 'font-bold' %}
         {% else %}
           {% assign current_background = '' %}
