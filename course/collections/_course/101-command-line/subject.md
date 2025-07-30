@@ -273,7 +273,7 @@ If there are multiple files or directories that begin with the **same characters
 pressing `Tab` will not display anything.
 You need hit `Tab` **a second time** to display the list of available choices:
 
-<p class='center'><img src='images/auto-complete-multiple.png'/></p>
+![Multiple Files Autocompletion](images/auto-complete-multiple.png)
 
 You can type just enough characters so that the CLI can determine which one you want (in this case `c` or `w`),
 then hit `Tab` again to get the full path.
@@ -283,7 +283,7 @@ then hit `Tab` again to get the full path.
 You can get help on most advanced commands by executing them with the `--help` option.
 As the option's name implies, it's designed to **give you some help** on how to use the command:
 
-<p class='center'><img src='images/tar-help.png'/></p>
+![Tar Command Help](images/tar-help.png)
 
 Some commands don't have the `--help` option, but there are alternative sources
 of information depending on what operating system you're on:
@@ -304,7 +304,7 @@ You can "scroll" up and down line-by-line using the arrow keys or the `Enter` ke
 
 To quit these interactive documentations, use the `q` (**q**uit) key.
 
-<p class='center'><img src='images/interactive-help.png' /></p>
+![Interactive Help](images/interactive-help.png)
 
 #### Unix Command Syntax
 
@@ -519,8 +519,6 @@ To type the `~` character, use this combination:
 {% endnote %}
 
 #### Path reference
-
-<!-- slide-front-matter class: commands-table -->
 
 | Path        | Where                                                                                                             |
 | :---------- | :---------------------------------------------------------------------------------------------------------------- |
@@ -822,7 +820,7 @@ $> nano test.txt
 Editing files is much more straightforward and intuitive with nano. Once the
 file is open, you can simply type your text and move around with arrow keys:
 
-<p class='center'><img src='images/nano.png' class='p80' /></p>
+![Nano](images/nano.png)
 
 {% note type: tip %}
 
@@ -839,7 +837,7 @@ So, **to exit from nano, type `Ctrl-X`**.
 When you exit nano with `Ctrl-X`, it will ask you whether you want to save your
 changes:
 
-<p class='center'><img src='images/nano-save.png' class='p80' /></p>
+![Nano Save](images/nano-save.png)
 
 Press the `y` key to save or the `n` key to discard your changes.
 
@@ -848,7 +846,7 @@ Press the `y` key to save or the `n` key to discard your changes.
 When saving changes, nano will always ask you to **confirm the filename** where
 the changes should be saved:
 
-<p class='center'><img src='images/nano-filename.png' class='p80' /></p>
+![Nano Filename](images/nano-filename.png)
 
 As you can see, it tells you the name of the file you opened. Now you can:
 
