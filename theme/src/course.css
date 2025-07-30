@@ -131,8 +131,8 @@ main .solution .highlighter-rouge:last-child pre.highlight {
 }
 
 .callout {
-  @apply shadow-lg p-4 relative md:before:content-[''] md:before:size-2 lg:before:size-3 md:before:-top-2 lg:before:-top-3 md:before:absolute md:before:border-[0.25rem] lg:before:border-[0.375rem] md:before:border-solid md:before:border-white;
-  @apply my-5 text-white;
+  @apply shadow-lg print:shadow-none print:border print:border-black print:rounded-xl p-4 relative md:before:content-[''] md:before:size-2 lg:before:size-3 md:before:-top-2 lg:before:-top-3 md:before:absolute md:before:border-[0.25rem] lg:before:border-[0.375rem] md:before:border-solid md:before:border-white;
+  @apply my-5 text-white print:text-black;
   @apply flex items-start gap-4;
 
   & strong {
@@ -152,11 +152,11 @@ main .solution .highlighter-rouge:last-child pre.highlight {
   }
 
   &.callout-more {
-    @apply md:ml-[10%] lg:ml-[15%] has-checked:ml-0 group-has-[#always-tell-me-more]/body:ml-0 -mr-4 md:-mr-6 lg:-mr-9 xl:-mr-11 rounded-tl-lg rounded-bl-lg md:before:right-0 md:before:border-t-transparent md:before:border-r-transparent;
+    @apply md:ml-[10%] lg:ml-[15%] has-checked:ml-0 group-has-[#always-tell-me-more]/body:ml-0 -mr-4 md:-mr-6 lg:-mr-9 xl:-mr-11 print:mr-0 rounded-tl-lg rounded-bl-lg md:before:right-0 md:before:border-t-transparent md:before:border-r-transparent;
   }
 
   &:not(.callout-more) {
-    @apply -ml-4 md:-ml-6 lg:-ml-9 xl:-ml-11 rounded-tr-lg rounded-br-lg md:before:left-0 md:before:border-t-transparent md:before:border-l-transparent;
+    @apply -ml-4 md:-ml-6 lg:-ml-9 xl:-ml-11 print:ml-0 rounded-tr-lg rounded-br-lg md:before:left-0 md:before:border-t-transparent md:before:border-l-transparent;
   }
 
   & .more,
@@ -221,8 +221,8 @@ main .solution .highlighter-rouge:last-child pre.highlight {
 
 .callout-more {
   @apply bg-linear-to-b from-success/65 to-success/50 md:before:border-l-success/40 md:before:border-b-success/40 text-success-content;
-  @apply has-checked:from-emerald-700 has-checked:to-emerald-900 has-checked:md:before:border-l-emerald-700/50 has-checked:md:before:border-b-emerald-700/50 has-checked:text-white;
-  @apply group-has-[#always-tell-me-more]/body:from-emerald-700 group-has-[#always-tell-me-more]/body:to-emerald-900 group-has-[#always-tell-me-more]/body:md:before:border-l-emerald-700/50 group-has-[#always-tell-me-more]/body:md:before:border-b-emerald-700/50 group-has-[#always-tell-me-more]/body:text-white;
+  @apply has-checked:from-emerald-700 has-checked:to-emerald-900 has-checked:md:before:border-l-emerald-700/50 has-checked:md:before:border-b-emerald-700/50 has-checked:text-white print:has-checked:text-black;
+  @apply group-has-[#always-tell-me-more]/body:from-emerald-700 group-has-[#always-tell-me-more]/body:to-emerald-900 group-has-[#always-tell-me-more]/body:md:before:border-l-emerald-700/50 group-has-[#always-tell-me-more]/body:md:before:border-b-emerald-700/50 group-has-[#always-tell-me-more]/body:text-white print:group-has-[#always-tell-me-more]/body:text-black;
 }
 
 .callout-warning {
