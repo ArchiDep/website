@@ -34,6 +34,8 @@ module ArchiDep
           ":books:"
         when "tip"
           ":gem:"
+        when "troubleshooting"
+          ":boom:"
         when "warning"
           render_icon("exclamation-triangle", context)
         else
@@ -53,6 +55,8 @@ module ArchiDep
             "More information"
           when "tip"
             "Tip"
+          when "troubleshooting"
+            "Troubleshooting"
           when "warning"
             "Warning"
           end
