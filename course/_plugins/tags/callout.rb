@@ -1,14 +1,15 @@
 module ArchiDep
   class CalloutTagBlock < Liquid::Block
-    Syntax = /(#{Liquid::QuotedFragment}+)?/
+    SYNTAX = /(#{Liquid::TagAttributes})?/
+    TYPES = %w[danger warning]
 
     def initialize(tag_name, markup, tokens)
       @attributes = {}
 
-      @attributes["type"] = ""
+      @attributes["type"] = "danger"
 
       # Parse parameters
-      if markup =~ Syntax
+      if markup =~ SYNTAX
         markup.scan(Liquid::TagAttributes) do |key, value|
           @attributes[key] = value
         end
@@ -16,28 +17,44 @@ module ArchiDep
         raise SyntaxError.new("Bad options given to 'callout' plugin.")
       end
 
+      @type = @attributes['type']
+      raise SyntaxError.new("Unknown callout type: #{@type}") unless TYPES.include?(@type)
+
+      @icon = case @type
+      when "danger"
+        "exclamation-circle"
+      when "warning"
+        "exclamation-triangle"
+      else
+        raise SyntaxError.new("Unknown callout type: #{@type}")
+      end
+
+      @animate = @attributes['animate'] == 'true'
+
       super
     end
 
     def render(context)
       text = super
 
-      callout_theme_class = "callout-#{@attributes["type"]}"
-      callout_class = "callout #{callout_theme_class}"
+      callout_class = "callout callout-#{@type}"
+      callout_class += " animate" if @animate
+      icon_html = render_icon(@icon, context, class: "icon")
+      markdown = ArchiDep::Utils.render_markdown(text, context)
 
       %|<div class="#{callout_class}">
-        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-          <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
-        </svg>
+          #{icon_html}
 
-        <div class="content">
-          #{
-        context.registers[:site].find_converter_instance(
-          Jekyll::Converters::Markdown
-        ).convert(text)
-      }
-        </div>
-      </div>|
+          <div class="content">
+            #{markdown}
+          </div>
+        </div>|
+    end
+
+    private
+
+    def render_icon(name, context, options = {})
+      ArchiDep::Utils.render_icon(name, context, options)
     end
   end
 end

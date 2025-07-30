@@ -21,14 +21,11 @@ module ArchiDep
 
     def render(context)
       text = super
+      markdown = ArchiDep::Utils.render_markdown(text, context)
 
       %|<div class="markdown">
-      #{
-        context.registers[:site].find_converter_instance(
-          Jekyll::Converters::Markdown
-        ).convert(text)
-      }
-      </div>|
+          #{markdown}
+        </div>|
     end
   end
 end

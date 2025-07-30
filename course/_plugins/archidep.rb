@@ -61,28 +61,7 @@ module ArchiDep
         item.data["toc"] = course_type == "exercise" || course_type == "subject"
 
         if course_type == "slides"
-          link_references =
-            item
-              .content
-              .split("\n")
-              .reverse
-              .map { |line| line.strip }
-              .reject { |line| line.empty? }
-              .take_while { |line| line.match?(/\A\[[^\]]+\]: ?.+\z/) }
-              .map do |line|
-                m = line.match(/\A\[([^\]]+)\]: ?(.+)\z/)
-                { reference: m[1], url: m[2] }
-              end
-              .reverse
-          unless link_references.empty?
-            item.content =
-              link_references.reduce(item.content) do |content, link_reference|
-                content.gsub(
-                  /\]\[#{link_reference[:reference]}\]/,
-                  "](#{link_reference[:url]})"
-                )
-              end
-          end
+          item.content = ArchiDep::Utils.replace_markdown_link_references(item.content, item)
         end
       end
 

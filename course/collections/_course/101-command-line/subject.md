@@ -55,18 +55,21 @@ On **Windows**, the default CLI is called **cmd** (or **Invite de commandes** in
 French) However, it does not use the same syntax as Unix-like CLIs _(plus, it's
 bad)_.
 
-You also have [PowerShell](https://en.wikipedia.org/wiki/PowerShell) which is
+You also have [PowerShell][powershell] which is
 better, but is not a Unix-like CLI either.
 
-> **You'll need to install an alternative.**
+**You'll need to install an alternative.**
 
 {% endmarkdown %}
 
   </div>
 </div>
 
-> Software terminals are an emulation of old physical terminals like [TTYs][tty] or the [VT100][vt100].
-> You will still find references to the term "TTY" in the documentation of some modern command line tools.
+{% note type: details %}
+Software terminals are an emulation of old physical terminals like [TTYs][tty]
+or the [VT100][vt100]. You will still find references to the term "TTY" in the
+documentation of some modern command line tools.
+{% endnote %}
 
 ### Install WSL (Windows users only)
 
@@ -96,19 +99,21 @@ These symbols represent **the prompt** and are used to indicate that you have
 the lead. **The computer is waiting for you to type something** for it to
 execute.
 
-> The prompt is not always `$>`.
->
-> For example, on earlier macOS versions, it used to be `bash3.2$`, indicating the
-> name of the shell ([Bash][bash]) and its version.
->
-> On more recent macOS versions using [the Z shell (Zsh)][zsh], the prompt might
-> indicate your computer's name, your username and the current directory, e.g.
-> `MyComputer:~ root#`.
+{% note %}
+The prompt is not always `$>`.
+
+For example, on earlier macOS versions, it used to be `bash3.2$`, indicating the
+name of the shell ([Bash][bash]) and its version.
+
+On more recent macOS versions using [the Z shell (Zsh)][zsh], the prompt might
+indicate your computer's name, your username and the current directory, e.g.
+`MyComputer:~ root#`.
 
 <div class="grid grid-cols-2 gap-4">
-  <div><img src='images/bash-prompt.png' class="w-full" /></div>
-  <div><img src='images/zsh-prompt.png' class="w-full" /></div>
+  <div><img src='images/bash-prompt.png' class="w-full !my-0" /></div>
+  <div><img src='images/zsh-prompt.png' class="w-full !my-0" /></div>
 </div>
+{% endnote %}
 
 **For consistency, we will always use `$>` to represent the prompt.**
 
@@ -133,8 +138,10 @@ by showing the prompt again.
   </div>
 </div>
 
-> The `sleep` command tells the computer to do nothing for the specified number
-> of seconds.
+{% note %}
+The `sleep` command tells the computer to do nothing for the specified number
+of seconds.
+{% endnote %}
 
 ### Writing commands
 
@@ -332,8 +339,10 @@ $> pwd
 /Users/Batman
 ```
 
-> `pwd` means "**p**rint **w**orking **d**irectory": it gives you the absolute
-> path to the directory you're currently in.
+{% note %}
+`pwd` means "**p**rint **w**orking **d**irectory": it gives you the absolute
+path to the directory you're currently in.
+{% endnote %}
 
 ### The `ls` command
 
@@ -346,7 +355,9 @@ $> ls
 (lots and lots of files)
 ```
 
-> `ls` means "**l**i**s**t": it lists the contents of a directory.
+{% note %}
+`ls` means "**l**i**s**t": it lists the contents of a directory.
+{% endnote %}
 
 By default, `ls` doesn't list **hidden elements**.
 By convention in Unix-like systems, files that start with `.` (a dot) are hidden.
@@ -393,7 +404,10 @@ $> pwd
 This is an **absolute path** because it starts with a `/` character. It starts
 at the root of your filesystem so it does not matter where you are now.
 
-> You also have **auto-completion** with the `cd` command. Hit the `Tab` key after entering some letters.
+{% note type: tip %}
+You also have **auto-completion** with the `cd` command. Hit the `Tab` key after
+entering some letters.
+{% endnote %}
 
 #### The `.` path
 
@@ -483,10 +497,13 @@ $> pwd
   </div>
 </div>
 
-> To type the `~` character, use this combination:
->
-> - `AltGr-^` on **Windows**
-> - `Alt-N` on **Mac**
+{% note type: tip %}
+To type the `~` character, use this combination:
+
+- `AltGr-^` on **Windows**
+- `Alt-N` on **Mac**
+
+{% endnote %}
 
 #### Path reference
 
@@ -513,14 +530,18 @@ $> cd /path/to/projects
 This means that you use **the path to the directory in which you store your projects**.
 For example, on John Doe's macOS system, it could be `/Users/jdoe/Projects`.
 
-> Do not actually write `/path/to/projects`. It will obviously fail, unless you
-> happen to have a `path` directory that contains a `to` directory that contains
-> a `projects` directory...
+{% note type: warning %}
+Do not actually write `/path/to/projects`. It will obviously fail, unless you
+happen to have a `path` directory that contains a `to` directory that contains a
+`projects` directory...
+{% endnote %}
 
-**WARNING:** if your Windows/Linux/macOS username contains **spaces** or
-**accents**, you should **NOT** store your projects under your home directory.
-You should find a path elsewhere on your filesystem. This will save you **a lot
-of needless pain and suffering**.
+{% callout %}
+If your Windows/Linux/macOS username contains **spaces** or **accents**, you
+should **NOT** store your projects under your home directory. You should find a
+path elsewhere on your filesystem. This will save you **a lot of needless pain
+and suffering**.
+{% endcallout %}
 
 ### The `mkdir` command
 
@@ -630,19 +651,24 @@ but by the `sleep` command instead (which doesn't do anything with it).
 By convention in Unix shells, you can always terminate a running command by
 typing `Ctrl-C` (press the **C** key while holding the **C**on**tr**o**l** key).
 
-> Note that `Ctrl-C` **forces termination** of a running command.
-> It might not have finished what it was doing.
+{% note type: warning %}
+Note that `Ctrl-C` **forces termination** of a running command. It might not
+have finished what it was doing.
+{% endnote %}
 
 ### Windows users
 
-This is how you reference or use your **drives** (`C:`, `D:`, etc) in Git Bash on Windows:
+This is how you reference or use your **drives** (`C:`, `D:`, etc) in the
+Windows Subsystem for Linux (WSL):
 
 ```bash
-$> cd /c/foo/bar
-$> cd /d/foo
+$> cd /mnt/c/foo/bar
+$> cd /mnt/d/foo
 ```
 
-> In the Windows Subsystem for Linux, it's `/mnt/c` instead of `/c`.
+{% note %}
+If you are using Git Bash, it's `/c` instead of `/mnt/c`.
+{% endnote %}
 
 **Copy/Paste**
 
@@ -652,20 +678,22 @@ shortcuts:
 
 - `Ctrl-Insert` to **copy** things from the CLI
 
-  > You can also simply **select any text** in Git Bash and it will
-  > automatically be copied to your clipboard.
+  You can also simply **select any text** in Git Bash and it will automatically
+  be copied to your clipboard.
 
 - `Shift-Insert` to **paste** things to the CLI
 
-  > Or use **Right-click & Paste** if you don't have an `Insert` key.
+  Or use **Right-click & Paste** if you don't have an `Insert` key.
 
 ## Vim
 
 [**Vim**][vim] is an infamous CLI editor originally developed in 1976 (WHAT?!)
 for the Unix operating system.
 
-> The name comes from "**vi** i**m**proved", because Vim is an improved clone of
-> an earlier editor: [vi][vi] (from **vi**sual).
+{% note type: details %}
+The name comes from "**vi** i**m**proved", because Vim is an improved clone of
+an earlier editor: [vi][vi] (from **vi**sual).
+{% endnote %}
 
 ### WHY?!
 
@@ -722,7 +750,9 @@ You can also use some commands to interact with the text:
 | `:`     | Enter **Command** mode (to save and/or quit)                    |
 | `i`     | Enter **Insert** mode (to type text)                            |
 
-> At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
+{% note type: tip %}
+At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
+{% endnote %}
 
 ### Command mode
 
@@ -743,7 +773,9 @@ From there, you can use some commands:
 
 ## Nano
 
-<img src='images/nano.jpg' class='w40' />
+<div class="flex justify-center">
+  <img src='images/nano.jpg' class="!m-0" />
+</div>
 
 > Nano: a simpler CLI editor to keep your sanity.
 
@@ -767,9 +799,11 @@ file is open, you can simply type your text and move around with arrow keys:
 
 <p class='center'><img src='images/nano.png' class='p80' /></p>
 
-> Nano also helpfully prints its main keyboard shortcuts at the bottom of the
-> window. The most important one is `^X` for Exit. In keyboard shortcut
-> parlance, the `^` symbol always represents the control key.
+{% note type: tip %}
+Nano also helpfully prints its main keyboard shortcuts at the bottom of the
+window. The most important one is `^X` for Exit. In keyboard shortcut parlance,
+the `^` symbol always represents the control key.
+{% endnote %}
 
 So, **to exit from nano, type `Ctrl-X`**.
 
@@ -818,15 +852,20 @@ $> echo $0
 bash
 ```
 
-> **Hint:** now that you know how to use nano, you can edit your Bash profile
-> file with the following command: `nano ~/.bash_profile`.
+{% note type: tip %}
+Now that you know how to use nano, you can edit your Bash profile file with the
+following command: `nano ~/.bash_profile`.
+{% endnote %}
 
-> On Ubuntu, you can list available editors and choose the default one with the
-> following command:
->
-> ```bash
-> $> sudo update-alternatives --config editor
-> ```
+{% note %}
+On Ubuntu, you can list available editors and choose the default one with the
+following command:
+
+```bash
+$> sudo update-alternatives --config editor
+```
+
+{% endnote %}
 
 ## The `PATH` variable
 
@@ -839,10 +878,12 @@ $> rubbish
 bash: rubbish: command not found
 ```
 
-> This means that the CLI failed to find the executable named `rubbish` in any
-> of the directories where it looked.
+This means that the CLI failed to find the executable named `rubbish` in any of
+the directories where it looked.
 
-The list of the directories (and their paths) in which the CLI searches is stored in the `PATH` environment variable, each of them being separated with a `:`.
+The list of the directories (and their paths) in which the CLI searches is
+stored in the `PATH` environment variable, each of them being separated with a
+`:`.
 
 You can print the content of your `PATH` variable to see this list:
 
@@ -892,9 +933,11 @@ $> which -a git
 /usr/bin/git
 ```
 
-> Remember, the shell will use the first one it finds, so in this example it
-> would use `/opt/homebrew/bin/git` if you type `git`, completely ignoring
-> `/usr/bin/git`.
+{% note %}
+Remember, the shell will use the first one it finds, so in this example it
+would use `/opt/homebrew/bin/git` if you type `git`, completely ignoring
+`/usr/bin/git`.
+{% endnote %}
 
 ### Using non-system commands
 
@@ -916,8 +959,10 @@ $> curl -o ~/hello-program/bin/hello https://gist.githubusercontent.com/AlphaHyd
 $> chmod 755 ~/hello-program/bin/hello
 ```
 
-> The `curl` command is used to download the script file, and the `chmod`
-> command to make that file executable.
+{% note %}
+The `curl` command is used to download the script file, and the `chmod` command
+to make that file executable.
+{% endnote %}
 
 You should now be able to find it in the `~/hello-program/bin` directory:
 
@@ -950,8 +995,11 @@ $> ./hello
 Hello World
 ```
 
-> When the first word on the CLI starts with `/`, `~/`, `./` or `../`, the shell interprets it as a file path.
-> Instead of looking for a command in the `PATH`, it simply executes that file.
+{% note type: tip %}
+When the first word on the CLI starts with `/`, `~/`, `./` or `../`, the shell
+interprets it as a file path. Instead of looking for a command in the `PATH`,
+it simply executes that file.
+{% endnote %}
 
 But, ideally, you want to be able to **just type `hello`**, and have the script be executed.
 For this, you need to **add the directory containing the executable** to your `PATH` variable.
@@ -986,8 +1034,10 @@ the filename.
 
 #### Does it work?
 
-> Remember to **close and re-open your CLI** to have the shell reload its
-> configuration file.
+{% note type: warning %}
+Remember to **close and re-open your CLI** to have the shell reload its
+configuration file.
+{% endnote %}
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
   <div class="order-1 md:order-none flex items-end">
@@ -1140,6 +1190,7 @@ A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 [oh-my-zsh]: https://ohmyz.sh
 [oh-my-zsh-plugins]: https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
 [oh-my-zsh-windows]: http://kevinprogramming.com/using-zsh-in-windows-terminal/
+[powershell]: https://en.wikipedia.org/wiki/PowerShell
 [programmable]: https://en.wikipedia.org/wiki/Computer_program
 [punched-card]: https://en.wikipedia.org/wiki/Punched_card
 [redirection]: https://en.wikipedia.org/wiki/Redirection_(computing)
