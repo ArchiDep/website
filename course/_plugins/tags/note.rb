@@ -28,10 +28,10 @@ module ArchiDep
         case type
         when "advanced"
           ":space_invader:"
-        when "details"
-          ":books:"
         when "info"
           render_icon("info-circle", context)
+        when "more"
+          ":books:"
         when "tip"
           ":gem:"
         when "warning"
@@ -47,10 +47,10 @@ module ArchiDep
           case type
           when "advanced"
             "Advanced"
-          when "details"
-            "More information"
           when "info"
             "Note"
+          when "more"
+            "More information"
           when "tip"
             "Tip"
           when "warning"

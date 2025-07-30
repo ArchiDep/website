@@ -65,7 +65,7 @@ better, but is not a Unix-like CLI either.
   </div>
 </div>
 
-{% note type: details %}
+{% note type: more %}
 Software terminals are an emulation of old physical terminals like [TTYs][tty]
 or the [VT100][vt100]. You will still find references to the term "TTY" in the
 documentation of some modern command line tools.
