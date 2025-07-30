@@ -167,11 +167,11 @@ main .solution .highlighter-rouge:last-child pre.highlight {
   }
 
   & .more {
-    @apply mt-4 btn-xs md:btn-sm text-xs md:text-sm bg-success/50 hover:bg-success/40 border-white/50 text-success-content/75 group-has-checked/callout:hidden group-has-[#always-tell-me-more]/body:hidden;
+    @apply mt-4 btn-xs md:btn-sm text-xs md:text-sm bg-success/50 hover:bg-success/40 border-white/50 text-success-content/75 group-has-checked/callout:hidden group-has-[#always-tell-me-more]/body:hidden print:hidden;
   }
 
   & .controls {
-    @apply group-has-checked/callout:mt-4 group-has-[#always-tell-me-more]/body:mt-4 join join-vertical sm:join-horizontal;
+    @apply print:hidden group-has-checked/callout:mt-4 group-has-[#always-tell-me-more]/body:mt-4 join join-vertical sm:join-horizontal;
   }
 
   & .less {
@@ -183,7 +183,7 @@ main .solution .highlighter-rouge:last-child pre.highlight {
   }
 
   & .stop-telling-me-more {
-    @apply hidden group-has-[#always-tell-me-more]/body:inline-flex btn-secondary btn-xs md:btn-sm text-xs md:text-sm items-center;
+    @apply hidden screen:group-has-[#always-tell-me-more]/body:inline-flex btn-secondary btn-xs md:btn-sm text-xs md:text-sm items-center;
   }
 }
 
@@ -204,7 +204,7 @@ main .solution .highlighter-rouge:last-child pre.highlight {
 }
 
 .callout.callout-more .content {
-  @apply line-clamp-3 peer-checked:line-clamp-none group-has-[#always-tell-me-more]/body:line-clamp-none;
+  @apply screen:line-clamp-3 peer-checked:line-clamp-none group-has-[#always-tell-me-more]/body:line-clamp-none;
 }
 
 .callout .content > * {
