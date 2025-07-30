@@ -5,7 +5,7 @@ layout: toc
   {% if page.previous_chapters.size != 0 %}
     <div class='card card-sm 2xl:card-md bg-success text-success-content'>
       <div class='card-body'>
-        <p class='card-title mt-0 px-2'>Previously</p>
+        <p class='card-title font-title text-2xl mt-0 px-2'>Previously</p>
         <ul class='flex flex-col gap-y-1'>
           {% for subject in page.previous_chapters %}
             <li class='px-2 py-1 rounded-full hover:bg-success-content/10'>
@@ -21,7 +21,7 @@ layout: toc
   {% if page.next_due_exercises.size != 0 %}
     <div class='card card-sm 2xl:card-md bg-warning text-warning-content'>
       <div class='card-body'>
-        <p class='card-title mt-0'>Due next</p>
+        <p class='card-title font-title text-2xl mt-0'>Due next</p>
         <ul class='flex flex-col gap-y-1'>
           {% for exercise in page.next_due_exercises %}
             <li class='px-2 py-1 rounded-full hover:bg-warning-content/10'>
@@ -37,7 +37,7 @@ layout: toc
   {% if page.next_chapters.size != 0 %}
     <div class='card card-sm 2xl:card-md bg-info text-info-content'>
       <div class='card-body'>
-        <p class='card-title mt-0'>Next time</p>
+        <p class='card-title font-title text-2xl mt-0'>Next time</p>
         <ul class='flex flex-col gap-y-1'>
           {% for chapter in page.next_chapters %}
             <li class='px-2 py-1 rounded-full hover:bg-info-content/10'>

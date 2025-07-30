@@ -3,6 +3,10 @@ main > .highlighter-rouge {
   @apply -ml-4 lg:-ml-6 xl:-ml-8 -mr-4 lg:-mr-6 xl:-mr-8;
 }
 
+main * pre.highlight {
+  @apply my-0;
+}
+
 main a {
   @apply hover:text-accent;
 }
@@ -56,7 +60,7 @@ main h6 {
 }
 
 main .note {
-  @apply my-4 border-l-4 border-gray-600/50 dark:border-gray-400/50 px-4 py-2 screen:bg-linear-to-r screen:from-gray-600/5 screen:to-gray-600/1 dark:screen:from-gray-400/5 dark:screen:to-gray-400/1 flex flex-col gap-2;
+  @apply my-5 border-l-4 border-gray-600/50 dark:border-gray-400/50 px-4 py-2 screen:bg-linear-to-r screen:from-gray-600/5 screen:to-gray-600/1 dark:screen:from-gray-400/5 dark:screen:to-gray-400/1 flex flex-col gap-2;
 
   .title {
     @apply flex items-center gap-2 font-bold text-gray-600 dark:text-gray-400;
@@ -117,7 +121,7 @@ main .solution .highlighter-rouge:last-child pre.highlight {
 
 .callout {
   @apply shadow-lg p-4 -ml-4 md:-ml-6 lg:-ml-9 xl:-ml-11 relative rounded-tr-lg rounded-br-lg md:before:content-[''] md:before:size-2 lg:before:size-3 md:before:left-0 md:before:-top-2 lg:before:-top-3 md:before:absolute md:before:border-[0.25rem] lg:before:border-[0.375rem] md:before:border-solid md:before:border-white md:before:border-t-transparent md:before:border-l-transparent;
-  @apply flex items-start gap-4 text-white;
+  @apply my-5 flex items-start gap-4 text-white;
 
   & strong {
     @apply font-bold text-sky-200;

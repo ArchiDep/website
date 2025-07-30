@@ -22,18 +22,8 @@ In pursuit of this goal, you will learn:
 - The basics of Unix system administration and cloud computing architectures.
 - Good security practices related to system administration and web applications.
 
-This course is a [Media Engineering][comem] web development course taught at
-[HEIG-VD][heig].
-
-{% callout type: warning %}
-Hello, Note!
-
-- Foo
-- Bar
-- Baz
-
-_HELLO!_
-{% endcallout %}
+This course is a [Media Engineering][media-engineering] web development course
+taught at [HEIG-VD][heig].
 
 ## What you will need
 
@@ -100,7 +90,6 @@ and related articles:
 
 [azure]: https://azure.microsoft.com
 [chrome]: https://www.google.com/chrome/
-[comem]: http://www.heig-vd.ch/comem
 [firefox]: https://www.mozilla.org/en-US/firefox/
 [git-downloads]: https://git-scm.com/downloads
 [git-for-windows]: https://gitforwindows.org
@@ -108,5 +97,6 @@ and related articles:
 [heig]: http://www.heig-vd.ch
 [install-git-on-linux]: https://www.atlassian.com/git/tutorials/install-git#linux
 [macos-cli]: https://www.freecodecamp.org/news/install-xcode-command-line-tools/
+[media-engineering]: https://heig-vd.ch/formation/bachelor/ingenierie-des-medias/
 [render]: https://render.com
 [wsl]: https://learn.microsoft.com/en-us/windows/wsl/about

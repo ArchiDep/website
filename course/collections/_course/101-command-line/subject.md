@@ -690,7 +690,7 @@ shortcuts:
 [**Vim**][vim] is an infamous CLI editor originally developed in 1976 (WHAT?!)
 for the Unix operating system.
 
-{% note type: details %}
+{% note %}
 The name comes from "**vi** i**m**proved", because Vim is an improved clone of
 an earlier editor: [vi][vi] (from **vi**sual).
 {% endnote %}
