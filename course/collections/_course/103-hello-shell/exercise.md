@@ -10,8 +10,10 @@ more familiar with the command line's fundamental tools and the automation of
 tasks through basic scripting.
 
 {% callout type: exercise %}
+
 Execute these tasks solely using Terminal or Git Bash. Utilizing GUI tools would
 defeat the purpose.
+
 {% endcallout %}
 
 <!-- more -->
@@ -48,8 +50,10 @@ access their personal files and settings.
 {% endcallout %}
 
 {% note type: advanced, title: Challenge %}
+
 As an added challenge: find a way to perform this step of the exercise using no
 more than two commands.
+
 {% endnote %}
 
 ## :exclamation: Adding clues
@@ -104,8 +108,10 @@ Follow these steps to script and automate your entire treasure hunt:
   command for heightened suspense.
 
 {% note type: tip %}
+
 For a touch of efficiency, consider crafting a function that merges the file
 reading and short delay. This promotes reusability throughout your script.
+
 {% endnote %}
 
 {% callout type: more %}
@@ -176,9 +182,11 @@ $> chmod +x auto_hunt
 ```
 
 {% note type: more %}
+
 At this juncture in the course, delving into the intricacies of Unix permissions
 isn't required. We'll embark on a deeper exploration of this topic as the
 semester progresses.
+
 {% endnote %}
 
 Running the script now works:

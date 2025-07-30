@@ -66,9 +66,11 @@ better, but is not a Unix-like CLI either.
 </div>
 
 {% note type: more %}
+
 Software terminals are an emulation of old physical terminals like [TTYs][tty]
 or the [VT100][vt100]. You will still find references to the term "TTY" in the
 documentation of some modern command line tools.
+
 {% endnote %}
 
 ### Install WSL (Windows users only)
@@ -100,6 +102,7 @@ the lead. **The computer is waiting for you to type something** for it to
 execute.
 
 {% note %}
+
 The prompt is not always `$>`.
 
 For example, on earlier macOS versions, it used to be `bash3.2$`, indicating the
@@ -113,6 +116,7 @@ indicate your computer's name, your username and the current directory, e.g.
   <div><img src='images/bash-prompt.png' class="w-full !my-0" /></div>
   <div><img src='images/zsh-prompt.png' class="w-full !my-0" /></div>
 </div>
+
 {% endnote %}
 
 **For consistency, we will always use `$>` to represent the prompt.**
@@ -139,8 +143,10 @@ by showing the prompt again.
 </div>
 
 {% note %}
+
 The `sleep` command tells the computer to do nothing for the specified number
 of seconds.
+
 {% endnote %}
 
 ### Writing commands
@@ -340,8 +346,10 @@ $> pwd
 ```
 
 {% note %}
+
 `pwd` means "**p**rint **w**orking **d**irectory": it gives you the absolute
 path to the directory you're currently in.
+
 {% endnote %}
 
 ### The `ls` command
@@ -356,7 +364,9 @@ $> ls
 ```
 
 {% note %}
+
 `ls` means "**l**i**s**t": it lists the contents of a directory.
+
 {% endnote %}
 
 By default, `ls` doesn't list **hidden elements**.
@@ -405,8 +415,10 @@ This is an **absolute path** because it starts with a `/` character. It starts
 at the root of your filesystem so it does not matter where you are now.
 
 {% note type: tip %}
+
 You also have **auto-completion** with the `cd` command. Hit the `Tab` key after
 entering some letters.
+
 {% endnote %}
 
 #### The `.` path
@@ -498,6 +510,7 @@ $> pwd
 </div>
 
 {% note type: tip %}
+
 To type the `~` character, use this combination:
 
 - `AltGr-^` on **Windows**
@@ -531,16 +544,20 @@ This means that you use **the path to the directory in which you store your proj
 For example, on John Doe's macOS system, it could be `/Users/jdoe/Projects`.
 
 {% note type: warning %}
+
 Do not actually write `/path/to/projects`. It will obviously fail, unless you
 happen to have a `path` directory that contains a `to` directory that contains a
 `projects` directory...
+
 {% endnote %}
 
 {% callout %}
+
 **Windows users:** if your username contains **spaces** or **accents**, you
 should **NOT** store your projects under your home directory. You should find a
 path elsewhere on your filesystem. This will save you **a lot of needless pain
 and suffering**.
+
 {% endcallout %}
 
 ### The `mkdir` command
@@ -652,8 +669,10 @@ By convention in Unix shells, you can always terminate a running command by
 typing `Ctrl-C` (press the **C** key while holding the **C**on**tr**o**l** key).
 
 {% note type: warning %}
+
 Note that `Ctrl-C` **forces termination** of a running command. It might not
 have finished what it was doing.
+
 {% endnote %}
 
 ### Windows users
@@ -667,7 +686,9 @@ $> cd /mnt/d/foo
 ```
 
 {% note %}
+
 If you are using Git Bash, it's `/c` instead of `/mnt/c`.
+
 {% endnote %}
 
 **Copy/Paste**
@@ -691,8 +712,10 @@ shortcuts:
 for the Unix operating system.
 
 {% note %}
+
 The name comes from "**vi** i**m**proved", because Vim is an improved clone of
 an earlier editor: [vi][vi] (from **vi**sual).
+
 {% endnote %}
 
 ### WHY?!
@@ -751,7 +774,9 @@ You can also use some commands to interact with the text:
 | `i`     | Enter **Insert** mode (to type text)                            |
 
 {% note type: tip %}
+
 At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
+
 {% endnote %}
 
 ### Command mode
@@ -800,9 +825,11 @@ file is open, you can simply type your text and move around with arrow keys:
 <p class='center'><img src='images/nano.png' class='p80' /></p>
 
 {% note type: tip %}
+
 Nano also helpfully prints its main keyboard shortcuts at the bottom of the
 window. The most important one is `^X` for Exit. In keyboard shortcut parlance,
 the `^` symbol always represents the control key.
+
 {% endnote %}
 
 So, **to exit from nano, type `Ctrl-X`**.
@@ -853,11 +880,14 @@ bash
 ```
 
 {% note type: tip %}
+
 Now that you know how to use nano, you can edit your Bash profile file with the
 following command: `nano ~/.bash_profile`.
+
 {% endnote %}
 
 {% note %}
+
 On Ubuntu, you can list available editors and choose the default one with the
 following command:
 
@@ -934,9 +964,11 @@ $> which -a git
 ```
 
 {% note %}
+
 Remember, the shell will use the first one it finds, so in this example it
 would use `/opt/homebrew/bin/git` if you type `git`, completely ignoring
 `/usr/bin/git`.
+
 {% endnote %}
 
 ### Using non-system commands
@@ -960,8 +992,10 @@ $> chmod 755 ~/hello-program/bin/hello
 ```
 
 {% note %}
+
 The `curl` command is used to download the script file, and the `chmod` command
 to make that file executable.
+
 {% endnote %}
 
 You should now be able to find it in the `~/hello-program/bin` directory:
@@ -996,9 +1030,11 @@ Hello World
 ```
 
 {% note type: tip %}
+
 When the first word on the CLI starts with `/`, `~/`, `./` or `../`, the shell
 interprets it as a file path. Instead of looking for a command in the `PATH`,
 it simply executes that file.
+
 {% endnote %}
 
 But, ideally, you want to be able to **just type `hello`**, and have the script be executed.
@@ -1035,8 +1071,10 @@ the filename.
 #### Does it work?
 
 {% note type: warning %}
+
 Remember to **close and re-open your CLI** to have the shell reload its
 configuration file.
+
 {% endnote %}
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

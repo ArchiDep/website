@@ -40,8 +40,10 @@ In this example, it tells the operating system that the **interpreter** which
 should run this file is `/bin/bash`, meaning that this is a [Bash][bash] script.
 
 {% note %}
+
 Note that there must not be any space between `#!` and the path of the
 interpreter `/bin/bash`.
+
 {% endnote %}
 
 ### What can I put in a script?
@@ -73,8 +75,10 @@ $> printf '#!/bin/bash\necho Hello World' > test.sh
 ```
 
 {% note type: more %}
+
 The `printf` (**print** **f**ormat) command is similar to the `echo` command
 but it has better support for special characters like new lines (`\n`).
+
 {% endnote %}
 
 Make it executable:
@@ -105,9 +109,11 @@ The following are a few examples of shebangs, but it is nowhere near exhaustive:
 | `#!/usr/bin/ruby`   | [Ruby][ruby] code           |
 
 {% note %}
+
 Of course, the path to the interpreter must correspond to the actual path of the
 command used (`sh`, `bash`, `php`, etc). It might differ on your machine. Use
 `which bash` to find the location of the Bash executable, for example.
+
 {% endnote %}
 
 ## What is shell scripting?
@@ -214,8 +220,10 @@ export FOO=bar
 ```
 
 {% note %}
+
 The `$FOO` environment variable in this example will only be set in the context
 of this script and its child processes.
+
 {% endnote %}
 
 ### Conditionals
@@ -236,8 +244,10 @@ fi
 ```
 
 {% note type: more %}
+
 The `[[  ]]` syntax is a Bash [test construct][bash-test-constructs]. Also see
 Bash [other comparison operators][bash-comparison-operators].
+
 {% endnote %}
 
 #### The `test` built-in command
@@ -267,8 +277,10 @@ fi
 ```
 
 {% note type: more %}
+
 See Bash [file test operators][bash-file-test-operators] and [other comparison
 operators][bash-comparison-operators].
+
 {% endnote %}
 
 ### Loops
@@ -290,7 +302,9 @@ three
 ```
 
 {% note type: more %}
+
 Bash also has `while` and `until`. See [loops & branches][bash-loops].
+
 {% endnote %}
 
 ### Special variables
