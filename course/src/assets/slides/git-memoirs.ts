@@ -121,6 +121,9 @@ import {
         .chapter('delete-branch')
         .branch('fix-add', { delete: true })
 
+        .chapter('work-on-feature-branch')
+        .checkout('feature-sub')
+
         .chapter('work-on-feature-branch-settings', {
           before: function (_step, drawer) {
             drawer.requireExtension(
@@ -129,8 +132,7 @@ import {
           }
         })
 
-        .chapter('work-on-feature-branch')
-        .checkout('feature-sub')
+        .chapter('commit-on-feature-branch')
         .commit({ commit: { hash: 'f92ab0' } })
 
         // Disable uniform column width for later steps (or the commit graph gets too wide)

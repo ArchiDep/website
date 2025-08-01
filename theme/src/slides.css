@@ -20,6 +20,10 @@ body {
   @apply font-semibold text-black;
 }
 
+.reveal p code:not(.hljs) {
+  @apply bg-gray-200/50 px-1 rounded-xl border border-gray-600;
+}
+
 img.emoji {
   @apply m-0;
 }

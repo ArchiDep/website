@@ -234,7 +234,7 @@ export class GitMemoirController {
     const drawOptions = {
       immediate: !!instant,
       chapters: 1,
-      initialDelay: instant ? 0 : 1500,
+      initialDelay: instant ? 0 : 1000,
       stepDuration: instant ? 0 : 1000
     };
 
