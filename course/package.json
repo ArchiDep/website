@@ -15,6 +15,7 @@
     "start": "webpack --config webpack.config.cjs --watch"
   },
   "devDependencies": {
+    "@iconify-json/fluent": "^1.2.28",
     "@mobily/ts-belt": "^4.0.0-rc.5",
     "@preact/signals-core": "^1.11.0",
     "@prettier/plugin-ruby": "^4.0.4",
@@ -28,12 +29,14 @@
     "css-loader": "^7.1.2",
     "del-cli": "^6.0.0",
     "fp-ts": "^2.16.10",
+    "iconify-icon": "^3.0.0",
     "io-ts": "^2.2.22",
     "lodash-es": "^4.17.21",
     "loglevel": "^1.9.2",
     "loglevel-plugin-prefix": "^0.8.4",
     "lunr": "^2.3.9",
     "luxon": "^3.7.1",
+    "mermaid": "^11.9.0",
     "mini-css-extract-plugin": "^2.9.2",
     "phoenix": "^1.7.21",
     "prettier": "^3.6.2",

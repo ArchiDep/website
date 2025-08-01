@@ -4,12 +4,17 @@
   "description": "Media engineering architecture and deployment course",
   "private": true,
   "scripts": {
-    "build": "tailwindcss -i ./src/theme.css -o ../app/priv/static/assets/theme/theme.css",
-    "start": "tailwindcss -i ./src/theme.css -o ../app/priv/static/assets/theme/theme.css --watch"
+    "build": "npm run build:main && npm run build:slides",
+    "build:main": "tailwindcss -i ./src/theme.css -o ../app/priv/static/assets/theme/theme.css",
+    "build:slides": "tailwindcss -i ./src/slides.css -o ../app/priv/static/assets/theme/slides.css",
+    "start": "concurrently \"npm run start:main\" \"npm run start:slides\"",
+    "start:main": "tailwindcss -i ./src/theme.css -o ../app/priv/static/assets/theme/theme.css --watch",
+    "start:slides": "tailwindcss -i ./src/slides.css -o ../app/priv/static/assets/theme/slides.css --watch"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.0.5",
     "@tailwindcss/typography": "^0.5.16",
+    "concurrently": "^9.2.0",
     "daisyui": "^5.0.9",
     "tailwindcss": "^4.0.5"
   },

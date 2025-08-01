@@ -1,3 +1,6 @@
+import 'iconify-icon';
+import { icons } from '@iconify-json/fluent';
+import mermaid from 'mermaid';
 import Reveal from 'reveal.js';
 import Highlight from 'reveal.js/plugin/highlight/highlight.esm.js';
 import Markdown from 'reveal.js/plugin/markdown/markdown.esm.js';
@@ -6,7 +9,6 @@ import Search from 'reveal.js/plugin/search/search.esm.js';
 
 import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/moon.css';
-import './slides.css';
 
 const urlSearch = new URLSearchParams(window.location.search);
 const printPdfMode = urlSearch.has('print-pdf');
@@ -26,6 +28,18 @@ deck.initialize().then(() => {
     link.setAttribute('target', '_blank');
   });
 });
+
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark'
+});
+
+mermaid.registerIconPacks([
+  {
+    name: 'fluent',
+    icons
+  }
+]);
 
 if (urlSearch.has('export')) {
   (window as any)['Reveal'] = deck;

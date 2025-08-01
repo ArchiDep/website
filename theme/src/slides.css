@@ -1,8 +1,21 @@
-@import url('https://cdnjs.cloudflare.com/ajax/libs/unsemantic/1.2.3/unsemantic-grid-desktop.min.css');
 @import url('https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&display=swap');
+
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@source "../../course/collections/_course/**/slides/**/*.md";
 
 body {
   background-color: #002b36;
+}
+
+strong {
+  @apply text-yellow-100/85;
+}
+
+pre.mermaid {
+  @apply shadow-none text-center;
 }
 
 .reveal .slides section:first-child,
