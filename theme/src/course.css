@@ -144,7 +144,7 @@ main .solution .highlighter-rouge:last-child pre.highlight {
   }
 
   &.callout-more strong {
-    @apply font-bold text-red-200;
+    @apply font-bold text-red-800/50 dark:text-red-800/65 group-has-checked/callout:text-red-300 group-has-[#always-tell-me-more]/body:text-red-300;
   }
 
   &.callout-warning strong {
@@ -205,6 +205,10 @@ main .solution .highlighter-rouge:last-child pre.highlight {
 
 .callout.callout-more .content {
   @apply screen:line-clamp-3 peer-checked:line-clamp-none group-has-[#always-tell-me-more]/body:line-clamp-none;
+}
+
+.callout .content {
+  @apply w-full text-left;
 }
 
 .callout .content > * {

@@ -31,16 +31,24 @@ To connect to the server:
   Before accepting, you should verify that the key fingerprint in the warning
   message corresponds to one of the keys provided by the teacher.
 
-  > :books: Answering yes without checking the key fingerprint exposes you to a
-  > potential man-in-the-middle attack. An attacker could make you connect to a
-  > compromised server and then intercept all traffic going through the SSH
-  > connexion, including your password.
+{% callout %}
+
+Answering yes without checking the key fingerprint exposes you to a potential
+man-in-the-middle attack. An attacker could make you connect to a compromised
+server and then intercept all traffic going through the SSH connexion, including
+your password.
+
+{% endcallout %}
 
 - Enter or paste your password when prompted.
 
-  > :books: The password's characters will not appear as you type or after
-  > pasting. This is a feature, not a bug. Passwords are not displayed to make
-  > it harder for someone looking over your shoulder to read them.
+{% note type: tip %}
+
+The password's characters will not appear as you type or after pasting. This is
+a feature, not a bug. Passwords are not displayed to make it harder for someone
+looking over your shoulder to read them.
+
+{% endnote %}
 
 You should now be connected to the server. You should see a welcome banner
 giving you some information about the server's operating system, and the prompt
@@ -58,24 +66,44 @@ console, they will be executed on your local machine this time. Observe the
 difference in output when you are connected to the server or running the
 commands on your local machine.
 
-![SSH and local](../images/ssh-local-side-by-side.png)
+![SSH and local](images/ssh-local-side-by-side.png)
+
+{% note type: more %}
+
+The `hostname` command prints the network name of the computer you are running
+it on. This is likely to be different on your local machine than on the SSH
+exercise server.
+
+{% endnote %}
 
 Another interesting command to run to see the difference between your machine
 and the server is the [`uname` command][uname-command]. Try running it on the
 server and your machine. Read the documentation and try some of its options to
 get more information about your machine and the server.
 
-> :gem: If you want to quickly run a command on a remote server with SSH and
-> immediately disconnect, you can do so by providing more arguments to the
-> SSH command:
->
->     $> ssh <username>@<hostname> [command]
->
-> For example, assuming your username is `jdoe`, open a new console and execute
-> the following commands:
->
->     $> ssh jdoe@archidep.ch hostname
->     $> hostname
+{% note type: tip %}
+
+If you want to quickly run a command on a remote server with SSH and
+immediately disconnect, you can do so by providing more arguments to the
+SSH command:
+
+    $> ssh <username>@<hostname> [command]
+
+For example, assuming your username is `jdoe`, open a new console and execute
+the following commands:
+
+```bash
+$> ssh jdoe@archidep.ch hostname
+archidep.ch
+
+$> hostname
+YourMachine.local
+```
+
+You can see from the output that the first command was run on the server, but
+that you are no longer connected by the time you ran the second command.
+
+{% endnote %}
 
 ## :exclamation: Copy a file with the `scp` command
 
@@ -148,30 +176,34 @@ $> cat hello3.txt
 World
 ```
 
-> :gem: Here's a few additional examples of how to use the `scp` command:
->
-> - `scp foo.txt jdoe@192.168.50.4:bar.txt`
->
->   Copy the local file `foo.txt` to a file named `bar.txt` in `jdoe`'s home
->   directory on the remote computer.
->
-> - `scp foo.txt jdoe@192.168.50.4:`
->
->   Copy the file to `jdoe`'s home directory with the same file name.
->
-> - `scp foo.txt jdoe@192.168.50.4:/tmp/foo.txt`
->
->   Copy the file to the absolute path `/tmp/foo.txt` on the remote computer.
->
-> - `scp jdoe@192.168.50.4:foo.txt jsmith@192.168.50.5:bar.txt`
->
->   Copy the file from one remote computer to another.
->
-> - `scp -r foo jdoe@192.168.50.4:foo`
->
->   **R**ecursively (the `-r` option) copy the contents of directory `foo` to
->   the remote computer (a [recursive][recursion] copy means that the directory
->   and all its subdirectories are copied).
+{% note type: tip %}
+
+Here's a few additional examples of how to use the `scp` command:
+
+- `scp foo.txt jdoe@192.168.50.4:bar.txt`
+
+  Copy the local file `foo.txt` to a file named `bar.txt` in `jdoe`'s home
+  directory on the remote computer.
+
+- `scp foo.txt jdoe@192.168.50.4:`
+
+  Copy the file to `jdoe`'s home directory with the same file name.
+
+- `scp foo.txt jdoe@192.168.50.4:/tmp/foo.txt`
+
+  Copy the file to the absolute path `/tmp/foo.txt` on the remote computer.
+
+- `scp jdoe@192.168.50.4:foo.txt jsmith@192.168.50.5:bar.txt`
+
+  Copy the file from one remote computer to another.
+
+- `scp -r foo jdoe@192.168.50.4:foo`
+
+  **R**ecursively (the `-r` option) copy the contents of directory `foo` to
+  the remote computer (a [recursive][recursion] copy means that the directory
+  and all its subdirectories are copied).
+
+{% endnote %}
 
 ## :exclamation: Copy a file using the SFTP protocol
 
@@ -198,16 +230,24 @@ configure a connection with the following information:
 - **Password**: the password you received by email
 - **Port:** 22 (the standard SSH port)
 
-> :gem: How to use these parameters depends on which application you use. They
-> may not be named exactly like this.
+{% note type: tip %}
+
+How to use these parameters depends on which application you use. They
+may not be named exactly like this.
+
+{% endnote %}
 
 For example, here's how to do it with Cyberduck:
 
-![Cyberduck SFTP password authentication](../images/cyberduck-sftp-password.png)
+![Cyberduck SFTP password authentication](images/cyberduck-sftp-password.png)
 
-> :books: When connecting for the first time, the application may issue the same
-> initial connection warning as when you connect using the command line. Be sure
-> to check the key fingerprint.
+{% note type: warning %}
+
+When connecting for the first time, the application may issue the same
+initial connection warning as when you connect using the command line. Be sure
+to check the key fingerprint.
+
+{% endnote %}
 
 Once you have successfully connected to the server, copy another file to the
 server using the SFTP application this time. These applications will usually
@@ -241,22 +281,43 @@ algorithm, such as an [ECDSA][ecdsa] key pair with files named `id_ecdsa` and
 `id_ecdsa.pub`, or an [RSA][rsa] key pair with files named `id_rsa` and
 `id_rsa.pub` if your system has an older SSH client.
 
-> :gem: On Windows, you can toggle the display of hidden files in the View tab
-> of the explorer to access your `.ssh` directory manually. On macOS, type `open
-~/.ssh` in your Terminal or use the `Cmd-Shift-.` shortcut to display hidden
-> files. On most Linux distributions, the file manager will have an option to
-> show hidden files under its menu.
+{% note type: tip %}
+
+On Windows, you can toggle the display of hidden files in the View tab of the
+explorer to access your `.ssh` directory manually.
+
+On macOS, type `open ~/.ssh` in your Terminal or use the `Cmd-Shift-.` shortcut
+to display hidden files.
+
+On most Linux distributions, the file manager will have an option to show hidden
+files under its menu.
+
+{% endnote %}
 
 If the directory doesn't exist or is empty, you don't have a key pair yet.
 
-> :books: You may have a key with a different name, e.g. `github_rsa` &
-> `github_rsa.pub`, as it is sometimes generated by some software. You can use
-> this key if you want, but since it doesn't have the default name, you will
-> have to add a `-i ~/.ssh/github_rsa` option to all your SSH commands.
-> Generating a new key with the default name for command line use would probably
-> be easier.
+{% note %}
 
-### :books: The `ssh-keygen` command
+You may have a key with a different name, e.g. `github_rsa` & `github_rsa.pub`,
+as it is sometimes generated by some software. You can use this key if you want,
+but since it doesn't have the default name, you will have to add a `-i
+~/.ssh/github_rsa` option to all your SSH commands. Generating a new key with
+the default name for command line use would probably be easier.
+
+{% endnote %}
+
+### :exclamation: Generate a private-public key pair
+
+{% callout type: exercise %}
+
+Perform this step on your local machine, not on the SSH exercise server.
+
+{% endcallout %}
+
+If you do not already have a key pair, you should generate one for the rest of
+the exercise and the course. You will use the `ssh-keygen` command.
+
+{% note type: more %}
 
 The `ssh-keygen` command is usually installed along with SSH and can generate a
 key pair for you. It will ask you a couple of questions about the key:
@@ -267,38 +328,26 @@ key pair for you. It will ask you a couple of questions about the key:
 - What password do you want to protect the key with? Enter a password or simply
   press enter to use no password.
 
-> **Should I protect my key with a password?**
->
-> If you enter no password, your key will be stored in the clear. This will be
-> convenient as you will not have to enter a password when you use it. However,
-> any malicious code you allow to run on your machine could easily steal it.
->
-> If your key is protected by a password, you can run an [SSH agent][ssh-agent]
-> to unlock it only once per session instead of every time you use it.
+{% endnote %}
 
-### :exclamation: Generate a private-public key pair
-
-:warning: **Perform this step on your local machine, not on the SSH exercise
-server.**
-
-If you do not already have a key pair, you should generate one for the rest of
-the exercise and the course. Simply running `ssh-keygen` with no arguments will
-ask you the required information and generate a new key pair using your SSH
-client's default algorithm:
+Simply running `ssh-keygen` with no arguments will ask you the required
+information and generate a new key pair using your SSH client's default
+algorithm:
 
 ```bash
 $> ssh-keygen
-Generating public/private rsa key pair.
-Enter file in which to save the key (/home/jdoe/.ssh/id_rsa):
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/jdoe/.ssh/id_ed25519):
 Created directory '/home/jdoe/.ssh'.
 Enter passphrase (empty for no passphrase):
 Enter same passphrase again:
-Your identification has been saved in /home/jdoe/.ssh/id_rsa.
-Your public key has been saved in /home/jdoe/.ssh/id_rsa.pub.
+Your identification has been saved in /home/jdoe/.ssh/id_ed25519.
+Your public key has been saved in /home/jdoe/.ssh/id_ed25519.pub.
 The key fingerprint is:
 SHA256:MmwL9n4KOUCuLoyvGJ7nWRDXjTSGAXO8AcCNVqmDJH0 jdoe@497820feb22a
 The key's randomart image is:
-+---[RSA 2048]----+
+
++--[ED25519 256]--+
 |.o===oo+         |
 |.=.oE++ +        |
 |= oo .oo .       |
@@ -311,9 +360,26 @@ The key's randomart image is:
 +----[SHA256]-----+
 ```
 
-> :gem: If you choose to enter a passphrase, you will not see anything in your
-> terminal when you type it. This is intentional, so that no one looking over
-> your shoulder can read it.
+{% note type: tip %}
+
+If you choose to enter a passphrase, you will not see anything in your terminal
+when you type it. This is intentional, so that no one looking over your shoulder
+can read it.
+
+{% endnote %}
+
+{% callout type: more %}
+
+**Should I protect my key with a password?**
+
+If you enter no password, your key will be stored **in the clear**. This will be
+convenient as you will not have to enter a password when you use it. However,
+any malicious code you allow to run on your machine could easily steal it.
+
+If your key is protected by a password, you can run an [SSH agent][ssh-agent]
+to unlock it only once per session instead of every time you use it.
+
+{% endcallout %}
 
 You can verify that a key has indeed been created by listing the contents of the
 SSH directory:
@@ -342,11 +408,15 @@ authentication** and you should not have to enter your password again to log in.
 SSH will use your private key to authenticate you instead. (You may have to
 enter your private key's password though, if it is protected by one.)
 
-> :books: Once you have set up public key authentication for an SSH server, that
-> server is in posession of your public key. Your SSH client can then use your
-> private key to prove that you are the owner of this public key, using the
-> mathematical relationship between the two. Your private key is never sent to
-> the server during this process.
+{% note type: more %}
+
+Once you have set up public key authentication for an SSH server, that server is
+in posession of your public key. Your SSH client can then use your private key
+to prove that you are the owner of this public key, using the mathematical
+relationship between the two. Your private key is never sent to the server
+during this process.
+
+{% endnote %}
 
 Connect with the `ssh` command again to see public key authentication in action:
 
@@ -380,17 +450,23 @@ The private key is never transmitted, and this new authentication process is
 transparent, handled automatically for you by the SSH client and server, hence
 why you no longer have to enter a password.
 
-> :books: You can also create the `authorized_keys` file manually. Note that
-> both the file and its parent directory must have permissions that make it
-> accessible only to your user account, or the SSH server will refuse to use it
-> for security reasons. The following commands can set up the file on the target
-> machine:
->
->     $> mkdir -p ~/.ssh && chmod 700 ~/.ssh
->     $> touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
->
-> The [`chmod` command][chmod] changes the permission of files. We will learn
-> more about this command later on in the course.
+{% callout type: more %}
+
+You can also create the `authorized_keys` file manually. Note that both the file
+and its parent directory must have permissions that make it accessible only to
+your user account, or the SSH server will refuse to use it for security reasons.
+The following commands can set up the file on the target machine:
+
+```bash
+$> mkdir -p ~/.ssh && chmod 700 ~/.ssh
+$> touch ~/.ssh/authorized_keys
+$> chmod 600 ~/.ssh/authorized_keys
+```
+
+The [`chmod` command][chmod] changes the permission of files. We will learn
+more about this command later on in the course.
+
+{% endcallout %}
 
 ## :exclamation: Configure your SFTP application to use public key authentication
 
@@ -401,37 +477,52 @@ how to replace your password by public key authentication, and try it.
 You can remove your password once you have selected your private key, since
 public key authentication will be used instead of your password.
 
-> :gem: You will need to provide the SFTP application with the location of your
-> **private key**. The application will use the private key to prove that it
-> owns the public key located in the server's `authorized_keys` file.
+{% note type: tip %}
+
+You will need to provide the SFTP application with the location of your
+**private key**. The application will use the private key to prove that it owns
+the public key located in the server's `authorized_keys` file.
+
+{% endnote %}
 
 For example, Cyberduck allows you to select your default key file:
 
-![Cyberduck SFTP public key authentication](../images/cyberduck-sftp-pubkey.png)
+![Cyberduck SFTP public key authentication](images/cyberduck-sftp-pubkey.png)
 
-> :gem: On macOS, depending on which application you use, you may not see hidden
-> files and directories (file names starting with a dot `.`) when browsing the
-> file system. Use the `Cmd-Shift-.` shortcut to display them. On Windows, you
-> can toggle the display of hidden files in the View tab of the explorer. On
-> most Linux distributions, the file manager will have an option to show hidden
-> files under its menu.
+{% note type: tip %}
 
-## :space_invader: SSH agent
+On macOS, depending on which application you use, you may not see hidden files
+and directories (file names starting with a dot `.`) when browsing the file
+system. Use the `Cmd-Shift-.` shortcut to display them.
+
+On Windows, you can toggle the display of hidden files in the View tab of the
+explorer.
+
+On most Linux distributions, the file manager will have an option to show hidden
+files under its menu.
+
+{% endnote %}
+
+## :question: SSH agent
 
 If you use a **private key that is password-protected**, you lose part of the
 convenience of public key authentication: you don't have to enter a password to
 authenticate to the server, but **you still have to enter the key's password**
 to unlock it.
 
-> :gem: If you did not set a passphrase when generating your key, you can also
-> [add a passphrase
-> afterwards](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases).
+{% note type: tip %}
+
+If you did not set a passphrase when generating your key, you can also [add a
+passphrase
+afterwards](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases).
+
+{% endnote %}
 
 The `ssh-agent` command can help you there. It runs a helper program that will
 let you unlock your private key(s) once, then use it multiple times without
 entering the password again each time.
 
-### :space_invader: Running an SSH agent
+{% callout type: more %}
 
 There are several ways to run an SSH agent:
 
@@ -467,20 +558,18 @@ agent and have it start a new shell for you:
 $> ssh-agent bash
 ```
 
-> The advantage of this last technique is that the agent will automatically quit
-> when you exit the shell, which is good since it's not necessarily a good idea
-> to keep an SSH agent running forever [for security
-> reasons][ssh-agent-security].
+The advantage of this last technique is that the agent will automatically quit
+when you exit the shell, which is good since it's not necessarily a good idea to
+keep an SSH agent running forever [for security reasons][ssh-agent-security].
 
-### :space_invader: Using the SSH agent
-
-The associated `ssh-add` command will take your default private key (e.g.
-`~/.ssh/id_25519`) and prompt you for your password to unlock it:
+Once you have your agent running, the associated `ssh-add` command will take
+your default private key (e.g. `~/.ssh/id_25519`) and prompt you for your
+password to unlock it:
 
 ```bash
 $> ssh-add
 Enter passphrase for /Users/jdoe/.ssh/id_25519:
-Identity added: /Users/jdoe/.ssh/id_25519 (/Users/jdoe/.ssh/id_25519)
+Identity added: /Users/jdoe/.ssh/id_25519 (...)
 ```
 
 The **unlocked key** is now **kept in memory by the agent**. The `ssh` command
@@ -492,6 +581,8 @@ If you want to load another key than the default one, you can specify its path:
 ```bash
 $> ssh-add /path/to/custom_id_25519
 ```
+
+{% endcallout %}
 
 ## :checkered_flag: What have I done?
 
