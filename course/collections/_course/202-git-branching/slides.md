@@ -49,7 +49,7 @@ Many teams using Git create a **separate branch** to develop **each feature**.
 
 ---
 
-### Snapshots
+### Remember commits?
 
 <git-memoir name='internals' chapter='internals' controls='false' svg-height='137px'></git-memoir>
 
@@ -69,9 +69,9 @@ Each commit also contains:
 
 ---
 
-#### Branches point to commits
+### Branches point to commits
 
-A branch is simply a lightweight, movable **pointer to a commit**.
+A branch is a lightweight, movable **pointer to a commit**.
 
 <git-memoir name='branchingOneLine' chapter='commits' svg-height='137px'></git-memoir>
 
@@ -147,14 +147,8 @@ In fact, this command is so useful you should make an **alias**, as we will use 
 
 ### Create a new branch
 
-.exercise[
-
-> **Exercise:** our JavaScript calculator is missing some code. Let's create a
-> branch to implement subtraction.
-> ]
-
-It's very fast and simple to create a new branch. Run the following command to
-create a branch called "feature-sub":
+> 🛠️ Our JavaScript calculator is missing some code. Let's create a branch to
+> implement subtraction.
 
 ```bash
 $> git branch feature-sub
@@ -162,15 +156,17 @@ $> git branch feature-sub
 
 <git-memoir name='branchingOneLine' chapter='branch' svg-height='137px'></git-memoir>
 
-There is now a new pointer to the current commit.
-Note that `HEAD` didn't move – we are still on the `main` branch.
+**Notes:**
+
+It's very fast and simple to create a new branch. Use the `git branch` command
+to create a branch called "feature-sub":
+
+There is now a new pointer to the current commit. Note that `HEAD` didn't move –
+we are still on the `main` branch.
 
 ---
 
-#### Showing the current branch
-
-You can use `git branch` without arguments to simply see the list of branches
-and which one you are currently on:
+### Showing the current branch
 
 ```bash
 $> git branch
@@ -178,13 +174,16 @@ $> git branch
    feature-sub
 ```
 
-> The star is displayed next to the current branch.
+**Notes:**
+
+You can use `git branch` without arguments to simply see the list of branches
+and which one you are currently on:
+
+The star is displayed next to the current branch.
 
 ---
 
 ### Switch branches
-
-Now let's switch to the `feature-sub` branch:
 
 ```bash
 $> git switch feature-sub  # or git checkout feature-sub
@@ -193,19 +192,19 @@ Switched to branch 'feature-sub'
 
 <git-memoir name='branchingOneLine' chapter='checkout' svg-height='137px'></git-memoir>
 
+> 🛠️ You can now implement the subtraction in `subtraction.js`. Move on to the
+> next slide once you're done.
+
+**Notes:**
+
+Now let's switch to the `feature-sub` branch:
+
 This moves `HEAD` to point to the `feature-sub` branch. Nothing else happened
 because `HEAD` is still pointing to the same commit as `main`.
-
-.exercise[
-
-> **Exercise:** you can now implement the subtraction in `subtraction.js`.
-> ]
 
 ---
 
 ### Commit on a branch
-
-Once you're done, it's time to add and commit your changes:
 
 ```bash
 $> git add subtraction.js
@@ -215,37 +214,40 @@ $> git commit -m "Implement subtraction"
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-As you commit, the current branch (the one pointed to by `HEAD`) moves forward
-to the new commit:
-
 <git-memoir name='branchingOneLine' chapter='commit-on-a-branch' svg-height='137px'></git-memoir>
+
+**Notes:**
+
+Once you're done, it's time to add and commit your changes. As you commit, the
+current branch (the one pointed to by `HEAD`) moves forward to the new commit.
 
 ---
 
 ### Switch back to `main`
 
-.exercise[
-
-> **Exercise:** oops, you just noticed that addition is not working correctly.
+> 🛠️ Oops, you just noticed that addition is not working correctly.
 > You need to make a bug fix, but you don't want to mix that code with the new
-> subtraction feature. Let's **go back to `main`**:
-> ]
+> subtraction feature. Let's **go back to `main`**.
+
+---
+
+### Switch/checkout behavior
 
 ```bash
 $> git switch main  # or git checkout main
 Switched to branch 'main'
 ```
 
----
+<git-memoir name='branchingOneLine' chapter='back-to-main' svg-height='137px'></git-memoir>
 
-#### Switch/checkout behavior
+Now check your files.
+
+**Notes:**
 
 Two things happened when you ran `git switch main` (or `git checkout main`):
 
 - The `HEAD` pointer was **moved** back to the `main` branch.
 - The files in your working directory were **reverted** back to the snapshot that `main` points to.
-
-<git-memoir name='branchingOneLine' chapter='back-to-main' svg-height='137px'></git-memoir>
 
 You have essentially **rewinded** the work you've done in `feature-sub`, and are working on an **older version** of the project.
 
@@ -253,14 +255,7 @@ You have essentially **rewinded** the work you've done in `feature-sub`, and are
 
 ### Create another branch
 
-.exercise[
-
-> **Exercise:** let's create a new branch to fix the bug.
-> ]
-
-You can create a new branch _and_ switch to it in one command with the `-c`
-(**c**reate) option of the `switch` command or the `-b` (new **b**ranch) option
-of the `checkout` command:
+> 🛠️ Let's create a new branch to fix the bug.
 
 ```bash
 $> git switch -c fix-add  # or git checkout -b fix-add
@@ -269,16 +264,19 @@ Switched to a new branch 'fix-add'
 
 <git-memoir name='branchingOneLine' chapter='another-branch' svg-height='137px'></git-memoir>
 
+**Notes:**
+
+You can create a new branch _and_ switch to it in one command with the `-c`
+(**c**reate) option of the `switch` command or the `-b` (new **b**ranch) option
+of the `checkout` command.
+
 Nothing changed yet because `fix-add` still points to the same commit as `main`.
 
 ---
 
 ### Work on a separate branch
 
-.exercise[
-
-> **Exercise:** fix addition in `addition.js` and commit your changes.
-> ]
+> 🛠️ Fix `addition.js` and commit your changes.
 
 ```bash
 $> git add addition.js
@@ -291,14 +289,21 @@ $> git commit -m "Fix addition"
 
 ---
 
-#### Divergent history
+### Divergent history
 
-Now your project history has **diverged**.
+```bash
+$> git switch feature-sub
+$> git switch fix-add
+```
+
+<git-memoir name='branching' chapter='switch-branches' svg-height='250px'></git-memoir>
+
+**Notes:**
+
+Your project history has now **diverged**.
 
 The changes in `feature-sub` and `fix-add` are **isolated**. You can **switch
 back and forth** between the branches with `git switch` or `git checkout`:
-
-<git-memoir name='branching' chapter='switch-branches' svg-height='250px'></git-memoir>
 
 Every time you switch to one of these branches, the files in your **working
 directory** are updated to reflect the state of the corresponding commit, or
@@ -308,18 +313,22 @@ snapshot.
 
 ### Merging
 
-Now that you've tested your fix and made sure it works, you want to **bring
-those changes** back **into the `main` branch**.
-
-Git's `merge` command can do that for you, but it can only **bring changes**
-from another branch **into the current branch**, not the other way around. So
-you must first switch to the `main` branch:
+Let's bring back those changes to the main line.
 
 ```bash
 $> git switch main  # or git checkout main
 ```
 
 <git-memoir name='branching' chapter='fast-forward-merge-checkout' svg-height='200px'></git-memoir>
+
+**Notes:**
+
+Now that you've tested your fix and made sure it works, you want to **bring
+those changes** back **into the `main` branch**.
+
+Git's `merge` command can do that for you, but it can only **bring changes**
+from another branch **into the current branch**, not the other way around. So
+you must first switch to the `main` branch.
 
 ---
 
