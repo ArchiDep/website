@@ -4,22 +4,42 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
+@plugin "daisyui";
+
 @source "../../course/collections/_course/**/slides/**/*.md";
 
+@custom-variant screen (@media screen);
+
 body {
-  background-color: #002b36;
+  background-color: #d9d4c4;
 }
 
-strong {
-  @apply text-yellow-100/85;
+img.emoji {
+  @apply m-0;
+}
+
+.emoji-container img.emoji {
+  @apply size-full;
+}
+
+strong:not(.text-success):not(.text-info):not(.text-warning):not(.text-error) {
+  @apply text-black;
+}
+
+a {
+  @apply text-blue-800 underline hover:text-accent;
+
+  & strong {
+    @apply text-blue-800 hover:text-accent;
+  }
 }
 
 pre.mermaid {
-  @apply shadow-none text-center;
+  @apply shadow-none text-center text-gray-600;
 }
 
 .reveal .slides section:first-child,
-.reveal .slides .scroll-page:first-child .scroll-page-content section {
+.reveal .slides .scroll-page:first-of-type .scroll-page-content section {
   h1 {
     font-family: 'Bitcount Prop Single', sans-serif;
     font-size: 1.8em;

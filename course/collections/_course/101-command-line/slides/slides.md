@@ -18,13 +18,12 @@ For old time's sake.
 
 The Analytical Engine, proposed by Charles Babbage <!-- .element: class="subtitle" -->
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-35">
+<div class="grid grid-cols-9 gap-4">
+  <div class="col-span-3 col-start-2">
     <img src="{{ 'images/analytical-engine.jpg' | relative_file_url }}" alt="Analytical Engine">
   </div>
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-35">
+  <div class="col-span-1">&nbsp;</div>
+  <div class="col-span-3">
     <img src="{{ 'images/charles-babbage.jpg' | relative_file_url }}" alt="Charles Babbage">
   </div>
 </div>
@@ -42,9 +41,8 @@ computer][general-purpose-computer].
 
 Ada Lovelace publishes the first algorithm <!-- .element: class="subtitle" -->
 
-<div class="grid-container">
-  <div class="grid-30">&nbsp;</div>
-  <div class="grid-40">
+<div class="grid grid-cols-10">
+  <div class="col-span-4 col-start-4">
     <img src="{{ 'images/ada-lovelace.png' | relative_file_url }}" alt="Ada Lovelace">
   </div>
 </div>
@@ -63,15 +61,11 @@ computer programmer.
 
 Alan Turing formalizes algorithms and computation <!-- .element: class="subtitle" -->
 
-<div class="grid-container">
-  <div class="grid-30">&nbsp;</div>
-  <div class="grid-40">
+<div class="grid grid-cols-10">
+  <div class="col-span-4 col-start-4">
     <img src="{{ 'images/alan-turing.jpg' | relative_file_url }}" alt="Alan Turing">
   </div>
-  <div class="grid-30">&nbsp;</div>
 </div>
-
-{% clear %}
 
 > Did you see [The Imitation Game][the-imitation-game]?
 
@@ -87,9 +81,8 @@ intelligence][artificial-intelligence].
 
 ### ENIAC (1946)
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-80">
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="{{ 'images/eniac.jpg' | relative_file_url }}" alt="ENIAC">
   </div>
 </div>
@@ -104,9 +97,8 @@ function tables with **hundreds of ten-way switches**, which took weeks.
 
 ### The first bug that was caught (1947)
 
-<div class="grid-container">
-  <div class="grid-15">&nbsp;</div>
-  <div class="grid-70">
+<div class="grid grid-cols-6">
+  <div class="col-span-4 col-start-2">
     <img src="{{ 'images/bug.jpg' | relative_file_url }}" alt="Bug">
   </div>
 </div>
@@ -127,9 +119,8 @@ hands dirty and finding the [actual bug][bug] in the physical machine.
 
 The Automated Computing Engine, designed by Alan Turing <!-- .element: class="subtitle" -->
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-80">
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="{{ 'images/ace.jpg' | relative_file_url }}" alt="Automated Computing Engine">
   </div>
 </div>
@@ -147,9 +138,8 @@ memory][delay-line-memory].
 
 Better not spill it... <!-- .element: class="subtitle italic" -->
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-80">
+<div class="grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="{{ 'images/mercury-delay-line-memory.jpg' | relative_file_url }}" alt="Mercury Delay Line Memory">
   </div>
 </div>
@@ -160,16 +150,15 @@ Better not spill it... <!-- .element: class="subtitle italic" -->
 
 One of the first user interfaces <!-- .element: class="subtitle" -->
 
-<div class="grid-container">
+<div class="grid grid-cols-12 gap-8">
   <div class="grid-5">&nbsp;</div>
-  <div class="grid-40">
+  <div class="col-span-5 col-start-2">
     <img src="{{ 'images/punched-card.jpg' | relative_file_url }}" alt="Punched Card">
 
 Invented in 1725 <!-- .element: style="margin-top: 0;" -->
 
   </div>
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-40">
+  <div class="col-span-5 col-start-7">
     <img src="{{ 'images/keypunch-machine.jpg' | relative_file_url }}" alt="Keypunch Machine">
   </div>
 </div>
@@ -189,9 +178,8 @@ Punched cards are much older than computers. They were first invented around
 
 <p class="subtitle italic">Whatever you do, <strong>DON'T</strong> drop it!</p>
 
-<div class="grid-container">
-  <div class="grid-15">&nbsp;</div>
-  <div class="grid-70">
+<div class="grid grid-cols-10">
+  <div class="col-span-6 col-start-3">
     <img src="{{ 'images/punched-cards-program.jpg' | relative_file_url }}" alt="Punched Card Program">
   </div>
 </div>
@@ -202,9 +190,8 @@ Punched cards are much older than computers. They were first invented around
 
 <p class="subtitle">The first <strong>command line interfaces (CLI)</strong></p>
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-80">
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="{{ 'images/tty.jpg' | relative_file_url }}" alt="TeleTYpewriter">
   </div>
 </div>
@@ -223,9 +210,8 @@ and the output would be printed on physical paper.
 
 ### Video terminals (1970s)
 
-<div class="grid-container">
-  <div class="grid-20">&nbsp;</div>
-  <div class="grid-60">
+<div class="grid grid-cols-10">
+  <div class="col-span-6 col-start-3">
     <img src="{{ 'images/vt102.jpg' | relative_file_url }}" alt="VT102">
   </div>
 </div>
@@ -242,9 +228,8 @@ fundamentally the same as TTYs: textual input/output devices.
 
 The first portable operating system <!-- .element: class="subtitle" -->
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-80">
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="{{ 'images/unix.png' | relative_file_url }}" alt="Unix">
   </div>
 </div>
@@ -265,9 +250,8 @@ is also used as the basis for [macOS][macos] (since Mac OS X).
 
 Text-based at that time <!-- .element: class="subtitle" -->
 
-<div class="grid-container">
-  <div class="grid-15">&nbsp;</div>
-  <div class="grid-70">
+<div class="grid grid-cols-10">
+  <div class="col-span-6 col-start-3">
     <img src="{{ 'images/shell.png' | relative_file_url }}" alt="Shell">
   </div>
 </div>
@@ -285,9 +269,8 @@ system; it wraps and hides the lower-level kernel interface.
 
 Also a type of shell <!-- .element: class="subtitle" -->
 
-<div class="grid-container">
-  <div class="grid-20">&nbsp;</div>
-  <div class="grid-60">
+<div class="grid grid-cols-10">
+  <div class="col-span-6 col-start-3">
     <img src="{{ 'images/xerox-star.jpg' | relative_file_url }}" alt="Shell">
   </div>
 </div>
@@ -307,9 +290,8 @@ interact with the kernel (graphical instead of textual).
 
 Invented 1940s, on TV 1950s, in wise use 2000s
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-80">
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="{{ 'images/motion-sensing-interface.png' | relative_file_url }}" alt="Motion Sensing User Interface">
   </div>
 </div>
@@ -324,9 +306,8 @@ Invented 1940s, on TV 1950s, in wise use 2000s
 
 Invented 1960s, on TV 1980s, in wise use 2000s
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-80">
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="{{ 'images/touch-user-interface.jpg' | relative_file_url }}" alt="Touch User Interface">
   </div>
 </div>
@@ -341,9 +322,8 @@ Invented 1960s, on TV 1980s, in wise use 2000s
 
 Invented 1950s, on TV 1960s, in wise use 2010s
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-80">
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="{{ 'images/voice-user-interface.png' | relative_file_url }}" alt="Voice User Interface">
   </div>
 </div>
@@ -358,9 +338,8 @@ Invented 1950s, on TV 1960s, in wise use 2010s
 
 Invented 1960s, on TV 1970s, in wise use 2010s
 
-<div class="grid-container">
-  <div class="grid-10">&nbsp;</div>
-  <div class="grid-80">
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="{{ 'images/augmented-reality.webp' | relative_file_url }}" alt="Augmented Reality">
   </div>
 </div>
@@ -375,9 +354,8 @@ Invented 1960s, on TV 1970s, in wise use 2010s
 
 Invented 1960s, on TV 1980s, in wise use 2010s
 
-<div class="grid-container">
-  <div class="grid-5">&nbsp;</div>
-  <div class="grid-90">
+<div class="grid grid-cols-12">
+  <div class="col-span-10 col-start-2">
     <img src="{{ 'images/virtual-reality.webp' | relative_file_url }}" alt="Virtual Reality">
   </div>
 </div>
@@ -390,9 +368,8 @@ Invented 1960s, on TV 1980s, in wise use 2010s
 
 ### Tomorrow?
 
-<div class="grid-container">
-  <div class="grid-15">&nbsp;</div>
-  <div class="grid-70">
+<div class="grid grid-cols-10">
+  <div class="col-span-6 col-start-3">
     <img src="{{ 'images/brain-computer-interface.png' | relative_file_url }}" alt="Brain Computer Interface">
   </div>
 </div>

@@ -111,9 +111,13 @@ The line above means that when SSH connects to `example.com` at IP address
 `192.168.50.4`, it expects the server to send this specific public key
 (`eTJtK2wrRzhW5RQzUHprbFJa...`) using the [ECDSA][ecdsa] algorithm.
 
-> ECDSA is another asymmetric algorithm like RSA, although ECDSA is based on
-> [elliptic curve cryptography][elliptic-curve] while RSA is based on prime
-> numbers.
+{% note type: more %}
+
+ECDSA is another asymmetric algorithm like RSA, although ECDSA is based on
+[elliptic curve cryptography][elliptic-curve] while RSA is based on prime
+numbers.
+
+{% endnote %}
 
 #### Adding public keys to the known hosts file
 
@@ -180,8 +184,12 @@ Warning: Permanently added '192.168.50.4' (ECDSA) to the list of known hosts.
 jdoe@192.168.50.4's password:
 ```
 
-> Most SSH clients will not display anything while you type your password.
-> Simply press `Enter` when you're done to submit it.
+{% note type: tip %}
+
+Most SSH clients will not display anything while you type your password. Simply
+press `Enter` when you're done to submit it.
+
+{% endnote %}
 
 ## Logging in with SSH
 
@@ -200,8 +208,12 @@ Welcome to Ubuntu 18.04.1 LTS (GNU/Linux 4.15.0-33-generic x86_64)
 $
 ```
 
-> Note that you may have a different command line prompt once you are connected,
-> in this example `$` instead of `$>`.
+{% note type: tip %}
+
+Note that you may have a different command line prompt once you are connected,
+in this example `$` instead of `$>`.
+
+{% endnote %}
 
 ### Typing commands while connected through SSH
 
@@ -301,10 +313,14 @@ This has advantages over password authentication:
   the server is compromised, as it is never transmitted to the server, only used
   to solve mathematical problems based on the public key.
 
-> Note that **public key authentication is only as secure as the file containing
-> your private key**. If you publish that file anywhere or allow your local
-> machine to be compromised, the attacker will be able to impersonate you on any
-> server or service where you put your public key.
+{% note type: warning %}
+
+Note that **public key authentication is only as secure as the file containing
+your private key**. If you publish that file anywhere or allow your local
+machine to be compromised, the attacker will be able to impersonate you on any
+server or service where you put your public key.
+
+{% endnote %}
 
 ### How does public key authentication work?
 
@@ -312,9 +328,13 @@ To authenticate you, the server will need your **public key**. That way, you
 will be able to prove, using your **private key**, that you are the owner of
 that public key.
 
-> Remember, **your private key MUST remain private** (i.e. the `id_rsa` file).
-> You should **never** give it to any person, server or web service.
-> Only give your public key (i.e. the `id_rsa.pub` file).
+{% callout %}
+
+Remember, **your private key MUST remain private** (i.e. the `id_ed25519` file).
+You should **never** give it to any person, server or web service. Only give
+your public key (i.e. the `id_ed25519.pub` file).
+
+{% endcallout %}
 
 ### Using multiple keys
 
@@ -338,9 +358,13 @@ $> ssh-keygen -f custom_key
 $> ssh -i ~/.ssh/custom_key jdoe@192.168.50.4
 ```
 
-> Note: it is the private key file you want to use with the `-i` option, not the
-> public key, as the private key is the one your SSH client will use to prove
-> that it owns the public key.
+{% note %}
+
+It is the private key file you want to use with the `-i` option, not the public
+key, as the private key is the one your SSH client will use to prove that it
+owns the public key.
+
+{% endnote %}
 
 ### Key management
 
@@ -358,7 +382,7 @@ A few tips on managing your key pairs:
 - Use [the `ssh-copy-id` command][ssh-copy-id] to copy your public key to other
   computers to use public key authentication instead of password authentication.
 
-  > You will see how to do that in the SSH exercises.
+  _You will see how to do that in the SSH exercises._
 
 - For web services using public key authentication (e.g. GitHub), you usually
   have to manually copy the public key file's contents (`id_rsa.pub`) and

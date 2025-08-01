@@ -19,13 +19,13 @@ SSH is a **cryptographic network protocol** for operating network services
 
 <div class="flex flex-col gap-4">
   <div class="flex justify-center items-center gap-2">
-    <iconify-icon icon="fluent:window-text-24-regular"></iconify-icon> Command line login
+    <iconify-icon icon="fluent:window-text-24-regular" noobserver></iconify-icon> Command line login
   </div>
   <div class="flex justify-center items-center gap-2">
-    <iconify-icon icon="cib:git"></iconify-icon> Git
+    <iconify-icon icon="cib:git" noobserver></iconify-icon> Git
   </div>
   <div class="flex justify-center items-center gap-2">
-    <iconify-icon icon="fluent:folder-arrow-up-24-regular"></iconify-icon> FTP
+    <iconify-icon icon="fluent:folder-arrow-up-24-regular" noobserver></iconify-icon> FTP
   </div>
 </div>
 
@@ -45,6 +45,7 @@ architecture-beta
     sshcl1:R --> L:sshsrv
     sshcl2:L --> R:sshsrv
     sshcl3:R --> T:sshsrv
+
 </pre>
 
 **Notes:**
@@ -57,173 +58,239 @@ execute programs.
 
 ### How is it secure?
 
-<!-- slide-column -->
+1. SSH establishes a **secure channel**.
+2. It then requires **authentication**.
 
-**Step 1:** SSH establishes a **secure channel** using various **cryptographic
-techniques**. This is handled automatically by the SSH client and server.
+**Notes:**
 
-<!-- slide-column 50 -->
-
-<p class='center'><img class='w100' src='images/ssh-secure-channel-establishment.jpg' /></p>
-
-<!-- slide-container -->
-
-<!-- slide-column -->
-
-**Step 2:** The user or service that wants to connect to the SSH server must
-**authenticate** to gain access, for example with a password.
-
-<p class='center'><img class='w65' src='images/ssh-authentication.png' /></p>
-
-**Step 3:** The logged-in user or service can do stuff on the server.
-
-> Note that steps 1 and 2 are **separate and unrelated processes**.
+Note that steps 1 and 2 are **separate and unrelated processes**.
 
 ---
 
-## Secure channel
+### Step 1: the secure channel
+
+<div class="grid grid-cols-12">
+  <div class="col-span-4 flex flex-col justify-center items-end">
+    <div class="flex flex-col items-center">
+      <iconify-icon icon="fluent:laptop-24-regular" noobserver width="160" height="160"></iconify-icon>
+      <span class="text-3xl">SSH Client</span>
+    </div>
+  </div>
+  <div class="col-span-4 flex flex-col justify-center items-center">
+    <img src='images/ssh-secure-channel-establishment.png' width="250" />
+  </div>
+  <div class="col-span-4 flex flex-col justify-center items-start">
+    <div class="flex flex-col items-center">
+      <iconify-icon icon="fluent:server-24-regular" noobserver width="160" height="160"></iconify-icon>
+      <span class="text-3xl">SSH Server</span>
+    </div>
+  </div>
+</div>
+
+_This is done for you and (mostly) automatic._
+
+**Notes:**
+
+SSH establishes a **secure channel** between client and server using various
+**cryptographic techniques**. This is handled automatically by the SSH client
+and server.
+
+---
+
+### Step 2: authentication
+
+<div class="grid grid-cols-12">
+  <div class="col-span-5">
+    <div class="size-full flex flex-col justify-center items-end">
+      <div class="chat chat-start">
+        <div class="chat-header">1. SSH Client</div>
+        <div class="chat-bubble chat-bubble-primary min-h-0 text-[1rem]">Hi, I'd like to log in as user "bob".</div>
+      </div>
+      <iconify-icon icon="fluent:laptop-24-regular" noobserver width="160" height="160"></iconify-icon>
+      <div class="chat chat-start">
+        <div class="chat-header">3. SSH Client</div>
+        <div class="chat-bubble chat-bubble-info min-h-0 text-[1rem]">Here's bob's password.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-span-2">
+    <div class="size-full flex justify-center items-center">
+      <img src='images/ssh-secure-channel-establishment.png' width="250" class='opacity-65' />
+    </div>
+  </div>
+  <div class="col-span-5">
+    <div class="size-full flex flex-col justify-center items-start">
+      <div class="chat chat-end">
+        <div class="chat-header">2. SSH Server</div>
+        <div class="chat-bubble chat-bubble-error min-h-0 text-[1rem]">Oh yeah? How do I know you're bob?</div>
+      </div>
+      <iconify-icon icon="fluent:server-24-regular" noobserver width="160" height="160"></iconify-icon>
+      <div class="chat chat-end">
+        <div class="chat-header">4. SSH Server</div>
+        <div class="chat-bubble chat-bubble-success min-h-0 text-[1rem]">Go right ahead.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+**Notes:**
+
+The user or service that wants to connect to the SSH server must
+**authenticate** to gain access, for example with a password.
+
+---
+
+### Security through cryptography
+
+- [Symmetric encryption][symmetric-encryption]
+- [Asymmetric cryptography][pubkey]
+  - Key exchange
+  - Digital signatures
+- [Hash-based Message Authentication Codes (HMAC)][hmac]
+
+**Notes:**
 
 SSH establishes a **secure channel** between two computers **over an insecure
-network** (e.g. a local network or the Internet).
-
-<p class='center'><img class='w70' src='images/ssh-secure-channel.png' /></p>
-
-Establishing and using this secure channel requires a combination of:
-
-- [**Symmetric encryption**][symmetric-encryption]
-- [**Asymmetric cryptography**][pubkey]
-  - A **key exchange** method
-  - **Digital signatures**
-- [**Hash-based Message Authentication Codes (HMAC)**][hmac]
+network** (e.g. a local network or the Internet). Establishing and using this
+secure channel requires a combination of various cryptographic techniques.
 
 ---
 
 ### Symmetric encryption
 
+![Symmetric Encryption](images/symmetric-encryption.png)
+
+**Notes:**
+
 [Symmetric-key algorithms][symmetric-encryption] can be used to encrypt
 communications between two or more parties using a **shared secret**. [AES][aes]
 is one such algorithm.
-
-<p class='center'><img class='w80' src='images/symmetric-encryption.png' /></p>
 
 **Assuming all parties possess the secret key**, they can encrypt data, send it
 over an insecure network, and decrypt it on the other side. An attacker who
 intercepts the data **cannot decrypt it without the key** (unless a weakness is
 found in the algorithm or [its implementation][enigma-operating-shortcomings]).
 
----
+--v
 
 #### Example: symmetric encryption with AES
 
-> **Windows users using Git Bash** may want to open a new shell with the command
-> `winpty bash` before attempting to reproduce these examples. This is because
-> of a [bug in Git Bash](https://github.com/mintty/mintty/issues/540) which
-> causes problems with some interactive commands.
-
-Create a [**plaintext**][plaintext] file containing the words "too many secrets":
-
 ```bash
+# Create a "plaintext" file
 $> cd /path/to/projects
-
 $> mkdir aes-example
-
 $> cd aes-example
-
 $> echo 'too many secrets' > plaintext.txt
 ```
 
-You may encrypt that file with the [OpenSSL library][openssl] (installed on most
-computers). Executing the following command pipeline will prompt you for an
-encryption key:
-
 ```bash
+# Encrypt the plaintext
 $> cat plaintext.txt | openssl aes-256-cbc > ciphertext.aes
 enter aes-256-cbc encryption password:
 Verifying - enter aes-256-cbc encryption password:
 ```
 
----
+**Notes:**
 
-#### Example: symmetric encryption with AES (decryption)
+Create a [**plaintext**][plaintext] file containing the words "too many
+secrets".
 
-The resulting [**ciphertext**][ciphertext] stored in the `ciphertext.aes` file
-cannot be decrypted without the key. Executing the following command pipeline
-and entering the same key as before when prompted will decrypt it:
+You may encrypt that file with the [OpenSSL library][openssl] (installed on most
+computers). Executing the example command pipeline will prompt you for an
+encryption key.
+
+--v
+
+#### Example: symmetric decryption with AES
 
 ```bash
+# Decrypt the ciphertext
 $> cat ciphertext.aes | openssl aes-256-cbc -d
 enter aes-256-cbc decryption password:
 too many secrets
 ```
 
-> The `-d` option makes the command **d**ecrypt the provided contents instead of
-> encrypting it.
+**Notes:**
+
+The resulting [**ciphertext**][ciphertext] stored in the `ciphertext.aes` file
+cannot be decrypted without the key. Executing the example command pipeline
+and entering the same key as before when prompted will decrypt it.
+
+The `-d` option makes the command **d**ecrypt the provided contents instead of
+encrypting it.
 
 ---
 
-#### Symmetric encryption over an insecure network
+### Symmetric encryption over an insecure network
 
-Both parties must already possess the shared encryption key to perform symmetric
-cryptography. It used to be **physically transferred**, for example in the form
-of the codebooks used to operate the German [Enigma machine][enigma] during
-World War II. But that is **impractical for modern computer networks**. And
-**sending the key over the insecure network risks it being compromised** by a
-[Man-in-the-Middle attack][mitm].
+- **Both parties must have the key**
+- It used to be **physically transferred**
 
-<p class='center'><img class='w90' src='images/symmetric-encryption-insecure-network.png' /></p>
+**Notes:**
+
+For example in the form of the codebooks used to operate the German [Enigma
+machine][enigma] during World War II. But that is **impractical for modern
+computer networks**.
+
+---
+
+### Man-in-the-middle attack (MitM)
+
+![Man-in-the-middle attack (MitM)](images/symmetric-encryption-insecure-network.png)
+
+**Notes:**
+
+**Sending the key over the insecure network risks it being
+compromised** by a [Man-in-the-Middle attack][mitm].
 
 ---
 
 ### Asymmetric cryptography
 
+<div class="grid grid-cols-3 gap-4">
+  <div>
+    <strong class="text-2xl">Encryption</strong>
+    <img src='images/asymmetric-cryptography-encryption.png' />
+  </div>
+  <div>
+    <strong class="text-2xl">Key exchange</strong>
+    <img src='images/asymmetric-cryptography-key-exchange.png' />
+  </div>
+  <div>
+    <strong class="text-2xl">Digital Signatures</strong>
+    <img src='images/asymmetric-cryptography-signature.png' />
+  </div>
+</div>
+
+**Notes:**
+
 [Public-key or asymmetric cryptography][pubkey] is any cryptographic system that
 uses pairs of keys: **public keys** which may be disseminated widely, while
 **private keys** which are known only to the owner. It has several use cases:
 
-<!-- slide-column -->
-
-**Encryption**
-
-Encrypt and decrypt data.
-
-<img class='w100' src='images/asymmetric-cryptography-encryption.png' />
-
-<!-- slide-column -->
-
-**Key exchange**
-
-Securely exchange shared secret keys.
-
-<img class='w100' src='images/asymmetric-cryptography-key-exchange.png' />
-
-<!-- slide-column -->
-
-**Digital Signatures**
-
-Verify identity and protect against tampering.
-
-<img class='w100' src='images/asymmetric-cryptography-signature.png' />
+- Encrypting and decrypting data.
+- Securely exchanging shared secret keys.
+- Verifying identity and protecting against tampering.
 
 ---
 
-#### How does asymmetric cryptography work?
+### The properties of an asymmetric key pair
+
+- **Quick & easy to generate a key pair**
+- **Too slow & hard to find the private key from the public key**
+- The private key can solve mathematicalsproblems based on the public key,
+  **proving ownership of that key** _(but not the other way around)_
+
+**Notes:**
 
 There is a mathematical relationship between a public and private key, based on
 problems that currently admit no efficient solution such as [integer
 factorization][integer-factorization], [discrete logarithm][discrete-logarithm]
 and [elliptic curve][elliptic-curve] relationships.
 
-Here's a [mathematical example][pubkey-math] based on integer factorization.
-
-Basically, these problems allow a private-public key pair to have the following
-properties:
-
-- It is easy and **computationally economical to generate a key pair**.
-- It is too **computationally expensive to find the private key** from its
-  paired public key.
-- Possession of the the private key allows you to solve complex mathematical
-  problems based on the public key, thus **proving that you own that public
-  key**.
+Here's a [mathematical example][pubkey-math] based on integer factorization,
+a problem that is computationally economical in one direction (multiplication)
+but very computationally expensive in the other (factorization).
 
 Effective security only requires keeping the private key private; **the public
 key can be openly distributed without compromising security**.
@@ -232,104 +299,106 @@ key can be openly distributed without compromising security**.
 
 ### Asymmetric encryption
 
-<p class='center'><img class='w80' src='images/asymmetric-encryption.png' /></p>
+![Asymmetric encryption](images/asymmetric-encryption.png)
+
+**Notes:**
 
 One use case of asymmetric cryptography is **asymmetric encryption**, where the
 **sender encrypts a message with the recipient's public key**. The message can
 only be **decrypted by the recipient using the matching private key**.
 
----
+--v
 
-#### Example: asymmetric encryption with RSA (key pair)
-
-Let's try encryption with [RSA][rsa] this time, an asymmetric algorithm. To do
-that, we need to generate a **key pair, i.e. a private and public key**. The
-following commands will generate first a private key in a file named
-`private.pem`, then a corresponding public key in a file named `public.pem`:
+#### Example: generate an asymmetric RSA key pair
 
 ```bash
 $> cd /path/to/projects
-
 $> mkdir rsa-example
-
 $> cd rsa-example
 
+# Generate a private key
 $> openssl genrsa -out private.pem 2048
 Generating RSA private key, 2048 bit long modulus
 .............++++++
 .................................++++++
 e is 65537 (0x10001)
 
-$> openssl rsa -in private.pem -out public.pem -outform PEM -pubout
+# Generate public key from the private key (quick & easy)
+$> openssl rsa -in private.pem \
+   -out public.pem -outform PEM -pubout
 writing RSA key
-
-$> ls
-private.pem public.pem
 ```
 
-> By convention, we use the `.pem` extension after the [Privacy-Enhanced Mail
-> (PEM) format][pem], a de facto standard format to store cryptographic data.
+**Notes:**
 
----
+Let's try encryption with [RSA][rsa] this time, an asymmetric algorithm. To do
+that, we need to generate a **key pair, i.e. a private and public key**. The
+example commands will generate first a private key in a file named
+`private.pem`, then a corresponding public key in a file named `public.pem`.
 
-#### Example: asymmetric encryption with RSA (encryption)
+By convention, we use the `.pem` extension after the [Privacy-Enhanced Mail
+(PEM) format][pem], a de facto standard format to store cryptographic data.
 
-Create a file containing your **plaintext**:
+--v
+
+#### Example: asymmetric encryption with RSA
 
 ```bash
+# Create a plaintext
 $> echo 'too many secrets' > plaintext.txt
-```
 
-**Encrypt it with the public key** using the OpenSSL library:
-
-```bash
+# Encrypt the plaintext with the public key
 $> openssl pkeyutl -encrypt -in plaintext.txt \
    -inkey public.pem -pubin -out ciphertext.rsa
-```
 
-> This command will read the plaintext file `plaintext.txt` specified with the
-> `-in` (**in**put) option. It will also read the public key in the `public.pem`
-> file with the `-inkey` (**in**put **key**) and `-pubin` (**pub**lic **in**)
-> options.
->
-> It will then write the encrypted ciphertext to the `ciphertext.rsa` file with
-> the `-out` (**out**put) option.
-
-In addition to your key pair, you should have two additional files containing
-the plaintext and ciphertext:
-
-```bash
+# See what's there
 $> ls
 ciphertext.rsa plaintext.txt private.pem public.pem
 ```
 
----
+**Notes:**
 
-#### Example: asymmetric encryption with RSA (decryption)
+You can create a plain text and **encrypt it with the public key** using the
+OpenSSL library.
 
-The ciphertext can now be **decrypted with the corresponding private key**:
+The example command will read the plaintext file `plaintext.txt` specified with
+the `-in` (**in**put) option. It will also read the public key in the
+`public.pem` file with the `-inkey` (**in**put **key**) and `-pubin` (**pub**lic
+**in**) options.
+
+It will then write the encrypted ciphertext to the `ciphertext.rsa` file with
+the `-out` (**out**put) option.
+
+In addition to your key pair, you should have two additional files containing
+the plaintext and ciphertext:
+
+--v
+
+#### Example: asymmetric decryption with RSA
 
 ```bash
-$> openssl pkeyutl -decrypt -inkey private.pem -in ciphertext.rsa
+# Decrypt the ciphertext with the private key
+$> openssl pkeyutl -decrypt \
+   -inkey private.pem -in ciphertext.rsa
 too many secrets
-```
 
-Note that you **cannot decrypt the ciphertext using the public key**:
-
-```bash
-$> openssl pkeyutl -decrypt -inkey public.pem -in ciphertext.rsa
+# It does not work with the public key
+$> openssl pkeyutl -decrypt \
+  -inkey public.pem -in ciphertext.rsa
 unable to load Private Key [...]
-```
 
-Of course, a hacker using **another private key cannot decrypt it either**:
-
-```bash
+# It does not work either with another private key
 $> openssl genrsa -out hacker-private.pem 1024
-Generating RSA private key, 1024 bit long modulus [...]
-
-$> openssl pkeyutl -decrypt -inkey hacker-private.pem -in ciphertext.rsa
+$> openssl pkeyutl -decrypt \
+   -inkey hacker-private.pem -in ciphertext.rsa
 RSA operation error [...]
 ```
+
+**Notes:**
+
+The ciphertext can be **decrypted with the corresponding private key**. Note
+that you **cannot decrypt the ciphertext using the public key**. Of course, a
+hacker using **another private key cannot decrypt it either**.
 
 Hence, you can encrypt data and send it to another party provided that you have
 their public key. **No single shared key needs to be exchanged** (the private
@@ -337,18 +406,44 @@ key remains a secret known only to the recipient).
 
 ---
 
-#### Asymmetric encryption and forward secrecy
+### Asymmetric encryption and forward secrecy
+
+![Forward Secrecy](images/asymmetric-encryption-forward-secrecy.png)
+
+**Notes:**
 
 Asymmetric encryption protects data sent over an insecure network from
 attackers, but **only as long as the private keys remain private**. It does not
 provide **forward secrecy**, meaning that if the private keys are compromised in
 the future, all data encrypted in the past is also compromised.
 
-<img class='w100' src='images/asymmetric-encryption-forward-secrecy.png' />
-
 ---
 
-### Asymmetric key exchange
+### Symmetric vs. asymmetric encryption
+
+<table class="text-4xl">
+  <thead>
+    <tr>
+      <th></th>
+      <th>Pros</th>
+      <th>Cons</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Symmetric encryption</th>
+      <td><strong class="text-success">Fast</strong>, can be implemented in <strong class="text-success">hardware</strong></td>
+      <td><span class="text-error">Must send key, no forward secrecy</span></td>
+    </tr>
+    <tr>
+      <th>Asymmetric encryption</th>
+      <td><strong class="text-success">No shared key</strong></td>
+      <td><span class="text-error">Slow, no forward secrecy</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+**Notes:**
 
 So far we learned that:
 
@@ -358,24 +453,33 @@ So far we learned that:
   key, but it does not provide forward secrecy.
 
 Additionally, it's important to note that **symmetric encryption is much faster
-than asymmetric encryption**. It's also less complex and can easily be
-implemented as hardware (most modern processors support hardware-accelerated AES
-encryption).
+than asymmetric encryption**.
 
-<!-- slide-column -->
+--v
 
-<img class='w100' src='images/hsm.jpg' />
+### Symmetric encryption in hardware
 
-<!-- slide-column 60 -->
+![Hardware Security Module](images/hsm.jpg)
 
-> This is a [hardware security module][hsm], a physical computing device that
-> safeguards and manages secrets, performs encryption and decryption functions
-> for digital signatures, strong authentication and other cryptographic
-> functions
+**Notes:**
+
+Symmetric encryption is also less complex and can easily be implemented as
+hardware (most modern processors support hardware-accelerated AES encryption).
+
+This is a [hardware security module][hsm], a physical computing device that
+safeguards and manages secrets, performs encryption and decryption functions for
+digital signatures, strong authentication and other cryptographic functions
 
 ---
 
-#### What can we do to improve upon asymmetric encryption?
+### What can we do?
+
+It would be nice if we could share a **fast symmetric encryption key**...
+without actually sharing it.
+
+<img class='w100' src='images/asymmetric-cryptography-key-exchange.png' />
+
+**Notes:**
 
 <!-- slide-column -->
 
@@ -389,15 +493,13 @@ Martin Hellman, was one of the first public key exchange protocols allowing
 users to **securely exchange secret keys** even if an attacker is monitoring the
 communication channel.
 
-<!-- slide-column 40 -->
-
-<img class='w100' src='images/asymmetric-cryptography-key-exchange.png' />
-
 ---
 
 #### Diffie-Hellman key exchange
 
-<!-- slide-column -->
+<img src="images/dh.png" alt="Diffie-Hellman Key Exchange" class="w-1/3" />
+
+**Notes:**
 
 This conceptual diagram illustrates the general idea behind the protocol:
 
@@ -410,12 +512,6 @@ This conceptual diagram illustrates the general idea behind the protocol:
 - Finally, Alice and Bob **mix the color he or she received** from each other
   **with his or her own private color** (yellow-brown).
 
-<!-- slide-column 35 -->
-
-<img class='w100' src='images/dh.png' />
-
-<!-- slide-container -->
-
 The result is a final color mixture that is **identical to the partner's final
 color mixture**, and which was never shared publicly. When using large numbers
 rather than colors, it would be computationally difficult for a third party to
@@ -425,6 +521,10 @@ determine the secret numbers.
 
 ### Man-in-the-Middle attack on Diffie-Hellman
 
+![Man-in-the-Middle Attack on Diffie-Hellman](images/diffie-hellman-mitm.png)
+
+**Notes:**
+
 The Diffie-Hellman key exchange solves the problem of transmitting the shared
 secret key over the network by computing it using asymmetric cryptography. It is
 therefore never transmitted.
@@ -433,16 +533,16 @@ However, **a Man-in-the-Middle attack is still possible** if the attacker can
 position himself between the two parties to **intercept and relay all
 communications**.
 
-<img class='w100' src='images/diffie-hellman-mitm.png' />
-
 ---
 
 ### Asymmetric digital signature
 
+![Digital Signatures with Asymmetric Cryptography](images/asymmetric-cryptography-signature.png)
+
+**Notes:**
+
 One of the other main uses of asymmetric cryptography is performing **digital
 signatures**. A signature proves that the message came from a particular sender.
-
-<!-- slide-column -->
 
 - Assuming **Alice wants to send a message to Bob**, she can **use her private
   key to create a digital signature based on the message**, and send both the
@@ -454,66 +554,67 @@ signatures**. A signature proves that the message came from a particular sender.
   signature will no longer be valid (since it based on both the private key and
   the message).
 
-<!-- slide-column 30 -->
+Note that a digital signature **does not provide confidentiality**. Although the
+message is protected from tampering, it is **not encrypted**.
 
-<img class='w100' src='images/asymmetric-cryptography-signature.png' />
+--v
 
-<!-- slide-container -->
-
-> Note that a digital signature **does not provide confidentiality**. Although
-> the message is protected from tampering, it is **not encrypted**.
-
----
-
-#### Example: digital signature with RSA (signing)
-
-In the same directory as the previous example (asymmetric encryption with RSA),
-create a `message.txt` file with the message that we want to digitally sign:
+#### Example: digital signature with RSA
 
 ```bash
+# Create a message file
 $> echo "Hello Bob, I like you" > message.txt
-```
 
-The following OpenSSL command will use the private key file `private.pem` (from
-the previous example) and generate a digital signature based on the message file
-`message.txt`. The signature will be stored in the file `signature.rsa`.
+# Create a digital signature for
+# that message with the private key
+$> openssl dgst -sha256 -sign private.pem \
+   -out signature.rsa message.txt
 
-```bash
-$> openssl dgst -sha256 -sign private.pem -out signature.rsa message.txt
-```
-
-If you open the file, you can see that it's simply binary data. You can see it
-base64-encoded with the following command:
-
-```bash
+# See the signature (base64-encoded)
 $> openssl base64 -in signature.rsa
 ```
 
----
+**Notes:**
 
-#### Example: digital signature with RSA (verifying)
+In the same directory as the previous example (asymmetric encryption with RSA),
+create a `message.txt` file with the message that we want to digitally sign.
 
-The following command uses the public key to check that the signature is valid
-for the message:
+The example OpenSSL command will use the private key file `private.pem` (from
+the previous example) and generate a digital signature based on the message file
+`message.txt`. The signature will be stored in the file `signature.rsa`.
+
+If you open the file, you can see that it's simply binary data. You can see it
+base64-encoded with the second example command.
+
+--v
+
+#### Example: verifying a digital signature with RSA
 
 ```bash
-$> openssl dgst -sha256 -verify public.pem -signature signature.rsa message.txt
+$> openssl dgst -sha256 -verify public.pem \
+   -signature signature.rsa message.txt
 Verified OK
-```
 
-If you modify the message file and run the command again, it will detect that
-the digital signature no longer matches the message:
+# Modify the message...
 
-```bash
-$> openssl dgst -sha256 -verify public.pem -signature signature.rsa message.txt
+$> openssl dgst -sha256 -verify public.pem \
+   -signature signature.rsa message.txt
 Verification Failure
 ```
 
+**Notes:**
+
+The example command uses the public key to check that the signature is valid for
+the message. If you modify the message file and run the command again, it will
+detect that the digital signature no longer matches the message:
+
 ---
 
-### Cryptographic hash functions
+### Cryptographic hash functions & MACs
 
-<!-- slide-column -->
+<img src="images/hash.png" alt="Cryptographic Hash Functions" class="w-1/2" />
+
+**Notes:**
 
 A [cryptographic hash function][hash] is a [hash function][hash-non-crypto] that
 has the following properties:
@@ -522,12 +623,6 @@ has the following properties:
 - Computing the hash value of any message is quick.
 - It is infeasible to generate a message from its hash value except by trying
   all possible messages (one-way).
-
-<!-- slide-column 45 -->
-
-<img class='w100' src='images/hash.png' />
-
-<!-- slide-container -->
 
 - A small change to a message should change the hash value so extensively that
   the new hash value appears uncorrelated with the old hash value.
@@ -542,20 +637,33 @@ authenticity of all messages sent through the secure channel.
 
 ### Combining it all together in SSH
 
-SSH uses most of the previous cryptographic techniques together to achieve as
-secure a channel as possible:
+![SSH Cryptography](images/ssh-crypto.png)
 
-<img class='w100' src='images/ssh-crypto.png' />
+**Notes:**
+
+SSH uses most of the previous cryptographic techniques we've seen together to
+achieve as secure a channel as possible.
 
 ---
 
 #### Man-in-the-Middle attack on SSH
 
-<img class='w100' src='images/ssh-mitm.png' />
+![Man-in-the-Middle Attack on SSH](images/ssh-mitm.png)
 
 ---
 
 #### Threats countered
+
+- Eavesdropping
+- Connection hijacking
+- DNS an IP spoofing
+- Man-in-the-Middle attack
+
+<div class="mt-4 text-warning italic">
+  As long as you <strong class="text-error screen:animate-pulse">check the public key</strong>!
+</div>
+
+**Notes:**
 
 SSH counters the following threats:
 
@@ -578,20 +686,22 @@ is genuine.
 
 #### Threats not countered
 
-SSH does not counter the following threats:
+- Password cracking <span class="text-xl italic">([common passwords](https://en.wikipedia.org/wiki/List_of_the_most_common_passwords): 123456, password, qwerty1)</span>
+- IP/TCP denial of service
+- Traffic analysis
+- Carelessness and coffee spills <div class="inline-block ml-2 emoji-container size-10">:coffee:</div>
+- Genius mathematicians <span class="text-xl italic">(did you see [Sneakers][sneakers]?)</span>
 
-<!-- slide-column -->
+![Flawless Security](images/xkcd-security.png)
+
+**Notes:**
+
+SSH does not counter the following threats:
 
 - **Password cracking:** if password authentication is enabled, a weak password
   might be easily brute-forced or obtained through [side-channel
   attacks][side-channel]. Consider using public key authentication instead to
   mitigate some of these risks.
-
-<!-- slide-column -->
-
-<img class='w100' src='images/xkcd-security.png' />
-
-<!-- slide-container -->
 
 - **IP/TCP denial of service:** since SSH operates on top of TCP, it is
   vulnerable to attacks against weaknesses in TCP and IP, such as [SYN
@@ -602,3 +712,45 @@ SSH does not counter the following threats:
 - **Carelessness and coffee spills:** SSH doesn't protect you if you write your
   password on a post-it note and paste it on your computer screen.
 - **Genius mathematicians:** did you see [Sneakers][sneakers]?
+
+[aes]: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+[authorized_keys]: https://www.ssh.com/ssh/authorized_keys/openssh
+[bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
+[brute-force]: https://en.wikipedia.org/wiki/Brute-force_attack
+[ciphertext]: https://en.wikipedia.org/wiki/Ciphertext
+[dh]: https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
+[discrete-logarithm]: https://en.wikipedia.org/wiki/Discrete_logarithm
+[ecdsa]: https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
+[elliptic-curve]: https://en.wikipedia.org/wiki/Elliptic-curve_cryptography
+[enigma]: https://en.wikipedia.org/wiki/Enigma_machine#Operation
+[enigma-operating-shortcomings]: https://en.wikipedia.org/wiki/Cryptanalysis_of_the_Enigma#Operating_shortcomings
+[entropy]: https://en.wikipedia.org/wiki/Password_strength#Entropy_as_a_measure_of_password_strength
+[forward-secrecy]: https://en.wikipedia.org/wiki/Forward_secrecy
+[github-fingerprints]: https://docs.github.com/en/github/authenticating-to-github/githubs-ssh-key-fingerprints
+[git]: https://git-scm.com
+[hash]: https://en.wikipedia.org/wiki/Cryptographic_hash_function
+[hash-non-crypto]: https://en.wikipedia.org/wiki/Hash_function
+[hmac]: https://en.wikipedia.org/wiki/HMAC
+[hsm]: https://en.wikipedia.org/wiki/Hardware_security_module
+[integer-factorization]: https://en.wikipedia.org/wiki/Integer_factorization
+[key-exchange]: https://en.wikipedia.org/wiki/Key_exchange
+[mac]: https://en.wikipedia.org/wiki/Message_authentication_code
+[mitm]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
+[openssl]: https://www.openssl.org
+[pem]: https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail
+[plaintext]: https://en.wikipedia.org/wiki/Plaintext
+[pubkey]: https://en.wikipedia.org/wiki/Public-key_cryptography
+[pubkey-math]: https://www.onebigfluke.com/2013/11/public-key-crypto-math-explained.html
+[rsa]: https://en.wikipedia.org/wiki/RSA_(cryptosystem)
+[rsync]: https://en.wikipedia.org/wiki/Rsync
+[scp]: https://en.wikipedia.org/wiki/Secure_copy
+[sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
+[shell]: https://en.wikipedia.org/wiki/Shell_(computing)
+[side-channel]: https://en.wikipedia.org/wiki/Cryptanalysis#Side-channel_attacks
+[sneakers]: https://en.wikipedia.org/wiki/Sneakers_(1992_film)
+[ssh-agent]: https://www.cyberciti.biz/faq/how-to-use-ssh-agent-for-authentication-on-linux-unix/
+[ssh-copy-id]: https://www.ssh.com/academy/ssh/copy-id
+[ssh-passphrase]: https://learn.microsoft.com/en-us/azure/devops/repos/git/gcm-ssh-passphrase?view=azure-devops
+[ssh-passphrase-add]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
+[symmetric-encryption]: https://en.wikipedia.org/wiki/Symmetric-key_algorithm
+[syn-flood]: https://en.wikipedia.org/wiki/SYN_flood
