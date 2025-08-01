@@ -23,6 +23,18 @@ main blockquote a {
   @apply text-base-content;
 }
 
+ul.legend {
+  @apply m-0 p-0 list-none flex flex-col gap-2;
+
+  & li {
+    @apply m-0 py-0 pr-0 pl-[calc(var(--spacing)*7)] 2xl:pl-[calc(var(--spacing)*10)] flex items-start gap-4;
+
+    & > img.emoji {
+      @apply mt-1 size-5 lg:size-6 xl:size-6 2xl:size-7 float-left -ml-[calc(var(--spacing)*7)] 2xl:-ml-[calc(var(--spacing)*10)];
+    }
+  }
+}
+
 main img.emoji {
   @apply size-5 xl:size-6 2xl:size-7;
 }
