@@ -26,7 +26,7 @@ git-memoir .memoir-controls {
 
 git-memoir .memoir-controls::after {
   display: block;
-  content: "";
+  content: '';
   clear: both;
 }
 
