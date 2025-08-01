@@ -10,6 +10,9 @@ import Search from 'reveal.js/plugin/search/search.esm.js';
 import 'reveal.js/plugin/highlight/monokai.css';
 import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/solarized.css';
+import 'tippy.js/dist/tippy.css';
+import './slides/git-memoirs';
+import { GitMemoirController } from './slides/git-memoir';
 
 const urlSearch = new URLSearchParams(window.location.search);
 const printPdfMode = urlSearch.has('print-pdf');
@@ -45,6 +48,8 @@ deck.initialize().then(() => {
     startOnLoad: printPdfMode || scrollMode,
     theme: 'dark'
   });
+
+  GitMemoirController.start(deck);
 });
 
 if (!printPdfMode && !scrollMode) {

@@ -109,6 +109,7 @@ for (const doc of docsToExport) {
   const params = new URLSearchParams();
   if (doc.course_type === 'slides') {
     params.set('print-pdf', '');
+    params.set('git-memoir-mode', 'visualization');
   }
 
   const exportUrl = `${docBaseUrl}?${params.toString()}`;
@@ -122,6 +123,7 @@ for (const doc of docsToExport) {
 
   if (doc.slides) {
     params.set('print-pdf', '');
+    params.set('git-memoir-mode', 'visualization');
     await exportSlidesToPdf(
       page,
       `${docBaseUrl}slides/?${params.toString()}`,

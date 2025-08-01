@@ -1,9 +1,13 @@
 import $ from 'jquery/dist/jquery.slim';
 import tippy, { Instance } from 'tippy.js';
 import { Drawer, Memoir, NarrationDrawOptions } from 'git-memoir';
+import Reveal from 'reveal.js';
+import { O, pipe } from '@mobily/ts-belt';
 
-const MODES = [
-  // The memoir starts in its initial state and starts drawing 1 second after the slide is displayed.
+type Mode = 'autoplay' | 'manual' | 'visualization';
+
+const MODES: readonly Mode[] = [
+  // The memoir starts in its initial state and starts drawing 1.5 seconds after the slide is displayed.
   //
   // If the memoir is not drawn and not currently drawing when entering this mode,
   // drawing automatically starts 1 second later.
@@ -21,20 +25,23 @@ const MODES = [
 const gitMemoirs: Record<string, () => Memoir> = window['gitMemoirs'] ?? {};
 
 export class GitMemoirController {
-  static start() {
+  static start(deck: Reveal.Api) {
     this.startGitMemoirs();
-    // subject.slideshow.on('afterShowSlide', this.startGitMemoirs);
-    // subject.slideshow.on('beforeHideSlide', this.destroyGitMemoirs);
+    deck.on('slidechanged', () => {
+      this.destroyGitMemoirs();
+      this.startGitMemoirs();
+      deck.layout();
+    });
   }
 
   static startGitMemoirs() {
-    $('.remark-visible .remark-slide-content git-memoir').each(function () {
+    $('.reveal .slides .present git-memoir').each(function () {
       new GitMemoirController(this).start();
     });
   }
 
   static destroyGitMemoirs() {
-    $('.remark-visible .remark-slide-content git-memoir').each(function () {
+    $('.reveal .slides git-memoir').each(function () {
       const memoirController = $(this).data('controller');
       if (memoirController) {
         memoirController.destroy();
@@ -54,6 +61,7 @@ export class GitMemoirController {
   readonly controlsEnabled: boolean;
   readonly memoirFactory: () => Memoir;
 
+  #mode: Mode;
   #started: boolean;
   #playing: boolean;
   #played: boolean;
@@ -72,6 +80,19 @@ export class GitMemoirController {
 
     this.name = name;
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlMode = pipe(
+      O.fromNullable(urlParams.get('git-memoir-mode')),
+      O.flatMap(value => (isMode(value) ? O.Some(value) : O.None)),
+      O.toUndefined
+    );
+    const storedMode = pipe(
+      O.fromNullable(localStorage.getItem('archidep.gitMemoirMode')),
+      O.flatMap(value => (isMode(value) ? O.Some(value) : O.None)),
+      O.toUndefined
+    );
+    this.#mode = urlMode ?? storedMode ?? 'autoplay';
+
     const svgHeight = this.$element.attr('svg-height');
     if (!svgHeight) {
       throw new Error('<git-memoir> must have an "svg-height" attribute');
@@ -88,7 +109,7 @@ export class GitMemoirController {
 
     const controlsAttr = this.$element.attr('controls');
     this.controlsEnabled =
-      !controlsAttr || controlsAttr.match(/^(1|y|yes|t|true)$/i) !== null;
+      !controlsAttr || /^(1|y|yes|t|true)$/i.exec(controlsAttr) !== null;
 
     const memoirFactory = gitMemoirs[this.name];
     if (!memoirFactory) {
@@ -102,12 +123,6 @@ export class GitMemoirController {
     }
 
     this.memoirFactory = memoirFactory;
-  }
-
-  get mode() {
-    return isLocalStorageAvailable()
-      ? (localStorage.getItem('archidep.gitMemoirMode') ?? 'autoplay')
-      : 'visualization';
   }
 
   start() {
@@ -129,20 +144,22 @@ export class GitMemoirController {
       .appendTo(this.$element);
 
     if (this.controlsEnabled) {
-      const $controls = $('<div class="controls" />').appendTo(this.$element);
+      const $controls = $('<div class="memoir-controls" />').appendTo(
+        this.$element
+      );
       this.$playButton = $<HTMLButtonElement>(
-        '<button type="button" class="play tooltip" title="Play"><i class="fa fa-play" /></button>'
+        '<button type="button" class="play tooltip" title="Play"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643z" clip-rule="evenodd"/></svg></button>'
       ).appendTo($controls);
 
       this.$modeButton = $<HTMLButtonElement>(
-        '<button type="button" class="mode tooltip" data-dynamictitle="true"><i class="fa" /></button>'
+        '<button type="button" class="mode tooltip" data-dynamictitle="true"><span class="icon" /></button>'
       );
       if (isLocalStorageAvailable()) {
         this.$modeButton.appendTo($controls);
       }
 
       this.$backButton = $<HTMLButtonElement>(
-        '<button type="button" class="back tooltip" title="Back"><i class="fa fa-backward" /></button>"'
+        '<button type="button" class="back tooltip" title="Back"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M9.195 18.44c1.25.714 2.805-.189 2.805-1.629v-2.34l6.945 3.968c1.25.715 2.805-.188 2.805-1.628V8.69c0-1.44-1.555-2.343-2.805-1.628L12 11.029v-2.34c0-1.44-1.555-2.343-2.805-1.628l-7.108 4.061c-1.26.72-1.26 2.536 0 3.256z"/></svg></button>"'
       ).appendTo($controls);
 
       this.updateControls();
@@ -156,7 +173,7 @@ export class GitMemoirController {
 
     const drawingPromise = this.drawInitialStep();
 
-    if (this.controlsEnabled && this.mode == 'autoplay') {
+    if (this.controlsEnabled && this.#mode === 'autoplay') {
       drawingPromise.then(() => {
         this.drawNextSteps();
       });
@@ -177,7 +194,7 @@ export class GitMemoirController {
 
     if (
       !this.#played &&
-      (this.mode == 'visualization' || !this.controlsEnabled)
+      (this.#mode === 'visualization' || !this.controlsEnabled)
     ) {
       drawOptions.chapter = this.chapter ?? 'n/a';
       this.#played = true;
@@ -217,7 +234,7 @@ export class GitMemoirController {
     const drawOptions = {
       immediate: !!instant,
       chapters: 1,
-      initialDelay: instant ? 0 : 1000,
+      initialDelay: instant ? 0 : 1500,
       stepDuration: instant ? 0 : 1000
     };
 
@@ -254,19 +271,20 @@ export class GitMemoirController {
   }
 
   cycleMode() {
-    const index = MODES.indexOf(this.mode);
+    const index = MODES.indexOf(this.#mode);
     this.setMode(MODES[index + 1] ?? 'autoplay');
 
     if (
-      (this.mode === 'autoplay' || this.mode === 'visualization') &&
+      (this.#mode === 'autoplay' || this.#mode === 'visualization') &&
       !this.#playing &&
       !this.#played
     ) {
-      this.drawNextSteps(this.mode === 'visualization');
+      this.drawNextSteps(this.#mode === 'visualization');
     }
   }
 
-  setMode(mode: string) {
+  setMode(mode: Mode) {
+    this.#mode = mode;
     localStorage.setItem('archidep.gitMemoirMode', mode);
     this.updateModeButton();
   }
@@ -284,22 +302,26 @@ export class GitMemoirController {
   }
 
   updateModeButton() {
-    let icon = 'play-circle-o';
+    let icon =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0"/><path d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327z"/></g></svg>';
     let title = 'Autoplay mode';
 
-    if (this.mode == 'manual') {
-      icon = 'pause-circle-o';
+    if (this.#mode === 'manual') {
+      icon =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.25 9v6m-4.5 0V9M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0"/></svg>';
       title = 'Manual mode';
-    } else if (this.mode == 'visualization') {
-      icon = 'check-circle-o';
+    } else if (this.#mode === 'visualization') {
+      icon =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.75L11.25 15L15 9.75M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0"/></svg>';
       title = 'Visualization mode';
     }
 
-    this.$modeButton
-      ?.attr('title', title)
-      .find('i')
-      .removeClass('fa-play-circle-o fa-pause-circle-o fa-check-circle-o')
-      .addClass(`fa-${icon}`);
+    this.$modeButton?.attr('title', title);
+
+    const $icon = this.$modeButton?.find('.icon');
+    if ($icon) {
+      $icon.html(icon);
+    }
 
     this.updateModeTooltip(title);
   }
@@ -358,4 +380,8 @@ function destroyTooltips(tooltips) {
 
 function isLocalStorageAvailable() {
   return typeof Storage != 'undefined';
+}
+
+function isMode(value: string): value is Mode {
+  return MODES.includes(value as Mode);
 }

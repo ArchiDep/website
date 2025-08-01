@@ -2,7 +2,11 @@
 title: Git Branching
 ---
 
-## {{ page.title }}
+# Git Branching
+
+Architecture & Deployment <!-- .element: class="subtitle" -->
+
+**Notes:**
 
 Learn how to work on isolated, parallel lines of development with [Git][git]
 branches.
@@ -18,33 +22,40 @@ which you should read if you want more detailed information on the subject.
 
 **Recommended reading**
 
-- [Version control with Git](../git/)
+- [Version control with Git]({% link _course/201-git/slides.md %})
+
+---
 
 ## What is branching?
 
-<!-- slide-front-matter class: center, middle -->
+<p class='center'><img src='../images/commits.png' width='45%' /></p>
 
-<p class='center'><img src='images/commits.png' width='45%' /></p>
+Branching means you **diverge from the main line of development** and continue
+to do work without messing with that main line.
 
-> Branching means you diverge from the main line of development and continue to do work without messing with that main line.
+---
 
 ### Why use branches?
+
+- Work **in isolation**
+- Pull changes from the main line **at your own pace**
+- Choose **which features to release and when**
+
+**Notes:**
 
 Git has a very powerful branching model that is very **lightweight and fast**: it encourages workflows that branch and merge often.
 
 Many teams using Git create a **separate branch** to develop **each feature**.
-This has many advantages:
 
-- Each developer can work on his own feature, **isolated** from changes going on
-  elsewhere.
-- Each developer can pull in changes from the main line **at their own pace**.
-- The team can choose **which features to release** and when.
+---
 
-### What is a branch?
-
-Remember that Git stores data as a series of snapshots.
+### Snapshots
 
 <git-memoir name='internals' chapter='internals' controls='false' svg-height='137px'></git-memoir>
+
+**Notes:**
+
+Remember that Git stores data as a series of snapshots.
 
 Each **commit** (the circles above) contains a pointer to the snapshot of the
 content you staged, represented by the blue **T**ree rectangles (as they
@@ -56,20 +67,27 @@ Each commit also contains:
 - The date at which the commit was created
 - A pointer to the previous commit (or commits)
 
+---
+
 #### Branches point to commits
 
-A branch is simply a lightweight, movable pointer to a commit.
+A branch is simply a lightweight, movable **pointer to a commit**.
 
 <git-memoir name='branchingOneLine' chapter='commits' svg-height='137px'></git-memoir>
 
-The default branch is `main`.
+**Notes:**
+
+The default branch is `main` (or `master` with the default Git configuration).
 The special `HEAD` pointer indicates the current branch.
 
 As you start making commits, the current branch pointer **automatically moves** forward to your latest commit.
 
+---
+
 ### Example repository
 
-We will use a prepared repository to illustrate branching.
+We will use a prepared repository to illustrate branching. Clone it and check it
+out.
 
 ```bash
 $> cd /path/to/projects
@@ -77,26 +95,23 @@ $> cd /path/to/projects
 $> git clone https://github.com/MediaComem/comem-archidep-git-branching.git
 
 $> cd comem-archidep-git-branching
-```
 
-Remove the link to the remote repository (we will talk more about it in
-[Collaborating with Git](../git-collaborating/)):
-
-```bash
+# We will talk more about this
 $> git remote rm origin
 ```
+
+**Notes:**
 
 As you can see if you type `git log`, there are some commits already.
 Open the project with your favorite editor and open the `index.html` page in a browser.
 
+---
+
 ## Working with branches
 
-<!-- slide-front-matter class: center, middle -->
+---
 
 ### Showing branches on the command line
-
-The [`git log` command][git-log] can show you a representation of the commit
-graph and its branches:
 
 ```bash
 $> git log --oneline --decorate --graph --all
@@ -105,16 +120,30 @@ $> git log --oneline --decorate --graph --all
  * 387f12 First version
 ```
 
-In fact, this command is so useful you should make an **alias**, as we will use it a lot in this tutorial:
+**Notes:**
 
+The [`git log` command][git-log] can show you a representation of the commit
+graph and its branches.
+
+---
+
+### Creating Git aliases
 ```bash
-$> git config --global alias.graph "log --oneline --decorate --graph --all"
+$> git config --global alias.graph \
+   "log --oneline --decorate --graph --all"
 
 $> git graph
  * 4f94fa (HEAD -> main) Improve layout
  * 9ab3fd Fix addition
  * 387f12 First version
 ```
+
+**Notes:**
+
+In fact, this command is so useful you should make an **alias**, as we will use it a lot in this tutorial.
+
+
+---
 
 ### Create a new branch
 
@@ -136,6 +165,8 @@ $> git branch feature-sub
 There is now a new pointer to the current commit.
 Note that `HEAD` didn't move – we are still on the `main` branch.
 
+---
+
 #### Showing the current branch
 
 You can use `git branch` without arguments to simply see the list of branches
@@ -148,6 +179,8 @@ $> git branch
 ```
 
 > The star is displayed next to the current branch.
+
+---
 
 ### Switch branches
 
@@ -168,6 +201,8 @@ because `HEAD` is still pointing to the same commit as `main`.
 > **Exercise:** you can now implement the subtraction in `subtraction.js`.
 > ]
 
+---
+
 ### Commit on a branch
 
 Once you're done, it's time to add and commit your changes:
@@ -185,6 +220,8 @@ to the new commit:
 
 <git-memoir name='branchingOneLine' chapter='commit-on-a-branch' svg-height='137px'></git-memoir>
 
+---
+
 ### Switch back to `main`
 
 .exercise[
@@ -199,6 +236,8 @@ $> git switch main  # or git checkout main
 Switched to branch 'main'
 ```
 
+---
+
 #### Switch/checkout behavior
 
 Two things happened when you ran `git switch main` (or `git checkout main`):
@@ -209,6 +248,8 @@ Two things happened when you ran `git switch main` (or `git checkout main`):
 <git-memoir name='branchingOneLine' chapter='back-to-main' svg-height='137px'></git-memoir>
 
 You have essentially **rewinded** the work you've done in `feature-sub`, and are working on an **older version** of the project.
+
+---
 
 ### Create another branch
 
@@ -230,6 +271,8 @@ Switched to a new branch 'fix-add'
 
 Nothing changed yet because `fix-add` still points to the same commit as `main`.
 
+---
+
 ### Work on a separate branch
 
 .exercise[
@@ -246,6 +289,8 @@ $> git commit -m "Fix addition"
 
 <git-memoir name='branching' chapter='divergent-history' svg-height='275px'></git-memoir>
 
+---
+
 #### Divergent history
 
 Now your project history has **diverged**.
@@ -258,6 +303,8 @@ back and forth** between the branches with `git switch` or `git checkout`:
 Every time you switch to one of these branches, the files in your **working
 directory** are updated to reflect the state of the corresponding commit, or
 snapshot.
+
+---
 
 ### Merging
 
@@ -274,6 +321,8 @@ $> git switch main  # or git checkout main
 
 <git-memoir name='branching' chapter='fast-forward-merge-checkout' svg-height='200px'></git-memoir>
 
+---
+
 ### Merge a branch
 
 Now that you are on the correct branch, you can **merge** the changes from the
@@ -289,6 +338,8 @@ Fast-forward
 
 Notice the term **fast-forward**.
 
+---
+
 ### Fast-forward
 
 The `fix-add` branch pointed to a commit **directly ahead** of the commit `main` pointed to.
@@ -296,6 +347,8 @@ There is no divergent history, so Git simply has to **moves the pointer forward*
 This is what is called a **fast-forward**.
 
 <git-memoir name='branching' chapter='fast-forward-merge' svg-height='275px'></git-memoir>
+
+---
 
 ### Delete a branch
 
@@ -312,6 +365,8 @@ Deleted branch fix-add (was 2817bc).
 ```
 
 <git-memoir name='branching' chapter='delete-branch' svg-height='275px'></git-memoir>
+
+---
 
 ### Continue working on a feature branch
 
@@ -330,6 +385,8 @@ $> git commit -m "Comment subtract function"
 
 <git-memoir name='branching' chapter='work-on-feature-branch' svg-height='225px'></git-memoir>
 
+---
+
 ### Merging a divergent history
 
 <git-memoir name='branching' chapter='work-on-feature-branch' controls='false' svg-height='200px'></git-memoir>
@@ -343,6 +400,8 @@ But the `feature-sub` branch has **diverged from some older point compared to `m
 
 Git will do a **three-way merge** instead, combining together the changes of `main` and `feature-sub` (compared to the common ancestor).
 A **new commit** will be created representing that state.
+
+---
 
 #### Merge commit message
 
@@ -377,12 +436,16 @@ with a generated commit message:
 If you are in Vim, type `:wq` (**w**rite and **q**uit) to save and exit. If you
 are in nano, use `Ctrl-X`.
 
+---
+
 #### Merge commit
 
 You can see the new **merge commit** that Git has created.
 It is a special commit in that it has more than one parent:
 
 <git-memoir name='branching' chapter='merge' svg-height='275px'></git-memoir>
+
+---
 
 #### Delete `feature-sub`
 
@@ -394,6 +457,8 @@ $> git branch -d feature-sub
 
 <git-memoir name='branching' chapter='delete-feature-sub' svg-height='275px'></git-memoir>
 
+---
+
 ## Merge conflicts
 
 Occasionally, the merge process doesn't go smoothly:
@@ -401,6 +466,8 @@ if the **same line(s) in the same file(s)** was modified in two diverging branch
 Git can't know which is the correct version.
 
 Let's pretend that a colleague of yours also implemented the subtraction function but in a different way than you did.
+
+---
 
 ### Find the common ancestor
 
@@ -426,6 +493,8 @@ Make a copy of that commit hash.
 > Note that the actual hash of the commit on your machine may be different than
 > the one in this slide.
 
+---
+
 ### Create a branch "in the past"
 
 You can create a branch at any point in the project's history by passing an
@@ -438,6 +507,8 @@ $> git switch -c better-sub 4f94fa  # or git checkout -b better-sub 4f94fa
 <git-memoir name='branching' chapter='checkout-past' svg-height='250px'></git-memoir>
 
 The `HEAD` has now moved to that point in the project's past history.
+
+---
 
 ### Make a conflicting change
 
@@ -468,11 +539,15 @@ $> git add subtraction.js
 $> git commit -m "Implement a better subtract"
 ```
 
+---
+
 #### The state before merging
 
 Viewing the graph of commits, it's clear that the change has been made **in parallel** with our earlier changes:
 
 <git-memoir name='branching' chapter='conflicting-change' svg-height='300px'></git-memoir>
+
+---
 
 ### Merge the conflicting branch
 
@@ -490,6 +565,8 @@ Automatic merge failed; fix conflicts and then commit the result.
 Git tells you that a **content conflict** has occurred in `subtraction.js`.
 
 The merge has failed and no new commit has been created.
+
+---
 
 ### Check the status of the conflict
 
@@ -517,6 +594,8 @@ no changes added to commit (use "git add" and/or "git commit -a")
   **branch we are trying to merge in**.
 - You can use `git add` to **mark the conflicts in a file as resolved**.
 
+---
+
 ### Inspect the conflicted file
 
 Let's see what's in `subtraction.js`:
@@ -542,6 +621,8 @@ Notice two things here:
 - Git could not merge the line with the computation, because the changes in the two branches conflict.
   It has added **conflict markers** to help you solve the issue.
 
+---
+
 ### Conflict markers
 
 Take a closer look at the conflict markers:
@@ -565,6 +646,8 @@ Since Git cannot know which is better, it's **your responsibility** to:
 ```js
 return -b + a;
 ```
+
+---
 
 ### Mark the conflict as resolved
 
@@ -593,6 +676,8 @@ and open the configured editor (Vim by default) for you to check and/or change
 the message. Type `:wq` to exit from Vim or `Ctrl-X` to exit from nano, and to
 make the commit.
 
+---
+
 #### The state after merging
 
 Finally, delete the `better-sub` branch:
@@ -604,6 +689,8 @@ $> git branch -d better-sub
 The latest commit on `main` now includes the changes from all lines of development:
 
 <git-memoir name='branching' chapter='merge-conflicting-change' svg-height='300px'></git-memoir>
+
+---
 
 ## Merge file conflicts
 
@@ -617,6 +704,8 @@ $> git switch -c cleanup 4f94fa  # or git checkout -b cleanup 4f94fa
 
 <git-memoir name='branching' chapter='conflicting-file-change-checkout' svg-height='250px'></git-memoir>
 
+---
+
 ### Make a conflicting file change
 
 This time, this colleague decided to delete `subtraction.js` in his branch because he doesn't like to see files with incomplete code:
@@ -628,6 +717,8 @@ $> git commit -m "Remove incomplete implementation"
 ```
 
 <git-memoir name='branching' chapter='conflicting-file-change' svg-height='300px'></git-memoir>
+
+---
 
 ### Merge the conflicting branch
 
@@ -647,6 +738,8 @@ Git tells you immediately that there is a conflict and that:
 - `subtraction.js` was **modified** in the current branch (`HEAD`).
 - Git **doesn't know** whether it should apply the deletion or the modification,
   so it left the modified file for you to check.
+
+---
 
 ### Check the status of the file conflict
 
@@ -673,6 +766,8 @@ Again, Git gives us some information:
   branch you're trying to merge in (if it had been deleted in the current branch
   and modified in the other branch, it would be _deleted by "us"_).
 - Use either `git add` or `git rm` to mark the conflict as resolved.
+
+---
 
 ### Resolve the file conflict
 
@@ -703,11 +798,15 @@ Finally, delete the `cleanup` branch:
 $> git branch -d cleanup
 ```
 
+---
+
 ### Final state
 
 And you're done!
 
 <git-memoir name='branching' chapter='merge-conflicting-file-change' svg-height='325px'></git-memoir>
+
+---
 
 ## Resources
 

@@ -16,6 +16,10 @@ body {
   background-color: #d9d4c4;
 }
 
+.reveal h1 {
+  @apply font-semibold text-black;
+}
+
 img.emoji {
   @apply m-0;
 }
