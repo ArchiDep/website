@@ -10,6 +10,8 @@
 
 @custom-variant screen (@media screen);
 
+@import './git-memoir.css';
+
 body {
   background-color: #d9d4c4;
 }
