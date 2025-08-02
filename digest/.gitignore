@@ -1,0 +1,5 @@
+# https://git-scm.com/docs/gitignore
+/_build
+/deps
+/erl_crash.dump
+/tmp
