@@ -22,7 +22,7 @@ which you should read if you want more detailed information on the subject.
 
 **Recommended reading**
 
-- [Version control with Git]({% link _course/201-git/slides.md %})
+- [Version control with Git]({% link _course/201-git/subject.md %})
 
 ---
 

@@ -2,12 +2,10 @@
 title: Version Control with Git
 ---
 
-## {{ page.title }}
-
-Learn the basics of [Git][git], one of the most popular distributed version control systems.
-This is a condensed version of the first chapters of the [Git Book](https://git-scm.com/book/en/v2), which you should read if you want more detailed information on the subject.
-
-<!-- slide-include ../../BANNER.md -->
+Learn the basics of [Git][git], one of the most popular distributed version
+control systems. This is a condensed version of the first chapters of the [Git
+Book](https://git-scm.com/book/en/v2), which you should read if you want more
+detailed information on the subject.
 
 **You will need**
 
@@ -15,281 +13,11 @@ This is a condensed version of the first chapters of the [Git Book](https://git-
 
 **Recommended reading**
 
-- [Command line](../cli/)
-
-## What is Git?
-
-<a href='https://git-scm.com'><img src='images/git-logo.png' width='30%' /></a>
-
-Git is a [**version control system (VCS)**][vcs] originally developed by Linus
-Torvalds, the creator of Linux, to manage the source code of the Linux kernel.
-
-Its goals are:
-
-- **Speed**
-- **Simple** design
-- Strong support for **non-linear development** (thousands of parallel branches)
-- Fully **distributed**
-- Able to handle **large projects** like the Linux kernel efficiently (speed and
-  data size)
-
-## What is a version control system?
-
-> A system that records changes to a file or set of files over time so that you can recall specific versions later.
-
-<p class='center'><img src='images/commits.png' width='50%' /></p>
-
-What can I do with it?
-
-- **Revert** specific files (or an entire project) back to a previous state
-- **Compare** changes over time
-- See who last modified something that might be causing a problem, when the
-  issue was introduced, and more
-- **Recover** if you screw things up or lose files
-- **Collaborate** on a project as a distributed team
-
-## A short history
-
-<!-- slide-front-matter class: center, middle -->
-
-### **Local** version control systems (1980s)
-
-<!-- slide-column -->
-
-Basically, you **manually** copy your files into other directories to keep old versions.
-
-Systems such as [**R**evision **C**ontrol **S**ystem (RCS)][rcs] automate this
-process.
-
-> RCS was first released in 1982.
-
-<!-- slide-column -->
-
-<img src='images/local-vcs.png' width='100%' />
-
-<!-- slide-container -->
-
-**But:**
-
-- It's easy to accidentally edit the wrong files.
-- It's hard to **collaborate** on different versions with other people.
-
-### **Centralized** version control systems (1990s)
-
-<!-- slide-column -->
-
-Systems such as [**C**oncurrent **V**ersion **S**ystems (CVS)][cvs] and
-[**S**ub**v**ersio**n** (SVN)][svn] use a **single central server** that keeps
-all the versioned files, and clients get files from there.
-
-Administrators have **fine-grained control** over who can do what.
-
-> CVS and SVN were first released in 1990 and 2000, respectively.
-
-<!-- slide-column 45 -->
-
-<img src='images/centralized-vcs.png' width='100%' />
-
-<!-- slide-container -->
-
-**But:**
-
-- Most operations are **slow** since they require connecting to a server.
-- The centralized server is a **single point of failure**.
-- If proper backups are not kept, the history of the project **can be lost**.
-
-> You could also consider storing your files in a shared Dropbox, Google Drive,
-> etc. to be a kind of centralized version control system. However, it doesn't
-> have as many tools for **consulting and manipulating the history** of your
-> project, or to **collaborate on source code**.
-
-### **Distributed** version control systems (2000+)
-
-<!-- slide-column -->
-
-Systems such as [Git][git] and [Mercurial][mercurial] are **distributed**.
-Clients **fully mirror** the repository, not just the latest snapshot.
-
-- Each client has a **full backup** of the project.
-- Different [types of collaborative workflows][distributed-workflows] can be
-  used.
-
-> Git and Mercurial were first released in 2005.
-
-<!-- slide-column -->
-
-<img src='images/distributed-vcs.png' width='100%' />
-
-## Git basics
-
-<!-- slide-front-matter class: center, middle -->
-
-### Snapshots, not differences
-
-<!-- slide-column 45 -->
-
-Unlike other version control systems, Git stores its data as **snapshots** instead of file-based changes.
-
-Because Git stores all versions of all files **locally**, most Git operations are almost instantaneous and do not require a connection to a server:
-
-- Browsing the history
-- Checking a file's changes from a month ago
-- Committing
-
-<!-- slide-column -->
-
-**Changes (Subversion)**
-
-<img src='images/deltas.png' width='100%' />
-
-**Snapshots (Git)**
-
-<img src='images/snapshots.png' width='100%' />
-
-<!-- slide-notes -->
-
-Git thinks of its data more like a set of **snapshots** of a miniature filesystem.
-
-Every time you save the state of your project in Git, it basically takes a picture of what all your files look like at that moment and stores a reference to that snapshot.
-To be efficient, **if files have not changed, Git doesn't store the file again**, just a link to the previous identical file it has already stored.
-Git thinks about its data more like a stream of snapshots.
-
-### Git has integrity
-
-All Git objects are identified by a [SHA-1][sha1] hash that looks like this:
-
-```
-24b9da6552252987aa493b52f8696cd6d3b00373
-```
-
-You will see them all over the place in Git.
-Often you will only see a prefix (the first 6-7 characters):
-
-```
-24b9da6
-```
-
-Because all content is [hashed][hash], it's virtually impossible for files to be
-lost or corrupted without Git knowing about it. This functionality is built into
-Git at the lowest levels and is integral to its philosophy.
-
-### What's in a Git project?
-
-The file structure in a Git project looks like this:
-
-```txt
-my-project:
-  .git:
-    HEAD
-    config
-    hooks
-    index
-    objects
-    ...
-  file1.txt
-  file2.txt
-  dir:
-    file3.txt
-```
-
-A Git project has three main parts:
-
-- The Git directory
-- The working directory
-- The staging area (also called the index)
-
-#### The Git directory
-
-The Git directory is where Git stores all the **snapshots** of the different **versions** of your files.
-This is the most important part of Git, and it is what is copied when you clone a repository from another computer or a server.
-
-It's located in the `.git` directory in the project's directory:
-
-```txt
-my-project:
-* .git:
-*   HEAD
-*   config
-*   hooks
-*   index
-*   objects
-*   ...
-  file1.txt
-  file2.txt
-  dir:
-    file3.txt
-```
-
-You should never modify any of the files in this directory yourself;
-you could easily corrupt the Git repository.
-
-It is hidden by default, but you can see it on the command line.
-
-#### The working directory (also called the working tree)
-
-The working directory contains the **files you are currently working on**; that is, **one specific version** of your project.
-These files are pulled out of the compressed database in the Git directory and placed in your project's directory for you to use or modify:
-
-```txt
-*my-project:
-  .git:
-    HEAD
-    config
-    hooks
-    index
-    objects
-    ...
-* file1.txt
-* file2.txt
-* dir:
-*   file3.txt
-```
-
-#### The staging area (also called the index)
-
-The staging area is a file in your Git directory, that stores information about
-**what will go into the next commit (or version)**.
-
-Before file snapshots are **committed** in the Git directory, they must go
-through the _staging area_:
-
-```txt
-my-project:
-  .git:
-    HEAD
-    config
-    hooks
-*   index
-    objects
-    ...
-  file1.txt
-  file2.txt
-  dir:
-    file3.txt
-```
-
-### The basic Git workflow
-
-This is one of the **most important things to remember about Git**:
-
-<p class='center'><img src='images/workflow.png' width='60%' /></p>
-
-- You **check out** (or **switch to**) a specific version of your files into the
-  _working directory_.
-- You **modify** files (or add new files) in your _working directory_.
-- You **stage** the files, adding snapshots of them to your _staging area_.
-- You make a **commit**, which takes the files as they are in the _staging area_
-  and stores these snapshots permanently to your _Git directory_.
-
-#### Using the staging area
-
-New snapshots of files **MUST go through the staging area** to be **committed** into the Git directory.
-
-<img src='images/staging-area-loading-dock.jpg' width='100%' />
+- [Command line]({% link _course/101-command-line/subject.md %})
 
 ## Getting started
 
-The rest of this documentation is a tutorial where you will learn how to:
+This is a tutorial where you will learn how to:
 
 - Configure Git for the first time
 - Create a new repository
@@ -326,11 +54,9 @@ command-line tools, which you can install by running the following command:
 $> xcode-select --install
 ```
 
-On **Windows**, you should have Git if you have Git Bash installed. If not, you
-can download it directly from https://git-scm.com/download/win
-
-On **Linux**, Git may already be installed. If not, you can install it using
-your distribution's package manager, for example on APT-based systems:
+On **Windows** under the **W**indows **S**ubsystem for **L**inux (WSL), or on
+**Linux**, Git may already be installed. If not, you can install it using your
+distribution's package manager, for example on APT-based systems:
 
 ```bash
 $> sudo apt install git-all
@@ -360,10 +86,14 @@ user.name=John Doe
 user.email=john.doe@example.com
 ```
 
-> Note that with the `--global` option, Git will store these settings in your user configuration file (`~/.gitconfig`),
-> so you only need to do this **once on any given computer**.
-> You can also change them at any time by running the commands again.
-> Run `cat ~/.gitconfig` to display this file.
+{% note type: more %}
+
+With the `--global` option, Git will store these settings in your user
+configuration file (`~/.gitconfig`), so you only need to do this **once on any
+given computer**. You can also change them at any time by running the commands
+again. Run `cat ~/.gitconfig` to display this file.
+
+{% endnote %}
 
 ### Choosing a default branch name
 
@@ -429,8 +159,12 @@ This means you have an empty repo with no commits, and a **clean working directo
 
 As you can see, Git often helps you by telling you what you can do next: you need to start adding some files.
 
-> **The `git status` command is your best friend when using Git.**
-> Do not hesitate to use it at any time to check in what state you are.
+{% note type: tip %}
+
+**The `git status` command is your best friend when using Git.** Do not hesitate
+to use it at any time to check in what state you are.
+
+{% endnote %}
 
 ### Adding new files
 
@@ -482,12 +216,14 @@ Changes to be committed:
 
 The files are now **staged**: they will be in the next commit.
 
-> **Tips:**
->
-> - `git add *.txt` would have added all files with the `.txt` extension in one
->   command.
-> - `git add .` would have added all the files in the current directory
->   (recursively).
+{% note type: tip %}
+
+- `git add *.txt` would have added all files with the `.txt` extension in one
+  command.
+- `git add .` would have added all the files in the current directory
+  (recursively).
+
+{% endnote %}
 
 #### Checking staged changes
 
@@ -621,7 +357,7 @@ Use `git diff` with the `--staged` option to show **staged** changes.
 
 <!-- slide-column -->
 
-```diff
+```bash
 $> git diff --staged
 diff --git a/hello.txt b/hello.txt
 index 557db03..2136a8e 100644
@@ -670,7 +406,9 @@ really two separate steps:
   of text ("I see trees of green") which you added later. It will not be
   included in the next commit unless you stage the file again.
 
-<p class='center'><img src='images/areas.png' width='60%' /></p>
+<div class="flex justify-center dark:bg-radial dark:from-gray-800 dark:from-40% dark:to-zinc-800/40">
+  <img src='images/areas.png' class='w-2/3' />
+</div>
 
 #### Committing partially staged changes
 
@@ -753,7 +491,12 @@ Changes to be committed:
 
 Note that Git can now tell that the file was moved.
 
-Many developers simply modify and manipulate files in their favorite editor or IDE, then use the command above.
+{% note type: tip %}
+
+Many developers simply modify and manipulate files in their favorite editor or
+IDE, then use the command above.
+
+{% endnote %}
 
 You may commit the rename now:
 
@@ -860,8 +603,12 @@ $> git add .gitignore
 $> git commit -m "Ignore file"
 ```
 
-> That way, when you start collaborating with the other developers in your team,
-> the same files will be ignored on their machine.
+{% note type: tip %}
+
+That way, when you start collaborating with the other developers in your team,
+the same files will be ignored on their machine.
+
+{% endnote %}
 
 ### Status of ignored files
 
@@ -904,7 +651,11 @@ and they will not be staged or committed.
 There are several ways of undoing things with Git.
 We'll review a few of the tools available.
 
+{% callout type: warning %}
+
 **_Be careful:_** you can't always undo some of these operations.
+
+{% endcallout %}
 
 ### Unmodifying a modified file
 
@@ -976,8 +727,12 @@ Oops, you've used the wrong commit message. Want to change it?
 $> git commit --amend -m "Fix the problem"
 ```
 
-> **Be careful:** this changes the commit and its SHA-1 hash. You should not do
-> this if you have already shared this commit with others.
+{% callout type: warning %}
+
+**_Be careful:_** this changes the commit and its SHA-1 hash. You should not do
+this if you have already shared this commit with others.
+
+{% endcallout %}
 
 ### Adding changes to a commit
 
@@ -1001,8 +756,12 @@ Your editor will open to give you the opportunity to change the message if you
 want, but you do not have to. Simply save and exit the editor. The changes to
 `b.txt` will now also be in the last commit.
 
-> **Be careful:** this changes the commit and its SHA-1 hash. You should not do
-> this if you have already shared this commit with others.
+{% callout type: warning %}
+
+**_Be careful:_** this changes the commit and its SHA-1 hash. You should not do
+this if you have already shared this commit with others.
+
+{% endcallout %}
 
 ## Best practices
 

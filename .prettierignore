@@ -6,8 +6,9 @@
 /app/deps
 /app/priv/static
 /app/priv/uploads
-/course/Gemfile
 /course/**/*.html
+/course/Gemfile
+/course/.jekyll-cache
 /course/**/*.rb
 /node_modules
 /theme/src/highlight-dark.css

@@ -42,7 +42,7 @@ deck.initialize().then(() => {
   });
 
   mermaid.initialize({
-    // Initialize mermaid on page load in print mode or scroll mode. Beware that
+    // Initialize mermaid on page load in print mode or scroll mode. Beware:
     // initializing mermaid on each slide in scroll mode seems to cause an
     // infinite loop.
     startOnLoad: printPdfMode || scrollMode,

@@ -160,7 +160,7 @@ main .solution .highlighter-rouge:last-child pre.highlight {
   }
 
   &.callout-warning strong {
-    @apply font-bold text-blue-300;
+    @apply font-bold text-blue-200;
   }
 
   &.callout-more {
