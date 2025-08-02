@@ -18,8 +18,6 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   alias ArchiDep.ClientMetadata
   alias ArchiDep.Events.Store.StoredEvent
 
-  @root_users :archidep |> Application.compile_env!(:root_users) |> Keyword.fetch!(:switch_edu_id)
-
   @spec log_in_or_register_with_switch_edu_id(
           Types.switch_edu_id_data(),
           ClientMetadata.t()
@@ -216,10 +214,15 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     end
   end
 
-  defp is_configured_root_user?(switch_edu_id) when is_struct(switch_edu_id, SwitchEduId),
-    do:
-      Enum.member?(@root_users, switch_edu_id.email) ||
-        Enum.member?(@root_users, switch_edu_id.swiss_edu_person_unique_id)
+  defp is_configured_root_user?(switch_edu_id) when is_struct(switch_edu_id, SwitchEduId) do
+    known_root_users = root_users()
+
+    Enum.member?(known_root_users, switch_edu_id.email) ||
+      Enum.member?(known_root_users, switch_edu_id.swiss_edu_person_unique_id)
+  end
+
+  defp root_users,
+    do: :archidep |> Application.fetch_env!(:root_users) |> Keyword.fetch!(:switch_edu_id)
 
   defp user_registered_with_switch_edu_id(
          switch_edu_id,

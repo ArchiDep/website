@@ -59,7 +59,7 @@ module ArchiDep
       end
 
       manifest = JSON.parse(File.read(phoenix_cache_manifest_file))
-      result = manifest.dig("assets", relative_path.to_s)
+      result = manifest.dig("latest", relative_path.to_s)
       raise "Asset #{relative_path.to_s.inspect} not found in manifest #{phoenix_cache_manifest_file.inspect}" unless result
       Jekyll.logger.info "Relative asset URL for #{relative_path} is #{result} (from manifest in #{phoenix_cache_manifest_file})"
       result
