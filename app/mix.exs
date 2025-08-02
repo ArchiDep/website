@@ -87,7 +87,7 @@ defmodule ArchiDep.MixProject do
       {:excoveralls, "~> 0.18.1", only: :test},
       {:faker, "~> 0.18.0", only: :test},
       {:floki, "~> 0.38.0", only: :test},
-      {:hammox, git: "https://github.com/AlphaHydrae/hammox.git", branch: "records", only: :test},
+      {:hammox, "~> 0.7.1", only: :test},
       {:mix_test_watch, "~> 1.0", only: :test, runtime: false},
       {:nicene, "~> 0.7.0", only: [:dev, :test], runtime: false},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
