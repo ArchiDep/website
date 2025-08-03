@@ -67,4 +67,5 @@ services:
       - db_data:/var/lib/postgresql/data:rw
 
 volumes:
+  app_uploads:
   db_data:

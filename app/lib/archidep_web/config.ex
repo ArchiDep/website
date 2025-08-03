@@ -10,7 +10,7 @@ defmodule ArchiDepWeb.Config do
   alias ArchiDepWeb.Endpoint
 
   @doc """
-  Read the web endpoint configuration.
+  Read the web endpoint's dynamic configuration.
   """
   @spec endpoint(%{String.t() => String.t()}, Keyword.t()) :: Keyword.t()
   def endpoint(
@@ -29,7 +29,7 @@ defmodule ArchiDepWeb.Config do
   end
 
   @doc """
-  Read the credentials for the Switch edu-ID authentication provider.
+  Read the dynamic credentials for the Switch edu-ID authentication provider.
   """
   @spec switch_edu_id_auth_credentials(%{String.t() => String.t()}) :: Keyword.t()
   @spec switch_edu_id_auth_credentials(%{String.t() => String.t()}, Keyword.t()) :: Keyword.t()

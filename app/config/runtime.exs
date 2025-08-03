@@ -7,6 +7,7 @@ import Config
 # configuration in here, as it won't be applied. The block below contains prod
 # specific runtime configuration.
 
+config :archidep, :auth, ArchiDep.Config.auth()
 config :archidep, ArchiDep.Repo, ArchiDep.Config.repo()
 config :archidep, ArchiDepWeb.Endpoint, ArchiDepWeb.Config.endpoint()
 

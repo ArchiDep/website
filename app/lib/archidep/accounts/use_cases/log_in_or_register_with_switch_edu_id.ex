@@ -222,7 +222,11 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   end
 
   defp root_users,
-    do: :archidep |> Application.fetch_env!(:root_users) |> Keyword.fetch!(:switch_edu_id)
+    do:
+      :archidep
+      |> Application.fetch_env!(:auth)
+      |> Keyword.fetch!(:root_users)
+      |> Keyword.fetch!(:switch_edu_id)
 
   defp user_registered_with_switch_edu_id(
          switch_edu_id,

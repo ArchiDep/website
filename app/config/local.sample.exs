@@ -2,11 +2,13 @@ import Config
 
 if config_env() != :test do
   config :archidep,
+    auth: [
+      # Emails which will create root user accounts when logging in
+      root_users: [switch_edu_id: ["example@archidep.ch"]]
+    ],
     # Generate your own key pair using `ssh-keygen -t ed25519 -C "archidep"`
     public_key:
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIxsZfyuRVJsWGYbLaZLTCDahyT9QhnT1ixz5ghIL0FB archidep",
-    # Emails which will create root user accounts when logging in
-    root_users: ["example@archidep.ch"]
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIxsZfyuRVJsWGYbLaZLTCDahyT9QhnT1ixz5ghIL0FB archidep"
 end
 
 # Database connection

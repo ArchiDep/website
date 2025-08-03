@@ -135,10 +135,14 @@ defmodule ArchiDep.Config.ConfigValue do
   end
 
   @doc """
-  Get the configuration value, raising an error if it is not set.
+  Get the configuration value, raising an error if it is not set or set to an
+  empty list.
   """
   @spec required_value(t()) :: term
   def required_value(%__MODULE__{value: nil} = config_value),
+    do: raise(ConfigError, required_error_message(config_value))
+
+  def required_value(%__MODULE__{value: []} = config_value),
     do: raise(ConfigError, required_error_message(config_value))
 
   def required_value(%__MODULE__{value: value}), do: value

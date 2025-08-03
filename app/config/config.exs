@@ -11,7 +11,9 @@ config :archidep,
   namespace: ArchiDep,
   ecto_repos: [ArchiDep.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true],
-  root_users: [switch_edu_id: []],
+  auth: [
+    root_users: [switch_edu_id: []]
+  ],
   servers: [
     connection_timeout: 30_000,
     track_on_boot: true

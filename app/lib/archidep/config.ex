@@ -10,7 +10,33 @@ defmodule ArchiDep.Config do
   alias ArchiDep.Repo
 
   @doc """
-  Read the repo configuration.
+  Read the dynamic application authentication configuration.
+  """
+  @spec auth(%{String.t() => String.t()}, keyword) :: keyword
+  def auth(env \\ System.get_env(), default_config \\ Application.fetch_env!(:archidep, :auth)) do
+    [
+      root_users: [switch_edu_id: app_root_users(env, default_config)]
+    ]
+  end
+
+  defp app_root_users(env, default_config),
+    do:
+      "Application root users"
+      |> ConfigValue.new()
+      |> ConfigValue.format(
+        "It must be a comma-separated list of emails or swissEduPersonUniqueID of switch edu-ID users."
+      )
+      |> ConfigValue.env_var(
+        env,
+        "ARCHIDEP_AUTH_SWITCH_EDU_ID_ROOT_USERS",
+        &parse_comma_separated_list/1
+      )
+      |> ConfigValue.default_to(default_config, [:root_users, :switch_edu_id])
+      |> ConfigValue.validate(&validate_string_list!/1)
+      |> ConfigValue.required_value()
+
+  @doc """
+  Read the dynamic persistence repository configuration.
   """
   @spec repo(%{String.t() => String.t()}, keyword) :: keyword
   def repo(env \\ System.get_env(), default_config \\ Application.fetch_env!(:archidep, Repo)) do
@@ -79,6 +105,21 @@ defmodule ArchiDep.Config do
     end
   end
 
+  defp parse_comma_separated_list(value) when is_binary(value),
+    do:
+      value
+      |> String.split(",")
+      |> Enum.reduce_while([], fn part, acc ->
+        case String.trim(part) do
+          "" -> {:halt, {:error, "Blank string in comma-separated list"}}
+          trimmed_part -> {:cont, [trimmed_part | acc]}
+        end
+      end)
+      |> then(fn
+        list when is_list(list) -> {:ok, Enum.reverse(list)}
+        {:error, reason} -> {:error, reason}
+      end)
+
   defp validate_integer!(value, min, max)
        when is_integer(value) and is_integer(min) and is_integer(max) and min <= max and
               value >= min and value <= max,
@@ -98,4 +139,7 @@ defmodule ArchiDep.Config do
         false
     end
   end
+
+  defp validate_string_list!(list) when is_list(list),
+    do: Enum.all?(list, fn part -> is_binary(part) and String.trim(part) != "" end)
 end
