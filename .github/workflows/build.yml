@@ -71,6 +71,9 @@ jobs:
           name: theme
           path: app/priv/static/assets/theme
 
+      - name: List static files
+        run: ls -laR app/priv/static
+
       - name: Install Erlang/OTP & Elixir
         uses: erlef/setup-beam@v1
         with:
