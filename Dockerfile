@@ -1,5 +1,6 @@
-# Course Assets
-# =============
+# ============= #
+# Course Assets #
+# ============= #
 FROM node:24.4.0-alpine AS assets
 
 RUN addgroup -S build && \
@@ -23,8 +24,9 @@ ENV NODE_ENV=production
 
 RUN npm run --workspace course build
 
-# App & Dependencies
-# ==================
+# ================== #
+# App & Dependencies #
+# ================== #
 FROM elixir:1.18.4-otp-28-alpine AS theme-sources
 
 RUN apk add --no-cache git && \
@@ -47,8 +49,9 @@ RUN mix local.hex --force && \
 COPY --chown=build:build ./app/lib/archidep_web/ /build/lib/archidep_web/
 COPY --chown=build:build ./course/ /build/course/
 
-# App & Course Theme
-# ==================
+# ================== #
+# App & Course Theme #
+# ================== #
 FROM node:24.4.0-alpine AS theme
 
 RUN addgroup -S build && \
@@ -72,8 +75,9 @@ ENV NODE_ENV=production
 
 RUN npm run --workspace theme build
 
-# Digest Assets
-# =============
+# ============= #
+# Digest Assets #
+# ============= #
 FROM elixir:1.18.4-otp-28-alpine AS digest
 
 RUN addgroup -S build && \
@@ -98,8 +102,9 @@ RUN mix phx.digest priv/static -o priv/static && \
     ls -laR /build/digest/priv/static/ && \
     cat /build/digest/priv/static/cache_manifest.json
 
-# Course
-# ======
+# ====== #
+# Course #
+# ====== #
 FROM ruby:3.4.4-alpine AS course
 
 RUN apk add --no-cache g++ make nodejs npm && \
@@ -130,8 +135,9 @@ ENV JEKYLL_ENV=production
 
 RUN bundle exec jekyll build
 
-# Application
-# ===========
+# =================== #
+# Application Release #
+# =================== #
 FROM elixir:1.18.4-otp-28-alpine AS release
 
 RUN apk add --no-cache git nodejs npm && \
@@ -167,8 +173,9 @@ RUN mix merge_manifests && \
     cat /usr/src/app/priv/static/cache_manifest.json && \
     mix release
 
-# Application
-# ===========
+# =========== #
+# Application #
+# =========== #
 FROM elixir:1.18.4-otp-28-alpine AS app
 
 WORKDIR /app
@@ -194,8 +201,9 @@ CMD ["/app/bin/server"]
 
 EXPOSE 42000
 
-# Reverse Proxy
-# =============
+# ============= #
+# Reverse Proxy #
+# ============= #
 FROM nginx:1.29-alpine AS assets-server
 
 RUN rm -fr /usr/share/nginx/html/* && \
