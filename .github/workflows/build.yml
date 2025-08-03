@@ -71,9 +71,6 @@ jobs:
           name: theme
           path: app/priv/static/assets/theme
 
-      - name: List static files
-        run: ls -laR app/priv/static
-
       - name: Install Erlang/OTP & Elixir
         uses: erlef/setup-beam@v1
         with:
@@ -165,6 +162,7 @@ jobs:
   build-course:
     runs-on: ubuntu-24.04
     name: Build course
+    needs: [build-assets]
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -188,6 +186,12 @@ jobs:
 
       - name: Check formatting
         run: npm run --workspace course format
+
+      - name: Download course assets
+        uses: actions/download-artifact@v4
+        with:
+          name: course_assets
+          path: app/priv/static/assets/course
 
       - name: Build the course
         run: bundle exec jekyll build
