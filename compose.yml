@@ -59,8 +59,8 @@ services:
       - 'traefik.http.services.archidep-app.loadbalancer.server.port=42000'
     restart: unless-stopped
     volumes:
-      - app_uploads:/var/lib/app/uploads:rw
       - ./app/priv/ssh:/etc/app/ssh:ro
+      - app_uploads:/var/lib/app/uploads:rw
 
   db:
     image: postgres:17.5-alpine
