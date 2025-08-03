@@ -8,6 +8,7 @@ import Config
 # specific runtime configuration.
 
 config :archidep, :auth, ArchiDep.Config.auth()
+config :archidep, :servers, ArchiDep.Config.servers()
 config :archidep, ArchiDep.Repo, ArchiDep.Config.repo()
 config :archidep, ArchiDepWeb.Endpoint, ArchiDepWeb.Config.endpoint()
 

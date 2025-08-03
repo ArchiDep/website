@@ -16,6 +16,7 @@ defmodule ArchiDep.Config do
   @spec log() :: :ok
   def log do
     auth_config = Application.fetch_env!(:archidep, :auth)
+    servers_config = Application.fetch_env!(:archidep, :servers)
     repo_config = Application.fetch_env!(:archidep, Repo)
 
     safe_repo_url =
@@ -35,7 +36,9 @@ defmodule ArchiDep.Config do
     /
     |-> Authentication
     |   \\-> Switch edu-ID root users: #{inspect(auth_config[:root_users][:switch_edu_id])}
-    --> Repository
+    |-> Servers
+    |   \\-> Public key: #{inspect(servers_config[:public_key])}
+    \\-> Repository
         |-> URL: #{inspect(URI.to_string(safe_repo_url))}
         |-> Pool size: #{inspect(repo_config[:pool_size])}
         \\-> Socket options: #{inspect(repo_config[:socket_options])}
@@ -66,6 +69,28 @@ defmodule ArchiDep.Config do
       )
       |> ConfigValue.default_to(default_config, [:root_users, :switch_edu_id])
       |> ConfigValue.validate(&validate_string_list!/1)
+      |> ConfigValue.required_value()
+
+  @doc """
+  Read the dynamic application configuration for server-related functionality.
+  """
+  @spec servers(%{String.t() => String.t()}, keyword) :: keyword
+  def servers(
+        env \\ System.get_env(),
+        default_config \\ Application.fetch_env!(:archidep, :servers)
+      ) do
+    [
+      public_key: public_key(env, default_config)
+    ]
+  end
+
+  defp public_key(env, default_config),
+    do:
+      "Public key"
+      |> ConfigValue.new()
+      |> ConfigValue.format("It must be a valid PEM-encoded public key.")
+      |> ConfigValue.env_var(env, "ARCHIDEP_SERVERS_PUBLIC_KEY")
+      |> ConfigValue.default_to(default_config, :public_key)
       |> ConfigValue.required_value()
 
   @doc """

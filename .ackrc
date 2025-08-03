@@ -3,5 +3,6 @@
 --ignore-dir=app/deps
 --ignore-dir=app/.elixir_ls
 --ignore-dir=app/priv/static
+--ignore-dir=digest/deps
 --ignore-dir=course/.jekyll-cache
 --ignore-file=is:erl_crash.dump

@@ -3,9 +3,6 @@ defmodule ArchiDep.Application do
 
   use Application
 
-  @spec public_key() :: String.t()
-  def public_key, do: Application.fetch_env!(:archidep, :public_key)
-
   @impl Application
   def start(_type, _args) do
     ArchiDep.Config.log()
