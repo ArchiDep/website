@@ -6,7 +6,7 @@ config :archidep,
   ],
   servers: [
     connection_timeout: 5_000,
-    ssh_private_key_file: Path.expand("../test/priv/ssh/id_25519", __DIR__),
+    ssh_private_key_file: Path.expand("../test/priv/ssh/id_ed25519", __DIR__),
     ssh_public_key:
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE1Q2L2jlt2R71iHClMbx1uIIkKbBGMwGo5c1gFJVArH archidep",
     track_on_boot: false
