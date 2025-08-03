@@ -162,7 +162,9 @@ COPY --chown=app:app ./app/ /usr/src/app/
 COPY --chown=app:app --from=course /build/app/priv/static/archidep.json /usr/src/app/priv/static/
 
 COPY ./.git/ /tmp/.git/
-RUN cat /tmp/.git/HEAD | awk '{print "/tmp/.git/"$2}' | xargs cat > /usr/src/app/.revision
+RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\///' > /usr/src/app/.git-branch && \
+    touch /usr/src/app/.git-dirty && \
+    cat /tmp/.git/HEAD | awk '{print "/tmp/.git/"$2}' | xargs cat > /usr/src/app/.git-revision
 
 RUN mix do ua_inspector.download --force, assets.setup, assets.deploy && \
     mv /usr/src/app/priv/static/cache_manifest.json /usr/src/app/priv/static/cache_manifest2.json
