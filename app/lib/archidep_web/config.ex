@@ -250,12 +250,12 @@ defmodule ArchiDepWeb.Config do
       {:ok, stat} ->
         case {stat.type, stat.access} do
           {:directory, :read_write} -> {:ok, path}
-          {:directory, _any_other_permissions} -> {:error, {error_key, :not_writable}}
-          _not_a_directory -> {:error, {error_key, :not_a_directory}}
+          {:directory, _any_other_permissions} -> {:error, {error_key, :not_writable, path}}
+          _not_a_directory -> {:error, {error_key, :not_a_directory, path}}
         end
 
       {:error, reason} ->
-        {:error, {error_key, reason}}
+        {:error, {error_key, reason, path}}
     end
   end
 end

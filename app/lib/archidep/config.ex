@@ -232,17 +232,17 @@ defmodule ArchiDep.Config do
 
           {"id_" <> type, :regular, _any_other_permission}
           when type in @supported_ssh_key_types ->
-            {:error, {:ssh_private_key_file, :not_readable}}
+            {:error, {:ssh_private_key_file, :not_readable, path}}
 
           {_any_other_name, :regular, _any_permission} ->
-            {:error, {:ssh_private_key_file, :unsupported_type}}
+            {:error, {:ssh_private_key_file, :unsupported_type, path}}
 
           _not_a_directory ->
-            {:error, {:ssh_private_key_file, :not_a_file}}
+            {:error, {:ssh_private_key_file, :not_a_file, path}}
         end
 
       {:error, reason} ->
-        {:error, {:ssh_private_key_file, reason}}
+        {:error, {:ssh_private_key_file, reason, path}}
     end
   end
 
