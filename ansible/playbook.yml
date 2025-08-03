@@ -7,17 +7,16 @@
   vars_files:
     - ./vars/secrets.vault
 
-  # roles:
-  # - role: ufw
-  #   vars:
-  #     ufw_allow:
-  #       - proto: tcp
-  #         port: '{{ server_ssh_port }}'
-  #       - proto: tcp
-  #         port: 80
-  #       - proto: tcp
-  #         port: 443
-  # - role: archidep
+  roles:
+    - role: ufw
+      vars:
+        ufw_allow:
+          - proto: tcp
+            port: '{{ server_ssh_port }}'
+          - proto: any
+            port: 80
+          - proto: any
+            port: 443
 
   tasks:
     - name: Set hostname
