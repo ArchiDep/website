@@ -1,6 +1,10 @@
 module ArchiDep
+  VERSION = File.read(File.expand_path("../../VERSION", File.dirname(__FILE__))).strip
+
   class Generator < Jekyll::Generator
     def generate(site)
+      site.data["version"] = VERSION
+
       course_docs = site.collections["course"].docs
 
       progress_docs = site.collections["progress"].docs

@@ -34,4 +34,7 @@ defmodule ArchiDep.Application do
     ArchiDepWeb.Endpoint.config_change(changed, removed)
     :ok
   end
+
+  @spec version() :: String.t()
+  def version, do: Application.spec(:archidep, :vsn)
 end
