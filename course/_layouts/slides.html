@@ -7,6 +7,15 @@
     {%- seo -%}
     <link rel='stylesheet' href='{{ "/assets/course/slides.css" | relative_asset_url }}'>
     <link rel='stylesheet' href='{{ "/assets/theme/slides.css" | relative_asset_url }}'>
+    {% if site.livereload_script_forced %}
+      <!--
+        https://github.com/jekyll/jekyll/blob/1f319fb273b6cdf876bc6edd38d7477935cdda8c/lib/jekyll/commands/serve/servlet.rb#L93-L111
+      -->
+      <script
+        src='{{ site.livereload_base_url }}/livereload.js?snipver=1&port={{ site.livereload_port }}'
+        defer
+      ></script>
+    {% endif %}
   </head>
   <body>
     <div class='reveal'>
