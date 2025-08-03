@@ -6,94 +6,98 @@
 This repository contains the source code for the Media Engineering Architecture
 & Deployment course website, composed of:
 
-- A [Jekyll][jekyll] static site containing most of the course's materials
-- A [Phoenix][phoenix] application for students to manage a virtual machine in
+- A [Jekyll][jekyll] static site containing most course material
+- A [Phoenix][phoenix] application to help students manage a virtual machine in
   the context of the course
+- A [Tailwind][tailwind] theme for both parts
+- Various related utilities written mostly in [TypeScript][typescript]
 
 ## Requirements
 
 - [Elixir][elixir] 1.18.x
 - [Erlang/OTP][erlang] 28.x
 - [Node.js][node] 24.x
-- [Ruby][ruby] 3.4
+- [Ruby][ruby] 3.4.x
+- [PostgreSQL][postgresql] 17.x
 
-> Use [asdf] or [mise] to install everything based on
+> Use [asdf] or [mise] to install Elixir, Erlang/OTP, Node.js & Ruby based on
 > [`.tool-versions`](./.tool-versions).
 
-## Setup
+## Initial setup
 
 ```bash
 # Clone this repository
 git clone git@github.com:ArchiDep/website.git
 cd website
 
-# Install and compile the Phoenix application's dependencies
-cd app
-mix deps.get
-mix compile  # grab a coffee
-mix ua_inspector.download
+# Install tooling
+npm ci
+
+# Build the course assets & theme at least once
+npm build --workspace assets
+npm build --workspace theme
 
 # Install the Jekyll site's dependencies
 cd ../course
 bundle install
 
-# Install other tooling
-cd ..
-npm ci
+# Install and compile the Phoenix application's dependencies
+cd app
+mix deps.get
+mix compile  # grab a coffee (extra large mug)
+mix ua_inspector.download
 
 # Copy (and adapt) the application's local config file
-cd app
 cp config/local.sample.exs config/local.exs
 
 # Perform initial setup (create the database, run migrations, etc)
 mix setup
 
 # Generate an SSH key (with no password) for testing
-cd ..
 mkdir -p priv/ssh
 cd priv/ssh
 ssh-keygen -t ed25519 -C archidep
 ```
 
-## Run the course and application in development
+## Run the course and application in development mode
 
-Run all these commands in parallel:
+Run all of these in parallel:
 
 ```bash
 # Build and watch course assets with Webpack
-cd website/course
+cd course
 npm start
 
 # Build and watch the CSS theme with Tailwind
-cd website/theme
+cd theme
 npm start
 
 # Serve course material with Jekyll
-cd website/course
+cd course
 bundle exec jekyll server --config _config.yml,_config.proxied.yml --drafts --livereload
 
 # Run the Phoenix web application (also proxies to Jekyll)
-cd website/app
+cd app
 mix phx.server
 ```
 
 Visit http://localhost:42000
 
-## Run the course in development
+## Run the course only in development mode
 
 If you only need to work on course material, run these commands in parallel:
 
 ```bash
 # Build and watch course assets with Webpack
-cd website/course
+cd course
 npm start
 
 # Build and watch the CSS theme with Tailwind
-cd website/theme
+cd theme
 npm start
 
 # Serve course material with Jekyll
-cd website/course
+cd course
 bundle exec jekyll server --config _config.yml --drafts --livereload
 ```
 
@@ -107,23 +111,6 @@ These ports are used by default:
 - 42001 (Jekyll)
 - 42002 (Jekyll live reload)
 
-## Simulate a student VM with a Docker container
-
-From the root of the repository:
-
-```bash
-# Add the test SSH key to your SSH agent
-cat tmp/jde/id_ed25519 | ssh-add -
-
-# Build an SSH server image
-cd app/test/docker/ssh-server
-docker build -t archidep/ssh-server --build-arg JDE_UID="$(id -u)" .
-
-# Run a container with an SSH server and expose it on local port 2222
-cd ../../../
-docker run --rm -it --init -p 2222:22 -v "$PWD/tmp/jde/id_ed25519.pub:/home/jde/.ssh/authorized_keys:ro" archidep/ssh-server
-```
-
 [asdf]: https://asdf-vm.com
 [elixir]: https://elixir-lang.org
 [erlang]: https://www.erlang.org
@@ -131,4 +118,7 @@ docker run --rm -it --init -p 2222:22 -v "$PWD/tmp/jde/id_ed25519.pub:/home/jde/
 [mise]: https://mise.jdx.dev
 [node]: https://nodejs.org
 [phoenix]: https://www.phoenixframework.org
+[postgresql]: https://www.postgresql.org
 [ruby]: https://www.ruby-lang.org
+[tailwind]: https://tailwindcss.com
+[typescript]: https://www.typescriptlang.org
