@@ -29,19 +29,19 @@ config :archidep, ArchiDep.Repo, pool_size: 10, socket_options: []
 
 # Configures the endpoint
 config :archidep, ArchiDepWeb.Endpoint,
-  server: true,
+  adapter: Bandit.PhoenixAdapter,
   # Bind to the loopback IPv4 address to prevent access from other machines by
   # default.
   http: [ip: {127, 0, 0, 1}, port: 42000],
-  url: [host: "localhost"],
-  adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: ArchiDepWeb.Controllers.ErrorHTML],
     layout: false
   ],
-  serve_static: false,
   pubsub_server: ArchiDep.PubSub,
-  uploads_directory: Path.expand("../priv/uploads", __DIR__)
+  serve_static: false,
+  server: true,
+  uploads_directory: Path.expand("../priv/uploads", __DIR__),
+  url: [host: "localhost"]
 
 # Configures the mailer
 #

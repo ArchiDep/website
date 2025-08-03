@@ -47,6 +47,7 @@ services:
       ARCHIDEP_WEB_ENDPOINT_LIVE_VIEW_SIGNING_SALT:
       ARCHIDEP_WEB_ENDPOINT_SECRET_KEY_BASE:
       ARCHIDEP_WEB_ENDPOINT_SESSION_SIGNING_SALT:
+      ARCHIDEP_WEB_ENDPOINT_UPLOADS_DIRECTORY: /var/lib/app/uploads
       ARCHIDEP_WEB_ENDPOINT_URL:
     init: true
     labels:
@@ -55,6 +56,8 @@ services:
       - 'traefik.http.routers.archidep-app.entrypoints=web'
       - 'traefik.http.services.archidep-app.loadbalancer.server.port=42000'
     restart: unless-stopped
+    volumes:
+      - app_uploads:/var/lib/app/uploads:rw
 
   db:
     image: postgres:17.5-alpine

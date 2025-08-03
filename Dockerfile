@@ -181,8 +181,9 @@ ENV LANG=en_US.UTF-8 \
 
 RUN addgroup -S app && \
     adduser -D -G app -H -h /app -S app && \
-    chown app:app /app && \
-    chmod 700 /app
+    mkdir -p /var/lib/app/uploads && \
+    chown -R app:app /app /var/lib/app && \
+    chmod 700 /app /var/lib/app
 
 COPY --chown=app:app --from=release /usr/src/app/_build/prod/rel/archidep ./
 

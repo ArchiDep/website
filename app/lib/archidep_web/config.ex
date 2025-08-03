@@ -22,6 +22,7 @@ defmodule ArchiDepWeb.Config do
       live_view: endpoint_live_view(env, default_config),
       secret_key_base: endpoint_secret_key_base(env, default_config),
       session_signing_salt: endpoint_session_signing_salt(env, default_config),
+      uploads_directory: endpoint_uploads_directory(env, default_config),
       url: endpoint_url(env, default_config)
     ]
 
@@ -115,6 +116,18 @@ defmodule ArchiDepWeb.Config do
       |> ConfigValue.validate(&validate_signing_salt/1)
       |> ConfigValue.required_value()
 
+  defp endpoint_uploads_directory(env, default_config),
+    do:
+      "Endpoint uploads directory"
+      |> ConfigValue.new()
+      |> ConfigValue.format(
+        ~s|It must be the path to a writable directory, for example:\n\n    /var/lib/app/uploads|
+      )
+      |> ConfigValue.env_var(env, "ARCHIDEP_WEB_ENDPOINT_UPLOADS_DIR")
+      |> ConfigValue.default_to(default_config, :uploads_directory)
+      |> ConfigValue.validate(&validate_writable_directory/1)
+      |> ConfigValue.required_value()
+
   defp endpoint_url(env, default_config),
     do:
       "Endpoint URL"
@@ -200,4 +213,18 @@ defmodule ArchiDepWeb.Config do
        do: true
 
   defp validate_port(_value), do: false
+
+  defp validate_writable_directory(path) do
+    case File.stat(path) do
+      {:ok, stat} ->
+        case {stat.type, stat.access} do
+          {:directory, :read_write} -> {:ok, path}
+          {:directory, _any_other_permissions} -> {:error, {:uploads_directory, :not_writable}}
+          _not_a_directory -> {:error, {:uploads_directory, :not_a_directory}}
+        end
+
+      {:error, reason} ->
+        {:error, {:uploads_directory, reason}}
+    end
+  end
 end
