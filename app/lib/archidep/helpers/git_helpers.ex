@@ -12,11 +12,12 @@ defmodule ArchiDep.Helpers.GitHelpers do
         git_branch_from_repository()
 
   @spec determine_git_dirty() :: boolean()
-  def determine_git_dirty,
-    do:
-      git_dirty_from_environment() ||
-        git_dirty_from_file() ||
-        git_dirty_from_repository()
+  def determine_git_dirty do
+    case git_dirty_from_environment() || git_dirty_from_file() do
+      nil -> git_dirty_from_repository()
+      dirty when is_boolean(dirty) -> dirty
+    end
+  end
 
   @spec determine_git_revision() :: String.t() | nil
   def determine_git_revision,
