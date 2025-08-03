@@ -55,7 +55,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=archidep/app:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/archidep/app:latest
           cache-to: type=inline
 
       # https://github.com/actions/attest-build-provenance
