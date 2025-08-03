@@ -15,7 +15,8 @@ USER build:build
 COPY --chown=build:build ./package.json ./package-lock.json /build/
 COPY --chown=build:build ./course/package.json /build/course/
 
-RUN npm ci
+RUN echo 'omit=optional' > ./.npmrc && \
+    npm ci
 
 COPY --chown=build:build ./course/tsconfig.json ./course/tsconfig.assets.json ./course/webpack.config.cjs /build/course/
 COPY --chown=build:build ./course/src/ /build/course/src/
@@ -66,7 +67,8 @@ USER build:build
 COPY --chown=build:build ./package.json ./package-lock.json /build/
 COPY --chown=build:build ./theme/package.json /build/theme/
 
-RUN npm ci
+RUN echo 'omit=optional' > ./.npmrc && \
+    npm ci
 
 COPY --chown=build:build --from=theme-sources /build/ /build/
 COPY --chown=build:build ./theme/ /build/theme/
@@ -124,7 +126,8 @@ RUN bundle install
 COPY --chown=build:build ./package.json ./package-lock.json /build/
 COPY --chown=build:build ./course/package.json /build/course/
 
-RUN npm ci
+RUN echo 'omit=optional' > ./.npmrc && \
+    npm ci
 
 COPY --chown=build:build ./course/ /build/course/
 COPY --chown=build:build ./app/mix.exs /build/app/mix.exs
