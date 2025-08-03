@@ -143,7 +143,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
         save_accepted_host: false,
         silently_accept_hosts: Keyword.get(options, :silently_accept_hosts, false),
         user: to_charlist(username),
-        user_dir: to_charlist("../tmp/jde"),
+        user_dir: to_charlist(ssh_dir()),
         user_interaction: false
       )
 
@@ -173,4 +173,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
         {:reply, {:error, reason}, {:idle, server_id}}
     end
   end
+
+  defp ssh_dir,
+    do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:ssh_dir)
 end

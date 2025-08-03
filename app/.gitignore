@@ -33,6 +33,9 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 archidep-*.tar
 
+# Ignore SSH key pair used to authenticate to registered servers.
+/priv/ssh
+
 # Ignore assets that are produced by build tools.
 /priv/static
 

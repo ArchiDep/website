@@ -6,8 +6,9 @@ config :archidep,
   ],
   servers: [
     connection_timeout: 5_000,
-    public_key:
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHbV+M6SR+flT3XhFhQv2DsyBs1+ORZU4qv9SLTqIFEs archidep",
+    ssh_dir: Path.expand("../test/priv/ssh", __DIR__),
+    ssh_public_key:
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE1Q2L2jlt2R71iHClMbx1uIIkKbBGMwGo5c1gFJVArH archidep",
     track_on_boot: false
   ]
 

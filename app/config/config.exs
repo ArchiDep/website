@@ -16,6 +16,7 @@ config :archidep,
   ],
   servers: [
     connection_timeout: 30_000,
+    ssh_dir: Path.expand("../priv/ssh", __DIR__),
     track_on_boot: true
   ]
 

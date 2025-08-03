@@ -1184,12 +1184,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
     Tracker.track_playbook!(playbook, server, username, %{
       "app_user_name" => server.app_username,
-      "app_user_authorized_key" => public_key(),
+      "app_user_authorized_key" => ssh_public_key(),
       "server_id" => server.id,
       "server_token" => token
     })
   end
 
-  defp public_key,
-    do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:public_key)
+  defp ssh_public_key,
+    do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:ssh_public_key)
 end

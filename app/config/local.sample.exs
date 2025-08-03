@@ -8,7 +8,7 @@ if config_env() != :test do
     ],
     servers: [
       # Generate your own key pair using `ssh-keygen -t ed25519 -C "archidep"`
-      public_key:
+      ssh_public_key:
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIxsZfyuRVJsWGYbLaZLTCDahyT9QhnT1ixz5ghIL0FB archidep"
     ]
 end

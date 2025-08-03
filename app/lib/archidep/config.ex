@@ -37,7 +37,10 @@ defmodule ArchiDep.Config do
     |-> Authentication
     |   \\-> Switch edu-ID root users: #{inspect(auth_config[:root_users][:switch_edu_id])}
     |-> Servers
-    |   \\-> Public key: #{inspect(servers_config[:public_key])}
+    |   |-> Connection timeout: #{inspect(servers_config[:connection_timeout])}
+    |   |-> Public key: #{inspect(servers_config[:ssh_public_key])}
+    |   |-> SSH directory: #{inspect(servers_config[:ssh_dir])}
+    |   \\-> Track: #{inspect(servers_config[:track_on_boot])}
     \\-> Repository
         |-> URL: #{inspect(URI.to_string(safe_repo_url))}
         |-> Pool size: #{inspect(repo_config[:pool_size])}
@@ -80,17 +83,30 @@ defmodule ArchiDep.Config do
         default_config \\ Application.fetch_env!(:archidep, :servers)
       ) do
     [
-      public_key: public_key(env, default_config)
+      ssh_dir: ssh_dir(env, default_config),
+      ssh_public_key: ssh_public_key(env, default_config)
     ]
   end
 
-  defp public_key(env, default_config),
+  defp ssh_dir(env, default_config),
+    do:
+      "SSH directory"
+      |> ConfigValue.new()
+      |> ConfigValue.format(
+        "It must be the path to a readable directory containing an SSH private key file with a standard name."
+      )
+      |> ConfigValue.env_var(env, "ARCHIDEP_SERVERS_SSH_DIR")
+      |> ConfigValue.default_to(default_config, :ssh_dir)
+      |> ConfigValue.validate(&validate_ssh_directory/1)
+      |> ConfigValue.required_value()
+
+  defp ssh_public_key(env, default_config),
     do:
       "Public key"
       |> ConfigValue.new()
-      |> ConfigValue.format("It must be a valid PEM-encoded public key.")
-      |> ConfigValue.env_var(env, "ARCHIDEP_SERVERS_PUBLIC_KEY")
-      |> ConfigValue.default_to(default_config, :public_key)
+      |> ConfigValue.format("It must be an SSH public key.")
+      |> ConfigValue.env_var(env, "ARCHIDEP_SERVERS_SSH_PUBLIC_KEY")
+      |> ConfigValue.default_to(default_config, :ssh_public_key)
       |> ConfigValue.required_value()
 
   @doc """
@@ -195,6 +211,44 @@ defmodule ArchiDep.Config do
 
       _anything_else ->
         false
+    end
+  end
+
+  defp validate_ssh_directory(path) do
+    private_key_file = Path.join(path, "id_ed25519")
+
+    with {:ok, ^path} <- validate_readable_directory(path, :ssh_dir),
+         {:ok, ^private_key_file} <-
+           validate_readable_file(private_key_file, :ssh_dir_private_key_file) do
+      {:ok, path}
+    end
+  end
+
+  defp validate_readable_directory(path, error_key) when is_atom(error_key) do
+    case File.stat(path) do
+      {:ok, stat} ->
+        case {stat.type, stat.access} do
+          {:directory, permission} when permission in [:read, :read_write] -> {:ok, path}
+          {:directory, _any_other_permissions} -> {:error, {error_key, :not_readable}}
+          _not_a_directory -> {:error, {error_key, :not_a_directory}}
+        end
+
+      {:error, reason} ->
+        {:error, {error_key, reason}}
+    end
+  end
+
+  defp validate_readable_file(path, error_key) when is_atom(error_key) do
+    case File.stat(path) do
+      {:ok, stat} ->
+        case {stat.type, stat.access} do
+          {:regular, permission} when permission in [:read, :read_write] -> {:ok, path}
+          {:regular, _any_other_permissions} -> {:error, {error_key, :not_readable}}
+          _not_a_directory -> {:error, {error_key, :not_a_file}}
+        end
+
+      {:error, reason} ->
+        {:error, {error_key, reason}}
     end
   end
 
