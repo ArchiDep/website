@@ -4,43 +4,13 @@ defmodule ArchiDep.Git do
   revision), retrieved and baked in at compile time.
   """
 
+  alias ArchiDep.Helpers.GitHelpers
   require Logger
 
-  @git_branch System.get_env("ARCHIDEP_GIT_BRANCH") ||
-                if(File.exists?(".git-branch"),
-                  do:
-                    ".git-branch"
-                    |> File.read!()
-                    |> String.trim()
-                    |> then(fn
-                      "" -> "HEAD"
-                      branch -> branch
-                    end),
-                  else: nil
-                ) ||
-                (case(System.cmd("git", ["rev-parse", "--abbrev-ref", "HEAD"], env: %{})) do
-                   {branch, 0} -> String.trim(branch)
-                 end)
-
-  @git_dirty System.get_env("ARCHIDEP_GIT_DIRTY") ||
-               if(File.exists?(".git-dirty"),
-                 do: ".git-dirty" |> File.read!() |> String.trim() != "",
-                 else:
-                   case(System.cmd("git", ["status", "--porcelain"], env: %{})) do
-                     {status, 0} -> String.trim(status) != ""
-                   end
-               )
-
+  @git_branch GitHelpers.determine_git_branch()
+  @git_dirty GitHelpers.determine_git_dirty()
   @git_ref System.get_env("ARCHIDEP_GIT_REF")
-
-  @git_revision System.get_env("ARCHIDEP_GIT_REVISION") ||
-                  if(File.exists?(".git-revision"),
-                    do: ".git-revision" |> File.read!() |> String.trim(),
-                    else: nil
-                  ) ||
-                  (case(System.cmd("git", ["rev-parse", "HEAD"], env: %{})) do
-                     {revision, 0} -> String.trim(revision)
-                   end)
+  @git_revision GitHelpers.determine_git_revision()
 
   @spec start() :: :ok
   def start do
@@ -72,39 +42,8 @@ defmodule ArchiDep.Git do
   def __mix_recompile__?,
     do:
       @git_branch !=
-        (System.get_env("ARCHIDEP_GIT_BRANCH") ||
-           if(File.exists?(".git-branch"),
-             do:
-               ".git-branch"
-               |> File.read!()
-               |> String.trim()
-               |> then(fn
-                 "" -> "HEAD"
-                 branch -> branch
-               end),
-             else: nil
-           ) ||
-           (case(System.cmd("git", ["rev-parse", "--abbrev-ref", "HEAD"], env: %{})) do
-              {branch, 0} -> String.trim(branch)
-            end)) ||
-        @git_dirty !=
-          (System.get_env("ARCHIDEP_GIT_DIRTY") ||
-             if(File.exists?(".git-dirty"),
-               do: ".git-dirty" |> File.read!() |> String.trim() != "",
-               else:
-                 case(System.cmd("git", ["status", "--porcelain"], env: %{})) do
-                   {status, 0} -> String.trim(status) != ""
-                 end
-             )) ||
+        GitHelpers.determine_git_branch() ||
+        @git_dirty != GitHelpers.determine_git_dirty() ||
         @git_ref != System.get_env("ARCHIDEP_GIT_REF") ||
-        @git_revision !=
-          (System.get_env("ARCHIDEP_GIT_REVISION") ||
-             if(File.exists?(".git-revision"),
-               do: ".git-revision" |> File.read!() |> String.trim(),
-               else: nil
-             ) ||
-             (case(System.cmd("git", ["rev-parse", "HEAD"], env: %{})) do
-                {revision, 0} -> String.trim(revision)
-                _anything_else -> "unknown"
-              end))
+        @git_revision != GitHelpers.determine_git_revision()
 end
