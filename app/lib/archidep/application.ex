@@ -5,6 +5,7 @@ defmodule ArchiDep.Application do
 
   @impl Application
   def start(_type, _args) do
+    ArchiDep.Git.start()
     ArchiDep.Config.start!()
     ArchiDepWeb.Config.start!()
 
