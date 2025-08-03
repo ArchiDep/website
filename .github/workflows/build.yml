@@ -89,6 +89,10 @@ jobs:
         run: mix ua_inspector.download --force
         working-directory: app
 
+      - name: Create uploads directory
+        run: mkdir priv/uploads
+        working-directory: app
+
       - name: Migrate the database
         run: mix ecto.migrate
         working-directory: app
