@@ -31,32 +31,36 @@ git clone git@github.com:ArchiDep/website.git
 cd website
 
 # Install tooling
-npm ci
+npm ci  # grab a coffee
 
 # Build the course assets & theme at least once
-npm build --workspace assets
-npm build --workspace theme
+npm run --workspace course build
+npm run --workspace theme build
 
-# Install the Jekyll site's dependencies
-cd ../course
+# Install the Jekyll site's dependencies & build at least once
+cd course
 bundle install
+bundle exec jekyll build
 
 # Install and compile the Phoenix application's dependencies
-cd app
+cd ../app
 mix deps.get
-mix compile  # grab a coffee (extra large mug)
+mix compile  # grab another coffee (extra large mug)
 mix ua_inspector.download
 
 # Copy (and adapt) the application's local config file
 cp config/local.sample.exs config/local.exs
 
-# Perform initial setup (create the database, run migrations, etc)
-mix setup
+# Create required directories
+mkdir -p priv/ssh priv/uploads
 
 # Generate an SSH key (with no password) for testing
-mkdir -p priv/ssh
 cd priv/ssh
-ssh-keygen -t ed25519 -C archidep
+ssh-keygen -t ed25519 -f id_ed25519 -C archidep
+cd ../../
+
+# Perform initial setup (create the database, run migrations, etc)
+mix setup
 ```
 
 ## Run the course and application in development mode

@@ -34,13 +34,15 @@ erl_crash.dump
 archidep-*.tar
 
 # Ignore SSH key pair used to authenticate to registered servers.
-/priv/ssh
+/priv/ssh/*
+!/priv/ssh/.keep
 
 # Ignore assets that are produced by build tools.
 /priv/static
 
 # Ignore uploaded files.
-/priv/uploads
+/priv/uploads/*
+!/priv/uploads/.keep
 
 # In case you use Node.js/npm, you want to ignore these.
 npm-debug.log
