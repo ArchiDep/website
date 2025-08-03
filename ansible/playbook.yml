@@ -3,6 +3,7 @@
   become: true
 
   vars:
+    docker_data_root: /mnt/data/docker
     server_name: archidep.ch
   vars_files:
     - ./vars/secrets.vault
@@ -17,6 +18,7 @@
             port: 80
           - proto: any
             port: 443
+    - role: docker
 
   tasks:
     - name: Set hostname

@@ -3,7 +3,7 @@
   apt:
     name: ufw
     state: present
-  tags: [ufw]
+  tags: [ufw, install]
 
 - name: Configure UFW ports
   ufw:
@@ -12,9 +12,9 @@
     proto: '{{ item.proto }}'
     state: enabled
   with_items: '{{ ufw_allow }}'
-  tags: [ufw]
+  tags: [ufw, config]
 
 - name: Enable UFW
   ufw:
     state: enabled
-  tags: [ufw]
+  tags: [ufw, install]
