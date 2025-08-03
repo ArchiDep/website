@@ -41,7 +41,7 @@ config :archidep, ArchiDepWeb.Endpoint,
   serve_static: false,
   server: true,
   uploads_directory: Path.expand("../priv/uploads", __DIR__),
-  url: [host: "localhost"]
+  url: [host: "localhost", port: 42000]
 
 # Configures the mailer
 #

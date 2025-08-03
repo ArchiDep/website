@@ -8,6 +8,39 @@ defmodule ArchiDep.Config do
 
   alias ArchiDep.Config.ConfigValue
   alias ArchiDep.Repo
+  require Logger
+
+  @doc """
+  Logs the current configuration of the application.
+  """
+  @spec log() :: :ok
+  def log do
+    auth_config = Application.fetch_env!(:archidep, :auth)
+    repo_config = Application.fetch_env!(:archidep, Repo)
+
+    safe_repo_url =
+      repo_config
+      |> Keyword.fetch!(:url)
+      |> URI.new!()
+      |> then(fn
+        %URI{userinfo: userinfo} = uri when is_binary(userinfo) ->
+          %URI{uri | userinfo: String.replace(userinfo, ~r/:.+/, "**********")}
+
+        uri_without_userinfo ->
+          uri_without_userinfo
+      end)
+
+    Logger.info(~s"""
+    Configuration
+    /
+    |-> Authentication
+    |   \\-> Switch edu-ID root users: #{inspect(auth_config[:root_users][:switch_edu_id])}
+    --> Repository
+        |-> URL: #{inspect(URI.to_string(safe_repo_url))}
+        |-> Pool size: #{inspect(repo_config[:pool_size])}
+        \\-> Socket options: #{inspect(repo_config[:socket_options])}
+    """)
+  end
 
   @doc """
   Read the dynamic application authentication configuration.

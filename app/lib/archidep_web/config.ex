@@ -8,6 +8,29 @@ defmodule ArchiDepWeb.Config do
 
   alias ArchiDep.Config.ConfigValue
   alias ArchiDepWeb.Endpoint
+  require Logger
+
+  @doc """
+  Logs the current configuration of the web application.
+  """
+  @spec log() :: :ok
+  def log do
+    endpoint_config = Application.fetch_env!(:archidep, Endpoint)
+    ueberauth_oidcc_providers = Application.fetch_env!(:ueberauth_oidcc, :providers)
+
+    Logger.info(~s"""
+    Web configuration
+    /
+    |-> Endpoint
+    |   |-> Bind: #{endpoint_config[:http][:ip] |> :inet.ntoa() |> to_string()}
+    |   |-> Port: #{inspect(endpoint_config[:http][:port])}
+    |   |-> Uploads directory: #{inspect(endpoint_config[:uploads_directory])}
+    |   \\-> URL: #{inspect(endpoint_config[:url])}
+    \\-> Ueberauth OpenID Connect
+        \\-> Switch edu-ID
+            \\-> Client ID: #{inspect(ueberauth_oidcc_providers[:switch_edu_id][:client_id])}
+    """)
+  end
 
   @doc """
   Read the web endpoint's dynamic configuration.

@@ -8,6 +8,9 @@ defmodule ArchiDep.Application do
 
   @impl Application
   def start(_type, _args) do
+    ArchiDep.Config.log()
+    ArchiDepWeb.Config.log()
+
     children = [
       ArchiDepWeb.Telemetry,
       ArchiDep.Repo,
