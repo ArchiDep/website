@@ -23,6 +23,30 @@ ENV NODE_ENV=production
 
 RUN npm run --workspace course build
 
+# App & Dependencies
+# ==================
+FROM elixir:1.18.4-otp-28-alpine AS theme-sources
+
+RUN apk add --no-cache git && \
+    addgroup -S build && \
+    adduser -D -G build -H -h /build -S build && \
+    mkdir -p /build && \
+    chown -R build:build /build && \
+    chmod 700 /build
+
+WORKDIR /build
+USER build:build
+
+COPY --chown=build:build ./app/mix.exs ./app/mix.lock /build/
+
+ENV MIX_ENV=prod
+
+RUN mix local.hex --force && \
+    mix deps.get --only prod
+
+COPY --chown=build:build ./app/lib/archidep_web/ /build/lib/archidep_web/
+COPY --chown=build:build ./course/ /build/course/
+
 # App & Course Theme
 # ==================
 FROM node:24.4.0-alpine AS theme
@@ -41,9 +65,8 @@ COPY --chown=build:build ./theme/package.json /build/theme/
 
 RUN npm ci
 
+COPY --chown=build:build --from=theme-sources /build/ /build/
 COPY --chown=build:build ./theme/ /build/theme/
-COPY --chown=build:build ./app/ /build/app/
-COPY --chown=build:build ./course/ /build/course/
 
 ENV NODE_ENV=production
 

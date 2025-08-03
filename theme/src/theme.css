@@ -13,7 +13,7 @@
 }
 
 @source "../../app/deps/flashy/**/*.*ex";
-@source "../../app/lib";
+@source "../../app/lib/archidep_web";
 @source "../../course/collections";
 @source "../../course/_includes";
 @source "../../course/index.md";
