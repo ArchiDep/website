@@ -50,8 +50,8 @@ mix setup
 
 # Generate an SSH key (with no password) for testing
 cd ..
-mkdir -p tmp/jde
-cd tmp/jde
+mkdir -p priv/ssh
+cd priv/ssh
 ssh-keygen -t ed25519 -C archidep
 ```
 
@@ -60,7 +60,7 @@ ssh-keygen -t ed25519 -C archidep
 Run all these commands in parallel:
 
 ```bash
-# Build and watch assets with Webpack
+# Build and watch course assets with Webpack
 cd website/course
 npm start
 
@@ -68,7 +68,7 @@ npm start
 cd website/theme
 npm start
 
-# Serve the course with Jekyll
+# Serve course material with Jekyll
 cd website/course
 bundle exec jekyll server --config _config.yml,_config.proxied.yml --drafts --livereload
 
@@ -84,7 +84,7 @@ Visit http://localhost:42000
 If you only need to work on course material, run these commands in parallel:
 
 ```bash
-# Build and watch assets with Webpack
+# Build and watch course assets with Webpack
 cd website/course
 npm start
 
@@ -92,7 +92,7 @@ npm start
 cd website/theme
 npm start
 
-# Serve the course with Jekyll
+# Serve course material with Jekyll
 cd website/course
 bundle exec jekyll server --config _config.yml --drafts --livereload
 ```

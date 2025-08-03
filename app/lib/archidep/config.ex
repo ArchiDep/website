@@ -10,13 +10,19 @@ defmodule ArchiDep.Config do
   alias ArchiDep.Repo
   require Logger
 
+  @supported_ssh_key_types ["ecdsa", "ed25519", "rsa"]
+
   @doc """
-  Logs the current configuration of the application.
+  Validates and logs the current configuration of the application.
   """
-  @spec log() :: :ok
-  def log do
+  @spec start!() :: :ok
+  def start! do
     auth_config = Application.fetch_env!(:archidep, :auth)
+
     servers_config = Application.fetch_env!(:archidep, :servers)
+    ssh_private_key_file = servers_config[:ssh_private_key_file]
+    {:ok, ^ssh_private_key_file} = validate_ssh_private_key_file(ssh_private_key_file)
+
     repo_config = Application.fetch_env!(:archidep, Repo)
 
     safe_repo_url =
@@ -37,15 +43,17 @@ defmodule ArchiDep.Config do
     |-> Authentication
     |   \\-> Switch edu-ID root users: #{inspect(auth_config[:root_users][:switch_edu_id])}
     |-> Servers
-    |   |-> Connection timeout: #{inspect(servers_config[:connection_timeout])}
-    |   |-> Public key: #{inspect(servers_config[:ssh_public_key])}
-    |   |-> SSH directory: #{inspect(servers_config[:ssh_dir])}
+    |   |-> SSH connection timeout: #{inspect(servers_config[:connection_timeout])}
+    |   |-> SSH private key file: #{inspect(ssh_private_key_file)}
+    |   |-> SSH public key: #{inspect(servers_config[:ssh_public_key])}
     |   \\-> Track: #{inspect(servers_config[:track_on_boot])}
     \\-> Repository
         |-> URL: #{inspect(URI.to_string(safe_repo_url))}
         |-> Pool size: #{inspect(repo_config[:pool_size])}
         \\-> Socket options: #{inspect(repo_config[:socket_options])}
     """)
+
+    :ok
   end
 
   @doc """
@@ -83,26 +91,26 @@ defmodule ArchiDep.Config do
         default_config \\ Application.fetch_env!(:archidep, :servers)
       ) do
     [
-      ssh_dir: ssh_dir(env, default_config),
+      ssh_private_key_file: ssh_private_key_file(env, default_config),
       ssh_public_key: ssh_public_key(env, default_config)
     ]
   end
 
-  defp ssh_dir(env, default_config),
+  defp ssh_private_key_file(env, default_config),
     do:
-      "SSH directory"
+      "SSH private key file"
       |> ConfigValue.new()
       |> ConfigValue.format(
-        "It must be the path to a readable directory containing an SSH private key file with a standard name."
+        ~S|It must be the path to a readable file containing an SSH private key. The file must have a standard name (e.g. "id_ed25519").|
       )
-      |> ConfigValue.env_var(env, "ARCHIDEP_SERVERS_SSH_DIR")
-      |> ConfigValue.default_to(default_config, :ssh_dir)
-      |> ConfigValue.validate(&validate_ssh_directory/1)
+      |> ConfigValue.env_var(env, "ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE")
+      |> ConfigValue.default_to(default_config, :ssh_private_key_file)
+      |> ConfigValue.validate(&validate_ssh_private_key_file/1)
       |> ConfigValue.required_value()
 
   defp ssh_public_key(env, default_config),
     do:
-      "Public key"
+      "SSH public key"
       |> ConfigValue.new()
       |> ConfigValue.format("It must be an SSH public key.")
       |> ConfigValue.env_var(env, "ARCHIDEP_SERVERS_SSH_PUBLIC_KEY")
@@ -214,41 +222,27 @@ defmodule ArchiDep.Config do
     end
   end
 
-  defp validate_ssh_directory(path) do
-    private_key_file = Path.join(path, "id_ed25519")
-
-    with {:ok, ^path} <- validate_readable_directory(path, :ssh_dir),
-         {:ok, ^private_key_file} <-
-           validate_readable_file(private_key_file, :ssh_dir_private_key_file) do
-      {:ok, path}
-    end
-  end
-
-  defp validate_readable_directory(path, error_key) when is_atom(error_key) do
+  defp validate_ssh_private_key_file(path) do
     case File.stat(path) do
       {:ok, stat} ->
-        case {stat.type, stat.access} do
-          {:directory, permission} when permission in [:read, :read_write] -> {:ok, path}
-          {:directory, _any_other_permissions} -> {:error, {error_key, :not_readable}}
-          _not_a_directory -> {:error, {error_key, :not_a_directory}}
+        case {Path.basename(path), stat.type, stat.access} do
+          {"id_" <> type, :regular, permission}
+          when type in @supported_ssh_key_types and permission in [:read, :read_write] ->
+            {:ok, path}
+
+          {"id_" <> type, :regular, _any_other_permission}
+          when type in @supported_ssh_key_types ->
+            {:error, {:ssh_private_key_file, :not_readable}}
+
+          {_any_other_name, :regular, _any_permission} ->
+            {:error, {:ssh_private_key_file, :unsupported_type}}
+
+          _not_a_directory ->
+            {:error, {:ssh_private_key_file, :not_a_file}}
         end
 
       {:error, reason} ->
-        {:error, {error_key, reason}}
-    end
-  end
-
-  defp validate_readable_file(path, error_key) when is_atom(error_key) do
-    case File.stat(path) do
-      {:ok, stat} ->
-        case {stat.type, stat.access} do
-          {:regular, permission} when permission in [:read, :read_write] -> {:ok, path}
-          {:regular, _any_other_permissions} -> {:error, {error_key, :not_readable}}
-          _not_a_directory -> {:error, {error_key, :not_a_file}}
-        end
-
-      {:error, reason} ->
-        {:error, {error_key, reason}}
+        {:error, {:ssh_private_key_file, reason}}
     end
   end
 

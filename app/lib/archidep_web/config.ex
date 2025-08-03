@@ -11,11 +11,14 @@ defmodule ArchiDepWeb.Config do
   require Logger
 
   @doc """
-  Logs the current configuration of the web application.
+  Validates and logs the current configuration of the web application.
   """
-  @spec log() :: :ok
-  def log do
+  @spec start!() :: :ok
+  def start! do
     endpoint_config = Application.fetch_env!(:archidep, Endpoint)
+    uploads_directory = endpoint_config[:uploads_directory]
+    {:ok, ^uploads_directory} = validate_uploads_directory(uploads_directory)
+
     ueberauth_oidcc_providers = Application.fetch_env!(:ueberauth_oidcc, :providers)
 
     Logger.info(~s"""
@@ -24,12 +27,14 @@ defmodule ArchiDepWeb.Config do
     |-> Endpoint
     |   |-> Bind: #{endpoint_config[:http][:ip] |> :inet.ntoa() |> to_string()}
     |   |-> Port: #{inspect(endpoint_config[:http][:port])}
-    |   |-> Uploads directory: #{inspect(endpoint_config[:uploads_directory])}
+    |   |-> Uploads directory: #{inspect(uploads_directory)}
     |   \\-> URL: #{inspect(endpoint_config[:url])}
     \\-> Ueberauth OpenID Connect
         \\-> Switch edu-ID
             \\-> Client ID: #{inspect(ueberauth_oidcc_providers[:switch_edu_id][:client_id])}
     """)
+
+    :ok
   end
 
   @doc """
@@ -146,9 +151,9 @@ defmodule ArchiDepWeb.Config do
       |> ConfigValue.format(
         ~s|It must be the path to a writable directory, for example:\n\n    /var/lib/app/uploads|
       )
-      |> ConfigValue.env_var(env, "ARCHIDEP_WEB_ENDPOINT_UPLOADS_DIR")
+      |> ConfigValue.env_var(env, "ARCHIDEP_WEB_ENDPOINT_UPLOADS_DIRECTORY")
       |> ConfigValue.default_to(default_config, :uploads_directory)
-      |> ConfigValue.validate(&validate_writable_directory/1)
+      |> ConfigValue.validate(&validate_uploads_directory/1)
       |> ConfigValue.required_value()
 
   defp endpoint_url(env, default_config),
@@ -237,17 +242,20 @@ defmodule ArchiDepWeb.Config do
 
   defp validate_port(_value), do: false
 
-  defp validate_writable_directory(path) do
+  defp validate_uploads_directory(path),
+    do: validate_writable_directory(path, :uploads_directory)
+
+  defp validate_writable_directory(path, error_key) do
     case File.stat(path) do
       {:ok, stat} ->
         case {stat.type, stat.access} do
           {:directory, :read_write} -> {:ok, path}
-          {:directory, _any_other_permissions} -> {:error, {:uploads_directory, :not_writable}}
-          _not_a_directory -> {:error, {:uploads_directory, :not_a_directory}}
+          {:directory, _any_other_permissions} -> {:error, {error_key, :not_writable}}
+          _not_a_directory -> {:error, {error_key, :not_a_directory}}
         end
 
       {:error, reason} ->
-        {:error, {:uploads_directory, reason}}
+        {:error, {error_key, reason}}
     end
   end
 end

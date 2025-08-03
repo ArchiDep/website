@@ -175,5 +175,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   end
 
   defp ssh_dir,
-    do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:ssh_dir)
+    do:
+      :archidep
+      |> Application.fetch_env!(:servers)
+      |> Keyword.fetch!(:ssh_private_key_file)
+      |> Path.dirname()
 end

@@ -12,6 +12,7 @@
 /app/*.ez
 /app/.fetch
 /app/npm-debug.log
+/app/priv/ssh
 /app/priv/static
 /app/priv/uploads
 /app/tmp/
@@ -24,6 +25,8 @@
 /course/pdf
 /course/_site
 /course/vendor
+
+/.env*
 
 /.git
 /!.git/HEAD
