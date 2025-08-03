@@ -25,6 +25,10 @@
 /course/_site
 /course/vendor
 
+/.git
+/!.git/HEAD
+/!.git/refs
+
 /theme/dist
 
 /node_modules

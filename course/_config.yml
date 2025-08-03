@@ -64,3 +64,4 @@ exclude:
 
 keep_files:
   - assets
+  - cache_manifest.json

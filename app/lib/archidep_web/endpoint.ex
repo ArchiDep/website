@@ -10,6 +10,8 @@ defmodule ArchiDepWeb.Endpoint do
     signing_salt: {__MODULE__, :session_signing_salt, []}
   ]
 
+  @serve_static :archidep |> Application.compile_env!(__MODULE__) |> Keyword.fetch!(:serve_static)
+
   # Phoenix LiveView
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [:peer_data, :user_agent, session: @session_options]],
@@ -21,18 +23,20 @@ defmodule ArchiDepWeb.Endpoint do
     longpoll: [connect_info: [:peer_data, :user_agent, session: @session_options]],
     error_handler: {ArchiDepWeb.Channels.UserSocket, :handle_error, []}
 
-  # Serve course material in the "priv/static" directory.
-  plug Plug.Static.IndexHtml
+  if @serve_static do
+    # Serve course material in the "priv/static" directory.
+    plug Plug.Static.IndexHtml
 
-  # Serve at "/" the static files from "priv/static" directory.
-  #
-  # You should set gzip to true if you are running phx.digest
-  # when deploying your static files in production.
-  plug Plug.Static,
-    at: "/",
-    from: :archidep,
-    gzip: false,
-    only: ArchiDepWeb.static_paths()
+    # Serve at "/" the static files from "priv/static" directory.
+    #
+    # You should set gzip to true if you are running phx.digest
+    # when deploying your static files in production.
+    plug Plug.Static,
+      at: "/",
+      from: :archidep,
+      gzip: false,
+      only: ArchiDepWeb.static_paths()
+  end
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

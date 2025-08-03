@@ -1,3 +1,5 @@
 # https://git-scm.com/docs/gitignore
+/.env
+!/.env.sample
 /node_modules
 /tmp

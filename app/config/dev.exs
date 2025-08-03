@@ -16,6 +16,7 @@ config :archidep, ArchiDepWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
+  serve_static: true,
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:archidep, ~w(--sourcemap=inline --watch)]}
   ]

@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+
+cd -P -- "$(dirname -- "$0")"
+
+./archidep eval ArchiDep.Release.migrate
+
+PHX_SERVER=true exec ./archidep start

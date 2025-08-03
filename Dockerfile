@@ -79,7 +79,7 @@ RUN mix phx.digest priv/static -o priv/static && \
 # ======
 FROM ruby:3.4.4-alpine AS course
 
-RUN apk add --no-cache g++ make && \
+RUN apk add --no-cache g++ make nodejs npm && \
     addgroup -S build && \
     adduser -D -G build -H -h /build -S build && \
     mkdir -p /build/course/ && \
@@ -93,6 +93,11 @@ COPY --chown=build:build ./course/Gemfile ./course/Gemfile.lock /build/course/
 
 RUN bundle install
 
+COPY --chown=build:build ./package.json ./package-lock.json /build/
+COPY --chown=build:build ./course/package.json /build/course/
+
+RUN npm ci
+
 COPY --chown=build:build ./course/ /build/course/
 COPY --chown=build:build --from=assets /build/app/priv/static/assets/course/ /build/app/priv/static/assets/course/
 COPY --chown=build:build --from=digest /build/digest/priv/static/ /build/app/priv/static/
@@ -103,14 +108,12 @@ RUN bundle exec jekyll build
 
 # Application
 # ===========
-FROM elixir:1.18.4-otp-28-alpine
+FROM elixir:1.18.4-otp-28-alpine AS release
 
-ARG ARCHIDEP_GIT_REVISION
-
-RUN apk add --no-cache git && \
+RUN apk add --no-cache git nodejs npm && \
     addgroup -S app && \
     adduser -D -G app -H -h /usr/src/app -S app && \
-    mkdir -p /usr/src/app/config && \
+    mkdir -p /usr/src/app/.git /usr/src/app/config && \
     chown -R app:app /usr/src/app && \
     chmod 700 /usr/src/app
 
@@ -122,12 +125,58 @@ COPY --chown=app:app ./app/mix.exs ./app/mix.lock /usr/src/app/
 ENV MIX_ENV=prod
 
 RUN mix local.hex --force && \
-    mix deps.get && \
+    mix deps.get --only prod && \
     mix deps.compile
 
 COPY --chown=app:app ./app/ /usr/src/app/
-COPY --chown=app:app --from=course /build/app/priv/static/ /usr/src/app/priv/static/
-COPY --chown=app:app --from=assets /build/app/priv/static/assets/course/ /usr/src/app/priv/static/assets/course/
-COPY --chown=app:app --from=digest /build/digest/priv/static/ /usr/src/app/priv/static/
+COPY --chown=app:app --from=course /build/app/priv/static/archidep.json /usr/src/app/priv/static/
 
-RUN mix do ua_inspector.download --force, assets.setup, assets.deploy
+COPY ./.git/ /tmp/.git/
+RUN cat /tmp/.git/HEAD | awk '{print "/tmp/.git/"$2}' | xargs cat > /usr/src/app/.revision
+
+RUN mix do ua_inspector.download --force, assets.setup, assets.deploy && \
+    mv /usr/src/app/priv/static/cache_manifest.json /usr/src/app/priv/static/cache_manifest2.json
+
+COPY --chown=app:app --from=course /build/app/priv/static/ /usr/src/app/priv/static/
+
+RUN mix merge_manifests && \
+    cat /usr/src/app/priv/static/cache_manifest.json && \
+    mix release
+
+# Application
+# ===========
+FROM elixir:1.18.4-otp-28-alpine AS app
+
+WORKDIR /app
+
+RUN apk add --no-cache ca-certificates libstdc++ musl-locales ncurses openssl tzdata
+
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8 \
+    MIX_ENV=prod
+
+RUN addgroup -S app && \
+    adduser -D -G app -H -h /app -S app && \
+    chown app:app /app && \
+    chmod 700 /app
+
+COPY --chown=app:app --from=release /usr/src/app/_build/prod/rel/archidep ./
+
+USER app:app
+
+CMD ["/app/bin/server"]
+
+EXPOSE 42000
+
+# Reverse Proxy
+# =============
+FROM nginx:1.29-alpine AS assets-server
+
+RUN rm -fr /usr/share/nginx/html/* && \
+    mkdir -p /var/www/html && \
+    chown nginx:nginx /var/www/html && \
+    chmod 700 /var/www/html
+
+COPY ./docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=app /app/lib/archidep-*/priv/static/ /var/www/html

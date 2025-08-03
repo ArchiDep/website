@@ -11,7 +11,7 @@ config :archidep,
   namespace: ArchiDep,
   ecto_repos: [ArchiDep.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true],
-  root_users: [],
+  root_users: [switch_edu_id: []],
   servers: [
     connection_timeout: 30_000,
     track_on_boot: true
@@ -37,6 +37,7 @@ config :archidep, ArchiDepWeb.Endpoint,
     formats: [html: ArchiDepWeb.Controllers.ErrorHTML],
     layout: false
   ],
+  serve_static: false,
   pubsub_server: ArchiDep.PubSub,
   uploads_directory: Path.expand("../priv/uploads", __DIR__)
 
@@ -88,6 +89,8 @@ config :ueberauth, Ueberauth,
 config :ueberauth_oidcc, :issuers, [
   %{name: :switch_edu_id, issuer: "https://login.test.eduid.ch/"}
 ]
+
+config :ueberauth_oidcc, :providers, switch_edu_id: []
 
 config_dir = Path.dirname(__ENV__.file)
 

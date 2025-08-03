@@ -24,6 +24,13 @@ defmodule ArchiDep.MixProject do
         test: :test,
         "test.watch": :test
       ],
+      releases: [
+        archidep: [
+          include_executables_for: [:unix],
+          applications: [runtime_tools: :permanent],
+          validate_compile_env: false
+        ]
+      ],
       test_coverage: [tool: ExCoveralls]
     ]
   end

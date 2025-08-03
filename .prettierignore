@@ -10,6 +10,8 @@
 /course/Gemfile
 /course/.jekyll-cache
 /course/**/*.rb
+/digest/_build
+/digest/deps
 /node_modules
 /theme/src/highlight-dark.css
 /theme/src/highlight-light.css

@@ -5,6 +5,7 @@ defmodule ArchiDep.Git do
   """
 
   @git_revision System.get_env("ARCHIDEP_GIT_REVISION") ||
+                  if(File.exists?(".revision"), do: File.read!(".revision"), else: nil) ||
                   (case(System.cmd("git", ["rev-parse", "HEAD"], env: %{})) do
                      {revision, 0} -> String.trim(revision)
                    end)
@@ -17,6 +18,7 @@ defmodule ArchiDep.Git do
     do:
       @git_revision !=
         (System.get_env("ARCHIDEP_GIT_REVISION") ||
+           if(File.exists?(".revision"), do: File.read!(".revision"), else: nil) ||
            (case(System.cmd("git", ["rev-parse", "HEAD"], env: %{})) do
               {revision, 0} -> String.trim(revision)
               _anything_else -> "unknown"
