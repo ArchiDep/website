@@ -122,6 +122,7 @@ COPY --chown=build:build ./course/package.json /build/course/
 RUN npm ci
 
 COPY --chown=build:build ./course/ /build/course/
+COPY --chown=build:build ./app/mix.exs /build/app/mix.exs
 COPY --chown=build:build --from=assets /build/app/priv/static/assets/course/ /build/app/priv/static/assets/course/
 COPY --chown=build:build --from=digest /build/digest/priv/static/ /build/app/priv/static/
 

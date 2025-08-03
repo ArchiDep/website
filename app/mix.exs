@@ -4,7 +4,7 @@ defmodule ArchiDep.MixProject do
   def project do
     [
       app: :archidep,
-      version: __DIR__ |> then(&Path.expand("../VERSION", &1)) |> File.read!() |> String.trim(),
+      version: "0.1.0",
       elixir: "~> 1.18",
       elixirc_paths: compilation_paths_for(Mix.env()),
       start_permanent: Mix.env() == :prod,

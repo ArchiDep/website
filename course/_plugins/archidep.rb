@@ -1,5 +1,7 @@
 module ArchiDep
-  VERSION = File.read(File.expand_path("../../VERSION", File.dirname(__FILE__))).strip
+  # Extract the version from the Elixir application's mix.exs file with a good
+  # ol' regular expression (please forgive me).
+  VERSION = File.read(File.expand_path("../../app/mix.exs", File.dirname(__FILE__))).sub(/\A.*version:\s*"([^"]+?)".*\z/m, '\1').strip
 
   class Generator < Jekyll::Generator
     def generate(site)
