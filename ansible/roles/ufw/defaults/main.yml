@@ -1,8 +1,0 @@
----
-ufw_allow:
-  - proto: tcp
-    port: 22
-  - proto: any
-    port: 80
-  - proto: any
-    port: 443

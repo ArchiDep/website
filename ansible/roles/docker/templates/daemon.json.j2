@@ -1,8 +1,0 @@
-{
-  "data-root": "{{ docker_data_root }}",
-  "log-driver": "json-file",
-  "log-opts": {
-    "max-file": {{ docker_logging_json_file_max_file | string | to_json }},
-    "max-size": {{ docker_logging_json_file_max_size | string | to_json }}
-  }
-}

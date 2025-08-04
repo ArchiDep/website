@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-set -e
-
-exec ansible-playbook -vv -D -i ansible/inventory.yml ansible/playbook.yml
