@@ -26,18 +26,23 @@ const gitMemoirs: Record<string, () => Memoir> = window['gitMemoirs'] ?? {};
 
 export class GitMemoirController {
   static start(deck: Reveal.Api) {
-    this.startGitMemoirs();
+    let memoirsCount = this.startGitMemoirs();
     deck.on('slidechanged', () => {
-      this.destroyGitMemoirs();
-      this.startGitMemoirs();
-      deck.layout();
+      if (memoirsCount !== 0) {
+        this.destroyGitMemoirs();
+      }
+
+      memoirsCount = this.startGitMemoirs();
     });
   }
 
   static startGitMemoirs() {
-    $('.reveal .slides .present git-memoir').each(function () {
+    const memoirs = $('.reveal .slides .present git-memoir');
+    memoirs.each(function () {
       new GitMemoirController(this).start();
     });
+
+    return memoirs.length;
   }
 
   static destroyGitMemoirs() {
