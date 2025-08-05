@@ -80,8 +80,9 @@ module ArchiDep
         raise "Asset #{relative_path.to_s.inspect} not found in manifest #{phoenix_cache_manifest_file.inspect}"
       end
 
-      Jekyll.logger.info "Relative asset URL for #{relative_path} is #{result} (from manifest in #{phoenix_cache_manifest_file})"
-      result
+      url = "/#{result}"
+      Jekyll.logger.info "Relative asset URL for #{relative_path} is #{url} (from manifest in #{phoenix_cache_manifest_file})"
+      url
     end
   end
 end
