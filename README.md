@@ -48,7 +48,8 @@ mix deps.get
 mix compile  # grab another coffee (extra large mug)
 mix ua_inspector.download
 
-# Copy (and adapt) the application's local config file
+# Copy (and adapt) the application's local config file. You will need a
+# PostgreSQL database.
 cp config/local.sample.exs config/local.exs
 
 # Create required directories
