@@ -53,6 +53,13 @@ config :archidep, ArchiDepWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :archidep, ArchiDep.Mailer, adapter: Swoosh.Adapters.Local
 
+config :archidep, ArchiDep.PromEx,
+  disabled: true,
+  manual_metrics_start_delay: :no_delay,
+  drop_metrics_groups: [],
+  grafana: :disabled,
+  metrics_server: :disabled
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",

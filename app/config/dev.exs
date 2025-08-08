@@ -1,5 +1,12 @@
 import Config
 
+# Enable dev routes for dashboard and mailbox
+config :archidep,
+  dev_routes: true,
+  servers: [
+    connection_timeout: 5_000
+  ]
+
 # Configure your database
 config :archidep, ArchiDep.Repo,
   stacktrace: true,
@@ -31,12 +38,8 @@ config :archidep, ArchiDepWeb.Endpoint,
     ]
   ]
 
-# Enable dev routes for dashboard and mailbox
-config :archidep,
-  dev_routes: true,
-  servers: [
-    connection_timeout: 5_000
-  ]
+# Enable Prometheus metrics server
+config :archidep, ArchiDep.PromEx, disabled: false, metrics_server: [port: 42003]
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

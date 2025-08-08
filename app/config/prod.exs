@@ -11,6 +11,9 @@ config :archidep, ArchiDepWeb.Endpoint,
   # run after static files are built and before starting your production server.
   cache_static_manifest: "priv/static/cache_manifest.json"
 
+# Enable Prometheus metrics server
+config :archidep, ArchiDep.PromEx, disabled: false, metrics_server: [port: 42003]
+
 # Swoosh API Client
 config :swoosh,
   api_client: Swoosh.ApiClient.Finch,

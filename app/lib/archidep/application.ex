@@ -10,6 +10,10 @@ defmodule ArchiDep.Application do
     ArchiDepWeb.Config.start!()
 
     children = [
+      # PromEx should be started before anything else as PromEx will caputre
+      # init events from libraries like Ecto and Phoenix. If it is started after
+      # those other supervision trees those events and metrics will be missed.
+      ArchiDep.PromEx,
       ArchiDepWeb.Telemetry,
       ArchiDep.Repo,
       {DNSCluster, query: Application.get_env(:archidep, :dns_cluster_query) || :ignore},

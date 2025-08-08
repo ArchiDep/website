@@ -115,6 +115,7 @@ These ports are used by default:
 - 42000 (app, main entrypoint)
 - 42001 (Jekyll)
 - 42002 (Jekyll live reload)
+- 42003 (Prometheus metrics)
 
 [asdf]: https://asdf-vm.com
 [elixir]: https://elixir-lang.org
