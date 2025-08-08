@@ -7,7 +7,7 @@ defmodule ArchiDep.PromEx do
 
   alias PromEx.Plugins
 
-  @impl true
+  @impl PromEx
   def plugins do
     [
       Plugins.Application,
