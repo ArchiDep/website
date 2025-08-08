@@ -1,5 +1,6 @@
 # Architecture & Deployment Course Website
 
+[![status](https://status.archidep.ch/badge/_/status?labelColor=&color=&style=flat&label=status)](https://status.archidep.ch)
 [![build](https://github.com/ArchiDep/website/actions/workflows/build.yml/badge.svg)](https://github.com/ArchiDep/website/actions/workflows/build.yml)
 [![MIT License](https://img.shields.io/static/v1?label=license&message=MIT&color=informational)](https://opensource.org/licenses/MIT)
 
