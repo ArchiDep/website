@@ -21,7 +21,7 @@ defmodule ArchiDepWeb.Router do
 
     plug(:put_secure_browser_headers, %{
       "content-security-policy" =>
-        "default-src 'self'; font-src 'self' fonts.gstatic.com; img-src 'self' data:; style-src-elem 'self' fonts.googleapis.com;"
+        "default-src 'self'; font-src 'self' fonts.gstatic.com; img-src 'self' status.archidep.ch data:; style-src-elem 'self' fonts.googleapis.com;"
     })
 
     plug Plug.SSL,
