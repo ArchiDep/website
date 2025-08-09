@@ -17,6 +17,7 @@ module.exports = [
     ...baseConfig,
     entry: {
       course: './src/assets/course.ts',
+      'slides-mermaid': '/src/assets/slides-mermaid.ts',
       slides: './src/assets/slides.ts'
     },
     module: {

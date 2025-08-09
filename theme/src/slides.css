@@ -8,6 +8,7 @@
 
 @source "../../course/collections/_course/**/slides/**/*.md";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 @custom-variant screen (@media screen);
 
 @import './git-memoir.css';
@@ -46,6 +47,10 @@ a {
 
 pre.mermaid {
   @apply shadow-none text-center text-gray-600;
+}
+
+pre.mermaid.loading {
+  @apply w-1/2 h-60 skeleton text-transparent;
 }
 
 .reveal .slides section:first-child,

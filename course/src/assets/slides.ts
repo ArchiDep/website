@@ -1,6 +1,4 @@
 import 'iconify-icon';
-import { icons } from '@iconify-json/fluent';
-import mermaid from 'mermaid';
 import Reveal from 'reveal.js';
 import Highlight from 'reveal.js/plugin/highlight/highlight.esm.js';
 import Markdown from 'reveal.js/plugin/markdown/markdown.esm.js';
@@ -36,56 +34,25 @@ const deck = new Reveal({
   slideNumber: 'c/t'
 });
 
-deck.initialize().then(() => {
+deck.initialize().then(async () => {
   document.querySelectorAll('a:not([target="_blank"])').forEach(link => {
     link.setAttribute('target', '_blank');
-  });
-
-  mermaid.initialize({
-    // Initialize mermaid on page load in print mode or scroll mode. Beware:
-    // initializing mermaid on each slide in scroll mode seems to cause an
-    // infinite loop.
-    startOnLoad: printPdfMode || scrollMode,
-    theme: 'dark'
   });
 
   GitMemoirController.start(deck);
 });
 
 if (!printPdfMode && !scrollMode) {
-  deck.on('slidechanged', event => {
-    const currentSlide = event['currentSlide'];
-    if (currentSlide instanceof HTMLElement) {
-      currentSlide.querySelectorAll<HTMLElement>('.mermaid').forEach(el => {
-        mermaid
-          .run({ nodes: [el] })
-          .then(() => {
-            deck.layout();
-          })
-          .catch((err: unknown) => {
-            console.error('Mermaid rendering error:', err);
-          });
-      });
-    } else {
-      deck.layout();
-    }
-  });
-
   deck.on('slidetransitionend', () => {
     deck.layout();
   });
 }
 
-mermaid.registerIconPacks([
-  {
-    name: 'fluent',
-    icons
-  }
-]);
-
 if (urlSearch.has('export')) {
   (window as any)['Reveal'] = deck;
 }
+
+window['deck'] = deck;
 
 function getNotesMode(): boolean | 'separate-page' {
   const value = urlSearch.get('show-notes');

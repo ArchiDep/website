@@ -35,8 +35,10 @@ SSH is a **cryptographic network protocol** for operating network services
 
 SSH is a **client-server** protocol.
 
-<pre class="mermaid">
+{% mermaid %}
+
 architecture-beta
+
     service sshcl1(fluent:window-text-24-regular)[SSH Client]
     service sshcl2(fluent:window-text-24-regular)[SSH Client]
     service sshcl3(fluent:window-text-24-regular)[SSH Client]
@@ -46,7 +48,7 @@ architecture-beta
     sshcl2:L --> R:sshsrv
     sshcl3:R --> T:sshsrv
 
-</pre>
+{% endmermaid %}
 
 **Notes:**
 
