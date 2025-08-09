@@ -10,11 +10,11 @@ defmodule ArchiDep.Application do
     ArchiDepWeb.Config.start!()
 
     children = [
-      # PromEx should be started before anything else as PromEx will caputre
+      ArchiDepWeb.Telemetry,
+      # PromEx should be started before most other stuff as PromEx will capture
       # init events from libraries like Ecto and Phoenix. If it is started after
       # those other supervision trees those events and metrics will be missed.
       ArchiDep.PromEx,
-      ArchiDepWeb.Telemetry,
       ArchiDep.Repo,
       {DNSCluster, query: Application.get_env(:archidep, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: ArchiDep.PubSub},
@@ -37,6 +37,12 @@ defmodule ArchiDep.Application do
   @impl Application
   def config_change(changed, _new, removed) do
     ArchiDepWeb.Endpoint.config_change(changed, removed)
+    :ok
+  end
+
+  @impl Application
+  def start_phase(:seed_prom_ex_telemetry, :normal, _phase_args) do
+    ArchiDep.PromEx.seed_event_metrics()
     :ok
   end
 

@@ -114,30 +114,25 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
           ^where_user_account_active(now)
       )
 
-    if session =
-         Repo.one(
-           from(us in __MODULE__,
-             as: :user_session,
-             join: ua in assoc(us, :user_account),
-             as: :user_account,
-             left_join: pu in assoc(ua, :preregistered_user),
-             as: :preregistered_user,
-             left_join: ug in assoc(pu, :group),
-             as: :user_group,
-             left_join: iua in assoc(us, :impersonated_user_account),
-             left_join: iuapu in assoc(iua, :preregistered_user),
-             left_join: iuag in assoc(iuapu, :group),
-             where: ^where,
-             preload: [
-               user_account: {ua, preregistered_user: {pu, group: ug}},
-               impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}
-             ]
-           )
-         ) do
-      {:ok, session}
-    else
-      {:error, :session_not_found}
-    end
+    from(us in __MODULE__,
+      as: :user_session,
+      join: ua in assoc(us, :user_account),
+      as: :user_account,
+      left_join: pu in assoc(ua, :preregistered_user),
+      as: :preregistered_user,
+      left_join: ug in assoc(pu, :group),
+      as: :user_group,
+      left_join: iua in assoc(us, :impersonated_user_account),
+      left_join: iuapu in assoc(iua, :preregistered_user),
+      left_join: iuag in assoc(iuapu, :group),
+      where: ^where,
+      preload: [
+        user_account: {ua, preregistered_user: {pu, group: ug}},
+        impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}
+      ]
+    )
+    |> Repo.one()
+    |> truthy_or(:session_not_found)
   end
 
   @spec fetch_active_session_by_token(String.t(), DateTime.t()) ::

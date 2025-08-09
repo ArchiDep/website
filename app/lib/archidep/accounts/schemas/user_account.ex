@@ -69,6 +69,22 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   @spec student?(t()) :: boolean
   def student?(%__MODULE__{roles: roles}), do: :student in roles
 
+  @spec count_active_users(DateTime.t()) :: non_neg_integer
+  def count_active_users(now),
+    do:
+      Repo.aggregate(
+        from(ua in __MODULE__,
+          as: :user_account,
+          left_join: pu in assoc(ua, :preregistered_user),
+          as: :preregistered_user,
+          left_join: ug in assoc(pu, :group),
+          as: :user_group,
+          where: ^where_user_account_active(now)
+        ),
+        :count,
+        :id
+      )
+
   @spec where_user_account_active(DateTime.t()) :: Queryable.t()
   def where_user_account_active(now),
     do:

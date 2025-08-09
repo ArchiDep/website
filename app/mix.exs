@@ -41,7 +41,8 @@ defmodule ArchiDep.MixProject do
   def application do
     [
       mod: {ArchiDep.Application, []},
-      extra_applications: [:logger, :observer, :runtime_tools, :ssh, :wx]
+      extra_applications: [:logger, :observer, :runtime_tools, :ssh, :wx],
+      start_phases: [seed_prom_ex_telemetry: []]
     ]
   end
 

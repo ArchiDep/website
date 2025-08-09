@@ -118,6 +118,43 @@ defmodule ArchiDep.Servers.Schemas.Server do
     )
   end
 
+  @spec count_active_servers(DateTime.t()) :: non_neg_integer()
+  def count_active_servers(now) do
+    day = DateTime.to_date(now)
+
+    where =
+      dynamic(
+        [s, owner_group_member: ogm, owner_group: og, server_group: sg],
+        s.active and (is_nil(og) or og.id == sg.id) and ^where_server_owner_active(day)
+      )
+
+    Repo.aggregate(
+      from(s in __MODULE__,
+        distinct: true,
+        join: o in assoc(s, :owner),
+        as: :owner,
+        left_join: ogm in assoc(o, :group_member),
+        as: :owner_group_member,
+        left_join: og in assoc(ogm, :group),
+        as: :owner_group,
+        join: sg in assoc(s, :group),
+        as: :server_group,
+        join: sgesp in assoc(sg, :expected_server_properties),
+        join: ep in assoc(s, :expected_properties),
+        left_join: lkp in assoc(s, :last_known_properties),
+        where: ^where,
+        preload: [
+          group: {sg, expected_server_properties: sgesp},
+          expected_properties: ep,
+          last_known_properties: lkp,
+          owner: {o, group_member: {ogm, group: og}}
+        ]
+      ),
+      :count,
+      :id
+    )
+  end
+
   @spec list_server_ids_in_group(UUID.t()) :: list(UUID.t())
   def list_server_ids_in_group(group_id),
     do:
