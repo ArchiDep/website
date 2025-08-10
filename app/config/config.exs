@@ -14,6 +14,10 @@ config :archidep,
   auth: [
     root_users: [switch_edu_id: []]
   ],
+  monitoring: [
+    # Refresh monitoring metrics every minute
+    metrics_poll_rate: 60 * 1000
+  ],
   servers: [
     connection_timeout: 30_000,
     ssh_private_key_file: Path.expand("../priv/ssh/id_ed25519", __DIR__),
@@ -67,7 +71,7 @@ config :esbuild,
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets/app --external:/fonts/* --external:/images/*),
     cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    env: %{"NODE_PATH" => System.get_env("MIX_DEPS_PATH") || Path.expand("../deps", __DIR__)}
   ]
 
 config :flashy,

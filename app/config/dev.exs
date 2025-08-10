@@ -3,6 +3,10 @@ import Config
 # Enable dev routes for dashboard and mailbox
 config :archidep,
   dev_routes: true,
+  monitoring: [
+    # Refresh monitoring metrics every 10 minutes to avoid polluting the logs
+    metrics_poll_rate: 10 * 60 * 1000
+  ],
   servers: [
     connection_timeout: 5_000
   ]

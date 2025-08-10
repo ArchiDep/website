@@ -11,4 +11,6 @@ USER archidep:archidep
 
 COPY ./docker/dev/course/entrypoint.sh /usr/local/bin/entrypoint.sh
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
 HEALTHCHECK --retries=6 --interval=5s --timeout=10s --start-period=90s --start-interval=5s CMD ["test", "-f", "/archidep/app/priv/static/archidep.json"]

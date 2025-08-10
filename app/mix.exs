@@ -128,6 +128,7 @@ defmodule ArchiDep.MixProject do
       "check.security": [
         "sobelow --exit --ignore-files config/local.exs,config/local.sample.exs --skip"
       ],
+      "docker.dev": ["ecto.migrate", "phx.server"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       setup: [
@@ -137,6 +138,7 @@ defmodule ArchiDep.MixProject do
         "assets.setup",
         "assets.build"
       ],
+      start: ["phx.server"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end

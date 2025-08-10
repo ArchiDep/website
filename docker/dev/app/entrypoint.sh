@@ -27,6 +27,13 @@ else
   echo "Using already downloaded user agent data"
 fi
 
+unix_timestamp=$(date +%s)
+cat <<EOF > /archidep/app/config/local.exs
+import Config
+
+config :archidep, force_recompilation: "${unix_timestamp}"
+EOF
+
 echo
 cat <<EOF
 ===============================
@@ -34,4 +41,4 @@ cat <<EOF
 ===============================
 EOF
 
-exec mix phx.server --no-halt
+exec mix docker.dev

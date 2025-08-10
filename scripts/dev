@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 compose="docker compose -f compose.dev.yml"
+
+mkdir -p tmp/docker/dev
+chmod 700 tmp/docker/dev
+
 $compose build node
 $compose run --rm node
+
+$compose build ssh
+$compose run --rm ssh
+
 $compose build app assets course theme
 
 rm -f tmp/docker/dev/app/priv/static/archidep.json
 rm -f tmp/docker/dev/app/priv/static/assets/course/manifest.json
 rm -f tmp/docker/dev/app/priv/static/theme/theme.css
-touch app/config/dev.exs
 
 $compose up --force-recreate app assets course theme db

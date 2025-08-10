@@ -19,15 +19,13 @@ services:
       theme:
         condition: service_healthy
         restart: true
-    # entrypoint: ['bash']
-    entrypoint: ['/usr/local/bin/entrypoint.sh']
     environment:
       ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID:
       ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_SECRET:
       ARCHIDEP_AUTH_SWITCH_EDU_ID_ROOT_USERS:
       ARCHIDEP_GIT_CWD: /var/lib/archidep/git
       ARCHIDEP_REPO_URL: ecto://archidep:archidep@db:5432/archidep
-      ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE: /etc/app/ssh/id_ed25519
+      ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE: /etc/archidep/ssh/id_ed25519
       ARCHIDEP_SERVERS_SSH_PUBLIC_KEY:
       ARCHIDEP_WEB_ENDPOINT_HTTP_IP:
       ARCHIDEP_WEB_ENDPOINT_HTTP_PORT:
@@ -43,11 +41,27 @@ services:
       - '42000:42000'
       - '42003:42003'
     volumes:
-      - ./app:/archidep/app:ro
+      - ./app/assets:/archidep/app/assets:ro
+      - ./app/config/config.exs:/archidep/app/config/config.exs:ro
+      - ./app/config/dev.exs:/archidep/app/config/dev.exs:ro
+      - ./app/config/prod.exs:/archidep/app/config/prod.exs:ro
+      - ./app/config/runtime.exs:/archidep/app/config/runtime.exs:ro
+      - ./app/config/test.exs:/archidep/app/config/test.exs:ro
+      - ./app/.credo.exs:/archidep/app/.credo.exs:ro
+      - ./app/.formatter.exs:/archidep/app/.formatter.exs:ro
+      - ./app/mix.exs:/archidep/app/mix.exs:ro
+      - ./app/mix.lock:/archidep/app/mix.lock:ro
+      - ./app/lib:/archidep/app/lib:ro
+      - ./app/priv/ansible:/archidep/app/priv/ansible:ro
+      - ./app/priv/gettext:/archidep/app/priv/gettext:ro
+      - ./app/priv/repo:/archidep/app/priv/repo:ro
+      - ./app/priv/scripts:/archidep/app/priv/scripts:ro
       - ./app/priv/ssh:/etc/archidep/ssh:ro
+      - ./app/test:/archidep/app/test:ro
       - ./.git:/var/lib/archidep/git/.git:ro
       - ./tmp/docker/dev/app/build:/var/lib/archidep/build:rw
       - ./tmp/docker/dev/app/deps:/var/lib/archidep/deps:rw
+      - ./tmp/docker/dev/app/priv/static:/archidep/app/priv/static:rw
       - ./tmp/docker/dev/app/uploads:/var/lib/archidep/uploads:rw
 
   assets:
@@ -55,7 +69,6 @@ services:
     build:
       context: .
       dockerfile: ./docker/dev/assets/Dockerfile
-    entrypoint: ['/usr/local/bin/entrypoint.sh']
     volumes:
       - ./course:/archidep/course:ro
       - ./package.json:/archidep/package.json:ro
@@ -75,7 +88,6 @@ services:
       theme:
         condition: service_healthy
         restart: true
-    entrypoint: ['/usr/local/bin/entrypoint.sh']
     volumes:
       - ./app/mix.exs:/archidep/app/mix.exs:ro
       - ./course:/archidep/course:ro
@@ -98,19 +110,26 @@ services:
       - ./tmp/docker/dev/node/dist:/archidep:rw
       - ./tmp/docker/dev/node/npm:/home/archidep/.npm:rw
 
+  ssh:
+    image: archidep/dev-ssh
+    build:
+      context: .
+      dockerfile: ./docker/dev/ssh/Dockerfile
+    volumes:
+      - ./tmp/docker/dev/app/priv/ssh:/home/archidep/.ssh:rw
+
   theme:
     image: archidep/dev-theme
     build:
       context: .
       dockerfile: ./docker/dev/theme/Dockerfile
-    entrypoint: ['/usr/local/bin/entrypoint.sh']
     volumes:
       - ./app/lib:/archidep/app/lib:ro
       - ./course:/archidep/course:ro
       - ./theme:/archidep/theme:ro
       - ./package.json:/archidep/package.json:ro
       - ./package-lock.json:/archidep/package-lock.json:ro
-      - ./tmp/docker/dev/app/deps:/archidep/app/deps:rw
+      - ./tmp/docker/dev/app/deps:/archidep/app/deps:ro
       - ./tmp/docker/dev/app/priv:/archidep/app/priv:rw
       - ./tmp/docker/dev/node/dist/node_modules:/archidep/node_modules:ro
 

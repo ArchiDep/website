@@ -6,6 +6,10 @@ if config_env() != :test do
       # Emails which will create root user accounts when logging in
       root_users: [switch_edu_id: ["example@archidep.ch"]]
     ],
+    monitoring: [
+      # Refresh monitoring metrics every 10 minutes to avoid polluting the logs
+      metrics_poll_rate: 10 * 60 * 1000
+    ],
     servers: [
       # Generate your own key pair using `ssh-keygen -t ed25519 -C "archidep"`
       ssh_public_key:

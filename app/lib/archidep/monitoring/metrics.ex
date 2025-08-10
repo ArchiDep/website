@@ -10,14 +10,17 @@ defmodule ArchiDep.Monitoring.Metrics do
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  require Logger
 
-  @one_minute 60_000
   @accounts_event [:archidep, :accounts, :data]
   @servers_event [:archidep, :servers, :data]
+  @poll_rate :archidep
+             |> Application.compile_env!(:monitoring)
+             |> Keyword.fetch!(:metrics_poll_rate)
 
   @impl PromEx.Plugin
   def polling_metrics(opts) do
-    poll_rate = Keyword.get(opts, :poll_rate, @one_minute)
+    poll_rate = Keyword.get(opts, :poll_rate, @poll_rate)
 
     [
       accounts_metrics(poll_rate),
@@ -97,6 +100,10 @@ defmodule ArchiDep.Monitoring.Metrics do
         compute_accounts_metrics(),
         %{}
       )
+    else
+      Logger.info(
+        "Skipping accounts metrics execution because the Repo is not running. Will poll again in #{inspect(@poll_rate)}ms."
+      )
     end
 
     :ok
@@ -111,6 +118,10 @@ defmodule ArchiDep.Monitoring.Metrics do
         @servers_event,
         compute_servers_metrics(),
         %{}
+      )
+    else
+      Logger.info(
+        "Skipping servers metrics execution because the Repo is not running. Will poll again in #{inspect(@poll_rate)}ms."
       )
     end
 
