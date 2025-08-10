@@ -44,19 +44,13 @@ layout {
     }
   }
 
-  tab name="app-assets" {
+  tab name="assets" split_direction="vertical" {
     pane command="npm" cwd="app" {
       args "start"
     }
-  }
-
-  tab name="course-assets" {
-    pane command="npm" cwd="course" {
+    pane command="npm" cwd="course" size="40%" {
       args "start"
     }
-  }
-
-  tab name="theme" {
     pane command="npm" cwd="theme" {
       args "start"
     }
