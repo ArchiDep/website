@@ -92,7 +92,6 @@ defmodule ArchiDep.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:credo_contrib, "~> 0.2.0", only: [:dev, :test], runtime: false},
       {:credo_naming, "~> 2.1", only: [:dev, :test], runtime: false},
-      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:ex_machina, "~> 2.8.0", only: :test},
       {:excoveralls, "~> 0.18.1", only: :test},
       {:faker, "~> 0.18.0", only: :test},
@@ -113,12 +112,7 @@ defmodule ArchiDep.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      "assets.setup": ["esbuild.install --if-missing"],
-      "assets.build": ["esbuild archidep"],
-      "assets.deploy": [
-        "esbuild archidep --minify",
-        "phx.digest"
-      ],
+      "assets.deploy": ["phx.digest"],
       check: [
         "coveralls.html --raise",
         "format --check-formatted",

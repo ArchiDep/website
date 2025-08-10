@@ -64,16 +64,6 @@ config :archidep, ArchiDep.PromEx,
   grafana: :disabled,
   metrics_server: :disabled
 
-# Configure esbuild (the version is required)
-config :esbuild,
-  version: "0.17.11",
-  archidep: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets/app --external:/fonts/* --external:/images/*),
-    cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => System.get_env("MIX_DEPS_PATH") || Path.expand("../deps", __DIR__)}
-  ]
-
 config :flashy,
   disconnected_module: ArchiDepWeb.Components.Notifications.Disconnected
 

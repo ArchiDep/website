@@ -9,7 +9,7 @@ RUN apk add --no-cache bash && \
 WORKDIR /archidep
 USER archidep:archidep
 
-COPY ./docker/dev/assets/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY ./docker/dev/course-assets/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 

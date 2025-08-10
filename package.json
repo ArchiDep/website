@@ -31,6 +31,7 @@
     "format:write": "npm run format:root:write && npm run --workspace course format:write"
   },
   "workspaces": [
+    "app",
     "course",
     "theme"
   ],

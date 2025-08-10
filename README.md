@@ -88,7 +88,8 @@ cd website
 # Install tooling
 npm ci  # grab a coffee
 
-# Build the course assets & theme at least once
+# Build the app assets, course assets & theme at least once
+npm run --workspace app build
 npm run --workspace course build
 npm run --workspace theme build
 
@@ -134,9 +135,9 @@ How to run the website in development mode with live reload on code changes.
 > initial run, as defined by their health checks. The startup order is as
 > follows:
 >
-> - Start the database (`db` container), compile the course assets (`assets`
->   container, takes a while to perform the first build) & theme (`theme`
->   container)
+> - Start the database (`db` container), compile the application assets
+>   (`app-assets` container), course assets (`course-assets` container, takes a
+>   while to perform the first build) & theme (`theme` container)
 > - Serve the course material (`course` container)
 > - Start the application (`app` container)
 
@@ -147,6 +148,10 @@ Visit http://localhost:42000 once the application has started.
 Run all of these in parallel:
 
 ```bash
+# Build and watch app assets with esbuild
+cd app
+npm start
+
 # Build and watch course assets with Webpack
 cd course
 npm start
@@ -193,6 +198,7 @@ These ports are used:
 
 - 42000 (app, main entrypoint)
 - 42001 (Jekyll, _not exposed directly with Docker_)
+- 42002 (Jekyll live reload)
 - 42003 (Prometheus metrics at `/metrics`)
 
 Concerning the monitoring metrics available at `http://42003/metrics`, note that

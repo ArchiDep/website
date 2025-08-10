@@ -44,7 +44,13 @@ layout {
     }
   }
 
-  tab name="assets" {
+  tab name="app-assets" {
+    pane command="npm" cwd="app" {
+      args "start"
+    }
+  }
+
+  tab name="course-assets" {
     pane command="npm" cwd="course" {
       args "start"
     }

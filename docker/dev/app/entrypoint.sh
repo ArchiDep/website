@@ -1,30 +1,30 @@
 #!/usr/bin/env bash
-# set -e
+set -e
 
 cd app
 
 cat <<EOF
-===============================
-=== Installing dependencies ===
-===============================
-EOF
-
-mix local.hex --force
-mix deps.get
-
-echo
-cat <<EOF
-===================================
-=== Downloading user agent data ===
-===================================
+======================================================
+=== Phase 6/6 — Step 1/3 — Application compilation ===
+======================================================
 EOF
 
 git config --global --add safe.directory /var/lib/archidep/git
+echo "Compiling Elixir application..."
+mix compile
+
+echo
+cat <<EOF
+==================================================
+=== Phase 6/6 — Step 2/3 — User agent database ===
+==================================================
+EOF
 
 if ! test -f /var/lib/archidep/deps/ua_inspector/priv/bot.bots.yml; then
+  echo "Downloading user agent database..."
   mix ua_inspector.download --force
 else
-  echo "Using already downloaded user agent data"
+  echo "User agent database already exists."
 fi
 
 unix_timestamp=$(date +%s)
@@ -36,9 +36,11 @@ EOF
 
 echo
 cat <<EOF
-===============================
-=== Running the application ===
-===============================
+==========================================
+=== Phase 6/6 — Step 3/3 — Application ===
+==========================================
+       🚀🚀🚀 Almost done! 🚀🚀🚀
+
 EOF
 
 exec mix docker.dev

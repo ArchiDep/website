@@ -9,6 +9,7 @@ RUN apk add --no-cache bash git inotify-tools nodejs npm && \
 WORKDIR /archidep
 USER archidep:archidep
 
+COPY ./docker/dev/app/deps.sh /usr/local/bin/deps.sh
 COPY ./docker/dev/app/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
