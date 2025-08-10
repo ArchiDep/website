@@ -12,6 +12,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManager
+  alias ArchiDep.Servers.SSH
   alias Ecto.UUID
   require Logger
 
@@ -143,7 +144,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
         save_accepted_host: false,
         silently_accept_hosts: Keyword.get(options, :silently_accept_hosts, false),
         user: to_charlist(username),
-        user_dir: to_charlist(ssh_dir()),
+        user_dir: to_charlist(SSH.ssh_dir()),
         user_interaction: false
       )
 
@@ -173,11 +174,4 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
         {:reply, {:error, reason}, {:idle, server_id}}
     end
   end
-
-  defp ssh_dir,
-    do:
-      :archidep
-      |> Application.fetch_env!(:servers)
-      |> Keyword.fetch!(:ssh_private_key_file)
-      |> Path.dirname()
 end

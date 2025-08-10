@@ -5,9 +5,6 @@
 From the root of the repository:
 
 ```bash
-# Add the test SSH key to your SSH agent
-cat tmp/jde/id_ed25519 | ssh-add -
-
 # Build an SSH server image
 cd app/test/docker/ssh-server
 docker build -t archidep/ssh-server --build-arg JDE_UID="$(id -u)" .

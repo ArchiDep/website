@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
   """
 
   import ArchiDep.Helpers.NetHelpers, only: [is_ip_address: 1, is_network_port: 1]
+  alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.Types
   require Logger
 
@@ -38,6 +39,8 @@ defmodule ArchiDep.Servers.Ansible.Runner do
         "ansible_host=#{:inet.ntoa(host)}",
         "-e",
         "ansible_port=#{port}",
+        "-e",
+        "ansible_ssh_private_key_file=\"#{shell_escape(SSH.ssh_private_key_file())}\"",
         "-e",
         "ansible_user=#{user}",
         # Gather facts
@@ -142,6 +145,8 @@ defmodule ArchiDep.Servers.Ansible.Runner do
        "ansible_host=#{:inet.ntoa(host)}",
        "-e",
        "ansible_port=#{port}",
+       "-e",
+       "ansible_ssh_private_key_file=\"#{shell_escape(SSH.ssh_private_key_file())}\"",
        "-e",
        "ansible_user=#{user}"
      ] ++
