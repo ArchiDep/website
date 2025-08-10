@@ -1,0 +1,131 @@
+name: archidep-dev
+
+services:
+  app:
+    image: archidep/dev-app
+    build:
+      context: .
+      dockerfile: ./docker/dev/app/Dockerfile
+    depends_on:
+      assets:
+        condition: service_healthy
+        restart: true
+      course:
+        condition: service_healthy
+        restart: true
+      db:
+        condition: service_healthy
+        restart: true
+      theme:
+        condition: service_healthy
+        restart: true
+    # entrypoint: ['bash']
+    entrypoint: ['/usr/local/bin/entrypoint.sh']
+    environment:
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID:
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_SECRET:
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_ROOT_USERS:
+      ARCHIDEP_GIT_CWD: /var/lib/archidep/git
+      ARCHIDEP_REPO_URL: ecto://archidep:archidep@db:5432/archidep
+      ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE: /etc/app/ssh/id_ed25519
+      ARCHIDEP_SERVERS_SSH_PUBLIC_KEY:
+      ARCHIDEP_WEB_ENDPOINT_HTTP_IP:
+      ARCHIDEP_WEB_ENDPOINT_HTTP_PORT:
+      ARCHIDEP_WEB_ENDPOINT_LIVE_VIEW_SIGNING_SALT:
+      ARCHIDEP_WEB_ENDPOINT_SECRET_KEY_BASE:
+      ARCHIDEP_WEB_ENDPOINT_SESSION_SIGNING_SALT:
+      ARCHIDEP_WEB_ENDPOINT_UPLOADS_DIRECTORY: /var/lib/archidep/uploads
+      ARCHIDEP_WEB_ENDPOINT_URL:
+      MIX_BUILD_PATH: /var/lib/archidep/build
+      MIX_DEPS_PATH: /var/lib/archidep/deps
+    init: true
+    ports:
+      - '42000:42000'
+      - '42003:42003'
+    volumes:
+      - ./app:/archidep/app:ro
+      - ./app/priv/ssh:/etc/archidep/ssh:ro
+      - ./.git:/var/lib/archidep/git/.git:ro
+      - ./tmp/docker/dev/app/build:/var/lib/archidep/build:rw
+      - ./tmp/docker/dev/app/deps:/var/lib/archidep/deps:rw
+      - ./tmp/docker/dev/app/uploads:/var/lib/archidep/uploads:rw
+
+  assets:
+    image: archidep/dev-assets
+    build:
+      context: .
+      dockerfile: ./docker/dev/assets/Dockerfile
+    entrypoint: ['/usr/local/bin/entrypoint.sh']
+    volumes:
+      - ./course:/archidep/course:ro
+      - ./package.json:/archidep/package.json:ro
+      - ./package-lock.json:/archidep/package-lock.json:ro
+      - ./tmp/docker/dev/app/priv:/archidep/app/priv:rw
+      - ./tmp/docker/dev/node/dist/node_modules:/archidep/node_modules:ro
+
+  course:
+    image: archidep/dev-course
+    build:
+      context: .
+      dockerfile: ./docker/dev/course/Dockerfile
+    depends_on:
+      assets:
+        condition: service_healthy
+        restart: true
+      theme:
+        condition: service_healthy
+        restart: true
+    entrypoint: ['/usr/local/bin/entrypoint.sh']
+    volumes:
+      - ./app/mix.exs:/archidep/app/mix.exs:ro
+      - ./course:/archidep/course:ro
+      - ./package.json:/archidep/package.json:ro
+      - ./package-lock.json:/archidep/package-lock.json:ro
+      - ./tmp/docker/dev/app/priv:/archidep/app/priv:rw
+      - ./tmp/docker/dev/course/bundle:/var/lib/archidep/bundle:rw
+      - ./tmp/docker/dev/node/dist/node_modules:/archidep/node_modules:ro
+
+  node:
+    image: archidep/dev-node
+    build:
+      context: .
+      dockerfile: ./docker/dev/node/Dockerfile
+    volumes:
+      - ./course/package.json:/etc/archidep/course/package.json:ro
+      - ./package.json:/etc/archidep/package.json:ro
+      - ./package-lock.json:/etc/archidep/package-lock.json:ro
+      - ./theme/package.json:/etc/archidep/theme/package.json:ro
+      - ./tmp/docker/dev/node/dist:/archidep:rw
+      - ./tmp/docker/dev/node/npm:/home/archidep/.npm:rw
+
+  theme:
+    image: archidep/dev-theme
+    build:
+      context: .
+      dockerfile: ./docker/dev/theme/Dockerfile
+    entrypoint: ['/usr/local/bin/entrypoint.sh']
+    volumes:
+      - ./app/lib:/archidep/app/lib:ro
+      - ./course:/archidep/course:ro
+      - ./theme:/archidep/theme:ro
+      - ./package.json:/archidep/package.json:ro
+      - ./package-lock.json:/archidep/package-lock.json:ro
+      - ./tmp/docker/dev/app/deps:/archidep/app/deps:rw
+      - ./tmp/docker/dev/app/priv:/archidep/app/priv:rw
+      - ./tmp/docker/dev/node/dist/node_modules:/archidep/node_modules:ro
+
+  db:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_DB: archidep
+      POSTGRES_PASSWORD: archidep
+      POSTGRES_USER: archidep
+    healthcheck:
+      test: ['CMD', 'pg_isready', '--dbname=archidep', '--username=archidep']
+      interval: 5s
+      timeout: 10s
+      retries: 6
+      start_period: 30s
+      start_interval: 5s
+    volumes:
+      - ./tmp/docker/dev/db/data:/var/lib/postgresql/data:rw

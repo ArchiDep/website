@@ -4,6 +4,8 @@ defmodule ArchiDep.Helpers.GitHelpers do
   `ArchiDep.Git`).
   """
 
+  @git_dir System.get_env("ARCHIDEP_GIT_CWD") || "."
+
   @spec determine_git_branch() :: String.t()
   def determine_git_branch,
     do:
@@ -42,7 +44,7 @@ defmodule ArchiDep.Helpers.GitHelpers do
   end
 
   defp git_branch_from_repository do
-    {branch, 0} = System.cmd("git", ["rev-parse", "--abbrev-ref", "HEAD"], env: %{})
+    {branch, 0} = System.cmd("git", ["rev-parse", "--abbrev-ref", "HEAD"], cd: @git_dir, env: %{})
     String.trim(branch)
   end
 
@@ -64,7 +66,7 @@ defmodule ArchiDep.Helpers.GitHelpers do
   end
 
   defp git_dirty_from_repository do
-    {status, 0} = System.cmd("git", ["status", "--porcelain"], env: %{})
+    {status, 0} = System.cmd("git", ["status", "--porcelain"], cd: @git_dir, env: %{})
     String.trim(status) != ""
   end
 
@@ -81,7 +83,7 @@ defmodule ArchiDep.Helpers.GitHelpers do
   end
 
   defp git_revision_from_repository do
-    {revision, 0} = System.cmd("git", ["rev-parse", "HEAD"], env: %{})
+    {revision, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: @git_dir, env: %{})
     String.trim(revision)
   end
 end
