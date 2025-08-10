@@ -45,18 +45,12 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       socket
       |> assign(
         :active_classes,
-        if(Enum.any?(active_classes, &(&1.id == id)),
-          do:
-            Enum.map(active_classes, fn
-              %Class{id: ^id} = c ->
-                Class.refresh!(c, updated)
-
-              c ->
-                c
-            end),
-          else: add_class(active_classes, updated)
+        sort_classes(
+          if(Enum.any?(active_classes, &(&1.id == id)),
+            do: update_class(active_classes, updated),
+            else: add_class(active_classes, updated)
+          )
         )
-        |> sort_classes()
       )
       |> noreply()
     else
@@ -82,6 +76,16 @@ defmodule ArchiDepWeb.Admin.AdminLive do
         |> noreply()
 
   defp add_class(classes, class), do: [class | classes]
+
+  defp update_class(classes, %Class{id: id} = class) do
+    Enum.map(classes, fn
+      %Class{id: ^id} = c ->
+        Class.refresh!(c, class)
+
+      c ->
+        c
+    end)
+  end
 
   defp remove_class(classes, class), do: Enum.reject(classes, fn c -> c.id == class.id end)
 
