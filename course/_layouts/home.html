@@ -9,7 +9,7 @@ layout: toc
         <ul class='flex flex-col gap-y-1'>
           {% for subject in page.previous_chapters %}
             <li class='px-2 py-1 rounded-full hover:bg-success-content/10'>
-              <a href='{{ subject.url }}'>
+              <a href='{{ subject.url }}' class='hover:!text-success-content'>
                 {% include chapter-title.html doc=subject %}
               </a>
             </li>
@@ -25,7 +25,7 @@ layout: toc
         <ul class='flex flex-col gap-y-1'>
           {% for exercise in page.next_due_exercises %}
             <li class='px-2 py-1 rounded-full hover:bg-warning-content/10'>
-              <a href='{{ exercise.url }}'>
+              <a href='{{ exercise.url }}' class='hover:!text-warning-content'>
                 {% include chapter-title.html doc=exercise %}
               </a>
             </li>
@@ -41,7 +41,7 @@ layout: toc
         <ul class='flex flex-col gap-y-1'>
           {% for chapter in page.next_chapters %}
             <li class='px-2 py-1 rounded-full hover:bg-info-content/10'>
-              <a href='{{ chapter.url }}'>
+              <a href='{{ chapter.url }}' class='hover:!text-info-content'>
                 {% include chapter-title.html doc=chapter %}
               </a>
             </li>
