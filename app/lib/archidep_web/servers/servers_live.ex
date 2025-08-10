@@ -6,7 +6,6 @@ defmodule ArchiDepWeb.Servers.ServersLive do
   alias ArchiDep.Servers
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.ServerTracking.ServerTracker
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
@@ -14,9 +13,8 @@ defmodule ArchiDepWeb.Servers.ServersLive do
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
 
-    [owner, servers, groups] =
+    [servers, groups] =
       Task.await_many([
-        Task.async(fn -> ServerOwner.fetch_authenticated(auth) end),
         Task.async(fn -> Servers.list_my_servers(auth) end),
         if(has_role?(auth, :root),
           do: Task.async(fn -> Servers.list_server_groups(auth) end),
@@ -47,7 +45,6 @@ defmodule ArchiDepWeb.Servers.ServersLive do
       servers: servers,
       server_state_map: ServerTracker.server_state_map(servers),
       server_tracker: tracker,
-      owner: owner,
       groups: groups
     )
     |> ok()
@@ -80,7 +77,7 @@ defmodule ArchiDepWeb.Servers.ServersLive do
         {:server_created, %Server{owner_id: owner_id} = created_server},
         %{
           assigns: %{
-            owner: %ServerOwner{id: owner_id},
+            auth: %Authentication{principal_id: owner_id},
             servers: servers,
             server_state_map: server_state_map,
             server_tracker: tracker
