@@ -19,4 +19,4 @@ cat <<EOF
 =====================================
 EOF
 
-exec bundle exec jekyll serve --config _config.yml,_config.proxied.yml --disable-disk-cache --drafts --livereload
+exec bundle exec jekyll serve --config _config.yml,_config.proxied.yml,_config.docker.yml --disable-disk-cache --drafts --livereload
