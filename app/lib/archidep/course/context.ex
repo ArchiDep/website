@@ -12,6 +12,7 @@ defmodule ArchiDep.Course.Context do
   implement(&Behaviour.validate_class/2, UseCases.CreateClass)
   implement(&Behaviour.create_class/2, UseCases.CreateClass)
   implement(&Behaviour.list_classes/1, UseCases.ReadClasses)
+  implement(&Behaviour.list_active_classes/1, UseCases.ReadClasses)
   implement(&Behaviour.fetch_class/2, UseCases.ReadClasses)
   implement(&Behaviour.validate_existing_class/3, UseCases.UpdateClass)
   implement(&Behaviour.update_class/3, UseCases.UpdateClass)

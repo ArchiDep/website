@@ -1,1 +1,6 @@
 <h1>{gettext("Admin")}</h1>
+<ul>
+  <li :for={class <- @active_classes}>
+    {class.name}
+  </li>
+</ul>

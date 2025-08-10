@@ -26,4 +26,10 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
     authorize!(auth, Policy, :course, :list_classes, nil)
     Class.list_classes()
   end
+
+  @spec list_active_classes(Authentication.t()) :: list(Class.t())
+  def list_active_classes(auth) do
+    authorize!(auth, Policy, :course, :list_active_classes, nil)
+    Class.list_active_classes(Date.utc_today())
+  end
 end

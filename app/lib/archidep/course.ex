@@ -14,6 +14,7 @@ defmodule ArchiDep.Course do
   delegate(&Behaviour.validate_class/2)
   delegate(&Behaviour.create_class/2)
   delegate(&Behaviour.list_classes/1)
+  delegate(&Behaviour.list_active_classes/1)
   delegate(&Behaviour.fetch_class/2)
   delegate(&Behaviour.validate_existing_class/3)
   delegate(&Behaviour.update_class/3)

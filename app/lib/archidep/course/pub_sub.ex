@@ -20,12 +20,16 @@ defmodule ArchiDep.Course.PubSub do
   end
 
   @spec publish_class_updated(Class.t()) :: :ok
-  def publish_class_updated(class),
-    do: PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_updated, class})
+  def publish_class_updated(class) do
+    :ok = PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_updated, class})
+    :ok = PubSub.broadcast(@pubsub, "classes", {:class_updated, class})
+  end
 
   @spec publish_class_deleted(Class.t()) :: :ok
-  def publish_class_deleted(class),
-    do: PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_deleted, class})
+  def publish_class_deleted(class) do
+    :ok = PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_deleted, class})
+    :ok = PubSub.broadcast(@pubsub, "classes", {:class_deleted, class})
+  end
 
   @spec subscribe_class(UUID.t()) :: :ok
   def subscribe_class(class_id) do

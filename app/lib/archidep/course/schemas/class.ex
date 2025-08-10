@@ -62,6 +62,19 @@ defmodule ArchiDep.Course.Schemas.Class do
           preload: [expected_server_properties: esp]
       )
 
+  @spec list_active_classes(Date.t()) :: list(t())
+  def list_active_classes(day),
+    do:
+      Repo.all(
+        from c in __MODULE__,
+          where:
+            c.active == true and (is_nil(c.start_date) or c.start_date <= ^day) and
+              (is_nil(c.end_date) or c.end_date >= ^day),
+          join: esp in assoc(c, :expected_server_properties),
+          order_by: [desc: c.end_date, desc: c.created_at, asc: c.name],
+          preload: [expected_server_properties: esp]
+      )
+
   @spec fetch_class(UUID.t()) :: {:ok, t()} | {:error, :class_not_found}
   def fetch_class(id),
     do:

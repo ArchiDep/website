@@ -14,15 +14,12 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
 
     if connected?(socket) do
       set_process_label(__MODULE__, auth)
-      :ok = PubSub.subscribe_classes()
     end
 
     classes = Course.list_classes(auth)
 
     if connected?(socket) do
-      for class <- classes do
-        :ok = PubSub.subscribe_class(class.id)
-      end
+      :ok = PubSub.subscribe_classes()
     end
 
     socket
@@ -40,13 +37,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
   def handle_info(
         {:class_created, created_class},
         %Socket{assigns: %{classes: classes}} = socket
-      ) do
-    :ok = PubSub.subscribe_class(created_class.id)
-
-    socket
-    |> assign(:classes, sort_classes([created_class | classes]))
-    |> noreply()
-  end
+      ),
+      do:
+        socket
+        |> assign(:classes, sort_classes([created_class | classes]))
+        |> noreply()
 
   @impl LiveView
   def handle_info(
@@ -73,18 +68,16 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
   def handle_info(
         {:class_deleted, deleted_class},
         %Socket{assigns: %{classes: classes}} = socket
-      ) do
-    :ok = PubSub.unsubscribe_class(deleted_class.id)
-
-    socket
-    |> assign(
-      :classes,
-      classes
-      |> Enum.reject(fn c -> c.id == deleted_class.id end)
-      |> sort_classes()
-    )
-    |> noreply()
-  end
+      ),
+      do:
+        socket
+        |> assign(
+          :classes,
+          classes
+          |> Enum.reject(fn c -> c.id == deleted_class.id end)
+          |> sort_classes()
+        )
+        |> noreply()
 
   defp sort_classes(classes),
     do: Enum.sort_by(classes, &{!&1.active, &1.end_date, &1.created_at, &1.name}, :desc)

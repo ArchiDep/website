@@ -27,6 +27,11 @@ defmodule ArchiDep.Course.Behaviour do
   callback(list_classes(auth: Authentication.t()) :: list(Class.t()))
 
   @doc """
+  Lists currently active classes.
+  """
+  callback(list_active_classes(auth: Authentication.t()) :: list(Class.t()))
+
+  @doc """
   Fetches a class.
   """
   callback(

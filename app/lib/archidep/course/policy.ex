@@ -37,6 +37,15 @@ defmodule ArchiDep.Course.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Root users can list active classes.
+  def authorize(
+        :course,
+        :list_active_classes,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   # Root users can fetch a class.
   def authorize(
         :course,
