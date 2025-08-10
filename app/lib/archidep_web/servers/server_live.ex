@@ -36,7 +36,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
       {:error, :server_not_found} ->
         socket
         |> put_notification(Message.new(:error, gettext("Server not found")))
-        |> push_navigate(to: ~p"/servers")
+        |> push_navigate(to: ~p"/app")
         |> ok()
     end
   end
@@ -91,6 +91,6 @@ defmodule ArchiDepWeb.Servers.ServerLive do
             gettext("Deleted server {server}", server: Server.name_or_default(deleted_server))
           )
         )
-        |> push_navigate(to: ~p"/servers")
+        |> push_navigate(to: ~p"/app")
         |> noreply()
 end

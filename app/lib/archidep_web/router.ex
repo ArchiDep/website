@@ -83,7 +83,6 @@ defmodule ArchiDepWeb.Router do
 
       scope "/servers" do
         pipe_through :fetch_authentication
-        live "/", Servers.ServersLive
         live "/:id", Servers.ServerLive
       end
     end

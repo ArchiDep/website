@@ -122,12 +122,6 @@
         </ul>
       </div>
       <ul class="w-full menu px-4 py-0">
-        <li :if={logged_in?(@auth) and String.starts_with?(@current_path, "/admin")}>
-          <.link navigate={~p"/servers"} class="flex items-center gap-2">
-            <Heroicons.server_stack class="size-4" />
-            <span>{gettext("Servers")}</span>
-          </.link>
-        </li>
         <li :if={has_role?(@auth, :root) and String.starts_with?(@current_path, "/admin")}>
           <.link
             navigate={~p"/admin/classes"}

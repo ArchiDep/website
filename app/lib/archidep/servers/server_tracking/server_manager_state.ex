@@ -1081,7 +1081,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        end}
 
   defp detect_server_properties_mismatches(problems, %Server{last_known_properties: nil}) do
-    problems
+    Enum.filter(problems, fn problem ->
+      elem(problem, 0) != :server_expected_property_mismatch
+    end)
   end
 
   defp detect_server_properties_mismatches(problems, %Server{
