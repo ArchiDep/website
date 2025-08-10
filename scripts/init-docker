@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+
+compose="docker compose -f compose.dev.yml"
+
+chmod 700 app/priv/ssh
+$compose build --build-arg ARCHIDEP_UID="$(id -u)" ssh
+$compose run --rm ssh

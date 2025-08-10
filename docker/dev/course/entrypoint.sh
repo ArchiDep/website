@@ -3,7 +3,7 @@ set -e
 
 cat <<EOF
 ================================================
-=== Phase 5/6 — Step 1/2 — Ruby dependencies ===
+=== Phase 4/5 — Step 1/2 — Ruby dependencies ===
 ================================================
 EOF
 
@@ -15,7 +15,7 @@ bundle install
 echo
 cat <<EOF
 =====================================
-=== Phase 5/6 — Step 2/2 — Course ===
+=== Phase 4/5 — Step 2/2 — Course ===
 =====================================
 EOF
 

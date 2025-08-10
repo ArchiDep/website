@@ -3,7 +3,7 @@ set -e
 
 cat <<EOF
 ===================================================
-=== Phase 2/6 — Step 1/1 — Node.js dependencies ===
+=== Phase 2/5 — Step 1/1 — Node.js dependencies ===
 ===================================================
 EOF
 

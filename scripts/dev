@@ -6,20 +6,16 @@ compose="docker compose -f compose.dev.yml"
 mkdir -p tmp/docker/dev
 chmod 700 tmp/docker/dev
 
-# Phase 3: Download the application's Elixir dependencies which are needed to
+# Phase 1: Download the application's Elixir dependencies which are needed to
 # compile the application assets and the theme.
 $compose build app
 $compose run --entrypoint /usr/local/bin/deps.sh --no-deps --rm app
 
-# Phase 1: Install Node.js dependencies.
+# Phase 2: Install Node.js dependencies.
 $compose build node
 $compose run --rm node
 
-# Phase 2: Generate an SSH key pair (if it doesn't already exist).
-$compose build ssh
-$compose run --rm ssh
-
-# Phase 4: Compile remaining Docker images.
+# Compile remaining Docker images.
 $compose build app-assets course course-assets theme
 
 # Delete these files that are used by the various health checks to know when
@@ -29,6 +25,6 @@ rm -f tmp/docker/dev/app/priv/static/archidep.json \
       tmp/docker/dev/app/priv/static/assets/course/manifest.json \
       tmp/docker/dev/app/priv/static/theme/theme.css
 
-# Phase 5: Run everything. Services will wait for each other to be healthy
+# Phases 3-5: Run everything. Services will wait for each other to be healthy
 # before starting.
-$compose up --force-recreate app app-assets course course-assets theme db
+exec $compose up --force-recreate app app-assets course course-assets theme db

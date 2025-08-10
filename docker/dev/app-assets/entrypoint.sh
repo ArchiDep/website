@@ -3,7 +3,7 @@ set -e
 
 cat <<EOF
 ============================================================
-=== Phase 4/6 — Step 1/3 (parallel) — Application assets ===
+=== Phase 3/5 — Step 1/3 (parallel) — Application assets ===
 ============================================================
 EOF
 

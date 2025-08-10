@@ -5,7 +5,7 @@ cd app
 
 cat <<EOF
 =====================================================
-=== Phase 1/6 — Step 1/2 — Elixir package manager ===
+=== Phase 1/5 — Step 1/2 — Elixir package manager ===
 =====================================================
 EOF
 
@@ -15,7 +15,7 @@ mix local.hex --force --if-missing
 echo
 cat <<EOF
 ==================================================
-=== Phase 1/6 — Step 2/2 — Elixir dependencies ===
+=== Phase 1/5 — Step 2/2 — Elixir dependencies ===
 ==================================================
 EOF
 

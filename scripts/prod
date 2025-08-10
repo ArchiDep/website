@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -e
+
+exec docker compose -f compose.prod.yml up --build

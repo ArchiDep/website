@@ -13,4 +13,4 @@ COPY ./docker/dev/course-assets/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
-HEALTHCHECK --retries=6 --interval=5s --timeout=10s --start-period=60s --start-interval=5s CMD ["test", "-f", "/archidep/app/priv/static/assets/course/manifest.json"]
+HEALTHCHECK --retries=12 --interval=5s --timeout=10s --start-period=240s --start-interval=5s CMD ["test", "-f", "/archidep/app/priv/static/assets/course/manifest.json"]

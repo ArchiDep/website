@@ -41,16 +41,16 @@ services:
       ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID:
       ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_SECRET:
       ARCHIDEP_AUTH_SWITCH_EDU_ID_ROOT_USERS:
-      ARCHIDEP_REPO_URL:
-      ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE: '/etc/app/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}'
+      ARCHIDEP_REPO_URL: ecto://archidep:archidep@db:5432/archidep
+      ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE: '/etc/archidep/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}'
       ARCHIDEP_SERVERS_SSH_PUBLIC_KEY:
-      ARCHIDEP_WEB_ENDPOINT_HTTP_IP:
-      ARCHIDEP_WEB_ENDPOINT_HTTP_PORT:
+      ARCHIDEP_WEB_ENDPOINT_HTTP_IP: 0.0.0.0
+      ARCHIDEP_WEB_ENDPOINT_HTTP_PORT: 42000
       ARCHIDEP_WEB_ENDPOINT_LIVE_VIEW_SIGNING_SALT:
       ARCHIDEP_WEB_ENDPOINT_SECRET_KEY_BASE:
       ARCHIDEP_WEB_ENDPOINT_SESSION_SIGNING_SALT:
-      ARCHIDEP_WEB_ENDPOINT_UPLOADS_DIRECTORY: /var/lib/app/uploads
-      ARCHIDEP_WEB_ENDPOINT_URL:
+      ARCHIDEP_WEB_ENDPOINT_UPLOADS_DIRECTORY: /var/lib/archidep/uploads
+      ARCHIDEP_WEB_ENDPOINT_URL: http://localhost:42000
     init: true
     labels:
       - 'traefik.enable=true'
@@ -59,14 +59,15 @@ services:
       - 'traefik.http.services.archidep-app.loadbalancer.server.port=42000'
     restart: unless-stopped
     volumes:
-      - ./app/priv/ssh:/etc/app/ssh:ro
-      - app_uploads:/var/lib/app/uploads:rw
+      - ./app/priv/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}:/etc/archidep/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}:ro
+      - ./app/priv/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}.pub:/etc/archidep/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}.pub:ro
+      - app_uploads:/var/lib/archidep/uploads:rw
 
   db:
     image: postgres:17.5-alpine
     environment:
       POSTGRES_DB: archidep
-      POSTGRES_PASSWORD: '${ARCHIDEP_DATABASE_PASSWORD}'
+      POSTGRES_PASSWORD: archidep
       POSTGRES_USER: archidep
     restart: unless-stopped
     volumes:

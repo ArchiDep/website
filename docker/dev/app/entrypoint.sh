@@ -5,7 +5,7 @@ cd app
 
 cat <<EOF
 ======================================================
-=== Phase 6/6 — Step 1/3 — Application compilation ===
+=== Phase 5/5 — Step 1/3 — Application compilation ===
 ======================================================
 EOF
 
@@ -16,7 +16,7 @@ mix compile
 echo
 cat <<EOF
 ==================================================
-=== Phase 6/6 — Step 2/3 — User agent database ===
+=== Phase 5/5 — Step 2/3 — User agent database ===
 ==================================================
 EOF
 
@@ -37,7 +37,7 @@ EOF
 echo
 cat <<EOF
 ==========================================
-=== Phase 6/6 — Step 3/3 — Application ===
+=== Phase 5/5 — Step 3/3 — Application ===
 ==========================================
        🚀🚀🚀 Almost done! 🚀🚀🚀
 

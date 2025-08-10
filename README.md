@@ -59,13 +59,21 @@ Setup instructions to perform before running the website for the first time.
 No setup is required if you have Docker installed. Simply clone the repository.
 
 ```bash
-# Clone this repository
+# Clone this repository.
 git clone git@github.com:ArchiDep/website.git
 cd website
+
+# Generate an SSH key pair, copy the printed public key.
+./scripts/init-docker
+
+# Copy (and adapt) the environment file. (Don't forget to paste the public key
+# in there.)
+cp .env.sample .env
 ```
 
-> [!TIP] Optionally, install [direnv][direnv] to automatically have all the
-> project's utility scripts in your PATH when you navigate to the repository.
+> [!TIP]
+> Optionally, install [direnv][direnv] to automatically have all the project's
+> utility scripts in your PATH when you navigate to the repository.
 >
 > ```bash
 > direnv allow  # see .envrc
@@ -111,7 +119,7 @@ cp config/local.sample.exs config/local.exs
 # Create required directories
 mkdir -p priv/ssh priv/uploads
 
-# Generate an SSH key (with no password) for testing
+# Generate an SSH key (with no password)
 cd priv/ssh
 ssh-keygen -t ed25519 -f id_ed25519 -C archidep
 cd ../../
@@ -130,10 +138,10 @@ How to run the website in development mode with live reload on code changes.
 ./scripts/dev  # or simply "dev" if you have direnv
 ```
 
-> [!TIP] It will take a while (quite a long while the first time). The various
-> Docker containers only start when their dependencies have finished their
-> initial run, as defined by their health checks. The startup order is as
-> follows:
+> [!TIP]
+> It will take a while (quite a long while the first time). The various Docker
+> containers only start when their dependencies have finished their initial run,
+> as defined by their health checks. The startup order is as follows:
 >
 > - Start the database (`db` container), compile the application assets
 >   (`app-assets` container), course assets (`course-assets` container, takes a
