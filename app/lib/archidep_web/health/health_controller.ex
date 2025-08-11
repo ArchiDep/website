@@ -20,7 +20,15 @@ defmodule ArchiDepWeb.Health.HealthController do
       |> Enum.map(& &1.st)
       |> Enum.reduce(:ok, &worst_status/2)
 
-    json(conn, %{
+    response_status =
+      case health_status do
+        :ok -> :ok
+        _anything_else -> :internal_server_error
+      end
+
+    conn
+    |> put_status(response_status)
+    |> json(%{
       st: slow_status(health_status, health_time),
       us: health_time,
       dt: health_data
