@@ -94,6 +94,10 @@ defmodule ArchiDepWeb.Router do
     scope "/callbacks/servers", Servers do
       post "/:server_id/up", ServerCallbacksController, :server_up
     end
+
+    scope "/health", Health do
+      get "/", HealthController, :health
+    end
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

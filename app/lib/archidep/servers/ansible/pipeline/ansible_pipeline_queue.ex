@@ -18,18 +18,34 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   defmodule State do
     @moduledoc false
 
-    @enforce_keys [:stored_demand, :pending_playbooks]
-    defstruct [:stored_demand, :pending_playbooks]
+    @enforce_keys [:pending_playbooks]
+    defstruct [
+      :pending_playbooks,
+      stored_demand: 0,
+      last_activity: nil
+    ]
 
     # TODO: store unique connection ref and drop playbook run if it has changed
     @type pending_playbook_data :: %{run_id: UUID.t(), server_id: UUID.t()}
     @type t :: %__MODULE__{
             stored_demand: non_neg_integer(),
-            pending_playbooks: {non_neg_integer(), :queue.queue(pending_playbook_data())}
+            pending_playbooks: {non_neg_integer(), :queue.queue(pending_playbook_data())},
+            last_activity: DateTime.t() | nil
+          }
+
+    @type health_data :: %{
+            pending: non_neg_integer(),
+            demand: non_neg_integer(),
+            last_activity: DateTime.t() | nil
           }
 
     @spec init() :: t()
-    def init, do: %__MODULE__{stored_demand: 0, pending_playbooks: {0, :queue.new()}}
+    def init,
+      do: %__MODULE__{
+        stored_demand: 0,
+        pending_playbooks: {0, :queue.new()},
+        last_activity: nil
+      }
 
     @spec store_demand(t, pos_integer) :: t
     def store_demand(state, demand) when is_demand(demand) do
@@ -54,11 +70,19 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
         ) do
       {number_pending, pending_playbooks_queue} = state.pending_playbooks
 
+      new_last_activity =
+        if number_pending == 0 do
+          DateTime.utc_now()
+        else
+          state.last_activity
+        end
+
       %__MODULE__{
         state
         | pending_playbooks:
             {number_pending + 1,
-             :queue.in(%{run_id: playbook_run_id, server_id: server_id}, pending_playbooks_queue)}
+             :queue.in(%{run_id: playbook_run_id, server_id: server_id}, pending_playbooks_queue)},
+          last_activity: new_last_activity
       }
     end
 
@@ -72,7 +96,10 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     end
 
     def server_offline(
-          %__MODULE__{pending_playbooks: {number_pending, pending_playbooks_queue}} = state,
+          %__MODULE__{
+            pending_playbooks: {number_pending, pending_playbooks_queue},
+            last_activity: last_activity
+          } = state,
           server_id
         ) do
       new_queue =
@@ -87,7 +114,18 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
         "Dropped #{number_pending - new_number_pending} playbook(s) for server #{server_id} which is now offline"
       )
 
-      %__MODULE__{state | pending_playbooks: {new_number_pending, new_queue}}
+      new_last_activity =
+        if new_number_pending == 0 do
+          nil
+        else
+          last_activity
+        end
+
+      %__MODULE__{
+        state
+        | pending_playbooks: {new_number_pending, new_queue},
+          last_activity: new_last_activity
+      }
     end
 
     @spec consume_events(t()) :: {list(UUID.t()), t()}
@@ -97,9 +135,12 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     end
 
     defp collect_events_to_consume(
-           {events, %__MODULE__{pending_playbooks: {0, _pending_playbooks_queue}} = state}
+           {events,
+            %__MODULE__{
+              pending_playbooks: {0, _pending_playbooks_queue}
+            } = state}
          ) do
-      {events, state}
+      {events, %__MODULE__{state | last_activity: nil}}
     end
 
     defp collect_events_to_consume(
@@ -107,8 +148,26 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
             %__MODULE__{pending_playbooks: {number_pending, pending_playbooks_queue}} = state}
          ) do
       {{:value, %{run_id: run_id}}, new_queue} = :queue.out(pending_playbooks_queue)
-      {[run_id | events], %__MODULE__{state | pending_playbooks: {number_pending - 1, new_queue}}}
+
+      {[run_id | events],
+       %__MODULE__{
+         state
+         | pending_playbooks: {number_pending - 1, new_queue},
+           last_activity: DateTime.utc_now()
+       }}
     end
+
+    @spec health(t()) :: health_data()
+    def health(%__MODULE__{
+          stored_demand: stored_demand,
+          pending_playbooks: {number_pending, _pending_playooks_queue},
+          last_activity: last_activity
+        }),
+        do: %{
+          pending: number_pending,
+          demand: stored_demand,
+          last_activity: last_activity
+        }
   end
 
   @spec name(Pipeline.t()) :: GenServer.name()
@@ -127,6 +186,9 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   @spec server_offline(Pipeline.t(), Server.t()) :: :ok
   def server_offline(pipeline, %Server{id: server_id}),
     do: GenStage.cast(name(pipeline), {:server_offline, server_id})
+
+  @spec health(Pipeline.t()) :: State.health_data()
+  def health(pipeline), do: GenStage.call(name(pipeline), :health)
 
   @impl GenStage
   def init(nil) do
@@ -150,6 +212,9 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       |> State.run_playbook(playbook_run_id, server_id)
       |> State.consume_events()
       |> reply(:ok)
+
+  @impl GenStage
+  def handle_call(:health, _from, state), do: {:reply, State.health(state), [], state}
 
   @impl GenStage
   def handle_cast({:server_offline, server_id}, state),
