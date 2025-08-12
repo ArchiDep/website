@@ -22,8 +22,8 @@ defmodule ArchiDepWeb.Health.HealthController do
 
     response_status =
       case health_status do
-        :ok -> :ok
-        _anything_else -> :internal_server_error
+        :error -> :internal_server_error
+        _anything_else -> :ok
       end
 
     conn
