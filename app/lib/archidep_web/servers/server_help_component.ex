@@ -1,4 +1,10 @@
 defmodule ArchiDepWeb.Servers.ServerHelpComponent do
+  @moduledoc """
+  A component that provides help and troubleshooting tips for servers,
+  displaying common issues and solutions related to server setup and connection
+  problems.
+  """
+
   use ArchiDepWeb, :component
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
