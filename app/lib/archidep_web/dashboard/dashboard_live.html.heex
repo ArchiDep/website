@@ -1,4 +1,19 @@
-<h1>{gettext("Dashboard")}</h1>
+<div
+  :if={@student != nil and not Student.can_create_servers?(@student)}
+  class="hero my-4 rounded-lg bg-base-200"
+>
+  <div class="hero-content p-10 text-center">
+    <div class="max-w-md">
+      <h1 class="text-5xl font-bold">Welcome!</h1>
+      <p class="my-6">
+        Welcome to the Architecture & Deployment course dashboard. There's not
+        much to see here yet, but come back later in the course to see some cool
+        stuff.
+      </p>
+      <a href="/" class="btn btn-primary">Got it, take me back to the course</a>
+    </div>
+  </div>
+</div>
 
 <.live_component
   :if={
@@ -10,37 +25,47 @@
   student={@student}
 />
 
-<div class="my-2 flex justify-between items-end">
-  <h2 class="text-2xl font-bold flex items-center gap-x-2">
-    <Heroicons.server_stack solid class="size-6" />
-    {gettext("Servers")}
-  </h2>
-  <button
-    type="button"
-    class="btn btn-success btn-sm"
-    phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewServerDialogLive.id()})}
-  >
-    <span class="flex items-center gap-x-2">
-      <Heroicons.plus class="size-4" />
-      <span>{gettext("Server")}</span>
-    </span>
-  </button>
+<div
+  :if={
+    (has_role?(@auth, :root) or
+       (@student != nil and Student.can_create_servers?(@student) and @student.username_confirmed)) and
+      Enum.empty?(@servers)
+  }
+  class="hero rounded-lg mt-4 bg-base-300"
+>
+  <div class="hero-content p-10 text-center">
+    <div class="max-w-md">
+      <div class="badge badge-outline badge-accent badge-lg">Action Required!</div>
+      <h1 class="mt-2 text-5xl font-bold">Let's get started!</h1>
+      <p class="py-6">
+        Register your first server to get started with deploying stuff.
+      </p>
+      <button
+        type="button"
+        class="btn btn-success btn-sm"
+        phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewServerDialogLive.id()})}
+      >
+        <span class="flex items-center gap-x-2">
+          <Heroicons.plus class="size-4" />
+          <span>{gettext("All right!")}</span>
+        </span>
+      </button>
+    </div>
+  </div>
 </div>
 
-<.no_data :if={Enum.empty?(@servers)} text={gettext("You have not registered any server yet.")} />
-
-<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-  <div
-    :for={server <- @servers}
-    class="cursor-pointer"
-    phx-click={JS.navigate(~p"/servers/#{server.id}")}
-  >
+<div class="flex justify-center">
+  <div :for={server <- @servers} class="w-full max-w-lg flex flex-col gap-y-4">
     <.server_card
       auth={@auth}
       server={server}
       state={Map.get(@server_state_map, server.id)}
+      class="cursor-pointer"
+      on_click={JS.navigate(~p"/servers/#{server.id}")}
       on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
     />
+
+    <.server_help auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} />
   </div>
 </div>
 

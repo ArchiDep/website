@@ -76,6 +76,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
           | disconnected_state()
           | connection_failed_state()
 
+  @spec connecting?(connection_state()) :: boolean()
+  def connecting?(state), do: Record.is_record(state, :connecting_state)
+
+  @spec retry_connecting?(connection_state()) :: boolean()
+  def retry_connecting?(state), do: Record.is_record(state, :retry_connecting_state)
+
   @spec connected?(connection_state()) :: boolean()
   def connected?(state), do: Record.is_record(state, :connected_state)
 

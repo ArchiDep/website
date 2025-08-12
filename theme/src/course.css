@@ -7,7 +7,7 @@ main * pre.highlight {
   @apply my-0;
 }
 
-main a {
+main a:not(.btn):not(.no-hover) {
   @apply hover:text-accent;
 }
 

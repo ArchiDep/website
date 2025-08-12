@@ -70,6 +70,7 @@ defmodule ArchiDepWeb.Router do
       scope "/app" do
         pipe_through :fetch_authentication
         live "/", Dashboard.DashboardLive
+        live "/my-servers", Dashboard.MyServersLive
       end
 
       scope "/admin" do

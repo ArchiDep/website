@@ -1,27 +1,21 @@
-defmodule ArchiDepWeb.Dashboard.DashboardLive do
+defmodule ArchiDepWeb.Dashboard.MyServersLive do
   use ArchiDepWeb, :live_view
 
   import ArchiDepWeb.Helpers.AuthHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents
-  import ArchiDepWeb.Servers.ServerHelpComponent
-  alias ArchiDep.Course
-  alias ArchiDep.Course.Schemas.Class
-  alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerTracker
-  alias ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
   @impl LiveView
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
 
-    [student, servers, groups] =
+    [servers, groups] =
       Task.await_many([
-        Task.async(fn -> fetch_student(auth) end),
         Task.async(fn -> Servers.list_my_servers(auth) end),
         if(has_role?(auth, :root),
           do: Task.async(fn -> Servers.list_server_groups(auth) end),
@@ -32,11 +26,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     tracker =
       if connected?(socket) do
         set_process_label(__MODULE__, auth)
-
-        if student != nil do
-          :ok = Course.PubSub.subscribe_student(student.id)
-          :ok = Course.PubSub.subscribe_class(student.class_id)
-        end
 
         for server <- servers do
           # TODO: add watch_my_servers in context
@@ -53,7 +42,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
     socket
     |> assign(
-      student: student,
       servers: servers,
       server_state_map: ServerTracker.server_state_map(servers),
       server_tracker: tracker,
@@ -68,58 +56,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     :ok = Servers.retry_connecting(socket.assigns.auth, server_id)
     noreply(socket)
   end
-
-  @impl LiveView
-  def handle_info(
-        {:student_updated, %Student{id: student_id} = updated_student},
-        %Socket{assigns: %{student: %Student{id: student_id} = student}} = socket
-      ),
-      do:
-        socket
-        |> assign(student: Student.refresh!(student, updated_student))
-        |> noreply()
-
-  @impl LiveView
-  def handle_info(
-        {:student_deleted, %Student{id: student_id}},
-        %Socket{
-          assigns: %{
-            student: %Student{id: student_id}
-          }
-        } = socket
-      ),
-      do:
-        socket
-        |> assign(student: nil, server_group_member: nil)
-        |> noreply()
-
-  @impl LiveView
-  def handle_info(
-        {:class_updated, %Class{id: id} = updated_class},
-        %Socket{
-          assigns: %{
-            student: %Student{class: %Class{id: id} = class} = student
-          }
-        } = socket
-      ),
-      do:
-        socket
-        |> assign(student: %Student{student | class: Class.refresh!(class, updated_class)})
-        |> noreply()
-
-  @impl LiveView
-  def handle_info(
-        {:class_deleted, %Class{id: id}},
-        %Socket{
-          assigns: %{
-            student: %Student{class_id: id}
-          }
-        } = socket
-      ),
-      do:
-        socket
-        |> assign(student: nil)
-        |> noreply()
 
   @impl LiveView
   def handle_info(
@@ -207,17 +143,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         )
     )
     |> noreply()
-  end
-
-  defp fetch_student(auth) do
-    {:ok, student} =
-      if has_role?(auth, :student) do
-        Course.fetch_authenticated_student(auth)
-      else
-        {:ok, nil}
-      end
-
-    student
   end
 
   defp sort_servers(servers),

@@ -17,4 +17,20 @@ defmodule ArchiDepWeb.Components.CoreComponents do
     </span>
     """
   end
+
+  slot :inner_block, required: true, doc: "the troubleshooting instruction to display"
+
+  @spec troubleshooting_note(map()) :: Rendered.t()
+  def troubleshooting_note(assigns) do
+    ~H"""
+    <div class="note note-troubleshooting">
+      <div class="title">
+        💥 <span>Troubleshooting</span>
+      </div>
+      <div class="content">
+        {render_slot(@inner_block)}
+      </div>
+    </div>
+    """
+  end
 end

@@ -1,0 +1,40 @@
+<div class="my-2 flex justify-between items-end">
+  <h2 class="text-2xl font-bold flex items-center gap-x-2">
+    <Heroicons.server_stack solid class="size-6" />
+    {gettext("Servers")}
+  </h2>
+  <button
+    type="button"
+    class="btn btn-success btn-sm"
+    phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewServerDialogLive.id()})}
+  >
+    <span class="flex items-center gap-x-2">
+      <Heroicons.plus class="size-4" />
+      <span>{gettext("Server")}</span>
+    </span>
+  </button>
+</div>
+
+<.no_data :if={Enum.empty?(@servers)} text={gettext("You have not registered any server yet.")} />
+
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+  <div
+    :for={server <- @servers}
+    class="cursor-pointer"
+    phx-click={JS.navigate(~p"/servers/#{server.id}")}
+  >
+    <.server_card
+      auth={@auth}
+      server={server}
+      state={Map.get(@server_state_map, server.id)}
+      on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
+    />
+  </div>
+</div>
+
+<.live_component
+  module={NewServerDialogLive}
+  id={NewServerDialogLive.id()}
+  auth={@auth}
+  groups={@groups}
+/>

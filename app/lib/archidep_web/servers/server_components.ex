@@ -28,6 +28,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   attr :auth, Authentication, doc: "the authentication context"
   attr :server, Server, doc: "the server to display"
   attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
+  attr :class, :string, doc: "extra CSS classes to apply to the card", default: nil
+
+  attr :on_click, JS, doc: "JS command to execute when clicking the card", default: nil
 
   attr :on_retry_connection, JS,
     doc: "JS command to execute when retrying the connection",
@@ -58,7 +61,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
     assigns =
       assigns
-      |> assign(:card_class, card_class)
+      |> assign(:card_classes, [card_class, assigns.class])
       |> assign(:badge_class, badge_class)
       |> assign(:badge_text, badge_text)
       |> assign(:body, body)
@@ -68,7 +71,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       |> assign(:busy, state != nil and state.current_job != nil)
 
     ~H"""
-    <div class={["card", @card_class]}>
+    <div class={["card"] ++ @card_classes} phx-click={@on_click}>
       <div class="card-body">
         <div class="card-title flex flex-wrap justify-between text-xs sm:text-sm md:text-base">
           <h2 class="flex items-center gap-x-2">

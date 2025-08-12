@@ -50,6 +50,11 @@
         <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
         <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
       </dd>
+      <dt class="font-bold">{gettext("Servers enabled")}</dt>
+      <dd class="col-span-1 md:col-span-2 xl:col-span-3">
+        <Heroicons.check_circle :if={@class.servers_enabled} class="size-5 text-success" />
+        <Heroicons.x_circle :if={not @class.servers_enabled} class="size-5 text-error" />
+      </dd>
     </dl>
   </div>
 

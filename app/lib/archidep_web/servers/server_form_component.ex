@@ -44,8 +44,8 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
     ~H"""
     <.form id={@id} for={@form} phx-change="validate" phx-submit={@on_submit} phx-target={@target}>
       <fieldset class="fieldset">
-        <legend class="fieldset-legend">
-          <h3 class="text-lg font-bold">{@title}</h3>
+        <legend class="fieldset-legend w-full">
+          <h3 class="w-full text-lg font-bold">{@title}</h3>
         </legend>
 
         <label class="fieldset-label mt-2">{gettext("Name")}</label>
