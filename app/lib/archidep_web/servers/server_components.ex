@@ -375,6 +375,30 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   end
 
   def server_problem(
+        %{problem: {:server_connection_refused, host, port, _user_type, username}} = assigns
+      ) do
+    assigns =
+      assigns
+      |> assign(:host, :inet.ntoa(host))
+      |> assign(:port, port)
+      |> assign(:username, username)
+
+    ~H"""
+    <div role="alert" class="alert alert-warning alert-soft">
+      <Heroicons.exclamation_triangle class="size-4" />
+      <span>
+        {gettext("Connection refused to {cs}{target}{ce}",
+          target: "#{@username}@#{@host}:#{@port}" |> html_escape() |> safe_to_string(),
+          cs: "<code>",
+          ce: "</code>"
+        )
+        |> raw()}
+      </span>
+    </div>
+    """
+  end
+
+  def server_problem(
         %{problem: {:server_connection_timed_out, host, port, _user_type, username}} = assigns
       ) do
     assigns =

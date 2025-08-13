@@ -35,6 +35,9 @@ defmodule ArchiDep.Servers.Types do
            ansible_stats()}
   @type server_authentication_failed_problem ::
           {:server_authentication_failed, :username | :app_username, String.t()}
+  @type server_connection_refused_problem ::
+          {:server_connection_refused, :inet.ip_address(), 1..65_535, :username | :app_username,
+           String.t()}
   @type server_connection_timed_out_problem ::
           {:server_connection_timed_out, :inet.ip_address(), 1..65_535, :username | :app_username,
            String.t()}
@@ -48,6 +51,7 @@ defmodule ArchiDep.Servers.Types do
   @type server_problem ::
           server_ansible_playbook_failed()
           | server_authentication_failed_problem()
+          | server_connection_refused_problem()
           | server_connection_timed_out_problem()
           | server_expected_property_mismatch_problem()
           | server_fact_gathering_failed_problem()

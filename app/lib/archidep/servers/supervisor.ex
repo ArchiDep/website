@@ -14,7 +14,7 @@ defmodule ArchiDep.Servers.Supervisor do
       {ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineSupervisor,
        ArchiDep.Servers.Ansible.Pipeline},
       ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor,
-      ArchiDep.Servers.ServerTracking.ServersOrchestrator
+      {ArchiDep.Servers.ServerTracking.ServersOrchestrator, ArchiDep.Servers.Ansible.Pipeline}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

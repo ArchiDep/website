@@ -245,6 +245,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
                 {:server_connection_timed_out, _host, _port, _user_type, ^app_username},
                 problem
               ) or
+              match?(
+                {:server_connection_refused, _host, _port, _user_type, ^app_username},
+                problem
+              ) or
               match?({:server_missing_sudo_access, _username, _stderr}, problem) or
               match?({:server_reconnection_failed, _reason}, problem) or
               match?({:server_sudo_access_check_failed, _reason}, problem)
@@ -555,28 +559,51 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         }
 
       connecting_state() ->
+        server_username = state.server.username
+
+        new_problems =
+          case {reason, state.username} do
+            {:timeout, ^server_username} ->
+              [
+                {:server_connection_timed_out, state.server.ip_address.address,
+                 state.server.ssh_port || 22,
+                 if(state.username == state.server.app_username,
+                   do: :app_username,
+                   else: :username
+                 ), state.username}
+              ]
+
+            {:econnrefused, ^server_username} ->
+              [
+                {:server_connection_refused, state.server.ip_address.address,
+                 state.server.ssh_port || 22,
+                 if(state.username == state.server.app_username,
+                   do: :app_username,
+                   else: :username
+                 ), state.username}
+              ]
+
+            _anything_else ->
+              []
+          end
+
         retry(
           %{
             state
             | problems:
                 Enum.reject(
                   state.problems,
-                  &match?(
-                    {:server_connection_timed_out, _host, _port, _user_type, _username},
-                    &1
-                  )
-                ) ++
-                  if(reason == :timeout and state.username == state.server.username,
-                    do: [
-                      {:server_connection_timed_out, state.server.ip_address.address,
-                       state.server.ssh_port || 22,
-                       if(state.username == state.server.app_username,
-                         do: :app_username,
-                         else: :username
-                       ), state.username}
-                    ],
-                    else: []
-                  )
+                  fn problem ->
+                    match?(
+                      {:server_connection_timed_out, _host, _port, _user_type, _username},
+                      problem
+                    ) or
+                      match?(
+                        {:server_connection_refused, _host, _port, _user_type, _username},
+                        problem
+                      )
+                  end
+                ) ++ new_problems
           },
           reason
         )
@@ -869,6 +896,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           auto_activate_or_deactivate(%__MODULE__{
             state
             | server: updated_server,
+              username:
+                if(updated_server.set_up_at,
+                  do: updated_server.app_username,
+                  else: updated_server.username
+                ),
               # TODO: do not add update tracking action if there is already one
               actions: [update_tracking()],
               problems: detect_server_properties_mismatches(problems, updated_server)

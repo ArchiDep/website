@@ -87,4 +87,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
 
   @spec not_connected?(connection_state()) :: boolean()
   def not_connected?(state), do: Record.is_record(state, :not_connected_state)
+
+  @spec connection_failed?(connection_state()) :: boolean()
+  def connection_failed?(state), do: Record.is_record(state, :connection_failed_state)
 end
