@@ -590,20 +590,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         retry(
           %{
             state
-            | problems:
-                Enum.reject(
-                  state.problems,
-                  fn problem ->
-                    match?(
-                      {:server_connection_timed_out, _host, _port, _user_type, _username},
-                      problem
-                    ) or
-                      match?(
-                        {:server_connection_refused, _host, _port, _user_type, _username},
-                        problem
-                      )
-                  end
-                ) ++ new_problems
+            | problems: drop_connection_problems(state.problems) ++ new_problems
           },
           reason
         )
@@ -1139,6 +1126,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       end)
     )
   end
+
+  defp drop_connection_problems(problems),
+    do:
+      Enum.reject(
+        problems,
+        fn problem ->
+          match?(
+            {:server_connection_timed_out, _host, _port, _user_type, _username},
+            problem
+          ) or
+            match?(
+              {:server_connection_refused, _host, _port, _user_type, _username},
+              problem
+            )
+        end
+      )
 
   defp track(state),
     do: %__MODULE__{

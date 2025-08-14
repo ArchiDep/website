@@ -22,7 +22,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     [student, servers, groups] =
       Task.await_many([
         Task.async(fn -> fetch_student(auth) end),
-        Task.async(fn -> Servers.list_my_servers(auth) end),
+        Task.async(fn -> Servers.list_my_active_servers(auth) end),
         if(has_role?(auth, :root),
           do: Task.async(fn -> Servers.list_server_groups(auth) end),
           else: Task.completed(nil)
@@ -43,7 +43,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           :ok = PubSub.subscribe_server(server.id)
         end
 
-        :ok = PubSub.subscribe_server_created()
+        :ok = PubSub.subscribe_server_owner_servers(auth.principal_id)
 
         {:ok, pid} = ServerTracker.start_link(servers)
         pid
@@ -135,7 +135,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:server_created, %Server{owner_id: owner_id} = created_server},
+        {:server_created, %Server{owner_id: owner_id, active: true} = created_server},
         %{
           assigns: %{
             auth: %Authentication{principal_id: owner_id},
@@ -145,8 +145,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           }
         } = socket
       ) do
-    :ok = PubSub.subscribe_server(created_server.id)
-
     socket
     |> assign(
       servers: sort_servers([created_server | servers]),
@@ -165,23 +163,69 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:server_updated, %Server{id: server_id} = server},
-        %{assigns: %{servers: servers}} = socket
+        {:server_updated,
+         %Server{id: server_id, owner_id: owner_id, active: true} = updated_server},
+        %{
+          assigns: %{
+            auth: %Authentication{principal_id: owner_id},
+            servers: servers,
+            server_state_map: server_state_map,
+            server_tracker: tracker
+          }
+        } = socket
       ) do
-    socket
-    |> assign(
-      servers:
-        servers
-        |> Enum.map(fn
-          %Server{id: ^server_id} ->
-            server
+    [updated_servers, updated_server_state_map] =
+      if Enum.any?(servers, &(&1.id == server_id)) do
+        [
+          Enum.map(servers, fn
+            %Server{id: ^server_id} ->
+              updated_server
 
-          other_server ->
-            other_server
-        end)
-        |> sort_servers()
-    )
+            other_server ->
+              other_server
+          end),
+          server_state_map
+        ]
+      else
+        [
+          [updated_server | servers],
+          ServerTracker.update_server_state_map(
+            server_state_map,
+            ServerTracker.track(tracker, updated_server)
+          )
+        ]
+      end
+
+    socket
+    |> assign(servers: sort_servers(updated_servers), server_state_map: updated_server_state_map)
     |> noreply()
+  end
+
+  @impl LiveView
+  def handle_info(
+        {:server_updated, %Server{id: server_id} = server},
+        %{
+          assigns: %{
+            servers: servers,
+            server_state_map: server_state_map,
+            server_tracker: tracker
+          }
+        } = socket
+      ) do
+    if Enum.any?(servers, &(&1.id == server_id)) do
+      socket
+      |> assign(
+        servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
+        server_state_map:
+          ServerTracker.update_server_state_map(
+            server_state_map,
+            ServerTracker.untrack(tracker, server)
+          )
+      )
+      |> noreply()
+    else
+      noreply(socket)
+    end
   end
 
   @impl LiveView
@@ -195,8 +239,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           }
         } = socket
       ) do
-    :ok = PubSub.unsubscribe_server(server_id)
-
     socket
     |> assign(
       servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),

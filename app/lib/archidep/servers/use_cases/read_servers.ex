@@ -21,6 +21,21 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
     )
   end
 
+  @spec list_my_active_servers(Authentication.t()) :: list(Server.t())
+  def list_my_active_servers(auth) do
+    authorize!(auth, Policy, :servers, :list_my_active_servers, nil)
+
+    principal_id = auth.principal_id
+
+    Repo.all(
+      from s in Server,
+        join: o in assoc(s, :owner),
+        where: s.owner_id == ^principal_id and s.active,
+        order_by: [s.name, s.username, s.ip_address],
+        preload: [owner: o]
+    )
+  end
+
   @spec fetch_server(Authentication.t(), UUID.t()) ::
           {:ok, Server.t()} | {:error, :server_not_found}
   def fetch_server(auth, id) do

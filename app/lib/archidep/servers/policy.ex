@@ -103,6 +103,15 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
 
+  # Server group members and root users can list their own active servers.
+  def authorize(
+        :servers,
+        :list_my_active_servers,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
+
   # Server group members and root users can fetch a server that belongs to them.
   def authorize(
         :servers,

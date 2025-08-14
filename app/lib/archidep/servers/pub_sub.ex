@@ -21,6 +21,13 @@ defmodule ArchiDep.Servers.PubSub do
     :ok = PubSub.unsubscribe(@pubsub, "server-groups:#{group_id}:servers")
   end
 
+  # Server owners
+
+  @spec subscribe_server_owner_servers(UUID.t()) :: :ok
+  def subscribe_server_owner_servers(owner_id) do
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{owner_id}:servers")
+  end
+
   # Servers
 
   @spec publish_server_created(Server.t()) :: :ok
@@ -31,6 +38,13 @@ defmodule ArchiDep.Servers.PubSub do
       PubSub.broadcast(
         @pubsub,
         "server-groups:#{server.group_id}:servers",
+        {:server_created, server}
+      )
+
+    :ok =
+      PubSub.broadcast(
+        @pubsub,
+        "server-owners:#{server.owner_id}:servers",
         {:server_created, server}
       )
   end
@@ -50,6 +64,13 @@ defmodule ArchiDep.Servers.PubSub do
         "server-groups:#{server.group_id}:servers",
         {:server_updated, server}
       )
+
+    :ok =
+      PubSub.broadcast(
+        @pubsub,
+        "server-owners:#{server.owner_id}:servers",
+        {:server_updated, server}
+      )
   end
 
   @spec publish_server_deleted(Server.t()) :: :ok
@@ -60,6 +81,13 @@ defmodule ArchiDep.Servers.PubSub do
       PubSub.broadcast(
         @pubsub,
         "server-groups:#{server.group_id}:servers",
+        {:server_deleted, server}
+      )
+
+    :ok =
+      PubSub.broadcast(
+        @pubsub,
+        "server-owners:#{server.owner_id}:servers",
         {:server_deleted, server}
       )
   end

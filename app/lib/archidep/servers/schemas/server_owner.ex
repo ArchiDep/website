@@ -28,7 +28,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
           updated_at: DateTime.t()
         }
 
-  @active_server_limit 2
+  @active_server_limit 1
 
   schema "user_accounts" do
     field(:active, :boolean)
