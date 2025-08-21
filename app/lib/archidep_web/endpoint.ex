@@ -74,6 +74,7 @@ defmodule ArchiDepWeb.Endpoint do
     do: :archidep |> Application.fetch_env!(__MODULE__) |> Keyword.fetch!(:session_signing_salt)
 
   # Disable logging for health check route
+  @spec log_level(Plug.Conn.t()) :: false | :info
   def log_level(%{path_info: ["api", "health"]}), do: false
-  def log_level(_), do: :info
+  def log_level(_req), do: :info
 end
