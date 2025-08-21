@@ -77,6 +77,11 @@ config :logger, level: :info
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :sentry,
+  environment_name: Mix.env(),
+  enable_source_code_context: true,
+  root_source_code_paths: [File.cwd!()]
+
 config :ueberauth, Ueberauth,
   providers: [
     switch_edu_id: {

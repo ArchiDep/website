@@ -198,7 +198,8 @@ RUN mix do ua_inspector.download --force
 
 COPY --chown=app:app --from=course /build/app/priv/static/ /usr/src/app/priv/static/
 
-RUN mix release
+RUN mix sentry.package_source_code && \
+    mix release
 
 ###################
 ### Application ###

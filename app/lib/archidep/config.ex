@@ -37,11 +37,18 @@ defmodule ArchiDep.Config do
           uri_without_userinfo
       end)
 
+    sentry_dsn =
+      case Application.get_env(:sentry, :dsn) do
+        nil -> "not configured"
+        _dsn -> "enabled"
+      end
+
     Logger.info(~s"""
     Configuration
     /
     |-> Authentication
     |   \\-> Switch edu-ID root users: #{inspect(auth_config[:root_users][:switch_edu_id])}
+    |-> Sentry: #{sentry_dsn}
     |-> Servers
     |   |-> SSH connection timeout: #{inspect(servers_config[:connection_timeout])}
     |   |-> SSH private key file: #{inspect(ssh_private_key_file)}
@@ -81,6 +88,24 @@ defmodule ArchiDep.Config do
       |> ConfigValue.default_to(default_config, [:root_users, :switch_edu_id])
       |> ConfigValue.validate(&validate_string_list!/1)
       |> ConfigValue.required_value()
+
+  @doc """
+  Read the dynamic Sentry configuration.
+  """
+  @spec sentry(%{String.t() => String.t()}, keyword) :: keyword
+  def sentry(
+        env \\ System.get_env(),
+        default_config \\ Application.get_all_env(:sentry)
+      ) do
+    [
+      dsn:
+        "Sentry DSN"
+        |> ConfigValue.new()
+        |> ConfigValue.env_var(env, "ARCHIDEP_SENTRY_DSN")
+        |> ConfigValue.default_to(default_config, :dsn)
+        |> ConfigValue.optional_value()
+    ]
+  end
 
   @doc """
   Read the dynamic application configuration for server-related functionality.

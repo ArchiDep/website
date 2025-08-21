@@ -12,6 +12,8 @@ config :archidep, :servers, ArchiDep.Config.servers()
 config :archidep, ArchiDep.Repo, ArchiDep.Config.repo()
 config :archidep, ArchiDepWeb.Endpoint, ArchiDepWeb.Config.endpoint()
 
+config :sentry, ArchiDep.Config.sentry()
+
 config :ueberauth_oidcc, :providers,
   switch_edu_id: ArchiDepWeb.Config.switch_edu_id_auth_credentials()
 
