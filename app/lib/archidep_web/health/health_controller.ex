@@ -78,7 +78,7 @@ defmodule ArchiDepWeb.Health.HealthController do
   end
 
   defp check_db_health do
-    case Repo.query("SELECT 1 + 2") do
+    case Repo.query("SELECT 1 + 2", [], log: false) do
       {:ok, %{rows: [[3]]}} -> :ok
       _anything_else -> :error
     end

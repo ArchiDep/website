@@ -53,7 +53,7 @@ defmodule ArchiDepWeb.Endpoint do
     cookie_key: "request_logger"
 
   plug Plug.RequestId
-  plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
+  plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint], log: {__MODULE__, :log_level, []}
 
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
@@ -72,4 +72,8 @@ defmodule ArchiDepWeb.Endpoint do
   @spec session_signing_salt() :: String.t()
   def session_signing_salt,
     do: :archidep |> Application.fetch_env!(__MODULE__) |> Keyword.fetch!(:session_signing_salt)
+
+  # Disable logging for health check route
+  def log_level(%{path_info: ["api", "health"]}), do: false
+  def log_level(_), do: :info
 end

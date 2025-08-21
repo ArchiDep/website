@@ -97,7 +97,7 @@ defmodule ArchiDepWeb.Router do
     end
 
     scope "/health", Health do
-      get "/", HealthController, :health
+      get "/", HealthController, :health, log: false
     end
   end
 
