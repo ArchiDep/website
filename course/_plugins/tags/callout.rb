@@ -16,6 +16,10 @@ module ArchiDep
     ]
     AMAZING_EMOJIS = %w[🎉 🎊 🚀 👍 👏 🌟 ✨ 💫 😎]
 
+    def self.callout_ids
+      @callout_ids ||= Set.new
+    end
+
     def initialize(tag_name, markup, tokens)
       @attributes = {}
 
@@ -33,6 +37,12 @@ module ArchiDep
       @type = @attributes["type"]
       unless TYPES.include?(@type)
         raise SyntaxError.new("Unknown callout type: #{@type}")
+      end
+
+      @id = @attributes["id"]
+      if @id
+        raise SyntaxError.new("Duplicate callout id: #{@id}") if self.class.callout_ids.include?(@id)
+        self.class.callout_ids.add(@id)
       end
 
       @icon =
@@ -73,12 +83,18 @@ module ArchiDep
       more_id = ""
       more_control = ""
       if @type == "more"
-        more_id = SecureRandom.hex
+        more_id = if @id
+          page = context.registers[:page]
+          "callout-more-#{page['num']}-#{page['course_slug']}-#{@id}"
+        else
+          SecureRandom.hex
+        end
+
         more_control =
           %|<input id="#{more_id}" type="checkbox" class="peer hidden" />|
         more =
           %|
-          <label for="#{more_id}" class="more">
+          <label for="#{more_id}" class="more tell-me-more">
             Would you like to know more?
           </label>
           <div class="controls">

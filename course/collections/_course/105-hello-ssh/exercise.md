@@ -368,7 +368,7 @@ can read it.
 
 {% endnote %}
 
-{% callout type: more %}
+{% callout type: more, id: should-i-protect-my-key-with-a-password %}
 
 **Should I protect my key with a password?**
 

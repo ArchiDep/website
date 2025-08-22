@@ -45,6 +45,7 @@ module ArchiDep
 
         item.data["section"] = section
         item.data["section_chapter"] = section_chapter
+        item.data["course_slug"] = slug
 
         chapter_num = section * 100 + section_chapter
         item.data["num"] = chapter_num

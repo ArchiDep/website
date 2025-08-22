@@ -10,6 +10,7 @@
     "start:docker": "cross-env NODE_PATH=deps esbuild assets/js/app.js --bundle --target=es2017 --outdir=priv/static/assets/app --external:/fonts/* --external:/images/* --sourcemap=inline --watch --watch=forever"
   },
   "dependencies": {
+    "@plausible-analytics/tracker": "^0.4.0",
     "cross-env": "^10.0.0",
     "esbuild": "^0.25.8"
   },

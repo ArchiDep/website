@@ -1,7 +1,20 @@
+import { trackEvent } from './plausible';
+
 document.addEventListener('click', event => {
   const target = event.target;
   if (!(target instanceof HTMLButtonElement)) {
     return;
+  }
+
+  if (target.classList.contains('tell-me-more')) {
+    const props = {};
+
+    const id = target.getAttribute('for') ?? target.getAttribute('id');
+    if (id !== null && id.startsWith('callout-more-')) {
+      props['id'] = id;
+    }
+
+    trackEvent('tell-me-more', props);
   }
 
   if (target.classList.contains('always-tell-me-more')) {
@@ -12,6 +25,7 @@ document.addEventListener('click', event => {
       $newElement.classList.add('hidden');
       document.body.appendChild($newElement);
       localStorage.setItem('archidep.alwaysTellMeMore', '1');
+      trackEvent('always-tell-me-more', {});
     }
   }
 
@@ -20,6 +34,7 @@ document.addEventListener('click', event => {
     if ($alwaysTellMeMore) {
       $alwaysTellMeMore.remove();
       localStorage.removeItem('archidep.alwaysTellMeMore');
+      trackEvent('stop-telling-me-more', {});
     }
 
     document

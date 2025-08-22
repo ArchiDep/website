@@ -1,5 +1,4 @@
 import { N, O, pipe, S } from '@mobily/ts-belt';
-import { track } from '@plausible-analytics/tracker';
 import { isLeft } from 'fp-ts/lib/Either';
 import * as t from 'io-ts';
 import { debounce } from 'lodash-es';
@@ -9,6 +8,7 @@ import { match } from 'ts-pattern';
 import { getValidationErrorDetails } from '../../shared/codecs/utils';
 import log from '../logging';
 import { isMacOs, required, toggleClass } from '../utils';
+import { trackEvent } from './plausible';
 import searchDialogTemplate from './search-dialog.template.html';
 import searchResultTemplate from './search-result.template.html';
 
@@ -604,22 +604,5 @@ function elementIsVisibleInViewport(el, partiallyVisible = false): boolean {
 }
 
 function trackSearch(query: string): void {
-  const plausible: typeof track | undefined = window['plausible'];
-  if (plausible === undefined) {
-    return;
-  }
-
-  plausible('search', { props: { query }, callback: trackCallback });
-}
-
-function trackCallback(
-  result?: { status: number } | { error: unknown } | undefined
-): void {
-  if (result !== undefined && 'status' in result) {
-    log.debug(`Plausible request done with status ${result.status}`);
-  } else if (result?.error) {
-    log.warn('Plausible request error', result.error);
-  } else {
-    log.warn('Plausible request ignored');
-  }
+  trackEvent('search', { query });
 }
