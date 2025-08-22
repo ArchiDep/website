@@ -41,7 +41,9 @@ module ArchiDep
 
       @id = @attributes["id"]
       if @id
-        raise SyntaxError.new("Duplicate callout id: #{@id}") if self.class.callout_ids.include?(@id)
+        if self.class.callout_ids.include?(@id)
+          raise SyntaxError.new("Duplicate callout id: #{@id}")
+        end
         self.class.callout_ids.add(@id)
       end
 
@@ -83,12 +85,13 @@ module ArchiDep
       more_id = ""
       more_control = ""
       if @type == "more"
-        more_id = if @id
-          page = context.registers[:page]
-          "callout-more-#{page['num']}-#{page['course_slug']}-#{@id}"
-        else
-          SecureRandom.hex
-        end
+        more_id =
+          if @id
+            page = context.registers[:page]
+            "callout-more-#{page["num"]}-#{page["course_slug"]}-#{@id}"
+          else
+            SecureRandom.hex
+          end
 
         more_control =
           %|<input id="#{more_id}" type="checkbox" class="peer hidden" />|
