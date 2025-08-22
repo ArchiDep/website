@@ -66,7 +66,7 @@ defmodule ArchiDepWeb.Config do
         env \\ System.get_env(),
         default_config \\ :ueberauth_oidcc
         |> Application.fetch_env!(:issuers)
-        |> Enum.find(fn issuer -> issuer[:name] == :switch_edu_id end)
+        |> Enum.find(%{}, fn issuer -> issuer[:name] == :switch_edu_id end)
       ) do
     %{
       name: :switch_edu_id,
