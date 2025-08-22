@@ -1,4 +1,5 @@
 import { N, O, pipe, S } from '@mobily/ts-belt';
+import { track } from '@plausible-analytics/tracker';
 import { isLeft } from 'fp-ts/lib/Either';
 import * as t from 'io-ts';
 import { debounce } from 'lodash-es';
@@ -336,6 +337,8 @@ function performSearch(idx: lunr.Index, data: readonly SearchElement[]): void {
     return;
   }
 
+  trackSearch(query);
+
   const actualQuery = quickSearch[query.toLowerCase()] ?? query;
   const results = idx.search(actualQuery).reduce((acc, result) => {
     const element = data.find(e => e.id === result.ref);
@@ -598,4 +601,25 @@ function elementIsVisibleInViewport(el, partiallyVisible = false): boolean {
         (bottom > 0 && bottom < innerHeight)) &&
         ((left > 0 && left < innerWidth) || (right > 0 && right < innerWidth))
     : top >= 0 && left >= 0 && bottom <= innerHeight && right <= innerWidth;
+}
+
+function trackSearch(query: string): void {
+  const plausible: typeof track | undefined = window['plausible'];
+  if (plausible === undefined) {
+    return;
+  }
+
+  plausible('search', { props: { query }, callback: trackCallback });
+}
+
+function trackCallback(
+  result?: { status: number } | { error: unknown } | undefined
+): void {
+  if (result !== undefined && 'status' in result) {
+    log.debug(`Plausible request done with status ${result.status}`);
+  } else if (result?.error) {
+    log.warn('Plausible request error', result.error);
+  } else {
+    log.warn('Plausible request ignored');
+  }
 }

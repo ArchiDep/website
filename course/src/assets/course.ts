@@ -1,4 +1,5 @@
 import { G, O, pipe } from '@mobily/ts-belt';
+import { init } from '@plausible-analytics/tracker';
 import { computed, effect, signal } from '@preact/signals-core';
 import { isRight } from 'fp-ts/lib/Either';
 import * as t from 'io-ts';
@@ -17,6 +18,13 @@ import log from './logging';
 const logger = log.getLogger('app');
 
 logger.info('ArchiDep 🚀');
+
+init({
+  domain: 'archidep.ch',
+  endpoint: 'https://plausible.alphahydrae.ch/api/event',
+  autoCapturePageviews: true,
+  outboundLinks: true
+});
 
 window['logOut'] = logOut;
 
