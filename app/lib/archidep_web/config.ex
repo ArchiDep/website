@@ -60,8 +60,8 @@ defmodule ArchiDepWeb.Config do
   @doc """
   Read the dynamic configuration for the Switch edu-ID authentication issuer.
   """
-  @spec switch_edu_id_issuer(%{String.t() => String.t()}) :: Map.t()
-  @spec switch_edu_id_issuer(%{String.t() => String.t()}, Map.t()) :: Map.t()
+  @spec switch_edu_id_issuer(%{String.t() => String.t()}) :: map()
+  @spec switch_edu_id_issuer(%{String.t() => String.t()}, map()) :: map()
   def switch_edu_id_issuer(
         env \\ System.get_env(),
         default_config \\ :ueberauth_oidcc
