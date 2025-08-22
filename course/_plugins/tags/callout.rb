@@ -94,7 +94,7 @@ module ArchiDep
           end
 
         more_control =
-          %|<input id="#{more_id}" type="checkbox" class="peer hidden" />|
+          %|<input id="#{more_id}" type="checkbox" class="peer hidden tell-me-more" />|
         more =
           %|
           <label for="#{more_id}" class="more tell-me-more">
