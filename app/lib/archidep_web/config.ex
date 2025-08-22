@@ -58,6 +58,31 @@ defmodule ArchiDepWeb.Config do
   end
 
   @doc """
+  Read the dynamic configuration for the Switch edu-ID authentication issuer.
+  """
+  @spec switch_edu_id_issuer(%{String.t() => String.t()}) :: Map.t()
+  @spec switch_edu_id_issuer(%{String.t() => String.t()}, Map.t()) :: Map.t()
+  def switch_edu_id_issuer(
+        env \\ System.get_env(),
+        default_config \\ :ueberauth_oidcc
+        |> Application.fetch_env!(:issuers)
+        |> Enum.find(fn issuer -> issuer[:name] == :switch_edu_id end)
+      ) do
+    %{
+      name: :switch_edu_id,
+      issuer: switch_edu_id_issuer_url(env, default_config)
+    }
+  end
+
+  defp switch_edu_id_issuer_url(env, default_config) do
+    "Switch edu-ID OpenID Connect issuer URL"
+    |> ConfigValue.new()
+    |> ConfigValue.env_var(env, "ARCHIDEP_AUTH_SWITCH_EDU_ID_ISSUER_URL")
+    |> ConfigValue.default_to(default_config, [:issuer])
+    |> ConfigValue.required_value()
+  end
+
+  @doc """
   Read the dynamic credentials for the Switch edu-ID authentication provider.
   """
   @spec switch_edu_id_auth_credentials(%{String.t() => String.t()}) :: Keyword.t()

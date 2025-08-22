@@ -14,6 +14,10 @@ config :archidep, ArchiDepWeb.Endpoint, ArchiDepWeb.Config.endpoint()
 
 config :sentry, ArchiDep.Config.sentry()
 
+config :ueberauth_oidcc, :issuers, [
+  ArchiDepWeb.Config.switch_edu_id_issuer()
+]
+
 config :ueberauth_oidcc, :providers,
   switch_edu_id: ArchiDepWeb.Config.switch_edu_id_auth_credentials()
 

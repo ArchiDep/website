@@ -21,5 +21,9 @@ config :swoosh,
   # Disable Swoosh Local Memory Storage
   local: false
 
+config :ueberauth_oidcc, :issuers, [
+  %{name: :switch_edu_id, issuer: "https://login.eduid.ch/"}
+]
+
 # Runtime production configuration, including reading of environment variables,
 # is done on config/runtime.exs.

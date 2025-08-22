@@ -94,12 +94,12 @@ defmodule ArchiDep.Config.ConfigValue do
   """
   @spec default_to(t(), list, atom | list(atom)) :: t()
   def default_to(%__MODULE__{value: nil} = config_value, default_config, key)
-      when is_list(default_config) and is_atom(key) do
+      when (is_list(default_config) or is_map(default_config)) and is_atom(key) do
     default_to(config_value, default_config, [key])
   end
 
   def default_to(%__MODULE__{value: nil, sources: sources} = config_value, default_config, key)
-      when is_list(default_config) and is_list(key) do
+      when (is_list(default_config) or is_map(default_config)) and is_list(key) do
     value = get_in(default_config, key)
     source = {:default_config, key}
 
