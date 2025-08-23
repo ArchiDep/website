@@ -92,7 +92,7 @@ defmodule ArchiDep.Config.ConfigValue do
   Read the value from the application's configuration. Has no effect if the
   value is already set.
   """
-  @spec default_to(t(), list, atom | list(atom)) :: t()
+  @spec default_to(t(), list() | map(), atom() | list(atom)) :: t()
   def default_to(%__MODULE__{value: nil} = config_value, default_config, key)
       when (is_list(default_config) or is_map(default_config)) and is_atom(key) do
     default_to(config_value, default_config, [key])
