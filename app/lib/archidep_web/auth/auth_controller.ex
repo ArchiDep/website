@@ -109,6 +109,8 @@ defmodule ArchiDepWeb.Auth.AuthController do
         } = conn,
         _params
       ) do
+    Logger.info("Switch edu-ID login for #{email} (#{swiss_edu_person_unique_id})")
+
     case Accounts.log_in_or_register_with_switch_edu_id(
            %{
              swiss_edu_person_unique_id: swiss_edu_person_unique_id,
