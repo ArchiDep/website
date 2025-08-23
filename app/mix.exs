@@ -21,6 +21,7 @@ defmodule ArchiDep.MixProject do
         check: :test,
         coveralls: :test,
         "coveralls.html": :test,
+        dialyzer: :test,
         test: :test,
         "test.watch": :test
       ],
