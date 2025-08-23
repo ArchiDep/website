@@ -57,18 +57,17 @@ body?.append(testNode.childNodes[0]!);
 
 const logger = log.getLogger('search');
 
-const $searchButton = required(
-  document.getElementById('search-button'),
-  'Search button not found'
-);
-const $searchKeyboardShortcutMacOs = required(
-  $searchButton.querySelector('kbd.macos'),
-  'Search keyboard shortcut for macOS not found'
-);
-const $searchKeyboardShortcutNonMacOs = required(
-  $searchButton.querySelector('kbd:not(.macos)'),
-  'Search keyboard shortcut for non-macOS not found'
-);
+function getSearchButton(): HTMLElement | undefined {
+  return document.getElementById('search-button') ?? undefined;
+}
+
+function getKeyboardShortcutMacOs(): HTMLElement | undefined {
+  return getSearchButton()?.querySelector('kbd.macos') ?? undefined;
+}
+
+function getKeyboardShortcutNonMacOs(): HTMLElement | undefined {
+  return getSearchButton()?.querySelector('kbd:not(.macos)') ?? undefined;
+}
 
 const $searchDialog = required(
   document.getElementById('search-dialog'),
@@ -119,6 +118,10 @@ let searchResults: readonly SearchResult[] = [];
 
 setUpSearch();
 
+window.addEventListener('phx:page-loading-stop', () =>
+  showSearchButton('live-view-page-load')
+);
+
 export function setUpSearch(): void {
   Promise.all([loadSearchIndex(), loadSearchData()])
     .then(([idx, data]) => {
@@ -132,10 +135,6 @@ function setUpSearchListeners(
   idx: lunr.Index,
   data: readonly SearchElement[]
 ): void {
-  $searchButton.addEventListener('click', () => {
-    showSearchDialog();
-  });
-
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
@@ -579,12 +578,35 @@ function parseJsonWhenIdle(
   });
 }
 
-function showSearchButton(): void {
+function showSearchButton(reason = 'initial'): void {
   const macOs = isMacOs();
-  toggleClass($searchKeyboardShortcutMacOs, 'sm:inline', macOs);
-  toggleClass($searchKeyboardShortcutNonMacOs, 'sm:inline', !macOs);
 
-  $searchButton.classList.remove('hidden');
+  const macOs$ = getKeyboardShortcutMacOs();
+  if (macOs$ !== undefined) {
+    toggleClass(macOs$, 'sm:inline', macOs);
+  }
+
+  const nonMacOs$ = getKeyboardShortcutNonMacOs();
+  if (nonMacOs$ !== undefined) {
+    toggleClass(nonMacOs$, 'sm:inline', !macOs);
+  }
+
+  const searchButton$ = getSearchButton();
+  if (
+    searchButton$ !== undefined &&
+    searchButton$.dataset['setup'] !== 'true'
+  ) {
+    searchButton$.addEventListener('click', () => {
+      showSearchDialog();
+    });
+
+    searchButton$.classList.remove('hidden');
+    searchButton$.dataset['setup'] = 'true';
+
+    if (reason !== 'initial') {
+      logger.debug(`Search button reset after ${reason}`);
+    }
+  }
 }
 
 function showSearchDialog(): void {

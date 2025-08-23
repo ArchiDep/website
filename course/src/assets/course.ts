@@ -15,7 +15,7 @@ import './course/search';
 import './course/toc';
 import log from './logging';
 
-const logger = log.getLogger('app');
+const logger = log.getLogger('course');
 
 logger.info('ArchiDep 🚀');
 
