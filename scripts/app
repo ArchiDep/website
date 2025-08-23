@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -e
+mix recompile
+exec mix phx.server
