@@ -42,9 +42,13 @@ module ArchiDep
       @id = @attributes["id"]
       if @id
         if self.class.callout_ids.include?(@id)
-          raise SyntaxError.new("Duplicate callout ID: '#{@id}' (IDs must be globally unique)")
+          raise SyntaxError.new(
+                  "Duplicate callout ID: '#{@id}' (IDs must be globally unique)"
+                )
         elsif @id !~ /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
-          raise SyntaxError.new("Invalid callout ID: '#{@id}' (IDs must be lowercase, alphanumeric and hyphen-separated)")
+          raise SyntaxError.new(
+                  "Invalid callout ID: '#{@id}' (IDs must be lowercase, alphanumeric and hyphen-separated)"
+                )
         end
         self.class.callout_ids.add(@id)
       elsif @type == "more"
