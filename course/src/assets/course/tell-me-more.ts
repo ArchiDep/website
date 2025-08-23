@@ -2,19 +2,15 @@ import { trackEvent } from './plausible';
 
 document.addEventListener('click', event => {
   const target = event.target;
-  if (!(target instanceof HTMLButtonElement)) {
+  if (
+    !(target instanceof HTMLButtonElement) &&
+    !(target instanceof HTMLLabelElement)
+  ) {
     return;
   }
 
   if (target.classList.contains('tell-me-more')) {
-    const props = {};
-
-    const id = target.getAttribute('for') ?? target.getAttribute('id');
-    if (id !== null && id.startsWith('callout-more-')) {
-      props['id'] = id;
-    }
-
-    trackEvent('tell-me-more', props);
+    trackCalloutEvent('tell-me-more', target);
   }
 
   if (target.classList.contains('always-tell-me-more')) {
@@ -25,7 +21,7 @@ document.addEventListener('click', event => {
       $newElement.classList.add('hidden');
       document.body.appendChild($newElement);
       localStorage.setItem('archidep.alwaysTellMeMore', '1');
-      trackEvent('always-tell-me-more', {});
+      trackCalloutEvent('always-tell-me-more', target);
     }
   }
 
@@ -34,7 +30,7 @@ document.addEventListener('click', event => {
     if ($alwaysTellMeMore) {
       $alwaysTellMeMore.remove();
       localStorage.removeItem('archidep.alwaysTellMeMore');
-      trackEvent('stop-telling-me-more', {});
+      trackCalloutEvent('stop-telling-me-more', target);
     }
 
     document
@@ -46,3 +42,16 @@ document.addEventListener('click', event => {
       });
   }
 });
+
+function trackCalloutEvent(name: string, target: HTMLElement) {
+  const props = {};
+
+  const callout =
+    target.closest('.callout[data-callout]')?.getAttribute('data-callout') ??
+    undefined;
+  if (callout !== undefined) {
+    props['callout'] = callout;
+  }
+
+  trackEvent(name, props);
+}

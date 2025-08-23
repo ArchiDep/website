@@ -10,6 +10,10 @@ export function trackEvent(name: string, props: CustomProperties = {}) {
     return;
   }
 
+  if (window.location.hostname === 'localhost') {
+    logger.debug(`Tracking event: ${name}`, props);
+  }
+
   plausible(name, { props, callback: trackCallback });
 }
 

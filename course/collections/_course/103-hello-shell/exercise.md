@@ -30,7 +30,7 @@ We're already familiar with the `pwd`, `cd`, `ls`, `mkdir`, `touch`, `echo`, and
 - Create the following files: `cave/echo.txt`, `lake/fish.txt`, and
   `forest/tree.txt`.
 
-{% callout type: more %}
+{% callout type: more, id: home-tilde %}
 
 In Unix-like operating systems, the tilde (`~`) symbol is a shorthand
 representation for a user's home directory. It's a convenient way to refer to
@@ -65,7 +65,7 @@ content:
 - `lake/fish.txt`: Venture deep into the woods to discover the last hint.
 - `forest/tree.txt`: curl parrot.live
 
-{% callout type: more %}
+{% callout type: more, id: curl %}
 
 The `curl` command is a versatile tool used primarily for transferring data
 using various protocols, most commonly HTTP and HTTPS. For beginners diving into
@@ -114,7 +114,7 @@ reading and short delay. This promotes reusability throughout your script.
 
 {% endnote %}
 
-{% callout type: more %}
+{% callout type: more, id: sleep %}
 
 The `sleep` command is a simple yet useful utility in Unix-like operating
 systems that pauses the execution of a program or script for a specified

@@ -42,9 +42,13 @@ module ArchiDep
       @id = @attributes["id"]
       if @id
         if self.class.callout_ids.include?(@id)
-          raise SyntaxError.new("Duplicate callout id: #{@id}")
+          raise SyntaxError.new("Duplicate callout ID: '#{@id}' (IDs must be globally unique)")
+        elsif @id !~ /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
+          raise SyntaxError.new("Invalid callout ID: '#{@id}' (IDs must be lowercase, alphanumeric and hyphen-separated)")
         end
         self.class.callout_ids.add(@id)
+      elsif @type == "more"
+        raise SyntaxError.new("More callout has no ID")
       end
 
       @icon =
@@ -88,20 +92,20 @@ module ArchiDep
         more_id =
           if @id
             page = context.registers[:page]
-            "callout-more-#{page["num"]}-#{page["course_slug"]}-#{@id}"
+            "#{page["num"]}-#{page["course_slug"]}:#{@id}"
           else
             SecureRandom.hex
           end
 
         more_control =
-          %|<input id="#{more_id}" type="checkbox" class="peer hidden tell-me-more" />|
+          %|<input id="callout-#{more_id}" type="checkbox" class="peer hidden" />|
         more =
           %|
-          <label for="#{more_id}" class="more tell-me-more">
+          <label for="callout-#{more_id}" class="more tell-me-more">
             Would you like to know more?
           </label>
           <div class="controls">
-            <label for="#{more_id}" class="less join-item">
+            <label for="callout-#{more_id}" class="less join-item">
               <span class="mr-1">#{AMAZING_EMOJIS.sample}</span> #{CLOSE.sample}
             </label>
             <button type="button" class="always-tell-me-more join-item">
@@ -114,7 +118,9 @@ module ArchiDep
         |
       end
 
-      %|<div class="#{callout_class}">
+      data_callout = more_id.empty? ? "" : %| data-callout="#{more_id}"|
+
+      %|<div class="#{callout_class}" #{data_callout}>
           #{icon_html}
 
           <div class="container">

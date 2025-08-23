@@ -450,7 +450,7 @@ The private key is never transmitted, and this new authentication process is
 transparent, handled automatically for you by the SSH client and server, hence
 why you no longer have to enter a password.
 
-{% callout type: more %}
+{% callout type: more, id: manually-create-authorized-keys-file %}
 
 You can also create the `authorized_keys` file manually. Note that both the file
 and its parent directory must have permissions that make it accessible only to
@@ -522,7 +522,7 @@ The `ssh-agent` command can help you there. It runs a helper program that will
 let you unlock your private key(s) once, then use it multiple times without
 entering the password again each time.
 
-{% callout type: more %}
+{% callout type: more, id: run-an-ssh-agent %}
 
 There are several ways to run an SSH agent:
 
