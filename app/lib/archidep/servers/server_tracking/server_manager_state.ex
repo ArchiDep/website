@@ -428,6 +428,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         gather_facts_ref,
         result
       ) do
+    Logger.debug("Received fact gathering result from server #{state.server.id}")
+
     new_state =
       case result do
         {:ok, facts} ->
@@ -1363,7 +1365,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     do:
       Enum.reject(problems, fn problem ->
         match?({:server_port_testing_script_failed, _reason}, problem) or
-          match?({:server_open_ports_check_failed, _port_problems}, problem)
+          match?({:server_open_ports_check_failed, _port_problems}, problem) or
+          match?({:server_fact_gathering_failed, _reason}, problem)
       end)
 
   defp track(state),
