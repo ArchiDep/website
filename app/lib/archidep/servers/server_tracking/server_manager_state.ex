@@ -1188,7 +1188,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp check_sudo_access, do: run_command(:check_access, "sudo ls", 10_000)
 
   defp test_ports,
-    do: run_command(:test_ports, "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000)
+    do:
+      run_command(
+        :test_ports,
+        "sudo /usr/local/sbin/test-ports #{Enum.join(@ports_to_check, " ")}",
+        10_000
+      )
 
   defp run_command(name, command, timeout),
     do:
