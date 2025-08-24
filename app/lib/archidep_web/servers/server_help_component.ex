@@ -108,7 +108,10 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
       </p>
     </.troubleshooting_note>
     <div
-      :if={@server.set_up_at != nil and @state != nil and connected?(@state.connection_state)}
+      :if={
+        @server.set_up_at != nil and @state != nil and connected?(@state.connection_state) and
+          not problems?(@state) and not busy?(@state)
+      }
       class="alert alert-success alert-soft"
     >
       <Heroicons.check_circle class="size-4" />
@@ -119,6 +122,12 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
     </div>
     """
   end
+
+  defp busy?(%ServerRealTimeState{current_job: nil}), do: false
+  defp busy?(%ServerRealTimeState{}), do: true
+
+  defp problems?(%ServerRealTimeState{problems: []}), do: false
+  defp problems?(%ServerRealTimeState{}), do: true
 
   defp problem?(%ServerRealTimeState{problems: problems}, type),
     do: Enum.any?(problems, fn problem -> elem(problem, 0) == type end)
