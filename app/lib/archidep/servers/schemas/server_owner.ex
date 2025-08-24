@@ -9,7 +9,6 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Errors.ServerOwnerNotFoundError
   alias ArchiDep.Servers.Schemas.ServerGroupMember
-  alias ArchiDep.Types
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
@@ -17,7 +16,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
-          roles: list(Types.role()),
+          root: boolean(),
           active: boolean(),
           group_member: ServerGroupMember.t() | nil | NotLoaded.t(),
           group_member_id: UUID.t() | nil,
@@ -32,7 +31,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
 
   schema "user_accounts" do
     field(:active, :boolean)
-    field(:roles, {:array, Ecto.Enum}, values: [:root, :student])
+    field(:root, :boolean)
     belongs_to(:group_member, ServerGroupMember, source: :student_id)
     field(:active_server_count, :integer)
     field(:active_server_count_lock, :integer)
@@ -42,8 +41,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
   end
 
   @spec active?(t(), DateTime.t()) :: boolean
-  def active?(%__MODULE__{active: true, roles: roles, group_member: nil}, _now),
-    do: Enum.member?(roles, :root)
+  def active?(%__MODULE__{active: true, root: true, group_member: nil}, _now), do: true
 
   def active?(
         %__MODULE__{active: true, group_member: group_member},
@@ -62,8 +60,8 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
       dynamic(
         [owner: o, owner_group_member: gm, owner_group: g],
         o.active and
-          ((:root in o.roles and is_nil(gm)) or
-             (:student in o.roles and not is_nil(gm) and gm.active and
+          ((o.root and is_nil(gm)) or
+             (not o.root and not is_nil(gm) and gm.active and
                 ^where_server_group_active(:owner_group, day)))
       )
 

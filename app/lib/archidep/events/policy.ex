@@ -7,13 +7,14 @@ defmodule ArchiDep.Events.Policy do
 
   @impl Policy
 
+  # Root users can perform any action.
   def authorize(
         :events,
-        :fetch_events,
-        %Authentication{roles: roles},
-        nil
+        _action,
+        %Authentication{root: true},
+        _params
       ),
-      do: Enum.member?(roles, :root)
+      do: true
 
   def authorize(_context, _action, _principal, _params), do: false
 end

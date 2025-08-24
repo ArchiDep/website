@@ -41,7 +41,7 @@
           <Heroicons.check_circle :if={@server.active} class="size-5 text-success" />
           <Heroicons.x_circle :if={not @server.active} class="size-5 text-error" />
         </dd>
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           <dt class="font-bold">{gettext("Group")}</dt>
           <dd class="col-span-1 md:col-span-2 xl:col-span-3">
             {@server.group.name}
@@ -65,7 +65,7 @@
         </button>
 
         <button
-          :if={has_role?(@auth, :root)}
+          :if={root?(@auth)}
           type="button"
           class="join-item btn btn-error"
           disabled={ServerRealTimeState.busy?(@state)}
@@ -100,7 +100,7 @@
   state={@state}
 />
 
-<%= if has_role?(@auth, :root) do %>
+<%= if root?(@auth) do %>
   <.live_component
     module={DeleteServerDialogLive}
     id={DeleteServerDialogLive.id(@server)}

@@ -97,7 +97,7 @@
               <span class="sr-only">Dashboard</span>
             </.link>
           </li>
-          <li :if={has_role?(@auth, :root)}>
+          <li :if={root?(@auth)}>
             <.link
               navigate={~p"/admin"}
               class={[
@@ -122,7 +122,7 @@
         </ul>
       </div>
       <ul class="w-full menu px-4 py-0">
-        <li :if={has_role?(@auth, :root) and String.starts_with?(@current_path, "/admin")}>
+        <li :if={root?(@auth) and String.starts_with?(@current_path, "/admin")}>
           <.link
             navigate={~p"/admin/classes"}
             class={[
@@ -134,7 +134,7 @@
             <span>{gettext("Classes")}</span>
           </.link>
         </li>
-        <li :if={has_role?(@auth, :root) and String.starts_with?(@current_path, "/admin")}>
+        <li :if={root?(@auth) and String.starts_with?(@current_path, "/admin")}>
           <.link
             navigate={~p"/admin/events"}
             class={[

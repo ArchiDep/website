@@ -10,122 +10,14 @@ defmodule ArchiDep.Course.Policy do
 
   @impl Policy
 
-  # Root users can validate classes.
+  # Root users can perform any action.
   def authorize(
         :course,
-        :validate_class,
-        %Authentication{roles: roles},
+        _action,
+        %Authentication{root: true},
         _params
       ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can create classes.
-  def authorize(
-        :course,
-        :create_class,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can list classes.
-  def authorize(
-        :course,
-        :list_classes,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can list active classes.
-  def authorize(
-        :course,
-        :list_active_classes,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can fetch a class.
-  def authorize(
-        :course,
-        :fetch_class,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can validate existing classes.
-  def authorize(
-        :course,
-        :validate_existing_class,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can update classes.
-  def authorize(
-        :course,
-        :update_class,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can update a class's expected server properties.
-  def authorize(
-        :course,
-        :update_expected_server_properties_for_class,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can delete classes.
-  def authorize(
-        :course,
-        :delete_class,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can validate students.
-  def authorize(
-        :course,
-        :validate_student,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can create students.
-  def authorize(
-        :course,
-        :create_student,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can import students.
-  def authorize(
-        :course,
-        :import_students,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can list students.
-  def authorize(
-        :course,
-        :list_students,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
+      do: true
 
   # Any user can fetch their authenticated student.
   def authorize(
@@ -136,51 +28,15 @@ defmodule ArchiDep.Course.Policy do
       ),
       do: true
 
-  # Root users can fetch a student in class.
-  def authorize(
-        :course,
-        :fetch_student_in_class,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can update students.
-  def authorize(
-        :course,
-        :update_student,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
-  # Root users can validate existing students.
-  def authorize(
-        :course,
-        :validate_existing_student,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
-
   # Students can confirm their own username.
   def authorize(
         :course,
         :configure_student,
-        %Authentication{principal_id: principal_id, roles: roles},
+        %Authentication{principal_id: principal_id, root: false},
         {%User{id: principal_id, student_id: student_id},
          %Student{id: student_id, user_id: principal_id}}
       ),
-      do: Enum.member?(roles, :student)
-
-  # Root users can delete students.
-  def authorize(
-        :course,
-        :delete_student,
-        %Authentication{roles: roles},
-        _params
-      ),
-      do: Enum.member?(roles, :root)
+      do: true
 
   def authorize(_context, _action, _principal, _params), do: false
 end

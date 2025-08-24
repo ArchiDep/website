@@ -1,9 +1,6 @@
 defmodule ArchiDep.Accounts.Types do
   @moduledoc false
 
-  # TODO: remove and replace by ArchiDep.Types
-  @type role :: :root | :student
-
   @type switch_edu_id_data :: %{
           email: String.t(),
           first_name: String.t() | nil,

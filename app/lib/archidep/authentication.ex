@@ -3,7 +3,6 @@ defmodule ArchiDep.Authentication do
   Represents an authenticated user session in the application.
   """
 
-  alias ArchiDep.Types
   alias Ecto.UUID
 
   @spec is_authentication(term) :: Macro.t()
@@ -12,7 +11,7 @@ defmodule ArchiDep.Authentication do
   @enforce_keys [
     :principal_id,
     :username,
-    :roles,
+    :root,
     :session_id,
     :session_token,
     :session_expires_at
@@ -20,7 +19,7 @@ defmodule ArchiDep.Authentication do
   defstruct [
     :principal_id,
     :username,
-    :roles,
+    :root,
     :session_id,
     :session_token,
     :session_expires_at,
@@ -30,7 +29,7 @@ defmodule ArchiDep.Authentication do
   @type t :: %__MODULE__{
           principal_id: UUID.t(),
           username: String.t(),
-          roles: list(Types.role()),
+          root: boolean(),
           session_id: UUID.t(),
           session_token: String.t(),
           session_expires_at: DateTime.t(),
@@ -40,9 +39,8 @@ defmodule ArchiDep.Authentication do
   @spec username(t()) :: String.t()
   def username(%__MODULE__{username: username}), do: username
 
-  @spec has_role?(t(), Types.role()) :: boolean
-  def has_role?(%__MODULE__{roles: roles}, role),
-    do: Enum.member?(roles, role)
+  @spec root?(t()) :: boolean
+  def root?(%__MODULE__{root: root}), do: root
 
   @spec principal_id(t()) :: String.t()
   def principal_id(%__MODULE__{principal_id: principal_id}), do: principal_id

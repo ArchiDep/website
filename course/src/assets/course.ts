@@ -28,13 +28,11 @@ init({
 
 window['logOut'] = logOut;
 
-const roleType = t.union([t.literal('root'), t.literal('student')]);
-
 const sessionType = t.readonly(
   t.exact(
     t.type({
       username: t.string,
-      roles: t.readonlyArray(roleType),
+      root: t.boolean,
       impersonating: t.boolean,
       sessionExpiresAt: iso8601DateTime
     })
@@ -54,7 +52,7 @@ const decodedCachedSession = pipe(
 );
 
 const me = signal<Session | undefined>(decodedCachedSession);
-const root = computed(() => me.value?.roles.includes('root'));
+const root = computed(() => me.value?.root === true);
 
 const $sidebarAdminItem = required(
   document.getElementById('sidebar-admin-item'),

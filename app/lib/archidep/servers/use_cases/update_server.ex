@@ -70,7 +70,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   end
 
   defp update_server_changeset(auth, server, data, owner) do
-    if has_role?(auth, :root) do
+    if root?(auth) do
       Server.update(server, data)
     else
       Server.update_group_member_server(server, data, owner)

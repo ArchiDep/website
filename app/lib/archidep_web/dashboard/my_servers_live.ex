@@ -17,7 +17,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
     [servers, groups] =
       Task.await_many([
         Task.async(fn -> Servers.list_my_servers(auth) end),
-        if(has_role?(auth, :root),
+        if(root?(auth),
           do: Task.async(fn -> Servers.list_server_groups(auth) end),
           else: Task.completed(nil)
         )

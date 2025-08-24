@@ -3,7 +3,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
 
   use ArchiDep, :use_case
 
-  import Authentication, only: [has_role?: 2]
+  import Authentication, only: [root?: 1]
   alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.PubSub
@@ -44,7 +44,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
   end
 
   defp new_server(auth, data, owner) do
-    if has_role?(auth, :root) do
+    if root?(auth) do
       Server.new(data, owner)
     else
       Server.new_group_member_server(data, owner)

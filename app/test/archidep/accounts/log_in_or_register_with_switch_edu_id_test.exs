@@ -40,9 +40,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              )
 
     auth
-    |> assert_auth("root", :root)
+    |> assert_auth("root", true)
     |> assert_registered_event(metadata, "root", @root_user_email, switch_edu_id_data)
-    |> assert_user_session(auth, "root", @root_user_email, :root)
+    |> assert_user_session(auth, "root", @root_user_email, true)
   end
 
   test "register a new student user account with Switch edu-ID", %{
@@ -70,9 +70,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              )
 
     auth
-    |> assert_auth("bob", :student)
+    |> assert_auth("bob", false)
     |> assert_registered_event(metadata, "bob", "bob@archidep.ch", switch_edu_id_data, student)
-    |> assert_user_session(auth, "bob", "bob@archidep.ch", :student, student)
+    |> assert_user_session(auth, "bob", "bob@archidep.ch", false, student)
   end
 
   test "an unknown user cannot register even if their Switch edu-ID account is valid", %{
@@ -119,7 +119,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert [] = Repo.all(UserSession)
   end
 
-  defp assert_auth(auth, username, role) do
+  defp assert_auth(auth, username, root) do
     assert %Authentication{
              principal_id: user_account_id,
              session_id: session_id,
@@ -130,7 +130,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert auth == %Authentication{
              principal_id: user_account_id,
              username: username,
-             roles: [role],
+             root: root,
              session_id: session_id,
              session_token: session_token,
              session_expires_at: session_expires_at,
@@ -210,7 +210,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
          },
          username,
          email,
-         role,
+         root,
          student \\ nil
        ) do
     assert [
@@ -246,7 +246,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                __meta__: loaded(UserAccount, "user_accounts"),
                id: user_account_id,
                username: username,
-               roles: [role],
+               root: root,
                active: true,
                switch_edu_id: %SwitchEduId{
                  __meta__: loaded(SwitchEduId, "switch_edu_ids"),

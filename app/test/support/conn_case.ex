@@ -79,7 +79,7 @@ defmodule ArchiDepWeb.Support.ConnCase do
       Factory.build(:authentication,
         principal_id: session.user_account_id,
         username: session.user_account.username,
-        roles: session.user_account.roles,
+        root: session.user_account.root,
         session_id: session.id,
         session_token: session_token,
         impersonated_id: session.impersonated_user_account_id

@@ -61,7 +61,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     %Authentication{
       principal_id: principal.id,
       username: principal.username,
-      roles: principal.roles,
+      root: principal.root,
       session_id: id,
       session_token: token,
       session_expires_at: session_expires_at,

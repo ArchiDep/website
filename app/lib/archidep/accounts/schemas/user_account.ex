@@ -10,13 +10,12 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
-  alias ArchiDep.Types
 
   @derive {Inspect,
            only: [
              :id,
              :username,
-             :roles,
+             :root,
              :active,
              :switch_edu_id_id,
              :preregistered_user_id,
@@ -29,7 +28,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   @type t :: %__MODULE__{
           id: UUID.t(),
           username: String.t(),
-          roles: list(Types.role()),
+          root: boolean(),
           active: boolean(),
           switch_edu_id: SwitchEduId.t() | NotLoaded.t(),
           switch_edu_id_id: UUID.t(),
@@ -44,7 +43,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
   schema "user_accounts" do
     field(:username, :string)
-    field(:roles, {:array, Ecto.Enum}, values: [:root, :student])
+    field(:root, :boolean)
     field(:active, :boolean)
     belongs_to(:switch_edu_id, SwitchEduId)
     belongs_to(:preregistered_user, PreregisteredUser, source: :student_id)
@@ -54,20 +53,15 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   end
 
   @spec active?(t(), DateTime.t()) :: boolean
-  def active?(%__MODULE__{active: active, roles: roles, preregistered_user: nil}, _now),
-    do: active and Enum.member?(roles, :root)
+  def active?(%__MODULE__{active: active, root: true, preregistered_user: nil}, _now), do: active
 
-  @spec active?(t(), DateTime.t()) :: boolean
   def active?(
-        %__MODULE__{active: active, roles: roles, preregistered_user: preregistered_user},
+        %__MODULE__{active: active, root: false, preregistered_user: preregistered_user},
         now
       ),
-      do:
-        active and
-          (Enum.member?(roles, :student) and PreregisteredUser.active?(preregistered_user, now))
+      do: active and PreregisteredUser.active?(preregistered_user, now)
 
-  @spec student?(t()) :: boolean
-  def student?(%__MODULE__{roles: roles}), do: :student in roles
+  def active?(_account, _now), do: false
 
   @spec count_active_users(DateTime.t()) :: non_neg_integer
   def count_active_users(now),
@@ -90,8 +84,8 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     do:
       dynamic(
         [user_account: ua, preregistered_user: pu, user_group: ug],
-        (ua.active and (:root in ua.roles and is_nil(pu))) or
-          (:student in ua.roles and not is_nil(pu) and pu.active and
+        (ua.active and (ua.root and is_nil(pu))) or
+          (not ua.root and not is_nil(pu) and pu.active and
              ^where_user_group_active(now))
       )
 
@@ -152,11 +146,11 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
             0,
             @max_username_length
           ),
-        roles: [:root]
+        root: true
       },
       [
         :username,
-        :roles
+        :root
       ]
     )
     |> change(
@@ -187,11 +181,11 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
             0,
             @max_username_length
           ),
-        roles: [:student]
+        root: false
       },
       [
         :username,
-        :roles
+        :root
       ]
     )
     |> change(
@@ -237,12 +231,11 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       |> validate_required([
         :id,
         :username,
-        :roles,
+        :root,
         :version,
         :created_at,
         :updated_at
       ])
       |> validate_length(:username, max: @max_username_length)
-      |> validate_subset(:roles, [:root, :student])
       |> unique_constraint(:username, name: :user_accounts_unique_username_index)
 end

@@ -3,16 +3,15 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
   Authentication-related helpers for the web application.
   """
 
-  alias ArchiDep.Accounts.Types
   alias ArchiDep.Authentication
 
   @spec logged_in?(Authentication.t()) :: boolean()
   def logged_in?(nil), do: false
   def logged_in?(_auth), do: true
 
-  @spec has_role?(Authentication.t(), Types.role()) :: boolean()
-  def has_role?(nil, _role), do: false
-  def has_role?(auth, role), do: Authentication.has_role?(auth, role)
+  @spec root?(Authentication.t()) :: boolean()
+  def root?(nil), do: false
+  def root?(auth), do: Authentication.root?(auth)
 
   @spec can_impersonate?(Authentication.t(), struct()) :: boolean()
   def can_impersonate?(nil, _user_account), do: false

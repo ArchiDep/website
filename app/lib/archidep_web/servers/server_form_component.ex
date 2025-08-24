@@ -119,7 +119,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:username]} />
 
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           <label class="fieldset-label mt-2">{gettext("Application username")}</label>
           <input
             type="text"
@@ -145,7 +145,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         />
         <.errors_for field={@form[:ssh_port]} />
       </fieldset>
-      <%= if has_role?(@auth, :root) do %>
+      <%= if root?(@auth) do %>
         <!-- Expected server properties -->
         <fieldset class="fieldset mt-4 w-full bg-base-300 border-base-200 rounded-box border p-4">
           <legend class="fieldset-legend">Expected properties</legend>

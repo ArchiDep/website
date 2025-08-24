@@ -7,7 +7,6 @@ defmodule ArchiDep.Support.Factory do
 
   alias ArchiDep.Authentication
   alias ArchiDep.ClientMetadata
-  alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.NetFactory
 
   @sample_user_agents [
@@ -27,7 +26,7 @@ defmodule ArchiDep.Support.Factory do
         sequence(:authentication_username, &"auth-user-#{&1}")
       end)
 
-    {roles, attrs!} = Map.pop_lazy(attrs!, :roles, &AccountsFactory.role/0)
+    {root, attrs!} = Map.pop_lazy(attrs!, :root, &bool/0)
     {session_id, attrs!} = Map.pop_lazy(attrs!, :session_id, &UUID.generate/0)
 
     {session_token, attrs!} =
@@ -46,7 +45,7 @@ defmodule ArchiDep.Support.Factory do
     %Authentication{
       principal_id: principal_id,
       username: username,
-      roles: roles,
+      root: root,
       session_id: session_id,
       session_token: session_token,
       session_expires_at: session_expires_at,

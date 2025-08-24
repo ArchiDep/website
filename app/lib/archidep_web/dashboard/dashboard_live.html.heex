@@ -27,7 +27,7 @@
 
 <div
   :if={
-    (has_role?(@auth, :root) or
+    (root?(@auth) or
        (@student != nil and Student.can_create_servers?(@student) and @student.username_confirmed)) and
       Enum.empty?(@servers)
   }

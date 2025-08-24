@@ -9,6 +9,24 @@ defmodule ArchiDep.Accounts.Policy do
 
   @impl Policy
 
+  # Root users can impersonate any user except themselves.
+  def authorize(
+        :accounts,
+        :impersonate,
+        %Authentication{principal_id: principal_id, root: true},
+        %UserAccount{id: impersonated_user_id}
+      ),
+      do: principal_id != impersonated_user_id
+
+  # Root users can perform any other action.
+  def authorize(
+        :accounts,
+        _action,
+        %Authentication{root: true},
+        _params
+      ),
+      do: true
+
   # Any authenticated user can fetch their own active sessions.
   def authorize(
         :accounts,
@@ -17,16 +35,6 @@ defmodule ArchiDep.Accounts.Policy do
         _params
       ),
       do: true
-
-  # Root users can impersonate any user except themselves.
-  def authorize(
-        :accounts,
-        :impersonate,
-        %Authentication{principal_id: principal_id, roles: roles},
-        %UserAccount{id: impersonated_user_id}
-      )
-      when principal_id != impersonated_user_id,
-      do: Enum.member?(roles, :root)
 
   # A user who is currently impersonating another user can stop impersonating.
   def authorize(
@@ -49,15 +57,6 @@ defmodule ArchiDep.Accounts.Policy do
         }
       ),
       do: true
-
-  # A root user can delete any user's session.
-  def authorize(
-        :accounts,
-        :delete_session,
-        %Authentication{roles: roles},
-        %UserSession{}
-      ),
-      do: Enum.member?(roles, :root)
 
   def authorize(_context, _action, _principal, _params), do: false
 end

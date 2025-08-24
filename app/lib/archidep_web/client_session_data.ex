@@ -7,12 +7,12 @@ defmodule ArchiDepWeb.ClientSessionData do
   alias Ecto.UUID
 
   @derive Jason.Encoder
-  @enforce_keys [:username, :roles, :impersonating, :sessionId, :sessionExpiresAt]
-  defstruct [:username, :roles, :impersonating, :sessionId, :sessionExpiresAt]
+  @enforce_keys [:username, :root, :impersonating, :sessionId, :sessionExpiresAt]
+  defstruct [:username, :root, :impersonating, :sessionId, :sessionExpiresAt]
 
   @type t :: %__MODULE__{
           username: String.t(),
-          roles: [String.t()],
+          root: boolean(),
           impersonating: boolean(),
           sessionId: UUID.t(),
           sessionExpiresAt: String.t()
@@ -21,14 +21,14 @@ defmodule ArchiDepWeb.ClientSessionData do
   @spec new(Authentication.t()) :: t()
   def new(%Authentication{
         username: username,
-        roles: roles,
+        root: root,
         session_id: session_id,
         session_expires_at: session_expires_at,
         impersonated_id: impersonated_id
       }) do
     %__MODULE__{
       username: username,
-      roles: Enum.map(roles, &Atom.to_string/1),
+      root: root,
       impersonating: impersonated_id != nil,
       sessionId: session_id,
       sessionExpiresAt: DateTime.to_iso8601(session_expires_at)

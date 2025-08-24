@@ -295,7 +295,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div role="alert" class="alert alert-error alert-soft">
       <Heroicons.exclamation_circle class="size-4" />
       <span>
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           {gettext("Ansible playbook {ss}{cs}{playbook}{ce}{se} failed with state {cs}{state}{ce}",
             playbook: @playbook |> html_escape() |> safe_to_string(),
             state: @ansible_run_state |> inspect() |> html_escape() |> safe_to_string(),
@@ -318,7 +318,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         <% end %>
       </span>
       <button
-        :if={@on_retry_operation != nil and @connected and has_role?(@auth, :root)}
+        :if={@on_retry_operation != nil and @connected and root?(@auth)}
         type="button"
         class="btn btn-xs btn-warning flex items-center gap-x-1 tooltip"
         data-tip="Retry"
@@ -361,7 +361,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div role="alert" class="alert alert-error alert-soft">
       <Heroicons.exclamation_circle class="size-4" />
       <span>
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           {gettext("Authentication failed for application user {cs}{username}{ce}",
             username: @username |> html_escape() |> safe_to_string(),
             cs: "<code>",
@@ -449,7 +449,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       <Heroicons.exclamation_triangle class="size-4" />
       <div>
         <span>{gettext("Could not gather facts from the server")}</span>
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           <div>
             {inspect(@reason)}
           </div>
@@ -474,7 +474,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           )
           |> raw()}
         </span>
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           <div>
             {inspect(@stderr)}
           </div>
@@ -509,10 +509,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         <ul class="list-disc list-inside">
           <li :for={{port, message, reason} <- @port_problem_details}>
             {gettext("Port {port}: {message}", port: port, message: message)}
-            <div
-              :if={reason != nil and has_role?(@auth, :root)}
-              class="font-mono text-sm opacity-90 mt-1 mb-2"
-            >
+            <div :if={reason != nil and root?(@auth)} class="font-mono text-sm opacity-90 mt-1 mb-2">
               {inspect(reason)}
             </div>
           </li>
@@ -542,7 +539,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       <Heroicons.exclamation_triangle class="size-4" />
       <div>
         <span>{gettext("Could not check open ports on the server")}</span>
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           <div>
             {inspect(@reason)}
           </div>
@@ -567,7 +564,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           )
           |> raw()}
         </span>
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           <div>
             {inspect(@reason)}
           </div>
@@ -585,7 +582,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       <Heroicons.exclamation_circle class="size-4" />
       <div>
         <span>{gettext("Could not reconnect to server after setup")}</span>
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           <div>
             {inspect(@reason)}
           </div>
@@ -601,7 +598,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       <Heroicons.exclamation_circle class="size-4" />
       <div>
         <span>{gettext("Oops, an unexpected problem occurred")}</span>
-        <%= if has_role?(@auth, :root) do %>
+        <%= if root?(@auth) do %>
           <div>
             {inspect(@problem)}
           </div>
@@ -737,7 +734,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     >
       {gettext("Will retry in {count}s", count: @remaining_seconds)}
     </span>
-    <%= if has_role?(@auth, :root) do %>
+    <%= if root?(@auth) do %>
       ({gettext("attempt #\{count\}", count: @retry + 1)})
     <% end %>
     """

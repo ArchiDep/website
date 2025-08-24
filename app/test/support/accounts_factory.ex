@@ -12,8 +12,6 @@ defmodule ArchiDep.Support.AccountsFactory do
   alias ArchiDep.Support.Factory
   alias ArchiDep.Support.NetFactory
 
-  @roles [:root, :student]
-
   @spec client_ip_address() :: String.t()
   def client_ip_address, do: NetFactory.ip_address() |> :inet.ntoa() |> List.to_string()
 
@@ -112,7 +110,7 @@ defmodule ArchiDep.Support.AccountsFactory do
         sequence(:user_account_username, &"user-account-#{&1}")
       end)
 
-    {roles, attrs!} = Map.pop_lazy(attrs!, :roles, &roles/0)
+    {root, attrs!} = Map.pop_lazy(attrs!, :root, &bool/0)
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
 
     {switch_edu_id, attrs!} =
@@ -125,7 +123,7 @@ defmodule ArchiDep.Support.AccountsFactory do
     %UserAccount{
       id: id,
       username: username,
-      roles: roles,
+      root: root,
       active: active,
       switch_edu_id: switch_edu_id,
       switch_edu_id_id: switch_edu_id.id,
@@ -199,10 +197,4 @@ defmodule ArchiDep.Support.AccountsFactory do
       impersonated_user_account_id: impersonated_user_account_id
     }
   end
-
-  @spec roles() :: list(ArchiDep.Types.role())
-  def roles, do: [role()]
-
-  @spec role() :: ArchiDep.Types.role()
-  def role, do: Enum.random(@roles)
 end

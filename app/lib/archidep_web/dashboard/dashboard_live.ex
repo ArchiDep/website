@@ -24,7 +24,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       Task.await_many([
         Task.async(fn -> fetch_student(auth) end),
         Task.async(fn -> Servers.list_my_active_servers(auth) end),
-        if(has_role?(auth, :root),
+        if(root?(auth),
           do: Task.async(fn -> Servers.list_server_groups(auth) end),
           else: Task.completed(nil)
         )
@@ -271,10 +271,10 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   defp fetch_student(auth) do
     {:ok, student} =
-      if has_role?(auth, :student) do
-        Course.fetch_authenticated_student(auth)
-      else
+      if root?(auth) do
         {:ok, nil}
+      else
+        Course.fetch_authenticated_student(auth)
       end
 
     student
