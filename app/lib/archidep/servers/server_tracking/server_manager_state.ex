@@ -456,17 +456,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
                 problems: detect_server_properties_mismatches(problems, updated_server)
             }
           else
-            actions =
-              if updated_server.open_ports_checked_at == nil,
-                do: [test_ports(), update_tracking()],
-                else: [update_tracking()]
-
-            %__MODULE__{
+            maybe_test_ports(%__MODULE__{
               state
               | server: updated_server,
-                actions: actions,
+                actions: [update_tracking()],
                 problems: detect_server_properties_mismatches(problems, updated_server)
-            }
+            })
           end
 
         {:error, reason} ->
@@ -1269,6 +1264,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         %__MODULE__{state | tasks: Map.delete(tasks, key), actions: [{:demonitor, ref} | actions]}
     end
   end
+
+  defp maybe_test_ports(
+         %__MODULE__{server: %Server{open_ports_checked_at: nil}, actions: actions} = state
+       ),
+       do: %__MODULE__{state | actions: [test_ports() | actions]}
+
+  defp maybe_test_ports(%__MODULE__{} = state), do: state
 
   defp gather_facts,
     do:
