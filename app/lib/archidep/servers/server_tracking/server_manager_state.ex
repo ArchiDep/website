@@ -1038,6 +1038,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       [:notify_server_offline] ++
         if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []) ++
         if(state.load_average_timer, do: [{:cancel_timer, state.load_average_timer}], else: []) ++
+        Enum.map(state.tasks, fn {_task_name, task_ref} -> {:demonitor, task_ref} end) ++
         [update_tracking()]
 
     %__MODULE__{
@@ -1045,6 +1046,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       | connection_state: disconnected_state(time: DateTime.utc_now()),
         actions: actions,
         problems: drop_connected_problems(state.problems),
+        tasks: %{},
         retry_timer: nil,
         load_average_timer: nil
     }
