@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents
   import ArchiDepWeb.Servers.ServerHelpComponent
+  import ArchiDepWeb.Servers.ServerRetryHandlers
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
@@ -63,11 +64,28 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   end
 
   @impl LiveView
-  def handle_event("retry_connecting", %{"server_id" => server_id}, socket)
-      when is_binary(server_id) do
-    :ok = Servers.retry_connecting(socket.assigns.auth, server_id)
-    noreply(socket)
-  end
+  def handle_event(
+        "retry_connecting",
+        %{"server_id" => server_id},
+        socket
+      ),
+      do: handle_retry_connecting_event(socket, server_id)
+
+  @impl LiveView
+  def handle_event(
+        "retry_operation",
+        %{"server_id" => server_id, "operation" => "ansible-playbook", "playbook" => playbook},
+        socket
+      ),
+      do: handle_retry_ansible_playbook_event(socket, server_id, playbook)
+
+  @impl LiveView
+  def handle_event(
+        "retry_operation",
+        %{"server_id" => server_id, "operation" => "check-open-ports"},
+        socket
+      ),
+      do: handle_retry_checking_open_ports_event(socket, server_id)
 
   @impl LiveView
   def handle_info(

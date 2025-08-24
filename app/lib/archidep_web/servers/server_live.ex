@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
 
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents
+  import ArchiDepWeb.Servers.ServerRetryHandlers
   alias ArchiDep.Servers
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
@@ -48,75 +49,25 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   def handle_event(
         "retry_connecting",
         %{"server_id" => server_id},
-        %Socket{assigns: %{auth: auth, server: %Server{id: server_id}}} = socket
-      ) do
-    :ok = Servers.retry_connecting(auth, server_id)
-    noreply(socket)
-  end
+        %Socket{assigns: %{server: %Server{id: server_id}}} = socket
+      ),
+      do: handle_retry_connecting_event(socket, server_id)
 
   @impl LiveView
   def handle_event(
         "retry_operation",
         %{"server_id" => server_id, "operation" => "ansible-playbook", "playbook" => playbook},
-        %Socket{assigns: %{auth: auth, server: %Server{id: server_id}}} = socket
-      ) do
-    case Servers.retry_ansible_playbook(auth, server_id, playbook) do
-      :ok ->
-        noreply(socket)
-
-      {:error, :server_not_connected} ->
-        socket
-        |> put_notification(
-          Message.new(
-            :error,
-            gettext("Cannot retry because the server is not connected.")
-          )
-        )
-        |> noreply()
-
-      {:error, :server_busy} ->
-        socket
-        |> put_notification(
-          Message.new(
-            :error,
-            gettext("Cannot retry because the server is busy. Please try again later.")
-          )
-        )
-        |> noreply()
-    end
-  end
+        %Socket{assigns: %{server: %Server{id: server_id}}} = socket
+      ),
+      do: handle_retry_ansible_playbook_event(socket, server_id, playbook)
 
   @impl LiveView
   def handle_event(
         "retry_operation",
         %{"server_id" => server_id, "operation" => "check-open-ports"},
-        %Socket{assigns: %{auth: auth, server: %Server{id: server_id}}} = socket
-      ) do
-    case Servers.retry_checking_open_ports(auth, server_id) do
-      :ok ->
-        noreply(socket)
-
-      {:error, :server_not_connected} ->
-        socket
-        |> put_notification(
-          Message.new(
-            :error,
-            gettext("Cannot retry because the server is not connected.")
-          )
-        )
-        |> noreply()
-
-      {:error, :server_busy} ->
-        socket
-        |> put_notification(
-          Message.new(
-            :error,
-            gettext("Cannot retry because the server is busy. Please try again later.")
-          )
-        )
-        |> noreply()
-    end
-  end
+        %Socket{assigns: %{server: %Server{id: server_id}}} = socket
+      ),
+      do: handle_retry_checking_open_ports_event(socket, server_id)
 
   @impl LiveView
   def handle_info(

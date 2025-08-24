@@ -63,6 +63,7 @@
       class="cursor-pointer"
       on_click={JS.navigate(~p"/servers/#{server.id}")}
       on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
+      on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
     />
 
     <.server_help auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} />
