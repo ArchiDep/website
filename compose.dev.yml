@@ -28,6 +28,7 @@ services:
       ARCHIDEP_AUTH_SWITCH_EDU_ID_ROOT_USERS:
       ARCHIDEP_GIT_CWD: /var/lib/archidep/git
       ARCHIDEP_REPO_URL: ecto://archidep:archidep@db:5432/archidep
+      ARCHIDEP_SERVERS_API_BASE_URL: http://localhost:42000/api
       ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE: '/etc/archidep/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}'
       ARCHIDEP_SERVERS_SSH_PUBLIC_KEY:
       ARCHIDEP_WEB_ENDPOINT_HTTP_IP: 0.0.0.0

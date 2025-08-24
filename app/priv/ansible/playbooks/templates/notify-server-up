@@ -11,4 +11,4 @@ token="$(head -n 1 "${token_file}")"
 curl -vv -X POST \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $token" \
-  "http://localhost:42000/api/callbacks/servers/${server_id}/up"
+  "{{api_base_url}}/callbacks/servers/${server_id}/up"

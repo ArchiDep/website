@@ -8,6 +8,7 @@ config :archidep,
     metrics_poll_rate: 10 * 60 * 1000
   ],
   servers: [
+    api_base_url: "http://localhost:42000/api",
     connection_timeout: 5_000
   ]
 

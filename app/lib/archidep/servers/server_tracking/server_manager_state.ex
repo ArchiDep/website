@@ -1022,7 +1022,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         %__MODULE__{connection_state: connected_state(connection_pid: connection_pid)} = state,
         connection_pid,
         reason
-      ) do
+      ),
+      do: disconnect(state, reason)
+
+  def connection_crashed(
+        %__MODULE__{connection_state: disconnected_state()} = state,
+        _connection_pid,
+        reason
+      ),
+      do: disconnect(state, reason)
+
+  defp disconnect(state, reason) do
     server = state.server
     Logger.info("Connection to server #{server.id} crashed because: #{inspect(reason)}")
 
@@ -1439,12 +1449,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     token = Token.sign(server.secret_key, "server auth", server.id)
 
     Tracker.track_playbook!(playbook, server, username, %{
+      "api_base_url" => api_base_url(),
       "app_user_name" => server.app_username,
       "app_user_authorized_key" => ssh_public_key(),
       "server_id" => server.id,
       "server_token" => token
     })
   end
+
+  defp api_base_url,
+    do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:api_base_url)
 
   defp ssh_public_key,
     do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:ssh_public_key)

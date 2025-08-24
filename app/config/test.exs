@@ -5,6 +5,7 @@ config :archidep,
     root_users: [switch_edu_id: ["root@archidep.ch"]]
   ],
   servers: [
+    api_base_url: "http://localhost:42000/api",
     connection_timeout: 5_000,
     ssh_private_key_file: Path.expand("../test/priv/ssh/id_ed25519", __DIR__),
     ssh_public_key:

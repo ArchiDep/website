@@ -116,10 +116,23 @@ defmodule ArchiDep.Config do
         default_config \\ Application.fetch_env!(:archidep, :servers)
       ) do
     [
+      api_base_url: api_base_url(env, default_config),
       ssh_private_key_file: ssh_private_key_file(env, default_config),
       ssh_public_key: ssh_public_key(env, default_config)
     ]
   end
+
+  defp api_base_url(env, default_config),
+    do:
+      "API base URL"
+      |> ConfigValue.new()
+      |> ConfigValue.format(
+        ~S|It must be the base URL of the ArchiDep API, e.g. "https://archidep.ch/api".|
+      )
+      |> ConfigValue.env_var(env, "ARCHIDEP_SERVERS_API_BASE_URL")
+      |> ConfigValue.default_to(default_config, :api_base_url)
+      |> ConfigValue.validate(&validate_http_url!/1)
+      |> ConfigValue.required_value()
 
   defp ssh_private_key_file(env, default_config),
     do:
@@ -240,6 +253,17 @@ defmodule ArchiDep.Config do
     case URI.new(value) do
       {:ok, %URI{host: host, path: path, scheme: "ecto"}}
       when is_binary(host) and is_binary(path) and path != "/" ->
+        true
+
+      _anything_else ->
+        false
+    end
+  end
+
+  defp validate_http_url!(value) when is_binary(value) do
+    case URI.new(value) do
+      {:ok, %URI{scheme: scheme, host: host, path: path}}
+      when scheme in ["http", "https"] and is_binary(host) and is_binary(path) and path != "/" ->
         true
 
       _anything_else ->

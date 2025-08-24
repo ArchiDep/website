@@ -1,0 +1,12 @@
+[Unit]
+Description=Notify the ArchiDep application that this server is up
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/archidep-notify-server-up
+Restart=no
+RemainAfterExit=false
+
+[Install]
+WantedBy=multi-user.target
