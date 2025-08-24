@@ -453,13 +453,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
                 problems: detect_server_properties_mismatches(problems, updated_server)
             }
           else
+            actions =
+              if updated_server.open_ports_checked_at == nil,
+                do: [test_ports(), update_tracking()],
+                else: [update_tracking()]
+
             %__MODULE__{
               state
               | server: updated_server,
-                actions: [
-                  test_ports(),
-                  update_tracking()
-                ],
+                actions: actions,
                 problems: detect_server_properties_mismatches(problems, updated_server)
             }
           end
@@ -546,6 +548,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def handle_task_result(
         %__MODULE__{
           connection_state: connected_state(),
+          server: server,
           tasks: %{check_open_ports: check_open_ports_ref}
         } = state,
         check_open_ports_ref,
@@ -554,7 +557,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     new_state =
       case result do
         :ok ->
-          state
+          updated_server = Server.mark_open_ports_checked!(server)
+
+          %__MODULE__{
+            state
+            | server: updated_server,
+              problems:
+                Enum.reject(
+                  state.problems,
+                  &(match?({:server_port_testing_script_failed, _details}, &1) or
+                      match?({:server_open_ports_check_failed, _details}, &1))
+                ),
+              actions: [update_tracking()]
+          }
 
         {:error, port_problems} ->
           %__MODULE__{

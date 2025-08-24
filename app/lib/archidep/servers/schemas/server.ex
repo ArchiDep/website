@@ -46,6 +46,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           version: pos_integer(),
           created_at: DateTime.t(),
           set_up_at: DateTime.t() | nil,
+          open_ports_checked_at: DateTime.t() | nil,
           updated_at: DateTime.t()
         }
 
@@ -65,6 +66,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:set_up_at, :utc_datetime_usec)
+    field(:open_ports_checked_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
   end
 
@@ -327,6 +329,16 @@ defmodule ArchiDep.Servers.Schemas.Server do
 
     server
     |> change(set_up_at: now)
+    |> optimistic_lock(:version)
+    |> Repo.update!()
+  end
+
+  @spec mark_open_ports_checked!(t()) :: t()
+  def mark_open_ports_checked!(%__MODULE__{open_ports_checked_at: nil} = server) do
+    now = DateTime.utc_now()
+
+    server
+    |> change(open_ports_checked_at: now)
     |> optimistic_lock(:version)
     |> Repo.update!()
   end
