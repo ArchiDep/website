@@ -35,4 +35,20 @@ defmodule ArchiDep.Servers.UseCases.ManageServer do
         {:error, :server_not_found}
     end
   end
+
+  @spec retry_checking_open_ports(Authentication.t(), UUID.t()) ::
+          :ok
+          | {:error, :server_not_found}
+          | {:error, :server_not_connected}
+          | {:error, :server_busy}
+  def retry_checking_open_ports(auth, server_id) do
+    with :ok <- validate_uuid(server_id, :server_not_found),
+         {:ok, server} <- Server.fetch_server(server_id),
+         :ok <- authorize(auth, Policy, :servers, :retry_checking_open_ports, server) do
+      ServerManager.retry_checking_open_ports(server)
+    else
+      {:error, {:access_denied, :servers, :retry_checking_open_ports}} ->
+        {:error, :server_not_found}
+    end
+  end
 end

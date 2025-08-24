@@ -35,5 +35,6 @@ defmodule ArchiDep.Servers do
   # Connected servers
   delegate(&Behaviour.retry_connecting/2)
   delegate(&Behaviour.retry_ansible_playbook/3)
+  delegate(&Behaviour.retry_checking_open_ports/2)
   delegate(&Behaviour.notify_server_up/2)
 end

@@ -146,6 +146,14 @@ defmodule ArchiDep.Servers.Behaviour do
   )
 
   @doc """
+  Retry checking the open ports on a server.
+  """
+  callback(
+    retry_checking_open_ports(auth: Authentication.t(), server_id: UUID.t()) ::
+      :ok | {:error, :server_not_found} | {:error, :server_not_connected} | {:error, :server_busy}
+  )
+
+  @doc """
   Receive a notification that a server is up. This is used to automatically
   attempt to connect to a server as soon as it boots.
   """

@@ -317,20 +317,19 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           |> raw()}
         <% end %>
       </span>
-      <%= if @on_retry_operation != nil and @connected and has_role?(@auth, :root) do %>
-        <button
-          type="button"
-          class="btn btn-xs btn-warning flex items-center gap-x-1 tooltip"
-          data-tip="Retry"
-          disabled={@current_job != nil}
-          phx-click={@on_retry_operation}
-          phx-value-operation="ansible-playbook"
-          phx-value-playbook={@playbook}
-        >
-          <Heroicons.arrow_path class={["size-4", if(@retrying, do: "animate-spin")]} />
-          <span class="sr-only">{gettext("Retry")}</span>
-        </button>
-      <% end %>
+      <button
+        :if={@on_retry_operation != nil and @connected and has_role?(@auth, :root)}
+        type="button"
+        class="btn btn-xs btn-warning flex items-center gap-x-1 tooltip"
+        data-tip="Retry"
+        disabled={@current_job != nil}
+        phx-click={@on_retry_operation}
+        phx-value-operation="ansible-playbook"
+        phx-value-playbook={@playbook}
+      >
+        <Heroicons.arrow_path class={["size-4", if(@retrying, do: "animate-spin")]} />
+        <span class="sr-only">{gettext("Retry")}</span>
+      </button>
     </div>
     """
   end
@@ -495,7 +494,12 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           {port, gettext("error"), unexpected_reason}
       end)
 
-    assigns = assign(assigns, :port_problem_details, port_problem_details)
+    retrying = assigns.current_job == :checking_open_ports
+
+    assigns =
+      assigns
+      |> assign(:port_problem_details, port_problem_details)
+      |> assign(:retrying, retrying)
 
     ~H"""
     <div role="alert" class="alert alert-warning alert-soft">
@@ -514,6 +518,18 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           </li>
         </ul>
       </div>
+      <button
+        :if={@on_retry_operation != nil and @connected}
+        type="button"
+        class="btn btn-xs btn-warning flex items-center gap-x-1 tooltip"
+        data-tip="Retry"
+        disabled={@current_job != nil}
+        phx-click={@on_retry_operation}
+        phx-value-operation="check-open-ports"
+      >
+        <Heroicons.arrow_path class={["size-4", if(@retrying, do: "animate-spin")]} />
+        <span class="sr-only">{gettext("Retry")}</span>
+      </button>
     </div>
     """
   end

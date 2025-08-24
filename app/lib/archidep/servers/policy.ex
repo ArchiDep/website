@@ -157,6 +157,24 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: Enum.member?(roles, :root)
 
+  # Server group members and root users can retry checking open ports on their own servers.
+  def authorize(
+        :servers,
+        :retry_checking_open_ports,
+        %Authentication{principal_id: principal_id, roles: roles},
+        %Server{owner_id: principal_id}
+      ),
+      do: Enum.member?(roles, :student) or Enum.member?(roles, :root)
+
+  # Root users can retry checking open ports on any server.
+  def authorize(
+        :servers,
+        :retry_checking_open_ports,
+        %Authentication{roles: roles},
+        _params
+      ),
+      do: Enum.member?(roles, :root)
+
   # Server group members and root users can validate their own existing servers.
   def authorize(
         :servers,

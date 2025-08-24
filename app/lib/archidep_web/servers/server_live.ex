@@ -65,6 +65,35 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   end
 
   @impl LiveView
+  def handle_event(
+        "retry_operation",
+        %{"server_id" => server_id, "operation" => "check-open-ports"},
+        %Socket{assigns: %{auth: auth, server: %Server{id: server_id}}} = socket
+      ) do
+    case Servers.retry_checking_open_ports(auth, server_id) do
+      :ok ->
+        noreply(socket)
+
+      {:error, :server_not_connected} ->
+        socket
+        |> put_notification(
+          Message.new(
+            :error,
+            gettext("Server is not connected. Cannot retry checking open ports.")
+          )
+        )
+        |> noreply()
+
+      {:error, :server_busy} ->
+        socket
+        |> put_notification(
+          Message.new(:error, gettext("Server is busy. Cannot retry checking open ports."))
+        )
+        |> noreply()
+    end
+  end
+
+  @impl LiveView
   def handle_info(
         {:server_state, server_id, new_server_state},
         %Socket{assigns: %{server: %Server{id: server_id}}} = socket

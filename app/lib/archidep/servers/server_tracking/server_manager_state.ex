@@ -85,7 +85,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @type gather_facts_action ::
           {:gather_facts, (t(), (String.t() -> Task.t()) -> t())}
   @type monitor_action :: {:monitor, pid()}
-  @type notify_server_offline :: :notify_server_offline
+  @type notify_server_offline_action :: :notify_server_offline
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
@@ -100,7 +100,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           | demonitor_action()
           | gather_facts_action()
           | monitor_action()
-          | notify_server_offline()
+          | notify_server_offline_action()
           | run_command_action()
           | run_playbook_action()
           | send_message_action()
@@ -497,15 +497,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           %__MODULE__{
             state
             | actions: [
-                {:check_open_ports,
-                 fn task_state, task_factory ->
-                   task = task_factory.(server.ip_address.address, @ports_to_check)
-
-                   %__MODULE__{
-                     task_state
-                     | tasks: Map.put(task_state.tasks, :check_open_ports, task.ref)
-                   }
-                 end},
+                check_open_ports(server),
                 update_tracking()
               ]
           }
@@ -519,7 +511,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             state
             | problems: [
                 {:server_port_testing_script_failed, {:exit, exit_code, stderr}}
-                | state.problems
+                | Enum.reject(
+                    state.problems,
+                    &(match?({:server_port_testing_script_failed, _details}, &1) or
+                        match?({:server_open_ports_check_failed, _details}, &1))
+                  )
               ],
               actions: [update_tracking()]
           }
@@ -531,7 +527,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
           %__MODULE__{
             state
-            | problems: [{:server_port_testing_script_failed, {:error, reason}} | state.problems],
+            | problems: [
+                {:server_port_testing_script_failed, {:error, reason}}
+                | Enum.reject(
+                    state.problems,
+                    &(match?({:server_port_testing_script_failed, _details}, &1) or
+                        match?({:server_open_ports_check_failed, _details}, &1))
+                  )
+              ],
               actions: [update_tracking()]
           }
       end
@@ -558,7 +561,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             state
             | problems: [
                 {:server_open_ports_check_failed, port_problems}
-                | state.problems
+                | Enum.reject(
+                    state.problems,
+                    &(match?({:server_port_testing_script_failed, _details}, &1) or
+                        match?({:server_open_ports_check_failed, _details}, &1))
+                  )
               ],
               actions: [update_tracking()]
           }
@@ -610,7 +617,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         actions: [
           check_sudo_access(),
           update_tracking()
-        ]
+        ],
+        problems: drop_connection_problems(state.problems)
     }
   end
 
@@ -907,6 +915,60 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   end
 
   @impl ServerManagerBehaviour
+  def retry_checking_open_ports(
+        %__MODULE__{
+          connection_state: connected_state(),
+          server: server,
+          problems: problems,
+          tasks: %{},
+          ansible_playbook: nil
+        } = state
+      ) do
+    Logger.info("Retrying checking open ports for server #{server.id}")
+
+    has_failed_checking_open_ports =
+      Enum.any?(
+        problems,
+        &(match?({:server_port_testing_script_failed, _details}, &1) or
+            match?({:server_open_ports_check_failed, _details}, &1))
+      )
+
+    if has_failed_checking_open_ports do
+      {%__MODULE__{
+         state
+         | actions: [
+             test_ports(),
+             update_tracking()
+           ]
+       }, :ok}
+    else
+      Logger.info(
+        "Ignoring retry request for checking open ports for server #{server.id} because there is no port checking problem"
+      )
+
+      {state, :ok}
+    end
+  end
+
+  def retry_checking_open_ports(
+        %__MODULE__{connection_state: connected_state(), server: server} = state
+      ) do
+    Logger.info(
+      "Ignoring retry request for checking open ports for server #{server.id} because the server is busy"
+    )
+
+    {state, {:error, :server_busy}}
+  end
+
+  def retry_checking_open_ports(%__MODULE__{server: server} = state) do
+    Logger.info(
+      "Ignoring retry request for checking open ports for server #{server.id} because the server is not connected"
+    )
+
+    {state, {:error, :server_not_connected}}
+  end
+
+  @impl ServerManagerBehaviour
   def group_updated(
         %__MODULE__{
           server: %Server{
@@ -957,6 +1019,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       state
       | connection_state: disconnected_state(time: DateTime.utc_now()),
         actions: actions,
+        problems: drop_connected_problems(state.problems),
         retry_timer: nil,
         load_average_timer: nil
     }
@@ -1184,6 +1247,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          }
        end}
 
+  defp check_open_ports(server),
+    do:
+      {:check_open_ports,
+       fn task_state, task_factory ->
+         task = task_factory.(server.ip_address.address, @ports_to_check)
+
+         %__MODULE__{
+           task_state
+           | tasks: Map.put(task_state.tasks, :check_open_ports, task.ref)
+         }
+       end}
+
   defp get_load_average, do: run_command(:get_load_average, "cat /proc/loadavg", 10_000)
   defp check_sudo_access, do: run_command(:check_access, "sudo ls", 10_000)
 
@@ -1250,6 +1325,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             )
         end
       )
+
+  defp drop_connected_problems(problems),
+    do:
+      Enum.reject(problems, fn problem ->
+        match?({:server_port_testing_script_failed, _reason}, problem) or
+          match?({:server_open_ports_check_failed, _port_problems}, problem)
+      end)
 
   defp track(state),
     do: %__MODULE__{

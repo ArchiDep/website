@@ -74,6 +74,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   def retry_ansible_playbook(server, playbook),
     do: GenServer.call(name(server), {:retry_ansible_playbook, playbook})
 
+  @spec retry_checking_open_ports(Server.t()) ::
+          :ok | {:error, :server_not_connected} | {:error, :server_busy}
+  def retry_checking_open_ports(server),
+    do: GenServer.call(name(server), :retry_checking_open_ports)
+
   @spec update_server(Server.t(), Authentication.t(), Types.update_server_data()) ::
           {:ok, Server.t()} | {:error, Changeset.t()}
   def update_server(server, auth, data),
@@ -173,6 +178,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
         |> execute_actions()
         |> pair(state_module)
         |> reply_with(:ok)
+
+  def handle_call(:retry_checking_open_ports, _from, {state_module, state}) do
+    {new_state, result} = state_module.retry_checking_open_ports(state)
+
+    new_state
+    |> execute_actions()
+    |> pair(state_module)
+    |> reply_with(result)
+  end
 
   def handle_call(
         {:update_server, auth, data},
