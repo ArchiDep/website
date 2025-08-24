@@ -70,7 +70,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   @spec retry_connecting(Server.t() | UUID.t()) :: :ok
   def retry_connecting(server_id), do: GenServer.call(name(server_id), :retry_connecting)
 
-  @spec retry_ansible_playbook(Server.t(), String.t()) :: :ok
+  @spec retry_ansible_playbook(Server.t(), String.t()) ::
+          :ok | {:error, :server_not_connected} | {:error, :server_busy}
   def retry_ansible_playbook(server, playbook),
     do: GenServer.call(name(server), {:retry_ansible_playbook, playbook})
 
@@ -171,13 +172,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
         _from,
         {state_module, state}
       )
-      when is_binary(playbook),
-      do:
-        state
-        |> state_module.retry_ansible_playbook(playbook)
-        |> execute_actions()
-        |> pair(state_module)
-        |> reply_with(:ok)
+      when is_binary(playbook) do
+    {new_state, result} = state_module.retry_ansible_playbook(state, playbook)
+
+    new_state
+    |> execute_actions()
+    |> pair(state_module)
+    |> reply_with(result)
+  end
 
   def handle_call(:retry_checking_open_ports, _from, {state_module, state}) do
     {new_state, result} = state_module.retry_checking_open_ports(state)

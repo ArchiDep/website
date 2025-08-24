@@ -22,9 +22,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
   @callback handle_task_result(state(), reference(), result) :: state() when result: term()
   @callback ansible_playbook_event(state(), UUID.t(), String.t() | nil) :: state()
   @callback ansible_playbook_completed(state(), UUID.t()) :: state()
-  @callback retry_ansible_playbook(state(), String.t()) :: state()
+  @callback retry_ansible_playbook(state(), String.t()) ::
+              {state(), :ok | {:error, :server_not_connected} | {:error, :server_busy}}
   @callback retry_checking_open_ports(state()) ::
-              {state(), :ok | {:error, :server_busy} | {:error, :server_not_connected}}
+              {state(), :ok | {:error, :server_not_connected} | {:error, :server_busy}}
   @callback group_updated(state(), map()) :: state()
   @callback connection_crashed(state(), pid(), reason) :: state() when reason: term()
   @callback update_server(state(), Authentication.t(), Types.update_server_data()) ::

@@ -24,7 +24,10 @@ defmodule ArchiDep.Servers.UseCases.ManageServer do
   end
 
   @spec retry_ansible_playbook(Authentication.t(), UUID.t(), String.t()) ::
-          :ok | {:error, :server_not_found}
+          :ok
+          | {:error, :server_not_found}
+          | {:error, :server_not_connected}
+          | {:error, :server_busy}
   def retry_ansible_playbook(auth, server_id, playbook) do
     with :ok <- validate_uuid(server_id, :server_not_found),
          {:ok, server} <- Server.fetch_server(server_id),

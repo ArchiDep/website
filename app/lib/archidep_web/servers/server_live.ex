@@ -60,8 +60,30 @@ defmodule ArchiDepWeb.Servers.ServerLive do
         %{"server_id" => server_id, "operation" => "ansible-playbook", "playbook" => playbook},
         %Socket{assigns: %{auth: auth, server: %Server{id: server_id}}} = socket
       ) do
-    :ok = Servers.retry_ansible_playbook(auth, server_id, playbook)
-    noreply(socket)
+    case Servers.retry_ansible_playbook(auth, server_id, playbook) do
+      :ok ->
+        noreply(socket)
+
+      {:error, :server_not_connected} ->
+        socket
+        |> put_notification(
+          Message.new(
+            :error,
+            gettext("Cannot retry because the server is not connected.")
+          )
+        )
+        |> noreply()
+
+      {:error, :server_busy} ->
+        socket
+        |> put_notification(
+          Message.new(
+            :error,
+            gettext("Cannot retry because the server is busy. Please try again later.")
+          )
+        )
+        |> noreply()
+    end
   end
 
   @impl LiveView
@@ -79,7 +101,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
         |> put_notification(
           Message.new(
             :error,
-            gettext("Server is not connected. Cannot retry checking open ports.")
+            gettext("Cannot retry because the server is not connected.")
           )
         )
         |> noreply()
@@ -87,7 +109,10 @@ defmodule ArchiDepWeb.Servers.ServerLive do
       {:error, :server_busy} ->
         socket
         |> put_notification(
-          Message.new(:error, gettext("Server is busy. Cannot retry checking open ports."))
+          Message.new(
+            :error,
+            gettext("Cannot retry because the server is busy. Please try again later.")
+          )
         )
         |> noreply()
     end

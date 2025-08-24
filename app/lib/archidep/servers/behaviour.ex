@@ -142,7 +142,7 @@ defmodule ArchiDep.Servers.Behaviour do
   """
   callback(
     retry_ansible_playbook(auth: Authentication.t(), server_id: UUID.t(), playbook: String.t()) ::
-      :ok | {:error, :server_not_found}
+      :ok | {:error, :server_not_found} | {:error, :server_not_connected} | {:error, :server_busy}
   )
 
   @doc """

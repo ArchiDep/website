@@ -881,20 +881,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
       playbook_run = run_setup_playbook(server)
 
-      %__MODULE__{
-        state
-        | ansible_playbook: {playbook_run, nil},
-          actions: [
-            {:run_playbook, playbook_run},
-            update_tracking()
-          ]
-      }
+      {%__MODULE__{
+         state
+         | ansible_playbook: {playbook_run, nil},
+           actions: [
+             {:run_playbook, playbook_run},
+             update_tracking()
+           ]
+       }, :ok}
     else
       Logger.info(
         "Ignoring retry request for Ansible playbook setup for server #{server.id} because there is no such failed run"
       )
 
-      state
+      {state, :ok}
     end
   end
 
@@ -903,7 +903,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Ignoring retry request for Ansible playbook #{playbook} because the server is busy"
     )
 
-    state
+    {state, {:error, :server_busy}}
   end
 
   def retry_ansible_playbook(%__MODULE__{} = state, playbook) do
@@ -911,7 +911,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Ignoring retry request for Ansible playbook #{playbook} because the server is not connected"
     )
 
-    state
+    {state, {:error, :server_not_connected}}
   end
 
   @impl ServerManagerBehaviour
