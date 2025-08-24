@@ -865,11 +865,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           connection_state: connected_state(),
           server: server,
           problems: problems,
-          tasks: %{},
+          tasks: tasks,
           ansible_playbook: nil
         } = state,
         "setup"
-      ) do
+      )
+      when tasks == %{} do
     has_failed_playbook =
       Enum.any?(problems, fn
         {:server_ansible_playbook_failed, "setup", _state, _stats} -> true
@@ -920,10 +921,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           connection_state: connected_state(),
           server: server,
           problems: problems,
-          tasks: %{},
+          tasks: tasks,
           ansible_playbook: nil
         } = state
-      ) do
+      )
+      when tasks == %{} do
     Logger.info("Retrying checking open ports for server #{server.id}")
 
     has_failed_checking_open_ports =
@@ -1069,15 +1071,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         auth
       ) do
     case state do
-      %__MODULE__{connection_state: not_connected_state(), tasks: %{}, ansible_playbook: nil} ->
+      %__MODULE__{connection_state: not_connected_state(), tasks: tasks, ansible_playbook: nil}
+      when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
         {state, :ok}
 
       %__MODULE__{
         connection_state: retry_connecting_state(connection_pid: connection_pid),
-        tasks: %{},
+        tasks: tasks,
         ansible_playbook: nil
-      } ->
+      }
+      when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
 
         {
@@ -1092,9 +1096,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       %__MODULE__{
         connection_state: connected_state(connection_pid: connection_pid),
         server: server,
-        tasks: %{},
+        tasks: tasks,
         ansible_playbook: nil
-      } ->
+      }
+      when tasks == %{} ->
         :ok = ServerConnection.disconnect(server)
         :ok = DeleteServer.delete_server(auth, server)
 
@@ -1108,9 +1113,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
       %__MODULE__{
         connection_state: connection_failed_state(connection_pid: connection_pid),
-        tasks: %{},
+        tasks: tasks,
         ansible_playbook: nil
-      } ->
+      }
+      when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
 
         {
@@ -1123,9 +1129,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
       %__MODULE__{
         connection_state: disconnected_state(),
-        tasks: %{},
+        tasks: tasks,
         ansible_playbook: nil
-      } ->
+      }
+      when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
 
         {
