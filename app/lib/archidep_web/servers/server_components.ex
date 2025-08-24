@@ -198,6 +198,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   defp server_card_body(connected_state(), :gathering_facts, _auth, _server),
     do: gettext("Gathering facts")
 
+  defp server_card_body(connected_state(), :checking_open_ports, _auth, _server),
+    do: gettext("Checking open ports")
+
   defp server_card_body(
          connected_state(),
          {:running_playbook, playbook, _run_id, ongoing_task},
@@ -208,7 +211,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
          [
            case playbook do
              "setup" ->
-               gettext("Initial setup")
+               gettext("Setup")
 
              _any_other_playbook ->
                gettext("Running {playbook}", playbook: playbook)
@@ -475,6 +478,57 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         <%= if has_role?(@auth, :root) do %>
           <div>
             {inspect(@stderr)}
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def server_problem(%{problem: {:server_open_ports_check_failed, port_problems}} = assigns) do
+    port_problem_details =
+      Enum.map(port_problems, fn
+        {port, %Req.TransportError{reason: :econnrefused}} ->
+          {port, gettext("connection refused"), nil}
+
+        {port, unexpected_reason} ->
+          {port, gettext("error"), unexpected_reason}
+      end)
+
+    assigns = assign(assigns, :port_problem_details, port_problem_details)
+
+    ~H"""
+    <div role="alert" class="alert alert-warning alert-soft">
+      <Heroicons.exclamation_triangle class="size-4" />
+      <div class="flex flex-col gap-2">
+        <p>The following ports might not be open:</p>
+        <ul class="list-disc list-inside">
+          <li :for={{port, message, reason} <- @port_problem_details}>
+            {gettext("Port {port}: {message}", port: port, message: message)}
+            <div
+              :if={reason != nil and has_role?(@auth, :root)}
+              class="font-mono text-sm opacity-90 mt-1 mb-2"
+            >
+              {inspect(reason)}
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+    """
+  end
+
+  def server_problem(%{problem: {:server_port_testing_script_failed, reason}} = assigns) do
+    assigns = assign(assigns, :reason, reason)
+
+    ~H"""
+    <div role="alert" class="alert alert-warning alert-soft">
+      <Heroicons.exclamation_triangle class="size-4" />
+      <div>
+        <span>{gettext("Could not check open ports on the server")}</span>
+        <%= if has_role?(@auth, :root) do %>
+          <div>
+            {inspect(@reason)}
           </div>
         <% end %>
       </div>

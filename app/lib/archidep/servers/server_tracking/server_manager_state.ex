@@ -71,6 +71,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @type connection_state :: ServerConnectionState.connection_state()
 
   @type cancel_timer_action :: {:cancel_timer, reference()}
+
+  @type check_open_ports_action ::
+          {:check_open_ports,
+           (t(), (:inet.ip_address(), list(network_port()) -> Task.t()) -> t())}
   @type connect_action ::
           {:connect,
            (t(),
@@ -119,7 +123,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     1800,
     3600
   ]
+
   @last_retry_interval_seconds List.last(@retry_intervals_seconds)
+
+  @ports_to_check [80, 443, 3000, 3001]
 
   @impl ServerManagerBehaviour
   def init(server_id, pipeline) do
@@ -449,7 +456,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             %__MODULE__{
               state
               | server: updated_server,
-                actions: [update_tracking()],
+                actions: [
+                  test_ports(),
+                  update_tracking()
+                ],
                 problems: detect_server_properties_mismatches(problems, updated_server)
             }
           end
@@ -457,7 +467,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         {:error, reason} ->
           %__MODULE__{
             state
-            | actions: [update_tracking()],
+            | actions: [
+                update_tracking()
+              ],
               problems: [
                 {:server_fact_gathering_failed, reason}
               ]
@@ -465,6 +477,94 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       end
 
     drop_task(new_state, :gather_facts, gather_facts_ref)
+  end
+
+  # Handle test ports result
+  def handle_task_result(
+        %__MODULE__{
+          connection_state: connected_state(),
+          server: server,
+          tasks: %{test_ports: test_ports_ref}
+        } = state,
+        test_ports_ref,
+        result
+      ) do
+    new_state =
+      case result do
+        {:ok, _stdout, _stderr, 0} ->
+          Logger.debug("Port testing script succeeded on server #{server.id}")
+
+          %__MODULE__{
+            state
+            | actions: [
+                {:check_open_ports,
+                 fn task_state, task_factory ->
+                   task = task_factory.(server.ip_address.address, @ports_to_check)
+
+                   %__MODULE__{
+                     task_state
+                     | tasks: Map.put(task_state.tasks, :check_open_ports, task.ref)
+                   }
+                 end},
+                update_tracking()
+              ]
+          }
+
+        {:ok, _stdout, stderr, exit_code} ->
+          Logger.warning(
+            "Port testing script exited with code #{exit_code} on server #{server.id}: #{inspect(stderr)}"
+          )
+
+          %__MODULE__{
+            state
+            | problems: [
+                {:server_port_testing_script_failed, {:exit, exit_code, stderr}}
+                | state.problems
+              ],
+              actions: [update_tracking()]
+          }
+
+        {:error, reason} ->
+          Logger.error(
+            "Port testing script failed on server #{server.id} because: #{inspect(reason)}"
+          )
+
+          %__MODULE__{
+            state
+            | problems: [{:server_port_testing_script_failed, {:error, reason}} | state.problems],
+              actions: [update_tracking()]
+          }
+      end
+
+    drop_task(new_state, :test_ports, test_ports_ref)
+  end
+
+  # Handle check open ports result
+  def handle_task_result(
+        %__MODULE__{
+          connection_state: connected_state(),
+          tasks: %{check_open_ports: check_open_ports_ref}
+        } = state,
+        check_open_ports_ref,
+        result
+      ) do
+    new_state =
+      case result do
+        :ok ->
+          state
+
+        {:error, port_problems} ->
+          %__MODULE__{
+            state
+            | problems: [
+                {:server_open_ports_check_failed, port_problems}
+                | state.problems
+              ],
+              actions: [update_tracking()]
+          }
+      end
+
+    drop_task(new_state, :check_open_ports, check_open_ports_ref)
   end
 
   # Handle connection result
@@ -1087,6 +1187,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp get_load_average, do: run_command(:get_load_average, "cat /proc/loadavg", 10_000)
   defp check_sudo_access, do: run_command(:check_access, "sudo ls", 10_000)
 
+  defp test_ports,
+    do: run_command(:test_ports, "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000)
+
   defp run_command(name, command, timeout),
     do:
       {:run_command,
@@ -1176,41 +1279,48 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     conn_username =
       if server.set_up_at, do: server.app_username, else: state.username
 
-    current_job =
-      case state do
-        %{connection_state: connecting_state()} ->
-          :connecting
-
-        %{connection_state: reconnecting_state()} ->
-          :reconnecting
-
-        %{connection_state: connected_state(), tasks: %{check_access: _ref}} ->
-          :checking_access
-
-        %{connection_state: connected_state(), tasks: %{gather_facts: _ref}} ->
-          :gathering_facts
-
-        %{
-          connection_state: connected_state(),
-          ansible_playbook: {%AnsiblePlaybookRun{id: id, playbook: playbook}, task}
-        } ->
-          {:running_playbook, playbook, id, task}
-
-        _anything_else ->
-          nil
-      end
-
     %ServerRealTimeState{
       connection_state: state.connection_state,
       name: server.name,
       conn_params: {server.ip_address.address, server.ssh_port || 22, conn_username},
       username: server.username,
       app_username: server.app_username,
-      current_job: current_job,
+      current_job: determine_current_job(state),
       set_up_at: server.set_up_at,
       problems: state.problems,
       version: state.version
     }
+  end
+
+  defp determine_current_job(state) do
+    case state do
+      %{connection_state: connecting_state()} ->
+        :connecting
+
+      %{connection_state: reconnecting_state()} ->
+        :reconnecting
+
+      %{connection_state: connected_state(), tasks: %{check_access: _ref}} ->
+        :checking_access
+
+      %{connection_state: connected_state(), tasks: %{gather_facts: _ref}} ->
+        :gathering_facts
+
+      %{connection_state: connected_state(), tasks: %{test_ports: _ref}} ->
+        :checking_open_ports
+
+      %{connection_state: connected_state(), tasks: %{check_open_ports: _ref}} ->
+        :checking_open_ports
+
+      %{
+        connection_state: connected_state(),
+        ansible_playbook: {%AnsiblePlaybookRun{id: id, playbook: playbook}, task}
+      } ->
+        {:running_playbook, playbook, id, task}
+
+      _anything_else ->
+        nil
+    end
   end
 
   defp run_setup_playbook(server) do

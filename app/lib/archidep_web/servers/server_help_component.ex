@@ -95,6 +95,18 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
         </li>
       </ul>
     </.troubleshooting_note>
+    <!-- Open port check failed -->
+    <.troubleshooting_note :if={
+      @server.active and @state != nil and
+        connected?(@state.connection_state) and
+        problem?(@state, :server_open_ports_check_failed)
+    }>
+      <p>
+        <strong>Oops.</strong> We've connected to your server but we can't seem
+        to reach some of the ports that should be open.  Are you sure you opened
+        the required ports in your cloud provider's firewall?
+      </p>
+    </.troubleshooting_note>
     <div
       :if={@server.set_up_at != nil and @state != nil and connected?(@state.connection_state)}
       class="alert alert-success alert-soft"

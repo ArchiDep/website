@@ -287,6 +287,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     state
   end
 
+  defp execute_action(state, {:check_open_ports, factory}) do
+    factory.(state, fn ip_address, ports ->
+      Task.async(fn -> check_ports_open(ip_address, ports) end)
+    end)
+  end
+
   defp execute_action(state, {:connect, factory}) do
     factory.(state, fn host, port, username, options ->
       Task.async(fn ->
@@ -360,5 +366,32 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
       })
 
     new_state
+  end
+
+  defp check_ports_open(ip_address, ports) do
+    results =
+      ports
+      |> Enum.map(fn port ->
+        Task.async(fn -> check_port_open(ip_address, port) end)
+      end)
+      |> Task.await_many(30_000)
+      |> Enum.filter(fn result -> result != :ok end)
+
+    if results == [] do
+      :ok
+    else
+      {:error, results}
+    end
+  end
+
+  defp check_port_open(ip_address, port) do
+    case Req.get("http://#{:inet.ntoa(ip_address)}:#{port}",
+           connect_options: [timeout: 10_000],
+           retry_log_level: :debug,
+           max_retries: 1
+         ) do
+      {:ok, _res} -> :ok
+      {:error, reason} -> {port, reason}
+    end
   end
 end

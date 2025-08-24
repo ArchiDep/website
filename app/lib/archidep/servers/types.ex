@@ -47,6 +47,11 @@ defmodule ArchiDep.Servers.Types do
   @type server_missing_sudo_access_problem ::
           {:server_missing_sudo_access, String.t(), String.t()}
   @type server_reconnection_failed_problem :: {:server_reconnection_failed, term()}
+  @type server_open_ports_check_failed_problem ::
+          {:server_open_ports_check_failed, list({pos_integer(), term()})}
+  @type server_port_testing_script_failed_problem ::
+          {:server_port_testing_script_failed,
+           {:error, term()} | {:exit, pos_integer(), String.t()}}
   @type server_sudo_access_check_failed_problem :: {:server_sudo_access_check_failed, term()}
   @type server_problem ::
           server_ansible_playbook_failed()
@@ -56,6 +61,8 @@ defmodule ArchiDep.Servers.Types do
           | server_expected_property_mismatch_problem()
           | server_fact_gathering_failed_problem()
           | server_missing_sudo_access_problem()
+          | server_open_ports_check_failed_problem()
+          | server_port_testing_script_failed_problem()
           | server_reconnection_failed_problem()
           | server_sudo_access_check_failed_problem()
 

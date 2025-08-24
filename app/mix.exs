@@ -77,6 +77,7 @@ defmodule ArchiDep.MixProject do
       {:plug_static_index_html, "~> 1.0"},
       {:postgrex, ">= 0.0.0"},
       {:prom_ex, "~> 1.11.0"},
+      {:req, "~> 0.5.15"},
       {:sentry, "~> 11.0.3"},
       {:sshex, "~> 2.2"},
       {:swoosh, "~> 1.5"},
