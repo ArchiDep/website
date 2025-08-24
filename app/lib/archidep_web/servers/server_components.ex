@@ -552,8 +552,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
-  def server_problem(%{problem: {:server_sudo_access_check_failed, reason}} = assigns) do
-    assigns = assign(assigns, :reason, reason)
+  def server_problem(%{problem: {:server_sudo_access_check_failed, username, reason}} = assigns) do
+    assigns = assigns |> assign(:username, username) |> assign(:reason, reason)
 
     ~H"""
     <div role="alert" class="alert alert-error alert-soft">

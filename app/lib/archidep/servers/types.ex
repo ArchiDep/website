@@ -52,7 +52,8 @@ defmodule ArchiDep.Servers.Types do
   @type server_port_testing_script_failed_problem ::
           {:server_port_testing_script_failed,
            {:error, term()} | {:exit, pos_integer(), String.t()}}
-  @type server_sudo_access_check_failed_problem :: {:server_sudo_access_check_failed, term()}
+  @type server_sudo_access_check_failed_problem ::
+          {:server_sudo_access_check_failed, String.t(), term()}
   @type server_problem ::
           server_ansible_playbook_failed()
           | server_authentication_failed_problem()

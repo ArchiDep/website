@@ -258,7 +258,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
               ) or
               match?({:server_missing_sudo_access, _username, _stderr}, problem) or
               match?({:server_reconnection_failed, _reason}, problem) or
-              match?({:server_sudo_access_check_failed, _reason}, problem)
+              match?({:server_sudo_access_check_failed, _username, _reason}, problem)
           end),
         retry_timer: nil
     }
@@ -313,6 +313,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def handle_task_result(
         %__MODULE__{
           connection_state: connected_state(),
+          username: username,
           tasks: %{check_access: check_access_ref}
         } = state,
         check_access_ref,
@@ -323,9 +324,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     new_state =
       case result do
         {:ok, _stdout, _stderr, 0} ->
-          if state.username == server.app_username do
+          if username == server.app_username do
             Logger.info(
-              "Server manager has sudo access to server #{server.id} as #{state.username}; gathering facts..."
+              "Server manager has sudo access to server #{server.id} as #{username}; gathering facts..."
             )
 
             %__MODULE__{
@@ -337,7 +338,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             }
           else
             Logger.info(
-              "Server manager has sudo access to server #{server.id} as #{state.username}; setting up app user..."
+              "Server manager has sudo access to server #{server.id} as #{username}; setting up app user..."
             )
 
             playbook_run = run_setup_playbook(server)
@@ -354,7 +355,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
         {:ok, _stdout, stderr, _exit_code} ->
           Logger.info(
-            "Server manager does not have sudo access to server #{server.id} as #{state.username}; connected with problems"
+            "Server manager does not have sudo access to server #{server.id} as #{username}; connected with problems"
           )
 
           %__MODULE__{
@@ -364,13 +365,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
                 update_tracking()
               ],
               problems: [
-                {:server_missing_sudo_access, server.username, String.trim(stderr)}
+                {:server_missing_sudo_access, username, String.trim(stderr)}
               ]
           }
 
         {:error, reason} ->
           Logger.error(
-            "Server manager could not check sudo access to server #{server.id} as #{state.username} because #{inspect(reason)}; connected with problems"
+            "Server manager could not check sudo access to server #{server.id} as #{username} because #{inspect(reason)}; connected with problems"
           )
 
           %__MODULE__{
@@ -380,7 +381,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
                 update_tracking()
               ],
               problems: [
-                {:server_sudo_access_check_failed, reason}
+                {:server_sudo_access_check_failed, username, reason}
               ]
           }
       end
