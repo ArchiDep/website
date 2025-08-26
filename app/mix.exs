@@ -67,7 +67,7 @@ defmodule ArchiDep.MixProject do
       {:hackney, "~> 1.25.0"},
       {:heroicons, "~> 0.5.6"},
       {:jason, "~> 1.2"},
-      {:phoenix, "~> 1.7.19"},
+      {:phoenix, "~> 1.8.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_view, "~> 1.0.0"},
