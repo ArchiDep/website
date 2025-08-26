@@ -1,19 +1,19 @@
 module ArchiDep
-  MD_GRID_COLS_CLASSES = %w[
-    md:grid-cols-2
-    md:grid-cols-3
-    md:grid-cols-4
-    md:grid-cols-5
-    md:grid-cols-6
-    md:grid-cols-7
-    md:grid-cols-8
-    md:grid-cols-9
-    md:grid-cols-10
-    md:grid-cols-11
-    md:grid-cols-12
-  ]
-
   class ColsTagBlock < Liquid::Block
+    MD_GRID_COLS_CLASSES = %w[
+      md:grid-cols-2
+      md:grid-cols-3
+      md:grid-cols-4
+      md:grid-cols-5
+      md:grid-cols-6
+      md:grid-cols-7
+      md:grid-cols-8
+      md:grid-cols-9
+      md:grid-cols-10
+      md:grid-cols-11
+      md:grid-cols-12
+    ]
+
     Syntax = /(#{Liquid::QuotedFragment}+)?/
 
     def initialize(tag_name, markup, tokens)
@@ -56,7 +56,8 @@ module ArchiDep
       texts.each_slice(2) do |tuple|
         col, t = tuple
         m = col.match(/<\!--\s*col(?:umn)?(?:\s+([^"'>]+))?\s*-->/)
-        inner_html += m ? "<div class=\"#{m[1]}\">" : "<div>"
+        col_class = m and m[1] ? m[1].strip : ""
+        inner_html += col_class ? "<div class=\"#{col_class}\">" : "<div>"
         inner_html += ArchiDep::Utils.render_markdown(t, context)
         inner_html += "</div>"
       end
