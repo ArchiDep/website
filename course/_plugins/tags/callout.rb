@@ -146,3 +146,7 @@ module ArchiDep
 end
 
 Liquid::Template.register_tag("callout", ArchiDep::CalloutTagBlock)
+
+Jekyll::Hooks.register :site, :after_reset do |site|
+  ArchiDep::CalloutTagBlock.callout_ids.clear
+end
