@@ -13,7 +13,7 @@ module ArchiDep
           @attributes[key] = value
         end
       else
-        raise SyntaxError.new("Bad options given to 'loop_directory' plugin.")
+        raise SyntaxError.new("Bad options given to 'mermaid' plugin.")
       end
 
       super
