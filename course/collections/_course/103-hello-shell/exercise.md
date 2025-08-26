@@ -290,32 +290,29 @@ In this command, we merge several elements together. Firstly, `$PATH` retrieves 
 
 To incorporate the modifications made to the startup file without restarting your terminal, simply "source" the file:
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div class="md:order-1">
-{% markdown %}
+{% cols %}
+
+<!-- col md:order-1 -->
+
 For Bash:
-{% endmarkdown %}
-  </div>
-  <div class="md:order-3">
-{% markdown %}
+
+<!-- col md:order-3 -->
+
 ```bash
 $> source ~/.bash_profile
 ```
-{% endmarkdown %}
-  </div>
-  <div class="md:order-2">
-{% markdown %}
+
+<!-- col md:order-2 -->
+
 For zsh:
-{% endmarkdown %}
-  </div>
-  <div class="md:order-4">
-{% markdown %}
+
+<!-- col md:order-4 -->
+
 ```bash
 $> source ~/.zshrc
 ```
-{% endmarkdown %}
-  </div>
-</div>
+
+{% endcols %}
 
 Now, the `auto_hunt` command should be accessible from any location in the terminal.
 

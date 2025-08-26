@@ -40,17 +40,14 @@ Or they have a limited GUI that does not have as many options as the CLI.
 
 **CLIs are available on every operating system.**
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div>
-{% markdown %}
+{% cols %}
+
 On **Unix-like** systems _(like macOS or Linux)_, it's an application called the **Terminal**.
 
 You can use it right away, as it's the _de-facto_ standard.
-{% endmarkdown %}
 
-  </div>
-  <div>
-{% markdown %}
+<!-- col -->
+
 On **Windows**, the default CLI is called **cmd** (or **Invite de commandes** in
 French) However, it does not use the same syntax as Unix-like CLIs _(plus, it's
 bad)_.
@@ -60,10 +57,7 @@ better, but is not a Unix-like CLI either.
 
 **You'll need to install an alternative.**
 
-{% endmarkdown %}
-
-  </div>
-</div>
+{% endcols %}
 
 {% note type: more %}
 
@@ -123,24 +117,21 @@ indicate your computer's name, your username and the current directory, e.g.
 
 ### Work in progress...
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div>
-{% markdown %}
+{% cols %}
+
 When the computer is working, the prompt disappear and you no longer have
 control.
 
-<img src='images/sleep.png' class="!m-0" />
-{% endmarkdown %}
-  </div>
-  <div>
-{% markdown %}
+![Sleep](images/sleep.png)
+
+<!-- col -->
+
 When the computer is done working, it will indicate that you are back in control
 by showing the prompt again.
 
-<img src='images/sleep-done.png' class="!m-0" />
-{% endmarkdown %}
-  </div>
-</div>
+![Sleep done](images/sleep-done.png)
+
+{% endcols %}
 
 {% note %}
 
@@ -235,22 +226,19 @@ This command will be interpreted as a call to the `ls` command with **three argu
 
 You **can** use arguments containing spaces, but you have to **escape** them first, either with **quotation marks** or **backslashes**:
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div>
-{% markdown %}
+{% cols %}
+
 ```bash
 $> ls "Why So Serious"
 ```
-{% endmarkdown %}
-  </div>
-  <div>
-{% markdown %}
+
+<!-- col -->
+
 ```bash
 $> ls Why\ So\ Serious
 ```
-{% endmarkdown %}
-  </div>
-</div>
+
+{% endcols %}
 
 ### Auto-completion
 
@@ -426,22 +414,19 @@ entering some letters.
 The `.` path represents the current directory. The following commands are
 strictly equivalent:
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div>
-{% markdown %}
+{% cols %}
+
 ```bash
 $> cd Documents/TopSecret
 ```
-{% endmarkdown %}
-  </div>
-  <div>
-{% markdown %}
+
+<!-- col -->
+
 ```bash
 $> cd ./Documents/TopSecret
 ```
-{% endmarkdown %}
-  </div>
-</div>
+
+{% endcols %}
 
 You can also _not go anywhere_:
 
@@ -488,26 +473,23 @@ $> cd /Users/Batman/Pictures/
 At any time and from anywhere, you can return to your **home directory** with
 the `cd` command, without any argument or with a `~` (tilde):
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div>
-{% markdown %}
+{% cols %}
+
 ```bash
 $> cd
 $> pwd
 /Users/Batman
 ```
-{% endmarkdown %}
-  </div>
-  <div>
-{% markdown %}
+
+<!-- col -->
+
 ```bash
 $> cd ~
 $> pwd
 /Users/Batman
 ```
-{% endmarkdown %}
-  </div>
-</div>
+
+{% endcols %}
 
 {% note type: tip %}
 
@@ -1075,28 +1057,26 @@ configuration file.
 
 {% endnote %}
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div class="order-1 md:order-none flex items-end">
-{% markdown %}
+{% cols %}
+
+<!-- col order-1 md:order-none flex items-end -->
+
 You should now be able to run the Hello World shell script as a command simply
 by typing `hello`:
-{% endmarkdown %}
-  </div>
-  <div class="order-3 md:order-none flex items-end">
-{% markdown %}
+
+<!-- col order-3 md:order-none flex items-end -->
+
 You don't even have to be in the correct directory:
-{% endmarkdown %}
-  </div>
-  <div class="order-2 md:order-none">
-{% markdown %}
+
+<!-- col order-2 md:order-none -->
+
 ```bash
 $> hello
 Hello World
 ```
-{% endmarkdown %}
-  </div>
-  <div class="order-4 md:order-none">
-{% markdown %}
+
+<!-- col order-4 md:order-none -->
+
 ```bash
 $> cd
 $> pwd
@@ -1104,9 +1084,8 @@ $> pwd
 $> hello
 Hello World
 ```
-{% endmarkdown %}
-  </div>
-</div>
+
+{% endcols %}
 
 And your CLI knows where it is:
 
@@ -1173,20 +1152,19 @@ Oh My Zsh as well][oh-my-zsh-windows].
 - [`rsync`](https://rsync.samba.org) for incremental file transfers (`cp` &
   `scp` alternative)
 
-<div class="grid grid-cols-1 md:grid-cols-2">
-  <div>
-{% markdown %}
+{% cols %}
+
 A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 
 - [tmux](https://github.com/tmux/tmux/wiki)
 - [screen](https://www.gnu.org/software/screen/)
 - [zellij](https://zellij.dev) 💙
-{% endmarkdown %}
-  </div>
-  <div>
-    <img class="!m-0" src='images/terminal-multiplexer.png' />
-  </div>
-</div>
+
+<!-- col -->
+
+![Terminal multiplexer](images/terminal-multiplexer.png)
+
+{% endcols %}
 
 [ace]: https://en.wikipedia.org/wiki/Automatic_Computing_Engine
 [ada-lovelace]: https://en.wikipedia.org/wiki/Ada_Lovelace

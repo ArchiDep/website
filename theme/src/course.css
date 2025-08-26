@@ -279,3 +279,17 @@ main .solution .highlighter-rouge:last-child pre.highlight {
     @apply opacity-25 hover:opacity-100;
   }
 }
+
+.cols {
+  & > div > * {
+    @apply first:mt-0 last:mb-0;
+
+    &:first-child > img {
+      @apply mt-0;
+    }
+
+    &:last-child > img {
+      @apply mb-0;
+    }
+  }
+}
