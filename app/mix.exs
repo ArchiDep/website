@@ -17,6 +17,7 @@ defmodule ArchiDep.MixProject do
         flags: [:no_opaque],
         plt_add_apps: [:ex_unit, :mix]
       ],
+      listeners: [Phoenix.CodeReloader],
       preferred_cli_env: [
         check: :test,
         coveralls: :test,
