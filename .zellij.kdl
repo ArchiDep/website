@@ -21,8 +21,7 @@ layout {
   }
 
   tab name="phoenix" {
-    pane command="mix" cwd="app" {
-      args "phx.server"
+    pane command="../scripts/app" cwd="app" {
     }
   }
 
