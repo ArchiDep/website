@@ -43,7 +43,7 @@ defmodule ArchiDep.Support.FactoryHelpers do
   def entity_id, do: UUID.generate()
 
   @spec entity_version() :: pos_integer()
-  def entity_version, do: Faker.random_between(1, 5)
+  def entity_version, do: Faker.random_between(1, 10)
 
   @spec entity_created_at() :: DateTime.t()
   def entity_created_at, do: Faker.DateTime.backward(1000)

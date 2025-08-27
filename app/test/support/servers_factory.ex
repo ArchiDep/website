@@ -5,12 +5,15 @@ defmodule ArchiDep.Support.ServersFactory do
 
   use ArchiDep.Support, :factory
 
+  import ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
+  alias ArchiDep.Servers.ServerTracking.ServerManagerState
+  alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.Types
   alias ArchiDep.Support.NetFactory
 
@@ -143,6 +146,59 @@ defmodule ArchiDep.Support.ServersFactory do
     }
   end
 
+  @spec random_connection_state() :: ServerConnectionState.connection_state()
+  def random_connection_state,
+    do:
+      Enum.random([
+        random_not_connected_state(),
+        random_connecting_state(),
+        random_connected_state(),
+        random_reconnecting_state(),
+        random_connection_failed_state(),
+        random_disconnected_state()
+      ])
+
+  @spec random_not_connected_state() :: ServerConnectionState.not_connected_state()
+  def random_not_connected_state, do: not_connected_state(connection_pid: self())
+
+  @spec random_connecting_state() :: ServerConnectionState.connecting_state()
+  def random_connecting_state,
+    do:
+      connecting_state(
+        connection_ref: make_ref(),
+        connection_pid: self(),
+        retrying: if(bool(), do: retry(), else: false)
+      )
+
+  @spec random_retry_connecting_state() :: ServerConnectionState.retry_connecting_state()
+  def random_retry_connecting_state,
+    do: retry_connecting_state(connection_pid: self(), retrying: retry())
+
+  @spec random_connected_state() :: ServerConnectionState.connected_state()
+  def random_connected_state,
+    do: connected_state(connection_ref: make_ref(), connection_pid: self())
+
+  @spec random_reconnecting_state() :: ServerConnectionState.reconnecting_state()
+  def random_reconnecting_state,
+    do: reconnecting_state(connection_ref: make_ref(), connection_pid: self())
+
+  @spec random_connection_failed_state() :: ServerConnectionState.connection_failed_state()
+  def random_connection_failed_state,
+    do: connection_failed_state(connection_pid: self(), reason: Faker.Lorem.sentence())
+
+  @spec random_disconnected_state() :: ServerConnectionState.disconnected_state()
+  def random_disconnected_state, do: disconnected_state(time: Faker.DateTime.backward(2))
+
+  @spec retry :: ServerConnectionState.retry()
+  def retry,
+    do: %{
+      retry: Faker.random_between(1, 100),
+      backoff: Faker.random_between(1, 20),
+      time: Faker.DateTime.backward(2),
+      in_seconds: Faker.random_between(1, 86000),
+      reason: Faker.Lorem.sentence()
+    }
+
   @spec server_factory(map()) :: Server.t()
   def server_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
@@ -224,6 +280,44 @@ defmodule ArchiDep.Support.ServersFactory do
       created_at: created_at,
       set_up_at: set_up_at,
       updated_at: updated_at
+    }
+  end
+
+  @spec server_manager_state_factory(map()) :: ServerManagerState.t()
+  def server_manager_state_factory(attrs!) do
+    {connection_state, attrs!} =
+      Map.pop_lazy(attrs!, :connection_state, &random_connection_state/0)
+
+    {server, attrs!} = Map.pop_lazy(attrs!, :server, fn -> build(:server) end)
+    {pipeline, attrs!} = Map.pop(attrs!, :pipeline, ArchiDep.Servers.Ansible.Pipeline)
+
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn ->
+        if(bool(), do: server.username, else: server.app_username)
+      end)
+
+    {actions, attrs!} = Map.pop(attrs!, :actions, [])
+    {tasks, attrs!} = Map.pop(attrs!, :tasks, %{})
+    {ansible_playbook, attrs!} = Map.pop(attrs!, :ansible_playbook, nil)
+    {problems, attrs!} = Map.pop(attrs!, :problems, [])
+    {retry_timer, attrs!} = Map.pop(attrs!, :retry_timer, nil)
+    {load_average_timer, attrs!} = Map.pop(attrs!, :load_average_timer, nil)
+    {version, attrs!} = pop_entity_version(attrs!)
+
+    [] = Map.keys(attrs!)
+
+    %ServerManagerState{
+      connection_state: connection_state,
+      server: server,
+      pipeline: pipeline,
+      username: username,
+      actions: actions,
+      tasks: tasks,
+      ansible_playbook: ansible_playbook,
+      problems: problems,
+      retry_timer: retry_timer,
+      load_average_timer: load_average_timer,
+      version: version
     }
   end
 

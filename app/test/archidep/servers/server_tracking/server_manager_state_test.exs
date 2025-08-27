@@ -59,6 +59,27 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
            }
   end
 
+  test "check whether a server is online" do
+    build_state = fn connection_state ->
+      ServersFactory.build(:server_manager_state, connection_state: connection_state)
+    end
+
+    state = build_state.(ServersFactory.random_connected_state())
+    assert ServerManagerState.online?(state) == true
+
+    for state <-
+          [
+            ServersFactory.random_not_connected_state(),
+            ServersFactory.random_connecting_state(),
+            ServersFactory.random_retry_connecting_state(),
+            ServersFactory.random_reconnecting_state(),
+            ServersFactory.random_connection_failed_state(),
+            ServersFactory.random_disconnected_state()
+          ] do
+      assert ServerManagerState.online?(build_state.(state)) == false
+    end
+  end
+
   defp generate_server!(attrs \\ []) do
     user_account = AccountsFactory.insert(:user_account)
     course = CourseFactory.insert(:class, servers_enabled: true)
