@@ -12,8 +12,8 @@ defmodule ArchiDep.Support.ServersFactory do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
-  alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
+  alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Servers.Types
   alias ArchiDep.Support.NetFactory
 
@@ -195,7 +195,7 @@ defmodule ArchiDep.Support.ServersFactory do
       retry: Faker.random_between(1, 100),
       backoff: Faker.random_between(1, 20),
       time: Faker.DateTime.backward(2),
-      in_seconds: Faker.random_between(1, 86000),
+      in_seconds: Faker.random_between(1, 86_000),
       reason: Faker.Lorem.sentence()
     }
 
