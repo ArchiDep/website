@@ -57,7 +57,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
           record(:connected_state, connection_ref: reference(), connection_pid: pid())
 
   @type reconnecting_state ::
-          record(:connecting_state,
+          record(:reconnecting_state,
             connection_ref: reference(),
             connection_pid: pid()
           )
