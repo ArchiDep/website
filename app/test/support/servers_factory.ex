@@ -173,12 +173,12 @@ defmodule ArchiDep.Support.ServersFactory do
       connecting_state(
         connection_ref: make_ref(),
         connection_pid: self(),
-        retrying: if(bool(), do: retry(), else: false)
+        retrying: if(bool(), do: random_retry(), else: false)
       )
 
   @spec random_retry_connecting_state() :: ServerConnectionState.retry_connecting_state()
   def random_retry_connecting_state,
-    do: retry_connecting_state(connection_pid: self(), retrying: retry())
+    do: retry_connecting_state(connection_pid: self(), retrying: random_retry())
 
   @spec random_connected_state() :: ServerConnectionState.connected_state()
   def random_connected_state,
@@ -195,8 +195,8 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec random_disconnected_state() :: ServerConnectionState.disconnected_state()
   def random_disconnected_state, do: disconnected_state(time: Faker.DateTime.backward(2))
 
-  @spec retry :: ServerConnectionState.retry()
-  def retry,
+  @spec random_retry :: ServerConnectionState.retry()
+  def random_retry,
     do: %{
       retry: Faker.random_between(1, 100),
       backoff: Faker.random_between(1, 20),

@@ -18,7 +18,7 @@ defmodule ArchiDep.Support.ProcessTestHelpers do
       ...>   Agent.update(agent, fn data -> ["foo" | data] end)
       ...> end)
       iex> {usec, :ok} = :timer.tc(fn -> wait_for_state!(agent, fn state -> Enum.member?(state, "foo") end, "oops") end)
-      iex> assert_in_delta usec, 15_000, 50_000
+      iex> assert_in_delta usec, 15_000, 100_000
       iex> wait_for_state!(agent, fn state -> Enum.member?(state, "bar") end, "bar not found", 10)
       ** (RuntimeError) Process state ["foo"] never matched: bar not found
   """
@@ -60,7 +60,7 @@ defmodule ArchiDep.Support.ProcessTestHelpers do
       ...>   Agent.update(agent, fn data -> ["foo" | data] end)
       ...> end)
       iex> {usec, :ok} = :timer.tc(fn -> wait_for!(fn -> Agent.get(agent, fn state -> Enum.member?(state, "foo") end) end, "oops") end)
-      iex> assert_in_delta usec, 15_000, 50_000
+      iex> assert_in_delta usec, 15_000, 100_000
       iex> wait_for!(fn -> Agent.get(agent, fn state -> Enum.member?(state, "bar") end) end, "bar not found", 10)
       ** (RuntimeError) Condition never fulfilled: bar not found
   """

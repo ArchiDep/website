@@ -3,11 +3,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import Ecto.Query, only: [from: 2]
+  import ExUnit.CaptureLog
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.FactoryHelpers
   alias ArchiDep.Support.ServersFactory
 
   test "initialize a server manager for a new server" do
@@ -81,17 +83,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
   end
 
   test "a not connected server manager for an active server connects when the connection becomes idle" do
-    group = ServersFactory.build(:server_group, active: true, servers_enabled: true)
-    member = ServersFactory.build(:server_group_member, active: true, group: group)
-    owner = ServersFactory.build(:server_owner, active: true, root: false, group_member: member)
-
     server =
-      ServersFactory.build(:server,
-        active: true,
+      build_active_server(
         ssh_port: 2222,
         username: "alice",
-        group: group,
-        owner: owner,
         set_up_at: nil
       )
 
@@ -141,17 +136,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
   end
 
   test "a disconnected server manager for an active server connects when the connection becomes idle" do
-    group = ServersFactory.build(:server_group, active: true, servers_enabled: true)
-    member = ServersFactory.build(:server_group_member, active: true, group: group)
-    owner = ServersFactory.build(:server_owner, active: true, root: false, group_member: member)
-
     server =
-      ServersFactory.build(:server,
-        active: true,
+      build_active_server(
         ssh_port: 2222,
         username: "bob",
-        group: group,
-        owner: owner,
         set_up_at: nil
       )
 
@@ -201,17 +189,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
   end
 
   test "a server manager drops specific problems when the connection becomes idle" do
-    group = ServersFactory.build(:server_group, active: true, servers_enabled: true)
-    member = ServersFactory.build(:server_group_member, active: true, group: group)
-    owner = ServersFactory.build(:server_owner, active: true, root: false, group_member: member)
-
     server =
-      ServersFactory.build(:server,
+      build_active_server(
         active: true,
         ssh_port: 2222,
         username: "chuck",
-        group: group,
-        owner: owner,
         set_up_at: nil
       )
 
@@ -353,6 +335,218 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               %ServerManagerState{result | version: 43}}
   end
 
+  test "automatically retry connecting to a server after a delay" do
+    server =
+      build_active_server(
+        ssh_port: 2223,
+        username: "dave",
+        set_up_at: nil
+      )
+
+    retry_timer = Process.send_after(self(), :retry, 30_000)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_retry_connecting_state(),
+        server: server,
+        username: "dave",
+        retry_timer: retry_timer,
+        version: 30
+      )
+
+    retry_connecting_state(retrying: retrying) = initial_state.connection_state
+
+    result = ServerManagerState.retry_connecting(initial_state, false)
+
+    test_pid = self()
+
+    assert %ServerManagerState{
+             connection_state:
+               connecting_state(
+                 connection_ref: connection_ref,
+                 connection_pid: ^test_pid,
+                 retrying: ^retrying
+               ) = connection_state,
+             actions:
+               [
+                 {:monitor, ^test_pid},
+                 {:connect, connect_fn},
+                 {:cancel_timer, ^retry_timer},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert is_reference(connection_ref)
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state: connection_state,
+               actions: actions,
+               retry_timer: nil
+           }
+
+    assert_connect_fn(connect_fn, result, "dave", test_pid)
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                current_job: :connecting,
+                version: 31
+              ), %ServerManagerState{result | version: 31}}
+  end
+
+  test "manually retrying to connect to a server resets the backoff delay" do
+    server =
+      build_active_server(
+        ssh_port: 2223,
+        username: "dave",
+        set_up_at: nil
+      )
+
+    retry_timer = Process.send_after(self(), :retry, 30_000)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_retry_connecting_state(),
+        server: server,
+        username: "dave",
+        retry_timer: retry_timer,
+        version: 30
+      )
+
+    retry_connecting_state(retrying: retrying) = initial_state.connection_state
+
+    result = ServerManagerState.retry_connecting(initial_state, true)
+
+    test_pid = self()
+
+    expected_retrying = %{retrying | backoff: 0}
+
+    assert %ServerManagerState{
+             connection_state:
+               connecting_state(
+                 connection_ref: connection_ref,
+                 connection_pid: ^test_pid,
+                 retrying: ^expected_retrying
+               ) = connection_state,
+             actions:
+               [
+                 {:monitor, ^test_pid},
+                 {:connect, connect_fn},
+                 {:cancel_timer, ^retry_timer},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert is_reference(connection_ref)
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state: connection_state,
+               actions: actions,
+               retry_timer: nil
+           }
+
+    assert_connect_fn(connect_fn, result, "dave", test_pid)
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                current_job: :connecting,
+                version: 31
+              ), %ServerManagerState{result | version: 31}}
+  end
+
+  test "retry connecting to a server after a connection failure" do
+    server =
+      build_active_server(
+        ssh_port: 2223,
+        username: "frank",
+        set_up_at: nil
+      )
+
+    retry_timer = Process.send_after(self(), :retry, 30_000)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connection_failed_state(),
+        server: server,
+        username: "frank",
+        retry_timer: retry_timer,
+        version: 30
+      )
+
+    manual = FactoryHelpers.bool()
+    result = ServerManagerState.retry_connecting(initial_state, manual)
+
+    test_pid = self()
+
+    assert %ServerManagerState{
+             connection_state:
+               connecting_state(
+                 connection_ref: connection_ref,
+                 connection_pid: ^test_pid,
+                 retrying: false
+               ) = connection_state,
+             actions:
+               [
+                 {:monitor, ^test_pid},
+                 {:connect, connect_fn},
+                 {:cancel_timer, ^retry_timer},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert is_reference(connection_ref)
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state: connection_state,
+               actions: actions,
+               retry_timer: nil
+           }
+
+    assert_connect_fn(connect_fn, result, "frank", test_pid)
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                current_job: :connecting,
+                version: 31
+              ), %ServerManagerState{result | version: 31}}
+  end
+
+  test "retry connecting in the wrong state does nothing" do
+    server = build_active_server()
+
+    for connection_state <-
+          [
+            ServersFactory.random_not_connected_state(),
+            ServersFactory.random_connecting_state(),
+            ServersFactory.random_connected_state(),
+            ServersFactory.random_reconnecting_state(),
+            ServersFactory.random_disconnected_state()
+          ] do
+      initial_state =
+        ServersFactory.build(:server_manager_state,
+          connection_state: connection_state,
+          server: server,
+          username: "frank",
+          version: 30
+        )
+
+      assert {^initial_state, log} =
+               with_log(fn -> ServerManagerState.retry_connecting(initial_state, true) end)
+
+      assert log =~ "Ignore request to retry connecting"
+
+      assert {^initial_state, log2} =
+               with_log(fn -> ServerManagerState.retry_connecting(initial_state, false) end)
+
+      assert log2 =~ "Ignore request to retry connecting"
+    end
+  end
+
   defp assert_connect_fn(connect_fn, state, username, test_pid) do
     task = Task.completed(:fake)
 
@@ -366,6 +560,26 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     assert_receive {:connect_fn_called, ^expected_host, ^expected_port, ^username,
                     silently_accept_hosts: true}
+  end
+
+  defp build_active_server(opts \\ []) do
+    group = ServersFactory.build(:server_group, active: true, servers_enabled: true)
+
+    root = FactoryHelpers.bool()
+
+    member =
+      if root do
+        nil
+      else
+        ServersFactory.build(:server_group_member, active: true, group: group)
+      end
+
+    owner = ServersFactory.build(:server_owner, active: true, root: root, group_member: member)
+
+    ServersFactory.build(
+      :server,
+      Keyword.merge([active: true, group: group, owner: owner], opts)
+    )
   end
 
   defp generate_server!(attrs \\ []) do
