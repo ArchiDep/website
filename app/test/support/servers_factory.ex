@@ -10,6 +10,8 @@ defmodule ArchiDep.Support.ServersFactory do
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
@@ -146,6 +148,10 @@ defmodule ArchiDep.Support.ServersFactory do
     }
   end
 
+  @spec ansible_playbook_run_state() :: Types.ansible_playbook_run_state()
+  def ansible_playbook_run_state,
+    do: Enum.random([:pending, :running, :succeeded, :failed, :interrupted, :timeout])
+
   @spec random_connection_state() :: ServerConnectionState.connection_state()
   def random_connection_state,
     do:
@@ -198,6 +204,113 @@ defmodule ArchiDep.Support.ServersFactory do
       in_seconds: Faker.random_between(1, 86_000),
       reason: Faker.Lorem.sentence()
     }
+
+  @spec server_group_factory(map()) :: ServerGroup.t()
+  def server_group_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+
+    {name, attrs!} =
+      Map.pop_lazy(attrs!, :name, fn -> sequence(:server_group_name, &"Server group #{&1}") end)
+
+    {start_date, attrs!} =
+      Map.pop_lazy(attrs!, :start_date, optionally(fn -> Faker.Date.backward(100) end))
+
+    {end_date, attrs!} =
+      Map.pop_lazy(attrs!, :end_date, optionally(fn -> Faker.Date.forward(100) end))
+
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+    {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
+
+    {expected_server_properties, attrs!} =
+      Map.pop_lazy(attrs!, :expected_server_properties, fn ->
+        build(:server_properties, id: id)
+      end)
+
+    {expected_server_properties_id, attrs!} =
+      Map.pop_lazy(attrs!, :expected_server_properties_id, fn -> expected_server_properties.id end)
+
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+
+    [] = Map.keys(attrs!)
+
+    %ServerGroup{
+      id: id,
+      name: name,
+      start_date: start_date,
+      end_date: end_date,
+      active: active,
+      servers_enabled: servers_enabled,
+      expected_server_properties: expected_server_properties,
+      expected_server_properties_id: expected_server_properties_id,
+      version: version,
+      created_at: created_at,
+      updated_at: updated_at
+    }
+  end
+
+  @spec server_group_member_factory(map()) :: ServerGroupMember.t()
+  def server_group_member_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+    {name, attrs!} = Map.pop_lazy(attrs!, :name, &Faker.Person.name/0)
+
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn ->
+        sequence(:server_group_member_username, &"user#{&1}")
+      end)
+
+    {username_confirmed, attrs!} = Map.pop_lazy(attrs!, :username_confirmed, &bool/0)
+
+    {domain, attrs!} =
+      Map.pop_lazy(attrs!, :domain, fn ->
+        sequence(:server_group_member_domain, &"domain#{&1}.archidep.ch")
+      end)
+
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+    {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
+
+    {group, attrs!} = Map.pop(attrs!, :group, fn -> build(:server_group) end)
+
+    {group_id, attrs!} =
+      Map.pop_lazy(attrs!, :group_id, fn ->
+        case group do
+          %ServerGroup{} -> group.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {owner, attrs!} = Map.pop(attrs!, :owner, optionally(fn -> build(:server_owner) end))
+
+    {owner_id, attrs!} =
+      Map.pop_lazy(attrs!, :owner_id, fn ->
+        case owner do
+          %ServerOwner{} -> owner.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+
+    [] = Map.keys(attrs!)
+
+    %ServerGroupMember{
+      id: id,
+      name: name,
+      username: username,
+      username_confirmed: username_confirmed,
+      domain: domain,
+      active: active,
+      servers_enabled: servers_enabled,
+      group: group,
+      group_id: group_id,
+      owner: owner,
+      owner_id: owner_id,
+      version: version,
+      created_at: created_at,
+      updated_at: updated_at
+    }
+  end
 
   @spec server_factory(map()) :: Server.t()
   def server_factory(attrs!) do
@@ -283,6 +396,9 @@ defmodule ArchiDep.Support.ServersFactory do
     }
   end
 
+  @spec server_ip_address() :: Postgrex.INET.t()
+  def server_ip_address, do: %Postgrex.INET{address: NetFactory.ip_address(), netmask: nil}
+
   @spec server_manager_state_factory(map()) :: ServerManagerState.t()
   def server_manager_state_factory(attrs!) do
     {connection_state, attrs!} =
@@ -318,6 +434,48 @@ defmodule ArchiDep.Support.ServersFactory do
       retry_timer: retry_timer,
       load_average_timer: load_average_timer,
       version: version
+    }
+  end
+
+  @spec server_owner_factory(map()) :: ServerOwner.t()
+  def server_owner_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+    {root, attrs!} = Map.pop_lazy(attrs!, :root, &bool/0)
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+
+    {group_member, attrs!} =
+      Map.pop(attrs!, :group_member, optionally(fn -> build(:server_group_member) end))
+
+    {group_member_id, attrs!} =
+      Map.pop_lazy(attrs!, :group_member_id, fn ->
+        case group_member do
+          %ServerGroup{} -> group_member.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {active_server_count, attrs!} =
+      Map.pop_lazy(attrs!, :active_server_count, fn -> Faker.random_between(0, 5) end)
+
+    {active_server_count_lock, attrs!} =
+      Map.pop_lazy(attrs!, :active_server_count_lock, fn -> Faker.random_between(1, 1000) end)
+
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+
+    [] = Map.keys(attrs!)
+
+    %ServerOwner{
+      id: id,
+      root: root,
+      active: active,
+      group_member: group_member,
+      group_member_id: group_member_id,
+      active_server_count: active_server_count,
+      active_server_count_lock: active_server_count_lock,
+      version: version,
+      created_at: created_at,
+      updated_at: updated_at
     }
   end
 
@@ -380,11 +538,4 @@ defmodule ArchiDep.Support.ServersFactory do
       distribution_version: distribution_version
     }
   end
-
-  @spec ansible_playbook_run_state() :: Types.ansible_playbook_run_state()
-  def ansible_playbook_run_state,
-    do: Enum.random([:pending, :running, :succeeded, :failed, :interrupted, :timeout])
-
-  @spec server_ip_address() :: Postgrex.INET.t()
-  def server_ip_address, do: %Postgrex.INET{address: NetFactory.ip_address(), netmask: nil}
 end

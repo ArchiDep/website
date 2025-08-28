@@ -249,11 +249,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           Enum.reject(state.problems, fn problem ->
             match?({:server_authentication_failed, _username, _reason}, problem) or
               match?(
-                {:server_connection_timed_out, _host, _port, _user_type, ^app_username},
+                {:server_connection_refused, _host, _port, _user_type, ^app_username},
                 problem
               ) or
               match?(
-                {:server_connection_refused, _host, _port, _user_type, ^app_username},
+                {:server_connection_timed_out, _host, _port, _user_type, ^app_username},
                 problem
               ) or
               match?({:server_missing_sudo_access, _username, _stderr}, problem) or
