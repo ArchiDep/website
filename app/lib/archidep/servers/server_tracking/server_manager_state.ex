@@ -201,7 +201,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         } = state,
         manual
       ),
-      do: connect(state, connection_pid, if(manual, do: %{retrying | backoff: 0}, else: retrying))
+      do: connect(state, connection_pid, if(manual, do: %{retrying | backoff: 1}, else: retrying))
 
   def retry_connecting(
         %__MODULE__{

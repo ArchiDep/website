@@ -273,7 +273,7 @@ defmodule ArchiDep.Support.ServersFactory do
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
     {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
 
-    {group, attrs!} = Map.pop(attrs!, :group, fn -> build(:server_group) end)
+    {group, attrs!} = Map.pop_lazy(attrs!, :group, fn -> build(:server_group) end)
 
     {group_id, attrs!} =
       Map.pop_lazy(attrs!, :group_id, fn ->
@@ -284,7 +284,7 @@ defmodule ArchiDep.Support.ServersFactory do
         end
       end)
 
-    {owner, attrs!} = Map.pop(attrs!, :owner, optionally(fn -> build(:server_owner) end))
+    {owner, attrs!} = Map.pop_lazy(attrs!, :owner, optionally(fn -> build(:server_owner) end))
 
     {owner_id, attrs!} =
       Map.pop_lazy(attrs!, :owner_id, fn ->
@@ -449,7 +449,7 @@ defmodule ArchiDep.Support.ServersFactory do
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
 
     {group_member, attrs!} =
-      Map.pop(attrs!, :group_member, optionally(fn -> build(:server_group_member) end))
+      Map.pop_lazy(attrs!, :group_member, optionally(fn -> build(:server_group_member) end))
 
     {group_member_id, attrs!} =
       Map.pop_lazy(attrs!, :group_member_id, fn ->

@@ -4,18 +4,34 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import Ecto.Query, only: [from: 2]
   import ExUnit.CaptureLog
+  import Hammox
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.FactoryHelpers
   alias ArchiDep.Support.ServersFactory
 
-  test "initialize a server manager for a new server" do
+  setup :verify_on_exit!
+
+  setup_all do
+    %{
+      init: protect({ServerManagerState, :init, 2}, ServerManagerBehaviour),
+      online?: protect({ServerManagerState, :online?, 1}, ServerManagerBehaviour),
+      connection_idle: protect({ServerManagerState, :connection_idle, 2}, ServerManagerBehaviour),
+      retry_connecting:
+        protect({ServerManagerState, :retry_connecting, 2}, ServerManagerBehaviour),
+      handle_task_result:
+        protect({ServerManagerState, :handle_task_result, 3}, ServerManagerBehaviour)
+    }
+  end
+
+  test "initialize a server manager for a new server", %{init: init} do
     server = generate_server!()
 
-    assert ServerManagerState.init(server.id, __MODULE__) == %ServerManagerState{
+    assert init.(server.id, __MODULE__) == %ServerManagerState{
              server: server,
              pipeline: __MODULE__,
              username: server.username,
@@ -23,11 +39,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
            }
   end
 
-  test "initializing a server manager for a server that has already been set up uses the app username instead of the username" do
+  test "initializing a server manager for a server that has already been set up uses the app username instead of the username",
+       %{init: init} do
     now = DateTime.utc_now()
     server = generate_server!(set_up_at: now)
 
-    assert ServerManagerState.init(server.id, __MODULE__) == %ServerManagerState{
+    assert init.(server.id, __MODULE__) == %ServerManagerState{
              server: server,
              pipeline: __MODULE__,
              username: server.app_username,
@@ -43,11 +60,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
            }
   end
 
-  test "initializing a server with a failed setup ansible playbook run indicates a problem" do
+  test "initializing a server with a failed setup ansible playbook run indicates a problem", %{
+    init: init
+  } do
     server = generate_server!()
     failed_run = ServersFactory.insert(:ansible_playbook_run, server: server, state: :failed)
 
-    assert ServerManagerState.init(server.id, __MODULE__) == %ServerManagerState{
+    assert init.(server.id, __MODULE__) == %ServerManagerState{
              server: server,
              pipeline: __MODULE__,
              username: server.username,
@@ -61,13 +80,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
            }
   end
 
-  test "check whether a server is online" do
+  test "check whether a server is online", %{online?: online?} do
     build_state = fn connection_state ->
       ServersFactory.build(:server_manager_state, connection_state: connection_state)
     end
 
     state = build_state.(ServersFactory.random_connected_state())
-    assert ServerManagerState.online?(state) == true
+    assert online?.(state) == true
 
     for state <-
           [
@@ -78,11 +97,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
             ServersFactory.random_connection_failed_state(),
             ServersFactory.random_disconnected_state()
           ] do
-      assert ServerManagerState.online?(build_state.(state)) == false
+      assert online?.(build_state.(state)) == false
     end
   end
 
-  test "a not connected server manager for an active server connects when the connection becomes idle" do
+  test "a not connected server manager for an active server connects when the connection becomes idle",
+       %{connection_idle: connection_idle} do
     server =
       build_active_server(
         ssh_port: 2222,
@@ -98,7 +118,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         version: 24
       )
 
-    result = ServerManagerState.connection_idle(initial_state, self())
+    result = connection_idle.(initial_state, self())
 
     test_pid = self()
 
@@ -135,7 +155,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: 25}}
   end
 
-  test "a disconnected server manager for an active server connects when the connection becomes idle" do
+  test "a disconnected server manager for an active server connects when the connection becomes idle",
+       %{connection_idle: connection_idle} do
     server =
       build_active_server(
         ssh_port: 2222,
@@ -151,7 +172,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         version: 24
       )
 
-    result = ServerManagerState.connection_idle(initial_state, self())
+    result = connection_idle.(initial_state, self())
 
     test_pid = self()
 
@@ -188,7 +209,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: 25}}
   end
 
-  test "a server manager drops specific problems when the connection becomes idle" do
+  test "a server manager drops specific problems when the connection becomes idle", %{
+    connection_idle: connection_idle
+  } do
     server =
       build_active_server(
         active: true,
@@ -227,7 +250,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         version: 24
       )
 
-    result = ServerManagerState.connection_idle(initial_state, self())
+    result = connection_idle.(initial_state, self())
 
     test_pid = self()
 
@@ -281,7 +304,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: 25}}
   end
 
-  test "a not connected server manager for an inactive server remains not connected when the connection becomes idle" do
+  test "a not connected server manager for an inactive server remains not connected when the connection becomes idle",
+       %{connection_idle: connection_idle} do
     server = ServersFactory.build(:server, active: false, username: "alice", set_up_at: nil)
 
     initial_state =
@@ -292,7 +316,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         version: 42
       )
 
-    result = ServerManagerState.connection_idle(initial_state, self())
+    result = connection_idle.(initial_state, self())
 
     pid = self()
 
@@ -303,7 +327,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
            }
   end
 
-  test "a disconnected server manager for an inactive server transitions to the not connected state when the connection becomes idle" do
+  test "a disconnected server manager for an inactive server transitions to the not connected state when the connection becomes idle",
+       %{connection_idle: connection_idle} do
     server = ServersFactory.build(:server, active: false, username: "alice", set_up_at: nil)
 
     initial_state =
@@ -314,7 +339,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         version: 42
       )
 
-    result = ServerManagerState.connection_idle(initial_state, self())
+    result = connection_idle.(initial_state, self())
 
     pid = self()
 
@@ -335,7 +360,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               %ServerManagerState{result | version: 43}}
   end
 
-  test "automatically retry connecting to a server after a delay" do
+  test "automatically retry connecting to a server after a delay", %{
+    retry_connecting: retry_connecting
+  } do
     server =
       build_active_server(
         ssh_port: 2223,
@@ -356,7 +383,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     retry_connecting_state(retrying: retrying) = initial_state.connection_state
 
-    result = ServerManagerState.retry_connecting(initial_state, false)
+    result = retry_connecting.(initial_state, false)
 
     test_pid = self()
 
@@ -395,7 +422,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: 31}}
   end
 
-  test "manually retrying to connect to a server resets the backoff delay" do
+  test "manually retrying to connect to a server resets the backoff delay", %{
+    retry_connecting: retry_connecting
+  } do
     server =
       build_active_server(
         ssh_port: 2223,
@@ -416,11 +445,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     retry_connecting_state(retrying: retrying) = initial_state.connection_state
 
-    result = ServerManagerState.retry_connecting(initial_state, true)
+    result = retry_connecting.(initial_state, true)
 
     test_pid = self()
 
-    expected_retrying = %{retrying | backoff: 0}
+    expected_retrying = %{retrying | backoff: 1}
 
     assert %ServerManagerState{
              connection_state:
@@ -457,7 +486,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: 31}}
   end
 
-  test "retry connecting to a server after a connection failure" do
+  test "retry connecting to a server after a connection failure", %{
+    retry_connecting: retry_connecting
+  } do
     server =
       build_active_server(
         ssh_port: 2223,
@@ -477,7 +508,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
       )
 
     manual = FactoryHelpers.bool()
-    result = ServerManagerState.retry_connecting(initial_state, manual)
+    result = retry_connecting.(initial_state, manual)
 
     test_pid = self()
 
@@ -516,7 +547,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: 31}}
   end
 
-  test "retry connecting in the wrong state does nothing" do
+  test "retry connecting in the wrong state does nothing", %{retry_connecting: retry_connecting} do
     server = build_active_server()
 
     for connection_state <-
@@ -536,18 +567,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         )
 
       assert {^initial_state, log} =
-               with_log(fn -> ServerManagerState.retry_connecting(initial_state, true) end)
+               with_log(fn -> retry_connecting.(initial_state, true) end)
 
       assert log =~ "Ignore request to retry connecting"
 
       assert {^initial_state, log2} =
-               with_log(fn -> ServerManagerState.retry_connecting(initial_state, false) end)
+               with_log(fn -> retry_connecting.(initial_state, false) end)
 
       assert log2 =~ "Ignore request to retry connecting"
     end
   end
 
-  test "check sudo access after successful connection" do
+  test "check sudo access after successful connection", %{handle_task_result: handle_task_result} do
     server = build_active_server(set_up_at: nil)
 
     fake_connect_task_ref = make_ref()
@@ -565,7 +596,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
       )
 
     now = DateTime.utc_now()
-    result = ServerManagerState.handle_task_result(initial_state, fake_connect_task_ref, :ok)
+    result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
 
     assert %{
              connection_state:
@@ -610,7 +641,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: 11}}
   end
 
-  test "a connection authentication failure stops the connection process" do
+  test "a connection authentication failure stops the connection process", %{
+    handle_task_result: handle_task_result
+  } do
     server = build_active_server(set_up_at: nil)
 
     fake_connect_task_ref = make_ref()
@@ -629,7 +662,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     {result, log} =
       with_log(fn ->
-        ServerManagerState.handle_task_result(
+        handle_task_result.(
           initial_state,
           fake_connect_task_ref,
           {:error, :authentication_failed}
@@ -669,7 +702,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: 10}}
   end
 
-  test "schedule a connection retry after a generic connection failure" do
+  test "schedule a connection retry after a generic connection failure", %{
+    handle_task_result: handle_task_result
+  } do
     server = build_active_server(set_up_at: nil)
 
     fake_connect_task_ref = make_ref()
@@ -689,7 +724,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
     now = DateTime.utc_now()
 
     result =
-      ServerManagerState.handle_task_result(
+      handle_task_result.(
         initial_state,
         fake_connect_task_ref,
         {:error, :foo}
