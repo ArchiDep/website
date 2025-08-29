@@ -167,14 +167,19 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec random_not_connected_state() :: ServerConnectionState.not_connected_state()
   def random_not_connected_state, do: not_connected_state(connection_pid: self())
 
-  @spec random_connecting_state() :: ServerConnectionState.connecting_state()
-  def random_connecting_state,
-    do:
-      connecting_state(
-        connection_ref: make_ref(),
-        connection_pid: self(),
-        retrying: if(bool(), do: random_retry(), else: false)
-      )
+  @spec random_connecting_state(map()) :: ServerConnectionState.connecting_state()
+  def random_connecting_state(attrs \\ %{}) do
+    {retrying, attrs!} =
+      Map.pop_lazy(attrs, :retrying, fn -> if(bool(), do: random_retry(), else: false) end)
+
+    [] = Map.keys(attrs!)
+
+    connecting_state(
+      connection_ref: make_ref(),
+      connection_pid: self(),
+      retrying: retrying
+    )
+  end
 
   @spec random_retry_connecting_state() :: ServerConnectionState.retry_connecting_state()
   def random_retry_connecting_state,

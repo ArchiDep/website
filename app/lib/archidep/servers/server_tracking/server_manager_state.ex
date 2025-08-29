@@ -1299,7 +1299,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        end}
 
   defp get_load_average, do: run_command(:get_load_average, "cat /proc/loadavg", 10_000)
-  defp check_sudo_access, do: run_command(:check_access, "sudo ls", 10_000)
+  defp check_sudo_access, do: run_command(:check_access, "sudo -n ls", 10_000)
 
   defp test_ports,
     do:
@@ -1395,9 +1395,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp send_message(msg, ms, timer_key),
     do:
       {:send_message,
-       fn state, factory ->
-         timer = factory.(msg, ms)
-         Map.put(state, timer_key, timer)
+       fn timer_state, timer_factory ->
+         timer = timer_factory.(msg, ms)
+         Map.put(timer_state, timer_key, timer)
        end}
 
   defp to_real_time_state(%__MODULE__{} = state) do

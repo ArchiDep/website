@@ -547,6 +547,198 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
     end
   end
 
+  test "check sudo access after successful connection" do
+    server = build_active_server(set_up_at: nil)
+
+    fake_connect_task_ref = make_ref()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting_state(connection_ref: connection_ref, connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref},
+        version: 10
+      )
+
+    now = DateTime.utc_now()
+    result = ServerManagerState.handle_task_result(initial_state, fake_connect_task_ref, :ok)
+
+    assert %{
+             connection_state:
+               connected_state(
+                 connection_ref: ^connection_ref,
+                 connection_pid: ^connection_pid,
+                 time: time
+               ),
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connected_state(
+                   connection_ref: connection_ref,
+                   connection_pid: connection_pid,
+                   time: time
+                 ),
+               actions: actions,
+               tasks: %{},
+               version: 10
+           }
+
+    fake_task = Task.completed(:fake)
+
+    assert run_command_fn.(result, fn "sudo -n ls", 10_000 ->
+             fake_task
+           end) == %ServerManagerState{result | tasks: %{check_access: fake_task.ref}}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                version: 11
+              ), %ServerManagerState{result | version: 11}}
+  end
+
+  test "a connection authentication failure stops the connection process" do
+    server = build_active_server(set_up_at: nil)
+
+    fake_connect_task_ref = make_ref()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting_state(connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref},
+        version: 9
+      )
+
+    {result, log} =
+      with_log(fn ->
+        ServerManagerState.handle_task_result(
+          initial_state,
+          fake_connect_task_ref,
+          {:error, :authentication_failed}
+        )
+      end)
+
+    assert log =~ ~r"Server manager could not connect .* because authentication failed"
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connection_failed_state(
+                   connection_pid: connection_pid,
+                   reason: :authentication_failed
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_authentication_failed, :username, server.username}
+               ],
+               version: 9
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
+                version: 10
+              ), %ServerManagerState{result | version: 10}}
+  end
+
+  test "schedule a connection retry after a generic connection failure" do
+    server = build_active_server(set_up_at: nil)
+
+    fake_connect_task_ref = make_ref()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting_state(connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref},
+        version: 9
+      )
+
+    now = DateTime.utc_now()
+
+    result =
+      ServerManagerState.handle_task_result(
+        initial_state,
+        fake_connect_task_ref,
+        {:error, :foo}
+      )
+
+    assert %{
+             connection_state: retry_connecting_state(retrying: %{time: time}),
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:send_message, send_message_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 retry_connecting_state(
+                   connection_pid: connection_pid,
+                   retrying: %{
+                     retry: 1,
+                     backoff: 1,
+                     time: time,
+                     in_seconds: 5,
+                     reason: :foo
+                   }
+                 ),
+               actions: actions,
+               tasks: %{},
+               version: 9
+           }
+
+    fake_timer_ref = make_ref()
+
+    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
+             fake_timer_ref
+           end) ==
+             %ServerManagerState{result | retry_timer: fake_timer_ref}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                version: 10
+              ), %ServerManagerState{result | version: 10}}
+  end
+
   defp assert_connect_fn(connect_fn, state, username, test_pid) do
     task = Task.completed(:fake)
 
