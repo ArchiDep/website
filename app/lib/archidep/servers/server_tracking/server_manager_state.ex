@@ -201,7 +201,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         } = state,
         manual
       ),
-      do: connect(state, connection_pid, if(manual, do: %{retrying | backoff: 1}, else: retrying))
+      do: connect(state, connection_pid, if(manual, do: %{retrying | backoff: 0}, else: retrying))
 
   def retry_connecting(
         %__MODULE__{
@@ -744,7 +744,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp retry(false, reason),
     do: %{
       retry: 1,
-      backoff: 1,
+      backoff: 0,
       time: DateTime.utc_now(),
       in_seconds: List.first(@retry_intervals_seconds),
       reason: reason

@@ -341,7 +341,12 @@ defmodule ArchiDep.Support.ServersFactory do
         sequence(:server_app_username, &"appuser#{&1}")
       end)
 
-    {ssh_port, attrs!} = Map.pop_lazy(attrs!, :ssh_port, optionally(&NetFactory.port/0))
+    {ssh_port, attrs!} =
+      case Map.pop_lazy(attrs!, :ssh_port, optionally(&NetFactory.port/0)) do
+        {nil, attrs} -> {nil, attrs}
+        {true, attrs} -> {NetFactory.port(), attrs}
+        {port, attrs} when is_integer(port) and port > 0 and port < 65_536 -> {port, attrs}
+      end
 
     {secret_key, attrs!} =
       Map.pop_lazy(attrs!, :secret_key, fn -> Faker.random_bytes(20) end)
@@ -369,11 +374,15 @@ defmodule ArchiDep.Support.ServersFactory do
     {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
 
     {set_up_at, attrs!} =
-      Map.pop_lazy(
-        attrs!,
-        :set_up_at,
-        optionally(fn -> Faker.DateTime.between(created_at, updated_at) end)
-      )
+      case Map.pop_lazy(
+             attrs!,
+             :set_up_at,
+             optionally(fn -> Faker.DateTime.between(created_at, updated_at) end)
+           ) do
+        {nil, attrs} -> {nil, attrs}
+        {true, attrs} -> {Faker.DateTime.between(created_at, updated_at), attrs}
+        {%DateTime{} = dt, attrs} -> {dt, attrs}
+      end
 
     [] = Map.keys(attrs!)
 
