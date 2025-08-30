@@ -124,7 +124,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     do:
       Enum.reject(
         problems,
-        &match?({:server_connection_timed_out, _host, _port, _user_type, _username}, &1)
+        &match?({:server_connection_timed_out, _host, _port, _username}, &1)
       )
 
   defp server_card_class(nil, _problems), do: "bg-neutral text-neutral-content"
@@ -376,9 +376,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
-  def server_problem(
-        %{problem: {:server_connection_refused, host, port, _user_type, username}} = assigns
-      ) do
+  def server_problem(%{problem: {:server_connection_refused, host, port, username}} = assigns) do
     assigns =
       assigns
       |> assign(:host, :inet.ntoa(host))
@@ -400,9 +398,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
-  def server_problem(
-        %{problem: {:server_connection_timed_out, host, port, _user_type, username}} = assigns
-      ) do
+  def server_problem(%{problem: {:server_connection_timed_out, host, port, username}} = assigns) do
     assigns =
       assigns
       |> assign(:host, :inet.ntoa(host))

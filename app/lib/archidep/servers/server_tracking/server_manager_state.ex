@@ -224,7 +224,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     host = server.ip_address.address
     port = server.ssh_port || 22
     username = state.username
-    app_username = server.app_username
 
     %__MODULE__{
       state
@@ -248,14 +247,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         problems:
           Enum.reject(state.problems, fn problem ->
             match?({:server_authentication_failed, _username, _reason}, problem) or
-              match?(
-                {:server_connection_refused, _host, _port, _user_type, ^app_username},
-                problem
-              ) or
-              match?(
-                {:server_connection_timed_out, _host, _port, _user_type, ^app_username},
-                problem
-              ) or
               match?({:server_missing_sudo_access, _username, _stderr}, problem) or
               match?({:server_reconnection_failed, _reason}, problem) or
               match?({:server_sudo_access_check_failed, _username, _reason}, problem)
@@ -687,21 +678,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             {:timeout, ^server_username} ->
               [
                 {:server_connection_timed_out, state.server.ip_address.address,
-                 state.server.ssh_port || 22,
-                 if(state.username == state.server.app_username,
-                   do: :app_username,
-                   else: :username
-                 ), state.username}
+                 state.server.ssh_port || 22, server_username}
               ]
 
             {:econnrefused, ^server_username} ->
               [
                 {:server_connection_refused, state.server.ip_address.address,
-                 state.server.ssh_port || 22,
-                 if(state.username == state.server.app_username,
-                   do: :app_username,
-                   else: :username
-                 ), state.username}
+                 state.server.ssh_port || 22, server_username}
               ]
 
             _anything_else ->
@@ -1355,11 +1338,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         problems,
         fn problem ->
           match?(
-            {:server_connection_timed_out, _host, _port, _user_type, _username},
+            {:server_connection_timed_out, _host, _port, _username},
             problem
           ) or
             match?(
-              {:server_connection_refused, _host, _port, _user_type, _username},
+              {:server_connection_refused, _host, _port, _username},
               problem
             )
         end

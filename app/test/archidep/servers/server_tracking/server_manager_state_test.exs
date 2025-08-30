@@ -237,10 +237,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
              unreachable: 0
            }},
           {:server_authentication_failed, :username, "Authentication error"},
-          {:server_connection_refused, {127, 0, 0, 1}, 22, :username, server.username},
-          {:server_connection_refused, {127, 0, 0, 1}, 22, :username, server.app_username},
-          {:server_connection_timed_out, {127, 0, 0, 1}, 22, :username, server.username},
-          {:server_connection_timed_out, {127, 0, 0, 1}, 22, :username, server.app_username},
+          {:server_connection_refused, {127, 0, 0, 1}, 22, server.username},
+          {:server_connection_timed_out, {127, 0, 0, 1}, 22, server.username},
           {:server_expected_property_mismatch, :cpu_cores, 4, 8},
           {:server_fact_gathering_failed, "Fact gathering error"},
           {:server_missing_sudo_access, "chuck", "Missing sudo access"},
@@ -288,8 +286,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                     skipped: 0,
                     unreachable: 0
                   }},
-                 {:server_connection_refused, {127, 0, 0, 1}, 22, :username, server.username},
-                 {:server_connection_timed_out, {127, 0, 0, 1}, 22, :username, server.username},
+                 {:server_connection_refused, {127, 0, 0, 1}, 22, server.username},
+                 {:server_connection_timed_out, {127, 0, 0, 1}, 22, server.username},
                  {:server_expected_property_mismatch, :cpu_cores, 4, 8},
                  {:server_fact_gathering_failed, "Fact gathering error"},
                  {:server_open_ports_check_failed, [{80, "Port closed"}, {443, "Port closed"}]},
@@ -673,10 +671,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
              unreachable: 0
            }},
           {:server_authentication_failed, :username, "Authentication error"},
-          {:server_connection_refused, {127, 0, 0, 1}, 22, :username, server.username},
-          {:server_connection_refused, {127, 0, 0, 1}, 22, :username, server.app_username},
-          {:server_connection_timed_out, {127, 0, 0, 1}, 22, :username, server.username},
-          {:server_connection_timed_out, {127, 0, 0, 1}, 22, :username, server.app_username},
+          {:server_connection_refused, {127, 0, 0, 1}, 22, server.username},
+          {:server_connection_timed_out, {127, 0, 0, 1}, 22, server.username},
           {:server_expected_property_mismatch, :cpu_cores, 4, 8},
           {:server_fact_gathering_failed, "Fact gathering error"},
           {:server_missing_sudo_access, "chuck", "Missing sudo access"},
@@ -935,7 +931,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                tasks: %{},
                problems: [
                  {:server_connection_timed_out, server.ip_address.address, server.ssh_port,
-                  :username, server.username}
+                  server.username}
                ]
            }
 
@@ -1010,7 +1006,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                tasks: %{},
                problems: [
                  {:server_connection_refused, server.ip_address.address, server.ssh_port,
-                  :username, server.username}
+                  server.username}
                ]
            }
 
