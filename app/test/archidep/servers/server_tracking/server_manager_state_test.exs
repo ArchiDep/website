@@ -209,7 +209,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: 25}}
   end
 
-  test "a server manager drops specific problems when the connection becomes idle", %{
+  test "specific problems are dropped when the connection becomes idle", %{
     connection_idle: connection_idle
   } do
     server =
@@ -950,6 +950,85 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
+  test "previous connection problems are dropped after a connection timeout", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    fake_connect_task_ref = make_ref()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting_state(connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref},
+        problems: [
+          ServersFactory.server_connection_refused_problem(),
+          ServersFactory.server_connection_timed_out_problem()
+        ]
+      )
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_connect_task_ref,
+        {:error, :timeout}
+      )
+
+    assert %{
+             connection_state: retry_connecting_state(retrying: %{time: time}),
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:send_message, send_message_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 retry_connecting_state(
+                   connection_pid: connection_pid,
+                   retrying: %{
+                     retry: 1,
+                     backoff: 0,
+                     time: time,
+                     in_seconds: 5,
+                     reason: :timeout
+                   }
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_connection_timed_out, server.ip_address.address, server.ssh_port,
+                  server.username}
+               ]
+           }
+
+    fake_timer_ref = make_ref()
+
+    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
+             fake_timer_ref
+           end) ==
+             %ServerManagerState{result | retry_timer: fake_timer_ref}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   test "schedule a connection retry after the connection was refused", %{
     handle_task_result: handle_task_result
   } do
@@ -966,6 +1045,85 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         server: server,
         username: server.username,
         tasks: %{connect: fake_connect_task_ref}
+      )
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_connect_task_ref,
+        {:error, :econnrefused}
+      )
+
+    assert %{
+             connection_state: retry_connecting_state(retrying: %{time: time}),
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:send_message, send_message_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 retry_connecting_state(
+                   connection_pid: connection_pid,
+                   retrying: %{
+                     retry: 1,
+                     backoff: 0,
+                     time: time,
+                     in_seconds: 5,
+                     reason: :econnrefused
+                   }
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_connection_refused, server.ip_address.address, server.ssh_port,
+                  server.username}
+               ]
+           }
+
+    fake_timer_ref = make_ref()
+
+    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
+             fake_timer_ref
+           end) ==
+             %ServerManagerState{result | retry_timer: fake_timer_ref}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "previous connection problems are dropped after the connection was refused", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    fake_connect_task_ref = make_ref()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting_state(connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref},
+        problems: [
+          ServersFactory.server_connection_refused_problem(),
+          ServersFactory.server_connection_timed_out_problem()
+        ]
       )
 
     now = DateTime.utc_now()
@@ -1080,6 +1238,83 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                  ),
                actions: actions,
                tasks: %{},
+               version: 9
+           }
+
+    fake_timer_ref = make_ref()
+
+    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
+             fake_timer_ref
+           end) ==
+             %ServerManagerState{result | retry_timer: fake_timer_ref}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                version: 10
+              ), %ServerManagerState{result | version: 10}}
+  end
+
+  test "previous connection problems are dropped after a generic connection failure", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil)
+
+    fake_connect_task_ref = make_ref()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting_state(connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref},
+        problems: [
+          ServersFactory.server_connection_refused_problem(),
+          ServersFactory.server_connection_timed_out_problem()
+        ],
+        version: 9
+      )
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_connect_task_ref,
+        {:error, :foo}
+      )
+
+    assert %{
+             connection_state: retry_connecting_state(retrying: %{time: time}),
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:send_message, send_message_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 retry_connecting_state(
+                   connection_pid: connection_pid,
+                   retrying: %{
+                     retry: 1,
+                     backoff: 0,
+                     time: time,
+                     in_seconds: 5,
+                     reason: :foo
+                   }
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: [],
                version: 9
            }
 

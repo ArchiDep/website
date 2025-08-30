@@ -210,6 +210,18 @@ defmodule ArchiDep.Support.ServersFactory do
       reason: Faker.Lorem.sentence()
     }
 
+  @spec server_connection_refused_problem :: Types.server_connection_refused_problem()
+  def server_connection_refused_problem,
+    do:
+      {:server_connection_refused, NetFactory.ip_address(), NetFactory.port(),
+       Faker.Internet.user_name()}
+
+  @spec server_connection_timed_out_problem :: Types.server_connection_timed_out_problem()
+  def server_connection_timed_out_problem,
+    do:
+      {:server_connection_timed_out, NetFactory.ip_address(), NetFactory.port(),
+       Faker.Internet.user_name()}
+
   @spec server_group_factory(map()) :: ServerGroup.t()
   def server_group_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
