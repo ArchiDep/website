@@ -30,7 +30,7 @@ defmodule ArchiDep.Servers.Types do
           | nil
 
   # TODO: add list of failed tasks
-  @type server_ansible_playbook_failed ::
+  @type server_ansible_playbook_failed_problem ::
           {:server_ansible_playbook_failed, String.t(), ansible_playbook_run_failed_state(),
            ansible_stats()}
   @type server_authentication_failed_problem ::
@@ -53,7 +53,7 @@ defmodule ArchiDep.Servers.Types do
   @type server_sudo_access_check_failed_problem ::
           {:server_sudo_access_check_failed, String.t(), term()}
   @type server_problem ::
-          server_ansible_playbook_failed()
+          server_ansible_playbook_failed_problem()
           | server_authentication_failed_problem()
           | server_connection_refused_problem()
           | server_connection_timed_out_problem()
