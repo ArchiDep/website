@@ -414,8 +414,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def handle_task_result(
         %__MODULE__{
           connection_state: connected_state(),
-          tasks: %{gather_facts: gather_facts_ref},
-          problems: problems
+          tasks: %{gather_facts: gather_facts_ref}
         } = state,
         gather_facts_ref,
         result
@@ -425,50 +424,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     new_state =
       case result do
         {:ok, facts} ->
-          updated_server = Server.update_last_known_properties!(state.server, facts)
-          :ok = PubSub.publish_server_updated(updated_server)
-
-          setup_playbook = Ansible.setup_playbook()
-
-          last_setup_run =
-            AnsiblePlaybookRun.get_last_playbook_run(updated_server, setup_playbook)
-
-          if last_setup_run == nil do
-            Logger.warning(
-              "No previous Ansible setup playbook run found for server #{updated_server.id}"
-            )
-          end
-
-          if last_setup_run != nil and
-               (last_setup_run.state !== :succeeded or
-                  setup_playbook.digest != last_setup_run.digest) do
-            if setup_playbook.digest != last_setup_run.digest do
-              Logger.notice(
-                "Re-running Ansible setup playbook for server #{updated_server.id} because its digest has changed from #{Base.encode16(last_setup_run.digest, case: :lower)} to #{Base.encode16(setup_playbook.digest, case: :lower)}"
-              )
-            else
-              Logger.notice(
-                "Re-running Ansible setup playbook for server #{updated_server.id} because its last run did not succeed (#{inspect(last_setup_run.state)})"
-              )
-            end
-
-            playbook_run = run_setup_playbook(updated_server)
-
-            %__MODULE__{
-              state
-              | server: updated_server,
-                ansible_playbook: {playbook_run, nil},
-                actions: [{:run_playbook, playbook_run}, update_tracking()],
-                problems: detect_server_properties_mismatches(problems, updated_server)
-            }
-          else
-            maybe_test_ports(%__MODULE__{
-              state
-              | server: updated_server,
-                actions: [update_tracking()],
-                problems: detect_server_properties_mismatches(problems, updated_server)
-            })
-          end
+          handle_successful_facts_gathering(state, facts)
 
         {:error, reason} ->
           Logger.warning(
@@ -770,6 +726,53 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp retry_action(%{in_seconds: in_seconds}),
     do: send_message(:retry_connecting, in_seconds * 1000, :retry_timer)
+
+  defp handle_successful_facts_gathering(state, facts) do
+    updated_server = Server.update_last_known_properties!(state.server, facts)
+    :ok = PubSub.publish_server_updated(updated_server)
+
+    setup_playbook = Ansible.setup_playbook()
+
+    last_setup_run =
+      AnsiblePlaybookRun.get_last_playbook_run(updated_server, setup_playbook)
+
+    if last_setup_run == nil do
+      Logger.warning(
+        "No previous Ansible setup playbook run found for server #{updated_server.id}"
+      )
+    end
+
+    if last_setup_run != nil and
+         (last_setup_run.state != :succeeded or
+            setup_playbook.digest != last_setup_run.digest) do
+      if setup_playbook.digest != last_setup_run.digest do
+        Logger.notice(
+          "Re-running Ansible setup playbook for server #{updated_server.id} because its digest has changed from #{Base.encode16(last_setup_run.digest, case: :lower)} to #{Base.encode16(setup_playbook.digest, case: :lower)}"
+        )
+      else
+        Logger.notice(
+          "Re-running Ansible setup playbook for server #{updated_server.id} because its last run did not succeed (#{inspect(last_setup_run.state)})"
+        )
+      end
+
+      playbook_run = run_setup_playbook(updated_server)
+
+      %__MODULE__{
+        state
+        | server: updated_server,
+          ansible_playbook: {playbook_run, nil},
+          actions: [{:run_playbook, playbook_run}, update_tracking()],
+          problems: detect_server_properties_mismatches(state.problems, updated_server)
+      }
+    else
+      maybe_test_ports(%__MODULE__{
+        state
+        | server: updated_server,
+          actions: [update_tracking()],
+          problems: detect_server_properties_mismatches(state.problems, updated_server)
+      })
+    end
+  end
 
   @impl ServerManagerBehaviour
   def ansible_playbook_event(
