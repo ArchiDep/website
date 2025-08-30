@@ -7,11 +7,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
   import Hammox
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
@@ -19,7 +21,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.FactoryHelpers
   alias ArchiDep.Support.ServersFactory
+  alias Ecto.UUID
+  alias Phoenix.PubSub
   alias Phoenix.Token
+
+  @pubsub ArchiDep.PubSub
 
   setup :verify_on_exit!
 
@@ -2257,6 +2263,381 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
            end) == %ServerManagerState{result | load_average_timer: fake_timer_ref}
   end
 
+  test "run the port testing script after facts have been gathered",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    ServersFactory.insert(:ansible_playbook_run,
+      server: server,
+      state: :succeeded,
+      digest: Ansible.setup_playbook().digest
+    )
+
+    fake_gather_facts_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok, %{}}
+      )
+
+    assert %{
+             server:
+               %Server{
+                 last_known_properties: %ServerProperties{id: last_known_properties_id}
+               } = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
+  test "save detected properties after gathering facts the first time",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server =
+      insert_active_server!(
+        set_up_at: true,
+        ssh_port: true,
+        class_expected_server_properties: [
+          hostname: nil,
+          machine_id: nil,
+          cpus: nil,
+          cores: nil,
+          vcpus: nil,
+          memory: nil,
+          swap: nil,
+          system: nil,
+          architecture: nil,
+          os_family: nil,
+          distribution: nil,
+          distribution_release: nil,
+          distribution_version: nil
+        ],
+        server_expected_properties: [
+          hostname: nil,
+          machine_id: nil,
+          cpus: nil,
+          cores: nil,
+          vcpus: nil,
+          memory: nil,
+          swap: nil,
+          system: nil,
+          architecture: nil,
+          os_family: nil,
+          distribution: nil,
+          distribution_release: nil,
+          distribution_version: nil
+        ]
+      )
+
+    ServersFactory.insert(:ansible_playbook_run,
+      server: server,
+      state: :succeeded,
+      digest: Ansible.setup_playbook().digest
+    )
+
+    fake_gather_facts_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok,
+         %{
+           "ansible_hostname" => "test-server",
+           "ansible_machine_id" => "1234567890abcdef",
+           "ansible_processor_count" => 2,
+           "ansible_processor_cores" => 4,
+           "ansible_processor_vcpus" => 8,
+           "ansible_memory_mb" => %{
+             "real" => %{"total" => 4096},
+             "swap" => %{"total" => 2048}
+           },
+           "ansible_system" => "Linux",
+           "ansible_architecture" => "x86_64",
+           "ansible_os_family" => "Debian",
+           "ansible_distribution" => "Ubuntu",
+           "ansible_distribution_release" => "noble",
+           "ansible_distribution_version" => "24.04"
+         }}
+      )
+
+    assert %{
+             server:
+               %Server{
+                 last_known_properties: %ServerProperties{id: last_known_properties_id}
+               } = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id,
+                     hostname: "test-server",
+                     machine_id: "1234567890abcdef",
+                     cpus: 2,
+                     cores: 4,
+                     vcpus: 8,
+                     memory: 4096,
+                     swap: 2048,
+                     system: "Linux",
+                     architecture: "x86_64",
+                     os_family: "Debian",
+                     distribution: "Ubuntu",
+                     distribution_release: "noble",
+                     distribution_version: "24.04"
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
+  test "a warning is logged if no previous ansible setup playbook run is found after gathering facts",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    fake_gather_facts_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_gather_facts_ref,
+          {:ok, %{}}
+        )
+      end)
+
+    assert log =~ "No previous Ansible setup playbook run found for server #{server.id}"
+
+    assert %{
+             server:
+               %Server{
+                 last_known_properties: %ServerProperties{id: last_known_properties_id}
+               } = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
+  test "a fact gathering error stops the connection process",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    ServersFactory.insert(:ansible_playbook_run,
+      server: server,
+      state: :succeeded,
+      digest: Ansible.setup_playbook().digest
+    )
+
+    fake_gather_facts_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    fact_gathering_error = Faker.Lorem.sentence()
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_gather_facts_ref,
+          {:error, fact_gathering_error}
+        )
+      end)
+
+    assert log =~ "Server manager could not gather facts for server #{server.id}"
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_fact_gathering_failed, fact_gathering_error}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   defp assert_connect_fn!(connect_fn, state, username) do
     fake_task = Task.completed(:fake)
 
@@ -2294,9 +2675,27 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
     )
   end
 
-  defp insert_active_server!(opts) do
-    class = CourseFactory.insert(:class, active: true, servers_enabled: true)
-    group = Repo.get!(ServerGroup, class.id)
+  defp insert_active_server!(opts!) do
+    class_id = UUID.generate()
+
+    {class_expected_server_properties, opts!} =
+      Keyword.pop(opts!, :class_expected_server_properties, [])
+
+    expected_server_properties =
+      CourseFactory.insert(
+        :expected_server_properties,
+        Keyword.merge(class_expected_server_properties, id: class_id)
+      )
+
+    class =
+      CourseFactory.insert(:class,
+        id: class_id,
+        active: true,
+        servers_enabled: true,
+        expected_server_properties: expected_server_properties
+      )
+
+    {:ok, group} = ServerGroup.fetch_server_group(class.id)
 
     root = FactoryHelpers.bool()
 
@@ -2305,7 +2704,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         nil
       else
         user_account = AccountsFactory.insert(:user_account)
-        user = Repo.get!(User, user_account.id)
+        {:ok, user} = User.fetch_user(user_account.id)
 
         student =
           CourseFactory.insert(:student,
@@ -2316,31 +2715,43 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
             user_id: user.id
           )
 
-        Repo.get!(ServerGroupMember, student.id)
+        student.id |> ServerGroupMember.fetch_server_group_member() |> unpair_ok()
       end
 
     owner =
       if member do
         Repo.update_all(UserAccount, set: [preregistered_user_id: member.id])
-        Repo.get!(ServerOwner, member.owner_id)
+        member.owner_id |> ServerOwner.fetch_server_owner() |> unpair_ok()
       else
         user_account = AccountsFactory.insert(:user_account, active: true, root: true)
-        Repo.get!(ServerOwner, user_account.id)
+        user_account.id |> ServerOwner.fetch_server_owner() |> unpair_ok()
       end
+
+    id = UUID.generate()
+
+    {server_expected_properties, opts!} =
+      Keyword.pop(opts!, :server_expected_properties, [])
+
+    expected_properties =
+      ServersFactory.insert(:server_properties, Keyword.merge(server_expected_properties, id: id))
 
     ServersFactory.insert(
       :server,
       Keyword.merge(
         [
+          id: id,
           active: true,
           group: group,
           group_id: group.id,
           owner: owner,
-          owner_id: owner.id
+          owner_id: owner.id,
+          expected_properties: expected_properties
         ],
-        opts
+        opts!
       )
     )
+
+    id |> Server.fetch_server() |> unpair_ok()
   end
 
   defp generate_server!(attrs \\ []) do

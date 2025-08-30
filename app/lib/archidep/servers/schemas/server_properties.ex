@@ -142,7 +142,7 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
         %{
           hostname: facts["ansible_hostname"],
           machine_id: facts["ansible_machine_id"],
-          cpus: facts["ansible_processor_cores"],
+          cpus: facts["ansible_processor_count"],
           cores: facts["ansible_processor_cores"],
           vcpus: facts["ansible_processor_vcpus"],
           memory: get_in(facts, ["ansible_memory_mb", "real", "total"]),
@@ -289,6 +289,8 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
   defp trim_binary_to_nil(value), do: value
 
   defp detect_mismatch(property, nil, _actual) when is_atom(property), do: :ok
+
+  defp detect_mismatch(property, _expected, nil) when is_atom(property), do: :ok
 
   defp detect_mismatch(property, 0, _actual) when is_atom(property), do: :ok
 

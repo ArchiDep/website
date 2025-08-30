@@ -433,10 +433,24 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           last_setup_run =
             AnsiblePlaybookRun.get_last_playbook_run(updated_server, setup_playbook)
 
-          if setup_playbook.digest != last_setup_run.digest do
-            Logger.notice(
-              "Re-running Ansible setup playbook for server #{updated_server.id} because its digest has changed from #{Base.encode16(last_setup_run.digest, case: :lower)} to #{Base.encode16(setup_playbook.digest, case: :lower)}"
+          if last_setup_run == nil do
+            Logger.warning(
+              "No previous Ansible setup playbook run found for server #{updated_server.id}"
             )
+          end
+
+          if last_setup_run != nil and
+               (last_setup_run.state !== :succeeded or
+                  setup_playbook.digest != last_setup_run.digest) do
+            if setup_playbook.digest != last_setup_run.digest do
+              Logger.notice(
+                "Re-running Ansible setup playbook for server #{updated_server.id} because its digest has changed from #{Base.encode16(last_setup_run.digest, case: :lower)} to #{Base.encode16(setup_playbook.digest, case: :lower)}"
+              )
+            else
+              Logger.notice(
+                "Re-running Ansible setup playbook for server #{updated_server.id} because its last run did not succeed (#{inspect(last_setup_run.state)})"
+              )
+            end
 
             playbook_run = run_setup_playbook(updated_server)
 
@@ -457,6 +471,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           end
 
         {:error, reason} ->
+          Logger.warning(
+            "Server manager could not gather facts for server #{state.server.id} because #{inspect(reason)}"
+          )
+
           %__MODULE__{
             state
             | actions: [
