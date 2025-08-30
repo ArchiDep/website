@@ -153,14 +153,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                actions: actions
            }
 
-    assert_connect_fn(connect_fn, result, "alice", test_pid)
+    connect_result = assert_connect_fn!(connect_fn, result, "alice")
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 current_job: :connecting,
                 version: 25
-              ), %ServerManagerState{result | version: 25}}
+              ), %ServerManagerState{connect_result | version: 25}}
   end
 
   test "a disconnected server manager for an active server connects when the connection becomes idle",
@@ -207,14 +207,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                actions: actions
            }
 
-    assert_connect_fn(connect_fn, result, "bob", test_pid)
+    connect_result = assert_connect_fn!(connect_fn, result, "bob")
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 current_job: :connecting,
                 version: 25
-              ), %ServerManagerState{result | version: 25}}
+              ), %ServerManagerState{connect_result | version: 25}}
   end
 
   test "specific problems are dropped when the connection becomes idle", %{
@@ -284,15 +284,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                problems: kept_problems
            }
 
-    assert_connect_fn(connect_fn, result, "chuck", test_pid)
+    connect_result = assert_connect_fn!(connect_fn, result, "chuck")
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 current_job: :connecting,
                 problems: result.problems,
                 version: 25
-              ), %ServerManagerState{result | version: 25}}
+              ), %ServerManagerState{connect_result | version: 25}}
   end
 
   test "a not connected server manager for an inactive server remains not connected when the connection becomes idle",
@@ -403,14 +403,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                retry_timer: nil
            }
 
-    assert_connect_fn(connect_fn, result, "dave", test_pid)
+    connect_result = assert_connect_fn!(connect_fn, result, "dave")
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 current_job: :connecting,
                 version: 31
-              ), %ServerManagerState{result | version: 31}}
+              ), %ServerManagerState{connect_result | version: 31}}
   end
 
   test "manually retrying to connect to a server resets the backoff delay", %{
@@ -467,14 +467,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                retry_timer: nil
            }
 
-    assert_connect_fn(connect_fn, result, "dave", test_pid)
+    connect_result = assert_connect_fn!(connect_fn, result, "dave")
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 current_job: :connecting,
                 version: 31
-              ), %ServerManagerState{result | version: 31}}
+              ), %ServerManagerState{connect_result | version: 31}}
   end
 
   test "retry connecting to a server after a connection failure", %{
@@ -528,14 +528,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                retry_timer: nil
            }
 
-    assert_connect_fn(connect_fn, result, "frank", test_pid)
+    connect_result = assert_connect_fn!(connect_fn, result, "frank")
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 current_job: :connecting,
                 version: 31
-              ), %ServerManagerState{result | version: 31}}
+              ), %ServerManagerState{connect_result | version: 31}}
   end
 
   test "retry connecting in the wrong state does nothing", %{retry_connecting: retry_connecting} do
@@ -621,15 +621,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_task = Task.completed(:fake)
 
-    assert run_command_fn.(result, fn "sudo -n ls", 10_000 ->
-             fake_task
-           end) == %ServerManagerState{result | tasks: %{check_access: fake_task.ref}}
+    check_access_result =
+      run_command_fn.(result, fn "sudo -n ls", 10_000 ->
+        fake_task
+      end)
 
-    assert update_tracking_fn.(result) ==
+    assert check_access_result == %ServerManagerState{
+             result
+             | tasks: %{check_access: fake_task.ref}
+           }
+
+    assert update_tracking_fn.(check_access_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
+                current_job: :checking_access,
                 version: 11
-              ), %ServerManagerState{result | version: 11}}
+              ), %ServerManagerState{check_access_result | version: 11}}
   end
 
   test "connection-related problems are dropped on successful connection", %{
@@ -707,16 +714,23 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_task = Task.completed(:fake)
 
-    assert run_command_fn.(result, fn "sudo -n ls", 10_000 ->
-             fake_task
-           end) == %ServerManagerState{result | tasks: %{check_access: fake_task.ref}}
+    check_access_result =
+      run_command_fn.(result, fn "sudo -n ls", 10_000 ->
+        fake_task
+      end)
 
-    assert update_tracking_fn.(result) ==
+    assert check_access_result == %ServerManagerState{
+             result
+             | tasks: %{check_access: fake_task.ref}
+           }
+
+    assert update_tracking_fn.(check_access_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
+                current_job: :checking_access,
                 problems: result.problems,
                 version: 11
-              ), %ServerManagerState{result | version: 11}}
+              ), %ServerManagerState{check_access_result | version: 11}}
   end
 
   test "a connection authentication failure stops the connection process", %{
@@ -905,17 +919,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_timer_ref = make_ref()
 
-    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
-             fake_timer_ref
-           end) ==
+    send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 5_000 ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
              %ServerManagerState{result | retry_timer: fake_timer_ref}
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{send_message_result | version: result.version + 1}}
   end
 
   test "previous connection problems are dropped after a connection timeout", %{
@@ -985,17 +1002,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_timer_ref = make_ref()
 
-    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
-             fake_timer_ref
-           end) ==
+    send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 5_000 ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
              %ServerManagerState{result | retry_timer: fake_timer_ref}
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{send_message_result | version: result.version + 1}}
   end
 
   test "schedule a connection retry after the connection was refused", %{
@@ -1060,17 +1080,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_timer_ref = make_ref()
 
-    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
-             fake_timer_ref
-           end) ==
+    send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 5_000 ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
              %ServerManagerState{result | retry_timer: fake_timer_ref}
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{send_message_result | version: result.version + 1}}
   end
 
   test "previous connection problems are dropped after the connection was refused", %{
@@ -1140,17 +1163,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_timer_ref = make_ref()
 
-    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
-             fake_timer_ref
-           end) ==
+    send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 5_000 ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
              %ServerManagerState{result | retry_timer: fake_timer_ref}
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{send_message_result | version: result.version + 1}}
   end
 
   test "schedule a connection retry after a generic connection failure", %{
@@ -1213,16 +1239,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_timer_ref = make_ref()
 
-    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
-             fake_timer_ref
-           end) ==
+    send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 5_000 ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
              %ServerManagerState{result | retry_timer: fake_timer_ref}
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 version: 10
-              ), %ServerManagerState{result | version: 10}}
+              ), %ServerManagerState{send_message_result | version: 10}}
   end
 
   test "previous connection problems are dropped after a generic connection failure", %{
@@ -1291,16 +1320,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_timer_ref = make_ref()
 
-    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
-             fake_timer_ref
-           end) ==
+    send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 5_000 ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
              %ServerManagerState{result | retry_timer: fake_timer_ref}
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 version: 10
-              ), %ServerManagerState{result | version: 10}}
+              ), %ServerManagerState{send_message_result | version: 10}}
   end
 
   test "schedule another connection retry after a connection error", %{
@@ -1366,17 +1398,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_timer_ref = make_ref()
 
-    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
-             fake_timer_ref
-           end) ==
+    send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 5_000 ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
              %ServerManagerState{result | retry_timer: fake_timer_ref}
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{send_message_result | version: result.version + 1}}
   end
 
   test "schedule a fifth connection retry after a connection error", %{
@@ -1442,20 +1477,23 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_timer_ref = make_ref()
 
-    assert send_message_fn.(result, fn :retry_connecting, 20_000 ->
-             fake_timer_ref
-           end) ==
+    send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 20_000 ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
              %ServerManagerState{result | retry_timer: fake_timer_ref}
 
-    assert update_tracking_fn.(result) ==
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{send_message_result | version: result.version + 1}}
   end
 
-  test "schedule a connection retry after a reconnection timeout", %{
+  test "a reconnection failure stops the connection process", %{
     handle_task_result: handle_task_result
   } do
     server = build_active_server(set_up_at: nil, ssh_port: true)
@@ -1512,7 +1550,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
-  test "previous problems are dropped after a reconnection timeout", %{
+  test "previous problems are dropped after a reconnection failure", %{
     handle_task_result: handle_task_result
   } do
     server = build_active_server(set_up_at: nil, ssh_port: true)
@@ -1626,21 +1664,30 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
     fake_facts_task = Task.completed(:fake)
     app_username = server.app_username
 
-    assert gather_facts_fn.(result, fn ^app_username -> fake_facts_task end) ==
+    facts_result = gather_facts_fn.(result, fn ^app_username -> fake_facts_task end)
+
+    assert facts_result ==
              %ServerManagerState{result | tasks: %{gather_facts: fake_facts_task.ref}}
 
     fake_loadavg_task = Task.completed(:fake)
 
-    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
-             fake_loadavg_task
-           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+    loadavg_result =
+      run_command_fn.(facts_result, fn "cat /proc/loadavg", 10_000 ->
+        fake_loadavg_task
+      end)
 
-    assert update_tracking_fn.(result) ==
+    assert loadavg_result == %ServerManagerState{
+             facts_result
+             | tasks: Map.put(facts_result.tasks, :get_load_average, fake_loadavg_task.ref)
+           }
+
+    assert update_tracking_fn.(loadavg_result) ==
              {real_time_state(server,
                 connection_state: connected,
                 conn_params: conn_params(server, username: server.app_username),
+                current_job: :gathering_facts,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{loadavg_result | version: result.version + 1}}
   end
 
   test "run the setup playbook after sudo access has been confirmed with the normal user", %{
@@ -1774,16 +1821,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_loadavg_task = Task.completed(:fake)
 
-    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
-             fake_loadavg_task
-           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+    loadavg_result =
+      run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
+        fake_loadavg_task
+      end)
 
-    assert update_tracking_fn.(result) ==
+    assert loadavg_result == %ServerManagerState{
+             result
+             | tasks: %{get_load_average: fake_loadavg_task.ref}
+           }
+
+    assert update_tracking_fn.(loadavg_result) ==
              {real_time_state(server,
                 connection_state: initial_state.connection_state,
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{loadavg_result | version: result.version + 1}}
   end
 
   test "fact gathering is not triggered if the application user does not have sudo access", %{
@@ -1828,17 +1881,23 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_loadavg_task = Task.completed(:fake)
 
-    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
-             fake_loadavg_task
-           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+    loadavg_result =
+      run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
+        fake_loadavg_task
+      end)
 
-    assert update_tracking_fn.(result) ==
+    assert loadavg_result == %ServerManagerState{
+             result
+             | tasks: %{get_load_average: fake_loadavg_task.ref}
+           }
+
+    assert update_tracking_fn.(loadavg_result) ==
              {real_time_state(server,
                 connection_state: initial_state.connection_state,
                 conn_params: conn_params(server, username: server.app_username),
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{loadavg_result | version: result.version + 1}}
   end
 
   test "the setup process is stopped if sudo access cannot be checked", %{
@@ -1887,16 +1946,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_loadavg_task = Task.completed(:fake)
 
-    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
-             fake_loadavg_task
-           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+    loadavg_result =
+      run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
+        fake_loadavg_task
+      end)
 
-    assert update_tracking_fn.(result) ==
+    assert loadavg_result == %ServerManagerState{
+             result
+             | tasks: %{get_load_average: fake_loadavg_task.ref}
+           }
+
+    assert update_tracking_fn.(loadavg_result) ==
              {real_time_state(server,
                 connection_state: initial_state.connection_state,
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{loadavg_result | version: result.version + 1}}
   end
 
   test "fact gathering is not triggered if sudo access cannot be checked", %{
@@ -1947,17 +2012,23 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
     fake_loadavg_task = Task.completed(:fake)
 
-    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
-             fake_loadavg_task
-           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+    loadavg_result =
+      run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
+        fake_loadavg_task
+      end)
 
-    assert update_tracking_fn.(result) ==
+    assert loadavg_result == %ServerManagerState{
+             result
+             | tasks: %{get_load_average: fake_loadavg_task.ref}
+           }
+
+    assert update_tracking_fn.(loadavg_result) ==
              {real_time_state(server,
                 connection_state: initial_state.connection_state,
                 conn_params: conn_params(server, username: server.app_username),
                 problems: result.problems,
                 version: result.version + 1
-              ), %ServerManagerState{result | version: result.version + 1}}
+              ), %ServerManagerState{loadavg_result | version: result.version + 1}}
   end
 
   test "receive load average from the server", %{
@@ -2186,19 +2257,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
            end) == %ServerManagerState{result | load_average_timer: fake_timer_ref}
   end
 
-  defp assert_connect_fn(connect_fn, state, username, test_pid) do
-    task = Task.completed(:fake)
-
-    assert connect_fn.(state, fn host, port, username, opts ->
-             send(test_pid, {:connect_fn_called, host, port, username, opts})
-             task
-           end) == %ServerManagerState{state | tasks: %{connect: task.ref}}
+  defp assert_connect_fn!(connect_fn, state, username) do
+    fake_task = Task.completed(:fake)
 
     expected_host = state.server.ip_address.address
     expected_port = state.server.ssh_port || 22
+    expected_opts = [silently_accept_hosts: true]
 
-    assert_receive {:connect_fn_called, ^expected_host, ^expected_port, ^username,
-                    silently_accept_hosts: true}
+    result =
+      connect_fn.(state, fn ^expected_host, ^expected_port, ^username, ^expected_opts ->
+        fake_task
+      end)
+
+    assert result == %ServerManagerState{state | tasks: %{connect: fake_task.ref}}
+
+    result
   end
 
   defp build_active_server(opts \\ []) do
