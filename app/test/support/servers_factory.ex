@@ -20,7 +20,8 @@ defmodule ArchiDep.Support.ServersFactory do
   alias ArchiDep.Support.NetFactory
 
   @playbooks [AnsiblePlaybook.name(Ansible.setup_playbook())]
-  @finished_ansible_playbook_run_states [:succeeded, :failed, :interrupted, :timeout]
+  @failed_ansible_playbook_run_states [:failed, :interrupted, :timeout]
+  @finished_ansible_playbook_run_states [:succeeded] ++ @failed_ansible_playbook_run_states
 
   @spec ansible_playbook_run_factory(map()) :: AnsiblePlaybookRun.t()
   def ansible_playbook_run_factory(attrs!) do
@@ -176,9 +177,13 @@ defmodule ArchiDep.Support.ServersFactory do
   def random_not_connected_state, do: not_connected_state(connection_pid: self())
 
   @spec random_connecting_state(map()) :: ServerConnectionState.connecting_state()
-  def random_connecting_state(attrs \\ %{}) do
+  def random_connecting_state(attrs! \\ %{}) do
     {retrying, attrs!} =
-      Map.pop_lazy(attrs, :retrying, fn -> if(bool(), do: random_retry(), else: false) end)
+      case Map.pop_lazy(attrs!, :retrying, &bool/0) do
+        {true, attrs} -> {random_retry(), attrs}
+        {false, attrs} -> {false, attrs}
+        {retry, attrs} when is_map(retry) -> {random_retry(retry), attrs}
+      end
 
     [] = Map.keys(attrs!)
 
@@ -208,34 +213,71 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec random_disconnected_state() :: ServerConnectionState.disconnected_state()
   def random_disconnected_state, do: disconnected_state(time: Faker.DateTime.backward(2))
 
-  @spec random_retry :: ServerConnectionState.retry()
-  def random_retry,
-    do: %{
-      retry: Faker.random_between(1, 100),
-      backoff: Faker.random_between(1, 20),
+  @spec random_retry(map) :: ServerConnectionState.retry()
+  def random_retry(attrs! \\ %{}) do
+    {retry, attrs!} = Map.pop_lazy(attrs!, :retry, fn -> Faker.random_between(1, 100) end)
+    {backoff, attrs!} = Map.pop_lazy(attrs!, :backoff, fn -> Faker.random_between(1, 20) end)
+
+    [] = Map.keys(attrs!)
+
+    %{
+      retry: retry,
+      backoff: backoff,
       time: Faker.DateTime.backward(2),
       in_seconds: Faker.random_between(1, 86_000),
       reason: Faker.Lorem.sentence()
     }
+  end
 
-  @spec server_ansible_playbook_failed_problem(map()) ::
+  @spec server_ansible_playbook_failed_problem(Keyword.t()) ::
           Types.server_ansible_playbook_failed_problem()
-  def server_ansible_playbook_failed_problem(attrs! \\ %{}) do
-    {playbook_name, attrs!} = Map.pop(attrs!, :playbook, Faker.Lorem.word())
-    playbook_state = Enum.random([:failed, :interrupted, :timeout])
+  def server_ansible_playbook_failed_problem(attrs! \\ []) do
+    {playbook_run, attrs!} = Keyword.pop(attrs!, :playbook_run, nil)
 
-    [] = Map.keys(attrs!)
+    {playbook_name, attrs!} =
+      Keyword.pop_lazy(attrs!, :playbook, fn ->
+        case playbook_run do
+          nil -> Faker.Lorem.word()
+          run -> run.playbook
+        end
+      end)
 
-    {:server_ansible_playbook_failed, playbook_name, playbook_state,
-     %{
-       changed: Faker.random_between(0, 10),
-       failures: Faker.random_between(0, 10),
-       ignored: Faker.random_between(0, 10),
-       ok: Faker.random_between(0, 10),
-       rescued: Faker.random_between(0, 10),
-       skipped: Faker.random_between(0, 10),
-       unreachable: Faker.random_between(0, 10)
-     }}
+    playbook_state =
+      case get_in(playbook_run.state) do
+        state when state in @failed_ansible_playbook_run_states -> state
+        _non_failed_state -> Enum.random(@failed_ansible_playbook_run_states)
+      end
+
+    {playbook_stats, attrs!} =
+      Keyword.pop_lazy(attrs!, :stats, fn ->
+        case playbook_run do
+          nil ->
+            %{
+              changed: Faker.random_between(0, 10),
+              failures: Faker.random_between(0, 10),
+              ignored: Faker.random_between(0, 10),
+              ok: Faker.random_between(0, 10),
+              rescued: Faker.random_between(0, 10),
+              skipped: Faker.random_between(0, 10),
+              unreachable: Faker.random_between(0, 10)
+            }
+
+          run ->
+            %{
+              changed: run.stats_changed,
+              failures: run.stats_failures,
+              ignored: run.stats_ignored,
+              ok: run.stats_ok,
+              rescued: run.stats_rescued,
+              skipped: run.stats_skipped,
+              unreachable: run.stats_unreachable
+            }
+        end
+      end)
+
+    [] = attrs!
+
+    {:server_ansible_playbook_failed, playbook_name, playbook_state, playbook_stats}
   end
 
   @spec server_authentication_failed_problem :: Types.server_authentication_failed_problem()

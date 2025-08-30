@@ -5,7 +5,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
   import Ecto.Query, only: [from: 2]
   import ExUnit.CaptureLog
   import Hammox
+  alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
@@ -13,6 +19,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.FactoryHelpers
   alias ArchiDep.Support.ServersFactory
+  alias Phoenix.Token
 
   setup :verify_on_exit!
 
@@ -65,6 +72,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
   } do
     server = generate_server!()
     failed_run = ServersFactory.insert(:ansible_playbook_run, server: server, state: :failed)
+    problem = ServersFactory.server_ansible_playbook_failed_problem(playbook_run: failed_run)
 
     assert init.(server.id, __MODULE__) == %ServerManagerState{
              server: server,
@@ -73,10 +81,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
              actions: [
                track_server_action(
                  server,
-                 real_time_state(server, problems: [server_ansible_playbook_failed(failed_run)])
+                 real_time_state(server, problems: [problem])
                )
              ],
-             problems: [server_ansible_playbook_failed(failed_run)]
+             problems: [problem]
            }
   end
 
@@ -596,7 +604,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
 
     assert result == %ServerManagerState{
              initial_state
@@ -634,34 +642,32 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_ref: connection_ref, connection_pid: connection_pid) = connecting
 
+    connection_problems =
+      Enum.shuffle([
+        ServersFactory.server_connection_refused_problem(),
+        ServersFactory.server_connection_timed_out_problem()
+      ])
+
+    other_problems =
+      Enum.shuffle([
+        ServersFactory.server_ansible_playbook_failed_problem(),
+        ServersFactory.server_authentication_failed_problem(),
+        ServersFactory.server_expected_property_mismatch_problem(),
+        ServersFactory.server_fact_gathering_failed_problem(),
+        ServersFactory.server_missing_sudo_access_problem(),
+        ServersFactory.server_open_ports_check_failed_problem(),
+        ServersFactory.server_port_testing_script_failed_problem(),
+        ServersFactory.server_reconnection_failed_problem(),
+        ServersFactory.server_sudo_access_check_failed_problem()
+      ])
+
     initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
         username: server.username,
         tasks: %{connect: fake_connect_task_ref},
-        problems: [
-          {:server_ansible_playbook_failed, "setup", :failed,
-           %{
-             changed: 1,
-             failures: 0,
-             ignored: 0,
-             ok: 5,
-             rescued: 0,
-             skipped: 0,
-             unreachable: 0
-           }},
-          {:server_authentication_failed, :username, "Authentication error"},
-          {:server_connection_refused, {127, 0, 0, 1}, 22, server.username},
-          {:server_connection_timed_out, {127, 0, 0, 1}, 22, server.username},
-          {:server_expected_property_mismatch, :cpu_cores, 4, 8},
-          {:server_fact_gathering_failed, "Fact gathering error"},
-          {:server_missing_sudo_access, "chuck", "Missing sudo access"},
-          {:server_open_ports_check_failed, [{80, "Port closed"}, {443, "Port closed"}]},
-          {:server_port_testing_script_failed, {:exit, 1, "Script error"}},
-          {:server_reconnection_failed, "Reconnection error"},
-          {:server_sudo_access_check_failed, "chuck", "Sudo check error"}
-        ],
+        problems: apply(&Kernel.++/2, Enum.shuffle([connection_problems, other_problems])),
         version: 10
       )
 
@@ -683,7 +689,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
 
     assert result == %ServerManagerState{
              initial_state
@@ -695,26 +701,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                  ),
                actions: actions,
                tasks: %{},
-               problems: [
-                 {:server_ansible_playbook_failed, "setup", :failed,
-                  %{
-                    changed: 1,
-                    failures: 0,
-                    ignored: 0,
-                    ok: 5,
-                    rescued: 0,
-                    skipped: 0,
-                    unreachable: 0
-                  }},
-                 {:server_authentication_failed, :username, "Authentication error"},
-                 {:server_expected_property_mismatch, :cpu_cores, 4, 8},
-                 {:server_fact_gathering_failed, "Fact gathering error"},
-                 {:server_missing_sudo_access, "chuck", "Missing sudo access"},
-                 {:server_open_ports_check_failed, [{80, "Port closed"}, {443, "Port closed"}]},
-                 {:server_port_testing_script_failed, {:exit, 1, "Script error"}},
-                 {:server_reconnection_failed, "Reconnection error"},
-                 {:server_sudo_access_check_failed, "chuck", "Sudo check error"}
-               ],
+               problems: other_problems,
                version: 10
            }
 
@@ -893,7 +880,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
 
     assert result == %ServerManagerState{
              initial_state
@@ -947,10 +934,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         server: server,
         username: server.username,
         tasks: %{connect: fake_connect_task_ref},
-        problems: [
-          ServersFactory.server_connection_refused_problem(),
-          ServersFactory.server_connection_timed_out_problem()
-        ]
+        problems:
+          Enum.shuffle([
+            ServersFactory.server_connection_refused_problem(),
+            ServersFactory.server_connection_timed_out_problem()
+          ])
       )
 
     now = DateTime.utc_now()
@@ -972,7 +960,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
 
     assert result == %ServerManagerState{
              initial_state
@@ -1047,7 +1035,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
 
     assert result == %ServerManagerState{
              initial_state
@@ -1101,10 +1089,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         server: server,
         username: server.username,
         tasks: %{connect: fake_connect_task_ref},
-        problems: [
-          ServersFactory.server_connection_refused_problem(),
-          ServersFactory.server_connection_timed_out_problem()
-        ]
+        problems:
+          Enum.shuffle([
+            ServersFactory.server_connection_refused_problem(),
+            ServersFactory.server_connection_timed_out_problem()
+          ])
       )
 
     now = DateTime.utc_now()
@@ -1126,7 +1115,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
 
     assert result == %ServerManagerState{
              initial_state
@@ -1202,7 +1191,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
 
     assert result == %ServerManagerState{
              initial_state
@@ -1252,10 +1241,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         server: server,
         username: server.username,
         tasks: %{connect: fake_connect_task_ref},
-        problems: [
-          ServersFactory.server_connection_refused_problem(),
-          ServersFactory.server_connection_timed_out_problem()
-        ],
+        problems:
+          Enum.shuffle([
+            ServersFactory.server_connection_refused_problem(),
+            ServersFactory.server_connection_timed_out_problem()
+          ]),
         version: 9
       )
 
@@ -1278,7 +1268,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 50
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
 
     assert result == %ServerManagerState{
              initial_state
@@ -1311,6 +1301,158 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                 connection_state: result.connection_state,
                 version: 10
               ), %ServerManagerState{result | version: 10}}
+  end
+
+  test "schedule another connection retry after a connection error", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    fake_connect_task_ref = make_ref()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: %{retry: 1, backoff: 0}})
+    connecting_state(connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref}
+      )
+
+    now = DateTime.utc_now()
+
+    connection_error =
+      Enum.random([:timeout, :econnrefused, "Oops"])
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_connect_task_ref,
+        {:error, connection_error}
+      )
+
+    assert %{
+             connection_state: retry_connecting_state(retrying: %{time: time}),
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:send_message, send_message_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions,
+             problems: problems
+           } = result
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 retry_connecting_state(
+                   connection_pid: connection_pid,
+                   retrying: %{
+                     retry: 2,
+                     backoff: 1,
+                     time: time,
+                     in_seconds: 5,
+                     reason: connection_error
+                   }
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: problems
+           }
+
+    fake_timer_ref = make_ref()
+
+    assert send_message_fn.(result, fn :retry_connecting, 5_000 ->
+             fake_timer_ref
+           end) ==
+             %ServerManagerState{result | retry_timer: fake_timer_ref}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "schedule a fifth connection retry after a connection error", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    fake_connect_task_ref = make_ref()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: %{retry: 4, backoff: 3}})
+    connecting_state(connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref}
+      )
+
+    now = DateTime.utc_now()
+
+    connection_error =
+      Enum.random([:timeout, :econnrefused, "Oops"])
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_connect_task_ref,
+        {:error, connection_error}
+      )
+
+    assert %{
+             connection_state: retry_connecting_state(retrying: %{time: time}),
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:send_message, send_message_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions,
+             problems: problems
+           } = result
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 retry_connecting_state(
+                   connection_pid: connection_pid,
+                   retrying: %{
+                     retry: 5,
+                     backoff: 4,
+                     time: time,
+                     in_seconds: 20,
+                     reason: connection_error
+                   }
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: problems
+           }
+
+    fake_timer_ref = make_ref()
+
+    assert send_message_fn.(result, fn :retry_connecting, 20_000 ->
+             fake_timer_ref
+           end) ==
+             %ServerManagerState{result | retry_timer: fake_timer_ref}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
   end
 
   test "schedule a connection retry after a reconnection timeout", %{
@@ -1386,19 +1528,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         server: server,
         username: server.username,
         tasks: %{connect: fake_connect_task_ref},
-        problems: [
-          ServersFactory.server_ansible_playbook_failed_problem(),
-          ServersFactory.server_authentication_failed_problem(),
-          ServersFactory.server_connection_refused_problem(),
-          ServersFactory.server_connection_timed_out_problem(),
-          ServersFactory.server_expected_property_mismatch_problem(),
-          ServersFactory.server_fact_gathering_failed_problem(),
-          ServersFactory.server_missing_sudo_access_problem(),
-          ServersFactory.server_open_ports_check_failed_problem(),
-          ServersFactory.server_port_testing_script_failed_problem(),
-          ServersFactory.server_reconnection_failed_problem(),
-          ServersFactory.server_sudo_access_check_failed_problem()
-        ]
+        problems:
+          Enum.shuffle([
+            ServersFactory.server_ansible_playbook_failed_problem(),
+            ServersFactory.server_authentication_failed_problem(),
+            ServersFactory.server_connection_refused_problem(),
+            ServersFactory.server_connection_timed_out_problem(),
+            ServersFactory.server_expected_property_mismatch_problem(),
+            ServersFactory.server_fact_gathering_failed_problem(),
+            ServersFactory.server_missing_sudo_access_problem(),
+            ServersFactory.server_open_ports_check_failed_problem(),
+            ServersFactory.server_port_testing_script_failed_problem(),
+            ServersFactory.server_reconnection_failed_problem(),
+            ServersFactory.server_sudo_access_check_failed_problem()
+          ])
       )
 
     connection_failure_reason = ServersFactory.random_connection_failure_reason()
@@ -1440,6 +1583,383 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
+  test "gather facts after sudo access has been confirmed with the application user", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: true, ssh_port: true)
+
+    fake_check_access_task_ref = make_ref()
+
+    connected = ServersFactory.random_connected_state()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connected,
+        server: server,
+        username: server.app_username,
+        tasks: %{check_access: fake_check_access_task_ref}
+      )
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_access_task_ref,
+        {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_access_task_ref},
+                 {:gather_facts, gather_facts_fn},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{}
+           }
+
+    fake_facts_task = Task.completed(:fake)
+    app_username = server.app_username
+
+    assert gather_facts_fn.(result, fn ^app_username -> fake_facts_task end) ==
+             %ServerManagerState{result | tasks: %{gather_facts: fake_facts_task.ref}}
+
+    fake_loadavg_task = Task.completed(:fake)
+
+    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
+             fake_loadavg_task
+           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: connected,
+                conn_params: conn_params(server, username: server.app_username),
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "run the setup playbook after sudo access has been confirmed with the normal user", %{
+    handle_task_result: handle_task_result
+  } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    fake_check_access_task_ref = make_ref()
+
+    connected = ServersFactory.random_connected_state()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connected,
+        server: server,
+        username: server.username,
+        tasks: %{check_access: fake_check_access_task_ref}
+      )
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_access_task_ref,
+        {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_access_task_ref},
+                 {:run_playbook,
+                  %{
+                    digest: digest,
+                    git_revision: git_revision,
+                    vars: %{"server_token" => server_token},
+                    created_at: playbook_created_at
+                  } =
+                    playbook_run},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               ansible_playbook: {playbook_run, nil},
+               tasks: %{}
+           }
+
+    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 5
+
+    assert playbook_run == %AnsiblePlaybookRun{
+             __meta__: loaded(AnsiblePlaybookRun, "ansible_playbook_runs"),
+             id: playbook_run.id,
+             playbook: "setup",
+             playbook_path: "priv/ansible/playbooks/setup.yml",
+             digest: digest,
+             git_revision: git_revision,
+             host: server.ip_address,
+             port: server.ssh_port,
+             user: server.username,
+             vars: %{
+               "api_base_url" => "http://localhost:42000/api",
+               "app_user_name" => server.app_username,
+               "app_user_authorized_key" => ssh_public_key(),
+               "server_id" => server.id,
+               "server_token" => server_token
+             },
+             server: server,
+             server_id: server.id,
+             state: :pending,
+             started_at: playbook_created_at,
+             created_at: playbook_created_at,
+             updated_at: playbook_created_at
+           }
+
+    server_id = server.id
+
+    assert {:ok, ^server_id} =
+             Token.verify(server.secret_key, "server auth", server_token, max_age: 5)
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: connected,
+                current_job: {:running_playbook, playbook_run.playbook, playbook_run.id, nil},
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "the setup process is stopped if the user does not have sudo access", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    fake_check_access_task_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        tasks: %{check_access: fake_check_access_task_ref}
+      )
+
+    check_access_stderr = Faker.Lorem.sentence()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_access_task_ref,
+        {:ok, Faker.Lorem.sentence(), check_access_stderr, Faker.random_between(1, 255)}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_access_task_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [{:server_missing_sudo_access, server.username, check_access_stderr}]
+           }
+
+    fake_loadavg_task = Task.completed(:fake)
+
+    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
+             fake_loadavg_task
+           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "the connection process is stopped if the application user does not have sudo access", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: true, ssh_port: true)
+
+    fake_check_access_task_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{check_access: fake_check_access_task_ref}
+      )
+
+    check_access_stderr = Faker.Lorem.sentence()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_access_task_ref,
+        {:ok, Faker.Lorem.sentence(), check_access_stderr, Faker.random_between(1, 255)}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_access_task_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [{:server_missing_sudo_access, server.app_username, check_access_stderr}]
+           }
+
+    fake_loadavg_task = Task.completed(:fake)
+
+    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
+             fake_loadavg_task
+           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "the setup process is stopped if sudo access cannot be checked", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    fake_check_access_task_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        tasks: %{check_access: fake_check_access_task_ref}
+      )
+
+    check_access_error = Faker.Lorem.sentence()
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_check_access_task_ref,
+          {:error, check_access_error}
+        )
+      end)
+
+    assert log =~ "Server manager could not check sudo access to server #{server.id}"
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_access_task_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [{:server_sudo_access_check_failed, server.username, check_access_error}]
+           }
+
+    fake_loadavg_task = Task.completed(:fake)
+
+    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
+             fake_loadavg_task
+           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "the connection process is stopped if sudo access cannot be checked", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: true, ssh_port: true)
+
+    fake_check_access_task_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{check_access: fake_check_access_task_ref}
+      )
+
+    check_access_error = Faker.Lorem.sentence()
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_check_access_task_ref,
+          {:error, check_access_error}
+        )
+      end)
+
+    assert log =~ "Server manager could not check sudo access to server #{server.id}"
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_access_task_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_sudo_access_check_failed, server.app_username, check_access_error}
+               ]
+           }
+
+    fake_loadavg_task = Task.completed(:fake)
+
+    assert run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
+             fake_loadavg_task
+           end) == %ServerManagerState{result | tasks: %{get_load_average: fake_loadavg_task.ref}}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   defp assert_connect_fn(connect_fn, state, username, test_pid) do
     task = Task.completed(:fake)
 
@@ -1472,6 +1992,55 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
     ServersFactory.build(
       :server,
       Keyword.merge([active: true, group: group, owner: owner], opts)
+    )
+  end
+
+  defp insert_active_server!(opts) do
+    class = CourseFactory.insert(:class, active: true, servers_enabled: true)
+    group = Repo.get!(ServerGroup, class.id)
+
+    root = FactoryHelpers.bool()
+
+    member =
+      if root do
+        nil
+      else
+        user_account = AccountsFactory.insert(:user_account)
+        user = Repo.get!(User, user_account.id)
+
+        student =
+          CourseFactory.insert(:student,
+            active: true,
+            class: class,
+            class_id: group.id,
+            user: user,
+            user_id: user.id
+          )
+
+        Repo.get!(ServerGroupMember, student.id)
+      end
+
+    owner =
+      if member do
+        Repo.update_all(UserAccount, set: [preregistered_user_id: member.id])
+        Repo.get!(ServerOwner, member.owner_id)
+      else
+        user_account = AccountsFactory.insert(:user_account, active: true, root: true)
+        Repo.get!(ServerOwner, user_account.id)
+      end
+
+    ServersFactory.insert(
+      :server,
+      Keyword.merge(
+        [
+          active: true,
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        ],
+        opts
+      )
     )
   end
 
@@ -1526,22 +2095,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
     {server.ip_address.address, server.ssh_port || 22, username}
   end
 
-  defp server_ansible_playbook_failed(ansible_playbook_run),
-    do:
-      {:server_ansible_playbook_failed, ansible_playbook_run.playbook, :failed,
-       ansible_stats(ansible_playbook_run)}
-
-  defp ansible_stats(ansible_playbook_run),
-    do: %{
-      changed: ansible_playbook_run.stats_changed,
-      failures: ansible_playbook_run.stats_failures,
-      ignored: ansible_playbook_run.stats_ignored,
-      ok: ansible_playbook_run.stats_ok,
-      rescued: ansible_playbook_run.stats_rescued,
-      skipped: ansible_playbook_run.stats_skipped,
-      unreachable: ansible_playbook_run.stats_unreachable
-    }
-
   defp fetch_server!(id),
     do:
       Repo.one!(
@@ -1561,4 +2114,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
             owner: {o, group_member: {ogm, group: ogmg}}
           ]
       )
+
+  defp ssh_public_key,
+    do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:ssh_public_key)
 end

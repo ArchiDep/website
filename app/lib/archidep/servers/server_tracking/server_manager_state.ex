@@ -323,8 +323,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             %__MODULE__{
               state
               | actions: [
+                  gather_facts(),
                   get_load_average(),
-                  gather_facts()
+                  update_tracking()
                 ]
             }
           else
@@ -361,7 +362,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           }
 
         {:error, reason} ->
-          Logger.error(
+          Logger.warning(
             "Server manager could not check sudo access to server #{server.id} as #{username} because #{inspect(reason)}; connected with problems"
           )
 
