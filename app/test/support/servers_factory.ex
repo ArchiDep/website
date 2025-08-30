@@ -152,6 +152,14 @@ defmodule ArchiDep.Support.ServersFactory do
   def ansible_playbook_run_state,
     do: Enum.random([:pending, :running, :succeeded, :failed, :interrupted, :timeout])
 
+  @spec random_connection_failure_reason() :: :timeout | :econnrefused | String.t()
+  def random_connection_failure_reason do
+    case Enum.random([:timeout, :econnrefused, :text]) do
+      :text -> Faker.Lorem.sentence()
+      reason -> reason
+    end
+  end
+
   @spec random_connection_state() :: ServerConnectionState.connection_state()
   def random_connection_state,
     do:
@@ -210,6 +218,32 @@ defmodule ArchiDep.Support.ServersFactory do
       reason: Faker.Lorem.sentence()
     }
 
+  @spec server_ansible_playbook_failed_problem(map()) ::
+          Types.server_ansible_playbook_failed_problem()
+  def server_ansible_playbook_failed_problem(attrs! \\ %{}) do
+    {playbook_name, attrs!} = Map.pop(attrs!, :playbook, Faker.Lorem.word())
+    playbook_state = Enum.random([:failed, :interrupted, :timeout])
+
+    [] = Map.keys(attrs!)
+
+    {:server_ansible_playbook_failed, playbook_name, playbook_state,
+     %{
+       changed: Faker.random_between(0, 10),
+       failures: Faker.random_between(0, 10),
+       ignored: Faker.random_between(0, 10),
+       ok: Faker.random_between(0, 10),
+       rescued: Faker.random_between(0, 10),
+       skipped: Faker.random_between(0, 10),
+       unreachable: Faker.random_between(0, 10)
+     }}
+  end
+
+  @spec server_authentication_failed_problem :: Types.server_authentication_failed_problem()
+  def server_authentication_failed_problem,
+    do:
+      {:server_authentication_failed, Enum.random([:username, :app_username]),
+       Faker.Internet.user_name()}
+
   @spec server_connection_refused_problem :: Types.server_connection_refused_problem()
   def server_connection_refused_problem,
     do:
@@ -221,6 +255,50 @@ defmodule ArchiDep.Support.ServersFactory do
     do:
       {:server_connection_timed_out, NetFactory.ip_address(), NetFactory.port(),
        Faker.Internet.user_name()}
+
+  @spec server_expected_property_mismatch_problem ::
+          Types.server_expected_property_mismatch_problem()
+  def server_expected_property_mismatch_problem,
+    do:
+      {:server_expected_property_mismatch, Enum.random([:cpus, :cores, :vcpus, :memory, :swap]),
+       Faker.random_between(1, 16), Faker.random_between(17, 32)}
+
+  @spec server_fact_gathering_failed_problem :: Types.server_fact_gathering_failed_problem()
+  def server_fact_gathering_failed_problem,
+    do: {:server_fact_gathering_failed, Faker.Lorem.sentence()}
+
+  @spec server_missing_sudo_access_problem :: Types.server_missing_sudo_access_problem()
+  def server_missing_sudo_access_problem,
+    do: {:server_missing_sudo_access, Faker.Internet.user_name(), Faker.Lorem.sentence()}
+
+  @spec server_open_ports_check_failed_problem :: Types.server_open_ports_check_failed_problem()
+  def server_open_ports_check_failed_problem,
+    do:
+      {:server_open_ports_check_failed,
+       1
+       |> Range.new(Faker.random_between(1, 3))
+       |> Enum.map(fn _n -> {NetFactory.port(), Faker.Lorem.sentence()} end)}
+
+  @spec server_port_testing_script_failed_problem ::
+          Types.server_port_testing_script_failed_problem()
+  def server_port_testing_script_failed_problem do
+    case Enum.random([:error, :exit]) do
+      :error ->
+        {:server_port_testing_script_failed, {:error, Faker.Lorem.sentence()}}
+
+      :exit ->
+        {:server_port_testing_script_failed,
+         {:exit, Faker.random_between(1, 255), Faker.Lorem.sentence()}}
+    end
+  end
+
+  @spec server_reconnection_failed_problem :: Types.server_reconnection_failed_problem()
+  def server_reconnection_failed_problem,
+    do: {:server_reconnection_failed, Faker.Lorem.sentence()}
+
+  @spec server_sudo_access_check_failed_problem :: Types.server_sudo_access_check_failed_problem()
+  def server_sudo_access_check_failed_problem,
+    do: {:server_sudo_access_check_failed, Faker.Internet.user_name(), Faker.Lorem.sentence()}
 
   @spec server_group_factory(map()) :: ServerGroup.t()
   def server_group_factory(attrs!) do

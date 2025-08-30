@@ -220,33 +220,31 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         set_up_at: nil
       )
 
+    dropped_problems =
+      Enum.shuffle([
+        ServersFactory.server_authentication_failed_problem(),
+        ServersFactory.server_missing_sudo_access_problem(),
+        ServersFactory.server_reconnection_failed_problem(),
+        ServersFactory.server_sudo_access_check_failed_problem()
+      ])
+
+    kept_problems =
+      Enum.shuffle([
+        ServersFactory.server_ansible_playbook_failed_problem(),
+        ServersFactory.server_connection_refused_problem(),
+        ServersFactory.server_connection_timed_out_problem(),
+        ServersFactory.server_expected_property_mismatch_problem(),
+        ServersFactory.server_fact_gathering_failed_problem(),
+        ServersFactory.server_open_ports_check_failed_problem(),
+        ServersFactory.server_port_testing_script_failed_problem()
+      ])
+
     initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_not_connected_state(),
         server: server,
         username: "chuck",
-        problems: [
-          {:server_ansible_playbook_failed, "setup", :failed,
-           %{
-             changed: 1,
-             failures: 0,
-             ignored: 0,
-             ok: 5,
-             rescued: 0,
-             skipped: 0,
-             unreachable: 0
-           }},
-          {:server_authentication_failed, :username, "Authentication error"},
-          {:server_connection_refused, {127, 0, 0, 1}, 22, server.username},
-          {:server_connection_timed_out, {127, 0, 0, 1}, 22, server.username},
-          {:server_expected_property_mismatch, :cpu_cores, 4, 8},
-          {:server_fact_gathering_failed, "Fact gathering error"},
-          {:server_missing_sudo_access, "chuck", "Missing sudo access"},
-          {:server_open_ports_check_failed, [{80, "Port closed"}, {443, "Port closed"}]},
-          {:server_port_testing_script_failed, {:exit, 1, "Script error"}},
-          {:server_reconnection_failed, "Reconnection error"},
-          {:server_sudo_access_check_failed, "chuck", "Sudo check error"}
-        ],
+        problems: apply(&Kernel.++/2, Enum.shuffle([dropped_problems, kept_problems])),
         version: 24
       )
 
@@ -275,24 +273,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
              initial_state
              | connection_state: connection_state,
                actions: actions,
-               problems: [
-                 {:server_ansible_playbook_failed, "setup", :failed,
-                  %{
-                    changed: 1,
-                    failures: 0,
-                    ignored: 0,
-                    ok: 5,
-                    rescued: 0,
-                    skipped: 0,
-                    unreachable: 0
-                  }},
-                 {:server_connection_refused, {127, 0, 0, 1}, 22, server.username},
-                 {:server_connection_timed_out, {127, 0, 0, 1}, 22, server.username},
-                 {:server_expected_property_mismatch, :cpu_cores, 4, 8},
-                 {:server_fact_gathering_failed, "Fact gathering error"},
-                 {:server_open_ports_check_failed, [{80, "Port closed"}, {443, "Port closed"}]},
-                 {:server_port_testing_script_failed, {:exit, 1, "Script error"}}
-               ]
+               problems: kept_problems
            }
 
     assert_connect_fn(connect_fn, result, "chuck", test_pid)
@@ -1330,6 +1311,133 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                 connection_state: result.connection_state,
                 version: 10
               ), %ServerManagerState{result | version: 10}}
+  end
+
+  test "schedule a connection retry after a reconnection timeout", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    fake_connect_task_ref = make_ref()
+
+    reconnecting = ServersFactory.random_reconnecting_state()
+    reconnecting_state(connection_pid: connection_pid) = reconnecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: reconnecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref}
+      )
+
+    connection_failure_reason = ServersFactory.random_connection_failure_reason()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_connect_task_ref,
+        {:error, connection_failure_reason}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connection_failed_state(
+                   connection_pid: connection_pid,
+                   reason: connection_failure_reason
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_reconnection_failed, connection_failure_reason}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "previous problems are dropped after a reconnection timeout", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    fake_connect_task_ref = make_ref()
+
+    reconnecting = ServersFactory.random_reconnecting_state()
+    reconnecting_state(connection_pid: connection_pid) = reconnecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: reconnecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref},
+        problems: [
+          ServersFactory.server_ansible_playbook_failed_problem(),
+          ServersFactory.server_authentication_failed_problem(),
+          ServersFactory.server_connection_refused_problem(),
+          ServersFactory.server_connection_timed_out_problem(),
+          ServersFactory.server_expected_property_mismatch_problem(),
+          ServersFactory.server_fact_gathering_failed_problem(),
+          ServersFactory.server_missing_sudo_access_problem(),
+          ServersFactory.server_open_ports_check_failed_problem(),
+          ServersFactory.server_port_testing_script_failed_problem(),
+          ServersFactory.server_reconnection_failed_problem(),
+          ServersFactory.server_sudo_access_check_failed_problem()
+        ]
+      )
+
+    connection_failure_reason = ServersFactory.random_connection_failure_reason()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_connect_task_ref,
+        {:error, connection_failure_reason}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connection_failed_state(
+                   connection_pid: connection_pid,
+                   reason: connection_failure_reason
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_reconnection_failed, connection_failure_reason}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
   end
 
   defp assert_connect_fn(connect_fn, state, username, test_pid) do
