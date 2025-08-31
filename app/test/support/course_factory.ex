@@ -20,10 +20,10 @@ defmodule ArchiDep.Support.CourseFactory do
       end)
 
     {start_date, attrs!} =
-      Map.pop_lazy(attrs!, :start_date, optionally(fn -> Faker.DateTime.backward(365) end))
+      Map.pop_lazy(attrs!, :start_date, optionally(fn -> Faker.Date.backward(365) end))
 
     {end_date, attrs!} =
-      Map.pop_lazy(attrs!, :end_date, optionally(fn -> Faker.DateTime.forward(365) end))
+      Map.pop_lazy(attrs!, :end_date, optionally(fn -> Faker.Date.forward(365) end))
 
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
     {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
