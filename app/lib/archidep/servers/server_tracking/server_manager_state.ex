@@ -1032,7 +1032,45 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   @impl ServerManagerBehaviour
   def connection_crashed(
+        %__MODULE__{connection_state: not_connected_state(connection_pid: connection_pid)} =
+          state,
+        connection_pid,
+        reason
+      ),
+      do: disconnect(state, reason)
+
+  def connection_crashed(
+        %__MODULE__{connection_state: connecting_state(connection_pid: connection_pid)} = state,
+        connection_pid,
+        reason
+      ),
+      do: disconnect(state, reason)
+
+  def connection_crashed(
+        %__MODULE__{connection_state: retry_connecting_state(connection_pid: connection_pid)} =
+          state,
+        connection_pid,
+        reason
+      ),
+      do: disconnect(state, reason)
+
+  def connection_crashed(
         %__MODULE__{connection_state: connected_state(connection_pid: connection_pid)} = state,
+        connection_pid,
+        reason
+      ),
+      do: disconnect(state, reason)
+
+  def connection_crashed(
+        %__MODULE__{connection_state: reconnecting_state(connection_pid: connection_pid)} = state,
+        connection_pid,
+        reason
+      ),
+      do: disconnect(state, reason)
+
+  def connection_crashed(
+        %__MODULE__{connection_state: connection_failed_state(connection_pid: connection_pid)} =
+          state,
         connection_pid,
         reason
       ),

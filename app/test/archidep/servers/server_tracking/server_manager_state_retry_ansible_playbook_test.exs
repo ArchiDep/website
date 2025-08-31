@@ -108,6 +108,96 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
+  test "retry running the ansible setup playbook with other problems", %{
+    retry_ansible_playbook: retry_ansible_playbook
+  } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    ServersFactory.insert(:ansible_playbook_run,
+      server: server,
+      state: ServersFactory.ansible_playbook_run_failed_state()
+    )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        problems: [
+          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup"),
+          ServersFactory.server_expected_property_mismatch_problem()
+        ]
+      )
+
+    now = DateTime.utc_now()
+
+    assert {result, :ok} =
+             retry_ansible_playbook.(
+               initial_state,
+               "setup"
+             )
+
+    assert %{
+             actions:
+               [
+                 {:run_playbook,
+                  %{
+                    git_revision: git_revision,
+                    vars: %{"server_token" => server_token},
+                    created_at: playbook_created_at
+                  } =
+                    playbook_run},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               ansible_playbook: {playbook_run, nil}
+           }
+
+    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
+
+    assert playbook_run == %AnsiblePlaybookRun{
+             __meta__: loaded(AnsiblePlaybookRun, "ansible_playbook_runs"),
+             id: playbook_run.id,
+             playbook: "setup",
+             playbook_path: "priv/ansible/playbooks/setup.yml",
+             digest: Ansible.setup_playbook().digest,
+             git_revision: git_revision,
+             host: server.ip_address,
+             port: server.ssh_port,
+             user: server.username,
+             vars: %{
+               "api_base_url" => "http://localhost:42000/api",
+               "app_user_name" => server.app_username,
+               "app_user_authorized_key" => ssh_public_key(),
+               "server_id" => server.id,
+               "server_token" => server_token
+             },
+             server: server,
+             server_id: server.id,
+             state: :pending,
+             started_at: playbook_created_at,
+             created_at: playbook_created_at,
+             updated_at: playbook_created_at
+           }
+
+    server_id = server.id
+
+    assert {:ok, ^server_id} =
+             Token.verify(server.secret_key, "server auth", server_token, max_age: 5)
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                current_job: {:running_playbook, playbook_run.playbook, playbook_run.id, nil},
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   test "cannot retry running the ansible setup playbook if the problem is not present", %{
     retry_ansible_playbook: retry_ansible_playbook
   } do
