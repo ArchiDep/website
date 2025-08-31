@@ -96,6 +96,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @type update_tracking_action :: {:update_tracking, String.t(), (t() -> {map(), t()})}
   @type action ::
           cancel_timer_action()
+          | check_open_ports_action()
           | connect_action()
           | demonitor_action()
           | gather_facts_action()
@@ -465,7 +466,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             | actions: [
                 check_open_ports(server),
                 update_tracking()
-              ]
+              ],
+              problems:
+                Enum.reject(
+                  state.problems,
+                  &(match?({:server_port_testing_script_failed, _details}, &1) or
+                      match?({:server_open_ports_check_failed, _details}, &1))
+                )
           }
 
         {:ok, _stdout, stderr, exit_code} ->
@@ -521,7 +528,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     new_state =
       case result do
         :ok ->
-          updated_server = Server.mark_open_ports_checked!(server)
+          updated_server =
+            if server.open_ports_checked_at do
+              server
+            else
+              updated = Server.mark_open_ports_checked!(server)
+              :ok = PubSub.publish_server_updated(updated)
+              updated
+            end
 
           %__MODULE__{
             state
@@ -736,12 +750,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     last_setup_run =
       AnsiblePlaybookRun.get_last_playbook_run(updated_server, setup_playbook)
 
-    if last_setup_run == nil do
-      Logger.warning(
-        "No previous Ansible setup playbook run found for server #{updated_server.id}"
-      )
-    end
-
     if last_setup_run != nil and
          (last_setup_run.state != :succeeded or
             setup_playbook.digest != last_setup_run.digest) do
@@ -765,6 +773,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           problems: detect_server_properties_mismatches(state.problems, updated_server)
       }
     else
+      if last_setup_run == nil do
+        Logger.warning(
+          "No previous Ansible setup playbook run found for server #{updated_server.id}"
+        )
+      end
+
       maybe_test_ports(%__MODULE__{
         state
         | server: updated_server,

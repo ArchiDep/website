@@ -27,6 +27,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
   @pubsub ArchiDep.PubSub
 
+  @no_server_properties [
+    hostname: nil,
+    machine_id: nil,
+    cpus: nil,
+    cores: nil,
+    vcpus: nil,
+    memory: nil,
+    swap: nil,
+    system: nil,
+    architecture: nil,
+    os_family: nil,
+    distribution: nil,
+    distribution_release: nil,
+    distribution_version: nil
+  ]
+
   setup :verify_on_exit!
 
   setup_all do
@@ -1728,7 +1744,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                  {:demonitor, ^fake_check_access_task_ref},
                  {:run_playbook,
                   %{
-                    digest: digest,
                     git_revision: git_revision,
                     vars: %{"server_token" => server_token},
                     created_at: playbook_created_at
@@ -1752,7 +1767,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
              id: playbook_run.id,
              playbook: "setup",
              playbook_path: "priv/ansible/playbooks/setup.yml",
-             digest: digest,
+             digest: Ansible.setup_playbook().digest,
              git_revision: git_revision,
              host: server.ip_address,
              port: server.ssh_port,
@@ -2347,7 +2362,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
   end
 
-  test "save detected properties after gathering facts the first time",
+  test "detected properties are saved after gathering facts the first time",
        %{
          handle_task_result: handle_task_result
        } do
@@ -2355,36 +2370,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
       insert_active_server!(
         set_up_at: true,
         ssh_port: true,
-        class_expected_server_properties: [
-          hostname: nil,
-          machine_id: nil,
-          cpus: nil,
-          cores: nil,
-          vcpus: nil,
-          memory: nil,
-          swap: nil,
-          system: nil,
-          architecture: nil,
-          os_family: nil,
-          distribution: nil,
-          distribution_release: nil,
-          distribution_version: nil
-        ],
-        server_expected_properties: [
-          hostname: nil,
-          machine_id: nil,
-          cpus: nil,
-          cores: nil,
-          vcpus: nil,
-          memory: nil,
-          swap: nil,
-          system: nil,
-          architecture: nil,
-          os_family: nil,
-          distribution: nil,
-          distribution_release: nil,
-          distribution_version: nil
-        ]
+        class_expected_server_properties: @no_server_properties,
+        server_expected_properties: @no_server_properties
       )
 
     ServersFactory.insert(:ansible_playbook_run,
@@ -2495,7 +2482,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
   end
 
-  test "update last known server properties after gathering facts",
+  test "last known server properties are updaated after gathering facts",
        %{
          handle_task_result: handle_task_result
        } do
@@ -2503,36 +2490,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
       insert_active_server!(
         set_up_at: true,
         ssh_port: true,
-        class_expected_server_properties: [
-          hostname: nil,
-          machine_id: nil,
-          cpus: nil,
-          cores: nil,
-          vcpus: nil,
-          memory: nil,
-          swap: nil,
-          system: nil,
-          architecture: nil,
-          os_family: nil,
-          distribution: nil,
-          distribution_release: nil,
-          distribution_version: nil
-        ],
-        server_expected_properties: [
-          hostname: nil,
-          machine_id: nil,
-          cpus: nil,
-          cores: nil,
-          vcpus: nil,
-          memory: nil,
-          swap: nil,
-          system: nil,
-          architecture: nil,
-          os_family: nil,
-          distribution: nil,
-          distribution_release: nil,
-          distribution_version: nil
-        ],
+        class_expected_server_properties: @no_server_properties,
+        server_expected_properties: @no_server_properties,
         server_last_known_properties: [
           hostname: "old-hostname",
           machine_id: "old-machine-id",
@@ -2655,6 +2614,154 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
   end
 
+  test "server property mismatches are detected after gathering facts",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server =
+      insert_active_server!(
+        set_up_at: true,
+        ssh_port: true,
+        class_expected_server_properties: [
+          hostname: nil,
+          machine_id: nil,
+          cpus: 4,
+          cores: 8,
+          vcpus: nil,
+          memory: 2048,
+          swap: nil,
+          system: "Windows",
+          architecture: "x86_64",
+          os_family: nil,
+          distribution: nil,
+          distribution_release: "bar",
+          distribution_version: "0.01"
+        ],
+        server_expected_properties: [
+          hostname: nil,
+          machine_id: nil,
+          cpus: 2,
+          cores: nil,
+          vcpus: 8,
+          memory: nil,
+          swap: 4096,
+          system: "Linux",
+          architecture: nil,
+          os_family: "Debian",
+          distribution: "Foo",
+          distribution_release: nil,
+          distribution_version: "0.02"
+        ]
+      )
+
+    ServersFactory.insert(:ansible_playbook_run,
+      server: server,
+      state: :succeeded,
+      digest: Ansible.setup_playbook().digest
+    )
+
+    fake_gather_facts_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok,
+         %{
+           "ansible_hostname" => "test-server",
+           "ansible_machine_id" => "1234567890abcdef",
+           "ansible_processor_count" => 4,
+           "ansible_processor_cores" => 7,
+           "ansible_processor_vcpus" => 9,
+           "ansible_memory_mb" => %{
+             "real" => %{"total" => 2000},
+             "swap" => %{"total" => 4096}
+           },
+           "ansible_system" => "macOS",
+           "ansible_architecture" => "arm64",
+           "ansible_os_family" => "DOS"
+         }}
+      )
+
+    assert %{
+             server: %Server{last_known_properties_id: last_known_properties_id} = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id,
+                     hostname: "test-server",
+                     machine_id: "1234567890abcdef",
+                     cpus: 4,
+                     cores: 7,
+                     vcpus: 9,
+                     memory: 2000,
+                     swap: 4096,
+                     system: "macOS",
+                     architecture: "arm64",
+                     os_family: "DOS"
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_expected_property_mismatch, :cpus, 2, 4},
+                 {:server_expected_property_mismatch, :cores, 8, 7},
+                 {:server_expected_property_mismatch, :vcpus, 8, 9},
+                 {:server_expected_property_mismatch, :system, "Linux", "macOS"},
+                 {:server_expected_property_mismatch, :architecture, "x86_64", "arm64"},
+                 {:server_expected_property_mismatch, :os_family, "Debian", "DOS"}
+               ]
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
   test "a warning is logged if no previous ansible setup playbook run is found after gathering facts",
        %{
          handle_task_result: handle_task_result
@@ -2737,6 +2844,236 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
   end
 
+  test "the setup playbook is rerun after gathering facts if the previous run failed",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    ServersFactory.insert(:ansible_playbook_run,
+      server: server,
+      state: :failed,
+      digest: Ansible.setup_playbook().digest
+    )
+
+    fake_gather_facts_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok, %{}}
+      )
+
+    assert %{
+             server:
+               %Server{
+                 last_known_properties: %ServerProperties{id: last_known_properties_id}
+               } = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_playbook,
+                  %{
+                    git_revision: git_revision,
+                    vars: %{"server_token" => server_token},
+                    created_at: playbook_created_at
+                  } =
+                    playbook_run},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   version: server.version + 1
+               },
+               ansible_playbook: {playbook_run, nil},
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 5
+
+    assert playbook_run == %AnsiblePlaybookRun{
+             __meta__: loaded(AnsiblePlaybookRun, "ansible_playbook_runs"),
+             id: playbook_run.id,
+             playbook: "setup",
+             playbook_path: "priv/ansible/playbooks/setup.yml",
+             digest: Ansible.setup_playbook().digest,
+             git_revision: git_revision,
+             host: server.ip_address,
+             port: server.ssh_port,
+             user: server.app_username,
+             vars: %{
+               "api_base_url" => "http://localhost:42000/api",
+               "app_user_name" => server.app_username,
+               "app_user_authorized_key" => ssh_public_key(),
+               "server_id" => server.id,
+               "server_token" => server_token
+             },
+             server: updated_server,
+             server_id: server.id,
+             state: :pending,
+             started_at: playbook_created_at,
+             created_at: playbook_created_at,
+             updated_at: playbook_created_at
+           }
+
+    server_id = server.id
+
+    assert {:ok, ^server_id} =
+             Token.verify(server.secret_key, "server auth", server_token, max_age: 5)
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: {:running_playbook, playbook_run.playbook, playbook_run.id, nil},
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "the setup playbook is rerun after gathering facts if its digest has changed",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    ServersFactory.insert(:ansible_playbook_run,
+      server: server,
+      state: :succeeded,
+      digest: <<102, 111, 111>>
+    )
+
+    fake_gather_facts_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok, %{}}
+      )
+
+    assert %{
+             server:
+               %Server{
+                 last_known_properties: %ServerProperties{id: last_known_properties_id}
+               } = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_playbook,
+                  %{
+                    git_revision: git_revision,
+                    vars: %{"server_token" => server_token},
+                    created_at: playbook_created_at
+                  } =
+                    playbook_run},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   version: server.version + 1
+               },
+               ansible_playbook: {playbook_run, nil},
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 5
+
+    assert playbook_run == %AnsiblePlaybookRun{
+             __meta__: loaded(AnsiblePlaybookRun, "ansible_playbook_runs"),
+             id: playbook_run.id,
+             playbook: "setup",
+             playbook_path: "priv/ansible/playbooks/setup.yml",
+             digest: Ansible.setup_playbook().digest,
+             git_revision: git_revision,
+             host: server.ip_address,
+             port: server.ssh_port,
+             user: server.app_username,
+             vars: %{
+               "api_base_url" => "http://localhost:42000/api",
+               "app_user_name" => server.app_username,
+               "app_user_authorized_key" => ssh_public_key(),
+               "server_id" => server.id,
+               "server_token" => server_token
+             },
+             server: updated_server,
+             server_id: server.id,
+             state: :pending,
+             started_at: playbook_created_at,
+             created_at: playbook_created_at,
+             updated_at: playbook_created_at
+           }
+
+    server_id = server.id
+
+    assert {:ok, ^server_id} =
+             Token.verify(server.secret_key, "server auth", server_token, max_age: 5)
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: {:running_playbook, playbook_run.playbook, playbook_run.id, nil},
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   test "a fact gathering error stops the connection process",
        %{
          handle_task_result: handle_task_result
@@ -2794,6 +3131,466 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                 connection_state: initial_state.connection_state,
                 conn_params: conn_params(server, username: server.app_username),
                 problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "check open ports after the port testing script has run", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: true, ssh_port: true)
+
+    fake_test_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{test_ports: fake_test_ports_ref}
+      )
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_test_ports_ref,
+        {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_test_ports_ref},
+                 {:check_open_ports, check_open_ports_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{}
+           }
+
+    fake_task = Task.completed(:fake)
+
+    server_ip_address = server.ip_address.address
+
+    check_open_ports_result =
+      check_open_ports_fn.(result, fn ^server_ip_address, [80, 443, 3000, 3001] ->
+        fake_task
+      end)
+
+    assert check_open_ports_result ==
+             %ServerManagerState{result | tasks: %{check_open_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(check_open_ports_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
+                version: result.version + 1
+              ), %ServerManagerState{check_open_ports_result | version: result.version + 1}}
+  end
+
+  test "previous port testing script problems are dropped on successful run", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: true, ssh_port: true)
+
+    fake_test_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{test_ports: fake_test_ports_ref},
+        problems: [
+          ServersFactory.server_port_testing_script_failed_problem(),
+          ServersFactory.server_open_ports_check_failed_problem()
+        ]
+      )
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_test_ports_ref,
+        {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_test_ports_ref},
+                 {:check_open_ports, check_open_ports_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: []
+           }
+
+    fake_task = Task.completed(:fake)
+
+    server_ip_address = server.ip_address.address
+
+    check_open_ports_result =
+      check_open_ports_fn.(result, fn ^server_ip_address, [80, 443, 3000, 3001] ->
+        fake_task
+      end)
+
+    assert check_open_ports_result ==
+             %ServerManagerState{result | tasks: %{check_open_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(check_open_ports_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
+                version: result.version + 1
+              ), %ServerManagerState{check_open_ports_result | version: result.version + 1}}
+  end
+
+  test "handle port testing script failure", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: true, ssh_port: true)
+
+    fake_test_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{test_ports: fake_test_ports_ref}
+      )
+
+    port_testing_stderr = Faker.Lorem.sentence()
+    port_testing_exit_code = Faker.random_between(1, 255)
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_test_ports_ref,
+          {:ok, Faker.Lorem.sentence(), port_testing_stderr, port_testing_exit_code}
+        )
+      end)
+
+    assert log =~
+             "Port testing script exited with code #{port_testing_exit_code} on server #{server.id}"
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_test_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_port_testing_script_failed,
+                  {:exit, port_testing_exit_code, port_testing_stderr}}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "previous port testing script problems are dropped on failure", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: true, ssh_port: true)
+
+    fake_test_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{test_ports: fake_test_ports_ref},
+        problems: [
+          ServersFactory.server_port_testing_script_failed_problem(),
+          ServersFactory.server_open_ports_check_failed_problem()
+        ]
+      )
+
+    port_testing_stderr = Faker.Lorem.sentence()
+    port_testing_exit_code = Faker.random_between(1, 255)
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_test_ports_ref,
+          {:ok, Faker.Lorem.sentence(), port_testing_stderr, port_testing_exit_code}
+        )
+      end)
+
+    assert log =~
+             "Port testing script exited with code #{port_testing_exit_code} on server #{server.id}"
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_test_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_port_testing_script_failed,
+                  {:exit, port_testing_exit_code, port_testing_stderr}}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "handle port testing script error", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: true, ssh_port: true)
+
+    fake_test_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{test_ports: fake_test_ports_ref}
+      )
+
+    port_testing_error = Faker.Lorem.sentence()
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_test_ports_ref,
+          {:error, port_testing_error}
+        )
+      end)
+
+    assert log =~
+             "Port testing script failed on server #{server.id} because: #{inspect(port_testing_error)}"
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_test_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_port_testing_script_failed, {:error, port_testing_error}}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "previous port testing script problems are dropped on error", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: true, ssh_port: true)
+
+    fake_test_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{test_ports: fake_test_ports_ref},
+        problems: [
+          ServersFactory.server_port_testing_script_failed_problem(),
+          ServersFactory.server_open_ports_check_failed_problem()
+        ]
+      )
+
+    port_testing_error = Faker.Lorem.sentence()
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_test_ports_ref,
+          {:error, port_testing_error}
+        )
+      end)
+
+    assert log =~
+             "Port testing script failed on server #{server.id} because: #{inspect(port_testing_error)}"
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_test_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_port_testing_script_failed, {:error, port_testing_error}}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "the connection process is done after open ports have been successfully checked", %{
+    handle_task_result: handle_task_result
+  } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true, open_ports_checked_at: nil)
+
+    fake_check_open_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{check_open_ports: fake_check_open_ports_ref}
+      )
+
+    now = DateTime.utc_now()
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_open_ports_ref,
+        :ok
+      )
+
+    assert %{
+             server: %{open_ports_checked_at: open_ports_checked_at} = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_check_open_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | open_ports_checked_at: open_ports_checked_at,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_in_delta DateTime.diff(now, open_ports_checked_at, :second), 0, 5
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "the server is not updated after open ports have been successfully checked if they had already been checked",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true, open_ports_checked_at: true)
+
+    fake_check_open_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{check_open_ports: fake_check_open_ports_ref}
+      )
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_open_ports_ref,
+        :ok
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_open_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{}
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
   end

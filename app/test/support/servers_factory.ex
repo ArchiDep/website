@@ -516,6 +516,16 @@ defmodule ArchiDep.Support.ServersFactory do
         {%DateTime{} = dt, attrs} -> {dt, attrs}
       end
 
+    {open_ports_checked_at, attrs!} =
+      case Map.pop(
+             attrs!,
+             :open_ports_checked_at
+           ) do
+        {nil, attrs} -> {nil, attrs}
+        {true, attrs} -> {Faker.DateTime.between(created_at, updated_at), attrs}
+        {%DateTime{} = dt, attrs} -> {dt, attrs}
+      end
+
     [] = Map.keys(attrs!)
 
     %Server{
@@ -538,6 +548,7 @@ defmodule ArchiDep.Support.ServersFactory do
       version: version,
       created_at: created_at,
       set_up_at: set_up_at,
+      open_ports_checked_at: open_ports_checked_at,
       updated_at: updated_at
     }
   end
