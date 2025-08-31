@@ -516,7 +516,8 @@ defmodule ArchiDep.Support.ServersFactory do
         {%DateTime{} = dt, attrs} -> {dt, attrs}
       end
 
-    {open_ports_checked_at, attrs!} = pop_server_open_ports_checked_at(attrs!)
+    {open_ports_checked_at, attrs!} =
+      pop_server_open_ports_checked_at(attrs!, created_at, updated_at)
 
     [] = Map.keys(attrs!)
 
@@ -545,7 +546,7 @@ defmodule ArchiDep.Support.ServersFactory do
     }
   end
 
-  defp pop_server_open_ports_checked_at(attrs) do
+  defp pop_server_open_ports_checked_at(attrs, created_at, updated_at) do
     case Map.pop(
            attrs,
            :open_ports_checked_at
