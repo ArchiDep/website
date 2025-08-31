@@ -153,6 +153,10 @@ defmodule ArchiDep.Support.ServersFactory do
   def ansible_playbook_run_state,
     do: Enum.random([:pending, :running, :succeeded, :failed, :interrupted, :timeout])
 
+  @spec ansible_playbook_run_failed_state() :: Types.ansible_playbook_run_failed_state()
+  def ansible_playbook_run_failed_state,
+    do: Enum.random(@failed_ansible_playbook_run_states)
+
   @spec random_connection_failure_reason() :: :timeout | :econnrefused | String.t()
   def random_connection_failure_reason do
     case Enum.random([:timeout, :econnrefused, :text]) do
