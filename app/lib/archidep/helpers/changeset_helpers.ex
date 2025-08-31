@@ -48,7 +48,9 @@ defmodule ArchiDep.Helpers.ChangesetHelpers do
     # No need to query if we haven't changed the field in question
     unrelated_changes? = not Map.has_key?(changeset.changes, field)
 
-    if any_prior_errors_for_fields? || unrelated_changes? do
+    field_nil? = get_field(changeset, field) == nil
+
+    if any_prior_errors_for_fields? || unrelated_changes? || field_nil? do
       changeset
     else
       if changeset |> query_fun.() |> repo.exists?() do

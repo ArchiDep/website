@@ -5,7 +5,24 @@ defmodule ArchiDep.Helpers.SchemaHelpers do
 
   alias Ecto.UUID
 
-  defdelegate trim(value), to: String
+  @doc """
+  Return the trimmed value if it is a string. If the value is nil, return nil.
+
+  ## Examples
+
+      iex> import ArchiDep.Helpers.SchemaHelpers
+      iex> trim("  Hello, World!  ")
+      "Hello, World!"
+      iex> trim("Hello, World!")
+      "Hello, World!"
+      iex> trim("  ")
+      ""
+      iex> trim(nil)
+      nil
+  """
+  @spec trim(String.t() | nil) :: String.t()
+  def trim(nil), do: nil
+  def trim(value) when is_binary(value), do: String.trim(value)
 
   @doc """
   Return the value if it is a non-blank string, otherwise return nil.

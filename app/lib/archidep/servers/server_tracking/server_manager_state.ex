@@ -1109,10 +1109,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def update_server(state, auth, data) do
     case state do
       %__MODULE__{connection_state: connecting_state()} ->
-        {:error, :server_busy}
+        {state, {:error, :server_busy}}
 
       %__MODULE__{connection_state: reconnecting_state()} ->
-        {:error, :server_busy}
+        {state, {:error, :server_busy}}
 
       _any_other_state ->
         do_update_server(state, auth, data)

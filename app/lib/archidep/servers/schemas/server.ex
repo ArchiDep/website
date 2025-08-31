@@ -365,6 +365,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
 
   defp validate_existing_server(changeset, id) do
     changeset
+    |> validate()
     |> validate_required([:expected_properties_id])
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
