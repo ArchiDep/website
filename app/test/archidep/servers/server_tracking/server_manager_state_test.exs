@@ -4959,7 +4959,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
       updated_at: class.updated_at
     }
 
-    server = build_active_server(group: group, root: true, set_up_at: nil, ssh_port: true)
+    server =
+      build_active_server(
+        group: group,
+        root: true,
+        set_up_at: nil,
+        ssh_port: true,
+        last_known_properties: nil
+      )
 
     initial_state =
       ServersFactory.build(:server_manager_state,
@@ -5002,6 +5009,67 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                 connection_state: result.connection_state,
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "ignore outdated server group updates", %{group_updated: group_updated} do
+    class = CourseFactory.build(:class, active: true, servers_enabled: true)
+
+    group = %ServerGroup{
+      id: class.id,
+      name: class.name,
+      start_date: class.start_date,
+      end_date: class.end_date,
+      active: class.active,
+      servers_enabled: class.servers_enabled,
+      servers: [],
+      expected_server_properties:
+        ServersFactory.build(
+          :server_properties,
+          id: class.expected_server_properties_id,
+          hostname: nil,
+          machine_id: nil,
+          cpus: nil,
+          cores: nil,
+          vcpus: nil,
+          memory: nil,
+          swap: nil,
+          system: nil,
+          architecture: nil,
+          os_family: nil,
+          distribution: nil,
+          distribution_release: nil,
+          distribution_version: nil
+        ),
+      expected_server_properties_id: class.expected_server_properties_id,
+      version: class.version,
+      created_at: class.created_at,
+      updated_at: class.updated_at
+    }
+
+    server =
+      build_active_server(
+        group: group,
+        root: true,
+        set_up_at: nil,
+        ssh_port: true,
+        last_known_properties: nil
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username
+      )
+
+    updated_class = %Class{
+      class
+      | name: Faker.Lorem.sentence(),
+        start_date: Faker.Date.backward(30),
+        version: class.version - Faker.random_between(1, 10)
+    }
+
+    assert group_updated.(initial_state, updated_class) == initial_state
   end
 
   defp assert_connect_fn!(connect_fn, state, username) do
