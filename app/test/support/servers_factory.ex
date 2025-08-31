@@ -516,15 +516,7 @@ defmodule ArchiDep.Support.ServersFactory do
         {%DateTime{} = dt, attrs} -> {dt, attrs}
       end
 
-    {open_ports_checked_at, attrs!} =
-      case Map.pop(
-             attrs!,
-             :open_ports_checked_at
-           ) do
-        {nil, attrs} -> {nil, attrs}
-        {true, attrs} -> {Faker.DateTime.between(created_at, updated_at), attrs}
-        {%DateTime{} = dt, attrs} -> {dt, attrs}
-      end
+    {open_ports_checked_at, attrs!} = pop_server_open_ports_checked_at(attrs!)
 
     [] = Map.keys(attrs!)
 
@@ -551,6 +543,17 @@ defmodule ArchiDep.Support.ServersFactory do
       open_ports_checked_at: open_ports_checked_at,
       updated_at: updated_at
     }
+  end
+
+  defp pop_server_open_ports_checked_at(attrs) do
+    case Map.pop(
+           attrs,
+           :open_ports_checked_at
+         ) do
+      {nil, new_attrs} -> {nil, new_attrs}
+      {true, new_attrs} -> {Faker.DateTime.between(created_at, updated_at), new_attrs}
+      {%DateTime{} = dt, new_attrs} -> {dt, new_attrs}
+    end
   end
 
   @spec server_ip_address() :: Postgrex.INET.t()

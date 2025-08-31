@@ -47,6 +47,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
 
   setup_all do
     %{
+      ansible_playbook_completed:
+        protect({ServerManagerState, :ansible_playbook_completed, 2}, ServerManagerBehaviour),
+      ansible_playbook_event:
+        protect({ServerManagerState, :ansible_playbook_event, 3}, ServerManagerBehaviour),
       init: protect({ServerManagerState, :init, 2}, ServerManagerBehaviour),
       online?: protect({ServerManagerState, :online?, 1}, ServerManagerBehaviour),
       connection_idle: protect({ServerManagerState, :connection_idle, 2}, ServerManagerBehaviour),
@@ -626,7 +630,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -718,7 +722,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -916,7 +920,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -999,7 +1003,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -1077,7 +1081,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -1160,7 +1164,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -1239,7 +1243,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -1319,7 +1323,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                ] = actions
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -1398,7 +1402,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
              problems: problems
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -1477,7 +1481,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
              problems: problems
            } = result
 
-    assert_in_delta DateTime.diff(now, time, :second), 0, 5
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -1760,7 +1764,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                tasks: %{}
            }
 
-    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 5
+    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
 
     assert playbook_run == %AnsiblePlaybookRun{
              __meta__: loaded(AnsiblePlaybookRun, "ansible_playbook_runs"),
@@ -2914,7 +2918,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                tasks: %{}
            }
 
-    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 5
+    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
 
     assert playbook_run == %AnsiblePlaybookRun{
              __meta__: loaded(AnsiblePlaybookRun, "ansible_playbook_runs"),
@@ -3029,7 +3033,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                tasks: %{}
            }
 
-    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 5
+    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
 
     assert playbook_run == %AnsiblePlaybookRun{
              __meta__: loaded(AnsiblePlaybookRun, "ansible_playbook_runs"),
@@ -3536,7 +3540,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
                tasks: %{}
            }
 
-    assert_in_delta DateTime.diff(now, open_ports_checked_at, :second), 0, 5
+    assert_in_delta DateTime.diff(now, open_ports_checked_at, :second), 0, 1
 
     assert_receive {:server_updated, ^updated_server}
     assert_receive {:server_updated, ^updated_server}
@@ -3556,6 +3560,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true, open_ports_checked_at: true)
 
+    previous_problems =
+      [
+        ServersFactory.server_open_ports_check_failed_problem(),
+        ServersFactory.server_port_testing_script_failed_problem()
+      ]
+      |> Enum.shuffle()
+      |> Enum.drop(Faker.random_between(0, 2))
+
     fake_check_open_ports_ref = make_ref()
 
     initial_state =
@@ -3563,7 +3575,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.app_username,
-        tasks: %{check_open_ports: fake_check_open_ports_ref}
+        tasks: %{check_open_ports: fake_check_open_ports_ref},
+        problems: previous_problems
       )
 
     result =
@@ -3584,13 +3597,909 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               tasks: %{}
+               tasks: %{},
+               problems: []
            }
 
     assert update_tracking_fn.(result) ==
              {real_time_state(server,
                 connection_state: initial_state.connection_state,
                 conn_params: conn_params(server, username: server.app_username),
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "previous open ports check problems are dropped after a successful check", %{
+    handle_task_result: handle_task_result
+  } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true, open_ports_checked_at: nil)
+
+    previous_problems =
+      Enum.shuffle([
+        ServersFactory.server_open_ports_check_failed_problem(),
+        ServersFactory.server_port_testing_script_failed_problem()
+      ])
+
+    fake_check_open_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{check_open_ports: fake_check_open_ports_ref},
+        problems: previous_problems
+      )
+
+    now = DateTime.utc_now()
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_open_ports_ref,
+        :ok
+      )
+
+    assert %{
+             server: %{open_ports_checked_at: open_ports_checked_at} = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_check_open_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | open_ports_checked_at: open_ports_checked_at,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{},
+               problems: []
+           }
+
+    assert_in_delta DateTime.diff(now, open_ports_checked_at, :second), 0, 1
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "handle open ports check failure", %{
+    handle_task_result: handle_task_result
+  } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true, open_ports_checked_at: true)
+
+    fake_check_open_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{check_open_ports: fake_check_open_ports_ref}
+      )
+
+    port_problems = [{80, Faker.Lorem.sentence()}, {3000, :oops}]
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_open_ports_ref,
+        {:error, port_problems}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_open_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_open_ports_check_failed, port_problems}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "previous open ports check failures are dropped on subsequent failures", %{
+    handle_task_result: handle_task_result
+  } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true, open_ports_checked_at: true)
+
+    previous_problems =
+      Enum.shuffle([
+        ServersFactory.server_open_ports_check_failed_problem(),
+        ServersFactory.server_port_testing_script_failed_problem()
+      ])
+
+    fake_check_open_ports_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{check_open_ports: fake_check_open_ports_ref},
+        problems: previous_problems
+      )
+
+    port_problems = [{80, Faker.Lorem.sentence()}, {3000, :oops}]
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_open_ports_ref,
+        {:error, port_problems}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_open_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_open_ports_check_failed, port_problems}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "keep track of executing ansible playbook events",
+       %{
+         ansible_playbook_event: ansible_playbook_event
+       } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.build(:ansible_playbook_run,
+        server: server,
+        state: :pending
+      )
+
+    previous_task =
+      if FactoryHelpers.bool() do
+        Faker.Lorem.word()
+      else
+        nil
+      end
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        ansible_playbook: {playbook_run, previous_task}
+      )
+
+    event_name = Faker.Lorem.word()
+
+    result =
+      ansible_playbook_event.(
+        initial_state,
+        playbook_run.id,
+        event_name
+      )
+
+    assert %{
+             actions:
+               [
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | ansible_playbook: {playbook_run, event_name},
+               actions: actions
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                current_job:
+                  {:running_playbook, playbook_run.playbook, playbook_run.id, event_name},
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "ignore ansible playbook events if there is no playbook running",
+       %{
+         ansible_playbook_event: ansible_playbook_event
+       } do
+    server = build_active_server()
+
+    for state <-
+          [
+            ServersFactory.random_connected_state(),
+            ServersFactory.random_not_connected_state(),
+            ServersFactory.random_connecting_state(),
+            ServersFactory.random_retry_connecting_state(),
+            ServersFactory.random_reconnecting_state(),
+            ServersFactory.random_connection_failed_state(),
+            ServersFactory.random_disconnected_state()
+          ] do
+      initial_state =
+        ServersFactory.build(:server_manager_state,
+          connection_state: state,
+          server: server,
+          ansible_playbook: nil
+        )
+
+      playbook_run_id = UUID.generate()
+      event_name = Faker.Lorem.word()
+
+      {^initial_state, log} =
+        with_log(fn ->
+          ansible_playbook_event.(
+            initial_state,
+            playbook_run_id,
+            event_name
+          )
+        end)
+
+      assert log =~
+               "Ignoring Ansible playbook event for server #{server.id} because no playbook is running"
+    end
+  end
+
+  test "mark a server as set up if the setup playbook completes successfully",
+       %{
+         ansible_playbook_completed: ansible_playbook_completed
+       } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded
+      )
+
+    previous_task =
+      if FactoryHelpers.bool() do
+        Faker.Lorem.word()
+      else
+        nil
+      end
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        ansible_playbook: {playbook_run, previous_task}
+      )
+
+    connected_state(connection_pid: connection_pid, connection_ref: connection_ref) =
+      initial_state.connection_state
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    now = DateTime.utc_now()
+
+    result =
+      ansible_playbook_completed.(
+        initial_state,
+        playbook_run.id
+      )
+
+    assert %{
+             server: %Server{set_up_at: %DateTime{} = set_up_at} = updated_server,
+             actions:
+               [
+                 {:connect, connect_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, set_up_at, :second), 0, 1
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 reconnecting_state(
+                   connection_pid: connection_pid,
+                   connection_ref: connection_ref
+                 ),
+               server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
+               username: server.app_username,
+               ansible_playbook: nil,
+               actions: actions
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    connect_result = assert_connect_fn!(connect_fn, result, server.app_username)
+
+    assert update_tracking_fn.(connect_result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                set_up_at: set_up_at,
+                current_job: :reconnecting,
+                version: result.version + 1
+              ), %ServerManagerState{connect_result | version: result.version + 1}}
+  end
+
+  test "previous setup playbook problems are dropped when the setup playbook completes successfully",
+       %{
+         ansible_playbook_completed: ansible_playbook_completed
+       } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded
+      )
+
+    previous_task =
+      if FactoryHelpers.bool() do
+        Faker.Lorem.word()
+      else
+        nil
+      end
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        ansible_playbook: {playbook_run, previous_task},
+        problems: [
+          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
+        ]
+      )
+
+    connected_state(connection_pid: connection_pid, connection_ref: connection_ref) =
+      initial_state.connection_state
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    now = DateTime.utc_now()
+
+    result =
+      ansible_playbook_completed.(
+        initial_state,
+        playbook_run.id
+      )
+
+    assert %{
+             server: %Server{set_up_at: %DateTime{} = set_up_at} = updated_server,
+             actions:
+               [
+                 {:connect, connect_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, set_up_at, :second), 0, 1
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 reconnecting_state(
+                   connection_pid: connection_pid,
+                   connection_ref: connection_ref
+                 ),
+               server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
+               username: server.app_username,
+               ansible_playbook: nil,
+               actions: actions,
+               problems: []
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    connect_result = assert_connect_fn!(connect_fn, result, server.app_username)
+
+    assert update_tracking_fn.(connect_result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                set_up_at: set_up_at,
+                current_job: :reconnecting,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{connect_result | version: result.version + 1}}
+  end
+
+  test "any pending load average result is dropped before reconnection",
+       %{
+         ansible_playbook_completed: ansible_playbook_completed
+       } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded
+      )
+
+    previous_task =
+      if FactoryHelpers.bool() do
+        Faker.Lorem.word()
+      else
+        nil
+      end
+
+    fake_loadavg_task_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        ansible_playbook: {playbook_run, previous_task},
+        tasks: %{get_load_average: fake_loadavg_task_ref}
+      )
+
+    connected_state(connection_pid: connection_pid, connection_ref: connection_ref) =
+      initial_state.connection_state
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    now = DateTime.utc_now()
+
+    result =
+      ansible_playbook_completed.(
+        initial_state,
+        playbook_run.id
+      )
+
+    assert %{
+             server: %Server{set_up_at: %DateTime{} = set_up_at} = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_loadavg_task_ref},
+                 {:connect, connect_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, set_up_at, :second), 0, 1
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 reconnecting_state(
+                   connection_pid: connection_pid,
+                   connection_ref: connection_ref
+                 ),
+               server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
+               username: server.app_username,
+               ansible_playbook: nil,
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    connect_result = assert_connect_fn!(connect_fn, result, server.app_username)
+
+    assert update_tracking_fn.(connect_result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                set_up_at: set_up_at,
+                current_job: :reconnecting,
+                version: result.version + 1
+              ), %ServerManagerState{connect_result | version: result.version + 1}}
+  end
+
+  test "any pending load average timer is canceled before reconnection",
+       %{
+         ansible_playbook_completed: ansible_playbook_completed
+       } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded
+      )
+
+    previous_task =
+      if FactoryHelpers.bool() do
+        Faker.Lorem.word()
+      else
+        nil
+      end
+
+    fake_loadavg_timer_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        ansible_playbook: {playbook_run, previous_task},
+        load_average_timer: fake_loadavg_timer_ref
+      )
+
+    connected_state(connection_pid: connection_pid, connection_ref: connection_ref) =
+      initial_state.connection_state
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    now = DateTime.utc_now()
+
+    result =
+      ansible_playbook_completed.(
+        initial_state,
+        playbook_run.id
+      )
+
+    assert %{
+             server: %Server{set_up_at: %DateTime{} = set_up_at} = updated_server,
+             actions:
+               [
+                 {:connect, connect_fn},
+                 {:cancel_timer, ^fake_loadavg_timer_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, set_up_at, :second), 0, 1
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 reconnecting_state(
+                   connection_pid: connection_pid,
+                   connection_ref: connection_ref
+                 ),
+               server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
+               username: server.app_username,
+               ansible_playbook: nil,
+               actions: actions,
+               load_average_timer: nil
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    connect_result = assert_connect_fn!(connect_fn, result, server.app_username)
+
+    assert update_tracking_fn.(connect_result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                set_up_at: set_up_at,
+                current_job: :reconnecting,
+                version: result.version + 1
+              ), %ServerManagerState{connect_result | version: result.version + 1}}
+  end
+
+  test "the application user connection process is complete after the setup playbook completes successfully",
+       %{
+         ansible_playbook_completed: ansible_playbook_completed
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded
+      )
+
+    previous_task =
+      if FactoryHelpers.bool() do
+        Faker.Lorem.word()
+      else
+        nil
+      end
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        ansible_playbook: {playbook_run, previous_task}
+      )
+
+    result =
+      ansible_playbook_completed.(
+        initial_state,
+        playbook_run.id
+      )
+
+    assert %{
+             actions:
+               [
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | ansible_playbook: nil,
+               actions: actions
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "a setup playbook error interrupts the setup process for the normal user",
+       %{
+         ansible_playbook_completed: ansible_playbook_completed
+       } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :failed,
+        stats_changed: 0,
+        stats_failures: 1,
+        stats_ignored: 2,
+        stats_ok: 3,
+        stats_rescued: 4,
+        stats_skipped: 5,
+        stats_unreachable: 6
+      )
+
+    previous_task =
+      if FactoryHelpers.bool() do
+        Faker.Lorem.word()
+      else
+        nil
+      end
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        ansible_playbook: {playbook_run, previous_task}
+      )
+
+    result =
+      ansible_playbook_completed.(
+        initial_state,
+        playbook_run.id
+      )
+
+    assert %{
+             actions:
+               [
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | ansible_playbook: nil,
+               actions: actions,
+               problems: [
+                 {:server_ansible_playbook_failed, "setup", :failed,
+                  %{
+                    changed: 0,
+                    failures: 1,
+                    ignored: 2,
+                    ok: 3,
+                    rescued: 4,
+                    skipped: 5,
+                    unreachable: 6
+                  }}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "a setup playbook error interrupts the connection process for the application user",
+       %{
+         ansible_playbook_completed: ansible_playbook_completed
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :failed,
+        stats_changed: 0,
+        stats_failures: 1,
+        stats_ignored: 2,
+        stats_ok: 3,
+        stats_rescued: 4,
+        stats_skipped: 5,
+        stats_unreachable: 6
+      )
+
+    previous_task =
+      if FactoryHelpers.bool() do
+        Faker.Lorem.word()
+      else
+        nil
+      end
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        ansible_playbook: {playbook_run, previous_task}
+      )
+
+    result =
+      ansible_playbook_completed.(
+        initial_state,
+        playbook_run.id
+      )
+
+    assert %{
+             actions:
+               [
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | ansible_playbook: nil,
+               actions: actions,
+               problems: [
+                 {:server_ansible_playbook_failed, "setup", :failed,
+                  %{
+                    changed: 0,
+                    failures: 1,
+                    ignored: 2,
+                    ok: 3,
+                    rescued: 4,
+                    skipped: 5,
+                    unreachable: 6
+                  }}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "previous setup playbook problems are dropped on subsequent failures",
+       %{
+         ansible_playbook_completed: ansible_playbook_completed
+       } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :failed,
+        stats_changed: 0,
+        stats_failures: 1,
+        stats_ignored: 2,
+        stats_ok: 3,
+        stats_rescued: 4,
+        stats_skipped: 5,
+        stats_unreachable: 6
+      )
+
+    previous_task =
+      if FactoryHelpers.bool() do
+        Faker.Lorem.word()
+      else
+        nil
+      end
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        ansible_playbook: {playbook_run, previous_task},
+        problems: [
+          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
+        ]
+      )
+
+    result =
+      ansible_playbook_completed.(
+        initial_state,
+        playbook_run.id
+      )
+
+    assert %{
+             actions:
+               [
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | ansible_playbook: nil,
+               actions: actions,
+               problems: [
+                 {:server_ansible_playbook_failed, "setup", :failed,
+                  %{
+                    changed: 0,
+                    failures: 1,
+                    ignored: 2,
+                    ok: 3,
+                    rescued: 4,
+                    skipped: 5,
+                    unreachable: 6
+                  }}
+               ]
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
   end

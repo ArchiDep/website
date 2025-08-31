@@ -467,12 +467,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
                 check_open_ports(server),
                 update_tracking()
               ],
-              problems:
-                Enum.reject(
-                  state.problems,
-                  &(match?({:server_port_testing_script_failed, _details}, &1) or
-                      match?({:server_open_ports_check_failed, _details}, &1))
-                )
+              problems: drop_port_checking_problems(state.problems)
           }
 
         {:ok, _stdout, stderr, exit_code} ->
@@ -484,11 +479,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             state
             | problems: [
                 {:server_port_testing_script_failed, {:exit, exit_code, stderr}}
-                | Enum.reject(
-                    state.problems,
-                    &(match?({:server_port_testing_script_failed, _details}, &1) or
-                        match?({:server_open_ports_check_failed, _details}, &1))
-                  )
+                | drop_port_checking_problems(state.problems)
               ],
               actions: [update_tracking()]
           }
@@ -502,11 +493,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             state
             | problems: [
                 {:server_port_testing_script_failed, {:error, reason}}
-                | Enum.reject(
-                    state.problems,
-                    &(match?({:server_port_testing_script_failed, _details}, &1) or
-                        match?({:server_open_ports_check_failed, _details}, &1))
-                  )
+                | drop_port_checking_problems(state.problems)
               ],
               actions: [update_tracking()]
           }
@@ -833,8 +820,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       new_username = server.app_username
 
       set_up_server = Server.mark_as_set_up!(server)
+      :ok = PubSub.publish_server_updated(set_up_server)
 
-      %__MODULE__{
+      new_state = %__MODULE__{
         state
         | connection_state:
             reconnecting_state(
@@ -867,6 +855,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             ),
           load_average_timer: nil
       }
+
+      case Map.get(state.tasks, :get_load_average) do
+        nil ->
+          new_state
+
+        get_load_average_ref ->
+          drop_task(new_state, :get_load_average, get_load_average_ref)
+      end
     else
       problem =
         if run.state !== :succeeded do
@@ -1391,6 +1387,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           match?({:server_open_ports_check_failed, _port_problems}, problem) or
           match?({:server_fact_gathering_failed, _reason}, problem)
       end)
+
+  defp drop_port_checking_problems(problems),
+    do:
+      Enum.reject(
+        problems,
+        &(match?({:server_port_testing_script_failed, _details}, &1) or
+            match?({:server_open_ports_check_failed, _details}, &1))
+      )
 
   defp track(state),
     do: %__MODULE__{
