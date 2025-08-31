@@ -58,6 +58,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
       online?: protect({ServerManagerState, :online?, 1}, ServerManagerBehaviour),
       retry_ansible_playbook:
         protect({ServerManagerState, :retry_ansible_playbook, 2}, ServerManagerBehaviour),
+      retry_checking_open_ports:
+        protect({ServerManagerState, :retry_checking_open_ports, 1}, ServerManagerBehaviour),
       retry_connecting:
         protect({ServerManagerState, :retry_connecting, 2}, ServerManagerBehaviour)
     }
@@ -4628,7 +4630,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
     assert retry_ansible_playbook.(initial_state, "setup") == {initial_state, :ok}
   end
 
-  test "cannot retry running the ansible setup playbook if the server is busy", %{
+  test "cannot retry running the ansible setup playbook if the server is busy running a task", %{
     retry_ansible_playbook: retry_ansible_playbook
   } do
     server = build_active_server(set_up_at: nil, ssh_port: true)
@@ -4642,6 +4644,30 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
           ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
         ],
         tasks: %{get_load_average: make_ref()}
+      )
+
+    assert retry_ansible_playbook.(initial_state, "setup") ==
+             {initial_state, {:error, :server_busy}}
+  end
+
+  test "cannot retry running the ansible setup playbook if the server is busy running an ansible playbook",
+       %{
+         retry_ansible_playbook: retry_ansible_playbook
+       } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    running_playbook =
+      ServersFactory.build(:ansible_playbook_run, server: server, state: :pending)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        problems: [
+          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
+        ],
+        ansible_playbook: {running_playbook, nil}
       )
 
     assert retry_ansible_playbook.(initial_state, "setup") ==
@@ -4673,6 +4699,203 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateTest do
         )
 
       assert retry_ansible_playbook.(initial_state, "setup") ==
+               {initial_state, {:error, :server_not_connected}}
+    end
+  end
+
+  test "retry checking open ports after a port testing script failure", %{
+    retry_checking_open_ports: retry_checking_open_ports
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        problems: [
+          ServersFactory.server_port_testing_script_failed_problem()
+        ]
+      )
+
+    assert {result, :ok} = retry_checking_open_ports.(initial_state)
+
+    assert %{
+             actions:
+               [
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{initial_state | actions: actions}
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                current_job: :checking_open_ports,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
+  test "retry checking open ports after a failed open ports check", %{
+    retry_checking_open_ports: retry_checking_open_ports
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        problems: [
+          ServersFactory.server_open_ports_check_failed_problem()
+        ]
+      )
+
+    assert {result, :ok} = retry_checking_open_ports.(initial_state)
+
+    assert %{
+             actions:
+               [
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{initial_state | actions: actions}
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                current_job: :checking_open_ports,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
+  test "cannot retry checking open ports if there is no such problem", %{
+    retry_checking_open_ports: retry_checking_open_ports
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username
+      )
+
+    assert retry_checking_open_ports.(initial_state) == {initial_state, :ok}
+  end
+
+  test "cannot retry checking open ports if the server is busy running a task", %{
+    retry_checking_open_ports: retry_checking_open_ports
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    port_checking_problems =
+      [
+        ServersFactory.server_open_ports_check_failed_problem(),
+        ServersFactory.server_port_testing_script_failed_problem()
+      ]
+      |> Enum.shuffle()
+      |> Enum.drop(Faker.random_between(0, 1))
+
+    fake_loadavg_task_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        tasks: %{get_load_average: fake_loadavg_task_ref},
+        problems: port_checking_problems
+      )
+
+    assert retry_checking_open_ports.(initial_state) == {initial_state, {:error, :server_busy}}
+  end
+
+  test "cannot retry checking open ports if the server is busy running an ansible playbook", %{
+    retry_checking_open_ports: retry_checking_open_ports
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    port_checking_problems =
+      [
+        ServersFactory.server_open_ports_check_failed_problem(),
+        ServersFactory.server_port_testing_script_failed_problem()
+      ]
+      |> Enum.shuffle()
+      |> Enum.drop(Faker.random_between(0, 1))
+
+    running_playbook =
+      ServersFactory.build(:ansible_playbook_run, server: server, state: :pending)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        ansible_playbook: {running_playbook, nil},
+        problems: port_checking_problems
+      )
+
+    assert retry_checking_open_ports.(initial_state) == {initial_state, {:error, :server_busy}}
+  end
+
+  test "cannot retry checking open ports if the server is not connected", %{
+    retry_checking_open_ports: retry_checking_open_ports
+  } do
+    server = build_active_server(set_up_at: nil, ssh_port: true)
+
+    port_checking_problems =
+      [
+        ServersFactory.server_open_ports_check_failed_problem(),
+        ServersFactory.server_port_testing_script_failed_problem()
+      ]
+      |> Enum.shuffle()
+      |> Enum.drop(Faker.random_between(0, 1))
+
+    for connection_state <-
+          [
+            ServersFactory.random_not_connected_state(),
+            ServersFactory.random_connecting_state(),
+            ServersFactory.random_retry_connecting_state(),
+            ServersFactory.random_reconnecting_state(),
+            ServersFactory.random_connection_failed_state(),
+            ServersFactory.random_disconnected_state()
+          ] do
+      initial_state =
+        ServersFactory.build(:server_manager_state,
+          connection_state: connection_state,
+          server: server,
+          username: server.username,
+          problems: port_checking_problems
+        )
+
+      assert retry_checking_open_ports.(initial_state) ==
                {initial_state, {:error, :server_not_connected}}
     end
   end
