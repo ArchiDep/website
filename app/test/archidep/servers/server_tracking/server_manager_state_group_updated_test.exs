@@ -9,11 +9,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerProperties
-  alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.CourseFactory
-  alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.ServersFactory
 
   setup :verify_on_exit!
@@ -540,24 +538,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    server_conn_name = ServerConnection.name(server)
-
-    # Start a fake server connection process that will forward all calls to the
-    # test process.
-    start_link_supervised!(%{
-      id: ServerConnection,
-      start: {GenServerProxy, :start_link, [self(), server_conn_name]}
-    })
-
-    result_task =
-      Task.async(fn ->
+    result =
+      assert_server_connection_disconnected!(server, fn ->
         group_updated.(initial_state, updated_class)
       end)
-
-    assert_receive {:proxy, ^server_conn_name, {:call, :disconnect, from}}
-    :ok = GenServer.reply(from, :ok)
-
-    result = Task.await(result_task)
 
     assert %ServerManagerState{
              actions: [

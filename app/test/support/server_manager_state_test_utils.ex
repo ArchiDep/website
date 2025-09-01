@@ -6,6 +6,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ExUnit.Assertions
+  import ExUnit.Callbacks
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Course.Schemas.User
   alias ArchiDep.Repo
@@ -14,10 +15,12 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.FactoryHelpers
+  alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.ServersFactory
   alias Ecto.UUID
 
@@ -91,13 +94,13 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
 
     {:ok, group} = ServerGroup.fetch_server_group(class.id)
 
-    root = FactoryHelpers.bool()
+    {root, opts!} = Keyword.pop_lazy(opts!, :root, &FactoryHelpers.bool/0)
 
     member =
       if root do
         nil
       else
-        user_account = AccountsFactory.insert(:user_account)
+        user_account = AccountsFactory.insert(:user_account, active: true)
         {:ok, user} = User.fetch_user(user_account.id)
 
         student =
@@ -167,6 +170,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
       Keyword.pop_lazy(attrs!, :connection_state, fn -> not_connected_state() end)
 
     {conn_params, attrs!} = Keyword.pop_lazy(attrs!, :conn_params, fn -> conn_params(server) end)
+    {username, attrs!} = Keyword.pop(attrs!, :username, server.username)
     {current_job, attrs!} = Keyword.pop(attrs!, :current_job, nil)
     {problems, attrs!} = Keyword.pop(attrs!, :problems, [])
     {set_up_at, attrs!} = Keyword.pop_lazy(attrs!, :set_up_at, fn -> server.set_up_at end)
@@ -178,7 +182,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
       connection_state: connection_state,
       name: server.name,
       conn_params: conn_params,
-      username: server.username,
+      username: username,
       app_username: server.app_username,
       current_job: current_job,
       problems: problems,
@@ -199,4 +203,24 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   @spec ssh_public_key() :: String.t()
   def ssh_public_key,
     do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:ssh_public_key)
+
+  @spec assert_server_connection_disconnected!(Server.t(), (-> result)) :: result
+        when result: var
+  def assert_server_connection_disconnected!(server, fun) do
+    server_conn_name = ServerConnection.name(server)
+
+    # Start a fake server connection process that will forward all calls to the
+    # test process.
+    start_link_supervised!(%{
+      id: ServerConnection,
+      start: {GenServerProxy, :start_link, [self(), server_conn_name]}
+    })
+
+    result_task = Task.async(fun)
+
+    assert_receive {:proxy, ^server_conn_name, {:call, :disconnect, from}}
+    :ok = GenServer.reply(from, :ok)
+
+    Task.await(result_task)
+  end
 end
