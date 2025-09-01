@@ -1294,14 +1294,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     do: %__MODULE__{
       state
       | actions: [
-          get_load_average(),
-          update_tracking()
+          get_load_average()
         ]
     }
 
   def on_message(state, :measure_load_average) do
     Logger.warning(
-      "Ignoring message :measure_load_average sent to server manager for server #{state.server.id} because the server is no longer connected"
+      "Ignoring :measure_load_average message sent to server #{state.server.id} because the server is no longer connected"
     )
 
     state
