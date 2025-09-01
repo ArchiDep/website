@@ -354,6 +354,7 @@ The following NEW packages will be installed:
 Need to get 17.7 kB of archives.
 After this operation, 89.1 kB of additional disk space will be used.
 ```
+
 {% note type: more %}
 
 More complex packages will list their dependencies and ask you to confirm that you really want to install everything.
@@ -494,6 +495,7 @@ Building dependency tree... Done
 Reading state information... Done
 0 upgraded, 0 newly installed, 0 to remove and 2 not upgraded.
 ```
+
 {% note type: tip %}
 
 It's good practice to run `apt autoremove` after an upgrade and reboot, to make sure there are no unused packages taking up space on the computer.

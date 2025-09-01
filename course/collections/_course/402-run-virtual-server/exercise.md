@@ -6,6 +6,7 @@ This guide describes how to run a virtual server appropriate for the Media
 Engineering Architecture & Deployment course on the [Microsoft Azure][microsoft-azure] cloud platform.
 
 ## :exclamation: Apply to Azure for Students
+
 Apply to [Azure for Students][azure-for-students]
 **with your `@hes-so.ch` email address**, which will provide you with free
 Azure resources as a student.
@@ -67,7 +68,7 @@ Any region will do. Closer to where you are (or where your customers are) will r
 
 {% note type: warning %}
 
-**Your Unix username MUST NOT** contain spaces, accented characters (e.g. é), hyphens (-) or dots (.). If you use the same name later in the course as a subdomain, it **MUST NOT** contain any underscores (_). We suggest you choose a name that starts with a letter (a-z) and contains only alphanumeric characters (a-z and 0-9).
+**Your Unix username MUST NOT** contain spaces, accented characters (e.g. é), hyphens (-) or dots (.). If you use the same name later in the course as a subdomain, it **MUST NOT** contain any underscores (\_). We suggest you choose a name that starts with a letter (a-z) and contains only alphanumeric characters (a-z and 0-9).
 
 {% endnote %}
 
@@ -77,8 +78,7 @@ Choose a username that is simple to type because you will need to type it often.
 
 {% endnote %}
 
-[azure-for-students]:https://azure.microsoft.com/en-us/free/students/
-[azure-portal]:https://portal.azure.com
-[microsoft-azure]:https://azure.microsoft.com
-[sysadmin-cheatsheet]:../701-sysadmin-cheatsheet/
-
+[azure-for-students]: https://azure.microsoft.com/en-us/free/students/
+[azure-portal]: https://portal.azure.com
+[microsoft-azure]: https://azure.microsoft.com
+[sysadmin-cheatsheet]: ../701-sysadmin-cheatsheet/
