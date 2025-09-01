@@ -1166,7 +1166,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           %__MODULE__{
             state
             | connection_state: not_connected_state(connection_pid: connection_pid),
-              actions: [if(state.retry_timer, do: {:cancel_timer, state.retry_timer}, else: [])]
+              actions: if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: [])
           },
           :ok
         }

@@ -171,6 +171,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
 
     {conn_params, attrs!} = Keyword.pop_lazy(attrs!, :conn_params, fn -> conn_params(server) end)
     {username, attrs!} = Keyword.pop(attrs!, :username, server.username)
+    {app_username, attrs!} = Keyword.pop(attrs!, :app_username, server.app_username)
     {current_job, attrs!} = Keyword.pop(attrs!, :current_job, nil)
     {problems, attrs!} = Keyword.pop(attrs!, :problems, [])
     {set_up_at, attrs!} = Keyword.pop_lazy(attrs!, :set_up_at, fn -> server.set_up_at end)
@@ -183,7 +184,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
       name: server.name,
       conn_params: conn_params,
       username: username,
-      app_username: server.app_username,
+      app_username: app_username,
       current_job: current_job,
       problems: problems,
       set_up_at: set_up_at,

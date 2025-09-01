@@ -107,6 +107,78 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
               ), %ServerManagerState{new_state | version: new_state.version + 1}}
   end
 
+  test "update the application of a server", %{update_server: update_server} do
+    server =
+      insert_active_server!(
+        root: true,
+        set_up_at: true,
+        ssh_port: true,
+        server_expected_properties: @no_server_properties
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        username: server.app_username,
+        server: server
+      )
+
+    auth = Factory.build(:authentication, principal_id: server.owner_id, root: true)
+
+    new_server_app_username = Faker.Internet.user_name()
+
+    data = %{
+      name: server.name,
+      ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
+      username: server.username,
+      ssh_port: server.ssh_port,
+      active: server.active,
+      app_username: new_server_app_username,
+      expected_properties: Enum.into(@no_server_properties, %{})
+    }
+
+    now = DateTime.utc_now()
+    result = update_server.(initial_state, auth, data)
+
+    assert {%ServerManagerState{
+              server: %Server{updated_at: updated_at} = updated_server,
+              actions:
+                [
+                  {:update_tracking, "servers", update_tracking_fn}
+                ] = actions
+            } = new_state, {:ok, updated_server}} = result
+
+    assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
+
+    assert result ==
+             {%ServerManagerState{
+                initial_state
+                | server: %Server{
+                    server
+                    | app_username: new_server_app_username,
+                      updated_at: updated_at,
+                      version: server.version + 1
+                  },
+                  username: new_server_app_username,
+                  actions: actions
+              },
+              {:ok,
+               %Server{
+                 server
+                 | app_username: new_server_app_username,
+                   updated_at: updated_at,
+                   version: server.version + 1
+               }}}
+
+    assert update_tracking_fn.(new_state) ==
+             {real_time_state(server,
+                connection_state: new_state.connection_state,
+                conn_params: conn_params(server, username: new_server_app_username),
+                app_username: new_server_app_username,
+                version: new_state.version + 1
+              ), %ServerManagerState{new_state | version: new_state.version + 1}}
+  end
+
   test "update and activate a deactivated server", %{update_server: update_server} do
     server =
       insert_active_server!(

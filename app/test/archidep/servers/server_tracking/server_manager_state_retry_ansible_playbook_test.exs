@@ -124,8 +124,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
         server: server,
         username: server.username,
         problems: [
-          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup"),
-          ServersFactory.server_expected_property_mismatch_problem()
+          ServersFactory.server_expected_property_mismatch_problem(),
+          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
         ]
       )
 
