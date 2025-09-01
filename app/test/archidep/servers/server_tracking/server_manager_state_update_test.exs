@@ -267,7 +267,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
               ), %ServerManagerState{connect_result | version: new_state.version + 1}}
   end
 
-  test "update and deactivate an active server", %{update_server: update_server} do
+  test "update and deactivate an active connected server", %{update_server: update_server} do
     server =
       insert_active_server!(
         set_up_at: nil,
@@ -302,6 +302,395 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       assert_server_connection_disconnected!(server, fn ->
         update_server.(initial_state, auth, data)
       end)
+
+    assert {%ServerManagerState{
+              server: %Server{updated_at: updated_at} = updated_server,
+              actions:
+                [
+                  {:update_tracking, "servers", update_tracking_fn}
+                ] = actions
+            } = new_state, {:ok, updated_server}} = result
+
+    assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
+
+    assert result ==
+             {%ServerManagerState{
+                initial_state
+                | connection_state: not_connected_state(connection_pid: self()),
+                  server: %Server{
+                    server
+                    | active: false,
+                      username: new_server_username,
+                      updated_at: updated_at,
+                      version: server.version + 1
+                  },
+                  username: new_server_username,
+                  actions: actions
+              },
+              {:ok,
+               %Server{
+                 server
+                 | active: false,
+                   username: new_server_username,
+                   updated_at: updated_at,
+                   version: server.version + 1
+               }}}
+
+    assert update_tracking_fn.(new_state) ==
+             {real_time_state(server,
+                connection_state: new_state.connection_state,
+                conn_params: conn_params(server, username: new_server_username),
+                username: new_server_username,
+                version: new_state.version + 1
+              ), %ServerManagerState{new_state | version: new_state.version + 1}}
+  end
+
+  test "update and deactivate an active server that is retrying to connect", %{
+    update_server: update_server
+  } do
+    server =
+      insert_active_server!(
+        set_up_at: nil,
+        ssh_port: true,
+        server_expected_properties: @no_server_properties
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_retry_connecting_state(),
+        username: server.username,
+        server: server
+      )
+
+    auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
+
+    new_server_username = Faker.Internet.user_name()
+
+    data = %{
+      name: server.name,
+      ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
+      username: new_server_username,
+      ssh_port: server.ssh_port,
+      active: false,
+      app_username: server.app_username,
+      expected_properties: Enum.into(@no_server_properties, %{})
+    }
+
+    now = DateTime.utc_now()
+
+    result = update_server.(initial_state, auth, data)
+
+    assert {%ServerManagerState{
+              server: %Server{updated_at: updated_at} = updated_server,
+              actions:
+                [
+                  {:update_tracking, "servers", update_tracking_fn}
+                ] = actions
+            } = new_state, {:ok, updated_server}} = result
+
+    assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
+
+    assert result ==
+             {%ServerManagerState{
+                initial_state
+                | connection_state: not_connected_state(connection_pid: self()),
+                  server: %Server{
+                    server
+                    | active: false,
+                      username: new_server_username,
+                      updated_at: updated_at,
+                      version: server.version + 1
+                  },
+                  username: new_server_username,
+                  actions: actions
+              },
+              {:ok,
+               %Server{
+                 server
+                 | active: false,
+                   username: new_server_username,
+                   updated_at: updated_at,
+                   version: server.version + 1
+               }}}
+
+    assert update_tracking_fn.(new_state) ==
+             {real_time_state(server,
+                connection_state: new_state.connection_state,
+                conn_params: conn_params(server, username: new_server_username),
+                username: new_server_username,
+                version: new_state.version + 1
+              ), %ServerManagerState{new_state | version: new_state.version + 1}}
+  end
+
+  test "update and deactivate an active server that is retrying to connect after a given time", %{
+    update_server: update_server
+  } do
+    server =
+      insert_active_server!(
+        set_up_at: nil,
+        ssh_port: true,
+        server_expected_properties: @no_server_properties
+      )
+
+    fake_retry_timer_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_retry_connecting_state(),
+        username: server.username,
+        server: server,
+        retry_timer: fake_retry_timer_ref
+      )
+
+    auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
+
+    new_server_username = Faker.Internet.user_name()
+
+    data = %{
+      name: server.name,
+      ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
+      username: new_server_username,
+      ssh_port: server.ssh_port,
+      active: false,
+      app_username: server.app_username,
+      expected_properties: Enum.into(@no_server_properties, %{})
+    }
+
+    now = DateTime.utc_now()
+
+    result = update_server.(initial_state, auth, data)
+
+    assert {%ServerManagerState{
+              server: %Server{updated_at: updated_at} = updated_server,
+              actions:
+                [
+                  {:cancel_timer, ^fake_retry_timer_ref},
+                  {:update_tracking, "servers", update_tracking_fn}
+                ] = actions
+            } = new_state, {:ok, updated_server}} = result
+
+    assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
+
+    assert result ==
+             {%ServerManagerState{
+                initial_state
+                | connection_state: not_connected_state(connection_pid: self()),
+                  server: %Server{
+                    server
+                    | active: false,
+                      username: new_server_username,
+                      updated_at: updated_at,
+                      version: server.version + 1
+                  },
+                  username: new_server_username,
+                  actions: actions
+              },
+              {:ok,
+               %Server{
+                 server
+                 | active: false,
+                   username: new_server_username,
+                   updated_at: updated_at,
+                   version: server.version + 1
+               }}}
+
+    assert update_tracking_fn.(new_state) ==
+             {real_time_state(server,
+                connection_state: new_state.connection_state,
+                conn_params: conn_params(server, username: new_server_username),
+                username: new_server_username,
+                version: new_state.version + 1
+              ), %ServerManagerState{new_state | version: new_state.version + 1}}
+  end
+
+  test "update and deactivate an active disconnected server", %{
+    update_server: update_server
+  } do
+    server =
+      insert_active_server!(
+        set_up_at: nil,
+        ssh_port: true,
+        server_expected_properties: @no_server_properties
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_disconnected_state(),
+        username: server.username,
+        server: server
+      )
+
+    auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
+
+    new_server_username = Faker.Internet.user_name()
+
+    data = %{
+      name: server.name,
+      ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
+      username: new_server_username,
+      ssh_port: server.ssh_port,
+      active: false,
+      app_username: server.app_username,
+      expected_properties: Enum.into(@no_server_properties, %{})
+    }
+
+    now = DateTime.utc_now()
+
+    result = update_server.(initial_state, auth, data)
+
+    assert {%ServerManagerState{
+              server: %Server{updated_at: updated_at} = updated_server,
+              actions:
+                [
+                  {:update_tracking, "servers", update_tracking_fn}
+                ] = actions
+            } = new_state, {:ok, updated_server}} = result
+
+    assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
+
+    assert result ==
+             {%ServerManagerState{
+                initial_state
+                | connection_state: not_connected_state(connection_pid: nil),
+                  server: %Server{
+                    server
+                    | active: false,
+                      username: new_server_username,
+                      updated_at: updated_at,
+                      version: server.version + 1
+                  },
+                  username: new_server_username,
+                  actions: actions
+              },
+              {:ok,
+               %Server{
+                 server
+                 | active: false,
+                   username: new_server_username,
+                   updated_at: updated_at,
+                   version: server.version + 1
+               }}}
+
+    assert update_tracking_fn.(new_state) ==
+             {real_time_state(server,
+                connection_state: new_state.connection_state,
+                conn_params: conn_params(server, username: new_server_username),
+                username: new_server_username,
+                version: new_state.version + 1
+              ), %ServerManagerState{new_state | version: new_state.version + 1}}
+  end
+
+  test "update and deactivate an active server that has failed to connect", %{
+    update_server: update_server
+  } do
+    server =
+      insert_active_server!(
+        set_up_at: nil,
+        ssh_port: true,
+        server_expected_properties: @no_server_properties
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connection_failed_state(),
+        username: server.username,
+        server: server
+      )
+
+    auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
+
+    new_server_username = Faker.Internet.user_name()
+
+    data = %{
+      name: server.name,
+      ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
+      username: new_server_username,
+      ssh_port: server.ssh_port,
+      active: false,
+      app_username: server.app_username,
+      expected_properties: Enum.into(@no_server_properties, %{})
+    }
+
+    now = DateTime.utc_now()
+
+    result = update_server.(initial_state, auth, data)
+
+    assert {%ServerManagerState{
+              server: %Server{updated_at: updated_at} = updated_server,
+              actions:
+                [
+                  {:update_tracking, "servers", update_tracking_fn}
+                ] = actions
+            } = new_state, {:ok, updated_server}} = result
+
+    assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
+
+    assert result ==
+             {%ServerManagerState{
+                initial_state
+                | connection_state: not_connected_state(connection_pid: self()),
+                  server: %Server{
+                    server
+                    | active: false,
+                      username: new_server_username,
+                      updated_at: updated_at,
+                      version: server.version + 1
+                  },
+                  username: new_server_username,
+                  actions: actions
+              },
+              {:ok,
+               %Server{
+                 server
+                 | active: false,
+                   username: new_server_username,
+                   updated_at: updated_at,
+                   version: server.version + 1
+               }}}
+
+    assert update_tracking_fn.(new_state) ==
+             {real_time_state(server,
+                connection_state: new_state.connection_state,
+                conn_params: conn_params(server, username: new_server_username),
+                username: new_server_username,
+                version: new_state.version + 1
+              ), %ServerManagerState{new_state | version: new_state.version + 1}}
+  end
+
+  test "update and deactivate an active server that is not connected", %{
+    update_server: update_server
+  } do
+    server =
+      insert_active_server!(
+        set_up_at: nil,
+        ssh_port: true,
+        server_expected_properties: @no_server_properties
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_not_connected_state(),
+        username: server.username,
+        server: server
+      )
+
+    auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
+
+    new_server_username = Faker.Internet.user_name()
+
+    data = %{
+      name: server.name,
+      ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
+      username: new_server_username,
+      ssh_port: server.ssh_port,
+      active: false,
+      app_username: server.app_username,
+      expected_properties: Enum.into(@no_server_properties, %{})
+    }
+
+    now = DateTime.utc_now()
+
+    result = update_server.(initial_state, auth, data)
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,

@@ -1264,11 +1264,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       state
       | connection_state: not_connected_state(connection_pid: connection_pid),
         actions:
-          state.actions ++
-            if(state.retry_timer,
-              do: [{:cancel_timer, state.retry_timer}],
-              else: []
-            )
+          if(state.retry_timer,
+            do: [{:cancel_timer, state.retry_timer}],
+            else: []
+          ) ++ state.actions
     }
   end
 
