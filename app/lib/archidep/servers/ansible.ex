@@ -6,9 +6,8 @@ defmodule ArchiDep.Servers.Ansible do
   See https://docs.ansible.com.
   """
 
-  @behaviour Ansible.Behaviour
+  @behaviour ArchiDep.Servers.Ansible.Behaviour
 
-  alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.PlaybooksRegistry
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   require Logger

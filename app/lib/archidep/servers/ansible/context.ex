@@ -3,7 +3,7 @@ defmodule ArchiDep.Servers.Ansible.Context do
   Implementation of the Ansible behavior.
   """
 
-  @behaviour Ansible.Behaviour
+  @behaviour ArchiDep.Servers.Ansible.Behaviour
 
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.PlaybooksRegistry

@@ -7,6 +7,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManager
   alias ArchiDep.Servers.ServerTracking.ServerManagerMock
@@ -16,11 +17,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.NoOpGenServer
   alias ArchiDep.Support.ServersFactory
+  alias Phoenix.PubSub
   alias Req.Response
 
   defmodule FakeHttpError do
     defexception [:message]
   end
+
+  @pubsub ArchiDep.PubSub
 
   setup :verify_on_exit!
 
@@ -516,6 +520,63 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
                GenServer.reply(from, {:ok, fake_result})
 
                :ok
+             end,
+             actions: init_actions
+           ) == :ok
+  end
+
+  test "have a server manager track itself then update its tracking information",
+       %{
+         initialize: initialize,
+         server: server,
+         test: test,
+         test_pid: test_pid
+       } do
+    fake_state = %ServerRealTimeState{
+      connection_state: ServersFactory.random_connected_state(),
+      name: server.name,
+      conn_params: {server.ip_address.address, server.ssh_port || 22, server.username},
+      username: server.username,
+      app_username: server.app_username,
+      set_up_at: nil
+    }
+
+    updated_state = %ServerRealTimeState{fake_state | version: Faker.random_between(1, 1_000_000)}
+
+    server_id = server.id
+    topic = Atom.to_string(test)
+
+    init_actions = [
+      {:track, topic, server_id, fake_state}
+    ]
+
+    :ok = PubSub.subscribe(@pubsub, "tracker:#{topic}")
+
+    assert test_server_manager!(
+             initialize,
+             test_pid,
+             fn done, _test_data ->
+               expect(ServerManagerMock, :retry_connecting, fn state, true ->
+                 %ServerManagerState{
+                   state
+                   | actions: [
+                       {:update_tracking, topic,
+                        fn track_state -> {updated_state, track_state} end}
+                     ]
+                 }
+               end)
+
+               expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+                 done.(state)
+               end)
+
+               assert_receive {:join, ^server_id, %{state: ^fake_state}}, 500
+
+               :ok = ServerManager.notify_server_up(server.id)
+
+               assert_receive {:update, ^server_id, %{state: ^updated_state}}, 500
+
+               ServerManager.connection_idle(server.id, test_pid)
              end,
              actions: init_actions
            ) == :ok
