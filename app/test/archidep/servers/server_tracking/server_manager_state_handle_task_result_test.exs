@@ -1813,6 +1813,78 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
   end
 
+  test "the connection process is complete after facts have been gathered if open ports have already been checked",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: true, open_ports_checked_at: true, ssh_port: true)
+
+    ServersFactory.insert(:ansible_playbook_run,
+      server: server,
+      state: :succeeded,
+      digest: Ansible.setup_playbook().digest
+    )
+
+    fake_gather_facts_ref = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok, %{}}
+      )
+
+    assert %{
+             server:
+               %Server{
+                 last_known_properties: %ServerProperties{id: last_known_properties_id}
+               } = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   test "detected properties are saved after gathering facts the first time",
        %{
          handle_task_result: handle_task_result
@@ -2118,7 +2190,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        tasks: %{gather_facts: fake_gather_facts_ref},
+        problems: [
+          ServersFactory.server_expected_property_mismatch_problem(),
+          ServersFactory.server_expected_property_mismatch_problem()
+        ]
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")

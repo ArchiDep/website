@@ -318,6 +318,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         {:ok, _stdout, _stderr, 0} ->
           if username == server.app_username do
             Logger.info(
+              # coveralls-ignore-next-line
               "Server manager has sudo access to server #{server.id} as #{username}; gathering facts..."
             )
 
@@ -331,6 +332,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             }
           else
             Logger.info(
+              # coveralls-ignore-next-line
               "Server manager has sudo access to server #{server.id} as #{username}; setting up app user..."
             )
 
@@ -348,6 +350,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
         {:ok, _stdout, stderr, _exit_code} ->
           Logger.info(
+            # coveralls-ignore-next-line
             "Server manager does not have sudo access to server #{server.id} as #{username}; connected with problems"
           )
 
@@ -486,6 +489,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
         {:error, reason} ->
           Logger.error(
+            # coveralls-ignore-next-line
             "Port testing script failed on server #{server.id} because: #{inspect(reason)}"
           )
 
@@ -583,6 +587,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          connection_pid
        ) do
     Logger.info(
+      # coveralls-ignore-next-line
       "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
     )
 
@@ -630,6 +635,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp handle_connection_failed(%__MODULE__{server: server} = state, connection_pid, reason) do
     Logger.info(
+      # coveralls-ignore-next-line
       "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
     )
 
@@ -742,10 +748,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             setup_playbook.digest != last_setup_run.digest) do
       if setup_playbook.digest != last_setup_run.digest do
         Logger.notice(
+          # coveralls-ignore-next-line
           "Re-running Ansible setup playbook for server #{updated_server.id} because its digest has changed from #{Base.encode16(last_setup_run.digest, case: :lower)} to #{Base.encode16(setup_playbook.digest, case: :lower)}"
         )
       else
         Logger.notice(
+          # coveralls-ignore-next-line
           "Re-running Ansible setup playbook for server #{updated_server.id} because its last run did not succeed (#{inspect(last_setup_run.state)})"
         )
       end
@@ -920,6 +928,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        }, :ok}
     else
       Logger.info(
+        # coveralls-ignore-next-line
         "Ignoring retry request for Ansible playbook setup for server #{server.id} because there is no such failed run"
       )
 
@@ -929,6 +938,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   def retry_ansible_playbook(%__MODULE__{connection_state: connected_state()} = state, playbook) do
     Logger.info(
+      # coveralls-ignore-next-line
       "Ignoring retry request for Ansible playbook #{playbook} because the server is busy"
     )
 
@@ -937,6 +947,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   def retry_ansible_playbook(%__MODULE__{} = state, playbook) do
     Logger.info(
+      # coveralls-ignore-next-line
       "Ignoring retry request for Ansible playbook #{playbook} because the server is not connected"
     )
 
@@ -973,6 +984,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        }, :ok}
     else
       Logger.info(
+        # coveralls-ignore-next-line
         "Ignoring retry request for checking open ports for server #{server.id} because there is no port checking problem"
       )
 
@@ -984,6 +996,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         %__MODULE__{connection_state: connected_state(), server: server} = state
       ) do
     Logger.info(
+      # coveralls-ignore-next-line
       "Ignoring retry request for checking open ports for server #{server.id} because the server is busy"
     )
 
@@ -992,6 +1005,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   def retry_checking_open_ports(%__MODULE__{server: server} = state) do
     Logger.info(
+      # coveralls-ignore-next-line
       "Ignoring retry request for checking open ports for server #{server.id} because the server is not connected"
     )
 
@@ -1010,6 +1024,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         %{id: group_id, version: version} = group
       ) do
     Logger.info(
+      # coveralls-ignore-next-line
       "Server manager for server #{server_id} received group update from version #{current_version} to version #{version}"
     )
 
@@ -1310,9 +1325,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do
     case Map.get(tasks, key) do
-      nil ->
-        state
-
       ^ref ->
         %__MODULE__{state | tasks: Map.delete(tasks, key), actions: [{:demonitor, ref} | actions]}
     end
