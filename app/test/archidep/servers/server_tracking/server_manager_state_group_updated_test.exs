@@ -9,11 +9,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerProperties
-  alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.CourseFactory
-  alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.ServersFactory
 
   setup :verify_on_exit!
@@ -333,6 +331,146 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
+  test "server property mismatches cannot be re-evaluated if the server has no last known properties",
+       %{
+         group_updated: group_updated
+       } do
+    expected_server_properties =
+      CourseFactory.build(:expected_server_properties,
+        hostname: nil,
+        machine_id: nil,
+        cpus: nil,
+        cores: nil,
+        vcpus: nil,
+        memory: nil,
+        swap: nil,
+        system: nil,
+        architecture: nil,
+        os_family: nil,
+        distribution: nil,
+        distribution_release: nil,
+        distribution_version: nil
+      )
+
+    class =
+      CourseFactory.build(:class,
+        active: true,
+        servers_enabled: true,
+        expected_server_properties: expected_server_properties
+      )
+
+    group = %ServerGroup{
+      id: class.id,
+      name: class.name,
+      start_date: class.start_date,
+      end_date: class.end_date,
+      active: class.active,
+      servers_enabled: class.servers_enabled,
+      servers: [],
+      expected_server_properties:
+        ServersFactory.build(
+          :server_properties,
+          id: class.expected_server_properties_id,
+          hostname: nil,
+          machine_id: nil,
+          cpus: 2,
+          cores: nil,
+          vcpus: nil,
+          memory: nil,
+          swap: nil,
+          system: nil,
+          architecture: nil,
+          os_family: nil,
+          distribution: nil,
+          distribution_release: nil,
+          distribution_version: nil
+        ),
+      expected_server_properties_id: class.expected_server_properties_id,
+      version: class.version,
+      created_at: class.created_at,
+      updated_at: class.updated_at
+    }
+
+    expected_properties =
+      ServersFactory.build(:server_properties,
+        hostname: nil,
+        machine_id: nil,
+        cpus: nil,
+        cores: nil,
+        vcpus: nil,
+        memory: nil,
+        swap: nil,
+        system: nil,
+        architecture: nil,
+        os_family: nil,
+        distribution: nil,
+        distribution_release: nil,
+        distribution_version: nil
+      )
+
+    server =
+      build_active_server(
+        group: group,
+        root: true,
+        set_up_at: nil,
+        ssh_port: true,
+        expected_properties: expected_properties,
+        last_known_properties: nil
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username,
+        problems: [
+          ServersFactory.server_expected_property_mismatch_problem(),
+          ServersFactory.server_expected_property_mismatch_problem(),
+          ServersFactory.server_expected_property_mismatch_problem()
+        ]
+      )
+
+    updated_class = %Class{
+      class
+      | expected_server_properties: %ExpectedServerProperties{
+          expected_server_properties
+          | cpus: 4
+        },
+        version: class.version + 1
+    }
+
+    result = group_updated.(initial_state, updated_class)
+
+    assert %ServerManagerState{
+             actions: [
+               {:update_tracking, "servers", update_tracking_fn}
+             ]
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | group: %ServerGroup{
+                     group
+                     | expected_server_properties: %ServerProperties{
+                         group.expected_server_properties
+                         | cpus: 4
+                       },
+                       version: updated_class.version
+                   }
+               },
+               actions: result.actions,
+               problems: []
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   test "a server manager connects to its server when it becomes active following a group update",
        %{
          group_updated: group_updated
@@ -540,24 +678,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    server_conn_name = ServerConnection.name(server)
-
-    # Start a fake server connection process that will forward all calls to the
-    # test process.
-    start_link_supervised!(%{
-      id: ServerConnection,
-      start: {GenServerProxy, :start_link, [self(), server_conn_name]}
-    })
-
-    result_task =
-      Task.async(fn ->
+    result =
+      assert_server_connection_disconnected!(server, fn ->
         group_updated.(initial_state, updated_class)
       end)
-
-    assert_receive {:proxy, ^server_conn_name, {:call, :disconnect, from}}
-    :ok = GenServer.reply(from, :ok)
-
-    result = Task.await(result_task)
 
     assert %ServerManagerState{
              actions: [
