@@ -34,7 +34,7 @@ module ArchiDep
         throw %/Invalid filename format for item: "#{item.path}"/ unless m
 
         section = Integer(m[1])
-        section_chapter = Integer(m[2])
+        section_chapter = Integer(m[2], 10)
         slug = m[3]
         course_type =
           if m[4] == "slides/slides.md"
