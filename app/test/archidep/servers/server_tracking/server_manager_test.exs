@@ -4,6 +4,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   import ArchiDep.Support.FactoryHelpers, only: [bool: 0]
   import Hammox
   alias ArchiDep.Http
+  alias ArchiDep.Servers.Ansible
+  alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManager
@@ -26,12 +28,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     test_pid = self()
 
     state_factory = fn ->
+      allow(Ansible.Mock, test_pid, self())
       allow(Http.Mock, test_pid, self())
       allow(ServerManagerMock, test_pid, self())
       ServerManagerMock
     end
 
-    server = ServersFactory.build(:server)
+    server = ServersFactory.build(:server, set_up_at: nil)
     server_opts = [state: state_factory]
 
     initialize_fn = fn actions ->
@@ -175,7 +178,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     assert test_server_manager!(
              initialize,
              test_pid,
-             fn done, _manager_pid ->
+             fn done, _test_data ->
                expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
                  task = Task.async(fn -> :timer.sleep(1_000_000) end)
 
@@ -229,7 +232,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
         {:ok, %Response{status: 400, body: "Bad Request"}}
     end)
 
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
                %ServerManagerState{
                  state
@@ -272,7 +275,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
         {:error, %FakeHttpError{message: "Connection refused"}}
     end)
 
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
                %ServerManagerState{
                  state
@@ -308,12 +311,222 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
            end) == :ok
   end
 
+  test "have a server manager gather ansible facts for its server", %{
+    initialize: initialize,
+    server: server,
+    test_pid: test_pid
+  } do
+    fake_facts = %{"cake" => "lie", "truth" => "out there"}
+
+    expect(Ansible.Mock, :gather_facts, fn ^server, "alice" ->
+      {:ok, fake_facts}
+    end)
+
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
+             expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+               %ServerManagerState{
+                 state
+                 | actions: [
+                     {:gather_facts,
+                      fn task_state, task_factory ->
+                        task = task_factory.("alice")
+                        Process.unlink(task.pid)
+                        task_state
+                      end}
+                   ]
+               }
+             end)
+
+             expect(ServerManagerMock, :handle_task_result, fn state,
+                                                               task_ref,
+                                                               {:ok, ^fake_facts} ->
+               Process.demonitor(task_ref, [:flush])
+               done.(state)
+             end)
+
+             :ok = ServerManager.connection_idle(server.id, test_pid)
+           end) == :ok
+  end
+
+  for ansible_error <- [
+        :unreachable,
+        :invalid_json_output,
+        :unknown,
+        "arbitrary"
+      ] do
+    test "have a server manager report ansible fact gathering #{ansible_error} error for its server",
+         %{
+           initialize: initialize,
+           server: server,
+           test_pid: test_pid
+         } do
+      fake_error = unquote(ansible_error)
+
+      expect(Ansible.Mock, :gather_facts, fn ^server, "alice" ->
+        {:error, fake_error}
+      end)
+
+      assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
+               expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+                 %ServerManagerState{
+                   state
+                   | actions: [
+                       {:gather_facts,
+                        fn task_state, task_factory ->
+                          task = task_factory.("alice")
+                          Process.unlink(task.pid)
+                          task_state
+                        end}
+                     ]
+                 }
+               end)
+
+               expect(ServerManagerMock, :handle_task_result, fn state,
+                                                                 task_ref,
+                                                                 {:error, ^fake_error} ->
+                 Process.demonitor(task_ref, [:flush])
+                 done.(state)
+               end)
+
+               :ok = ServerManager.connection_idle(server.id, test_pid)
+             end) == :ok
+    end
+  end
+
+  test "have a server manager request that the ansible pipeline queue run a playbook for its server",
+       %{
+         initialize: initialize,
+         server: server,
+         test: test,
+         test_pid: test_pid
+       } do
+    server_id = server.id
+    queue_name = AnsiblePipelineQueue.name(test)
+    playbook_run = ServersFactory.build(:ansible_playbook_run, server: server, state: :pending)
+    playbook_run_id = playbook_run.id
+
+    # Start a fake ansible pipeline queue process that will forward all calls to
+    # the test process.
+    start_link_supervised!(%{
+      id: AnsiblePipelineQueue,
+      start: {GenServerProxy, :start_link, [self(), queue_name]}
+    })
+
+    init_actions = [{:run_playbook, playbook_run}]
+
+    assert test_server_manager!(
+             initialize,
+             test_pid,
+             fn done, %{starting_version: starting_version} ->
+               expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+                 done.(%ServerManagerState{state | version: starting_version})
+               end)
+
+               assert_receive {:proxy, ^queue_name,
+                               {:call, {:run_playbook, ^playbook_run_id, ^server_id}, from}},
+                              500
+
+               GenServer.reply(from, :ok)
+
+               ServerManager.connection_idle(server.id, test_pid)
+             end,
+             actions: init_actions,
+             wait_for_started_message: false
+           ) == :ok
+  end
+
+  test "have a server manager notify the ansible pipeline queue that it is offline",
+       %{
+         initialize: initialize,
+         server: server,
+         test: test,
+         test_pid: test_pid
+       } do
+    server_id = server.id
+    queue_name = AnsiblePipelineQueue.name(test)
+
+    # Start a fake ansible pipeline queue process that will forward all calls to
+    # the test process.
+    start_link_supervised!(%{
+      id: AnsiblePipelineQueue,
+      start: {GenServerProxy, :start_link, [self(), queue_name]}
+    })
+
+    init_actions = [:notify_server_offline]
+
+    assert test_server_manager!(
+             initialize,
+             test_pid,
+             fn done, _test_data ->
+               expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+                 done.(state)
+               end)
+
+               assert_receive {:proxy, ^queue_name, {:cast, {:server_offline, ^server_id}}}, 500
+
+               ServerManager.connection_idle(server.id, test_pid)
+             end,
+             actions: init_actions
+           ) == :ok
+  end
+
+  test "have a server manager run a command on its server",
+       %{
+         initialize: initialize,
+         server: server,
+         test_pid: test_pid
+       } do
+    server_conn_name = ServerConnection.name(server)
+
+    # Start a fake server connection process that will forward all calls to the
+    # test process.
+    start_link_supervised!(%{
+      id: ServerConnection,
+      start: {GenServerProxy, :start_link, [self(), server_conn_name]}
+    })
+
+    fake_command = Faker.Lorem.sentence()
+    fake_timeout = Faker.random_between(1, 1_000_000)
+    fake_result = Faker.random_between(1, 1_000_000)
+
+    init_actions = [
+      {:run_command,
+       fn task_state, task_factory ->
+         task = task_factory.(fake_command, fake_timeout)
+         Process.unlink(task.pid)
+         task_state
+       end}
+    ]
+
+    assert test_server_manager!(
+             initialize,
+             test_pid,
+             fn done, _test_data ->
+               expect(ServerManagerMock, :handle_task_result, fn state,
+                                                                 task_ref,
+                                                                 {:ok, ^fake_result} ->
+                 Process.demonitor(task_ref, [:flush])
+                 done.(state)
+               end)
+
+               assert_receive {:proxy, ^server_conn_name,
+                               {:call, {:run_command, ^fake_command}, from}},
+                              500
+
+               GenServer.reply(from, {:ok, fake_result})
+
+               :ok
+             end,
+             actions: init_actions
+           ) == :ok
+  end
+
   test "notify a server manager that its connection is idle", %{
     initialize: initialize,
     server: server,
     test_pid: test_pid
   } do
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
                done.(state)
              end)
@@ -327,7 +540,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     server: server,
     test_pid: test_pid
   } do
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :retry_connecting, fn state, true ->
                done.(state)
              end)
@@ -347,7 +560,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     task_name = Faker.Lorem.sentence()
     event = ServersFactory.build(:ansible_playbook_event, run: run, task_name: task_name)
 
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :ansible_playbook_event, fn state, ^run_id, ^task_name ->
                done.(state)
              end)
@@ -364,7 +577,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     run = ServersFactory.build(:ansible_playbook_run, server: server, state: :succeeded)
     run_id = run.id
 
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :ansible_playbook_completed, fn state, ^run_id ->
                done.(state)
              end)
@@ -383,7 +596,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     assert test_server_manager!(
              initialize,
              test_pid,
-             fn _done, _manager_pid ->
+             fn _done, _test_data ->
                expect(ServerManagerMock, :online?, fn _state ->
                  online
                end)
@@ -399,7 +612,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     server: server,
     test_pid: test_pid
   } do
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :retry_connecting, fn state, true ->
                done.(state)
              end)
@@ -416,7 +629,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     playbook = Faker.Lorem.word()
     result = Enum.random([:ok, {:error, :server_not_connected}, {:error, :server_busy}])
 
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :retry_ansible_playbook, fn state, ^playbook ->
                {done.(state), result}
              end)
@@ -432,7 +645,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   } do
     result = Enum.random([:ok, {:error, :server_not_connected}, {:error, :server_busy}])
 
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :retry_checking_open_ports, fn state ->
                {done.(state), result}
              end)
@@ -450,7 +663,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
     data = ServersFactory.random_update_server_data()
 
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :update_server, fn state, ^auth, ^data ->
                {done.(state), {:ok, updated_server}}
              end)
@@ -469,7 +682,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
     data = ServersFactory.random_update_server_data()
 
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :update_server, fn state, ^auth, ^data ->
                {done.(state), {:ok, updated_server}}
              end)
@@ -484,6 +697,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     test_pid: test_pid
   } do
     state_factory = fn ->
+      allow(Ansible.Mock, test_pid, self())
       allow(Http.Mock, test_pid, self())
       allow(ServerManagerMock, test_pid, self())
       ServerManagerMock
@@ -521,7 +735,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   } do
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :delete_server, fn state, ^auth ->
                {done.(state), {:error, :server_busy}}
              end)
@@ -534,7 +748,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     initialize: initialize,
     test_pid: test_pid
   } do
-    assert test_server_manager!(initialize, test_pid, fn done, manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, %{manager_pid: manager_pid} ->
              expect(ServerManagerMock, :retry_connecting, fn state, false ->
                done.(state)
              end)
@@ -550,7 +764,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     fake_task_ref = make_ref()
     fake_result = {:ok, Faker.Lorem.sentence()}
 
-    assert test_server_manager!(initialize, test_pid, fn done, manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, %{manager_pid: manager_pid} ->
              expect(ServerManagerMock, :handle_task_result, fn state,
                                                                ^fake_task_ref,
                                                                ^fake_result ->
@@ -568,7 +782,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   } do
     updated_class = CourseFactory.build(:class, id: server.group_id)
 
-    assert test_server_manager!(initialize, test_pid, fn done, manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, %{manager_pid: manager_pid} ->
              expect(ServerManagerMock, :group_updated, fn state, ^updated_class ->
                done.(state)
              end)
@@ -584,7 +798,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     fake_error = {:error, Faker.Lorem.sentence()}
     fake_connection_ref = make_ref()
 
-    assert test_server_manager!(initialize, test_pid, fn done, manager_pid ->
+    assert test_server_manager!(initialize, test_pid, fn done, %{manager_pid: manager_pid} ->
              expect(ServerManagerMock, :connection_crashed, fn state, ^test_pid, ^fake_error ->
                done.(state)
              end)
@@ -594,7 +808,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   end
 
   defp test_server_manager!(initialize_fn, test_pid, test_fn, opts! \\ []) do
+    {actions, opts!} = Keyword.pop(opts!, :actions, [])
     {wait_for_done_action, opts!} = Keyword.pop(opts!, :wait_for_done_action, true)
+    {wait_for_started_message, opts!} = Keyword.pop(opts!, :wait_for_started_message, true)
     [] = opts!
 
     # Generate random versions that we will use to make sure that the server
@@ -605,12 +821,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     # Have the server manager forward the :started message to the test process.
     # We use this message to know when the server manager has finished
     # initializing (including processing its initial actions).
-    expect(ServerManagerMock, :on_message, fn state, :started ->
-      send(test_pid, :started)
-      # Add the starting version so that we can verify later that the server
-      # manager has actually updated its state during initialization.
-      %ServerManagerState{state | version: starting_version}
-    end)
+    if wait_for_started_message do
+      expect(ServerManagerMock, :on_message, fn state, :started ->
+        send(test_pid, :started)
+        # Add the starting version so that we can verify later that the server
+        # manager has actually updated its state during initialization.
+        %ServerManagerState{state | version: starting_version}
+      end)
+    end
 
     if wait_for_done_action do
       # Have the server manager forward the :done message to the test process.
@@ -627,8 +845,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     end
 
     # Initialize the server manager and wait for it to finish initializing.
-    server_manager_pid = initialize_fn.([send_message(:started)])
-    assert_receive :started, 500
+    base_actions = if wait_for_started_message, do: [send_message(:started)], else: []
+    server_manager_pid = initialize_fn.(base_actions ++ actions)
+
+    if wait_for_started_message do
+      assert_receive :started, 500
+    end
 
     done_action = send_message({:done, done_version})
 
@@ -640,7 +862,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
       %ServerManagerState{state | actions: [done_action | state.actions], version: done_version}
     end
 
-    result = test_fn.(done_action_fn, server_manager_pid)
+    result =
+      test_fn.(done_action_fn, %{
+        manager_pid: server_manager_pid,
+        starting_version: starting_version
+      })
 
     if wait_for_done_action do
       # Ensure that the server manager has received has processed the done action.

@@ -30,6 +30,7 @@ config :archidep, ArchiDep.Course, ArchiDep.Course.Context
 config :archidep, ArchiDep.Events, ArchiDep.Events.Context
 config :archidep, ArchiDep.Servers, ArchiDep.Servers.Context
 
+config :archidep, ArchiDep.Servers.Ansible, ArchiDep.Servers.Ansible.Context
 config :archidep, ArchiDep.Http, Req
 config :archidep, ArchiDep.Repo, pool_size: 10, socket_options: []
 

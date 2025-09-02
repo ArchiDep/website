@@ -35,6 +35,8 @@ config :archidep, ArchiDep.Accounts, ArchiDep.Accounts.ContextMock
 config :archidep, ArchiDep.Course, ArchiDep.Course.ContextMock
 config :archidep, ArchiDep.Events, ArchiDep.Events.ContextMock
 config :archidep, ArchiDep.Servers, ArchiDep.Servers.ContextMock
+
+config :archidep, ArchiDep.Servers.Ansible, ArchiDep.Servers.Ansible.Mock
 config :archidep, ArchiDep.Http, ArchiDep.Http.Mock
 
 # Disable swoosh api client as it is only required for production adapters

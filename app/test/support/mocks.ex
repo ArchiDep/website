@@ -33,6 +33,13 @@ Hammox.defmock(ArchiDep.Servers.ServerTracking.ServerManagerMock,
   """
 )
 
+Hammox.defmock(ArchiDep.Servers.Ansible.Mock,
+  for: ArchiDep.Servers.Ansible.Behaviour,
+  moduledoc: """
+  Mock of the Ansible context.
+  """
+)
+
 Hammox.defmock(ArchiDep.Http.Mock,
   for: ArchiDep.Http.Behaviour,
   moduledoc: """
