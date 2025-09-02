@@ -495,19 +495,30 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     {wait_for_done_action, opts!} = Keyword.pop(opts!, :wait_for_done_action, true)
     [] = opts!
 
+    # Generate random versions that we will use to make sure that the server
+    # manager actually updates its state between actions.
+    starting_version = Faker.random_between(1, 1_000_000)
+    done_version = Faker.random_between(starting_version + 1, 2_000_000)
+
     # Have the server manager forward the :started message to the test process.
     # We use this message to know when the server manager has finished
     # initializing (including processing its initial actions).
     expect(ServerManagerMock, :on_message, fn state, :started ->
       send(test_pid, :started)
-      state
+      # Add the starting version so that we can verify later that the server
+      # manager has actually updated its state during initialization.
+      %ServerManagerState{state | version: starting_version}
     end)
 
     if wait_for_done_action do
-      # Have the server manager forward the :done message to the test process. We
-      # use this message to know when the server manager has finished processing
-      # its actions.
-      expect(ServerManagerMock, :on_message, fn state, :done ->
+      # Have the server manager forward the :done message to the test process.
+      # We use this message to know when the server manager has finished
+      # processing its actions. We also verify that the server manager's state
+      # was previously updated by checking that its version matches the expected
+      # done version.
+      expect(ServerManagerMock, :on_message, fn %ServerManagerState{version: ^done_version} =
+                                                  state,
+                                                {:done, ^done_version} ->
         send(test_pid, :done)
         state
       end)
@@ -517,10 +528,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     server_manager_pid = initialize_fn.([send_message(:started)])
     assert_receive :started, 500
 
-    done_action = send_message(:done)
+    done_action = send_message({:done, done_version})
 
-    done_action_fn = fn state ->
-      %ServerManagerState{state | actions: [done_action | state.actions]}
+    # Define a function that appends a done action to the server manager's
+    # actions, and updates its version to the done version. This function also
+    # verifies that the server manager's version matches the starting version,
+    # hence it was correctly initialized.
+    done_action_fn = fn %ServerManagerState{version: ^starting_version} = state ->
+      %ServerManagerState{state | actions: [done_action | state.actions], version: done_version}
     end
 
     result = test_fn.(done_action_fn, server_manager_pid)
