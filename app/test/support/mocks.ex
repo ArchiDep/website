@@ -32,3 +32,10 @@ Hammox.defmock(ArchiDep.Servers.ServerTracking.ServerManagerMock,
   Mock of the module responsible for managing interactions with a registered server.
   """
 )
+
+Hammox.defmock(ArchiDep.Http.Mock,
+  for: ArchiDep.Http.Behaviour,
+  moduledoc: """
+  Mock of the HTTP client.
+  """
+)

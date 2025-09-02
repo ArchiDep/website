@@ -24,15 +24,16 @@ config :archidep,
     track_on_boot: true
   ]
 
-# Configure contexts.
+# Context configuration
 config :archidep, ArchiDep.Accounts, ArchiDep.Accounts.Context
 config :archidep, ArchiDep.Course, ArchiDep.Course.Context
 config :archidep, ArchiDep.Events, ArchiDep.Events.Context
 config :archidep, ArchiDep.Servers, ArchiDep.Servers.Context
 
+config :archidep, ArchiDep.Http, Req
 config :archidep, ArchiDep.Repo, pool_size: 10, socket_options: []
 
-# Configures the endpoint
+# Endpoint configuration
 config :archidep, ArchiDepWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
   # Bind to the loopback IPv4 address to prevent access from other machines by

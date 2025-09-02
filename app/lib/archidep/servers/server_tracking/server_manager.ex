@@ -12,6 +12,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Authentication
   alias ArchiDep.Course
+  alias ArchiDep.Http
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
@@ -390,7 +391,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   end
 
   defp check_port_open(ip_address, port) do
-    case Req.get("http://#{:inet.ntoa(ip_address)}:#{port}",
+    case Http.get("http://#{:inet.ntoa(ip_address)}:#{port}",
            connect_options: [timeout: 10_000],
            retry_log_level: :debug,
            max_retries: 1

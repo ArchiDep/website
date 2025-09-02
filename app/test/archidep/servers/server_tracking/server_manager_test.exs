@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
 
   import ArchiDep.Support.FactoryHelpers, only: [bool: 0]
   import Hammox
+  alias ArchiDep.Http
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManager
@@ -13,6 +14,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.NoOpGenServer
   alias ArchiDep.Support.ServersFactory
+  alias Req.Response
+
+  defmodule FakeHttpError do
+    defexception [:message]
+  end
 
   setup :verify_on_exit!
 
@@ -20,6 +26,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     test_pid = self()
 
     state_factory = fn ->
+      allow(Http.Mock, test_pid, self())
       allow(ServerManagerMock, test_pid, self())
       ServerManagerMock
     end
@@ -207,6 +214,100 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
            ) == :ok
   end
 
+  test "have a server manager check open ports", %{
+    initialize: initialize,
+    server: server,
+    test_pid: test_pid
+  } do
+    expect(Http.Mock, :get, 2, fn
+      "http://1.2.3.4:42", opts ->
+        assert Keyword.get(opts, :max_retries) == 1
+        {:ok, %Response{status: 200, body: "OK"}}
+
+      "http://1.2.3.4:24", opts ->
+        assert Keyword.get(opts, :max_retries) == 1
+        {:ok, %Response{status: 400, body: "Bad Request"}}
+    end)
+
+    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+             expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+               %ServerManagerState{
+                 state
+                 | actions: [
+                     {:check_open_ports,
+                      fn task_state, task_factory ->
+                        task = task_factory.({1, 2, 3, 4}, [42, 24])
+                        Process.unlink(task.pid)
+                        task_state
+                      end}
+                   ]
+               }
+             end)
+
+             expect(ServerManagerMock, :handle_task_result, fn state, task_ref, :ok ->
+               Process.demonitor(task_ref, [:flush])
+               done.(state)
+             end)
+
+             :ok = ServerManager.connection_idle(server.id, test_pid)
+           end) == :ok
+  end
+
+  test "have a server manager check open ports and report any problems", %{
+    initialize: initialize,
+    server: server,
+    test_pid: test_pid
+  } do
+    expect(Http.Mock, :get, 3, fn
+      "http://1.2.3.4:3000", opts ->
+        assert Keyword.get(opts, :max_retries) == 1
+        {:error, %FakeHttpError{message: "Connection timeout"}}
+
+      "http://1.2.3.4:4000", opts ->
+        assert Keyword.get(opts, :max_retries) == 1
+        {:ok, %Response{status: 200, body: "OK"}}
+
+      "http://1.2.3.4:5000", opts ->
+        assert Keyword.get(opts, :max_retries) == 1
+        {:error, %FakeHttpError{message: "Connection refused"}}
+    end)
+
+    assert test_server_manager!(initialize, test_pid, fn done, _manager_pid ->
+             expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+               %ServerManagerState{
+                 state
+                 | actions: [
+                     {:check_open_ports,
+                      fn task_state, task_factory ->
+                        task = task_factory.({1, 2, 3, 4}, [3000, 4000, 5000])
+                        Process.unlink(task.pid)
+                        task_state
+                      end}
+                   ]
+               }
+             end)
+
+             expect(ServerManagerMock, :handle_task_result, fn state,
+                                                               task_ref,
+                                                               {:error,
+                                                                [
+                                                                  {3000,
+                                                                   %FakeHttpError{
+                                                                     message: "Connection timeout"
+                                                                   }},
+                                                                  {5000,
+                                                                   %FakeHttpError{
+                                                                     message: "Connection refused"
+                                                                   }}
+                                                                ]} ->
+               Process.demonitor(task_ref, [:flush])
+               done.(state)
+             end)
+
+             :ok = ServerManager.connection_idle(server.id, test_pid)
+           end) == :ok
+  end
+
   test "notify a server manager that its connection is idle", %{
     initialize: initialize,
     server: server,
@@ -383,6 +484,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     test_pid: test_pid
   } do
     state_factory = fn ->
+      allow(Http.Mock, test_pid, self())
       allow(ServerManagerMock, test_pid, self())
       ServerManagerMock
     end
