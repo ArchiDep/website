@@ -8,6 +8,7 @@ defmodule ArchiDep.Support.ServersFactory do
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
@@ -18,10 +19,53 @@ defmodule ArchiDep.Support.ServersFactory do
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Servers.Types
   alias ArchiDep.Support.NetFactory
+  alias Ecto.UUID
 
   @playbooks [AnsiblePlaybook.name(Ansible.setup_playbook())]
   @failed_ansible_playbook_run_states [:failed, :interrupted, :timeout]
   @finished_ansible_playbook_run_states [:succeeded] ++ @failed_ansible_playbook_run_states
+
+  @spec ansible_playbook_event_factory(map()) :: AnsiblePlaybookEvent.t()
+  def ansible_playbook_event_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+    {run, attrs!} = Map.pop_lazy(attrs!, :run, fn -> build(:ansible_playbook_run) end)
+    {run_id, attrs!} = Map.pop_lazy(attrs!, :run_id, fn -> run.id end)
+    {name, attrs!} = Map.pop_lazy(attrs!, :name, &Faker.Lorem.word/0)
+    {action, attrs!} = Map.pop_lazy(attrs!, :action, optionally(&Faker.Lorem.word/0))
+    {changed, attrs!} = Map.pop_lazy(attrs!, :changed, &bool/0)
+
+    {data, attrs!} =
+      Map.pop_lazy(attrs!, :data, fn -> %{"value" => Faker.random_between(1, 1_000_000)} end)
+
+    {task_name, attrs!} = Map.pop_lazy(attrs!, :task_name, optionally(&Faker.Lorem.sentence/0))
+    {task_id, attrs!} = Map.pop_lazy(attrs!, :task_id, optionally(&UUID.generate/0))
+
+    {task_started_at, attrs!} =
+      Map.pop_lazy(attrs!, :task_started_at, optionally(fn -> Faker.DateTime.backward(5) end))
+
+    {task_ended_at, attrs!} =
+      Map.pop_lazy(attrs!, :task_ended_at, optionally(fn -> Faker.DateTime.backward(3) end))
+
+    {occurred_at, attrs!} =
+      Map.pop_lazy(attrs!, :occurred_at, fn -> Faker.DateTime.backward(1) end)
+
+    [] = Map.keys(attrs!)
+
+    %AnsiblePlaybookEvent{
+      id: id,
+      run: run,
+      run_id: run_id,
+      name: name,
+      action: action,
+      changed: changed,
+      data: data,
+      task_name: task_name,
+      task_id: task_id,
+      task_started_at: task_started_at,
+      task_ended_at: task_ended_at,
+      occurred_at: occurred_at
+    }
+  end
 
   @spec ansible_playbook_run_factory(map()) :: AnsiblePlaybookRun.t()
   def ansible_playbook_run_factory(attrs!) do

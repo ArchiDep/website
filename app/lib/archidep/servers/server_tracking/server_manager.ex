@@ -68,7 +68,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     do: GenServer.call(name(run.server), {:ansible_playbook_completed, run.id})
 
   @spec retry_connecting(Server.t() | UUID.t()) :: :ok
-  def retry_connecting(server_id), do: GenServer.call(name(server_id), :retry_connecting)
+  def retry_connecting(server), do: GenServer.call(name(server), :retry_connecting)
 
   @spec retry_ansible_playbook(Server.t(), String.t()) ::
           :ok | {:error, :server_not_connected} | {:error, :server_busy}
@@ -257,17 +257,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
         |> execute_actions()
         |> pair(state_module)
         |> noreply()
-
-  def handle_info(
-        :measure_load_average,
-        {state_module, state}
-      ) do
-    state
-    |> state_module.measure_load_average()
-    |> execute_actions()
-    |> pair(state_module)
-    |> noreply()
-  end
 
   def handle_info({:server_manager_message, message}, {state_module, state}) do
     state
