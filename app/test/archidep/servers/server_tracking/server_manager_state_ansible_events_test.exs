@@ -429,8 +429,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
              server: %Server{set_up_at: %DateTime{} = set_up_at} = updated_server,
              actions:
                [
-                 {:connect, connect_fn},
                  {:cancel_timer, ^fake_loadavg_timer_ref},
+                 {:connect, connect_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result

@@ -90,4 +90,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
 
   @spec connection_failed?(connection_state()) :: boolean()
   def connection_failed?(state), do: Record.is_record(state, :connection_failed_state)
+
+  @spec connection_pid(connection_state()) :: pid() | nil
+  def connection_pid(not_connected_state(connection_pid: pid)), do: pid
+  def connection_pid(connecting_state(connection_pid: pid)), do: pid
+  def connection_pid(retry_connecting_state(connection_pid: pid)), do: pid
+  def connection_pid(connected_state(connection_pid: pid)), do: pid
+  def connection_pid(reconnecting_state(connection_pid: pid)), do: pid
+  def connection_pid(connection_failed_state(connection_pid: pid)), do: pid
+  def connection_pid(disconnected_state()), do: nil
 end

@@ -9,11 +9,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @behaviour ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
+  import ArchiDep.Servers.ServerTracking.ServerProblems
   alias ArchiDep.Helpers.NetHelpers
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Tracker
   alias ArchiDep.Servers.PubSub
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
@@ -138,24 +140,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     last_setup_run =
       AnsiblePlaybookRun.get_last_playbook_run(server, Ansible.setup_playbook())
 
-    username = if server.set_up_at, do: server.app_username, else: server.username
-
-    track(%__MODULE__{
+    %__MODULE__{
       server: server,
       pipeline: pipeline,
-      username: username,
-      actions: [],
-      problems:
-        [] ++
-          if(last_setup_run != nil and last_setup_run.state != :succeeded,
-            do: [
-              {:server_ansible_playbook_failed, last_setup_run.playbook, last_setup_run.state,
-               AnsiblePlaybookRun.stats(last_setup_run)}
-            ],
-            else: []
-          )
-    })
+      username: user_to_connect_as(server),
+      actions: []
+    }
+    |> maybe_add_problem(determine_last_setup_run_problem(last_setup_run))
+    |> track()
   end
+
+  defp determine_last_setup_run_problem(%AnsiblePlaybookRun{state: state} = last_setup_run)
+       when state != :succeeded,
+       do: server_ansible_playbook_failed_problem(last_setup_run)
+
+  defp determine_last_setup_run_problem(_last_setup_run), do: nil
 
   @impl ServerManagerBehaviour
   def online?(%__MODULE__{connection_state: connected_state()}), do: true
@@ -164,6 +163,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   # TODO: try connecting after a while if the connection idle message is not received
   # TODO: do not attempt immediate reconnection if the connection crashed, wait a few seconds
   @impl ServerManagerBehaviour
+
   def connection_idle(
         %__MODULE__{connection_state: not_connected_state(), server: server} = state,
         connection_pid
@@ -171,11 +171,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     if Server.active?(server, DateTime.utc_now()) do
       connect(state, connection_pid, false)
     else
-      %__MODULE__{
-        state
-        | connection_state: not_connected_state(connection_pid: connection_pid),
-          actions: [monitor(connection_pid)]
-      }
+      state
+      |> change_connection_state(not_connected_state(connection_pid: connection_pid))
+      |> add_action(monitor_action(connection_pid))
     end
   end
 
@@ -186,15 +184,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     if Server.active?(server, DateTime.utc_now()) do
       connect(state, connection_pid, false)
     else
-      %__MODULE__{
-        state
-        | connection_state: not_connected_state(connection_pid: connection_pid),
-          actions: [monitor(connection_pid), update_tracking()]
-      }
+      state
+      |> change_connection_state(not_connected_state(connection_pid: connection_pid))
+      |> add_actions([update_tracking_action(), monitor_action(connection_pid)])
     end
   end
 
   @impl ServerManagerBehaviour
+
   def retry_connecting(
         %__MODULE__{
           connection_state:
@@ -202,7 +199,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         } = state,
         manual
       ),
-      do: connect(state, connection_pid, if(manual, do: %{retrying | backoff: 0}, else: retrying))
+      do:
+        connect(
+          state,
+          connection_pid,
+          # When manually retrying, the backoff counter is reset and the manager
+          # restarts trying to connect more frequently, then proceeds to add the
+          # usual backoff.
+          maybe_manually_retry(retrying, manual)
+        )
 
   def retry_connecting(
         %__MODULE__{
@@ -220,43 +225,31 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     state
   end
 
-  defp connect(state, connection_pid, retrying) do
-    server = state.server
-    host = server.ip_address.address
-    port = server.ssh_port || 22
-    username = state.username
-
-    %__MODULE__{
+  defp connect(state, connection_pid, retrying),
+    do:
       state
-      | connection_state:
-          connecting_state(
-            connection_ref: make_ref(),
-            connection_pid: connection_pid,
-            retrying: retrying
-          ),
-        actions:
-          [
-            monitor(connection_pid),
-            {:connect,
-             fn task_state, task_factory ->
-               task = task_factory.(host, port, username, silently_accept_hosts: true)
-               %__MODULE__{task_state | tasks: Map.put(task_state.tasks, :connect, task.ref)}
-             end}
-          ] ++
-            if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []) ++
-            [update_tracking()],
-        problems:
-          Enum.reject(state.problems, fn problem ->
-            match?({:server_authentication_failed, _username, _reason}, problem) or
-              match?({:server_missing_sudo_access, _username, _stderr}, problem) or
-              match?({:server_reconnection_failed, _reason}, problem) or
-              match?({:server_sudo_access_check_failed, _username, _reason}, problem)
-          end),
-        retry_timer: nil
-    }
-  end
+      |> change_connection_state(
+        connecting_state(
+          connection_ref: make_ref(),
+          connection_pid: connection_pid,
+          retrying: retrying
+        )
+      )
+      |> add_action(update_tracking_action())
+      |> maybe_cancel_retry_timer()
+      |> add_actions([
+        connect_action(state),
+        monitor_action(connection_pid)
+      ])
+      |> drop_problems([
+        :server_authentication_failed,
+        :server_missing_sudo_access,
+        :server_reconnection_failed,
+        :server_sudo_access_check_failed
+      ])
 
   @impl ServerManagerBehaviour
+
   # Handle connection result
   def handle_task_result(
         %__MODULE__{
@@ -279,7 +272,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     )
   end
 
-  # Handle reconnection result
+  # Handle reconnection result (after initial setup)
   def handle_task_result(
         %__MODULE__{
           connection_state:
@@ -301,89 +294,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     )
   end
 
-  # Handle access check result
+  # Handle sudo access check result
   def handle_task_result(
-        %__MODULE__{
-          connection_state: connected_state(),
-          username: username,
-          tasks: %{check_access: check_access_ref}
-        } = state,
+        %__MODULE__{connection_state: connected_state(), tasks: %{check_access: check_access_ref}} =
+          state,
         check_access_ref,
         result
-      ) do
-    server = state.server
-
-    new_state =
-      case result do
-        {:ok, _stdout, _stderr, 0} ->
-          if username == server.app_username do
-            Logger.info(
-              # coveralls-ignore-next-line
-              "Server manager has sudo access to server #{server.id} as #{username}; gathering facts..."
-            )
-
-            %__MODULE__{
-              state
-              | actions: [
-                  gather_facts(),
-                  get_load_average(),
-                  update_tracking()
-                ]
-            }
-          else
-            Logger.info(
-              # coveralls-ignore-next-line
-              "Server manager has sudo access to server #{server.id} as #{username}; setting up app user..."
-            )
-
-            playbook_run = run_setup_playbook(server)
-
-            %__MODULE__{
-              state
-              | ansible_playbook: {playbook_run, nil},
-                actions: [
-                  {:run_playbook, playbook_run},
-                  update_tracking()
-                ]
-            }
-          end
-
-        {:ok, _stdout, stderr, _exit_code} ->
-          Logger.info(
-            # coveralls-ignore-next-line
-            "Server manager does not have sudo access to server #{server.id} as #{username}; connected with problems"
-          )
-
-          %__MODULE__{
-            state
-            | actions: [
-                get_load_average(),
-                update_tracking()
-              ],
-              problems: [
-                {:server_missing_sudo_access, username, String.trim(stderr)}
-              ]
-          }
-
-        {:error, reason} ->
-          Logger.warning(
-            "Server manager could not check sudo access to server #{server.id} as #{username} because #{inspect(reason)}; connected with problems"
-          )
-
-          %__MODULE__{
-            state
-            | actions: [
-                get_load_average(),
-                update_tracking()
-              ],
-              problems: [
-                {:server_sudo_access_check_failed, username, reason}
-              ]
-          }
-      end
-
-    drop_task(new_state, :check_access, check_access_ref)
-  end
+      ),
+      do:
+        state
+        |> handle_access_check_result(result)
+        |> drop_task(:check_access, check_access_ref)
 
   # Handle load average result
   def handle_task_result(
@@ -393,26 +314,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         } = state,
         get_load_average_ref,
         result
-      ) do
-    with {:ok, stdout, _stderr, 0} <- result,
-         [m1s, m5s, m15s | _rest] <- stdout |> String.trim() |> String.split(~r/\s+/),
-         [{m1, ""}, {m5, ""}, {m15, ""}] <- [
-           Float.parse(m1s),
-           Float.parse(m5s),
-           Float.parse(m15s)
-         ] do
-      Logger.debug("Received load average from server #{state.server.id}: #{m1}, #{m5}, #{m15}")
-    end
-
-    drop_task(
-      %__MODULE__{
+      ),
+      do:
         state
-        | actions: [send_message(:measure_load_average, 20_000, :load_average_timer)]
-      },
-      :get_load_average,
-      get_load_average_ref
-    )
-  end
+        |> handle_load_average_result(result)
+        |> drop_task(:get_load_average, get_load_average_ref)
 
   # Handle fact gathering result
   def handle_task_result(
@@ -422,291 +328,165 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         } = state,
         gather_facts_ref,
         result
-      ) do
-    Logger.debug("Received fact gathering result from server #{state.server.id}")
-
-    new_state =
-      case result do
-        {:ok, facts} ->
-          handle_successful_facts_gathering(state, facts)
-
-        {:error, reason} ->
-          Logger.warning(
-            "Server manager could not gather facts for server #{state.server.id} because #{inspect(reason)}"
-          )
-
-          %__MODULE__{
-            state
-            | actions: [
-                update_tracking()
-              ],
-              problems: [
-                {:server_fact_gathering_failed, reason}
-              ]
-          }
-      end
-
-    drop_task(new_state, :gather_facts, gather_facts_ref)
-  end
+      ),
+      do:
+        state
+        |> handle_facts_gathering_result(result)
+        |> drop_task(:gather_facts, gather_facts_ref)
 
   # Handle test ports result
   def handle_task_result(
         %__MODULE__{
           connection_state: connected_state(),
-          server: server,
           tasks: %{test_ports: test_ports_ref}
         } = state,
         test_ports_ref,
         result
-      ) do
-    new_state =
-      case result do
-        {:ok, _stdout, _stderr, 0} ->
-          Logger.debug("Port testing script succeeded on server #{server.id}")
-
-          %__MODULE__{
-            state
-            | actions: [
-                check_open_ports(server),
-                update_tracking()
-              ],
-              problems: drop_port_checking_problems(state.problems)
-          }
-
-        {:ok, _stdout, stderr, exit_code} ->
-          Logger.warning(
-            "Port testing script exited with code #{exit_code} on server #{server.id}: #{inspect(stderr)}"
-          )
-
-          %__MODULE__{
-            state
-            | problems: [
-                {:server_port_testing_script_failed, {:exit, exit_code, stderr}}
-                | drop_port_checking_problems(state.problems)
-              ],
-              actions: [update_tracking()]
-          }
-
-        {:error, reason} ->
-          Logger.error(
-            # coveralls-ignore-next-line
-            "Port testing script failed on server #{server.id} because: #{inspect(reason)}"
-          )
-
-          %__MODULE__{
-            state
-            | problems: [
-                {:server_port_testing_script_failed, {:error, reason}}
-                | drop_port_checking_problems(state.problems)
-              ],
-              actions: [update_tracking()]
-          }
-      end
-
-    drop_task(new_state, :test_ports, test_ports_ref)
-  end
+      ),
+      do:
+        state
+        |> handle_port_testing_script_result(result)
+        |> drop_task(:test_ports, test_ports_ref)
 
   # Handle check open ports result
   def handle_task_result(
         %__MODULE__{
           connection_state: connected_state(),
-          server: server,
           tasks: %{check_open_ports: check_open_ports_ref}
         } = state,
         check_open_ports_ref,
         result
-      ) do
-    new_state =
-      case result do
-        :ok ->
-          updated_server =
-            if server.open_ports_checked_at do
-              server
-            else
-              updated = Server.mark_open_ports_checked!(server)
-              :ok = PubSub.publish_server_updated(updated)
-              updated
-            end
+      ),
+      do:
+        state
+        |> handle_open_ports_check_result(result)
+        |> drop_task(:check_open_ports, check_open_ports_ref)
 
-          %__MODULE__{
-            state
-            | server: updated_server,
-              problems:
-                Enum.reject(
-                  state.problems,
-                  &(match?({:server_port_testing_script_failed, _details}, &1) or
-                      match?({:server_open_ports_check_failed, _details}, &1))
-                ),
-              actions: [update_tracking()]
-          }
-
-        {:error, port_problems} ->
-          %__MODULE__{
-            state
-            | problems: [
-                {:server_open_ports_check_failed, port_problems}
-                | Enum.reject(
-                    state.problems,
-                    &(match?({:server_port_testing_script_failed, _details}, &1) or
-                        match?({:server_open_ports_check_failed, _details}, &1))
-                  )
-              ],
-              actions: [update_tracking()]
-          }
-      end
-
-    drop_task(new_state, :check_open_ports, check_open_ports_ref)
-  end
-
-  # Handle connection result
   defp handle_connect_task_result(
          state,
          connection_ref,
          connection_pid,
          connection_task_ref,
          result
-       ) do
-    new_state =
-      case result do
-        :ok ->
-          handle_successful_connection(state, connection_ref, connection_pid)
+       ),
+       do:
+         state
+         |> handle_connect_task_result(connection_ref, connection_pid, result)
+         |> drop_task(:connect, connection_task_ref)
 
-        {:error, :authentication_failed} ->
-          handle_connection_authentication_failed(state, connection_pid)
-
-        {:error, reason} ->
-          handle_connection_failed(state, connection_pid, reason)
-      end
-
-    drop_task(new_state, :connect, connection_task_ref)
-  end
-
-  defp handle_successful_connection(
+  defp handle_connect_task_result(
          %__MODULE__{server: server} = state,
          connection_ref,
-         connection_pid
+         connection_pid,
+         :ok
        ) do
     Logger.info(
       # coveralls-ignore-next-line
       "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
     )
 
-    %__MODULE__{
-      state
-      | connection_state:
-          connected_state(
-            connection_ref: connection_ref,
-            connection_pid: connection_pid,
-            time: DateTime.utc_now()
-          ),
-        actions: [
-          check_sudo_access(),
-          update_tracking()
-        ],
-        problems: drop_connection_problems(state.problems)
-    }
+    state
+    |> change_connection_state(
+      connected_state(
+        connection_ref: connection_ref,
+        connection_pid: connection_pid,
+        time: DateTime.utc_now()
+      )
+    )
+    |> add_actions([update_tracking_action(), check_sudo_access()])
+    |> drop_connection_problems()
   end
 
-  defp handle_connection_authentication_failed(
+  defp handle_connect_task_result(
          %__MODULE__{server: server} = state,
-         connection_pid
+         _connection_ref,
+         connection_pid,
+         {:error, :authentication_failed}
        ) do
     Logger.warning(
       "Server manager could not connect to server #{server.id} as #{state.username} because authentication failed"
     )
 
-    %__MODULE__{
-      state
-      | connection_state:
-          connection_failed_state(
-            connection_pid: connection_pid,
-            reason: :authentication_failed
-          ),
-        actions: [update_tracking()],
-        problems: [
-          {:server_authentication_failed,
-           if(state.username == state.server.app_username,
-             do: :app_username,
-             else: :username
-           ), state.username}
-        ]
-    }
+    state
+    |> change_connection_state(
+      connection_failed_state(
+        connection_pid: connection_pid,
+        reason: :authentication_failed
+      )
+    )
+    |> add_action(update_tracking_action())
+    |> set_problem(server_authentication_failed_problem(server, state.username))
   end
 
-  defp handle_connection_failed(%__MODULE__{server: server} = state, connection_pid, reason) do
+  defp handle_connect_task_result(
+         %__MODULE__{server: server} = state,
+         _connection_ref,
+         connection_pid,
+         {:error, reason}
+       ) do
     Logger.info(
       # coveralls-ignore-next-line
       "Server manager could not connect to server #{server.id} as #{state.username} because #{inspect(reason)}"
     )
 
     case state.connection_state do
-      reconnecting_state() ->
-        %__MODULE__{
-          state
-          | connection_state:
-              connection_failed_state(
-                connection_pid: connection_pid,
-                reason: reason
-              ),
-            actions: [update_tracking()],
-            problems: [{:server_reconnection_failed, reason}]
-        }
+      # Move to the connection retry state on connection failure.
+      connecting_state(retrying: retrying) ->
+        retrying_again = back_off_retrying(retrying, reason)
 
-      connecting_state() ->
-        server_username = state.server.username
-
-        new_problems =
-          case {reason, state.username} do
-            {:timeout, ^server_username} ->
-              [
-                {:server_connection_timed_out, state.server.ip_address.address,
-                 state.server.ssh_port || 22, server_username}
-              ]
-
-            {:econnrefused, ^server_username} ->
-              [
-                {:server_connection_refused, state.server.ip_address.address,
-                 state.server.ssh_port || 22, server_username}
-              ]
-
-            _anything_else ->
-              []
-          end
-
-        retry(
-          %{
-            state
-            | problems: drop_connection_problems(state.problems) ++ new_problems
-          },
-          reason
+        state
+        |> change_connection_state(
+          retry_connecting_state(
+            connection_pid: connection_pid,
+            retrying: retrying_again
+          )
         )
+        |> add_actions([update_tracking_action(), retry_action(retrying_again)])
+        |> drop_connection_problems()
+        |> maybe_add_problem(determine_connection_problem(state, reason))
+
+      # Move to the connection failed state on reconnection failure. A failure
+      # while reconnecting is considered a problem because reconnection happens
+      # immediately after the initial setup. The server should be up and there
+      # should be no reason why we cannot connect again with the application
+      # user unless something is wrong.
+      reconnecting_state() ->
+        state
+        |> change_connection_state(
+          connection_failed_state(
+            connection_pid: connection_pid,
+            reason: reason
+          )
+        )
+        |> add_action(update_tracking_action())
+        |> set_problem(server_reconnection_failed_problem(reason))
     end
   end
 
-  defp retry(
-         %__MODULE__{
-           connection_state:
-             connecting_state(
-               connection_pid: connection_pid,
-               retrying: retrying
-             )
-         } = state,
-         reason
-       ) do
-    retrying = retry(retrying, reason)
+  # Return a connection timeout problem for the server's normal user. A
+  # connection timeout is considered a problem for the normal user because setup
+  # has not yet been successfully completed.
+  defp determine_connection_problem(
+         %__MODULE__{username: username, server: %Server{username: username} = server},
+         :timeout
+       ),
+       do: server_connection_timed_out_problem(server, username)
 
-    %__MODULE__{
-      state
-      | connection_state:
-          retry_connecting_state(
-            connection_pid: connection_pid,
-            retrying: retrying
-          ),
-        actions: [retry_action(retrying), update_tracking()]
-    }
-  end
+  # Return a connection refused problem for the server's app user. A refused
+  # connection is considered a problem for the normal user because setup has not
+  # yet been successfully completed.
+  defp determine_connection_problem(
+         %__MODULE__{username: username, server: %Server{username: username} = server},
+         :econnrefused
+       ),
+       do: server_connection_refused_problem(server, username)
 
-  defp retry(false, reason),
+  # Return no problem if the connection failed for the application user. The
+  # server has been set up so we don't care about connection problems which will
+  # often happen when the server is shut down or rebooted.
+  defp determine_connection_problem(_state, _reason), do: nil
+
+  defp back_off_retrying(false, reason),
     do: %{
       retry: 1,
       backoff: 0,
@@ -715,7 +495,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       reason: reason
     }
 
-  defp retry(%{retry: previous_retry, backoff: previous_backoff}, reason) do
+  defp back_off_retrying(%{retry: previous_retry, backoff: previous_backoff}, reason) do
     next_retry = previous_retry + 1
     next_backoff = previous_backoff + 1
 
@@ -731,73 +511,236 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     }
   end
 
-  defp retry_action(%{in_seconds: in_seconds}),
-    do: send_message(:retry_connecting, in_seconds * 1000, :retry_timer)
+  defp handle_access_check_result(
+         %__MODULE__{
+           connection_state: connected_state(),
+           server: %Server{app_username: app_username},
+           username: app_username
+         } = state,
+         {:ok, _stdout, _stderr, 0}
+       ) do
+    Logger.info(
+      # coveralls-ignore-next-line
+      "Server manager has sudo access to server #{state.server.id} as #{app_username}; gathering facts..."
+    )
 
-  defp handle_successful_facts_gathering(state, facts) do
+    add_actions(state, [
+      update_tracking_action(),
+      get_load_average(),
+      gather_facts()
+    ])
+  end
+
+  defp handle_access_check_result(
+         %__MODULE__{
+           connection_state: connected_state(),
+           server: server,
+           username: username
+         } = state,
+         {:ok, _stdout, _stderr, 0}
+       ) do
+    Logger.info(
+      # coveralls-ignore-next-line
+      "Server manager has sudo access to server #{server.id} as #{username}; setting up app user..."
+    )
+
+    state
+    |> add_action(update_tracking_action())
+    |> run_setup_playbook()
+  end
+
+  defp handle_access_check_result(
+         %__MODULE__{
+           connection_state: connected_state(),
+           server: server,
+           username: username
+         } = state,
+         {:ok, _stdout, stderr, _non_zero_exit_code}
+       ) do
+    Logger.info(
+      # coveralls-ignore-next-line
+      "Server manager does not have sudo access to server #{server.id} as #{username}; connected with problems"
+    )
+
+    state
+    |> add_actions([update_tracking_action(), get_load_average()])
+    |> set_problem(server_missing_sudo_access_problem(username, stderr))
+  end
+
+  defp handle_access_check_result(
+         %__MODULE__{
+           connection_state: connected_state(),
+           server: server,
+           username: username
+         } = state,
+         {:error, reason}
+       ) do
+    Logger.warning(
+      "Server manager could not check sudo access to server #{server.id} as #{username} because #{inspect(reason)}; connected with problems"
+    )
+
+    state
+    |> add_actions([update_tracking_action(), get_load_average()])
+    |> set_problem(server_sudo_access_check_failed_problem(username, reason))
+  end
+
+  defp handle_load_average_result(
+         %__MODULE__{connection_state: connected_state()} = state,
+         result
+       ) do
+    with {:ok, stdout, _stderr, 0} <- result,
+         [m1s, m5s, m15s | _rest] <- stdout |> String.trim() |> String.split(~r/\s+/),
+         [{m1, ""}, {m5, ""}, {m15, ""}] <- [
+           Float.parse(m1s),
+           Float.parse(m5s),
+           Float.parse(m15s)
+         ] do
+      Logger.debug("Received load average from server #{state.server.id}: #{m1}, #{m5}, #{m15}")
+    end
+
+    add_action(state, measure_load_average_action())
+  end
+
+  defp handle_facts_gathering_result(state, {:ok, facts}) do
+    Logger.debug("Received fact gathering result from server #{state.server.id}")
+
     updated_server = Server.update_last_known_properties!(state.server, facts)
-    :ok = PubSub.publish_server_updated(updated_server)
 
     setup_playbook = Ansible.setup_playbook()
 
     last_setup_run =
       AnsiblePlaybookRun.get_last_playbook_run(updated_server, setup_playbook)
 
-    if last_setup_run != nil and
-         (last_setup_run.state != :succeeded or
-            setup_playbook.digest != last_setup_run.digest) do
-      if setup_playbook.digest != last_setup_run.digest do
-        Logger.notice(
-          # coveralls-ignore-next-line
-          "Re-running Ansible setup playbook for server #{updated_server.id} because its digest has changed from #{Base.encode16(last_setup_run.digest, case: :lower)} to #{Base.encode16(setup_playbook.digest, case: :lower)}"
-        )
-      else
-        Logger.notice(
-          # coveralls-ignore-next-line
-          "Re-running Ansible setup playbook for server #{updated_server.id} because its last run did not succeed (#{inspect(last_setup_run.state)})"
-        )
-      end
-
-      playbook_run = run_setup_playbook(updated_server)
-
-      %__MODULE__{
-        state
-        | server: updated_server,
-          ansible_playbook: {playbook_run, nil},
-          actions: [{:run_playbook, playbook_run}, update_tracking()],
-          problems: detect_server_properties_mismatches(state.problems, updated_server)
-      }
-    else
-      if last_setup_run == nil do
-        Logger.warning(
-          "No previous Ansible setup playbook run found for server #{updated_server.id}"
-        )
-      end
-
-      maybe_test_ports(%__MODULE__{
-        state
-        | server: updated_server,
-          actions: [update_tracking()],
-          problems: detect_server_properties_mismatches(state.problems, updated_server)
-      })
-    end
+    state
+    |> set_updated_server(updated_server)
+    |> add_action(update_tracking_action())
+    |> detect_server_properties_mismatches()
+    |> test_ports_or_rerun_setup(last_setup_run, setup_playbook)
   end
 
+  defp handle_facts_gathering_result(state, {:error, reason}) do
+    Logger.warning(
+      "Server manager could not gather facts for server #{state.server.id} because #{inspect(reason)}"
+    )
+
+    state
+    |> add_action(update_tracking_action())
+    |> set_problem(server_fact_gathering_failed_problem(reason))
+  end
+
+  defp test_ports_or_rerun_setup(%__MODULE__{server: server} = state, nil, _playbook) do
+    Logger.warning("No previous Ansible setup playbook run found for server #{server.id}")
+    maybe_test_ports(state)
+  end
+
+  defp test_ports_or_rerun_setup(
+         state,
+         %AnsiblePlaybookRun{state: :succeeded, digest: digest},
+         %AnsiblePlaybook{digest: digest}
+       ) do
+    maybe_test_ports(state)
+  end
+
+  defp test_ports_or_rerun_setup(
+         %__MODULE__{server: server} = state,
+         %AnsiblePlaybookRun{state: :succeeded, digest: previous_digest},
+         %AnsiblePlaybook{digest: digest}
+       ) do
+    Logger.notice(
+      # coveralls-ignore-next-line
+      "Re-running Ansible setup playbook for server #{server.id} because its digest has changed from #{Base.encode16(previous_digest, case: :lower)} to #{Base.encode16(digest, case: :lower)}"
+    )
+
+    run_setup_playbook(state)
+  end
+
+  defp test_ports_or_rerun_setup(
+         %__MODULE__{server: server} = state,
+         last_setup_run,
+         _playbook
+       ) do
+    Logger.notice(
+      # coveralls-ignore-next-line
+      "Re-running Ansible setup playbook for server #{server.id} because its last run did not succeed (#{inspect(last_setup_run.state)})"
+    )
+
+    run_setup_playbook(state)
+  end
+
+  defp handle_port_testing_script_result(
+         %__MODULE__{connection_state: connected_state(), server: server} = state,
+         {:ok, _stdout, _stderr, 0}
+       ) do
+    Logger.debug("Port testing script succeeded on server #{server.id}")
+
+    state
+    |> add_actions([update_tracking_action(), check_open_ports(server)])
+    |> drop_port_checking_problems()
+  end
+
+  defp handle_port_testing_script_result(
+         %__MODULE__{connection_state: connected_state(), server: server} = state,
+         {:ok, _stdout, stderr, non_zero_exit_code}
+       ) do
+    Logger.warning(
+      "Port testing script exited with code #{non_zero_exit_code} on server #{server.id}: #{inspect(stderr)}"
+    )
+
+    state
+    |> add_action(update_tracking_action())
+    |> drop_port_checking_problems()
+    |> add_problem(server_port_testing_script_failed_problem(:exit, non_zero_exit_code, stderr))
+  end
+
+  defp handle_port_testing_script_result(
+         %__MODULE__{connection_state: connected_state(), server: server} = state,
+         {:error, reason}
+       ) do
+    Logger.error("Port testing script failed on server #{server.id} because: #{inspect(reason)}")
+
+    state
+    |> add_action(update_tracking_action())
+    |> drop_port_checking_problems()
+    |> add_problem(server_port_testing_script_failed_problem(:error, reason))
+  end
+
+  defp handle_open_ports_check_result(
+         %__MODULE__{connection_state: connected_state(), server: server} = state,
+         :ok
+       ),
+       do:
+         state
+         |> set_updated_server(maybe_mark_open_ports_checked(server))
+         |> add_action(update_tracking_action())
+         |> drop_port_checking_problems()
+
+  defp handle_open_ports_check_result(
+         %__MODULE__{connection_state: connected_state()} = state,
+         {:error, port_problems}
+       ),
+       do:
+         state
+         |> add_action(update_tracking_action())
+         |> drop_port_checking_problems()
+         |> add_problem(server_open_ports_check_failed_problem(port_problems))
+
+  defp maybe_mark_open_ports_checked(%Server{open_ports_checked_at: nil} = server),
+    do: Server.mark_open_ports_checked!(server)
+
+  defp maybe_mark_open_ports_checked(server), do: server
+
   @impl ServerManagerBehaviour
+
   def ansible_playbook_event(
         %__MODULE__{
-          ansible_playbook: {%AnsiblePlaybookRun{id: run_id} = playbook_run, _previous_task}
+          ansible_playbook: {%AnsiblePlaybookRun{id: run_id}, _previous_task}
         } = state,
         run_id,
         ongoing_task
       ) do
-    %__MODULE__{
-      state
-      | ansible_playbook: {playbook_run, ongoing_task},
-        actions: [
-          update_tracking()
-        ]
-    }
+    state
+    |> add_action(update_tracking_action())
+    |> update_ongoing_playbook_task(ongoing_task)
   end
 
   def ansible_playbook_event(state, _run_id, _ongoing_task) do
@@ -811,8 +754,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @impl ServerManagerBehaviour
   def ansible_playbook_completed(
         %__MODULE__{
-          connection_state:
-            connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
+          connection_state: connected_state(),
           ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task}
         } = state,
         run_id
@@ -822,78 +764,50 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
     run = AnsiblePlaybookRun.get_completed_run!(run_id)
 
-    if run.state == :succeeded and state.username == server.username do
-      host = server.ip_address.address
-      port = server.ssh_port || 22
-      new_username = server.app_username
-
-      set_up_server = Server.mark_as_set_up!(server)
-      :ok = PubSub.publish_server_updated(set_up_server)
-
-      new_state = %__MODULE__{
-        state
-        | connection_state:
-            reconnecting_state(
-              connection_pid: connection_pid,
-              connection_ref: connection_ref
-            ),
-          server: set_up_server,
-          username: new_username,
-          ansible_playbook: nil,
-          actions:
-            [
-              {:connect,
-               fn task_state, task_factory ->
-                 task = task_factory.(host, port, new_username, silently_accept_hosts: true)
-
-                 %__MODULE__{
-                   task_state
-                   | tasks: Map.put(task_state.tasks, :connect, task.ref)
-                 }
-               end}
-            ] ++
-              if(state.load_average_timer,
-                do: [{:cancel_timer, state.load_average_timer}],
-                else: []
-              ) ++ [update_tracking()],
-          problems:
-            Enum.reject(
-              state.problems,
-              &match?({:server_ansible_playbook_failed, "setup", _state, _stats}, &1)
-            ),
-          load_average_timer: nil
-      }
-
-      case Map.get(state.tasks, :get_load_average) do
-        nil ->
-          new_state
-
-        get_load_average_ref ->
-          drop_task(new_state, :get_load_average, get_load_average_ref)
-      end
-    else
-      problem =
-        if run.state !== :succeeded do
-          [
-            {:server_ansible_playbook_failed, run.playbook, run.state,
-             AnsiblePlaybookRun.stats(run)}
-          ]
-        else
-          []
-        end
-
-      %__MODULE__{
-        state
-        | ansible_playbook: nil,
-          actions: [update_tracking()],
-          problems:
-            Enum.reject(
-              state.problems,
-              &match?({:server_ansible_playbook_failed, "setup", _state, _stats}, &1)
-            ) ++ problem
-      }
-    end
+    state
+    |> add_action(update_tracking_action())
+    |> handle_ansible_playbook_completed(run)
+    |> clear_running_ansible_playbook()
   end
+
+  defp handle_ansible_playbook_completed(
+         %__MODULE__{
+           connection_state:
+             connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
+           server: %Server{username: username} = server,
+           username: username,
+           ansible_playbook:
+             {%AnsiblePlaybookRun{id: run_id, playbook: "setup", state: :succeeded}, _task}
+         } = state,
+         %AnsiblePlaybookRun{id: run_id}
+       ),
+       do:
+         state
+         |> change_connection_state(
+           reconnecting_state(connection_pid: connection_pid, connection_ref: connection_ref)
+         )
+         |> set_updated_server(Server.mark_as_set_up!(server))
+         |> connect_with_app_username()
+         |> then(&add_action(&1, connect_action(&1)))
+         |> stop_measuring_load_average()
+         |> drop_problems(server_ansible_playbook_failed_problem?("setup"))
+
+  defp handle_ansible_playbook_completed(
+         %__MODULE__{
+           connection_state: connected_state(),
+           ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task}
+         } = state,
+         %AnsiblePlaybookRun{id: run_id} = run
+       ),
+       do:
+         state
+         |> drop_problems(server_ansible_playbook_failed_problem?("setup"))
+         |> maybe_add_problem(determine_ansible_playbook_problem(run))
+
+  defp determine_ansible_playbook_problem(%AnsiblePlaybookRun{state: :succeeded}), do: nil
+
+  defp determine_ansible_playbook_problem(failed_run),
+    do: server_ansible_playbook_failed_problem(failed_run)
 
   @impl ServerManagerBehaviour
   def retry_ansible_playbook(
@@ -907,29 +821,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         "setup"
       )
       when tasks == %{} do
-    has_failed_playbook =
-      Enum.any?(problems, fn
-        {:server_ansible_playbook_failed, "setup", _state, _stats} -> true
-        _any_other_problem -> false
-      end)
+    has_failed_setup_playbook =
+      Enum.any?(problems, server_ansible_playbook_failed_problem?("setup"))
 
-    if has_failed_playbook do
-      Logger.info("Retrying Ansible playbook setup for server #{server.id}")
+    if has_failed_setup_playbook do
+      Logger.info("Retrying Ansible setup playbook for server #{server.id}")
 
-      playbook_run = run_setup_playbook(server)
-
-      {%__MODULE__{
-         state
-         | ansible_playbook: {playbook_run, nil},
-           actions: [
-             {:run_playbook, playbook_run},
-             update_tracking()
-           ]
-       }, :ok}
+      {
+        state
+        |> add_action(update_tracking_action())
+        |> run_setup_playbook(),
+        :ok
+      }
     else
       Logger.info(
         # coveralls-ignore-next-line
-        "Ignoring retry request for Ansible playbook setup for server #{server.id} because there is no such failed run"
+        "Ignoring retry request for Ansible setup playbook for server #{server.id} because there is no such failed run"
       )
 
       {state, :ok}
@@ -939,7 +846,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def retry_ansible_playbook(%__MODULE__{connection_state: connected_state()} = state, playbook) do
     Logger.info(
       # coveralls-ignore-next-line
-      "Ignoring retry request for Ansible playbook #{playbook} because the server is busy"
+      "Ignoring retry request for Ansible #{playbook} playbook because the server is busy"
     )
 
     {state, {:error, :server_busy}}
@@ -948,7 +855,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def retry_ansible_playbook(%__MODULE__{} = state, playbook) do
     Logger.info(
       # coveralls-ignore-next-line
-      "Ignoring retry request for Ansible playbook #{playbook} because the server is not connected"
+      "Ignoring retry request for Ansible #{playbook} playbook because the server is not connected"
     )
 
     {state, {:error, :server_not_connected}}
@@ -970,18 +877,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     has_failed_checking_open_ports =
       Enum.any?(
         problems,
-        &(match?({:server_port_testing_script_failed, _details}, &1) or
-            match?({:server_open_ports_check_failed, _details}, &1))
+        server_problem?([:server_port_testing_script_failed, :server_open_ports_check_failed])
       )
 
     if has_failed_checking_open_ports do
-      {%__MODULE__{
-         state
-         | actions: [
-             test_ports(),
-             update_tracking()
-           ]
-       }, :ok}
+      {add_actions(state, [update_tracking_action(), test_ports()]), :ok}
     else
       Logger.info(
         # coveralls-ignore-next-line
@@ -1018,8 +918,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           server: %Server{
             id: server_id,
             group: %ServerGroup{id: group_id, version: current_version} = current_group
-          },
-          problems: problems
+          }
         } = state,
         %{id: group_id, version: version} = group
       ) do
@@ -1035,68 +934,26 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     else
       new_server = %Server{state.server | group: new_group}
 
-      auto_activate_or_deactivate(%__MODULE__{
-        state
-        | server: new_server,
-          # TODO: do not add update tracking action if there is already one
-          actions: [update_tracking()],
-          problems: detect_server_properties_mismatches(problems, new_server)
-      })
+      state
+      |> set_updated_server(new_server, false)
+      |> detect_server_properties_mismatches()
+      |> auto_activate_or_deactivate()
     end
   end
 
   @impl ServerManagerBehaviour
   def connection_crashed(
-        %__MODULE__{connection_state: not_connected_state(connection_pid: connection_pid)} =
-          state,
+        %__MODULE__{connection_state: connection_state} = state,
         connection_pid,
         reason
       ),
-      do: disconnect(state, reason)
+      do: disconnect(state, connection_pid(connection_state), connection_pid, reason)
 
-  def connection_crashed(
-        %__MODULE__{connection_state: connecting_state(connection_pid: connection_pid)} = state,
-        connection_pid,
-        reason
-      ),
-      do: disconnect(state, reason)
+  defp disconnect(state, connection_pid, connection_pid, reason) when is_pid(connection_pid),
+    do: disconnect(state, reason)
 
-  def connection_crashed(
-        %__MODULE__{connection_state: retry_connecting_state(connection_pid: connection_pid)} =
-          state,
-        connection_pid,
-        reason
-      ),
-      do: disconnect(state, reason)
-
-  def connection_crashed(
-        %__MODULE__{connection_state: connected_state(connection_pid: connection_pid)} = state,
-        connection_pid,
-        reason
-      ),
-      do: disconnect(state, reason)
-
-  def connection_crashed(
-        %__MODULE__{connection_state: reconnecting_state(connection_pid: connection_pid)} = state,
-        connection_pid,
-        reason
-      ),
-      do: disconnect(state, reason)
-
-  def connection_crashed(
-        %__MODULE__{connection_state: connection_failed_state(connection_pid: connection_pid)} =
-          state,
-        connection_pid,
-        reason
-      ),
-      do: disconnect(state, reason)
-
-  def connection_crashed(
-        %__MODULE__{connection_state: disconnected_state()} = state,
-        _connection_pid,
-        reason
-      ),
-      do: disconnect(state, reason)
+  defp disconnect(state, _connection_pid, _disconnected_pid, reason),
+    do: disconnect(state, reason)
 
   defp disconnect(state, reason) do
     server = state.server
@@ -1107,7 +964,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []) ++
         if(state.load_average_timer, do: [{:cancel_timer, state.load_average_timer}], else: []) ++
         Enum.map(state.tasks, fn {_task_name, task_ref} -> {:demonitor, task_ref} end) ++
-        [update_tracking()]
+        [update_tracking_action()]
 
     %__MODULE__{
       state
@@ -1146,8 +1003,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
                   do: updated_server.app_username,
                   else: updated_server.username
                 ),
-              # TODO: do not add update tracking action if there is already one
-              actions: [update_tracking()],
               problems: detect_server_properties_mismatches(problems, updated_server)
           })
 
@@ -1250,10 +1105,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           connect(state, connection_pid, false)
 
         _any_other_state ->
-          state
+          add_action(state, update_tracking_action())
       end
     else
-      deactivate(state)
+      state |> add_action(update_tracking_action()) |> deactivate()
     end
   end
 
@@ -1323,6 +1178,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   def on_message(state, :retry_connecting), do: retry_connecting(state, false)
 
+  defp drop_task(%__MODULE__{tasks: tasks} = state, key) do
+    case Map.get(tasks, key) do
+      nil ->
+        state
+
+      task_ref ->
+        drop_task(state, key, task_ref)
+    end
+  end
+
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do
     case Map.get(tasks, key) do
       ^ref ->
@@ -1384,6 +1249,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          }
        end}
 
+  defp detect_server_properties_mismatches(
+         %__MODULE__{server: server, problems: problems} = state
+       ),
+       do: %__MODULE__{state | problems: detect_server_properties_mismatches(problems, server)}
+
   defp detect_server_properties_mismatches(problems, %Server{last_known_properties: nil}) do
     Enum.filter(problems, fn problem ->
       elem(problem, 0) != :server_expected_property_mismatch
@@ -1412,21 +1282,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     )
   end
 
-  defp drop_connection_problems(problems),
-    do:
-      Enum.reject(
-        problems,
-        fn problem ->
-          match?(
-            {:server_connection_timed_out, _host, _port, _username},
-            problem
-          ) or
-            match?(
-              {:server_connection_refused, _host, _port, _username},
-              problem
-            )
-        end
-      )
+  defp maybe_add_problem(state, nil), do: state
+  defp maybe_add_problem(state, problem), do: add_problem(state, problem)
+
+  defp add_problem(state, problem), do: set_problems(state, [problem | state.problems])
+
+  defp set_problem(state, problem), do: set_problems(state, [problem])
+  defp set_problems(state, problems), do: %__MODULE__{state | problems: problems}
+
+  defp drop_connection_problems(state),
+    do: drop_problems(state, [:server_connection_timed_out, :server_connection_refused])
 
   defp drop_connected_problems(problems),
     do:
@@ -1436,40 +1301,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           match?({:server_fact_gathering_failed, _reason}, problem)
       end)
 
-  defp drop_port_checking_problems(problems),
+  defp drop_port_checking_problems(state),
     do:
-      Enum.reject(
-        problems,
-        &(match?({:server_port_testing_script_failed, _details}, &1) or
-            match?({:server_open_ports_check_failed, _details}, &1))
-      )
-
-  defp track(state),
-    do: %__MODULE__{
-      state
-      | actions:
-          state.actions ++
-            [{:track, "servers", state.server.id, to_real_time_state(state)}]
-    }
-
-  defp update_tracking,
-    do:
-      {:update_tracking, "servers",
-       fn state ->
-         new_state = %__MODULE__{state | version: state.version + 1}
-         real_time_state = to_real_time_state(new_state)
-         {real_time_state, new_state}
-       end}
-
-  defp monitor(pid), do: {:monitor, pid}
-
-  defp send_message(msg, ms, timer_key),
-    do:
-      {:send_message,
-       fn timer_state, timer_factory ->
-         timer = timer_factory.(msg, ms)
-         Map.put(timer_state, timer_key, timer)
-       end}
+      drop_problems(state, [:server_port_testing_script_failed, :server_open_ports_check_failed])
 
   defp to_real_time_state(%__MODULE__{} = state) do
     server = state.server
@@ -1521,7 +1355,27 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
-  defp run_setup_playbook(server) do
+  defp run_setup_playbook(state) do
+    playbook_run = start_setup_playbook(state.server)
+
+    add_action(
+      %__MODULE__{state | ansible_playbook: {playbook_run, nil}},
+      run_playbook_action(playbook_run)
+    )
+  end
+
+  defp update_ongoing_playbook_task(
+         %__MODULE__{ansible_playbook: {playbook_run, _previous_task}} = state,
+         ongoing_task
+       ),
+       do: %__MODULE__{
+         state
+         | ansible_playbook: {playbook_run, ongoing_task}
+       }
+
+  defp clear_running_ansible_playbook(state), do: %__MODULE__{state | ansible_playbook: nil}
+
+  defp start_setup_playbook(server) do
     playbook = Ansible.setup_playbook()
 
     username = if server.set_up_at, do: server.app_username, else: server.username
@@ -1535,6 +1389,111 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "server_token" => token
     })
   end
+
+  defp drop_problems(state, problems) when is_list(problems),
+    do: drop_problems(state, &(elem(&1, 0) in problems))
+
+  defp drop_problems(state, predicate_fn) when is_function(predicate_fn, 1),
+    do: %__MODULE__{state | problems: Enum.reject(state.problems, &predicate_fn.(&1))}
+
+  defp stop_measuring_load_average(state),
+    do:
+      state
+      |> maybe_cancel_load_average_timer()
+      |> drop_task(:get_load_average)
+
+  defp maybe_cancel_load_average_timer(%__MODULE__{load_average_timer: nil} = state), do: state
+
+  defp maybe_cancel_load_average_timer(%__MODULE__{load_average_timer: timer} = state),
+    do: state |> clear_load_average_timer() |> add_action(cancel_timer_action(timer))
+
+  defp clear_load_average_timer(state), do: %__MODULE__{state | load_average_timer: nil}
+
+  defp maybe_cancel_retry_timer(%__MODULE__{retry_timer: nil} = state), do: state
+
+  defp maybe_cancel_retry_timer(%__MODULE__{retry_timer: timer} = state),
+    do: state |> clear_retry_timer() |> add_action(cancel_timer_action(timer))
+
+  defp clear_retry_timer(state), do: %__MODULE__{state | retry_timer: nil}
+
+  defp maybe_manually_retry(retrying, false), do: retrying
+  defp maybe_manually_retry(retrying, true), do: %{retrying | backoff: 0}
+
+  defp change_connection_state(state, connection_state),
+    do: %__MODULE__{state | connection_state: connection_state}
+
+  defp set_updated_server(%__MODULE__{server: server} = state, server), do: state
+
+  defp set_updated_server(state, updated_server, publish \\ true) do
+    if publish do
+      :ok = PubSub.publish_server_updated(updated_server)
+    end
+
+    %__MODULE__{state | server: updated_server}
+  end
+
+  defp add_actions(state, []), do: state
+
+  defp add_actions(state, [action | remaining_actions]),
+    do: state |> add_action(action) |> add_actions(remaining_actions)
+
+  defp add_action(state, action), do: %__MODULE__{state | actions: [action | state.actions]}
+
+  defp cancel_timer_action(timer_ref), do: {:cancel_timer, timer_ref}
+
+  defp connect_action(%__MODULE__{server: server, username: username}) do
+    host = server.ip_address.address
+    port = server.ssh_port || 22
+
+    {:connect,
+     fn task_state, task_factory ->
+       task = task_factory.(host, port, username, silently_accept_hosts: true)
+       %__MODULE__{task_state | tasks: Map.put(task_state.tasks, :connect, task.ref)}
+     end}
+  end
+
+  defp track(state),
+    do: %__MODULE__{
+      state
+      | actions:
+          state.actions ++
+            [{:track, "servers", state.server.id, to_real_time_state(state)}]
+    }
+
+  defp update_tracking_action,
+    do:
+      {:update_tracking, "servers",
+       fn state ->
+         new_state = %__MODULE__{state | version: state.version + 1}
+         real_time_state = to_real_time_state(new_state)
+         {real_time_state, new_state}
+       end}
+
+  defp monitor_action(pid), do: {:monitor, pid}
+
+  defp run_playbook_action(playbook_run), do: {:run_playbook, playbook_run}
+
+  defp measure_load_average_action,
+    do: send_message_action(:measure_load_average, 20_000, :load_average_timer)
+
+  defp retry_action(%{in_seconds: in_seconds}),
+    do: send_message_action(:retry_connecting, in_seconds * 1000, :retry_timer)
+
+  defp send_message_action(msg, ms, timer_key),
+    do:
+      {:send_message,
+       fn timer_state, timer_factory ->
+         timer = timer_factory.(msg, ms)
+         Map.put(timer_state, timer_key, timer)
+       end}
+
+  defp connect_with_app_username(
+         %__MODULE__{server: %Server{set_up_at: %DateTime{}, app_username: app_username}} = state
+       ),
+       do: %__MODULE__{state | username: app_username}
+
+  defp user_to_connect_as(%Server{set_up_at: nil, username: username}), do: username
+  defp user_to_connect_as(%Server{app_username: app_username}), do: app_username
 
   defp api_base_url,
     do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:api_base_url)

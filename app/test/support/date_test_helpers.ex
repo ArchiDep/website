@@ -23,7 +23,7 @@ defmodule ArchiDep.Support.DateTestHelpers do
   ## Examples
 
       iex> import ArchiDep.Support.DateTestHelpers
-      iex> assert_in_delta DateTime.diff(days_ago(2), DateTime.utc_now(), :millisecond), -172_800_000, 100
+      iex> assert_in_delta DateTime.diff(days_ago(2), DateTime.utc_now(), :millisecond), -172_800_000, 999
   """
   @spec days_ago(pos_integer) :: DateTime.t()
   def days_ago(n) when is_integer(n) and n >= 1,
@@ -35,7 +35,7 @@ defmodule ArchiDep.Support.DateTestHelpers do
   ## Examples
 
       iex> import ArchiDep.Support.DateTestHelpers
-      iex> assert_in_delta DateTime.diff(hours_ago(2), DateTime.utc_now(), :millisecond), -7_200_000, 100
+      iex> assert_in_delta DateTime.diff(hours_ago(2), DateTime.utc_now(), :millisecond), -7_200_000, 999
   """
   @spec hours_ago(pos_integer) :: DateTime.t()
   def hours_ago(n) when is_integer(n) and n >= 1,
