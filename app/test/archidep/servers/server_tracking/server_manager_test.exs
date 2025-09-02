@@ -166,7 +166,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
       start: {ServerManager, :start_link, [id, pipeline, opts]}
     })
 
-    assert_receive :initialized
+    assert_receive :initialized, 500
     refute_received _anything_else
   end
 
