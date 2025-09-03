@@ -87,7 +87,7 @@
       ansible.builtin.systemd:
         name: archidep-notify-server-up.service
         enabled: true
-        state: started
+        state: stopped
         daemon_reload: true
       become: true
 
