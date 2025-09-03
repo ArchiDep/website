@@ -70,12 +70,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
               ), %ServerManagerState{connect_result | version: 25}}
   end
 
-  test "a disconnected server manager for an active server connects when the connection becomes idle",
+  test "a disconnected server manager for an active server schedules a connection retry when the connection becomes idle",
        %{connection_idle: connection_idle} do
     server =
       build_active_server(
-        ssh_port: 2222,
-        username: "bob",
+        ssh_port: true,
         set_up_at: nil
       )
 
@@ -83,45 +82,58 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_disconnected_state(),
         server: server,
-        username: "bob",
-        version: 24
+        username: server.username
       )
 
+    now = DateTime.utc_now()
     result = connection_idle.(initial_state, self())
 
     test_pid = self()
 
     assert %ServerManagerState{
-             connection_state:
-               connecting_state(
-                 connection_ref: connection_ref,
-                 connection_pid: ^test_pid,
-                 retrying: false
-               ) = connection_state,
+             connection_state: retry_connecting_state(retrying: %{time: time}),
              actions:
                [
                  {:monitor, ^test_pid},
-                 {:connect, connect_fn},
+                 {:send_message, send_message_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
 
-    assert is_reference(connection_ref)
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
-             | connection_state: connection_state,
+             | connection_state:
+                 retry_connecting_state(
+                   connection_pid: test_pid,
+                   retrying: %{
+                     retry: 1,
+                     backoff: 0,
+                     time: time,
+                     in_seconds: 5,
+                     reason: :disconnected
+                   }
+                 ),
+               username: server.username,
                actions: actions
            }
 
-    connect_result = assert_connect_fn!(connect_fn, result, "bob")
+    fake_timer_ref = make_ref()
 
-    assert update_tracking_fn.(connect_result) ==
+    send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 5_000 ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
+             %ServerManagerState{result | retry_timer: fake_timer_ref}
+
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
-                current_job: :connecting,
-                version: 25
-              ), %ServerManagerState{connect_result | version: 25}}
+                version: result.version + 1
+              ), %ServerManagerState{send_message_result | version: result.version + 1}}
   end
 
   test "specific problems are dropped when the connection becomes idle", %{

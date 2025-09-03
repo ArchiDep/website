@@ -180,7 +180,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         connection_pid
       ) do
     if Server.active?(server, DateTime.utc_now()) do
-      connect(state, connection_pid, false)
+      retrying = back_off_retrying(false, :disconnected)
+
+      state
+      |> change_connection_state(
+        retry_connecting_state(
+          connection_pid: connection_pid,
+          retrying: retrying
+        )
+      )
+      |> add_actions([
+        update_tracking_action(),
+        retry_action(retrying),
+        monitor_action(connection_pid)
+      ])
     else
       state
       |> change_connection_state(not_connected_state(connection_pid: connection_pid))
