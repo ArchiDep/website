@@ -39,16 +39,18 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
         Please check the following:
       </p>
       <ul class="mt-2 list-disc list-outside pl-6 flex flex-col gap-y-2">
-        <li>Is your server running? We can't connect to it if it's off.</li>
         <li>Did you configure the correct IP address?</li>
         <li>
           We are attempting to open an SSH connection to port {@server.ssh_port ||
             22}. Is this port open in your cloud provider's firewall?
         </li>
         <li>
-          <a href="https://youtu.be/5UT8RkSmN4k?feature=shared" target="_blank" class="no-hover">
-            Have you tried turning it off and on again?
-          </a>
+          Is your server running? We can't connect to it if it's off.
+          (<a
+            href="https://youtu.be/5UT8RkSmN4k?feature=shared"
+            target="_blank"
+            class="no-hover italic"
+          >Have you tried turning it off and on again?</a>)
         </li>
       </ul>
     </.troubleshooting_note>
