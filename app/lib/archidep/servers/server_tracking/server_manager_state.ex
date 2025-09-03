@@ -35,15 +35,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @enforce_keys [
     :server,
     :pipeline,
-    :username,
-    :actions
+    :username
   ]
   defstruct [
     :server,
     :pipeline,
     :username,
-    :actions,
     connection_state: not_connected_state(),
+    actions: [],
     # TODO: tasks, ansible playbook and load average timer should be part of the connected state
     tasks: %{},
     ansible_playbook: nil,
@@ -143,8 +142,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     %__MODULE__{
       server: server,
       pipeline: pipeline,
-      username: user_to_connect_as(server),
-      actions: []
+      username: user_to_connect_as(server)
     }
     |> maybe_add_problem(determine_last_setup_run_problem(last_setup_run))
     |> track()
