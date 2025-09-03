@@ -11,6 +11,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblems do
   def server_problem?(problem_types) when is_list(problem_types),
     do: &(elem(&1, 0) in problem_types)
 
+  @spec server_problem?(atom()) :: (Types.server_problem() -> boolean())
+  def server_problem?(type), do: &(elem(&1, 0) == type)
+
   @spec server_ansible_playbook_failed_problem(AnsiblePlaybookRun.t()) ::
           Types.server_ansible_playbook_failed_problem()
   def server_ansible_playbook_failed_problem(playbook_run),

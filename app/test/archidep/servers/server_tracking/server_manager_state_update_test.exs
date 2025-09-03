@@ -483,7 +483,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                       version: server.version + 1
                   },
                   username: new_server_username,
-                  actions: actions
+                  actions: actions,
+                  retry_timer: nil
               },
               {:ok,
                %Server{

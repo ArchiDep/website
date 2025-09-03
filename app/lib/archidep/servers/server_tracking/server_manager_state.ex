@@ -527,7 +527,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     add_actions(state, [
       update_tracking_action(),
       get_load_average(),
-      gather_facts()
+      gather_facts_action()
     ])
   end
 
@@ -674,7 +674,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     Logger.debug("Port testing script succeeded on server #{server.id}")
 
     state
-    |> add_actions([update_tracking_action(), check_open_ports(server)])
+    |> add_actions([update_tracking_action(), check_open_ports_action(server)])
     |> drop_port_checking_problems()
   end
 
@@ -827,19 +827,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     if has_failed_setup_playbook do
       Logger.info("Retrying Ansible setup playbook for server #{server.id}")
 
-      {
-        state
-        |> add_action(update_tracking_action())
-        |> run_setup_playbook(),
-        :ok
-      }
+      state
+      |> add_action(update_tracking_action())
+      |> run_setup_playbook()
+      |> with_reply(:ok)
     else
       Logger.info(
         # coveralls-ignore-next-line
         "Ignoring retry request for Ansible setup playbook for server #{server.id} because there is no such failed run"
       )
 
-      {state, :ok}
+      with_reply(state, :ok)
     end
   end
 
@@ -849,7 +847,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Ignoring retry request for Ansible #{playbook} playbook because the server is busy"
     )
 
-    {state, {:error, :server_busy}}
+    with_reply(state, {:error, :server_busy})
   end
 
   def retry_ansible_playbook(%__MODULE__{} = state, playbook) do
@@ -858,7 +856,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Ignoring retry request for Ansible #{playbook} playbook because the server is not connected"
     )
 
-    {state, {:error, :server_not_connected}}
+    with_reply(state, {:error, :server_not_connected})
   end
 
   @impl ServerManagerBehaviour
@@ -881,14 +879,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       )
 
     if has_failed_checking_open_ports do
-      {add_actions(state, [update_tracking_action(), test_ports()]), :ok}
+      state |> add_actions([update_tracking_action(), test_ports()]) |> with_reply(:ok)
     else
       Logger.info(
         # coveralls-ignore-next-line
         "Ignoring retry request for checking open ports for server #{server.id} because there is no port checking problem"
       )
 
-      {state, :ok}
+      with_reply(state, :ok)
     end
   end
 
@@ -900,7 +898,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Ignoring retry request for checking open ports for server #{server.id} because the server is busy"
     )
 
-    {state, {:error, :server_busy}}
+    with_reply(state, {:error, :server_busy})
   end
 
   def retry_checking_open_ports(%__MODULE__{server: server} = state) do
@@ -909,7 +907,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Ignoring retry request for checking open ports for server #{server.id} because the server is not connected"
     )
 
-    {state, {:error, :server_not_connected}}
+    with_reply(state, {:error, :server_not_connected})
   end
 
   @impl ServerManagerBehaviour
@@ -959,57 +957,41 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     server = state.server
     Logger.info("Connection to server #{server.id} crashed because: #{inspect(reason)}")
 
-    actions =
-      [:notify_server_offline] ++
-        if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: []) ++
-        if(state.load_average_timer, do: [{:cancel_timer, state.load_average_timer}], else: []) ++
-        Enum.map(state.tasks, fn {_task_name, task_ref} -> {:demonitor, task_ref} end) ++
-        [update_tracking_action()]
-
-    %__MODULE__{
-      state
-      | connection_state: disconnected_state(time: DateTime.utc_now()),
-        actions: actions,
-        problems: drop_connected_problems(state.problems),
-        tasks: %{},
-        retry_timer: nil,
-        load_average_timer: nil
-    }
+    state
+    |> change_connection_state(disconnected_state(time: DateTime.utc_now()))
+    |> add_actions([update_tracking_action(), notify_server_offline_action()])
+    |> stop_measuring_load_average()
+    |> maybe_cancel_retry_timer()
+    |> drop_remaining_tasks()
+    |> drop_connected_problems()
   end
 
   @impl ServerManagerBehaviour
   def update_server(state, auth, data) do
     case state do
       %__MODULE__{connection_state: connecting_state()} ->
-        {state, {:error, :server_busy}}
+        with_reply(state, {:error, :server_busy})
 
       %__MODULE__{connection_state: reconnecting_state()} ->
-        {state, {:error, :server_busy}}
+        with_reply(state, {:error, :server_busy})
 
       _any_other_state ->
         do_update_server(state, auth, data)
     end
   end
 
-  defp do_update_server(%__MODULE__{problems: problems} = state, auth, data) do
+  defp do_update_server(state, auth, data) do
     case UpdateServer.update_server(auth, state.server, data) do
       {:ok, updated_server} ->
-        new_state =
-          auto_activate_or_deactivate(%__MODULE__{
-            state
-            | server: updated_server,
-              username:
-                if(updated_server.set_up_at,
-                  do: updated_server.app_username,
-                  else: updated_server.username
-                ),
-              problems: detect_server_properties_mismatches(problems, updated_server)
-          })
-
-        {new_state, {:ok, updated_server}}
+        state
+        |> set_updated_server(updated_server, false)
+        |> update_user_to_connect_as()
+        |> detect_server_properties_mismatches()
+        |> auto_activate_or_deactivate()
+        |> with_reply({:ok, updated_server})
 
       {:error, changeset} ->
-        {state, {:error, changeset}}
+        with_reply(state, {:error, changeset})
     end
   end
 
@@ -1022,7 +1004,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       %__MODULE__{connection_state: not_connected_state(), tasks: tasks, ansible_playbook: nil}
       when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
-        {state, :ok}
+        with_reply(state, :ok)
 
       %__MODULE__{
         connection_state: retry_connecting_state(connection_pid: connection_pid),
@@ -1032,14 +1014,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
 
-        {
-          %__MODULE__{
-            state
-            | connection_state: not_connected_state(connection_pid: connection_pid),
-              actions: if(state.retry_timer, do: [{:cancel_timer, state.retry_timer}], else: [])
-          },
-          :ok
-        }
+        state
+        |> change_connection_state(not_connected_state(connection_pid: connection_pid))
+        |> maybe_cancel_retry_timer()
+        |> with_reply(:ok)
 
       %__MODULE__{
         connection_state: connected_state(connection_pid: connection_pid),
@@ -1051,13 +1029,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         :ok = ServerConnection.disconnect(server)
         :ok = DeleteServer.delete_server(auth, server)
 
-        {
-          %__MODULE__{
-            state
-            | connection_state: not_connected_state(connection_pid: connection_pid)
-          },
-          :ok
-        }
+        state
+        |> change_connection_state(not_connected_state(connection_pid: connection_pid))
+        |> with_reply(:ok)
 
       %__MODULE__{
         connection_state: connection_failed_state(connection_pid: connection_pid),
@@ -1067,13 +1041,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
 
-        {
-          %__MODULE__{
-            state
-            | connection_state: not_connected_state(connection_pid: connection_pid)
-          },
-          :ok
-        }
+        state
+        |> change_connection_state(not_connected_state(connection_pid: connection_pid))
+        |> with_reply(:ok)
 
       %__MODULE__{
         connection_state: disconnected_state(),
@@ -1083,16 +1053,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
 
-        {
-          %__MODULE__{
-            state
-            | connection_state: not_connected_state()
-          },
-          :ok
-        }
+        state
+        |> change_connection_state(not_connected_state())
+        |> with_reply(:ok)
 
       _any_other_state ->
-        {state, {:error, :server_busy}}
+        with_reply(state, {:error, :server_busy})
     end
   end
 
@@ -1118,27 +1084,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
            server: server
          } = state
        ) do
-    ServerConnection.disconnect(server.id)
+    :ok = ServerConnection.disconnect(server.id)
 
-    %__MODULE__{
-      state
-      | connection_state: not_connected_state(connection_pid: connection_pid)
-    }
+    change_connection_state(state, not_connected_state(connection_pid: connection_pid))
   end
 
   defp deactivate(
          %__MODULE__{connection_state: retry_connecting_state(connection_pid: connection_pid)} =
            state
        ) do
-    %__MODULE__{
-      state
-      | connection_state: not_connected_state(connection_pid: connection_pid),
-        actions:
-          if(state.retry_timer,
-            do: [{:cancel_timer, state.retry_timer}],
-            else: []
-          ) ++ state.actions
-    }
+    state
+    |> change_connection_state(not_connected_state(connection_pid: connection_pid))
+    |> maybe_cancel_retry_timer()
   end
 
   defp deactivate(%__MODULE__{connection_state: disconnected_state()} = state) do
@@ -1149,10 +1106,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          %__MODULE__{connection_state: connection_failed_state(connection_pid: connection_pid)} =
            state
        ) do
-    %__MODULE__{
-      state
-      | connection_state: not_connected_state(connection_pid: connection_pid)
-    }
+    change_connection_state(state, not_connected_state(connection_pid: connection_pid))
   end
 
   defp deactivate(%__MODULE__{} = state) do
@@ -1161,12 +1115,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   @impl ServerManagerBehaviour
   def on_message(%__MODULE__{connection_state: connected_state()} = state, :measure_load_average),
-    do: %__MODULE__{
-      state
-      | actions: [
-          get_load_average()
-        ]
-    }
+    do: add_action(state, get_load_average())
 
   def on_message(state, :measure_load_average) do
     Logger.warning(
@@ -1191,18 +1140,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp drop_task(%__MODULE__{actions: actions, tasks: tasks} = state, key, ref) do
     case Map.get(tasks, key) do
       ^ref ->
-        %__MODULE__{state | tasks: Map.delete(tasks, key), actions: [{:demonitor, ref} | actions]}
+        %__MODULE__{
+          state
+          | tasks: Map.delete(tasks, key),
+            actions: [demonitor_action(ref) | actions]
+        }
     end
   end
 
-  defp maybe_test_ports(
-         %__MODULE__{server: %Server{open_ports_checked_at: nil}, actions: actions} = state
-       ),
-       do: %__MODULE__{state | actions: [test_ports() | actions]}
+  defp maybe_test_ports(%__MODULE__{server: %Server{open_ports_checked_at: nil}} = state),
+    do: add_action(state, test_ports())
 
   defp maybe_test_ports(%__MODULE__{} = state), do: state
 
-  defp gather_facts,
+  defp gather_facts_action,
     do:
       {:gather_facts,
        fn task_state, task_factory ->
@@ -1214,7 +1165,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          }
        end}
 
-  defp check_open_ports(server),
+  defp check_open_ports_action(server),
     do:
       {:check_open_ports,
        fn task_state, task_factory ->
@@ -1226,18 +1177,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          }
        end}
 
-  defp get_load_average, do: run_command(:get_load_average, "cat /proc/loadavg", 10_000)
-  defp check_sudo_access, do: run_command(:check_access, "sudo -n ls", 10_000)
+  defp get_load_average, do: run_command_action(:get_load_average, "cat /proc/loadavg", 10_000)
+  defp check_sudo_access, do: run_command_action(:check_access, "sudo -n ls", 10_000)
 
   defp test_ports,
     do:
-      run_command(
+      run_command_action(
         :test_ports,
         "sudo /usr/local/sbin/test-ports #{Enum.join(@ports_to_check, " ")}",
         10_000
       )
 
-  defp run_command(name, command, timeout),
+  defp run_command_action(name, command, timeout),
     do:
       {:run_command,
        fn task_state, task_factory ->
@@ -1254,11 +1205,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        ),
        do: %__MODULE__{state | problems: detect_server_properties_mismatches(problems, server)}
 
-  defp detect_server_properties_mismatches(problems, %Server{last_known_properties: nil}) do
-    Enum.filter(problems, fn problem ->
-      elem(problem, 0) != :server_expected_property_mismatch
-    end)
-  end
+  defp detect_server_properties_mismatches(problems, %Server{last_known_properties: nil}),
+    do: Enum.reject(problems, server_problem?(:server_expected_property_mismatch))
 
   defp detect_server_properties_mismatches(problems, %Server{
          group: %ServerGroup{expected_server_properties: expected_server_properties},
@@ -1272,9 +1220,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     mismatches = ServerProperties.detect_mismatches(expected_properties, last_known_properties)
 
     problems
-    |> Enum.filter(fn problem ->
-      elem(problem, 0) != :server_expected_property_mismatch
-    end)
+    |> Enum.reject(server_problem?(:server_expected_property_mismatch))
     |> Enum.concat(
       Enum.map(mismatches, fn {property, expected, actual} ->
         {:server_expected_property_mismatch, property, expected, actual}
@@ -1293,13 +1239,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp drop_connection_problems(state),
     do: drop_problems(state, [:server_connection_timed_out, :server_connection_refused])
 
-  defp drop_connected_problems(problems),
+  defp drop_connected_problems(state),
     do:
-      Enum.reject(problems, fn problem ->
-        match?({:server_port_testing_script_failed, _reason}, problem) or
-          match?({:server_open_ports_check_failed, _port_problems}, problem) or
-          match?({:server_fact_gathering_failed, _reason}, problem)
-      end)
+      drop_problems(state, [
+        :server_port_testing_script_failed,
+        :server_open_ports_check_failed,
+        :server_fact_gathering_failed
+      ])
 
   defp drop_port_checking_problems(state),
     do:
@@ -1416,6 +1362,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp clear_retry_timer(state), do: %__MODULE__{state | retry_timer: nil}
 
+  defp drop_remaining_tasks(state),
+    do: %__MODULE__{
+      state
+      | tasks: %{},
+        actions:
+          Enum.reduce(state.tasks, state.actions, fn {_task_name, task_ref}, actions ->
+            [demonitor_action(task_ref) | actions]
+          end)
+    }
+
   defp maybe_manually_retry(retrying, false), do: retrying
   defp maybe_manually_retry(retrying, true), do: %{retrying | backoff: 0}
 
@@ -1452,6 +1408,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
      end}
   end
 
+  defp notify_server_offline_action, do: :notify_server_offline
+
   defp track(state),
     do: %__MODULE__{
       state
@@ -1470,6 +1428,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        end}
 
   defp monitor_action(pid), do: {:monitor, pid}
+  defp demonitor_action(ref), do: {:demonitor, ref}
 
   defp run_playbook_action(playbook_run), do: {:run_playbook, playbook_run}
 
@@ -1487,6 +1446,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          Map.put(timer_state, timer_key, timer)
        end}
 
+  defp update_user_to_connect_as(
+         %__MODULE__{server: %Server{set_up_at: nil, username: username}} = state
+       ),
+       do: %__MODULE__{state | username: username}
+
+  defp update_user_to_connect_as(
+         %__MODULE__{server: %Server{set_up_at: %DateTime{}, app_username: app_username}} = state
+       ),
+       do: %__MODULE__{state | username: app_username}
+
   defp connect_with_app_username(
          %__MODULE__{server: %Server{set_up_at: %DateTime{}, app_username: app_username}} = state
        ),
@@ -1494,6 +1463,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp user_to_connect_as(%Server{set_up_at: nil, username: username}), do: username
   defp user_to_connect_as(%Server{app_username: app_username}), do: app_username
+
+  defp with_reply(state, reply), do: {state, reply}
 
   defp api_base_url,
     do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:api_base_url)

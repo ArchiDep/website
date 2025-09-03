@@ -78,6 +78,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
         set_up_at: nil
       )
 
+    fake_gather_facts_task_ref = make_ref()
     fake_loadavg_task_ref = make_ref()
     fake_retry_timer_ref = make_ref()
     fake_loadavg_timer_ref = make_ref()
@@ -87,7 +88,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,
         server: server,
-        tasks: %{load_average: fake_loadavg_task_ref},
+        tasks: %{gather_facts: fake_gather_facts_task_ref, load_average: fake_loadavg_task_ref},
         retry_timer: fake_retry_timer_ref,
         load_average_timer: fake_loadavg_timer_ref,
         problems: [
@@ -106,10 +107,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
              connection_state: disconnected_state(time: time),
              actions:
                [
-                 :notify_server_offline,
+                 {:demonitor, ^fake_loadavg_task_ref},
+                 {:demonitor, ^fake_gather_facts_task_ref},
                  {:cancel_timer, ^fake_retry_timer_ref},
                  {:cancel_timer, ^fake_loadavg_timer_ref},
-                 {:demonitor, ^fake_loadavg_task_ref},
+                 :notify_server_offline,
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result

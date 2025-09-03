@@ -100,7 +100,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
              {%ServerManagerState{
                 initial_state
                 | connection_state: not_connected_state(connection_pid: self()),
-                  actions: [{:cancel_timer, fake_retry_timer_ref}]
+                  actions: [{:cancel_timer, fake_retry_timer_ref}],
+                  retry_timer: nil
               }, :ok}
 
     assert_server_deleted!(server, now)
