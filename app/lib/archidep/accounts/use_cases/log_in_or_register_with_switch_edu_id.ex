@@ -19,7 +19,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   alias ArchiDep.Events.Store.StoredEvent
 
   @spec log_in_or_register_with_switch_edu_id(
-          Types.switch_edu_id_data(),
+          Types.switch_edu_id_login_data(),
           ClientMetadata.t()
         ) ::
           {:ok, Authentication.t()}
@@ -67,10 +67,10 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       fn _repo, %{switch_edu_id: switch_edu_id} ->
         case UserAccount.fetch_for_switch_edu_id(switch_edu_id) do
           nil ->
-            new_user_account(switch_edu_id)
+            new_user_account(switch_edu_id, switch_edu_id_data)
 
           user_account ->
-            existing_user_account(switch_edu_id, user_account)
+            existing_user_account(switch_edu_id_data, user_account)
         end
       end
     )
@@ -144,17 +144,17 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     |> transaction()
   end
 
-  defp new_user_account(switch_edu_id) do
-    # If the user account does not exist but the email of the Switch
-    # edu-ID account has been configured as a root user, create a new
-    # root user account.
-    if is_configured_root_user?(switch_edu_id) do
+  defp new_user_account(switch_edu_id, data) do
+    # If the user account does not exist but one of the emails of the Switch
+    # edu-ID account has been configured as a root user, create a new root user
+    # account.
+    if configured_root_user?(data) do
       {:ok, {:new_root, UserAccount.new_root_switch_edu_id_account(switch_edu_id), nil}}
     else
       # Otherwise check whether there is a preregistered user for that
       # email...
-      case PreregisteredUser.list_available_preregistered_users_for_email(
-             switch_edu_id.email,
+      case PreregisteredUser.list_available_preregistered_users_for_emails(
+             data.emails,
              nil,
              DateTime.utc_now()
            ) do
@@ -182,7 +182,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     end
   end
 
-  defp existing_user_account(switch_edu_id, user_account) do
+  defp existing_user_account(switch_edu_id_data, user_account) do
     # If the user account already exists, check whether it is still active (it
     # might be linked to a class from the previous year, or it or its linked
     # preregistered user might have been deactivated).
@@ -195,8 +195,8 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       # the same email (e.g. a student might be repeating a year, in
       # which case a new preregistered user will have been created in
       # a new class)...
-      case PreregisteredUser.list_available_preregistered_users_for_email(
-             switch_edu_id.email,
+      case PreregisteredUser.list_available_preregistered_users_for_emails(
+             switch_edu_id_data.emails,
              user_account.id,
              DateTime.utc_now()
            ) do
@@ -214,11 +214,14 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     end
   end
 
-  defp is_configured_root_user?(switch_edu_id) when is_struct(switch_edu_id, SwitchEduId) do
+  defp configured_root_user?(%{
+         swiss_edu_person_unique_id: swiss_edu_person_unique_id,
+         emails: emails
+       }) do
     known_root_users = root_users()
 
-    Enum.member?(known_root_users, switch_edu_id.email) ||
-      Enum.member?(known_root_users, switch_edu_id.swiss_edu_person_unique_id)
+    Enum.member?(known_root_users, swiss_edu_person_unique_id) ||
+      Enum.any?(emails, &Enum.member?(known_root_users, &1))
   end
 
   defp root_users,

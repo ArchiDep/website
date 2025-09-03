@@ -14,7 +14,7 @@ defmodule ArchiDep.Accounts.Behaviour do
   """
   callback(
     log_in_or_register_with_switch_edu_id(
-      data: Types.switch_edu_id_data(),
+      data: Types.switch_edu_id_login_data(),
       meta: map
     ) ::
       {:ok, Authentication.t()}

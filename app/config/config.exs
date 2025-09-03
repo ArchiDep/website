@@ -94,7 +94,6 @@ config :ueberauth, Ueberauth,
       userinfo: true,
       request_path: "/auth/switch-edu-id",
       callback_path: "/auth/switch-edu-id/callback"
-      # uid_field: "email"
     }
   ]
 

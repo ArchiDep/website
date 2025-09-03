@@ -40,37 +40,45 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
   def active?(%__MODULE__{active: active, group: group}, now),
     do: active and UserGroup.active?(group, now)
 
-  @spec list_available_preregistered_users_for_email(String.t(), UUID.t() | nil, DateTime.t()) ::
+  @spec list_available_preregistered_users_for_emails(
+          list(String.t()),
+          UUID.t() | nil,
+          DateTime.t()
+        ) ::
           list(t())
-  def list_available_preregistered_users_for_email(email, nil, now),
-    do:
-      Repo.all(
-        from(pu in __MODULE__,
-          join: ug in assoc(pu, :group),
-          left_join: ua in assoc(pu, :user_account),
-          where:
-            pu.active and
-              ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
-              (is_nil(ug.end_date) or ug.end_date >= ^now) and is_nil(ua) and
-              fragment("LOWER(?)", pu.email) == fragment("LOWER(?)", ^email),
-          preload: [group: ug, user_account: ua]
-        )
-      )
+  def list_available_preregistered_users_for_emails(emails, nil, now) do
+    lowercase_emails = Enum.map(emails, &String.downcase/1)
 
-  def list_available_preregistered_users_for_email(email, user_account_id, now),
-    do:
-      Repo.all(
-        from(pu in __MODULE__,
-          join: ug in assoc(pu, :group),
-          left_join: ua in assoc(pu, :user_account),
-          where:
-            pu.active and
-              ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
-              (is_nil(ug.end_date) or ug.end_date >= ^now) and ua.id == ^user_account_id and
-              fragment("LOWER(?)", pu.email) == fragment("LOWER(?)", ^email),
-          preload: [group: ug, user_account: ua]
-        )
+    Repo.all(
+      from(pu in __MODULE__,
+        join: ug in assoc(pu, :group),
+        left_join: ua in assoc(pu, :user_account),
+        where:
+          pu.active and
+            ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
+            (is_nil(ug.end_date) or ug.end_date >= ^now) and is_nil(ua) and
+            fragment("LOWER(?)", pu.email) in ^lowercase_emails,
+        preload: [group: ug, user_account: ua]
       )
+    )
+  end
+
+  def list_available_preregistered_users_for_emails(emails, user_account_id, now) do
+    lowercase_emails = Enum.map(emails, &String.downcase/1)
+
+    Repo.all(
+      from(pu in __MODULE__,
+        join: ug in assoc(pu, :group),
+        left_join: ua in assoc(pu, :user_account),
+        where:
+          pu.active and
+            ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
+            (is_nil(ug.end_date) or ug.end_date >= ^now) and ua.id == ^user_account_id and
+            fragment("LOWER(?)", pu.email) in ^lowercase_emails,
+        preload: [group: ug, user_account: ua]
+      )
+    )
+  end
 
   @spec link_to_user_account(
           t(),

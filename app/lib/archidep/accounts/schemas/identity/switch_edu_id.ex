@@ -17,7 +17,6 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
-          email: String.t(),
           first_name: String.t() | nil,
           last_name: String.t() | nil,
           swiss_edu_person_unique_id: String.t(),
@@ -28,7 +27,6 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
         }
 
   schema "switch_edu_ids" do
-    field(:email, :string)
     field(:first_name, :string)
     field(:last_name, :string)
     field(:swiss_edu_person_unique_id, :string)
@@ -49,14 +47,14 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
   Creates a new Switch edu-ID identity from the specified data, or updates an
   existing identity if one already exists with the same unique identifier.
   """
-  @spec create_or_update(Types.switch_edu_id_data()) :: Changeset.t()
+  @spec create_or_update(Types.switch_edu_id_login_data()) :: Changeset.t()
   def create_or_update(%{swiss_edu_person_unique_id: swiss_edu_person_unique_id} = data) do
     now = DateTime.utc_now()
 
     if existing_switch_edu_id =
          Repo.get_by(__MODULE__, swiss_edu_person_unique_id: swiss_edu_person_unique_id) do
       existing_switch_edu_id
-      |> cast(data, [:email, :first_name, :last_name])
+      |> cast(data, [:first_name, :last_name])
       |> touch_if_data_changed(now)
       |> change(used_at: now)
       |> optimistic_lock(:version)
@@ -65,7 +63,7 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
       id = UUID.generate()
 
       %__MODULE__{}
-      |> cast(data, [:email, :first_name, :last_name, :swiss_edu_person_unique_id])
+      |> cast(data, [:first_name, :last_name, :swiss_edu_person_unique_id])
       |> change(id: id, version: 1, created_at: now, updated_at: now, used_at: now)
       |> validate()
     end
@@ -76,20 +74,16 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
       changeset
       |> validate_required([
         :id,
-        :email,
         :swiss_edu_person_unique_id,
         :version,
         :created_at,
         :updated_at,
         :used_at
       ])
-      |> validate_format(:email, ~r/^.+@.+$/)
-      |> unique_constraint(:email, name: :switch_edu_ids_unique_email_index)
       |> unique_constraint(:swiss_edu_person_unique_id, name: :switch_edu_ids_unique_sepui_index)
 
   defp touch_if_data_changed(changeset, updated_at) do
-    if changed?(changeset, :email) or changed?(changeset, :first_name) or
-         changed?(changeset, :last_name) do
+    if changed?(changeset, :first_name) or changed?(changeset, :last_name) do
       change(changeset, updated_at: updated_at)
     else
       changeset

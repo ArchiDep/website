@@ -34,37 +34,9 @@ defmodule ArchiDep.Support.AccountsFactory do
     user_session_factory(attrs_with_defaults)
   end
 
-  @spec switch_edu_id_data_factory(map()) :: Types.switch_edu_id_data()
-  def switch_edu_id_data_factory(attrs!) do
-    {email, attrs!} = Map.pop_lazy(attrs!, :email, &Faker.Internet.email/0)
-
-    {first_name, attrs!} =
-      Map.pop_lazy(attrs!, :first_name, fn ->
-        if(bool(), do: Faker.Person.first_name(), else: nil)
-      end)
-
-    {last_name, attrs!} =
-      Map.pop_lazy(attrs!, :last_name, fn ->
-        if(bool(), do: Faker.Person.last_name(), else: nil)
-      end)
-
-    {swiss_edu_person_unique_id, attrs!} =
-      Map.pop_lazy(attrs!, :swiss_edu_person_unique_id, &Faker.String.base64/0)
-
-    [] = Map.keys(attrs!)
-
-    %{
-      email: email,
-      first_name: first_name,
-      last_name: last_name,
-      swiss_edu_person_unique_id: swiss_edu_person_unique_id
-    }
-  end
-
   @spec switch_edu_id_factory(map()) :: SwitchEduId.t()
   def switch_edu_id_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
-    {email, attrs!} = Map.pop_lazy(attrs!, :email, &Faker.Internet.email/0)
 
     {first_name, attrs!} =
       Map.pop_lazy(attrs!, :first_name, fn ->
@@ -90,7 +62,6 @@ defmodule ArchiDep.Support.AccountsFactory do
 
     %SwitchEduId{
       id: id,
-      email: email,
       first_name: first_name,
       last_name: last_name,
       swiss_edu_person_unique_id: swiss_edu_person_unique_id,
@@ -98,6 +69,39 @@ defmodule ArchiDep.Support.AccountsFactory do
       created_at: created_at,
       updated_at: updated_at,
       used_at: used_at
+    }
+  end
+
+  @spec switch_edu_id_login_data_factory(map()) :: Types.switch_edu_id_login_data()
+  def switch_edu_id_login_data_factory(attrs!) do
+    {emails, attrs!} =
+      Map.pop_lazy(attrs!, :emails, fn ->
+        1
+        |> Faker.random_between(3)
+        |> then(&Range.new(1, &1))
+        |> Enum.map(fn _n -> Faker.Internet.email() end)
+      end)
+
+    {first_name, attrs!} =
+      Map.pop_lazy(attrs!, :first_name, fn ->
+        if(bool(), do: Faker.Person.first_name(), else: nil)
+      end)
+
+    {last_name, attrs!} =
+      Map.pop_lazy(attrs!, :last_name, fn ->
+        if(bool(), do: Faker.Person.last_name(), else: nil)
+      end)
+
+    {swiss_edu_person_unique_id, attrs!} =
+      Map.pop_lazy(attrs!, :swiss_edu_person_unique_id, &Faker.String.base64/0)
+
+    [] = Map.keys(attrs!)
+
+    %{
+      emails: emails,
+      first_name: first_name,
+      last_name: last_name,
+      swiss_edu_person_unique_id: swiss_edu_person_unique_id
     }
   end
 

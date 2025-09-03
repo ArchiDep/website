@@ -8,8 +8,10 @@
 <dl class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4">
   <dt class="font-bold">{gettext("Username")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">{username(@auth)}</dd>
-  <dt class="font-bold">{gettext("Switch edu-ID email")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">{@user_account.switch_edu_id.email}</dd>
+  <dt class="font-bold">{gettext("Switch edu-ID unique ID")}</dt>
+  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+    {@user_account.switch_edu_id.swiss_edu_person_unique_id}
+  </dd>
   <dt class="font-bold">{gettext("Registration date")}</dt>
   <dd class="col-span-1 md:col-span-3 xl:col-span-4">
     {format_date_time(@user_account.created_at)}

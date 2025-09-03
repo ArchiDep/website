@@ -28,21 +28,25 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   test "register a new root user account with Switch edu-ID", %{
     log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
   } do
-    switch_edu_id_data =
-      AccountsFactory.build(:switch_edu_id_data, email: @root_user_email, first_name: nil)
+    switch_edu_id_login_data =
+      AccountsFactory.build(:switch_edu_id_login_data,
+        emails: [@root_user_email],
+        first_name: nil,
+        swiss_edu_person_unique_id: "foobar"
+      )
 
     metadata = Factory.build(:client_metadata)
 
     assert {:ok, auth} =
              log_in_or_register_with_switch_edu_id.(
-               switch_edu_id_data,
+               switch_edu_id_login_data,
                metadata
              )
 
     auth
-    |> assert_auth("root", true)
-    |> assert_registered_event(metadata, "root", @root_user_email, switch_edu_id_data)
-    |> assert_user_session(auth, "root", @root_user_email, true)
+    |> assert_auth("foobar", true)
+    |> assert_registered_event(metadata, "foobar", switch_edu_id_login_data)
+    |> assert_user_session(auth, "foobar", true)
   end
 
   test "register a new student user account with Switch edu-ID", %{
@@ -58,34 +62,43 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
         user: nil
       )
 
-    switch_edu_id_data =
-      AccountsFactory.build(:switch_edu_id_data, email: student.email, first_name: nil)
+    switch_edu_id_login_data =
+      AccountsFactory.build(:switch_edu_id_login_data,
+        emails: [student.email],
+        first_name: nil,
+        swiss_edu_person_unique_id: "bob"
+      )
 
     metadata = Factory.build(:client_metadata)
 
     assert {:ok, auth} =
              log_in_or_register_with_switch_edu_id.(
-               switch_edu_id_data,
+               switch_edu_id_login_data,
                metadata
              )
 
     auth
     |> assert_auth("bob", false)
-    |> assert_registered_event(metadata, "bob", "bob@archidep.ch", switch_edu_id_data, student)
-    |> assert_user_session(auth, "bob", "bob@archidep.ch", false, student)
+    |> assert_registered_event(
+      metadata,
+      "bob",
+      switch_edu_id_login_data,
+      student
+    )
+    |> assert_user_session(auth, "bob", false, student)
   end
 
   test "an unknown user cannot register even if their Switch edu-ID account is valid", %{
     log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
   } do
-    switch_edu_id_data =
-      AccountsFactory.build(:switch_edu_id_data)
+    switch_edu_id_login_data =
+      AccountsFactory.build(:switch_edu_id_login_data)
 
     metadata = Factory.build(:client_metadata)
 
     assert {:error, :unauthorized_switch_edu_id} =
              log_in_or_register_with_switch_edu_id.(
-               switch_edu_id_data,
+               switch_edu_id_login_data,
                metadata
              )
 
@@ -100,9 +113,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     switch_edu_id =
       AccountsFactory.insert(:switch_edu_id)
 
-    switch_edu_id_data =
-      AccountsFactory.build(:switch_edu_id_data,
-        email: switch_edu_id.email,
+    switch_edu_id_login_data =
+      AccountsFactory.build(:switch_edu_id_login_data,
         swiss_edu_person_unique_id: switch_edu_id.swiss_edu_person_unique_id
       )
 
@@ -110,7 +122,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     assert {:error, :unauthorized_switch_edu_id} =
              log_in_or_register_with_switch_edu_id.(
-               switch_edu_id_data,
+               switch_edu_id_login_data,
                metadata
              )
 
@@ -146,8 +158,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
          %Authentication{principal_id: user_account_id, session_id: session_id},
          client_metadata,
          username,
-         email,
-         switch_edu_id_data,
+         switch_edu_id_login_data,
          student \\ nil
        ) do
     assert [
@@ -166,10 +177,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              type: "archidep/accounts/user-registered-with-switch-edu-id",
              data: %{
                "switch_edu_id" => switch_edu_id_id,
-               "email" => email,
                "first_name" => nil,
-               "last_name" => switch_edu_id_data[:last_name],
-               "swiss_edu_person_unique_id" => switch_edu_id_data[:swiss_edu_person_unique_id],
+               "last_name" => switch_edu_id_login_data[:last_name],
+               "swiss_edu_person_unique_id" =>
+                 switch_edu_id_login_data[:swiss_edu_person_unique_id],
                "user_account_id" => user_account_id,
                "username" => username,
                "session_id" => session_id,
@@ -209,7 +220,6 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
            session_token: session_token
          },
          username,
-         email,
          root,
          student \\ nil
        ) do
@@ -251,7 +261,6 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                switch_edu_id: %SwitchEduId{
                  __meta__: loaded(SwitchEduId, "switch_edu_ids"),
                  id: switch_edu_id_id,
-                 email: email,
                  first_name: first_name,
                  last_name: last_name,
                  swiss_edu_person_unique_id: swiss_edu_person_unique_id,

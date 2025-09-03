@@ -15,7 +15,6 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
 
   @enforce_keys [
     :switch_edu_id,
-    :email,
     :first_name,
     :last_name,
     :swiss_edu_person_unique_id,
@@ -26,7 +25,6 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
   ]
   defstruct [
     :switch_edu_id,
-    :email,
     :first_name,
     :last_name,
     :swiss_edu_person_unique_id,
@@ -38,7 +36,6 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
 
   @type t :: %__MODULE__{
           switch_edu_id: UUID.t(),
-          email: String.t(),
           first_name: String.t() | nil,
           last_name: String.t() | nil,
           swiss_edu_person_unique_id: String.t(),
@@ -52,7 +49,6 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
   def new(switch_edu_id, session, client_metadata) do
     %SwitchEduId{
       id: switch_edu_id_id,
-      email: email,
       first_name: first_name,
       last_name: last_name,
       swiss_edu_person_unique_id: swiss_edu_person_unique_id
@@ -70,7 +66,6 @@ defmodule ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId do
 
     %__MODULE__{
       switch_edu_id: switch_edu_id_id,
-      email: email,
       first_name: first_name,
       last_name: last_name,
       swiss_edu_person_unique_id: swiss_edu_person_unique_id,

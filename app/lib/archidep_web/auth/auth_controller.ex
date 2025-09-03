@@ -99,7 +99,6 @@ defmodule ArchiDepWeb.Auth.AuthController do
                 raw_info: %{
                   userinfo:
                     %{
-                      "email" => email,
                       "swissEduPersonUniqueID" => swiss_edu_person_unique_id
                     } = userinfo
                 }
@@ -109,12 +108,13 @@ defmodule ArchiDepWeb.Auth.AuthController do
         } = conn,
         _params
       ) do
-    Logger.info("Switch edu-ID login for #{email} (#{swiss_edu_person_unique_id})")
+    full_name = switch_edu_id_full_name(userinfo)
+    Logger.info("Switch edu-ID login for #{full_name} (#{swiss_edu_person_unique_id})")
 
     case Accounts.log_in_or_register_with_switch_edu_id(
            %{
              swiss_edu_person_unique_id: swiss_edu_person_unique_id,
-             email: email,
+             emails: collect_switch_edu_id_emails(userinfo),
              first_name: Map.get(userinfo, "given_name"),
              last_name: Map.get(userinfo, "family_name")
            },
@@ -136,4 +136,34 @@ defmodule ArchiDepWeb.Auth.AuthController do
         |> redirect(to: "/login")
     end
   end
+
+  defp switch_edu_id_full_name(userinfo) do
+    case [Map.get(userinfo, "given_name"), Map.get(userinfo, "family_name")] do
+      [nil, nil] -> "<unknown>"
+      names -> names |> Enum.filter(&is_binary/1) |> Enum.join(" ")
+    end
+  end
+
+  defp collect_switch_edu_id_emails(user_info),
+    do:
+      Enum.reduce(
+        [
+          switch_edu_id_main_email(user_info)
+          | switch_edu_id_affiliation_emails(user_info)
+        ],
+        MapSet.new(),
+        fn
+          email, acc when is_binary(email) -> MapSet.put(acc, email)
+          _invalid_email, acc -> acc
+        end
+      )
+
+  defp switch_edu_id_main_email(%{"email" => email}) when is_binary(email), do: email
+  defp switch_edu_id_main_email(_userinfo), do: nil
+
+  defp switch_edu_id_affiliation_emails(%{"swissEduIDLinkedAffiliationMail" => emails})
+       when is_list(emails),
+       do: emails
+
+  defp switch_edu_id_affiliation_emails(_userinfo), do: []
 end

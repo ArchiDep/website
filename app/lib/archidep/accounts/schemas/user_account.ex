@@ -142,7 +142,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       %{
         username:
           String.slice(
-            switch_edu_id.first_name || String.replace(switch_edu_id.email, ~r/@.*/, ""),
+            switch_edu_id.first_name || switch_edu_id.swiss_edu_person_unique_id,
             0,
             @max_username_length
           ),
@@ -177,7 +177,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       %{
         username:
           String.slice(
-            switch_edu_id.first_name || String.replace(switch_edu_id.email, ~r/@.*/, ""),
+            switch_edu_id.first_name || switch_edu_id.swiss_edu_person_unique_id,
             0,
             @max_username_length
           ),
