@@ -486,6 +486,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         {port, %Req.TransportError{reason: :econnrefused}} ->
           {port, gettext("connection refused"), nil}
 
+        {port, %Req.TransportError{reason: :timeout}} ->
+          {port, gettext("connection timeout"), nil}
+
         {port, unexpected_reason} ->
           {port, gettext("error"), unexpected_reason}
       end)
