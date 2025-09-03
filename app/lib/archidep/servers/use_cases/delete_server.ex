@@ -36,12 +36,11 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
   @spec delete_server(Authentication.t(), Server.t()) :: :ok
   def delete_server(auth, server) when is_struct(server, Server) do
     now = DateTime.utc_now()
-    owner = ServerOwner.fetch_authenticated(auth)
 
     case Multi.new()
          |> Multi.delete(:server, server)
          |> Multi.delete(:expected_properties, server.expected_properties)
-         |> Multi.merge(&decrease_active_server_count(owner, &1.server))
+         |> Multi.merge(&decrease_active_server_count(server.owner, &1.server))
          |> Multi.insert(:stored_event, &server_deleted(auth, &1.server, now))
          |> Repo.transaction() do
       {:ok, _changes} ->

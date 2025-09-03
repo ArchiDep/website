@@ -57,7 +57,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
 
     case Multi.new()
          |> Multi.update(:server, update_server_changeset(auth, server, data, owner))
-         |> Multi.merge(&update_active_server_count(owner, server.active, &1.server))
+         |> Multi.merge(&update_active_server_count(server.owner, server.active, &1.server))
          |> Multi.insert(:stored_event, &server_updated(auth, &1.server))
          |> Repo.transaction() do
       {:ok, %{server: updated_server}} ->
