@@ -787,10 +787,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
              connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
            server: %Server{username: username} = server,
            username: username,
-           ansible_playbook:
-             {%AnsiblePlaybookRun{id: run_id, playbook: "setup", state: :succeeded}, _task}
+           ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task}
          } = state,
-         %AnsiblePlaybookRun{id: run_id}
+         %AnsiblePlaybookRun{id: run_id, playbook: "setup", state: :succeeded}
        ),
        do:
          state
