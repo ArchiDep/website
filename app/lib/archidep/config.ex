@@ -6,6 +6,7 @@ defmodule ArchiDep.Config do
   application values.
   """
 
+  import Bitwise
   alias ArchiDep.Config.ConfigValue
   alias ArchiDep.Repo
   require Logger
@@ -274,16 +275,20 @@ defmodule ArchiDep.Config do
   defp validate_ssh_private_key_file(path) do
     case File.stat(path) do
       {:ok, stat} ->
-        case {Path.basename(path), stat.type, stat.access} do
-          {"id_" <> type, :regular, permission}
+        case {Path.basename(path), stat.type, stat.access, stat.mode &&& 0o077} do
+          {"id_" <> type, :regular, permission, 0}
           when type in @supported_ssh_key_types and permission in [:read, :read_write] ->
             {:ok, path}
 
-          {"id_" <> type, :regular, _any_other_permission}
+          {"id_" <> type, :regular, permission, _any_other_mode}
+          when type in @supported_ssh_key_types and permission in [:read, :read_write] ->
+            {:error, {:ssh_private_key_file, :too_permissive, path}}
+
+          {"id_" <> type, :regular, _any_other_permission, _mode}
           when type in @supported_ssh_key_types ->
             {:error, {:ssh_private_key_file, :not_readable, path}}
 
-          {_any_other_name, :regular, _any_permission} ->
+          {_any_other_name, :regular, _any_permission, _mode} ->
             {:error, {:ssh_private_key_file, :unsupported_type, path}}
 
           _not_a_directory ->
