@@ -55,9 +55,11 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   def update_server(auth, server, data) when is_struct(server, Server) do
     owner = ServerOwner.fetch_authenticated(auth)
 
+    {:ok, fresh_server_owner} = ServerOwner.fetch_server_owner(server.owner_id)
+
     case Multi.new()
          |> Multi.update(:server, update_server_changeset(auth, server, data, owner))
-         |> Multi.merge(&update_active_server_count(server.owner, server.active, &1.server))
+         |> Multi.merge(&update_active_server_count(fresh_server_owner, server.active, &1.server))
          |> Multi.insert(:stored_event, &server_updated(auth, &1.server))
          |> Repo.transaction() do
       {:ok, %{server: updated_server}} ->

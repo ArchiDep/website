@@ -110,7 +110,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
       |> state_module.init(pipeline)
       |> execute_actions()
 
-    # TODO: watch user account & student for changes
+    # TODO: watch user account & student for changes (also remove superfluous
+    # reloads in update & delete server use cases once done)
     :ok = Course.PubSub.subscribe_class(state.server.group_id)
 
     state
