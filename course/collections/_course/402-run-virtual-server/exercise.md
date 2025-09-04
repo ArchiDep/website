@@ -22,9 +22,7 @@ $> cat ~/.ssh/id_e25519.pub
 ```
 
 {% note type: tip %}
-
 If you have an older SSH client, you may want to try displaying the contents of `~/.ssh/id_rsa.pub` instead.
-
 {% endnote %}
 
 ## :exclamation: Launch a virtual server
@@ -55,7 +53,6 @@ Once you have your Azure account, you can launch the virtual server you will be 
 
 {% callout %}
 **MAKE SURE TO SELECT THE `Ubuntu 24.04` IMAGE AND THE `B1s` SIZE.** If you select a VM size that is too expensive, **YOU WILL RUN OUT OF FREE CREDITS BEFORE THE END OF THE COURSE** You will then have pay 💸 for a new VM and will have to reinstall your VM from scratch (including all deployment exercises you may already have completed).
-
 {% endcallout %}
 
 {% note type: troubleshooting %}
@@ -72,9 +69,7 @@ If you cannot select the `B1s` size, try selecting another availability zone (or
 {% endnote %}
 
 {% note type: tip %}
-
 Any region will do. Closer to where you are (or where your customers are) will reduce latency, and the North/West European regions are among the cheapest.
-
 {% endnote %}
 
 {% cols %}
@@ -90,15 +85,11 @@ Any region will do. Closer to where you are (or where your customers are) will r
 - Select **SSH public key** authentication, set the source to Use existing public key, and paste your public SSH key (the one you copied earlier) in the text area.
 
 {% note type: warning %}
-
 **Your Unix username MUST NOT** contain spaces, accented characters (e.g. é), hyphens (-) or dots (.). If you use the same name later in the course as a subdomain, it **MUST NOT** contain any underscores (\_). We suggest you choose a name that starts with a letter (a-z) and contains only alphanumeric characters (a-z and 0-9).
-
 {% endnote %}
 
 {% note type: tip %}
-
 Choose a username that is simple to type because you will need to type it often. If necessary, you can [change it later][sysadmin-cheatsheet-change-username].
-
 {% endnote %}
 
 {% cols %}
@@ -142,7 +133,6 @@ Choose a username that is simple to type because you will need to type it often.
 
 {% callout type: more, id: azure-firewall %}
 What you are doing here is configuring the Azure firewall to allow incoming traffic to your virtual server on specific ports. If you do not do this, it will not be reachable from outside the Azure network. For example, for a web application running on your virtual server to be reachable, ports 80 (HTTP) and 443 (HTTPS) must accept incoming requests. Port 22 is for SSH connections. Ports 3000 and 3001 will be used in various exercises.
-
 {% endcallout %}
 
 - Keep the default **Management, Monitoring, Advanced** and **Tags** settings.
@@ -233,7 +223,6 @@ Your machine's public key fingerprints are in the `message` property, separated
 by encoded new lines (`\n`).
 
 {% callout type: more, id: azure-fingerprint %}
-
 You can skip this step if you consider the risk and impact of an attack low enough.
 Understand that if you simply answer "yes" when the SSH client warns you, you
 are exposing yourself to a potential man-in-the-middle attack. In all
@@ -245,7 +234,6 @@ your credentials should not be compromised (you will not send a password and
 your private key will not leave your computer). However, anything you do on
 that server could potentially be read and modified by an attacker if he
 manages to intercept the initial connection.
-
 {% endcallout %}
 
 ## :exclamation: Configure your virtual server
@@ -269,6 +257,20 @@ you gave your public SSH key to Azure when creating your virtual server. It
 was automatically put in your user's `~/.ssh/authorized_keys` file when the
 server was launched, which allows you to authenticate using your private SSH
 key.
+{% endcallout %}
+
+### :exclamation: Give the teacher access to your virtual machine
+
+Once you are connected, run the following command to give the teacher access to
+your virtual machine (be sure to copy the whole line and to replace `jde` with
+your username):
+
+```bash
+$> echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB1TC4ygWjzpRemdOyrtqQYmOARxMMks71fUduU1Og+i archidep" | sudo tee --append /home/jde/.ssh/authorized_keys
+```
+
+{% callout type: more, id: teacher-access %}
+This adds the teacher's public SSH key to your user's `~/.ssh/authorized_keys`, allowing the teacher to also authenticate to your virtual server with his private SSH key to help debug issues.
 {% endcallout %}
 
 ### :exclamation: Change the hostname of your virtual machine
@@ -297,7 +299,6 @@ $> echo "jde.archidep.ch" | sudo tee /etc/hostname
 The hostname is the name of your virtual server. It can be any URL. It often identifies a machine in an organization with the format `<machine-name>.<organization>.<tld>` (e.g. `unix-box.google.com`).
 
 For the purposes of this course, we will be using the `archidep.ch` domain, so it makes sense to use a subdomain corresponding to yourself (`jde.archidep.ch`) as the hostname.
-
 {% endcallout %}
 
 ### :exclamation: Reboot the server
@@ -328,7 +329,6 @@ solve this issue.
 
 {% note type: more %}
 Swap space in Linux is used when there is no more available physical memory (RAM). If the system needs more memory resources and the RAM is full, inactive pages in memory are moved to the swap space (on disk).
-
 {% endnote %}
 
 Adding 2 gigabytes of swap space should be enough for our purposes.
@@ -382,7 +382,6 @@ UUID=0BC7-0000  /boot/efi       vfat    umask=0077      0 1
 :warning: :warning: :warning: **WARNING: BE VERY CAREFUL TO EXECUTE THE
 FOLLOWING COMMAND EXACTLY AS IS.** _(Corrupting your `/etc/fstab` file can
 prevent your server from rebooting.)_ :warning: :warning: :warning:
-
 {% endcallout %}
 
 To make the swap space permanent, execute the following command to add the
@@ -467,12 +466,10 @@ generate a new one with enough bits:
     ssh-keygen -m PEM -t rsa -b 4096
 
 {% callout type: warning %}
-
 **ATTENTION!** If you already have an RSA key, this command will ask
 you if you want to overwrite it with the new one. If you do, the old key will be
 **PERMANENTLY LOST**. (You will need to put your public key on GitHub again and
 everywhere else you may have used it.)
-
 {% endcallout %}
 
 [Azure-cli]: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
