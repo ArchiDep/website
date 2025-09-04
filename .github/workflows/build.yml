@@ -97,6 +97,10 @@ jobs:
         run: mix assets.deploy
         working-directory: app
 
+      - name: Fix test private key permissions
+        run: chmod 600 test/priv/ssh/id_ed25519
+        working-directory: app
+
       - name: Run automated tests & measure code coverage
         run: mix coveralls.html --raise
         working-directory: app
