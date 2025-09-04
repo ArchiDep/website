@@ -216,7 +216,7 @@ ENV ARCHIDEP_UID=42000 \
     LC_ALL=en_US.UTF-8 \
     MIX_ENV=prod
 
-RUN apk add --no-cache ca-certificates libstdc++ musl-locales ncurses openssl shadow tzdata && \
+RUN apk add --no-cache ansible ca-certificates libstdc++ musl-locales ncurses openssl shadow tzdata && \
     # Install gosu
     set -eux && \
     apk add --no-cache --virtual .gosu-deps \
