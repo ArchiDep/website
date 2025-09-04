@@ -44,9 +44,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              )
 
     auth
-    |> assert_auth("foobar", true)
-    |> assert_registered_event(metadata, "foobar", switch_edu_id_login_data)
-    |> assert_user_session(auth, "foobar", true)
+    |> assert_auth("root@archidep.ch", true)
+    |> assert_registered_event(metadata, "root@archidep.ch", switch_edu_id_login_data)
+    |> assert_user_session(auth, "root@archidep.ch", true)
   end
 
   test "register a new student user account with Switch edu-ID", %{
@@ -78,14 +78,14 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              )
 
     auth
-    |> assert_auth("bob", false)
+    |> assert_auth(nil, false)
     |> assert_registered_event(
       metadata,
-      "bob",
+      nil,
       switch_edu_id_login_data,
       student
     )
-    |> assert_user_session(auth, "bob", false, student)
+    |> assert_user_session(auth, nil, false, student)
   end
 
   test "an unknown user cannot register even if their Switch edu-ID account is valid", %{

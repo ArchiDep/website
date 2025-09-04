@@ -148,8 +148,9 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     # If the user account does not exist but one of the emails of the Switch
     # edu-ID account has been configured as a root user, create a new root user
     # account.
-    if configured_root_user?(data) do
-      {:ok, {:new_root, UserAccount.new_root_switch_edu_id_account(switch_edu_id), nil}}
+    if matched_id = configured_root_user_identifier(data) do
+      {:ok,
+       {:new_root, UserAccount.new_root_switch_edu_id_account(switch_edu_id, matched_id), nil}}
     else
       # Otherwise check whether there is a preregistered user for that
       # email...
@@ -214,14 +215,20 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     end
   end
 
-  defp configured_root_user?(%{
+  defp configured_root_user_identifier(%{
          swiss_edu_person_unique_id: swiss_edu_person_unique_id,
          emails: emails
        }) do
     known_root_users = root_users()
 
-    Enum.member?(known_root_users, swiss_edu_person_unique_id) ||
-      Enum.any?(emails, &Enum.member?(known_root_users, &1))
+    if Enum.member?(known_root_users, swiss_edu_person_unique_id) do
+      swiss_edu_person_unique_id
+    else
+      case Enum.find(emails, &Enum.member?(known_root_users, &1)) do
+        nil -> nil
+        matched_email -> matched_email
+      end
+    end
   end
 
   defp root_users,

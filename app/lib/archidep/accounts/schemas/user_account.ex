@@ -27,7 +27,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
-          username: String.t(),
+          username: String.t() | nil,
           root: boolean(),
           active: boolean(),
           switch_edu_id: SwitchEduId.t() | NotLoaded.t(),
@@ -38,8 +38,6 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
           created_at: DateTime.t(),
           updated_at: DateTime.t()
         }
-
-  @max_username_length 25
 
   schema "user_accounts" do
     field(:username, :string)
@@ -132,26 +130,15 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
         )
       )
 
-  @spec new_root_switch_edu_id_account(SwitchEduId.t()) :: Changeset.t(t())
-  def new_root_switch_edu_id_account(switch_edu_id) do
+  @spec new_root_switch_edu_id_account(SwitchEduId.t(), String.t()) :: Changeset.t(t())
+  def new_root_switch_edu_id_account(switch_edu_id, matched_identifier) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
     %__MODULE__{}
     |> cast(
-      %{
-        username:
-          String.slice(
-            switch_edu_id.first_name || switch_edu_id.swiss_edu_person_unique_id,
-            0,
-            @max_username_length
-          ),
-        root: true
-      },
-      [
-        :username,
-        :root
-      ]
+      %{username: matched_identifier, root: true},
+      [:username, :root]
     )
     |> change(
       id: id,
@@ -174,19 +161,8 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
     %__MODULE__{}
     |> cast(
-      %{
-        username:
-          String.slice(
-            switch_edu_id.first_name || switch_edu_id.swiss_edu_person_unique_id,
-            0,
-            @max_username_length
-          ),
-        root: false
-      },
-      [
-        :username,
-        :root
-      ]
+      %{username: nil, root: false},
+      [:username, :root]
     )
     |> change(
       id: id,
@@ -227,15 +203,12 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   defp validate(changeset),
     do:
       changeset
-      |> update_change(:username, &trim/1)
+      |> update_change(:username, &trim_to_nil/1)
       |> validate_required([
         :id,
-        :username,
         :root,
         :version,
         :created_at,
         :updated_at
       ])
-      |> validate_length(:username, max: @max_username_length)
-      |> unique_constraint(:username, name: :user_accounts_unique_username_index)
 end

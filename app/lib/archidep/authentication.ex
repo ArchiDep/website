@@ -28,7 +28,7 @@ defmodule ArchiDep.Authentication do
 
   @type t :: %__MODULE__{
           principal_id: UUID.t(),
-          username: String.t(),
+          username: String.t() | nil,
           root: boolean(),
           session_id: UUID.t(),
           session_token: String.t(),
@@ -36,7 +36,7 @@ defmodule ArchiDep.Authentication do
           impersonated_id: UUID.t() | nil
         }
 
-  @spec username(t()) :: String.t()
+  @spec username(t()) :: String.t() | nil
   def username(%__MODULE__{username: username}), do: username
 
   @spec root?(t()) :: boolean
