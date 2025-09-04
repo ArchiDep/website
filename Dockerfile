@@ -208,23 +208,52 @@ FROM elixir:1.18.4-otp-28-alpine AS app
 
 WORKDIR /archidep
 
-RUN apk add --no-cache ca-certificates libstdc++ musl-locales ncurses openssl tzdata
-
-ENV LANG=en_US.UTF-8 \
+ENV ARCHIDEP_UID=42000 \
+    ARCHIDEP_GID=42000 \
+    GOSU_VERSION=1.17 \
+    LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8 \
     MIX_ENV=prod
 
-RUN addgroup -S archidep && \
-    adduser -D -G archidep -H -h /home/archidep -S archidep && \
+RUN apk add --no-cache ca-certificates libstdc++ musl-locales ncurses openssl shadow tzdata && \
+    # Install gosu
+    set -eux && \
+    apk add --no-cache --virtual .gosu-deps \
+      dpkg \
+      gnupg \
+    && \
+    \
+    # Download gosu
+    dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
+    wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
+    wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc"; \
+    \
+    # Verify gosu signature
+    export GNUPGHOME="$(mktemp -d)"; \
+    gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4; \
+    gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \
+    gpgconf --kill all; \
+    rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
+    \
+    # Clean up fetch dependencies
+    apk del --no-network .gosu-deps; \
+    \
+    chmod +x /usr/local/bin/gosu; \
+    # Berify that the gosu binary works
+    gosu --version; \
+    gosu nobody true && \
+    # Create application user and group
+    addgroup -g 42000 -S archidep && \
+    adduser -D -G archidep -H -h /home/archidep -S -u 42000 archidep && \
     mkdir -p /etc/archidep/ssh /home/archidep /var/lib/archidep/uploads && \
     chown -R archidep:archidep /archidep /home/archidep /etc/archidep /var/lib/archidep && \
-    chmod 700 /archidep /etc/archidep /var/lib/archidep
+    chmod 700 /archidep /etc/archidep /home/archidep /var/lib/archidep
 
 COPY --chown=archidep:archidep --from=release /usr/src/app/_build/prod/rel/archidep ./
+COPY ./docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-USER archidep:archidep
-
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/archidep/bin/server"]
 
 EXPOSE 42000
