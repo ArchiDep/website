@@ -44,7 +44,7 @@ defmodule ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId do
           last_name: String.t() | nil,
           swiss_edu_person_unique_id: String.t(),
           user_account_id: UUID.t(),
-          username: String.t(),
+          username: String.t() | nil,
           session_id: UUID.t(),
           client_ip_address: String.t() | nil,
           client_user_agent: String.t() | nil,
