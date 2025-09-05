@@ -15,7 +15,11 @@ h6 {
 }
 
 .prose {
-  h2, h3, h4, h5, h6 {
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply pb-1 border-b border-black/10 dark:border-white/10;
   }
 }
