@@ -7,9 +7,13 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
   alias ArchiDepWeb.Admin.AdminClassServersLive
+  alias Ecto.UUID
 
+  @spec real_time_states_for(list(Server.t()), %{optional(UUID.t()) => ServerRealTimeState.t()}) ::
+          %{optional(UUID.t()) => ServerRealTimeState.t()}
   def real_time_states_for(class_servers, server_state_map),
     do:
       class_servers
@@ -45,7 +49,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       |> Task.await_many()
       |> Enum.into(%{})
 
-    all_servers = Map.values(servers_by_class_id) |> List.flatten()
+    all_servers = servers_by_class_id |> Map.values() |> List.flatten()
 
     tracker =
       if connected?(socket) do

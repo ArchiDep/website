@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.AdminClassServersLive do
 
   import ArchiDepWeb.Servers.ServerComponents
   alias ArchiDep.Course.Schemas.Class
+  alias Phoenix.LiveView.JS
 
   @spec id(Class.t()) :: String.t()
   def id(class), do: "admin-class-#{class.id}-servers"

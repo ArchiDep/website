@@ -1,12 +1,14 @@
 <div>
-  <h2>{@class.name} Class</h2>
+  <h2 class="text-xl mb-4">Servers for {@class.name}</h2>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
     <.admin_server_card
       :for={server <- @servers}
+      class="cursor-pointer"
       auth={@auth}
       server={server}
       state={Map.get(@server_state_map, server.id)}
+      on_click={JS.navigate(~p"/admin/servers/#{server.id}")}
     />
   </div>
 </div>

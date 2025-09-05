@@ -137,6 +137,14 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         assigns.server
       )
 
+    short_status =
+      server_card_short_status(
+        state && state.connection_state,
+        state && state.current_job,
+        assigns.auth,
+        assigns.server
+      )
+
     filtered_problems = filter_problems(state)
     card_class = server_card_class(state && state.connection_state, filtered_problems)
 
@@ -144,6 +152,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       assigns
       |> assign(:card_classes, [card_class, assigns.class])
       |> assign(:body, body)
+      |> assign(:short_status, short_status)
       |> assign(:connected, state != nil and connected?(state.connection_state))
       |> assign(:connecting_or_reconnecting, server_connecting_or_reconnecting?(state))
       |> assign(:busy, state != nil and state.current_job != nil)
@@ -154,17 +163,26 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         <div class="card-title flex flex-wrap justify-between">
           <h2 class="flex items-center gap-x-2">
             <Heroicons.server solid class="size-4" />
-            {server_owner_name(@server)}
+            <span class="tooltip">
+              <div class="tooltip-content font-mono">
+                {Server.default_name(@server)}
+              </div>
+              {server_owner_name(@server)}
+            </span>
           </h2>
-        </div>
-        <div class="flex items-center gap-x-2">
-          <Heroicons.bolt :if={!@busy and (@connected or @connecting_or_reconnecting)} class="size-4" />
-          <Heroicons.bolt_slash
-            :if={!@busy and !@connected and !@connecting_or_reconnecting}
-            class="size-4"
-          />
-          <Heroicons.arrow_path :if={@busy} class="size-4 animate-spin" />
-          <span>{@body}</span>
+          <div class="tooltip flex items-center gap-2 font-normal">
+            {@short_status}
+            <Heroicons.bolt
+              :if={!@busy and (@connected or @connecting_or_reconnecting)}
+              class="size-4"
+            />
+            <Heroicons.bolt_slash
+              :if={!@busy and !@connected and !@connecting_or_reconnecting}
+              class="size-4"
+            />
+            <Heroicons.arrow_path :if={@busy} class="size-4 animate-spin" />
+            <div class="tooltip-content">{@body}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -287,6 +305,62 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   defp server_card_body(disconnected_state(), _current_job, _auth, _server),
     do: gettext("The connection to the server was lost.")
+
+  defp server_card_short_status(nil, _current_job, _auth, _server),
+    do: gettext("n/a")
+
+  defp server_card_short_status(not_connected_state(), _current_job, _auth, _server),
+    do: gettext("n/a")
+
+  defp server_card_short_status(connecting_state(), _current_job, _auth, _server),
+    do: gettext("connecting")
+
+  defp server_card_short_status(
+         retry_connecting_state(
+           retrying: %{retry: retry, time: time, in_seconds: in_seconds, reason: reason}
+         ),
+         _current_job,
+         auth,
+         server
+       ),
+       do:
+         retry_connecting_short(%{
+           auth: auth,
+           server: server,
+           retry: retry,
+           time: time,
+           in_seconds: in_seconds,
+           reason: reason
+         })
+
+  defp server_card_short_status(connected_state(), :checking_access, _auth, _server),
+    do: gettext("sudo")
+
+  defp server_card_short_status(connected_state(), :gathering_facts, _auth, _server),
+    do: gettext("facts")
+
+  defp server_card_short_status(connected_state(), :checking_open_ports, _auth, _server),
+    do: gettext("ports")
+
+  defp server_card_short_status(
+         connected_state(),
+         {:running_playbook, playbook, _run_id, _ongoing_task},
+         _auth,
+         _server
+       ),
+       do: playbook
+
+  defp server_card_short_status(connected_state(), nil, _auth, _server),
+    do: gettext("connected")
+
+  defp server_card_short_status(reconnecting_state(), _current_job, _auth, _server),
+    do: gettext("reconnecting")
+
+  defp server_card_short_status(connection_failed_state(), _current_job, _auth, _server),
+    do: gettext("conn. failed")
+
+  defp server_card_short_status(disconnected_state(), _current_job, _auth, _server),
+    do: gettext("conn. lost")
 
   defp server_card_retry_text(retry_connecting_state()), do: gettext("Retry now")
   defp server_card_retry_text(connection_failed_state()), do: gettext("Retry connecting")
@@ -790,6 +864,43 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     </span>
     <%= if root?(@auth) do %>
       ({gettext("attempt #\{count\}", count: @retry + 1)})
+    <% end %>
+    """
+  end
+
+  defp retry_connecting_short(assigns) do
+    id = "server-#{assigns.server.id}-retry-connecting-short"
+
+    end_time = DateTime.add(assigns.time, assigns.in_seconds, :second)
+
+    remaining_seconds =
+      max(
+        0,
+        DateTime.diff(
+          end_time,
+          DateTime.utc_now(),
+          :second
+        )
+      )
+
+    assigns =
+      assigns
+      |> Map.put(:id, id)
+      |> Map.put(:end_time, end_time)
+      |> Map.put(:remaining_seconds, remaining_seconds)
+
+    ~H"""
+    <span
+      id={@id}
+      data-end-time={DateTime.to_iso8601(@end_time)}
+      data-template={gettext("retry '{seconds}'s")}
+      data-template-done={gettext("retry soon")}
+      phx-hook="remainingSeconds"
+    >
+      {gettext("retry {count}s", count: @remaining_seconds)}
+    </span>
+    <%= if root?(@auth) do %>
+      ({gettext("#\{count\}", count: @retry + 1)})
     <% end %>
     """
   end

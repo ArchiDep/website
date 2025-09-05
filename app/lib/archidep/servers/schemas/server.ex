@@ -82,8 +82,12 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def name_or_default(%__MODULE__{name: name}), do: name
 
   @spec default_name(t()) :: String.t()
-  def default_name(%__MODULE__{ip_address: ip_address, username: username}),
-    do: "#{username}@#{:inet.ntoa(ip_address.address)}"
+  def default_name(%__MODULE__{ip_address: ip_address, username: username, ssh_port: ssh_port})
+      when is_nil(ssh_port) or ssh_port == 22,
+      do: "#{username}@#{:inet.ntoa(ip_address.address)}"
+
+  def default_name(%__MODULE__{ip_address: ip_address, username: username, ssh_port: ssh_port}),
+    do: "#{username}@#{:inet.ntoa(ip_address.address)}:#{ssh_port}"
 
   @spec list_active_servers(DateTime.t()) :: list(t())
   def list_active_servers(now) do

@@ -43,7 +43,13 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   end
 
   @impl LiveView
-  def handle_params(_params, _url, socket), do: noreply(socket)
+  def handle_params(_params, url, socket) do
+    uri = URI.parse(url)
+
+    socket
+    |> assign(admin_ui: String.starts_with?(uri.path, "/admin"))
+    |> noreply()
+  end
 
   @impl LiveView
   def handle_event(

@@ -1,6 +1,12 @@
 <div class="breadcrumbs text-xs">
   <ul>
-    <li>
+    <li :if={@admin_ui} class="text-error">
+      <.link class="flex items-center gap-1" navigate={~p"/admin"}>
+        <Heroicons.fire outline class="size-4" />
+        <span>{gettext("Admin")}</span>
+      </.link>
+    </li>
+    <li :if={not @admin_ui}>
       <.link class="flex items-center gap-1" navigate={~p"/app"}>
         <Heroicons.cube solid class="size-4" />
         <span>{gettext("Dashboard")}</span>
