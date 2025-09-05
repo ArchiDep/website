@@ -8,7 +8,9 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
+  alias ArchiDep.Servers.SSH
   alias ArchiDepWeb.Admin.AdminClassServersLive
   alias Ecto.UUID
 
@@ -21,6 +23,15 @@ defmodule ArchiDepWeb.Admin.AdminLive do
         {server.id, Map.get(server_state_map, server.id)}
       end)
       |> Enum.into(%{})
+
+  @spec count_connected(%{optional(UUID.t()) => ServerRealTimeState.t()}) :: non_neg_integer()
+  def count_connected(server_state_map),
+    do:
+      server_state_map
+      |> Map.values()
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(& &1.connection_state)
+      |> Enum.count(&ServerConnectionState.connected?/1)
 
   @impl LiveView
   def mount(_params, _session, socket) do
@@ -62,7 +73,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       active_classes: active_classes,
       servers_by_class_id: servers_by_class_id,
       server_state_map: ServerTracker.server_state_map(all_servers),
-      server_tracker: tracker
+      server_tracker: tracker,
+      ssh_public_key: SSH.ssh_public_key()
     )
     |> ok()
   end

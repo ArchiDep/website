@@ -24,6 +24,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
+  alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UseCases.DeleteServer
   alias ArchiDep.Servers.UseCases.UpdateServer
@@ -1340,7 +1341,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     Tracker.track_playbook!(playbook, server, username, %{
       "api_base_url" => api_base_url(),
       "app_user_name" => server.app_username,
-      "app_user_authorized_key" => ssh_public_key(),
+      "app_user_authorized_key" => SSH.ssh_public_key(),
       "server_id" => server.id,
       "server_token" => token
     })
@@ -1478,7 +1479,4 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp api_base_url,
     do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:api_base_url)
-
-  defp ssh_public_key,
-    do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:ssh_public_key)
 end
