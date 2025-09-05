@@ -1,6 +1,15 @@
 <h1>{gettext("Admin")}</h1>
 <ul>
   <li :for={class <- @active_classes}>
-    {class.name}
+    <.live_component
+      module={AdminClassServersLive}
+      id={AdminClassServersLive.id(class)}
+      auth={@auth}
+      class={class}
+      servers={Map.get(@servers_by_class_id, class.id, [])}
+      server_state_map={
+        @servers_by_class_id |> Map.fetch!(class.id) |> real_time_states_for(@server_state_map)
+      }
+    />
   </li>
 </ul>

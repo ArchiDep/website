@@ -7,6 +7,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   import ArchiDepWeb.Helpers.AuthHelpers
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias Phoenix.LiveView.JS
 
@@ -110,6 +112,59 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           >
             {@retry_text}
           </button>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :auth, Authentication, doc: "the authentication context"
+  attr :server, Server, doc: "the server to display"
+  attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
+  attr :class, :string, doc: "extra CSS classes to apply to the card", default: nil
+
+  attr :on_click, JS, doc: "JS command to execute when clicking the card", default: nil
+
+  @spec admin_server_card(map()) :: Rendered.t()
+  def admin_server_card(assigns) do
+    state = assigns.state
+
+    body =
+      server_card_body(
+        state && state.connection_state,
+        state && state.current_job,
+        assigns.auth,
+        assigns.server
+      )
+
+    filtered_problems = filter_problems(state)
+    card_class = server_card_class(state && state.connection_state, filtered_problems)
+
+    assigns =
+      assigns
+      |> assign(:card_classes, [card_class, assigns.class])
+      |> assign(:body, body)
+      |> assign(:connected, state != nil and connected?(state.connection_state))
+      |> assign(:connecting_or_reconnecting, server_connecting_or_reconnecting?(state))
+      |> assign(:busy, state != nil and state.current_job != nil)
+
+    ~H"""
+    <div class={["card card-xs"] ++ @card_classes} phx-click={@on_click}>
+      <div class="card-body">
+        <div class="card-title flex flex-wrap justify-between">
+          <h2 class="flex items-center gap-x-2">
+            <Heroicons.server solid class="size-4" />
+            {server_owner_name(@server)}
+          </h2>
+        </div>
+        <div class="flex items-center gap-x-2">
+          <Heroicons.bolt :if={!@busy and (@connected or @connecting_or_reconnecting)} class="size-4" />
+          <Heroicons.bolt_slash
+            :if={!@busy and !@connected and !@connecting_or_reconnecting}
+            class="size-4"
+          />
+          <Heroicons.arrow_path :if={@busy} class="size-4 animate-spin" />
+          <span>{@body}</span>
         </div>
       </div>
     </div>
@@ -737,5 +792,18 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       ({gettext("attempt #\{count\}", count: @retry + 1)})
     <% end %>
     """
+  end
+
+  defp server_owner_name(server) do
+    case server do
+      %Server{owner: %ServerOwner{group_member: %ServerGroupMember{username: username}}} ->
+        username
+
+      %Server{owner: %ServerOwner{username: username}} when is_binary(username) ->
+        username
+
+      %Server{username: username} ->
+        username
+    end
   end
 end

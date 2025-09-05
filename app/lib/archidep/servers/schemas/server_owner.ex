@@ -16,6 +16,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
+          username: String.t() | nil,
           root: boolean(),
           active: boolean(),
           group_member: ServerGroupMember.t() | nil | NotLoaded.t(),
@@ -30,8 +31,9 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
   @active_server_limit 1
 
   schema "user_accounts" do
-    field(:active, :boolean)
+    field(:username, :string)
     field(:root, :boolean)
+    field(:active, :boolean)
     belongs_to(:group_member, ServerGroupMember, source: :student_id)
     field(:active_server_count, :integer)
     field(:active_server_count_lock, :integer)

@@ -1,0 +1,12 @@
+<div>
+  <h2>{@class.name} Class</h2>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+    <.admin_server_card
+      :for={server <- @servers}
+      auth={@auth}
+      server={server}
+      state={Map.get(@server_state_map, server.id)}
+    />
+  </div>
+</div>

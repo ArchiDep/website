@@ -17,6 +17,7 @@ defmodule ArchiDep.Servers do
   delegate(&Behaviour.list_server_groups/1)
   delegate(&Behaviour.fetch_server_group/2)
   delegate(&Behaviour.watch_server_ids/2)
+  delegate(&Behaviour.list_all_servers_in_group/2)
 
   # Server group members
   delegate(&Behaviour.list_server_group_members/2)

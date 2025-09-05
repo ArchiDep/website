@@ -88,6 +88,14 @@ defmodule ArchiDep.Servers.Behaviour do
   callback(list_my_active_servers(auth: Authentication.t()) :: list(Server.t()))
 
   @doc """
+  Lists all servers in a server group.
+  """
+  callback(
+    list_all_servers_in_group(auth: Authentication.t(), server_group_id: UUID.t()) ::
+      {:ok, list(Server.t())} | {:error, :server_group_not_found}
+  )
+
+  @doc """
   Fetches a server.
   """
   callback(

@@ -11,7 +11,13 @@ h5,
 h6 {
   font-family: 'Fjalla One', 'PT Sans', sans-serif;
   font-weight: 400;
-  @apply dark:text-white font-normal pb-1 border-b border-black/10 dark:border-white/10 print:break-after-avoid;
+  @apply dark:text-white font-normal print:break-after-avoid;
+}
+
+.prose {
+  h2, h3, h4, h5, h6 {
+    @apply pb-1 border-b border-black/10 dark:border-white/10;
+  }
 }
 
 img.emoji {

@@ -63,8 +63,11 @@ defmodule ArchiDepWeb.LiveAuth do
     if socket.assigns[:auth] do
       {:cont, socket}
     else
-      current_path = socket.private.connect_info.request_path
-      query_params = %{to: current_path}
+      query_params =
+        case Map.get(socket.private.connect_info, :request_path) do
+          current_path when is_binary(current_path) -> %{to: current_path}
+          nil -> %{}
+        end
 
       socket
       |> put_notification(Message.new(:error, gettext("You must log in to access this page.")))

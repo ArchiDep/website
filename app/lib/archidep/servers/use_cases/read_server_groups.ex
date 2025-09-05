@@ -65,7 +65,7 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
            authorize(
              auth,
              Policy,
-             :course,
+             :servers,
              :fetch_authenticated_server_group_member,
              server_group_member
            ) do
@@ -74,8 +74,33 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
       {:error, :server_group_member_not_found} ->
         {:error, :not_a_server_group_member}
 
-      {:error, {:access_denied, :course, :fetch_authenticated_server_group_member}} ->
+      {:error, {:access_denied, :servers, :fetch_authenticated_server_group_member}} ->
         {:error, :not_a_server_group_member}
+    end
+  end
+
+  @spec list_all_servers_in_group(Authentication.t(), UUID.t()) ::
+          {:ok, list(Server.t())} | {:error, :server_group_not_found}
+  def list_all_servers_in_group(auth, server_group_id) do
+    with {:ok, group} <- ServerGroup.fetch_server_group(server_group_id),
+         :ok <- authorize(auth, Policy, :servers, :list_all_servers_in_group, group) do
+      {
+        :ok,
+        Repo.all(
+          from s in Server,
+            join: g in assoc(s, :group),
+            join: o in assoc(s, :owner),
+            where: s.group_id == ^server_group_id,
+            order_by: [s.name, s.username, s.ip_address],
+            preload: [group: g, owner: o]
+        )
+      }
+    else
+      {:error, :server_group_not_found} ->
+        {:error, :server_group_not_found}
+
+      {:error, {:access_denied, :servers, :list_all_servers_in_group}} ->
+        {:error, :server_group_not_found}
     end
   end
 

@@ -14,6 +14,7 @@ defmodule ArchiDep.Servers.Context do
   implement(&Behaviour.list_server_groups/1, UseCases.ReadServerGroups)
   implement(&Behaviour.fetch_server_group/2, UseCases.ReadServerGroups)
   implement(&Behaviour.watch_server_ids/2, UseCases.ReadServerGroups)
+  implement(&Behaviour.list_all_servers_in_group/2, UseCases.ReadServerGroups)
 
   # Server group members
   # ====================

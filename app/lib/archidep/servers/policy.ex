@@ -20,7 +20,7 @@ defmodule ArchiDep.Servers.Policy do
 
   # Any user can fetch their authenticated server group member.
   def authorize(
-        :course,
+        :servers,
         :fetch_authenticated_server_group_member,
         %Authentication{},
         _params
