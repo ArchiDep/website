@@ -668,6 +668,46 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
+  test "completed ansible playbooks are ignored when the server is not connected",
+       %{
+         ansible_playbook_completed: ansible_playbook_completed
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    playbook_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :failed,
+        stats_changed: 0,
+        stats_failures: 1,
+        stats_ignored: 2,
+        stats_ok: 3,
+        stats_rescued: 4,
+        stats_skipped: 5,
+        stats_unreachable: 6
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_retry_connecting_state(),
+        server: server,
+        username: server.app_username
+      )
+
+    {result, log} =
+      with_log(fn ->
+        ansible_playbook_completed.(
+          initial_state,
+          playbook_run.id
+        )
+      end)
+
+    assert log =~
+             "Ignoring completed Ansible playbook run #{playbook_run.id} for server #{server.id}"
+
+    assert result == initial_state
+  end
+
   test "previous setup playbook problems are dropped on subsequent failures",
        %{
          ansible_playbook_completed: ansible_playbook_completed

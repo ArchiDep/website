@@ -106,10 +106,10 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
         unreachable: unreachable
       }
 
-  @spec get_pending_run!(UUID.t()) :: t()
-  def get_pending_run!(id),
+  @spec get_pending_run(UUID.t()) :: t() | nil
+  def get_pending_run(id),
     do:
-      Repo.one!(
+      Repo.one(
         from(r in __MODULE__,
           where: r.id == ^id and r.state == :pending,
           join: s in assoc(r, :server),

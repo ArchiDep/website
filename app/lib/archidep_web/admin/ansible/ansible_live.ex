@@ -64,16 +64,23 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
 
     new_meta = Map.get(new_tracked_playbooks, run_id)
 
-    socket
-    |> assign(
-      playbook_runs:
+    new_playbook_runs =
+      if Enum.any?(playbook_runs, &(&1.id === run_id)) do
         Enum.map(playbook_runs, fn
           %AnsiblePlaybookRun{id: ^run_id} = run ->
             %AnsiblePlaybookRun{run | state: new_meta.state, number_of_events: new_meta.events}
 
           other_run ->
             other_run
-        end),
+        end)
+      else
+        new_run = run_id |> AnsiblePlaybookRun.fetch_run() |> unpair_ok()
+        add_new_playbook_run(playbook_runs, new_run)
+      end
+
+    socket
+    |> assign(
+      playbook_runs: new_playbook_runs,
       tracked_playbooks: new_tracked_playbooks
     )
     |> tick()
@@ -175,4 +182,29 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
   defp ansible_playbook_run_state_order(:pending), do: 1
   defp ansible_playbook_run_state_order(:running), do: 2
   defp ansible_playbook_run_state_order(_final_state), do: 3
+
+  defp add_new_playbook_run([], new_run), do: [new_run]
+
+  defp add_new_playbook_run(
+         [%AnsiblePlaybookRun{started_at: most_recent_run_started_at} | _other_runs] =
+           current_runs,
+         %AnsiblePlaybookRun{started_at: new_run_started_at} = new_run
+       )
+       when new_run_started_at > most_recent_run_started_at,
+       do: [new_run | current_runs]
+
+  defp add_new_playbook_run(playbook_runs, new_run),
+    do:
+      playbook_runs
+      |> Enum.reduce({new_run, []}, fn
+        %AnsiblePlaybookRun{started_at: started_at} = existing_run,
+        {%AnsiblePlaybookRun{started_at: new_run_started_at} = run_to_add, acc}
+        when new_run_started_at > started_at ->
+          {nil, [existing_run | [run_to_add | acc]]}
+
+        existing_run, {run_to_add, acc} ->
+          {run_to_add, [existing_run | acc]}
+      end)
+      |> elem(1)
+      |> Enum.reverse()
 end

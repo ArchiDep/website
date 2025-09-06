@@ -782,6 +782,32 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     |> clear_running_ansible_playbook()
   end
 
+  def ansible_playbook_completed(
+        %__MODULE__{
+          connection_state: connected_state(),
+          ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task}
+        } = state,
+        run_id
+      ) do
+    server = state.server
+    Logger.info("Ansible setup playbook completed for server #{server.id}")
+
+    run = AnsiblePlaybookRun.get_completed_run!(run_id)
+
+    state
+    |> add_action(update_tracking_action())
+    |> handle_ansible_playbook_completed(run)
+    |> clear_running_ansible_playbook()
+  end
+
+  def ansible_playbook_completed(state, run_id) do
+    Logger.warning(
+      "Ignoring completed Ansible playbook run #{run_id} for server #{state.server.id}"
+    )
+
+    state
+  end
+
   defp handle_ansible_playbook_completed(
          %__MODULE__{
            connection_state:

@@ -25,14 +25,18 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
 
   @spec process_event(UUID.t()) :: :ok
   def process_event(run_id) do
-    pending_run = AnsiblePlaybookRun.get_pending_run!(run_id)
+    case AnsiblePlaybookRun.get_pending_run(run_id) do
+      nil ->
+        Logger.warning("No pending Ansible playbook run found with ID #{run_id}")
 
-    if ServerManager.online?(pending_run.server) do
-      run_playbook(pending_run)
-    else
-      pending_run
-      |> AnsiblePlaybookRun.interrupt()
-      |> Repo.update!()
+      pending_run ->
+        if ServerManager.online?(pending_run.server) do
+          run_playbook(pending_run)
+        else
+          pending_run
+          |> AnsiblePlaybookRun.interrupt()
+          |> Repo.update!()
+        end
     end
 
     :ok
