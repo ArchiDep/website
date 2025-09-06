@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.Behaviour do
 
   use ArchiDep, :context_behaviour
 
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
@@ -169,4 +170,12 @@ defmodule ArchiDep.Servers.Behaviour do
     notify_server_up(server_id: UUID.t(), token: binary()) ::
       :ok | {:error, :server_not_found}
   )
+
+  # Ansible
+  # =======
+
+  @doc """
+  Fetches all Ansible playbook runs.
+  """
+  callback(fetch_ansible_playbook_runs(auth: Authentication.t()) :: list(AnsiblePlaybookRun.t()))
 end

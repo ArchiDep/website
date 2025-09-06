@@ -1,0 +1,110 @@
+<div class="breadcrumbs text-xs">
+  <ul>
+    <li class="text-error">
+      <.link class="flex items-center gap-1" navigate={~p"/admin"}>
+        <Heroicons.fire outline class="size-4" />
+        <span>{gettext("Admin")}</span>
+      </.link>
+    </li>
+    <li>
+      <span class="flex items-center gap-1 !cursor-default !no-underline">
+        <Heroicons.cog_6_tooth solid class="size-4" />
+        <span>{gettext("Ansible")}</span>
+      </span>
+    </li>
+  </ul>
+</div>
+
+<div class="my-2 flex justify-between items-end">
+  <h2 class="text-2xl font-bold flex items-center gap-x-2">
+    <Heroicons.cog_6_tooth solid class="size-6" />
+    {gettext("Ansible")}
+  </h2>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>{gettext("Playbook")}</th>
+      <th>
+        {gettext("Start")}
+      </th>
+      <th>
+        {gettext("Duration")}
+      </th>
+      <th>
+        {gettext("State")}
+      </th>
+      <th>
+        {gettext("Exit code")}
+      </th>
+      <th>
+        {gettext("Events")}
+      </th>
+      <th>
+        {gettext("Tasks")}
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr :if={Enum.empty?(@playbook_runs)}>
+      <td colspan="1000">
+        <.no_data text={gettext("No Ansible playbook have been run")} />
+      </td>
+    </tr>
+    <tr
+      :for={run <- @playbook_runs}
+      id={"ansible-playbook-run-#{run.id}"}
+      class="hover:bg-base-300 even:bg-base-200 cursor-pointer"
+    >
+      <td class="font-mono">{run.playbook}</td>
+      <td>
+        <span class="tooltip" data-tip={format_date_time(run.started_at)}>
+          {format_time_ago(run.started_at, @now)}
+        </span>
+      </td>
+      <td>
+        {AnsiblePlaybookRun.duration(run, @now)}s
+      </td>
+      <td>
+        <div class="flex items-center gap-2">
+          <%= if run.state == :pending do %>
+            <Heroicons.clock solid class="size-4 text-info" />
+            <span>{gettext("Pending")}</span>
+          <% end %>
+          <%= if run.state == :running do %>
+            <Heroicons.arrow_path solid class="size-4 text-warning animate-spin" />
+            <span>{gettext("Running")}</span>
+          <% end %>
+          <%= if run.state == :succeeded do %>
+            <Heroicons.check_circle solid class="size-4 text-success" />
+            <span>{gettext("Succeeded")}</span>
+          <% end %>
+          <%= if run.state == :failed do %>
+            <Heroicons.exclamation_circle solid class="size-4 text-error" />
+            <span>{gettext("Failed")}</span>
+          <% end %>
+          <%= if run.state == :failed do %>
+            <Heroicons.exclamation_triangle outline class="size-4 text-base-content/50" />
+            <span>{gettext("Interrupted")}</span>
+          <% end %>
+          <%= if run.state == :failed do %>
+            <Heroicons.exclamation_triangle outline class="size-4 text-base-content/50" />
+            <span>{gettext("Timeout")}</span>
+          <% end %>
+        </div>
+      </td>
+      <td>
+        <span class={["font-mono", if(run.exit_code != 0, do: "text-error", else: "text-success")]}>
+          {run.exit_code}
+        </span>
+      </td>
+      <td>
+        {run.number_of_events}
+      </td>
+      <td>
+        <.ansible_playbook_run_stats playbook_run={run} />
+      </td>
+    </tr>
+  </tbody>
+</table>

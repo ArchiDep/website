@@ -20,7 +20,7 @@ defmodule ArchiDep.Helpers.AuthHelpers do
   end
 
   @doc """
-  Authorizes the specified action or raises a `Lair.Errors.UnauthorizedError`
+  Authorizes the specified action or raises a `ArchiDep.Errors.UnauthorizedError`
   error.
   """
   @spec authorize!(Authentication.t(), module, atom, atom, term) :: Authentication.t()

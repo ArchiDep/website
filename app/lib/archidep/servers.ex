@@ -38,4 +38,7 @@ defmodule ArchiDep.Servers do
   delegate(&Behaviour.retry_ansible_playbook/3)
   delegate(&Behaviour.retry_checking_open_ports/2)
   delegate(&Behaviour.notify_server_up/2)
+
+  # Ansible
+  delegate(&Behaviour.fetch_ansible_playbook_runs/1)
 end

@@ -42,4 +42,8 @@ defmodule ArchiDep.Servers.Context do
   implement(&Behaviour.retry_ansible_playbook/3, UseCases.ManageServer)
   implement(&Behaviour.retry_checking_open_ports/2, UseCases.ManageServer)
   implement(&Behaviour.notify_server_up/2, UseCases.ServerCallbacks)
+
+  # Ansible
+  # =======
+  implement(&Behaviour.fetch_ansible_playbook_runs/1, UseCases.ReadAnsible)
 end

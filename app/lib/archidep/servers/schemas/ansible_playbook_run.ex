@@ -80,6 +80,13 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     field(:updated_at, :utc_datetime_usec)
   end
 
+  @spec duration(t(), DateTime.t()) :: non_neg_integer()
+  def duration(%__MODULE__{started_at: started_at, finished_at: nil}, now),
+    do: now |> DateTime.diff(started_at, :second) |> max(0)
+
+  def duration(%__MODULE__{started_at: started_at, finished_at: finished_at}, _now),
+    do: finished_at |> DateTime.diff(started_at, :second) |> max(0)
+
   @spec stats(t()) :: Types.ansible_stats()
   def stats(%__MODULE__{
         stats_changed: changed,
@@ -132,6 +139,17 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
           limit: 1
         )
       )
+
+  @spec fetch_runs() :: list(t())
+  def fetch_runs do
+    Repo.all(
+      from(r in __MODULE__,
+        join: s in assoc(r, :server),
+        order_by: [desc: r.started_at],
+        preload: [server: s]
+      )
+    )
+  end
 
   @spec new_pending(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::
           Changeset.t(t())
