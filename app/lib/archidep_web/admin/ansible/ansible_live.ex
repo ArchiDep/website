@@ -109,60 +109,67 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
       |> tick()
       |> noreply()
 
-  defp tick(
-         %Socket{
-           assigns: %{
-             playbook_runs: playbook_runs,
-             tracked_playbooks: tracked_playbooks,
-             next_tick: next_tick
-           }
-         } =
-           socket
-       ) do
-    new_next_tick =
-      if connected?(socket) and
-           (tracked_playbooks != %{} or
-              Enum.any?(playbook_runs, &(not AnsiblePlaybookRun.done?(&1)))) do
-        in_seconds =
-          if tracked_playbooks != %{} do
-            1
-          else
-            last_run_minutes_ago =
-              playbook_runs
-              |> Enum.filter(&(not AnsiblePlaybookRun.done?(&1)))
-              |> Enum.map(& &1.started_at)
-              |> Enum.max()
-              |> DateTime.diff(DateTime.utc_now(), :second)
-              |> abs()
-              |> div(60)
+  defp tick(socket) do
+    if connected?(socket) do
+      interval = tick_interval(socket)
+      assign(socket, :next_tick, reset_tick(socket, interval))
+    else
+      socket
+    end
+  end
 
-            Logger.debug("Last Ansible playbook run was #{last_run_minutes_ago} minute(s) ago")
+  defp reset_tick(%Socket{assigns: %{next_tick: next_tick}}, in_seconds) do
+    {cancel, schedule} =
+      case {next_tick, in_seconds} do
+        {nil, false} ->
+          {false, false}
 
-            last_run_minutes_ago
-            |> min(1)
-            |> max(60)
-          end
+        {{_old_seconds, old_ref}, false} ->
+          {old_ref, false}
 
-        {previous_seconds, previous_ref} =
-          case next_tick do
-            nil -> {nil, nil}
-            {s, r} -> {s, r}
-          end
+        {nil, _seconds} ->
+          {false, in_seconds}
 
-        if previous_ref == nil or in_seconds < previous_seconds do
-          if previous_ref != nil do
-            Process.cancel_timer(previous_ref)
-          end
+        {{old_seconds, old_ref}, new_seconds} when new_seconds < old_seconds ->
+          {old_ref, new_seconds}
 
-          Logger.debug("Next tick in #{in_seconds} second(s)")
-          ref = Process.send_after(self(), :tick, in_seconds * 1000)
-          {in_seconds, ref}
-        else
-          next_tick
-        end
+        {_previous, _seconds} ->
+          {false, false}
       end
 
-    assign(socket, :next_tick, new_next_tick)
+    if cancel do
+      Process.cancel_timer(cancel)
+    end
+
+    if schedule do
+      Logger.debug("Next tick in #{in_seconds} second(s)")
+      ref = Process.send_after(self(), :tick, in_seconds * 1000)
+      {in_seconds, ref}
+    else
+      next_tick
+    end
+  end
+
+  defp tick_interval(%Socket{assigns: %{tracked_playbooks: tracked_playbooks}})
+       when tracked_playbooks != %{},
+       do: 1
+
+  defp tick_interval(%Socket{assigns: %{playbook_runs: []}}), do: false
+
+  defp tick_interval(%Socket{assigns: %{playbook_runs: [most_recent_run | _other_runs]}}) do
+    last_run_minutes_ago =
+      most_recent_run.started_at
+      |> DateTime.diff(DateTime.utc_now(), :second)
+      |> abs()
+      |> div(60)
+
+    Logger.debug("Last Ansible playbook run was #{last_run_minutes_ago} minute(s) ago")
+
+    case last_run_minutes_ago do
+      n when n < 1 -> 1
+      n when n < 5 -> 30
+      _otherwise -> 60
+    end
   end
 
   defp ansible_playbook_run_state_order(:pending), do: 1

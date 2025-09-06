@@ -142,12 +142,10 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   @spec mark_all_incomplete_as_timed_out(DateTime.t()) :: non_neg_integer()
   def mark_all_incomplete_as_timed_out(now),
     do:
-      Repo.update_all(
-        from(r in __MODULE__,
-          where: r.state in [:pending, :running]
-        ),
-        set: [state: :timeout, finished_at: now, updated_at: now]
+      from(r in __MODULE__,
+        where: r.state in [:pending, :running]
       )
+      |> Repo.update_all(set: [state: :timeout, finished_at: now, updated_at: now])
       |> elem(0)
 
   @spec fetch_runs() :: list(t())
@@ -164,13 +162,12 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   @spec fetch_run(UUID.t()) :: {:ok, t()} | {:error, :ansible_playbook_run_not_found}
   def fetch_run(id),
     do:
-      Repo.one(
-        from(r in __MODULE__,
-          where: r.id == ^id,
-          join: s in assoc(r, :server),
-          preload: [server: s]
-        )
+      from(r in __MODULE__,
+        where: r.id == ^id,
+        join: s in assoc(r, :server),
+        preload: [server: s]
       )
+      |> Repo.one()
       |> truthy_or(:ansible_playbook_run_not_found)
 
   @spec new_pending(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::

@@ -62,7 +62,7 @@ defmodule ArchiDepWeb.Helpers.DateFormatHelpers do
       "5 days ago"
   """
   @spec format_time_ago(DateTime.t(), DateTime.t()) :: String.t()
-  def format_time_ago(date_time, now), do: format_duration(date_time, now, :ago)
+  def format_time_ago(date_time, now), do: format_duration_common(date_time, now, :ago)
 
   @doc """
   Formats the specified date time as a human-readable duration. The duration
@@ -102,9 +102,9 @@ defmodule ArchiDepWeb.Helpers.DateFormatHelpers do
       "14 seconds"
   """
   @spec format_duration(DateTime.t(), DateTime.t()) :: String.t()
-  def format_duration(date_time, now), do: format_duration(now, date_time, :elapsed)
+  def format_duration(date_time, now), do: format_duration_common(now, date_time, :elapsed)
 
-  defp format_duration(date_time, now, type) when type in [:ago, :elapsed] do
+  defp format_duration_common(date_time, now, type) when type in [:ago, :elapsed] do
     seconds = now |> DateTime.diff(date_time, :second) |> max(0)
 
     cond do
