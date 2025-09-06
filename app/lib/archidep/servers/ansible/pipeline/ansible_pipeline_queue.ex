@@ -194,6 +194,10 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   def init(nil) do
     set_process_label(__MODULE__)
     Logger.info("Init Ansible pipeline queue")
+
+    incomplete_runs_nb = AnsiblePlaybookRun.mark_all_incomplete_as_timed_out(DateTime.utc_now())
+    Logger.notice("Marked #{incomplete_runs_nb} incomplete playbook runs as timed out")
+
     {:producer, State.init()}
   end
 

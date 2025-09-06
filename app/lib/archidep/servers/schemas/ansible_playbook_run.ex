@@ -139,6 +139,17 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
         )
       )
 
+  @spec mark_all_incomplete_as_timed_out(DateTime.t()) :: non_neg_integer()
+  def mark_all_incomplete_as_timed_out(now),
+    do:
+      Repo.update_all(
+        from(r in __MODULE__,
+          where: r.state in [:pending, :running]
+        ),
+        set: [state: :timeout, finished_at: now, updated_at: now]
+      )
+      |> elem(0)
+
   @spec fetch_runs() :: list(t())
   def fetch_runs do
     Repo.all(
