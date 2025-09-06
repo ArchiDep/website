@@ -167,6 +167,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         %__MODULE__{connection_state: not_connected_state(), server: server} = state,
         connection_pid
       ) do
+    Logger.debug("Connection idle for server #{server.id}")
+
     if Server.active?(server, DateTime.utc_now()) do
       connect(state, connection_pid, false)
     else
@@ -180,6 +182,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         %__MODULE__{connection_state: disconnected_state(), server: server} = state,
         connection_pid
       ) do
+    Logger.debug("Connection idle for server #{server.id}")
+
     if Server.active?(server, DateTime.utc_now()) do
       retrying = back_off_retrying(false, :disconnected)
 
