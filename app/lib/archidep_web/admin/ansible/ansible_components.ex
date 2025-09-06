@@ -5,6 +5,16 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleComponents do
 
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
 
+  @ansible_stat_types [
+    :changed,
+    :failures,
+    :ignored,
+    :ok,
+    :rescued,
+    :skipped,
+    :unreachable
+  ]
+
   @ansible_stat_colors %{
     changed: "text-warning",
     failures: "text-error",
@@ -21,6 +31,17 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleComponents do
 
   @spec ansible_playbook_run_stats(map()) :: Rendered.t()
   def ansible_playbook_run_stats(assigns) do
+    playbook_run = assigns.playbook_run
+
+    assigns =
+      assign(
+        assigns,
+        :total,
+        Enum.reduce(@ansible_stat_types, 0, fn stat, acc ->
+          acc + ansible_playbook_run_stat(playbook_run, stat)
+        end)
+      )
+
     ~H"""
     <div class="flex flex-wrap gap-y-1 [&>.ansible-stat]:before:content-[','] [&>.ansible-stat:first-child]:before:content-[''] [&>.ansible-stat]:before:text-base-content">
       <.ansible_stat playbook_run={@playbook_run} stat={:changed} />
@@ -30,6 +51,10 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleComponents do
       <.ansible_stat playbook_run={@playbook_run} stat={:rescued} />
       <.ansible_stat playbook_run={@playbook_run} stat={:skipped} />
       <.ansible_stat playbook_run={@playbook_run} stat={:unreachable} />
+
+      <span :if={@total == 0} class="ansible-stat text-base-content/50">
+        {gettext("N/A")}
+      </span>
     </div>
     """
   end
@@ -47,13 +72,11 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleComponents do
   @spec ansible_stat(map()) :: Rendered.t()
   def ansible_stat(assigns) do
     stat = assigns.stat
-    stat_key = String.to_existing_atom("stats_#{stat}")
-
     playbook_run = assigns.playbook_run
 
     assigns =
       assign(assigns,
-        value: Map.fetch!(playbook_run, stat_key),
+        value: ansible_playbook_run_stat(playbook_run, stat),
         color_class: Map.fetch!(@ansible_stat_colors, stat)
       )
 
@@ -62,6 +85,11 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleComponents do
       {translate_ansible_stat(@value, @stat)}
     </span>
     """
+  end
+
+  defp ansible_playbook_run_stat(run, stat) do
+    stat_key = String.to_existing_atom("stats_#{stat}")
+    Map.fetch!(run, stat_key)
   end
 
   defp translate_ansible_stat(count, :changed), do: gettext("{count} changed", count: count)
