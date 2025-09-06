@@ -100,12 +100,12 @@
             <Heroicons.exclamation_circle solid class="size-4 text-error" />
             <span>{gettext("Failed")}</span>
           <% end %>
-          <%= if run.state == :failed do %>
-            <Heroicons.exclamation_triangle outline class="size-4 text-base-content/50" />
+          <%= if run.state == :interrupted do %>
+            <Heroicons.exclamation_triangle outline class="size-4 text-base-content/75" />
             <span>{gettext("Interrupted")}</span>
           <% end %>
-          <%= if run.state == :failed do %>
-            <Heroicons.exclamation_triangle outline class="size-4 text-base-content/50" />
+          <%= if run.state == :timeout do %>
+            <Heroicons.x_circle outline class="size-4 text-base-content/75" />
             <span>{gettext("Timeout")}</span>
           <% end %>
         </div>
