@@ -24,7 +24,7 @@
             <%= if session.used_at do %>
               <div class="tooltip" data-tip={format_date_time(session.used_at)}>
                 <span class="badge h-auto">
-                  {gettext("{time} ago", time: format_duration(session.used_at))}
+                  {format_time_ago(session.used_at, @now)}
                 </span>
               </div>
             <% else %>
@@ -39,7 +39,7 @@
               <span class="badge badge-error">{gettext("Expired")}</span>
             <% else %>
               <span class={"badge #{if expires_soon?(session), do: "badge-warning", else: "badge-success"} h-auto"}>
-                {session |> expires_at() |> format_duration()}
+                {session |> expires_at() |> format_duration(@now)}
               </span>
             <% end %>
           </div>

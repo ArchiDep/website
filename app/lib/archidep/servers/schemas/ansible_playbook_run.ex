@@ -80,12 +80,11 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     field(:updated_at, :utc_datetime_usec)
   end
 
-  @spec duration(t(), DateTime.t()) :: non_neg_integer()
-  def duration(%__MODULE__{started_at: started_at, finished_at: nil}, now),
-    do: now |> DateTime.diff(started_at, :second) |> max(0)
+  @spec done?(t()) :: boolean()
+  def done?(%__MODULE__{state: state}) when state in [:pending, :running],
+    do: false
 
-  def duration(%__MODULE__{started_at: started_at, finished_at: finished_at}, _now),
-    do: finished_at |> DateTime.diff(started_at, :second) |> max(0)
+  def done?(%__MODULE__{}), do: true
 
   @spec stats(t()) :: Types.ansible_stats()
   def stats(%__MODULE__{
@@ -150,6 +149,18 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       )
     )
   end
+
+  @spec fetch_run(UUID.t()) :: {:ok, t()} | {:error, :ansible_playbook_run_not_found}
+  def fetch_run(id),
+    do:
+      Repo.one(
+        from(r in __MODULE__,
+          where: r.id == ^id,
+          join: s in assoc(r, :server),
+          preload: [server: s]
+        )
+      )
+      |> truthy_or(:ansible_playbook_run_not_found)
 
   @spec new_pending(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::
           Changeset.t(t())

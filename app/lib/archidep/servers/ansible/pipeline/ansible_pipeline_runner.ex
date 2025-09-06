@@ -39,7 +39,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   end
 
   defp run_playbook(%AnsiblePlaybookRun{id: run_id} = pending_run) do
-    track!(run_id, %{state: :pending, events: 0})
+    track!(run_id, %{state: :pending, events: 0, current_task: nil})
 
     running_run =
       pending_run
@@ -53,15 +53,18 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
       |> Ansible.run_playbook()
       |> Stream.each(fn
         {:event, event} ->
-          update_tracking!(run_id, fn meta -> %{meta | events: meta.events + 1} end)
+          update_tracking!(run_id, fn meta ->
+            %{meta | events: meta.events + 1, current_task: event.task_name}
+          end)
+
           :ok = ServerManager.ansible_playbook_event(running_run, event)
 
         {:succeeded, succeeded_run} ->
-          update_tracking!(run_id, fn meta -> %{meta | state: :succeeded} end)
+          update_tracking!(run_id, fn meta -> %{meta | state: :succeeded, current_task: nil} end)
           :ok = ServerManager.ansible_playbook_completed(succeeded_run)
 
         {:failed, failed_run} ->
-          update_tracking!(run_id, fn meta -> %{meta | state: :failed} end)
+          update_tracking!(run_id, fn meta -> %{meta | state: :failed, current_task: nil} end)
           :ok = ServerManager.ansible_playbook_completed(failed_run)
       end)
       |> Stream.run()

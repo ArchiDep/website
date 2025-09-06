@@ -5,6 +5,10 @@ defmodule ArchiDepWeb.Helpers.DateFormatHelpers do
 
   use Gettext, backend: ArchiDepWeb.Gettext
 
+  @seconds_in_one_minute 60
+  @seconds_in_one_hour 3600
+  @seconds_in_one_day 86_400
+
   @doc """
   Formats the specified date with the default format.
 
@@ -58,25 +62,7 @@ defmodule ArchiDepWeb.Helpers.DateFormatHelpers do
       "5 days ago"
   """
   @spec format_time_ago(DateTime.t(), DateTime.t()) :: String.t()
-  def format_time_ago(date_time, now) do
-    seconds = now |> DateTime.diff(date_time, :second) |> max(0)
-
-    cond do
-      seconds < 60 ->
-        gettext("{count} {count, plural, =1 {second} other {seconds}} ago", count: seconds)
-
-      seconds < 3600 ->
-        gettext("{count} {count, plural, =1 {minute} other {minutes}} ago",
-          count: div(seconds, 60)
-        )
-
-      seconds < 86_400 ->
-        gettext("{count} {count, plural, =1 {hour} other {hours}} ago", count: div(seconds, 3600))
-
-      true ->
-        gettext("{count} {count, plural, =1 {day} other {days}} ago", count: div(seconds, 86_400))
-    end
-  end
+  def format_time_ago(date_time, now), do: format_duration(date_time, now, :ago)
 
   @doc """
   Formats the specified date time as a human-readable duration. The duration
@@ -84,51 +70,79 @@ defmodule ArchiDepWeb.Helpers.DateFormatHelpers do
 
   ## Examples
 
-      iex> ArchiDepWeb.Helpers.DateFormatHelpers.format_duration(DateTime.add(DateTime.utc_now(), trunc(2.51 * 24 * 60 * 60), :second))
-      "2 days, 12 hours"
+      iex> import ArchiDepWeb.Helpers.DateFormatHelpers
+      iex> now = DateTime.utc_now()
+      iex> two_days_and_a_half = DateTime.add(now, trunc(2.51 * 24 * 60 * 60), :second)
+      iex> format_duration(two_days_and_a_half, now)
+      "2 days"
 
-      iex> ArchiDepWeb.Helpers.DateFormatHelpers.format_duration(DateTime.add(DateTime.utc_now(), trunc(365 * 24 * 60 * 60 + 30 * 60), :second))
+      iex> import ArchiDepWeb.Helpers.DateFormatHelpers
+      iex> now = DateTime.utc_now()
+      iex> format_duration(DateTime.add(now, 365 * 24 * 60 * 60 + 30 * 60, :second), now)
       "365 days"
 
-      iex> ArchiDepWeb.Helpers.DateFormatHelpers.format_duration(DateTime.add(DateTime.utc_now(), trunc(14 * 60 * 60 + 15 * 60 + 42), :second))
-      "14 hours, 15 minutes"
-
-      iex> ArchiDepWeb.Helpers.DateFormatHelpers.format_duration(DateTime.add(DateTime.utc_now(), trunc(14 * 60 * 60 + 42), :second))
+      iex> import ArchiDepWeb.Helpers.DateFormatHelpers
+      iex> now = DateTime.utc_now()
+      iex> format_duration(DateTime.add(now, 14 * 60 * 60 + 15 * 60 + 42, :second), now)
       "14 hours"
 
-      iex> ArchiDepWeb.Helpers.DateFormatHelpers.format_duration(DateTime.add(DateTime.utc_now(), trunc(15 * 60 + 42), :second))
-      "15 minutes, 42 seconds"
+      iex> import ArchiDepWeb.Helpers.DateFormatHelpers
+      iex> now = DateTime.utc_now()
+      iex> format_duration(DateTime.add(now, 14 * 60 * 60 + 42, :second), now)
+      "14 hours"
+
+      iex> import ArchiDepWeb.Helpers.DateFormatHelpers
+      iex> now = DateTime.utc_now()
+      iex> format_duration(DateTime.add(now, 15 * 60 + 42, :second), now)
+      "15 minutes"
+
+      iex> import ArchiDepWeb.Helpers.DateFormatHelpers
+      iex> now = DateTime.utc_now()
+      iex> format_duration(DateTime.add(now, 14, :second), now)
+      "14 seconds"
   """
-  @spec format_duration(DateTime.t()) :: String.t()
-  def format_duration(date_time) do
-    seconds = DateTime.utc_now() |> DateTime.diff(date_time, :second) |> abs()
+  @spec format_duration(DateTime.t(), DateTime.t()) :: String.t()
+  def format_duration(date_time, now), do: format_duration(now, date_time, :elapsed)
 
-    {[], seconds}
-    |> determine_duration_part(:day)
-    |> determine_duration_part(:hour)
-    |> determine_duration_part(:minute)
-    |> determine_duration_part(:second)
-    |> elem(0)
-    |> Enum.reverse()
-    |> Enum.drop_while(fn {_interval, n} -> n == 0 end)
-    |> Enum.take(2)
-    |> Enum.reverse()
-    |> Enum.drop_while(fn {_interval, n} -> n == 0 end)
-    |> Enum.reverse()
-    |> Enum.map_join(", ", &format_duration_part/1)
+  defp format_duration(date_time, now, type) when type in [:ago, :elapsed] do
+    seconds = now |> DateTime.diff(date_time, :second) |> max(0)
+
+    cond do
+      seconds < @seconds_in_one_minute ->
+        translate_duration(seconds, :second, type)
+
+      seconds < @seconds_in_one_hour ->
+        translate_duration(div(seconds, @seconds_in_one_minute), :minute, type)
+
+      seconds < @seconds_in_one_day ->
+        translate_duration(div(seconds, @seconds_in_one_hour), :hour, type)
+
+      true ->
+        translate_duration(div(seconds, @seconds_in_one_day), :day, type)
+    end
   end
 
-  defp determine_duration_part({parts, remaining_seconds}, part) do
-    part_seconds = seconds_in(part)
-    n = div(remaining_seconds, part_seconds)
-    {[{part, n} | parts], remaining_seconds - n * part_seconds}
-  end
+  defp translate_duration(count, :second, :ago),
+    do: gettext("{count} {count, plural, =1 {second} other {seconds}} ago", count: count)
 
-  defp seconds_in(:day), do: 24 * 60 * 60
-  defp seconds_in(:hour), do: 60 * 60
-  defp seconds_in(:minute), do: 60
-  defp seconds_in(:second), do: 1
+  defp translate_duration(count, :second, :elapsed),
+    do: gettext("{count} {count, plural, =1 {second} other {seconds}}", count: count)
 
-  defp format_duration_part({interval, 1}), do: "1 #{Atom.to_string(interval)}"
-  defp format_duration_part({interval, n}), do: "#{n} #{Atom.to_string(interval)}s"
+  defp translate_duration(count, :minute, :ago),
+    do: gettext("{count} {count, plural, =1 {minute} other {minutes}} ago", count: count)
+
+  defp translate_duration(count, :minute, :elapsed),
+    do: gettext("{count} {count, plural, =1 {minute} other {minutes}}", count: count)
+
+  defp translate_duration(count, :hour, :ago),
+    do: gettext("{count} {count, plural, =1 {hour} other {hours}} ago", count: count)
+
+  defp translate_duration(count, :hour, :elapsed),
+    do: gettext("{count} {count, plural, =1 {hour} other {hours}}", count: count)
+
+  defp translate_duration(count, :day, :ago),
+    do: gettext("{count} {count, plural, =1 {day} other {days}} ago", count: count)
+
+  defp translate_duration(count, :day, :elapsed),
+    do: gettext("{count} {count, plural, =1 {day} other {days}}", count: count)
 end

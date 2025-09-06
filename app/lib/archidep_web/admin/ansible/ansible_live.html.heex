@@ -36,9 +36,6 @@
         {gettext("State")}
       </th>
       <th>
-        {gettext("Exit code")}
-      </th>
-      <th>
         {gettext("Events")}
       </th>
       <th>
@@ -63,11 +60,30 @@
           {format_time_ago(run.started_at, @now)}
         </span>
       </td>
-      <td>
-        {AnsiblePlaybookRun.duration(run, @now)}s
+      <td
+        class={[if(run.finished_at != nil, do: "tooltip")]}
+        data-tip={[
+          if(run.finished_at != nil,
+            do: format_date_time(run.finished_at),
+            else: gettext("Still running")
+          )
+        ]}
+      >
+        {format_duration(run.finished_at || @now, run.started_at)}
       </td>
       <td>
-        <div class="flex items-center gap-2">
+        <div class={[
+          "flex items-center gap-2",
+          if(run.state == :failed and run.exit_code != nil and run.exit_code != 0,
+            do: "tooltip"
+          )
+        ]}>
+          <div
+            :if={run.state == :failed and run.exit_code != nil and run.exit_code != 0}
+            class="tooltip-content font-mono"
+          >
+            {gettext("exit code {code}", code: run.exit_code)}
+          </div>
           <%= if run.state == :pending do %>
             <Heroicons.clock solid class="size-4 text-info" />
             <span>{gettext("Pending")}</span>
@@ -95,15 +111,20 @@
         </div>
       </td>
       <td>
-        <span class={["font-mono", if(run.exit_code != 0, do: "text-error", else: "text-success")]}>
-          {run.exit_code}
-        </span>
-      </td>
-      <td>
         {run.number_of_events}
       </td>
       <td>
-        <.ansible_playbook_run_stats playbook_run={run} />
+        <%= if Map.has_key?(@tracked_playbooks, run.id) do %>
+          <%= if get_in(@tracked_playbooks, [run.id, :current_task]) do %>
+            <span class="text-base-content/75">
+              {get_in(@tracked_playbooks, [run.id, :current_task])}...
+            </span>
+          <% else %>
+            -
+          <% end %>
+        <% else %>
+          <.ansible_playbook_run_stats playbook_run={run} />
+        <% end %>
       </td>
     </tr>
   </tbody>

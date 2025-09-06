@@ -57,7 +57,11 @@ defmodule ArchiDepWeb.Profile.CurrentSessionsLive do
   @impl LiveComponent
   def update(assigns, socket) do
     socket
-    |> assign(active_sessions: fetch_active_sessions(assigns.auth), auth: assigns.auth)
+    |> assign(
+      auth: assigns.auth,
+      active_sessions: fetch_active_sessions(assigns.auth),
+      now: DateTime.utc_now()
+    )
     |> ok()
   end
 
