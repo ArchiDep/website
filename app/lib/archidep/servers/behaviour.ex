@@ -178,4 +178,17 @@ defmodule ArchiDep.Servers.Behaviour do
   Fetches all Ansible playbook runs.
   """
   callback(fetch_ansible_playbook_runs(auth: Authentication.t()) :: list(AnsiblePlaybookRun.t()))
+
+  @doc """
+  Fetches an Ansible playbook run.
+  """
+  callback(
+    fetch_ansible_playbook_run(auth: Authentication.t(), run_id: UUID.t()) ::
+      {:ok, AnsiblePlaybookRun.t()} | {:error, :ansible_playbook_run_not_found}
+  )
+
+  callback(
+    fetch_ansible_playbook_events_for_run(auth: Authentication.t(), run_id: UUID.t()) ::
+      {:ok, list(AnsiblePlaybookRun.t())} | {:error, :ansible_playbook_run_not_found}
+  )
 end

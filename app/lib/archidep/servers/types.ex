@@ -9,7 +9,7 @@ defmodule ArchiDep.Servers.Types do
   @type ansible_playbook_run_state ::
           :pending | :running | :succeeded | ansible_playbook_run_failed_state()
   @type ansible_playbook_run_failed_state :: :failed | :interrupted | :timeout
-  @type ansible_variables :: %{String.t() => String.t()}
+  @type ansible_variables :: %{String.t() => term()}
   @type ansible_stats :: %{
           changed: non_neg_integer(),
           failures: non_neg_integer(),

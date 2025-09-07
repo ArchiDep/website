@@ -46,4 +46,6 @@ defmodule ArchiDep.Servers.Context do
   # Ansible
   # =======
   implement(&Behaviour.fetch_ansible_playbook_runs/1, UseCases.ReadAnsible)
+  implement(&Behaviour.fetch_ansible_playbook_run/2, UseCases.ReadAnsible)
+  implement(&Behaviour.fetch_ansible_playbook_events_for_run/2, UseCases.ReadAnsible)
 end

@@ -43,6 +43,16 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
     field(:created_at, :utc_datetime_usec)
   end
 
+  @spec fetch_events_for_run(UUID.t()) :: list(t())
+  def fetch_events_for_run(run_id),
+    do:
+      Repo.all(
+        from(e in __MODULE__,
+          where: e.run_id == ^run_id,
+          order_by: [desc: e.occurred_at]
+        )
+      )
+
   @spec new(%{String.t() => term()}, AnsiblePlaybookRun.t()) :: Changeset.t(t())
   def new(data, run) do
     id = UUID.generate()

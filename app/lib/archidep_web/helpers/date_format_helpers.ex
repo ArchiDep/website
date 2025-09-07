@@ -21,6 +21,18 @@ defmodule ArchiDepWeb.Helpers.DateFormatHelpers do
   def format_date(date), do: Calendar.strftime(date, "%a, %B %d, %Y")
 
   @doc """
+  Formats the time part of the specified date and time with the default format.
+
+  ## Examples
+
+      iex> import ArchiDepWeb.Helpers.DateFormatHelpers
+      iex> format_time(DateTime.new!(~D[2016-05-24], ~T[13:26:08.003], "Etc/UTC"))
+      "13:26:08"
+  """
+  @spec format_time(DateTime.t()) :: String.t()
+  def format_time(date_time), do: Calendar.strftime(date_time, "%H:%M:%S")
+
+  @doc """
   Formats the specified date time with the default format.
 
   ## Examples

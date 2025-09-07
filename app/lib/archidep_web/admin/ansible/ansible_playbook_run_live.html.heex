@@ -1,0 +1,258 @@
+<div class="breadcrumbs text-xs">
+  <ul>
+    <li class="text-error">
+      <.link class="flex items-center gap-1" navigate={~p"/admin"}>
+        <Heroicons.fire outline class="size-4" />
+        <span>{gettext("Admin")}</span>
+      </.link>
+    </li>
+    <li>
+      <.link class="flex items-center gap-1" navigate={~p"/admin/ansible"}>
+        <Heroicons.cog_6_tooth solid class="size-4" />
+        <span>{gettext("Ansible")}</span>
+      </.link>
+    </li>
+  </ul>
+</div>
+
+<div class="mt-2 flex justify-between items-end">
+  <h2 class="text-2xl font-bold flex items-center gap-x-2">
+    <Heroicons.cog_6_tooth solid class="size-6" />
+    <span class="font-mono">{@playbook_run.playbook}</span>
+    {gettext("playbook run for")}
+    {server_owner_name(@playbook_run.server)}
+  </h2>
+</div>
+
+<dl class="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+  <div class="flex flex-col">
+    <dt class="mb-1 text-sm text-base-content/75">{gettext("Playbook")}</dt>
+    <dd class="flex items-center gap-2">
+      <div class="font-mono tooltip">
+        <div class="tooltip-content text-sm">
+          {@playbook_run.playbook_path}
+        </div>
+        {@playbook_run.playbook}
+      </div>
+      <div class="text-sm text-base-content/50 tooltip flex items-center gap-x-1">
+        <div class="tooltip-content">
+          <dl class="flex flex-col gap-2">
+            <div>
+              <dt class="mb-1 text-sm text-base-content/75">{gettext("Digest")}</dt>
+              <dd class="text-xs font-mono break-all">
+                {Base.encode16(@playbook_run.digest, case: :lower)}
+              </dd>
+            </div>
+            <div>
+              <dt class="mb-1 text-sm text-base-content/75">{gettext("Git revision")}</dt>
+              <dd class="text-xs font-mono">{@playbook_run.git_revision}</dd>
+            </div>
+          </dl>
+        </div>
+        <div>@</div>
+        <div class="font-mono">
+          {String.slice(@playbook_run.git_revision, 0..6)}
+        </div>
+      </div>
+    </dd>
+  </div>
+  <div class="flex flex-col">
+    <dt class="mb-1 text-sm text-base-content/75">{gettext("Connection")}</dt>
+    <dd class="font-mono">
+      {@playbook_run.user}@{@playbook_run.host}:{@playbook_run.port}
+    </dd>
+  </div>
+  <div class="flex flex-col">
+    <dt class="mb-1 text-sm text-base-content/75">{gettext("Server")}</dt>
+    <dd>
+      <.link navigate={~p"/admin/servers/#{@playbook_run.server_id}"}>
+        {server_owner_name(@playbook_run.server)}
+      </.link>
+    </dd>
+  </div>
+  <div class="flex flex-col">
+    <dt class="mb-1 text-sm text-base-content/75">{gettext("Started")}</dt>
+    <dd>
+      {format_time_ago(@playbook_run.started_at, @now)}
+    </dd>
+  </div>
+  <div class="flex flex-col">
+    <dt class="mb-1 text-sm text-base-content/75">{gettext("Duration")}</dt>
+    <dd>
+      {format_duration(@playbook_run.finished_at || @now, @playbook_run.started_at)}
+    </dd>
+  </div>
+  <div class="flex flex-col">
+    <dt class="mb-1 text-sm text-base-content/75">{gettext("State")}</dt>
+    <dd>
+      <.ansible_playbook_run_state playbook_run={@playbook_run} />
+    </dd>
+  </div>
+  <div class="flex flex-col">
+    <dt class="mb-1 text-sm text-base-content/75">{gettext("Exit code")}</dt>
+    <dd>
+      <span
+        :if={@playbook_run.exit_code != nil}
+        class={[
+          "font-mono",
+          if(@playbook_run.exit_code == 0, do: "text-success", else: "text-error")
+        ]}
+      >
+        {@playbook_run.exit_code}
+      </span>
+      <span :if={@playbook_run.exit_code == nil} class="text-base-content/50">
+        N/A
+      </span>
+    </dd>
+  </div>
+  <div class="flex flex-col">
+    <dt class="mb-1 text-sm text-base-content/75">{gettext("Events")}</dt>
+    <dd>
+      {@playbook_run.number_of_events}
+    </dd>
+  </div>
+  <div class="flex flex-col">
+    <dt class="mb-1 text-sm text-base-content/75">{gettext("Tasks")}</dt>
+    <dd>
+      <.ansible_playbook_run_stats playbook_run={@playbook_run} />
+    </dd>
+  </div>
+</dl>
+
+<h3 class="mt-8 text-xl">{gettext("Variables")}</h3>
+
+<table class="mt-2 table">
+  <thead>
+    <tr>
+      <th>{gettext("Key")}</th>
+      <th>{gettext("Value")}</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr :for={{visibility, key, value} <- AnsiblePlaybookRun.display_variables(@playbook_run)}>
+      <th class="font-mono">
+        {key}
+      </th>
+      <td
+        class="cursor-pointer"
+        phx-click={
+          JS.toggle(to: "#ansible-playbook-run-#{@playbook_run.id}-var-#{key}")
+          |> JS.toggle(to: "#ansible-playbook-run-#{@playbook_run.id}-var-#{key}-toggle")
+        }
+      >
+        <%= if visibility == :visible do %>
+          {value}
+        <% else %>
+          <span
+            id={"ansible-playbook-run-#{@playbook_run.id}-var-#{key}-toggle"}
+            class="font-mono"
+          >
+            **********
+          </span>
+          <span id={"ansible-playbook-run-#{@playbook_run.id}-var-#{key}"} class="hidden">
+            {value}
+          </span>
+        <% end %>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 class="mt-8 mb-2 text-xl">{gettext("Events")}</h3>
+
+<.async_result :let={events} assign={@events}>
+  <:loading>
+    <div class="flex items-center gap-2 italic text-base-content/75">
+      <Heroicons.arrow_path solid class="size-4 animate-spin" />
+      <span>{gettext("Loading events...")}</span>
+    </div>
+  </:loading>
+  <:failed :let={failure}>
+    <div role="alert" class="alert alert-error">
+      <Heroicons.exclamation_circle solid class="size-4" />
+      <div class="flex flex-col gap-y-2">
+        <div>
+          <strong>{gettext("Error!")}</strong>
+          {gettext("Events could not be loaded.")}
+        </div>
+        <code>
+          {inspect(failure)}
+        </code>
+      </div>
+    </div>
+  </:failed>
+  <table class="mt-2 table table-xs table-zebra">
+    <thead>
+      <tr>
+        <th>{gettext("Time")}</th>
+        <th>{gettext("Name")}</th>
+        <th>{gettext("Task")}</th>
+        <th>{gettext("Action")}</th>
+        <th>{gettext("Changed")}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for event <- events do %>
+        <tr
+          class="hover:bg-base-300 cursor-pointer"
+          phx-click={
+            JS.toggle(to: "#ansible-playbook-run-#{@playbook_run.id}-event-#{event.id}-data")
+          }
+        >
+          <td>
+            <span class="tooltip" data-tip={format_date_time(event.occurred_at)}>
+              {format_time(event.occurred_at)}
+            </span>
+          </td>
+          <th class="font-mono">
+            {event.name}
+          </th>
+          <td>
+            <%= if event.task_name != nil or event.task_id != nil do %>
+              <span class={[if(event.task_id, do: "tooltip")]}>
+                <div class="tooltip-content">
+                  <dl class="flex flex-col gap-2">
+                    <div>
+                      <dt class="mb-1 text-sm text-base-content/75">{gettext("Task ID")}</dt>
+                      <dd class="text-xs font-mono break-all">
+                        {event.task_id}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+                <%= if event.task_name != nil do %>
+                  {event.task_name}
+                <% else %>
+                  <span class="font-mono">{event.task_id}</span>
+                <% end %>
+              </span>
+            <% else %>
+              <.no_data />
+            <% end %>
+          </td>
+          <td>
+            <%= if event.action != nil do %>
+              <span class="font-mono">{event.action}</span>
+            <% else %>
+              <.no_data />
+            <% end %>
+          </td>
+          <td class={[if(event.changed, do: "text-warning", else: "text-success")]}>
+            <%= if event.changed do %>
+              {gettext("yes")}
+            <% else %>
+              {gettext("no")}
+            <% end %>
+          </td>
+        </tr>
+        <tr id={"ansible-playbook-run-#{@playbook_run.id}-event-#{event.id}-data"} class="hidden">
+          <td colspan="1000">
+            <div class="p-2 text-secondary">
+              <pre class="whitespace-pre-wrap break-all">{Jason.encode!(event.data, pretty: true)}</pre>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</.async_result>

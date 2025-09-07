@@ -41,4 +41,6 @@ defmodule ArchiDep.Servers do
 
   # Ansible
   delegate(&Behaviour.fetch_ansible_playbook_runs/1)
+  delegate(&Behaviour.fetch_ansible_playbook_run/2)
+  delegate(&Behaviour.fetch_ansible_playbook_events_for_run/2)
 end

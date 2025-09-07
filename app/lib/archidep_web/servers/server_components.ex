@@ -21,7 +21,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       {@server.name}
     <% else %>
       <span class="font-mono">
-        {Server.default_name(@server)}
+        {Server.ssh_connection_description(@server)}
       </span>
     <% end %>
     """
@@ -165,7 +165,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             <Heroicons.server solid class="size-4" />
             <span class="tooltip">
               <div class="tooltip-content font-mono">
-                {Server.default_name(@server)}
+                {Server.ssh_connection_description(@server)}
               </div>
               {server_owner_name(@server)}
             </span>
@@ -905,7 +905,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
-  defp server_owner_name(server) do
+  @spec server_owner_name(Server.t()) :: String.t()
+  def server_owner_name(server) do
     case server do
       %Server{owner: %ServerOwner{group_member: %ServerGroupMember{username: username}}} ->
         username

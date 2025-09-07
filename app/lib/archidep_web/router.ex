@@ -77,6 +77,7 @@ defmodule ArchiDepWeb.Router do
         pipe_through :fetch_authentication
         live "/", Admin.AdminLive
         live "/ansible", Admin.Ansible.AnsibleLive
+        live "/ansible/playbook-runs/:id", Admin.Ansible.AnsiblePlaybookRunLive
         live "/classes", Admin.Classes.ClassesLive
         live "/classes/:id", Admin.Classes.ClassLive
         live "/classes/:class_id/students/:id", Admin.Classes.StudentLive

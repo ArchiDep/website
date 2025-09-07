@@ -78,16 +78,24 @@ defmodule ArchiDep.Servers.Schemas.Server do
         (owner.group_member == nil or owner.group_member.group_id == group.id)
 
   @spec name_or_default(t()) :: String.t()
-  def name_or_default(%__MODULE__{name: nil} = server), do: default_name(server)
+  def name_or_default(%__MODULE__{name: nil} = server), do: ssh_connection_description(server)
   def name_or_default(%__MODULE__{name: name}), do: name
 
-  @spec default_name(t()) :: String.t()
-  def default_name(%__MODULE__{ip_address: ip_address, username: username, ssh_port: ssh_port})
+  @spec ssh_connection_description(t()) :: String.t()
+  def ssh_connection_description(%__MODULE__{
+        ip_address: ip_address,
+        username: username,
+        ssh_port: ssh_port
+      })
       when is_nil(ssh_port) or ssh_port == 22,
       do: "#{username}@#{:inet.ntoa(ip_address.address)}"
 
-  def default_name(%__MODULE__{ip_address: ip_address, username: username, ssh_port: ssh_port}),
-    do: "#{username}@#{:inet.ntoa(ip_address.address)}:#{ssh_port}"
+  def ssh_connection_description(%__MODULE__{
+        ip_address: ip_address,
+        username: username,
+        ssh_port: ssh_port
+      }),
+      do: "#{username}@#{:inet.ntoa(ip_address.address)}:#{ssh_port}"
 
   @spec list_active_servers(DateTime.t()) :: list(t())
   def list_active_servers(now) do

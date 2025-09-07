@@ -20,6 +20,13 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime_usec]
 
+  @visible_variables MapSet.new([
+                       "api_base_url",
+                       "app_user_authorized_key",
+                       "app_user_name",
+                       "server_id"
+                     ])
+
   @type t :: %__MODULE__{
           id: UUID.t(),
           playbook: String.t(),
@@ -85,6 +92,23 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     do: false
 
   def done?(%__MODULE__{}), do: true
+
+  @spec ssh_connection_description(t()) :: String.t()
+  def ssh_connection_description(%__MODULE__{user: user, host: host, port: port}) when port == 22,
+    do: "#{user}@#{host}"
+
+  def ssh_connection_description(%__MODULE__{user: user, host: host, port: port}),
+    do: "#{user}@#{host}:#{port}"
+
+  @spec display_variables(t()) :: list({:visible | :hidden, String.t(), term()})
+  def display_variables(%__MODULE__{vars: vars}),
+    do:
+      vars
+      |> Map.to_list()
+      |> Enum.sort_by(fn {k, _v} -> k end)
+      |> Enum.map(fn {k, v} ->
+        {if(MapSet.member?(@visible_variables, k), do: :visible, else: :hidden), k, v}
+      end)
 
   @spec stats(t()) :: Types.ansible_stats()
   def stats(%__MODULE__{
@@ -165,7 +189,10 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       from(r in __MODULE__,
         where: r.id == ^id,
         join: s in assoc(r, :server),
-        preload: [server: s]
+        left_join: so in assoc(s, :owner),
+        left_join: sogm in assoc(so, :group_member),
+        left_join: sogmg in assoc(sogm, :group),
+        preload: [server: {s, owner: {so, group_member: {sogm, group: sogmg}}}]
       )
       |> Repo.one()
       |> truthy_or(:ansible_playbook_run_not_found)

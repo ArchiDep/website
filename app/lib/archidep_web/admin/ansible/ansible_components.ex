@@ -27,6 +27,42 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleComponents do
 
   attr :playbook_run, AnsiblePlaybookRun,
     required: true,
+    doc: "the Ansible playbook run from which to retrieve the state"
+
+  @spec ansible_playbook_run_state(map()) :: Rendered.t()
+  def ansible_playbook_run_state(assigns) do
+    ~H"""
+    <div class="flex items-center gap-2">
+      <%= if @playbook_run.state == :pending do %>
+        <Heroicons.clock solid class="size-4 text-info" />
+        <span>{gettext("Pending")}</span>
+      <% end %>
+      <%= if @playbook_run.state == :running do %>
+        <Heroicons.arrow_path solid class="size-4 text-warning animate-spin" />
+        <span>{gettext("Running")}</span>
+      <% end %>
+      <%= if @playbook_run.state == :succeeded do %>
+        <Heroicons.check_circle solid class="size-4 text-success" />
+        <span>{gettext("Succeeded")}</span>
+      <% end %>
+      <%= if @playbook_run.state == :failed do %>
+        <Heroicons.exclamation_circle solid class="size-4 text-error" />
+        <span>{gettext("Failed")}</span>
+      <% end %>
+      <%= if @playbook_run.state == :interrupted do %>
+        <Heroicons.exclamation_triangle outline class="size-4 text-base-content/75" />
+        <span>{gettext("Interrupted")}</span>
+      <% end %>
+      <%= if @playbook_run.state == :timeout do %>
+        <Heroicons.x_circle outline class="size-4 text-base-content/75" />
+        <span>{gettext("Timeout")}</span>
+      <% end %>
+    </div>
+    """
+  end
+
+  attr :playbook_run, AnsiblePlaybookRun,
+    required: true,
     doc: "the Ansible playbook run from which to retrieve stats"
 
   @spec ansible_playbook_run_stats(map()) :: Rendered.t()

@@ -6,12 +6,6 @@
         <span>{gettext("Admin")}</span>
       </.link>
     </li>
-    <li>
-      <span class="flex items-center gap-1 !cursor-default !no-underline">
-        <Heroicons.cog_6_tooth solid class="size-4" />
-        <span>{gettext("Ansible")}</span>
-      </span>
-    </li>
   </ul>
 </div>
 
@@ -53,6 +47,7 @@
       :for={run <- @playbook_runs}
       id={"ansible-playbook-run-#{run.id}"}
       class="hover:bg-base-300 even:bg-base-200 cursor-pointer"
+      phx-click={JS.navigate(~p"/admin/ansible/playbook-runs/#{run.id}")}
     >
       <td class="font-mono">{run.playbook}</td>
       <td>
