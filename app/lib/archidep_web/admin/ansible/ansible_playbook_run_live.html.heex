@@ -24,100 +24,83 @@
   </h2>
 </div>
 
-<dl class="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-  <div class="flex flex-col">
-    <dt class="mb-1 text-sm text-base-content/75">{gettext("Playbook")}</dt>
-    <dd class="flex items-center gap-2">
-      <div class="font-mono tooltip">
-        <div class="tooltip-content text-sm">
-          {@playbook_run.playbook_path}
-        </div>
-        {@playbook_run.playbook}
+<.data_display class="mt-4">
+  <.data_display_element title={gettext("Playbook")} class="flex items-center gap-2">
+    <div class="tooltip">
+      <div class="tooltip-content text-sm">
+        <.data_display responsive={false} small={true}>
+          <.data_display_element
+            title={gettext("Relative path")}
+            small={true}
+            class="font-mono break-all"
+          >
+            {@playbook_run.playbook_path}
+          </.data_display_element>
+        </.data_display>
       </div>
-      <div class="text-sm text-base-content/50 tooltip flex items-center gap-x-1">
-        <div class="tooltip-content">
-          <dl class="flex flex-col gap-2">
-            <div>
-              <dt class="mb-1 text-sm text-base-content/75">{gettext("Digest")}</dt>
-              <dd class="text-xs font-mono break-all">
-                {Base.encode16(@playbook_run.digest, case: :lower)}
-              </dd>
-            </div>
-            <div>
-              <dt class="mb-1 text-sm text-base-content/75">{gettext("Git revision")}</dt>
-              <dd class="text-xs font-mono">{@playbook_run.git_revision}</dd>
-            </div>
-          </dl>
-        </div>
-        <div>@</div>
-        <div class="font-mono">
-          {String.slice(@playbook_run.git_revision, 0..6)}
-        </div>
+      <span class="font-mono">{@playbook_run.playbook}</span>
+    </div>
+    <div class="text-sm text-base-content/50 tooltip flex items-center gap-x-1">
+      <div class="tooltip-content">
+        <.data_display responsive={false} small={true}>
+          <.data_display_element
+            title={gettext("Digest")}
+            small={true}
+            class="font-mono break-all"
+          >
+            {Base.encode16(@playbook_run.digest, case: :lower)}
+          </.data_display_element>
+          <.data_display_element
+            title={gettext("Git revision")}
+            small={true}
+            class="font-mono break-all"
+          >
+            {@playbook_run.git_revision}
+          </.data_display_element>
+        </.data_display>
       </div>
-    </dd>
-  </div>
-  <div class="flex flex-col">
-    <dt class="mb-1 text-sm text-base-content/75">{gettext("Connection")}</dt>
-    <dd class="font-mono">
-      {@playbook_run.user}@{@playbook_run.host}:{@playbook_run.port}
-    </dd>
-  </div>
-  <div class="flex flex-col">
-    <dt class="mb-1 text-sm text-base-content/75">{gettext("Server")}</dt>
-    <dd>
-      <.link navigate={~p"/admin/servers/#{@playbook_run.server_id}"}>
-        {server_owner_name(@playbook_run.server)}
-      </.link>
-    </dd>
-  </div>
-  <div class="flex flex-col">
-    <dt class="mb-1 text-sm text-base-content/75">{gettext("Started")}</dt>
-    <dd>
-      {format_time_ago(@playbook_run.started_at, @now)}
-    </dd>
-  </div>
-  <div class="flex flex-col">
-    <dt class="mb-1 text-sm text-base-content/75">{gettext("Duration")}</dt>
-    <dd>
-      {format_duration(@playbook_run.finished_at || @now, @playbook_run.started_at)}
-    </dd>
-  </div>
-  <div class="flex flex-col">
-    <dt class="mb-1 text-sm text-base-content/75">{gettext("State")}</dt>
-    <dd>
-      <.ansible_playbook_run_state playbook_run={@playbook_run} />
-    </dd>
-  </div>
-  <div class="flex flex-col">
-    <dt class="mb-1 text-sm text-base-content/75">{gettext("Exit code")}</dt>
-    <dd>
-      <span
-        :if={@playbook_run.exit_code != nil}
-        class={[
-          "font-mono",
-          if(@playbook_run.exit_code == 0, do: "text-success", else: "text-error")
-        ]}
-      >
-        {@playbook_run.exit_code}
-      </span>
-      <span :if={@playbook_run.exit_code == nil} class="text-base-content/50">
-        N/A
-      </span>
-    </dd>
-  </div>
-  <div class="flex flex-col">
-    <dt class="mb-1 text-sm text-base-content/75">{gettext("Events")}</dt>
-    <dd>
-      {@playbook_run.number_of_events}
-    </dd>
-  </div>
-  <div class="flex flex-col">
-    <dt class="mb-1 text-sm text-base-content/75">{gettext("Tasks")}</dt>
-    <dd>
-      <.ansible_playbook_run_stats playbook_run={@playbook_run} />
-    </dd>
-  </div>
-</dl>
+      <div>@</div>
+      <div class="font-mono">
+        {String.slice(@playbook_run.git_revision, 0..6)}
+      </div>
+    </div>
+  </.data_display_element>
+  <.data_display_element title={gettext("Connection")} class="font-mono">
+    {@playbook_run.user}@{@playbook_run.host}:{@playbook_run.port}
+  </.data_display_element>
+  <.data_display_element title={gettext("Server")}>
+    <.link navigate={~p"/admin/servers/#{@playbook_run.server_id}"}>
+      {server_owner_name(@playbook_run.server)}
+    </.link>
+  </.data_display_element>
+  <.data_display_element title={gettext("Started")}>
+    {format_time_ago(@playbook_run.started_at, @now)}
+  </.data_display_element>
+  <.data_display_element title={gettext("Duration")}>
+    {format_duration(@playbook_run.finished_at || @now, @playbook_run.started_at)}
+  </.data_display_element>
+  <.data_display_element title={gettext("State")}>
+    <.ansible_playbook_run_state playbook_run={@playbook_run} />
+  </.data_display_element>
+  <.data_display_element title={gettext("Exit code")}>
+    <span
+      :if={@playbook_run.exit_code != nil}
+      class={[
+        "font-mono",
+        if(@playbook_run.exit_code == 0, do: "text-success", else: "text-error")
+      ]}
+    >
+      {@playbook_run.exit_code}
+    </span>
+    <.no_data :if={@playbook_run.exit_code == nil} text="N/A" />
+  </.data_display_element>
+  <.data_display_element title={gettext("Events")}>
+    {@playbook_run.number_of_events}
+  </.data_display_element>
+  <.data_display_element title={gettext("Tasks")}>
+    <.ansible_playbook_run_stats playbook_run={@playbook_run} />
+  </.data_display_element>
+</.data_display>
 
 <h3 class="mt-8 text-xl">{gettext("Variables")}</h3>
 
