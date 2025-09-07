@@ -16,6 +16,11 @@ defmodule ArchiDep.Accounts.UseCases.LogOut do
 
     with {:ok, session} <- fetch_session_by_token(token) do
       {:ok, _multi} = delete_session(session, auth)
+
+      :telemetry.execute([:archidep, :accounts, :auth, :logout], %{}, %{
+        principal_id: Authentication.principal_id(auth)
+      })
+
       :ok
     end
   end

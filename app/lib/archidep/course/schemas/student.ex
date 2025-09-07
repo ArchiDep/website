@@ -120,6 +120,10 @@ defmodule ArchiDep.Course.Schemas.Student do
       |> Repo.one()
       |> truthy_or(:student_not_found)
 
+  @spec count_registered_students() :: non_neg_integer
+  def count_registered_students,
+    do: Repo.aggregate(from(s in __MODULE__, where: not is_nil(s.user_id)), :count, :id)
+
   @spec refresh!(t(), map()) :: t()
   def refresh!(
         %__MODULE__{

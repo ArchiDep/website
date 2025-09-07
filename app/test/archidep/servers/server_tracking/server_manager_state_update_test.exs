@@ -214,7 +214,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     test_pid = self()
 
     assert {%ServerManagerState{
-              connection_state: connecting_state(connection_ref: connection_ref),
+              connection_state:
+                connecting_state(connection_ref: connection_ref, time: connecting_time),
               server: %Server{updated_at: updated_at} = updated_server,
               actions:
                 [
@@ -225,6 +226,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
             } = new_state, {:ok, updated_server}} = result
 
     assert is_reference(connection_ref)
+    assert_in_delta DateTime.diff(now, connecting_time, :second), 0, 1
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
     assert result ==
@@ -234,6 +236,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                     connecting_state(
                       connection_pid: self(),
                       connection_ref: connection_ref,
+                      time: connecting_time,
                       retrying: false
                     ),
                   server: %Server{

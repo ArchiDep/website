@@ -238,6 +238,7 @@ defmodule ArchiDep.Support.ServersFactory do
     connecting_state(
       connection_ref: make_ref(),
       connection_pid: self(),
+      time: Faker.DateTime.backward(1),
       retrying: retrying
     )
   end
@@ -248,11 +249,21 @@ defmodule ArchiDep.Support.ServersFactory do
 
   @spec random_connected_state() :: ServerConnectionState.connected_state()
   def random_connected_state,
-    do: connected_state(connection_ref: make_ref(), connection_pid: self())
+    do:
+      connected_state(
+        connection_ref: make_ref(),
+        connection_pid: self(),
+        time: Faker.DateTime.backward(1)
+      )
 
   @spec random_reconnecting_state() :: ServerConnectionState.reconnecting_state()
   def random_reconnecting_state,
-    do: reconnecting_state(connection_ref: make_ref(), connection_pid: self())
+    do:
+      reconnecting_state(
+        connection_ref: make_ref(),
+        connection_pid: self(),
+        time: Faker.DateTime.backward(1)
+      )
 
   @spec random_connection_failed_state() :: ServerConnectionState.connection_failed_state()
   def random_connection_failed_state,

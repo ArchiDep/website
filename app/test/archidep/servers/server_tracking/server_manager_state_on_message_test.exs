@@ -107,12 +107,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
 
     retry_connecting_state(retrying: retrying) = initial_state.connection_state
 
+    now = DateTime.utc_now()
     result = on_message.(initial_state, :retry_connecting)
 
     test_pid = self()
 
     assert %ServerManagerState{
-             connection_state: connecting_state(connection_ref: connection_ref),
+             connection_state:
+               connecting_state(connection_ref: connection_ref, time: connecting_time),
              actions:
                [
                  {:monitor, ^test_pid},
@@ -123,6 +125,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
            } = result
 
     assert is_reference(connection_ref)
+    assert_in_delta DateTime.diff(now, connecting_time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
@@ -130,6 +133,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
                  connecting_state(
                    connection_pid: self(),
                    connection_ref: connection_ref,
+                   time: connecting_time,
                    retrying: retrying
                  ),
                actions: actions,

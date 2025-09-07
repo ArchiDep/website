@@ -20,6 +20,12 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
          {:ok, server} <- Server.fetch_server(server_id),
          {:ok, ^server_id} <-
            Token.verify(server.secret_key, "server auth", token, max_age: @one_year_in_seconds) do
+      :telemetry.execute(
+        [:archidep, :servers, :tracking, :up],
+        %{},
+        %{server_id: server_id}
+      )
+
       :ok = ServerManager.notify_server_up(server_id)
     else
       {:error, :server_not_found} ->

@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
   Record.defrecord(:connecting_state,
     connection_ref: nil,
     connection_pid: nil,
+    time: nil,
     retrying: nil
   )
 
@@ -19,11 +20,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
     retrying: nil
   )
 
-  Record.defrecord(:connected_state, time: nil, connection_ref: nil, connection_pid: nil)
+  Record.defrecord(:connected_state,
+    connection_ref: nil,
+    connection_pid: nil,
+    time: nil
+  )
 
   Record.defrecord(:reconnecting_state,
     connection_ref: nil,
-    connection_pid: nil
+    connection_pid: nil,
+    time: nil
   )
 
   Record.defrecord(:connection_failed_state, connection_pid: nil, reason: nil)
@@ -44,6 +50,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
           record(:connecting_state,
             connection_ref: reference(),
             connection_pid: pid(),
+            time: DateTime.t(),
             retrying: retry() | false
           )
 
@@ -54,12 +61,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
           )
 
   @type connected_state ::
-          record(:connected_state, connection_ref: reference(), connection_pid: pid())
+          record(:connected_state,
+            connection_ref: reference(),
+            connection_pid: pid(),
+            time: DateTime.t()
+          )
 
   @type reconnecting_state ::
           record(:reconnecting_state,
             connection_ref: reference(),
-            connection_pid: pid()
+            connection_pid: pid(),
+            time: DateTime.t()
           )
 
   @type connection_failed_state ::

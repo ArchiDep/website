@@ -135,6 +135,31 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     |> truthy_or(:session_not_found)
   end
 
+  @spec count_active_sessions(DateTime.t()) :: non_neg_integer()
+  def count_active_sessions(now) do
+    where =
+      dynamic(
+        [user_session: us],
+        us.created_at > ago(@session_validity_in_days, "day") and
+          ^where_user_account_active(now)
+      )
+
+    Repo.aggregate(
+      from(us in __MODULE__,
+        as: :user_session,
+        join: ua in assoc(us, :user_account),
+        as: :user_account,
+        left_join: pu in assoc(ua, :preregistered_user),
+        as: :preregistered_user,
+        left_join: ug in assoc(pu, :group),
+        as: :user_group,
+        where: ^where
+      ),
+      :count,
+      :id
+    )
+  end
+
   @spec fetch_active_session_by_token(String.t(), DateTime.t()) ::
           {:ok, t()} | {:error, :session_not_found}
   def fetch_active_session_by_token(token, now) do

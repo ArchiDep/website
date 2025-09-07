@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Support.ServerManagerStateTestUtils
+  import ArchiDep.Support.TelemetryTestHelpers
   import ExUnit.CaptureLog
   import Hammox
   alias ArchiDep.Servers.Ansible
@@ -42,13 +43,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     }
   end
 
-  test "check sudo access after successful connection", %{handle_task_result: handle_task_result} do
+  test "check sudo access after successful connection",
+       %{handle_task_result: handle_task_result} = context do
+    attach_telemetry_handler!(context, [:archidep, :servers, :tracking, :connected])
+
     server = build_active_server(set_up_at: nil)
 
     fake_connect_task_ref = make_ref()
 
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
-    connecting_state(connection_ref: connection_ref, connection_pid: connection_pid) = connecting
+
+    connecting_state(
+      connection_ref: connection_ref,
+      connection_pid: connection_pid,
+      time: connecting_time
+    ) = connecting
 
     initial_state =
       ServersFactory.build(:server_manager_state,
@@ -110,6 +119,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                 current_job: :checking_access,
                 version: 11
               ), %ServerManagerState{check_access_result | version: 11}}
+
+    event_data = assert_telemetry_event!([:archidep, :servers, :tracking, :connected])
+    assert %{measurements: %{duration: connection_duration}} = event_data
+
+    assert_in_delta DateTime.diff(now, connecting_time, :millisecond) / 1000,
+                    connection_duration,
+                    1
+
+    assert event_data == %{
+             measurements: %{duration: connection_duration},
+             metadata: %{},
+             config: nil
+           }
   end
 
   test "connection-related problems are dropped on successful connection", %{

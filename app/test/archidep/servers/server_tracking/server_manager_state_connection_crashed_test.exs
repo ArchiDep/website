@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Support.ServerManagerStateTestUtils
+  import ArchiDep.Support.TelemetryTestHelpers
   import Hammox
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
@@ -18,7 +19,70 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
   end
 
   test "handle connection crash when connected to the server",
-       %{connection_crashed: connection_crashed} do
+       %{connection_crashed: connection_crashed} = context do
+    attach_telemetry_handler!(context, [:archidep, :servers, :tracking, :connection_crashed])
+
+    server =
+      build_active_server(
+        ssh_port: true,
+        set_up_at: nil
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        username: server.username,
+        server: server
+      )
+
+    connected_state(time: connected_time) = initial_state.connection_state
+
+    now = DateTime.utc_now()
+    crash_reason = Faker.Lorem.sentence()
+
+    result = connection_crashed.(initial_state, self(), crash_reason)
+
+    assert %ServerManagerState{
+             connection_state: disconnected_state(time: time),
+             actions:
+               [
+                 :notify_server_offline,
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state: disconnected_state(time: time),
+               actions: actions
+           }
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+
+    event_data = assert_telemetry_event!([:archidep, :servers, :tracking, :connection_crashed])
+    assert %{measurements: %{duration: connected_duration}} = event_data
+
+    assert_in_delta DateTime.diff(now, connected_time, :millisecond) / 1000,
+                    connected_duration,
+                    1
+
+    assert event_data == %{
+             measurements: %{duration: connected_duration},
+             metadata: %{},
+             config: nil
+           }
+  end
+
+  test "handle connection crash when not connected to the server",
+       %{connection_crashed: connection_crashed} = context do
+    attach_telemetry_handler!(context, [:archidep, :servers, :tracking, :connection_crashed])
+
     server =
       build_active_server(
         ssh_port: true,
@@ -29,7 +93,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
           ServersFactory.random_not_connected_state(),
           ServersFactory.random_connecting_state(),
           ServersFactory.random_retry_connecting_state(),
-          ServersFactory.random_connected_state(),
           ServersFactory.random_reconnecting_state(),
           ServersFactory.random_connection_failed_state()
         ] do
@@ -67,6 +130,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
                   connection_state: result.connection_state,
                   version: result.version + 1
                 ), %ServerManagerState{result | version: result.version + 1}}
+
+      event_data = assert_telemetry_event!([:archidep, :servers, :tracking, :connection_crashed])
+
+      assert event_data == %{
+               measurements: %{duration: 0},
+               metadata: %{},
+               config: nil
+             }
     end
   end
 

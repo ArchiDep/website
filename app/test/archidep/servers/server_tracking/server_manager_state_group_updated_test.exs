@@ -555,10 +555,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
+    now = DateTime.utc_now()
     result = group_updated.(initial_state, updated_class)
 
     assert %ServerManagerState{
-             connection_state: connecting_state(connection_ref: connection_ref),
+             connection_state:
+               connecting_state(connection_ref: connection_ref, time: connecting_time),
              actions: [
                {:monitor, ^connection_pid},
                {:connect, connect_fn},
@@ -566,12 +568,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
              ]
            } = result
 
+    assert_in_delta DateTime.diff(now, connecting_time, :second), 0, 1
+
     assert result == %ServerManagerState{
              initial_state
              | connection_state:
                  connecting_state(
                    connection_pid: connection_pid,
                    connection_ref: connection_ref,
+                   time: connecting_time,
                    retrying: false
                  ),
                server: %Server{

@@ -45,6 +45,11 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
             impersonated_user_account: nil
         }
 
+        :telemetry.execute([:archidep, :accounts, :auth, :login], %{}, %{
+          method: :switch_edu_id,
+          principal_id: user_account.id
+        })
+
         {:ok, UserSession.authentication(enriched_session)}
 
       {:error, _operation, :unauthorized_switch_edu_id, _changes} ->

@@ -130,6 +130,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @last_retry_interval_seconds List.last(@retry_intervals_seconds)
 
   @ports_to_check [80, 443, 3000, 3001]
+  @event_base [:tracking, :servers, :archidep]
 
   @impl ServerManagerBehaviour
   def init(server_id, pipeline) do
@@ -247,6 +248,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         connecting_state(
           connection_ref: make_ref(),
           connection_pid: connection_pid,
+          time: DateTime.utc_now(),
           retrying: retrying
         )
       )
@@ -271,7 +273,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           connection_state:
             connecting_state(
               connection_ref: connection_ref,
-              connection_pid: connection_pid
+              connection_pid: connection_pid,
+              time: start_time
             ),
           tasks: %{connect: connection_task_ref}
         } = state,
@@ -283,6 +286,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       connection_ref,
       connection_pid,
       connection_task_ref,
+      start_time,
       result
     )
   end
@@ -293,7 +297,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           connection_state:
             reconnecting_state(
               connection_ref: connection_ref,
-              connection_pid: connection_pid
+              connection_pid: connection_pid,
+              time: start_time
             ),
           tasks: %{connect: connection_task_ref}
         } = state,
@@ -305,6 +310,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       connection_ref,
       connection_pid,
       connection_task_ref,
+      start_time,
       result
     )
   end
@@ -382,23 +388,29 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          connection_ref,
          connection_pid,
          connection_task_ref,
+         start_time,
          result
        ),
        do:
          state
-         |> handle_connect_task_result(connection_ref, connection_pid, result)
+         |> handle_connect_task_result(connection_ref, connection_pid, start_time, result)
          |> drop_task(:connect, connection_task_ref)
 
   defp handle_connect_task_result(
          %__MODULE__{server: server} = state,
          connection_ref,
          connection_pid,
+         start_time,
          :ok
        ) do
     Logger.info(
       # coveralls-ignore-next-line
       "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
     )
+
+    execute_telemetry_event(:connected, %{
+      duration: DateTime.diff(DateTime.utc_now(), start_time, :millisecond) / 1000
+    })
 
     state
     |> change_connection_state(
@@ -416,6 +428,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          %__MODULE__{server: server} = state,
          _connection_ref,
          connection_pid,
+         _start_time,
          {:error, :authentication_failed}
        ) do
     Logger.warning(
@@ -437,6 +450,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          %__MODULE__{server: server} = state,
          _connection_ref,
          connection_pid,
+         _start_time,
          {:error, reason}
        ) do
     Logger.info(
@@ -824,7 +838,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        do:
          state
          |> change_connection_state(
-           reconnecting_state(connection_pid: connection_pid, connection_ref: connection_ref)
+           reconnecting_state(
+             connection_pid: connection_pid,
+             connection_ref: connection_ref,
+             time: DateTime.utc_now()
+           )
          )
          |> set_updated_server(Server.mark_as_set_up!(server))
          |> connect_with_app_username()
@@ -984,8 +1002,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         %__MODULE__{connection_state: connection_state} = state,
         connection_pid,
         reason
-      ),
-      do: disconnect(state, connection_pid(connection_state), connection_pid, reason)
+      ) do
+    now = DateTime.utc_now()
+
+    connected_time =
+      case connection_state do
+        connected_state(time: time) -> time
+        _other_state -> now
+      end
+
+    execute_telemetry_event(:connection_crashed, %{
+      duration: DateTime.diff(now, connected_time, :millisecond) / 1000
+    })
+
+    disconnect(state, connection_pid(connection_state), connection_pid, reason)
+  end
 
   defp disconnect(state, connection_pid, connection_pid, reason) when is_pid(connection_pid),
     do: disconnect(state, reason)
@@ -1508,4 +1539,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp api_base_url,
     do: :archidep |> Application.fetch_env!(:servers) |> Keyword.fetch!(:api_base_url)
+
+  defp execute_telemetry_event(key, measurements) when is_atom(key) and is_map(measurements),
+    do: execute_telemetry_event([key], measurements)
+
+  defp execute_telemetry_event(keys, measurements) when is_list(keys) and is_map(measurements),
+    do:
+      :telemetry.execute(
+        keys |> Enum.reduce(@event_base, fn key, acc -> [key | acc] end) |> Enum.reverse(),
+        measurements,
+        %{}
+      )
 end

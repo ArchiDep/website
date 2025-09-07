@@ -167,6 +167,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
       )
 
     assert %{
+             connection_state: reconnecting_state(time: reconnecting_time),
              server: %Server{set_up_at: %DateTime{} = set_up_at} = updated_server,
              actions:
                [
@@ -175,6 +176,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                ] = actions
            } = result
 
+    assert_in_delta DateTime.diff(now, reconnecting_time, :second), 0, 1
     assert_in_delta DateTime.diff(now, set_up_at, :second), 0, 1
 
     assert result == %ServerManagerState{
@@ -182,7 +184,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
              | connection_state:
                  reconnecting_state(
                    connection_pid: connection_pid,
-                   connection_ref: connection_ref
+                   connection_ref: connection_ref,
+                   time: reconnecting_time
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
@@ -252,6 +255,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
       )
 
     assert %{
+             connection_state: reconnecting_state(time: reconnecting_time),
              server: %Server{set_up_at: %DateTime{} = set_up_at} = updated_server,
              actions:
                [
@@ -260,6 +264,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                ] = actions
            } = result
 
+    assert_in_delta DateTime.diff(now, reconnecting_time, :second), 0, 1
     assert_in_delta DateTime.diff(now, set_up_at, :second), 0, 1
 
     assert result == %ServerManagerState{
@@ -267,7 +272,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
              | connection_state:
                  reconnecting_state(
                    connection_pid: connection_pid,
-                   connection_ref: connection_ref
+                   connection_ref: connection_ref,
+                   time: reconnecting_time
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
@@ -339,6 +345,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
       )
 
     assert %{
+             connection_state: reconnecting_state(time: reconnecting_time),
              server: %Server{set_up_at: %DateTime{} = set_up_at} = updated_server,
              actions:
                [
@@ -348,6 +355,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                ] = actions
            } = result
 
+    assert_in_delta DateTime.diff(now, reconnecting_time, :second), 0, 1
     assert_in_delta DateTime.diff(now, set_up_at, :second), 0, 1
 
     assert result == %ServerManagerState{
@@ -355,7 +363,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
              | connection_state:
                  reconnecting_state(
                    connection_pid: connection_pid,
-                   connection_ref: connection_ref
+                   connection_ref: connection_ref,
+                   time: reconnecting_time
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
@@ -426,6 +435,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
       )
 
     assert %{
+             connection_state: reconnecting_state(time: reconnection_time),
              server: %Server{set_up_at: %DateTime{} = set_up_at} = updated_server,
              actions:
                [
@@ -435,6 +445,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                ] = actions
            } = result
 
+    assert_in_delta DateTime.diff(now, reconnection_time, :second), 0, 1
     assert_in_delta DateTime.diff(now, set_up_at, :second), 0, 1
 
     assert result == %ServerManagerState{
@@ -442,7 +453,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
              | connection_state:
                  reconnecting_state(
                    connection_pid: connection_pid,
-                   connection_ref: connection_ref
+                   connection_ref: connection_ref,
+                   time: reconnection_time
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
