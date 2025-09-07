@@ -1,21 +1,23 @@
 <footer class='p-4 absolute bottom-0 left-0 right-0 border-t border-black/10 dark:border-white/10'>
   <div class='flex justify-between items-center gap-2'>
     <p class='flex items-center gap-2'>
-      <a href='{{ site.feed.path | default: 'feed.xml' | absolute_url }}'>
-        {%- include icons/rss.html class="size-4" -%}
+      <a href='https://status.archidep.ch'>
+        <img src='https://status.archidep.ch/badge/_/dot' alt='Status'>
       </a>
       <a href='https://github.com/archidep/website'>
         {%- include icons/github.html class="size-4" -%}
       </a>
     </p>
     <p class='flex items-center gap-x-1 text-xs'>
-      <a href='https://status.archidep.ch'>
-        <img src='https://status.archidep.ch/badge/_/dot' alt='Status'>
+      <a href='{{ "/" | relative_url }}' class='hover:text-accent flex items-center gap-1.5'>
+        <span class='avatar'>
+          <span class='w-7'>
+            <img src='/favicons/archidep-192.png' alt='ArchiDep logo'>
+          </span>
+        </span>
+        <span class='font-title'>ArchiDep</span>
       </a>
-      <span>
-        <a href='{{ "/" | relative_url }}' class='font-title hover:text-accent'>ArchiDep</a>
-        <span class='font-title'>{{ site.data.version }}</span>
-      </span>
+      <span class='font-title'>{{ site.data.version }}</span>
     </p>
   </div>
 </footer>
