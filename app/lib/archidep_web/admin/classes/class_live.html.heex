@@ -12,12 +12,6 @@
         <span>{gettext("Classes")}</span>
       </.link>
     </li>
-    <li>
-      <span class="flex items-center gap-1 !cursor-default !no-underline">
-        <Heroicons.academic_cap solid class="size-4" />
-        <span>{@class.name}</span>
-      </span>
-    </li>
   </ul>
 </div>
 
@@ -27,36 +21,30 @@
 </h2>
 
 <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
-  <div class="col-span-1 md:col-span-3">
-    <dl class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
-      <dt class="font-bold">{gettext("Start date")}</dt>
-      <dd class="col-span-1 md:col-span-2 xl:col-span-3">
-        <%= if @class.start_date do %>
-          {format_date(@class.start_date)}
-        <% else %>
-          <.no_data />
-        <% end %>
-      </dd>
-      <dt class="font-bold">{gettext("End date")}</dt>
-      <dd class="col-span-1 md:col-span-2 xl:col-span-3">
-        <%= if @class.end_date do %>
-          {format_date(@class.end_date)}
-        <% else %>
-          <.no_data />
-        <% end %>
-      </dd>
-      <dt class="font-bold">{gettext("Active")}</dt>
-      <dd class="col-span-1 md:col-span-2 xl:col-span-3">
-        <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
-        <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
-      </dd>
-      <dt class="font-bold">{gettext("Servers enabled")}</dt>
-      <dd class="col-span-1 md:col-span-2 xl:col-span-3">
-        <Heroicons.check_circle :if={@class.servers_enabled} class="size-5 text-success" />
-        <Heroicons.x_circle :if={not @class.servers_enabled} class="size-5 text-error" />
-      </dd>
-    </dl>
-  </div>
+  <.data_display class="col-span-1 md:col-span-3">
+    <.data_display_element title={gettext("Start date")}>
+      <%= if @class.start_date do %>
+        {format_date(@class.start_date)}
+      <% else %>
+        <.no_data />
+      <% end %>
+    </.data_display_element>
+    <.data_display_element title={gettext("End date")}>
+      <%= if @class.end_date do %>
+        {format_date(@class.end_date)}
+      <% else %>
+        <.no_data />
+      <% end %>
+    </.data_display_element>
+    <.data_display_element title={gettext("Active")}>
+      <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
+      <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
+    </.data_display_element>
+    <.data_display_element title={gettext("Servers enabled")}>
+      <Heroicons.check_circle :if={@class.servers_enabled} class="size-5 text-success" />
+      <Heroicons.x_circle :if={not @class.servers_enabled} class="size-5 text-error" />
+    </.data_display_element>
+  </.data_display>
 
   <div class="col-span1 md:col-span-2">
     <div class="card bg-base-300 card-sm shadow-sm">

@@ -18,12 +18,6 @@
         <span>{@class.name}</span>
       </.link>
     </li>
-    <li>
-      <span class="flex items-center gap-1 !cursor-default !no-underline">
-        <Heroicons.user solid class="size-4" />
-        <span>{@student.name}</span>
-      </span>
-    </li>
   </ul>
 </div>
 
@@ -32,38 +26,27 @@
   {@student.name}
 </h2>
 
-<dl class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4">
-  <dt class="font-bold">{gettext("Name")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+<.data_display class="mt-4">
+  <.data_display_element title={gettext("Name")}>
     {@student.name}
-  </dd>
-  <dt class="font-bold">{gettext("Email")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
-    {@student.email}
-  </dd>
-  <dt class="font-bold">{gettext("Class")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
-    {@student.class.name}
-  </dd>
-  <dt class="font-bold">{gettext("Academic class")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+  </.data_display_element>
+  <.data_display_element title={gettext("Email")}>{@student.email}</.data_display_element>
+  <.data_display_element title={gettext("Class")}>{@student.class.name}</.data_display_element>
+  <.data_display_element title={gettext("Academic class")}>
     <%= if @student.academic_class do %>
       {@student.academic_class}
     <% else %>
       <.no_data />
     <% end %>
-  </dd>
-  <dt class="font-bold">{gettext("Server username")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+  </.data_display_element>
+  <.data_display_element title={gettext("Server username")}>
     <.student_username student={@student} />
-  </dd>
-  <dt class="font-bold">{gettext("Active")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+  </.data_display_element>
+  <.data_display_element title={gettext("Active")}>
     <Heroicons.check_circle :if={@student.active} class="size-5 text-success" />
     <Heroicons.x_circle :if={not @student.active} class="size-5 text-error" />
-  </dd>
-  <dt class="font-bold">{gettext("User account")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+  </.data_display_element>
+  <.data_display_element title={gettext("User account")}>
     <%= if @student.user do %>
       <span class="flex items-center gap-x-4">
         <span
@@ -95,8 +78,8 @@
     <% else %>
       <.no_data text={gettext("Not registered yet")} />
     <% end %>
-  </dd>
-</dl>
+  </.data_display_element>
+</.data_display>
 
 <div class="mt-4 join">
   <button
