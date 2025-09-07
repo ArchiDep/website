@@ -160,7 +160,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def online?(_state), do: false
 
   # TODO: try connecting after a while if the connection idle message is not received
-  # TODO: do not attempt immediate reconnection if the connection crashed, wait a few seconds
   @impl ServerManagerBehaviour
 
   def connection_idle(
