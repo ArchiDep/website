@@ -16,5 +16,5 @@ defmodule ArchiDep.Events.Policy do
       ),
       do: true
 
-  def authorize(_context, _action, _principal, _params), do: false
+  def authorize(_context, _action, _auth, _params), do: false
 end

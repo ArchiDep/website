@@ -11,7 +11,7 @@ defmodule ArchiDep.Helpers.AuthHelpers do
   @spec authorize(Authentication.t(), module, atom, atom, term) ::
           :ok | {:error, {:access_denied, atom, atom}}
   def authorize(auth, policy, context, action, params)
-      when is_authentication(auth) and is_atom(context) and is_atom(action) do
+      when (is_authentication(auth) or is_nil(auth)) and is_atom(context) and is_atom(action) do
     if policy.authorize(context, action, auth, params) do
       :ok
     else
@@ -25,7 +25,7 @@ defmodule ArchiDep.Helpers.AuthHelpers do
   """
   @spec authorize!(Authentication.t(), module, atom, atom, term) :: Authentication.t()
   def authorize!(auth, policy, context, action, params)
-      when is_authentication(auth) and is_atom(context) and is_atom(action) do
+      when (is_authentication(auth) or is_nil(auth)) and is_atom(context) and is_atom(action) do
     if policy.authorize(context, action, auth, params) do
       auth
     else

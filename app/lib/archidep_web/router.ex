@@ -80,6 +80,11 @@ defmodule ArchiDepWeb.Router do
         live "/ansible/playbook-runs/:id", Admin.Ansible.AnsiblePlaybookRunLive
         live "/classes", Admin.Classes.ClassesLive
         live "/classes/:id", Admin.Classes.ClassLive
+
+        get "/classes/:id/ssh-exercise-vm-inventory",
+            Admin.Classes.ClassesController,
+            :generate_class_ssh_exercise_vm_inventory
+
         live "/classes/:class_id/students/:id", Admin.Classes.StudentLive
         live "/servers/:id", Servers.ServerLive, private: %{scope: :admin}
         live "/events", Admin.Events.EventLogLive

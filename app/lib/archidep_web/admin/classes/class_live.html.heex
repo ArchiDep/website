@@ -145,6 +145,15 @@
   <h3 class="text-xl font-bold">{gettext("Students")}</h3>
 
   <div class="join">
+    <a
+      class="join-item btn btn-neutral btn-sm"
+      href={~p"/admin/classes/#{@class.id}/ssh-exercise-vm-inventory"}
+    >
+      <span class="flex items-center gap-x-2">
+        <Heroicons.cog_6_tooth class="size-4" />
+        <span>{gettext("Inventory")}</span>
+      </span>
+    </a>
     <button
       type="button"
       class="join-item btn btn-secondary btn-sm"
