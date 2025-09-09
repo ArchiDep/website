@@ -27,6 +27,14 @@ defmodule ArchiDep.Monitoring.Metrics do
   @events_data_event [:archidep, :events, :data]
 
   @servers_data_event [:archidep, :servers, :data]
+  @server_ansible_playbook_run_stop_event [:archidep, :servers, :ansible, :playbook_run, :stop]
+  @server_ansible_playbook_run_exception_event [
+    :archidep,
+    :servers,
+    :ansible,
+    :playbook_run,
+    :exception
+  ]
   @server_connected_event [:archidep, :servers, :tracking, :connected]
   @server_connection_crashed_event [:archidep, :servers, :tracking, :connected]
   @server_up_event [:archidep, :servers, :tracking, :up]
@@ -53,6 +61,21 @@ defmodule ArchiDep.Monitoring.Metrics do
           measurement: :count,
           description: "The number of successful user logouts.",
           unit: :count
+        ),
+        counter([:archidep, :servers, :ansible, :playbook_run, :stop, :count],
+          event_name: @server_ansible_playbook_run_stop_event,
+          measurement: :count,
+          description: "The number of finished Ansible playbook runs.",
+          unit: :count,
+          tags: [:playbook, :server_id, :state]
+        ),
+        counter([:archidep, :servers, :ansible, :playbook_run, :exception, :count],
+          event_name: @server_ansible_playbook_run_exception_event,
+          measurement: :count,
+          description:
+            "The number of Ansible playbook runs that did not finish because of an exception.",
+          unit: :count,
+          tags: [:playbook, :server_id, :state]
         ),
         counter([:archidep, :servers, :tracking, :connected, :count],
           event_name: @server_connected_event,

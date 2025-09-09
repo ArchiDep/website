@@ -15,6 +15,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   require Logger
 
   @tracker ArchiDep.Tracker
+  @event_base [:archidep, :servers, :ansible, :playbook_run]
 
   @spec start_link(UUID.t()) :: {:ok, pid()}
   def start_link(run_id),
@@ -30,16 +31,36 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
         Logger.warning("No pending Ansible playbook run found with ID #{run_id}")
 
       pending_run ->
-        if ServerManager.online?(pending_run.server) do
-          run_playbook(pending_run)
-        else
-          pending_run
-          |> AnsiblePlaybookRun.interrupt()
-          |> Repo.update!()
-        end
+        process_pending_run(pending_run)
     end
 
     :ok
+  end
+
+  defp process_pending_run(pending_run) do
+    if ServerManager.online?(pending_run.server) do
+      :telemetry.span(
+        @event_base,
+        start_event_metadata(pending_run),
+        fn ->
+          finished_run =
+            pending_run |> run_playbook() |> finished_run_from_result()
+
+          {finished_run, finished_event_metadata(finished_run)}
+        end
+      )
+    else
+      pending_run
+      |> AnsiblePlaybookRun.interrupt()
+      |> Repo.update!()
+      |> then(fn interrupted_run ->
+        :telemetry.execute(
+          @event_base ++ [:interrupted],
+          %{duration: AnsiblePlaybookRun.duration(interrupted_run)},
+          finished_event_metadata(interrupted_run)
+        )
+      end)
+    end
   end
 
   defp run_playbook(%AnsiblePlaybookRun{id: run_id} = pending_run) do
@@ -52,26 +73,25 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
 
     update_tracking!(run_id, fn meta -> %{meta | state: :running} end)
 
-    :ok =
-      running_run
-      |> Ansible.run_playbook()
-      |> Stream.each(fn
-        {:event, event} ->
-          update_tracking!(run_id, fn meta ->
-            %{meta | events: meta.events + 1, current_task: event.task_name}
-          end)
+    running_run
+    |> Ansible.run_playbook()
+    |> Stream.each(fn
+      {:event, event} ->
+        update_tracking!(run_id, fn meta ->
+          %{meta | events: meta.events + 1, current_task: event.task_name}
+        end)
 
-          :ok = ServerManager.ansible_playbook_event(running_run, event)
+        :ok = ServerManager.ansible_playbook_event(running_run, event)
 
-        {:succeeded, succeeded_run} ->
-          update_tracking!(run_id, fn meta -> %{meta | state: :succeeded, current_task: nil} end)
-          :ok = ServerManager.ansible_playbook_completed(succeeded_run)
+      {:succeeded, succeeded_run} ->
+        update_tracking!(run_id, fn meta -> %{meta | state: :succeeded, current_task: nil} end)
+        :ok = ServerManager.ansible_playbook_completed(succeeded_run)
 
-        {:failed, failed_run} ->
-          update_tracking!(run_id, fn meta -> %{meta | state: :failed, current_task: nil} end)
-          :ok = ServerManager.ansible_playbook_completed(failed_run)
-      end)
-      |> Stream.run()
+      {:failed, failed_run} ->
+        update_tracking!(run_id, fn meta -> %{meta | state: :failed, current_task: nil} end)
+        :ok = ServerManager.ansible_playbook_completed(failed_run)
+    end)
+    |> Enum.at(-1)
   end
 
   defp track!(run_id, meta) do
@@ -83,4 +103,20 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
     {:ok, _ref} =
       Tracker.update(@tracker, self(), "ansible-playbooks", run_id, update)
   end
+
+  defp finished_run_from_result({:succeeded, run}), do: run
+  defp finished_run_from_result({:failed, run}), do: run
+
+  defp start_event_metadata(run),
+    do: %{
+      server_id: run.server_id,
+      playbook: run.playbook
+    }
+
+  defp finished_event_metadata(run),
+    do: %{
+      state: run.state,
+      server_id: run.server_id,
+      playbook: run.playbook
+    }
 end

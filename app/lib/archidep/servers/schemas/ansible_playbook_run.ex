@@ -93,6 +93,12 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
 
   def done?(%__MODULE__{}), do: true
 
+  @spec duration(t()) :: non_neg_integer() | nil
+  def duration(%__MODULE__{finished_at: nil}), do: nil
+
+  def duration(%__MODULE__{started_at: started_at, finished_at: finished_at}),
+    do: DateTime.diff(finished_at, started_at, :millisecond)
+
   @spec ssh_connection_description(t()) :: String.t()
   def ssh_connection_description(%__MODULE__{user: user, host: host, port: port}) when port == 22,
     do: "#{user}@#{host}"
