@@ -26,6 +26,7 @@ defmodule ArchiDep.Course.Schemas.Student do
           domain: String.t(),
           active: boolean(),
           servers_enabled: boolean(),
+          ssh_exercise_password: String.t(),
           class: Class.t() | NotLoaded.t(),
           class_id: UUID.t(),
           user: User.t() | nil | NotLoaded.t(),
@@ -44,6 +45,7 @@ defmodule ArchiDep.Course.Schemas.Student do
     field(:domain, :string)
     field(:active, :boolean, default: false)
     field(:servers_enabled, :boolean, default: false)
+    field(:ssh_exercise_password, :string)
     belongs_to(:class, Class)
     belongs_to(:user, User, source: :user_account_id)
     field(:version, :integer)
@@ -142,6 +144,7 @@ defmodule ArchiDep.Course.Schemas.Student do
           domain: domain,
           active: active,
           servers_enabled: servers_enabled,
+          ssh_exercise_password: ssh_exercise_password,
           class: %Class{id: class_id, version: class_version},
           user: %User{id: user_id, version: user_version},
           version: version,
@@ -159,6 +162,7 @@ defmodule ArchiDep.Course.Schemas.Student do
         domain: domain,
         active: active,
         servers_enabled: servers_enabled,
+        ssh_exercise_password: ssh_exercise_password,
         version: version,
         updated_at: updated_at
     }
@@ -230,6 +234,7 @@ defmodule ArchiDep.Course.Schemas.Student do
     |> change(
       id: id,
       username_confirmed: false,
+      ssh_exercise_password: 5 |> :crypto.strong_rand_bytes() |> Base.encode32(),
       version: 1,
       created_at: now,
       updated_at: now
@@ -304,6 +309,7 @@ defmodule ArchiDep.Course.Schemas.Student do
         :domain,
         :active,
         :servers_enabled,
+        :ssh_exercise_password,
         :class_id
       ])
       # Name
@@ -327,6 +333,8 @@ defmodule ArchiDep.Course.Schemas.Student do
         message:
           "must be a valid domain name containing only letters (without accents), numbers and hyphens"
       )
+      # SSH exercise password
+      |> validate_length(:ssh_exercise_password, max: 255)
       # Class
       |> assoc_constraint(:class)
 

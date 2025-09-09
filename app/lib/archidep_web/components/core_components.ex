@@ -11,6 +11,10 @@ defmodule ArchiDepWeb.Components.CoreComponents do
     default: true,
     doc: "whether to display elements horizontally on larger screens"
 
+  attr :responsive_class, :string,
+    default: "md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4",
+    doc: "the responsive grid classes to use"
+
   attr :small, :boolean, default: false, doc: "whether to use a smaller layout"
   attr :rest, :global, doc: "arbitrary HTML attributes to add to the container"
 
@@ -22,7 +26,7 @@ defmodule ArchiDepWeb.Components.CoreComponents do
     <dl
       class={[
         "grid grid-cols-1",
-        if(@responsive, do: "md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"),
+        if(@responsive, do: @responsive_class),
         if(@small, do: "gap-2", else: "gap-4"),
         Map.get(@rest, :class)
       ]}

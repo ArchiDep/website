@@ -4,13 +4,47 @@
 >
   <div class="hero-content p-10 text-center">
     <div class="max-w-md">
-      <h1 class="text-5xl font-bold">Welcome!</h1>
+      <h1 class="text-5xl font-bold">{gettext("Welcome!")}</h1>
       <p class="my-6">
-        Welcome to the Architecture & Deployment course dashboard. There's not
-        much to see here yet, but come back later in the course to see some cool
-        stuff.
+        {gettext(
+          "Welcome to the Architecture & Deployment course dashboard. There's not much to see here yet, but come back for more later."
+        )}
       </p>
-      <a href="/" class="btn btn-primary">Got it, take me back to the course</a>
+      <p>
+        {gettext(
+          "In the meantime, here's your connection details to the SSH server we have set up for you for the Hello SSH exercise:"
+        )}
+      </p>
+      <div>
+        <.data_display class="mt-4" responsive_class="sm:grid-cols-3">
+          <.data_display_element title={gettext("IP address")}>
+            <span class="font-mono">1.2.3.4</span>
+          </.data_display_element>
+          <.data_display_element title={gettext("Username")}>
+            <span class="font-mono">{@student.username}</span>
+          </.data_display_element>
+          <.data_display_element title={gettext("Password")}>
+            <div id="student-ssh-exercise-password" class="flex justify-center items-center gap-2">
+              <div class="toggle-password font-mono">********</div>
+              <div class="toggle-password font-mono hidden">
+                {@student.ssh_exercise_password}
+              </div>
+              <Heroicons.eye
+                class="toggle-password size-4 cursor-pointer text-base-content/75"
+                phx-click={
+                  JS.toggle_class("hidden", to: "#student-ssh-exercise-password .toggle-password")
+                }
+              />
+              <Heroicons.eye_slash
+                class="toggle-password size-4 hidden cursor-pointer text-base-content/75"
+                phx-click={
+                  JS.toggle_class("hidden", to: "#student-ssh-exercise-password .toggle-password")
+                }
+              />
+            </div>
+          </.data_display_element>
+        </.data_display>
+      </div>
     </div>
   </div>
 </div>
@@ -35,10 +69,14 @@
 >
   <div class="hero-content p-10 text-center">
     <div class="max-w-md">
-      <div class="badge badge-outline badge-accent badge-lg">Action Required!</div>
-      <h1 class="mt-2 text-5xl font-bold">Let's get started!</h1>
+      <div class="badge badge-outline badge-accent badge-lg">{gettext("Action Required!")}</div>
+      <h1 class="mt-2 text-5xl font-bold">{gettext("Let's get started!")}</h1>
       <p class="py-6">
-        Register your first server to get started with deploying stuff.
+        {gettext("The time has come to get your own server!")}
+      </p>
+      <div class="text-5xl animate-bounce">🎉</div>
+      <p class="pt-3 pb-6">
+        {gettext("Register your first server to get started.")}
       </p>
       <button
         type="button"

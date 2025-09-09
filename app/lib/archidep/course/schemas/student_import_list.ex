@@ -62,23 +62,32 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         existing_usernames,
         now
       ) do
+    password_bytes = :crypto.strong_rand_bytes(5 * length(students))
+
     students
     |> Enum.map(&Map.from_struct/1)
     |> Enum.uniq_by(& &1.email)
-    |> Enum.map(
-      &Map.merge(&1, %{
+    |> Enum.with_index()
+    |> Enum.map(fn {student, idx} ->
+      password =
+        password_bytes
+        |> :binary.part(idx * 5, 5)
+        |> Base.encode32(padding: false)
+
+      Map.merge(student, %{
         id: UUID.generate(),
         academic_class: academic_class,
         username_confirmed: false,
         domain: domain,
         active: true,
         servers_enabled: false,
+        ssh_exercise_password: password,
         class_id: class_id,
         version: 1,
         created_at: now,
         updated_at: now
       })
-    )
+    end)
     |> Enum.reduce({[], MapSet.new(existing_usernames)}, fn student, {list, usernames} ->
       username = generate_suggested_username(student, usernames)
 

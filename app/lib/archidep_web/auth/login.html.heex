@@ -1,7 +1,22 @@
-<form action="/auth/switch-edu-id/configure" method="get">
-  <button type="submit">{gettext("Log in")}</button>
-  <label>
-    <input type="checkbox" name="remember-me" value="true" />
-    {gettext("Remember Me")}
-  </label>
-</form>
+<div class="my-4 hero bg-base-200">
+  <div class="hero-content p-10 text-center">
+    <div class="max-w-md">
+      <h1 class="text-5xl font-bold">Hello there</h1>
+      <p class="py-6">
+        {gettext(
+          "Welcome to the course! Please log in using your Switch Edu-ID account to continue."
+        )}
+      </p>
+
+      <form action="/auth/switch-edu-id/configure" method="get">
+        <div class="flex flex-col gap-2">
+          <button type="submit" class="btn btn-primary">{gettext("Log in")}</button>
+          <label>
+            <input type="checkbox" name="remember-me" value="true" />
+            {gettext("Remember Me")}
+          </label>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

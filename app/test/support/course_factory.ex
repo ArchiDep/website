@@ -138,6 +138,12 @@ defmodule ArchiDep.Support.CourseFactory do
 
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
     {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
+
+    {ssh_exercise_password, attrs!} =
+      Map.pop_lazy(attrs!, :ssh_exercise_password, fn ->
+        sequence(:ssh_exercise_password, &"ssh-password-#{&1}")
+      end)
+
     {class, attrs!} = Map.pop_lazy(attrs!, :class, fn -> build(:class) end)
 
     {class_id, attrs!} =
@@ -173,6 +179,7 @@ defmodule ArchiDep.Support.CourseFactory do
       domain: domain,
       active: active,
       servers_enabled: servers_enabled,
+      ssh_exercise_password: ssh_exercise_password,
       class: class,
       class_id: class_id,
       user: user,
