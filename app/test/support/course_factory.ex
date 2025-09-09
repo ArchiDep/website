@@ -9,6 +9,7 @@ defmodule ArchiDep.Support.CourseFactory do
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Support.NetFactory
 
   @spec class_factory(map()) :: Class.t()
   def class_factory(attrs!) do
@@ -26,6 +27,10 @@ defmodule ArchiDep.Support.CourseFactory do
       Map.pop_lazy(attrs!, :end_date, optionally(fn -> Faker.Date.forward(365) end))
 
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+
+    {ssh_exercise_vm_ip_address, attrs!} =
+      Map.pop_lazy(attrs!, :ssh_exercise_vm_ip_address, optionally(&NetFactory.ip_address/0))
+
     {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
 
     {expected_server_properties, attrs!} =
@@ -43,6 +48,7 @@ defmodule ArchiDep.Support.CourseFactory do
       start_date: start_date,
       end_date: end_date,
       active: active,
+      ssh_exercise_vm_ip_address: ssh_exercise_vm_ip_address,
       servers_enabled: servers_enabled,
       expected_server_properties: expected_server_properties,
       expected_server_properties_id: expected_server_properties.id,

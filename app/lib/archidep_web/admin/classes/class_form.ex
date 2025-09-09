@@ -20,6 +20,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean, default: false)
+    field(:ssh_exercise_vm_ip_address, :string)
     field(:servers_enabled, :boolean, default: false)
   end
 
@@ -31,6 +32,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       :start_date,
       :end_date,
       :active,
+      :ssh_exercise_vm_ip_address,
       :servers_enabled
     ])
     |> validate_required([:name, :active, :servers_enabled])
@@ -43,6 +45,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       start_date: class.start_date,
       end_date: class.end_date,
       active: class.active,
+      ssh_exercise_vm_ip_address: class.ssh_exercise_vm_ip_address,
       servers_enabled: class.servers_enabled
     }
     |> cast(params, [
@@ -50,6 +53,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       :start_date,
       :end_date,
       :active,
+      :ssh_exercise_vm_ip_address,
       :servers_enabled
     ])
     |> validate_required([:name, :active, :servers_enabled])
