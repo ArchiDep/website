@@ -9,7 +9,7 @@ defmodule ArchiDep.Course.UseCases.UpdateStudent do
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Types
 
-  @spec validate_existing_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
+  @spec validate_existing_student(Authentication.t(), UUID.t(), Types.student_data()) ::
           {:ok, Changeset.t()} | {:error, :student_not_found}
   def validate_existing_student(auth, id, data) do
     with :ok <- validate_uuid(id, :student_not_found),
@@ -19,7 +19,7 @@ defmodule ArchiDep.Course.UseCases.UpdateStudent do
     end
   end
 
-  @spec update_student(Authentication.t(), UUID.t(), Types.existing_student_data()) ::
+  @spec update_student(Authentication.t(), UUID.t(), Types.student_data()) ::
           {:ok, Student.t()} | {:error, Changeset.t()} | {:error, :student_not_found}
   def update_student(auth, id, data) do
     with :ok <- validate_uuid(id, :student_not_found),
