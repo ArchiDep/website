@@ -99,7 +99,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       )
 
   @spec event_stream(String.t() | t()) :: String.t()
-  def event_stream(id) when is_binary(id), do: "user-accounts:#{id}"
+  def event_stream(id) when is_binary(id), do: "accounts:user-accounts:#{id}"
   def event_stream(%__MODULE__{id: id}), do: event_stream(id)
 
   @spec fetch_by_id(UUID.t()) :: {:ok, t()} | {:error, :user_account_not_found}

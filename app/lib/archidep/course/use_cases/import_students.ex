@@ -5,7 +5,7 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
 
   import ArchiDep.Events.Store.StoredEvent, only: [to_insert_data: 1]
   alias ArchiDep.Course.Events.StudentCreated
-  alias ArchiDep.Course.Events.StudentsImported
+  alias ArchiDep.Course.Events.StudentsImportedInClass
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
@@ -77,7 +77,14 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
           |> Multi.insert(
             :students_imported_event,
             fn %{} ->
-              students_imported(auth, class, import_list.academic_class, inserted, now)
+              students_imported(
+                auth,
+                class,
+                import_list.academic_class,
+                import_list.domain,
+                inserted,
+                now
+              )
             end
           )
           |> Multi.insert_all(:student_created_events, StoredEvent, fn %{
@@ -88,11 +95,12 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
           end)
       end)
 
-  defp students_imported(auth, class, academic_class, inserted, now),
+  defp students_imported(auth, class, academic_class, domain, inserted, now),
     do:
       class
-      |> StudentsImported.new(
+      |> StudentsImportedInClass.new(
         academic_class,
+        domain,
         inserted
       )
       |> new_event(auth, occurred_at: now)

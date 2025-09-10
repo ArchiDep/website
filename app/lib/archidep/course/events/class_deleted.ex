@@ -40,9 +40,9 @@ defmodule ArchiDep.Course.Events.ClassDeleted do
 
     @spec event_stream(ClassDeleted.t()) :: String.t()
     def event_stream(%ClassDeleted{id: id}),
-      do: "classes:#{id}"
+      do: "course:classes:#{id}"
 
     @spec event_type(ClassDeleted.t()) :: atom()
-    def event_type(_event), do: :"archidep/students/class-deleted"
+    def event_type(_event), do: :"archidep/course/class-deleted"
   end
 end

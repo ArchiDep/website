@@ -109,7 +109,10 @@ defmodule ArchiDepWeb.Auth.AuthController do
         _params
       ) do
     full_name = switch_edu_id_full_name(userinfo)
-    Logger.info("Switch edu-ID login for #{full_name} (#{swiss_edu_person_unique_id})")
+
+    Logger.info(
+      "Switch edu-ID login for #{full_name} (#{Enum.join([swiss_edu_person_unique_id | switch_edu_id_affiliation_emails(userinfo)], ", ")})"
+    )
 
     case Accounts.log_in_or_register_with_switch_edu_id(
            %{

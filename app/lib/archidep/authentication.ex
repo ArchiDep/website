@@ -53,5 +53,6 @@ defmodule ArchiDep.Authentication do
     do: session_token
 
   @spec event_stream(t()) :: String.t()
-  def event_stream(%__MODULE__{principal_id: principal_id}), do: "user-accounts:#{principal_id}"
+  def event_stream(%__MODULE__{principal_id: principal_id}),
+    do: "accounts:user-accounts:#{principal_id}"
 end

@@ -10,28 +10,33 @@ defmodule ArchiDep.Course.Events.StudentDeleted do
 
   @enforce_keys [
     :id,
-    :name
+    :name,
+    :email
   ]
   defstruct [
     :id,
-    :name
+    :name,
+    :email
   ]
 
   @type t :: %__MODULE__{
           id: UUID.t(),
-          name: String.t()
+          name: String.t(),
+          email: String.t()
         }
 
   @spec new(Student.t()) :: t()
   def new(student) do
     %Student{
       id: id,
-      name: name
+      name: name,
+      email: email
     } = student
 
     %__MODULE__{
       id: id,
-      name: name
+      name: name,
+      email: email
     }
   end
 
@@ -40,9 +45,9 @@ defmodule ArchiDep.Course.Events.StudentDeleted do
 
     @spec event_stream(StudentDeleted.t()) :: String.t()
     def event_stream(%StudentDeleted{id: id}),
-      do: "students:#{id}"
+      do: "course:students:#{id}"
 
     @spec event_type(StudentDeleted.t()) :: atom()
-    def event_type(_event), do: :"archidep/students/student-deleted"
+    def event_type(_event), do: :"archidep/course/student-deleted"
   end
 end

@@ -4,6 +4,9 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
   use ArchiDep, :event
 
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias Ecto.UUID
 
@@ -14,8 +17,11 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
     :name,
     :ip_address,
     :username,
+    :app_username,
     :ssh_port,
-    :group_id,
+    :active,
+    :group,
+    :owner,
     :expected_properties
   ]
   defstruct [
@@ -23,8 +29,11 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
     :name,
     :ip_address,
     :username,
+    :app_username,
     :ssh_port,
-    :group_id,
+    :active,
+    :group,
+    :owner,
     :expected_properties
   ]
 
@@ -33,8 +42,18 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
           name: String.t() | nil,
           ip_address: String.t(),
           username: String.t(),
+          app_username: String.t(),
           ssh_port: 1..65_535 | nil,
-          group_id: UUID.t(),
+          active: boolean(),
+          group: %{
+            id: UUID.t(),
+            name: String.t()
+          },
+          owner: %{
+            id: UUID.t(),
+            username: String.t() | nil,
+            name: String.t() | nil
+          },
           expected_properties: %{
             hostname: String.t() | nil,
             machine_id: String.t() | nil,
@@ -59,8 +78,11 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
       name: name,
       ip_address: ip_address,
       username: username,
+      app_username: app_username,
       ssh_port: ssh_port,
-      group_id: group_id,
+      active: active,
+      group: group,
+      owner: owner,
       expected_properties: %ServerProperties{
         hostname: expected_hostname,
         machine_id: expected_machine_id,
@@ -78,13 +100,40 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
       }
     } = server
 
+    %ServerGroup{
+      id: group_id,
+      name: group_name
+    } = group
+
+    %ServerOwner{
+      id: owner_id,
+      username: owner_username,
+      group_member: group_member
+    } = owner
+
+    owner_name =
+      case group_member do
+        %ServerGroupMember{name: name} -> name
+        nil -> nil
+      end
+
     %__MODULE__{
       id: id,
       name: name,
       ip_address: to_string(:inet.ntoa(ip_address.address)),
       username: username,
+      app_username: app_username,
       ssh_port: ssh_port,
-      group_id: group_id,
+      active: active,
+      group: %{
+        id: group_id,
+        name: group_name
+      },
+      owner: %{
+        id: owner_id,
+        username: owner_username,
+        name: owner_name
+      },
       expected_properties: %{
         hostname: expected_hostname,
         machine_id: expected_machine_id,
@@ -108,7 +157,7 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
 
     @spec event_stream(ServerCreated.t()) :: String.t()
     def event_stream(%ServerCreated{id: id}),
-      do: "servers:#{id}"
+      do: "servers:servers:#{id}"
 
     @spec event_type(ServerCreated.t()) :: atom()
     def event_type(_event), do: :"archidep/servers/server-created"

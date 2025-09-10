@@ -236,17 +236,26 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
     assert registered_event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),
              id: event_id,
-             stream: "servers:#{server.id}",
+             stream: "servers:servers:#{server.id}",
              version: server.version,
              type: "archidep/servers/server-deleted",
              data: %{
                "id" => server.id,
                "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
                "name" => server.name,
-               "ssh_port" => server.ssh_port
+               "ssh_port" => server.ssh_port,
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner_id,
+                 "username" => server.owner.username,
+                 "name" => server.owner.group_member && server.owner.group_member.name
+               }
              },
              meta: %{},
-             initiator: "user-accounts:#{server.owner_id}",
+             initiator: "accounts:user-accounts:#{server.owner_id}",
              causation_id: event_id,
              correlation_id: event_id,
              occurred_at: occurred_at,

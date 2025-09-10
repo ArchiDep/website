@@ -11,18 +11,33 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
   @enforce_keys [
     :id,
     :name,
-    :email
+    :email,
+    :academic_class,
+    :username,
+    :domain,
+    :active,
+    :servers_enabled
   ]
   defstruct [
     :id,
     :name,
-    :email
+    :email,
+    :academic_class,
+    :username,
+    :domain,
+    :active,
+    :servers_enabled
   ]
 
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t(),
-          email: String.t()
+          email: String.t(),
+          academic_class: String.t() | nil,
+          username: String.t(),
+          domain: String.t(),
+          active: boolean(),
+          servers_enabled: boolean()
         }
 
   @spec new(Student.t()) :: t()
@@ -30,13 +45,23 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
     %Student{
       id: id,
       name: name,
-      email: email
+      email: email,
+      academic_class: academic_class,
+      username: username,
+      domain: domain,
+      active: active,
+      servers_enabled: servers_enabled
     } = student
 
     %__MODULE__{
       id: id,
       name: name,
-      email: email
+      email: email,
+      academic_class: academic_class,
+      username: username,
+      domain: domain,
+      active: active,
+      servers_enabled: servers_enabled
     }
   end
 
@@ -45,9 +70,9 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
 
     @spec event_stream(StudentUpdated.t()) :: String.t()
     def event_stream(%StudentUpdated{id: id}),
-      do: "students:#{id}"
+      do: "course:students:#{id}"
 
     @spec event_type(StudentUpdated.t()) :: atom()
-    def event_type(_event), do: :"archidep/students/student-updated"
+    def event_type(_event), do: :"archidep/course/student-updated"
   end
 end

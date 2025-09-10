@@ -72,17 +72,17 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
       streams
       |> Enum.map(&String.split(&1, ":"))
       |> Enum.reduce(%{}, fn
-        ["classes", id], map ->
-          Map.update(map, "classes", [id], fn ids -> [id | ids] end)
+        ["accounts", "user-accounts", id], map ->
+          Map.update(map, "accounts:user-accounts", [id], fn ids -> [id | ids] end)
 
-        ["servers", id], map ->
-          Map.update(map, "servers", [id], fn ids -> [id | ids] end)
+        ["course", "classes", id], map ->
+          Map.update(map, "course:classes", [id], fn ids -> [id | ids] end)
 
-        ["students", id], map ->
-          Map.update(map, "students", [id], fn ids -> [id | ids] end)
+        ["course", "students", id], map ->
+          Map.update(map, "course:students", [id], fn ids -> [id | ids] end)
 
-        ["user-accounts", id], map ->
-          Map.update(map, "user-accounts", [id], fn ids -> [id | ids] end)
+        ["servers", "servers", id], map ->
+          Map.update(map, "servers:servers", [id], fn ids -> [id | ids] end)
       end)
 
   defp fetch_entities_by_type(entity_ids_by_type) when is_map(entity_ids_by_type),
@@ -98,39 +98,39 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
         {type, task} -> {type, Task.await(task)}
       end)
 
-  defp fetch_entities_by_type({"classes", ids}) when is_list(ids),
+  defp fetch_entities_by_type({"accounts:user-accounts", ids}) when is_list(ids),
+    do: from(ua in UserAccount, where: ua.id in ^ids)
+
+  defp fetch_entities_by_type({"course:classes", ids}) when is_list(ids),
     do: from(c in Class, where: c.id in ^ids)
 
-  defp fetch_entities_by_type({"servers", ids}) when is_list(ids),
-    do: from(s in Server, where: s.id in ^ids)
-
-  defp fetch_entities_by_type({"students", ids}) when is_list(ids),
+  defp fetch_entities_by_type({"course:students", ids}) when is_list(ids),
     do: from(s in Student, where: s.id in ^ids)
 
-  defp fetch_entities_by_type({"user-accounts", ids}) when is_list(ids),
-    do: from(ua in UserAccount, where: ua.id in ^ids)
+  defp fetch_entities_by_type({"servers:servers", ids}) when is_list(ids),
+    do: from(s in Server, where: s.id in ^ids)
 
   defp to_entities_by_stream(entities_by_type),
     do:
       Enum.reduce(entities_by_type, %{}, fn
-        {"classes", classes}, map ->
-          Enum.reduce(classes, map, fn class, acc ->
-            Map.put(acc, "classes:#{class.id}", class)
-          end)
-
-        {"servers", servers}, map ->
-          Enum.reduce(servers, map, fn class, acc ->
-            Map.put(acc, "servers:#{class.id}", class)
-          end)
-
-        {"students", students}, map ->
-          Enum.reduce(students, map, fn class, acc ->
-            Map.put(acc, "students:#{class.id}", class)
-          end)
-
-        {"user-accounts", users}, map ->
+        {"accounts:user-accounts", users}, map ->
           Enum.reduce(users, map, fn user, acc ->
-            Map.put(acc, "user-accounts:#{user.id}", user)
+            Map.put(acc, "accounts:user-accounts:#{user.id}", user)
+          end)
+
+        {"course:classes", classes}, map ->
+          Enum.reduce(classes, map, fn class, acc ->
+            Map.put(acc, "course:classes:#{class.id}", class)
+          end)
+
+        {"course:students", students}, map ->
+          Enum.reduce(students, map, fn class, acc ->
+            Map.put(acc, "course:students:#{class.id}", class)
+          end)
+
+        {"servers:servers", servers}, map ->
+          Enum.reduce(servers, map, fn class, acc ->
+            Map.put(acc, "servers:servers:#{class.id}", class)
           end)
       end)
 end

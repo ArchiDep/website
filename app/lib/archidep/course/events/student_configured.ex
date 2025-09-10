@@ -12,15 +12,21 @@ defmodule ArchiDep.Course.Events.StudentConfigured do
 
   @enforce_keys [
     :id,
+    :name,
+    :email,
     :username
   ]
   defstruct [
     :id,
+    :name,
+    :email,
     :username
   ]
 
   @type t :: %__MODULE__{
           id: UUID.t(),
+          name: String.t(),
+          email: String.t(),
           username: String.t()
         }
 
@@ -28,11 +34,15 @@ defmodule ArchiDep.Course.Events.StudentConfigured do
   def new(member) do
     %Student{
       id: id,
+      name: name,
+      email: email,
       username: username
     } = member
 
     %__MODULE__{
       id: id,
+      name: name,
+      email: email,
       username: username
     }
   end
@@ -42,7 +52,7 @@ defmodule ArchiDep.Course.Events.StudentConfigured do
 
     @spec event_stream(StudentConfigured.t()) :: String.t()
     def event_stream(%StudentConfigured{id: id}),
-      do: "students:#{id}"
+      do: "course:students:#{id}"
 
     @spec event_type(StudentConfigured.t()) :: atom()
     def event_type(_event), do: :"archidep/course/student-configured"

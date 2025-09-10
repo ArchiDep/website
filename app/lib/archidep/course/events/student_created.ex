@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.Events.StudentCreated do
 
   use ArchiDep, :event
 
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias Ecto.UUID
 
@@ -12,20 +13,23 @@ defmodule ArchiDep.Course.Events.StudentCreated do
     :id,
     :name,
     :email,
-    :class_id
+    :class_id,
+    :class_name
   ]
   defstruct [
     :id,
     :name,
     :email,
-    :class_id
+    :class_id,
+    :class_name
   ]
 
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t(),
           email: String.t(),
-          class_id: UUID.t()
+          class_id: UUID.t(),
+          class_name: String.t()
         }
 
   @spec new(Student.t()) :: t()
@@ -34,14 +38,20 @@ defmodule ArchiDep.Course.Events.StudentCreated do
       id: id,
       name: name,
       email: email,
-      class_id: class_id
+      class: class
     } = student
+
+    %Class{
+      id: class_id,
+      name: class_name
+    } = class
 
     %__MODULE__{
       id: id,
       name: name,
       email: email,
-      class_id: class_id
+      class_id: class_id,
+      class_name: class_name
     }
   end
 
@@ -50,9 +60,9 @@ defmodule ArchiDep.Course.Events.StudentCreated do
 
     @spec event_stream(StudentCreated.t()) :: String.t()
     def event_stream(%StudentCreated{id: id}),
-      do: "students:#{id}"
+      do: "course:students:#{id}"
 
     @spec event_type(StudentCreated.t()) :: atom()
-    def event_type(_event), do: :"archidep/students/student-created"
+    def event_type(_event), do: :"archidep/course/student-created"
   end
 end

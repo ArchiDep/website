@@ -3,13 +3,14 @@ defmodule ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated do
 
   use ArchiDep, :event
 
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias Ecto.UUID
 
   @derive Jason.Encoder
 
   @enforce_keys [
-    :id,
+    :class,
     :hostname,
     :machine_id,
     :cpus,
@@ -25,7 +26,7 @@ defmodule ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated do
     :distribution_version
   ]
   defstruct [
-    :id,
+    :class,
     :hostname,
     :machine_id,
     :cpus,
@@ -42,7 +43,10 @@ defmodule ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated do
   ]
 
   @type t :: %__MODULE__{
-          id: UUID.t(),
+          class: %{
+            id: UUID.t(),
+            name: String.t()
+          },
           hostname: String.t() | nil,
           machine_id: String.t() | nil,
           cpus: pos_integer() | nil,
@@ -58,10 +62,9 @@ defmodule ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated do
           distribution_version: String.t() | nil
         }
 
-  @spec new(ExpectedServerProperties.t()) :: t()
-  def new(properties) do
+  @spec new(ExpectedServerProperties.t(), Class.t()) :: t()
+  def new(properties, class) do
     %ExpectedServerProperties{
-      id: id,
       hostname: expected_hostname,
       machine_id: expected_machine_id,
       cpus: expected_cpus,
@@ -77,8 +80,13 @@ defmodule ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated do
       distribution_version: expected_distribution_version
     } = properties
 
+    %Class{
+      id: class_id,
+      name: class_name
+    } = class
+
     %__MODULE__{
-      id: id,
+      class: %{id: class_id, name: class_name},
       hostname: expected_hostname,
       machine_id: expected_machine_id,
       cpus: expected_cpus,
@@ -99,8 +107,8 @@ defmodule ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated do
     alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
 
     @spec event_stream(ClassExpectedServerPropertiesUpdated.t()) :: String.t()
-    def event_stream(%ClassExpectedServerPropertiesUpdated{id: id}),
-      do: "classes:#{id}"
+    def event_stream(%ClassExpectedServerPropertiesUpdated{class: %{id: class_id}}),
+      do: "course:classes:#{class_id}"
 
     @spec event_type(ClassExpectedServerPropertiesUpdated.t()) :: atom()
     def event_type(_event), do: :"archidep/course/class-expected-server-properties-updated"

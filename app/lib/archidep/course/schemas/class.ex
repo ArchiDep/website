@@ -20,7 +20,7 @@ defmodule ArchiDep.Course.Schemas.Class do
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
           active: boolean(),
-          ssh_exercise_vm_ip_address: :inet.ip_address() | nil,
+          ssh_exercise_vm_ip_address: Postgrex.INET.t() | nil,
           servers_enabled: boolean(),
           expected_server_properties: ExpectedServerProperties.t() | NotLoaded.t(),
           expected_server_properties_id: UUID.t(),

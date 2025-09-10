@@ -164,7 +164,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert [
              %StoredEvent{
                id: event_id,
-               data: %{"switch_edu_id" => switch_edu_id_id},
+               data: %{"switch_edu_id" => %{"id" => switch_edu_id_id}},
                occurred_at: occurred_at
              } = registered_event
            ] = Repo.all(from e in StoredEvent, order_by: [asc: e.occurred_at])
@@ -172,27 +172,41 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert registered_event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),
              id: event_id,
-             stream: "user-accounts:#{user_account_id}",
+             stream: "accounts:user-accounts:#{user_account_id}",
              version: 1,
              type: "archidep/accounts/user-registered-with-switch-edu-id",
              data: %{
-               "switch_edu_id" => switch_edu_id_id,
-               "first_name" => nil,
-               "last_name" => switch_edu_id_login_data[:last_name],
-               "swiss_edu_person_unique_id" =>
-                 switch_edu_id_login_data[:swiss_edu_person_unique_id],
-               "user_account_id" => user_account_id,
-               "username" => username,
+               "switch_edu_id" => %{
+                 "id" => switch_edu_id_id,
+                 "first_name" => nil,
+                 "last_name" => switch_edu_id_login_data[:last_name],
+                 "swiss_edu_person_unique_id" =>
+                   switch_edu_id_login_data[:swiss_edu_person_unique_id]
+               },
+               "user_account" => %{
+                 "id" => user_account_id,
+                 "username" => username,
+                 "root" => student == nil
+               },
                "session_id" => session_id,
                "client_ip_address" =>
                  client_metadata.ip_address
                  |> truthy_then(&:inet.ntoa/1)
                  |> truthy_then(&List.to_string/1),
                "client_user_agent" => client_metadata.user_agent,
-               "preregistered_user_id" => student && student.id
+               "preregistered_user" =>
+                 if student do
+                   %{
+                     "id" => student.id,
+                     "name" => student.name,
+                     "email" => student.email
+                   }
+                 else
+                   nil
+                 end
              },
              meta: %{},
-             initiator: "user-accounts:#{user_account_id}",
+             initiator: "accounts:user-accounts:#{user_account_id}",
              causation_id: event_id,
              correlation_id: event_id,
              occurred_at: occurred_at,
@@ -205,10 +219,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   defp assert_user_session(
          %StoredEvent{
            data: %{
-             "switch_edu_id" => switch_edu_id_id,
-             "first_name" => first_name,
-             "last_name" => last_name,
-             "swiss_edu_person_unique_id" => swiss_edu_person_unique_id,
+             "switch_edu_id" => %{
+               "id" => switch_edu_id_id,
+               "first_name" => first_name,
+               "last_name" => last_name,
+               "swiss_edu_person_unique_id" => swiss_edu_person_unique_id
+             },
              "client_ip_address" => client_ip_address,
              "client_user_agent" => client_user_agent
            },
@@ -282,6 +298,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                    %PreregisteredUser{
                      __meta__: loaded(PreregisteredUser, "students"),
                      id: student.id,
+                     name: student.name,
                      email: student.email,
                      active: true,
                      group: not_loaded(:group, PreregisteredUser),

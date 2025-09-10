@@ -69,7 +69,7 @@ defmodule ArchiDep.Course.UseCases.UpdateExpectedServerPropertiesForClass do
   defp class_expected_properties_updated(auth, class),
     do:
       class.expected_server_properties
-      |> ClassExpectedServerPropertiesUpdated.new()
+      |> ClassExpectedServerPropertiesUpdated.new(class)
       |> new_event(auth, occurred_at: class.updated_at)
       |> add_to_stream(class)
       |> initiated_by(auth)

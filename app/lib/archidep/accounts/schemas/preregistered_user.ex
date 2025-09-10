@@ -17,6 +17,7 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
+          name: String.t(),
           email: String.t(),
           active: boolean(),
           group: UserGroup.t() | NotLoaded.t(),
@@ -29,6 +30,7 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
 
   schema "students" do
     field(:email, :string)
+    field(:name, :string)
     field(:active, :boolean, default: false)
     belongs_to(:group, UserGroup, source: :class_id)
     belongs_to(:user_account, UserAccount)

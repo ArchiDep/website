@@ -118,6 +118,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       as: :user_session,
       join: ua in assoc(us, :user_account),
       as: :user_account,
+      join: sei in assoc(ua, :switch_edu_id),
       left_join: pu in assoc(ua, :preregistered_user),
       as: :preregistered_user,
       left_join: ug in assoc(pu, :group),
@@ -127,7 +128,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       left_join: iuag in assoc(iuapu, :group),
       where: ^where,
       preload: [
-        user_account: {ua, preregistered_user: {pu, group: ug}},
+        user_account: {ua, preregistered_user: {pu, group: ug}, switch_edu_id: sei},
         impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}
       ]
     )
@@ -176,6 +177,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
              as: :user_session,
              join: ua in assoc(us, :user_account),
              as: :user_account,
+             join: sei in assoc(ua, :switch_edu_id),
              left_join: pu in assoc(ua, :preregistered_user),
              as: :preregistered_user,
              left_join: ug in assoc(pu, :group),
@@ -185,7 +187,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
              left_join: iuag in assoc(iuapu, :group),
              where: ^where,
              preload: [
-               user_account: {ua, preregistered_user: {pu, group: ug}},
+               user_account: {ua, preregistered_user: {pu, group: ug}, switch_edu_id: sei},
                impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}
              ]
            )
@@ -207,8 +209,13 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     do:
       from(us in __MODULE__,
         join: ua in assoc(us, :user_account),
+        join: sei in assoc(ua, :switch_edu_id),
+        left_join: pu in assoc(ua, :preregistered_user),
         left_join: iua in assoc(us, :impersonated_user_account),
-        preload: [user_account: ua, impersonated_user_account: iua]
+        preload: [
+          user_account: {ua, preregistered_user: pu, switch_edu_id: sei},
+          impersonated_user_account: iua
+        ]
       )
       |> Repo.get(uuid)
       |> truthy_or(:session_not_found)
@@ -219,9 +226,11 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       Repo.all(
         from(us in __MODULE__,
           join: ua in assoc(us, :user_account),
+          join: sei in assoc(ua, :switch_edu_id),
+          left_join: pu in assoc(ua, :preregistered_user),
           where: ua.id == ^id and us.created_at > ago(@session_validity_in_days, "day"),
           order_by: [desc: us.created_at],
-          preload: [user_account: ua]
+          preload: [user_account: {ua, preregistered_user: pu, switch_edu_id: sei}]
         )
       )
 
