@@ -22,7 +22,7 @@ To connect to the server:
 
 - Determine the SSH command to connect to the exercise server. Replace the
   `<username>` placeholder by the username you received in your email, and the
-  `<hostname>` placeholder by `archidep.ch`.
+  `<hostname>` placeholder by `ssh.archidep.ch`.
 - Execute that command in your console.
 - Since you are probably connecting to this server for the first time,
   you should get the initial SSH connection warning indicating that the
@@ -66,7 +66,21 @@ console, they will be executed on your local machine this time. Observe the
 difference in output when you are connected to the server or running the
 commands on your local machine.
 
-![SSH and local](images/ssh-local-side-by-side.png)
+{% cols %}
+
+<!-- col text-center text-base -->
+
+Connected to an SSH server
+
+![SSH hostname](images/hostname-ssh.png)
+
+<!-- col text-center text-base -->
+
+On your local machine
+
+![Local hostname](images/hostname-local.png)
+
+{% endcols %}
 
 {% note type: more %}
 
@@ -89,15 +103,15 @@ SSH command:
 
     $> ssh <username>@<hostname> [command]
 
-For example, assuming your username is `jdoe`, open a new console and execute
-the following commands:
+For example, assuming your username is `jde`, open a new console and execute the
+following commands:
 
 ```bash
-$> ssh jdoe@archidep.ch hostname
-archidep.ch
+$> ssh jde@ssh.archidep.ch hostname
+ssh.archidep.ch
 
 $> hostname
-YourMachine.local
+MyComputer.local
 ```
 
 You can see from the output that the first command was run on the server, but
@@ -139,22 +153,22 @@ The [`scp` (**s**ecure **c**o**p**y) command][scp-command] works in principle
 like the `cp` command, except that it can copy files to and from other computers
 that have an SSH server running, using SSH to transfer the files. It reuses part
 of the same syntax as the `ssh` command to connect to an SSH server. Try running
-this command now (replacing `jdoe` with your username on the SSH exercise
+this command now (replacing `jde` with your username on the SSH exercise
 server):
 
 ```bash
-$> scp hello.txt jdoe@archidep.ch:hello.txt
+$> scp hello.txt jde@ssh.archidep.ch:hello.txt
 hello.txt 100% 4 0.6KB/s 00:00
 ```
 
 This command copies your local `hello.txt` file to the home directory of the
-`jdoe` user account on the remote computer.
+`jde` user account on the remote computer.
 
 To check that the file has indeed been copied, connect to your server
 and use some of the commands you have learned so far:
 
 ```bash
-$> ssh jdoe@archidep.ch
+$> ssh jde@ssh.archidep.ch
 
 $ ls
 hello.txt
@@ -169,7 +183,7 @@ $ exit
 You can also copy files from the remote computer to your local computer:
 
 ```bash
-$> scp jdoe@archidep.ch:hello.txt hello3.txt
+$> scp jde@ssh.archidep.ch:hello.txt hello3.txt
 hello.txt 100% 4 5.7KB/s 00:00
 
 $> cat hello3.txt
@@ -180,24 +194,24 @@ World
 
 Here's a few additional examples of how to use the `scp` command:
 
-- `scp foo.txt jdoe@192.168.50.4:bar.txt`
+- `scp foo.txt jde@192.168.50.4:bar.txt`
 
-  Copy the local file `foo.txt` to a file named `bar.txt` in `jdoe`'s home
+  Copy the local file `foo.txt` to a file named `bar.txt` in `jde`'s home
   directory on the remote computer.
 
-- `scp foo.txt jdoe@192.168.50.4:`
+- `scp foo.txt jde@192.168.50.4:`
 
-  Copy the file to `jdoe`'s home directory with the same file name.
+  Copy the file to `jde`'s home directory with the same file name.
 
-- `scp foo.txt jdoe@192.168.50.4:/tmp/foo.txt`
+- `scp foo.txt jde@192.168.50.4:/tmp/foo.txt`
 
   Copy the file to the absolute path `/tmp/foo.txt` on the remote computer.
 
-- `scp jdoe@192.168.50.4:foo.txt jsmith@192.168.50.5:bar.txt`
+- `scp jde@192.168.50.4:foo.txt jsmith@192.168.50.5:bar.txt`
 
   Copy the file from one remote computer to another.
 
-- `scp -r foo jdoe@192.168.50.4:foo`
+- `scp -r foo jde@192.168.50.4:foo`
 
   **R**ecursively (the `-r` option) copy the contents of directory `foo` to
   the remote computer (a [recursive][recursion] copy means that the directory
@@ -225,7 +239,7 @@ already have one) and connect to the SSH exercise server. You will need to
 configure a connection with the following information:
 
 - **Protocol:** SFTP
-- **Host, hostname or server address:** `archidep.ch`
+- **Host, hostname or server address:** `ssh.archidep.ch`
 - **Username**: the username you received by email
 - **Password**: the password you received by email
 - **Port:** 22 (the standard SSH port)
@@ -271,10 +285,10 @@ By default, SSH keys are stored in the `.ssh` directory in your home directory:
 
 ```bash
 $> ls ~/.ssh
-id_ed25519  id_25519.pub
+id_ed25519  id_ed25519.pub
 ```
 
-If you have the `id_25519` and `id_25519.pub` files, you're good to go, since
+If you have the `id_ed25519` and `id_ed25519.pub` files, you're good to go, since
 SSH expects to find your main [Ed25519][eddsa] private key at
 `~/.ssh/id_ed25519`. You might also have a default key pair using another
 algorithm, such as an [ECDSA][ecdsa] key pair with files named `id_ecdsa` and
@@ -337,14 +351,14 @@ algorithm:
 ```bash
 $> ssh-keygen
 Generating public/private ed25519 key pair.
-Enter file in which to save the key (/home/jdoe/.ssh/id_ed25519):
-Created directory '/home/jdoe/.ssh'.
+Enter file in which to save the key (/home/jde/.ssh/id_ed25519):
+Created directory '/home/jde/.ssh'.
 Enter passphrase (empty for no passphrase):
 Enter same passphrase again:
-Your identification has been saved in /home/jdoe/.ssh/id_ed25519.
-Your public key has been saved in /home/jdoe/.ssh/id_ed25519.pub.
+Your identification has been saved in /home/jde/.ssh/id_ed25519.
+Your public key has been saved in /home/jde/.ssh/id_ed25519.pub.
 The key fingerprint is:
-SHA256:MmwL9n4KOUCuLoyvGJ7nWRDXjTSGAXO8AcCNVqmDJH0 jdoe@497820feb22a
+SHA256:MmwL9n4KOUCuLoyvGJ7nWRDXjTSGAXO8AcCNVqmDJH0 jde@497820feb22a
 The key's randomart image is:
 
 +--[ED25519 256]--+
@@ -386,20 +400,20 @@ SSH directory:
 
 ```bash
 $> ls ~/.ssh
-id_ed25519 id_25519.pub
+id_ed25519 id_ed25519.pub
 ```
 
 ### :exclamation: Use `ssh-copy-id` to copy your public key to the server
 
 The `ssh-copy-id` command uses the same syntax as the `ssh` command to connect
-to another computer (e.g. `ssh-copy-id jdoe@example.com`). Instead of opening a
+to another computer (e.g. `ssh-copy-id jde@example.com`). Instead of opening a
 new shell, however, it will **copy your local public key(s) to your user
 account's `authorized_keys` file** on the target computer.
 
-Execute that command now (replacing `jdoe` with your username):
+Execute that command now (replacing `jde` with your username):
 
 ```bash
-$> ssh-copy-id jdoe@archidep.ch
+$> ssh-copy-id jde@ssh.archidep.ch
 ```
 
 You will probably have to enter your password, so that `ssh-copy-id` can log in
@@ -421,7 +435,7 @@ during this process.
 Connect with the `ssh` command again to see public key authentication in action:
 
 ```bash
-$> ssh jdoe@archidep.ch
+$> ssh jde@ssh.archidep.ch
 ```
 
 If it worked, the connection should now open without asking for a password. Your
@@ -563,13 +577,13 @@ when you exit the shell, which is good since it's not necessarily a good idea to
 keep an SSH agent running forever [for security reasons][ssh-agent-security].
 
 Once you have your agent running, the associated `ssh-add` command will take
-your default private key (e.g. `~/.ssh/id_25519`) and prompt you for your
+your default private key (e.g. `~/.ssh/id_ed25519`) and prompt you for your
 password to unlock it:
 
 ```bash
 $> ssh-add
-Enter passphrase for /Users/jdoe/.ssh/id_25519:
-Identity added: /Users/jdoe/.ssh/id_25519 (...)
+Enter passphrase for /Users/jde/.ssh/id_ed25519:
+Identity added: /Users/jde/.ssh/id_ed25519 (...)
 ```
 
 The **unlocked key** is now **kept in memory by the agent**. The `ssh` command
@@ -579,7 +593,7 @@ password as long as the agent keeps running.
 If you want to load another key than the default one, you can specify its path:
 
 ```bash
-$> ssh-add /path/to/custom_id_25519
+$> ssh-add /path/to/custom_id_ed25519
 ```
 
 {% endcallout %}
