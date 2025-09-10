@@ -6,6 +6,9 @@ defmodule ArchiDep.Servers.Policy do
   use ArchiDep, :policy
 
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.Schemas.ServerOwner
 
   @impl Policy
 
@@ -32,7 +35,8 @@ defmodule ArchiDep.Servers.Policy do
         :servers,
         :validate_server,
         %Authentication{root: false},
-        %{group_id: nil}
+        {_data, %ServerGroup{id: group_id},
+         %ServerOwner{group_member: %ServerGroupMember{group_id: group_id}}}
       ),
       do: true
 
@@ -41,7 +45,8 @@ defmodule ArchiDep.Servers.Policy do
         :servers,
         :create_server,
         %Authentication{root: false},
-        %{group_id: nil}
+        {_data, %ServerGroup{id: group_id},
+         %ServerOwner{group_member: %ServerGroupMember{group_id: group_id}}}
       ),
       do: true
 

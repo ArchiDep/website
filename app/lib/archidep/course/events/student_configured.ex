@@ -6,6 +6,7 @@ defmodule ArchiDep.Course.Events.StudentConfigured do
 
   use ArchiDep, :event
 
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
 
   @derive Jason.Encoder
@@ -14,20 +15,26 @@ defmodule ArchiDep.Course.Events.StudentConfigured do
     :id,
     :name,
     :email,
-    :username
+    :username,
+    :class
   ]
   defstruct [
     :id,
     :name,
     :email,
-    :username
+    :username,
+    :class
   ]
 
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t(),
           email: String.t(),
-          username: String.t()
+          username: String.t(),
+          class: %{
+            id: UUID.t(),
+            name: String.t()
+          }
         }
 
   @spec new(Student.t()) :: t()
@@ -36,14 +43,24 @@ defmodule ArchiDep.Course.Events.StudentConfigured do
       id: id,
       name: name,
       email: email,
-      username: username
+      username: username,
+      class: class
     } = member
+
+    %Class{
+      id: class_id,
+      name: class_name
+    } = class
 
     %__MODULE__{
       id: id,
       name: name,
       email: email,
-      username: username
+      username: username,
+      class: %{
+        id: class_id,
+        name: class_name
+      }
     }
   end
 

@@ -759,9 +759,9 @@ defmodule ArchiDep.Support.ServersFactory do
     }
   end
 
-  @spec random_update_server_data() :: Types.update_server_data()
-  @spec random_update_server_data(map()) :: Types.update_server_data()
-  def random_update_server_data(attrs! \\ %{}) do
+  @spec random_server_data() :: Types.server_data()
+  @spec random_server_data(map()) :: Types.server_data()
+  def random_server_data(attrs! \\ %{}) do
     {name, attrs!} = Map.pop_lazy(attrs!, :name, optionally(&Faker.Person.name/0))
 
     {ip_address, attrs!} =

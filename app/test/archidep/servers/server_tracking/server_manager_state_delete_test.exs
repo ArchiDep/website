@@ -251,7 +251,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
                "owner" => %{
                  "id" => server.owner_id,
                  "username" => server.owner.username,
-                 "name" => server.owner.group_member && server.owner.group_member.name
+                 "name" => server.owner.group_member && server.owner.group_member.name,
+                 "root" => server.owner.root
                }
              },
              meta: %{},

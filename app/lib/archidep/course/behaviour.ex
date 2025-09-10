@@ -99,15 +99,16 @@ defmodule ArchiDep.Course.Behaviour do
   Validates the data to create a new student.
   """
   callback(
-    validate_student(auth: Authentication.t(), data: Types.create_student_data()) :: Changeset.t()
+    validate_student(auth: Authentication.t(), class_id: UUID.t(), data: Types.student_data()) ::
+      {:ok, Changeset.t()} | {:error, :class_not_found}
   )
 
   @doc """
   Creates a new student with the specified data.
   """
   callback(
-    create_student(auth: Authentication.t(), data: Types.create_student_data()) ::
-      {:ok, Student.t()} | {:error, Changeset.t()}
+    create_student(auth: Authentication.t(), class_id: UUID.t(), data: Types.student_data()) ::
+      {:ok, Student.t()} | {:error, Changeset.t()} | {:error, :class_not_found}
   )
 
   @doc """
@@ -151,7 +152,7 @@ defmodule ArchiDep.Course.Behaviour do
     validate_existing_student(
       auth: Authentication.t(),
       student_id: UUID.t(),
-      data: Types.existing_student_data()
+      data: Types.student_data()
     ) ::
       {:ok, Changeset.t()} | {:error, :student_not_found}
   )
@@ -163,9 +164,9 @@ defmodule ArchiDep.Course.Behaviour do
     update_student(
       auth: Authentication.t(),
       student_id: UUID.t(),
-      data: Types.existing_student_data()
+      data: Types.student_data()
     ) ::
-      {:ok, Student.t()} | {:error, Changeset.t()}
+      {:ok, Student.t()} | {:error, Changeset.t()} | {:error, :student_not_found}
   )
 
   @doc """

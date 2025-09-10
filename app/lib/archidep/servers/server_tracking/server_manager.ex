@@ -81,7 +81,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   def retry_checking_open_ports(server),
     do: GenServer.call(name(server), :retry_checking_open_ports)
 
-  @spec update_server(Server.t(), Authentication.t(), Types.update_server_data()) ::
+  @spec update_server(Server.t(), Authentication.t(), Types.server_data()) ::
           {:ok, Server.t()} | {:error, Changeset.t()}
   def update_server(server, auth, data),
     do: GenServer.call(name(server), {:update_server, auth, data})

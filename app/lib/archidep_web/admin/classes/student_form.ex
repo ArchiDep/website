@@ -9,7 +9,6 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
 
   import ArchiDep.Helpers.ChangesetHelpers, only: [validate_not_nil: 2]
   import Ecto.Changeset
-  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Types
   alias Ecto.Changeset
@@ -73,22 +72,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
     |> validate_not_nil([:name, :email, :username, :domain, :active, :servers_enabled])
   end
 
-  @spec to_create_student_data(t(), Class.t()) :: Types.create_student_data()
-  def to_create_student_data(%__MODULE__{} = form, class) do
-    %{
-      name: form.name,
-      email: form.email,
-      academic_class: form.academic_class,
-      username: form.username,
-      domain: form.domain,
-      active: form.active,
-      servers_enabled: form.servers_enabled,
-      class_id: class.id
-    }
-  end
-
-  @spec to_existing_student_data(t()) :: Types.existing_student_data()
-  def to_existing_student_data(%__MODULE__{} = form) do
+  @spec to_student_data(t()) :: Types.student_data()
+  def to_student_data(%__MODULE__{} = form) do
     %{
       name: form.name,
       email: form.email,

@@ -722,7 +722,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   } do
     updated_server = %Server{server | username: Faker.Internet.user_name()}
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
-    data = ServersFactory.random_update_server_data()
+    data = ServersFactory.random_server_data()
 
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :update_server, fn state, ^auth, ^data ->
@@ -741,7 +741,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     new_server_username = Faker.Internet.user_name()
     updated_server = %Server{server | username: new_server_username}
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
-    data = ServersFactory.random_update_server_data()
+    data = ServersFactory.random_server_data()
 
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :update_server, fn state, ^auth, ^data ->

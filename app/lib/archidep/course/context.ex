@@ -30,8 +30,8 @@ defmodule ArchiDep.Course.Context do
   implement(&Behaviour.delete_class/2, UseCases.DeleteClass)
 
   # Students
-  implement(&Behaviour.validate_student/2, UseCases.CreateStudent)
-  implement(&Behaviour.create_student/2, UseCases.CreateStudent)
+  implement(&Behaviour.validate_student/3, UseCases.CreateStudent)
+  implement(&Behaviour.create_student/3, UseCases.CreateStudent)
   implement(&Behaviour.import_students/3, UseCases.ImportStudents)
   implement(&Behaviour.list_students/2, UseCases.ReadStudents)
   implement(&Behaviour.fetch_authenticated_student/1, UseCases.ReadStudents)

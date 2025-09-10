@@ -214,10 +214,9 @@ defmodule ArchiDep.Course.Schemas.Student do
     fresh_student
   end
 
-  @spec new(Types.create_student_data()) :: Changeset.t(t())
-  def new(data) do
+  @spec new(Types.student_data(), Class.t()) :: Changeset.t(t())
+  def new(data, class) do
     id = UUID.generate()
-    class_id = data.class_id
     now = DateTime.utc_now()
 
     %__MODULE__{}
@@ -228,21 +227,22 @@ defmodule ArchiDep.Course.Schemas.Student do
       :username,
       :domain,
       :active,
-      :servers_enabled,
-      :class_id
+      :servers_enabled
     ])
     |> change(
       id: id,
+      class: class,
+      class_id: class.id,
       username_confirmed: false,
       ssh_exercise_password: 5 |> :crypto.strong_rand_bytes() |> Base.encode32(),
       version: 1,
       created_at: now,
       updated_at: now
     )
-    |> validate(id, class_id)
+    |> validate(id, class.id)
   end
 
-  @spec update(t(), Types.existing_student_data()) :: Changeset.t(t())
+  @spec update(t(), Types.student_data()) :: Changeset.t(t())
   def update(student, data) do
     id = student.id
     class_id = student.class_id

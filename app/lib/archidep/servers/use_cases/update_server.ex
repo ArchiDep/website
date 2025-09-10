@@ -20,20 +20,24 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   alias ArchiDep.Servers.ServerTracking.ServersOrchestrator
   alias ArchiDep.Servers.Types
 
-  @spec validate_existing_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
+  @spec validate_existing_server(Authentication.t(), UUID.t(), Types.server_data()) ::
           {:ok, Changeset.t()} | {:error, :server_not_found}
   def validate_existing_server(auth, id, data) do
     with :ok <- validate_uuid(id, :server_not_found),
-         {:ok, server} <- Server.fetch_server(id) do
-      authorize!(auth, Policy, :servers, :validate_existing_server, server)
-
+         {:ok, server} <- Server.fetch_server(id),
+         :ok <- authorize(auth, Policy, :servers, :validate_existing_server, server) do
       owner = ServerOwner.fetch_authenticated(auth)
-
       {:ok, update_server_changeset(auth, server, data, owner)}
+    else
+      {:error, {:access_denied, :servers, :validate_existing_server}} ->
+        {:error, :server_not_found}
+
+      {:error, :server_not_found} ->
+        {:error, :server_not_found}
     end
   end
 
-  @spec update_server(Authentication.t(), UUID.t(), Types.update_server_data()) ::
+  @spec update_server(Authentication.t(), UUID.t(), Types.server_data()) ::
           {:ok, Server.t()}
           | {:error, Changeset.t()}
           | {:error, :server_busy}
@@ -47,10 +51,13 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
     else
       {:error, {:access_denied, :servers, :update_server}} ->
         {:error, :server_not_found}
+
+      {:error, :server_not_found} ->
+        {:error, :server_not_found}
     end
   end
 
-  @spec update_server(Authentication.t(), Server.t(), Types.update_server_data()) ::
+  @spec update_server(Authentication.t(), Server.t(), Types.server_data()) ::
           {:ok, Server.t()} | {:error, Changeset.t()}
   def update_server(auth, server, data) when is_struct(server, Server) do
     owner = ServerOwner.fetch_authenticated(auth)

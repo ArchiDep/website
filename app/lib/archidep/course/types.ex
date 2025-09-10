@@ -1,8 +1,6 @@
 defmodule ArchiDep.Course.Types do
   @moduledoc false
 
-  alias Ecto.UUID
-
   @type class_data :: %{
           name: String.t(),
           start_date: Date.t() | nil,
@@ -11,18 +9,7 @@ defmodule ArchiDep.Course.Types do
           servers_enabled: boolean()
         }
 
-  @type create_student_data :: %{
-          name: String.t(),
-          email: String.t(),
-          academic_class: String.t() | nil,
-          username: String.t(),
-          domain: String.t() | nil,
-          active: boolean(),
-          servers_enabled: boolean(),
-          class_id: UUID.t()
-        }
-
-  @type existing_student_data :: %{
+  @type student_data :: %{
           name: String.t(),
           email: String.t(),
           academic_class: String.t() | nil,

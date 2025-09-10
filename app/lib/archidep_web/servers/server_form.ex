@@ -27,7 +27,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     embeds_one(:expected_properties, ServerPropertiesForm, on_replace: :update)
   end
 
-  @spec create_changeset(map) :: Changeset.t(Types.create_server_data())
+  @spec create_changeset(map) :: Changeset.t(Types.server_data())
   def create_changeset(params \\ %{}) when is_map(params) do
     %__MODULE__{
       app_username: "archidep"
@@ -38,18 +38,19 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :username,
       :ssh_port,
       :active,
-      :group_id,
-      :app_username
+      :app_username,
+      :group_id
     ])
     |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
     |> validate_required([:ip_address, :username, :active])
   end
 
-  @spec to_create_data(t()) :: Types.create_server_data()
+  @spec to_create_data(t()) :: Types.server_data()
   def to_create_data(form),
     do:
       form
       |> Map.from_struct()
+      |> Map.delete(:group_id)
       |> Map.put(
         :expected_properties,
         then(form.expected_properties, fn
@@ -58,7 +59,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
         end)
       )
 
-  @spec update_changeset(Server.t(), map) :: Changeset.t(Types.update_server_data())
+  @spec update_changeset(Server.t(), map) :: Changeset.t(Types.server_data())
   def update_changeset(server, params \\ %{}) when is_struct(server, Server) and is_map(params) do
     %__MODULE__{
       name: server.name,
@@ -82,7 +83,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     |> validate_required([:ip_address, :username, :active])
   end
 
-  @spec to_update_data(t()) :: Types.update_server_data()
+  @spec to_update_data(t()) :: Types.server_data()
   def to_update_data(form),
     do:
       form

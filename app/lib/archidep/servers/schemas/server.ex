@@ -201,8 +201,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
       |> Repo.one()
       |> truthy_or(:server_not_found)
 
-  @spec new(Types.create_server_data(), ServerOwner.t()) :: Changeset.t(t())
-  def new(data, owner) do
+  @spec new(Types.server_data(), ServerGroup.t(), ServerOwner.t()) :: Changeset.t(t())
+  def new(data, group, owner) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
@@ -213,14 +213,16 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :username,
       :ssh_port,
       :active,
-      :group_id,
       :app_username
     ])
     |> cast_assoc(:expected_properties, with: &ServerProperties.new(&1, id, &2))
     |> change(
       id: id,
       secret_key: :crypto.strong_rand_bytes(50),
+      owner: owner,
       owner_id: owner.id,
+      group: group,
+      group_id: group.id,
       version: 1,
       created_at: now,
       updated_at: now
@@ -228,7 +230,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_new_server()
   end
 
-  @spec new_group_member_server(Types.create_server_data(), ServerOwner.t()) ::
+  @spec new_group_member_server(Types.server_data(), ServerOwner.t()) ::
           Changeset.t(t())
   def new_group_member_server(data, owner) do
     id = UUID.generate()
@@ -248,7 +250,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> change(
       id: id,
       secret_key: :crypto.strong_rand_bytes(50),
+      owner: owner,
       owner_id: owner.id,
+      group: owner.group_member.group,
       group_id: owner.group_member.group_id,
       app_username: "archidep",
       version: 1,
@@ -269,7 +273,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end)
   end
 
-  @spec update(t(), Types.update_server_data()) :: Changeset.t(t())
+  @spec update(t(), Types.server_data()) :: Changeset.t(t())
   def update(server, data) do
     id = server.id
     now = DateTime.utc_now()
@@ -291,7 +295,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_existing_server(id)
   end
 
-  @spec update_group_member_server(t(), Types.update_server_data(), ServerOwner.t()) ::
+  @spec update_group_member_server(t(), Types.server_data(), ServerOwner.t()) ::
           Changeset.t(t())
   def update_group_member_server(server, data, owner) do
     id = server.id
@@ -407,6 +411,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :secret_key,
       :active,
       :group_id,
+      :owner_id,
       :app_username,
       :expected_properties
     ])

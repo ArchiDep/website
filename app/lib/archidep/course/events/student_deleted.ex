@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.Events.StudentDeleted do
 
   use ArchiDep, :event
 
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias Ecto.UUID
 
@@ -11,18 +12,24 @@ defmodule ArchiDep.Course.Events.StudentDeleted do
   @enforce_keys [
     :id,
     :name,
-    :email
+    :email,
+    :class
   ]
   defstruct [
     :id,
     :name,
-    :email
+    :email,
+    :class
   ]
 
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t(),
-          email: String.t()
+          email: String.t(),
+          class: %{
+            id: UUID.t(),
+            name: String.t()
+          }
         }
 
   @spec new(Student.t()) :: t()
@@ -30,13 +37,23 @@ defmodule ArchiDep.Course.Events.StudentDeleted do
     %Student{
       id: id,
       name: name,
-      email: email
+      email: email,
+      class: class
     } = student
+
+    %Class{
+      id: class_id,
+      name: class_name
+    } = class
 
     %__MODULE__{
       id: id,
       name: name,
-      email: email
+      email: email,
+      class: %{
+        id: class_id,
+        name: class_name
+      }
     }
   end
 

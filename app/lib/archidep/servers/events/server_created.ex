@@ -52,7 +52,8 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
           owner: %{
             id: UUID.t(),
             username: String.t() | nil,
-            name: String.t() | nil
+            name: String.t() | nil,
+            root: boolean()
           },
           expected_properties: %{
             hostname: String.t() | nil,
@@ -108,7 +109,8 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
     %ServerOwner{
       id: owner_id,
       username: owner_username,
-      group_member: group_member
+      group_member: group_member,
+      root: owner_root
     } = owner
 
     owner_name =
@@ -132,7 +134,8 @@ defmodule ArchiDep.Servers.Events.ServerCreated do
       owner: %{
         id: owner_id,
         username: owner_username,
-        name: owner_name
+        name: owner_name,
+        root: owner_root
       },
       expected_properties: %{
         hostname: expected_hostname,

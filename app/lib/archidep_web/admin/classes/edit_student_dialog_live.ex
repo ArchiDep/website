@@ -46,7 +46,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
       &Course.validate_existing_student(
         auth,
         student.id,
-        StudentForm.to_existing_student_data(&1)
+        StudentForm.to_student_data(&1)
       ),
       socket
     )
@@ -65,7 +65,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
            Course.update_student(
              auth,
              student.id,
-             StudentForm.to_existing_student_data(form_data)
+             StudentForm.to_student_data(form_data)
            ) do
       socket
       |> send_notification(

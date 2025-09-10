@@ -41,9 +41,7 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
       :student,
       StudentForm.create_changeset(params),
       fn data ->
-        auth
-        |> Course.validate_student(StudentForm.to_create_student_data(data, class))
-        |> ok()
+        Course.validate_student(auth, class.id, StudentForm.to_student_data(data))
       end,
       socket
     )
@@ -59,7 +57,8 @@ defmodule ArchiDepWeb.Admin.Classes.NewStudentDialogLive do
          {:ok, created_student} <-
            Course.create_student(
              auth,
-             StudentForm.to_create_student_data(form_data, class)
+             class.id,
+             StudentForm.to_student_data(form_data)
            ) do
       socket
       |> send_notification(

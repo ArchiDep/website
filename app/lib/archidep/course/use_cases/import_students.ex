@@ -51,7 +51,9 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
                new_students = Enum.filter(students, &MapSet.member?(generated_ids, &1.id))
                ^inserted = length(new_students)
 
-               {:ok, new_students}
+               new_students
+               |> Enum.map(&%Student{&1 | class: class})
+               |> ok()
              end)
              |> insert_events(auth, class, import_list, now)
              |> transaction() do

@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
 
   use ArchiDep, :event
 
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias Ecto.UUID
 
@@ -16,7 +17,8 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
     :username,
     :domain,
     :active,
-    :servers_enabled
+    :servers_enabled,
+    :class
   ]
   defstruct [
     :id,
@@ -26,7 +28,8 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
     :username,
     :domain,
     :active,
-    :servers_enabled
+    :servers_enabled,
+    :class
   ]
 
   @type t :: %__MODULE__{
@@ -37,7 +40,11 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
           username: String.t(),
           domain: String.t(),
           active: boolean(),
-          servers_enabled: boolean()
+          servers_enabled: boolean(),
+          class: %{
+            id: UUID.t(),
+            name: String.t()
+          }
         }
 
   @spec new(Student.t()) :: t()
@@ -50,8 +57,14 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
       username: username,
       domain: domain,
       active: active,
-      servers_enabled: servers_enabled
+      servers_enabled: servers_enabled,
+      class: class
     } = student
+
+    %Class{
+      id: class_id,
+      name: class_name
+    } = class
 
     %__MODULE__{
       id: id,
@@ -61,7 +74,11 @@ defmodule ArchiDep.Course.Events.StudentUpdated do
       username: username,
       domain: domain,
       active: active,
-      servers_enabled: servers_enabled
+      servers_enabled: servers_enabled,
+      class: %{
+        id: class_id,
+        name: class_name
+      }
     }
   end
 

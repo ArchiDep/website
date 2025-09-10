@@ -40,7 +40,8 @@ defmodule ArchiDep.Servers.Events.ServerDeleted do
           owner: %{
             id: UUID.t(),
             username: String.t() | nil,
-            name: String.t() | nil
+            name: String.t() | nil,
+            root: boolean()
           }
         }
 
@@ -63,7 +64,8 @@ defmodule ArchiDep.Servers.Events.ServerDeleted do
     %ServerOwner{
       id: owner_id,
       username: owner_username,
-      group_member: group_member
+      group_member: group_member,
+      root: owner_root
     } = owner
 
     owner_name =
@@ -84,7 +86,8 @@ defmodule ArchiDep.Servers.Events.ServerDeleted do
       owner: %{
         id: owner_id,
         username: owner_username,
-        name: owner_name
+        name: owner_name,
+        root: owner_root
       }
     }
   end

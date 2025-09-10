@@ -13,23 +13,39 @@ defmodule ArchiDep.Course.Events.StudentCreated do
     :id,
     :name,
     :email,
-    :class_id,
-    :class_name
+    :academic_class,
+    :username,
+    :domain,
+    :active,
+    :servers_enabled,
+    :class
   ]
+
   defstruct [
     :id,
     :name,
     :email,
-    :class_id,
-    :class_name
+    :academic_class,
+    :username,
+    :domain,
+    :active,
+    :servers_enabled,
+    :class
   ]
 
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t(),
           email: String.t(),
-          class_id: UUID.t(),
-          class_name: String.t()
+          academic_class: String.t() | nil,
+          username: String.t(),
+          domain: String.t(),
+          active: boolean(),
+          servers_enabled: boolean(),
+          class: %{
+            id: UUID.t(),
+            name: String.t()
+          }
         }
 
   @spec new(Student.t()) :: t()
@@ -38,6 +54,11 @@ defmodule ArchiDep.Course.Events.StudentCreated do
       id: id,
       name: name,
       email: email,
+      academic_class: academic_class,
+      username: username,
+      domain: domain,
+      active: active,
+      servers_enabled: servers_enabled,
       class: class
     } = student
 
@@ -50,8 +71,15 @@ defmodule ArchiDep.Course.Events.StudentCreated do
       id: id,
       name: name,
       email: email,
-      class_id: class_id,
-      class_name: class_name
+      academic_class: academic_class,
+      username: username,
+      domain: domain,
+      active: active,
+      servers_enabled: servers_enabled,
+      class: %{
+        id: class_id,
+        name: class_name
+      }
     }
   end
 

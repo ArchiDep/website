@@ -835,7 +835,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       )
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
-    data = ServersFactory.random_update_server_data(%{username: ""})
+    data = ServersFactory.random_server_data(%{username: ""})
 
     assert {^initial_state,
             {:error,
@@ -859,7 +859,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       )
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
-    data = ServersFactory.random_update_server_data()
+    data = ServersFactory.random_server_data()
 
     assert update_server.(initial_state, auth, data) == {initial_state, {:error, :server_busy}}
   end
@@ -880,7 +880,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       )
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
-    data = ServersFactory.random_update_server_data()
+    data = ServersFactory.random_server_data()
 
     assert update_server.(initial_state, auth, data) == {initial_state, {:error, :server_busy}}
   end

@@ -67,15 +67,19 @@ defmodule ArchiDep.Servers.Behaviour do
   Validates the data to create a new server.
   """
   callback(
-    validate_server(auth: Authentication.t(), data: Types.create_server_data()) :: Changeset.t()
+    validate_server(auth: Authentication.t(), group_id: UUID.t(), data: Types.server_data()) ::
+      {:ok, Changeset.t()} | {:error, :server_group_not_found}
   )
 
   @doc """
   Creates a new server.
   """
   callback(
-    create_server(auth: Authentication.t(), data: Types.create_server_data()) ::
-      {:ok, Server.t()} | {:error, Changeset.t()}
+    create_server(auth: Authentication.t(), group_id: UUID.t(), data: Types.server_data()) ::
+      {:ok, Server.t()}
+      | {:error, Changeset.t()}
+      | {:error, {:server_limit_reached, pos_integer()}}
+      | {:error, :server_group_not_found}
   )
 
   @doc """
@@ -111,7 +115,7 @@ defmodule ArchiDep.Servers.Behaviour do
     validate_existing_server(
       auth: Authentication.t(),
       server_id: UUID.t(),
-      data: Types.update_server_data()
+      data: Types.server_data()
     ) ::
       {:ok, Changeset.t()} | {:error, :server_not_found}
   )
@@ -120,7 +124,7 @@ defmodule ArchiDep.Servers.Behaviour do
   Updates a server. The operation will fail if the server is busy.
   """
   callback(
-    update_server(auth: Authentication.t(), server_id: UUID.t(), data: Types.update_server_data()) ::
+    update_server(auth: Authentication.t(), server_id: UUID.t(), data: Types.server_data()) ::
       {:ok, Server.t()}
       | {:error, Changeset.t()}
       | {:error, :server_busy}

@@ -64,18 +64,7 @@ defmodule ArchiDep.Servers.Types do
           | server_reconnection_failed_problem()
           | server_sudo_access_check_failed_problem()
 
-  @type create_server_data :: %{
-          name: String.t() | nil,
-          ip_address: String.t(),
-          username: String.t(),
-          ssh_port: integer() | nil,
-          active: boolean(),
-          class_id: UUID.t(),
-          app_username: String.t(),
-          expected_properties: server_properties()
-        }
-
-  @type update_server_data :: %{
+  @type server_data :: %{
           name: String.t() | nil,
           ip_address: String.t(),
           username: String.t(),
