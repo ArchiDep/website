@@ -17,6 +17,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   import ArchiDep.Servers.Schemas.ServerOwner, only: [where_server_owner_active: 1]
   alias ArchiDep.Events.Store.EventInitiator
   alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Servers.Events.ServerFactsGathered
   alias ArchiDep.Servers.Events.ServerSetUp
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
@@ -333,18 +334,31 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end)
   end
 
-  @spec update_last_known_properties!(t(), map()) :: t()
-  def update_last_known_properties!(server, ansible_facts) do
-    server
-    |> change(
-      last_known_properties:
-        ServerProperties.update_from_ansible_facts(
-          server.last_known_properties || %ServerProperties{id: UUID.generate()},
-          ansible_facts
-        )
-    )
-    |> optimistic_lock(:version)
-    |> Repo.update!()
+  @spec update_last_known_properties!(t(), map(), EventReference.t()) :: t()
+  def update_last_known_properties!(server, ansible_facts, cause) do
+    now = DateTime.utc_now()
+
+    case Multi.new()
+         |> Multi.update(
+           :server,
+           server
+           |> change(
+             last_known_properties:
+               ServerProperties.update_from_ansible_facts(
+                 server.last_known_properties || %ServerProperties{id: UUID.generate()},
+                 ansible_facts
+               ),
+             updated_at: now
+           )
+           |> optimistic_lock(:version)
+         )
+         |> Multi.insert(
+           :stored_event,
+           &server_facts_gathered(&1.server, ansible_facts, now, cause)
+         )
+         |> Repo.transaction() do
+      {:ok, %{server: updated_server}} -> updated_server
+    end
   end
 
   @spec mark_as_set_up!(t(), EventReference.t()) :: t()
@@ -459,6 +473,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
        do: add_error(changeset, :app_username, "cannot be the same as the username")
 
   defp validate_username_and_app_username(changeset, _username, _app_username), do: changeset
+
+  defp server_facts_gathered(server, facts, now, cause),
+    do:
+      server
+      |> ServerFactsGathered.new(facts)
+      |> new_event(%{}, caused_by: cause, occurred_at: now)
+      |> add_to_stream(server)
+      |> initiated_by(server)
 
   defp server_set_up(server, cause),
     do:

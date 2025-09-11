@@ -666,10 +666,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     add_action(state, measure_load_average_action())
   end
 
-  defp handle_facts_gathering_result(state, {:ok, facts}) do
+  defp handle_facts_gathering_result(
+         %__MODULE__{connection_state: connected_state(connection_event: connection_event)} =
+           state,
+         {:ok, facts}
+       ) do
     Logger.debug("Received fact gathering result from server #{state.server.id}")
 
-    updated_server = Server.update_last_known_properties!(state.server, facts)
+    updated_server = Server.update_last_known_properties!(state.server, facts, connection_event)
 
     setup_playbook = Ansible.setup_playbook()
 

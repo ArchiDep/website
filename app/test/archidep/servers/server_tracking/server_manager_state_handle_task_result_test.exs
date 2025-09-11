@@ -78,7 +78,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     now = DateTime.utc_now()
     result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
 
-    connection_event = assert_server_connected_event!(server, now, fake_event)
+    [connection_event] = fetch_new_stored_events([fake_event])
+
+    connection_event_ref =
+      assert_server_connected_event!(connection_event, server, now, fake_event)
 
     assert %{
              connection_state: connected_state(time: time),
@@ -99,7 +102,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                    connection_ref: connection_ref,
                    connection_pid: connection_pid,
                    time: time,
-                   connection_event: connection_event
+                   connection_event: connection_event_ref
                  ),
                actions: actions,
                tasks: %{},
@@ -170,7 +173,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     now = DateTime.utc_now()
     result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
 
-    connection_event = assert_server_connected_event!(server, now, fake_event)
+    [connection_event] = fetch_new_stored_events([fake_event])
+
+    connection_event_ref =
+      assert_server_connected_event!(connection_event, server, now, fake_event)
 
     assert %{
              connection_state: connected_state(time: time),
@@ -191,7 +197,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                    connection_ref: connection_ref,
                    connection_pid: connection_pid,
                    time: time,
-                   connection_event: connection_event
+                   connection_event: connection_event_ref
                  ),
                actions: actions,
                tasks: %{},
@@ -274,7 +280,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     now = DateTime.utc_now()
     result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
 
-    connection_event = assert_server_connected_event!(server, now)
+    [connection_event] = fetch_new_stored_events()
+    connection_event_ref = assert_server_connected_event!(connection_event, server, now)
 
     assert %{
              connection_state: connected_state(time: time),
@@ -295,7 +302,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                    connection_ref: connection_ref,
                    connection_pid: connection_pid,
                    time: time,
-                   connection_event: connection_event
+                   connection_event: connection_event_ref
                  ),
                actions: actions,
                tasks: %{},
@@ -1346,10 +1353,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                ] = actions
            } = result
 
-    run_started_event =
-      assert_ansible_playbook_run_started_event!(playbook_run, now, fake_connection_event)
+    [run_started_event] = fetch_new_stored_events([fake_connection_event])
 
-    assert playbook_run_cause == run_started_event
+    run_started_event_ref =
+      assert_ansible_playbook_run_started_event!(
+        run_started_event,
+        playbook_run,
+        now,
+        fake_connection_event
+      )
+
+    assert playbook_run_cause == run_started_event_ref
 
     assert result == %ServerManagerState{
              initial_state
@@ -1906,10 +1920,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     )
 
     fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{gather_facts: fake_gather_facts_ref}
@@ -1919,14 +1935,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
+    now = DateTime.utc_now()
+
     result =
       handle_task_result.(
         initial_state,
         fake_gather_facts_ref,
         {:ok, %{}}
       )
-
-    assert_no_stored_events!()
 
     assert %{
              server:
@@ -1941,6 +1957,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                ] = actions
            } = result
 
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      %{},
+      now,
+      fake_connection_event
+    )
+
     assert result == %ServerManagerState{
              initial_state
              | server: %Server{
@@ -1950,6 +1976,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                      id: last_known_properties_id
                    },
                    last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                actions: actions,
@@ -1992,10 +2019,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     )
 
     fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{gather_facts: fake_gather_facts_ref}
@@ -2005,14 +2034,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
+    now = DateTime.utc_now()
+
     result =
       handle_task_result.(
         initial_state,
         fake_gather_facts_ref,
         {:ok, %{}}
       )
-
-    assert_no_stored_events!()
 
     assert %{
              server:
@@ -2026,6 +2055,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                ] = actions
            } = result
 
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      %{},
+      now,
+      fake_connection_event
+    )
+
     assert result == %ServerManagerState{
              initial_state
              | server: %Server{
@@ -2035,6 +2074,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                      id: last_known_properties_id
                    },
                    last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                actions: actions,
@@ -2072,10 +2112,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     )
 
     fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{gather_facts: fake_gather_facts_ref}
@@ -2085,31 +2127,32 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
+    fake_facts = %{
+      "ansible_hostname" => "test-server",
+      "ansible_machine_id" => "1234567890abcdef",
+      "ansible_processor_count" => 2,
+      "ansible_processor_cores" => 4,
+      "ansible_processor_vcpus" => 8,
+      "ansible_memory_mb" => %{
+        "real" => %{"total" => 4096},
+        "swap" => %{"total" => 2048}
+      },
+      "ansible_system" => "Linux",
+      "ansible_architecture" => "x86_64",
+      "ansible_os_family" => "Debian",
+      "ansible_distribution" => "Ubuntu",
+      "ansible_distribution_release" => "noble",
+      "ansible_distribution_version" => "24.04"
+    }
+
+    now = DateTime.utc_now()
+
     result =
       handle_task_result.(
         initial_state,
         fake_gather_facts_ref,
-        {:ok,
-         %{
-           "ansible_hostname" => "test-server",
-           "ansible_machine_id" => "1234567890abcdef",
-           "ansible_processor_count" => 2,
-           "ansible_processor_cores" => 4,
-           "ansible_processor_vcpus" => 8,
-           "ansible_memory_mb" => %{
-             "real" => %{"total" => 4096},
-             "swap" => %{"total" => 2048}
-           },
-           "ansible_system" => "Linux",
-           "ansible_architecture" => "x86_64",
-           "ansible_os_family" => "Debian",
-           "ansible_distribution" => "Ubuntu",
-           "ansible_distribution_release" => "noble",
-           "ansible_distribution_version" => "24.04"
-         }}
+        {:ok, fake_facts}
       )
-
-    assert_no_stored_events!()
 
     assert %{
              server:
@@ -2123,6 +2166,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
+
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      fake_facts,
+      now,
+      fake_connection_event
+    )
 
     assert result == %ServerManagerState{
              initial_state
@@ -2146,6 +2199,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                      distribution_version: "24.04"
                    },
                    last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                actions: actions,
@@ -2175,7 +2229,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
   end
 
-  test "last known server properties are updaated after gathering facts",
+  test "last known server properties are updated after gathering facts",
        %{
          handle_task_result: handle_task_result
        } do
@@ -2209,10 +2263,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     )
 
     fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{gather_facts: fake_gather_facts_ref}
@@ -2222,31 +2278,32 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
+    fake_facts = %{
+      "ansible_hostname" => "test-server",
+      "ansible_machine_id" => "1234567890abcdef",
+      "ansible_processor_count" => 2,
+      "ansible_processor_cores" => 4,
+      "ansible_processor_vcpus" => 8,
+      "ansible_memory_mb" => %{
+        "real" => %{"total" => 4096},
+        "swap" => %{"total" => 2048}
+      },
+      "ansible_system" => "Linux",
+      "ansible_architecture" => "x86_64",
+      "ansible_os_family" => "Debian",
+      "ansible_distribution" => "Ubuntu",
+      "ansible_distribution_release" => "noble",
+      "ansible_distribution_version" => "24.04"
+    }
+
+    now = DateTime.utc_now()
+
     result =
       handle_task_result.(
         initial_state,
         fake_gather_facts_ref,
-        {:ok,
-         %{
-           "ansible_hostname" => "test-server",
-           "ansible_machine_id" => "1234567890abcdef",
-           "ansible_processor_count" => 2,
-           "ansible_processor_cores" => 4,
-           "ansible_processor_vcpus" => 8,
-           "ansible_memory_mb" => %{
-             "real" => %{"total" => 4096},
-             "swap" => %{"total" => 2048}
-           },
-           "ansible_system" => "Linux",
-           "ansible_architecture" => "x86_64",
-           "ansible_os_family" => "Debian",
-           "ansible_distribution" => "Ubuntu",
-           "ansible_distribution_release" => "noble",
-           "ansible_distribution_version" => "24.04"
-         }}
+        {:ok, fake_facts}
       )
-
-    assert_no_stored_events!()
 
     assert %{
              server: updated_server,
@@ -2257,6 +2314,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
+
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      fake_facts,
+      now,
+      fake_connection_event
+    )
 
     assert result == %ServerManagerState{
              initial_state
@@ -2280,6 +2347,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                      distribution_version: "24.04"
                    },
                    last_known_properties_id: server.last_known_properties_id,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                actions: actions,
@@ -2356,10 +2424,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     )
 
     fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{gather_facts: fake_gather_facts_ref},
@@ -2373,28 +2443,29 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
+    fake_facts = %{
+      "ansible_hostname" => "test-server",
+      "ansible_machine_id" => "1234567890abcdef",
+      "ansible_processor_count" => 4,
+      "ansible_processor_cores" => 7,
+      "ansible_processor_vcpus" => 9,
+      "ansible_memory_mb" => %{
+        "real" => %{"total" => 2000},
+        "swap" => %{"total" => 4096}
+      },
+      "ansible_system" => "macOS",
+      "ansible_architecture" => "arm64",
+      "ansible_os_family" => "DOS"
+    }
+
+    now = DateTime.utc_now()
+
     result =
       handle_task_result.(
         initial_state,
         fake_gather_facts_ref,
-        {:ok,
-         %{
-           "ansible_hostname" => "test-server",
-           "ansible_machine_id" => "1234567890abcdef",
-           "ansible_processor_count" => 4,
-           "ansible_processor_cores" => 7,
-           "ansible_processor_vcpus" => 9,
-           "ansible_memory_mb" => %{
-             "real" => %{"total" => 2000},
-             "swap" => %{"total" => 4096}
-           },
-           "ansible_system" => "macOS",
-           "ansible_architecture" => "arm64",
-           "ansible_os_family" => "DOS"
-         }}
+        {:ok, fake_facts}
       )
-
-    assert_no_stored_events!()
 
     assert %{
              server: %Server{last_known_properties_id: last_known_properties_id} = updated_server,
@@ -2405,6 +2476,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
+
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      fake_facts,
+      now,
+      fake_connection_event
+    )
 
     assert result == %ServerManagerState{
              initial_state
@@ -2425,6 +2506,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                      os_family: "DOS"
                    },
                    last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                actions: actions,
@@ -2470,10 +2552,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     server = insert_active_server!(set_up_at: true, ssh_port: true)
 
     fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{gather_facts: fake_gather_facts_ref}
@@ -2482,6 +2566,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    now = DateTime.utc_now()
 
     {result, log} =
       with_log(fn ->
@@ -2493,7 +2579,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
       end)
 
     assert log =~ "No previous Ansible setup playbook run found for server #{server.id}"
-    assert_no_stored_events!()
 
     assert %{
              server:
@@ -2508,6 +2593,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                ] = actions
            } = result
 
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      %{},
+      now,
+      fake_connection_event
+    )
+
     assert result == %ServerManagerState{
              initial_state
              | server: %Server{
@@ -2517,6 +2612,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                      id: last_known_properties_id
                    },
                    last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                actions: actions,
@@ -2602,10 +2698,25 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                ] = actions
            } = result
 
-    run_started_event =
-      assert_ansible_playbook_run_started_event!(playbook_run, now, fake_connection_event)
+    [facts_event, run_started_event] = fetch_new_stored_events([fake_connection_event])
 
-    assert playbook_run_cause == run_started_event
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      %{},
+      now,
+      fake_connection_event
+    )
+
+    run_started_event_ref =
+      assert_ansible_playbook_run_started_event!(
+        run_started_event,
+        playbook_run,
+        now,
+        fake_connection_event
+      )
+
+    assert playbook_run_cause == run_started_event_ref
 
     assert result == %ServerManagerState{
              initial_state
@@ -2616,6 +2727,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                      id: last_known_properties_id
                    },
                    last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                ansible_playbook: {playbook_run, nil, fake_connection_event},
@@ -2724,10 +2836,25 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                ] = actions
            } = result
 
-    run_started_event =
-      assert_ansible_playbook_run_started_event!(playbook_run, now, fake_connection_event)
+    [facts_event, run_started_event] = fetch_new_stored_events([fake_connection_event])
 
-    assert playbook_run_cause == run_started_event
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      %{},
+      now,
+      fake_connection_event
+    )
+
+    run_started_event_ref =
+      assert_ansible_playbook_run_started_event!(
+        run_started_event,
+        playbook_run,
+        now,
+        fake_connection_event
+      )
+
+    assert playbook_run_cause == run_started_event_ref
 
     assert result == %ServerManagerState{
              initial_state
@@ -2738,6 +2865,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                      id: last_known_properties_id
                    },
                    last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                ansible_playbook: {playbook_run, nil, fake_connection_event},
@@ -3521,25 +3649,29 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
-  defp assert_server_connected_event!(server, now, caused_by \\ nil) do
-    caused_by_id = if caused_by, do: caused_by.id, else: "00000000-0000-0000-0000-000000000000"
+  defp fetch_new_stored_events(except \\ []) do
+    ids_to_exclude = Enum.map(except, & &1.id)
 
-    assert [
-             %StoredEvent{
-               id: event_id,
-               data: %{"connection_duration" => connection_duration},
-               occurred_at: occurred_at
-             } = registered_event
-           ] =
-             Repo.all(
-               from e in StoredEvent,
-                 where: e.id not in [^caused_by_id],
-                 order_by: [asc: e.occurred_at]
-             )
+    Repo.all(
+      from e in StoredEvent,
+        where: e.id not in ^ids_to_exclude,
+        order_by: [asc: e.occurred_at]
+    )
+  end
 
+  defp assert_server_connected_event!(
+         %StoredEvent{
+           id: event_id,
+           data: %{"connection_duration" => connection_duration},
+           occurred_at: occurred_at
+         } = connected_event,
+         server,
+         now,
+         caused_by \\ nil
+       ) do
     assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
 
-    assert registered_event == %StoredEvent{
+    assert connected_event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),
              id: event_id,
              stream: "servers:servers:#{server.id}",
@@ -3580,31 +3712,74 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     %EventReference{
       id: event_id,
-      causation_id: registered_event.causation_id,
-      correlation_id: registered_event.correlation_id
+      causation_id: connected_event.causation_id,
+      correlation_id: connected_event.correlation_id
+    }
+  end
+
+  defp assert_server_facts_gathered_event!(
+         %StoredEvent{id: event_id, occurred_at: occurred_at} = event,
+         server,
+         facts,
+         now,
+         caused_by
+       ) do
+    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+
+    assert event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{server.id}",
+             version: server.version,
+             type: "archidep/servers/server-facts-gathered",
+             data: %{
+               "id" => server.id,
+               "name" => server.name,
+               "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
+               "username" => server.username,
+               "app_username" => server.app_username,
+               "ssh_port" => server.ssh_port,
+               "facts" => facts,
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner.id,
+                 "username" => server.owner.username,
+                 "name" =>
+                   if server.owner.group_member do
+                     server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => server.owner.root
+               }
+             },
+             meta: %{},
+             initiator: "servers:servers:#{server.id}",
+             causation_id: caused_by.id,
+             correlation_id: caused_by.correlation_id,
+             occurred_at: occurred_at,
+             entity: nil
+           }
+
+    %EventReference{
+      id: event_id,
+      causation_id: event.causation_id,
+      correlation_id: event.correlation_id
     }
   end
 
   defp assert_ansible_playbook_run_started_event!(
+         %StoredEvent{id: event_id, occurred_at: occurred_at} = event,
          run,
          now,
-         %EventReference{id: caused_by_id} = caused_by
+         caused_by
        ) do
-    assert [
-             %StoredEvent{
-               id: event_id,
-               occurred_at: occurred_at
-             } = registered_event
-           ] =
-             Repo.all(
-               from e in StoredEvent,
-                 where: e.id not in [^caused_by_id],
-                 order_by: [asc: e.occurred_at]
-             )
-
     assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
 
-    assert registered_event == %StoredEvent{
+    assert event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),
              id: event_id,
              stream: "servers:servers:#{run.server_id}",
@@ -3651,8 +3826,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     %EventReference{
       id: event_id,
-      causation_id: registered_event.causation_id,
-      correlation_id: registered_event.correlation_id
+      causation_id: event.causation_id,
+      correlation_id: event.correlation_id
     }
   end
 end
