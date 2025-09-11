@@ -6,7 +6,6 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
 
   import ArchiDep.Helpers.DataHelpers
   import ArchiDep.Helpers.UseCaseHelpers
-  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Events.ServerNotifiedUp
   alias ArchiDep.Servers.Schemas.Server
