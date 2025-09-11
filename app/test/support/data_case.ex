@@ -62,6 +62,19 @@ defmodule ArchiDep.Support.DataCase do
     :ok
   end
 
+  @spec fetch_new_stored_events() :: list(StoredEvent.t(map))
+  @spec fetch_new_stored_events(list(StoredEvent.t(map) | EventReference.t())) ::
+          list(StoredEvent.t(map))
+  def fetch_new_stored_events(except \\ []) do
+    ids_to_exclude = Enum.map(except, & &1.id)
+
+    Repo.all(
+      from e in StoredEvent,
+        where: e.id not in ^ids_to_exclude,
+        order_by: [asc: e.occurred_at]
+    )
+  end
+
   @doc """
   Sets up the sandbox based on the test tags.
   """
