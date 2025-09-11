@@ -22,6 +22,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias ArchiDep.Servers.Events.ServerDisconnected
   alias ArchiDep.Servers.Events.ServerReconnecting
   alias ArchiDep.Servers.Events.ServerRetriedAnsiblePlaybook
+  alias ArchiDep.Servers.Events.ServerRetriedConnecting
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
@@ -231,7 +232,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           # restarts trying to connect more frequently, then proceeds to add the
           # usual backoff.
           maybe_manually_retry(retrying, manual),
-          retry_connecting_causation_event(manual)
+          retry_connecting_causation_event(state, manual)
         )
 
   def retry_connecting(
@@ -240,7 +241,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         } = state,
         manual
       ),
-      do: connect(state, connection_pid, false, retry_connecting_causation_event(manual))
+      do: connect(state, connection_pid, false, retry_connecting_causation_event(state, manual))
 
   def retry_connecting(state, _manual) do
     Logger.warning(
@@ -250,8 +251,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     state
   end
 
-  defp retry_connecting_causation_event({:event, event}), do: event
-  defp retry_connecting_causation_event(_anything_else), do: nil
+  defp retry_connecting_causation_event(_state, {:event, event}), do: event
+
+  defp retry_connecting_causation_event(state, :manual),
+    do:
+      state.server
+      |> ServerRetriedConnecting.new(state.username)
+      |> persist_server_event!(state.server, DateTime.utc_now(), nil)
+      |> StoredEvent.to_reference()
+
+  defp retry_connecting_causation_event(_state, :automated), do: nil
 
   defp connect(state, connection_pid, retrying, causation_event),
     do:

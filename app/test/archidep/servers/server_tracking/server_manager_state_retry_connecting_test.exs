@@ -106,9 +106,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     retry_connecting_state(retrying: retrying) = initial_state.connection_state
 
+    now = DateTime.utc_now()
     result = retry_connecting.(initial_state, :manual)
 
-    assert_no_stored_events!()
+    [retried_event] = fetch_new_stored_events()
+    retried_event_ref = assert_server_retried_connecting_event!(retried_event, server, now)
 
     test_pid = self()
 
@@ -119,8 +121,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                connecting_state(
                  connection_ref: connection_ref,
                  connection_pid: ^test_pid,
+                 time: time,
                  retrying: ^expected_retrying
-               ) = connection_state,
+               ),
              actions:
                [
                  {:monitor, ^test_pid},
@@ -131,10 +134,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
            } = result
 
     assert is_reference(connection_ref)
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
 
     assert result == %ServerManagerState{
              initial_state
-             | connection_state: connection_state,
+             | connection_state:
+                 connecting_state(
+                   connection_ref: connection_ref,
+                   connection_pid: test_pid,
+                   time: time,
+                   retrying: expected_retrying,
+                   causation_event: retried_event_ref
+                 ),
                actions: actions,
                retry_timer: nil
            }
@@ -236,8 +247,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
         version: 30
       )
 
-    cause = ServersFactory.random_retry_connecting_cause()
-    result = retry_connecting.(initial_state, cause)
+    result = retry_connecting.(initial_state, :automated)
 
     assert_no_stored_events!()
 
@@ -316,5 +326,60 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
     end
 
     assert_no_stored_events!()
+  end
+
+  defp assert_server_retried_connecting_event!(
+         %StoredEvent{
+           id: event_id,
+           occurred_at: occurred_at
+         } = retried_event,
+         server,
+         now
+       ) do
+    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+
+    assert retried_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{server.id}",
+             version: server.version,
+             type: "archidep/servers/server-retried-connecting",
+             data: %{
+               "id" => server.id,
+               "name" => server.name,
+               "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
+               "username" => server.username,
+               "ssh_username" =>
+                 if(server.set_up_at, do: server.app_username, else: server.username),
+               "ssh_port" => server.ssh_port,
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner.id,
+                 "username" => server.owner.username,
+                 "name" =>
+                   if server.owner.group_member do
+                     server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => server.owner.root
+               }
+             },
+             meta: %{},
+             initiator: "servers:servers:#{server.id}",
+             causation_id: event_id,
+             correlation_id: event_id,
+             occurred_at: occurred_at,
+             entity: nil
+           }
+
+    %EventReference{
+      id: event_id,
+      causation_id: retried_event.causation_id,
+      correlation_id: retried_event.correlation_id
+    }
   end
 end
