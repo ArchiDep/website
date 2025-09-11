@@ -26,7 +26,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
     connection_ref: nil,
     connection_pid: nil,
     time: nil,
-    connection_event: nil
+    connection_event: nil,
+    retry_event: nil
   )
 
   Record.defrecord(:reconnecting_state,
@@ -70,7 +71,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
             connection_ref: reference(),
             connection_pid: pid(),
             time: DateTime.t(),
-            connection_event: EventReference.t()
+            connection_event: EventReference.t(),
+            retry_event: EventReference.t() | nil
           )
 
   @type reconnecting_state ::

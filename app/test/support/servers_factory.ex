@@ -280,13 +280,16 @@ defmodule ArchiDep.Support.ServersFactory do
     {connection_event, attrs!} =
       Keyword.pop_lazy(attrs!, :connection_event, fn -> EventsFactory.build(:event_reference) end)
 
+    {retry_event, attrs!} = Keyword.pop(attrs!, :retry_event, nil)
+
     [] = Keyword.keys(attrs!)
 
     connected_state(
       connection_ref: make_ref(),
       connection_pid: self(),
       time: Faker.DateTime.backward(1),
-      connection_event: connection_event
+      connection_event: connection_event,
+      retry_event: retry_event
     )
   end
 

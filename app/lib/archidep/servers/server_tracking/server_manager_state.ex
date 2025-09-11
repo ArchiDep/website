@@ -22,6 +22,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias ArchiDep.Servers.Events.ServerDisconnected
   alias ArchiDep.Servers.Events.ServerReconnecting
   alias ArchiDep.Servers.Events.ServerRetriedAnsiblePlaybook
+  alias ArchiDep.Servers.Events.ServerRetriedCheckingOpenPorts
   alias ArchiDep.Servers.Events.ServerRetriedConnecting
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
@@ -771,6 +772,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     )
 
     state
+    |> change_connection_state(connected_state(state.connection_state, retry_event: nil))
     |> add_action(update_tracking_action())
     |> drop_port_checking_problems()
     |> add_problem(server_port_testing_script_failed_problem(:exit, non_zero_exit_code, stderr))
@@ -783,19 +785,24 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     Logger.error("Port testing script failed on server #{server.id} because: #{inspect(reason)}")
 
     state
+    |> change_connection_state(connected_state(state.connection_state, retry_event: nil))
     |> add_action(update_tracking_action())
     |> drop_port_checking_problems()
     |> add_problem(server_port_testing_script_failed_problem(:error, reason))
   end
 
   defp handle_open_ports_check_result(
-         %__MODULE__{connection_state: connected_state(connection_event: cause), server: server} =
+         %__MODULE__{
+           connection_state: connected_state(connection_event: cause, retry_event: retry_cause),
+           server: server
+         } =
            state,
          :ok
        ),
        do:
          state
-         |> set_updated_server(maybe_mark_open_ports_checked(server, cause))
+         |> change_connection_state(connected_state(state.connection_state, retry_event: nil))
+         |> set_updated_server(maybe_mark_open_ports_checked(server, retry_cause || cause))
          |> add_action(update_tracking_action())
          |> drop_port_checking_problems()
 
@@ -805,6 +812,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        ),
        do:
          state
+         |> change_connection_state(connected_state(state.connection_state, retry_event: nil))
          |> add_action(update_tracking_action())
          |> drop_port_checking_problems()
          |> add_problem(server_open_ports_check_failed_problem(port_problems))
@@ -992,7 +1000,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       )
 
     if has_failed_checking_open_ports do
-      state |> add_actions([update_tracking_action(), test_ports()]) |> with_reply(:ok)
+      retried_event =
+        server
+        |> ServerRetriedCheckingOpenPorts.new(state.username, @ports_to_check)
+        |> persist_server_event!(server, DateTime.utc_now())
+        |> StoredEvent.to_reference()
+
+      state
+      |> change_connection_state(
+        connected_state(state.connection_state, retry_event: retried_event)
+      )
+      |> add_actions([update_tracking_action(), test_ports()])
+      |> with_reply(:ok)
     else
       Logger.info(
         # coveralls-ignore-next-line

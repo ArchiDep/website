@@ -1,6 +1,7 @@
 defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTaskResultTest do
   use ArchiDep.Support.DataCase, async: true
 
+  import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Support.ServerManagerStateTestUtils
   import ExUnit.CaptureLog
   import Hammox
@@ -456,6 +457,86 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     assert update_tracking_fn.(result) ==
              {real_time_state(server,
                 connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "the open ports checked event is marked as a retry when that is the case", %{
+    handle_task_result: handle_task_result
+  } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true, open_ports_checked_at: nil)
+
+    fake_check_open_ports_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+    fake_retry_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state:
+          ServersFactory.random_connected_state(
+            connection_event: fake_connection_event,
+            retry_event: fake_retry_event
+          ),
+        server: server,
+        username: server.app_username,
+        tasks: %{check_open_ports: fake_check_open_ports_ref}
+      )
+
+    now = DateTime.utc_now()
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_open_ports_ref,
+        :ok
+      )
+
+    assert %{
+             server: %{open_ports_checked_at: open_ports_checked_at} = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_check_open_ports_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    [ports_checked_event] = fetch_new_stored_events([fake_connection_event, fake_retry_event])
+
+    assert_server_open_ports_checked_event!(
+      ports_checked_event,
+      updated_server,
+      now,
+      fake_retry_event
+    )
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connected_state(initial_state.connection_state, retry_event: nil),
+               server: %Server{
+                 server
+                 | open_ports_checked_at: open_ports_checked_at,
+                   updated_at: updated_server.updated_at,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_in_delta DateTime.diff(now, open_ports_checked_at, :second), 0, 1
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
                 conn_params: conn_params(server, username: server.app_username),
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}

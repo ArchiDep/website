@@ -1,6 +1,7 @@
 defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPortsTest do
   use ArchiDep.Support.DataCase, async: true
 
+  import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Support.ServerManagerStateTestUtils
   import Hammox
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
@@ -32,9 +33,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
         ]
       )
 
+    now = DateTime.utc_now()
     assert {result, :ok} = retry_checking_open_ports.(initial_state)
 
-    assert_no_stored_events!()
+    [retried_event] = fetch_new_stored_events()
+
+    retried_event_ref =
+      assert_server_retried_checking_open_ports_event!(retried_event, server, now)
 
     assert %{
              actions:
@@ -44,7 +49,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
                ] = actions
            } = result
 
-    assert result == %ServerManagerState{initial_state | actions: actions}
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connected_state(initial_state.connection_state, retry_event: retried_event_ref),
+               actions: actions
+           }
 
     fake_task = Task.completed(:fake)
 
@@ -58,7 +68,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
 
     assert update_tracking_fn.(run_command_result) ==
              {real_time_state(server,
-                connection_state: initial_state.connection_state,
+                connection_state: result.connection_state,
                 current_job: :checking_open_ports,
                 problems: result.problems,
                 version: result.version + 1
@@ -80,9 +90,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
         ]
       )
 
+    now = DateTime.utc_now()
     assert {result, :ok} = retry_checking_open_ports.(initial_state)
 
-    assert_no_stored_events!()
+    [retried_event] = fetch_new_stored_events()
+
+    retried_event_ref =
+      assert_server_retried_checking_open_ports_event!(retried_event, server, now)
 
     assert %{
              actions:
@@ -92,7 +106,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
                ] = actions
            } = result
 
-    assert result == %ServerManagerState{initial_state | actions: actions}
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connected_state(initial_state.connection_state, retry_event: retried_event_ref),
+               actions: actions
+           }
 
     fake_task = Task.completed(:fake)
 
@@ -106,7 +125,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
 
     assert update_tracking_fn.(run_command_result) ==
              {real_time_state(server,
-                connection_state: initial_state.connection_state,
+                connection_state: result.connection_state,
                 current_job: :checking_open_ports,
                 problems: result.problems,
                 version: result.version + 1
@@ -226,5 +245,61 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
     end
 
     assert_no_stored_events!()
+  end
+
+  defp assert_server_retried_checking_open_ports_event!(
+         %StoredEvent{
+           id: event_id,
+           occurred_at: occurred_at
+         } = retried_event,
+         server,
+         now
+       ) do
+    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+
+    assert retried_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{server.id}",
+             version: server.version,
+             type: "archidep/servers/server-retried-checking-open-ports",
+             data: %{
+               "id" => server.id,
+               "name" => server.name,
+               "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
+               "username" => server.username,
+               "ssh_username" =>
+                 if(server.set_up_at, do: server.app_username, else: server.username),
+               "ssh_port" => server.ssh_port,
+               "ports" => [80, 443, 3000, 3001],
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner.id,
+                 "username" => server.owner.username,
+                 "name" =>
+                   if server.owner.group_member do
+                     server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => server.owner.root
+               }
+             },
+             meta: %{},
+             initiator: "servers:servers:#{server.id}",
+             causation_id: event_id,
+             correlation_id: event_id,
+             occurred_at: occurred_at,
+             entity: nil
+           }
+
+    %EventReference{
+      id: event_id,
+      causation_id: retried_event.causation_id,
+      correlation_id: retried_event.correlation_id
+    }
   end
 end
