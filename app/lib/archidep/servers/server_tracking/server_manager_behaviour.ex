@@ -18,7 +18,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
   @callback init(UUID.t(), Pipeline.t()) :: state()
   @callback online?(state()) :: boolean()
   @callback connection_idle(state(), pid()) :: state()
-  @callback retry_connecting(state(), boolean()) :: state()
+  @callback retry_connecting(state(), :manual | :automated | {:event, UUID.t()}) :: state()
   @callback handle_task_result(state(), reference(), result) :: state() when result: term()
   @callback ansible_playbook_event(state(), UUID.t(), String.t() | nil) :: state()
   @callback ansible_playbook_completed(state(), UUID.t()) :: state()

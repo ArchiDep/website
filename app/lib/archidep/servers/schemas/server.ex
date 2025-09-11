@@ -97,6 +97,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
       }),
       do: "#{username}@#{:inet.ntoa(ip_address.address)}:#{ssh_port}"
 
+  @spec event_stream(String.t() | t()) :: String.t()
+  def event_stream(id) when is_binary(id), do: "servers:servers:#{id}"
+  def event_stream(%__MODULE__{id: id}), do: event_stream(id)
+
   @spec list_active_servers(DateTime.t()) :: list(t())
   def list_active_servers(now) do
     day = DateTime.to_date(now)

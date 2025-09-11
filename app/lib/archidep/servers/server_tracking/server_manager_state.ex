@@ -1443,8 +1443,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           end)
     }
 
-  defp maybe_manually_retry(retrying, false), do: retrying
-  defp maybe_manually_retry(retrying, true), do: %{retrying | backoff: 0}
+  defp maybe_manually_retry(retrying, :automated), do: retrying
+  defp maybe_manually_retry(retrying, :manual), do: %{retrying | backoff: 0}
+  defp maybe_manually_retry(retrying, {:event, _id}), do: %{retrying | backoff: 0}
 
   defp change_connection_state(state, connection_state),
     do: %__MODULE__{state | connection_state: connection_state}

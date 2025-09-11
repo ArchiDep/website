@@ -4,6 +4,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   import ArchiDep.Support.FactoryHelpers, only: [bool: 0]
   import Hammox
   alias ArchiDep.Http
+  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Schemas.Server
@@ -13,6 +14,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   alias ArchiDep.Servers.ServerTracking.ServerManagerMock
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
   alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.NoOpGenServer
@@ -182,7 +184,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     assert test_server_manager!(
              initialize,
              test_pid,
-             fn done, _test_data ->
+             fn done, %{manager_pid: server_manager_pid} ->
                expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
                  task = Task.async(fn -> :timer.sleep(1_000_000) end)
 
@@ -204,7 +206,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
                  }
                end)
 
-               expect(ServerManagerMock, :retry_connecting, fn state, true ->
+               done_ref = make_ref()
+
+               expect(ServerManagerMock, :handle_task_result, fn state, ^done_ref, :ok ->
                  done.(state)
                end)
 
@@ -216,7 +220,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
                Process.exit(task_pid, :kill)
 
                # Make sure the server manager is still working.
-               ServerManager.notify_server_up(server.id)
+               send(server_manager_pid, {done_ref, :ok})
+               :ok
              end
            ) == :ok
   end
@@ -555,8 +560,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     assert test_server_manager!(
              initialize,
              test_pid,
-             fn done, _test_data ->
-               expect(ServerManagerMock, :retry_connecting, fn state, true ->
+             fn done, %{manager_pid: server_manager_pid} ->
+               ref = make_ref()
+
+               expect(ServerManagerMock, :handle_task_result, fn state, ^ref, :ok ->
                  %ServerManagerState{
                    state
                    | actions: [
@@ -572,7 +579,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
 
                assert_receive {:join, ^server_id, %{state: ^fake_state}}, 500
 
-               :ok = ServerManager.notify_server_up(server.id)
+               send(server_manager_pid, {ref, :ok})
 
                assert_receive {:update, ^server_id, %{state: ^updated_state}}, 500
 
@@ -602,11 +609,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     test_pid: test_pid
   } do
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
-             expect(ServerManagerMock, :retry_connecting, fn state, true ->
+             fake_event = EventsFactory.build(:stored_event)
+             %StoredEvent{id: event_id} = fake_event
+
+             expect(ServerManagerMock, :retry_connecting, fn state, {:event, ^event_id} ->
                done.(state)
              end)
 
-             ServerManager.notify_server_up(server.id)
+             ServerManager.notify_server_up(server.id, fake_event)
            end) == :ok
   end
 
@@ -674,7 +684,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     test_pid: test_pid
   } do
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
-             expect(ServerManagerMock, :retry_connecting, fn state, true ->
+             expect(ServerManagerMock, :retry_connecting, fn state, :manual ->
                done.(state)
              end)
 
@@ -810,7 +820,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     test_pid: test_pid
   } do
     assert test_server_manager!(initialize, test_pid, fn done, %{manager_pid: manager_pid} ->
-             expect(ServerManagerMock, :retry_connecting, fn state, false ->
+             expect(ServerManagerMock, :retry_connecting, fn state, :automated ->
                done.(state)
              end)
 

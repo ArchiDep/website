@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.FactoryHelpers
   alias ArchiDep.Support.ServersFactory
+  alias Ecto.UUID
 
   setup :verify_on_exit!
 
@@ -42,7 +43,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     retry_connecting_state(retrying: retrying) = initial_state.connection_state
 
-    result = retry_connecting.(initial_state, false)
+    result = retry_connecting.(initial_state, :automated)
 
     test_pid = self()
 
@@ -104,7 +105,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     retry_connecting_state(retrying: retrying) = initial_state.connection_state
 
-    result = retry_connecting.(initial_state, true)
+    result = retry_connecting.(initial_state, :manual)
 
     test_pid = self()
 
@@ -166,8 +167,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
         version: 30
       )
 
-    manual = FactoryHelpers.bool()
-    result = retry_connecting.(initial_state, manual)
+    cause = ServersFactory.random_retry_connecting_cause()
+    result = retry_connecting.(initial_state, cause)
 
     test_pid = self()
 
@@ -226,14 +227,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
         )
 
       assert {^initial_state, log} =
-               with_log(fn -> retry_connecting.(initial_state, true) end)
+               with_log(fn -> retry_connecting.(initial_state, :manual) end)
 
       assert log =~ "Ignore request to retry connecting"
 
       assert {^initial_state, log2} =
-               with_log(fn -> retry_connecting.(initial_state, false) end)
+               with_log(fn -> retry_connecting.(initial_state, :automated) end)
 
       assert log2 =~ "Ignore request to retry connecting"
+
+      assert {^initial_state, log3} =
+               with_log(fn -> retry_connecting.(initial_state, {:event, UUID.generate()}) end)
+
+      assert log3 =~ "Ignore request to retry connecting"
     end
   end
 end

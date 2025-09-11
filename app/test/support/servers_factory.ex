@@ -847,4 +847,8 @@ defmodule ArchiDep.Support.ServersFactory do
       distribution_version: distribution_version
     }
   end
+
+  @spec random_retry_connecting_cause :: :manual | :automated | {:event, UUID.t()}
+  def random_retry_connecting_cause,
+    do: Enum.random([:manual, :automated, {:event, UUID.generate()}])
 end

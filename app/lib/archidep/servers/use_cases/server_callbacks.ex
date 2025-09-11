@@ -5,6 +5,10 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
   """
 
   import ArchiDep.Helpers.DataHelpers
+  import ArchiDep.Helpers.UseCaseHelpers
+  alias ArchiDep.Events.Store.StoredEvent
+  alias ArchiDep.Repo
+  alias ArchiDep.Servers.Events.ServerNotifiedUp
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManager
   alias Ecto.UUID
@@ -26,7 +30,10 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
         %{server_id: server_id}
       )
 
-      :ok = ServerManager.notify_server_up(server_id)
+      now = DateTime.utc_now()
+      event = server |> server_notified_up(now) |> Repo.insert!()
+
+      :ok = ServerManager.notify_server_up(server_id, event)
     else
       {:error, :server_not_found} ->
         # Verify a token anyway against timing attacks
@@ -51,4 +58,12 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
         {:error, :server_not_found}
     end
   end
+
+  defp server_notified_up(server, now),
+    do:
+      server
+      |> ServerNotifiedUp.new()
+      |> new_event(%{}, occurred_at: now)
+      |> add_to_stream(server)
+      |> StoredEvent.initiated_by(Server.event_stream(server))
 end
