@@ -5,17 +5,35 @@ defmodule ArchiDep.Support.EventsFactory do
 
   use ArchiDep.Support, :factory
 
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
 
   @spec context() :: :accounts | :course | :events | :servers
   def context, do: Faker.Util.pick([:accounts, :course, :events, :servers])
+
+  @spec event_reference_factory(map()) :: EventReference.t()
+  def event_reference_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+    {causation_id, attrs!} = Map.pop_lazy(attrs!, :causation_id, &UUID.generate/0)
+    {correlation_id, attrs!} = Map.pop_lazy(attrs!, :correlation_id, &UUID.generate/0)
+
+    [] = Map.keys(attrs!)
+
+    %EventReference{
+      id: id,
+      causation_id: causation_id,
+      correlation_id: correlation_id
+    }
+  end
 
   @spec stored_event_factory(map()) :: StoredEvent.t(map)
   def stored_event_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
 
     {stream, attrs!} =
-      Map.pop_lazy(attrs!, :stream, &__MODULE__.context/0)
+      Map.pop_lazy(attrs!, :stream, fn ->
+        "#{context()}:#{Faker.Lorem.word()}:#{UUID.generate()}"
+      end)
 
     {version, attrs!} = Map.pop_lazy(attrs!, :version, fn -> Faker.random_between(1, 100) end)
 
@@ -35,7 +53,7 @@ defmodule ArchiDep.Support.EventsFactory do
       end)
 
     {initiator, attrs!} =
-      Map.pop(attrs!, :initiator, fn ->
+      Map.pop_lazy(attrs!, :initiator, fn ->
         if bool() do
           "accounts/user-accounts/#{UUID.generate()}"
         else
@@ -43,11 +61,8 @@ defmodule ArchiDep.Support.EventsFactory do
         end
       end)
 
-    {causation_id, attrs!} =
-      Map.pop_lazy(attrs!, :causation_id, &UUID.generate/0)
-
-    {correlation_id, attrs!} =
-      Map.pop_lazy(attrs!, :correlation_id, &UUID.generate/0)
+    {causation_id, attrs!} = Map.pop(attrs!, :causation_id, id)
+    {correlation_id, attrs!} = Map.pop(attrs!, :correlation_id, id)
 
     {occurred_at, attrs!} =
       Map.pop_lazy(attrs!, :occurred_at, fn -> Faker.DateTime.backward(30) end)

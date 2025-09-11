@@ -3,7 +3,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
 
   import ArchiDep.Support.FactoryHelpers, only: [bool: 0]
   import Hammox
-  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Http
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
@@ -609,10 +608,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     test_pid: test_pid
   } do
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
-             fake_event = EventsFactory.build(:stored_event)
-             %StoredEvent{id: event_id} = fake_event
+             fake_event = EventsFactory.build(:event_reference)
 
-             expect(ServerManagerMock, :retry_connecting, fn state, {:event, ^event_id} ->
+             expect(ServerManagerMock, :retry_connecting, fn state, {:event, ^fake_event} ->
                done.(state)
              end)
 
@@ -852,14 +850,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     test_pid: test_pid
   } do
     updated_class = CourseFactory.build(:class, id: server.group_id)
+    event = EventsFactory.build(:event_reference)
 
     assert test_server_manager!(initialize, test_pid, fn done, %{manager_pid: manager_pid} ->
-             expect(ServerManagerMock, :group_updated, fn state, ^updated_class ->
+             expect(ServerManagerMock, :group_updated, fn state, ^updated_class, ^event ->
                done.(state)
              end)
 
-             send(manager_pid, {:class_updated, updated_class})
-           end) == {:class_updated, updated_class}
+             send(manager_pid, {:class_updated, updated_class, event})
+           end) == {:class_updated, updated_class, event}
   end
 
   test "send a message to a server manager indicating that its connection has crashed", %{

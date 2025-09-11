@@ -12,13 +12,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
 
   setup :verify_on_exit!
 
   setup_all do
     %{
-      group_updated: protect({ServerManagerState, :group_updated, 2}, ServerManagerBehaviour)
+      group_updated: protect({ServerManagerState, :group_updated, 3}, ServerManagerBehaviour)
     }
   end
 
@@ -102,7 +103,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    result = group_updated.(initial_state, updated_class)
+    event = EventsFactory.build(:event_reference)
+
+    result = group_updated.(initial_state, updated_class, event)
 
     assert %ServerManagerState{
              actions: [
@@ -189,7 +192,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version - Faker.random_between(1, 10)
     }
 
-    assert group_updated.(initial_state, updated_class) == initial_state
+    event = EventsFactory.build(:event_reference)
+
+    assert group_updated.(initial_state, updated_class, event) == initial_state
   end
 
   test "server property mismatches are re-evaluated when a group is updated", %{
@@ -296,7 +301,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    result = group_updated.(initial_state, updated_class)
+    event = EventsFactory.build(:event_reference)
+
+    result = group_updated.(initial_state, updated_class, event)
 
     assert %ServerManagerState{
              actions: [
@@ -332,9 +339,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
   end
 
   test "server property mismatches cannot be re-evaluated if the server has no last known properties",
-       %{
-         group_updated: group_updated
-       } do
+       %{group_updated: group_updated} do
     expected_server_properties =
       CourseFactory.build(:expected_server_properties,
         hostname: nil,
@@ -439,7 +444,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    result = group_updated.(initial_state, updated_class)
+    event = EventsFactory.build(:event_reference)
+
+    result = group_updated.(initial_state, updated_class, event)
 
     assert %ServerManagerState{
              actions: [
@@ -472,9 +479,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
   end
 
   test "a server manager connects to its server when it becomes active following a group update",
-       %{
-         group_updated: group_updated
-       } do
+       %{group_updated: group_updated} do
     expected_server_properties =
       CourseFactory.build(:expected_server_properties,
         hostname: nil,
@@ -555,8 +560,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
+    event = EventsFactory.build(:event_reference)
+
     now = DateTime.utc_now()
-    result = group_updated.(initial_state, updated_class)
+    result = group_updated.(initial_state, updated_class, event)
 
     assert %ServerManagerState{
              connection_state:
@@ -577,7 +584,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
                    connection_pid: connection_pid,
                    connection_ref: connection_ref,
                    time: connecting_time,
-                   retrying: false
+                   retrying: false,
+                   causation_event: event
                  ),
                server: %Server{
                  server
@@ -683,9 +691,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
+    event = EventsFactory.build(:event_reference)
+
     result =
       assert_server_connection_disconnected!(server, fn ->
-        group_updated.(initial_state, updated_class)
+        group_updated.(initial_state, updated_class, event)
       end)
 
     assert %ServerManagerState{

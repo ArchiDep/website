@@ -65,5 +65,5 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
       |> ServerNotifiedUp.new()
       |> new_event(%{}, occurred_at: now)
       |> add_to_stream(server)
-      |> StoredEvent.initiated_by(Server.event_stream(server))
+      |> initiated_by(server)
 end

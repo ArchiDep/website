@@ -42,6 +42,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
 
     result = connection_crashed.(initial_state, self(), crash_reason)
 
+    assert_server_disconnected_event!(server, now, crash_reason)
+
     assert %ServerManagerState{
              connection_state: disconnected_state(time: time),
              actions:
@@ -108,6 +110,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
 
       result = connection_crashed.(initial_state, self(), crash_reason)
 
+      assert_no_stored_events!()
+
       assert %ServerManagerState{
                connection_state: disconnected_state(time: time),
                actions:
@@ -170,9 +174,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
       )
 
     now = DateTime.utc_now()
-    crash_reason = Faker.Lorem.sentence()
+    crash_reason = :foo
 
     result = connection_crashed.(initial_state, self(), crash_reason)
+
+    assert_server_disconnected_event!(server, now, ":foo")
 
     assert %ServerManagerState{
              connection_state: disconnected_state(time: time),
@@ -226,6 +232,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
 
     result = connection_crashed.(initial_state, self(), crash_reason)
 
+    assert_no_stored_events!()
+
     assert %ServerManagerState{
              connection_state: disconnected_state(time: time),
              actions:
@@ -248,5 +256,67 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
                 connection_state: result.connection_state,
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  defp assert_server_disconnected_event!(server, now, reason) do
+    assert [
+             %StoredEvent{
+               id: event_id,
+               data: %{"uptime" => uptime},
+               occurred_at: occurred_at
+             } = registered_event
+           ] =
+             Repo.all(
+               from e in StoredEvent,
+                 order_by: [asc: e.occurred_at]
+             )
+
+    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+
+    assert registered_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{server.id}",
+             version: server.version,
+             type: "archidep/servers/server-disconnected",
+             data: %{
+               "id" => server.id,
+               "name" => server.name,
+               "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
+               "username" => server.username,
+               "ssh_username" =>
+                 if(server.set_up_at, do: server.app_username, else: server.username),
+               "ssh_port" => server.ssh_port,
+               "uptime" => uptime,
+               "reason" => reason,
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner.id,
+                 "username" => server.owner.username,
+                 "name" =>
+                   if server.owner.group_member do
+                     server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => server.owner.root
+               }
+             },
+             meta: %{},
+             initiator: "servers:servers:#{server.id}",
+             causation_id: event_id,
+             correlation_id: event_id,
+             occurred_at: occurred_at,
+             entity: nil
+           }
+
+    %EventReference{
+      id: event_id,
+      causation_id: registered_event.causation_id,
+      correlation_id: registered_event.correlation_id
+    }
   end
 end

@@ -6,6 +6,7 @@ defmodule ArchiDep.Support.ServersFactory do
   use ArchiDep.Support, :factory
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
@@ -18,6 +19,7 @@ defmodule ArchiDep.Support.ServersFactory do
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Servers.Types
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.NetFactory
   alias Ecto.UUID
 
@@ -212,14 +214,17 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec random_connection_state() :: ServerConnectionState.connection_state()
   def random_connection_state,
     do:
-      Enum.random([
-        random_not_connected_state(),
-        random_connecting_state(),
-        random_connected_state(),
-        random_reconnecting_state(),
-        random_connection_failed_state(),
-        random_disconnected_state()
-      ])
+      [
+        &__MODULE__.random_not_connected_state/0,
+        &__MODULE__.random_connecting_state/0,
+        &__MODULE__.random_connected_state/0,
+        &__MODULE__.random_retry_connecting_state/0,
+        &__MODULE__.random_reconnecting_state/0,
+        &__MODULE__.random_connection_failed_state/0,
+        &__MODULE__.random_disconnected_state/0
+      ]
+      |> Enum.random()
+      |> apply([])
 
   @spec random_not_connected_state() :: ServerConnectionState.not_connected_state()
   def random_not_connected_state, do: not_connected_state(connection_pid: self())
@@ -233,13 +238,23 @@ defmodule ArchiDep.Support.ServersFactory do
         {retry, attrs} when is_map(retry) -> {random_retry(retry), attrs}
       end
 
+    {causation_event, attrs!} =
+      Map.pop_lazy(attrs!, :causation_event, fn ->
+        if bool() do
+          EventsFactory.build(:event_reference)
+        else
+          nil
+        end
+      end)
+
     [] = Map.keys(attrs!)
 
     connecting_state(
       connection_ref: make_ref(),
       connection_pid: self(),
       time: Faker.DateTime.backward(1),
-      retrying: retrying
+      retrying: retrying,
+      causation_event: causation_event
     )
   end
 
@@ -848,7 +863,7 @@ defmodule ArchiDep.Support.ServersFactory do
     }
   end
 
-  @spec random_retry_connecting_cause :: :manual | :automated | {:event, UUID.t()}
+  @spec random_retry_connecting_cause :: :manual | :automated | {:event, EventReference.t()}
   def random_retry_connecting_cause,
-    do: Enum.random([:manual, :automated, {:event, UUID.generate()}])
+    do: Enum.random([:manual, :automated, {:event, EventsFactory.build(:event_reference)}])
 end

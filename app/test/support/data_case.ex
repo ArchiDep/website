@@ -14,6 +14,8 @@ defmodule ArchiDep.Support.DataCase do
 
   use ExUnit.CaseTemplate
 
+  alias ArchiDep.Events.Store.StoredEvent
+  alias ArchiDep.Repo
   alias ArchiDep.Support.DataCase
   alias Ecto.Adapters.SQL.Sandbox
   alias Ecto.Association.NotLoaded
@@ -22,13 +24,14 @@ defmodule ArchiDep.Support.DataCase do
 
   using do
     quote do
-      alias ArchiDep.Repo
-
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
       import ArchiDep.Helpers.PipeHelpers
       import ArchiDep.Support.DataCase
+      alias ArchiDep.Events.Store.EventReference
+      alias ArchiDep.Events.Store.StoredEvent
+      alias ArchiDep.Repo
     end
   end
 
@@ -43,6 +46,12 @@ defmodule ArchiDep.Support.DataCase do
   @spec not_loaded(atom(), module()) :: NotLoaded.t()
   def not_loaded(field, owner),
     do: %NotLoaded{__field__: field, __owner__: owner, __cardinality__: :one}
+
+  @spec assert_no_stored_events!() :: :ok
+  def assert_no_stored_events! do
+    assert Repo.all(StoredEvent) == []
+    :ok
+  end
 
   @doc """
   Sets up the sandbox based on the test tags.

@@ -29,6 +29,7 @@ defmodule ArchiDep do
 
       import ArchiDep.Helpers.ContextHelpers, only: [callback: 1]
       alias ArchiDep.Authentication
+      alias ArchiDep.Events.Store.EventReference
       alias Ecto.Changeset
       alias Ecto.UUID
     end
@@ -103,6 +104,7 @@ defmodule ArchiDep do
       alias ArchiDep.Accounts.Schemas.UserAccount
       alias ArchiDep.Authentication
       alias ArchiDep.Authentication
+      alias ArchiDep.Events.Store.EventReference
       alias ArchiDep.Events.Store.StoredEvent
       alias ArchiDep.Repo
       alias Ecto.Changeset

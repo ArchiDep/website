@@ -113,7 +113,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, %Class{id: id} = updated_class},
+        {:class_updated, %Class{id: id} = updated_class, _event},
         %Socket{
           assigns: %{
             student: %Student{class: %Class{id: id} = class} = student

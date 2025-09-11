@@ -12,6 +12,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias Phoenix.PubSub
   alias Phoenix.Token
@@ -50,8 +51,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     server = build_active_server(set_up_at: nil)
 
     fake_connect_task_ref = make_ref()
+    fake_event = EventsFactory.insert(:stored_event)
+    fake_event_reference = StoredEvent.to_reference(fake_event)
 
-    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting =
+      ServersFactory.random_connecting_state(%{
+        retrying: false,
+        causation_event: fake_event_reference
+      })
 
     connecting_state(
       connection_ref: connection_ref,
@@ -70,6 +77,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     now = DateTime.utc_now()
     result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
+
+    assert_server_connected_event!(server, now, fake_event)
 
     assert %{
              connection_state:
@@ -141,7 +150,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     fake_connect_task_ref = make_ref()
 
-    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting = ServersFactory.random_connecting_state(%{retrying: false, causation_event: nil})
     connecting_state(connection_ref: connection_ref, connection_pid: connection_pid) = connecting
 
     connection_problems =
@@ -175,6 +184,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     now = DateTime.utc_now()
     result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
+
+    assert_server_connected_event!(server, now)
 
     assert %{
              connection_state:
@@ -257,6 +268,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
       end)
 
     assert log =~ ~r"Server manager could not connect .* because authentication failed"
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -319,6 +331,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
       end)
 
     assert log =~ ~r"Server manager could not connect .* because authentication failed"
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -378,6 +391,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_connect_task_ref,
         {:error, :timeout}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              connection_state: retry_connecting_state(retrying: %{time: time}),
@@ -462,6 +477,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:error, :timeout}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              connection_state: retry_connecting_state(retrying: %{time: time}),
              actions:
@@ -539,6 +556,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_connect_task_ref,
         {:error, :econnrefused}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              connection_state: retry_connecting_state(retrying: %{time: time}),
@@ -623,6 +642,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:error, :econnrefused}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              connection_state: retry_connecting_state(retrying: %{time: time}),
              actions:
@@ -701,6 +722,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_connect_task_ref,
         {:error, :foo}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              connection_state: retry_connecting_state(retrying: %{time: time}),
@@ -782,6 +805,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:error, :foo}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              connection_state: retry_connecting_state(retrying: %{time: time}),
              actions:
@@ -859,6 +884,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_connect_task_ref,
         {:error, connection_error}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              connection_state: retry_connecting_state(retrying: %{time: time}),
@@ -939,6 +966,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:error, connection_error}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              connection_state: retry_connecting_state(retrying: %{time: time}),
              actions:
@@ -1015,6 +1044,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:error, connection_failure_reason}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -1086,6 +1117,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:error, connection_failure_reason}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -1139,6 +1172,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_check_access_task_ref,
         {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -1210,6 +1245,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_check_access_task_ref,
         {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -1297,6 +1334,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:ok, Faker.Lorem.sentence(), check_access_stderr, Faker.random_between(1, 255)}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -1356,6 +1395,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_check_access_task_ref,
         {:ok, Faker.Lorem.sentence(), check_access_stderr, Faker.random_between(1, 255)}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -1419,6 +1460,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
           {:error, check_access_error}
         )
       end)
+
+    assert_no_stored_events!()
 
     assert log =~ "Server manager could not check sudo access to server #{server.id}"
 
@@ -1485,6 +1528,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
       end)
 
     assert log =~ "Server manager could not check sudo access to server #{server.id}"
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -1549,6 +1593,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:ok, "0.65 0.43 0.21 1/436 761182\n", "", 0}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -1593,6 +1639,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_get_load_average_ref,
         {:ok, "oops", "", 0}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -1639,6 +1687,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:ok, "", "Oops\n", Faker.random_between(1, 255)}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -1683,6 +1733,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_get_load_average_ref,
         {:error, Faker.Lorem.sentence()}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -1729,6 +1781,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_get_load_average_ref,
         {:ok, "0.65 0.43 0.21 1/436 761182\n", "", 0}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -1783,6 +1837,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_gather_facts_ref,
         {:ok, %{}}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              server:
@@ -1867,6 +1923,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_gather_facts_ref,
         {:ok, %{}}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              server:
@@ -1962,6 +2020,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
            "ansible_distribution_version" => "24.04"
          }}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              server:
@@ -2097,6 +2157,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
            "ansible_distribution_version" => "24.04"
          }}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              server: updated_server,
@@ -2244,6 +2306,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
          }}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              server: %Server{last_known_properties_id: last_known_properties_id} = updated_server,
              actions:
@@ -2341,6 +2405,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
       end)
 
     assert log =~ "No previous Ansible setup playbook run found for server #{server.id}"
+    assert_no_stored_events!()
 
     assert %{
              server:
@@ -2427,6 +2492,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_gather_facts_ref,
         {:ok, %{}}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              server:
@@ -2543,6 +2610,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:ok, %{}}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              server:
                %Server{
@@ -2657,6 +2726,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
       end)
 
     assert log =~ "Server manager could not gather facts for server #{server.id}"
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -2705,6 +2775,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_test_ports_ref,
         {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -2767,6 +2839,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_test_ports_ref,
         {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
       )
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -2835,6 +2909,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     assert log =~
              "Port testing script exited with code #{port_testing_exit_code} on server #{server.id}"
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -2896,6 +2972,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     assert log =~
              "Port testing script exited with code #{port_testing_exit_code} on server #{server.id}"
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -2951,6 +3029,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     assert log =~
              "Port testing script failed on server #{server.id} because: #{inspect(port_testing_error)}"
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -3011,6 +3091,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     assert log =~
              "Port testing script failed on server #{server.id} because: #{inspect(port_testing_error)}"
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -3064,6 +3146,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_check_open_ports_ref,
         :ok
       )
+
+    assert_no_stored_events!()
 
     assert %{
              server: %{open_ports_checked_at: open_ports_checked_at} = updated_server,
@@ -3131,6 +3215,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         :ok
       )
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -3188,6 +3274,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         fake_check_open_ports_ref,
         :ok
       )
+
+    assert_no_stored_events!()
 
     assert %{
              server: %{open_ports_checked_at: open_ports_checked_at} = updated_server,
@@ -3248,6 +3336,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:error, port_problems}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -3305,6 +3395,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:error, port_problems}
       )
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -3329,5 +3421,69 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                 problems: result.problems,
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  defp assert_server_connected_event!(server, now, caused_by \\ nil) do
+    caused_by_id = if caused_by, do: caused_by.id, else: "00000000-0000-0000-0000-000000000000"
+
+    assert [
+             %StoredEvent{
+               id: event_id,
+               data: %{"connection_duration" => connection_duration},
+               occurred_at: occurred_at
+             } = registered_event
+           ] =
+             Repo.all(
+               from e in StoredEvent,
+                 where: e.id not in [^caused_by_id],
+                 order_by: [asc: e.occurred_at]
+             )
+
+    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+
+    assert registered_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{server.id}",
+             version: server.version,
+             type: "archidep/servers/server-connected",
+             data: %{
+               "id" => server.id,
+               "name" => server.name,
+               "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
+               "username" => server.username,
+               "ssh_username" =>
+                 if(server.set_up_at, do: server.app_username, else: server.username),
+               "ssh_port" => server.ssh_port,
+               "connection_duration" => connection_duration,
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner.id,
+                 "username" => server.owner.username,
+                 "name" =>
+                   if server.owner.group_member do
+                     server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => server.owner.root
+               }
+             },
+             meta: %{},
+             initiator: "servers:servers:#{server.id}",
+             causation_id: if(caused_by, do: caused_by.id, else: event_id),
+             correlation_id: if(caused_by, do: caused_by.correlation_id, else: event_id),
+             occurred_at: occurred_at,
+             entity: nil
+           }
+
+    %EventReference{
+      id: event_id,
+      causation_id: registered_event.causation_id,
+      correlation_id: registered_event.correlation_id
+    }
   end
 end

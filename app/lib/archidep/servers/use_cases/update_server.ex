@@ -11,6 +11,8 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.PubSub
@@ -38,7 +40,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   end
 
   @spec update_server(Authentication.t(), UUID.t(), Types.server_data()) ::
-          {:ok, Server.t()}
+          {:ok, Server.t(), EventReference.t()}
           | {:error, Changeset.t()}
           | {:error, :server_busy}
           | {:error, :server_not_found}
@@ -58,7 +60,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   end
 
   @spec update_server(Authentication.t(), Server.t(), Types.server_data()) ::
-          {:ok, Server.t()} | {:error, Changeset.t()}
+          {:ok, Server.t(), EventReference.t()} | {:error, Changeset.t()}
   def update_server(auth, server, data) when is_struct(server, Server) do
     owner = ServerOwner.fetch_authenticated(auth)
 
@@ -69,9 +71,9 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
          |> Multi.merge(&update_active_server_count(fresh_server_owner, server.active, &1.server))
          |> Multi.insert(:stored_event, &server_updated(auth, &1.server))
          |> Repo.transaction() do
-      {:ok, %{server: updated_server}} ->
+      {:ok, %{server: updated_server, stored_event: event}} ->
         :ok = PubSub.publish_server_updated(updated_server)
-        {:ok, updated_server}
+        {:ok, updated_server, StoredEvent.to_reference(event)}
 
       {:error, :server, changeset, _changes} ->
         {:error, changeset}

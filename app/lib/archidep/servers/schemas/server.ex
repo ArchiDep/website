@@ -14,6 +14,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
 
   import ArchiDep.Helpers.ChangesetHelpers
   import ArchiDep.Servers.Schemas.ServerOwner, only: [where_server_owner_active: 1]
+  alias ArchiDep.Events.Store.EventInitiator
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
@@ -361,6 +362,13 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> change(open_ports_checked_at: now)
     |> optimistic_lock(:version)
     |> Repo.update!()
+  end
+
+  defimpl EventInitiator do
+    alias ArchiDep.Servers.Schemas.Server
+
+    @spec event_initiator_stream(Server.t()) :: String.t()
+    def event_initiator_stream(server), do: Server.event_stream(server)
   end
 
   defp validate_new_server(changeset) do

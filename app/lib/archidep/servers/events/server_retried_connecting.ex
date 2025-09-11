@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.Events.ServerConnected do
+defmodule ArchiDep.Servers.Events.ServerRetriedConnecting do
   @moduledoc false
 
   use ArchiDep, :event
@@ -18,7 +18,6 @@ defmodule ArchiDep.Servers.Events.ServerConnected do
     :username,
     :ssh_username,
     :ssh_port,
-    :connection_duration,
     :group,
     :owner
   ]
@@ -29,7 +28,6 @@ defmodule ArchiDep.Servers.Events.ServerConnected do
     :username,
     :ssh_username,
     :ssh_port,
-    :connection_duration,
     :group,
     :owner
   ]
@@ -41,7 +39,6 @@ defmodule ArchiDep.Servers.Events.ServerConnected do
           username: String.t(),
           ssh_username: String.t(),
           ssh_port: 1..65_535 | nil,
-          connection_duration: non_neg_integer(),
           group: %{
             id: UUID.t(),
             name: String.t()
@@ -54,8 +51,8 @@ defmodule ArchiDep.Servers.Events.ServerConnected do
           }
         }
 
-  @spec new(Server.t(), String.t(), non_neg_integer()) :: t()
-  def new(server, ssh_username, connection_duration) do
+  @spec new(Server.t(), String.t()) :: t()
+  def new(server, ssh_username) do
     %Server{
       id: id,
       name: name,
@@ -91,7 +88,6 @@ defmodule ArchiDep.Servers.Events.ServerConnected do
       username: username,
       ssh_username: ssh_username,
       ssh_port: ssh_port,
-      connection_duration: connection_duration,
       group: %{
         id: group_id,
         name: group_name
@@ -106,13 +102,13 @@ defmodule ArchiDep.Servers.Events.ServerConnected do
   end
 
   defimpl Event do
-    alias ArchiDep.Servers.Events.ServerConnected
+    alias ArchiDep.Servers.Events.ServerRetriedConnecting
 
-    @spec event_stream(ServerConnected.t()) :: String.t()
-    def event_stream(%ServerConnected{id: id}),
+    @spec event_stream(ServerRetriedConnecting.t()) :: String.t()
+    def event_stream(%ServerRetriedConnecting{id: id}),
       do: "servers:servers:#{id}"
 
-    @spec event_type(ServerConnected.t()) :: atom()
-    def event_type(_event), do: :"archidep/servers/server-connected"
+    @spec event_type(ServerRetriedConnecting.t()) :: atom()
+    def event_type(_event), do: :"archidep/servers/server-retried-connecting"
   end
 end

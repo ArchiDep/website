@@ -30,8 +30,8 @@ defmodule ArchiDep.Course.UseCases.UpdateClass do
            |> Multi.update(:class, Class.update(class, data))
            |> Multi.insert(:stored_event, &class_updated(auth, &1.class))
            |> Repo.transaction() do
-        {:ok, %{class: updated_class}} ->
-          :ok = PubSub.publish_class_updated(updated_class)
+        {:ok, %{class: updated_class, stored_event: event}} ->
+          :ok = PubSub.publish_class_updated(updated_class, event)
           {:ok, updated_class}
 
         {:error, :class, changeset, _changes} ->

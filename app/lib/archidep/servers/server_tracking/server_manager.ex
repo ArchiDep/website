@@ -12,7 +12,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Authentication
   alias ArchiDep.Course
-  alias ArchiDep.Events.Store.StoredEvent
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Http
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
@@ -90,9 +90,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   @spec delete_server(Server.t(), Authentication.t()) :: :ok | {:error, :server_busy}
   def delete_server(server, auth), do: GenServer.call(name(server), {:delete_server, auth})
 
-  @spec notify_server_up(UUID.t(), StoredEvent.t(map())) :: :ok
+  @spec notify_server_up(UUID.t(), EventReference.t()) :: :ok
   def notify_server_up(server_id, event),
-    do: GenServer.cast(name(server_id), {:retry_connecting, event.id})
+    do: GenServer.cast(name(server_id), {:retry_connecting, event})
 
   # Server callbacks
 
@@ -131,10 +131,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
       |> pair(state_module)
       |> noreply()
 
-  def handle_cast({:retry_connecting, event_id}, {state_module, state}),
+  def handle_cast({:retry_connecting, event}, {state_module, state}),
     do:
       state
-      |> state_module.retry_connecting({:event, event_id})
+      |> state_module.retry_connecting({:event, event})
       |> execute_actions()
       |> pair(state_module)
       |> noreply()
@@ -252,12 +252,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
         |> noreply()
 
   def handle_info(
-        {:class_updated, class},
+        {:class_updated, class, event},
         {state_module, state}
       ),
       do:
         state
-        |> state_module.group_updated(class)
+        |> state_module.group_updated(class, event)
         |> execute_actions()
         |> pair(state_module)
         |> noreply()

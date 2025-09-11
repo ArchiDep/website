@@ -6,6 +6,7 @@ defmodule ArchiDep.Events.Store.StoredEvent do
   use Ecto.Schema
 
   import Ecto.Changeset
+  alias ArchiDep.Events.Store.EventReference
   alias Ecto.Changeset
   alias Ecto.UUID
 
@@ -28,7 +29,8 @@ defmodule ArchiDep.Events.Store.StoredEvent do
 
   @type changeset(data) :: Changeset.t(t(data))
 
-  @type options :: list({:caused_by, t(struct)} | {:occurred_at, DateTime.t()})
+  @type options ::
+          list({:caused_by, t(struct) | EventReference.t() | nil} | {:occurred_at, DateTime.t()})
 
   schema "events" do
     field(:stream, :string)
@@ -45,12 +47,17 @@ defmodule ArchiDep.Events.Store.StoredEvent do
 
   @doc """
   Creates a new business event with the specified data and metadata.
+
+  A cause may be specified as an option to set the causation and correlation
+  IDs. The causation ID is the ID of the event that directly caused this event
+  to occur, while the correlation ID is the ID of the root event in a chain of
+  related events.
   """
   @spec new(map, map, options) :: __MODULE__.changeset(struct)
   def new(data, meta, opts \\ []) when is_map(data) and is_map(meta) and is_list(opts) do
     id = UUID.generate()
     occurred_at = Keyword.get_lazy(opts, :occurred_at, &DateTime.utc_now/0)
-    caused_by = Keyword.get(opts, :caused_by, %{})
+    caused_by = Keyword.get(opts, :caused_by) || %{}
 
     %__MODULE__{}
     |> cast(
@@ -101,4 +108,16 @@ defmodule ArchiDep.Events.Store.StoredEvent do
       occurred_at: event.occurred_at
     }
   end
+
+  @spec to_reference(t(map)) :: EventReference.t()
+  def to_reference(%__MODULE__{
+        id: id,
+        causation_id: causation_id,
+        correlation_id: correlation_id
+      }),
+      do: %EventReference{
+        id: id,
+        causation_id: causation_id,
+        correlation_id: correlation_id
+      }
 end

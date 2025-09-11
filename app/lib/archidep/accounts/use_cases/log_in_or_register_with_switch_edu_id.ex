@@ -16,7 +16,6 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
   alias ArchiDep.ClientMetadata
-  alias ArchiDep.Events.Store.StoredEvent
 
   @spec log_in_or_register_with_switch_edu_id(
           Types.switch_edu_id_login_data(),
@@ -256,7 +255,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
          )
          |> new_event(%{}, occurred_at: session.user_account.created_at)
          |> add_to_stream(session.user_account)
-         |> StoredEvent.initiated_by(UserAccount.event_stream(session.user_account))
+         |> initiated_by(session.user_account)
 
   defp user_logged_in_with_switch_edu_id(
          switch_edu_id,
@@ -268,5 +267,5 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
          |> UserLoggedInWithSwitchEduId.new(session, client_metadata)
          |> new_event(%{}, occurred_at: session.created_at)
          |> add_to_stream(session.user_account)
-         |> StoredEvent.initiated_by(UserAccount.event_stream(session.user_account))
+         |> initiated_by(session.user_account)
 end

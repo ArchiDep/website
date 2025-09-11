@@ -19,6 +19,7 @@ defmodule ArchiDep.Servers.Events.ServerDisconnected do
     :ssh_username,
     :ssh_port,
     :uptime,
+    :reason,
     :group,
     :owner
   ]
@@ -30,6 +31,7 @@ defmodule ArchiDep.Servers.Events.ServerDisconnected do
     :ssh_username,
     :ssh_port,
     :uptime,
+    :reason,
     :group,
     :owner
   ]
@@ -42,6 +44,7 @@ defmodule ArchiDep.Servers.Events.ServerDisconnected do
           ssh_username: String.t(),
           ssh_port: 1..65_535 | nil,
           uptime: non_neg_integer(),
+          reason: String.t() | nil,
           group: %{
             id: UUID.t(),
             name: String.t()
@@ -54,8 +57,8 @@ defmodule ArchiDep.Servers.Events.ServerDisconnected do
           }
         }
 
-  @spec new(Server.t(), String.t(), non_neg_integer()) :: t()
-  def new(server, ssh_username, uptime) do
+  @spec new(Server.t(), String.t(), non_neg_integer(), String.t() | nil) :: t()
+  def new(server, ssh_username, uptime, reason) do
     %Server{
       id: id,
       name: name,
@@ -84,6 +87,13 @@ defmodule ArchiDep.Servers.Events.ServerDisconnected do
         nil -> nil
       end
 
+    serialized_reason =
+      case reason do
+        nil -> nil
+        text when is_binary(text) -> text
+        term -> inspect(term)
+      end
+
     %__MODULE__{
       id: id,
       name: name,
@@ -92,6 +102,7 @@ defmodule ArchiDep.Servers.Events.ServerDisconnected do
       ssh_username: ssh_username,
       ssh_port: ssh_port,
       uptime: uptime,
+      reason: serialized_reason,
       group: %{
         id: group_id,
         name: group_name

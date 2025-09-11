@@ -4,6 +4,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
   connected yet, connecting, connected, retrying to connect, or disconnected.
   """
 
+  alias ArchiDep.Events.Store.EventReference
   require Record
 
   Record.defrecord(:not_connected_state, connection_pid: nil)
@@ -12,7 +13,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
     connection_ref: nil,
     connection_pid: nil,
     time: nil,
-    retrying: nil
+    retrying: nil,
+    causation_event: nil
   )
 
   Record.defrecord(:retry_connecting_state,
@@ -51,7 +53,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
             connection_ref: reference(),
             connection_pid: pid(),
             time: DateTime.t(),
-            retrying: retry() | false
+            retrying: retry() | false,
+            causation_event: EventReference.t() | nil
           )
 
   @type retry_connecting_state ::

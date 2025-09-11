@@ -8,12 +8,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   @behaviour ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
 
+  import ArchiDep.Helpers.UseCaseHelpers
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Servers.ServerTracking.ServerProblems
   alias ArchiDep.Helpers.NetHelpers
+  alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Tracker
+  alias ArchiDep.Servers.Events.ServerConnected
+  alias ArchiDep.Servers.Events.ServerDisconnected
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
@@ -170,7 +174,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     Logger.debug("Connection idle for server #{server.id}")
 
     if Server.active?(server, DateTime.utc_now()) do
-      connect(state, connection_pid, false)
+      connect(state, connection_pid, false, nil)
     else
       state
       |> change_connection_state(not_connected_state(connection_pid: connection_pid))
@@ -222,16 +226,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           # When manually retrying, the backoff counter is reset and the manager
           # restarts trying to connect more frequently, then proceeds to add the
           # usual backoff.
-          maybe_manually_retry(retrying, manual)
+          maybe_manually_retry(retrying, manual),
+          retry_connecting_causation_event(manual)
         )
 
   def retry_connecting(
         %__MODULE__{
           connection_state: connection_failed_state(connection_pid: connection_pid)
         } = state,
-        _manual
+        manual
       ),
-      do: connect(state, connection_pid, false)
+      do: connect(state, connection_pid, false, retry_connecting_causation_event(manual))
 
   def retry_connecting(state, _manual) do
     Logger.warning(
@@ -241,7 +246,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     state
   end
 
-  defp connect(state, connection_pid, retrying),
+  defp retry_connecting_causation_event({:event, event}), do: event
+  defp retry_connecting_causation_event(_anything_else), do: nil
+
+  defp connect(state, connection_pid, retrying, causation_event),
     do:
       state
       |> change_connection_state(
@@ -249,7 +257,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           connection_ref: make_ref(),
           connection_pid: connection_pid,
           time: DateTime.utc_now(),
-          retrying: retrying
+          retrying: retrying,
+          causation_event: causation_event
         )
       )
       |> add_action(update_tracking_action())
@@ -274,7 +283,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             connecting_state(
               connection_ref: connection_ref,
               connection_pid: connection_pid,
-              time: start_time
+              time: start_time,
+              causation_event: event
             ),
           tasks: %{connect: connection_task_ref}
         } = state,
@@ -287,6 +297,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       connection_pid,
       connection_task_ref,
       start_time,
+      event,
       result
     )
   end
@@ -311,6 +322,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       connection_pid,
       connection_task_ref,
       start_time,
+      # FIXME: link to reconnection causation event
+      nil,
       result
     )
   end
@@ -389,18 +402,26 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          connection_pid,
          connection_task_ref,
          start_time,
+         causation_event,
          result
        ),
        do:
          state
-         |> handle_connect_task_result(connection_ref, connection_pid, start_time, result)
+         |> handle_connect_task_result(
+           connection_ref,
+           connection_pid,
+           start_time,
+           causation_event,
+           result
+         )
          |> drop_task(:connect, connection_task_ref)
 
   defp handle_connect_task_result(
-         %__MODULE__{server: server} = state,
+         %__MODULE__{server: server, username: username} = state,
          connection_ref,
          connection_pid,
          start_time,
+         causation_event,
          :ok
        ) do
     Logger.info(
@@ -408,9 +429,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Server manager is connected to server #{server.id} as #{state.username}; checking sudo access..."
     )
 
+    now = DateTime.utc_now()
+    connection_duration = DateTime.diff(now, start_time, :millisecond)
+
     execute_telemetry_event(:connected, %{
-      duration: DateTime.diff(DateTime.utc_now(), start_time, :millisecond) / 1000
+      duration: connection_duration / 1000
     })
+
+    server
+    |> ServerConnected.new(username, connection_duration)
+    |> persist_server_event!(server, now, causation_event)
 
     state
     |> change_connection_state(
@@ -429,6 +457,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          _connection_ref,
          connection_pid,
          _start_time,
+         _causation_event,
          {:error, :authentication_failed}
        ) do
     Logger.warning(
@@ -451,6 +480,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          _connection_ref,
          connection_pid,
          _start_time,
+         _causation_event,
          {:error, reason}
        ) do
     Logger.info(
@@ -958,7 +988,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             group: %ServerGroup{id: group_id, version: current_version} = current_group
           }
         } = state,
-        %{id: group_id, version: version} = group
+        %{id: group_id, version: version} = group,
+        event
       ) do
     Logger.info(
       # coveralls-ignore-next-line
@@ -975,7 +1006,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       state
       |> set_updated_server(new_server, false)
       |> detect_server_properties_mismatches()
-      |> auto_activate_or_deactivate()
+      |> auto_activate_or_deactivate(event)
     end
   end
 
@@ -1010,6 +1041,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     server = state.server
     Logger.info("Connection to server #{server.id} crashed because: #{inspect(reason)}")
 
+    case state.connection_state do
+      connected_state(time: time) ->
+        now = DateTime.utc_now()
+        uptime = DateTime.diff(now, time, :millisecond)
+
+        server
+        |> ServerDisconnected.new(state.username, uptime, reason)
+        |> persist_server_event!(server, now)
+
+      _any_other_state ->
+        :noop
+    end
+
     state
     |> change_connection_state(disconnected_state(time: DateTime.utc_now()))
     |> add_actions([update_tracking_action(), notify_server_offline_action()])
@@ -1035,12 +1079,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp do_update_server(state, auth, data) do
     case UpdateServer.update_server(auth, state.server, data) do
-      {:ok, updated_server} ->
+      {:ok, updated_server, event} ->
         state
         |> set_updated_server(updated_server, false)
         |> update_user_to_connect_as()
         |> detect_server_properties_mismatches()
-        |> auto_activate_or_deactivate()
+        |> auto_activate_or_deactivate(event)
         |> with_reply({:ok, updated_server})
 
       {:error, changeset} ->
@@ -1116,12 +1160,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   end
 
   defp auto_activate_or_deactivate(
-         %__MODULE__{connection_state: connection_state, server: server} = state
+         %__MODULE__{connection_state: connection_state, server: server} = state,
+         causation_event
        ) do
     if Server.active?(server, DateTime.utc_now()) do
       case connection_state do
         not_connected_state(connection_pid: connection_pid) when connection_pid != nil ->
-          connect(state, connection_pid, false)
+          connect(state, connection_pid, false, causation_event)
 
         _any_other_state ->
           add_action(state, update_tracking_action())
@@ -1427,7 +1472,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp maybe_manually_retry(retrying, :automated), do: retrying
   defp maybe_manually_retry(retrying, :manual), do: %{retrying | backoff: 0}
-  defp maybe_manually_retry(retrying, {:event, _id}), do: %{retrying | backoff: 0}
+  defp maybe_manually_retry(retrying, {:event, _event}), do: %{retrying | backoff: 0}
 
   defp change_connection_state(state, connection_state),
     do: %__MODULE__{state | connection_state: connection_state}
@@ -1533,4 +1578,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         measurements,
         %{}
       )
+
+  defp persist_server_event!(event, server, now, causation_event \\ nil),
+    do:
+      event
+      |> new_event(%{}, caused_by: causation_event, occurred_at: now)
+      |> add_to_stream(server)
+      |> initiated_by(server)
+      |> Repo.insert!()
 end

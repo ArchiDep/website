@@ -6,6 +6,7 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   import ArchiDep.Authentication, only: [is_authentication: 1]
   alias ArchiDep.Authentication
   alias ArchiDep.Events.Store.Event
+  alias ArchiDep.Events.Store.EventInitiator
   alias ArchiDep.Events.Store.StoredEvent
   alias Ecto.Changeset
   alias Ecto.Multi
@@ -77,13 +78,12 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
   end
 
   @doc """
-  Marks a business event as initiated by the authenticated or specified user
-  account.
+  Marks a business event as initiated by the specified entity.
   """
-  @spec initiated_by(StoredEvent.changeset(struct), Authentication.t()) ::
+  @spec initiated_by(StoredEvent.changeset(struct), EventInitiator.t()) ::
           StoredEvent.changeset(struct)
-  def initiated_by(changeset, auth) when is_authentication(auth) do
-    initiator = Authentication.event_stream(auth)
+  def initiated_by(changeset, initiator) when is_struct(initiator) do
+    initiator = EventInitiator.event_initiator_stream(initiator)
     StoredEvent.initiated_by(changeset, initiator)
   end
 

@@ -7,6 +7,7 @@ defmodule ArchiDep.Course.PubSub do
 
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Events.Store.EventReference
 
   @pubsub ArchiDep.PubSub
 
@@ -19,10 +20,10 @@ defmodule ArchiDep.Course.PubSub do
     :ok = PubSub.subscribe(@pubsub, "classes")
   end
 
-  @spec publish_class_updated(Class.t()) :: :ok
-  def publish_class_updated(class) do
-    :ok = PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_updated, class})
-    :ok = PubSub.broadcast(@pubsub, "classes", {:class_updated, class})
+  @spec publish_class_updated(Class.t(), EventReference.t()) :: :ok
+  def publish_class_updated(class, event) do
+    :ok = PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_updated, class, event})
+    :ok = PubSub.broadcast(@pubsub, "classes", {:class_updated, class, event})
   end
 
   @spec publish_class_deleted(Class.t()) :: :ok

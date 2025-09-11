@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
   """
 
   alias ArchiDep.Authentication
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
@@ -18,7 +19,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
   @callback init(UUID.t(), Pipeline.t()) :: state()
   @callback online?(state()) :: boolean()
   @callback connection_idle(state(), pid()) :: state()
-  @callback retry_connecting(state(), :manual | :automated | {:event, UUID.t()}) :: state()
+  @callback retry_connecting(state(), :manual | :automated | {:event, EventReference.t()}) ::
+              state()
   @callback handle_task_result(state(), reference(), result) :: state() when result: term()
   @callback ansible_playbook_event(state(), UUID.t(), String.t() | nil) :: state()
   @callback ansible_playbook_completed(state(), UUID.t()) :: state()
@@ -26,7 +28,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
               {state(), :ok | {:error, :server_not_connected} | {:error, :server_busy}}
   @callback retry_checking_open_ports(state()) ::
               {state(), :ok | {:error, :server_not_connected} | {:error, :server_busy}}
-  @callback group_updated(state(), map()) :: state()
+  @callback group_updated(state(), map(), EventReference.t()) :: state()
   @callback connection_crashed(state(), pid(), reason) :: state() when reason: term()
   @callback update_server(state(), Authentication.t(), Types.server_data()) ::
               {state(), {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_busy}}

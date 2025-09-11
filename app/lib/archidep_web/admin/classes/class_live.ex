@@ -69,7 +69,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, %Class{id: id} = updated_class},
+        {:class_updated, %Class{id: id} = updated_class, _event},
         %Socket{
           assigns: %{
             class: %Class{id: id, version: current_version} = class,

@@ -10,6 +10,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
+  alias ArchiDep.Events.Store.EventInitiator
 
   @derive {Inspect,
            only: [
@@ -199,6 +200,13 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
               ua.id != ^user_account_id and ua.preregistered_user_id == ^preregistered_user_id
           )
         end)
+
+  defimpl EventInitiator do
+    alias ArchiDep.Accounts.Schemas.UserAccount
+
+    @spec event_initiator_stream(UserAccount.t()) :: String.t()
+    def event_initiator_stream(user_account), do: UserAccount.event_stream(user_account)
+  end
 
   defp validate(changeset),
     do:

@@ -4,6 +4,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Support.ServerManagerStateTestUtils
   import Hammox
+  alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
@@ -68,6 +70,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     now = DateTime.utc_now()
     result = update_server.(initial_state, auth, data)
 
+    assert_server_updated_event!(%Server{server | username: new_server_username}, now)
+
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
               actions:
@@ -107,7 +111,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
               ), %ServerManagerState{new_state | version: new_state.version + 1}}
   end
 
-  test "update the application of a server", %{update_server: update_server} do
+  test "update the application username of a server", %{update_server: update_server} do
     server =
       insert_active_server!(
         root: true,
@@ -139,6 +143,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     now = DateTime.utc_now()
     result = update_server.(initial_state, auth, data)
+
+    assert_server_updated_event!(
+      %Server{server | app_username: new_server_app_username, active: true},
+      now
+    )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -213,6 +222,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     result = update_server.(initial_state, auth, data)
     test_pid = self()
 
+    causation_event =
+      assert_server_updated_event!(
+        %Server{server | username: new_server_username, active: true},
+        now
+      )
+
     assert {%ServerManagerState{
               connection_state:
                 connecting_state(connection_ref: connection_ref, time: connecting_time),
@@ -237,7 +252,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                       connection_pid: self(),
                       connection_ref: connection_ref,
                       time: connecting_time,
-                      retrying: false
+                      retrying: false,
+                      causation_event: causation_event
                     ),
                   server: %Server{
                     server
@@ -305,6 +321,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       assert_server_connection_disconnected!(server, fn ->
         update_server.(initial_state, auth, data)
       end)
+
+    assert_server_updated_event!(
+      %Server{server | username: new_server_username, active: false},
+      now
+    )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -382,6 +403,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     now = DateTime.utc_now()
 
     result = update_server.(initial_state, auth, data)
+
+    assert_server_updated_event!(
+      %Server{server | username: new_server_username, active: false},
+      now
+    )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -463,6 +489,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     result = update_server.(initial_state, auth, data)
 
+    assert_server_updated_event!(
+      %Server{server | username: new_server_username, active: false},
+      now
+    )
+
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
               actions:
@@ -542,6 +573,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     result = update_server.(initial_state, auth, data)
 
+    assert_server_updated_event!(
+      %Server{server | username: new_server_username, active: false},
+      now
+    )
+
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
               actions:
@@ -618,6 +654,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     now = DateTime.utc_now()
 
     result = update_server.(initial_state, auth, data)
+
+    assert_server_updated_event!(
+      %Server{server | username: new_server_username, active: false},
+      now
+    )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -696,6 +737,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     result = update_server.(initial_state, auth, data)
 
+    assert_server_updated_event!(
+      %Server{server | username: new_server_username, active: false},
+      now
+    )
+
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
               actions:
@@ -772,6 +818,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     now = DateTime.utc_now()
     result = update_server.(initial_state, auth, data)
+
+    assert_server_updated_event!(
+      %Server{server | expected_properties: %{server.expected_properties | cpus: 4}},
+      now
+    )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -883,5 +934,75 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     data = ServersFactory.random_server_data()
 
     assert update_server.(initial_state, auth, data) == {initial_state, {:error, :server_busy}}
+  end
+
+  defp assert_server_updated_event!(server, now) do
+    assert [
+             %StoredEvent{
+               id: event_id,
+               occurred_at: occurred_at
+             } = registered_event
+           ] = Repo.all(from e in StoredEvent, order_by: [asc: e.occurred_at])
+
+    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+
+    assert registered_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{server.id}",
+             version: server.version + 1,
+             type: "archidep/servers/server-updated",
+             data: %{
+               "id" => server.id,
+               "name" => server.name,
+               "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
+               "username" => server.username,
+               "app_username" => server.app_username,
+               "ssh_port" => server.ssh_port,
+               "active" => server.active,
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner.id,
+                 "username" => server.owner.username,
+                 "name" =>
+                   if server.owner.group_member do
+                     server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => server.owner.root
+               },
+               "expected_properties" => %{
+                 "hostname" => server.expected_properties.hostname,
+                 "machine_id" => server.expected_properties.machine_id,
+                 "cpus" => server.expected_properties.cpus,
+                 "cores" => server.expected_properties.cores,
+                 "vcpus" => server.expected_properties.vcpus,
+                 "memory" => server.expected_properties.memory,
+                 "swap" => server.expected_properties.swap,
+                 "system" => server.expected_properties.system,
+                 "architecture" => server.expected_properties.architecture,
+                 "os_family" => server.expected_properties.os_family,
+                 "distribution" => server.expected_properties.distribution,
+                 "distribution_release" => server.expected_properties.distribution_release,
+                 "distribution_version" => server.expected_properties.distribution_version
+               }
+             },
+             meta: %{},
+             initiator: "accounts:user-accounts:#{server.owner_id}",
+             causation_id: event_id,
+             correlation_id: event_id,
+             occurred_at: occurred_at,
+             entity: nil
+           }
+
+    %EventReference{
+      id: event_id,
+      causation_id: registered_event.causation_id,
+      correlation_id: registered_event.correlation_id
+    }
   end
 end

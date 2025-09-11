@@ -63,7 +63,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
              ServerForm.update_changeset(server, params),
              :validate
            ),
-         {:ok, updated_server} <-
+         {:ok, updated_server, _event} <-
            Servers.update_server(auth, server.id, ServerForm.to_update_data(form_data)) do
       socket
       |> send_notification(

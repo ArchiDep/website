@@ -57,8 +57,8 @@ defmodule ArchiDep.Course.UseCases.UpdateExpectedServerPropertiesForClass do
            &class_expected_properties_updated(auth, &1.class)
          )
          |> Repo.transaction() do
-      {:ok, %{class: updated_class}} ->
-        :ok = PubSub.publish_class_updated(updated_class)
+      {:ok, %{class: updated_class, stored_event: event}} ->
+        :ok = PubSub.publish_class_updated(updated_class, StoredEvent.to_reference(event))
         {:ok, updated_class.expected_server_properties}
 
       {:error, :class, changeset, _changes} ->

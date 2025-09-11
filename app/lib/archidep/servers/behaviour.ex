@@ -125,7 +125,7 @@ defmodule ArchiDep.Servers.Behaviour do
   """
   callback(
     update_server(auth: Authentication.t(), server_id: UUID.t(), data: Types.server_data()) ::
-      {:ok, Server.t()}
+      {:ok, Server.t(), EventReference.t()}
       | {:error, Changeset.t()}
       | {:error, :server_busy}
       | {:error, :server_not_found}

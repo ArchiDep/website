@@ -3,6 +3,7 @@ defmodule ArchiDep.Authentication do
   Represents an authenticated user session in the application.
   """
 
+  alias ArchiDep.Events.Store.EventInitiator
   alias Ecto.UUID
 
   @spec is_authentication(term) :: Macro.t()
@@ -55,4 +56,11 @@ defmodule ArchiDep.Authentication do
   @spec event_stream(t()) :: String.t()
   def event_stream(%__MODULE__{principal_id: principal_id}),
     do: "accounts:user-accounts:#{principal_id}"
+
+  defimpl EventInitiator do
+    alias ArchiDep.Authentication
+
+    @spec event_initiator_stream(Authentication.t()) :: String.t()
+    def event_initiator_stream(auth), do: Authentication.event_stream(auth)
+  end
 end

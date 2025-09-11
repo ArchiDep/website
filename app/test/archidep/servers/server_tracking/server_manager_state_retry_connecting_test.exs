@@ -9,7 +9,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
-  alias Ecto.UUID
 
   setup :verify_on_exit!
 
@@ -169,9 +168,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     retry_connecting_state(retrying: retrying) = initial_state.connection_state
 
-    fake_event = EventsFactory.build(:stored_event)
-
-    result = retry_connecting.(initial_state, {:event, fake_event.id})
+    fake_event = EventsFactory.build(:event_reference)
+    result = retry_connecting.(initial_state, {:event, fake_event})
 
     test_pid = self()
 
@@ -303,7 +301,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
       assert log2 =~ "Ignore request to retry connecting"
 
       assert {^initial_state, log3} =
-               with_log(fn -> retry_connecting.(initial_state, {:event, UUID.generate()}) end)
+               with_log(fn ->
+                 retry_connecting.(initial_state, {:event, EventsFactory.build(:event_reference)})
+               end)
 
       assert log3 =~ "Ignore request to retry connecting"
     end
