@@ -49,7 +49,11 @@ defmodule ArchiDep.Support.EventsFactory do
 
     {meta, attrs!} =
       Map.pop_lazy(attrs!, :meta, fn ->
-        Map.put(%{}, Faker.Lorem.word(), Faker.Lorem.sentence())
+        if bool() do
+          Map.put(%{}, Faker.Lorem.word(), Faker.Lorem.sentence())
+        else
+          %{}
+        end
       end)
 
     {initiator, attrs!} =

@@ -107,6 +107,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     result = group_updated.(initial_state, updated_class, event)
 
+    assert_no_stored_events!()
+
     assert %ServerManagerState{
              actions: [
                {:update_tracking, "servers", update_tracking_fn}
@@ -195,6 +197,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
     event = EventsFactory.build(:event_reference)
 
     assert group_updated.(initial_state, updated_class, event) == initial_state
+
+    assert_no_stored_events!()
   end
 
   test "server property mismatches are re-evaluated when a group is updated", %{
@@ -304,6 +308,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
     event = EventsFactory.build(:event_reference)
 
     result = group_updated.(initial_state, updated_class, event)
+
+    assert_no_stored_events!()
 
     assert %ServerManagerState{
              actions: [
@@ -448,6 +454,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     result = group_updated.(initial_state, updated_class, event)
 
+    assert_no_stored_events!()
+
     assert %ServerManagerState{
              actions: [
                {:update_tracking, "servers", update_tracking_fn}
@@ -564,6 +572,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     now = DateTime.utc_now()
     result = group_updated.(initial_state, updated_class, event)
+
+    assert_no_stored_events!()
 
     assert %ServerManagerState{
              connection_state:
@@ -697,6 +707,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
       assert_server_connection_disconnected!(server, fn ->
         group_updated.(initial_state, updated_class, event)
       end)
+
+    assert_no_stored_events!()
 
     assert %ServerManagerState{
              actions: [

@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
   alias ArchiDep.Support.ServersFactory
 
@@ -203,7 +204,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
     for {busy_state, tasks, ansible_playbook} <- [
           {ServersFactory.random_connected_state(), %{foo: make_ref()}, nil},
           {ServersFactory.random_connected_state(), %{},
-           {ServersFactory.build(:ansible_playbook_run, server: server, state: :pending), nil}},
+           {ServersFactory.build(:ansible_playbook_run, server: server, state: :pending), nil,
+            EventsFactory.build(:event_reference)}},
           {ServersFactory.random_connecting_state(), %{}, nil},
           {ServersFactory.random_reconnecting_state(), %{}, nil}
         ] do
@@ -219,7 +221,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
       assert delete_server.(initial_state, auth) == {initial_state, {:error, :server_busy}}
     end
 
-    assert Repo.all(StoredEvent) == []
+    assert_no_stored_events!()
     assert Repo.exists?(from s in Server, where: s.id == ^server.id)
   end
 

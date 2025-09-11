@@ -113,7 +113,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
       |> execute_actions()
 
     # TODO: watch user account & student for changes (also remove superfluous
-    # reloads in update & delete server use cases once done)
+    # reloads in update & delete server use cases once done, or at least make
+    # them conditional)
     :ok = Course.PubSub.subscribe_class(state.server.group_id)
 
     state
@@ -343,11 +344,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     end)
   end
 
-  defp execute_action(state, {:run_playbook, playbook_run}) do
+  defp execute_action(state, {:run_playbook, playbook_run, cause}) do
     :ok =
       AnsiblePipelineQueue.run_playbook(
         state.pipeline,
-        playbook_run
+        playbook_run,
+        cause
       )
 
     state

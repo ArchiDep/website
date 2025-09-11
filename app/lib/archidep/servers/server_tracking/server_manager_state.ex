@@ -12,12 +12,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Servers.ServerTracking.ServerProblems
   alias ArchiDep.Helpers.NetHelpers
+  alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Tracker
   alias ArchiDep.Servers.Events.ServerConnected
   alias ArchiDep.Servers.Events.ServerDisconnected
+  alias ArchiDep.Servers.Events.ServerRetriedAnsiblePlaybook
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
@@ -65,7 +68,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           username: String.t(),
           actions: list(action()),
           tasks: %{optional(atom()) => reference()},
-          ansible_playbook: {AnsiblePlaybookRun.t(), String.t() | nil} | nil,
+          ansible_playbook: {AnsiblePlaybookRun.t(), String.t() | nil, EventReference.t()} | nil,
           problems: list(server_problem()),
           retry_timer: reference() | nil,
           load_average_timer: reference() | nil,
@@ -95,7 +98,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @type run_command_action ::
           {:run_command, (t(), (String.t(), pos_integer() -> Task.t()) -> t())}
   @type run_playbook_action ::
-          {:run_playbook, AnsiblePlaybookRun.t()}
+          {:run_playbook, AnsiblePlaybookRun.t(), EventReference.t()}
   @type send_message_action ::
           {:send_message, (t(), (term(), pos_integer() -> reference()) -> t())}
   @type track_action :: {:track, String.t(), UUID.t(), ServerRealTimeState.t()}
@@ -436,16 +439,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       duration: connection_duration / 1000
     })
 
-    server
-    |> ServerConnected.new(username, connection_duration)
-    |> persist_server_event!(server, now, causation_event)
+    connected_event =
+      server
+      |> ServerConnected.new(username, connection_duration)
+      |> persist_server_event!(server, now, causation_event)
 
     state
     |> change_connection_state(
       connected_state(
         connection_ref: connection_ref,
         connection_pid: connection_pid,
-        time: DateTime.utc_now()
+        time: DateTime.utc_now(),
+        connection_event: StoredEvent.to_reference(connected_event)
       )
     )
     |> add_actions([update_tracking_action(), check_sudo_access()])
@@ -592,7 +597,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp handle_access_check_result(
          %__MODULE__{
-           connection_state: connected_state(),
+           connection_state: connected_state(connection_event: connection_event),
            server: server,
            username: username
          } = state,
@@ -605,7 +610,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
     state
     |> add_action(update_tracking_action())
-    |> run_setup_playbook()
+    |> run_setup_playbook(connection_event)
   end
 
   defp handle_access_check_result(
@@ -701,7 +706,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   end
 
   defp test_ports_or_rerun_setup(
-         %__MODULE__{server: server} = state,
+         %__MODULE__{
+           connection_state: connected_state(connection_event: connection_event),
+           server: server
+         } = state,
          %AnsiblePlaybookRun{state: :succeeded, digest: previous_digest},
          %AnsiblePlaybook{digest: digest}
        ) do
@@ -710,11 +718,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Re-running Ansible setup playbook for server #{server.id} because its digest has changed from #{Base.encode16(previous_digest, case: :lower)} to #{Base.encode16(digest, case: :lower)}"
     )
 
-    run_setup_playbook(state)
+    run_setup_playbook(state, connection_event)
   end
 
   defp test_ports_or_rerun_setup(
-         %__MODULE__{server: server} = state,
+         %__MODULE__{
+           connection_state: connected_state(connection_event: connection_event),
+           server: server
+         } = state,
          last_setup_run,
          _playbook
        ) do
@@ -723,7 +734,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Re-running Ansible setup playbook for server #{server.id} because its last run did not succeed (#{inspect(last_setup_run.state)})"
     )
 
-    run_setup_playbook(state)
+    run_setup_playbook(state, connection_event)
   end
 
   defp handle_port_testing_script_result(
@@ -792,7 +803,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   def ansible_playbook_event(
         %__MODULE__{
-          ansible_playbook: {%AnsiblePlaybookRun{id: run_id}, _previous_task}
+          ansible_playbook: {%AnsiblePlaybookRun{id: run_id}, _previous_task, _cause}
         } = state,
         run_id,
         ongoing_task
@@ -814,7 +825,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def ansible_playbook_completed(
         %__MODULE__{
           connection_state: connected_state(),
-          ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task}
+          ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, _cause}
         } = state,
         run_id
       ) do
@@ -840,10 +851,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp handle_ansible_playbook_completed(
          %__MODULE__{
            connection_state:
-             connected_state(connection_pid: connection_pid, connection_ref: connection_ref),
+             connected_state(
+               connection_pid: connection_pid,
+               connection_ref: connection_ref
+             ),
            server: %Server{username: username} = server,
            username: username,
-           ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task}
+           ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, cause}
          } = state,
          %AnsiblePlaybookRun{id: run_id, playbook: "setup", state: :succeeded}
        ),
@@ -856,7 +870,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
              time: DateTime.utc_now()
            )
          )
-         |> set_updated_server(Server.mark_as_set_up!(server))
+         |> set_updated_server(Server.mark_as_set_up!(server, cause))
          |> connect_with_app_username()
          |> then(&add_action(&1, connect_action(&1)))
          |> stop_measuring_load_average()
@@ -865,7 +879,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp handle_ansible_playbook_completed(
          %__MODULE__{
            connection_state: connected_state(),
-           ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task}
+           ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, _cause}
          } = state,
          %AnsiblePlaybookRun{id: run_id} = run
        ),
@@ -884,6 +898,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         %__MODULE__{
           connection_state: connected_state(),
           server: server,
+          username: username,
           problems: problems,
           tasks: tasks,
           ansible_playbook: nil
@@ -897,9 +912,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     if has_failed_setup_playbook do
       Logger.info("Retrying Ansible setup playbook for server #{server.id}")
 
+      retry_event =
+        server
+        |> ServerRetriedAnsiblePlaybook.new(username, "setup")
+        |> persist_server_event!(server, DateTime.utc_now())
+
       state
       |> add_action(update_tracking_action())
-      |> run_setup_playbook()
+      |> run_setup_playbook(StoredEvent.to_reference(retry_event))
       |> with_reply(:ok)
     else
       Logger.info(
@@ -1085,7 +1105,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         |> update_user_to_connect_as()
         |> detect_server_properties_mismatches()
         |> auto_activate_or_deactivate(event)
-        |> with_reply({:ok, updated_server})
+        |> with_reply({:ok, updated_server, event})
 
       {:error, changeset} ->
         with_reply(state, {:error, changeset})
@@ -1390,7 +1410,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
       %{
         connection_state: connected_state(),
-        ansible_playbook: {%AnsiblePlaybookRun{id: id, playbook: playbook}, task}
+        ansible_playbook: {%AnsiblePlaybookRun{id: id, playbook: playbook}, task, _cause}
       } ->
         {:running_playbook, playbook, id, task}
 
@@ -1399,39 +1419,45 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
-  defp run_setup_playbook(state) do
-    playbook_run = start_setup_playbook(state.server)
+  defp run_setup_playbook(state, cause) do
+    {playbook_run, start_event} = start_setup_playbook(state.server, cause)
 
     add_action(
-      %__MODULE__{state | ansible_playbook: {playbook_run, nil}},
-      run_playbook_action(playbook_run)
+      %__MODULE__{state | ansible_playbook: {playbook_run, nil, cause}},
+      run_playbook_action(playbook_run, start_event)
     )
   end
 
   defp update_ongoing_playbook_task(
-         %__MODULE__{ansible_playbook: {playbook_run, _previous_task}} = state,
+         %__MODULE__{ansible_playbook: {playbook_run, _previous_task, cause}} = state,
          ongoing_task
        ),
        do: %__MODULE__{
          state
-         | ansible_playbook: {playbook_run, ongoing_task}
+         | ansible_playbook: {playbook_run, ongoing_task, cause}
        }
 
   defp clear_running_ansible_playbook(state), do: %__MODULE__{state | ansible_playbook: nil}
 
-  defp start_setup_playbook(server) do
+  defp start_setup_playbook(server, cause) do
     playbook = Ansible.setup_playbook()
 
     username = if server.set_up_at, do: server.app_username, else: server.username
     token = Token.sign(server.secret_key, "server auth", server.id)
 
-    Tracker.track_playbook!(playbook, server, username, %{
-      "api_base_url" => api_base_url(),
-      "app_user_name" => server.app_username,
-      "app_user_authorized_key" => SSH.ssh_public_key(),
-      "server_id" => server.id,
-      "server_token" => token
-    })
+    Tracker.track_playbook!(
+      playbook,
+      server,
+      username,
+      %{
+        "api_base_url" => api_base_url(),
+        "app_user_name" => server.app_username,
+        "app_user_authorized_key" => SSH.ssh_public_key(),
+        "server_id" => server.id,
+        "server_token" => token
+      },
+      cause
+    )
   end
 
   defp drop_problems(state, problems) when is_list(problems),
@@ -1529,7 +1555,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp monitor_action(pid), do: {:monitor, pid}
   defp demonitor_action(ref), do: {:demonitor, ref}
 
-  defp run_playbook_action(playbook_run), do: {:run_playbook, playbook_run}
+  defp run_playbook_action(playbook_run, cause), do: {:run_playbook, playbook_run, cause}
 
   defp measure_load_average_action,
     do: send_message_action(:measure_load_average, 20_000, :load_average_timer)

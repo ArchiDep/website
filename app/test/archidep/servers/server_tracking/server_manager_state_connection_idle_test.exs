@@ -35,6 +35,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
 
     result = connection_idle.(initial_state, self())
 
+    assert_no_stored_events!()
+
     test_pid = self()
 
     assert %ServerManagerState{
@@ -87,6 +89,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
 
     now = DateTime.utc_now()
     result = connection_idle.(initial_state, self())
+
+    assert_no_stored_events!()
 
     test_pid = self()
 
@@ -177,6 +181,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
 
     result = connection_idle.(initial_state, self())
 
+    assert_no_stored_events!()
+
     test_pid = self()
 
     assert %ServerManagerState{
@@ -228,6 +234,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
 
     result = connection_idle.(initial_state, self())
 
+    assert_no_stored_events!()
+
     pid = self()
 
     assert result == %ServerManagerState{
@@ -250,6 +258,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
       )
 
     result = connection_idle.(initial_state, self())
+
+    assert_no_stored_events!()
 
     pid = self()
 

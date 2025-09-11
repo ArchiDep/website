@@ -13,8 +13,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
+  import ArchiDep.Helpers.UseCaseHelpers
   import ArchiDep.Servers.Schemas.ServerOwner, only: [where_server_owner_active: 1]
   alias ArchiDep.Events.Store.EventInitiator
+  alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Servers.Events.ServerSetUp
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
@@ -344,14 +347,16 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> Repo.update!()
   end
 
-  @spec mark_as_set_up!(t()) :: t()
-  def mark_as_set_up!(%__MODULE__{set_up_at: nil} = server) do
+  @spec mark_as_set_up!(t(), EventReference.t()) :: t()
+  def mark_as_set_up!(%__MODULE__{set_up_at: nil} = server, cause) do
     now = DateTime.utc_now()
 
-    server
-    |> change(set_up_at: now)
-    |> optimistic_lock(:version)
-    |> Repo.update!()
+    case Multi.new()
+         |> Multi.update(:server, server |> change(set_up_at: now) |> optimistic_lock(:version))
+         |> Multi.insert(:stored_event, &server_set_up(&1.server, cause))
+         |> Repo.transaction() do
+      {:ok, %{server: server}} -> server
+    end
   end
 
   @spec mark_open_ports_checked!(t()) :: t()
@@ -454,4 +459,12 @@ defmodule ArchiDep.Servers.Schemas.Server do
        do: add_error(changeset, :app_username, "cannot be the same as the username")
 
   defp validate_username_and_app_username(changeset, _username, _app_username), do: changeset
+
+  defp server_set_up(server, cause),
+    do:
+      server
+      |> ServerSetUp.new()
+      |> new_event(%{}, caused_by: cause, occurred_at: server.set_up_at)
+      |> add_to_stream(server)
+      |> initiated_by(server)
 end

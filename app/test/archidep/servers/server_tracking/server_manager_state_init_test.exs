@@ -26,6 +26,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateInitTest do
              username: server.username,
              actions: [track_server_action(server, real_time_state(server))]
            }
+
+    assert_no_stored_events!()
   end
 
   test "initializing a server manager for a server that has already been set up uses the app username instead of the username",
@@ -47,6 +49,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateInitTest do
                )
              ]
            }
+
+    assert_no_stored_events!()
   end
 
   test "initializing a server with a failed setup ansible playbook run indicates a problem", %{
@@ -68,6 +72,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateInitTest do
              ],
              problems: [problem]
            }
+
+    assert_no_stored_events!()
   end
 
   defp generate_server!(attrs \\ []) do

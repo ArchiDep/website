@@ -46,7 +46,7 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunStarted do
           id: UUID.t(),
           playbook: String.t(),
           playbook_path: String.t(),
-          digest: binary(),
+          digest: String.t(),
           git_revision: String.t(),
           host: String.t(),
           port: 1..65_535,
@@ -69,8 +69,8 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunStarted do
           }
         }
 
-  @spec new(AnsiblePlaybookRun.t(), Server.t()) :: t()
-  def new(run, server) do
+  @spec new(AnsiblePlaybookRun.t()) :: t()
+  def new(run) do
     %AnsiblePlaybookRun{
       id: id,
       playbook: playbook,
@@ -80,7 +80,8 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunStarted do
       host: host,
       port: port,
       user: user,
-      vars: vars
+      vars: vars,
+      server: server
     } = run
 
     %Server{
@@ -113,9 +114,9 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunStarted do
       id: id,
       playbook: playbook,
       playbook_path: playbook_path,
-      digest: digest,
+      digest: Base.encode16(digest, case: :lower),
       git_revision: git_revision,
-      host: host,
+      host: host.address |> :inet.ntoa() |> to_string(),
       port: port,
       user: user,
       vars: vars,

@@ -81,9 +81,11 @@ defmodule ArchiDep do
       import ArchiDep.Helpers.SchemaHelpers
       import Ecto.Changeset
       import Ecto.Query, only: [dynamic: 2, from: 2]
+      alias ArchiDep.Events.Store.EventReference
       alias ArchiDep.Repo
       alias Ecto.Association.NotLoaded
       alias Ecto.Changeset
+      alias Ecto.Multi
       alias Ecto.Query
       alias Ecto.Queryable
       alias Ecto.UUID

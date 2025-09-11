@@ -14,6 +14,8 @@ defmodule ArchiDep.Support.DataCase do
 
   use ExUnit.CaseTemplate
 
+  import Ecto.Query, only: [from: 2]
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Support.DataCase
@@ -50,6 +52,13 @@ defmodule ArchiDep.Support.DataCase do
   @spec assert_no_stored_events!() :: :ok
   def assert_no_stored_events! do
     assert Repo.all(StoredEvent) == []
+    :ok
+  end
+
+  @spec assert_no_stored_events!(list(StoredEvent.t(map) | EventReference.t())) :: :ok
+  def assert_no_stored_events!(except) do
+    ids = Enum.map(except, & &1.id)
+    assert Repo.all(from(e in StoredEvent, where: e.id not in ^ids)) == []
     :ok
   end
 

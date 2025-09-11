@@ -48,11 +48,12 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunRunning do
           }
         }
 
-  @spec new(AnsiblePlaybookRun.t(), Server.t()) :: t()
-  def new(run, server) do
+  @spec new(AnsiblePlaybookRun.t()) :: t()
+  def new(run) do
     %AnsiblePlaybookRun{
       id: id,
-      playbook: playbook
+      playbook: playbook,
+      server: server
     } = run
 
     %Server{

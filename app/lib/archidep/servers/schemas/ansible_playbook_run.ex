@@ -143,7 +143,11 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
         from(r in __MODULE__,
           where: r.id == ^id and r.state == :pending,
           join: s in assoc(r, :server),
-          preload: [server: s]
+          join: sg in assoc(s, :group),
+          join: so in assoc(s, :owner),
+          left_join: sogm in assoc(so, :group_member),
+          left_join: sogmg in assoc(sogm, :group),
+          preload: [server: {s, group: sg, owner: {so, group_member: {sogm, group: sogmg}}}]
         )
       )
 
@@ -220,6 +224,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       port: server.ssh_port || 22,
       user: user,
       vars: vars,
+      server: server,
       server_id: server.id,
       state: :pending,
       started_at: now,
@@ -236,6 +241,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     run
     |> change(
       state: :running,
+      # FIXME: add running_at
       started_at: now,
       updated_at: now
     )

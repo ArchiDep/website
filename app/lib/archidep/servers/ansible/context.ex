@@ -20,7 +20,11 @@ defmodule ArchiDep.Servers.Ansible.Context do
   end
 
   @impl Ansible.Behaviour
-  def run_playbook(%AnsiblePlaybookRun{state: :running} = playbook_run)
+  def run_playbook(
+        %AnsiblePlaybookRun{state: :running} = playbook_run,
+        started_cause,
+        running_cause
+      )
       when is_struct(playbook_run, AnsiblePlaybookRun) do
     ansible_host = playbook_run.host.address
     ansible_port = playbook_run.port
@@ -38,7 +42,7 @@ defmodule ArchiDep.Servers.Ansible.Context do
       ansible_user,
       playbook_run.vars
     )
-    |> Stream.map(&Tracker.track_playbook_event(&1, playbook_run))
+    |> Stream.map(&Tracker.track_playbook_event(&1, playbook_run, started_cause, running_cause))
   end
 
   defp playbook_path(name),

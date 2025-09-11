@@ -31,7 +31,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
   @callback group_updated(state(), map(), EventReference.t()) :: state()
   @callback connection_crashed(state(), pid(), reason) :: state() when reason: term()
   @callback update_server(state(), Authentication.t(), Types.server_data()) ::
-              {state(), {:ok, Server.t()} | {:error, Changeset.t()} | {:error, :server_busy}}
+              {state(),
+               {:ok, Server.t(), EventReference.t()}
+               | {:error, Changeset.t()}
+               | {:error, :server_busy}}
   @callback delete_server(state(), Authentication.t()) :: {state(), :ok | {:error, :server_busy}}
   @callback on_message(state(), term()) :: state()
 end

@@ -1,8 +1,9 @@
-defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunFinished do
+defmodule ArchiDep.Servers.Events.AnsiblePlaybookEventOccurred do
   @moduledoc false
 
   use ArchiDep, :event
 
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
@@ -14,11 +15,8 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunFinished do
 
   @enforce_keys [
     :id,
-    :playbook,
-    :state,
-    :number_of_events,
-    :exit_code,
-    :stats,
+    :properties,
+    :playbook_run,
     :server,
     :group,
     :owner
@@ -26,11 +24,8 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunFinished do
 
   defstruct [
     :id,
-    :playbook,
-    :state,
-    :number_of_events,
-    :exit_code,
-    :stats,
+    :properties,
+    :playbook_run,
     :server,
     :group,
     :owner
@@ -38,18 +33,10 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunFinished do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
-          playbook: String.t(),
-          state: String.t(),
-          number_of_events: non_neg_integer(),
-          exit_code: 0..255,
-          stats: %{
-            changed: non_neg_integer(),
-            failures: non_neg_integer(),
-            ignored: non_neg_integer(),
-            ok: non_neg_integer(),
-            rescued: non_neg_integer(),
-            skipped: non_neg_integer(),
-            unreachable: non_neg_integer()
+          properties: %{String.t() => term()},
+          playbook_run: %{
+            id: UUID.t(),
+            playbook: String.t()
           },
           server: %{
             id: UUID.t(),
@@ -68,22 +55,18 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunFinished do
           }
         }
 
-  @spec new(AnsiblePlaybookRun.t()) :: t()
-  def new(run) do
-    %AnsiblePlaybookRun{
+  @spec new(AnsiblePlaybookEvent.t()) :: t()
+  def new(event) do
+    %AnsiblePlaybookEvent{
       id: id,
-      server: server,
+      run: run,
+      data: properties
+    } = event
+
+    %AnsiblePlaybookRun{
+      id: run_id,
       playbook: playbook,
-      state: state,
-      number_of_events: number_of_events,
-      exit_code: exit_code,
-      stats_changed: changed,
-      stats_failures: failures,
-      stats_ignored: ignored,
-      stats_ok: ok,
-      stats_rescued: rescued,
-      stats_skipped: skipped,
-      stats_unreachable: unreachable
+      server: server
     } = run
 
     %Server{
@@ -114,18 +97,10 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunFinished do
 
     %__MODULE__{
       id: id,
-      playbook: playbook,
-      state: Atom.to_string(state),
-      number_of_events: number_of_events,
-      exit_code: exit_code,
-      stats: %{
-        changed: changed,
-        failures: failures,
-        ignored: ignored,
-        ok: ok,
-        rescued: rescued,
-        skipped: skipped,
-        unreachable: unreachable
+      properties: properties,
+      playbook_run: %{
+        id: run_id,
+        playbook: playbook
       },
       server: %{
         id: server_id,
@@ -146,13 +121,13 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunFinished do
   end
 
   defimpl Event do
-    alias ArchiDep.Servers.Events.AnsiblePlaybookRunFinished
+    alias ArchiDep.Servers.Events.AnsiblePlaybookEventOccurred
 
-    @spec event_stream(AnsiblePlaybookRunFinished.t()) :: String.t()
-    def event_stream(%AnsiblePlaybookRunFinished{server: %{id: server_id}}),
+    @spec event_stream(AnsiblePlaybookEventOccurred.t()) :: String.t()
+    def event_stream(%AnsiblePlaybookEventOccurred{server: %{id: server_id}}),
       do: "servers:servers:#{server_id}"
 
-    @spec event_type(AnsiblePlaybookRunFinished.t()) :: atom()
-    def event_type(_event), do: :"archidep/servers/ansible-playbook-run-finished"
+    @spec event_type(AnsiblePlaybookEventOccurred.t()) :: atom()
+    def event_type(_event), do: :"archidep/servers/ansible-playbook-event-occurred"
   end
 end

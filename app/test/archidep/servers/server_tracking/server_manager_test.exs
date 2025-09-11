@@ -412,6 +412,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     queue_name = AnsiblePipelineQueue.name(test)
     playbook_run = ServersFactory.build(:ansible_playbook_run, server: server, state: :pending)
     playbook_run_id = playbook_run.id
+    fake_cause = EventsFactory.build(:event_reference)
 
     # Start a fake ansible pipeline queue process that will forward all calls to
     # the test process.
@@ -420,7 +421,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
       start: {GenServerProxy, :start_link, [self(), queue_name]}
     })
 
-    init_actions = [{:run_playbook, playbook_run}]
+    init_actions = [{:run_playbook, playbook_run, fake_cause}]
 
     assert test_server_manager!(
              initialize,
@@ -431,7 +432,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
                end)
 
                assert_receive {:proxy, ^queue_name,
-                               {:call, {:run_playbook, ^playbook_run_id, ^server_id}, from}},
+                               {:call, {:run_playbook, ^playbook_run_id, ^server_id, ^fake_cause},
+                                from}},
                               500
 
                GenServer.reply(from, :ok)
@@ -731,14 +733,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     updated_server = %Server{server | username: Faker.Internet.user_name()}
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
     data = ServersFactory.random_server_data()
+    fake_event = EventsFactory.build(:event_reference)
 
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :update_server, fn state, ^auth, ^data ->
-               {done.(state), {:ok, updated_server}}
+               {done.(state), {:ok, updated_server, fake_event}}
              end)
 
              ServerManager.update_server(server, auth, data)
-           end) == {:ok, updated_server}
+           end) == {:ok, updated_server, fake_event}
   end
 
   test "fail to update a server through its manager", %{
@@ -746,18 +749,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     server: server,
     test_pid: test_pid
   } do
-    new_server_username = Faker.Internet.user_name()
-    updated_server = %Server{server | username: new_server_username}
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
     data = ServersFactory.random_server_data()
 
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
              expect(ServerManagerMock, :update_server, fn state, ^auth, ^data ->
-               {done.(state), {:ok, updated_server}}
+               {done.(state), {:error, :server_busy}}
              end)
 
              ServerManager.update_server(server, auth, data)
-           end) == {:ok, updated_server}
+           end) == {:error, :server_busy}
   end
 
   test "delete a server through its manager", %{

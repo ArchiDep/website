@@ -78,15 +78,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     now = DateTime.utc_now()
     result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
 
-    assert_server_connected_event!(server, now, fake_event)
+    connection_event = assert_server_connected_event!(server, now, fake_event)
 
     assert %{
-             connection_state:
-               connected_state(
-                 connection_ref: ^connection_ref,
-                 connection_pid: ^connection_pid,
-                 time: time
-               ),
+             connection_state: connected_state(time: time),
              actions:
                [
                  {:demonitor, ^fake_connect_task_ref},
@@ -103,7 +98,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                  connected_state(
                    connection_ref: connection_ref,
                    connection_pid: connection_pid,
-                   time: time
+                   time: time,
+                   connection_event: connection_event
                  ),
                actions: actions,
                tasks: %{},
@@ -185,15 +181,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     now = DateTime.utc_now()
     result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
 
-    assert_server_connected_event!(server, now)
+    connection_event = assert_server_connected_event!(server, now)
 
     assert %{
-             connection_state:
-               connected_state(
-                 connection_ref: ^connection_ref,
-                 connection_pid: ^connection_pid,
-                 time: time
-               ),
+             connection_state: connected_state(time: time),
              actions:
                [
                  {:demonitor, ^fake_connect_task_ref},
@@ -210,7 +201,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                  connected_state(
                    connection_ref: connection_ref,
                    connection_pid: connection_pid,
-                   time: time
+                   time: time,
+                   connection_event: connection_event
                  ),
                actions: actions,
                tasks: %{},
@@ -1226,8 +1218,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     server = insert_active_server!(set_up_at: nil, ssh_port: true)
 
     fake_check_access_task_ref = make_ref()
-
-    connected = ServersFactory.random_connected_state()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+    connected = ServersFactory.random_connected_state(connection_event: fake_connection_event)
 
     initial_state =
       ServersFactory.build(:server_manager_state,
@@ -1246,8 +1238,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
       )
 
-    assert_no_stored_events!()
-
     assert %{
              actions:
                [
@@ -1258,15 +1248,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                     vars: %{"server_token" => server_token},
                     created_at: playbook_created_at
                   } =
-                    playbook_run},
+                    playbook_run, playbook_run_cause},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
 
+    run_started_event =
+      assert_ansible_playbook_run_started_event!(playbook_run, now, fake_connection_event)
+
+    assert playbook_run_cause == run_started_event
+
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               ansible_playbook: {playbook_run, nil},
+               ansible_playbook: {playbook_run, nil, fake_connection_event},
                tasks: %{}
            }
 
@@ -2471,10 +2466,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     )
 
     fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{gather_facts: fake_gather_facts_ref}
@@ -2493,8 +2490,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:ok, %{}}
       )
 
-    assert_no_stored_events!()
-
     assert %{
              server:
                %Server{
@@ -2509,10 +2504,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                     vars: %{"server_token" => server_token},
                     created_at: playbook_created_at
                   } =
-                    playbook_run},
+                    playbook_run, playbook_run_cause},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
+
+    run_started_event =
+      assert_ansible_playbook_run_started_event!(playbook_run, now, fake_connection_event)
+
+    assert playbook_run_cause == run_started_event
 
     assert result == %ServerManagerState{
              initial_state
@@ -2525,7 +2525,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                    last_known_properties_id: last_known_properties_id,
                    version: server.version + 1
                },
-               ansible_playbook: {playbook_run, nil},
+               ansible_playbook: {playbook_run, nil, fake_connection_event},
                actions: actions,
                tasks: %{}
            }
@@ -2588,10 +2588,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
     )
 
     fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{gather_facts: fake_gather_facts_ref}
@@ -2610,8 +2612,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         {:ok, %{}}
       )
 
-    assert_no_stored_events!()
-
     assert %{
              server:
                %Server{
@@ -2626,10 +2626,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                     vars: %{"server_token" => server_token},
                     created_at: playbook_created_at
                   } =
-                    playbook_run},
+                    playbook_run, playbook_run_cause},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
+
+    run_started_event =
+      assert_ansible_playbook_run_started_event!(playbook_run, now, fake_connection_event)
+
+    assert playbook_run_cause == run_started_event
 
     assert result == %ServerManagerState{
              initial_state
@@ -2642,7 +2647,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
                    last_known_properties_id: last_known_properties_id,
                    version: server.version + 1
                },
-               ansible_playbook: {playbook_run, nil},
+               ansible_playbook: {playbook_run, nil, fake_connection_event},
                actions: actions,
                tasks: %{}
            }
@@ -3476,6 +3481,77 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
              initiator: "servers:servers:#{server.id}",
              causation_id: if(caused_by, do: caused_by.id, else: event_id),
              correlation_id: if(caused_by, do: caused_by.correlation_id, else: event_id),
+             occurred_at: occurred_at,
+             entity: nil
+           }
+
+    %EventReference{
+      id: event_id,
+      causation_id: registered_event.causation_id,
+      correlation_id: registered_event.correlation_id
+    }
+  end
+
+  defp assert_ansible_playbook_run_started_event!(
+         run,
+         now,
+         %EventReference{id: caused_by_id} = caused_by
+       ) do
+    assert [
+             %StoredEvent{
+               id: event_id,
+               occurred_at: occurred_at
+             } = registered_event
+           ] =
+             Repo.all(
+               from e in StoredEvent,
+                 where: e.id not in [^caused_by_id],
+                 order_by: [asc: e.occurred_at]
+             )
+
+    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+
+    assert registered_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{run.server_id}",
+             version: run.server.version,
+             type: "archidep/servers/ansible-playbook-run-started",
+             data: %{
+               "id" => run.id,
+               "playbook" => run.playbook,
+               "playbook_path" => run.playbook_path,
+               "digest" => Base.encode16(run.digest, case: :lower),
+               "git_revision" => run.git_revision,
+               "host" => run.host.address |> :inet.ntoa() |> to_string(),
+               "port" => run.port,
+               "user" => run.user,
+               "vars" => run.vars,
+               "server" => %{
+                 "id" => run.server_id,
+                 "name" => run.server.name,
+                 "username" => run.server.username
+               },
+               "group" => %{
+                 "id" => run.server.group.id,
+                 "name" => run.server.group.name
+               },
+               "owner" => %{
+                 "id" => run.server.owner.id,
+                 "username" => run.server.owner.username,
+                 "name" =>
+                   if run.server.owner.group_member do
+                     run.server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => run.server.owner.root
+               }
+             },
+             meta: %{},
+             initiator: "servers:servers:#{run.server_id}",
+             causation_id: caused_by.id,
+             correlation_id: caused_by.correlation_id,
              occurred_at: occurred_at,
              entity: nil
            }

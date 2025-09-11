@@ -70,7 +70,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     now = DateTime.utc_now()
     result = update_server.(initial_state, auth, data)
 
-    assert_server_updated_event!(%Server{server | username: new_server_username}, now)
+    updated_event =
+      assert_server_updated_event!(%Server{server | username: new_server_username}, now)
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -78,7 +79,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                 [
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
@@ -100,7 +101,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                  | username: new_server_username,
                    updated_at: updated_at,
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     assert update_tracking_fn.(new_state) ==
              {real_time_state(server,
@@ -144,10 +145,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     now = DateTime.utc_now()
     result = update_server.(initial_state, auth, data)
 
-    assert_server_updated_event!(
-      %Server{server | app_username: new_server_app_username, active: true},
-      now
-    )
+    updated_event =
+      assert_server_updated_event!(
+        %Server{server | app_username: new_server_app_username, active: true},
+        now
+      )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -155,7 +157,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                 [
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
@@ -177,7 +179,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                  | app_username: new_server_app_username,
                    updated_at: updated_at,
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     assert update_tracking_fn.(new_state) ==
              {real_time_state(server,
@@ -222,7 +224,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     result = update_server.(initial_state, auth, data)
     test_pid = self()
 
-    causation_event =
+    updated_event =
       assert_server_updated_event!(
         %Server{server | username: new_server_username, active: true},
         now
@@ -238,7 +240,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                   {:connect, connect_fn},
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert is_reference(connection_ref)
     assert_in_delta DateTime.diff(now, connecting_time, :second), 0, 1
@@ -253,7 +255,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                       connection_ref: connection_ref,
                       time: connecting_time,
                       retrying: false,
-                      causation_event: causation_event
+                      causation_event: updated_event
                     ),
                   server: %Server{
                     server
@@ -272,7 +274,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                    username: new_server_username,
                    updated_at: updated_at,
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     connect_result = assert_connect_fn!(connect_fn, new_state, new_server_username)
 
@@ -322,10 +324,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
         update_server.(initial_state, auth, data)
       end)
 
-    assert_server_updated_event!(
-      %Server{server | username: new_server_username, active: false},
-      now
-    )
+    updated_event =
+      assert_server_updated_event!(
+        %Server{server | username: new_server_username, active: false},
+        now
+      )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -333,7 +336,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                 [
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
@@ -358,7 +361,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                    username: new_server_username,
                    updated_at: updated_at,
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     assert update_tracking_fn.(new_state) ==
              {real_time_state(server,
@@ -404,10 +407,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     result = update_server.(initial_state, auth, data)
 
-    assert_server_updated_event!(
-      %Server{server | username: new_server_username, active: false},
-      now
-    )
+    updated_event =
+      assert_server_updated_event!(
+        %Server{server | username: new_server_username, active: false},
+        now
+      )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -415,7 +419,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                 [
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
@@ -440,7 +444,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                    username: new_server_username,
                    updated_at: updated_at,
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     assert update_tracking_fn.(new_state) ==
              {real_time_state(server,
@@ -489,10 +493,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     result = update_server.(initial_state, auth, data)
 
-    assert_server_updated_event!(
-      %Server{server | username: new_server_username, active: false},
-      now
-    )
+    updated_event =
+      assert_server_updated_event!(
+        %Server{server | username: new_server_username, active: false},
+        now
+      )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -501,7 +506,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                   {:cancel_timer, ^fake_retry_timer_ref},
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
@@ -527,7 +532,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                    username: new_server_username,
                    updated_at: updated_at,
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     assert update_tracking_fn.(new_state) ==
              {real_time_state(server,
@@ -573,10 +578,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     result = update_server.(initial_state, auth, data)
 
-    assert_server_updated_event!(
-      %Server{server | username: new_server_username, active: false},
-      now
-    )
+    updated_event =
+      assert_server_updated_event!(
+        %Server{server | username: new_server_username, active: false},
+        now
+      )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -584,7 +590,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                 [
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
@@ -609,7 +615,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                    username: new_server_username,
                    updated_at: updated_at,
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     assert update_tracking_fn.(new_state) ==
              {real_time_state(server,
@@ -655,10 +661,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     result = update_server.(initial_state, auth, data)
 
-    assert_server_updated_event!(
-      %Server{server | username: new_server_username, active: false},
-      now
-    )
+    updated_event =
+      assert_server_updated_event!(
+        %Server{server | username: new_server_username, active: false},
+        now
+      )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -666,7 +673,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                 [
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
@@ -691,7 +698,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                    username: new_server_username,
                    updated_at: updated_at,
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     assert update_tracking_fn.(new_state) ==
              {real_time_state(server,
@@ -737,10 +744,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     result = update_server.(initial_state, auth, data)
 
-    assert_server_updated_event!(
-      %Server{server | username: new_server_username, active: false},
-      now
-    )
+    updated_event =
+      assert_server_updated_event!(
+        %Server{server | username: new_server_username, active: false},
+        now
+      )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -748,7 +756,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                 [
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
@@ -773,7 +781,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                    username: new_server_username,
                    updated_at: updated_at,
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     assert update_tracking_fn.(new_state) ==
              {real_time_state(server,
@@ -819,10 +827,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     now = DateTime.utc_now()
     result = update_server.(initial_state, auth, data)
 
-    assert_server_updated_event!(
-      %Server{server | expected_properties: %{server.expected_properties | cpus: 4}},
-      now
-    )
+    updated_event =
+      assert_server_updated_event!(
+        %Server{server | expected_properties: %{server.expected_properties | cpus: 4}},
+        now
+      )
 
     assert {%ServerManagerState{
               server: %Server{updated_at: updated_at} = updated_server,
@@ -830,7 +839,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                 [
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
-            } = new_state, {:ok, updated_server}} = result
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
 
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
@@ -860,7 +869,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                      | cpus: 4
                    },
                    version: server.version + 1
-               }}}
+               }, updated_event}}
 
     assert update_tracking_fn.(new_state) ==
              {real_time_state(server,
@@ -892,6 +901,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
             {:error,
              %Changeset{valid?: false, errors: [{:username, {_msg, [validation: :required]}}]}}} =
              update_server.(initial_state, auth, data)
+
+    assert_no_stored_events!()
   end
 
   test "cannot update a connecting server",
@@ -913,6 +924,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     data = ServersFactory.random_server_data()
 
     assert update_server.(initial_state, auth, data) == {initial_state, {:error, :server_busy}}
+
+    assert_no_stored_events!()
   end
 
   test "cannot update a reconnecting server",
@@ -934,6 +947,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     data = ServersFactory.random_server_data()
 
     assert update_server.(initial_state, auth, data) == {initial_state, {:error, :server_busy}}
+
+    assert_no_stored_events!()
   end
 
   defp assert_server_updated_event!(server, now) do

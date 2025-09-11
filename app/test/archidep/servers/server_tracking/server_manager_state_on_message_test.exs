@@ -40,6 +40,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
                ] = actions
            } = result
 
+    assert_no_stored_events!()
+
     assert result == %ServerManagerState{
              initial_state
              | actions: actions
@@ -86,6 +88,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
 
       assert log =~ "Ignoring :measure_load_average message sent to server #{server.id}"
     end
+
+    assert_no_stored_events!()
   end
 
   test "receive a message to retry connecting to the server", %{on_message: on_message} do
@@ -109,6 +113,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
 
     now = DateTime.utc_now()
     result = on_message.(initial_state, :retry_connecting)
+
+    assert_no_stored_events!()
 
     test_pid = self()
 

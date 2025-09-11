@@ -6,10 +6,16 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   come in.
   """
 
+  import ArchiDep.Helpers.UseCaseHelpers
+  alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible
+  alias ArchiDep.Servers.Events.AnsiblePlaybookRunFinished
+  alias ArchiDep.Servers.Events.AnsiblePlaybookRunRunning
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.ServerTracking.ServerManager
+  alias Ecto.Multi
   alias Ecto.UUID
   alias Phoenix.Tracker
   require Logger
@@ -17,43 +23,44 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   @tracker ArchiDep.Tracker
   @event_base [:archidep, :servers, :ansible, :playbook_run]
 
-  @spec start_link(UUID.t()) :: {:ok, pid()}
-  def start_link(run_id),
+  @spec start_link({UUID.t(), EventReference.t()}) :: {:ok, pid()}
+  def start_link({run_id, cause}),
     do:
       Task.start_link(fn ->
-        process_event(run_id)
+        process_event(run_id, cause)
       end)
 
-  @spec process_event(UUID.t()) :: :ok
-  def process_event(run_id) do
+  @spec process_event(UUID.t(), EventReference.t()) :: :ok
+  def process_event(run_id, cause) do
     case AnsiblePlaybookRun.get_pending_run(run_id) do
       nil ->
         Logger.warning("No pending Ansible playbook run found with ID #{run_id}")
 
       pending_run ->
-        process_pending_run(pending_run)
+        process_pending_run(pending_run, cause)
     end
 
     :ok
   end
 
-  defp process_pending_run(pending_run) do
+  defp process_pending_run(pending_run, cause) do
     if ServerManager.online?(pending_run.server) do
       :telemetry.span(
         @event_base,
         start_event_metadata(pending_run),
         fn ->
           finished_run =
-            pending_run |> run_playbook() |> finished_run_from_result()
+            pending_run |> run_playbook(cause) |> finished_run_from_result()
 
           {finished_run, finished_event_metadata(finished_run)}
         end
       )
     else
-      pending_run
-      |> AnsiblePlaybookRun.interrupt()
-      |> Repo.update!()
-      |> then(fn interrupted_run ->
+      Multi.new()
+      |> Multi.update(:run, AnsiblePlaybookRun.interrupt(pending_run))
+      |> Multi.insert(:stored_event, &ansible_playbook_run_finished(&1.run, cause))
+      |> Repo.transaction()
+      |> then(fn {:ok, %{run: interrupted_run}} ->
         :telemetry.execute(
           @event_base ++ [:interrupted],
           %{duration: AnsiblePlaybookRun.duration(interrupted_run)},
@@ -63,18 +70,19 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
     end
   end
 
-  defp run_playbook(%AnsiblePlaybookRun{id: run_id} = pending_run) do
+  defp run_playbook(%AnsiblePlaybookRun{id: run_id} = pending_run, cause) do
     track!(run_id, %{state: :pending, events: 0, current_task: nil})
 
-    running_run =
-      pending_run
-      |> AnsiblePlaybookRun.start_running()
-      |> Repo.update!()
+    {:ok, %{run: running_run, stored_event: running_event}} =
+      Multi.new()
+      |> Multi.update(:run, AnsiblePlaybookRun.start_running(pending_run))
+      |> Multi.insert(:stored_event, &ansible_playbook_run_running(&1.run, cause))
+      |> Repo.transaction()
 
     update_tracking!(run_id, fn meta -> %{meta | state: :running} end)
 
     running_run
-    |> Ansible.run_playbook()
+    |> Ansible.run_playbook(cause, StoredEvent.to_reference(running_event))
     |> Stream.each(fn
       {:event, event} ->
         update_tracking!(run_id, fn meta ->
@@ -119,4 +127,20 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
       server_id: run.server_id,
       playbook: run.playbook
     }
+
+  defp ansible_playbook_run_running(run, cause),
+    do:
+      run
+      |> AnsiblePlaybookRunRunning.new()
+      |> new_event(%{}, caused_by: cause, occurred_at: run.started_at)
+      |> add_to_stream(run.server)
+      |> initiated_by(run.server)
+
+  defp ansible_playbook_run_finished(run, cause),
+    do:
+      run
+      |> AnsiblePlaybookRunFinished.new()
+      |> new_event(%{}, caused_by: cause, occurred_at: run.finished_at)
+      |> add_to_stream(run.server)
+      |> initiated_by(run.server)
 end

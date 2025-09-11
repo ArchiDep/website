@@ -26,7 +26,8 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
           task_id: String.t() | nil,
           task_started_at: DateTime.t() | nil,
           task_ended_at: DateTime.t() | nil,
-          occurred_at: DateTime.t()
+          occurred_at: DateTime.t(),
+          created_at: DateTime.t()
         }
 
   schema "ansible_playbook_events" do

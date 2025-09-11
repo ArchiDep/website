@@ -44,6 +44,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     result = retry_connecting.(initial_state, :automated)
 
+    assert_no_stored_events!()
+
     test_pid = self()
 
     assert %ServerManagerState{
@@ -105,6 +107,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
     retry_connecting_state(retrying: retrying) = initial_state.connection_state
 
     result = retry_connecting.(initial_state, :manual)
+
+    assert_no_stored_events!()
 
     test_pid = self()
 
@@ -191,6 +195,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                ] = actions
            } = result
 
+    assert_no_stored_events!()
     assert is_reference(connection_ref)
 
     assert result == %ServerManagerState{
@@ -233,6 +238,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     cause = ServersFactory.random_retry_connecting_cause()
     result = retry_connecting.(initial_state, cause)
+
+    assert_no_stored_events!()
 
     test_pid = self()
 
@@ -307,5 +314,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
       assert log3 =~ "Ignore request to retry connecting"
     end
+
+    assert_no_stored_events!()
   end
 end

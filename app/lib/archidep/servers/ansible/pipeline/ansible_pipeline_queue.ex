@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
   import ArchiDep.Helpers.GenStageHelpers
   import ArchiDep.Helpers.ProcessHelpers
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
@@ -26,7 +27,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     ]
 
     # TODO: store unique connection ref and drop playbook run if it has changed
-    @type pending_playbook_data :: %{run_id: UUID.t(), server_id: UUID.t()}
+    @type pending_playbook_data :: %{
+            run_id: UUID.t(),
+            server_id: UUID.t(),
+            cause: EventReference.t()
+          }
     @type t :: %__MODULE__{
             stored_demand: non_neg_integer(),
             pending_playbooks: {non_neg_integer(), :queue.queue(pending_playbook_data())},
@@ -61,12 +66,14 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     @spec run_playbook(
             t(),
             UUID.t(),
-            UUID.t()
+            UUID.t(),
+            EventReference.t()
           ) :: t()
     def run_playbook(
           state,
           playbook_run_id,
-          server_id
+          server_id,
+          cause
         ) do
       {number_pending, pending_playbooks_queue} = state.pending_playbooks
 
@@ -81,7 +88,10 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
         state
         | pending_playbooks:
             {number_pending + 1,
-             :queue.in(%{run_id: playbook_run_id, server_id: server_id}, pending_playbooks_queue)},
+             :queue.in(
+               %{run_id: playbook_run_id, server_id: server_id, cause: cause},
+               pending_playbooks_queue
+             )},
           last_activity: new_last_activity
       }
     end
@@ -128,7 +138,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       }
     end
 
-    @spec consume_events(t()) :: {list(UUID.t()), t()}
+    @spec consume_events(t()) :: {list({UUID.t(), EventReference.t()}), t()}
     def consume_events(state) do
       {events, new_state} = collect_events_to_consume({[], state})
       {Enum.reverse(events), new_state}
@@ -147,9 +157,9 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
            {events,
             %__MODULE__{pending_playbooks: {number_pending, pending_playbooks_queue}} = state}
          ) do
-      {{:value, %{run_id: run_id}}, new_queue} = :queue.out(pending_playbooks_queue)
+      {{:value, %{run_id: run_id, cause: cause}}, new_queue} = :queue.out(pending_playbooks_queue)
 
-      {[run_id | events],
+      {[{run_id, cause} | events],
        %__MODULE__{
          state
          | pending_playbooks: {number_pending - 1, new_queue},
@@ -178,10 +188,15 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
   @spec run_playbook(
           Pipeline.t(),
-          AnsiblePlaybookRun.t()
+          AnsiblePlaybookRun.t(),
+          EventReference.t()
         ) :: :ok
-  def run_playbook(pipeline, %AnsiblePlaybookRun{state: :pending} = playbook_run),
-    do: GenStage.call(name(pipeline), {:run_playbook, playbook_run.id, playbook_run.server_id})
+  def run_playbook(pipeline, %AnsiblePlaybookRun{state: :pending} = playbook_run, cause),
+    do:
+      GenStage.call(
+        name(pipeline),
+        {:run_playbook, playbook_run.id, playbook_run.server_id, cause}
+      )
 
   @spec server_offline(Pipeline.t(), Server.t()) :: :ok
   def server_offline(pipeline, %Server{id: server_id}),
@@ -195,6 +210,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     set_process_label(__MODULE__)
     Logger.info("Init Ansible pipeline queue")
 
+    # FIXME: store an event for each timed out playbook run
     incomplete_runs_nb = AnsiblePlaybookRun.mark_all_incomplete_as_timed_out(DateTime.utc_now())
     Logger.notice("Marked #{incomplete_runs_nb} incomplete playbook runs as timed out")
 
@@ -210,10 +226,10 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       |> noreply()
 
   @impl GenStage
-  def handle_call({:run_playbook, playbook_run_id, server_id}, _from, state),
+  def handle_call({:run_playbook, playbook_run_id, server_id, cause}, _from, state),
     do:
       state
-      |> State.run_playbook(playbook_run_id, server_id)
+      |> State.run_playbook(playbook_run_id, server_id, cause)
       |> State.consume_events()
       |> reply(:ok)
 

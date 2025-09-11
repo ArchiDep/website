@@ -33,5 +33,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnlineTest do
           ] do
       assert online?.(build_state.(state)) == false
     end
+
+    assert_no_stored_events!()
   end
 end

@@ -16,9 +16,8 @@ defmodule ArchiDep.Servers.Events.ServerSetUp do
     :name,
     :ip_address,
     :username,
-    :ssh_username,
+    :app_username,
     :ssh_port,
-    :problems,
     :group,
     :owner
   ]
@@ -27,9 +26,8 @@ defmodule ArchiDep.Servers.Events.ServerSetUp do
     :name,
     :ip_address,
     :username,
-    :ssh_username,
+    :app_username,
     :ssh_port,
-    :problems,
     :group,
     :owner
   ]
@@ -39,9 +37,8 @@ defmodule ArchiDep.Servers.Events.ServerSetUp do
           name: String.t() | nil,
           ip_address: String.t(),
           username: String.t(),
-          ssh_username: String.t(),
+          app_username: String.t(),
           ssh_port: 1..65_535 | nil,
-          problems: list(String.t()),
           group: %{
             id: UUID.t(),
             name: String.t()
@@ -54,13 +51,14 @@ defmodule ArchiDep.Servers.Events.ServerSetUp do
           }
         }
 
-  @spec new(Server.t(), String.t(), list(String.t())) :: t()
-  def new(server, ssh_username, problems) do
+  @spec new(Server.t()) :: t()
+  def new(server) do
     %Server{
       id: id,
       name: name,
       ip_address: ip_address,
       username: username,
+      app_username: app_username,
       ssh_port: ssh_port,
       group: group,
       owner: owner
@@ -89,9 +87,8 @@ defmodule ArchiDep.Servers.Events.ServerSetUp do
       name: name,
       ip_address: ip_address.address |> :inet.ntoa() |> to_string(),
       username: username,
-      ssh_username: ssh_username,
+      app_username: app_username,
       ssh_port: ssh_port,
-      problems: problems,
       group: %{
         id: group_id,
         name: group_name

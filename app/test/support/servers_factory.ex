@@ -51,6 +51,9 @@ defmodule ArchiDep.Support.ServersFactory do
     {occurred_at, attrs!} =
       Map.pop_lazy(attrs!, :occurred_at, fn -> Faker.DateTime.backward(1) end)
 
+    {created_at, attrs!} =
+      Map.pop_lazy(attrs!, :occurred_at, fn -> Faker.DateTime.backward(1) end)
+
     [] = Map.keys(attrs!)
 
     %AnsiblePlaybookEvent{
@@ -65,7 +68,8 @@ defmodule ArchiDep.Support.ServersFactory do
       task_id: task_id,
       task_started_at: task_started_at,
       task_ended_at: task_ended_at,
-      occurred_at: occurred_at
+      occurred_at: occurred_at,
+      created_at: created_at
     }
   end
 
@@ -263,13 +267,20 @@ defmodule ArchiDep.Support.ServersFactory do
     do: retry_connecting_state(connection_pid: self(), retrying: random_retry())
 
   @spec random_connected_state() :: ServerConnectionState.connected_state()
-  def random_connected_state,
-    do:
-      connected_state(
-        connection_ref: make_ref(),
-        connection_pid: self(),
-        time: Faker.DateTime.backward(1)
-      )
+  @spec random_connected_state(Keyword.t()) :: ServerConnectionState.connected_state()
+  def random_connected_state(attrs! \\ []) do
+    {connection_event, attrs!} =
+      Keyword.pop_lazy(attrs!, :connection_event, fn -> EventsFactory.build(:event_reference) end)
+
+    [] = Keyword.keys(attrs!)
+
+    connected_state(
+      connection_ref: make_ref(),
+      connection_pid: self(),
+      time: Faker.DateTime.backward(1),
+      connection_event: connection_event
+    )
+  end
 
   @spec random_reconnecting_state() :: ServerConnectionState.reconnecting_state()
   def random_reconnecting_state,

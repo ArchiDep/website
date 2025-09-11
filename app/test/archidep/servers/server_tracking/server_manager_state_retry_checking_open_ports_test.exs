@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
   import Hammox
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
 
   setup :verify_on_exit!
@@ -32,6 +33,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
       )
 
     assert {result, :ok} = retry_checking_open_ports.(initial_state)
+
+    assert_no_stored_events!()
 
     assert %{
              actions:
@@ -79,6 +82,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
 
     assert {result, :ok} = retry_checking_open_ports.(initial_state)
 
+    assert_no_stored_events!()
+
     assert %{
              actions:
                [
@@ -121,6 +126,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
       )
 
     assert retry_checking_open_ports.(initial_state) == {initial_state, :ok}
+
+    assert_no_stored_events!()
   end
 
   test "cannot retry checking open ports if the server is busy running a task", %{
@@ -148,6 +155,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
       )
 
     assert retry_checking_open_ports.(initial_state) == {initial_state, {:error, :server_busy}}
+
+    assert_no_stored_events!()
   end
 
   test "cannot retry checking open ports if the server is busy running an ansible playbook", %{
@@ -166,16 +175,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
     running_playbook =
       ServersFactory.build(:ansible_playbook_run, server: server, state: :pending)
 
+    fake_cause = EventsFactory.build(:event_reference)
+
     initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.username,
-        ansible_playbook: {running_playbook, nil},
+        ansible_playbook: {running_playbook, nil, fake_cause},
         problems: port_checking_problems
       )
 
     assert retry_checking_open_ports.(initial_state) == {initial_state, {:error, :server_busy}}
+
+    assert_no_stored_events!()
   end
 
   test "cannot retry checking open ports if the server is not connected", %{
@@ -211,5 +224,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
       assert retry_checking_open_ports.(initial_state) ==
                {initial_state, {:error, :server_not_connected}}
     end
+
+    assert_no_stored_events!()
   end
 end
