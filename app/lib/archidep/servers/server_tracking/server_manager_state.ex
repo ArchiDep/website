@@ -780,12 +780,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   end
 
   defp handle_open_ports_check_result(
-         %__MODULE__{connection_state: connected_state(), server: server} = state,
+         %__MODULE__{connection_state: connected_state(connection_event: cause), server: server} =
+           state,
          :ok
        ),
        do:
          state
-         |> set_updated_server(maybe_mark_open_ports_checked(server))
+         |> set_updated_server(maybe_mark_open_ports_checked(server, cause))
          |> add_action(update_tracking_action())
          |> drop_port_checking_problems()
 
@@ -799,10 +800,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          |> drop_port_checking_problems()
          |> add_problem(server_open_ports_check_failed_problem(port_problems))
 
-  defp maybe_mark_open_ports_checked(%Server{open_ports_checked_at: nil} = server),
-    do: Server.mark_open_ports_checked!(server)
+  defp maybe_mark_open_ports_checked(%Server{open_ports_checked_at: nil} = server, cause),
+    do: Server.mark_open_ports_checked!(server, @ports_to_check, cause)
 
-  defp maybe_mark_open_ports_checked(server), do: server
+  defp maybe_mark_open_ports_checked(server, _cause), do: server
 
   @impl ServerManagerBehaviour
 

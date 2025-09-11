@@ -7,6 +7,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias Phoenix.PubSub
 
@@ -392,10 +393,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     server = insert_active_server!(set_up_at: true, ssh_port: true, open_ports_checked_at: nil)
 
     fake_check_open_ports_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{check_open_ports: fake_check_open_ports_ref}
@@ -414,8 +417,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
         :ok
       )
 
-    assert_no_stored_events!()
-
     assert %{
              server: %{open_ports_checked_at: open_ports_checked_at} = updated_server,
              actions:
@@ -425,11 +426,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
                ] = actions
            } = result
 
+    [ports_checked_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_open_ports_checked_event!(
+      ports_checked_event,
+      updated_server,
+      now,
+      fake_connection_event
+    )
+
     assert result == %ServerManagerState{
              initial_state
              | server: %Server{
                  server
                  | open_ports_checked_at: open_ports_checked_at,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                actions: actions,
@@ -519,10 +530,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
       ])
 
     fake_check_open_ports_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_connected_state(),
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
         tasks: %{check_open_ports: fake_check_open_ports_ref},
@@ -542,8 +555,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
         :ok
       )
 
-    assert_no_stored_events!()
-
     assert %{
              server: %{open_ports_checked_at: open_ports_checked_at} = updated_server,
              actions:
@@ -553,11 +564,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
                ] = actions
            } = result
 
+    [ports_checked_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_open_ports_checked_event!(
+      ports_checked_event,
+      updated_server,
+      now,
+      fake_connection_event
+    )
+
     assert result == %ServerManagerState{
              initial_state
              | server: %Server{
                  server
                  | open_ports_checked_at: open_ports_checked_at,
+                   updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
                actions: actions,
@@ -688,5 +709,61 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
                 problems: result.problems,
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  defp assert_server_open_ports_checked_event!(
+         %StoredEvent{
+           id: event_id,
+           occurred_at: occurred_at
+         } = connected_event,
+         server,
+         now,
+         caused_by
+       ) do
+    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+
+    assert connected_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{server.id}",
+             version: server.version,
+             type: "archidep/servers/server-open-ports-checked",
+             data: %{
+               "id" => server.id,
+               "name" => server.name,
+               "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
+               "username" => server.username,
+               "app_username" => server.app_username,
+               "ssh_port" => server.ssh_port,
+               "ports" => [80, 443, 3000, 3001],
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner.id,
+                 "username" => server.owner.username,
+                 "name" =>
+                   if server.owner.group_member do
+                     server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => server.owner.root
+               }
+             },
+             meta: %{},
+             initiator: "servers:servers:#{server.id}",
+             causation_id: caused_by.id,
+             correlation_id: caused_by.correlation_id,
+             occurred_at: occurred_at,
+             entity: nil
+           }
+
+    %EventReference{
+      id: event_id,
+      causation_id: connected_event.causation_id,
+      correlation_id: connected_event.correlation_id
+    }
   end
 end

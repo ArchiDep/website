@@ -18,6 +18,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   alias ArchiDep.Events.Store.EventInitiator
   alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.Events.ServerFactsGathered
+  alias ArchiDep.Servers.Events.ServerOpenPortsChecked
   alias ArchiDep.Servers.Events.ServerSetUp
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
@@ -373,14 +374,21 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end
   end
 
-  @spec mark_open_ports_checked!(t()) :: t()
-  def mark_open_ports_checked!(%__MODULE__{open_ports_checked_at: nil} = server) do
+  @spec mark_open_ports_checked!(t(), list(1..65_535), EventReference.t()) :: t()
+  def mark_open_ports_checked!(%__MODULE__{open_ports_checked_at: nil} = server, ports, cause) do
     now = DateTime.utc_now()
 
-    server
-    |> change(open_ports_checked_at: now)
-    |> optimistic_lock(:version)
-    |> Repo.update!()
+    case Multi.new()
+         |> Multi.update(
+           :server,
+           server
+           |> change(open_ports_checked_at: now, updated_at: now)
+           |> optimistic_lock(:version)
+         )
+         |> Multi.insert(:stored_event, &server_open_ports_checked(&1.server, ports, now, cause))
+         |> Repo.transaction() do
+      {:ok, %{server: server}} -> server
+    end
   end
 
   defimpl EventInitiator do
@@ -478,6 +486,14 @@ defmodule ArchiDep.Servers.Schemas.Server do
     do:
       server
       |> ServerFactsGathered.new(facts)
+      |> new_event(%{}, caused_by: cause, occurred_at: now)
+      |> add_to_stream(server)
+      |> initiated_by(server)
+
+  defp server_open_ports_checked(server, ports, now, cause),
+    do:
+      server
+      |> ServerOpenPortsChecked.new(ports)
       |> new_event(%{}, caused_by: cause, occurred_at: now)
       |> add_to_stream(server)
       |> initiated_by(server)

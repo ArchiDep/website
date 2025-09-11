@@ -16,10 +16,9 @@ defmodule ArchiDep.Servers.Events.ServerOpenPortsChecked do
     :name,
     :ip_address,
     :username,
-    :ssh_username,
+    :app_username,
     :ssh_port,
     :ports,
-    :problems,
     :group,
     :owner
   ]
@@ -28,10 +27,9 @@ defmodule ArchiDep.Servers.Events.ServerOpenPortsChecked do
     :name,
     :ip_address,
     :username,
-    :ssh_username,
+    :app_username,
     :ssh_port,
     :ports,
-    :problems,
     :group,
     :owner
   ]
@@ -41,10 +39,9 @@ defmodule ArchiDep.Servers.Events.ServerOpenPortsChecked do
           name: String.t() | nil,
           ip_address: String.t(),
           username: String.t(),
-          ssh_username: String.t(),
+          app_username: String.t(),
           ssh_port: 1..65_535 | nil,
           ports: list(1..65_535),
-          problems: list(String.t()),
           group: %{
             id: UUID.t(),
             name: String.t()
@@ -57,13 +54,14 @@ defmodule ArchiDep.Servers.Events.ServerOpenPortsChecked do
           }
         }
 
-  @spec new(Server.t(), String.t(), list(1..65_535), list(String.t())) :: t()
-  def new(server, ssh_username, ports, problems) do
+  @spec new(Server.t(), list(1..65_535)) :: t()
+  def new(server, ports) do
     %Server{
       id: id,
       name: name,
       ip_address: ip_address,
       username: username,
+      app_username: app_username,
       ssh_port: ssh_port,
       group: group,
       owner: owner
@@ -92,10 +90,9 @@ defmodule ArchiDep.Servers.Events.ServerOpenPortsChecked do
       name: name,
       ip_address: ip_address.address |> :inet.ntoa() |> to_string(),
       username: username,
-      ssh_username: ssh_username,
+      app_username: app_username,
       ssh_port: ssh_port,
       ports: ports,
-      problems: problems,
       group: %{
         id: group_id,
         name: group_name
