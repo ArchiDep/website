@@ -11,9 +11,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   import ArchiDep.Helpers.UseCaseHelpers
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Servers.ServerTracking.ServerProblems
-  alias ArchiDep.Helpers.NetHelpers
   alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
+  alias ArchiDep.Helpers.NetHelpers
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline

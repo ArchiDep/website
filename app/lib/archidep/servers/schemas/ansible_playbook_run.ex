@@ -173,14 +173,20 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
         )
       )
 
-  @spec mark_all_incomplete_as_timed_out(DateTime.t()) :: non_neg_integer()
-  def mark_all_incomplete_as_timed_out(now),
+  @spec fetch_incomplete_runs() :: list(t())
+  def fetch_incomplete_runs,
     do:
-      from(r in __MODULE__,
-        where: r.state in [:pending, :running]
+      Repo.all(
+        from(r in __MODULE__,
+          where: r.state in [:pending, :running],
+          join: s in assoc(r, :server),
+          join: sg in assoc(s, :group),
+          left_join: so in assoc(s, :owner),
+          left_join: sogm in assoc(so, :group_member),
+          left_join: sogmg in assoc(sogm, :group),
+          preload: [server: {s, group: sg, owner: {so, group_member: {sogm, group: sogmg}}}]
+        )
       )
-      |> Repo.update_all(set: [state: :timeout, finished_at: now, updated_at: now])
-      |> elem(0)
 
   @spec fetch_runs() :: list(t())
   def fetch_runs do
@@ -199,10 +205,11 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       from(r in __MODULE__,
         where: r.id == ^id,
         join: s in assoc(r, :server),
+        join: sg in assoc(s, :group),
         left_join: so in assoc(s, :owner),
         left_join: sogm in assoc(so, :group_member),
         left_join: sogmg in assoc(sogm, :group),
-        preload: [server: {s, owner: {so, group_member: {sogm, group: sogmg}}}]
+        preload: [server: {s, group: sg, owner: {so, group_member: {sogm, group: sogmg}}}]
       )
       |> Repo.one()
       |> truthy_or(:ansible_playbook_run_not_found)
@@ -328,6 +335,19 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     run
     |> change(
       state: :interrupted,
+      finished_at: now,
+      updated_at: now
+    )
+    |> validate()
+  end
+
+  @spec time_out(t()) :: Changeset.t(t())
+  def time_out(run) do
+    now = DateTime.utc_now()
+
+    run
+    |> change(
+      state: :timeout,
       finished_at: now,
       updated_at: now
     )

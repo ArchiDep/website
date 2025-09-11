@@ -9,10 +9,14 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
 
   import ArchiDep.Helpers.GenStageHelpers
   import ArchiDep.Helpers.ProcessHelpers
+  import ArchiDep.Helpers.UseCaseHelpers
   alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible.Pipeline
+  alias ArchiDep.Servers.Events.AnsiblePlaybookRunFinished
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
+  alias Ecto.Multi
   alias Ecto.UUID
   require Logger
 
@@ -210,9 +214,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     set_process_label(__MODULE__)
     Logger.info("Init Ansible pipeline queue")
 
-    # FIXME: store an event for each timed out playbook run
-    incomplete_runs_nb = AnsiblePlaybookRun.mark_all_incomplete_as_timed_out(DateTime.utc_now())
-    Logger.notice("Marked #{incomplete_runs_nb} incomplete playbook runs as timed out")
+    mark_incomplete_playbook_runs_as_timed_out()
 
     {:producer, State.init()}
   end
@@ -243,4 +245,35 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       |> State.server_offline(server_id)
       |> State.consume_events()
       |> noreply()
+
+  defp mark_incomplete_playbook_runs_as_timed_out do
+    incomplete_runs = AnsiblePlaybookRun.fetch_incomplete_runs()
+
+    if Enum.any?(incomplete_runs) do
+      Task.await_many(
+        Enum.map(
+          incomplete_runs,
+          &Task.async(fn -> mark_incomplete_playbook_run_as_timed_out(&1) end)
+        )
+      )
+
+      incomplete_runs_nb = length(incomplete_runs)
+      Logger.notice("Marked #{incomplete_runs_nb} incomplete playbook runs as timed out")
+    end
+  end
+
+  defp mark_incomplete_playbook_run_as_timed_out(run),
+    do:
+      Multi.new()
+      |> Multi.update(:run, AnsiblePlaybookRun.time_out(run))
+      |> Multi.insert(:stored_event, &ansible_playbook_run_finished(&1.run))
+      |> Repo.transaction()
+
+  defp ansible_playbook_run_finished(run),
+    do:
+      run
+      |> AnsiblePlaybookRunFinished.new()
+      |> new_event(%{}, occurred_at: run.finished_at)
+      |> add_to_stream(run.server)
+      |> initiated_by(run.server)
 end
