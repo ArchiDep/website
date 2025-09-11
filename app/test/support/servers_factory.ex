@@ -118,13 +118,21 @@ defmodule ArchiDep.Support.ServersFactory do
     {state, attrs!} = Map.pop_lazy(attrs!, :state, &ansible_playbook_run_state/0)
 
     {started_at, attrs!} =
-      Map.pop_lazy(attrs!, :started_at, fn ->
-        DateTime.add(DateTime.utc_now(), -Faker.random_between(1, 300), :second)
-      end)
+      Map.pop_lazy(
+        attrs!,
+        :started_at,
+        fn ->
+          if state == :pending do
+            nil
+          else
+            DateTime.add(DateTime.utc_now(), -Faker.random_between(1, 300), :second)
+          end
+        end
+      )
 
     {finished_at, attrs!} =
       Map.pop_lazy(attrs!, :finished_at, fn ->
-        if Enum.member?(@finished_ansible_playbook_run_states, state) do
+        if Enum.member?(@finished_ansible_playbook_run_states, state) and started_at != nil do
           Faker.DateTime.between(started_at, DateTime.utc_now())
         else
           nil

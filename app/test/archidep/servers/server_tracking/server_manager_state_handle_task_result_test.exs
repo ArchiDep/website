@@ -1287,7 +1287,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
              server: server,
              server_id: server.id,
              state: :pending,
-             started_at: playbook_created_at,
+             started_at: nil,
              created_at: playbook_created_at,
              updated_at: playbook_created_at
            }
@@ -2552,7 +2552,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
              server: updated_server,
              server_id: server.id,
              state: :pending,
-             started_at: playbook_created_at,
+             started_at: nil,
              created_at: playbook_created_at,
              updated_at: playbook_created_at
            }
@@ -2674,7 +2674,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
              server: updated_server,
              server_id: server.id,
              state: :pending,
-             started_at: playbook_created_at,
+             started_at: nil,
              created_at: playbook_created_at,
              updated_at: playbook_created_at
            }

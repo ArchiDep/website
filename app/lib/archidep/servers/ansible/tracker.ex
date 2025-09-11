@@ -134,7 +134,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
     do:
       run
       |> AnsiblePlaybookRunStarted.new()
-      |> new_event(%{}, caused_by: cause, occurred_at: run.started_at)
+      |> new_event(%{}, caused_by: cause, occurred_at: run.created_at)
       |> add_to_stream(run.server)
       |> initiated_by(run.server)
 

@@ -40,7 +40,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
           server: Server.t() | NotLoaded,
           server_id: UUID.t(),
           state: Types.ansible_playbook_run_state(),
-          started_at: DateTime.t(),
+          started_at: DateTime.t() | nil,
           finished_at: DateTime.t() | nil,
           number_of_events: non_neg_integer(),
           last_event_at: DateTime.t() | nil,
@@ -96,8 +96,8 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   @spec duration(t()) :: non_neg_integer() | nil
   def duration(%__MODULE__{finished_at: nil}), do: nil
 
-  def duration(%__MODULE__{started_at: started_at, finished_at: finished_at}),
-    do: DateTime.diff(finished_at, started_at, :millisecond)
+  def duration(%__MODULE__{created_at: created_at, finished_at: finished_at}),
+    do: DateTime.diff(finished_at, created_at, :millisecond)
 
   @spec ssh_connection_description(t()) :: String.t()
   def ssh_connection_description(%__MODULE__{user: user, host: host, port: port}) when port == 22,
@@ -187,7 +187,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     Repo.all(
       from(r in __MODULE__,
         join: s in assoc(r, :server),
-        order_by: [desc: r.started_at],
+        order_by: [desc: r.created_at],
         preload: [server: s]
       )
     )
@@ -227,7 +227,6 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       server: server,
       server_id: server.id,
       state: :pending,
-      started_at: now,
       created_at: now,
       updated_at: now
     )
@@ -241,7 +240,6 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     run
     |> change(
       state: :running,
-      # FIXME: add running_at
       started_at: now,
       updated_at: now
     )
@@ -346,8 +344,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       :digest,
       :vars,
       :server_id,
-      :state,
-      :started_at
+      :state
     ])
     |> validate_length(:playbook, max: 50)
     |> validate_number(:port, greater_than: 0, less_than: 65_536)

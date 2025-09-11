@@ -165,7 +165,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
 
   defp tick_interval(%Socket{assigns: %{playbook_runs: [most_recent_run | _other_runs]}}) do
     last_run_minutes_ago =
-      most_recent_run.started_at
+      most_recent_run.created_at
       |> DateTime.diff(DateTime.utc_now(), :second)
       |> abs()
       |> div(60)
@@ -186,20 +186,20 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
   defp add_new_playbook_run([], new_run), do: [new_run]
 
   defp add_new_playbook_run(
-         [%AnsiblePlaybookRun{started_at: most_recent_run_started_at} | _other_runs] =
+         [%AnsiblePlaybookRun{created_at: most_recent_run_created_at} | _other_runs] =
            current_runs,
-         %AnsiblePlaybookRun{started_at: new_run_started_at} = new_run
+         %AnsiblePlaybookRun{created_at: new_run_created_at} = new_run
        )
-       when new_run_started_at > most_recent_run_started_at,
+       when new_run_created_at > most_recent_run_created_at,
        do: [new_run | current_runs]
 
   defp add_new_playbook_run(playbook_runs, new_run),
     do:
       playbook_runs
       |> Enum.reduce({new_run, []}, fn
-        %AnsiblePlaybookRun{started_at: started_at} = existing_run,
-        {%AnsiblePlaybookRun{started_at: new_run_started_at} = run_to_add, acc}
-        when new_run_started_at > started_at ->
+        %AnsiblePlaybookRun{created_at: created_at} = existing_run,
+        {%AnsiblePlaybookRun{created_at: new_run_created_at} = run_to_add, acc}
+        when new_run_created_at > created_at ->
           {nil, [existing_run | [run_to_add | acc]]}
 
         existing_run, {run_to_add, acc} ->

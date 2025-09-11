@@ -93,7 +93,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
              server: server,
              server_id: server.id,
              state: :pending,
-             started_at: playbook_created_at,
+             started_at: nil,
              created_at: playbook_created_at,
              updated_at: playbook_created_at
            }
@@ -186,7 +186,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
              server: server,
              server_id: server.id,
              state: :pending,
-             started_at: playbook_created_at,
+             started_at: nil,
              created_at: playbook_created_at,
              updated_at: playbook_created_at
            }

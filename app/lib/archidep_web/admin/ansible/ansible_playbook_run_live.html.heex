@@ -74,10 +74,10 @@
     </.link>
   </.data_display_element>
   <.data_display_element title={gettext("Started")}>
-    {format_time_ago(@playbook_run.started_at, @now)}
+    {format_time_ago(@playbook_run.created_at, @now)}
   </.data_display_element>
   <.data_display_element title={gettext("Duration")}>
-    {format_duration(@playbook_run.finished_at || @now, @playbook_run.started_at)}
+    {format_duration(@playbook_run.finished_at || @now, @playbook_run.created_at)}
   </.data_display_element>
   <.data_display_element title={gettext("State")}>
     <.ansible_playbook_run_state playbook_run={@playbook_run} />

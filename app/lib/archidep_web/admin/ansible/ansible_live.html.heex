@@ -51,8 +51,8 @@
     >
       <td class="font-mono">{run.playbook}</td>
       <td>
-        <span class="tooltip" data-tip={format_date_time(run.started_at)}>
-          {format_time_ago(run.started_at, @now)}
+        <span class="tooltip" data-tip={format_date_time(run.created_at)}>
+          {format_time_ago(run.created_at, @now)}
         </span>
       </td>
       <td
@@ -64,7 +64,7 @@
           )
         ]}
       >
-        {format_duration(run.finished_at || @now, run.started_at)}
+        {format_duration(run.finished_at || @now, run.created_at)}
       </td>
       <td>
         <div class={[
