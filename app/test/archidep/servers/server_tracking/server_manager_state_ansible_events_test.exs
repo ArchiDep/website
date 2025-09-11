@@ -176,7 +176,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         playbook_run.id
       )
 
-    assert_server_set_up_event!(server, now, fake_connection_event)
+    {_setup_event, reconnecting_event} =
+      assert_server_set_up_and_reconnection_events!(server, now, fake_connection_event)
 
     assert %{
              connection_state: reconnecting_state(time: reconnecting_time),
@@ -197,7 +198,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                  reconnecting_state(
                    connection_pid: connection_pid,
                    connection_ref: connection_ref,
-                   time: reconnecting_time
+                   time: reconnecting_time,
+                   causation_event: reconnecting_event
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
@@ -270,7 +272,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         playbook_run.id
       )
 
-    assert_server_set_up_event!(server, now, fake_cause, [fake_connection_event])
+    {_setup_event, reconnecting_event} =
+      assert_server_set_up_and_reconnection_events!(server, now, fake_cause, [
+        fake_connection_event
+      ])
 
     assert %{
              connection_state: reconnecting_state(time: reconnecting_time),
@@ -291,7 +296,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                  reconnecting_state(
                    connection_pid: connection_pid,
                    connection_ref: connection_ref,
-                   time: reconnecting_time
+                   time: reconnecting_time,
+                   causation_event: reconnecting_event
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
@@ -364,7 +370,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         playbook_run.id
       )
 
-    assert_server_set_up_event!(server, now, fake_connection_event)
+    {_setup_event, reconnecting_event} =
+      assert_server_set_up_and_reconnection_events!(server, now, fake_connection_event)
 
     assert %{
              connection_state: reconnecting_state(time: reconnecting_time),
@@ -386,7 +393,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                  reconnecting_state(
                    connection_pid: connection_pid,
                    connection_ref: connection_ref,
-                   time: reconnecting_time
+                   time: reconnecting_time,
+                   causation_event: reconnecting_event
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
@@ -458,7 +466,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         playbook_run.id
       )
 
-    assert_server_set_up_event!(server, now, fake_connection_event)
+    {_setup_event, reconnecting_event} =
+      assert_server_set_up_and_reconnection_events!(server, now, fake_connection_event)
 
     assert %{
              connection_state: reconnecting_state(time: reconnection_time),
@@ -480,7 +489,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                  reconnecting_state(
                    connection_pid: connection_pid,
                    connection_ref: connection_ref,
-                   time: reconnection_time
+                   time: reconnection_time,
+                   causation_event: reconnecting_event
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
@@ -840,15 +850,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
-  defp assert_server_set_up_event!(server, now, caused_by, except \\ []) do
+  defp assert_server_set_up_and_reconnection_events!(server, now, caused_by, except \\ []) do
     caused_by_id = caused_by.id
     ids_to_exclude = [caused_by_id | Enum.map(except, & &1.id)]
 
     assert [
              %StoredEvent{
-               id: event_id,
-               occurred_at: occurred_at
-             } = set_up_event
+               id: setup_event_id,
+               occurred_at: setup_occurred_at
+             } = setup_event,
+             %StoredEvent{
+               id: reconnecting_event_id,
+               occurred_at: reconnecting_occurred_at
+             } = reconnecting_event
            ] =
              Repo.all(
                from e in StoredEvent,
@@ -856,11 +870,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                  order_by: [asc: e.occurred_at]
              )
 
-    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+    assert_in_delta DateTime.diff(now, setup_occurred_at, :second), 0, 1
+    assert_in_delta DateTime.diff(now, reconnecting_occurred_at, :second), 0, 1
 
-    assert set_up_event == %StoredEvent{
+    assert setup_event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),
-             id: event_id,
+             id: setup_event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version + 1,
              type: "archidep/servers/server-set-up",
@@ -891,14 +906,58 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
              initiator: "servers:servers:#{server.id}",
              causation_id: caused_by.id,
              correlation_id: caused_by.correlation_id,
-             occurred_at: occurred_at,
+             occurred_at: setup_occurred_at,
              entity: nil
            }
 
-    %EventReference{
-      id: event_id,
-      causation_id: set_up_event.causation_id,
-      correlation_id: set_up_event.correlation_id
+    assert reconnecting_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: reconnecting_event_id,
+             stream: "servers:servers:#{server.id}",
+             version: server.version + 1,
+             type: "archidep/servers/server-reconnecting",
+             data: %{
+               "id" => server.id,
+               "name" => server.name,
+               "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
+               "username" => server.username,
+               "ssh_username" => server.app_username,
+               "ssh_port" => server.ssh_port,
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner.id,
+                 "username" => server.owner.username,
+                 "name" =>
+                   if server.owner.group_member do
+                     server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => server.owner.root
+               }
+             },
+             meta: %{},
+             initiator: "servers:servers:#{server.id}",
+             causation_id: caused_by.id,
+             correlation_id: caused_by.correlation_id,
+             occurred_at: reconnecting_occurred_at,
+             entity: nil
+           }
+
+    {
+      %EventReference{
+        id: setup_event_id,
+        causation_id: setup_event.causation_id,
+        correlation_id: setup_event.correlation_id
+      },
+      %EventReference{
+        id: reconnecting_event_id,
+        causation_id: reconnecting_event.causation_id,
+        correlation_id: reconnecting_event.correlation_id
+      }
     }
   end
 end

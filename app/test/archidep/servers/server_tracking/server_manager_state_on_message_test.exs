@@ -72,6 +72,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
     for connection_state <- [
           ServersFactory.random_not_connected_state(),
           ServersFactory.random_connecting_state(),
+          ServersFactory.random_retry_connecting_state(),
           ServersFactory.random_reconnecting_state(),
           ServersFactory.random_connection_failed_state(),
           ServersFactory.random_disconnected_state()

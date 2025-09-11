@@ -139,6 +139,99 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
            }
   end
 
+  test "check sudo access after successful reconnection",
+       %{handle_task_result: handle_task_result} = context do
+    attach_telemetry_handler!(context, [:archidep, :servers, :tracking, :connected])
+
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    fake_connect_task_ref = make_ref()
+    fake_event = EventsFactory.insert(:stored_event)
+    fake_event_reference = StoredEvent.to_reference(fake_event)
+
+    reconnecting =
+      ServersFactory.random_reconnecting_state(causation_event: fake_event_reference)
+
+    reconnecting_state(
+      connection_ref: connection_ref,
+      connection_pid: connection_pid,
+      time: connecting_time
+    ) = reconnecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: reconnecting,
+        server: server,
+        username: server.app_username,
+        tasks: %{connect: fake_connect_task_ref},
+        version: 10
+      )
+
+    now = DateTime.utc_now()
+    result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
+
+    connection_event = assert_server_connected_event!(server, now, fake_event)
+
+    assert %{
+             connection_state: connected_state(time: time),
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connected_state(
+                   connection_ref: connection_ref,
+                   connection_pid: connection_pid,
+                   time: time,
+                   connection_event: connection_event
+                 ),
+               actions: actions,
+               tasks: %{},
+               version: 10
+           }
+
+    fake_task = Task.completed(:fake)
+
+    check_access_result =
+      run_command_fn.(result, fn "sudo -n ls", 10_000 ->
+        fake_task
+      end)
+
+    assert check_access_result == %ServerManagerState{
+             result
+             | tasks: %{check_access: fake_task.ref}
+           }
+
+    assert update_tracking_fn.(check_access_result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_access,
+                version: 11
+              ), %ServerManagerState{check_access_result | version: 11}}
+
+    event_data = assert_telemetry_event!([:archidep, :servers, :tracking, :connected])
+    assert %{measurements: %{duration: connection_duration}} = event_data
+
+    assert_in_delta DateTime.diff(now, connecting_time, :millisecond) / 1000,
+                    connection_duration,
+                    1
+
+    assert event_data == %{
+             measurements: %{duration: connection_duration},
+             metadata: %{},
+             config: nil
+           }
+  end
+
   test "connection-related problems are dropped on successful connection", %{
     handle_task_result: handle_task_result
   } do

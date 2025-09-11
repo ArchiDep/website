@@ -20,6 +20,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias ArchiDep.Servers.Ansible.Tracker
   alias ArchiDep.Servers.Events.ServerConnected
   alias ArchiDep.Servers.Events.ServerDisconnected
+  alias ArchiDep.Servers.Events.ServerReconnecting
   alias ArchiDep.Servers.Events.ServerRetriedAnsiblePlaybook
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
@@ -312,7 +313,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
             reconnecting_state(
               connection_ref: connection_ref,
               connection_pid: connection_pid,
-              time: start_time
+              time: start_time,
+              causation_event: causation_event
             ),
           tasks: %{connect: connection_task_ref}
         } = state,
@@ -325,8 +327,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       connection_pid,
       connection_task_ref,
       start_time,
-      # FIXME: link to reconnection causation event
-      nil,
+      causation_event,
       result
     )
   end
@@ -855,26 +856,34 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
                connection_pid: connection_pid,
                connection_ref: connection_ref
              ),
-           server: %Server{username: username} = server,
+           server: %Server{username: username, app_username: app_username} = server,
            username: username,
            ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, cause}
          } = state,
          %AnsiblePlaybookRun{id: run_id, playbook: "setup", state: :succeeded}
-       ),
-       do:
-         state
-         |> change_connection_state(
-           reconnecting_state(
-             connection_pid: connection_pid,
-             connection_ref: connection_ref,
-             time: DateTime.utc_now()
-           )
-         )
-         |> set_updated_server(Server.mark_as_set_up!(server, cause))
-         |> connect_with_app_username()
-         |> then(&add_action(&1, connect_action(&1)))
-         |> stop_measuring_load_average()
-         |> drop_problems(server_ansible_playbook_failed_problem?("setup"))
+       ) do
+    updated_server = Server.mark_as_set_up!(server, cause)
+
+    reconnecting_event =
+      updated_server
+      |> ServerReconnecting.new(app_username)
+      |> persist_server_event!(updated_server, DateTime.utc_now(), cause)
+
+    state
+    |> change_connection_state(
+      reconnecting_state(
+        connection_pid: connection_pid,
+        connection_ref: connection_ref,
+        time: DateTime.utc_now(),
+        causation_event: StoredEvent.to_reference(reconnecting_event)
+      )
+    )
+    |> set_updated_server(updated_server)
+    |> connect_with_app_username()
+    |> then(&add_action(&1, connect_action(&1)))
+    |> stop_measuring_load_average()
+    |> drop_problems(server_ansible_playbook_failed_problem?("setup"))
+  end
 
   defp handle_ansible_playbook_completed(
          %__MODULE__{

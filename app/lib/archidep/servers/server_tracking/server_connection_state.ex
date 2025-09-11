@@ -32,7 +32,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
   Record.defrecord(:reconnecting_state,
     connection_ref: nil,
     connection_pid: nil,
-    time: nil
+    time: nil,
+    causation_event: nil
   )
 
   Record.defrecord(:connection_failed_state, connection_pid: nil, reason: nil)
@@ -76,7 +77,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
           record(:reconnecting_state,
             connection_ref: reference(),
             connection_pid: pid(),
-            time: DateTime.t()
+            time: DateTime.t(),
+            causation_event: EventReference.t()
           )
 
   @type connection_failed_state ::

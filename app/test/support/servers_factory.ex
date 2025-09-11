@@ -291,13 +291,20 @@ defmodule ArchiDep.Support.ServersFactory do
   end
 
   @spec random_reconnecting_state() :: ServerConnectionState.reconnecting_state()
-  def random_reconnecting_state,
-    do:
-      reconnecting_state(
-        connection_ref: make_ref(),
-        connection_pid: self(),
-        time: Faker.DateTime.backward(1)
-      )
+  @spec random_reconnecting_state(Keyword.t()) :: ServerConnectionState.reconnecting_state()
+  def random_reconnecting_state(attrs! \\ []) do
+    {causation_event, attrs!} =
+      Keyword.pop_lazy(attrs!, :causation_event, fn -> EventsFactory.build(:event_reference) end)
+
+    [] = Keyword.keys(attrs!)
+
+    reconnecting_state(
+      connection_ref: make_ref(),
+      connection_pid: self(),
+      time: Faker.DateTime.backward(1),
+      causation_event: causation_event
+    )
+  end
 
   @spec random_connection_failed_state() :: ServerConnectionState.connection_failed_state()
   def random_connection_failed_state,
