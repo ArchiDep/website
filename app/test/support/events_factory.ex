@@ -10,7 +10,7 @@ defmodule ArchiDep.Support.EventsFactory do
   @spec context() :: :accounts | :course | :events | :servers
   def context, do: Faker.Util.pick([:accounts, :course, :events, :servers])
 
-  @spec stored_event_factory(map()) :: SwitchEduId.t()
+  @spec stored_event_factory(map()) :: StoredEvent.t(map)
   def stored_event_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
 
@@ -21,7 +21,7 @@ defmodule ArchiDep.Support.EventsFactory do
 
     {type, attrs!} =
       Map.pop_lazy(attrs!, :type, fn ->
-        "archidep/#{context()}/#{Faker.Lorem.words() |> Enum.join("-")}"
+        "archidep/#{context()}/#{Enum.join(Faker.Lorem.words(), "-")}"
       end)
 
     {data, attrs!} =

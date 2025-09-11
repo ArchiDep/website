@@ -7,7 +7,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
   import Hammox
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
-  alias ArchiDep.Support.FactoryHelpers
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias Ecto.UUID
 
@@ -106,6 +106,72 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
     retry_connecting_state(retrying: retrying) = initial_state.connection_state
 
     result = retry_connecting.(initial_state, :manual)
+
+    test_pid = self()
+
+    expected_retrying = %{retrying | backoff: 0}
+
+    assert %ServerManagerState{
+             connection_state:
+               connecting_state(
+                 connection_ref: connection_ref,
+                 connection_pid: ^test_pid,
+                 retrying: ^expected_retrying
+               ) = connection_state,
+             actions:
+               [
+                 {:monitor, ^test_pid},
+                 {:connect, connect_fn},
+                 {:cancel_timer, ^retry_timer},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert is_reference(connection_ref)
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state: connection_state,
+               actions: actions,
+               retry_timer: nil
+           }
+
+    connect_result = assert_connect_fn!(connect_fn, result, "dave")
+
+    assert update_tracking_fn.(connect_result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                current_job: :connecting,
+                version: 31
+              ), %ServerManagerState{connect_result | version: 31}}
+  end
+
+  test "retrying to connect to a server following an event resets the backoff delay", %{
+    retry_connecting: retry_connecting
+  } do
+    server =
+      build_active_server(
+        ssh_port: 2223,
+        username: "dave",
+        set_up_at: nil
+      )
+
+    retry_timer = Process.send_after(self(), :retry, 30_000)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_retry_connecting_state(),
+        server: server,
+        username: "dave",
+        retry_timer: retry_timer,
+        version: 30
+      )
+
+    retry_connecting_state(retrying: retrying) = initial_state.connection_state
+
+    fake_event = EventsFactory.build(:stored_event)
+
+    result = retry_connecting.(initial_state, {:event, fake_event.id})
 
     test_pid = self()
 

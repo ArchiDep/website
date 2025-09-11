@@ -3,8 +3,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
 
   import ArchiDep.Support.FactoryHelpers, only: [bool: 0]
   import Hammox
-  alias ArchiDep.Http
   alias ArchiDep.Events.Store.StoredEvent
+  alias ArchiDep.Http
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Schemas.Server
