@@ -128,13 +128,14 @@
         on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
       />
 
-      <div class="mt-1 text-right">
+      <div class="mt-1">
         <.link
           :if={not root?(@auth)}
-          class="text-sm text-base-content/75"
+          class="flex justify-end items-center gap-1 text-sm text-base-content/75"
           navigate={~p"/app/my-servers"}
         >
-          Manage my servers
+          <Heroicons.server_stack class="size-4" />
+          <span>Manage my servers</span>
         </.link>
       </div>
     </div>
