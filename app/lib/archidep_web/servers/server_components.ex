@@ -107,7 +107,13 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             />
           </li>
         </ul>
-        <div class="card-actions justify-end">
+        <div
+          :if={
+            (@retry_text != nil and @on_retry_connection != nil) or
+              (@edit_enabled and @on_edit != nil) or @details_link != nil
+          }
+          class="card-actions justify-end"
+        >
           <button
             :if={@retry_text != nil and @on_retry_connection != nil}
             type="button"
@@ -131,7 +137,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
               <span>{gettext("Edit")}</span>
             </span>
           </button>
-          <.link class="btn btn-sm btn-info" navigate={@details_link}>
+          <.link :if={@details_link} class="btn btn-sm btn-info" navigate={@details_link}>
             <span class="flex items-center gap-x-2">
               <Heroicons.eye class="size-4" />
               <span>{gettext("Details")}</span>
