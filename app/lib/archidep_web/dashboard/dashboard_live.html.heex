@@ -108,15 +108,75 @@
 </div>
 
 <div class="flex flex-col items-center gap-8">
-  <div :for={server <- @servers} class="w-full max-w-lg flex flex-col gap-y-4">
-    <div class="w-full">
-      <.server_card
-        auth={@auth}
-        server={server}
-        state={Map.get(@server_state_map, server.id)}
-        details_link={~p"/servers/#{server.id}"}
-        on_edit={JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})}
-        edit_enabled={
+  <div :for={server <- @servers} class="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-2 gap-4">
+    <div>
+      <h2 class="mb-4 text-4xl font-title text-white">{gettext("Your server")}</h2>
+      <.data_display responsive_class="md:grid-cols-2">
+        <.data_display_element title={gettext("How do I connect?")}>
+          <code class="font-mono">
+            ssh {server.username}@{server.ip_address.address |> :inet.ntoa() |> to_string()}
+          </code>
+        </.data_display_element>
+        <.data_display_element title={gettext("Setup")}>
+          <span
+            :if={Server.set_up?(server)}
+            class="badge badge-sm badge-success tooltip"
+            data-tip={
+              gettext("You have successfully set up your server and can use it for exercises.")
+            }
+          >
+            {gettext("Completed")}
+          </span>
+          <span
+            :if={not Server.set_up?(server)}
+            class="badge badge-sm badge-warning tooltip"
+            data-tip={
+              gettext(
+                "You have not completed the initial server setup yet. You should not proceed with deployment exercises until you have done so."
+              )
+            }
+          >
+            {gettext("Not completed")}
+          </span>
+        </.data_display_element>
+      </.data_display>
+    </div>
+    <div class="w-full flex flex-col gap-y-4">
+      <div class="w-full">
+        <.server_card
+          auth={@auth}
+          server={server}
+          state={Map.get(@server_state_map, server.id)}
+          details_link={~p"/servers/#{server.id}"}
+          on_edit={JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})}
+          edit_enabled={
+            not Server.set_up?(server) and
+              ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
+                :server_authentication_failed,
+                :server_connection_timed_out,
+                :server_connection_refused
+              ])
+          }
+          on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
+          on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
+        />
+
+        <div class="mt-1">
+          <.link
+            :if={not root?(@auth)}
+            class="flex justify-end items-center gap-1 text-sm text-base-content/75"
+            navigate={~p"/app/my-servers"}
+          >
+            <Heroicons.server_stack class="size-4" />
+            <span>Manage my servers</span>
+          </.link>
+        </div>
+      </div>
+
+      <.server_help auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} />
+
+      <.live_component
+        :if={
           not Server.set_up?(server) and
             ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
               :server_authentication_failed,
@@ -124,39 +184,13 @@
               :server_connection_refused
             ])
         }
-        on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
-        on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
+        module={EditServerDialogLive}
+        id={EditServerDialogLive.id(server)}
+        auth={@auth}
+        server={server}
+        state={Map.get(@server_state_map, server.id)}
       />
-
-      <div class="mt-1">
-        <.link
-          :if={not root?(@auth)}
-          class="flex justify-end items-center gap-1 text-sm text-base-content/75"
-          navigate={~p"/app/my-servers"}
-        >
-          <Heroicons.server_stack class="size-4" />
-          <span>Manage my servers</span>
-        </.link>
-      </div>
     </div>
-
-    <.server_help auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} />
-
-    <.live_component
-      :if={
-        not Server.set_up?(server) and
-          ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
-            :server_authentication_failed,
-            :server_connection_timed_out,
-            :server_connection_refused
-          ])
-      }
-      module={EditServerDialogLive}
-      id={EditServerDialogLive.id(server)}
-      auth={@auth}
-      server={server}
-      state={Map.get(@server_state_map, server.id)}
-    />
   </div>
 </div>
 
