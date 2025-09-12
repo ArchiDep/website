@@ -58,6 +58,10 @@ services:
       - "traefik.http.routers.archidep-app.rule=Host(`localhost`) && !Path(`/`) && !PathPrefix(`/assets/`) && !PathPrefix(`/course/`) && !PathRegexp(`^/[^/]+\\.[^/]+$`)"
       - 'traefik.http.routers.archidep-app.entrypoints=web'
       - 'traefik.http.services.archidep-app.loadbalancer.server.port=42000'
+    networks:
+      default:
+        aliases:
+          - archidep-website-app
     restart: unless-stopped
     volumes:
       - ./app/priv/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}:/etc/archidep/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}:ro
