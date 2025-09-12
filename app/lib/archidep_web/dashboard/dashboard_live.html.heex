@@ -81,16 +81,28 @@
       <p class="pt-3 pb-6">
         {gettext("Register your first server to get started.")}
       </p>
-      <button
-        type="button"
-        class="btn btn-success btn-sm"
-        phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewServerDialogLive.id()})}
-      >
-        <span class="flex items-center gap-x-2">
-          <Heroicons.plus class="size-4" />
-          <span>{gettext("All right!")}</span>
-        </span>
-      </button>
+      <div class="join">
+        <.link
+          :if={Enum.any?(@inactive_servers)}
+          navigate={~p"/app/my-servers"}
+          class="join-item btn btn-secondary btn-sm"
+        >
+          <span class="flex items-center gap-x-2">
+            <Heroicons.server_stack class="size-4" />
+            <span>{gettext("My servers")}</span>
+          </span>
+        </.link>
+        <button
+          type="button"
+          class="join-item btn btn-success btn-sm"
+          phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewServerDialogLive.id()})}
+        >
+          <span class="flex items-center gap-x-2">
+            <Heroicons.plus class="size-4" />
+            <span>{gettext("All right!")}</span>
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -103,11 +115,36 @@
       state={Map.get(@server_state_map, server.id)}
       class="cursor-pointer"
       on_click={JS.navigate(~p"/servers/#{server.id}")}
+      on_edit={JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})}
+      edit_enabled={
+        not Server.set_up?(server) and
+          ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
+            :server_authentication_failed,
+            :server_connection_timed_out,
+            :server_connection_refused
+          ])
+      }
       on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
       on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
     />
 
     <.server_help auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} />
+
+    <.live_component
+      :if={
+        not Server.set_up?(server) and
+          ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
+            :server_authentication_failed,
+            :server_connection_timed_out,
+            :server_connection_refused
+          ])
+      }
+      module={EditServerDialogLive}
+      id={EditServerDialogLive.id(server)}
+      auth={@auth}
+      server={server}
+      state={Map.get(@server_state_map, server.id)}
+    />
   </div>
 </div>
 

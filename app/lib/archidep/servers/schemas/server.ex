@@ -83,6 +83,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
       active and ServerGroup.active?(group, now) and ServerOwner.active?(owner, now) and
         (owner.group_member == nil or owner.group_member.group_id == group.id)
 
+  @spec set_up?(t()) :: boolean()
+  def set_up?(%__MODULE__{set_up_at: set_up_at}), do: set_up_at != nil
+
   @spec name_or_default(t()) :: String.t()
   def name_or_default(%__MODULE__{name: nil} = server), do: ssh_connection_description(server)
   def name_or_default(%__MODULE__{name: name}), do: name

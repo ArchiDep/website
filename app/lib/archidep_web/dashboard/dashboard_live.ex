@@ -12,8 +12,10 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Servers
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
   alias ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive
+  alias ArchiDepWeb.Servers.EditServerDialogLive
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
   @impl LiveView
@@ -23,12 +25,15 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     [student, servers, groups] =
       Task.await_many([
         Task.async(fn -> fetch_student(auth) end),
-        Task.async(fn -> Servers.list_my_active_servers(auth) end),
+        Task.async(fn -> Servers.list_my_servers(auth) end),
         if(root?(auth),
           do: Task.async(fn -> Servers.list_server_groups(auth) end),
           else: Task.completed(nil)
         )
       ])
+
+    active_servers = Enum.filter(servers, & &1.active)
+    inactive_servers = Enum.reject(servers, & &1.active)
 
     tracker =
       if connected?(socket) do
@@ -39,14 +44,14 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           :ok = Course.PubSub.subscribe_class(student.class_id)
         end
 
-        for server <- servers do
+        for server <- active_servers do
           # TODO: add watch_my_servers in context
           :ok = PubSub.subscribe_server(server.id)
         end
 
         :ok = PubSub.subscribe_server_owner_servers(auth.principal_id)
 
-        {:ok, pid} = ServerTracker.start_link(servers)
+        {:ok, pid} = ServerTracker.start_link(active_servers)
         pid
       else
         nil
@@ -55,8 +60,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     socket
     |> assign(
       student: student,
-      servers: servers,
-      server_state_map: ServerTracker.server_state_map(servers),
+      servers: active_servers,
+      inactive_servers: inactive_servers |> Enum.map(& &1.id) |> MapSet.new(),
+      server_state_map: ServerTracker.server_state_map(active_servers),
       server_tracker: tracker,
       groups: groups
     )
@@ -175,8 +181,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     |> noreply()
   end
 
-  def handle_info({:server_created, _unrelated_server}, socket) do
-    noreply(socket)
+  def handle_info(
+        {:server_created, inactive_server},
+        %Socket{assigns: %{inactive_servers: inactive_servers}} = socket
+      ) do
+    socket
+    |> assign(inactive_servers: MapSet.put(inactive_servers, inactive_server.id))
+    |> noreply()
   end
 
   @impl LiveView
@@ -188,7 +199,8 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
             auth: %Authentication{principal_id: owner_id},
             servers: servers,
             server_state_map: server_state_map,
-            server_tracker: tracker
+            server_tracker: tracker,
+            inactive_servers: inactive_servers
           }
         } = socket
       ) do
@@ -215,7 +227,11 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       end
 
     socket
-    |> assign(servers: sort_servers(updated_servers), server_state_map: updated_server_state_map)
+    |> assign(
+      servers: sort_servers(updated_servers),
+      server_state_map: updated_server_state_map,
+      inactive_servers: MapSet.delete(inactive_servers, server_id)
+    )
     |> noreply()
   end
 
@@ -226,7 +242,8 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           assigns: %{
             servers: servers,
             server_state_map: server_state_map,
-            server_tracker: tracker
+            server_tracker: tracker,
+            inactive_servers: inactive_servers
           }
         } = socket
       ) do
@@ -238,11 +255,14 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           ServerTracker.update_server_state_map(
             server_state_map,
             ServerTracker.untrack(tracker, server)
-          )
+          ),
+        inactive_servers: MapSet.put(inactive_servers, server_id)
       )
       |> noreply()
     else
-      noreply(socket)
+      socket
+      |> assign(inactive_servers: MapSet.put(inactive_servers, server_id))
+      |> noreply()
     end
   end
 
@@ -253,7 +273,8 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           assigns: %{
             servers: servers,
             server_state_map: server_state_map,
-            server_tracker: tracker
+            server_tracker: tracker,
+            inactive_servers: inactive_servers
           }
         } = socket
       ) do
@@ -264,7 +285,8 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         ServerTracker.update_server_state_map(
           server_state_map,
           ServerTracker.untrack(tracker, server)
-        )
+        ),
+      inactive_servers: MapSet.delete(inactive_servers, server_id)
     )
     |> noreply()
   end

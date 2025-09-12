@@ -31,8 +31,10 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   attr :server, Server, doc: "the server to display"
   attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
   attr :class, :string, doc: "extra CSS classes to apply to the card", default: nil
+  attr :edit_enabled, :boolean, doc: "whether editing the server is enabled", default: false
 
   attr :on_click, JS, doc: "JS command to execute when clicking the card", default: nil
+  attr :on_edit, JS, doc: "JS command to execute when editing the server", default: nil
 
   attr :on_retry_connection, JS,
     doc: "JS command to execute when retrying the connection",
@@ -44,9 +46,10 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   @spec server_card(map()) :: Rendered.t()
   def server_card(assigns) do
+    server = assigns.server
     state = assigns.state
 
-    {badge_class, badge_text} = server_card_badge(state && state.connection_state)
+    {badge_class, badge_text} = server_card_badge(server, state && state.connection_state)
 
     body =
       server_card_body(
@@ -104,13 +107,46 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             />
           </li>
         </ul>
-        <div :if={@retry_text != nil and @on_retry_connection != nil} class="card-actions justify-end">
+        <div
+          :if={
+            @on_click != nil or (@on_edit != nil and @edit_enabled) or
+              (@retry_text != nil and @on_retry_connection != nil)
+          }
+          class="card-actions justify-end"
+        >
           <button
+            :if={@retry_text != nil and @on_retry_connection != nil}
             type="button"
             class="btn btn-sm btn-secondary"
-            phx-click={@on_retry_connection |> JS.add_class("btn-disabled")}
+            phx-click={@on_retry_connection}
           >
-            {@retry_text}
+            <span class="flex items-center gap-x-2">
+              <Heroicons.arrow_path class="size-4" />
+              {@retry_text}
+            </span>
+          </button>
+          <button
+            :if={@edit_enabled and @on_edit != nil}
+            type="button"
+            class="btn btn-sm btn-primary"
+            phx-disabled={@connecting_or_reconnecting or @busy}
+            phx-click={@on_edit}
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.pencil class="size-4" />
+              <span>{gettext("Edit")}</span>
+            </span>
+          </button>
+          <button
+            :if={@on_click != nil}
+            type="button"
+            class="btn btn-sm btn-info"
+            phx-click={@on_click}
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.eye class="size-4" />
+              <span>{gettext("Details")}</span>
+            </span>
           </button>
         </div>
       </div>
@@ -127,6 +163,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   @spec admin_server_card(map()) :: Rendered.t()
   def admin_server_card(assigns) do
+    server = assigns.server
     state = assigns.state
 
     body =
@@ -134,7 +171,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         state && state.connection_state,
         state && state.current_job,
         assigns.auth,
-        assigns.server
+        server
       )
 
     short_status =
@@ -142,7 +179,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         state && state.connection_state,
         state && state.current_job,
         assigns.auth,
-        assigns.server
+        server
       )
 
     filtered_problems = filter_problems(state)
@@ -223,17 +260,28 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   defp server_card_class(disconnected_state(), []), do: "bg-info text-info-content"
   defp server_card_class(disconnected_state(), _problems), do: "bg-warning text-warning-content"
 
-  defp server_card_badge(nil), do: {"badge-info", gettext("Not connected")}
-  defp server_card_badge(not_connected_state()), do: {"badge-info", gettext("Not connected")}
-  defp server_card_badge(connecting_state()), do: {"badge-primary", gettext("Connecting")}
-  defp server_card_badge(retry_connecting_state()), do: {"badge-primary", gettext("Reconnecting")}
-  defp server_card_badge(connected_state()), do: {"badge-success", gettext("Connected")}
-  defp server_card_badge(reconnecting_state()), do: {"badge-primary", gettext("Reconnecting")}
+  defp server_card_badge(%Server{active: false}, _state), do: {"badge-info", gettext("Inactive")}
+  defp server_card_badge(_server, nil), do: {"badge-info", gettext("Not connected")}
 
-  defp server_card_badge(connection_failed_state()),
+  defp server_card_badge(_server, not_connected_state()),
+    do: {"badge-info", gettext("Not connected")}
+
+  defp server_card_badge(_server, connecting_state()),
+    do: {"badge-primary", gettext("Connecting")}
+
+  defp server_card_badge(_server, retry_connecting_state()),
+    do: {"badge-primary", gettext("Reconnecting")}
+
+  defp server_card_badge(_server, connected_state()), do: {"badge-success", gettext("Connected")}
+
+  defp server_card_badge(_server, reconnecting_state()),
+    do: {"badge-primary", gettext("Reconnecting")}
+
+  defp server_card_badge(_server, connection_failed_state()),
     do: {"badge-error", gettext("Connection failed")}
 
-  defp server_card_badge(disconnected_state()), do: {"badge-primary", gettext("Disconnected")}
+  defp server_card_badge(_server, disconnected_state()),
+    do: {"badge-primary", gettext("Disconnected")}
 
   defp server_card_body(nil, _current_job, _auth, _server),
     do: gettext("No connection to this server.")
@@ -305,6 +353,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   defp server_card_body(disconnected_state(), _current_job, _auth, _server),
     do: gettext("The connection to the server was lost.")
+
+  defp server_card_short_status(_connection_state, _current_job, _auth, %Server{active: false}),
+    do: gettext("inactive")
 
   defp server_card_short_status(nil, _current_job, _auth, _server),
     do: gettext("n/a")

@@ -1,7 +1,18 @@
+<div class="breadcrumbs text-xs">
+  <ul>
+    <li>
+      <.link class="flex items-center gap-1" navigate={~p"/app"}>
+        <Heroicons.cube solid class="size-4" />
+        <span>{gettext("Dashboard")}</span>
+      </.link>
+    </li>
+  </ul>
+</div>
+
 <div class="my-2 flex justify-between items-end">
   <h2 class="text-2xl font-bold flex items-center gap-x-2">
     <Heroicons.server_stack solid class="size-6" />
-    {gettext("Servers")}
+    {gettext("My servers")}
   </h2>
   <button
     type="button"
@@ -17,7 +28,7 @@
 
 <.no_data :if={Enum.empty?(@servers)} text={gettext("You have not registered any server yet.")} />
 
-<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+<div class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
   <div
     :for={server <- @servers}
     class="cursor-pointer"

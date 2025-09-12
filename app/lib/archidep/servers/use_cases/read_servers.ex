@@ -15,9 +15,20 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
     Repo.all(
       from s in Server,
         join: o in assoc(s, :owner),
+        left_join: ogm in assoc(o, :group_member),
+        left_join: ogmg in assoc(ogm, :group),
+        join: g in assoc(s, :group),
+        join: gesp in assoc(g, :expected_server_properties),
+        join: ep in assoc(s, :expected_properties),
+        left_join: lkp in assoc(s, :last_known_properties),
         where: s.owner_id == ^principal_id,
         order_by: [s.name, s.username, s.ip_address],
-        preload: [owner: o]
+        preload: [
+          group: {g, expected_server_properties: gesp},
+          expected_properties: ep,
+          last_known_properties: lkp,
+          owner: {o, group_member: {ogm, group: ogmg}}
+        ]
     )
   end
 
@@ -30,9 +41,20 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
     Repo.all(
       from s in Server,
         join: o in assoc(s, :owner),
+        left_join: ogm in assoc(o, :group_member),
+        left_join: ogmg in assoc(ogm, :group),
+        join: g in assoc(s, :group),
+        join: gesp in assoc(g, :expected_server_properties),
+        join: ep in assoc(s, :expected_properties),
+        left_join: lkp in assoc(s, :last_known_properties),
         where: s.owner_id == ^principal_id and s.active,
         order_by: [s.name, s.username, s.ip_address],
-        preload: [owner: o]
+        preload: [
+          group: {g, expected_server_properties: gesp},
+          expected_properties: ep,
+          last_known_properties: lkp,
+          owner: {o, group_member: {ogm, group: ogmg}}
+        ]
     )
   end
 

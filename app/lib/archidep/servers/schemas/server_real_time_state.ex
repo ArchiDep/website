@@ -47,4 +47,10 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
 
   def busy?(%__MODULE__{connection_state: disconnected_state(), current_job: nil}), do: false
   def busy?(%__MODULE__{}), do: true
+
+  @spec problem?(t() | nil, list(atom())) :: boolean()
+  def problem?(nil, _types), do: false
+
+  def problem?(%__MODULE__{problems: problems}, types) when is_list(types),
+    do: Enum.any?(problems, &(elem(&1, 0) in types))
 end
