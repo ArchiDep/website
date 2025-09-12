@@ -110,7 +110,7 @@
 <div class="flex flex-col items-center gap-8">
   <div :for={server <- @servers} class="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-2 gap-4">
     <div>
-      <h2 class="mb-4 text-4xl font-title text-white">{gettext("Your server")}</h2>
+      <h2 class="mb-4 text-4xl">{gettext("Your server")}</h2>
       <.data_display responsive_class="md:grid-cols-2">
         <.data_display_element title={gettext("How do I connect?")}>
           <code class="font-mono">

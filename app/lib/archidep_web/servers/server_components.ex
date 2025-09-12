@@ -79,10 +79,10 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div class={["card"] ++ @card_classes}>
       <div class="card-body">
         <div class="card-title flex flex-wrap justify-between text-xs sm:text-sm md:text-base">
-          <h2 class="flex items-center gap-x-2">
+          <div class="flex items-center gap-x-2">
             <Heroicons.server solid class="size-4 sm:size-5 md:size-6" />
             <.server_name server={@server} />
-          </h2>
+          </div>
           <div class={["badge badge-soft", @badge_class]}>
             {@badge_text}
           </div>
