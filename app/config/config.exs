@@ -41,7 +41,7 @@ config :archidep, ArchiDepWeb.Endpoint,
   # default.
   http: [ip: {127, 0, 0, 1}, port: 42000],
   render_errors: [
-    formats: [html: ArchiDepWeb.Controllers.ErrorHTML],
+    formats: [html: ArchiDepWeb.Errors.ErrorHTML],
     layout: false
   ],
   pubsub_server: ArchiDep.PubSub,

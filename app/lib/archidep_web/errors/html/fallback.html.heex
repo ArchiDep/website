@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" class="[scrollbar-gutter:stable]">
+  <head>
+    <title>{@status} {@status_text} · ArchiDep</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicons/archidep-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicons/archidep-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicons/archidep-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicons/archidep-96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicons/archidep-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicons/archidep-180.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="stylesheet" href={~p"/assets/theme/theme.css"} />
+  </head>
+  <body>
+    <header class="navbar bg-base-300 shadow-sm w-full">
+      <div class="navbar-start">
+        <label for="sidebar" class="lg:hidden btn btn-square btn-ghost">
+          <Heroicons.bars_3 class="size-5" />
+        </label>
+        <a class="btn btn-ghost text-xl" href="/">
+          <div class="flex items-center gap-x-2">
+            <div class="avatar">
+              <div class="w-10 rounded-full">
+                <img src="/favicons/archidep-192.png" alt="ArchiDep logo" />
+              </div>
+            </div>
+            <h1>{gettext("ArchiDep")}</h1>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <div class="text-center mt-16">
+      <h1 class="text-6xl font-bold !text-error">{@status}</h1>
+      <h2 class="text-xl !font-title !text-error/75">{@status_text}</h2>
+      <ul class="mt-4 text-lg">
+        <li>{@line1}</li>
+        <li>{@line2}</li>
+      </ul>
+      <a href="/" class="btn btn-primary mt-6">{@button_text}</a>
+    </div>
+  </body>
+</html>
