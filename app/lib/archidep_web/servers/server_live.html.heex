@@ -20,68 +20,59 @@
   <.server_name server={@server} />
 </h2>
 
-<div class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-4">
-  <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-5 gap-4">
-    <div class="col-span-1 md:col-span-3">
-      <dl class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
-        <dt class="font-bold">{gettext("IP address")}</dt>
-        <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
-          {:inet.ntoa(@server.ip_address.address)}
-        </dd>
-        <dt class="font-bold">{gettext("Username")}</dt>
-        <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
-          {@server.username}
-        </dd>
-        <dt class="font-bold">{gettext("SSH port")}</dt>
-        <dd class="col-span-1 md:col-span-2 xl:col-span-3 font-mono">
-          {@server.ssh_port || 22}
-        </dd>
-        <dt class="font-bold">{gettext("Active")}</dt>
-        <dd class="col-span-1 md:col-span-2 xl:col-span-3">
-          <Heroicons.check_circle :if={@server.active} class="size-5 text-success" />
-          <Heroicons.x_circle :if={not @server.active} class="size-5 text-error" />
-        </dd>
-        <%= if root?(@auth) do %>
-          <dt class="font-bold">{gettext("Group")}</dt>
-          <dd class="col-span-1 md:col-span-2 xl:col-span-3">
-            {@server.group.name}
-          </dd>
-        <% end %>
-      </dl>
+<div class="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
+  <div>
+    <.data_display responsive_class="md:grid-cols-2 2xl:grid-cols-3">
+      <.data_display_element title={gettext("IP address")}>
+        {:inet.ntoa(@server.ip_address.address)}
+      </.data_display_element>
+      <.data_display_element title={gettext("Username")}>
+        {@server.username}
+      </.data_display_element>
+      <.data_display_element title={gettext("SSH port")}>
+        {@server.ssh_port || 22}
+      </.data_display_element>
+      <.data_display_element title={gettext("Active")}>
+        <Heroicons.check_circle :if={@server.active} class="size-5 text-success" />
+        <Heroicons.x_circle :if={not @server.active} class="size-5 text-error" />
+      </.data_display_element>
+      <.data_display_element :if={root?(@auth)} title={gettext("Group")}>
+        {@server.group.name}
+      </.data_display_element>
+    </.data_display>
 
-      <div class="mt-4 join">
-        <button
-          type="button"
-          class="join-item btn btn-warning"
-          disabled={ServerRealTimeState.busy?(@state)}
-          phx-click={
-            JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(@server)})
-          }
-        >
-          <span class="flex items-center gap-x-2">
-            <Heroicons.pencil class="size-4" />
-            <span>{gettext("Edit")}</span>
-          </span>
-        </button>
+    <div class="mt-4 join">
+      <button
+        type="button"
+        class="join-item btn btn-warning"
+        disabled={ServerRealTimeState.busy?(@state)}
+        phx-click={
+          JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(@server)})
+        }
+      >
+        <span class="flex items-center gap-x-2">
+          <Heroicons.pencil class="size-4" />
+          <span>{gettext("Edit")}</span>
+        </span>
+      </button>
 
-        <button
-          :if={root?(@auth)}
-          type="button"
-          class="join-item btn btn-error"
-          disabled={ServerRealTimeState.busy?(@state)}
-          phx-click={
-            JS.dispatch("open-dialog", detail: %{dialog: DeleteServerDialogLive.id(@server)})
-          }
-        >
-          <span class="flex items-center gap-x-2">
-            <Heroicons.trash class="size-4" />
-            <span>{gettext("Delete")}</span>
-          </span>
-        </button>
-      </div>
+      <button
+        :if={root?(@auth)}
+        type="button"
+        class="join-item btn btn-error"
+        disabled={ServerRealTimeState.busy?(@state)}
+        phx-click={
+          JS.dispatch("open-dialog", detail: %{dialog: DeleteServerDialogLive.id(@server)})
+        }
+      >
+        <span class="flex items-center gap-x-2">
+          <Heroicons.trash class="size-4" />
+          <span>{gettext("Delete")}</span>
+        </span>
+      </button>
     </div>
   </div>
-  <div class="lg:col-span-2">
+  <div>
     <.server_card
       auth={@auth}
       server={@server}
