@@ -8,7 +8,7 @@
       auth={@auth}
       server={server}
       state={Map.get(@server_state_map, server.id)}
-      on_click={JS.navigate(~p"/admin/servers/#{server.id}")}
+      details_link={~p"/admin/servers/#{server.id}"}
     />
   </div>
 </div>

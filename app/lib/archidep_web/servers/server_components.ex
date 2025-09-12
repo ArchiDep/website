@@ -31,9 +31,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   attr :server, Server, doc: "the server to display"
   attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
   attr :class, :string, doc: "extra CSS classes to apply to the card", default: nil
+  attr :details_link, :string, doc: "the link to the server's details page", default: nil
   attr :edit_enabled, :boolean, doc: "whether editing the server is enabled", default: false
 
-  attr :on_click, JS, doc: "JS command to execute when clicking the card", default: nil
   attr :on_edit, JS, doc: "JS command to execute when editing the server", default: nil
 
   attr :on_retry_connection, JS,
@@ -76,7 +76,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       |> assign(:busy, state != nil and state.current_job != nil)
 
     ~H"""
-    <div class={["card"] ++ @card_classes} phx-click={@on_click}>
+    <div class={["card"] ++ @card_classes}>
       <div class="card-body">
         <div class="card-title flex flex-wrap justify-between text-xs sm:text-sm md:text-base">
           <h2 class="flex items-center gap-x-2">
@@ -107,13 +107,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             />
           </li>
         </ul>
-        <div
-          :if={
-            @on_click != nil or (@on_edit != nil and @edit_enabled) or
-              (@retry_text != nil and @on_retry_connection != nil)
-          }
-          class="card-actions justify-end"
-        >
+        <div class="card-actions justify-end">
           <button
             :if={@retry_text != nil and @on_retry_connection != nil}
             type="button"
@@ -137,17 +131,12 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
               <span>{gettext("Edit")}</span>
             </span>
           </button>
-          <button
-            :if={@on_click != nil}
-            type="button"
-            class="btn btn-sm btn-info"
-            phx-click={@on_click}
-          >
+          <.link class="btn btn-sm btn-info" navigate={@details_link}>
             <span class="flex items-center gap-x-2">
               <Heroicons.eye class="size-4" />
               <span>{gettext("Details")}</span>
             </span>
-          </button>
+          </.link>
         </div>
       </div>
     </div>
@@ -158,8 +147,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   attr :server, Server, doc: "the server to display"
   attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
   attr :class, :string, doc: "extra CSS classes to apply to the card", default: nil
-
-  attr :on_click, JS, doc: "JS command to execute when clicking the card", default: nil
+  attr :details_link, :string, doc: "the link to the server's details page", default: nil
 
   @spec admin_server_card(map()) :: Rendered.t()
   def admin_server_card(assigns) do
@@ -195,7 +183,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       |> assign(:busy, state != nil and state.current_job != nil)
 
     ~H"""
-    <div class={["card card-xs"] ++ @card_classes} phx-click={@on_click}>
+    <div class={["card card-xs"] ++ @card_classes} phx-click={JS.navigate(@details_link)}>
       <div class="card-body">
         <div class="card-title flex flex-wrap justify-between">
           <h2 class="flex items-center gap-x-2">

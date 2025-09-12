@@ -113,8 +113,7 @@
       auth={@auth}
       server={server}
       state={Map.get(@server_state_map, server.id)}
-      class="cursor-pointer"
-      on_click={JS.navigate(~p"/servers/#{server.id}")}
+      details_link={~p"/servers/#{server.id}"}
       on_edit={JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})}
       edit_enabled={
         not Server.set_up?(server) and
