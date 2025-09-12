@@ -102,6 +102,9 @@ defmodule ArchiDepWeb.Servers.ServerLive do
             gettext("Deleted server {server}", server: Server.name_or_default(deleted_server))
           )
         )
-        |> push_navigate(to: ~p"/app")
+        |> push_navigate(to: redirect_after_deleted(socket))
         |> noreply()
+
+  defp redirect_after_deleted(%Socket{assigns: %{admin_ui: true}}), do: ~p"/admin"
+  defp redirect_after_deleted(_socket), do: ~p"/app"
 end
