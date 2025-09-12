@@ -557,18 +557,20 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   end
 
   def server_problem(%{problem: {:server_connection_refused, host, port, username}} = assigns) do
-    assigns =
-      assigns
-      |> assign(:host, :inet.ntoa(host))
-      |> assign(:port, port)
-      |> assign(:username, username)
+    target =
+      case {username, host, port} do
+        {u, h, 22} -> "#{u}@#{:inet.ntoa(h)}"
+        {u, h, p} -> "#{u}@#{:inet.ntoa(h)}:#{p}"
+      end
+
+    assigns = assign(assigns, target: target)
 
     ~H"""
     <div role="alert" class="alert alert-warning alert-soft">
       <Heroicons.exclamation_triangle class="size-4" />
       <span>
         {gettext("Connection refused to {cs}{target}{ce}",
-          target: "#{@username}@#{@host}:#{@port}" |> html_escape() |> safe_to_string(),
+          target: @target |> html_escape() |> safe_to_string(),
           cs: "<code>",
           ce: "</code>"
         )
@@ -579,18 +581,20 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   end
 
   def server_problem(%{problem: {:server_connection_timed_out, host, port, username}} = assigns) do
-    assigns =
-      assigns
-      |> assign(:host, :inet.ntoa(host))
-      |> assign(:port, port)
-      |> assign(:username, username)
+    target =
+      case {username, host, port} do
+        {u, h, 22} -> "#{u}@#{:inet.ntoa(h)}"
+        {u, h, p} -> "#{u}@#{:inet.ntoa(h)}:#{p}"
+      end
+
+    assigns = assign(assigns, target: target)
 
     ~H"""
     <div role="alert" class="alert alert-warning alert-soft">
       <Heroicons.exclamation_triangle class="size-4" />
       <span>
         {gettext("Timeout when connecting to {cs}{target}{ce}",
-          target: "#{@username}@#{@host}:#{@port}" |> html_escape() |> safe_to_string(),
+          target: @target |> html_escape() |> safe_to_string(),
           cs: "<code>",
           ce: "</code>"
         )
