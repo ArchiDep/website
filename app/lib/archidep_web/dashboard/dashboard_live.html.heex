@@ -107,25 +107,37 @@
   </div>
 </div>
 
-<div class="flex justify-center">
+<div class="flex flex-col items-center gap-8">
   <div :for={server <- @servers} class="w-full max-w-lg flex flex-col gap-y-4">
-    <.server_card
-      auth={@auth}
-      server={server}
-      state={Map.get(@server_state_map, server.id)}
-      details_link={~p"/servers/#{server.id}"}
-      on_edit={JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})}
-      edit_enabled={
-        not Server.set_up?(server) and
-          ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
-            :server_authentication_failed,
-            :server_connection_timed_out,
-            :server_connection_refused
-          ])
-      }
-      on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
-      on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
-    />
+    <div class="w-full">
+      <.server_card
+        auth={@auth}
+        server={server}
+        state={Map.get(@server_state_map, server.id)}
+        details_link={~p"/servers/#{server.id}"}
+        on_edit={JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})}
+        edit_enabled={
+          not Server.set_up?(server) and
+            ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
+              :server_authentication_failed,
+              :server_connection_timed_out,
+              :server_connection_refused
+            ])
+        }
+        on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
+        on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
+      />
+
+      <div class="mt-1 text-right">
+        <.link
+          :if={not root?(@auth)}
+          class="text-sm text-base-content/75"
+          navigate={~p"/app/my-servers"}
+        >
+          Manage my servers
+        </.link>
+      </div>
+    </div>
 
     <.server_help auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} />
 

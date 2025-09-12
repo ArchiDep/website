@@ -20,7 +20,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
   def server_help(assigns) do
     ~H"""
     <!-- Inactive server -->
-    <.troubleshooting_note :if={@server.set_up_at == nil and not @server.active}>
+    <.troubleshooting_note :if={@server.set_up_at == nil and not @server.active} class="!mt-0">
       <p>
         <strong>Oops.</strong> It appears that you have mistakenly created your
         server in an inactive state. We will only connect to servers that are
@@ -28,11 +28,14 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
       </p>
     </.troubleshooting_note>
     <!-- Connection timeout -->
-    <.troubleshooting_note :if={
-      @server.set_up_at == nil and @server.active and @state != nil and
-        (connecting?(@state.connection_state) or retry_connecting?(@state.connection_state)) and
-        problem?(@state, :server_connection_timed_out)
-    }>
+    <.troubleshooting_note
+      :if={
+        @server.set_up_at == nil and @server.active and @state != nil and
+          (connecting?(@state.connection_state) or retry_connecting?(@state.connection_state)) and
+          problem?(@state, :server_connection_timed_out)
+      }
+      class="!mt-0"
+    >
       <p>
         <strong>Oops.</strong> We can't seem to connect to your server. This
         could be due to a misconfiguration or an issue with the server itself.
@@ -55,11 +58,14 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
       </ul>
     </.troubleshooting_note>
     <!-- Connection refused -->
-    <.troubleshooting_note :if={
-      @server.set_up_at == nil and @server.active and @state != nil and
-        (connecting?(@state.connection_state) or retry_connecting?(@state.connection_state)) and
-        problem?(@state, :server_connection_refused)
-    }>
+    <.troubleshooting_note
+      :if={
+        @server.set_up_at == nil and @server.active and @state != nil and
+          (connecting?(@state.connection_state) or retry_connecting?(@state.connection_state)) and
+          problem?(@state, :server_connection_refused)
+      }
+      class="!mt-0"
+    >
       <p>
         <strong>Oops.</strong> We've reached a server at the IP address you
         provided, but it's refusing to let us open a connection.
@@ -76,11 +82,14 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
       </ul>
     </.troubleshooting_note>
     <!-- Authentication failure -->
-    <.troubleshooting_note :if={
-      @server.set_up_at == nil and @server.active and @state != nil and
-        connection_failed?(@state.connection_state) and
-        problem?(@state, :server_authentication_failed)
-    }>
+    <.troubleshooting_note
+      :if={
+        @server.set_up_at == nil and @server.active and @state != nil and
+          connection_failed?(@state.connection_state) and
+          problem?(@state, :server_authentication_failed)
+      }
+      class="!mt-0"
+    >
       <p>
         <strong>Oops.</strong> We've reached an SSH server at the IP address and
         port you provided, but it's not letting us in with the provided
@@ -98,11 +107,14 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
       </ul>
     </.troubleshooting_note>
     <!-- Open port check failed -->
-    <.troubleshooting_note :if={
-      @server.active and @state != nil and
-        connected?(@state.connection_state) and
-        problem?(@state, :server_open_ports_check_failed)
-    }>
+    <.troubleshooting_note
+      :if={
+        @server.active and @state != nil and
+          connected?(@state.connection_state) and
+          problem?(@state, :server_open_ports_check_failed)
+      }
+      class="!mt-0"
+    >
       <p>
         <strong>Oops.</strong> We've connected to your server but we can't seem
         to reach some of the ports that should be open.  Are you sure you opened

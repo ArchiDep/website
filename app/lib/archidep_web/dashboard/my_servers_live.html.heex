@@ -28,7 +28,7 @@
 
 <.no_data :if={Enum.empty?(@servers)} text={gettext("You have not registered any server yet.")} />
 
-<div class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
+<div class="mt-4 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
   <div
     :for={server <- @servers}
     class="cursor-pointer"

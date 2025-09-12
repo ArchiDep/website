@@ -67,12 +67,13 @@ defmodule ArchiDepWeb.Components.CoreComponents do
     """
   end
 
+  attr :rest, :global, doc: "arbitrary HTML attributes to add to the note container"
   slot :inner_block, required: true, doc: "the troubleshooting instruction to display"
 
   @spec troubleshooting_note(map()) :: Rendered.t()
   def troubleshooting_note(assigns) do
     ~H"""
-    <div class="note note-troubleshooting">
+    <div class={["note note-troubleshooting", Map.get(@rest, :class)]} {@rest}>
       <div class="title">
         💥 <span>Troubleshooting</span>
       </div>
