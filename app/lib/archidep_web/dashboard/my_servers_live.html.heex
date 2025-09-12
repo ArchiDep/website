@@ -29,15 +29,12 @@
 <.no_data :if={Enum.empty?(@servers)} text={gettext("You have not registered any server yet.")} />
 
 <div class="mt-4 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
-  <div
-    :for={server <- @servers}
-    class="cursor-pointer"
-    phx-click={JS.navigate(~p"/servers/#{server.id}")}
-  >
+  <div :for={server <- @servers}>
     <.server_card
       auth={@auth}
       server={server}
       state={Map.get(@server_state_map, server.id)}
+      details_link={~p"/servers/#{server.id}"}
       on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
     />
   </div>
