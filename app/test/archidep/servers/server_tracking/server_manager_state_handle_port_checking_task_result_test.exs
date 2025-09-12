@@ -814,7 +814,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
                "name" => server.name,
                "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
                "username" => server.username,
-               "app_username" => server.app_username,
+               "ssh_username" => server.app_username,
                "ssh_port" => server.ssh_port,
                "ports" => [80, 443, 3000, 3001],
                "group" => %{

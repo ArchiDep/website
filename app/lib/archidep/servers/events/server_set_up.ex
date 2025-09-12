@@ -16,7 +16,7 @@ defmodule ArchiDep.Servers.Events.ServerSetUp do
     :name,
     :ip_address,
     :username,
-    :app_username,
+    :ssh_username,
     :ssh_port,
     :group,
     :owner
@@ -26,7 +26,7 @@ defmodule ArchiDep.Servers.Events.ServerSetUp do
     :name,
     :ip_address,
     :username,
-    :app_username,
+    :ssh_username,
     :ssh_port,
     :group,
     :owner
@@ -37,7 +37,7 @@ defmodule ArchiDep.Servers.Events.ServerSetUp do
           name: String.t() | nil,
           ip_address: String.t(),
           username: String.t(),
-          app_username: String.t(),
+          ssh_username: String.t(),
           ssh_port: 1..65_535 | nil,
           group: %{
             id: UUID.t(),
@@ -87,7 +87,7 @@ defmodule ArchiDep.Servers.Events.ServerSetUp do
       name: name,
       ip_address: ip_address.address |> :inet.ntoa() |> to_string(),
       username: username,
-      app_username: app_username,
+      ssh_username: app_username,
       ssh_port: ssh_port,
       group: %{
         id: group_id,

@@ -15,6 +15,9 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunRunning do
   @enforce_keys [
     :id,
     :playbook,
+    :host,
+    :port,
+    :user,
     :server,
     :group,
     :owner
@@ -23,6 +26,9 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunRunning do
   defstruct [
     :id,
     :playbook,
+    :host,
+    :port,
+    :user,
     :server,
     :group,
     :owner
@@ -31,6 +37,9 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunRunning do
   @type t :: %__MODULE__{
           id: UUID.t(),
           playbook: String.t(),
+          host: String.t(),
+          port: 1..65_535,
+          user: String.t(),
           server: %{
             id: UUID.t(),
             name: String.t() | nil,
@@ -53,7 +62,10 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunRunning do
     %AnsiblePlaybookRun{
       id: id,
       playbook: playbook,
-      server: server
+      server: server,
+      host: host,
+      port: port,
+      user: user
     } = run
 
     %Server{
@@ -85,6 +97,9 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookRunRunning do
     %__MODULE__{
       id: id,
       playbook: playbook,
+      host: host.address |> :inet.ntoa() |> to_string(),
+      port: port,
+      user: user,
       server: %{
         id: server_id,
         name: server_name,

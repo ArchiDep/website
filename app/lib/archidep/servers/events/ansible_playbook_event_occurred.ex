@@ -36,7 +36,10 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookEventOccurred do
           properties: %{String.t() => term()},
           playbook_run: %{
             id: UUID.t(),
-            playbook: String.t()
+            playbook: String.t(),
+            host: String.t(),
+            port: 1..65_535,
+            user: String.t()
           },
           server: %{
             id: UUID.t(),
@@ -66,7 +69,10 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookEventOccurred do
     %AnsiblePlaybookRun{
       id: run_id,
       playbook: playbook,
-      server: server
+      server: server,
+      host: host,
+      port: port,
+      user: user
     } = run
 
     %Server{
@@ -100,7 +106,10 @@ defmodule ArchiDep.Servers.Events.AnsiblePlaybookEventOccurred do
       properties: properties,
       playbook_run: %{
         id: run_id,
-        playbook: playbook
+        playbook: playbook,
+        host: host.address |> :inet.ntoa() |> to_string(),
+        port: port,
+        user: user
       },
       server: %{
         id: server_id,
