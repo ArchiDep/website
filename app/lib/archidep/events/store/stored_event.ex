@@ -5,8 +5,11 @@ defmodule ArchiDep.Events.Store.StoredEvent do
 
   use Ecto.Schema
 
+  import ArchiDep.Helpers.PipeHelpers
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
   alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Repo
   alias Ecto.Changeset
   alias Ecto.UUID
 
@@ -44,6 +47,13 @@ defmodule ArchiDep.Events.Store.StoredEvent do
     field(:occurred_at, :utc_datetime_usec)
     field(:entity, :map, virtual: true)
   end
+
+  @spec fetch_event(UUID.t()) :: {:ok, __MODULE__.t(map)} | {:error, :event_not_found}
+  def fetch_event(id),
+    do:
+      from(se in __MODULE__, where: se.id == ^id)
+      |> Repo.one()
+      |> truthy_or(:event_not_found)
 
   @doc """
   Creates a new business event with the specified data and metadata.

@@ -9,4 +9,5 @@ defmodule ArchiDep.Events.Context do
   alias ArchiDep.Events.UseCases
 
   implement(&Behaviour.fetch_events/2, UseCases.FetchEvents)
+  implement(&Behaviour.fetch_event/2, UseCases.FetchEvents)
 end

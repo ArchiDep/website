@@ -36,6 +36,19 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
     end)
   end
 
+  @spec fetch_event(Authentication.t(), UUID.t()) ::
+          {:ok, StoredEvent.t(struct)} | {:error, :event_not_found}
+  def fetch_event(auth, id) do
+    with :ok <- validate_uuid(id, :event_not_found),
+         {:ok, event} <- StoredEvent.fetch_event(id),
+         :ok <- authorize(auth, Policy, :events, :fetch_event, event) do
+      {:ok, event}
+    else
+      {:error, {:access_denied, :events, :fetch_event}} -> {:error, :event_not_found}
+      {:error, :event_not_found} -> {:error, :event_not_found}
+    end
+  end
+
   defp before_event(query, nil), do: query
 
   defp before_event(query, {before_id, before_timestamp}),

@@ -27,7 +27,11 @@
     </tr>
   </thead>
   <tbody>
-    <tr :for={event <- @events} class="hover:bg-base-200 hover:even:bg-base-300">
+    <tr
+      :for={event <- @events}
+      class="hover:bg-base-200 hover:even:bg-base-300"
+      phx-click={JS.navigate(~p"/admin/events/#{event.id}")}
+    >
       <td>
         <span class="flex flex-wrap gap-2">
           <.event_context event={event} />

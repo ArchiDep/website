@@ -1,0 +1,74 @@
+<div class="breadcrumbs text-xs">
+  <ul>
+    <li class="text-error">
+      <.link class="flex items-center gap-1" navigate={~p"/admin"}>
+        <Heroicons.fire outline class="size-4" />
+        <span>{gettext("Admin")}</span>
+      </.link>
+    </li>
+    <li>
+      <.link class="flex items-center gap-1" navigate={~p"/admin/events"}>
+        <Heroicons.book_open outline class="size-4" />
+        <span>{gettext("Event Log")}</span>
+      </.link>
+    </li>
+  </ul>
+</div>
+
+<h2 class="my-2 text-2xl font-bold flex items-center gap-x-2">
+  <Heroicons.document_text solid class="size-6" />
+  {gettext("Event")}
+</h2>
+
+<.data_display>
+  <.data_display_element title={gettext("Event ID")} class="font-mono">
+    {@event.id}
+  </.data_display_element>
+  <.data_display_element title={gettext("Context & type")}>
+    <.event_context event={@event} />
+    <.event_action event={@event} />
+  </.data_display_element>
+  <.data_display_element title={gettext("Stream")} class="font-mono">
+    {@event.stream}
+  </.data_display_element>
+  <.data_display_element title={gettext("Version")} class="font-mono">
+    {@event.version}
+  </.data_display_element>
+  <.data_display_element title={gettext("Occurred at")}>
+    {format_date_time(@event.occurred_at)}
+  </.data_display_element>
+  <.data_display_element title={gettext("Initiator")} class="font-mono">
+    {@event.initiator}
+  </.data_display_element>
+  <.data_display_element :if={@causation_event != nil} title={gettext("Immediate cause")}>
+    <.link navigate={~p"/admin/events/#{@causation_event.id}"}>
+      <.event_context event={@causation_event} />
+      <.event_action event={@causation_event} />
+    </.link>
+  </.data_display_element>
+  <.data_display_element :if={@correlation_event != nil} title={gettext("Root cause")}>
+    <.link navigate={~p"/admin/events/#{@correlation_event.id}"}>
+      <.event_context event={@correlation_event} />
+      <.event_action event={@correlation_event} />
+    </.link>
+  </.data_display_element>
+</.data_display>
+
+<div class="mt-8 grid grid-cols-1 xl:grid-cols-3 gap-8">
+  <div class="xl:col-span-2">
+    <div class="card bg-primary/10">
+      <div class="card-body">
+        <h2 class="card-title">Data</h2>
+        <pre class="whitespace-pre-wrap break-all">{Jason.encode!(@event.data, pretty: true)}</pre>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="card bg-info/10">
+      <div class="card-body">
+        <h2 class="card-title">Metadata</h2>
+        <pre class="whitespace-pre-wrap break-all">{Jason.encode!(@event.meta, pretty: true)}</pre>
+      </div>
+    </div>
+  </div>
+</div>

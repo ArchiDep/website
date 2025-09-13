@@ -88,6 +88,7 @@ defmodule ArchiDepWeb.Router do
         live "/classes/:class_id/students/:id", Admin.Classes.StudentLive
         live "/servers/:id", Servers.ServerLive, private: %{scope: :admin}
         live "/events", Admin.Events.EventLogLive
+        live "/events/:id", Admin.Events.EventLive
       end
 
       scope "/servers" do

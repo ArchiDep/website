@@ -12,4 +12,5 @@ defmodule ArchiDep.Events do
   @implementation Application.compile_env!(:archidep, __MODULE__)
 
   delegate(&Behaviour.fetch_events/2)
+  delegate(&Behaviour.fetch_event/2)
 end

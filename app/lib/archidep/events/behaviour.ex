@@ -16,4 +16,12 @@ defmodule ArchiDep.Events.Behaviour do
     ) ::
       list(StoredEvent.t(map))
   )
+
+  @doc """
+  Returns a specific stored event.
+  """
+  callback(
+    fetch_event(auth: Authentication.t(), id: UUID.t()) ::
+      {:ok, StoredEvent.t(map)} | {:error, :event_not_found}
+  )
 end

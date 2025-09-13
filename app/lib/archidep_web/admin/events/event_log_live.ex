@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Admin.Events.EventLogLive do
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Events
   alias ArchiDep.Events.Store.StoredEvent
+  alias Phoenix.LiveView.JS
 
   @limit 50
 
@@ -63,10 +64,8 @@ defmodule ArchiDepWeb.Admin.Events.EventLogLive do
       events: events,
       oldest_event: oldest_event,
       newest_event: newest_event,
-      beginning?: true,
-      end_of_timeline?: false
-      # beginning?: page == :first or (page == :previous and length(events) < @limit),
-      # end_of_timeline?: (page == :first or page == :next) and length(events) < @limit
+      beginning?: page == :first or (page == :previous and length(events) < @limit),
+      end_of_timeline?: (page == :first or page == :next) and length(events) < @limit
     )
   end
 
