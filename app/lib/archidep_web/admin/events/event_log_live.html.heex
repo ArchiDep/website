@@ -17,24 +17,28 @@
 <table class="table table-zebra w-full">
   <thead>
     <tr>
-      <th>
+      <th>Event</th>
+      <%!-- <th>
         <span class="md:hidden">{gettext("Event")}</span>
         <span class="hidden md:inline">{gettext("Context")}</span>
       </th>
       <th class="hidden md:table-cell">{gettext("Action")}</th>
       <th class="hidden md:table-cell">{gettext("Entity")}</th>
-      <th>{gettext("Occurred at")}</th>
+      <th>{gettext("Occurred at")}</th> --%>
     </tr>
   </thead>
   <tbody
     id="event-log-events"
     phx-update="stream"
-    phx-viewport-top={@beginning? && "prev-page"}
-    phx-viewport-bottom={!@end_of_timeline? && "next-page"}
+    phx-viewport-top={@page > 1 && JS.push("prev-page", page_loading: true)}
+    phx-viewport-bottom={!@end_of_timeline? && JS.push("next-page", page_loading: true)}
     phx-page-loading
     class={[
-      if(@beginning?, do: "pt-10", else: "pt-[calc(200vh)]"),
-      if(@end_of_timeline?, do: "pb-10", else: "pb-[calc(200vh)]")
+      if(@page == 1, do: "pt-10", else: "before:content-[''] before:block before:h-[calc(200vh)]"),
+      if(@end_of_timeline?,
+        do: "pb-10",
+        else: "after:content-[''] after:block after:h-[calc(200vh)]"
+      )
     ]}
   >
     <tr
@@ -43,6 +47,9 @@
       class="hover:bg-base-200 hover:even:bg-base-300"
     >
       <td>
+        {event.id}
+      </td>
+      <%!-- <td>
         <span class="flex flex-wrap gap-2">
           <.event_context event={event} />
           <.event_action event={event} extra_class="md:hidden" />
@@ -55,7 +62,7 @@
       <td class="hidden md:table-cell">
         <.event_entity event={event} />
       </td>
-      <td>{format_date_time(event.occurred_at)}</td>
+      <td>{format_date_time(event.occurred_at)}</td> --%>
     </tr>
   </tbody>
 </table>
