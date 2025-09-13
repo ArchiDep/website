@@ -16,7 +16,13 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
   def fetch_events(auth, opts) do
     authorize!(auth, Policy, :events, :fetch_events, nil)
 
-    events = opts |> base_query() |> before_event(opts) |> after_event(opts) |> Repo.all()
+    events =
+      opts
+      |> base_query()
+      |> before_event(Keyword.get(opts, :older_than))
+      |> after_event(Keyword.get(opts, :newer_than))
+      |> Repo.all()
+
     streams = events |> Enum.map(& &1.stream) |> Enum.uniq()
 
     entities =
@@ -30,37 +36,27 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
     end)
   end
 
-  defp before_event(query, opts) do
-    if before = Keyword.get(opts, :older_than) do
-      before_id = before.id
-      before_timestamp = before.occurred_at
+  defp before_event(query, nil), do: query
 
+  defp before_event(query, {before_id, before_timestamp}),
+    do:
       from(se in query,
         where:
           se.id != ^before_id and
             (se.occurred_at < ^before_timestamp or
                (se.occurred_at == ^before_timestamp and se.id > ^before_id))
       )
-    else
-      query
-    end
-  end
 
-  defp after_event(query, opts) do
-    if aftr = Keyword.get(opts, :newer_than) do
-      after_id = aftr.id
-      after_timestamp = aftr.occurred_at
+  defp after_event(query, nil), do: query
 
+  defp after_event(query, {after_id, after_timestamp}),
+    do:
       from(se in query,
         where:
           se.id != ^after_id and
             (se.occurred_at > ^after_timestamp or
                (se.occurred_at == ^after_timestamp and se.id < ^after_id))
       )
-    else
-      query
-    end
-  end
 
   defp base_query(opts) do
     limit = opts |> Keyword.fetch!(:limit) |> validate_limit()
