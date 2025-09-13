@@ -5,6 +5,8 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
 
   use ArchiDepWeb, :component
 
+  alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
+  alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
@@ -125,13 +127,13 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
         </span>
         """
 
-      %UserAccount{username: username} ->
-        assigns = assign(assigns, :username, username)
+      %UserAccount{} = user_account ->
+        assigns = assign(assigns, :name, determine_user_account_display_name(user_account))
 
         ~H"""
         <span class={"flex items-center #{@extra_class}"}>
           <Heroicons.user solid class="size-6 mr-1" />
-          <span>{@username}</span>
+          <span>{@name}</span>
         </span>
         """
 
@@ -150,6 +152,23 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
           <span>{gettext("unknown")}</span>
         </span>
         """
+    end
+  end
+
+  defp determine_user_account_display_name(%UserAccount{
+         username: username,
+         switch_edu_id: %SwitchEduId{first_name: first_name, last_name: last_name},
+         preregistered_user: preregistered_user
+       }) do
+    case {username, first_name, last_name, preregistered_user} do
+      {_u, _f, _l, %PreregisteredUser{name: preregistered_name}} ->
+        preregistered_name
+
+      {_u, f, l, _pu} when f != nil or l != nil ->
+        [f, l] |> Enum.filter(& &1) |> Enum.join(" ")
+
+      {u, _f, _l, _pu} ->
+        u
     end
   end
 end

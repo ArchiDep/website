@@ -95,7 +95,13 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
       end)
 
   defp fetch_entities_by_type({"accounts:user-accounts", ids}) when is_list(ids),
-    do: from(ua in UserAccount, where: ua.id in ^ids)
+    do:
+      from(ua in UserAccount,
+        where: ua.id in ^ids,
+        join: sei in assoc(ua, :switch_edu_id),
+        left_join: pu in assoc(ua, :preregistered_user),
+        preload: [switch_edu_id: sei, preregistered_user: pu]
+      )
 
   defp fetch_entities_by_type({"course:classes", ids}) when is_list(ids),
     do: from(c in Class, where: c.id in ^ids)
