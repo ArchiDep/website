@@ -192,7 +192,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     <div class={["card card-xs"] ++ @card_classes} phx-click={JS.navigate(@details_link)}>
       <div class="card-body">
         <div class="card-title flex flex-wrap justify-between">
-          <h2 class="flex items-center gap-x-2">
+          <div class="flex items-center gap-x-2">
             <Heroicons.server solid class="size-4" />
             <span class="tooltip">
               <div class="tooltip-content font-mono">
@@ -200,7 +200,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
               </div>
               {server_owner_name(@server)}
             </span>
-          </h2>
+          </div>
           <div class="tooltip flex items-center gap-2 font-normal">
             {@short_status}
             <Heroicons.bolt
