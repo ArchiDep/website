@@ -17,8 +17,8 @@ defmodule ArchiDep.Release do
     :ok
   end
 
-  @spec rollback(Ecto.Repo.t(), integer()) :: :ok
-  def rollback(repo, version) do
+  @spec rollback(Ecto.Repo.t(), integer(), :yes_i_know_what_i_am_doing) :: :ok
+  def rollback(repo, version, :yes_i_know_what_i_am_doing) do
     load_app()
 
     {:ok, _fun_return, _apps} =
