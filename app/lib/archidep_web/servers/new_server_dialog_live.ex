@@ -25,21 +25,23 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
   def update(assigns, socket) do
     auth = assigns.auth
 
+    owner = ServerOwner.fetch_authenticated(auth)
+
     socket
     |> assign(assigns)
     |> assign(
-      form: to_form(ServerForm.create_changeset(%{}), as: :server),
-      owner: ServerOwner.fetch_authenticated(auth)
+      form: init_form(owner),
+      owner: owner
     )
     |> ok()
   end
 
   @impl LiveComponent
 
-  def handle_event("closed", _params, socket),
+  def handle_event("closed", _params, %Socket{assigns: %{owner: owner}} = socket),
     do:
       socket
-      |> assign(form: to_form(ServerForm.create_changeset(%{}), as: :server))
+      |> assign(form: init_form(owner))
       |> noreply()
 
   def handle_event("validate", %{"server" => params}, socket) do
@@ -94,5 +96,15 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
         |> assign(form: to_form(changeset, as: :server))
         |> noreply()
     end
+  end
+
+  defp init_form(owner) do
+    default_username =
+      case owner.group_member do
+        %ServerGroupMember{username: username} -> username
+        _anything_else -> nil
+      end
+
+    to_form(ServerForm.create_changeset(%{username: default_username}), as: :server)
   end
 end
