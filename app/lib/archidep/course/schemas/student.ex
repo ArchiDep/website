@@ -317,6 +317,9 @@ defmodule ArchiDep.Course.Schemas.Student do
       message:
         "must contain only letters (without accents), numbers and hyphens, and start with a letter"
     )
+    |> validate_exclusion(:username, ["archidep"],
+      message: "this username is reserved and cannot be used"
+    )
     |> unique_constraint(:username, name: :students_username_unique)
     |> unsafe_validate_username_unique(student.id, student.class_id)
   end

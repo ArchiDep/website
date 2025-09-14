@@ -34,6 +34,7 @@ defmodule ArchiDep.Support.DataCase do
       alias ArchiDep.Events.Store.EventReference
       alias ArchiDep.Events.Store.StoredEvent
       alias ArchiDep.Repo
+      alias Ecto.Changeset
     end
   end
 
@@ -92,7 +93,7 @@ defmodule ArchiDep.Support.DataCase do
       assert %{password: ["password is too short"]} = errors_on(changeset)
   """
   @spec errors_on(Changeset.t()) :: %{optional(atom()) => [String.t()]}
-  def errors_on(changeset),
+  def errors_on(%Changeset{valid?: false} = changeset),
     do:
       Changeset.traverse_errors(changeset, fn {message, opts} ->
         Regex.replace(~r"%{(\w+)}", message, fn _whole_match, key ->
