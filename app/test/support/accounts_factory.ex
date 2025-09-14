@@ -124,6 +124,8 @@ defmodule ArchiDep.Support.AccountsFactory do
     {switch_edu_id, attrs!} =
       Map.pop_lazy(attrs!, :switch_edu_id, fn -> build(:switch_edu_id) end)
 
+    {preregistered_user_id, attrs!} = Map.pop(attrs!, :preregistered_user_id, nil)
+
     {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
 
     [] = Map.keys(attrs!)
@@ -136,7 +138,7 @@ defmodule ArchiDep.Support.AccountsFactory do
       switch_edu_id: switch_edu_id,
       switch_edu_id_id: switch_edu_id.id,
       preregistered_user: nil,
-      preregistered_user_id: nil,
+      preregistered_user_id: preregistered_user_id,
       version: version,
       created_at: created_at,
       updated_at: updated_at

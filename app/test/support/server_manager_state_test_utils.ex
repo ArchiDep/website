@@ -5,10 +5,9 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
 
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
+  import Ecto.Query, only: [from: 2]
   import ExUnit.Assertions
   import ExUnit.Callbacks
-  alias ArchiDep.Accounts.Schemas.UserAccount
-  alias ArchiDep.Course.Schemas.User
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
@@ -96,33 +95,35 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
 
     {root, opts!} = Keyword.pop_lazy(opts!, :root, &FactoryHelpers.bool/0)
 
-    member =
+    user_account =
       if root do
-        nil
+        AccountsFactory.insert(:user_account, active: true, root: true)
       else
-        user_account = AccountsFactory.insert(:user_account, active: true)
-        {:ok, user} = User.fetch_user(user_account.id)
-
         student =
           CourseFactory.insert(:student,
             active: true,
             class: class,
             class_id: group.id,
-            user: user,
-            user_id: user.id
+            user: nil
           )
 
-        student.id |> ServerGroupMember.fetch_server_group_member() |> unpair_ok()
+        user_account =
+          AccountsFactory.insert(:user_account,
+            root: false,
+            active: true,
+            preregistered_user_id: student.id
+          )
+
+        student_id = student.id
+
+        Repo.update_all(from(sgm in ServerGroupMember, where: sgm.id == ^student_id),
+          set: [owner_id: user_account.id]
+        )
+
+        user_account
       end
 
-    owner =
-      if member do
-        Repo.update_all(UserAccount, set: [preregistered_user_id: member.id])
-        member.owner_id |> ServerOwner.fetch_server_owner() |> unpair_ok()
-      else
-        user_account = AccountsFactory.insert(:user_account, active: true, root: true)
-        user_account.id |> ServerOwner.fetch_server_owner() |> unpair_ok()
-      end
+    owner = user_account.id |> ServerOwner.fetch_server_owner() |> unpair_ok()
 
     id = UUID.generate()
 
