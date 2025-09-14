@@ -11,7 +11,7 @@ defmodule ArchiDepWeb.Components.FormComponents do
   def field_help(assigns) do
     ~H"""
     <div class="flex items-start gap-x-1">
-      <Heroicons.information_circle class="size-4 shrink-0 text-info/85" />
+      <Heroicons.information_circle class="mt-0.5 size-4 shrink-0 text-info/85" />
       <div class="text-sm text-info/85">{render_slot(@inner_block)}</div>
     </div>
     """

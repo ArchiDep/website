@@ -68,6 +68,41 @@ defmodule ArchiDepWeb.Components.CoreComponents do
   end
 
   attr :rest, :global, doc: "arbitrary HTML attributes to add to the note container"
+  slot :inner_block, required: true, doc: "the informational text to display"
+
+  @spec info_note(map()) :: Rendered.t()
+  def info_note(assigns) do
+    ~H"""
+    <div class={["note note-info", Map.get(@rest, :class)]} {@rest}>
+      <div class="title">
+        <Heroicons.information_circle class="size-6" />
+        <span>Note</span>
+      </div>
+      <div class="content">
+        {render_slot(@inner_block)}
+      </div>
+    </div>
+    """
+  end
+
+  attr :rest, :global, doc: "arbitrary HTML attributes to add to the note container"
+  slot :inner_block, required: true, doc: "the informational text to display"
+
+  @spec more_note(map()) :: Rendered.t()
+  def more_note(assigns) do
+    ~H"""
+    <div class={["note note-more", Map.get(@rest, :class)]} {@rest}>
+      <div class="title">
+        📚 <span>More information</span>
+      </div>
+      <div class="content">
+        {render_slot(@inner_block)}
+      </div>
+    </div>
+    """
+  end
+
+  attr :rest, :global, doc: "arbitrary HTML attributes to add to the note container"
   slot :inner_block, required: true, doc: "the troubleshooting instruction to display"
 
   @spec troubleshooting_note(map()) :: Rendered.t()

@@ -25,6 +25,10 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
   attr :on_close, JS, default: nil, doc: "optional JS to execute when the form is closed"
   attr :target, :string, default: nil, doc: "the target for the form submission"
 
+  slot :header,
+    required: false,
+    doc: "optional header displayed at the top of the form, below the title"
+
   slot :footer,
     required: false,
     doc: "optional footer displayed at the bottom of the form, above the actions"
@@ -47,6 +51,8 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
         <legend class="fieldset-legend w-full">
           <h3 class="w-full text-lg font-bold">{@title}</h3>
         </legend>
+
+        {render_slot(@header)}
 
         <label class="fieldset-label mt-2">{gettext("Name")}</label>
         <input
@@ -107,6 +113,9 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           placeholder={gettext("e.g. 1.2.3.4")}
         />
         <.errors_for field={@form[:ip_address]} />
+        <.field_help>
+          {gettext("The public IP address of your cloud server.")}
+        </.field_help>
 
         <label class="fieldset-label required mt-2">{gettext("Username")}</label>
         <input
@@ -118,6 +127,11 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           placeholder={gettext("e.g. jde")}
         />
         <.errors_for field={@form[:username]} />
+        <.field_help>
+          {gettext(
+            "The name of your Unix user account on the server. This user must be an administrative user account that has sudo privileges without password."
+          )}
+        </.field_help>
 
         <%= if root?(@auth) do %>
           <label class="fieldset-label mt-2">{gettext("Application username")}</label>

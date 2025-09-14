@@ -84,7 +84,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
       |> send_notification(
         Message.new(
           :success,
-          gettext("Created server {server}", server: Server.name_or_default(created_server))
+          gettext("Registered server {server}", server: Server.name_or_default(created_server))
         )
       )
       |> push_event("execute-action", %{to: "##{id()}", action: "close"})

@@ -10,11 +10,36 @@
       form={@form}
       group={get_in(@owner.group_member.group)}
       groups={@groups}
-      title={gettext("New Server")}
+      title={gettext("Register Server")}
       on_submit="create"
       on_close={close()}
       target={@myself}
-    />
+    >
+      <:header>
+        <.more_note class="text-base">
+          <div class="flex flex-col gap-2">
+            <p>
+              {gettext("""
+                This form allows you to register the existing cloud server you
+                have created by following our exercise. We will connect to your
+                server and verify that you have set it up correctly for the
+                purposes of the course. We will also create our own user account
+                on the server to facilitate future debugging and to help you if
+                you lose your own access.
+              """)}
+            </p>
+            <p>
+              {gettext("""
+                Note that by following the exercise and registering your server
+                here, you are effectively giving us full administrative access
+                to your server. Do not use this form to register a production
+                server or any server that contains sensitive data.
+              """)}
+            </p>
+          </div>
+        </.more_note>
+      </:header>
+    </.server_form>
   </div>
   <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
     <button type="submit">{gettext("Close")}</button>
