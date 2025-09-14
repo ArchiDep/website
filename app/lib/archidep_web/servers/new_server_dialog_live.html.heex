@@ -16,7 +16,7 @@
       target={@myself}
     >
       <:header>
-        <.more_note class="text-base">
+        <.more_note :if={not root?(@auth)} class="text-base">
           <div class="flex flex-col gap-2">
             <p>
               {gettext("""

@@ -72,15 +72,23 @@
 >
   <div class="hero-content p-10 text-center">
     <div class="max-w-md">
-      <div class="badge badge-outline badge-accent badge-lg">{gettext("Action Required!")}</div>
+      <div :if={not root?(@auth)} class="badge badge-outline badge-accent badge-lg">
+        {gettext("Action Required!")}
+      </div>
       <h1 class="mt-2 text-5xl font-bold">{gettext("Let's get started!")}</h1>
-      <p class="py-6">
-        {gettext("The time has come to get your own server!")}
-      </p>
-      <div class="text-5xl animate-bounce">🎉</div>
-      <p class="pt-3 pb-6">
-        {gettext("Register your first server to get started.")}
-      </p>
+      <%= if root?(@auth) do %>
+        <p class="py-6">
+          {gettext("You are root. Register as many servers as you like.")}
+        </p>
+      <% else %>
+        <p class="py-6">
+          {gettext("The time has come to get your own server!")}
+        </p>
+        <div class="text-5xl animate-bounce">🎉</div>
+        <p class="pt-3 pb-6">
+          {gettext("Register your first server to get started.")}
+        </p>
+      <% end %>
       <div class="join">
         <.link
           :if={Enum.any?(@inactive_servers)}
