@@ -365,7 +365,7 @@ defmodule ArchiDep.Course.Schemas.Student do
       )
       |> unique_constraint(:username, name: :students_username_unique)
       # Domain
-      |> validate_length(:domain, max: 20)
+      |> validate_length(:domain, max: 50)
       |> validate_format(:domain, ~r/\A[a-z0-9][\-a-z0-9]*(?:\.[a-z][\-a-z0-9]*)+\z/i,
         message:
           "must be a valid domain name containing only letters (without accents), numbers and hyphens"
