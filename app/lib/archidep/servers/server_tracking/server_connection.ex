@@ -42,7 +42,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
     do: GenServer.call(name(server), {:connect, host, port, username, options}, 45_000)
 
   @spec run_command(Server.t(), String.t(), pos_integer()) ::
-          {:ok, String.t(), String.t(), 0..255} | {:error, term()}
+          {:ok, String.t(), String.t(), 0..255} | {:error, :not_connected} | {:error, term()}
   def run_command(server, command, timeout),
     do: GenServer.call(name(server), {:run_command, command}, timeout)
 

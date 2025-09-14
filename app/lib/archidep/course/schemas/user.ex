@@ -16,6 +16,7 @@ defmodule ArchiDep.Course.Schemas.User do
   @type t :: %__MODULE__{
           id: UUID.t(),
           username: String.t(),
+          active: boolean(),
           student: Student.t() | nil | NotLoaded.t(),
           student_id: UUID.t() | nil,
           version: pos_integer(),
@@ -25,6 +26,7 @@ defmodule ArchiDep.Course.Schemas.User do
 
   schema "user_accounts" do
     field(:username, :string)
+    field(:active, :boolean)
     belongs_to(:student, Student)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
@@ -62,6 +64,7 @@ defmodule ArchiDep.Course.Schemas.User do
         %{
           id: id,
           username: username,
+          active: active,
           preregistered_user: %{id: student_id} = preregistered_user,
           version: version,
           updated_at: updated_at
@@ -71,6 +74,7 @@ defmodule ArchiDep.Course.Schemas.User do
     %__MODULE__{
       user
       | username: username,
+        active: active,
         student: Student.refresh!(student, preregistered_user),
         version: version,
         updated_at: updated_at
@@ -82,6 +86,7 @@ defmodule ArchiDep.Course.Schemas.User do
           user,
         %{
           id: id,
+          active: active,
           group_member: %{id: student_id} = member,
           version: version,
           updated_at: updated_at
@@ -90,7 +95,8 @@ defmodule ArchiDep.Course.Schemas.User do
       when version == current_version + 1 do
     %__MODULE__{
       user
-      | student: Student.refresh!(student, member),
+      | active: active,
+        student: Student.refresh!(student, member),
         version: version,
         updated_at: updated_at
     }

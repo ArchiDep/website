@@ -67,6 +67,43 @@ defmodule ArchiDep.Course.Schemas.Student do
         active?(member, now) and
           (servers_enabled or Class.allows_server_creation?(class, now))
 
+  @spec find_active_registered_student_by_name(
+          String.t(),
+          DateTime.t()
+        ) ::
+          {:ok, t()}
+          | {:error, {:multiple_students_found, list(String.t())}}
+          | {:error, :student_not_found}
+  def find_active_registered_student_by_name(name, time) do
+    case list_active_registered_students_by_name(name, time) do
+      [] ->
+        {:error, :student_not_found}
+
+      [student] ->
+        {:ok, student}
+
+      multiple_students ->
+        {:error, {:multiple_students_found, Enum.map(multiple_students, & &1.name)}}
+    end
+  end
+
+  defp list_active_registered_students_by_name(name, time) do
+    lowercase_name = "%#{String.downcase(name)}%"
+
+    Repo.all(
+      from(s in __MODULE__,
+        join: c in assoc(s, :class),
+        join: u in assoc(s, :user),
+        where:
+          s.active and
+            c.active and (is_nil(c.start_date) or c.start_date <= ^time) and
+            (is_nil(c.end_date) or c.end_date >= ^time) and u.active and
+            ilike(fragment("LOWER(?)", s.name), ^lowercase_name),
+        preload: [class: c, user: u]
+      )
+    )
+  end
+
   @spec list_students_in_class(UUID.t()) :: list(t())
   def list_students_in_class(class_id),
     do:

@@ -86,6 +86,20 @@ defmodule ArchiDep.Servers.Schemas.Server do
   @spec set_up?(t()) :: boolean()
   def set_up?(%__MODULE__{set_up_at: set_up_at}), do: set_up_at != nil
 
+  @spec find_active_server_for_group_member(UUID.t()) :: {:ok, t()} | {:error, :server_not_found}
+  def find_active_server_for_group_member(group_member_id) do
+    case Repo.all(
+           from(s in __MODULE__,
+             join: o in assoc(s, :owner),
+             where: s.active and o.group_member_id == ^group_member_id
+           )
+         ) do
+      [server] -> {:ok, server}
+      [] -> {:error, :server_not_found}
+      multiple_servers -> {:error, {:multiple_servers_found, Enum.map(multiple_servers, & &1.id)}}
+    end
+  end
+
   @spec name_or_default(t()) :: String.t()
   def name_or_default(%__MODULE__{name: nil} = server), do: ssh_connection_description(server)
   def name_or_default(%__MODULE__{name: name}), do: name

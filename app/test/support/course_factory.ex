@@ -205,6 +205,8 @@ defmodule ArchiDep.Support.CourseFactory do
         sequence(:user_username, &"user-account-#{&1}")
       end)
 
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+
     {student, attrs!} =
       Map.pop_lazy(attrs!, :student, fn -> build(:student) end)
 
@@ -224,6 +226,7 @@ defmodule ArchiDep.Support.CourseFactory do
     %User{
       id: id,
       username: username,
+      active: active,
       student: student,
       student_id: student_id,
       version: version,
