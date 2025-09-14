@@ -30,27 +30,53 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: true
 
-  # Server group members can validate servers for their own group.
+  # Server group members can validate servers for their own group provided that
+  # they have confirmed their username and that servers are enabled at either
+  # the group's or the member's level.
   def authorize(
         :servers,
         :validate_server,
         %Authentication{root: false},
-        {_data, %ServerGroup{id: group_id},
-         %ServerOwner{group_member: %ServerGroupMember{group_id: group_id}}}
-      ),
+        {_data,
+         %ServerGroup{
+           id: group_id,
+           servers_enabled: group_servers_enabled
+         },
+         %ServerOwner{
+           group_member: %ServerGroupMember{
+             group_id: group_id,
+             servers_enabled: member_servers_enabled,
+             username_confirmed: true
+           }
+         }}
+      )
+      when group_servers_enabled or member_servers_enabled,
       do: true
 
-  # Server group members can create servers in their own group.
+  # Server group members can create servers in their own group provided that
+  # they have confirmed their username and that servers are enabled at either
+  # the group's or the member's level.
   def authorize(
         :servers,
         :create_server,
         %Authentication{root: false},
-        {_data, %ServerGroup{id: group_id},
-         %ServerOwner{group_member: %ServerGroupMember{group_id: group_id}}}
-      ),
+        {_data,
+         %ServerGroup{
+           id: group_id,
+           servers_enabled: group_servers_enabled
+         },
+         %ServerOwner{
+           group_member: %ServerGroupMember{
+             group_id: group_id,
+             servers_enabled: member_servers_enabled,
+             username_confirmed: true
+           }
+         }}
+      )
+      when group_servers_enabled or member_servers_enabled,
       do: true
 
-  # Server group members can list their own servers.
+  # Normal users can list their own servers.
   def authorize(
         :servers,
         :list_my_servers,
@@ -59,7 +85,7 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: true
 
-  # Server group members can fetch a server that belongs to them.
+  # Normal users can fetch a server that belongs to them.
   def authorize(
         :servers,
         :fetch_server,
@@ -68,7 +94,7 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: true
 
-  # Server group members can retry connecting to their own servers.
+  # Normal users can retry connecting to their own servers.
   def authorize(
         :servers,
         :retry_connecting,
@@ -77,7 +103,7 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: true
 
-  # Server group members can retry checking open ports on their own servers.
+  # Normal users can retry checking open ports on their own servers.
   def authorize(
         :servers,
         :retry_checking_open_ports,
@@ -86,22 +112,48 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: true
 
-  # Server group members can validate their own existing servers.
+  # Normal users can validate updates to their own existing servers as long as
+  # they have confirmed their username and that servers are enabled at either
+  # the group's or the member's level.
   def authorize(
         :servers,
         :validate_existing_server,
         %Authentication{principal_id: principal_id, root: false},
-        %Server{owner_id: principal_id}
-      ),
+        %Server{
+          group: %ServerGroup{id: group_id, servers_enabled: group_servers_enabled},
+          owner: %ServerOwner{
+            id: principal_id,
+            group_member: %ServerGroupMember{
+              group_id: group_id,
+              servers_enabled: member_servers_enabled,
+              username_confirmed: true
+            }
+          }
+        }
+      )
+      when group_servers_enabled or member_servers_enabled,
       do: true
 
-  # Server group members can update their own servers.
+  # Normal users can update their own servers as long as they have confirmed
+  # their username and that servers are enabled at either the group's or the
+  # member's level.
   def authorize(
         :servers,
         :update_server,
         %Authentication{principal_id: principal_id, root: false},
-        %Server{owner_id: principal_id}
-      ),
+        %Server{
+          group: %ServerGroup{id: group_id, servers_enabled: group_servers_enabled},
+          owner: %ServerOwner{
+            id: principal_id,
+            group_member: %ServerGroupMember{
+              group_id: group_id,
+              servers_enabled: member_servers_enabled,
+              username_confirmed: true
+            }
+          }
+        }
+      )
+      when group_servers_enabled or member_servers_enabled,
       do: true
 
   def authorize(_context, _action, _auth, _params), do: false
