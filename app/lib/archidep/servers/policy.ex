@@ -59,15 +59,6 @@ defmodule ArchiDep.Servers.Policy do
       ),
       do: true
 
-  # Server group members can list their own active servers.
-  def authorize(
-        :servers,
-        :list_my_active_servers,
-        %Authentication{root: false},
-        _params
-      ),
-      do: true
-
   # Server group members can fetch a server that belongs to them.
   def authorize(
         :servers,

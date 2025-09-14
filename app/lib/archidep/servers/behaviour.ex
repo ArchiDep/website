@@ -88,11 +88,6 @@ defmodule ArchiDep.Servers.Behaviour do
   callback(list_my_servers(auth: Authentication.t()) :: list(Server.t()))
 
   @doc """
-  Lists all active servers owned by the authenticated user.
-  """
-  callback(list_my_active_servers(auth: Authentication.t()) :: list(Server.t()))
-
-  @doc """
   Lists all servers in a server group.
   """
   callback(

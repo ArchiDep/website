@@ -29,7 +29,6 @@ defmodule ArchiDep.Servers.Context do
   implement(&Behaviour.validate_server/3, UseCases.CreateServer)
   implement(&Behaviour.create_server/3, UseCases.CreateServer)
   implement(&Behaviour.list_my_servers/1, UseCases.ReadServers)
-  implement(&Behaviour.list_my_active_servers/1, UseCases.ReadServers)
   implement(&Behaviour.fetch_server/2, UseCases.ReadServers)
   implement(&Behaviour.validate_existing_server/3, UseCases.UpdateServer)
   implement(&Behaviour.update_server/3, UseCases.UpdateServer)
