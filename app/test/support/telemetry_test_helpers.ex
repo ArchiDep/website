@@ -3,6 +3,7 @@ defmodule ArchiDep.Support.TelemetryTestHelpers do
   Helpers for working with telemetry events in tests.
   """
 
+  import ExUnit.Callbacks
   import ExUnit.Assertions
 
   @spec attach_telemetry_handler!(%{test: atom(), test_pid: pid()}, list(atom())) :: :ok
@@ -22,6 +23,10 @@ defmodule ArchiDep.Support.TelemetryTestHelpers do
         end,
         nil
       )
+
+    on_exit(fn ->
+      :ok = :telemetry.detach(handler_id)
+    end)
   end
 
   @spec assert_telemetry_event!(list(atom())) :: %{
