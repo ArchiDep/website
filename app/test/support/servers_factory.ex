@@ -708,7 +708,13 @@ defmodule ArchiDep.Support.ServersFactory do
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
 
     {group_member, attrs!} =
-      Map.pop_lazy(attrs!, :group_member, optionally(fn -> build(:server_group_member) end))
+      Map.pop_lazy(attrs!, :group_member, fn ->
+        if root do
+          nil
+        else
+          build(:server_group_member)
+        end
+      end)
 
     {group_member_id, attrs!} =
       Map.pop_lazy(attrs!, :group_member_id, fn ->
@@ -804,24 +810,24 @@ defmodule ArchiDep.Support.ServersFactory do
   end
 
   @spec random_server_data() :: Types.server_data()
-  @spec random_server_data(map()) :: Types.server_data()
-  def random_server_data(attrs! \\ %{}) do
-    {name, attrs!} = Map.pop_lazy(attrs!, :name, optionally(&Faker.Person.name/0))
+  @spec random_server_data(Keyword.t()) :: Types.server_data()
+  def random_server_data(attrs! \\ []) do
+    {name, attrs!} = Keyword.pop_lazy(attrs!, :name, optionally(&Faker.Person.name/0))
 
     {ip_address, attrs!} =
-      Map.pop_lazy(attrs!, :ip_address, fn ->
+      Keyword.pop_lazy(attrs!, :ip_address, fn ->
         NetFactory.ip_address() |> :inet.ntoa() |> to_string()
       end)
 
-    {username, attrs!} = Map.pop_lazy(attrs!, :username, &Faker.Internet.user_name/0)
-    {ssh_port, attrs!} = Map.pop_lazy(attrs!, :ssh_port, &NetFactory.port/0)
-    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
-    {app_username, attrs!} = Map.pop_lazy(attrs!, :app_username, &Faker.Internet.user_name/0)
+    {username, attrs!} = Keyword.pop_lazy(attrs!, :username, &Faker.Internet.user_name/0)
+    {ssh_port, attrs!} = Keyword.pop_lazy(attrs!, :ssh_port, &NetFactory.port/0)
+    {active, attrs!} = Keyword.pop_lazy(attrs!, :active, &bool/0)
+    {app_username, attrs!} = Keyword.pop_lazy(attrs!, :app_username, &Faker.Internet.user_name/0)
 
     {expected_properties, attrs!} =
-      Map.pop_lazy(attrs!, :expected_properties, &random_server_properties/0)
+      Keyword.pop_lazy(attrs!, :expected_properties, &random_server_properties/0)
 
-    [] = Map.keys(attrs!)
+    [] = Keyword.keys(attrs!)
 
     %{
       name: name,

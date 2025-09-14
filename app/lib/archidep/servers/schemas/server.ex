@@ -255,6 +255,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       updated_at: now
     )
     |> validate_new_server()
+    |> validate_username_and_app_username()
   end
 
   @spec new_group_member_server(Types.server_data(), ServerOwner.t()) ::
@@ -287,6 +288,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
       updated_at: now
     )
     |> validate_new_server()
+    |> validate_exclusion(:username, ["archidep"],
+      message: "this username is reserved and cannot be used"
+    )
     |> validate_change(:active, fn :active, active ->
       if active and ServerOwner.active_server_limit_reached?(owner) do
         [
@@ -320,6 +324,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate_existing_server(id)
+    |> validate_username_and_app_username()
   end
 
   @spec update_group_member_server(t(), Types.server_data(), ServerOwner.t()) ::
@@ -339,6 +344,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate_existing_server(id)
+    |> validate_exclusion(:username, ["archidep"],
+      message: "this username is reserved and cannot be used"
+    )
     |> validate_change(:active, fn :active, active ->
       if active and ServerOwner.active_server_limit_reached?(owner) do
         [
@@ -478,7 +486,6 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> unique_constraint(:ip_address)
     |> assoc_constraint(:owner)
     |> validate_length(:app_username, max: 32)
-    |> validate_username_and_app_username()
   end
 
   defp validate_username_and_app_username(changeset) do
@@ -493,9 +500,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end
   end
 
-  defp validate_username_and_app_username(changeset, username, app_username)
-       when username != nil and username == app_username,
-       do: add_error(changeset, :app_username, "cannot be the same as the username")
+  defp validate_username_and_app_username(changeset, username, username) when is_binary(username),
+    do: add_error(changeset, :app_username, "cannot be the same as the username")
 
   defp validate_username_and_app_username(changeset, _username, _app_username), do: changeset
 

@@ -895,7 +895,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       )
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
-    data = ServersFactory.random_server_data(%{username: ""})
+    data = ServersFactory.random_server_data(username: "")
 
     assert {^initial_state,
             {:error,

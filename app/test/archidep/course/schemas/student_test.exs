@@ -1,10 +1,10 @@
-defmodule ArchiDep.Course.Schemas.StudentExclusionConstraintTest do
+defmodule ArchiDep.Course.Schemas.StudentTest do
   use ArchiDep.Support.DataCase, async: true
 
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Support.CourseFactory
 
-  test "exclusion constraint: only one of root or preregistered_user_id is true" do
+  test "a student cannot choose the 'archidep' username" do
     student = CourseFactory.build(:student)
 
     changeset = Student.configure_changeset(student, %{username: "archidep"})
