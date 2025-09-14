@@ -71,6 +71,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
     socket
     |> assign(
       active_classes: active_classes,
+      page_title: gettext("Admin"),
       servers_by_class_id: servers_by_class_id,
       server_state_map: ServerTracker.server_state_map(all_servers),
       server_tracker: tracker,

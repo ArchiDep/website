@@ -24,7 +24,7 @@ defmodule ArchiDepWeb.Admin.Events.EventLive do
 
         socket
         |> assign(
-          page_title: "#{gettext("ArchiDep")} > #{gettext("Event Log")}",
+          page_title: "#{gettext("Event Log")} · #{gettext("Admin")}",
           event: event,
           causation_event: causation_event,
           correlation_event: correlation_event

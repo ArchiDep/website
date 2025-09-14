@@ -30,7 +30,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
 
     socket
     |> assign(
-      page_title: "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Ansible")}",
+      page_title: "#{gettext("Ansible")} · #{gettext("Admin")}",
       now: DateTime.utc_now(),
       playbook_runs: Servers.fetch_ansible_playbook_runs(auth),
       tracked_playbooks: tracked_playbooks,

@@ -27,8 +27,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
 
         socket
         |> assign(
-          page_title:
-            "#{gettext("ArchiDep")} > #{gettext("Servers")} > #{Server.name_or_default(server)}",
+          page_title: Server.name_or_default(server),
           server: server,
           state: ServerTracker.get_current_server_state(server)
         )

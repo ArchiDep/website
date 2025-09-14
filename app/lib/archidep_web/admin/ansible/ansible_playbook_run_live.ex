@@ -14,7 +14,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsiblePlaybookRunLive do
 
     socket
     |> assign(
-      page_title: "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Ansible")}",
+      page_title: "#{gettext("Ansible")} · #{gettext("Admin")}",
       playbook_run: auth |> Servers.fetch_ansible_playbook_run(run_id) |> unpair_ok(),
       now: DateTime.utc_now()
     )

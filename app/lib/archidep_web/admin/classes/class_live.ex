@@ -44,8 +44,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
       socket
       |> assign(
-        page_title:
-          "#{gettext("ArchiDep")} > #{gettext("Admin")} > #{gettext("Classes")} > #{class.name}",
+        page_title: "#{class.name} · #{gettext("Admin")}",
         class: class,
         server_group: server_group,
         server_ids: {server_ids, server_ids_reducer},

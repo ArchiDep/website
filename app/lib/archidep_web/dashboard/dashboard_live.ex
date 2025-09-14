@@ -59,6 +59,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
     socket
     |> assign(
+      page_title: gettext("Dashboard"),
       student: student,
       servers: active_servers,
       inactive_servers: inactive_servers |> Enum.map(& &1.id) |> MapSet.new(),

@@ -19,7 +19,10 @@ defmodule ArchiDepWeb.Admin.Events.EventLogLive do
     end
 
     socket
-    |> assign(page_title: "#{gettext("ArchiDep")} > #{gettext("Event Log")}", events: [])
+    |> assign(
+      page_title: "#{gettext("Event Log")} · #{gettext("Admin")}",
+      events: []
+    )
     |> paginate_events(:first)
     |> ok()
   end
