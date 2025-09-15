@@ -19,14 +19,25 @@
         <.more_note :if={not root?(@auth)} class="text-base">
           <div class="flex flex-col gap-2">
             <p>
-              {gettext("""
-                This form allows you to register the existing cloud server you
-                have created by following our exercise. We will connect to your
-                server and verify that you have set it up correctly for the
-                purposes of the course. We will also create our own user account
-                on the server to facilitate future debugging and to help you if
-                you lose your own access.
-              """)}
+              {gettext(
+                """
+                  This form allows you to register the existing cloud server you
+                  have created by following the {as}{ss}{exercise}{se}{ae}
+                  exercise. We will connect to your server and verify that you
+                  have set it up correctly for the purposes of the course. We will
+                  also create our own user account on the server to facilitate
+                  future debugging and to help you if you lose your own access.
+                """,
+                exercise:
+                  Material.run_virtual_server_exercise().title
+                  |> html_escape()
+                  |> safe_to_string(),
+                as: "<a href=\"#{Material.run_virtual_server_exercise().url}\">",
+                ae: "</a>",
+                ss: "<strong class=\"underline\">",
+                se: "</strong>"
+              )
+              |> raw()}
             </p>
             <p>
               {gettext("""

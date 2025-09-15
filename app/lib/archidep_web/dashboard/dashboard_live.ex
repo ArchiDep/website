@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   import ArchiDepWeb.Servers.ServerHelpComponent
   import ArchiDepWeb.Servers.ServerRetryHandlers
   alias ArchiDep.Course
+  alias ArchiDep.Course.Material
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
@@ -69,6 +70,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     )
     |> ok()
   end
+
+  @impl LiveView
+  def handle_params(params, _uri, socket),
+    do:
+      socket
+      |> assign(run_virtual_server_exercise_done: params["server"] == "ready")
+      |> noreply()
 
   @impl LiveView
   def handle_event(

@@ -14,10 +14,27 @@ defmodule ArchiDep.Course.Material do
                                )
 
   %{"sections" => [_section | _rest] = sections} = @course_material_data
+
+  %{"title" => "Basic Deployment", "num" => 400, "docs" => docs} =
+    Enum.find(sections, &match?(%{"num" => 400}, &1))
+
+  %{
+    "num" => 402,
+    "title" => run_virtual_server_exercise_title,
+    "url" => run_virtual_server_exercise_url = "/course/402-run-virtual-server/"
+  } =
+    Enum.find(docs, &match?(%{"num" => 402}, &1))
+
   @course_sections sections
+  @run_virtual_server_exercise_title run_virtual_server_exercise_title
+  @run_virtual_server_exercise_url run_virtual_server_exercise_url
 
   @spec course_sections() :: list(map())
   def course_sections, do: @course_sections
+
+  @spec run_virtual_server_exercise() :: %{title: String.t(), url: String.t()}
+  def run_virtual_server_exercise,
+    do: %{title: @run_virtual_server_exercise_title, url: @run_virtual_server_exercise_url}
 
   @spec __mix_recompile__?() :: boolean()
   def __mix_recompile__?, do: @course_material_file_digest != course_material_file_digest()

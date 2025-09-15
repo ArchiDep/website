@@ -328,7 +328,7 @@ To authenticate you, the server will need your **public key**. That way, you
 will be able to prove, using your **private key**, that you are the owner of
 that public key.
 
-{% callout %}
+{% callout type: warning %}
 
 Remember, **your private key MUST remain private** (i.e. the `id_ed25519` file).
 You should **never** give it to any person, server or web service. Only give

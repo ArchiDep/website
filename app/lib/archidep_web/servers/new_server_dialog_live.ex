@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
 
   import ArchiDepWeb.Helpers.DialogHelpers
   import ArchiDepWeb.Servers.ServerFormComponent
+  alias ArchiDep.Course.Material
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroupMember
