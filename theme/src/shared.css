@@ -22,6 +22,10 @@ h6 {
   h6 {
     @apply pb-1 border-b border-black/10 dark:border-white/10;
   }
+
+  img {
+    @apply my-4;
+  }
 }
 
 img.emoji {
