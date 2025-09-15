@@ -57,9 +57,7 @@ defmodule ArchiDep.Course.Helpers.MaterialHelpers do
       Enum.find(
         docs,
         fn doc when is_map(doc) ->
-          doc_num = Map.get(doc, "num")
-          doc_url = Map.get(doc, "url")
-          doc_num == num and is_binary(doc_url) and String.ends_with?(doc_url, "/#{num}-#{slug}/")
+          Map.get(doc, "num") == num and Map.get(doc, "course_slug") == slug
         end
       )
 
@@ -68,11 +66,11 @@ defmodule ArchiDep.Course.Helpers.MaterialHelpers do
     end
 
     case doc do
-      %{"title" => title, "url" => url} ->
+      %{"title" => title, "url" => url} when is_binary(title) and is_binary(url) ->
         %{title: title, url: url}
 
       _other ->
-        raise "Malformed course document '#{num}-#{slug}' in section #{section_num} in '#{file}'"
+        raise "Malformed course document '#{num}-#{slug}' in section #{section_num} in '#{file}': could not find 'title' and/or 'url' string properties"
     end
   end
 

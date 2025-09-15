@@ -10,7 +10,9 @@ pretty_print: true
   {%- for item in section.items -%}
     {"title":{{ item.title | jsonify }},"num":{{ item.num | jsonify }},"course_type":
     {{- item.course_type | jsonify -}}
-    ,"section":{{ item.section | jsonify }},"section_chapter":{{ item.section_chapter | jsonify }},"progress":
+    ,"course_slug":{{ item.course_slug | jsonify }} ,"section":{{ item.section | jsonify }},"section_chapter":
+    {{- item.section_chapter | jsonify -}}
+    ,"progress":
     {{- item.progress | jsonify -}}
     ,"slides":{{ item.has_slides | jsonify }},"url":{{ item.url | jsonify }}}
     {%- unless forloop.last %},{% endunless -%}
