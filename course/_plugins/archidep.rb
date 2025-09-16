@@ -159,8 +159,7 @@ module ArchiDep
 
       cheatsheet_docs = site.collections["cheatsheets"].docs
       cheatsheet_docs.each do |item|
-        m =
-          %r{/([^/]+)/(cheatsheet.md)\z}.match(item.path)
+        m = %r{/([^/]+)/(cheatsheet.md)\z}.match(item.path)
         throw %/Invalid filename format for cheatsheet: "#{item.path}"/ unless m
 
         item.data["course_type"] = "cheatsheet"
