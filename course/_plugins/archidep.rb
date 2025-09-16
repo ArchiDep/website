@@ -113,10 +113,23 @@ module ArchiDep
 
         section_num = (i + 1) * 100
         section["num"] = section_num
+        section["slug"] = section["title"]
+          .downcase
+          .gsub(/\s+/, "-")
+          .gsub(/[^a-z0-9\-]/, "")
         section["progress"] = case section_num
         when *done_chapters
           "done"
+        when *next_chapters
+          "next"
+        else
+          "future"
         end
+
+        section["open"] = section["progress"] == "next" ||
+          section_docs.any? do |d|
+            d.data["progress"] != "done" && d.data["progress"] != "future"
+          end
       end
 
       home_page_doc = site.pages.find { |doc| doc.data["layout"] == "home" }

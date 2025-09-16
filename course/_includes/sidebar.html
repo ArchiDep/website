@@ -44,11 +44,31 @@
       {%- assign current_section = forloop.index -%}
       {% if section.progress == 'done' %}
         {% assign section_color = 'border-r-4 border-success/50 hover:border-success' %}
+      {% elsif section.progress == 'next' %}
+        {% assign section_color = 'border-r-4 border-info/50 hover:border-info' %}
       {% else %}
         {% assign section_color = '' %}
       {% endif %}
-      <li class='{{ section_color }}'>
-        <span class='text-base-content/50 cursor-default'>{{ section.title }}</span>
+      <li class='{{ section_color }} peer/section-{{ forloop.index }} group/section-{{ forloop.index }}'>
+        <label for='section-{{ section.slug }}-toggle' class='flex justify-between items-center'>
+          <span class='text-base-content/50'>{{ section.title }}</span>
+          {% if section.open == false %}
+            <span class='group-has-checked/section-{{ current_section }}:hidden'>
+              {%- include icons/chevron-down.html class="size-4 text-base-content/50" -%}
+            </span>
+            <span class='hidden group-has-checked/section-{{ current_section }}:inline'>
+              {%- include icons/chevron-up.html class="size-4 text-base-content/50" -%}
+            </span>
+          {% endif %}
+          <input
+            type='checkbox'
+            id='section-{{ section.slug }}-toggle'
+            class='hidden'
+            {% if section.open %}
+              checked disabled
+            {% endif %}
+          >
+        </label>
       </li>
       {%- for item in section.items -%}
         {% if item.url == page.url %}
@@ -81,7 +101,7 @@
           {% assign chapter_color = 'opacity-25 hover:opacity-100' %}
         {% endif %}
 
-        <li class='group {{ current_background }} {{ chapter_color }}'>
+        <li class='group {{ current_background }} {{ chapter_color }} hidden peer-has-checked/section-{{ current_section }}:flex'>
           {% if item.course_type == 'slides' %}
             {% assign link_target = '_blank' %}
           {% else %}

@@ -12,6 +12,12 @@
   --font-title: 'Bitcount Prop Single', 'PT Sans', sans-serif;
 }
 
+@source inline("peer/section-{0..10}");
+@source inline("group/section-{0..10}");
+@source inline("peer-has-checked/section-{0..10}:flex");
+@source inline("group-has-checked/section-{0..10}:hidden");
+@source inline("group-has-checked/section-{0..10}:inline");
+
 @source "../../app/deps/flashy/**/*.*ex";
 @source "../../app/lib/archidep_web";
 @source "../../course/collections";

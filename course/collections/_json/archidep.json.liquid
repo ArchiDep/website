@@ -4,8 +4,11 @@ pretty_print: true
 ---
 {"sections":[
 {%- for section in site.data.course.sections -%}
-  {"title":{{ section.title | jsonify }},"num":{{ section.num | jsonify }},"progress":
+  {"title":{{ section.title | jsonify }},"slug":{{ section.slug | jsonify }},"num":
+  {{- section.num | jsonify -}}
+  ,"progress":
   {{- section.progress | jsonify -}}
+  ,"open":{{ section.open | jsonify }}
   ,"docs":[
   {%- for item in section.items -%}
     {"title":{{ item.title | jsonify }},"num":{{ item.num | jsonify }},"course_type":

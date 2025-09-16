@@ -182,20 +182,43 @@
         Course
       </div>
       <ul id="course-material-menu" class="w-full menu px-4 pt-0 pb-4">
-        <%= for section <- Material.course_sections() do %>
+        <%= for {section, i} <- Enum.with_index(Material.course_sections()) do %>
           <li class={[
+            "peer/section-#{i}",
+            "group/section-#{i}",
             if(section["progress"],
               do: "course-section-#{section["progress"]}",
               else: nil
             )
           ]}>
-            <span class="text-base-content/50 cursor-default">
-              {section["title"]}
-            </span>
+            <label
+              for={"section-#{section["slug"]}-toggle"}
+              class="flex justify-between items-center"
+            >
+              <span class="text-base-content/50 cursor-default">
+                {section["title"]}
+              </span>
+              <%= if section["open"] == false do %>
+                <span class={"group-has-checked/section-#{i}:hidden"}>
+                  <Heroicons.chevron_down class="size-4 text-base-content/50" />
+                </span>
+                <span class={"hidden group-has-checked/section-#{i}:inline"}>
+                  <Heroicons.chevron_up class="size-4 text-base-content/50" />
+                </span>
+              <% end %>
+              <input
+                type="checkbox"
+                id={"section-#{section["slug"]}-toggle"}
+                class="hidden"
+                checked={section["open"]}
+                disabled={section["open"]}
+              />
+            </label>
           </li>
           <%= for item <- section["docs"] do %>
             <li class={[
               "group",
+              "hidden peer-has-checked/section-#{i}:flex",
               if(item["progress"], do: "course-item-#{item["progress"]}", else: nil)
             ]}>
               <.link
