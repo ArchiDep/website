@@ -1,8 +1,17 @@
 ---
 title: System Administation Cheatsheet
+sidebar_title: System Administration
 ---
 
-## How do I connect to my server with SSH? (`ssh`)
+This cheatsheet is designed to help students in this course quickly find and
+remember key sysadmin commands and concepts. Use it as a handy reference to make
+your work with servers and system administration tasks easier.
+
+## The basics
+
+A few basic and/or essential commands.
+
+### How do I connect to my server with SSH? (`ssh`)
 
 Connect to the server at the IP address `W.X.Y.Z` as the `jde` user:
 
@@ -16,7 +25,7 @@ Connect to the server at the domain `example.com` as the `jde` user:
 $> ssh jde@example.com
 ```
 
-## Who am I? (`whoami` & `id`)
+### Who am I? (`whoami` & `id`)
 
 If you don't remember who you are currently logged in (and have forgotten that this information is generally displayed at the very start of your prompt), you can use the `whoami` command:
 
@@ -32,7 +41,7 @@ $> id
 uid=1000(jde) gid=1000(jde) groups=1000(jde),4(adm),24(cdrom),27(sudo),30(dip),105(lxd)
 ```
 
-## How do I change my password? (`passwd`)
+### How do I change my password? (`passwd`)
 
 ```bash
 $> passwd

@@ -157,6 +157,20 @@ module ArchiDep
         end
       home_page_doc.data["next_chapters"] = next_chapters
 
+      cheatsheet_docs = site.collections["cheatsheets"].docs
+      cheatsheet_docs.each do |item|
+        m =
+          %r{/([^/]+)/(cheatsheet.md)\z}.match(item.path)
+        throw %/Invalid filename format for cheatsheet: "#{item.path}"/ unless m
+
+        item.data["course_type"] = "cheatsheet"
+        item.data["cheatsheet"] = m[1]
+        item.data["layout"] = "cheatsheet"
+        item.data["toc"] = true
+
+        item.data["permalink"] = "/cheatsheets/#{m[1]}/"
+      end
+
       # Prototype for adding digest to static files
       # site.static_files.each do |file|
       #   dests = file.instance_variable_get(:@destination) || {}
@@ -206,6 +220,7 @@ Jekyll::Hooks.register :site, :post_render do |site|
   docs = []
   site.pages.each { |page| docs << page if page.data["search"] }
   site.collections["course"].docs.each { |doc| docs << doc }
+  site.collections["cheatsheets"].docs.each { |doc| docs << doc }
 
   search_elements =
     docs.flat_map do |doc|

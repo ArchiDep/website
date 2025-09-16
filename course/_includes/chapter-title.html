@@ -6,11 +6,17 @@
       🎬
     {%- elsif doc.course_type == 'exercise' -%}
       🛠️
+    {%- elsif doc.course_type == 'cheatsheet' -%}
+      📝
     {%- else -%}
       📖
     {%- endif -%}
   </span>
   <span>
-    {{ doc.title }}
+    {%- if doc.sidebar_title -%}
+      {{ doc.sidebar_title }}
+    {%- else -%}
+      {{ doc.title }}
+    {%- endif -%}
   </span>
 </span>

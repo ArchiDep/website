@@ -231,6 +231,25 @@
             </li>
           <% end %>
         <% end %>
+        <li>
+          <span class="text-base-content/50 cursor-default">
+            Cheatsheets
+          </span>
+        </li>
+        <%= for cheatsheet <- Material.course_cheatsheets() do %>
+          <li>
+            <a href={cheatsheet["url"]} class="flex items-center gap-2">
+              <span class="flex items-center gap-x-2">
+                <span class="size-4">
+                  📝
+                </span>
+                <span>
+                  {cheatsheet["sidebar_title"] || cheatsheet["title"]}
+                </span>
+              </span>
+            </a>
+          </li>
+        <% end %>
       </ul>
 
       <footer class="p-4 absolute bottom-0 left-0 right-0 border-t border-black/10 dark:border-white/10">

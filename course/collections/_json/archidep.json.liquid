@@ -20,4 +20,11 @@ pretty_print: true
   ]}
   {%- unless forloop.last %},{% endunless -%}
 {%- endfor -%}
+],"cheatsheets":[
+{%- for doc in site.cheatsheets -%}
+  {"title":{{ doc.title | jsonify }},"sidebar_title":{{ doc.sidebar_title | jsonify }},"slug":
+  {{- doc.cheatsheet | jsonify -}}
+  ,"url":{{ doc.url | jsonify }}}
+  {%- unless forloop.last %},{% endunless -%}
+{%- endfor -%}
 ]}

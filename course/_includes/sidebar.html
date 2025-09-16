@@ -104,6 +104,27 @@
         </li>
       {%- endfor -%}
     {%- endfor -%}
+    <li>
+      <span class='text-base-content/50 cursor-default'>Cheatsheets</span>
+    </li>
+    {%- for item in site.cheatsheets -%}
+      {% if item.url == page.url %}
+        {% assign current_background = 'bg-neutral/25 dark:bg-neutral' %}
+        {% assign current_font_weight = 'font-bold' %}
+      {% else %}
+        {% assign current_background = '' %}
+        {% assign current_font_weight = '' %}
+      {% endif %}
+
+      <li class='{{ current_background }}'>
+        <a
+          href='{{ item.url }}'
+          class='flex items-center gap-2 {{ current_font_weight }}'
+        >
+          {%- include chapter-title.html doc=item -%}
+        </a>
+      </li>
+    {%- endfor -%}
   </ul>
 
   {%- include footer.html -%}

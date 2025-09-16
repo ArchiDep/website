@@ -1,0 +1,7 @@
+main.course-cheatsheet h2 {
+  @apply text-3xl xl:text-4xl;
+}
+
+main.course-cheatsheet h3 {
+  @apply text-2xl xl:text-3xl;
+}

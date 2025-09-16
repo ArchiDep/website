@@ -3,7 +3,7 @@ layout: base
 ---
 <div class='flex flex-wrap xl:flex-nowrap justify-center gap-4 mx-auto'>
   <div class='p-4 lg:p-6 xl:p-8 rounded md:rounded-lg lg:rounded-xl xl:rounded-2xl w-full bg-linear-to-br from-transparent to-zinc-200 dark:from-transparent dark:to-zinc-800/40 md:w-auto'>
-    <main class='prose prose-lg xl:prose-xl 2xl:prose-2xl sm:max-md:max-w-none'>
+    <main class='prose prose-lg xl:prose-xl 2xl:prose-2xl sm:max-md:max-w-none course-{{ page.course_type }}'>
       {% if page.title_include %}
         {%- include {{ page.title_include }} %}
       {% elsif page.title %}

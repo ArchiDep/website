@@ -18,6 +18,20 @@ defmodule ArchiDep.Course.Helpers.MaterialHelpers do
   @spec course_data() :: map()
   def course_data, do: @course_material_data
 
+  @spec course_cheatsheets() :: list(map())
+  @spec course_cheatsheets(course_material_data_source()) :: list(map())
+  def course_cheatsheets(source \\ {@course_material_data, @course_material_file}) do
+    {data, file} = source
+
+    case data do
+      %{"cheatsheets" => [_cheatsheet | _rest] = cheatsheets} ->
+        cheatsheets
+
+      _anything_else ->
+        raise "Invalid course material data structure in '#{file}': the 'cheatsheets' key is missing or is not an array"
+    end
+  end
+
   @spec course_sections() :: list(map())
   @spec course_sections(course_material_data_source()) :: list(map())
   def course_sections(source \\ {@course_material_data, @course_material_file}) do

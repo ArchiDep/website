@@ -19,6 +19,7 @@ const quickSearch = {
 };
 
 const searchElementType = t.union([
+  t.literal('cheatsheet'),
   t.literal('dashboard'),
   t.literal('exercise'),
   t.literal('home'),
@@ -392,6 +393,7 @@ function renderSearchResults(
         </svg>
       `
       )
+      .with('cheatsheet', () => '📝')
       .with('exercise', () => '🛠️')
       .with('home', () => '🏠')
       .with('slides', () => '🎬')
