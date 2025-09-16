@@ -29,7 +29,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
         |> assign(
           page_title: "#{student.name} · #{student.class.name} · #{gettext("Admin")}",
           class: student.class,
-          student: student
+          student: student,
+          login_link: nil
         )
         |> ok()
 
@@ -44,6 +45,27 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   @impl LiveView
   def handle_params(_params, _url, socket) do
     {:noreply, socket}
+  end
+
+  @impl LiveView
+  def handle_event(
+        "generate-login-link",
+        _params,
+        %Socket{assigns: %{auth: auth, student: student}} = socket
+      ) do
+    case Accounts.create_login_link_for_preregistered_user(auth, student.id) do
+      {:ok, login_link} ->
+        socket
+        |> assign(login_link: login_link)
+        |> put_notification(Message.new(:success, gettext("Login link generated")))
+        |> noreply()
+
+      {:error, :preregistered_user_not_found} ->
+        socket
+        |> put_notification(Message.new(:error, gettext("Student not found")))
+        |> push_navigate(to: ~p"/admin/classes/#{student.class_id}")
+        |> noreply()
+    end
   end
 
   @impl LiveView

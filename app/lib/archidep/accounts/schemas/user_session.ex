@@ -118,7 +118,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       as: :user_session,
       join: ua in assoc(us, :user_account),
       as: :user_account,
-      join: sei in assoc(ua, :switch_edu_id),
+      left_join: sei in assoc(ua, :switch_edu_id),
       left_join: pu in assoc(ua, :preregistered_user),
       as: :preregistered_user,
       left_join: ug in assoc(pu, :group),
@@ -177,7 +177,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
              as: :user_session,
              join: ua in assoc(us, :user_account),
              as: :user_account,
-             join: sei in assoc(ua, :switch_edu_id),
+             left_join: sei in assoc(ua, :switch_edu_id),
              left_join: pu in assoc(ua, :preregistered_user),
              as: :preregistered_user,
              left_join: ug in assoc(pu, :group),
@@ -209,7 +209,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     do:
       from(us in __MODULE__,
         join: ua in assoc(us, :user_account),
-        join: sei in assoc(ua, :switch_edu_id),
+        left_join: sei in assoc(ua, :switch_edu_id),
         left_join: pu in assoc(ua, :preregistered_user),
         left_join: iua in assoc(us, :impersonated_user_account),
         preload: [
@@ -226,7 +226,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       Repo.all(
         from(us in __MODULE__,
           join: ua in assoc(us, :user_account),
-          join: sei in assoc(ua, :switch_edu_id),
+          left_join: sei in assoc(ua, :switch_edu_id),
           left_join: pu in assoc(ua, :preregistered_user),
           where: ua.id == ^id and us.created_at > ago(@session_validity_in_days, "day"),
           order_by: [desc: us.created_at],

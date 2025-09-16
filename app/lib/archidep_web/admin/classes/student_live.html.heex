@@ -48,32 +48,18 @@
   </.data_display_element>
   <.data_display_element title={gettext("User account")}>
     <%= if @student.user do %>
-      <span class="flex items-center gap-x-4">
-        <span
-          class={[
-            "flex items-center gap-x-2",
-            if(@student.user.student_id != @student.id,
-              do: "text-base-content/50 line-through tooltip",
-              else: nil
-            )
-          ]}
-          data-tip={student_not_in_class_tooltip(@student)}
-        >
-          <Heroicons.user solid class="size-5" />
-          {@student.user.username}
-        </span>
-        <.form for={%{}} action={~p"/auth/impersonate"} method="POST" class="flex items-center">
-          <button
-            :if={can_impersonate?(@auth, @student.user)}
-            type="submit"
-            class="tooltip"
-            data-tip={gettext("Impersonate")}
-            name="user_account_id"
-            value={@student.user.id}
-          >
-            <Heroicons.eye solid class="size-4 cursor-pointer hover:opacity-85" />
-          </button>
-        </.form>
+      <span
+        class={[
+          "flex items-center gap-x-2",
+          if(@student.user.student_id != @student.id,
+            do: "text-base-content/50 line-through tooltip",
+            else: nil
+          )
+        ]}
+        data-tip={student_not_in_class_tooltip(@student)}
+      >
+        <Heroicons.user solid class="size-5" />
+        {@student.username}
       </span>
     <% else %>
       <.no_data text={gettext("Not registered yet")} />
@@ -81,7 +67,58 @@
   </.data_display_element>
 </.data_display>
 
+<.form
+  :if={@student.user != nil and can_impersonate?(@auth, @student.user)}
+  id={"impersonate-user-#{@student.user_id}-form"}
+  for={%{}}
+  action={~p"/auth/impersonate"}
+  method="POST"
+  class="join-item flex items-center"
+>
+</.form>
+
+<div :if={@login_link} role="alert" class="my-4 max-w-xl alert alert-success alert-soft">
+  <Heroicons.check_circle solid class="size-5 text-success" />
+  <div class="flex flex-col gap-4">
+    <strong>{gettext("Login link created")}</strong>
+    <span>
+      {gettext(
+        "The following link will allow the student to log in one time within the next 24 hours. Their session will last one day once the link has been used. All previous login links for this student are now invalid."
+      )}
+    </span>
+    <label class="w-full input">
+      <Heroicons.link class="h-[1em] opacity-50" />
+      <input
+        type="text"
+        class="grow"
+        value={url(~p"/auth/link?#{%{token: Base.encode64(@login_link.token)}}")}
+        readonly
+      />
+    </label>
+  </div>
+</div>
+
 <div class="mt-4 join">
+  <button
+    :if={@student.user != nil and can_impersonate?(@auth, @student.user)}
+    type="submit"
+    form={"impersonate-user-#{@student.user_id}-form"}
+    class="join-item btn btn-accent tooltip"
+    data-tip={gettext("Temporarily assume the identity of that user for debugging")}
+    name="user_account_id"
+    value={@student.user.id}
+  >
+    <Heroicons.eye solid class="size-4 cursor-pointer hover:opacity-85" />
+    {gettext("Impersonate")}
+  </button>
+
+  <button type="button" class="join-item btn btn-secondary" phx-click="generate-login-link">
+    <span class="flex items-center gap-x-2">
+      <Heroicons.arrow_right_end_on_rectangle class="size-4" />
+      <span>{gettext("Generate login link")}</span>
+    </span>
+  </button>
+
   <button
     type="button"
     class="join-item btn btn-warning"

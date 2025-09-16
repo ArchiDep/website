@@ -42,6 +42,21 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
   def active?(%__MODULE__{active: active, group: group}, now),
     do: active and UserGroup.active?(group, now)
 
+  @spec event_stream(t()) :: String.t()
+  def event_stream(%__MODULE__{id: id}), do: "accounts:preregistered-users:#{id}"
+
+  @spec fetch_preregistered_user(UUID.t()) :: {:ok, t()} | {:error, :preregistered_user_not_found}
+  def fetch_preregistered_user(preregistered_user_id),
+    do:
+      from(pu in __MODULE__,
+        where: pu.id == ^preregistered_user_id,
+        join: pug in assoc(pu, :group),
+        left_join: pua in assoc(pu, :user_account),
+        preload: [group: pug, user_account: pua]
+      )
+      |> Repo.one()
+      |> truthy_or(:preregistered_user_not_found)
+
   @spec list_available_preregistered_users_for_emails(
           list(String.t()),
           UUID.t() | nil,

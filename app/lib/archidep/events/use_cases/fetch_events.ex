@@ -3,6 +3,7 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
@@ -81,6 +82,9 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
       streams
       |> Enum.map(&String.split(&1, ":"))
       |> Enum.reduce(%{}, fn
+        ["accounts", "preregistered-users", id], map ->
+          Map.update(map, "accounts:preregistered-users", [id], fn ids -> [id | ids] end)
+
         ["accounts", "user-accounts", id], map ->
           Map.update(map, "accounts:user-accounts", [id], fn ids -> [id | ids] end)
 
@@ -107,11 +111,20 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
         {type, task} -> {type, Task.await(task)}
       end)
 
+  defp fetch_entities_by_type({"accounts:preregistered-users", ids}) when is_list(ids),
+    do:
+      from(pu in PreregisteredUser,
+        where: pu.id in ^ids,
+        join: ug in assoc(pu, :group),
+        left_join: ua in assoc(pu, :user_account),
+        preload: [group: ug, user_account: ua]
+      )
+
   defp fetch_entities_by_type({"accounts:user-accounts", ids}) when is_list(ids),
     do:
       from(ua in UserAccount,
         where: ua.id in ^ids,
-        join: sei in assoc(ua, :switch_edu_id),
+        left_join: sei in assoc(ua, :switch_edu_id),
         left_join: pu in assoc(ua, :preregistered_user),
         preload: [switch_edu_id: sei, preregistered_user: pu]
       )
@@ -128,6 +141,11 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
   defp to_entities_by_stream(entities_by_type),
     do:
       Enum.reduce(entities_by_type, %{}, fn
+        {"accounts:preregistered-users", users}, map ->
+          Enum.reduce(users, map, fn user, acc ->
+            Map.put(acc, "accounts:preregistered-users:#{user.id}", user)
+          end)
+
         {"accounts:user-accounts", users}, map ->
           Enum.reduce(users, map, fn user, acc ->
             Map.put(acc, "accounts:user-accounts:#{user.id}", user)

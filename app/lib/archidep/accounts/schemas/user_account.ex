@@ -31,8 +31,8 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
           username: String.t() | nil,
           root: boolean(),
           active: boolean(),
-          switch_edu_id: SwitchEduId.t() | NotLoaded.t(),
-          switch_edu_id_id: UUID.t(),
+          switch_edu_id: SwitchEduId.t() | nil | NotLoaded.t(),
+          switch_edu_id_id: UUID.t() | nil,
           preregistered_user: PreregisteredUser.t() | nil | NotLoaded.t(),
           preregistered_user_id: UUID.t() | nil,
           version: pos_integer(),
@@ -93,7 +93,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     do:
       Repo.one!(
         from(ua in __MODULE__,
-          join: sei in assoc(ua, :switch_edu_id),
+          left_join: sei in assoc(ua, :switch_edu_id),
           where: ua.id == ^id,
           preload: [switch_edu_id: sei]
         )
@@ -169,6 +169,26 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       id: id,
       active: true,
       switch_edu_id_id: switch_edu_id.id,
+      preregistered_user: preregistered_user,
+      preregistered_user_id: preregistered_user.id,
+      version: 1,
+      created_at: now,
+      updated_at: now
+    )
+    |> validate()
+  end
+
+  @spec new_preregistered_account(PreregisteredUser.t()) :: Changeset.t(t())
+  def new_preregistered_account(preregistered_user) do
+    id = UUID.generate()
+    now = DateTime.utc_now()
+
+    %__MODULE__{}
+    |> change(
+      id: id,
+      username: nil,
+      root: false,
+      active: true,
       preregistered_user: preregistered_user,
       preregistered_user_id: preregistered_user.id,
       version: 1,

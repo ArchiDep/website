@@ -13,6 +13,7 @@ defmodule ArchiDep.Accounts do
   @implementation Application.compile_env!(:archidep, __MODULE__)
 
   delegate(&Behaviour.log_in_or_register_with_switch_edu_id/2)
+  delegate(&Behaviour.log_in_or_register_with_link/2)
   delegate(&Behaviour.validate_session_token/2)
   delegate(&Behaviour.validate_session_id/2)
   delegate(&Behaviour.fetch_active_sessions/1)
@@ -21,4 +22,5 @@ defmodule ArchiDep.Accounts do
   delegate(&Behaviour.delete_session/2)
   delegate(&Behaviour.user_account/1)
   delegate(&Behaviour.log_out/1)
+  delegate(&Behaviour.create_login_link_for_preregistered_user/2)
 end

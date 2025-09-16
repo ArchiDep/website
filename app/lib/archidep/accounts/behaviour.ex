@@ -3,6 +3,7 @@ defmodule ArchiDep.Accounts.Behaviour do
 
   use ArchiDep, :context_behaviour
 
+  alias ArchiDep.Accounts.Schemas.LoginLink
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
@@ -19,6 +20,19 @@ defmodule ArchiDep.Accounts.Behaviour do
     ) ::
       {:ok, Authentication.t()}
       | {:error, :unauthorized_switch_edu_id}
+  )
+
+  @doc """
+  Logs in a user account with the specified login link token, creating a new
+  session. If that login linked corresponds to a preregistered user and no user
+  account yet exists for that user, a new user account is registered.
+  """
+  callback(
+    log_in_or_register_with_link(
+      token: binary(),
+      meta: map
+    ) ::
+      {:ok, Authentication.t()} | {:error, :invalid_link}
   )
 
   @doc """
@@ -75,4 +89,14 @@ defmodule ArchiDep.Accounts.Behaviour do
   Logs out a user account.
   """
   callback(log_out(auth: Authentication.t()) :: :ok | {:error, :session_not_found})
+
+  @doc """
+  Creates a new login link for the specified preregistered user.
+  """
+  callback(
+    create_login_link_for_preregistered_user(
+      auth: Authentication.t(),
+      preregistered_user_id: UUID.t()
+    ) :: {:ok, LoginLink.t()} | {:error, :preregistered_user_not_found} | {:error, :unauthorized}
+  )
 end

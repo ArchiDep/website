@@ -20,11 +20,13 @@ defmodule ArchiDep.Accounts.Events.SessionDeleted do
             id: UUID.t(),
             username: String.t() | nil
           },
-          switch_edu_id: %{
-            id: UUID.t(),
-            first_name: String.t() | nil,
-            last_name: String.t() | nil
-          },
+          switch_edu_id:
+            %{
+              id: UUID.t(),
+              first_name: String.t() | nil,
+              last_name: String.t() | nil
+            }
+            | nil,
           preregistered_user:
             %{
               id: UUID.t(),
@@ -45,15 +47,16 @@ defmodule ArchiDep.Accounts.Events.SessionDeleted do
           preregistered_user: preregistered_user
         }
       }) do
-    %SwitchEduId{
-      id: switch_edu_id,
-      first_name: first_name,
-      last_name: last_name
-    } = switch_edu_id
-
     %__MODULE__{
       user_account: %{id: user_account_id, username: username},
-      switch_edu_id: %{id: switch_edu_id, first_name: first_name, last_name: last_name},
+      switch_edu_id:
+        case switch_edu_id do
+          %SwitchEduId{id: switch_edu_id_id, first_name: first_name, last_name: last_name} ->
+            %{id: switch_edu_id_id, first_name: first_name, last_name: last_name}
+
+          nil ->
+            nil
+        end,
       session_id: session_id,
       preregistered_user:
         case preregistered_user do

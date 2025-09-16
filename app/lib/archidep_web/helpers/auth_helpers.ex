@@ -20,10 +20,10 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
         %Authentication{
           principal_id: principal_id,
           impersonated_id: impersonated_id
-        },
+        } = auth,
         %{id: user_account_id}
       ),
-      do: impersonated_id == nil and user_account_id != principal_id
+      do: root?(auth) and impersonated_id == nil and user_account_id != principal_id
 
   @spec impersonating?(Authentication.t()) :: boolean()
   def impersonating?(nil), do: false

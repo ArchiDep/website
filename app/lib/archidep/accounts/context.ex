@@ -13,6 +13,11 @@ defmodule ArchiDep.Accounts.Context do
     UseCases.LogInOrRegisterWithSwitchEduId
   )
 
+  implement(
+    &Behaviour.log_in_or_register_with_link/2,
+    UseCases.LogInOrRegisterWithLink
+  )
+
   implement(&Behaviour.validate_session_token/2, UseCases.Sessions)
   implement(&Behaviour.validate_session_id/2, UseCases.Sessions)
   implement(&Behaviour.fetch_active_sessions/1, UseCases.Sessions)
@@ -22,4 +27,5 @@ defmodule ArchiDep.Accounts.Context do
   implement(&Behaviour.log_out/1, UseCases.LogOut)
 
   implement(&Behaviour.user_account/1, UseCases.Sessions)
+  implement(&Behaviour.create_login_link_for_preregistered_user/2, UseCases.CreateLoginLinks)
 end

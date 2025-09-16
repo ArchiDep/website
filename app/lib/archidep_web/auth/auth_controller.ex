@@ -3,6 +3,8 @@ defmodule ArchiDepWeb.Auth.AuthController do
 
   import ArchiDepWeb.Helpers.ConnHelpers
   alias ArchiDep.Accounts
+  alias ArchiDep.Accounts.Schemas.PreregisteredUser
+  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDepWeb.Auth
   alias Phoenix.Token
   alias Plug.Conn
@@ -14,6 +16,30 @@ defmodule ArchiDepWeb.Auth.AuthController do
   @spec login(Conn.t(), map) :: Conn.t()
   def login(conn, _params) do
     render(conn, "login.html")
+  end
+
+  @spec log_in_with_link(Conn.t(), map) :: Conn.t()
+  def log_in_with_link(conn, %{"token" => token}) do
+    with {:ok, decoded_token} <- Base.decode64(token),
+         {:ok, auth} <-
+           Accounts.log_in_or_register_with_link(
+             decoded_token,
+             conn_metadata(conn)
+           ) do
+      conn
+      |> put_notification(Message.new(:success, gettext("Welcome!")))
+      |> Auth.log_in(auth)
+    else
+      {:error, :invalid_link} ->
+        conn
+        |> put_notification(
+          Message.new(
+            :error,
+            gettext("This login link has expired or is invalid.")
+          )
+        )
+        |> redirect(to: "/login")
+    end
   end
 
   @spec generate_csrf_token(Conn.t(), map) :: Conn.t()
@@ -49,7 +75,13 @@ defmodule ArchiDepWeb.Auth.AuthController do
     |> put_notification(
       Message.new(
         :success,
-        gettext("You are impersonating user {user}.", user: impersonated_user_account.username)
+        gettext("You are impersonating user {user}.",
+          user:
+            case impersonated_user_account do
+              %UserAccount{preregistered_user: %PreregisteredUser{name: name}} -> name
+              %UserAccount{username: username} -> username
+            end
+        )
       )
     )
     |> redirect(to: ~p"/app")

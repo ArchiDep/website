@@ -117,6 +117,16 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
         </span>
         """
 
+      %PreregisteredUser{name: name} ->
+        assigns = assign(assigns, :name, name)
+
+        ~H"""
+        <span class={"flex items-center #{@extra_class}"}>
+          <Heroicons.user solid class="size-6 mr-1" />
+          <span>{@name}</span>
+        </span>
+        """
+
       %Student{name: name} ->
         assigns = assign(assigns, :name, name)
 
@@ -157,17 +167,18 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
 
   defp determine_user_account_display_name(%UserAccount{
          username: username,
-         switch_edu_id: %SwitchEduId{first_name: first_name, last_name: last_name},
+         switch_edu_id: switch_edu_id,
          preregistered_user: preregistered_user
        }) do
-    case {username, first_name, last_name, preregistered_user} do
-      {_u, _f, _l, %PreregisteredUser{name: preregistered_name}} ->
+    case {username, switch_edu_id, preregistered_user} do
+      {_u, _sei, %PreregisteredUser{name: preregistered_name}} ->
         preregistered_name
 
-      {_u, f, l, _pu} when f != nil or l != nil ->
-        [f, l] |> Enum.filter(& &1) |> Enum.join(" ")
+      {_u, %SwitchEduId{first_name: first_name, last_name: last_name}, _pu}
+      when first_name != nil or last_name != nil ->
+        [first_name, last_name] |> Enum.filter(& &1) |> Enum.join(" ")
 
-      {u, _f, _l, _pu} ->
+      {u, _sei, _pu} ->
         u
     end
   end

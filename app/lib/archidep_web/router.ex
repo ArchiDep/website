@@ -49,6 +49,7 @@ defmodule ArchiDepWeb.Router do
       pipe_through :fetch_authentication
       get "/auth/csrf", AuthController, :generate_csrf_token
       get "/auth/socket", AuthController, :generate_socket_token
+      get "/auth/link", AuthController, :log_in_with_link
       post "/auth/impersonate", AuthController, :impersonate
       post "/auth/stop-impersonating", AuthController, :stop_impersonating
       delete "/logout", AuthController, :logout
