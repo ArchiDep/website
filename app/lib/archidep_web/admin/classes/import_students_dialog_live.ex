@@ -8,13 +8,10 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDepWeb.Admin.Classes.ImportStudentsForm
+  alias ArchiDepWeb.Endpoint
   alias Phoenix.HTML.Form
 
   @id "import-students-dialog"
-  @uploads_directory Application.compile_env!(:archidep, [
-                       ArchiDepWeb.Endpoint,
-                       :uploads_directory
-                     ])
 
   @spec id() :: String.t()
   def id, do: @id
@@ -352,7 +349,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   end
 
   defp uploaded_students_file(%Class{id: class_id}),
-    do: Path.join([@uploads_directory, "students", "classes", class_id, "import-students.csv"])
+    do: Path.join([uploads_directory(), "students", "classes", class_id, "import-students.csv"])
 
   defp consume_uploaded_students(socket),
     do:
@@ -417,4 +414,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
         {:ok, %{columns: headers, students: students}}
     end
   end
+
+  defp uploads_directory,
+    do: :archidep |> Application.fetch_env!(Endpoint) |> Keyword.fetch!(:uploads_directory)
 end

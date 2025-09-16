@@ -210,6 +210,7 @@ WORKDIR /archidep
 
 ENV ARCHIDEP_UID=42000 \
     ARCHIDEP_GID=42000 \
+    ARCHIDEP_WEB_ENDPOINT_UPLOADS_DIRECTORY=/var/lib/archidep/uploads \
     GOSU_VERSION=1.17 \
     LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
