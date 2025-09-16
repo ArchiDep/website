@@ -28,7 +28,8 @@
     "format": "npm run format:root && npm run --workspace course format",
     "format:root": "prettier --check .",
     "format:root:write": "prettier --write .",
-    "format:write": "npm run format:root:write && npm run --workspace course format:write"
+    "format:write": "npm run format:root:write && npm run --workspace course format:write",
+    "pdf": "npm run --workspace course pdf"
   },
   "workspaces": [
     "app",
