@@ -85,7 +85,10 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
       Multi.new()
       |> Multi.put(:user_account, user_account)
       |> Multi.put(:linked_preregistered_user, nil)
-      |> Multi.insert(:user_session, &UserSession.new_session(&1.user_account, client_metadata))
+      |> Multi.insert(
+        :user_session,
+        &UserSession.new_session(&1.user_account, client_metadata, now)
+      )
       |> Multi.update(
         :used_login_link,
         LoginLink.mark_as_used_changeset(link)
@@ -117,7 +120,10 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
           DateTime.utc_now()
         )
       )
-      |> Multi.insert(:user_session, &UserSession.new_session(&1.user_account, client_metadata))
+      |> Multi.insert(
+        :user_session,
+        &UserSession.new_session(&1.user_account, client_metadata, now)
+      )
       |> Multi.update(
         :used_login_link,
         LoginLink.mark_as_used_changeset(link)

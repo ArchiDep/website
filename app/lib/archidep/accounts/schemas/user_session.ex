@@ -79,11 +79,10 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   def expires_at(%__MODULE__{created_at: created_at}),
     do: DateTime.add(created_at, @session_validity_in_days * @one_day_in_seconds, :second)
 
-  @spec new_session(UserAccount.t(), ClientMetadata.t()) ::
+  @spec new_session(UserAccount.t(), ClientMetadata.t(), DateTime.t()) ::
           Changeset.t(t())
-  def new_session(user_account, client_metadata) do
+  def new_session(user_account, client_metadata, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     client_ip_address =
       if client_metadata.ip_address,

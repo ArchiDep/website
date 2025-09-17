@@ -6,6 +6,7 @@ defmodule ArchiDep.Support.AccountsFactory do
   use ArchiDep.Support, :factory
 
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
+  alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
@@ -122,9 +123,27 @@ defmodule ArchiDep.Support.AccountsFactory do
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
 
     {switch_edu_id, attrs!} =
-      Map.pop_lazy(attrs!, :switch_edu_id, fn -> build(:switch_edu_id) end)
+      Map.pop_lazy(attrs!, :switch_edu_id, optionally(fn -> build(:switch_edu_id) end))
 
-    {preregistered_user_id, attrs!} = Map.pop(attrs!, :preregistered_user_id, nil)
+    {switch_edu_id_id, attrs!} =
+      Map.pop_lazy(attrs!, :switch_edu_id_id, fn ->
+        case switch_edu_id do
+          %SwitchEduId{} -> switch_edu_id.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {preregistered_user, attrs!} = Map.pop(attrs!, :preregistered_user, nil)
+
+    {preregistered_user_id, attrs!} =
+      Map.pop_lazy(attrs!, :preregistered_user_id, fn ->
+        case preregistered_user do
+          %PreregisteredUser{} -> preregistered_user.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
 
     {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
 
@@ -136,8 +155,8 @@ defmodule ArchiDep.Support.AccountsFactory do
       root: root,
       active: active,
       switch_edu_id: switch_edu_id,
-      switch_edu_id_id: switch_edu_id.id,
-      preregistered_user: nil,
+      switch_edu_id_id: switch_edu_id_id,
+      preregistered_user: preregistered_user,
       preregistered_user_id: preregistered_user_id,
       version: version,
       created_at: created_at,

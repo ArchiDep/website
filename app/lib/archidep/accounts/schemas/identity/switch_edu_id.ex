@@ -47,10 +47,8 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
   Creates a new Switch edu-ID identity from the specified data, or updates an
   existing identity if one already exists with the same unique identifier.
   """
-  @spec create_or_update(Types.switch_edu_id_login_data()) :: Changeset.t()
-  def create_or_update(%{swiss_edu_person_unique_id: swiss_edu_person_unique_id} = data) do
-    now = DateTime.utc_now()
-
+  @spec create_or_update(Types.switch_edu_id_login_data(), DateTime.t()) :: Changeset.t()
+  def create_or_update(%{swiss_edu_person_unique_id: swiss_edu_person_unique_id} = data, now) do
     if existing_switch_edu_id =
          Repo.get_by(__MODULE__, swiss_edu_person_unique_id: swiss_edu_person_unique_id) do
       existing_switch_edu_id

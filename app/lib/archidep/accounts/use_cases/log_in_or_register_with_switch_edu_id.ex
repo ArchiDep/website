@@ -57,12 +57,14 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   end
 
   defp log_in_or_register(switch_edu_id_data, client_metadata) do
+    now = DateTime.utc_now()
+
     Multi.new()
     # Create or update the Switch edu-ID identity. It might or might not already
     # exist and be linked to a user account.
     |> Multi.insert_or_update(
       :switch_edu_id,
-      SwitchEduId.create_or_update(switch_edu_id_data)
+      SwitchEduId.create_or_update(switch_edu_id_data, now)
     )
     # Determine whether the user account already exists or needs to be
     # created...
@@ -124,7 +126,10 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       end
     end)
     # Create a new session for the user account which is logging in.
-    |> Multi.insert(:user_session, &UserSession.new_session(&1.user_account, client_metadata))
+    |> Multi.insert(
+      :user_session,
+      &UserSession.new_session(&1.user_account, client_metadata, now)
+    )
     # Store either a registration or a login event as appropriate.
     |> insert(:stored_event, fn
       %{
