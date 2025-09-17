@@ -161,22 +161,21 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       {:ok,
        {:new_root, UserAccount.new_root_switch_edu_id_account(switch_edu_id, matched_id), nil}}
     else
-      # Otherwise check whether there is a preregistered user for that
-      # email...
+      # Otherwise check whether there is a preregistered user for that email...
       case PreregisteredUser.list_available_preregistered_users_for_emails(
              data.emails,
              nil,
              DateTime.utc_now()
            ) do
-        # If there is exactly one active preregistered user with a
-        # matching email that is not yet linked to a user account,
-        # create a new student user account.
+        # If there is exactly one active preregistered user with a matching
+        # email that is not yet linked to a user account, create a new student
+        # user account.
         [exactly_one_preregistered_user] ->
           {:ok,
            {
              :new_student,
-             # and one for new student accounts. Directly link the
-             # account to the student in the latter.
+             # and one for new student accounts. Directly link the account to
+             # the student in the latter.
              UserAccount.new_preregistered_switch_edu_id_account(
                switch_edu_id,
                exactly_one_preregistered_user
@@ -184,8 +183,8 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
              exactly_one_preregistered_user
            }}
 
-        # If there are no preregistered users or more than one matches,
-        # deny access.
+        # If there are no preregistered users or more than one matches, deny
+        # access.
         _zero_or_multiple_preregistered_users ->
           {:error, :unauthorized_switch_edu_id}
       end
@@ -201,23 +200,22 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     if UserAccount.active?(user_account, DateTime.utc_now()) do
       {:ok, {:existing_account, change(user_account), nil}}
     else
-      # Otherwise, check whether there is a new preregistered user for
-      # the same email (e.g. a student might be repeating a year, in
-      # which case a new preregistered user will have been created in
-      # a new class)...
+      # Otherwise, check whether there is a new preregistered user for the same
+      # email (e.g. a student might be repeating a year, in which case a new
+      # preregistered user will have been created in a new class)...
       case PreregisteredUser.list_available_preregistered_users_for_emails(
              switch_edu_id_data.emails,
              user_account.id,
              DateTime.utc_now()
            ) do
-        # If there is exactly one active preregistered user with a
-        # matching email that is not yet linked to a user account,
-        # link the user account to it.
+        # If there is exactly one active preregistered user with a matching
+        # email that is not yet linked to a user account, link the user account
+        # to it.
         [exactly_one_preregistered_user] ->
           {:ok, {:existing_student, change(user_account), exactly_one_preregistered_user}}
 
-        # If there are no preregistered users or more than one matches,
-        # deny access.
+        # If there are no preregistered users or more than one matches, deny
+        # access.
         _zero_or_multiple_preregistered_users ->
           {:error, :unauthorized_switch_edu_id}
       end
