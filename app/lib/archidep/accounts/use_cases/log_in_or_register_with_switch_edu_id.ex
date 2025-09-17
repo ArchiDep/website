@@ -94,15 +94,16 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
                       } ->
       case user_account_and_state do
         {:new_student, _user_account, %PreregisteredUser{} = preregistered_user} ->
-          Multi.update(
-            Multi.new(),
+          Multi.new()
+          |> Multi.update(
             :linked_preregistered_user,
             PreregisteredUser.link_to_user_account(
               preregistered_user,
               user_account,
-              DateTime.utc_now()
+              now
             )
           )
+          |> Multi.put(:linked_user_account, nil)
 
         {:existing_student, _user_account, preregistered_user} ->
           Multi.new()
@@ -111,12 +112,12 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
             PreregisteredUser.link_to_user_account(
               preregistered_user,
               user_account,
-              DateTime.utc_now()
+              now
             )
           )
           |> Multi.update(
             :linked_user_account,
-            UserAccount.relink_to_preregistered_user(user_account, preregistered_user)
+            UserAccount.relink_to_preregistered_user(user_account, preregistered_user, now)
           )
 
         _otherwise ->
@@ -128,7 +129,15 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     # Create a new session for the user account which is logging in.
     |> Multi.insert(
       :user_session,
-      &UserSession.new_session(&1.user_account, client_metadata, now)
+      &UserSession.new_session(
+        if &1.linked_user_account != nil do
+          %UserAccount{&1.linked_user_account | preregistered_user: &1.linked_preregistered_user}
+        else
+          &1.user_account
+        end,
+        client_metadata,
+        now
+      )
     )
     # Store either a registration or a login event as appropriate.
     |> insert(:stored_event, fn
@@ -164,7 +173,6 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       # Otherwise check whether there is a preregistered user for that email...
       case PreregisteredUser.list_available_preregistered_users_for_emails(
              data.emails,
-             nil,
              DateTime.utc_now()
            ) do
         # If there is exactly one active preregistered user with a matching
@@ -205,7 +213,6 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       # preregistered user will have been created in a new class)...
       case PreregisteredUser.list_available_preregistered_users_for_emails(
              switch_edu_id_data.emails,
-             user_account.id,
              DateTime.utc_now()
            ) do
         # If there is exactly one active preregistered user with a matching

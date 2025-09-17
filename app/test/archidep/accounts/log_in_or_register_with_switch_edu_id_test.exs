@@ -165,8 +165,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     auth
     |> assert_auth(@root_user_email, true)
-    |> assert_logged_in_event(metadata, user_account, switch_edu_id_login_data)
-    |> assert_user_session_for_existing_user(auth, user_account, switch_edu_id, true)
+    |> assert_logged_in_event(metadata, user_account, switch_edu_id_login_data, false)
+    |> assert_user_session_for_existing_user(auth, user_account, switch_edu_id, true, false)
   end
 
   test "log in an existing student user account with Switch edu-ID", %{
@@ -206,8 +206,80 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     auth
     |> assert_auth(user_account.username, false)
-    |> assert_logged_in_event(metadata, user_account, switch_edu_id_login_data, student)
-    |> assert_user_session_for_existing_user(auth, user_account, switch_edu_id, false, student)
+    |> assert_logged_in_event(metadata, user_account, switch_edu_id_login_data, false, student)
+    |> assert_user_session_for_existing_user(
+      auth,
+      user_account,
+      switch_edu_id,
+      false,
+      false,
+      student
+    )
+  end
+
+  test "log in an existing inactive student user account to a new student with Switch edu-ID", %{
+    log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
+  } do
+    class = CourseFactory.insert(:class, active: true)
+    student = CourseFactory.insert(:student, active: true, class: class, user: nil)
+
+    old_class = CourseFactory.insert(:class, active: false)
+
+    old_student =
+      CourseFactory.insert(:student,
+        email: student.email,
+        active: true,
+        class: old_class,
+        user: nil
+      )
+
+    old_student_id = old_student.id
+
+    switch_edu_id_login_data =
+      AccountsFactory.build(:switch_edu_id_login_data,
+        emails: [student.email],
+        swiss_edu_person_unique_id: "foobar"
+      )
+
+    switch_edu_id = AccountsFactory.insert(:switch_edu_id, swiss_edu_person_unique_id: "foobar")
+
+    user_account =
+      AccountsFactory.insert(:user_account,
+        root: false,
+        active: true,
+        switch_edu_id: switch_edu_id,
+        preregistered_user_id: old_student.id
+      )
+
+    Repo.update_all(from(s in Student, where: s.id == ^old_student_id),
+      set: [user_id: user_account.id]
+    )
+
+    metadata = Factory.build(:client_metadata)
+
+    assert {:ok, auth} =
+             log_in_or_register_with_switch_edu_id.(
+               switch_edu_id_login_data,
+               metadata
+             )
+
+    auth
+    |> assert_auth(user_account.username, false)
+    |> assert_logged_in_event(
+      metadata,
+      user_account,
+      switch_edu_id_login_data,
+      true,
+      student
+    )
+    |> assert_user_session_for_existing_user(
+      auth,
+      user_account,
+      switch_edu_id,
+      false,
+      true,
+      student
+    )
   end
 
   defp assert_auth(auth, username, root) do
@@ -300,6 +372,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
          client_metadata,
          %UserAccount{id: user_account_id} = user_account,
          switch_edu_id_login_data,
+         updated,
          student \\ nil
        ) do
     assert [
@@ -314,7 +387,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              __meta__: loaded(StoredEvent, "events"),
              id: event_id,
              stream: "accounts:user-accounts:#{user_account_id}",
-             version: user_account.version,
+             version:
+               if updated do
+                 user_account.version + 1
+               else
+                 user_account.version
+               end,
              type: "archidep/accounts/user-logged-in-with-switch-edu-id",
              data: %{
                "switch_edu_id" => %{
@@ -474,7 +552,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              },
              "client_ip_address" => client_ip_address,
              "client_user_agent" => client_user_agent
-           }
+           },
+           occurred_at: occurred_at
          },
          %Authentication{
            principal_id: user_account_id,
@@ -484,6 +563,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
          %UserAccount{id: user_account_id} = user_account,
          switch_edu_id,
          root,
+         updated,
          student \\ nil
        ) do
     assert [
@@ -536,13 +616,6 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                switch_edu_id_id: switch_edu_id_id,
                preregistered_user:
                  if student do
-                   [preregistered_user_updated_at] =
-                     Repo.one(
-                       from pu in PreregisteredUser,
-                         select: [pu.updated_at],
-                         where: pu.id == ^student.id
-                     )
-
                    %PreregisteredUser{
                      __meta__: loaded(PreregisteredUser, "students"),
                      id: student.id,
@@ -553,16 +626,36 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                      group_id: student.class_id,
                      user_account: not_loaded(:user_account, PreregisteredUser),
                      user_account_id: user_account_id,
-                     version: student.version,
-                     updated_at: preregistered_user_updated_at
+                     version:
+                       if updated do
+                         student.version + 1
+                       else
+                         student.version
+                       end,
+                     updated_at:
+                       if updated do
+                         occurred_at
+                       else
+                         student.updated_at
+                       end
                    }
                  else
                    nil
                  end,
                preregistered_user_id: student && student.id,
-               version: user_account.version,
+               version:
+                 if updated do
+                   user_account.version + 1
+                 else
+                   user_account.version
+                 end,
                created_at: user_account.created_at,
-               updated_at: user_account.updated_at
+               updated_at:
+                 if updated do
+                   occurred_at
+                 else
+                   user_account.updated_at
+                 end
              },
              user_account_id: user_account_id,
              impersonated_user_account: nil,
