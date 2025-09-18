@@ -80,7 +80,7 @@ const progress = new ProgressBar(
 
 const progressInterval = setInterval(() => progress.render(), 1000);
 
-const baseUrl = `http://localhost:42000`;
+const baseUrl = process.argv[2] ?? `http://localhost:42000`;
 progress.render({ what: 'Home' });
 await exportPageToPdf(
   page,
