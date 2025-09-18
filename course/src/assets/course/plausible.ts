@@ -4,7 +4,14 @@ import log from '../logging';
 
 const logger = log.getLogger('plausible');
 
-export function trackEvent(name: string, props: CustomProperties = {}) {
+const standalone =
+  document.querySelector('head')?.dataset['archidepStandalone'] === 'true';
+
+export function trackEvent(name: string, props: CustomProperties = {}): void {
+  if (standalone) {
+    return;
+  }
+
   const plausible: typeof track | undefined = window['plausible'];
   if (plausible === undefined) {
     return;
