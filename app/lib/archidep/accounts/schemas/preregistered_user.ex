@@ -72,7 +72,8 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
         where:
           pu.active and
             ug.active and (is_nil(ug.start_date) or ug.start_date <= ^now) and
-            (is_nil(ug.end_date) or ug.end_date >= ^now) and is_nil(ua) and
+            (is_nil(ug.end_date) or ug.end_date >= ^now) and
+            (is_nil(ua) or is_nil(ua.switch_edu_id_id)) and
             fragment("LOWER(?)", pu.email) in ^lowercase_emails,
         preload: [group: ug, user_account: ua]
       )
@@ -85,11 +86,17 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
           DateTime.t()
         ) :: Changeset.t(t())
   def link_to_user_account(
-        %__MODULE__{user_account_id: current_user_account_id} = preregistered_user,
-        %UserAccount{id: new_user_account_id} = user_account,
+        %__MODULE__{user_account_id: user_account_id} = preregistered_user,
+        %UserAccount{id: user_account_id},
+        _now
+      ),
+      do: change(preregistered_user)
+
+  def link_to_user_account(
+        %__MODULE__{user_account_id: nil} = preregistered_user,
+        user_account,
         now
-      )
-      when is_nil(current_user_account_id) or current_user_account_id == new_user_account_id,
+      ),
       do:
         preregistered_user
         |> change()

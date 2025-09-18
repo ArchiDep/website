@@ -73,7 +73,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       fn _repo, %{switch_edu_id: switch_edu_id} ->
         case UserAccount.fetch_for_switch_edu_id(switch_edu_id) do
           nil ->
-            new_user_account(switch_edu_id, switch_edu_id_data)
+            new_user_account(switch_edu_id, switch_edu_id_data, now)
 
           user_account ->
             existing_user_account(switch_edu_id_data, user_account)
@@ -162,7 +162,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     |> transaction()
   end
 
-  defp new_user_account(switch_edu_id, data) do
+  defp new_user_account(switch_edu_id, data, now) do
     # If the user account does not exist but one of the emails of the Switch
     # edu-ID account has been configured as a root user, create a new root user
     # account.
@@ -178,15 +178,28 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
         # If there is exactly one active preregistered user with a matching
         # email that is not yet linked to a user account, create a new student
         # user account.
-        [exactly_one_preregistered_user] ->
+        [%PreregisteredUser{user_account_id: nil} = exactly_one_preregistered_user] ->
           {:ok,
            {
              :new_student,
-             # and one for new student accounts. Directly link the account to
-             # the student in the latter.
              UserAccount.new_preregistered_switch_edu_id_account(
                switch_edu_id,
                exactly_one_preregistered_user
+             ),
+             exactly_one_preregistered_user
+           }}
+
+        [
+          %PreregisteredUser{user_account: %UserAccount{switch_edu_id_id: nil} = user_account} =
+              exactly_one_preregistered_user
+        ] ->
+          {:ok,
+           {
+             :existing_student,
+             UserAccount.link_to_switch_edu_id(
+               user_account,
+               switch_edu_id,
+               now
              ),
              exactly_one_preregistered_user
            }}

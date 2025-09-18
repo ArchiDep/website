@@ -217,6 +217,53 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     )
   end
 
+  test "log in an existing student user account with Switch edu-ID when it has previous logged in with a link",
+       %{
+         log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
+       } do
+    class = CourseFactory.insert(:class, active: true)
+    student = CourseFactory.insert(:student, active: true, class: class, user: nil)
+    student_id = student.id
+
+    switch_edu_id_login_data =
+      AccountsFactory.build(:switch_edu_id_login_data,
+        emails: [student.email],
+        swiss_edu_person_unique_id: "foobar"
+      )
+
+    user_account =
+      AccountsFactory.insert(:user_account,
+        root: false,
+        active: true,
+        switch_edu_id: nil,
+        preregistered_user_id: student.id
+      )
+
+    Repo.update_all(from(s in Student, where: s.id == ^student_id),
+      set: [user_id: user_account.id]
+    )
+
+    metadata = Factory.build(:client_metadata)
+
+    assert {:ok, auth} =
+             log_in_or_register_with_switch_edu_id.(
+               switch_edu_id_login_data,
+               metadata
+             )
+
+    auth
+    |> assert_auth(user_account.username, false)
+    |> assert_logged_in_event(metadata, user_account, switch_edu_id_login_data, true, student)
+    |> assert_user_session_for_existing_user(
+      auth,
+      user_account,
+      switch_edu_id_login_data,
+      false,
+      :user_account,
+      student
+    )
+  end
+
   test "log in an existing inactive student user account to a new student with Switch edu-ID", %{
     log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
   } do
@@ -608,7 +655,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                  first_name: first_name,
                  last_name: last_name,
                  swiss_edu_person_unique_id: swiss_edu_person_unique_id,
-                 version: switch_edu_id.version + 1,
+                 version:
+                   case switch_edu_id do
+                     %SwitchEduId{} -> switch_edu_id.version + 1
+                     _otherwise -> 1
+                   end,
                  created_at: switch_edu_id_created_at,
                  updated_at: switch_edu_id_updated_at,
                  used_at: session_created_at
@@ -626,14 +677,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                      group_id: student.class_id,
                      user_account: not_loaded(:user_account, PreregisteredUser),
                      user_account_id: user_account_id,
-                     version:
-                       if updated do
-                         student.version + 1
-                       else
-                         student.version
-                       end,
+                     version: update_version_if(student, :student, updated),
                      updated_at:
-                       if updated do
+                       if updated == true or updated == :student do
                          occurred_at
                        else
                          student.updated_at
@@ -643,15 +689,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                    nil
                  end,
                preregistered_user_id: student && student.id,
-               version:
-                 if updated do
-                   user_account.version + 1
-                 else
-                   user_account.version
-                 end,
+               version: update_version_if(user_account, :user_account, updated),
                created_at: user_account.created_at,
                updated_at:
-                 if updated do
+                 if updated == true or updated == :user_account do
                    occurred_at
                  else
                    user_account.updated_at
@@ -662,4 +703,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              impersonated_user_account_id: nil
            }
   end
+
+  defp update_version_if(%{version: version}, _key, true), do: version + 1
+
+  defp update_version_if(%{version: version}, update, update) when is_atom(update),
+    do: version + 1
+
+  defp update_version_if(%{version: version}, _key, _update), do: version
 end

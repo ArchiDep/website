@@ -117,7 +117,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
         &PreregisteredUser.link_to_user_account(
           preregistered_user,
           &1.user_account,
-          DateTime.utc_now()
+          now
         )
       )
       |> Multi.insert(

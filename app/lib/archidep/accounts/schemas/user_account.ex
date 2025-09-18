@@ -198,6 +198,28 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     |> validate()
   end
 
+  @spec link_to_switch_edu_id(t(), SwitchEduId.t(), DateTime.t()) :: Changeset.t(t())
+  def link_to_switch_edu_id(
+        %__MODULE__{switch_edu_id_id: nil} = user_account,
+        switch_edu_id,
+        now
+      ),
+      do:
+        user_account
+        |> cast(%{switch_edu_id_id: switch_edu_id.id}, [
+          :switch_edu_id_id
+        ])
+        |> assoc_constraint(:switch_edu_id)
+        |> change(updated_at: now)
+        |> optimistic_lock(:version)
+        |> unsafe_validate_unique_query(:switch_edu_id_id, Repo, fn changeset ->
+          switch_edu_id_id = get_field(changeset, :switch_edu_id_id)
+
+          from(ua in __MODULE__,
+            where: ua.id != ^user_account.id and ua.switch_edu_id_id == ^switch_edu_id_id
+          )
+        end)
+
   @spec relink_to_preregistered_user(
           t(),
           PreregisteredUser.t(),
