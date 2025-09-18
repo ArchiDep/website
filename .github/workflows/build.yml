@@ -10,6 +10,18 @@ on:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run
+# in-progress and latest queued. However, do NOT cancel in-progress runs as
+# we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build-app:
     runs-on: ubuntu-24.04
@@ -213,6 +225,12 @@ jobs:
           path: app/priv/static
           retention-days: 5
 
+      - name: Upload static files as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/priv/static
+
   build-theme:
     runs-on: ubuntu-24.04
     name: Build theme
@@ -270,3 +288,15 @@ jobs:
         run: |
           git status --porcelain
           test -z "$(git status --porcelain)"
+
+  publish-pages:
+    name: Publish to GitHub Pages
+    runs-on: ubuntu-24.04
+    needs: [build-course]
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
