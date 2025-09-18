@@ -236,7 +236,9 @@ Jekyll::Hooks.register :site, :post_render do |site|
 
   search_elements =
     docs.flat_map do |doc|
-      next [] if doc["standalone"] == false and site.config["archidep_standalone"]
+      if doc["standalone"] == false and site.config["archidep_standalone"]
+        next []
+      end
 
       html_doc = Nokogiri.HTML(doc.content)
 
