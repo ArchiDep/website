@@ -13,13 +13,13 @@
   <link rel='preconnect' href='https://fonts.googleapis.com'>
   <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
   <link rel='stylesheet' href='{{ "/assets/theme/theme.css" | relative_asset_url }}'>
-  <link rel='icon' type='image/png' sizes='16x16' href='/favicons/archidep-rocket-16.png'>
-  <link rel='icon' type='image/png' sizes='32x32' href='/favicons/archidep-rocket-32.png'>
-  <link rel='icon' type='image/png' sizes='48x48' href='/favicons/archidep-rocket-48.png'>
-  <link rel='icon' type='image/png' sizes='96x96' href='/favicons/archidep-rocket-96.png'>
-  <link rel='icon' type='image/png' sizes='192x192' href='/favicons/archidep-rocket-192.png'>
-  <link rel='apple-touch-icon' sizes='180x180' href='/favicons/archidep-rocket-180.png'>
-  <link rel='shortcut icon' href='/favicon.ico'>
+  <link rel='icon' type='image/png' sizes='16x16' href='{{ "/favicons/archidep-rocket-16.png" | relative_url }}'>
+  <link rel='icon' type='image/png' sizes='32x32' href='{{ "/favicons/archidep-rocket-32.png" | relative_url }}'>
+  <link rel='icon' type='image/png' sizes='48x48' href='{{ "/favicons/archidep-rocket-48.png" | relative_url }}'>
+  <link rel='icon' type='image/png' sizes='96x96' href='{{ "/favicons/archidep-rocket-96.png" | relative_url }}'>
+  <link rel='icon' type='image/png' sizes='192x192' href='{{ "/favicons/archidep-rocket-192.png" | relative_url }}'>
+  <link rel='apple-touch-icon' sizes='180x180' href='{{ "/favicons/archidep-rocket-180.png" | relative_url }}'>
+  <link rel='shortcut icon' href='{{ "/favicon.ico" | relative_url }}'>
   <script src='{{ "/assets/course/course.js" | relative_asset_url }}' defer></script>
   {%- feed_meta -%}
   {% if site.livereload_script_forced %}

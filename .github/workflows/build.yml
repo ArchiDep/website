@@ -210,7 +210,7 @@ jobs:
           path: app/priv/static/assets/course
 
       - name: Build the course
-        run: bundle exec jekyll build
+        run: bundle exec jekyll build --config __config.yml,__config.pages.yml
         working-directory: course
 
       - name: Ensure there are no uncommitted changes
