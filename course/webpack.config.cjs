@@ -57,7 +57,7 @@ module.exports = [
         'assets',
         'course'
       ),
-      publicPath: `${ARCHIDEP_BASE_PATH}/assets/course/`
+      publicPath: `${basePath}/assets/course/`
     },
     plugins: [
       new MiniCssExtractPlugin({
@@ -102,7 +102,7 @@ module.exports = [
         'assets',
         'search'
       ),
-      publicPath: `${ARCHIDEP_BASE_PATH}/assets/search/`
+      publicPath: `${basePath}/assets/search/`
     }
   }
 ];
