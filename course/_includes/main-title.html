@@ -23,19 +23,21 @@
       </span>
 
       <ul class='not-prose flex flex-wrap md:flex-nowrap items-center gap-x-2 gap-y-1'>
-        <li>
-          <a href='https://status.archidep.ch'>
-            <img
-              src='https://status.archidep.ch/badge/_/status?labelColor=&color=&style=flat&label=status'
-              alt='Status'
-            >
-          </a>
-        </li>
-        <li>
-          <a href='https://github.com/ArchiDep/website/actions/workflows/build.yml'>
-            <img src='https://github.com/ArchiDep/website/actions/workflows/build.yml/badge.svg' alt='Build'>
-          </a>
-        </li>
+        {% unless site.archidep_standalone %}
+          <li>
+            <a href='https://status.archidep.ch'>
+              <img
+                src='https://status.archidep.ch/badge/_/status?labelColor=&color=&style=flat&label=status'
+                alt='Status'
+              >
+            </a>
+          </li>
+          <li>
+            <a href='https://github.com/ArchiDep/website/actions/workflows/build.yml'>
+              <img src='https://github.com/ArchiDep/website/actions/workflows/build.yml/badge.svg' alt='Build'>
+            </a>
+          </li>
+        {% endunless %}
         <li>
           <a href='https://opensource.org/licenses/MIT'>
             <img src='https://img.shields.io/static/v1?label=license&message=MIT&color=informational' alt='MIT License'>
