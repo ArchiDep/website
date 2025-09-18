@@ -243,7 +243,7 @@ Jekyll::Hooks.register :site, :post_render do |site|
       current_search_element = {
         id: doc.data["search_url"] || doc.url,
         type: type,
-        url: doc.data["search_url"] || doc.url,
+        url: site.baseurl + (doc.data["search_url"] || doc.url),
         title: doc.data["title"].sub(/:[^:]+:\s*/, "").strip,
         subtitle: doc.data["search_subtitle"] || doc.data["title"],
         elements: [],
@@ -262,7 +262,7 @@ Jekyll::Hooks.register :site, :post_render do |site|
           current_search_element = {
             id: "#{doc.url}##{element["id"]}",
             type: type,
-            url: "#{doc.url}##{element["id"]}",
+            url: "#{site.baseurl}#{doc.url}##{element["id"]}",
             title: element.text.sub(/^:[^:]+:\s*/, ""),
             subtitle: doc.data["title"],
             elements: [],

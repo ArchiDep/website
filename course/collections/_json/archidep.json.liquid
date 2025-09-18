@@ -17,7 +17,7 @@ pretty_print: true
     {{- item.section_chapter | jsonify -}}
     ,"progress":
     {{- item.progress | jsonify -}}
-    ,"slides":{{ item.has_slides | jsonify }},"url":{{ item.url | jsonify }}}
+    ,"slides":{{ item.has_slides | jsonify }},"url":{{ item.url | relative_url | jsonify }}}
     {%- unless forloop.last %},{% endunless -%}
   {%- endfor -%}
   ]}
@@ -27,7 +27,7 @@ pretty_print: true
 {%- for doc in site.cheatsheets -%}
   {"title":{{ doc.title | jsonify }},"sidebar_title":{{ doc.sidebar_title | jsonify }},"slug":
   {{- doc.cheatsheet | jsonify -}}
-  ,"url":{{ doc.url | jsonify }}}
+  ,"url":{{ doc.url | relative_url | jsonify }}}
   {%- unless forloop.last %},{% endunless -%}
 {%- endfor -%}
 ]}
