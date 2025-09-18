@@ -19,12 +19,17 @@ const logger = log.getLogger('course');
 
 logger.info('ArchiDep 🚀');
 
-init({
-  domain: 'archidep.ch',
-  endpoint: 'https://plausible.alphahydrae.ch/api/event',
-  autoCapturePageviews: true,
-  outboundLinks: true
-});
+const standalone =
+  document.querySelector('head')?.dataset['archidepStandalone'] === 'true';
+
+if (!standalone) {
+  init({
+    domain: 'archidep.ch',
+    endpoint: 'https://plausible.alphahydrae.ch/api/event',
+    autoCapturePageviews: true,
+    outboundLinks: true
+  });
+}
 
 window['logOut'] = logOut;
 
