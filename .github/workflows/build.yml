@@ -180,7 +180,7 @@ jobs:
   build-course:
     runs-on: ubuntu-24.04
     name: Build course
-    needs: [build-assets]
+    needs: [build-assets, build-theme]
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -210,6 +210,12 @@ jobs:
         with:
           name: course_assets
           path: app/priv/static/assets/course
+
+      - name: Download theme
+        uses: actions/download-artifact@v4
+        with:
+          name: theme
+          path: app/priv/static/assets/theme
 
       - name: Build the course
         run: bundle exec jekyll build --config _config.yml,_config.pages.yml

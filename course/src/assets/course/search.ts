@@ -50,6 +50,7 @@ type SearchPosition = readonly [number, number];
 
 const searchData = t.readonlyArray(searchElement);
 
+const basePath = document.querySelector('head')?.dataset['basePath'] ?? '';
 const body = document.querySelector('body');
 
 const testNode = document.createElement('div');
@@ -483,7 +484,7 @@ function loadSearchIndex(): Promise<lunr.Index> {
   const start = Date.now();
   logger.debug('Downloading search index...');
 
-  return fetch('/lunr.json')
+  return fetch(`${basePath}/lunr.json`)
     .then(res => {
       if (!res.ok) {
         throw new Error(
@@ -523,7 +524,7 @@ function loadSearchData(): Promise<readonly SearchElement[]> {
   const start = Date.now();
   logger.debug('Downloading search data...');
 
-  return fetch('/search.json')
+  return fetch(`${basePath}/search.json`)
     .then(res => {
       if (!res.ok) {
         throw new Error(
