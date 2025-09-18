@@ -174,6 +174,10 @@ async function exportToPdf(
   url: string,
   options: PDFOptions
 ): Promise<void> {
+  await page.evaluateOnNewDocument(() => {
+    localStorage.setItem('plausible_ignore', 'true');
+  });
+
   await page.goto(url, {
     waitUntil: 'networkidle2'
   });
