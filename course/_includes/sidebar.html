@@ -20,23 +20,25 @@
         {% if page.url == '/' %}
           {% assign home_background = 'bg-primary/50' %}
         {% endif %}
-        <a href='/' class='{{ home_background }} tooltip tooltip-bottom' data-tip='Course'>
+        <a href='{{ "/" | relative_url }}' class='{{ home_background }} tooltip tooltip-bottom' data-tip='Course'>
           {%- include icons/home.html class="w-full" -%}
           <span class='sr-only'>Course</span>
         </a>
       </li>
-      <li>
-        <a href='/app' class='tooltip tooltip-bottom' data-tip='Dashboard'>
-          {%- include icons/cube.html class="w-full" -%}
-          <span class='sr-only'>Dashboard</span>
-        </a>
-      </li>
-      <li>
-        <a href='/admin' id='sidebar-admin-item' class='hidden tooltip tooltip-bottom' data-tip='Admin'>
-          {%- include icons/fire.html class="text-error w-full" -%}
-          <span class='sr-only'>Admin</span>
-        </a>
-      </li>
+      {% unless site.archidep_standalone %}
+        <li>
+          <a href='/app' class='tooltip tooltip-bottom' data-tip='Dashboard'>
+            {%- include icons/cube.html class="w-full" -%}
+            <span class='sr-only'>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href='/admin' id='sidebar-admin-item' class='hidden tooltip tooltip-bottom' data-tip='Admin'>
+            {%- include icons/fire.html class="text-error w-full" -%}
+            <span class='sr-only'>Admin</span>
+          </a>
+        </li>
+      {% endunless %}
     </ul>
   </div>
   <ul class='w-full menu px-4 pt-0 pb-4'>

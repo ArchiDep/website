@@ -155,8 +155,13 @@ window.addEventListener('phx:execute-action', event => {
   });
 });
 
+const standalone =
+  document.querySelector('head').dataset['archidepStandalone'] === 'true';
+
 // connect if there are any LiveViews on the page
-liveSocket.connect();
+if (!standalone) {
+  liveSocket.connect();
+}
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
@@ -164,14 +169,16 @@ liveSocket.connect();
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket;
 
-init({
-  domain: 'archidep.ch',
-  endpoint: 'https://plausible.alphahydrae.ch/api/event',
-  autoCapturePageviews: false,
-  outboundLinks: true
-});
+if (!standalone) {
+  init({
+    domain: 'archidep.ch',
+    endpoint: 'https://plausible.alphahydrae.ch/api/event',
+    autoCapturePageviews: false,
+    outboundLinks: true
+  });
 
-trackEvent('pageview');
+  trackEvent('pageview');
+}
 
 let lastPage;
 

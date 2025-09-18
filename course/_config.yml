@@ -11,6 +11,7 @@ livereload_base_url: http://localhost:42002
 livereload_script_forced: false
 destination: '../app/priv/static'
 strict_front_matter: true
+archidep_standalone: false
 
 collections:
   cheatsheets:

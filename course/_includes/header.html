@@ -31,31 +31,33 @@
       <span class='sr-only'>Log in</span>
     </a>
 
-    <div id='navbar-profile' class='hidden dropdown dropdown-end'>
-      <button type='button' class='btn btn-ghost btn-circle hover:bg-neutral'>
-        <div class='user hidden w-6 sm:w-8 rounded-full'>
-          {%- include icons/user-circle.html class="w-full" -%}
-        </div>
-        <div class='impersonator hidden w-6 sm:w-8 rounded-full'>
-          {%- include icons/eye.html class="w-full" -%}
-        </div>
-      </button>
-      <ul
-        class='menu menu-sm dropdown-content bg-base-300 rounded-box z-1 mt-3 w-52 p-2 shadow'
-      >
-        <li>
-          <a href='/profile' class='flex items-center gap-1'>
-            {%- include icons/user.html class="size-3.5" -%}
-            <span>Profile</span>
-          </a>
-        </li>
-        <li>
-          <button type='button' id='logout-button' class='flex items-center gap-1' onclick='logOut' disabled>
-            {%- include icons/arrow-right-start-on-rectangle.html class="size-3.5" -%}
-            <span>Log out</span>
-          </button>
-        </li>
-      </ul>
-    </div>
+    {% unless site.archidep_standalone %}
+      <div id='navbar-profile' class='hidden dropdown dropdown-end'>
+        <button type='button' class='btn btn-ghost btn-circle hover:bg-neutral'>
+          <div class='user hidden w-6 sm:w-8 rounded-full'>
+            {%- include icons/user-circle.html class="w-full" -%}
+          </div>
+          <div class='impersonator hidden w-6 sm:w-8 rounded-full'>
+            {%- include icons/eye.html class="w-full" -%}
+          </div>
+        </button>
+        <ul
+          class='menu menu-sm dropdown-content bg-base-300 rounded-box z-1 mt-3 w-52 p-2 shadow'
+        >
+          <li>
+            <a href='/profile' class='flex items-center gap-1'>
+              {%- include icons/user.html class="size-3.5" -%}
+              <span>Profile</span>
+            </a>
+          </li>
+          <li>
+            <button type='button' id='logout-button' class='flex items-center gap-1' onclick='logOut' disabled>
+              {%- include icons/arrow-right-start-on-rectangle.html class="size-3.5" -%}
+              <span>Log out</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    {% endunless %}
   </div>
 </header>
