@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Profile.ProfileLive do
 
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Accounts
+  alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDepWeb.Profile.CurrentSessionsLive
 
   @impl LiveView

@@ -36,6 +36,12 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduId do
     field(:used_at, :utc_datetime_usec)
   end
 
+  @spec name(t()) :: String.t() | nil
+  def name(%__MODULE__{first_name: nil, last_name: nil}), do: nil
+
+  def name(%__MODULE__{first_name: first_name, last_name: last_name}),
+    do: [first_name, last_name] |> Enum.filter(& &1) |> Enum.join(" ")
+
   @doc """
   Returns the event stream for the specified Switch edu-ID entity.
   """

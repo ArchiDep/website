@@ -33,6 +33,6 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
 
   def impersonating?(_auth), do: true
 
-  @spec username(Authentication.t()) :: String.t()
+  @spec username(Authentication.t()) :: String.t() | nil
   defdelegate username(auth), to: Authentication
 end

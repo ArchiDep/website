@@ -94,8 +94,9 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
       Repo.one!(
         from(ua in __MODULE__,
           left_join: sei in assoc(ua, :switch_edu_id),
+          left_join: pu in assoc(ua, :preregistered_user),
           where: ua.id == ^id,
-          preload: [switch_edu_id: sei]
+          preload: [switch_edu_id: sei, preregistered_user: pu]
         )
       )
 

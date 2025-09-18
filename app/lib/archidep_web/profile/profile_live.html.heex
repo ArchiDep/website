@@ -5,20 +5,29 @@
   </h2>
 </div>
 
-<dl class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4">
-  <dt class="font-bold">{gettext("Username")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">{username(@auth)}</dd>
-  <%= if @user_account.switch_edu_id != nil do %>
-    <dt class="font-bold">{gettext("Switch edu-ID unique ID")}</dt>
-    <dd class="col-span-1 md:col-span-3 xl:col-span-4">
-      {@user_account.switch_edu_id.swiss_edu_person_unique_id}
-    </dd>
-  <% end %>
-  <dt class="font-bold">{gettext("Registration date")}</dt>
-  <dd class="col-span-1 md:col-span-3 xl:col-span-4">
+<.data_display>
+  <.data_display_element :if={username(@auth) != nil} title={gettext("Username")}>
+    {username(@auth)}
+  </.data_display_element>
+  <.data_display_element :if={@user_account.preregistered_user != nil} title={gettext("Email")}>
+    {@user_account.preregistered_user.email}
+  </.data_display_element>
+  <.data_display_element
+    :if={@user_account.switch_edu_id != nil and SwitchEduId.name(@user_account.switch_edu_id)}
+    title={gettext("Switch edu-ID name")}
+  >
+    {SwitchEduId.name(@user_account.switch_edu_id)}
+  </.data_display_element>
+  <.data_display_element
+    :if={root?(@auth) and @user_account.switch_edu_id != nil}
+    title={gettext("Swiss edu person unique ID")}
+  >
+    {@user_account.switch_edu_id.swiss_edu_person_unique_id}
+  </.data_display_element>
+  <.data_display_element title={gettext("Registration date")}>
     {format_date_time(@user_account.created_at)}
-  </dd>
-</dl>
+  </.data_display_element>
+</.data_display>
 
 <h2 class="mt-5 text-2xl font-bold mb-3">{gettext("Sessions")}</h2>
 
