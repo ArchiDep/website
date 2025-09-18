@@ -6,7 +6,7 @@ layout: toc
     <div class='mt-4 mb-2 flex justify-between items-end gap-x-2'>
       <h2 class='text-4xl font-bold'>Presentation</h2>
       <a
-        href='{{ page.slides.url }}'
+        href='{{ page.slides.url | relative_url }}'
         target='_blank'
         class='flex items-center gap-x-2 opacity-75 hover:opacity-100 tooltip'
         data-tip='Open'
@@ -17,7 +17,7 @@ layout: toc
 
     <iframe
       class='w-full aspect-video dark:opacity-85'
-      src='{{ page.slides.url }}?view=scroll'
+      src='{{ page.slides.url | relative_url }}?view=scroll'
       title='Slides'
     ></iframe>
   </div>
