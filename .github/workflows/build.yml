@@ -162,6 +162,8 @@ jobs:
       - name: Build course assets
         run: npm run build
         working-directory: course
+        env:
+          ARCHIDEP_BASE_PATH: '/website'
 
       - name: Ensure there are no uncommitted changes
         run: |

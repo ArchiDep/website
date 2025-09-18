@@ -3,6 +3,7 @@ const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const path = require('path');
 
 const production = process.env.NODE_ENV === 'production';
+const basePath = process.env.ARCHIDEP_BASE_PATH ?? '';
 
 const baseConfig = {
   devtool: 'source-map',
@@ -56,7 +57,7 @@ module.exports = [
         'assets',
         'course'
       ),
-      publicPath: '/assets/course/'
+      publicPath: `${ARCHIDEP_BASE_PATH}/assets/course/`
     },
     plugins: [
       new MiniCssExtractPlugin({
@@ -101,7 +102,7 @@ module.exports = [
         'assets',
         'search'
       ),
-      publicPath: '/assets/search/'
+      publicPath: `${ARCHIDEP_BASE_PATH}/assets/search/`
     }
   }
 ];
