@@ -19,7 +19,7 @@ permissions:
 # in-progress and latest queued. However, do NOT cancel in-progress runs as
 # we want to allow these production deployments to complete.
 concurrency:
-  group: "pages"
+  group: 'pages'
   cancel-in-progress: false
 
 jobs:
@@ -210,7 +210,7 @@ jobs:
           path: app/priv/static/assets/course
 
       - name: Build the course
-        run: bundle exec jekyll build --config __config.yml,__config.pages.yml
+        run: bundle exec jekyll build --config _config.yml,_config.pages.yml
         working-directory: course
 
       - name: Ensure there are no uncommitted changes

@@ -4,7 +4,7 @@
       <div class='flex items-center gap-x-2'>
         <div class='avatar'>
           <div class='w-10'>
-            <img src='/favicons/archidep-rocket-192.png' alt='ArchiDep logo'>
+            <img src='{{ "/favicons/archidep-rocket-192.png" | relative_url }}' alt='ArchiDep logo'>
           </div>
         </div>
         <span class='font-title'>ArchiDep</span>
@@ -109,7 +109,7 @@
           {% endif %}
 
           <a
-            href='{{ item.url }}'
+            href='{{ item.url | relative_url }}'
             target='{{ link_target }}'
             class='flex items-center gap-2 {{ current_font_weight }}'
           >
