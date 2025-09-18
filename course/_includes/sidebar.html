@@ -140,7 +140,7 @@
 
       <li class='{{ current_background }}'>
         <a
-          href='{{ item.url }}'
+          href='{{ item.url | relative_url }}'
           class='flex items-center gap-2 {{ current_font_weight }}'
         >
           {%- include chapter-title.html doc=item -%}
