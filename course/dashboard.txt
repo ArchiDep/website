@@ -5,6 +5,7 @@ permalink: /integration/dashboard
 search: true
 search_subtitle: User & server dashboard
 search_url: /app
+standalone: false
 ---
 
 Manage your user account for the course and register a server for the exercises.
