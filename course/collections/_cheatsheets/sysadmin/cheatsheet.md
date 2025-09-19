@@ -288,6 +288,16 @@ Not all services log there, however. If `journalctl` displays no log entries, yo
 
 If your service cannot start, you should be able to find an error from one of these sources.
 
+### List a server's SSH host key fingerprints
+
+If you need to see the fingerprints of a server's SSH public keys (e.g. to check
+the key in an SSH client's initial connection warning), run the following
+command on the server:
+
+```bash
+find /etc/ssh -name "*.pub" -exec ssh-keygen -l -f {} \;
+```
+
 ## Installing & upgrading
 
 You must be an administrator (have `sudo` access) to perform some of the following operations.
