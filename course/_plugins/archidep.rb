@@ -12,6 +12,7 @@ module ArchiDep
       site.data["version"] = VERSION
 
       course_docs = site.collections["course"].docs
+      sections = site.data["course"]["sections"]
 
       progress_docs = site.collections["progress"].docs
       done_chapters = progress_docs.flat_map { |doc| doc.data["done"] || [] }
@@ -45,6 +46,7 @@ module ArchiDep
 
         item.data["section"] = section
         item.data["section_chapter"] = section_chapter
+        item.data["section_title"] = sections[section - 1]["title"]
         item.data["course_slug"] = slug
 
         chapter_num = section * 100 + section_chapter
@@ -98,7 +100,6 @@ module ArchiDep
         end
       end
 
-      sections = site.data["course"]["sections"]
       sections.each_with_index do |section, i|
         # Attach the items in section to the section
         section_docs =

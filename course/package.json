@@ -29,6 +29,7 @@
     "@types/progress": "^2.0.7",
     "@types/reveal.js": "^5.2.0",
     "@types/tippy.js": "^6.3.0",
+    "archiver": "^7.0.1",
     "css-loader": "^7.1.2",
     "del-cli": "^6.0.0",
     "fp-ts": "^2.16.10",

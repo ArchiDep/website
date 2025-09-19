@@ -1,16 +1,19 @@
-import { G, N } from '@mobily/ts-belt';
+import { N } from '@mobily/ts-belt';
+import archiver from 'archiver';
 import { isLeft } from 'fp-ts/lib/Either.js';
 import * as t from 'io-ts';
-import { mkdir, readFile } from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
+import { mkdir, readFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import ProgressBar from 'progress';
 import puppeteer, { Page, PDFOptions } from 'puppeteer';
 import { match } from 'ts-pattern';
 
 import { getValidationErrorDetails } from '../shared/codecs/utils';
-import { courseDataFile, courseRoot } from './utils/constants';
+import { courseDataFile, courseRoot, tmpDir } from './utils/constants';
 
 const courseType = t.union([
+  t.literal('cheatsheet'),
   t.literal('exercise'),
   t.literal('slides'),
   t.literal('subject')
@@ -98,12 +101,11 @@ for (const doc of docsToExport) {
     match(doc.course_type)
       .with('subject', () => (doc.slides ? ' - Subject' : undefined))
       .with('slides', () => ' - Slides')
-      .with('exercise', () => undefined)
+      .with('exercise', () => ' - Exercise')
+      .with('cheatsheet', () => ' - Cheatsheet')
       .exhaustive(),
     '.pdf'
-  ]
-    .filter(G.isNotNullable)
-    .join('');
+  ].join('');
   const file = path.join(pdfExportDir, basename);
 
   const params = new URLSearchParams();
@@ -137,6 +139,27 @@ for (const doc of docsToExport) {
 clearInterval(progressInterval);
 
 await browser.close();
+
+await zipDirectory(pdfExportDir, path.join(tmpDir, 'ArchiDep.zip'));
+await rename(
+  path.join(tmpDir, 'ArchiDep.zip'),
+  path.join(pdfExportDir, 'ArchiDep.zip')
+);
+
+function zipDirectory(sourceDir: string, outPath: string): Promise<void> {
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  const stream = createWriteStream(outPath);
+
+  return new Promise((resolve, reject) => {
+    archive
+      .directory(sourceDir, false)
+      .on('error', err => reject(err))
+      .pipe(stream);
+
+    stream.on('close', () => resolve());
+    archive.finalize();
+  });
+}
 
 async function exportPageToPdf(
   page: Page,

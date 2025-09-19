@@ -13,6 +13,7 @@ export const courseRoot = pipe(
 
 export const repoRoot = path.dirname(courseRoot);
 export const destDir = path.resolve(repoRoot, 'app', 'priv', 'static');
+export const tmpDir = path.resolve(repoRoot, 'tmp');
 export const courseDataFile = path.join(destDir, 'archidep.json');
 export const courseSearchFile = path.join(destDir, 'search.json');
 export const courseIndexFile = path.join(destDir, 'lunr.json');
