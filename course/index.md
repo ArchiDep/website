@@ -47,6 +47,14 @@ apt install git` command][install-git-on-linux], or with their other
 
 - [All the course's subjects, slides & cheatsheets as PDF](/pdf/ArchiDep.zip)
 
+{% note type: warning %}
+
+These PDFs are not final. They are **not** the reference material for this
+course. Course material **will change** until the end of the semester. The only
+up-to-date material is what is on this site.
+
+{% endnote %}
+
 ## References
 
 These are the main references used throughout this course. More detailed and
