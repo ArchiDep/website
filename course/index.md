@@ -115,8 +115,8 @@ and related articles:
 - David Goetschmann, my current boss at [Square
   Services](https://www.squareservices.ch), who encourages me to continue to
   teach this course.
-- Mathias Oberson, former colleague at MEI, wrote the command line subject and
-  various other material.
+- Mathias Oberson, former colleague at MEI and Square Services, wrote the
+  command line subject and various other material.
 - Sarah Composto reread the material, suggested a significant amount of
   corrections and improvements, and hand-pixelated the funny logo.
 - All my former colleagues at MEI who suggested various improvements.
