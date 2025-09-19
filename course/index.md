@@ -120,7 +120,7 @@ and related articles:
 - Sarah Composto reread the material, suggested a significant amount of
   corrections and improvements, and hand-pixelated the funny logo.
 - All my former colleagues at MEI who suggested various improvements.
-- [Nicolas Chabloz](https://people.hes-so.ch/de/profile/4172247-nicolas-chabloz)
+- [Nicolas Chabloz](https://people.hes-so.ch/fr/profile/4172247-nicolas-chabloz)
   and the Helpdesk & IT team at [HEIG-VD](https://heig-vd.ch) who helped me
   debug last-minute issues.
 - All the teachers who taught me.
