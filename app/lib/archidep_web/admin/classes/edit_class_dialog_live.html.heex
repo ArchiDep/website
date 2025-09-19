@@ -8,6 +8,7 @@
       id="edit-class-form"
       form={@form}
       title={gettext("Edit Class")}
+      on_add_teacher_ssh_public_key={JS.push("add_teacher_ssh_public_key")}
       on_submit="update"
       on_close={close(@class)}
       target={@myself}

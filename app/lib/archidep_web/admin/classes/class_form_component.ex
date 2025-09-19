@@ -9,10 +9,15 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
-  attr :id, :string, doc: "the id of the form"
-  attr :form, Form, doc: "the form to render"
-  attr :title, :string, doc: "the title of the form"
-  attr :on_submit, :string, doc: "the event to trigger on form submission"
+  attr :id, :string, required: true, doc: "the id of the form"
+  attr :form, Form, required: true, doc: "the form to render"
+  attr :title, :string, required: true, doc: "the title of the form"
+
+  attr :on_add_teacher_ssh_public_key, JS,
+    default: nil,
+    doc: "the JS command to execute to add a new teacher SSH public key"
+
+  attr :on_submit, :string, required: true, doc: "the event to trigger on form submission"
   attr :on_close, JS, default: nil, doc: "optional JS to execute when the form is closed"
   attr :target, :string, default: nil, doc: "the target for the form submission"
 
@@ -105,6 +110,34 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         <.field_help>
           {gettext("Students can only register new servers if their class has servers enabled.")}
         </.field_help>
+
+        <label class="fieldset-label mt-2">{gettext("Teacher SSH public keys")}</label>
+        <.inputs_for :let={f} field={@form[:teacher_ssh_public_keys]}>
+          <input
+            type="text"
+            id={f[:value].id}
+            class="input w-full"
+            name={f[:value].name}
+            value={f[:value].value}
+            placeholder={gettext("Paste an SSH public key here")}
+          />
+          <.errors_for field={f[:value]} />
+        </.inputs_for>
+        <.errors_for field={@form[:teacher_ssh_public_keys]} />
+        <div>
+          <button
+            :if={@on_add_teacher_ssh_public_key}
+            type="button"
+            class="btn btn-success btn-sm"
+            phx-click={@on_add_teacher_ssh_public_key}
+            phx-target={@target}
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.plus class="size-4" />
+              <span>{gettext("Add")}</span>
+            </span>
+          </button>
+        </div>
       </fieldset>
 
       <div class="mt-2 flex justify-end gap-x-2">

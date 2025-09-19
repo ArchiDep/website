@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDepWeb.Admin.Classes.ClassForm
+  alias ArchiDepWeb.Admin.Classes.ClassFormSshPublicKey
 
   @base_id "edit-class-dialog"
 
@@ -27,6 +28,23 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
       |> ok()
 
   @impl LiveComponent
+
+  def handle_event("add_teacher_ssh_public_key", _params, socket) do
+    form = socket.assigns.form
+
+    changeset =
+      form.source
+      |> Changeset.change()
+      |> Changeset.put_embed(
+        :teacher_ssh_public_keys,
+        Changeset.get_field(form.source, :teacher_ssh_public_keys, []) ++
+          [%ClassFormSshPublicKey{}]
+      )
+
+    socket
+    |> assign(form: to_form(changeset, as: :class))
+    |> noreply()
+  end
 
   def handle_event("closed", _params, socket),
     do:
