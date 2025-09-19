@@ -43,6 +43,10 @@ apt install git` command][install-git-on-linux], or with their other
   - [Firefox][firefox] (optional, required for one network exercise)
 - A free [Render][render] account
 
+## Resources
+
+- [All the course's subjects, slides & cheatsheets as PDF](/pdf/ArchiDep.zip)
+
 ## References
 
 These are the main references used throughout this course. More detailed and
