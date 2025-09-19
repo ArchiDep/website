@@ -1,0 +1,16 @@
+<div class='card card-sm 2xl:card-md {{ include.class }}'>
+  <div class='card-body'>
+    <p class='card-title font-title text-2xl mt-0 flex-none'>
+      {{ include.title }}
+    </p>
+    <ul class='flex flex-col gap-y-1'>
+      {% for chapter in include.chapters %}
+        <li class='px-2 py-1 rounded-full {{ include.line_class }}'>
+          <a href='{{ chapter.url }}' class='{{ include.link_class }}'>
+            {% include chapter-title.html doc=chapter %}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>

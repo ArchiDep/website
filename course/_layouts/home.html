@@ -1,61 +1,36 @@
 ---
 layout: toc
 ---
+<!-- Welcome message -->
 <div class='not-prose alert alert-success alert-soft my-4 print:hidden' role='alert'>
-  <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' class='stroke-success h-6 w-6 shrink-0'>
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-  </svg>
+  {% include icons/info-circle.html class='size-6 stroke-success shrink-0' %}
   <span>Welcome to the Architecture & Deployment course!</span>
 </div>
 
+<!-- Previously, due next & next time cards -->
 <div class='not-prose my-4 grid grid-cols-1 xl:grid-cols-3 gap-4 print:hidden'>
   {% if page.previous_chapters.size != 0 %}
-    <div class='card card-sm 2xl:card-md bg-success text-success-content'>
-      <div class='card-body'>
-        <p class='card-title font-title text-2xl mt-0 px-2'>Previously</p>
-        <ul class='flex flex-col gap-y-1'>
-          {% for subject in page.previous_chapters %}
-            <li class='px-2 py-1 rounded-full hover:bg-success-content/10'>
-              <a href='{{ subject.url }}' class='hover:!text-success-content'>
-                {% include chapter-title.html doc=subject %}
-              </a>
-            </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
+    {%
+      include home-card.html
+      title='Previously' chapters=page.previous_chapters
+      class='bg-success text-success-content' line_class='hover:bg-success-content/10' link_class='hover:!text-success-content'
+    %}
   {% endif %}
+
   {% if page.next_due_exercises.size != 0 %}
-    <div class='card card-sm 2xl:card-md bg-warning text-warning-content'>
-      <div class='card-body'>
-        <p class='card-title font-title text-2xl mt-0'>Due next</p>
-        <ul class='flex flex-col gap-y-1'>
-          {% for exercise in page.next_due_exercises %}
-            <li class='px-2 py-1 rounded-full hover:bg-warning-content/10'>
-              <a href='{{ exercise.url }}' class='hover:!text-warning-content'>
-                {% include chapter-title.html doc=exercise %}
-              </a>
-            </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
+    {%
+      include home-card.html
+      title='Due next' chapters=page.next_due_exercises
+      class='bg-warning text-warning-content' line_class='hover:bg-warning-content/10' link_class='hover:!text-warning-content'
+    %}
   {% endif %}
+
   {% if page.next_chapters.size != 0 %}
-    <div class='card card-sm 2xl:card-md bg-info text-info-content'>
-      <div class='card-body'>
-        <p class='card-title font-title text-2xl mt-0'>Next time</p>
-        <ul class='flex flex-col gap-y-1'>
-          {% for chapter in page.next_chapters %}
-            <li class='px-2 py-1 rounded-full hover:bg-info-content/10'>
-              <a href='{{ chapter.url }}' class='hover:!text-info-content'>
-                {% include chapter-title.html doc=chapter %}
-              </a>
-            </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
+    {%
+      include home-card.html
+      title='Next time' chapters=page.next_chapters
+      class='bg-info text-info-content' line_class='hover:bg-info-content/10' link_class='hover:!text-info-content'
+    %}
   {% endif %}
 </div>
 
