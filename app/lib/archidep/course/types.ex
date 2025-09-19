@@ -6,7 +6,9 @@ defmodule ArchiDep.Course.Types do
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
           active: boolean(),
-          servers_enabled: boolean()
+          ssh_exercise_vm_ip_address: String.t() | nil,
+          servers_enabled: boolean(),
+          teacher_ssh_public_keys: list(String.t())
         }
 
   @type student_data :: %{

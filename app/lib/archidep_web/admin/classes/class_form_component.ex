@@ -6,13 +6,19 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
   use ArchiDepWeb, :component
 
   import ArchiDepWeb.Components.FormComponents
+  alias Ecto.Changeset
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
-  attr :id, :string, doc: "the id of the form"
-  attr :form, Form, doc: "the form to render"
-  attr :title, :string, doc: "the title of the form"
-  attr :on_submit, :string, doc: "the event to trigger on form submission"
+  attr :id, :string, required: true, doc: "the id of the form"
+  attr :form, Form, required: true, doc: "the form to render"
+  attr :title, :string, required: true, doc: "the title of the form"
+
+  attr :on_add_teacher_ssh_public_key, JS,
+    default: nil,
+    doc: "the JS command to execute to add a new teacher SSH public key"
+
+  attr :on_submit, :string, required: true, doc: "the event to trigger on form submission"
   attr :on_close, JS, default: nil, doc: "optional JS to execute when the form is closed"
   attr :target, :string, default: nil, doc: "the target for the form submission"
 
@@ -105,6 +111,45 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         <.field_help>
           {gettext("Students can only register new servers if their class has servers enabled.")}
         </.field_help>
+
+        <label class="fieldset-label mt-2">{gettext("Teacher SSH public keys")}</label>
+        <.inputs_for :let={f} field={@form[:teacher_ssh_public_keys]}>
+          <div class="join">
+            <input
+              type="text"
+              id={f[:value].id}
+              class="join-item input w-full"
+              name={f[:value].name}
+              value={f[:value].value}
+              placeholder={gettext("Paste an SSH public key here")}
+            />
+            <label type="button" class="btn btn-neutral join-item">
+              <input type="checkbox" name="class[delete_keys][]" value={f.index} class="hidden" />
+              <Heroicons.trash class="size-4" />
+            </label>
+          </div>
+          <.errors_for field={f[:value]} />
+        </.inputs_for>
+        <input type="hidden" name="class[delete_keys][]" />
+        <.no_data
+          :if={field_empty?(@form[:teacher_ssh_public_keys])}
+          class="text-base"
+          text={gettext("No keys registered")}
+        />
+        <.errors_for field={@form[:teacher_ssh_public_keys]} />
+        <div class="mt-1">
+          <button
+            type="button"
+            class="btn btn-success btn-sm"
+            phx-click="add_teacher_ssh_public_key"
+            phx-target={@target}
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.plus class="size-4" />
+              <span>{gettext("Add")}</span>
+            </span>
+          </button>
+        </div>
       </fieldset>
 
       <div class="mt-2 flex justify-end gap-x-2">
@@ -124,4 +169,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
     </.form>
     """
   end
+
+  defp field_empty?(%{value: %{"0" => %{"value" => ""}}}), do: true
+
+  defp field_empty?(field),
+    do:
+      field.value
+      |> Enum.reject(fn x ->
+        is_struct(x, Changeset) and x.action == :replace and x.params == nil
+      end)
+      |> Enum.empty?()
 end

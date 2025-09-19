@@ -57,11 +57,12 @@ defmodule ArchiDepWeb.Components.CoreComponents do
   end
 
   attr :text, :string, default: "-", doc: "the text to display"
+  attr :rest, :global, doc: "arbitrary HTML attributes to add to the no data container"
 
   @spec no_data(map()) :: Rendered.t()
   def no_data(assigns) do
     ~H"""
-    <span class="text-base-content/50 italic">
+    <span class={["text-base-content/50 italic", Map.get(@rest, :class)]} {@rest}>
       {@text}
     </span>
     """

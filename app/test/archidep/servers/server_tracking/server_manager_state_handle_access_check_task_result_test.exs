@@ -192,6 +192,115 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
+  test "install extra SSH public keys from the server group when running the setup playbook", %{
+    handle_task_result: handle_task_result
+  } do
+    server =
+      insert_active_server!(
+        set_up_at: nil,
+        ssh_port: true,
+        class_teacher_ssh_public_keys: [
+          "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0V7EXAMPLEKEY key1",
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBEXAMPLEKEY key2"
+        ]
+      )
+
+    fake_check_access_task_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+    connected = ServersFactory.random_connected_state(connection_event: fake_connection_event)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connected,
+        server: server,
+        username: server.username,
+        tasks: %{check_access: fake_check_access_task_ref}
+      )
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_check_access_task_ref,
+        {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_access_task_ref},
+                 {:run_playbook,
+                  %{
+                    git_revision: git_revision,
+                    vars: %{"server_token" => server_token},
+                    created_at: playbook_created_at
+                  } =
+                    playbook_run, playbook_run_cause},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    [run_started_event] = fetch_new_stored_events([fake_connection_event])
+
+    run_started_event_ref =
+      assert_ansible_playbook_run_started_event!(
+        run_started_event,
+        playbook_run,
+        now,
+        fake_connection_event
+      )
+
+    assert playbook_run_cause == run_started_event_ref
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               ansible_playbook: {playbook_run, nil, fake_connection_event},
+               tasks: %{}
+           }
+
+    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
+
+    assert playbook_run == %AnsiblePlaybookRun{
+             __meta__: loaded(AnsiblePlaybookRun, "ansible_playbook_runs"),
+             id: playbook_run.id,
+             playbook: "setup",
+             playbook_path: "priv/ansible/playbooks/setup.yml",
+             digest: Ansible.setup_playbook().digest,
+             git_revision: git_revision,
+             host: server.ip_address,
+             port: server.ssh_port,
+             user: server.username,
+             vars: %{
+               "api_base_url" => "http://localhost:42000/api",
+               "app_user_name" => server.app_username,
+               "app_user_authorized_key" =>
+                 "#{ssh_public_key()}\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0V7EXAMPLEKEY key1\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBEXAMPLEKEY key2",
+               "server_id" => server.id,
+               "server_token" => server_token
+             },
+             server: server,
+             server_id: server.id,
+             state: :pending,
+             started_at: nil,
+             created_at: playbook_created_at,
+             updated_at: playbook_created_at
+           }
+
+    server_id = server.id
+
+    assert {:ok, ^server_id} =
+             Token.verify(server.secret_key, "server auth", server_token, max_age: 5)
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: connected,
+                current_job: {:running_playbook, playbook_run.playbook, playbook_run.id, nil},
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   test "the setup process is stopped if the user does not have sudo access", %{
     handle_task_result: handle_task_result
   } do

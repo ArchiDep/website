@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
   import Ecto.Changeset
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Types
+  alias ArchiDepWeb.Admin.Classes.ClassFormSshPublicKey
   alias Ecto.Changeset
 
   @type t :: struct()
@@ -22,7 +23,18 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
     field(:active, :boolean, default: false)
     field(:ssh_exercise_vm_ip_address, :string)
     field(:servers_enabled, :boolean, default: false)
+    embeds_many(:teacher_ssh_public_keys, ClassFormSshPublicKey, on_replace: :delete)
   end
+
+  @spec add_teacher_ssh_public_key(t()) :: t()
+  def add_teacher_ssh_public_key(form),
+    do:
+      Changeset.put_embed(
+        form.source,
+        :teacher_ssh_public_keys,
+        Changeset.get_field(form.source, :teacher_ssh_public_keys, []) ++
+          [%ClassFormSshPublicKey{}]
+      )
 
   @spec create_changeset(map()) :: Changeset.t(Types.class_data())
   def create_changeset(params \\ %{}) when is_map(params) do
@@ -35,6 +47,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       :ssh_exercise_vm_ip_address,
       :servers_enabled
     ])
+    |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
     |> validate_required([:name, :active, :servers_enabled])
   end
 
@@ -46,7 +59,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       end_date: class.end_date,
       active: class.active,
       ssh_exercise_vm_ip_address: class.ssh_exercise_vm_ip_address,
-      servers_enabled: class.servers_enabled
+      servers_enabled: class.servers_enabled,
+      teacher_ssh_public_keys:
+        Enum.map(class.teacher_ssh_public_keys, &ClassFormSshPublicKey.new(&1))
     }
     |> cast(params, [
       :name,
@@ -56,9 +71,20 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       :ssh_exercise_vm_ip_address,
       :servers_enabled
     ])
+    |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
     |> validate_required([:name, :active, :servers_enabled])
   end
 
   @spec to_class_data(t()) :: Types.class_data()
-  def to_class_data(%__MODULE__{} = form), do: Map.from_struct(form)
+  def to_class_data(%__MODULE__{} = form),
+    do:
+      form
+      |> Map.from_struct()
+      |> Map.delete(:teacher_ssh_public_keys)
+      |> Map.put(:teacher_ssh_public_keys, to_keys_data(form.teacher_ssh_public_keys))
+
+  defp to_keys_data([%ClassFormSshPublicKey{value: ""}]), do: []
+
+  defp to_keys_data(teacher_ssh_public_keys),
+    do: teacher_ssh_public_keys |> Enum.map(& &1.value) |> Enum.uniq()
 end

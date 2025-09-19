@@ -33,6 +33,9 @@ defmodule ArchiDep.Support.CourseFactory do
 
     {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
 
+    {teacher_ssh_public_keys, attrs!} =
+      Map.pop(attrs!, :teacher_ssh_public_keys, [])
+
     {expected_server_properties, attrs!} =
       Map.pop_lazy(attrs!, :expected_server_properties, fn ->
         build(:expected_server_properties)
@@ -50,6 +53,7 @@ defmodule ArchiDep.Support.CourseFactory do
       active: active,
       ssh_exercise_vm_ip_address: ssh_exercise_vm_ip_address,
       servers_enabled: servers_enabled,
+      teacher_ssh_public_keys: teacher_ssh_public_keys,
       expected_server_properties: expected_server_properties,
       expected_server_properties_id: expected_server_properties.id,
       version: version,

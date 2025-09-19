@@ -21,7 +21,10 @@
 </h2>
 
 <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
-  <.data_display class="col-span-1 md:col-span-3">
+  <.data_display
+    class="col-span-1 md:col-span-3"
+    responsive_class="md:grid-cols-2 2xl:grid-cols-3"
+  >
     <.data_display_element title={gettext("Start date")}>
       <%= if @class.start_date do %>
         {format_date(@class.start_date)}
@@ -43,6 +46,13 @@
     <.data_display_element title={gettext("Servers enabled")}>
       <Heroicons.check_circle :if={@class.servers_enabled} class="size-5 text-success" />
       <Heroicons.x_circle :if={not @class.servers_enabled} class="size-5 text-error" />
+    </.data_display_element>
+    <.data_display_element title={gettext("SSH exercise VM IP address")}>
+      <.no_data :if={@class.ssh_exercise_vm_ip_address == nil} />
+      <span class="font-mono">{@class.ssh_exercise_vm_ip_address}</span>
+    </.data_display_element>
+    <.data_display_element title={gettext("Teacher SSH public keys")}>
+      {length(@class.teacher_ssh_public_keys)}
     </.data_display_element>
   </.data_display>
 

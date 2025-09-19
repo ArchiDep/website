@@ -28,6 +28,14 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
 
   @impl LiveComponent
 
+  def handle_event("add_teacher_ssh_public_key", _params, socket) do
+    form = socket.assigns.form
+
+    socket
+    |> assign(form: to_form(ClassForm.add_teacher_ssh_public_key(form), as: :class))
+    |> noreply()
+  end
+
   def handle_event("closed", _params, socket),
     do:
       socket
@@ -38,27 +46,40 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
     auth = socket.assigns.auth
     class = socket.assigns.class
 
-    validate_dialog_form(
-      :class,
-      ClassForm.update_changeset(class, params),
-      &Course.validate_existing_class(
-        auth,
-        class.id,
-        ClassForm.to_class_data(&1)
-      ),
+    changeset = ClassForm.update_changeset(class, params)
+
+    with {:ok, form_data} <- Changeset.apply_action(changeset, :validate),
+         {:ok, result_changeset} <-
+           Course.validate_existing_class(auth, class.id, ClassForm.to_class_data(form_data)) do
       socket
-    )
+      |> assign(
+        form:
+          to_form(%Changeset{changeset | errors: result_changeset.errors},
+            as: :class,
+            action: :validate
+          )
+      )
+      |> noreply()
+    else
+      {:error, %Changeset{} = result_changeset} ->
+        socket
+        |> assign(
+          form:
+            to_form(%Changeset{changeset | errors: changeset.errors ++ result_changeset.errors},
+              as: :class
+            )
+        )
+        |> noreply()
+    end
   end
 
   def handle_event("update", %{"class" => params}, socket) do
     auth = socket.assigns.auth
     class = socket.assigns.class
 
-    with {:ok, form_data} <-
-           Changeset.apply_action(
-             ClassForm.update_changeset(class, params),
-             :validate
-           ),
+    changeset = ClassForm.update_changeset(class, params)
+
+    with {:ok, form_data} <- Changeset.apply_action(changeset, :validate),
          {:ok, updated_class} <-
            Course.update_class(auth, class.id, ClassForm.to_class_data(form_data)) do
       socket
@@ -68,8 +89,15 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
       |> push_event("execute-action", %{to: "##{id(class)}", action: "close"})
       |> noreply()
     else
-      {:error, %Changeset{} = changeset} ->
-        socket |> assign(form: to_form(changeset, as: :class)) |> noreply()
+      {:error, %Changeset{} = result_changeset} ->
+        socket
+        |> assign(
+          form:
+            to_form(%Changeset{changeset | errors: changeset.errors ++ result_changeset.errors},
+              as: :class
+            )
+        )
+        |> noreply()
     end
   end
 end

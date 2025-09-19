@@ -22,6 +22,7 @@ defmodule ArchiDep.Course.Schemas.Class do
           active: boolean(),
           ssh_exercise_vm_ip_address: Postgrex.INET.t() | nil,
           servers_enabled: boolean(),
+          teacher_ssh_public_keys: list(String.t()),
           expected_server_properties: ExpectedServerProperties.t() | NotLoaded.t(),
           expected_server_properties_id: UUID.t(),
           # Common metadata
@@ -37,6 +38,7 @@ defmodule ArchiDep.Course.Schemas.Class do
     field(:active, :boolean)
     field(:ssh_exercise_vm_ip_address, EctoNetwork.INET)
     field(:servers_enabled, :boolean, default: false)
+    field(:teacher_ssh_public_keys, {:array, :string}, default: [])
     belongs_to(:expected_server_properties, ExpectedServerProperties, on_replace: :update)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
@@ -100,7 +102,8 @@ defmodule ArchiDep.Course.Schemas.Class do
       :end_date,
       :active,
       :ssh_exercise_vm_ip_address,
-      :servers_enabled
+      :servers_enabled,
+      :teacher_ssh_public_keys
     ])
     |> change(
       id: id,
@@ -131,7 +134,8 @@ defmodule ArchiDep.Course.Schemas.Class do
       :end_date,
       :active,
       :ssh_exercise_vm_ip_address,
-      :servers_enabled
+      :servers_enabled,
+      :teacher_ssh_public_keys
     ])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
@@ -180,6 +184,7 @@ defmodule ArchiDep.Course.Schemas.Class do
           active: active,
           ssh_exercise_vm_ip_address: ssh_exercise_vm_ip_address,
           servers_enabled: servers_enabled,
+          teacher_ssh_public_keys: teacher_ssh_public_keys,
           expected_server_properties: new_expected_server_properties,
           version: version,
           updated_at: updated_at
@@ -194,6 +199,7 @@ defmodule ArchiDep.Course.Schemas.Class do
         active: active,
         ssh_exercise_vm_ip_address: ssh_exercise_vm_ip_address,
         servers_enabled: servers_enabled,
+        teacher_ssh_public_keys: teacher_ssh_public_keys,
         expected_server_properties:
           ExpectedServerProperties.refresh(
             expected_server_properties,
@@ -233,7 +239,32 @@ defmodule ArchiDep.Course.Schemas.Class do
     |> validate_required([:name, :active, :servers_enabled])
     |> validate_length(:name, max: 50)
     |> unique_constraint(:name, name: :classes_unique_name_index)
+    |> validate_ssh_public_keys(:teacher_ssh_public_keys)
     |> validate_start_and_end_dates()
+  end
+
+  defp validate_ssh_public_keys(changeset, field) do
+    if changed?(changeset, field) do
+      keys = get_field(changeset, field, [])
+
+      invalid_keys =
+        keys
+        |> Enum.with_index(1)
+        |> Enum.filter(fn {key, _index} -> not String.match?(key, ~r/^ssh-(?:[^\s]+) [^\s]+/) end)
+        |> Enum.map(fn {_key, index} -> index end)
+
+      if invalid_keys == [] do
+        changeset
+      else
+        add_error(
+          changeset,
+          field,
+          "contains invalid SSH public keys (positions: #{Enum.join(invalid_keys, ", ")})"
+        )
+      end
+    else
+      changeset
+    end
   end
 
   defp validate_start_and_end_dates(changeset) do

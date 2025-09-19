@@ -1487,6 +1487,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     username = if server.set_up_at, do: server.app_username, else: server.username
     token = Token.sign(server.secret_key, "server auth", server.id)
 
+    ssh_public_keys = [SSH.ssh_public_key() | server.group.ssh_public_keys_to_install]
+
     Tracker.track_playbook!(
       playbook,
       server,
@@ -1494,7 +1496,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       %{
         "api_base_url" => api_base_url(),
         "app_user_name" => server.app_username,
-        "app_user_authorized_key" => SSH.ssh_public_key(),
+        "app_user_authorized_key" => Enum.join(ssh_public_keys, "\n"),
         "server_id" => server.id,
         "server_token" => token
       },

@@ -15,7 +15,8 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
     :end_date,
     :active,
     :ssh_exercise_vm_ip_address,
-    :servers_enabled
+    :servers_enabled,
+    :teacher_ssh_public_keys
   ]
   defstruct [
     :id,
@@ -24,7 +25,8 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
     :end_date,
     :active,
     :ssh_exercise_vm_ip_address,
-    :servers_enabled
+    :servers_enabled,
+    :teacher_ssh_public_keys
   ]
 
   @type t :: %__MODULE__{
@@ -34,7 +36,8 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
           end_date: Date.t() | nil,
           active: boolean(),
           ssh_exercise_vm_ip_address: String.t() | nil,
-          servers_enabled: boolean()
+          servers_enabled: boolean(),
+          teacher_ssh_public_keys: list(String.t())
         }
 
   @spec new(Class.t()) :: t()
@@ -46,7 +49,8 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
       end_date: end_date,
       active: active,
       ssh_exercise_vm_ip_address: ssh_exercise_vm_ip_address,
-      servers_enabled: servers_enabled
+      servers_enabled: servers_enabled,
+      teacher_ssh_public_keys: teacher_ssh_public_keys
     } = class
 
     ip_address =
@@ -62,7 +66,8 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
       end_date: end_date,
       active: active,
       ssh_exercise_vm_ip_address: ip_address,
-      servers_enabled: servers_enabled
+      servers_enabled: servers_enabled,
+      teacher_ssh_public_keys: teacher_ssh_public_keys
     }
   end
 

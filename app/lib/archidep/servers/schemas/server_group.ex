@@ -21,6 +21,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
           active: boolean(),
           servers_enabled: boolean(),
           servers: list(Server.t()) | NotLoaded.t(),
+          ssh_public_keys_to_install: list(String.t()),
           expected_server_properties: ServerProperties.t() | NotLoaded.t(),
           expected_server_properties_id: UUID.t(),
           # Common metadata
@@ -35,6 +36,12 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
     field(:end_date, :date)
     field(:active, :boolean)
     field(:servers_enabled, :boolean)
+
+    field(:ssh_public_keys_to_install, {:array, :string},
+      default: [],
+      source: :teacher_ssh_public_keys
+    )
+
     belongs_to(:expected_server_properties, ServerProperties)
     has_many(:servers, Server, foreign_key: :group_id)
     field(:version, :integer)
@@ -79,6 +86,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         end_date: end_date,
         active: active,
         servers_enabled: servers_enabled,
+        ssh_public_keys_to_install: ssh_public_keys_to_install,
         expected_server_properties: expected_server_properties,
         expected_server_properties_id: expected_server_properties_id,
         version: version,
@@ -92,6 +100,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         end_date: end_date,
         active: active,
         servers_enabled: servers_enabled,
+        ssh_public_keys_to_install: ssh_public_keys_to_install,
         expected_server_properties: expected_server_properties,
         expected_server_properties_id: expected_server_properties_id,
         version: version,
@@ -112,6 +121,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
           end_date: end_date,
           active: active,
           servers_enabled: servers_enabled,
+          teacher_ssh_public_keys: ssh_public_keys_to_install,
           expected_server_properties: new_expected_server_properties,
           version: version,
           updated_at: updated_at
@@ -125,6 +135,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         end_date: end_date,
         active: active,
         servers_enabled: servers_enabled,
+        ssh_public_keys_to_install: ssh_public_keys_to_install,
         expected_server_properties:
           ServerProperties.refresh(expected_server_properties, new_expected_server_properties),
         version: version,

@@ -83,11 +83,15 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
         Keyword.merge(class_expected_server_properties, id: class_id)
       )
 
+    {class_teacher_ssh_public_keys, opts!} =
+      Keyword.pop(opts!, :class_teacher_ssh_public_keys, [])
+
     class =
       CourseFactory.insert(:class,
         id: class_id,
         active: true,
         servers_enabled: true,
+        teacher_ssh_public_keys: class_teacher_ssh_public_keys,
         expected_server_properties: expected_server_properties
       )
 
