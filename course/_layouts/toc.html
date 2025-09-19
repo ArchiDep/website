@@ -39,8 +39,12 @@ layout: base
     {% unless site.archidep_standalone %}
       <div class='my-4 pl-4 flex items-center gap-4'>
         {% assign suffix = ' - Subject' %}
+        {% assign default_tooltip = 'Subject PDF' %}
         {% if page.course_type == 'slides' %}{% assign suffix = ' - Slides' %}{% endif %}
-        {% if page.course_type == 'exercise' %}{% assign suffix = ' - Exercise' %}{% endif %}
+        {% if page.course_type == 'exercise' %}
+          {% assign suffix = ' - Exercise' %}
+          {% assign default_tooltip = 'Exercise PDF' %}
+        {% endif %}
         {% if page.course_type == 'cheatsheet' %}
           <a
             href='{{ site.baseurl }}/pdf/ArchiDep 999 - {{ page.title }}.pdf'
@@ -55,7 +59,7 @@ layout: base
             <a
               href='{{ site.baseurl }}/pdf/{{ page.pdf_name }}.pdf'
               class='tooltip'
-              data-tip='{{ page.pdf_title | default: "Subject PDF" }}'
+              data-tip='{{ page.pdf_title | default: default_tooltip }}'
               download
             >
               {%- include icons/document-arrow-down.html class="size-6 opacity-50 hover:opacity-100" -%}
@@ -64,7 +68,7 @@ layout: base
             <a
               href='{{ site.baseurl }}/pdf/ArchiDep {{ page.num }} - {{ page.section_title }} - {{ page.title }}{{ suffix }}.pdf'
               class='tooltip'
-              data-tip='{{ page.pdf_title | default: "Subject PDF" }}'
+              data-tip='{{ page.pdf_title | default: default_tooltip }}'
               download
             >
               {%- include icons/document-arrow-down.html class="size-6 opacity-50 hover:opacity-100" -%}
