@@ -126,7 +126,12 @@ and related articles:
 - All the teachers who taught me.
 - All the students of the Media Engineering classes who participated in the
   course since 2019 and suggested various fixes and improvements.
-- My coffee machine, who never stopped supporting me.
+- All the giants who built great things, whose shoulders I stand on.
+- Douglas Adams, who taught us the meaning of life.
+- My laptop, who is currently dying, but still compiles the course every day.
+- My coffee machine, who never stopped supporting me, and provided all the raw
+  material that was turned into code.
+- All the people I undoubtedly forgot to mention (let me know).
 
 [azure]: https://azure.microsoft.com
 [chrome]: https://www.google.com/chrome/
