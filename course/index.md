@@ -102,6 +102,32 @@ and related articles:
 - [Reverse Proxy](https://en.wikipedia.org/wiki/Reverse_proxy)
 - [Public Key Certificate](https://en.wikipedia.org/wiki/Public_key_certificate)
 
+## Credits & thanks
+
+- _Me_
+- Simon Pinkas contributed the Docker subject, command line exercises and
+  various other material, and we teach the course together.
+- [Daniel Rappo](https://people.hes-so.ch/fr/profile/2302401-daniel-rappo),
+  director of the [Media Engineering
+  Institute](https://heig-vd.ch/rad/instituts/mei/), allowed me to work a lot
+  more time than I was supposed to on the material for this course when
+  developing the initial version while I was working there.
+- David Goetschmann, my current boss at [Square
+  Services](https://www.squareservices.ch), who encourages me to continue to
+  teach this course.
+- Mathias Oberson, former colleague at MEI, wrote the command line subject and
+  various other material.
+- Sarah Composto reread the material, suggested a significant amount of
+  corrections and improvements, and hand-pixelated the funny logo.
+- All my former colleagues at MEI who suggested various improvements.
+- [Nicolas Chabloz](https://people.hes-so.ch/de/profile/4172247-nicolas-chabloz)
+  and the Helpdesk & IT team at [HEIG-VD](https://heig-vd.ch) who helped me
+  debug last-minute issues.
+- All the teachers who taught me.
+- All the students of the Media Engineering classes who participated in the
+  course since 2019 and suggested various fixes and improvements.
+- My coffee machine, who never stopped supporting me.
+
 [azure]: https://azure.microsoft.com
 [chrome]: https://www.google.com/chrome/
 [firefox]: https://www.mozilla.org/en-US/firefox/
