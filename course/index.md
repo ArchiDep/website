@@ -4,7 +4,7 @@ title: Architecture & Deployment
 title_include: main-title.html
 layout: home
 toc: true
-pdf_name: ArchiDep 000 - Course.pdf
+pdf_name: ArchiDep 000 - Course
 pdf_title: Home PDF
 search: true
 search_subtitle: Course home page
