@@ -40,10 +40,22 @@ const courseSectionType = t.readonly(
   )
 );
 
+const courseCheatsheetType = t.readonly(
+  t.exact(
+    t.type({
+      title: t.string,
+      sidebar_title: t.string,
+      slug: t.string,
+      url: t.string
+    })
+  )
+);
+
 const courseDataType = t.readonly(
   t.exact(
     t.type({
-      sections: t.readonlyArray(courseSectionType)
+      sections: t.readonlyArray(courseSectionType),
+      cheatsheets: t.readonlyArray(courseCheatsheetType)
     })
   )
 );
@@ -77,7 +89,10 @@ const progress = new ProgressBar(
   '[:bar] :current/:total :percent :elapseds :what',
   {
     width: Math.min(30, process.stdout.columns),
-    total: 1 + docsToExport.map(doc => doc.exportCount).reduce(N.add, 0)
+    total:
+      1 +
+      docsToExport.map(doc => doc.exportCount).reduce(N.add, 0) +
+      courseData.cheatsheets.length
   }
 );
 
@@ -134,6 +149,18 @@ for (const doc of docsToExport) {
 
     progress.tick();
   }
+}
+
+for (const cheatsheet of courseData.cheatsheets) {
+  const exportUrl = `${baseUrl}${cheatsheet.url}`;
+  progress.render({ what: cheatsheet.title });
+
+  const basename = `ArchiDep 999 - ${cheatsheet.title}.pdf`;
+  const file = path.join(pdfExportDir, basename);
+
+  await exportPageToPdf(page, exportUrl, file);
+
+  progress.tick();
 }
 
 clearInterval(progressInterval);
