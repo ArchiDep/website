@@ -38,31 +38,48 @@ layout: base
     </nav>
     {% unless site.archidep_standalone %}
       <div class='my-4 pl-4 flex items-center gap-4'>
-        {% assign prefix = '{{ page.num }} - {{ page.section_title }} - ' %}
         {% assign suffix = ' - Subject' %}
         {% if page.course_type == 'slides' %}{% assign suffix = ' - Slides' %}{% endif %}
         {% if page.course_type == 'exercise' %}{% assign suffix = ' - Exercise' %}{% endif %}
         {% if page.course_type == 'cheatsheet' %}
-          {% assign prefix = '999 - ' %}
-          {% assign suffix = '' %}
-        {% endif %}
-        <a
-          href='{{ site.baseurl }}/pdf/ArchiDep {{ prefix }}{{ page.title }}{{ suffix }}.pdf'
-          class='tooltip'
-          data-tip='Subject PDF'
-          download
-        >
-          {%- include icons/document-arrow-down.html class="size-6 opacity-50 hover:opacity-100" -%}
-        </a>
-        {% if page.slides %}
           <a
-            href='{{ site.baseurl }}/pdf/ArchiDep {{ page.num }} - {{ page.section_title }} - {{ page.title }} - Slides.pdf'
+            href='{{ site.baseurl }}/pdf/ArchiDep 999 - {{ page.title }}.pdf'
             class='tooltip'
-            data-tip='Slides PDF'
+            data-tip='{{ page.pdf_title | default: "Cheatsheet PDF" }}'
             download
           >
-            {%- include icons/presentation-chart.html class="size-6 opacity-50 hover:opacity-100" -%}
+            {%- include icons/document-arrow-down.html class="size-6 opacity-50 hover:opacity-100" -%}
           </a>
+        {% else %}
+          {% if page.pdf_name %}
+            <a
+              href='{{ site.baseurl }}/pdf/{{ page.pdf_name }}.pdf'
+              class='tooltip'
+              data-tip='{{ page.pdf_title | default: "Subject PDF" }}'
+              download
+            >
+              {%- include icons/document-arrow-down.html class="size-6 opacity-50 hover:opacity-100" -%}
+            </a>
+          {% else %}
+            <a
+              href='{{ site.baseurl }}/pdf/ArchiDep {{ page.num }} - {{ page.section_title }} - {{ page.title }}{{ suffix }}.pdf'
+              class='tooltip'
+              data-tip='{{ page.pdf_title | default: "Subject PDF" }}'
+              download
+            >
+              {%- include icons/document-arrow-down.html class="size-6 opacity-50 hover:opacity-100" -%}
+            </a>
+          {% endif %}
+          {% if page.slides %}
+            <a
+              href='{{ site.baseurl }}/pdf/ArchiDep {{ page.num }} - {{ page.section_title }} - {{ page.title }} - Slides.pdf'
+              class='tooltip'
+              data-tip='Slides PDF'
+              download
+            >
+              {%- include icons/presentation-chart.html class="size-6 opacity-50 hover:opacity-100" -%}
+            </a>
+          {% endif %}
         {% endif %}
       </div>
     {% endunless %}

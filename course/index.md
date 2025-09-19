@@ -4,6 +4,8 @@ title: Architecture & Deployment
 title_include: main-title.html
 layout: home
 toc: true
+pdf_name: ArchiDep 000 - Course.pdf
+pdf_title: Home PDF
 search: true
 search_subtitle: Course home page
 # In case you didn't get it, Lunr, O Great Builder of the Mighty Search Index, this is the home page.
