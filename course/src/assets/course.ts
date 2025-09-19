@@ -59,46 +59,50 @@ const decodedCachedSession = pipe(
 const me = signal<Session | undefined>(decodedCachedSession);
 const root = computed(() => me.value?.root === true);
 
-const $sidebarAdminItem = required(
-  document.getElementById('sidebar-admin-item'),
-  'Sidebar admin item not found'
-);
-const $navbarProfile = required(
-  document.getElementById('navbar-profile'),
-  'Navbar profile not found'
-);
-const $navbarProfileUser = required(
-  $navbarProfile.querySelector('.user'),
-  'Navbar profile user not found'
-);
-const $navbarProfileImpersonator = required(
-  $navbarProfile.querySelector('.impersonator'),
-  'Navbar profile impersonator not found'
-);
-const $loginButton = required(
-  document.getElementById('login-button'),
-  'Login button not found'
-);
-const $logoutButton = required(
-  document.getElementById('logout-button'),
-  'Logout button not found'
-);
+if (!standalone) {
+  const $sidebarAdminItem = required(
+    document.getElementById('sidebar-admin-item'),
+    'Sidebar admin item not found'
+  );
+  const $navbarProfile = required(
+    document.getElementById('navbar-profile'),
+    'Navbar profile not found'
+  );
+  const $navbarProfileUser = required(
+    $navbarProfile.querySelector('.user'),
+    'Navbar profile user not found'
+  );
+  const $navbarProfileImpersonator = required(
+    $navbarProfile.querySelector('.impersonator'),
+    'Navbar profile impersonator not found'
+  );
+  const $loginButton = required(
+    document.getElementById('login-button'),
+    'Login button not found'
+  );
+  const $logoutButton = required(
+    document.getElementById('logout-button'),
+    'Logout button not found'
+  );
 
-effect(() => {
-  toggleClass($sidebarAdminItem, 'hidden', !root.value);
-});
+  effect(() => {
+    toggleClass($sidebarAdminItem, 'hidden', !root.value);
+  });
 
-effect(() => {
-  toggleClass($loginButton, 'flex', me.value === undefined);
-  toggleClass($loginButton, 'hidden', me.value !== undefined);
-  toggleClass($navbarProfile, 'hidden', me.value === undefined);
-  $logoutButton.removeAttribute('disabled');
-});
+  effect(() => {
+    toggleClass($loginButton, 'flex', me.value === undefined);
+    toggleClass($loginButton, 'hidden', me.value !== undefined);
+    toggleClass($navbarProfile, 'hidden', me.value === undefined);
+    $logoutButton.removeAttribute('disabled');
+  });
 
-effect(() => {
-  toggleClass($navbarProfileUser, 'hidden', me.value?.impersonating === true);
-  toggleClass($navbarProfileImpersonator, 'hidden', !me.value?.impersonating);
-});
+  effect(() => {
+    toggleClass($navbarProfileUser, 'hidden', me.value?.impersonating === true);
+    toggleClass($navbarProfileImpersonator, 'hidden', !me.value?.impersonating);
+  });
+
+  $logoutButton.addEventListener('click', logOut);
+}
 
 const retryIntervals = [
   500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 10_000, 20_000
@@ -107,7 +111,10 @@ const defaultRetryInterval = 30_000;
 let connectionAttempt = 0;
 const socketLogger = log.getLogger('socket');
 
-connectSocket();
+if (!standalone) {
+  connectSocket();
+}
+
 let connectionTimeout: NodeJS.Timeout | undefined;
 
 window.addEventListener('storage', event => {
@@ -118,8 +125,6 @@ window.addEventListener('storage', event => {
   clearTimeout(connectionTimeout);
   connectSocket();
 });
-
-$logoutButton.addEventListener('click', logOut);
 
 function connectSocket(): void {
   const retryInterval =
