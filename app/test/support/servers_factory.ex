@@ -85,7 +85,7 @@ defmodule ArchiDep.Support.ServersFactory do
         fn -> sequence(:ansible_playbook_run_playbook_path, &"/playbooks/playbook-#{&1}.yml") end
       )
 
-    {digest, attrs!} = Map.pop_lazy(attrs!, :digest, &Faker.String.base64/0)
+    {playbook_digest, attrs!} = Map.pop_lazy(attrs!, :playbook_digest, &Faker.String.base64/0)
 
     {git_revision, attrs!} =
       Map.pop_lazy(
@@ -104,6 +104,8 @@ defmodule ArchiDep.Support.ServersFactory do
       Map.pop_lazy(attrs!, :vars, fn ->
         %{"ansible_connection" => "ssh", "ansible_user" => user}
       end)
+
+    {vars_digest, attrs!} = Map.pop_lazy(attrs!, :vars_digest, fn -> Faker.random_bytes(10) end)
 
     {server, attrs!} = Map.pop(attrs!, :server, not_loaded(:server, AnsiblePlaybookRun))
 
@@ -181,12 +183,13 @@ defmodule ArchiDep.Support.ServersFactory do
       id: id,
       playbook: playbook,
       playbook_path: playbook_path,
-      digest: digest,
+      playbook_digest: playbook_digest,
       git_revision: git_revision,
       host: host,
       port: port,
       user: user,
       vars: vars,
+      vars_digest: vars_digest,
       server: server,
       server_id: server_id,
       state: state,

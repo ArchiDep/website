@@ -51,4 +51,37 @@ defmodule ArchiDep.Servers.Ansible.Context do
         Application.app_dir(:archidep),
         PlaybooksRegistry.playbook!(name).relative_path
       )
+
+  @impl Ansible.Behaviour
+  def digest_ansible_variables(vars) when is_map(vars),
+    do: :crypto.hash(:sha256, normalize_ansible_variable(vars, []))
+
+  defp normalize_ansible_variable(nil, _path), do: "\0"
+
+  defp normalize_ansible_variable(value, _path) when is_boolean(value) or is_number(value),
+    do: to_string(value)
+
+  defp normalize_ansible_variable(value, _path) when is_atom(value), do: Atom.to_string(value)
+  defp normalize_ansible_variable(value, _path) when is_binary(value), do: value
+
+  defp normalize_ansible_variable(value, path) when is_list(value),
+    do:
+      value
+      |> Enum.with_index()
+      |> Enum.map_join("\0", fn {v, i} ->
+        normalize_ansible_variable(v, [Integer.to_string(i) | path])
+      end)
+
+  defp normalize_ansible_variable(vars, path) when is_map(vars),
+    do:
+      vars
+      |> Enum.map(fn {k, v} -> {normalize_ansible_variable(k, []), v} end)
+      |> Enum.sort_by(fn {k, _v} -> k end)
+      |> Enum.flat_map(fn {k, v} ->
+        [
+          [k | path] |> Enum.reverse() |> Enum.join("."),
+          normalize_ansible_variable(v, [k | path])
+        ]
+      end)
+      |> Enum.join("\0")
 end

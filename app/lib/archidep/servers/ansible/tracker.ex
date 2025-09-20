@@ -33,12 +33,16 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
           Server.t(),
           String.t(),
           Types.ansible_variables(),
+          binary(),
           EventReference.t()
         ) ::
           {AnsiblePlaybookRun.t(), EventReference.t()}
-  def track_playbook!(playbook, server, user, vars, causation_event) do
+  def track_playbook!(playbook, server, user, vars, vars_digest, causation_event) do
     case Multi.new()
-         |> Multi.insert(:run, AnsiblePlaybookRun.new_pending(playbook, server, user, vars))
+         |> Multi.insert(
+           :run,
+           AnsiblePlaybookRun.new_pending(playbook, server, user, vars, vars_digest)
+         )
          |> Multi.insert(:stored_event, &ansible_playbook_run_started(&1.run, causation_event))
          |> Repo.transaction() do
       {:ok, %{run: run, stored_event: event}} -> {run, StoredEvent.to_reference(event)}

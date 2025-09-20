@@ -23,4 +23,5 @@ defmodule ArchiDep.Servers.Ansible do
 
   defdelegate gather_facts(server, ansible_user), to: @implementation
   defdelegate run_playbook(playbook_run, started_cause, running_cause), to: @implementation
+  defdelegate digest_ansible_variables(vars), to: @implementation
 end

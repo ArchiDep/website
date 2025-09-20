@@ -5,38 +5,24 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
   baked into the application at compile time.
   """
 
+  alias ArchiDep.Helpers.FileHelpers
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
 
   @playbooks_dir Path.expand("../../../../priv/ansible/playbooks", __DIR__)
+  @playbooks_files_digest FileHelpers.hash_files_in_directory!(@playbooks_dir)
   @playbooks @playbooks_dir
              |> File.ls!()
              |> Enum.filter(&String.ends_with?(&1, ".yml"))
              |> Enum.map(fn filename ->
-               digest =
-                 @playbooks_dir
-                 |> Path.join(filename)
-                 |> File.stream!(2048)
-                 |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
-                 |> :crypto.hash_final()
-
                name = String.replace_suffix(filename, ".yml", "")
-
                playbook_file = Path.join("priv/ansible/playbooks", filename)
 
                playbook =
-                 AnsiblePlaybook.new(playbook_file, digest)
+                 AnsiblePlaybook.new(playbook_file, @playbooks_files_digest)
 
                {name, playbook}
              end)
              |> Enum.into(%{})
-  @playbooks_files_digest :crypto.hash(
-                            :sha256,
-                            @playbooks_dir
-                            |> Path.join("**/*")
-                            |> Path.wildcard()
-                            |> Enum.sort()
-                            |> Enum.join("\0")
-                          )
 
   for playbook <- Map.values(@playbooks) do
     @external_resource playbook.relative_path
@@ -57,14 +43,5 @@ defmodule ArchiDep.Servers.Ansible.PlaybooksRegistry do
   @spec __mix_recompile__?() :: boolean()
   def __mix_recompile__?, do: @playbooks_files_digest != ansible_files_hash()
 
-  defp ansible_files_hash,
-    do:
-      :crypto.hash(
-        :sha256,
-        @playbooks_dir
-        |> Path.join("**/*")
-        |> Path.wildcard()
-        |> Enum.sort()
-        |> Enum.join("\0")
-      )
+  defp ansible_files_hash, do: FileHelpers.hash_files_in_directory!(@playbooks_dir)
 end

@@ -48,7 +48,7 @@
             small={true}
             class="font-mono break-all"
           >
-            {Base.encode16(@playbook_run.digest, case: :lower)}
+            {Base.encode16(@playbook_run.playbook_digest, case: :lower)}
           </.data_display_element>
           <.data_display_element
             title={gettext("Git revision")}
@@ -117,14 +117,14 @@
         {key}
       </th>
       <td
-        class="cursor-pointer"
+        class={[if(visibility == :hidden, do: "cursor-pointer")]}
         phx-click={
           JS.toggle(to: "#ansible-playbook-run-#{@playbook_run.id}-var-#{key}")
           |> JS.toggle(to: "#ansible-playbook-run-#{@playbook_run.id}-var-#{key}-toggle")
         }
       >
         <%= if visibility == :visible do %>
-          {value}
+          <pre class="whitespace-pre-wrap break-all">{value}</pre>
         <% else %>
           <span
             id={"ansible-playbook-run-#{@playbook_run.id}-var-#{key}-toggle"}
@@ -132,9 +132,10 @@
           >
             **********
           </span>
-          <span id={"ansible-playbook-run-#{@playbook_run.id}-var-#{key}"} class="hidden">
-            {value}
-          </span>
+          <pre
+            id={"ansible-playbook-run-#{@playbook_run.id}-var-#{key}"}
+            class="hidden whitespace-pre-wrap break-all"
+          >{value}</pre>
         <% end %>
       </td>
     </tr>

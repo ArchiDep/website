@@ -7,8 +7,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormSshPublicKey do
 
   import ArchiDep.Helpers.SchemaHelpers
   import Ecto.Changeset
+  alias Ecto.Changeset
 
-  @type t :: %{value: String.t()}
+  @type t :: %__MODULE__{value: String.t()}
 
   @primary_key false
   embedded_schema do

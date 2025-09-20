@@ -713,11 +713,27 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   end
 
   defp test_ports_or_rerun_setup(
-         state,
-         %AnsiblePlaybookRun{state: :succeeded, digest: digest},
-         %AnsiblePlaybook{digest: digest}
+         %__MODULE__{connection_state: connected_state(connection_event: connection_event)} =
+           state,
+         %AnsiblePlaybookRun{
+           state: :succeeded,
+           playbook_digest: playbook_digest,
+           vars_digest: previous_vars_digest
+         },
+         %AnsiblePlaybook{digest: playbook_digest}
        ) do
-    maybe_test_ports(state)
+    case build_setup_playbook_vars(state.server) do
+      {_vars, ^previous_vars_digest} ->
+        maybe_test_ports(state)
+
+      {_vars, vars_digest} = vars_and_digest ->
+        Logger.notice(
+          # coveralls-ignore-next-line
+          "Re-running Ansible setup playbook for server #{state.server.id} because the digest of its variables has changed from #{Base.encode16(previous_vars_digest, case: :lower)} to #{Base.encode16(vars_digest, case: :lower)}"
+        )
+
+        run_setup_playbook(state, connection_event, vars_and_digest)
+    end
   end
 
   defp test_ports_or_rerun_setup(
@@ -725,7 +741,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
            connection_state: connected_state(connection_event: connection_event),
            server: server
          } = state,
-         %AnsiblePlaybookRun{state: :succeeded, digest: previous_digest},
+         %AnsiblePlaybookRun{state: :succeeded, playbook_digest: previous_digest},
          %AnsiblePlaybook{digest: digest}
        ) do
     Logger.notice(
@@ -1461,8 +1477,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
-  defp run_setup_playbook(state, cause) do
-    {playbook_run, start_event} = start_setup_playbook(state.server, cause)
+  defp run_setup_playbook(
+         state,
+         cause,
+         vars_and_digest \\ nil
+       ) do
+    {vars, vars_digest} = vars_and_digest || build_setup_playbook_vars(state.server)
+    {playbook_run, start_event} = start_setup_playbook(state.server, vars, vars_digest, cause)
 
     add_action(
       %__MODULE__{state | ansible_playbook: {playbook_run, nil, cause}},
@@ -1481,27 +1502,40 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp clear_running_ansible_playbook(state), do: %__MODULE__{state | ansible_playbook: nil}
 
-  defp start_setup_playbook(server, cause) do
+  defp start_setup_playbook(server, vars, vars_digest, cause) do
     playbook = Ansible.setup_playbook()
 
     username = if server.set_up_at, do: server.app_username, else: server.username
-    token = Token.sign(server.secret_key, "server auth", server.id)
-
-    ssh_public_keys = [SSH.ssh_public_key() | server.group.ssh_public_keys_to_install]
 
     Tracker.track_playbook!(
       playbook,
       server,
       username,
-      %{
-        "api_base_url" => api_base_url(),
-        "app_user_name" => server.app_username,
-        "app_user_authorized_key" => Enum.join(ssh_public_keys, "\n"),
-        "server_id" => server.id,
-        "server_token" => token
-      },
+      vars,
+      vars_digest,
       cause
     )
+  end
+
+  defp build_setup_playbook_vars(server) do
+    ssh_public_keys = [SSH.ssh_public_key() | server.group.ssh_public_keys_to_install]
+    token = Token.sign(server.secret_key, "server auth", server.id)
+
+    vars = %{
+      "api_base_url" => api_base_url(),
+      "app_user_name" => server.app_username,
+      "app_user_authorized_key" => Enum.join(ssh_public_keys, "\n"),
+      "server_id" => server.id,
+      "server_token" => token
+    }
+
+    # Compute the digest of the variables, using the server's secret key instead
+    # of the token, so that the digest remains the same even if the token
+    # changes, as long as the secret key is unchanged.
+    vars_digest =
+      vars |> Map.put("server_token", server.secret_key) |> Ansible.digest_ansible_variables()
+
+    {vars, vars_digest}
   end
 
   defp drop_problems(state, problems) when is_list(problems),

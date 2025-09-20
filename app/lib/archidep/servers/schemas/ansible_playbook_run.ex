@@ -31,12 +31,13 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
           id: UUID.t(),
           playbook: String.t(),
           playbook_path: String.t(),
-          digest: binary(),
+          playbook_digest: binary(),
           git_revision: String.t(),
           host: Postgrex.INET.t(),
           port: 1..65_535,
           user: String.t(),
           vars: Types.ansible_variables(),
+          vars_digest: binary(),
           server: Server.t() | NotLoaded,
           server_id: UUID.t(),
           state: Types.ansible_playbook_run_state(),
@@ -59,12 +60,13 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   schema "ansible_playbook_runs" do
     field(:playbook, :string)
     field(:playbook_path, :string)
-    field(:digest, :binary)
+    field(:playbook_digest, :binary)
     field(:git_revision, :string)
     field(:host, EctoNetwork.INET)
     field(:port, :integer)
     field(:user, :string)
     field(:vars, :map)
+    field(:vars_digest, :binary)
     belongs_to(:server, Server, type: :binary_id)
 
     field(:state, Ecto.Enum,
@@ -214,9 +216,15 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       |> Repo.one()
       |> truthy_or(:ansible_playbook_run_not_found)
 
-  @spec new_pending(AnsiblePlaybook.t(), Server.t(), String.t(), Types.ansible_variables()) ::
+  @spec new_pending(
+          AnsiblePlaybook.t(),
+          Server.t(),
+          String.t(),
+          Types.ansible_variables(),
+          binary()
+        ) ::
           Changeset.t(t())
-  def new_pending(playbook, server, user, vars) do
+  def new_pending(playbook, server, user, vars, vars_digest) do
     id = UUID.generate()
     now = DateTime.utc_now()
 
@@ -225,12 +233,13 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
       id: id,
       playbook: AnsiblePlaybook.name(playbook),
       playbook_path: playbook.relative_path,
-      digest: playbook.digest,
+      playbook_digest: playbook.digest,
       git_revision: Git.git_revision(),
       host: server.ip_address,
       port: server.ssh_port || 22,
       user: user,
       vars: vars,
+      vars_digest: vars_digest,
       server: server,
       server_id: server.id,
       state: :pending,
@@ -361,7 +370,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> validate_required([
       :playbook,
       :playbook_path,
-      :digest,
+      :playbook_digest,
       :vars,
       :server_id,
       :state

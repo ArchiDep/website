@@ -109,6 +109,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
         tasks: %{check_access: fake_check_access_task_ref}
       )
 
+    expect(Ansible.Mock, :digest_ansible_variables, fn _vars ->
+      Faker.random_bytes(10)
+    end)
+
     now = DateTime.utc_now()
 
     result =
@@ -126,6 +130,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
                   %{
                     git_revision: git_revision,
                     vars: %{"server_token" => server_token},
+                    vars_digest: vars_digest,
                     created_at: playbook_created_at
                   } =
                     playbook_run, playbook_run_cause},
@@ -159,7 +164,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
              id: playbook_run.id,
              playbook: "setup",
              playbook_path: "priv/ansible/playbooks/setup.yml",
-             digest: Ansible.setup_playbook().digest,
+             playbook_digest: Ansible.setup_playbook().digest,
              git_revision: git_revision,
              host: server.ip_address,
              port: server.ssh_port,
@@ -171,6 +176,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
                "server_id" => server.id,
                "server_token" => server_token
              },
+             vars_digest: vars_digest,
              server: server,
              server_id: server.id,
              state: :pending,
@@ -217,6 +223,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
         tasks: %{check_access: fake_check_access_task_ref}
       )
 
+    expect(Ansible.Mock, :digest_ansible_variables, fn _vars ->
+      Faker.random_bytes(10)
+    end)
+
     now = DateTime.utc_now()
 
     result =
@@ -234,6 +244,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
                   %{
                     git_revision: git_revision,
                     vars: %{"server_token" => server_token},
+                    vars_digest: vars_digest,
                     created_at: playbook_created_at
                   } =
                     playbook_run, playbook_run_cause},
@@ -267,7 +278,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
              id: playbook_run.id,
              playbook: "setup",
              playbook_path: "priv/ansible/playbooks/setup.yml",
-             digest: Ansible.setup_playbook().digest,
+             playbook_digest: Ansible.setup_playbook().digest,
              git_revision: git_revision,
              host: server.ip_address,
              port: server.ssh_port,
@@ -280,6 +291,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
                "server_id" => server.id,
                "server_token" => server_token
              },
+             vars_digest: vars_digest,
              server: server,
              server_id: server.id,
              state: :pending,
@@ -578,12 +590,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
                "id" => run.id,
                "playbook" => run.playbook,
                "playbook_path" => run.playbook_path,
-               "digest" => Base.encode16(run.digest, case: :lower),
+               "playbook_digest" => Base.encode16(run.playbook_digest, case: :lower),
                "git_revision" => run.git_revision,
                "host" => run.host.address |> :inet.ntoa() |> to_string(),
                "port" => run.port,
                "user" => run.user,
                "vars" => run.vars,
+               "vars_digest" => Base.encode16(run.vars_digest, case: :lower),
                "server" => %{
                  "id" => run.server_id,
                  "name" => run.server.name,

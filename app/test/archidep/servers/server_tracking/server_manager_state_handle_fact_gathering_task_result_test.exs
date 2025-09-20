@@ -47,12 +47,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
          handle_task_result: handle_task_result
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true)
+    server_secret_key = server.secret_key
 
-    ServersFactory.insert(:ansible_playbook_run,
-      server: server,
-      state: :succeeded,
-      digest: Ansible.setup_playbook().digest
-    )
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
 
     fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
@@ -146,12 +152,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
          handle_task_result: handle_task_result
        } do
     server = insert_active_server!(set_up_at: true, open_ports_checked_at: true, ssh_port: true)
+    server_secret_key = server.secret_key
 
-    ServersFactory.insert(:ansible_playbook_run,
-      server: server,
-      state: :succeeded,
-      digest: Ansible.setup_playbook().digest
-    )
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
 
     fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
@@ -240,11 +252,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
         server_expected_properties: @no_server_properties
       )
 
-    ServersFactory.insert(:ansible_playbook_run,
-      server: server,
-      state: :succeeded,
-      digest: Ansible.setup_playbook().digest
-    )
+    server_secret_key = server.secret_key
+
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
 
     fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
@@ -391,11 +410,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
         ]
       )
 
-    ServersFactory.insert(:ansible_playbook_run,
-      server: server,
-      state: :succeeded,
-      digest: Ansible.setup_playbook().digest
-    )
+    server_secret_key = server.secret_key
+
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
 
     fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
@@ -552,11 +578,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
         ]
       )
 
-    ServersFactory.insert(:ansible_playbook_run,
-      server: server,
-      state: :succeeded,
-      digest: Ansible.setup_playbook().digest
-    )
+    server_secret_key = server.secret_key
+
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
 
     fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
@@ -782,12 +815,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
          handle_task_result: handle_task_result
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true)
+    server_secret_key = server.secret_key
 
     ServersFactory.insert(:ansible_playbook_run,
       server: server,
       state: :failed,
-      digest: Ansible.setup_playbook().digest
+      playbook_digest: Ansible.setup_playbook().digest
     )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      Faker.random_bytes(10)
+    end)
 
     fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
@@ -826,6 +864,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                   %{
                     git_revision: git_revision,
                     vars: %{"server_token" => server_token},
+                    vars_digest: vars_digest,
                     created_at: playbook_created_at
                   } =
                     playbook_run, playbook_run_cause},
@@ -877,7 +916,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
              id: playbook_run.id,
              playbook: "setup",
              playbook_path: "priv/ansible/playbooks/setup.yml",
-             digest: Ansible.setup_playbook().digest,
+             playbook_digest: Ansible.setup_playbook().digest,
              git_revision: git_revision,
              host: server.ip_address,
              port: server.ssh_port,
@@ -889,6 +928,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                "server_id" => server.id,
                "server_token" => server_token
              },
+             vars_digest: vars_digest,
              server: updated_server,
              server_id: server.id,
              state: :pending,
@@ -920,12 +960,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
          handle_task_result: handle_task_result
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true)
+    server_secret_key = server.secret_key
 
-    ServersFactory.insert(:ansible_playbook_run,
-      server: server,
-      state: :succeeded,
-      digest: <<102, 111, 111>>
-    )
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: <<102, 111, 111>>
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
 
     fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
@@ -964,6 +1010,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                   %{
                     git_revision: git_revision,
                     vars: %{"server_token" => server_token},
+                    vars_digest: vars_digest,
                     created_at: playbook_created_at
                   } =
                     playbook_run, playbook_run_cause},
@@ -1015,7 +1062,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
              id: playbook_run.id,
              playbook: "setup",
              playbook_path: "priv/ansible/playbooks/setup.yml",
-             digest: Ansible.setup_playbook().digest,
+             playbook_digest: Ansible.setup_playbook().digest,
              git_revision: git_revision,
              host: server.ip_address,
              port: server.ssh_port,
@@ -1027,6 +1074,153 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                "server_id" => server.id,
                "server_token" => server_token
              },
+             vars_digest: vars_digest,
+             server: updated_server,
+             server_id: server.id,
+             state: :pending,
+             started_at: nil,
+             created_at: playbook_created_at,
+             updated_at: playbook_created_at
+           }
+
+    server_id = server.id
+
+    assert {:ok, ^server_id} =
+             Token.verify(server.secret_key, "server auth", server_token, max_age: 5)
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: {:running_playbook, playbook_run.playbook, playbook_run.id, nil},
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
+  test "the setup playbook is rerun after gathering facts if the digest of its variables has changed",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+    server_secret_key = server.secret_key
+
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest <> <<0>>
+    end)
+
+    fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok, %{}}
+      )
+
+    assert %{
+             server:
+               %Server{
+                 last_known_properties: %ServerProperties{id: last_known_properties_id}
+               } = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_playbook,
+                  %{
+                    git_revision: git_revision,
+                    vars: %{"server_token" => server_token},
+                    vars_digest: vars_digest,
+                    created_at: playbook_created_at
+                  } =
+                    playbook_run, playbook_run_cause},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    [facts_event, run_started_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      %{},
+      now,
+      fake_connection_event
+    )
+
+    run_started_event_ref =
+      assert_ansible_playbook_run_started_event!(
+        run_started_event,
+        playbook_run,
+        now,
+        fake_connection_event
+      )
+
+    assert playbook_run_cause == run_started_event_ref
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
+                   version: server.version + 1
+               },
+               ansible_playbook: {playbook_run, nil, fake_connection_event},
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
+
+    assert playbook_run == %AnsiblePlaybookRun{
+             __meta__: loaded(AnsiblePlaybookRun, "ansible_playbook_runs"),
+             id: playbook_run.id,
+             playbook: "setup",
+             playbook_path: "priv/ansible/playbooks/setup.yml",
+             playbook_digest: Ansible.setup_playbook().digest,
+             git_revision: git_revision,
+             host: server.ip_address,
+             port: server.ssh_port,
+             user: server.app_username,
+             vars: %{
+               "api_base_url" => "http://localhost:42000/api",
+               "app_user_name" => server.app_username,
+               "app_user_authorized_key" => ssh_public_key(),
+               "server_id" => server.id,
+               "server_token" => server_token
+             },
+             vars_digest: vars_digest,
              server: updated_server,
              server_id: server.id,
              state: :pending,
@@ -1062,7 +1256,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     ServersFactory.insert(:ansible_playbook_run,
       server: server,
       state: :succeeded,
-      digest: Ansible.setup_playbook().digest
+      playbook_digest: Ansible.setup_playbook().digest
     )
 
     fake_gather_facts_ref = make_ref()
@@ -1187,12 +1381,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                "id" => run.id,
                "playbook" => run.playbook,
                "playbook_path" => run.playbook_path,
-               "digest" => Base.encode16(run.digest, case: :lower),
+               "playbook_digest" => Base.encode16(run.playbook_digest, case: :lower),
                "git_revision" => run.git_revision,
                "host" => run.host.address |> :inet.ntoa() |> to_string(),
                "port" => run.port,
                "user" => run.user,
                "vars" => run.vars,
+               "vars_digest" => Base.encode16(run.vars_digest, case: :lower),
                "server" => %{
                  "id" => run.server_id,
                  "name" => run.server.name,
