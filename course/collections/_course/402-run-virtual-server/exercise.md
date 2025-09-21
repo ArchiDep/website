@@ -185,6 +185,15 @@ Standard B1s**).
 
 🎉 Create your virtual machine!
 
+{% note type: troubleshooting %}
+
+If Azure tells you that you cannot create a virtual machine in the region you
+have selected, go back to the [basic
+settings](#exclamation-configure-basic-settings) and find a region that works.
+Make sure to re-check your estimated monthly cost.
+
+{% endnote %}
+
 Once your deployment is complete, go to the virtual machine source:
 
 ![Azure: VM deployment complete](images/azure-vm-deployment-complete.png)
