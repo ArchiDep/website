@@ -477,9 +477,26 @@ manpage][fstab-linux-manpage].
 
 ## :exclamation: Register your Azure VM with us
 
-Just one more step. Copy your virtual machine's public IP address (the same you
-used to connect to it with the `ssh` command), and [go back to the dashboard to
-register you virtual machine](/app?server=ready).
+Make a note of your virtual server's public IP address (the same IP address you
+used to connect to it with the `ssh` command).
+
+Also run the following command **while connected to your server with SSH** to
+obtain your server's SSH host key fingerprints:
+
+```bash
+$> find /etc/ssh -name "ssh_host_*.pub" -exec ssh-keygen -lf {} \;
+```
+
+Just one more step: [go back to the dashboard to register you virtual
+machine](/app?server=ready).
+
+{% note type: more %}
+
+When connecting to your server, we will match the public SSH key fingerprint it
+provides against the keys you are providing us to make sure we are connecting to
+your server and not an attacker's (man-in-the-middle).
+
+{% endnote %}
 
 ## :checkered_flag: What have I done?
 

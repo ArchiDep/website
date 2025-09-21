@@ -26,6 +26,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblems do
   def server_ansible_playbook_failed_problem?(playbook),
     do: &match?({:server_ansible_playbook_failed, ^playbook, _state, _stats}, &1)
 
+  @spec server_key_exchange_failed_problem?() :: (Types.server_problem() -> boolean())
+  def server_key_exchange_failed_problem?, do: server_problem?(:server_key_exchange_failed)
+
   @spec server_authentication_failed_problem(Server.t(), String.t()) ::
           Types.server_authentication_failed_problem()
   def server_authentication_failed_problem(%Server{app_username: app_username}, app_username),
@@ -47,6 +50,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblems do
   @spec server_fact_gathering_failed_problem(term()) ::
           Types.server_fact_gathering_failed_problem()
   def server_fact_gathering_failed_problem(reason), do: {:server_fact_gathering_failed, reason}
+
+  @spec server_key_exchange_failed_problem(Server.t(), String.t() | nil) ::
+          Types.server_key_exchange_failed_problem()
+  def server_key_exchange_failed_problem(
+        %Server{
+          ssh_host_key_fingerprints: ssh_host_key_fingerprints
+        },
+        unknown_fingerprint
+      ),
+      do: {:server_key_exchange_failed, unknown_fingerprint, ssh_host_key_fingerprints}
 
   @spec server_missing_sudo_access_problem(String.t(), String.t()) ::
           Types.server_missing_sudo_access_problem()

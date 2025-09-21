@@ -153,7 +153,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
 
     dropped_problems =
       Enum.shuffle([
-        ServersFactory.server_authentication_failed_problem(),
         ServersFactory.server_missing_sudo_access_problem(),
         ServersFactory.server_reconnection_failed_problem(),
         ServersFactory.server_sudo_access_check_failed_problem()
@@ -162,10 +161,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
     kept_problems =
       Enum.shuffle([
         ServersFactory.server_ansible_playbook_failed_problem(),
+        ServersFactory.server_authentication_failed_problem(),
         ServersFactory.server_connection_refused_problem(),
         ServersFactory.server_connection_timed_out_problem(),
         ServersFactory.server_expected_property_mismatch_problem(),
         ServersFactory.server_fact_gathering_failed_problem(),
+        ServersFactory.server_key_exchange_failed_problem(),
         ServersFactory.server_open_ports_check_failed_problem(),
         ServersFactory.server_port_testing_script_failed_problem()
       ])

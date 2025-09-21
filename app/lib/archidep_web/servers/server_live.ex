@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
 
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Servers.ServerComponents
+  import ArchiDepWeb.Servers.ServerHelpComponent
   import ArchiDepWeb.Servers.ServerRetryHandlers
   alias ArchiDep.Servers
   alias ArchiDep.Servers.PubSub

@@ -62,6 +62,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: server.active,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -137,6 +138,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: server.username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: server.active,
       app_username: new_server_app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -215,6 +217,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: true,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -312,6 +315,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -398,6 +402,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -484,6 +489,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -569,6 +575,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -652,6 +659,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -735,6 +743,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -819,6 +828,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: server.username,
       ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
       active: server.active,
       app_username: server.app_username,
       expected_properties: @no_server_properties |> Enum.into(%{}) |> Map.put(:cpus, 4)

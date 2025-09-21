@@ -10,6 +10,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.SSH
+  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias Phoenix.LiveView.JS
 
   attr :server, Server, doc: "the server whose name to display"
@@ -628,6 +630,64 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             {inspect(@reason)}
           </div>
         <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def server_problem(
+        %{problem: {:server_key_exchange_failed, unknown_fingerprint, ssh_host_key_fingerprints}} =
+          assigns
+      ) do
+    {no_keys, valid_keys, invalid_keys} =
+      case SSH.parse_ssh_host_key_fingerprints(ssh_host_key_fingerprints) do
+        {:ok, valid, invalid} -> {false, valid, invalid}
+        {:error, :no_keys_found} -> {true, [], []}
+        {:error, {:invalid_keys, invalid_keys}} -> {false, [], invalid_keys}
+      end
+
+    assigns =
+      assign(assigns,
+        unknown_fingerprint: unknown_fingerprint,
+        no_keys: no_keys,
+        valid_keys: valid_keys,
+        invalid_keys: invalid_keys
+      )
+
+    ~H"""
+    <div role="alert" class="alert alert-error alert-soft">
+      <Heroicons.exclamation_circle class="size-4" />
+      <div>
+        <div class="w-full flex flex-col gap-2">
+          <p><strong>{gettext("SSH key exchange failed")}</strong></p>
+          <p :if={@unknown_fingerprint == nil}>{gettext("Server host key fingerprint is unknown")}</p>
+          <%= if @unknown_fingerprint != [] do %>
+            <p :if={@unknown_fingerprint != nil} class="mt-1">
+              {gettext("The host key fingerprint provided by the server is:")}
+            </p>
+            <p><code class="break-all">{@unknown_fingerprint}</code></p>
+          <% end %>
+          <p :if={@no_keys}>{gettext("No known host key fingerprints were registered")}</p>
+          <%= if @valid_keys != [] do %>
+            <p>{gettext("The following host key fingerprints are registered for this server:")}</p>
+            <ul class="pl-4 list-disc list-outside">
+              <li :for={key <- @valid_keys}>
+                <code class="break-all">{SSHKeyFingerprint.fingerprint_human(key)}</code>
+                ({SSHKeyFingerprint.key_algorithm(key)})
+              </li>
+            </ul>
+          <% end %>
+          <%= if @invalid_keys != [] do %>
+            <p>
+              {gettext("The following invalid host key fingerprints are registered for this server:")}
+            </p>
+            <ul class="pl-4 list-disc list-outside">
+              <li :for={{key, _error} <- @invalid_keys}>
+                <code class="break-all">{key}</code>
+              </li>
+            </ul>
+          <% end %>
+        </div>
       </div>
     </div>
     """

@@ -271,6 +271,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     |> noreply()
   end
 
+  def handle_info({:unknown_key_fingerprint, fingerprint} = message, {state_module, state})
+      when is_binary(fingerprint) do
+    state
+    |> state_module.on_message(message)
+    |> execute_actions()
+    |> pair(state_module)
+    |> noreply()
+  end
+
   def handle_info(
         {:DOWN, _ref, :process, connection_pid, reason},
         {state_module, state}

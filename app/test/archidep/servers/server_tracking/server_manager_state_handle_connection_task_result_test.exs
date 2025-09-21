@@ -226,14 +226,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     connection_problems =
       Enum.shuffle([
+        ServersFactory.server_authentication_failed_problem(),
         ServersFactory.server_connection_refused_problem(),
-        ServersFactory.server_connection_timed_out_problem()
+        ServersFactory.server_connection_timed_out_problem(),
+        ServersFactory.server_key_exchange_failed_problem()
       ])
 
     other_problems =
       Enum.shuffle([
         ServersFactory.server_ansible_playbook_failed_problem(),
-        ServersFactory.server_authentication_failed_problem(),
         ServersFactory.server_expected_property_mismatch_problem(),
         ServersFactory.server_fact_gathering_failed_problem(),
         ServersFactory.server_missing_sudo_access_problem(),
@@ -428,6 +429,141 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
              {real_time_state(server,
                 connection_state: result.connection_state,
                 conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: 10
+              ), %ServerManagerState{result | version: 10}}
+  end
+
+  test "a key exchange failure stops the connection process", %{
+    handle_task_result: handle_task_result
+  } do
+    server = build_active_server(set_up_at: nil)
+
+    fake_connect_task_ref = make_ref()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting_state(connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref},
+        version: 9
+      )
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_connect_task_ref,
+          {:error, :key_exchange_failed}
+        )
+      end)
+
+    assert log =~
+             "Server manager could not connect to server #{server.id} as #{server.username} because key exchange failed"
+
+    assert_no_stored_events!()
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connection_failed_state(
+                   connection_pid: connection_pid,
+                   reason: :key_exchange_failed
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_key_exchange_failed, nil, server.ssh_host_key_fingerprints}
+               ],
+               version: 9
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                problems: result.problems,
+                version: 10
+              ), %ServerManagerState{result | version: 10}}
+  end
+
+  test "a key exchange failure indicates the offending host key fingerprint if it was previously detected",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = build_active_server(set_up_at: nil)
+
+    fake_connect_task_ref = make_ref()
+    fake_ssh_host_key_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+
+    connecting = ServersFactory.random_connecting_state(%{retrying: false})
+    connecting_state(connection_pid: connection_pid) = connecting
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connecting,
+        server: server,
+        username: server.username,
+        tasks: %{connect: fake_connect_task_ref},
+        problems: [
+          {:server_key_exchange_failed, fake_ssh_host_key_fingerprint,
+           server.ssh_host_key_fingerprints}
+        ],
+        version: 9
+      )
+
+    {result, log} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_connect_task_ref,
+          {:error, :key_exchange_failed}
+        )
+      end)
+
+    assert log =~
+             "Server manager could not connect to server #{server.id} as #{server.username} because key exchange failed"
+
+    assert_no_stored_events!()
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_connect_task_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connection_failed_state(
+                   connection_pid: connection_pid,
+                   reason: :key_exchange_failed
+                 ),
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_key_exchange_failed, fake_ssh_host_key_fingerprint,
+                  server.ssh_host_key_fingerprints}
+               ],
+               version: 9
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
                 problems: result.problems,
                 version: 10
               ), %ServerManagerState{result | version: 10}}
@@ -1168,6 +1304,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
             ServersFactory.server_connection_timed_out_problem(),
             ServersFactory.server_expected_property_mismatch_problem(),
             ServersFactory.server_fact_gathering_failed_problem(),
+            ServersFactory.server_key_exchange_failed_problem(),
             ServersFactory.server_missing_sudo_access_problem(),
             ServersFactory.server_open_ports_check_failed_problem(),
             ServersFactory.server_port_testing_script_failed_problem(),

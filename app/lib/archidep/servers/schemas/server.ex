@@ -23,6 +23,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
+  alias ArchiDep.Servers.SSH
+  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias ArchiDep.Servers.Types
 
   @primary_key {:id, :binary_id, []}
@@ -38,6 +40,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           username: String.t(),
           app_username: String.t(),
           ssh_port: 1..65_535 | nil,
+          ssh_host_key_fingerprints: String.t(),
           secret_key: binary(),
           active: boolean(),
           group: ServerGroup.t() | NotLoaded.t(),
@@ -62,6 +65,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:username, :string)
     field(:app_username, :string)
     field(:ssh_port, :integer)
+    field(:ssh_host_key_fingerprints, :string)
     field(:secret_key, :binary)
     field(:active, :boolean)
     belongs_to(:group, ServerGroup, source: :class_id)
@@ -85,6 +89,16 @@ defmodule ArchiDep.Servers.Schemas.Server do
 
   @spec set_up?(t()) :: boolean()
   def set_up?(%__MODULE__{set_up_at: set_up_at}), do: set_up_at != nil
+
+  @spec valid_ssh_host_key_fingerprints(t()) :: list(SSHKeyFingerprint.t())
+  def valid_ssh_host_key_fingerprints(%__MODULE__{
+        ssh_host_key_fingerprints: ssh_host_key_fingerprints
+      }) do
+    case SSH.parse_ssh_host_key_fingerprints(ssh_host_key_fingerprints) do
+      {:ok, valid, _invalid} -> valid
+      {:error, _reason} -> []
+    end
+  end
 
   @spec find_active_server_for_group_member(UUID.t()) :: {:ok, t()} | {:error, :server_not_found}
   def find_active_server_for_group_member(group_member_id) do
@@ -239,6 +253,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :ip_address,
       :username,
       :ssh_port,
+      :ssh_host_key_fingerprints,
       :active,
       :app_username
     ])
@@ -270,6 +285,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :ip_address,
       :username,
       :ssh_port,
+      :ssh_host_key_fingerprints,
       :active
     ])
     |> cast_assoc(:expected_properties,
@@ -317,6 +333,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :ip_address,
       :username,
       :ssh_port,
+      :ssh_host_key_fingerprints,
       :app_username,
       :active
     ])
@@ -339,6 +356,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :ip_address,
       :username,
       :ssh_port,
+      :ssh_host_key_fingerprints,
       :active
     ])
     |> change(updated_at: now)
@@ -469,6 +487,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> update_change(:name, &trim_to_nil/1)
     |> update_change(:username, &trim/1)
     |> update_change(:app_username, &trim/1)
+    |> update_change(:ssh_host_key_fingerprints, &trim/1)
     |> validate_required([
       :ip_address,
       :username,
@@ -477,12 +496,26 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :group_id,
       :owner_id,
       :app_username,
+      :ssh_host_key_fingerprints,
       :expected_properties
     ])
     |> validate_length(:name, max: 50)
     |> unique_constraint(:name)
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
+    |> validate_change(:ssh_host_key_fingerprints, fn :ssh_host_key_fingerprints, fingerprints ->
+      case SSH.parse_ssh_host_key_fingerprints(fingerprints) do
+        {:ok, _valid, _invalid} ->
+          []
+
+        {:error, reason} ->
+          [
+            ssh_host_key_fingerprints:
+              {"must contain at least one valid SSH host key fingerprint, with new lines between each fingerprint",
+               [reason: reason]}
+          ]
+      end
+    end)
     |> unique_constraint(:ip_address)
     |> assoc_constraint(:owner)
     |> validate_length(:app_username, max: 32)

@@ -42,6 +42,8 @@ defmodule ArchiDep.Servers.Types do
   @type server_expected_property_mismatch_problem ::
           {:server_expected_property_mismatch, atom(), term(), term()}
   @type server_fact_gathering_failed_problem :: {:server_fact_gathering_failed, term()}
+  @type server_key_exchange_failed_problem ::
+          {:server_key_exchange_failed, String.t() | nil, String.t()}
   @type server_missing_sudo_access_problem ::
           {:server_missing_sudo_access, String.t(), String.t()}
   @type server_open_ports_check_failed_problem ::
@@ -59,6 +61,7 @@ defmodule ArchiDep.Servers.Types do
           | server_connection_timed_out_problem()
           | server_expected_property_mismatch_problem()
           | server_fact_gathering_failed_problem()
+          | server_key_exchange_failed_problem()
           | server_missing_sudo_access_problem()
           | server_open_ports_check_failed_problem()
           | server_port_testing_script_failed_problem()
@@ -70,6 +73,7 @@ defmodule ArchiDep.Servers.Types do
           ip_address: String.t(),
           username: String.t(),
           ssh_port: integer() | nil,
+          ssh_host_key_fingerprints: String.t(),
           active: boolean(),
           app_username: String.t(),
           expected_properties: server_properties()

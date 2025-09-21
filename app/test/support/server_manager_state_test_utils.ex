@@ -8,6 +8,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   import Ecto.Query, only: [from: 2]
   import ExUnit.Assertions
   import ExUnit.Callbacks
+  import ExUnit.CaptureLog
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
@@ -16,10 +17,13 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
+  alias ArchiDep.Servers.SSH
+  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.FactoryHelpers
   alias ArchiDep.Support.GenServerProxy
+  alias ArchiDep.Support.NetFactory
   alias ArchiDep.Support.ServersFactory
   alias Ecto.UUID
 
@@ -32,16 +36,50 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   def assert_connect_fn!(connect_fn, state, username) do
     fake_task = Task.completed(:fake)
 
-    expected_host = state.server.ip_address.address
-    expected_port = state.server.ssh_port || 22
-    expected_opts = [silently_accept_hosts: true]
+    test_pid = self()
+    server = state.server
+    expected_host = server.ip_address.address
+    expected_port = server.ssh_port || 22
 
     result =
-      connect_fn.(state, fn ^expected_host, ^expected_port, ^username, ^expected_opts ->
+      connect_fn.(state, fn ^expected_host, ^expected_port, ^username, opts! ->
+        assert {{:sha256, silently_accept_hosts}, opts!} =
+                 Keyword.pop!(opts!, :silently_accept_hosts)
+
+        assert Keyword.keys(opts!) == []
+        send(test_pid, {:connect_called, silently_accept_hosts})
         fake_task
       end)
 
     assert result == %ServerManagerState{state | tasks: %{connect: fake_task.ref}}
+
+    assert_receive {:connect_called, silently_accept_hosts_fn}, 500
+    assert is_function(silently_accept_hosts_fn, 2)
+
+    assert {:ok, ssh_host_key_fingerprints, []} =
+             SSH.parse_ssh_host_key_fingerprints(server.ssh_host_key_fingerprints)
+
+    for fingerprint <- ssh_host_key_fingerprints do
+      random_peer = :inet.ntoa(NetFactory.ip_address())
+
+      assert silently_accept_hosts_fn.(
+               random_peer,
+               SSHKeyFingerprint.fingerprint_human(fingerprint)
+             ) == true
+    end
+
+    refute_received {:unknown_key_fingerprint, _unknown_fingerprint}
+
+    random_peer = :inet.ntoa(NetFactory.ip_address())
+    unknown_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+
+    assert {false, msg} =
+             with_log(fn -> silently_accept_hosts_fn.(random_peer, unknown_fingerprint) end)
+
+    assert msg =~
+             "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(unknown_fingerprint)} does not match any of the expected fingerprints"
+
+    assert_receive {:unknown_key_fingerprint, ^unknown_fingerprint}, 500
 
     result
   end

@@ -158,6 +158,35 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           placeholder={gettext("22 by default")}
         />
         <.errors_for field={@form[:ssh_port]} />
+
+        <label class="fieldset-label required mt-2">{gettext("SSH host key fingerprints")}</label>
+        <textarea
+          id={@form[:ssh_host_key_fingerprints].id}
+          class="textarea w-full"
+          name={@form[:ssh_host_key_fingerprints].name}
+          rows="3"
+          placeholder={
+            gettext(
+              "3072 SHA256:x4gxcQl96qBWfIL/8BxVU2WECUuF/TmnHlEQUQcqE7w= root@server (RSA)\n256 SHA256:LTmRTt/Zc7t48a0bF1hI0tlLLOWpIu9c+ZAAytialxw= root@server (ED25519)\n256 SHA256:4wjltFerVQi4J8+rqS3atzUI7jZyUXeuCXhfdH1QKg0= root@server (ECDSA)"
+            )
+          }
+        ><%= @form[:ssh_host_key_fingerprints].value %></textarea>
+        <.errors_for field={@form[:ssh_host_key_fingerprints]} />
+        <.field_help>
+          <div class="flex flex-col gap-2">
+            <span>
+              {gettext(
+                "The fingerprints of your server's SSH host keys, one per line. We will use these to verify that we are connecting to your server and not an attacker's (man-in-the-middle). Simply run the following command {ss}while connected to your server with SSH{se}, and paste the output in the field above:",
+                ss: "<strong>",
+                se: "</strong>"
+              )
+              |> raw()}
+            </span>
+            <code class="pl-2">
+              find /etc/ssh -name "ssh_host_*.pub" -exec ssh-keygen -lf {"{}"} \;
+            </code>
+          </div>
+        </.field_help>
       </fieldset>
       <%= if root?(@auth) do %>
         <!-- Expected server properties -->

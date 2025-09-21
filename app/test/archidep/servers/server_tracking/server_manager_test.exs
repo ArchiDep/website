@@ -620,6 +620,44 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
            end) == :ok
   end
 
+  test "notify a server manager that the SSH host key fingerprint of the server it is trying to connect to is unknown",
+       %{
+         initialize: initialize,
+         test_pid: test_pid
+       } do
+    assert test_server_manager!(
+             initialize,
+             test_pid,
+             fn done,
+                %{
+                  manager_pid: server_manager_pid,
+                  starting_version: starting_version,
+                  done_version: done_version
+                } ->
+               fake_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+
+               expect(ServerManagerMock, :on_message, 2, fn
+                 %ServerManagerState{
+                   version: ^starting_version
+                 } = state,
+                 {:unknown_key_fingerprint, ^fake_fingerprint} ->
+                   done.(state)
+
+                 %ServerManagerState{version: ^done_version} =
+                     state,
+                 {:done, ^done_version} ->
+                   send(test_pid, :done)
+                   state
+               end)
+
+               send(server_manager_pid, {:unknown_key_fingerprint, fake_fingerprint})
+
+               assert_receive :done, 500
+             end,
+             wait_for_done_action: false
+           ) == :done
+  end
+
   test "notify a server manager that an ansible playbook event is running", %{
     initialize: initialize,
     server: server,
@@ -936,7 +974,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     result =
       test_fn.(done_action_fn, %{
         manager_pid: server_manager_pid,
-        starting_version: starting_version
+        starting_version: starting_version,
+        done_version: done_version
       })
 
     if wait_for_done_action do

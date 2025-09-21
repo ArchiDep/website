@@ -35,6 +35,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.SSH
+  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UseCases.DeleteServer
   alias ArchiDep.Servers.UseCases.UpdateServer
@@ -282,7 +283,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         monitor_action(connection_pid)
       ])
       |> drop_problems([
-        :server_authentication_failed,
         :server_missing_sudo_access,
         :server_reconnection_failed,
         :server_sudo_access_check_failed
@@ -489,6 +489,35 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     )
     |> add_action(update_tracking_action())
     |> set_problem(server_authentication_failed_problem(server, state.username))
+  end
+
+  defp handle_connect_task_result(
+         %__MODULE__{server: server} = state,
+         _connection_ref,
+         connection_pid,
+         _start_time,
+         _causation_event,
+         {:error, :key_exchange_failed}
+       ) do
+    Logger.warning(
+      "Server manager could not connect to server #{server.id} as #{state.username} because key exchange failed"
+    )
+
+    unknown_fingerprint =
+      Enum.find(state.problems, fn
+        {:server_key_exchange_failed, _fingerprint, _ssh_host_key_fingerprints} -> true
+        _anything_else -> false
+      end) || {:server_key_exchange_failed, nil, nil}
+
+    state
+    |> change_connection_state(
+      connection_failed_state(
+        connection_pid: connection_pid,
+        reason: :key_exchange_failed
+      )
+    )
+    |> add_action(update_tracking_action())
+    |> set_problem(server_key_exchange_failed_problem(server, elem(unknown_fingerprint, 1)))
   end
 
   defp handle_connect_task_result(
@@ -1293,6 +1322,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def on_message(%__MODULE__{connection_state: connected_state()} = state, :measure_load_average),
     do: add_action(state, get_load_average())
 
+  def on_message(%__MODULE__{server: server} = state, {:unknown_key_fingerprint, fingerprint})
+      when is_binary(fingerprint),
+      do:
+        state
+        |> drop_problems(server_key_exchange_failed_problem?())
+        |> add_problem(server_key_exchange_failed_problem(server, fingerprint))
+
   def on_message(state, :measure_load_average) do
     Logger.warning(
       "Ignoring :measure_load_average message sent to server #{state.server.id} because the server is no longer connected"
@@ -1413,7 +1449,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp set_problems(state, problems), do: %__MODULE__{state | problems: problems}
 
   defp drop_connection_problems(state),
-    do: drop_problems(state, [:server_connection_timed_out, :server_connection_refused])
+    do:
+      drop_problems(state, [
+        :server_authentication_failed,
+        :server_connection_timed_out,
+        :server_connection_refused,
+        :server_key_exchange_failed
+      ])
 
   defp drop_connected_problems(state),
     do:
@@ -1604,9 +1646,33 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     host = server.ip_address.address
     port = server.ssh_port || 22
 
+    pid = self()
+    ssh_host_key_fingerprints = Server.valid_ssh_host_key_fingerprints(server)
+
     {:connect,
      fn task_state, task_factory ->
-       task = task_factory.(host, port, username, silently_accept_hosts: true)
+       task =
+         task_factory.(host, port, username,
+           silently_accept_hosts:
+             {:sha256,
+              fn _peer_name, fingerprint_charlist ->
+                fingerprint = to_string(fingerprint_charlist)
+
+                match =
+                  Enum.any?(ssh_host_key_fingerprints, &SSHKeyFingerprint.match?(&1, fingerprint))
+
+                if not match do
+                  Logger.warning(
+                    "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(fingerprint)} does not match any of the expected fingerprints"
+                  )
+
+                  send(pid, {:unknown_key_fingerprint, fingerprint})
+                end
+
+                match
+              end}
+         )
+
        %__MODULE__{task_state | tasks: Map.put(task_state.tasks, :connect, task.ref)}
      end}
   end

@@ -26,6 +26,7 @@ defmodule ArchiDep.Support.ServersFactory do
   @playbooks [AnsiblePlaybook.name(Ansible.setup_playbook())]
   @failed_ansible_playbook_run_states [:failed, :interrupted, :timeout]
   @finished_ansible_playbook_run_states [:succeeded] ++ @failed_ansible_playbook_run_states
+  @ssh_host_key_algs_and_sizes [{"RSA", 3072}, {"ECDSA", 256}, {"ED25519", 256}]
 
   @spec ansible_playbook_event_factory(map()) :: AnsiblePlaybookEvent.t()
   def ansible_playbook_event_factory(attrs!) do
@@ -415,6 +416,14 @@ defmodule ArchiDep.Support.ServersFactory do
   def server_fact_gathering_failed_problem,
     do: {:server_fact_gathering_failed, Faker.Lorem.sentence()}
 
+  @spec server_key_exchange_failed_problem() :: Types.server_key_exchange_failed_problem()
+  def server_key_exchange_failed_problem,
+    do:
+      {:server_key_exchange_failed, optional(&random_ssh_host_key_fingerprint_digest/0),
+       1
+       |> Range.new(Faker.random_between(1, 3))
+       |> Enum.map_join("\n", fn _n -> random_ssh_host_key_fingerprint_string() end)}
+
   @spec server_missing_sudo_access_problem :: Types.server_missing_sudo_access_problem()
   def server_missing_sudo_access_problem,
     do: {:server_missing_sudo_access, Faker.Internet.user_name(), Faker.Lorem.sentence()}
@@ -586,6 +595,13 @@ defmodule ArchiDep.Support.ServersFactory do
         {port, attrs} when is_integer(port) and port > 0 and port < 65_536 -> {port, attrs}
       end
 
+    {ssh_host_key_fingerprints, attrs!} =
+      Map.pop_lazy(attrs!, :ssh_host_key_fingerprints, fn ->
+        1
+        |> Range.new(Faker.random_between(1, 3))
+        |> Enum.map_join("\n", fn _n -> random_ssh_host_key_fingerprint_string() end)
+      end)
+
     {secret_key, attrs!} =
       Map.pop_lazy(attrs!, :secret_key, fn -> Faker.random_bytes(20) end)
 
@@ -634,6 +650,7 @@ defmodule ArchiDep.Support.ServersFactory do
       username: username,
       app_username: app_username,
       ssh_port: ssh_port,
+      ssh_host_key_fingerprints: ssh_host_key_fingerprints,
       secret_key: secret_key,
       active: active,
       group: group,
@@ -824,6 +841,14 @@ defmodule ArchiDep.Support.ServersFactory do
 
     {username, attrs!} = Keyword.pop_lazy(attrs!, :username, &Faker.Internet.user_name/0)
     {ssh_port, attrs!} = Keyword.pop_lazy(attrs!, :ssh_port, &NetFactory.port/0)
+
+    {ssh_host_key_fingerprints, attrs!} =
+      Keyword.pop_lazy(attrs!, :ssh_host_key_fingerprints, fn ->
+        1
+        |> Range.new(Faker.random_between(1, 3))
+        |> Enum.map_join("\n", fn _n -> random_ssh_host_key_fingerprint_string() end)
+      end)
+
     {active, attrs!} = Keyword.pop_lazy(attrs!, :active, &bool/0)
     {app_username, attrs!} = Keyword.pop_lazy(attrs!, :app_username, &Faker.Internet.user_name/0)
 
@@ -837,6 +862,7 @@ defmodule ArchiDep.Support.ServersFactory do
       ip_address: ip_address,
       username: username,
       ssh_port: ssh_port,
+      ssh_host_key_fingerprints: ssh_host_key_fingerprints,
       active: active,
       app_username: app_username,
       expected_properties: expected_properties
@@ -904,4 +930,28 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec random_retry_connecting_cause :: :manual | :automated | {:event, EventReference.t()}
   def random_retry_connecting_cause,
     do: Enum.random([:manual, :automated, {:event, EventsFactory.build(:event_reference)}])
+
+  @spec random_ssh_host_key_fingerprint_digest() :: String.t()
+  def random_ssh_host_key_fingerprint_digest do
+    {digest_alg, digest} =
+      if bool() do
+        {"SHA256", 32 |> Faker.random_bytes() |> Base.encode64(padding: false)}
+      else
+        {"MD5",
+         16
+         |> Faker.random_bytes()
+         |> Base.encode16(case: :lower)
+         |> String.graphemes()
+         |> Enum.chunk_every(2)
+         |> Enum.map_join(":", &Enum.join/1)}
+      end
+
+    "#{digest_alg}:#{digest}"
+  end
+
+  @spec random_ssh_host_key_fingerprint_string() :: String.t()
+  def random_ssh_host_key_fingerprint_string do
+    {alg, size} = Enum.random(@ssh_host_key_algs_and_sizes)
+    "#{size} #{random_ssh_host_key_fingerprint_digest()} root@server (#{alg})"
+  end
 end

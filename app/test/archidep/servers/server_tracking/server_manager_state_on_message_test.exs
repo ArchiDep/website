@@ -156,4 +156,66 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
                 version: result.version + 1
               ), %ServerManagerState{connect_result | version: result.version + 1}}
   end
+
+  test "receive a message to indicate that the SSH host key fingerprint of the server the manager is trying to connect to is unknown",
+       %{on_message: on_message} do
+    server =
+      build_active_server(
+        set_up_at: nil,
+        ssh_port: true
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        username: server.username,
+        server: server
+      )
+
+    fake_ssh_host_key_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+
+    assert on_message.(initial_state, {:unknown_key_fingerprint, fake_ssh_host_key_fingerprint}) ==
+             %ServerManagerState{
+               initial_state
+               | problems: [
+                   {:server_key_exchange_failed, fake_ssh_host_key_fingerprint,
+                    server.ssh_host_key_fingerprints}
+                 ]
+             }
+
+    assert_no_stored_events!()
+  end
+
+  test "any previous key exchange problem is replaced when receiving a new unknown key fingerprint message",
+       %{on_message: on_message} do
+    server =
+      build_active_server(
+        set_up_at: nil,
+        ssh_port: true
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        username: server.username,
+        server: server,
+        problems: [
+          {:server_key_exchange_failed, ServersFactory.random_ssh_host_key_fingerprint_digest(),
+           server.ssh_host_key_fingerprints}
+        ]
+      )
+
+    fake_ssh_host_key_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+
+    assert on_message.(initial_state, {:unknown_key_fingerprint, fake_ssh_host_key_fingerprint}) ==
+             %ServerManagerState{
+               initial_state
+               | problems: [
+                   {:server_key_exchange_failed, fake_ssh_host_key_fingerprint,
+                    server.ssh_host_key_fingerprints}
+                 ]
+             }
+
+    assert_no_stored_events!()
+  end
 end

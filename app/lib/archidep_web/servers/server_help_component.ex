@@ -9,6 +9,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Authentication
+  alias ArchiDep.Course.Material
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
 
@@ -103,6 +104,50 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
         <li>
           Did you add the course's SSH public key to the user's authorized keys?
           We won't be able to log in without it.
+        </li>
+      </ul>
+    </.troubleshooting_note>
+    <!-- Key exchange failure -->
+    <.troubleshooting_note
+      :if={
+        @server.active and @state != nil and
+          connection_failed?(@state.connection_state) and
+          problem?(@state, :server_key_exchange_failed)
+      }
+      class="!mt-0"
+    >
+      <p>
+        <strong>Oops.</strong> We've reached an SSH server at the IP address and
+        port you provided, but the public SSH key fingerprint it provided does
+        not match those you have registered. That means we can't be sure we're
+        connecting to the right server.
+      </p>
+      <ul class="mt-2 list-disc list-outside pl-6 flex flex-col gap-y-2">
+        <li>
+          <div class="flex flex-col gap-2">
+            <span>
+              Most likely the problem is due to user error.
+              When setting up your virtual server, did you <a
+                href={"#{Material.run_virtual_server_exercise().url}#exclamation-register-your-azure-vm-with-us"}
+                class="underline hover:no-underline"
+                target="_blank"
+              >copy the correct SSH host
+              key fingerprints</a>? You need to connect to your server with SSH and
+              run the following command:
+            </span>
+            <code>find /etc/ssh -name "ssh_host_*.pub" -exec ssh-keygen -lf {"{}"} \;</code>
+            <span>
+              Copy the output of that command, edit your server, and make sure
+              to paste them into the <strong>SSH host key fingerprints</strong>
+              field and save. You may then attempt to reconnect.
+            </span>
+          </div>
+        </li>
+        <li>
+          If the problem persists, let us know!  It's also possible there is an
+          incompatibility between your SSH server and our SSH client. This is
+          unlikely if you set up your server as we requested, but <em>shit
+          happens</em>™.
         </li>
       </ul>
     </.troubleshooting_note>

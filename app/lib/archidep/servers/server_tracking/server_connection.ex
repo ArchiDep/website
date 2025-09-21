@@ -166,6 +166,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
 
         {:reply, {:error, :authentication_failed}, {:idle, server_id}}
 
+      {:error, ~c"Key exchange failed"} ->
+        Logger.warning(
+          "Could not open SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port}) because the key exchange failed"
+        )
+
+        {:reply, {:error, :key_exchange_failed}, {:idle, server_id}}
+
       {:error, reason} ->
         Logger.debug(
           "Could not open SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port}) because #{inspect(reason)}"

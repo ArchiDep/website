@@ -215,7 +215,8 @@
               ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
                 :server_authentication_failed,
                 :server_connection_timed_out,
-                :server_connection_refused
+                :server_connection_refused,
+                :server_key_exchange_failed
               ])
           }
           on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
