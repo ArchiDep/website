@@ -26,7 +26,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
       <p>
         <strong>Oops.</strong> It appears that you have mistakenly created your
         server in an inactive state. We will only connect to servers that are
-        marked as active.
+        marked as active. Please edit and activate your server.
       </p>
     </.troubleshooting_note>
     <!-- Connection timeout -->
@@ -44,7 +44,16 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
         Please check the following:
       </p>
       <ul class="mt-2 list-disc list-outside pl-6 flex flex-col gap-y-2">
-        <li>Did you configure the correct IP address?</li>
+        <li>
+          Did you configure the correct IP address? We might be trying to reach
+          the wrong server. You can find your server's IP address in its
+          information page (<a
+            href={"#{Material.run_virtual_server_exercise().url}#exclamation-create-your-server"}
+            class="underline hover:no-underline"
+            target="_blank"
+          >after creating
+          it during the exercise</a>).
+        </li>
         <li>
           We are attempting to open an SSH connection to port {@server.ssh_port ||
             22}. Is this port open in your cloud provider's firewall?
@@ -75,7 +84,13 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
       <ul class="mt-2 list-disc list-outside pl-6 flex flex-col gap-y-2">
         <li>
           Did you configure the correct IP address? We might be trying to reach
-          the wrong server.
+          the wrong server. You can find your server's IP address in its
+          information page (<a
+            href={"#{Material.run_virtual_server_exercise().url}#exclamation-create-your-server"}
+            class="underline hover:no-underline"
+            target="_blank"
+          >after creating
+          it during the exercise</a>).
         </li>
         <li>
           Is your server rebooting? It might not be ready to accept connections
