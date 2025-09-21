@@ -517,6 +517,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
         username: server.username,
         tasks: %{connect: fake_connect_task_ref},
         problems: [
+          ServersFactory.server_authentication_failed_problem(),
           {:server_key_exchange_failed, fake_ssh_host_key_fingerprint,
            server.ssh_host_key_fingerprints}
         ],

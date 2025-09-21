@@ -1420,14 +1420,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp detect_server_properties_mismatches(problems, %Server{last_known_properties: nil}),
     do: Enum.reject(problems, server_problem?(:server_expected_property_mismatch))
 
-  defp detect_server_properties_mismatches(problems, %Server{
-         group: %ServerGroup{expected_server_properties: expected_server_properties},
-         expected_properties: expected_properties_overrides,
-         last_known_properties: last_known_properties
-       })
+  defp detect_server_properties_mismatches(
+         problems,
+         %Server{
+           group: %ServerGroup{expected_server_properties: expected_server_properties},
+           expected_properties: expected_properties_overrides,
+           last_known_properties: last_known_properties
+         } = server
+       )
        when last_known_properties != nil do
+    default_hostname = Server.default_hostname(server)
+
     expected_properties =
-      ServerProperties.merge(expected_server_properties, expected_properties_overrides)
+      expected_server_properties
+      |> ServerProperties.merge(expected_properties_overrides)
+      |> ServerProperties.set_default_hostname(default_hostname)
 
     mismatches = ServerProperties.detect_mismatches(expected_properties, last_known_properties)
 

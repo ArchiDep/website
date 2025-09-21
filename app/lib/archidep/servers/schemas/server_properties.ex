@@ -224,9 +224,6 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
       |> validate_length(:distribution_version, max: 20)
 
   @spec merge(t(), t()) :: t()
-  # TODO: remove clause
-  def merge(nil, overrides), do: overrides
-
   def merge(properties, overrides),
     do: %__MODULE__{
       properties
@@ -244,6 +241,14 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
         distribution_release: merge_property(properties, overrides, :distribution_release),
         distribution_version: merge_property(properties, overrides, :distribution_version)
     }
+
+  @spec set_default_hostname(t(), String.t()) :: t()
+  def set_default_hostname(properties, nil), do: properties
+
+  def set_default_hostname(%__MODULE__{hostname: nil} = properties, default_hostname),
+    do: %__MODULE__{properties | hostname: default_hostname}
+
+  def set_default_hostname(properties, _default_hostname), do: properties
 
   defp merge_property(properties, overrides, property),
     do: merge_property(Map.get(properties, property), Map.get(overrides, property))

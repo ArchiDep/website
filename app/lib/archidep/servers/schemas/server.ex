@@ -21,6 +21,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   alias ArchiDep.Servers.Events.ServerOpenPortsChecked
   alias ArchiDep.Servers.Events.ServerSetUp
   alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.SSH
@@ -99,6 +100,15 @@ defmodule ArchiDep.Servers.Schemas.Server do
       {:error, _reason} -> []
     end
   end
+
+  @spec default_hostname(t()) :: String.t() | nil
+  def default_hostname(%__MODULE__{
+        username: username,
+        owner: %ServerOwner{group_member: %ServerGroupMember{domain: domain}}
+      }),
+      do: "#{username}.#{domain}"
+
+  def default_hostname(_server), do: nil
 
   @spec find_active_server_for_group_member(UUID.t()) :: {:ok, t()} | {:error, :server_not_found}
   def find_active_server_for_group_member(group_member_id) do

@@ -249,7 +249,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
         set_up_at: true,
         ssh_port: true,
         class_expected_server_properties: @no_server_properties,
-        server_expected_properties: @no_server_properties
+        server_expected_properties: Keyword.merge(@no_server_properties, hostname: "test-server")
       )
 
     server_secret_key = server.secret_key
@@ -391,7 +391,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       insert_active_server!(
         set_up_at: true,
         ssh_port: true,
-        class_expected_server_properties: @no_server_properties,
+        class_expected_server_properties:
+          Keyword.merge(@no_server_properties, hostname: "test-server"),
         server_expected_properties: @no_server_properties,
         server_last_known_properties: [
           hostname: "old-hostname",
@@ -544,6 +545,360 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
        } do
     server =
       insert_active_server!(
+        set_up_at: true,
+        ssh_port: true,
+        class_expected_server_properties: [
+          hostname: "test-server",
+          machine_id: nil,
+          cpus: 4,
+          cores: 8,
+          vcpus: nil,
+          memory: 2048,
+          swap: nil,
+          system: "Windows",
+          architecture: "x86_64",
+          os_family: nil,
+          distribution: nil,
+          distribution_release: "bar",
+          distribution_version: "0.01"
+        ],
+        server_expected_properties: [
+          hostname: nil,
+          machine_id: nil,
+          cpus: 2,
+          cores: nil,
+          vcpus: 8,
+          memory: nil,
+          swap: 4096,
+          system: "Linux",
+          architecture: nil,
+          os_family: "Debian",
+          distribution: "Foo",
+          distribution_release: nil,
+          distribution_version: "0.02"
+        ]
+      )
+
+    server_secret_key = server.secret_key
+
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
+
+    fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref},
+        problems: [
+          ServersFactory.server_expected_property_mismatch_problem(),
+          ServersFactory.server_expected_property_mismatch_problem()
+        ]
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    fake_facts = %{
+      "ansible_hostname" => "test-server",
+      "ansible_machine_id" => "1234567890abcdef",
+      "ansible_processor_count" => 4,
+      "ansible_processor_cores" => 7,
+      "ansible_processor_vcpus" => 9,
+      "ansible_memory_mb" => %{
+        "real" => %{"total" => 2000},
+        "swap" => %{"total" => 4096}
+      },
+      "ansible_system" => "macOS",
+      "ansible_architecture" => "arm64",
+      "ansible_os_family" => "DOS"
+    }
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok, fake_facts}
+      )
+
+    assert %{
+             server: %Server{last_known_properties_id: last_known_properties_id} = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      fake_facts,
+      now,
+      fake_connection_event
+    )
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id,
+                     hostname: "test-server",
+                     machine_id: "1234567890abcdef",
+                     cpus: 4,
+                     cores: 7,
+                     vcpus: 9,
+                     memory: 2000,
+                     swap: 4096,
+                     system: "macOS",
+                     architecture: "arm64",
+                     os_family: "DOS"
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_expected_property_mismatch, :cpus, 2, 4},
+                 {:server_expected_property_mismatch, :cores, 8, 7},
+                 {:server_expected_property_mismatch, :vcpus, 8, 9},
+                 {:server_expected_property_mismatch, :system, "Linux", "macOS"},
+                 {:server_expected_property_mismatch, :architecture, "x86_64", "arm64"},
+                 {:server_expected_property_mismatch, :os_family, "Debian", "DOS"}
+               ]
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
+  test "the hostname of a group member's server is expected to be the server's username and the server group member's domain by default",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server =
+      insert_active_server!(
+        root: false,
+        set_up_at: true,
+        ssh_port: true,
+        class_expected_server_properties: [
+          hostname: nil,
+          machine_id: nil,
+          cpus: 4,
+          cores: 8,
+          vcpus: nil,
+          memory: 2048,
+          swap: nil,
+          system: "Windows",
+          architecture: "x86_64",
+          os_family: nil,
+          distribution: nil,
+          distribution_release: "bar",
+          distribution_version: "0.01"
+        ],
+        server_expected_properties: [
+          hostname: nil,
+          machine_id: nil,
+          cpus: 2,
+          cores: nil,
+          vcpus: 8,
+          memory: nil,
+          swap: 4096,
+          system: "Linux",
+          architecture: nil,
+          os_family: "Debian",
+          distribution: "Foo",
+          distribution_release: nil,
+          distribution_version: "0.02"
+        ]
+      )
+
+    server_secret_key = server.secret_key
+
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
+
+    fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref},
+        problems: [
+          ServersFactory.server_expected_property_mismatch_problem(),
+          ServersFactory.server_expected_property_mismatch_problem()
+        ]
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    fake_facts = %{
+      "ansible_hostname" => "test-server",
+      "ansible_machine_id" => "1234567890abcdef",
+      "ansible_processor_count" => 4,
+      "ansible_processor_cores" => 7,
+      "ansible_processor_vcpus" => 9,
+      "ansible_memory_mb" => %{
+        "real" => %{"total" => 2000},
+        "swap" => %{"total" => 4096}
+      },
+      "ansible_system" => "macOS",
+      "ansible_architecture" => "arm64",
+      "ansible_os_family" => "DOS"
+    }
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok, fake_facts}
+      )
+
+    assert %{
+             server: %Server{last_known_properties_id: last_known_properties_id} = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      fake_facts,
+      now,
+      fake_connection_event
+    )
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id,
+                     hostname: "test-server",
+                     machine_id: "1234567890abcdef",
+                     cpus: 4,
+                     cores: 7,
+                     vcpus: 9,
+                     memory: 2000,
+                     swap: 4096,
+                     system: "macOS",
+                     architecture: "arm64",
+                     os_family: "DOS"
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_expected_property_mismatch, :hostname,
+                  "#{server.username}.#{server.owner.group_member.domain}", "test-server"},
+                 {:server_expected_property_mismatch, :cpus, 2, 4},
+                 {:server_expected_property_mismatch, :cores, 8, 7},
+                 {:server_expected_property_mismatch, :vcpus, 8, 9},
+                 {:server_expected_property_mismatch, :system, "Linux", "macOS"},
+                 {:server_expected_property_mismatch, :architecture, "x86_64", "arm64"},
+                 {:server_expected_property_mismatch, :os_family, "Debian", "DOS"}
+               ]
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
+  test "the hostname of a root user's server has no expected value by default",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server =
+      insert_active_server!(
+        root: true,
         set_up_at: true,
         ssh_port: true,
         class_expected_server_properties: [
@@ -709,6 +1064,162 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                 conn_params: conn_params(server, username: server.app_username),
                 current_job: :checking_open_ports,
                 problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
+  test "no hostname mismatch is detected if the server's hostname matches the expected value",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server =
+      insert_active_server!(
+        root: false,
+        set_up_at: true,
+        ssh_port: true,
+        class_expected_server_properties: @no_server_properties,
+        server_expected_properties: @no_server_properties,
+        server_last_known_properties: [
+          hostname: "old-hostname",
+          machine_id: "old-machine-id",
+          cpus: 1,
+          cores: 1,
+          vcpus: nil,
+          memory: 1024,
+          swap: 512,
+          system: "OldOS",
+          architecture: "i386",
+          os_family: "OldFamily",
+          distribution: "OldDistro",
+          distribution_release: nil,
+          distribution_version: "0.1"
+        ]
+      )
+
+    server_secret_key = server.secret_key
+
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
+
+    fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    fake_facts = %{
+      "ansible_hostname" => "#{server.username}.#{server.owner.group_member.domain}",
+      "ansible_machine_id" => "1234567890abcdef",
+      "ansible_processor_count" => 2,
+      "ansible_processor_cores" => 4,
+      "ansible_processor_vcpus" => 8,
+      "ansible_memory_mb" => %{
+        "real" => %{"total" => 4096},
+        "swap" => %{"total" => 2048}
+      },
+      "ansible_system" => "Linux",
+      "ansible_architecture" => "x86_64",
+      "ansible_os_family" => "Debian",
+      "ansible_distribution" => "Ubuntu",
+      "ansible_distribution_release" => "noble",
+      "ansible_distribution_version" => "24.04"
+    }
+
+    now = DateTime.utc_now()
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok, fake_facts}
+      )
+
+    assert %{
+             server: updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      fake_facts,
+      now,
+      fake_connection_event
+    )
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: server.last_known_properties_id,
+                     hostname: "#{server.username}.#{server.owner.group_member.domain}",
+                     machine_id: "1234567890abcdef",
+                     cpus: 2,
+                     cores: 4,
+                     vcpus: 8,
+                     memory: 4096,
+                     swap: 2048,
+                     system: "Linux",
+                     architecture: "x86_64",
+                     os_family: "Debian",
+                     distribution: "Ubuntu",
+                     distribution_release: "noble",
+                     distribution_version: "24.04"
+                   },
+                   last_known_properties_id: server.last_known_properties_id,
+                   updated_at: updated_server.updated_at,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{}
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
                 version: result.version + 1
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
   end
