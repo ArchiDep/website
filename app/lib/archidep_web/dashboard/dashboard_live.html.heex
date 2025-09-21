@@ -87,12 +87,13 @@
         <div class="text-5xl animate-bounce">🎉</div>
         <p class="pt-3 pb-6">
           {gettext(
-            "Armed with your username, {cs}{username}{ce}, battle through the {as}{ss}{exercise}{se}{ae} exercise, then come back here to register your hard-won server.",
+            "Armed with your username, {cs}{username}{ce}, and your assigned domain, {cs}{domain}{ce}, battle through the {as}{ss}{exercise}{se}{ae} exercise, then come back here to register your hard-won server.",
             username: @student.username |> html_escape() |> safe_to_string(),
-            cs: "<code class=\"text-info\">",
-            ce: "</code>",
+            domain: @student.domain |> html_escape() |> safe_to_string(),
             exercise:
               Material.run_virtual_server_exercise().title |> html_escape() |> safe_to_string(),
+            cs: "<code class=\"text-info\">",
+            ce: "</code>",
             as: "<a href=\"#{Material.run_virtual_server_exercise().url}\">",
             ae: "</a>",
             ss: "<strong class=\"underline\">",
