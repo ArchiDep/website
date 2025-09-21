@@ -44,6 +44,8 @@ infrastructure:
 
 ![Azure: Create a new virtual machine](images/azure-create-vm.png)
 
+### :exclamation: Configure basic settings
+
 In the **Basics** settings, configure the **virtual machine details** (the
 machine's name, region, image and size):
 
@@ -76,6 +78,8 @@ reduce latency, and the North/West European regions are among the cheapest.
 
 {% endnote %}
 
+#### :exclamation: Configure your administator account
+
 Under the **Administrator account** settings, configure your username. Replace
 `jde` in this screenshot with the username you have selected for the course:
 
@@ -102,6 +106,8 @@ If necessary, you can [change it later][sysadmin-cheatsheet-change-username].
 
 {% endnote %}
 
+#### :exclamation: Make sure the SSH port is open
+
 Under inbound port rules, make sure the SSH (22) port is allowed:
 
 ![Azure: VM inbount port rules](images/azure-vm-inbound-port-rules.png)
@@ -110,9 +116,13 @@ Next, go to the **Disks** settings (**DO NOT** create the machine just yet):
 
 ![Azure: Go to disks](images/azure-vm-go-to-disks.png)
 
+### :exclamation: Skip the disk settings
+
 Keep the default **Disks** settings and go to the **Networking** settings:
 
 ![Azure: Go to disks](images/azure-vm-go-to-networking.png)
+
+### :exclamation: Configure open ports
 
 In the **Networking** settings, select the **Advanced** security group option,
 and create a new security group:
@@ -144,7 +154,11 @@ exercises.
 
 {% endcallout %}
 
+### :exclamation: Skip advanced settings
+
 Keep the default **Management, Monitoring, Advanced** and **Tags** settings.
+
+### :exclamation: Review your monthly cost
 
 Review your estimated monthly cost:
 
@@ -163,6 +177,8 @@ not the recommended one and that is too expensive for the credits you have at
 your disposal for this course.
 
 {% endcallout %}
+
+### :exclamation: Create your server
 
 Double-check that you are launching one virtual machine of size `B1s` (**1 X
 Standard B1s**).
@@ -285,28 +301,27 @@ private SSH key to help debug issues.
 
 ### :exclamation: Change the hostname of your virtual machine
 
-Configure the hostname for your virtual machine, a subdomain of `archidep.ch`.
-Use the username you have chosen for the course and the domain for the course.
-For example, if your usename is `jde`, your hostname should be
-`jde.archidep.ch`. Make sure not to pick the same subdomain as someone else in
-the class.
+Configure the hostname for your virtual machine. You have chosen a username
+(e.g. `jde`) and have been assigned a domain for the course (e.g.
+`archidep2.ch`). Use a combination of both as the hostname for your server.
 
-{% note type: warning %}
+{% note type: tip %}
 
-:warning: You should not use underscores (`_`) in a hostname, use hyphens (`-`)
-instead.
+For example, if your usename is `jde` and your assigned domain is
+`archidep2.ch`, your hostname should be `jde.archidep2.ch`. Make sure not to
+pick the same username/domain combination as someone else in the class.
 
 {% endnote %}
 
 ```bash
-$> sudo hostname jde.archidep.ch
+$> sudo hostname jde.archidep2.ch
 ```
 
 Also save your new hostname to the `/etc/hostname` file so that it will persist
 when you reboot the server:
 
 ```bash
-$> echo "jde.archidep.ch" | sudo tee /etc/hostname
+$> echo "jde.archidep2.ch" | sudo tee /etc/hostname
 ```
 
 {% callout type: more, id: hostname %}
@@ -315,9 +330,9 @@ The hostname is the name of your virtual server. It can be any URL. It often
 identifies a machine in an organization with the format
 `<machine-name>.<organization>.<tld>` (e.g. `unix-box.google.com`).
 
-For the purposes of this course, we will be using the `archidep.ch` domain, so
-it makes sense to use a subdomain corresponding to yourself (`jde.archidep.ch`)
-as the hostname.
+For the purposes of this course, we will be using prepared domains such as
+`archidep2.ch`, so it makes sense to use a subdomain corresponding to yourself
+(`jde.archidep2.ch`) as the hostname.
 
 {% endcallout %}
 

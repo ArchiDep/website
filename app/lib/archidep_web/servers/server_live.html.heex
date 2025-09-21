@@ -23,13 +23,13 @@
 <div class="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
   <div>
     <.data_display responsive_class="md:grid-cols-2 2xl:grid-cols-3">
-      <.data_display_element title={gettext("IP address")}>
+      <.data_display_element title={gettext("IP address")} class="font-mono">
         {:inet.ntoa(@server.ip_address.address)}
       </.data_display_element>
-      <.data_display_element title={gettext("Username")}>
+      <.data_display_element title={gettext("Username")} class="font-mono">
         {@server.username}
       </.data_display_element>
-      <.data_display_element title={gettext("SSH port")}>
+      <.data_display_element title={gettext("SSH port")} class="font-mono">
         {@server.ssh_port || 22}
       </.data_display_element>
       <.data_display_element title={gettext("Active")}>
@@ -37,7 +37,19 @@
         <Heroicons.x_circle :if={not @server.active} class="size-5 text-error" />
       </.data_display_element>
       <.data_display_element :if={root?(@auth)} title={gettext("Group")}>
-        {@server.group.name}
+        <.link navigate={~p"/admin/classes/#{@server.group_id}"}>
+          {@server.group.name}
+        </.link>
+      </.data_display_element>
+      <.data_display_element
+        :if={root?(@auth) and not same_user?(@auth, @server.owner) and not @server.owner.root}
+        title={gettext("Owner")}
+      >
+        <.link navigate={
+          ~p"/admin/classes/#{@server.group_id}/students/#{@server.owner.group_member_id}"
+        }>
+          {@server.owner.group_member.name}
+        </.link>
       </.data_display_element>
     </.data_display>
 

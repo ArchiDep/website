@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
   """
 
   alias ArchiDep.Authentication
+  alias ArchiDep.Servers.Schemas.ServerOwner
 
   @spec logged_in?(Authentication.t()) :: boolean()
   def logged_in?(nil), do: false
@@ -12,6 +13,14 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
   @spec root?(Authentication.t()) :: boolean()
   def root?(nil), do: false
   def root?(auth), do: Authentication.root?(auth)
+
+  @spec same_user?(Authentication.t(), ServerOwner.t()) :: boolean()
+  def same_user?(nil, _user), do: false
+
+  def same_user?(%Authentication{principal_id: principal_id}, %ServerOwner{id: principal_id}),
+    do: true
+
+  def same_user?(_auth, _user), do: false
 
   @spec can_impersonate?(Authentication.t(), struct()) :: boolean()
   def can_impersonate?(nil, _user_account), do: false

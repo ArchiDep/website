@@ -845,6 +845,18 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
+  defp server_expected_property_mismatch(:hostname, expected, actual),
+    do:
+      raw(
+        gettext(
+          "Server hostname is {cs}{actual}{ce} when it should be {cs}{expected}{ce}",
+          actual: actual |> html_escape() |> safe_to_string(),
+          expected: expected |> html_escape() |> safe_to_string(),
+          cs: "<code>",
+          ce: "</code>"
+        )
+      )
+
   defp server_expected_property_mismatch(:cpus, expected, actual),
     do:
       gettext(

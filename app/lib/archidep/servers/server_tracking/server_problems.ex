@@ -29,6 +29,23 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblems do
   @spec server_key_exchange_failed_problem?() :: (Types.server_problem() -> boolean())
   def server_key_exchange_failed_problem?, do: server_problem?(:server_key_exchange_failed)
 
+  @spec server_expected_property_mismatch_problem?(atom()) :: (Types.server_problem() ->
+                                                                 boolean())
+  def server_expected_property_mismatch_problem?(property) when is_atom(property),
+    do: &match?({:server_expected_property_mismatch, ^property, _expected, _actual}, &1)
+
+  @spec server_expected_property_mismatch_problem?((atom() -> boolean())) ::
+          (Types.server_problem() ->
+             boolean())
+  def server_expected_property_mismatch_problem?(predicate) when is_function(predicate, 1),
+    do: fn
+      {:server_expected_property_mismatch, property, _expected, _actual} ->
+        predicate.(property)
+
+      _any_other_kind_of_problem ->
+        false
+    end
+
   @spec server_authentication_failed_problem(Server.t(), String.t()) ::
           Types.server_authentication_failed_problem()
   def server_authentication_failed_problem(%Server{app_username: app_username}, app_username),
