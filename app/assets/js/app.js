@@ -23,6 +23,9 @@ import FlashyHooks from 'flashy';
 import { Socket } from 'phoenix';
 import { LiveSocket } from 'phoenix_live_view';
 import topbar from '../vendor/topbar';
+import ClipboardJS from 'clipboard';
+
+new ClipboardJS('[data-clipboard-target], [data-clipboard-text]');
 
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
@@ -164,6 +167,45 @@ window.addEventListener('phx:execute-action', event => {
   });
 });
 
+window.addEventListener('hide-tooltip', event => {
+  const target = event.target;
+
+  const targetId = target?.id;
+  if (targetId === undefined || !target.classList.contains('tooltip')) {
+    return;
+  }
+
+  const tooltipReset = event.detail?.tooltip;
+
+  if (target.dataset.tooltipTimer) {
+    clearTimeout(target.dataset.tooltipTimer);
+  }
+
+  // Schedule a timeout to remove the "tooltip-open" class from the target
+  // element after 2 seconds.
+  target.dataset.tooltipTimer = setTimeout(() => {
+    const openTooltip = document.getElementById(targetId);
+    if (openTooltip === null) {
+      // Element was removed from the DOM in the meantime, probably by a live
+      // view update.
+      return;
+    }
+
+    openTooltip.classList.remove('tooltip-open');
+
+    // Reset the tooltip text 500 milliseconds (if a new one was provided) after
+    // closing the tooltip (to give time for the tooltip close animation).
+    if (tooltipReset) {
+      openTooltip.dataset.tooltipTimer = setTimeout(() => {
+        const openTooltipText = document.getElementById(targetId);
+        if (openTooltipText !== null) {
+          openTooltipText.dataset.tip = tooltipReset;
+        }
+      }, 500);
+    }
+  }, 2000);
+});
+
 const standalone =
   document.querySelector('head').dataset['archidepStandalone'] === 'true';
 
@@ -219,5 +261,12 @@ function trackCallback(result) {
     console.warn('Plausible request error', result.error);
   } else {
     console.warn('Plausible request ignored');
+  }
+}
+
+function ifStillExists(id, callback) {
+  const el = document.getElementById(id);
+  if (el !== null) {
+    callback(el);
   }
 }

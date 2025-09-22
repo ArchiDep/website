@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@plausible-analytics/tracker": "^0.4.0",
+    "clipboard": "^2.0.11",
     "cross-env": "^10.0.0",
     "esbuild": "^0.25.8"
   },
