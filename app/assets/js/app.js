@@ -34,6 +34,12 @@ const liveSocket = new LiveSocket('/live', Socket, {
     remainingSeconds: {
       mounted() {
         updateRemainingSeconds(this.el);
+      },
+      destroyed() {
+        const timer = this.el.dataset.remainingSecondsTimer;
+        if (timer) {
+          clearTimeout(timer);
+        }
       }
     },
     ...FlashyHooks
@@ -70,7 +76,10 @@ function updateRemainingSeconds(element) {
       : doneTemplate;
 
   if (remainingSeconds >= 1) {
-    setTimeout(() => updateRemainingSeconds(element), 1000);
+    const timer = setTimeout(() => updateRemainingSeconds(element), 1000);
+    element.dataset.remainingSecondsTimer = timer;
+  } else {
+    delete element.dataset.remainingSecondsTimer;
   }
 }
 
