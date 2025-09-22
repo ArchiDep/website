@@ -403,26 +403,32 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def update_last_known_properties!(server, ansible_facts, cause) do
     now = DateTime.utc_now()
 
-    case Multi.new()
-         |> Multi.update(
-           :server,
-           server
-           |> change(
-             last_known_properties:
-               ServerProperties.update_from_ansible_facts(
-                 server.last_known_properties || %ServerProperties{id: UUID.generate()},
-                 ansible_facts
-               ),
-             updated_at: now
+    new_properties =
+      ServerProperties.update_from_ansible_facts(
+        server.last_known_properties || %ServerProperties{id: UUID.generate()},
+        ansible_facts
+      )
+
+    if new_properties.changes == %{} do
+      server
+    else
+      case Multi.new()
+           |> Multi.update(
+             :server,
+             server
+             |> change(
+               last_known_properties: new_properties,
+               updated_at: now
+             )
+             |> optimistic_lock(:version)
            )
-           |> optimistic_lock(:version)
-         )
-         |> Multi.insert(
-           :stored_event,
-           &server_facts_gathered(&1.server, ansible_facts, now, cause)
-         )
-         |> Repo.transaction() do
-      {:ok, %{server: updated_server}} -> updated_server
+           |> Multi.insert(
+             :stored_event,
+             &server_facts_gathered(&1.server, ansible_facts, now, cause)
+           )
+           |> Repo.transaction() do
+        {:ok, %{server: updated_server}} -> updated_server
+      end
     end
   end
 

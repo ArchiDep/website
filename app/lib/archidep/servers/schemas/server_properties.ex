@@ -171,6 +171,9 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
         ]
       )
       |> then(fn changeset ->
+        # Clear out any fields that have errors because we are going to save
+        # this changeset to the database even in the presence of errors. We'll
+        # just clear out the invalid fields.
         changeset.errors
         |> Keyword.keys()
         |> Enum.uniq()

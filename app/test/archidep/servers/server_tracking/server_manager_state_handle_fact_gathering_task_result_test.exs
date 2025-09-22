@@ -76,8 +76,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    now = DateTime.utc_now()
-
     result =
       handle_task_result.(
         initial_state,
@@ -86,10 +84,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       )
 
     assert %{
-             server:
-               %Server{
-                 last_known_properties: %ServerProperties{id: last_known_properties_id}
-               } = updated_server,
              actions:
                [
                  {:demonitor, ^fake_gather_facts_ref},
@@ -98,35 +92,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                ] = actions
            } = result
 
-    [facts_event] = fetch_new_stored_events([fake_connection_event])
-
-    assert_server_facts_gathered_event!(
-      facts_event,
-      updated_server,
-      %{},
-      now,
-      fake_connection_event
-    )
+    assert_no_stored_events!([fake_connection_event])
 
     assert result == %ServerManagerState{
              initial_state
-             | server: %Server{
-                 server
-                 | last_known_properties: %ServerProperties{
-                     __meta__: loaded(ServerProperties, "server_properties"),
-                     id: last_known_properties_id
-                   },
-                   last_known_properties_id: last_known_properties_id,
-                   updated_at: updated_server.updated_at,
-                   version: server.version + 1
-               },
-               actions: actions,
+             | actions: actions,
                tasks: %{}
            }
-
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
 
     fake_task = Task.completed(:fake)
 
@@ -145,6 +117,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                 current_job: :checking_open_ports,
                 version: result.version + 1
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
+
+    refute_received {:server_updated, _updated_server}
   end
 
   test "the connection process is complete after facts have been gathered if open ports have already been checked",
@@ -181,8 +155,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    now = DateTime.utc_now()
-
     result =
       handle_task_result.(
         initial_state,
@@ -191,10 +163,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       )
 
     assert %{
-             server:
-               %Server{
-                 last_known_properties: %ServerProperties{id: last_known_properties_id}
-               } = updated_server,
              actions:
                [
                  {:demonitor, ^fake_gather_facts_ref},
@@ -202,35 +170,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                ] = actions
            } = result
 
-    [facts_event] = fetch_new_stored_events([fake_connection_event])
-
-    assert_server_facts_gathered_event!(
-      facts_event,
-      updated_server,
-      %{},
-      now,
-      fake_connection_event
-    )
+    assert_no_stored_events!([fake_connection_event])
 
     assert result == %ServerManagerState{
              initial_state
-             | server: %Server{
-                 server
-                 | last_known_properties: %ServerProperties{
-                     __meta__: loaded(ServerProperties, "server_properties"),
-                     id: last_known_properties_id
-                   },
-                   last_known_properties_id: last_known_properties_id,
-                   updated_at: updated_server.updated_at,
-                   version: server.version + 1
-               },
-               actions: actions,
+             | actions: actions,
                tasks: %{}
            }
-
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
 
     assert update_tracking_fn.(result) ==
              {real_time_state(server,
@@ -238,6 +184,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                 conn_params: conn_params(server, username: server.app_username),
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
+
+    refute_received {:server_updated, _updated_server}
   end
 
   test "detected properties are saved after gathering facts the first time",
@@ -537,6 +485,125 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                 current_job: :checking_open_ports,
                 version: result.version + 1
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
+  end
+
+  test "last known server properties are not updated after gathering facts if they have not changed",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server =
+      insert_active_server!(
+        root: true,
+        set_up_at: true,
+        ssh_port: true,
+        class_expected_server_properties: @no_server_properties,
+        server_expected_properties: @no_server_properties,
+        server_last_known_properties: [
+          hostname: "current-hostname",
+          machine_id: "current-machine-id",
+          cpus: 1,
+          cores: 1,
+          vcpus: nil,
+          memory: 1024,
+          swap: 512,
+          system: "CurrentOS",
+          architecture: "i386",
+          os_family: "CurrentFamily",
+          distribution: "CurrentDistro",
+          distribution_release: nil,
+          distribution_version: "0.1"
+        ]
+      )
+
+    server_secret_key = server.secret_key
+
+    successful_run =
+      ServersFactory.insert(:ansible_playbook_run,
+        server: server,
+        state: :succeeded,
+        playbook_digest: Ansible.setup_playbook().digest
+      )
+
+    expect(Ansible.Mock, :digest_ansible_variables, fn %{"server_token" => ^server_secret_key} ->
+      successful_run.vars_digest
+    end)
+
+    fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    fake_facts = %{
+      "ansible_hostname" => "current-hostname",
+      "ansible_machine_id" => "current-machine-id",
+      "ansible_processor_count" => 1,
+      "ansible_processor_cores" => 1,
+      "ansible_memory_mb" => %{
+        "real" => %{"total" => 1024},
+        "swap" => %{"total" => 512}
+      },
+      "ansible_system" => "CurrentOS",
+      "ansible_architecture" => "i386",
+      "ansible_os_family" => "CurrentFamily",
+      "ansible_distribution" => "CurrentDistro",
+      "ansible_distribution_release" => nil,
+      "ansible_distribution_version" => "0.1"
+    }
+
+    result =
+      handle_task_result.(
+        initial_state,
+        fake_gather_facts_ref,
+        {:ok, fake_facts}
+      )
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:run_command, run_command_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_no_stored_events!([fake_connection_event])
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               tasks: %{}
+           }
+
+    fake_task = Task.completed(:fake)
+
+    run_command_result =
+      run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
+        fake_task
+      end)
+
+    assert run_command_result ==
+             %ServerManagerState{result | tasks: %{test_ports: fake_task.ref}}
+
+    assert update_tracking_fn.(run_command_result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                current_job: :checking_open_ports,
+                version: result.version + 1
+              ), %ServerManagerState{run_command_result | version: result.version + 1}}
+
+    refute_received {:server_updated, _updated_server}
   end
 
   test "server property mismatches are detected after gathering facts",
@@ -1246,8 +1313,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    now = DateTime.utc_now()
-
     {result, log} =
       with_log(fn ->
         handle_task_result.(
@@ -1260,10 +1325,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert log =~ "No previous Ansible setup playbook run found for server #{server.id}"
 
     assert %{
-             server:
-               %Server{
-                 last_known_properties: %ServerProperties{id: last_known_properties_id}
-               } = updated_server,
              actions:
                [
                  {:demonitor, ^fake_gather_facts_ref},
@@ -1272,35 +1333,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                ] = actions
            } = result
 
-    [facts_event] = fetch_new_stored_events([fake_connection_event])
-
-    assert_server_facts_gathered_event!(
-      facts_event,
-      updated_server,
-      %{},
-      now,
-      fake_connection_event
-    )
+    assert_no_stored_events!([fake_connection_event])
 
     assert result == %ServerManagerState{
              initial_state
-             | server: %Server{
-                 server
-                 | last_known_properties: %ServerProperties{
-                     __meta__: loaded(ServerProperties, "server_properties"),
-                     id: last_known_properties_id
-                   },
-                   last_known_properties_id: last_known_properties_id,
-                   updated_at: updated_server.updated_at,
-                   version: server.version + 1
-               },
-               actions: actions,
+             | actions: actions,
                tasks: %{}
            }
-
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
 
     fake_task = Task.completed(:fake)
 
@@ -1319,13 +1358,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                 current_job: :checking_open_ports,
                 version: result.version + 1
               ), %ServerManagerState{run_command_result | version: result.version + 1}}
+
+    refute_received {:server_updated, _updated_server}
   end
 
   test "the setup playbook is rerun after gathering facts if the previous run failed",
        %{
          handle_task_result: handle_task_result
        } do
-    server = insert_active_server!(set_up_at: true, ssh_port: true)
+    server =
+      insert_active_server!(
+        set_up_at: true,
+        ssh_port: true,
+        class_expected_server_properties: @no_server_properties,
+        server_expected_properties: @no_server_properties
+      )
+
     server_secret_key = server.secret_key
 
     ServersFactory.insert(:ansible_playbook_run,
@@ -1355,12 +1403,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     now = DateTime.utc_now()
+    fake_facts = %{"ansible_machine_id" => "1234567890abcdef"}
 
     result =
       handle_task_result.(
         initial_state,
         fake_gather_facts_ref,
-        {:ok, %{}}
+        {:ok, fake_facts}
       )
 
     assert %{
@@ -1388,7 +1437,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert_server_facts_gathered_event!(
       facts_event,
       updated_server,
-      %{},
+      fake_facts,
       now,
       fake_connection_event
     )
@@ -1409,7 +1458,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                  server
                  | last_known_properties: %ServerProperties{
                      __meta__: loaded(ServerProperties, "server_properties"),
-                     id: last_known_properties_id
+                     id: last_known_properties_id,
+                     machine_id: "1234567890abcdef"
                    },
                    last_known_properties_id: last_known_properties_id,
                    updated_at: updated_server.updated_at,
@@ -1499,8 +1549,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    now = DateTime.utc_now()
-
     {result, msg} =
       with_log(fn ->
         handle_task_result.(
@@ -1514,10 +1562,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
              "Not re-running Ansible setup playbook for server #{server.id} because it has failed 3 times"
 
     assert %{
-             server:
-               %Server{
-                 last_known_properties: %ServerProperties{id: last_known_properties_id}
-               } = updated_server,
              actions:
                [
                  {:demonitor, ^fake_gather_facts_ref},
@@ -1525,39 +1569,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                ] = actions
            } = result
 
-    [facts_event] = fetch_new_stored_events([fake_connection_event])
-
-    assert_server_facts_gathered_event!(
-      facts_event,
-      updated_server,
-      %{},
-      now,
-      fake_connection_event
-    )
+    assert_no_stored_events!([fake_connection_event])
 
     assert result == %ServerManagerState{
              initial_state
-             | server: %Server{
-                 server
-                 | last_known_properties: %ServerProperties{
-                     __meta__: loaded(ServerProperties, "server_properties"),
-                     id: last_known_properties_id
-                   },
-                   last_known_properties_id: last_known_properties_id,
-                   updated_at: updated_server.updated_at,
-                   version: server.version + 1
-               },
-               actions: actions,
+             | actions: actions,
                tasks: %{},
                problems: [
                  {:server_ansible_playbook_repeatedly_failed,
                   Enum.map(failed_playbooks, &{"setup", &1.state, AnsiblePlaybookRun.stats(&1)})}
                ]
            }
-
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
 
     assert update_tracking_fn.(result) ==
              {real_time_state(server,
@@ -1566,6 +1588,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                 problems: result.problems,
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
+
+    refute_received {:server_updated, _updated_server}
   end
 
   test "the setup playbook is rerun after gathering facts if its digest has changed",
@@ -1612,10 +1636,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       )
 
     assert %{
-             server:
-               %Server{
-                 last_known_properties: %ServerProperties{id: last_known_properties_id}
-               } = updated_server,
              actions:
                [
                  {:demonitor, ^fake_gather_facts_ref},
@@ -1631,15 +1651,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                ] = actions
            } = result
 
-    [facts_event, run_started_event] = fetch_new_stored_events([fake_connection_event])
-
-    assert_server_facts_gathered_event!(
-      facts_event,
-      updated_server,
-      %{},
-      now,
-      fake_connection_event
-    )
+    [run_started_event] = fetch_new_stored_events([fake_connection_event])
 
     run_started_event_ref =
       assert_ansible_playbook_run_started_event!(
@@ -1653,17 +1665,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
     assert result == %ServerManagerState{
              initial_state
-             | server: %Server{
-                 server
-                 | last_known_properties: %ServerProperties{
-                     __meta__: loaded(ServerProperties, "server_properties"),
-                     id: last_known_properties_id
-                   },
-                   last_known_properties_id: last_known_properties_id,
-                   updated_at: updated_server.updated_at,
-                   version: server.version + 1
-               },
-               ansible_playbook: {playbook_run, nil, fake_connection_event},
+             | ansible_playbook: {playbook_run, nil, fake_connection_event},
                actions: actions,
                tasks: %{}
            }
@@ -1688,7 +1690,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                "server_token" => server_token
              },
              vars_digest: vars_digest,
-             server: updated_server,
+             server: server,
              server_id: server.id,
              state: :pending,
              started_at: nil,
@@ -1701,10 +1703,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert {:ok, ^server_id} =
              Token.verify(server.secret_key, "server auth", server_token, max_age: 5)
 
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-
     assert update_tracking_fn.(result) ==
              {real_time_state(server,
                 connection_state: initial_state.connection_state,
@@ -1712,6 +1710,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                 current_job: {:running_playbook, playbook_run.playbook, playbook_run.id, nil},
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
+
+    refute_received {:server_updated, _updated_server}
   end
 
   test "the setup playbook is rerun after gathering facts if the digest of its variables has changed",
@@ -1758,10 +1758,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       )
 
     assert %{
-             server:
-               %Server{
-                 last_known_properties: %ServerProperties{id: last_known_properties_id}
-               } = updated_server,
              actions:
                [
                  {:demonitor, ^fake_gather_facts_ref},
@@ -1777,15 +1773,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                ] = actions
            } = result
 
-    [facts_event, run_started_event] = fetch_new_stored_events([fake_connection_event])
-
-    assert_server_facts_gathered_event!(
-      facts_event,
-      updated_server,
-      %{},
-      now,
-      fake_connection_event
-    )
+    [run_started_event] = fetch_new_stored_events([fake_connection_event])
 
     run_started_event_ref =
       assert_ansible_playbook_run_started_event!(
@@ -1799,17 +1787,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
     assert result == %ServerManagerState{
              initial_state
-             | server: %Server{
-                 server
-                 | last_known_properties: %ServerProperties{
-                     __meta__: loaded(ServerProperties, "server_properties"),
-                     id: last_known_properties_id
-                   },
-                   last_known_properties_id: last_known_properties_id,
-                   updated_at: updated_server.updated_at,
-                   version: server.version + 1
-               },
-               ansible_playbook: {playbook_run, nil, fake_connection_event},
+             | ansible_playbook: {playbook_run, nil, fake_connection_event},
                actions: actions,
                tasks: %{}
            }
@@ -1834,7 +1812,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                "server_token" => server_token
              },
              vars_digest: vars_digest,
-             server: updated_server,
+             server: server,
              server_id: server.id,
              state: :pending,
              started_at: nil,
@@ -1847,10 +1825,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert {:ok, ^server_id} =
              Token.verify(server.secret_key, "server auth", server_token, max_age: 5)
 
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-
     assert update_tracking_fn.(result) ==
              {real_time_state(server,
                 connection_state: initial_state.connection_state,
@@ -1858,6 +1832,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                 current_job: {:running_playbook, playbook_run.playbook, playbook_run.id, nil},
                 version: result.version + 1
               ), %ServerManagerState{result | version: result.version + 1}}
+
+    refute_received {:server_updated, _updated_server}
   end
 
   test "a fact gathering error stops the connection process",
