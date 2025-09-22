@@ -114,7 +114,7 @@ jobs:
         working-directory: app
 
       - name: Run automated tests & measure code coverage
-        run: mix coveralls.html --raise
+        run: mix coveralls.html --raise --repeat-until-failure 3
         working-directory: app
 
       - name: Perform static code analysis with Credo
