@@ -136,10 +136,18 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
     {:ok, group} = ServerGroup.fetch_server_group(class.id)
 
     {root, opts!} = Keyword.pop_lazy(opts!, :root, &FactoryHelpers.bool/0)
+    server_active = Keyword.get(opts!, :active, true)
 
     user_account =
       if root do
-        AccountsFactory.insert(:user_account, active: true, root: true)
+        user_account = AccountsFactory.insert(:user_account, active: true, root: true)
+        user_account_id = user_account.id
+
+        Repo.update_all(from(so in ServerOwner, where: so.id == ^user_account_id),
+          set: [server_count: 1, active_server_count: if(server_active, do: 1, else: 0)]
+        )
+
+        user_account
       else
         student =
           CourseFactory.insert(:student,
@@ -157,6 +165,11 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
           )
 
         student_id = student.id
+        user_account_id = user_account.id
+
+        Repo.update_all(from(so in ServerOwner, where: so.id == ^user_account_id),
+          set: [server_count: 1, active_server_count: if(server_active, do: 1, else: 0)]
+        )
 
         Repo.update_all(from(sgm in ServerGroupMember, where: sgm.id == ^student_id),
           set: [owner_id: user_account.id]

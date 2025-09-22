@@ -6,7 +6,9 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
   test "a server group member cannot create a server with the username 'archidep'" do
     data = ServersFactory.random_server_data(username: "archidep")
-    owner = ServersFactory.build(:server_owner, root: false, active_server_count: 0)
+
+    owner =
+      ServersFactory.build(:server_owner, root: false, active_server_count: 0, server_count: 0)
 
     changeset = Server.new_group_member_server(data, owner)
 
@@ -14,7 +16,9 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   end
 
   test "a server group member cannot update a server to have the username 'archidep'" do
-    owner = ServersFactory.build(:server_owner, root: false, active_server_count: 1)
+    owner =
+      ServersFactory.build(:server_owner, root: false, active_server_count: 1, server_count: 1)
+
     server = ServersFactory.build(:server, active: true, username: "validusername", owner: owner)
     data = ServersFactory.random_server_data(username: "archidep")
 

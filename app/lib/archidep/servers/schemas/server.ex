@@ -328,6 +328,17 @@ defmodule ArchiDep.Servers.Schemas.Server do
         []
       end
     end)
+    |> validate_change(:active, fn :active, _active ->
+      if ServerOwner.server_limit_reached?(owner) do
+        [
+          active:
+            {"server limit reached (max {current})",
+             current: owner.server_count, limit: ServerOwner.server_limit()}
+        ]
+      else
+        []
+      end
+    end)
   end
 
   @spec update(t(), Types.server_data()) :: Changeset.t(t())

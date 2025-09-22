@@ -742,8 +742,14 @@ defmodule ArchiDep.Support.ServersFactory do
         end
       end)
 
+    {server_count, attrs!} =
+      Map.pop_lazy(attrs!, :server_count, fn -> Faker.random_between(0, 5) end)
+
+    {server_count_lock, attrs!} =
+      Map.pop_lazy(attrs!, :server_count_lock, fn -> Faker.random_between(1, 1000) end)
+
     {active_server_count, attrs!} =
-      Map.pop_lazy(attrs!, :active_server_count, fn -> Faker.random_between(0, 5) end)
+      Map.pop_lazy(attrs!, :active_server_count, fn -> Faker.random_between(0, server_count) end)
 
     {active_server_count_lock, attrs!} =
       Map.pop_lazy(attrs!, :active_server_count_lock, fn -> Faker.random_between(1, 1000) end)
@@ -760,6 +766,8 @@ defmodule ArchiDep.Support.ServersFactory do
       group_member_id: group_member_id,
       active_server_count: active_server_count,
       active_server_count_lock: active_server_count_lock,
+      server_count: server_count,
+      server_count_lock: server_count_lock,
       version: version,
       created_at: created_at,
       updated_at: updated_at

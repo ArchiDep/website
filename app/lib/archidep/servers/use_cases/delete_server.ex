@@ -42,7 +42,17 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
     case Multi.new()
          |> Multi.delete(:server, server)
          |> Multi.delete(:expected_properties, server.expected_properties)
+         # Note: make sure to decrease the active server count before decreasing
+         # the server count, or the database constraint checking the consistency
+         # of the two will complain.
          |> Multi.merge(&decrease_active_server_count(fresh_server_owner, &1.server))
+         |> Multi.update(
+           :server_limit,
+           &ServerOwner.update_server_count(
+             Map.get(&1, :active_server_limit, fresh_server_owner),
+             -1
+           )
+         )
          |> Multi.insert(:stored_event, &server_deleted(auth, &1.server, now))
          |> Repo.transaction() do
       {:ok, _changes} ->
@@ -55,7 +65,7 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
     do:
       Multi.update(
         Multi.new(),
-        :server_limit,
+        :active_server_limit,
         ServerOwner.update_active_server_count(owner, -1)
       )
 

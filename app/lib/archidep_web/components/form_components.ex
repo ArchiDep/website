@@ -38,7 +38,7 @@ defmodule ArchiDepWeb.Components.FormComponents do
     ~H"""
     <p class="fieldset-label text-error text-sm text-left">
       <span class="flex items-start gap-x-1">
-        <Heroicons.exclamation_circle class="size-4 shrink-0" />
+        <Heroicons.exclamation_circle class="mt-0.5 size-4 shrink-0" />
         <span>{render_slot(@inner_block)}</span>
       </span>
     </p>

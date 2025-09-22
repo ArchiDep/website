@@ -41,7 +41,8 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
          :ok <- authorize(auth, Policy, :servers, :create_server, {data, group, owner}) do
       case Multi.new()
            |> Multi.insert(:server, new_server(auth, data, group, owner))
-           |> Multi.merge(&increase_active_server_count(owner, &1.server))
+           |> Multi.update(:server_limit, ServerOwner.update_server_count(owner, 1))
+           |> Multi.merge(&increase_active_server_count(&1.server_limit, &1.server))
            |> Multi.insert(:stored_event, &server_created(auth, &1.server))
            |> Repo.transaction() do
         {:ok, %{server: server}} ->
@@ -72,7 +73,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
     do:
       Multi.update(
         Multi.new(),
-        :server_limit,
+        :active_server_limit,
         ServerOwner.update_active_server_count(owner, 1)
       )
 
