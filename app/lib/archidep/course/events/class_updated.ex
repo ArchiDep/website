@@ -14,7 +14,6 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
     :start_date,
     :end_date,
     :active,
-    :ssh_exercise_vm_ip_address,
     :servers_enabled,
     :teacher_ssh_public_keys
   ]
@@ -24,7 +23,6 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
     :start_date,
     :end_date,
     :active,
-    :ssh_exercise_vm_ip_address,
     :servers_enabled,
     :teacher_ssh_public_keys
   ]
@@ -35,7 +33,6 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
           active: boolean(),
-          ssh_exercise_vm_ip_address: String.t() | nil,
           servers_enabled: boolean(),
           teacher_ssh_public_keys: list(String.t())
         }
@@ -48,16 +45,9 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
       start_date: start_date,
       end_date: end_date,
       active: active,
-      ssh_exercise_vm_ip_address: ssh_exercise_vm_ip_address,
       servers_enabled: servers_enabled,
       teacher_ssh_public_keys: teacher_ssh_public_keys
     } = class
-
-    ip_address =
-      case ssh_exercise_vm_ip_address do
-        %Postgrex.INET{address: address} -> address |> :inet.ntoa() |> to_string()
-        nil -> nil
-      end
 
     %__MODULE__{
       id: id,
@@ -65,7 +55,6 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
       start_date: start_date,
       end_date: end_date,
       active: active,
-      ssh_exercise_vm_ip_address: ip_address,
       servers_enabled: servers_enabled,
       teacher_ssh_public_keys: teacher_ssh_public_keys
     }

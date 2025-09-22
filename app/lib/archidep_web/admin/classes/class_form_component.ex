@@ -85,19 +85,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         </.field_help>
 
         <label class="fieldset-label mt-2">
-          {gettext("SSH exercise VM IP address")}
-        </label>
-        <input
-          type="text"
-          id={@form[:ssh_exercise_vm_ip_address].id}
-          class="input w-full"
-          name={@form[:ssh_exercise_vm_ip_address].name}
-          value={@form[:ssh_exercise_vm_ip_address].value}
-          placeholder={gettext("e.g. 1.2.3.4")}
-        />
-        <.errors_for field={@form[:ssh_exercise_vm_ip_address]} />
-
-        <label class="fieldset-label mt-2">
           <input type="hidden" name={@form[:servers_enabled].name} value="false" />
           <input
             type="checkbox"

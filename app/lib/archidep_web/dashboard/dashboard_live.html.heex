@@ -16,13 +16,7 @@
         )}
       </p>
       <div>
-        <.data_display class="mt-4" responsive_class="sm:grid-cols-3">
-          <.data_display_element title={gettext("IP address")}>
-            <span :if={@student.class.ssh_exercise_vm_ip_address != nil} class="font-mono">
-              {@student.class.ssh_exercise_vm_ip_address.address |> :inet.ntoa() |> to_string()}
-            </span>
-            <.no_data :if={@student.class.ssh_exercise_vm_ip_address == nil} text="N/A" />
-          </.data_display_element>
+        <.data_display class="mt-4" responsive_class="sm:grid-cols-2">
           <.data_display_element title={gettext("Username")}>
             <span class="font-mono">{@student.username}</span>
           </.data_display_element>

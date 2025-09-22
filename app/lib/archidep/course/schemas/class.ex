@@ -20,7 +20,6 @@ defmodule ArchiDep.Course.Schemas.Class do
           start_date: Date.t() | nil,
           end_date: Date.t() | nil,
           active: boolean(),
-          ssh_exercise_vm_ip_address: Postgrex.INET.t() | nil,
           servers_enabled: boolean(),
           teacher_ssh_public_keys: list(String.t()),
           expected_server_properties: ExpectedServerProperties.t() | NotLoaded.t(),
@@ -36,7 +35,6 @@ defmodule ArchiDep.Course.Schemas.Class do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean)
-    field(:ssh_exercise_vm_ip_address, EctoNetwork.INET)
     field(:servers_enabled, :boolean, default: false)
     field(:teacher_ssh_public_keys, {:array, :string}, default: [])
     belongs_to(:expected_server_properties, ExpectedServerProperties, on_replace: :update)
@@ -101,7 +99,6 @@ defmodule ArchiDep.Course.Schemas.Class do
       :start_date,
       :end_date,
       :active,
-      :ssh_exercise_vm_ip_address,
       :servers_enabled,
       :teacher_ssh_public_keys
     ])
@@ -133,7 +130,6 @@ defmodule ArchiDep.Course.Schemas.Class do
       :start_date,
       :end_date,
       :active,
-      :ssh_exercise_vm_ip_address,
       :servers_enabled,
       :teacher_ssh_public_keys
     ])
@@ -182,7 +178,6 @@ defmodule ArchiDep.Course.Schemas.Class do
           start_date: start_date,
           end_date: end_date,
           active: active,
-          ssh_exercise_vm_ip_address: ssh_exercise_vm_ip_address,
           servers_enabled: servers_enabled,
           teacher_ssh_public_keys: teacher_ssh_public_keys,
           expected_server_properties: new_expected_server_properties,
@@ -197,7 +192,6 @@ defmodule ArchiDep.Course.Schemas.Class do
         start_date: start_date,
         end_date: end_date,
         active: active,
-        ssh_exercise_vm_ip_address: ssh_exercise_vm_ip_address,
         servers_enabled: servers_enabled,
         teacher_ssh_public_keys: teacher_ssh_public_keys,
         expected_server_properties:

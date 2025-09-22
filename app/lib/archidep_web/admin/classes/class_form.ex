@@ -21,7 +21,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
     field(:start_date, :date)
     field(:end_date, :date)
     field(:active, :boolean, default: false)
-    field(:ssh_exercise_vm_ip_address, :string)
     field(:servers_enabled, :boolean, default: false)
     embeds_many(:teacher_ssh_public_keys, ClassFormSshPublicKey, on_replace: :delete)
   end
@@ -44,7 +43,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       :start_date,
       :end_date,
       :active,
-      :ssh_exercise_vm_ip_address,
       :servers_enabled
     ])
     |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
@@ -58,7 +56,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       start_date: class.start_date,
       end_date: class.end_date,
       active: class.active,
-      ssh_exercise_vm_ip_address: class.ssh_exercise_vm_ip_address,
       servers_enabled: class.servers_enabled,
       teacher_ssh_public_keys:
         Enum.map(class.teacher_ssh_public_keys, &ClassFormSshPublicKey.new(&1))
@@ -68,7 +65,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       :start_date,
       :end_date,
       :active,
-      :ssh_exercise_vm_ip_address,
       :servers_enabled
     ])
     |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
