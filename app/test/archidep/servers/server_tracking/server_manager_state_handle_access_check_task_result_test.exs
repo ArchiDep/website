@@ -313,6 +313,75 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
+  test "do not run the setup playbook after sudo access has been confirmed with the normal user if the three previous runs failed",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: nil, ssh_port: true)
+
+    failed_playbooks =
+      1..3
+      |> Enum.map(fn _n ->
+        ServersFactory.insert(:ansible_playbook_run,
+          playbook: "setup",
+          server: server,
+          state: ServersFactory.ansible_playbook_run_failed_state()
+        )
+      end)
+      |> Enum.sort_by(& &1.created_at, {:desc, DateTime})
+
+    fake_check_access_task_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+    connected = ServersFactory.random_connected_state(connection_event: fake_connection_event)
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: connected,
+        server: server,
+        username: server.username,
+        tasks: %{check_access: fake_check_access_task_ref}
+      )
+
+    {result, msg} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_check_access_task_ref,
+          {:ok, Faker.Lorem.sentence(), Faker.Lorem.sentence(), 0}
+        )
+      end)
+
+    assert msg =~
+             "Not re-running Ansible setup playbook for server #{server.id} because it has failed 3 times"
+
+    assert %{
+             actions:
+               [
+                 {:demonitor, ^fake_check_access_task_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_no_stored_events!([fake_connection_event])
+
+    assert result == %ServerManagerState{
+             initial_state
+             | actions: actions,
+               problems: [
+                 {:server_ansible_playbook_repeatedly_failed,
+                  Enum.map(failed_playbooks, &{"setup", &1.state, AnsiblePlaybookRun.stats(&1)})}
+               ],
+               tasks: %{}
+           }
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: connected,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   test "the setup process is stopped if the user does not have sudo access", %{
     handle_task_result: handle_task_result
   } do

@@ -175,6 +175,17 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
         )
       )
 
+  @spec fetch_last_playbook_runs(Server.t(), AnsiblePlaybook.t(), pos_integer()) :: list(t())
+  def fetch_last_playbook_runs(server, playbook, n),
+    do:
+      Repo.all(
+        from(r in __MODULE__,
+          where: r.server_id == ^server.id and r.playbook == ^AnsiblePlaybook.name(playbook),
+          order_by: [desc: r.created_at],
+          limit: ^n
+        )
+      )
+
   @spec fetch_incomplete_runs() :: list(t())
   def fetch_incomplete_runs,
     do:

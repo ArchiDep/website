@@ -648,9 +648,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Server manager has sudo access to server #{server.id} as #{username}; setting up app user..."
     )
 
+    last_setup_runs =
+      AnsiblePlaybookRun.fetch_last_playbook_runs(server, Ansible.setup_playbook(), 3)
+
     state
     |> add_action(update_tracking_action())
-    |> run_setup_playbook(connection_event)
+    |> maybe_run_setup_playbook(last_setup_runs, connection_event)
   end
 
   defp handle_access_check_result(
@@ -716,14 +719,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
     setup_playbook = Ansible.setup_playbook()
 
-    last_setup_run =
-      AnsiblePlaybookRun.get_last_playbook_run(updated_server, setup_playbook)
+    last_setup_runs =
+      AnsiblePlaybookRun.fetch_last_playbook_runs(updated_server, setup_playbook, 3)
 
     state
     |> set_updated_server(updated_server)
     |> add_action(update_tracking_action())
     |> detect_server_properties_mismatches()
-    |> test_ports_or_rerun_setup(last_setup_run, setup_playbook)
+    |> test_ports_or_rerun_setup(last_setup_runs, setup_playbook)
   end
 
   defp handle_facts_gathering_result(state, {:error, reason}) do
@@ -736,7 +739,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     |> set_problem(server_fact_gathering_failed_problem(reason))
   end
 
-  defp test_ports_or_rerun_setup(%__MODULE__{server: server} = state, nil, _playbook) do
+  defp test_ports_or_rerun_setup(%__MODULE__{server: server} = state, [], _playbook) do
     Logger.warning("No previous Ansible setup playbook run found for server #{server.id}")
     maybe_test_ports(state)
   end
@@ -744,11 +747,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp test_ports_or_rerun_setup(
          %__MODULE__{connection_state: connected_state(connection_event: connection_event)} =
            state,
-         %AnsiblePlaybookRun{
-           state: :succeeded,
-           playbook_digest: playbook_digest,
-           vars_digest: previous_vars_digest
-         },
+         [
+           %AnsiblePlaybookRun{
+             state: :succeeded,
+             playbook_digest: playbook_digest,
+             vars_digest: previous_vars_digest
+           }
+           | _previous_runs
+         ],
          %AnsiblePlaybook{digest: playbook_digest}
        ) do
     case build_setup_playbook_vars(state.server) do
@@ -770,7 +776,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
            connection_state: connected_state(connection_event: connection_event),
            server: server
          } = state,
-         %AnsiblePlaybookRun{state: :succeeded, playbook_digest: previous_digest},
+         [
+           %AnsiblePlaybookRun{state: :succeeded, playbook_digest: previous_digest}
+           | _previous_runs
+         ],
          %AnsiblePlaybook{digest: digest}
        ) do
     Logger.notice(
@@ -786,15 +795,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
            connection_state: connected_state(connection_event: connection_event),
            server: server
          } = state,
-         last_setup_run,
+         [%AnsiblePlaybookRun{state: last_state} | _previous_runs] = last_runs,
          _playbook
        ) do
     Logger.notice(
       # coveralls-ignore-next-line
-      "Re-running Ansible setup playbook for server #{server.id} because its last run did not succeed (#{inspect(last_setup_run.state)})"
+      "Re-running Ansible setup playbook for server #{server.id} because its last run did not succeed (#{inspect(last_state)})"
     )
 
-    run_setup_playbook(state, connection_event)
+    maybe_run_setup_playbook(state, last_runs, connection_event)
   end
 
   defp handle_port_testing_script_result(
@@ -1523,6 +1532,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
       _anything_else ->
         nil
+    end
+  end
+
+  defp maybe_run_setup_playbook(state, last_runs, cause, vars_and_digest \\ nil) do
+    failed_runs_count = Enum.count(last_runs, &(&1.state != :succeeded))
+
+    if failed_runs_count == 3 do
+      Logger.warning(
+        "Not re-running Ansible setup playbook for server #{state.server.id} because it has failed 3 times"
+      )
+
+      add_problem(state, server_ansible_playbook_repeatedly_failed_problem(last_runs))
+    else
+      run_setup_playbook(state, cause, vars_and_digest)
     end
   end
 

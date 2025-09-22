@@ -33,6 +33,10 @@ defmodule ArchiDep.Servers.Types do
   @type server_ansible_playbook_failed_problem ::
           {:server_ansible_playbook_failed, String.t(), ansible_playbook_run_failed_state(),
            ansible_stats()}
+
+  @type server_ansible_playbook_repeatedly_failed_problem ::
+          {:server_ansible_playbook_repeatedly_failed,
+           list({String.t(), ansible_playbook_run_failed_state(), ansible_stats()})}
   @type server_authentication_failed_problem ::
           {:server_authentication_failed, :username | :app_username, String.t()}
   @type server_connection_refused_problem ::
@@ -56,6 +60,7 @@ defmodule ArchiDep.Servers.Types do
           {:server_sudo_access_check_failed, String.t(), term()}
   @type server_problem ::
           server_ansible_playbook_failed_problem()
+          | server_ansible_playbook_repeatedly_failed_problem()
           | server_authentication_failed_problem()
           | server_connection_refused_problem()
           | server_connection_timed_out_problem()

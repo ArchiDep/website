@@ -1466,6 +1466,108 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
+  test "the setup playbook is not rerun after gathering facts if the three previous runs failed",
+       %{
+         handle_task_result: handle_task_result
+       } do
+    server = insert_active_server!(set_up_at: true, ssh_port: true)
+
+    failed_playbooks =
+      1..3
+      |> Enum.map(fn _n ->
+        ServersFactory.insert(:ansible_playbook_run,
+          playbook: "setup",
+          server: server,
+          state: ServersFactory.ansible_playbook_run_failed_state()
+        )
+      end)
+      |> Enum.sort_by(& &1.created_at, {:desc, DateTime})
+
+    fake_gather_facts_ref = make_ref()
+    fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state:
+          ServersFactory.random_connected_state(connection_event: fake_connection_event),
+        server: server,
+        username: server.app_username,
+        tasks: %{gather_facts: fake_gather_facts_ref}
+      )
+
+    :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
+    :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
+    :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
+
+    now = DateTime.utc_now()
+
+    {result, msg} =
+      with_log(fn ->
+        handle_task_result.(
+          initial_state,
+          fake_gather_facts_ref,
+          {:ok, %{}}
+        )
+      end)
+
+    assert msg =~
+             "Not re-running Ansible setup playbook for server #{server.id} because it has failed 3 times"
+
+    assert %{
+             server:
+               %Server{
+                 last_known_properties: %ServerProperties{id: last_known_properties_id}
+               } = updated_server,
+             actions:
+               [
+                 {:demonitor, ^fake_gather_facts_ref},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    [facts_event] = fetch_new_stored_events([fake_connection_event])
+
+    assert_server_facts_gathered_event!(
+      facts_event,
+      updated_server,
+      %{},
+      now,
+      fake_connection_event
+    )
+
+    assert result == %ServerManagerState{
+             initial_state
+             | server: %Server{
+                 server
+                 | last_known_properties: %ServerProperties{
+                     __meta__: loaded(ServerProperties, "server_properties"),
+                     id: last_known_properties_id
+                   },
+                   last_known_properties_id: last_known_properties_id,
+                   updated_at: updated_server.updated_at,
+                   version: server.version + 1
+               },
+               actions: actions,
+               tasks: %{},
+               problems: [
+                 {:server_ansible_playbook_repeatedly_failed,
+                  Enum.map(failed_playbooks, &{"setup", &1.state, AnsiblePlaybookRun.stats(&1)})}
+               ]
+           }
+
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+    assert_receive {:server_updated, ^updated_server}
+
+    assert update_tracking_fn.(result) ==
+             {real_time_state(server,
+                connection_state: initial_state.connection_state,
+                conn_params: conn_params(server, username: server.app_username),
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{result | version: result.version + 1}}
+  end
+
   test "the setup playbook is rerun after gathering facts if its digest has changed",
        %{
          handle_task_result: handle_task_result

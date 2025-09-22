@@ -21,6 +21,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblems do
       {:server_ansible_playbook_failed, playbook_run.playbook, playbook_run.state,
        AnsiblePlaybookRun.stats(playbook_run)}
 
+  @spec server_ansible_playbook_repeatedly_failed_problem(list(AnsiblePlaybookRun.t())) ::
+          Types.server_ansible_playbook_repeatedly_failed_problem()
+  def server_ansible_playbook_repeatedly_failed_problem(playbook_runs),
+    do:
+      {:server_ansible_playbook_repeatedly_failed,
+       Enum.map(playbook_runs, &{&1.playbook, &1.state, AnsiblePlaybookRun.stats(&1)})}
+
   @spec server_ansible_playbook_failed_problem?(String.t()) :: (Types.server_problem() ->
                                                                   boolean())
   def server_ansible_playbook_failed_problem?(playbook),
