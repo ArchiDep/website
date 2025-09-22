@@ -314,9 +314,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       updated_at: now
     )
     |> validate_new_server()
-    |> validate_exclusion(:username, ["archidep"],
-      message: "this username is reserved and cannot be used"
-    )
+    |> validate_username_not_reserved()
     |> validate_change(:active, fn :active, active ->
       if active and ServerOwner.active_server_limit_reached?(owner) do
         [
@@ -383,9 +381,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> change(updated_at: now)
     |> optimistic_lock(:version)
     |> validate_existing_server(id)
-    |> validate_exclusion(:username, ["archidep"],
-      message: "this username is reserved and cannot be used"
-    )
+    |> validate_username_not_reserved()
     |> validate_change(:active, fn :active, active ->
       if active and ServerOwner.active_server_limit_reached?(owner) do
         [
@@ -564,6 +560,16 @@ defmodule ArchiDep.Servers.Schemas.Server do
     do: add_error(changeset, :app_username, "cannot be the same as the username")
 
   defp validate_username_and_app_username(changeset, _username, _app_username), do: changeset
+
+  defp validate_username_not_reserved(changeset),
+    do:
+      validate_change(changeset, :username, fn :username, username ->
+        if String.downcase(username) == "archidep" do
+          [username: "this username is reserved and cannot be used"]
+        else
+          []
+        end
+      end)
 
   defp server_facts_gathered(server, facts, now, cause),
     do:
