@@ -119,4 +119,22 @@ defmodule ArchiDepWeb.Components.CoreComponents do
     </div>
     """
   end
+
+  attr :rest, :global, doc: "arbitrary HTML attributes to add to the note container"
+  slot :inner_block, required: true, doc: "the warning to display"
+
+  @spec warning_note(map()) :: Rendered.t()
+  def warning_note(assigns) do
+    ~H"""
+    <div class={["note note-warning", Map.get(@rest, :class)]} {@rest}>
+      <div class="title">
+        <Heroicons.exclamation_circle class="size-6" />
+        <span>Warning</span>
+      </div>
+      <div class="content">
+        {render_slot(@inner_block)}
+      </div>
+    </div>
+    """
+  end
 end

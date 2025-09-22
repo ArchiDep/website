@@ -19,6 +19,8 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
           id: UUID.t(),
           name: String.t(),
           email: String.t(),
+          username: String.t(),
+          username_confirmed: boolean(),
           active: boolean(),
           group: UserGroup.t() | NotLoaded.t(),
           group_id: UUID.t(),
@@ -29,8 +31,10 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
         }
 
   schema "students" do
-    field(:email, :string)
     field(:name, :string)
+    field(:email, :string)
+    field(:username, :string)
+    field(:username_confirmed, :boolean)
     field(:active, :boolean, default: false)
     belongs_to(:group, UserGroup, source: :class_id)
     belongs_to(:user_account, UserAccount)

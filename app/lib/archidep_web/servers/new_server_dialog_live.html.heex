@@ -32,7 +32,8 @@
                   Material.run_virtual_server_exercise().title
                   |> html_escape()
                   |> safe_to_string(),
-                as: "<a href=\"#{Material.run_virtual_server_exercise().url}\">",
+                as:
+                  "<a href=\"#{Material.run_virtual_server_exercise().url}\" target=\"_blank\">",
                 ae: "</a>",
                 ss: "<strong class=\"underline\">",
                 se: "</strong>"

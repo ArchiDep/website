@@ -18,6 +18,20 @@ defmodule ArchiDep.Course.Helpers.MaterialHelpers do
   @spec course_data() :: map()
   def course_data, do: @course_material_data
 
+  @spec course_cheatsheet(String.t()) :: %{title: String.t(), url: String.t()}
+  def course_cheatsheet(slug) do
+    case Enum.find(course_cheatsheets(), fn cs -> cs["slug"] == slug end) do
+      nil ->
+        raise "Cheatsheet with slug '#{slug}' not found in '#{@course_material_file}'"
+
+      %{"title" => title, "url" => url} when is_binary(title) and is_binary(url) ->
+        %{title: title, url: url}
+
+      _other ->
+        raise "Malformed cheatsheet with slug '#{slug}' in '#{@course_material_file}'"
+    end
+  end
+
   @spec course_cheatsheets() :: list(map())
   @spec course_cheatsheets(course_material_data_source()) :: list(map())
   def course_cheatsheets(source \\ {@course_material_data, @course_material_file}) do

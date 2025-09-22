@@ -1,0 +1,103 @@
+<dialog
+  id={id()}
+  class="modal"
+  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id()})}
+>
+  <div class="modal-box w-11/12 max-w-3xl">
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend w-full">
+        <h3 class="w-full text-lg font-bold">Change username</h3>
+      </legend>
+
+      <.form for={@form} phx-change="validate" phx-submit="configure" phx-target={@myself}>
+        <fieldset class="fieldset mt-2">
+          <label class="fieldset-label required mt-2">
+            {gettext("Your username")}
+          </label>
+          <input
+            type="text"
+            id={@form[:username].id}
+            class="input w-full font-mono"
+            name={@form[:username].name}
+            value={@form[:username].value}
+          />
+          <.errors_for field={@form[:username]} />
+        </fieldset>
+        <div class="flex-on-change mt-2 flex-col gap-y-2 text-left">
+          <.field_help>
+            <span>
+              {gettext(
+                "You will use this name as the username of your Unix user account on your virtual server. It will also be part of the subdomain pointing to your server, e.g. {sc}{subdomain}.{domain}{ec}.",
+                subdomain: @student.username |> html_escape() |> safe_to_string(),
+                domain: @student.domain |> html_escape() |> safe_to_string(),
+                sc: "<code class=\"font-bold\">",
+                ec: "</code>"
+              )
+              |> raw()}
+            </span>
+          </.field_help>
+          <.field_help>
+            {gettext(
+              "To be valid in both of these contexts, it must only contain letter without accents, numbers and hyphens, and it must start with a letter."
+            )}
+          </.field_help>
+          <.field_help>
+            {gettext("It must be unique among all the students in your class.")}
+          </.field_help>
+          <.field_help>
+            <span>
+              {gettext(
+                "It is in your interest to keep it short, because you will have to type it {sb}a lot{eb} when using the command line.",
+                sb: "<strong>",
+                eb: "</strong>"
+              )
+              |> raw()}
+            </span>
+          </.field_help>
+        </div>
+
+        <.warning_note class="text-base">
+          <div class="flex flex-col gap-2">
+            <p>
+              Note that changing your username does not affect any servers you may
+              already have registered with us. It only sets the default for new
+              servers.
+            </p>
+            <p>
+              To change the username of an existing server, go the the dashboard
+              and to your server's details, then edit the server to change its
+              username. However, this will only change the name in our database,
+              not on the actual server.
+            </p>
+            <p>
+              To change the username of your Unix user account on your server,
+              connect to it via SSH then follow the instructions on <a
+                href={"#{Material.sysadmin_cheatsheet().url}#how-do-i-change-my-username-usermod"}
+                class="underline hover:no-underline"
+                target="_blank"
+              >
+                how to change your username in the system administration cheatsheet
+              </a>.
+            </p>
+          </div>
+        </.warning_note>
+
+        <div class="mt-4 flex justify-end join">
+          <button
+            type="button"
+            class="join-item btn btn-secondary"
+            phx-click={JS.dispatch("phx:close-dialog", detail: %{dialog: id()})}
+          >
+            {gettext("Cancel")}
+          </button>
+          <button type="submit" class="join-item btn btn-primary">
+            {gettext("Save")}
+          </button>
+        </div>
+      </.form>
+    </fieldset>
+  </div>
+  <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
+    <button type="submit">{gettext("Close")}</button>
+  </form>
+</dialog>

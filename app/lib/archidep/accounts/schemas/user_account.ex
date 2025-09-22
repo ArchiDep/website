@@ -88,8 +88,8 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
              ^where_user_group_active(now))
       )
 
-  @spec get_with_switch_edu_id!(UUID.t()) :: t
-  def get_with_switch_edu_id!(id),
+  @spec get!(UUID.t()) :: t
+  def get!(id),
     do:
       Repo.one!(
         from(ua in __MODULE__,

@@ -29,7 +29,7 @@ defmodule ArchiDep.Support.CourseFactory do
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
 
     {ssh_exercise_vm_ip_address, attrs!} =
-      Map.pop_lazy(attrs!, :ssh_exercise_vm_ip_address, optionally(&NetFactory.ip_address/0))
+      Map.pop_lazy(attrs!, :ssh_exercise_vm_ip_address, optionally(&NetFactory.postgrex_inet/0))
 
     {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
 

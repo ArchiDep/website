@@ -6,17 +6,35 @@
 </div>
 
 <.data_display>
-  <.data_display_element :if={username(@auth) != nil} title={gettext("Username")}>
+  <.data_display_element :if={username(@auth) != nil} title={gettext("Account username")}>
     {username(@auth)}
   </.data_display_element>
-  <.data_display_element :if={@user_account.preregistered_user != nil} title={gettext("Email")}>
-    {@user_account.preregistered_user.email}
+  <.data_display_element :if={@student != nil} title={gettext("Email")}>
+    {@student.email}
   </.data_display_element>
   <.data_display_element
     :if={@user_account.switch_edu_id != nil and SwitchEduId.name(@user_account.switch_edu_id)}
     title={gettext("Switch edu-ID name")}
   >
     {SwitchEduId.name(@user_account.switch_edu_id)}
+  </.data_display_element>
+  <.data_display_element
+    :if={@student != nil and @student.username_confirmed}
+    title={gettext("Username")}
+  >
+    <div class="flex items-center gap-2">
+      <span>{@student.username}</span>
+      <button
+        type="button"
+        class="btn btn-warning btn-xs"
+        phx-click={JS.dispatch("open-dialog", detail: %{dialog: ChangeUsernameDialogLive.id()})}
+      >
+        <span class="flex items-center gap-2">
+          <Heroicons.pencil class="size-4" />
+          <span class="sr-only">{gettext("Change")}</span>
+        </span>
+      </button>
+    </div>
   </.data_display_element>
   <.data_display_element
     :if={root?(@auth) and @user_account.switch_edu_id != nil}
@@ -28,6 +46,14 @@
     {format_date_time(@user_account.created_at)}
   </.data_display_element>
 </.data_display>
+
+<.live_component
+  :if={@student != nil and @student.username_confirmed}
+  module={ChangeUsernameDialogLive}
+  id={ChangeUsernameDialogLive.id()}
+  auth={@auth}
+  student={@student}
+/>
 
 <h2 class="mt-5 text-2xl font-bold mb-3">{gettext("Sessions")}</h2>
 

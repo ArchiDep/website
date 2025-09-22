@@ -26,6 +26,9 @@ defmodule ArchiDep.Support.NetFactory do
       end)
       |> List.to_tuple()
 
+  @spec postgrex_inet() :: Postgrex.INET.t()
+  def postgrex_inet, do: %Postgrex.INET{address: ip_address(), netmask: nil}
+
   @spec port() :: 1..65_535
   def port, do: Faker.random_between(1, 65_535)
 end

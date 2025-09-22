@@ -1,28 +1,35 @@
-defmodule ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive do
+defmodule ArchiDepWeb.Course.ChangeUsernameDialogLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Components.FormComponents
+  import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Course
+  alias ArchiDep.Course.Material
   alias ArchiDepWeb.Course.ChangeUsernameForm
-  alias Phoenix.LiveView.JS
+
+  @id "change-username-dialog"
 
   @spec id() :: String.t()
-  def id, do: "what-is-your-name"
+  def id, do: @id
+
+  @spec close() :: js
+  def close, do: close_dialog(@id)
 
   @impl LiveComponent
   def update(assigns, socket) do
     student = assigns.student
 
     form =
-      ChangeUsernameForm.changeset(student, %{
-        username: student.username
-      })
+      ChangeUsernameForm.changeset(student)
 
     socket
     |> assign(assigns)
-    |> assign(form: to_form(form, as: :student_config), change: false)
+    |> assign(form: to_form(form, as: :student_config))
     |> ok()
   end
+
+  @impl LiveComponent
+  def handle_event("closed", _params, socket), do: noreply(socket)
 
   @impl LiveComponent
   def handle_event("validate", %{"student_config" => params}, socket) when is_map(params) do
@@ -55,9 +62,16 @@ defmodule ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive do
          {:ok, configured_student} <-
            Course.configure_student(auth, student.id, data) do
       socket
-      |> send_notification(
-        Message.new(:success, gettext("Hello, {name}!", name: configured_student.username))
+      |> assign(
+        form: to_form(ChangeUsernameForm.changeset(configured_student), as: :student_config)
       )
+      |> send_notification(
+        Message.new(
+          :success,
+          gettext("Username changed to {name}", name: configured_student.username)
+        )
+      )
+      |> push_event("execute-action", %{to: "##{@id}", action: "close"})
       |> noreply()
     else
       {:error, %Changeset{} = changeset} ->

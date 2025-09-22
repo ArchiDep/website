@@ -3,7 +3,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
   import Hammox
   alias ArchiDep.Accounts
+  alias ArchiDep.Course
   alias ArchiDep.Support.AccountsFactory
+  alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.Factory
+  alias ArchiDep.Support.FactoryHelpers
 
   @path "/profile"
   @current_sessions_table_id "current-sessions"
@@ -17,11 +21,36 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   setup :verify_on_exit!
 
   test "show the profile page", %{conn: conn!} do
-    %{conn: conn!, auth: auth, session: session, user_account: user_account} =
-      conn_with_auth(conn!)
+    {student, preregistered_user} =
+      if FactoryHelpers.bool() do
+        student = CourseFactory.build(:student, user: nil)
+        preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
+        {student, preregistered_user}
+      else
+        {nil, nil}
+      end
+
+    user_account =
+      AccountsFactory.build(:user_account,
+        root: preregistered_user == nil,
+        active: true,
+        preregistered_user: preregistered_user
+      )
+
+    session =
+      AccountsFactory.build(:user_session,
+        user_account: user_account,
+        client_user_agent: Factory.user_agent()
+      )
+
+    %{conn: conn!, auth: auth} = conn_with_auth(conn!, session: session)
 
     expect(Accounts.ContextMock, :user_account, fn ^auth -> user_account end)
     expect(Accounts.ContextMock, :fetch_active_sessions, fn ^auth -> [session] end)
+
+    if student != nil do
+      expect(Course.ContextMock, :fetch_authenticated_student, fn ^auth -> {:ok, student} end)
+    end
 
     conn!
     |> get(@path)
@@ -29,9 +58,16 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     |> assert_html_title("Profile · ArchiDep")
   end
 
-  test "connect to the profile page", %{conn: conn!} do
-    %{conn: conn!, auth: auth, session: session, user_account: user_account} =
-      conn_with_auth(conn!)
+  test "connect to the profile page as a root user", %{conn: conn!} do
+    user_account = AccountsFactory.build(:user_account, root: true)
+
+    session =
+      AccountsFactory.build(:user_session,
+        user_account: user_account,
+        client_user_agent: Factory.user_agent()
+      )
+
+    %{conn: conn!, auth: auth} = conn_with_auth(conn!, session: session)
 
     expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
@@ -47,8 +83,52 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end)
   end
 
+  test "connect to the profile page as a student", %{conn: conn!} do
+    student = CourseFactory.build(:student, user: nil)
+    preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
+
+    user_account =
+      AccountsFactory.build(:user_account, root: false, preregistered_user: preregistered_user)
+
+    session =
+      AccountsFactory.build(:user_session,
+        user_account: user_account,
+        client_user_agent: Factory.user_agent()
+      )
+
+    %{conn: conn!, auth: auth} = conn_with_auth(conn!, session: session)
+
+    expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+    expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+    expect(Course.ContextMock, :fetch_authenticated_student, 2, fn ^auth -> {:ok, student} end)
+
+    {:ok, _view, html} = live(conn!, @path)
+
+    html
+    |> assert_html_title("Profile · ArchiDep")
+    |> with_current_sessions_table_rows(fn rows ->
+      assert [
+               [_login, @current_session_text, _exp, _ip, _client, @no_actions]
+             ] = rows
+    end)
+  end
+
   test "all sessions are shown in the current sessions table of the profile page", %{conn: conn!} do
-    user_account = AccountsFactory.build(:user_account, active: true)
+    {student, preregistered_user} =
+      if FactoryHelpers.bool() do
+        student = CourseFactory.build(:student, user: nil)
+        preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
+        {student, preregistered_user}
+      else
+        {nil, nil}
+      end
+
+    user_account =
+      AccountsFactory.build(:user_account,
+        root: preregistered_user == nil,
+        active: true,
+        preregistered_user: preregistered_user
+      )
 
     most_recent_session =
       AccountsFactory.build(:user_session,
@@ -95,6 +175,10 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
 
+    if student != nil do
+      expect(Course.ContextMock, :fetch_authenticated_student, 2, fn ^auth -> {:ok, student} end)
+    end
+
     {:ok, _view, html} = live(conn!, @path)
 
     html
@@ -127,7 +211,22 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   end
 
   test "delete a session in the profile page", %{conn: conn!} do
-    user_account = AccountsFactory.build(:user_account)
+    {student, preregistered_user} =
+      if FactoryHelpers.bool() do
+        student = CourseFactory.build(:student, user: nil)
+        preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
+        {student, preregistered_user}
+      else
+        {nil, nil}
+      end
+
+    user_account =
+      AccountsFactory.build(:user_account,
+        root: preregistered_user == nil,
+        active: true,
+        preregistered_user: preregistered_user
+      )
+
     current_session = AccountsFactory.build(:current_session, user_account: user_account)
 
     other_session =
@@ -146,6 +245,10 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
     expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
+
+    if student != nil do
+      expect(Course.ContextMock, :fetch_authenticated_student, 2, fn ^auth -> {:ok, student} end)
+    end
 
     {:ok, view, html} = live(conn!, @path)
 
@@ -175,7 +278,22 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
   test "a notification is shown in the profile page when deleting a session that no longer exists",
        %{conn: conn!} do
-    user_account = AccountsFactory.build(:user_account)
+    {student, preregistered_user} =
+      if FactoryHelpers.bool() do
+        student = CourseFactory.build(:student, user: nil)
+        preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
+        {student, preregistered_user}
+      else
+        {nil, nil}
+      end
+
+    user_account =
+      AccountsFactory.build(:user_account,
+        root: preregistered_user == nil,
+        active: true,
+        preregistered_user: preregistered_user
+      )
+
     current_session = AccountsFactory.build(:current_session, user_account: user_account)
 
     other_session =
@@ -194,6 +312,10 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
     expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
+
+    if student != nil do
+      expect(Course.ContextMock, :fetch_authenticated_student, 2, fn ^auth -> {:ok, student} end)
+    end
 
     {:ok, view, html} = live(conn!, @path)
 

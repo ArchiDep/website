@@ -1,4 +1,4 @@
-defmodule ArchiDepWeb.Dashboard.Components.WhatIsYourNameForm do
+defmodule ArchiDepWeb.Course.ChangeUsernameForm do
   @moduledoc """
   Form schema and changeset functions for the form used by students to confirm
   their username. This schema only validates the basic structure and types of

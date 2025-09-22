@@ -8,6 +8,7 @@ defmodule ArchiDep.Support.AccountsFactory do
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Accounts.Schemas.UserGroup
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
   alias ArchiDep.Support.Factory
@@ -33,6 +34,69 @@ defmodule ArchiDep.Support.AccountsFactory do
       )
 
     user_session_factory(attrs_with_defaults)
+  end
+
+  @spec preregistered_user_factory(map()) :: PreregisteredUser.t()
+  def preregistered_user_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+
+    {name, attrs!} =
+      Map.pop_lazy(attrs!, :name, fn ->
+        sequence(:preregistered_user_name, &"Preregistered user #{&1}")
+      end)
+
+    {email, attrs!} =
+      Map.pop_lazy(attrs!, :email, fn -> Faker.Internet.email() end)
+
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn ->
+        sequence(:preregistered_user_username, &"student-#{&1}")
+      end)
+
+    {username_confirmed, attrs!} = Map.pop_lazy(attrs!, :username_confirmed, &bool/0)
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+
+    {group, attrs!} =
+      Map.pop_lazy(attrs!, :group, fn -> build(:user_group) end)
+
+    {group_id, attrs!} =
+      Map.pop_lazy(attrs!, :group_id, fn ->
+        case group do
+          %UserGroup{} -> group.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {user_account, attrs!} = Map.pop(attrs!, :user_account, nil)
+
+    {user_account_id, attrs!} =
+      Map.pop_lazy(attrs!, :user_account_id, fn ->
+        case user_account do
+          %UserAccount{} -> user_account.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {version, _created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+
+    [] = Map.keys(attrs!)
+
+    %PreregisteredUser{
+      id: id,
+      name: name,
+      email: email,
+      username: username,
+      username_confirmed: username_confirmed,
+      active: active,
+      group: group,
+      group_id: group_id,
+      user_account: user_account,
+      user_account_id: user_account_id,
+      version: version,
+      updated_at: updated_at
+    }
   end
 
   @spec switch_edu_id_factory(map()) :: SwitchEduId.t()
@@ -161,6 +225,38 @@ defmodule ArchiDep.Support.AccountsFactory do
       version: version,
       created_at: created_at,
       updated_at: updated_at
+    }
+  end
+
+  @spec user_group_factory(map()) :: UserGroup.t()
+  def user_group_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+
+    {name, attrs!} =
+      Map.pop_lazy(attrs!, :name, fn ->
+        sequence(:user_group_name, &"User Group #{&1}")
+      end)
+
+    {start_date, attrs!} =
+      Map.pop_lazy(attrs!, :start_date, fn ->
+        if(bool(), do: Faker.Date.backward(30), else: nil)
+      end)
+
+    {end_date, attrs!} =
+      Map.pop_lazy(attrs!, :end_date, fn ->
+        if(bool(), do: Faker.Date.forward(30), else: nil)
+      end)
+
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+
+    [] = Map.keys(attrs!)
+
+    %UserGroup{
+      id: id,
+      name: name,
+      active: active,
+      start_date: start_date,
+      end_date: end_date
     }
   end
 

@@ -46,5 +46,5 @@ defmodule ArchiDep.Accounts.UseCases.Sessions do
     do:
       auth
       |> Authentication.principal_id()
-      |> UserAccount.get_with_switch_edu_id!()
+      |> UserAccount.get!()
 end

@@ -137,6 +137,17 @@
             <span>{gettext("My servers")}</span>
           </span>
         </.link>
+        <button
+          :if={@student != nil and Enum.empty?(@servers)}
+          type="button"
+          class="btn btn-neutral"
+          phx-click={JS.dispatch("open-dialog", detail: %{dialog: ChangeUsernameDialogLive.id()})}
+        >
+          <span class="flex items-center gap-2">
+            <Heroicons.pencil class="size-4" />
+            <span>{gettext("Change username")}</span>
+          </span>
+        </button>
         <a
           :if={@run_virtual_server_exercise_done}
           class="join-item btn btn-primary"
@@ -168,6 +179,17 @@
     </div>
   </div>
 </div>
+
+<.live_component
+  :if={
+    @student != nil and Student.can_create_servers?(@student) and @student.username_confirmed and
+      Enum.empty?(@servers)
+  }
+  module={ChangeUsernameDialogLive}
+  id={ChangeUsernameDialogLive.id()}
+  auth={@auth}
+  student={@student}
+/>
 
 <div class="flex flex-col items-center gap-8">
   <div :for={server <- @servers} class="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-2 gap-4">

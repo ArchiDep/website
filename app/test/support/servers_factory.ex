@@ -95,7 +95,7 @@ defmodule ArchiDep.Support.ServersFactory do
         fn -> sequence(:ansible_playbook_run_git_revision, &"rev-#{&1}") end
       )
 
-    {host, attrs!} = Map.pop_lazy(attrs!, :host, &server_ip_address/0)
+    {host, attrs!} = Map.pop_lazy(attrs!, :host, &NetFactory.postgrex_inet/0)
     {port, attrs!} = Map.pop_lazy(attrs!, :port, &NetFactory.port/0)
 
     {user, attrs!} =
@@ -578,7 +578,7 @@ defmodule ArchiDep.Support.ServersFactory do
       )
 
     {ip_address, attrs!} =
-      Map.pop_lazy(attrs!, :ip_address, &server_ip_address/0)
+      Map.pop_lazy(attrs!, :ip_address, &NetFactory.postgrex_inet/0)
 
     {username, attrs!} =
       Map.pop_lazy(attrs!, :username, fn -> sequence(:server_username, &"user#{&1}") end)
@@ -679,9 +679,6 @@ defmodule ArchiDep.Support.ServersFactory do
       {%DateTime{} = dt, new_attrs} -> {dt, new_attrs}
     end
   end
-
-  @spec server_ip_address() :: Postgrex.INET.t()
-  def server_ip_address, do: %Postgrex.INET{address: NetFactory.ip_address(), netmask: nil}
 
   @spec server_manager_state_factory(map()) :: ServerManagerState.t()
   def server_manager_state_factory(attrs!) do

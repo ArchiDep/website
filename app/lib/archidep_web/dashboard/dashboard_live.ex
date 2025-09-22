@@ -15,6 +15,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
+  alias ArchiDepWeb.Course.ChangeUsernameDialogLive
   alias ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive
   alias ArchiDepWeb.Servers.EditServerDialogLive
   alias ArchiDepWeb.Servers.NewServerDialogLive
