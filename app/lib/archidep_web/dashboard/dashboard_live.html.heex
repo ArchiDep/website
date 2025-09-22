@@ -26,14 +26,28 @@
               <div class="toggle-password font-mono hidden">
                 {@student.ssh_exercise_password}
               </div>
+              <button
+                type="button"
+                id="student-ssh-exercise-password-copy"
+                class="cursor-pointer text-base-content/75 hover:text-base-content tooltip"
+                data-clipboard-text={@student.ssh_exercise_password}
+                data-tip={gettext("Copy to clipboard")}
+                phx-click={
+                  JS.set_attribute({"data-tip", gettext("Copied!")})
+                  |> JS.add_class("tooltip-open")
+                  |> JS.dispatch("hide-tooltip", detail: %{tooltip: gettext("Copy to clipboard")})
+                }
+              >
+                <Heroicons.clipboard_document class="size-4" />
+              </button>
               <Heroicons.eye
-                class="toggle-password size-4 cursor-pointer text-base-content/75"
+                class="toggle-password size-4 cursor-pointer text-base-content/75 hover:text-base-content"
                 phx-click={
                   JS.toggle_class("hidden", to: "#student-ssh-exercise-password .toggle-password")
                 }
               />
               <Heroicons.eye_slash
-                class="toggle-password size-4 hidden cursor-pointer text-base-content/75"
+                class="toggle-password size-4 hidden cursor-pointer text-base-content/75 hover:text-base-content"
                 phx-click={
                   JS.toggle_class("hidden", to: "#student-ssh-exercise-password .toggle-password")
                 }
