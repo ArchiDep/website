@@ -54,7 +54,8 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
       socket
       |> assign(
         form:
-          to_form(%Changeset{changeset | errors: result_changeset.errors},
+          to_form(
+            %Changeset{changeset | errors: result_changeset.errors},
             as: :class,
             action: :validate
           )

@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
 
   use Ecto.Schema
 
+  import ArchiDepWeb.Helpers.FormHelpers, only: [tmp_boolify: 2]
   import Ecto.Changeset
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Types
@@ -37,20 +38,27 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
 
   @spec create_changeset(map()) :: Changeset.t(Types.class_data())
   def create_changeset(params \\ %{}) when is_map(params) do
+    fixed_params = params |> tmp_boolify("active") |> tmp_boolify("servers_enabled")
+
     %__MODULE__{}
-    |> cast(params, [
-      :name,
-      :start_date,
-      :end_date,
-      :active,
-      :servers_enabled
-    ])
+    |> cast(
+      fixed_params,
+      [
+        :name,
+        :start_date,
+        :end_date,
+        :active,
+        :servers_enabled
+      ]
+    )
     |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
     |> validate_required([:name, :active, :servers_enabled])
   end
 
   @spec update_changeset(Class.t(), map()) :: Changeset.t(Types.class_data())
   def update_changeset(class, params \\ %{}) when is_struct(class, Class) and is_map(params) do
+    fixed_params = params |> tmp_boolify("active") |> tmp_boolify("servers_enabled")
+
     %__MODULE__{
       name: class.name,
       start_date: class.start_date,
@@ -60,13 +68,16 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       teacher_ssh_public_keys:
         Enum.map(class.teacher_ssh_public_keys, &ClassFormSshPublicKey.new(&1))
     }
-    |> cast(params, [
-      :name,
-      :start_date,
-      :end_date,
-      :active,
-      :servers_enabled
-    ])
+    |> cast(
+      fixed_params,
+      [
+        :name,
+        :start_date,
+        :end_date,
+        :active,
+        :servers_enabled
+      ]
+    )
     |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
     |> validate_required([:name, :active, :servers_enabled])
   end
