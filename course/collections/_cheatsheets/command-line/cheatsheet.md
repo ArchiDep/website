@@ -1,6 +1,7 @@
 ---
 title: Command Line Cheatsheet
 sidebar_title: Command Line
+custom_page_class: command-tables
 ---
 
 Useful commands for [Bash][bash] (**B**ourne-**a**gain **sh**ell), the default

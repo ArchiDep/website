@@ -23,6 +23,10 @@ main blockquote a {
   @apply text-base-content;
 }
 
+main.command-tables table tbody tr td:first-child {
+  @apply whitespace-nowrap;
+}
+
 ul.legend {
   @apply m-0 p-0 list-none flex flex-col gap-2;
 
