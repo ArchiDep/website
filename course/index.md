@@ -108,16 +108,20 @@ and related articles:
 ## Credits & thanks
 
 - _Me_
-- Simon Pinkas contributed the Docker subject, command line exercises and
-  various other material, and we teach the course together.
+- Simon Pinkas contributed the Docker subject, the Hello Shell command line
+  exercise and various other material. He sometimes teaches parts of the course
+  when I feel too lazy (his words), and helps students navigate through this
+  mess along with me during exercise sessions.
+- My ~~test subjects~~ early adopters: students who helped test, debug and
+  improve the course.
+- David Goetschmann, my current boss at [Square
+  Services](https://www.squareservices.ch), who encourages me to continue to
+  teach this course.
 - [Daniel Rappo](https://people.hes-so.ch/fr/profile/2302401-daniel-rappo),
   director of the [Media Engineering
   Institute](https://heig-vd.ch/rad/instituts/mei/), allowed me to work a lot
   more time than I was supposed to on the material for this course when
   developing the initial version while I was working there.
-- David Goetschmann, my current boss at [Square
-  Services](https://www.squareservices.ch), who encourages me to continue to
-  teach this course.
 - Mathias Oberson, former colleague at MEI and Square Services, wrote the
   command line subject and various other material.
 - Sarah Composto reread the material, suggested a significant amount of
