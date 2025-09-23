@@ -8,6 +8,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.ServersFactory
+  alias ArchiDep.Support.SSHFactory
 
   setup :verify_on_exit!
 
@@ -172,7 +173,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
         server: server
       )
 
-    fake_ssh_host_key_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+    fake_ssh_host_key_fingerprint = SSHFactory.random_ssh_host_key_fingerprint_digest()
 
     assert on_message.(initial_state, {:unknown_key_fingerprint, fake_ssh_host_key_fingerprint}) ==
              %ServerManagerState{
@@ -200,12 +201,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
         username: server.username,
         server: server,
         problems: [
-          {:server_key_exchange_failed, ServersFactory.random_ssh_host_key_fingerprint_digest(),
+          {:server_key_exchange_failed, SSHFactory.random_ssh_host_key_fingerprint_digest(),
            server.ssh_host_key_fingerprints}
         ]
       )
 
-    fake_ssh_host_key_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+    fake_ssh_host_key_fingerprint = SSHFactory.random_ssh_host_key_fingerprint_digest()
 
     assert on_message.(initial_state, {:unknown_key_fingerprint, fake_ssh_host_key_fingerprint}) ==
              %ServerManagerState{

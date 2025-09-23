@@ -55,6 +55,20 @@
             </div>
           </.data_display_element>
         </.data_display>
+        <.data_display
+          :if={@ssh_exercise_vm_host_key_fingerprints != []}
+          class="mt-4"
+          responsive={false}
+        >
+          <.data_display_element title={gettext("Exercise server SSH host key fingerprints")}>
+            <ul class="flex flex-col gap-1">
+              <li :for={fingerprint <- @ssh_exercise_vm_host_key_fingerprints} class="text-xs">
+                <code class="break-all">{SSHKeyFingerprint.fingerprint_human(fingerprint)}</code>
+                ({fingerprint.key_alg})
+              </li>
+            </ul>
+          </.data_display_element>
+        </.data_display>
       </div>
     </div>
   </div>

@@ -18,6 +18,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
   alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.NoOpGenServer
   alias ArchiDep.Support.ServersFactory
+  alias ArchiDep.Support.SSHFactory
   alias Phoenix.PubSub
   alias Req.Response
 
@@ -634,7 +635,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
                   starting_version: starting_version,
                   done_version: done_version
                 } ->
-               fake_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+               fake_fingerprint = SSHFactory.random_ssh_host_key_fingerprint_digest()
 
                expect(ServerManagerMock, :on_message, 2, fn
                  %ServerManagerState{

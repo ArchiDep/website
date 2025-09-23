@@ -137,6 +137,27 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
             </span>
           </button>
         </div>
+
+        <label class="fieldset-label mt-2">
+          {gettext("SSH exercise VM host key fingerprints")}
+        </label>
+        <textarea
+          id={@form[:ssh_exercise_vm_host_key_fingerprints].id}
+          class="textarea w-full"
+          name={@form[:ssh_exercise_vm_host_key_fingerprints].name}
+          rows="3"
+          placeholder={
+            gettext(
+              "3072 SHA256:x4gxcQl96qBWfIL/8BxVU2WECUuF/TmnHlEQUQcqE7w= root@server (RSA)\n256 SHA256:LTmRTt/Zc7t48a0bF1hI0tlLLOWpIu9c+ZAAytialxw= root@server (ED25519)\n256 SHA256:4wjltFerVQi4J8+rqS3atzUI7jZyUXeuCXhfdH1QKg0= root@server (ECDSA)"
+            )
+          }
+        ><%= @form[:ssh_exercise_vm_host_key_fingerprints].value %></textarea>
+        <.errors_for field={@form[:ssh_exercise_vm_host_key_fingerprints]} />
+        <.field_help>
+          <code>
+            find /etc/ssh -name "*.pub" -exec ssh-keygen -lf {"{}"} \;
+          </code>
+        </.field_help>
       </fieldset>
 
       <div class="mt-2 flex justify-end gap-x-2">

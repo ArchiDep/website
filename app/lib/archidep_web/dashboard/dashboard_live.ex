@@ -15,6 +15,8 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
+  alias ArchiDep.Servers.SSH
+  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias ArchiDepWeb.Course.ChangeUsernameDialogLive
   alias ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive
   alias ArchiDepWeb.Servers.EditServerDialogLive
@@ -33,6 +35,15 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           else: Task.completed(nil)
         )
       ])
+
+    ssh_exercise_vm_host_key_fingerprints =
+      with %Student{class: %Class{ssh_exercise_vm_host_key_fingerprints: fingerprints}}
+           when is_binary(fingerprints) <- student,
+           {:ok, valid, _invalid} <- SSH.parse_ssh_host_key_fingerprints(fingerprints) do
+        valid
+      else
+        _anything -> []
+      end
 
     active_servers = Enum.filter(servers, & &1.active)
     inactive_servers = Enum.reject(servers, & &1.active)
@@ -63,6 +74,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     |> assign(
       page_title: gettext("Dashboard"),
       student: student,
+      ssh_exercise_vm_host_key_fingerprints: ssh_exercise_vm_host_key_fingerprints,
       servers: active_servers,
       inactive_servers: inactive_servers |> Enum.map(& &1.id) |> MapSet.new(),
       server_state_map: ServerTracker.server_state_map(active_servers),

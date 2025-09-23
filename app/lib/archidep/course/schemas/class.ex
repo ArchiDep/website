@@ -9,6 +9,7 @@ defmodule ArchiDep.Course.Schemas.Class do
   import ArchiDep.Helpers.ChangesetHelpers
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Types
+  alias ArchiDep.Servers.SSH
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
@@ -22,6 +23,7 @@ defmodule ArchiDep.Course.Schemas.Class do
           active: boolean(),
           servers_enabled: boolean(),
           teacher_ssh_public_keys: list(String.t()),
+          ssh_exercise_vm_host_key_fingerprints: String.t() | nil,
           expected_server_properties: ExpectedServerProperties.t() | NotLoaded.t(),
           expected_server_properties_id: UUID.t(),
           # Common metadata
@@ -37,6 +39,7 @@ defmodule ArchiDep.Course.Schemas.Class do
     field(:active, :boolean)
     field(:servers_enabled, :boolean, default: false)
     field(:teacher_ssh_public_keys, {:array, :string}, default: [])
+    field(:ssh_exercise_vm_host_key_fingerprints, :string)
     belongs_to(:expected_server_properties, ExpectedServerProperties, on_replace: :update)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
@@ -100,7 +103,8 @@ defmodule ArchiDep.Course.Schemas.Class do
       :end_date,
       :active,
       :servers_enabled,
-      :teacher_ssh_public_keys
+      :teacher_ssh_public_keys,
+      :ssh_exercise_vm_host_key_fingerprints
     ])
     |> change(
       id: id,
@@ -131,7 +135,8 @@ defmodule ArchiDep.Course.Schemas.Class do
       :end_date,
       :active,
       :servers_enabled,
-      :teacher_ssh_public_keys
+      :teacher_ssh_public_keys,
+      :ssh_exercise_vm_host_key_fingerprints
     ])
     |> change(updated_at: now)
     |> optimistic_lock(:version)
@@ -180,6 +185,7 @@ defmodule ArchiDep.Course.Schemas.Class do
           active: active,
           servers_enabled: servers_enabled,
           teacher_ssh_public_keys: teacher_ssh_public_keys,
+          ssh_exercise_vm_host_key_fingerprints: ssh_exercise_vm_host_key_fingerprints,
           expected_server_properties: new_expected_server_properties,
           version: version,
           updated_at: updated_at
@@ -194,6 +200,7 @@ defmodule ArchiDep.Course.Schemas.Class do
         active: active,
         servers_enabled: servers_enabled,
         teacher_ssh_public_keys: teacher_ssh_public_keys,
+        ssh_exercise_vm_host_key_fingerprints: ssh_exercise_vm_host_key_fingerprints,
         expected_server_properties:
           ExpectedServerProperties.refresh(
             expected_server_properties,
@@ -230,11 +237,28 @@ defmodule ArchiDep.Course.Schemas.Class do
   defp validate(changeset) do
     changeset
     |> update_change(:name, &trim/1)
+    |> update_change(:ssh_exercise_vm_host_key_fingerprints, &trim_to_nil/1)
     |> validate_required([:name, :active, :servers_enabled])
     |> validate_length(:name, max: 50)
     |> unique_constraint(:name, name: :classes_unique_name_index)
     |> validate_ssh_public_keys(:teacher_ssh_public_keys)
     |> validate_start_and_end_dates()
+    |> validate_change(
+      :ssh_exercise_vm_host_key_fingerprints,
+      fn :ssh_exercise_vm_host_key_fingerprints, fingerprints ->
+        case SSH.parse_ssh_host_key_fingerprints(fingerprints) do
+          {:ok, _valid, _invalid} ->
+            []
+
+          {:error, reason} ->
+            [
+              ssh_exercise_vm_host_key_fingerprints:
+                {"must contain at least one valid SSH host key fingerprint, with new lines between each fingerprint",
+                 [reason: reason]}
+            ]
+        end
+      end
+    )
   end
 
   defp validate_ssh_public_keys(changeset, field) do

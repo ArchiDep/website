@@ -16,15 +16,14 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
   def close(class), do: class |> id() |> close_dialog()
 
   @impl LiveComponent
-  def update(assigns, socket),
-    do:
-      socket
-      |> assign(
-        auth: assigns.auth,
-        class: assigns.class,
-        form: to_form(ClassForm.update_changeset(assigns.class, %{}), as: :class)
-      )
-      |> ok()
+  def update(assigns, socket) do
+    class = assigns.class
+
+    socket
+    |> assign(assigns)
+    |> assign(form: to_form(ClassForm.update_changeset(class, %{}), as: :class))
+    |> ok()
+  end
 
   @impl LiveComponent
 
@@ -88,6 +87,7 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
         Message.new(:success, gettext("Updated class {class}", class: updated_class.name))
       )
       |> push_event("execute-action", %{to: "##{id(class)}", action: "close"})
+      |> assign(form: to_form(ClassForm.update_changeset(updated_class, %{}), as: :class))
       |> noreply()
     else
       {:error, %Changeset{} = result_changeset} ->

@@ -165,7 +165,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
               key fingerprints</a>? You need to connect to your server with SSH and
               run the following command:
             </span>
-            <code>find /etc/ssh -name "ssh_host_*.pub" -exec ssh-keygen -lf {"{}"} \;</code>
+            <code>find /etc/ssh -name "*.pub" -exec ssh-keygen -lf {"{}"} \;</code>
             <span>
               Copy the output of that command, edit your server, and make sure
               to paste them into the <strong>SSH host key fingerprints</strong>

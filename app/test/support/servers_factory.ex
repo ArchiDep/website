@@ -21,12 +21,12 @@ defmodule ArchiDep.Support.ServersFactory do
   alias ArchiDep.Servers.Types
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.NetFactory
+  alias ArchiDep.Support.SSHFactory
   alias Ecto.UUID
 
   @playbooks [AnsiblePlaybook.name(Ansible.setup_playbook())]
   @failed_ansible_playbook_run_states [:failed, :interrupted, :timeout]
   @finished_ansible_playbook_run_states [:succeeded] ++ @failed_ansible_playbook_run_states
-  @ssh_host_key_algs_and_sizes [{"RSA", 3072}, {"ECDSA", 256}, {"ED25519", 256}]
 
   @spec ansible_playbook_event_factory(map()) :: AnsiblePlaybookEvent.t()
   def ansible_playbook_event_factory(attrs!) do
@@ -419,10 +419,11 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec server_key_exchange_failed_problem() :: Types.server_key_exchange_failed_problem()
   def server_key_exchange_failed_problem,
     do:
-      {:server_key_exchange_failed, optional(&random_ssh_host_key_fingerprint_digest/0),
+      {:server_key_exchange_failed,
+       optional(&SSHFactory.random_ssh_host_key_fingerprint_digest/0),
        1
        |> Range.new(Faker.random_between(1, 3))
-       |> Enum.map_join("\n", fn _n -> random_ssh_host_key_fingerprint_string() end)}
+       |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)}
 
   @spec server_missing_sudo_access_problem :: Types.server_missing_sudo_access_problem()
   def server_missing_sudo_access_problem,
@@ -599,7 +600,7 @@ defmodule ArchiDep.Support.ServersFactory do
       Map.pop_lazy(attrs!, :ssh_host_key_fingerprints, fn ->
         1
         |> Range.new(Faker.random_between(1, 3))
-        |> Enum.map_join("\n", fn _n -> random_ssh_host_key_fingerprint_string() end)
+        |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)
       end)
 
     {secret_key, attrs!} =
@@ -851,7 +852,7 @@ defmodule ArchiDep.Support.ServersFactory do
       Keyword.pop_lazy(attrs!, :ssh_host_key_fingerprints, fn ->
         1
         |> Range.new(Faker.random_between(1, 3))
-        |> Enum.map_join("\n", fn _n -> random_ssh_host_key_fingerprint_string() end)
+        |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)
       end)
 
     {active, attrs!} = Keyword.pop_lazy(attrs!, :active, &bool/0)
@@ -935,28 +936,4 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec random_retry_connecting_cause :: :manual | :automated | {:event, EventReference.t()}
   def random_retry_connecting_cause,
     do: Enum.random([:manual, :automated, {:event, EventsFactory.build(:event_reference)}])
-
-  @spec random_ssh_host_key_fingerprint_digest() :: String.t()
-  def random_ssh_host_key_fingerprint_digest do
-    {digest_alg, digest} =
-      if bool() do
-        {"SHA256", 32 |> Faker.random_bytes() |> Base.encode64(padding: false)}
-      else
-        {"MD5",
-         16
-         |> Faker.random_bytes()
-         |> Base.encode16(case: :lower)
-         |> String.graphemes()
-         |> Enum.chunk_every(2)
-         |> Enum.map_join(":", &Enum.join/1)}
-      end
-
-    "#{digest_alg}:#{digest}"
-  end
-
-  @spec random_ssh_host_key_fingerprint_string() :: String.t()
-  def random_ssh_host_key_fingerprint_string do
-    {alg, size} = Enum.random(@ssh_host_key_algs_and_sizes)
-    "#{size} #{random_ssh_host_key_fingerprint_digest()} root@server (#{alg})"
-  end
 end

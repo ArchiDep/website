@@ -9,6 +9,7 @@ defmodule ArchiDep.Support.CourseFactory do
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Support.SSHFactory
 
   @spec class_factory(map()) :: Class.t()
   def class_factory(attrs!) do
@@ -32,6 +33,17 @@ defmodule ArchiDep.Support.CourseFactory do
     {teacher_ssh_public_keys, attrs!} =
       Map.pop(attrs!, :teacher_ssh_public_keys, [])
 
+    {ssh_exercise_vm_host_key_fingerprints, attrs!} =
+      Map.pop_lazy(
+        attrs!,
+        :ssh_exercise_vm_host_key_fingerprints,
+        optionally(fn ->
+          1
+          |> Range.new(Faker.random_between(1, 3))
+          |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)
+        end)
+      )
+
     {expected_server_properties, attrs!} =
       Map.pop_lazy(attrs!, :expected_server_properties, fn ->
         build(:expected_server_properties)
@@ -49,6 +61,7 @@ defmodule ArchiDep.Support.CourseFactory do
       active: active,
       servers_enabled: servers_enabled,
       teacher_ssh_public_keys: teacher_ssh_public_keys,
+      ssh_exercise_vm_host_key_fingerprints: ssh_exercise_vm_host_key_fingerprints,
       expected_server_properties: expected_server_properties,
       expected_server_properties_id: expected_server_properties.id,
       version: version,

@@ -183,7 +183,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               |> raw()}
             </span>
             <code class="pl-2">
-              find /etc/ssh -name "ssh_host_*.pub" -exec ssh-keygen -lf {"{}"} \;
+              find /etc/ssh -name "*.pub" -exec ssh-keygen -lf {"{}"} \;
             </code>
           </div>
         </.field_help>

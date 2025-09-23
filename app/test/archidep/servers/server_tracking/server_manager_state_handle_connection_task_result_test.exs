@@ -10,6 +10,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
+  alias ArchiDep.Support.SSHFactory
 
   setup :verify_on_exit!
 
@@ -505,7 +506,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     server = build_active_server(set_up_at: nil)
 
     fake_connect_task_ref = make_ref()
-    fake_ssh_host_key_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+    fake_ssh_host_key_fingerprint = SSHFactory.random_ssh_host_key_fingerprint_digest()
 
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting

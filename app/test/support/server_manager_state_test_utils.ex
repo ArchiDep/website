@@ -25,6 +25,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.NetFactory
   alias ArchiDep.Support.ServersFactory
+  alias ArchiDep.Support.SSHFactory
   alias Ecto.UUID
 
   @type connect_fn :: (ServerManagerState.t(),
@@ -71,7 +72,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
     refute_received {:unknown_key_fingerprint, _unknown_fingerprint}
 
     random_peer = :inet.ntoa(NetFactory.ip_address())
-    unknown_fingerprint = ServersFactory.random_ssh_host_key_fingerprint_digest()
+    unknown_fingerprint = SSHFactory.random_ssh_host_key_fingerprint_digest()
 
     assert {false, msg} =
              with_log(fn -> silently_accept_hosts_fn.(random_peer, unknown_fingerprint) end)
