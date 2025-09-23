@@ -552,6 +552,28 @@ future deployment exercises.
 
 ## :boom: Troubleshooting
 
+Here's a few tips about some problems you may encounter during this exercise.
+
+### :boom: I forgot to open some (or all) of the ports in the firewall
+
+If you did not open the correct ports (80, 443, 3000 and 3001) during the initial
+configuration of your virtual server, you can go back to its network settings
+at any time and add the missing rules.
+
+![Azure: fix VM networks settings](images/azure-vm-fix-network-settings.png)
+
+As a reminder, you need to add inbound rules to open the following ports (if you
+haven't already):
+
+- **Service:** HTTP, **Action:** Allow, **Name:** HTTP
+- **Service:** HTTPS, **Action:** Allow, **Name:** HTTPS
+- **Service:** Custom, **Destination port ranges:** 3000, **Protocol:** TCP,
+  **Action:** Allow, **Name:** Port3000
+- **Service:** Custom, **Destination port ranges:** 3001, **Protocol:** TCP,
+  **Action:** Allow, **Name:** Port3001
+
+### :boom: Azure complains that my RSA key is too short
+
 Azure requires that [SSH keys of type RSA have at least 2048
 bits][azure-ssh-key-formats]. If your existing key is not accepted by Azure when
 pasting it in the administrator account settings of your virtual server later,

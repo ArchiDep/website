@@ -248,6 +248,16 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
           the required ports in your cloud provider's firewall
         </a>?
       </p>
+      <p class="mt-2">
+        If you forgot some or all of them,
+        <a
+          href={"#{Material.run_virtual_server_exercise().url}#boom-i-forgot-to-open-some-or-all-of-the-ports-in-the-firewall"}
+          class="underline hover:no-underline"
+          target="_blank"
+        >
+          edit your virtual server's network settings to add the missing rules.
+        </a>
+      </p>
     </.troubleshooting_note>
     <div
       :if={
