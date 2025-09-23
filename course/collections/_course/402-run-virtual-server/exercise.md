@@ -73,8 +73,15 @@ availability zone (or another region that is not too expensive).
 
 {% note type: tip %}
 
-Any region will do. Closer to where you are (or where your customers are) will
-reduce latency, and the North/West European regions are among the cheapest.
+As a student, you are not allowed to run your virtual machine in any region.
+Choose one of the regions that are recommended for you (these may be different
+for each student):
+
+![Azure: recommended regions](images/azure-vm-recommended-regions.png)
+
+In general, choosing a region closer to where you are (or where your customers
+are) will reduce latency, and the North/West European regions are among the
+cheapest.
 
 {% endnote %}
 
@@ -202,7 +209,7 @@ Standard B1s**).
 If Azure tells you that you cannot create a virtual machine in the region you
 have selected, go back to the [basic
 settings](#exclamation-configure-basic-settings) and find a region that works.
-Make sure to re-check your estimated monthly cost.
+**Make sure to re-check your estimated monthly cost afterwards.**
 
 {% endnote %}
 
