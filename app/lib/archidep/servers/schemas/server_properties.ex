@@ -306,17 +306,22 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
 
   defp detect_mismatch(property, expected, expected) when is_atom(property), do: :ok
 
-  defp detect_mismatch(property, expected, actual)
-       when property in [:memory, :swap] and expected != 0 do
+  defp detect_mismatch(:memory, expected, actual) when expected != 0,
+    do: detect_mismatch_with_ratio(0.2, expected, actual)
+
+  defp detect_mismatch(:swap, expected, actual) when expected != 0,
+    do: detect_mismatch_with_ratio(0.1, expected, actual)
+
+  defp detect_mismatch(_property, expected, actual), do: {:error, {expected, actual}}
+
+  defp detect_mismatch_with_ratio(max_ratio, expected, actual) do
     difference = abs(expected - actual)
     ratio = difference / expected
 
-    if ratio > 0.1 do
+    if ratio > max_ratio do
       {:error, {expected, actual}}
     else
       :ok
     end
   end
-
-  defp detect_mismatch(_property, expected, actual), do: {:error, {expected, actual}}
 end
