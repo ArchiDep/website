@@ -34,14 +34,20 @@ if (!standalone) {
 window['logOut'] = logOut;
 
 const sessionType = t.readonly(
-  t.exact(
-    t.type({
-      username: t.string,
-      root: t.boolean,
-      impersonating: t.boolean,
-      sessionExpiresAt: iso8601DateTime
-    })
-  )
+  t.intersection([
+    t.exact(
+      t.type({
+        root: t.boolean,
+        impersonating: t.boolean,
+        sessionExpiresAt: iso8601DateTime
+      })
+    ),
+    t.exact(
+      t.partial({
+        username: t.union([t.string, t.null])
+      })
+    )
+  ])
 );
 
 type Session = t.TypeOf<typeof sessionType>;
