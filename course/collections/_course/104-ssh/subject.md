@@ -424,6 +424,13 @@ A few examples are:
 - [Git][git] - Version control system that can use SSH (among other protocols)
   to transfer versioned data.
 
+## The birth (or death) of an SSH connection
+
+![The birth (or death) of an SSH connection](images/ssh-connection.png)
+
+- [PDF version](./images/ssh-connection.pdf)
+- [PNG version](./images/ssh-connection.png)
+
 ## References
 
 - [How does SSH Work](https://www.hostinger.com/tutorials/ssh-tutorial-how-does-ssh-work)
@@ -432,7 +439,6 @@ A few examples are:
 - [Diffie-Hellman Key Exchange][dh]
 - [Simplest Explanation of the Math Behind Public Key Cryptography][pubkey-math]
 - [SSH, The Secure Shell: The Definitive Guide](https://books.google.ch/books/about/SSH_The_Secure_Shell_The_Definitive_Guid.html?id=9FSaScltd-kC&redir_esc=y)
-- [The Birth (or Death) of an SSH Connection](./images/ssh-connection.png) ([PDF version](./images/ssh-connection.pdf))
 - [SSH Authentication Sequence and Key Files](https://serverfault.com/a/935667)
 
 [aes]: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
