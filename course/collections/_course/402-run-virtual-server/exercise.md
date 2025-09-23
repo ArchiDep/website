@@ -133,9 +133,21 @@ Add two inbound rules, one for **HTTP** and one for **HTTPS**:
 
 ![Azure: VM HTTP Ports](images/azure-vm-http.png)
 
+{% note type: tip %}
+
+You will also have to name them. You can simply name them "HTTP" and "HTTPS".
+
+{% endnote %}
+
 Add two other inbound rules, one for **port 3000** and one for **port 3001**:
 
 ![Azure: VM Custom Ports](images/azure-vm-custom-port.png)
+
+{% note type: tip %}
+
+You can simply name those rules "Port3000" and "Port3001".
+
+{% endnote %}
 
 The final security group settings should look something like this:
 
