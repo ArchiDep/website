@@ -529,10 +529,14 @@ obtain your server's SSH host key fingerprints:
 $> find /etc/ssh -name "ssh_host_*.pub" -exec ssh-keygen -lf {} \;
 ```
 
-Just one more step: [go back to the dashboard to register you virtual
-machine](/app?server=ready).
+Just one more step, go back to the dashboard and:
 
-{% note type: more %}
+<a href="/app?server=ready" class="btn btn-primary btn-xl">
+  <span class="flex items-center gap-2">
+    <span>🎉</span>
+    <span class="font-title">Register you virtual server</span>
+  </span>
+</a>
 
 When connecting to your server, we will match the public SSH key fingerprint it
 provides against the keys you are providing us to make sure we are connecting to
