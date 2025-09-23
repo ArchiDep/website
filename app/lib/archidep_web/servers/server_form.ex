@@ -7,13 +7,18 @@ defmodule ArchiDepWeb.Servers.ServerForm do
 
   use Ecto.Schema
 
+  import ArchiDepWeb.Helpers.AuthHelpers
   import Ecto.Changeset
+  alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
   alias ArchiDepWeb.Servers.ServerPropertiesForm
   alias Ecto.Changeset
 
   @type t :: struct()
+
+  @required_fields [:ip_address, :username, :active, :ssh_host_key_fingerprints]
+  @root_required_fields [:group_id | @required_fields]
 
   @primary_key false
   embedded_schema do
@@ -28,8 +33,8 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     embeds_one(:expected_properties, ServerPropertiesForm, on_replace: :update)
   end
 
-  @spec create_changeset(map) :: Changeset.t(Types.server_data())
-  def create_changeset(params \\ %{}) when is_map(params) do
+  @spec create_changeset(Authentication.t(), map) :: Changeset.t(Types.server_data())
+  def create_changeset(auth, params \\ %{}) when is_map(params) do
     %__MODULE__{
       app_username: "archidep"
     }
@@ -44,7 +49,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
       :group_id
     ])
     |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
-    |> validate_required([:ip_address, :username, :active, :ssh_host_key_fingerprints])
+    |> validate_required(if(root?(auth), do: @root_required_fields, else: @required_fields))
   end
 
   @spec to_create_data(t()) :: Types.server_data()

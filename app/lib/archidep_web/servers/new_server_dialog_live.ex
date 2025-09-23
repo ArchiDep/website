@@ -31,7 +31,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
     socket
     |> assign(assigns)
     |> assign(
-      form: init_form(owner),
+      form: init_form(auth, owner),
       owner: owner
     )
     |> ok()
@@ -39,10 +39,10 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
 
   @impl LiveComponent
 
-  def handle_event("closed", _params, %Socket{assigns: %{owner: owner}} = socket),
+  def handle_event("closed", _params, %Socket{assigns: %{auth: auth, owner: owner}} = socket),
     do:
       socket
-      |> assign(form: init_form(owner))
+      |> assign(form: init_form(auth, owner))
       |> noreply()
 
   def handle_event("validate", %{"server" => params}, socket) do
@@ -56,7 +56,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
 
     validate_dialog_form(
       :server,
-      ServerForm.create_changeset(params),
+      ServerForm.create_changeset(auth, params),
       fn data ->
         Servers.validate_server(auth, data.group_id || group_id, ServerForm.to_create_data(data))
       end,
@@ -74,7 +74,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
       end
 
     with {:ok, form_data} <-
-           Changeset.apply_action(ServerForm.create_changeset(params), :validate),
+           Changeset.apply_action(ServerForm.create_changeset(auth, params), :validate),
          {:ok, created_server} <-
            Servers.create_server(
              auth,
@@ -99,13 +99,13 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
     end
   end
 
-  defp init_form(owner) do
+  defp init_form(auth, owner) do
     default_username =
       case owner.group_member do
         %ServerGroupMember{username: username} -> username
         _anything_else -> nil
       end
 
-    to_form(ServerForm.create_changeset(%{username: default_username}), as: :server)
+    to_form(ServerForm.create_changeset(auth, %{username: default_username}), as: :server)
   end
 end
