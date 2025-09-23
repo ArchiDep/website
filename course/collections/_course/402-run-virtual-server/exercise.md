@@ -526,7 +526,7 @@ Also run the following command **while connected to your server with SSH** to
 obtain your server's SSH host key fingerprints:
 
 ```bash
-$> find /etc/ssh -name "ssh_host_*.pub" -exec ssh-keygen -lf {} \;
+$> find /etc/ssh -name "*.pub" -exec ssh-keygen -lf {} \;
 ```
 
 Just one more step, go back to the dashboard and:
@@ -538,11 +538,31 @@ Just one more step, go back to the dashboard and:
   </span>
 </a>
 
+{% callout type: more, id: providing-virtual-server-ssh-host-key-fingerprints %}
+
 When connecting to your server, we will match the public SSH key fingerprint it
 provides against the keys you are providing us to make sure we are connecting to
 your server and not an attacker's (man-in-the-middle).
 
-{% endnote %}
+The command above does a few things:
+
+- The first `find` command finds all files named `*.pub` in the `/etc/ssh`
+  directory, which contains the configuration files for the SSH server running
+  on your virtual server. These will be the public SSH host keys of your server,
+  i.e. the keys it uses to sign the Diffie-Helmann key exchange parameters
+  during the establishment of the SSH secure tunnel.
+- The `-exec` option of the `find` command executes a command for each file that
+  was found, with `{}` being the path to the file and `\;` a marker to mark the
+  end of the command to execute.
+- For each public SSH host key file, the `ssh-keygen -lf <file>` command is
+  executed. The `ssh-keygen` command can not only generate new keys, but with
+  the `-l` option, it can also show the fingerprints of the file specified with
+  the `-f` (**f**ile) option.
+
+Basically, the entire command will print the fingerprints of all public SSH host
+keys on your server.
+
+{% endcallout %}
 
 ## :checkered_flag: What have I done?
 
