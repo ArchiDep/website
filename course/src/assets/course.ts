@@ -14,6 +14,8 @@ import './course/back-to-top';
 import './course/search';
 import './course/toc';
 import log from './logging';
+import './git-memoir/git-memoirs-registry';
+import { GitMemoirController } from './git-memoir/git-memoir-controller';
 
 const logger = log.getLogger('course');
 
@@ -29,6 +31,31 @@ if (!standalone) {
     autoCapturePageviews: true,
     outboundLinks: true
   });
+}
+
+// Display Git memoirs on page as they come into view
+const gitMemoirsOnPage = document.querySelectorAll('git-memoir');
+const urlParams = new URLSearchParams(window.location.search);
+const forceGitMemoirs = urlParams.get('git-memoir-force') === 'true';
+if (forceGitMemoirs) {
+  gitMemoirsOnPage.forEach(el => GitMemoirController.startNewGitMemoir(el));
+} else if (gitMemoirsOnPage.length !== 0) {
+  const options = {
+    root: null,
+    rootMargin: '0px',
+    scrollMargin: '0px',
+    threshold: 1.0
+  };
+
+  const observer = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        GitMemoirController.startNewGitMemoir(entry.target);
+      }
+    }
+  }, options);
+
+  gitMemoirsOnPage.forEach(el => observer.observe(el));
 }
 
 window['logOut'] = logOut;

@@ -1,7 +1,6 @@
 import $ from 'jquery/dist/jquery.slim';
 import tippy, { Instance } from 'tippy.js';
 import { Drawer, Memoir, NarrationDrawOptions } from 'git-memoir';
-import Reveal from 'reveal.js';
 import { O, pipe } from '@mobily/ts-belt';
 
 type Mode = 'autoplay' | 'manual' | 'visualization';
@@ -25,19 +24,24 @@ const MODES: readonly Mode[] = [
 const gitMemoirs: Record<string, () => Memoir> = window['gitMemoirs'] ?? {};
 
 export class GitMemoirController {
-  static start(deck: Reveal.Api) {
-    let memoirsCount = this.startGitMemoirs();
-    deck.on('slidechanged', () => {
-      if (memoirsCount !== 0) {
-        this.destroyGitMemoirs();
-      }
+  static startNewGitMemoir(element: Element): GitMemoirController {
+    const existingController = $(element).data('controller');
+    if (existingController instanceof GitMemoirController) {
+      return existingController;
+    }
 
-      memoirsCount = this.startGitMemoirs();
-    });
+    const newController = new GitMemoirController(element);
+    newController.start();
+
+    return newController;
   }
 
-  static startGitMemoirs() {
-    const memoirs = $('.reveal .slides .present git-memoir');
+  static startGitMemoir(element: Element): void {
+    new GitMemoirController(element).start();
+  }
+
+  static startGitMemoirs(selector: string): number {
+    const memoirs = $(selector);
     memoirs.each(function () {
       new GitMemoirController(this).start();
     });
@@ -45,8 +49,8 @@ export class GitMemoirController {
     return memoirs.length;
   }
 
-  static destroyGitMemoirs() {
-    $('.reveal .slides git-memoir').each(function () {
+  static destroyGitMemoirs(selector: string): void {
+    $(selector).each(function () {
       const memoirController = $(this).data('controller');
       if (memoirController) {
         memoirController.destroy();

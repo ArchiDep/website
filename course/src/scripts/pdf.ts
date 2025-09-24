@@ -127,6 +127,9 @@ for (const doc of docsToExport) {
   if (doc.course_type === 'slides') {
     params.set('print-pdf', '');
     params.set('git-memoir-mode', 'visualization');
+  } else {
+    params.set('git-memoir-force', 'true');
+    params.set('git-memoir-mode', 'visualization');
   }
 
   const exportUrl = `${docBaseUrl}?${params.toString()}`;

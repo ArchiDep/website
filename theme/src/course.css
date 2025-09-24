@@ -1,3 +1,9 @@
+@import './git-memoir.css';
+
+git-memoir {
+  @apply bg-zinc-400 border-slate-800 min-h-[350px] my-4;
+}
+
 main > .highlight,
 main > .highlighter-rouge {
   @apply -ml-4 lg:-ml-6 xl:-ml-8 -mr-4 lg:-mr-6 xl:-mr-8;

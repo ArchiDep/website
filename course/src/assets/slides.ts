@@ -5,12 +5,12 @@ import Markdown from 'reveal.js/plugin/markdown/markdown.esm.js';
 import Notes from 'reveal.js/plugin/notes/notes.esm.js';
 import Search from 'reveal.js/plugin/search/search.esm.js';
 
-import 'reveal.js/plugin/highlight/monokai.css';
 import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/solarized.css';
+import 'reveal.js/plugin/highlight/monokai.css';
 import 'tippy.js/dist/tippy.css';
-import './slides/git-memoirs';
-import { GitMemoirController } from './slides/git-memoir';
+import './git-memoir/git-memoirs-registry';
+import { startGitMemoirsForRevealDeck } from './slides/git-memoirs';
 
 const urlSearch = new URLSearchParams(window.location.search);
 const printPdfMode = urlSearch.has('print-pdf');
@@ -39,7 +39,7 @@ deck.initialize().then(async () => {
     link.setAttribute('target', '_blank');
   });
 
-  GitMemoirController.start(deck);
+  startGitMemoirsForRevealDeck(deck);
 });
 
 if (!printPdfMode && !scrollMode) {
