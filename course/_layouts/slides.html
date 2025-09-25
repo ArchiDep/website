@@ -5,6 +5,8 @@
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     {%- seo -%}
+    <link rel='preconnect' href='https://fonts.googleapis.com'>
+    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
     <link rel='stylesheet' href='{{ "/assets/course/slides.css" | relative_asset_url }}'>
     <link rel='stylesheet' href='{{ "/assets/theme/slides.css" | relative_asset_url }}'>
     <script defer src='{{ "/assets/course/slides-mermaid.js" | relative_asset_url }}'></script>
@@ -17,16 +19,6 @@
         src='{{ site.livereload_base_url }}/livereload.js?snipver=1&port={{ site.livereload_port }}'
       ></script>
     {% endif %}
-    <style>
-      #heig-vd-logo {
-        position: absolute;
-        bottom: 1rem;
-        left: 1rem;
-        z-index: 10;
-        opacity: 0.75;
-        transition: opacity 0.3s;
-      }
-    </style>
   </head>
   <body data-theme='light'>
     <div class='reveal'>
@@ -41,8 +33,27 @@
 
     <script src='{{ "/assets/course/slides.js" | relative_asset_url }}'></script>
 
-    <a id='heig-vd-logo' href='https://heig-vd.ch/' target='_blank'>
-      <img src='{{ "/favicons/heig.png" | relative_url }}' alt='HEIG-VD logo' width='48' height='48'>
-    </a>
+    <div id='meta' class='absolute bottom-4 left-4 z-10 flex items-end gap-2 font-meta'>
+      <a id='heig-vd-logo' href='https://heig-vd.ch/' target='_blank'>
+        <img src='{{ "/favicons/heig.png" | relative_url }}' alt='HEIG-VD logo' width='40' height='40'>
+      </a>
+
+      <a
+        id='download-pdf'
+        href='{{ site.baseurl }}/pdf/ArchiDep {{ page.num }} - {{ page.section_title }} - {{ page.title }} - Slides.pdf'
+        class='tooltip'
+        data-tip='Download PDF'
+        download
+      >
+        {%- include icons/document-arrow-down.html class="size-6 opacity-25 hover:opacity-100" -%}
+      </a>
+    </div>
+
+    <div
+      id='footer'
+      class='absolute bottom-4 left-0 right-0 text-center font-meta text-sm opacity-25 hover:opacity-100'
+    >
+      <a href='https://archidep.ch' class='!no-underline hover:!underline'>ArchiDep {{ site.archidep_years }}</a>
+    </div>
   </body>
 </html>

@@ -12,6 +12,7 @@ livereload_script_forced: false
 destination: '../app/priv/static'
 strict_front_matter: true
 archidep_standalone: false
+archidep_years: 2025-2026
 
 collections:
   cheatsheets:

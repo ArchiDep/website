@@ -48,6 +48,15 @@ if (!printPdfMode && !scrollMode) {
   });
 }
 
+deck.on('slidechanged', event => {
+  const $downloadPdf = document.getElementById('download-pdf');
+  if (event['indexh'] === 0) {
+    $downloadPdf?.classList.remove('hidden');
+  } else {
+    $downloadPdf?.classList.add('hidden');
+  }
+});
+
 if (urlSearch.has('export')) {
   (window as any)['Reveal'] = deck;
 }
