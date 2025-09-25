@@ -17,10 +17,6 @@ defmodule ArchiDep.Repo.Migrations.AddServerCountToUserAccounts do
              check: "server_count_lock >= 1"
            )
 
-    create constraint(:user_accounts, :active_server_count_is_not_greater_than_server_count,
-             check: "active_server_count <= server_count"
-           )
-
     execute(
       """
       WITH server_counts AS (
@@ -35,5 +31,9 @@ defmodule ArchiDep.Repo.Migrations.AddServerCountToUserAccounts do
       """,
       "SELECT 1;"
     )
+
+    create constraint(:user_accounts, :active_server_count_is_not_greater_than_server_count,
+             check: "active_server_count <= server_count"
+           )
   end
 end
