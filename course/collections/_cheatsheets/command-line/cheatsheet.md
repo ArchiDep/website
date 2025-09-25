@@ -342,6 +342,17 @@ $> which foo
 foo not found
 ```
 
+## Miscellaneous
+
+### Can I write a long command on multiple lines?
+
+```bash
+$> echo \
+   "Hello" \
+   "World"
+Hello World
+```
+
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [tee]: https://en.wikipedia.org/wiki/Tee_(command)
 [whee]: https://en.wiktionary.org/wiki/whee
