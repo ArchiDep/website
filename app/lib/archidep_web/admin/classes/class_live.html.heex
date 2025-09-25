@@ -148,7 +148,15 @@
 />
 
 <div class="mt-4 mb-2 flex justify-between items-end">
-  <h3 class="text-xl font-bold">{gettext("Students")}</h3>
+  <h3 class="text-xl font-bold">
+    {gettext("Students")}
+    <small :if={not Enum.empty?(@students)} class="ml-2 text-base-content/75">
+      {gettext("{count}/{total} registered",
+        count: Enum.count(@students, &(&1.user_id != nil)),
+        total: length(@students)
+      )}
+    </small>
+  </h3>
 
   <div class="join">
     <a
