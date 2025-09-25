@@ -120,4 +120,5 @@ access control, bug tracking, feature requests, task management, and wikis for
 every project.
 
 [distributed-workflows]: https://git-scm.com/book/en/v2/Distributed-Git-Distributed-Workflows
+[git]: https://git-scm.com
 [github]: https://github.com
