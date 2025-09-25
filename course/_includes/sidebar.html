@@ -68,6 +68,8 @@
             class='hidden'
             {% if section.open %}
               checked disabled
+            {% elsif page.section_num == section.num %}
+              checked
             {% endif %}
           >
         </label>
@@ -99,6 +101,8 @@
           {% else %}
             {% assign chapter_color = 'border-r-4 border-info/50 hover:border-info' %}
           {% endif %}
+        {% elsif item.url == page.url %}
+          {% assign chapter_color = '' %}
         {% else %}
           {% assign chapter_color = 'opacity-25 hover:opacity-100' %}
         {% endif %}

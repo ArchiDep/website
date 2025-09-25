@@ -51,6 +51,7 @@ module ArchiDep
 
         chapter_num = section * 100 + section_chapter
         item.data["num"] = chapter_num
+        item.data["section_num"] = section * 100
         item.data["progress"] = case chapter_num
         when *done_chapters
           "done"
