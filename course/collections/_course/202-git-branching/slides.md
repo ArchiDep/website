@@ -92,9 +92,9 @@ out.
 ```bash
 $> cd /path/to/projects
 
-$> git clone https://github.com/MediaComem/comem-archidep-git-branching.git
+$> git clone https://github.com/ArchiDep/git-branching-ex.git
 
-$> cd comem-archidep-git-branching
+$> cd git-branching-ex
 
 # We will talk more about this
 $> git remote rm origin
