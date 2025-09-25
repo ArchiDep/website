@@ -430,7 +430,8 @@ $> git push origin main
 `index.html`:
 
 - Add an `<h2>` title before each computation.
-- Put the two last `<script>` tags on one line.
+- Add the `defer` attribute to the three `<script>` tags at the bottom to speed
+  up page loading.
 
 ```html
 <h2>Addition</h2>
@@ -439,9 +440,9 @@ $> git push origin main
 <h2>Subtraction</h2>
 <p id="subtraction">...</p>
 
-<script src="calculations.js"></script>
-<script src="addition.js"></script>
-<script src="subtraction.js"></script>
+<script src="calculations.js" defer></script>
+<script src="addition.js" defer></script>
+<script src="subtraction.js" defer></script>
 ```
 
 ### :exclamation: Alice: push the other changes
@@ -553,18 +554,23 @@ As we've seen before, a `pull` is equivalent to a `fetch` followed by a `merge`.
 
 ```txt
 <<<<<<< HEAD
-    <script src="addition.js"></script><script src="subtraction.js"></script>
+    <script src="calculations.js" defer></script>
+    <script src="addition.js" defer></script>
+    <script src="subtraction.js" defer></script>
 =======
+    <script src="calculations.js"></script>
     <script src="add.js"></script>
     <script src="sub.js"></script>
 >>>>>>> 3ff5311406e73c7d2cc1691f9535214c2543937f
 ```
 
-Let's make sure we keep it on one line while still renaming the files, and
-remove the conflict markers:
+Let's combine the fix of renaming the files and the `defer` change, and remove
+the conflict markers:
 
 ```txt
-    <script src="add.js"></script><script src="sub.js"></script>
+    <script src="calculations.js" defer></script>
+    <script src="add.js" defer></script>
+    <script src="sub.js" defer></script>
 ```
 
 Mark the conflict as resolved and finish the merge:
