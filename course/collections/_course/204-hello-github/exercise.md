@@ -226,7 +226,7 @@ The commit objects and file snapshots have been **pushed** (or uploaded) to the
 GitHub repository. This includes not only the commit pointed to by main, but
 also the **entire history** of the repository up to that commit.
 
-<git-memoir name='github' chapter='bob-push' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='bob-push' svg-height='350px' style='--memoir-min-height: 350px'></git-memoir>
 
 Note the **origin/main** branch that has appeared in your local repository. This
 is a **remote-tracking branch**. It tells you where the **main** branch points
@@ -271,7 +271,7 @@ The entire history of the project is **pulled** (or downloaded) from the GitHub
 repository. Git will also automatically switch to the **main** branch in the
 working directory so you have something to work from.
 
-<git-memoir name='github' chapter='alice-pull' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-pull' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
 
 Again, Git has created a **remote-tracking branch** in Alice's repository,
 so that you can know what the current state of the remote is.
@@ -291,7 +291,7 @@ $> git commit -m "Shorter file names"
 
 This is now the state of the shared repository and **Alice**'s local repository.
 
-<git-memoir name='github' chapter='alice-commit' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-commit' svg-height='350px' style='--memoir-min-height: 350px'></git-memoir>
 
 There is a new commit in **Alice**'s repository that is not in the shared GitHub
 repository.
@@ -304,7 +304,7 @@ Push to update the shared repository:
 $> git push origin main
 ```
 
-<git-memoir name='github' chapter='alice-push' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-push' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
 
 ### :exclamation: Bob: check the state of branches
 
@@ -314,7 +314,7 @@ Note that the new commit is in the shared repository (on GitHub) but that the
 remote-tracking branch origin/main **is not up-to-date** in **Bob**'s
 repository.
 
-<git-memoir name='github' chapter='bob-look' controls='false' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='bob-look' controls='false' svg-height='350px' style='--memoir-min-height: 350px'></git-memoir>
 
 Git does not automatically synchronize repositories. **As far as Bob knows**
 looking at information from his local repository, the main branch still points
@@ -336,12 +336,12 @@ From github.com:bob/github-demo
 
 The new commit is now here and the remote-tracking branch has been updated.
 
-<git-memoir name='github' chapter='bob-fetch' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='bob-fetch' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
 
 However, the local main branch **has not moved** and the working directory has
 **not been updated**.
 
-### :exclamation: Bob: check the state of branches
+### :exclamation: Bob: merge fetched changes
 
 Now you can use `git merge` like in the previous tutorial to bring the changes
 of origin/main into main:
@@ -358,7 +358,7 @@ Fast-forward
 As expected, main has been fast-forwarded to the commit pointed to by
 origin/main and the working directory has been updated.
 
-<git-memoir name='github' chapter='bob-merge' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='bob-merge' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
 
 **Bob**'s repository is now up-to-date.
 
@@ -398,7 +398,7 @@ $> git commit -m "Fix bad <script> tags"
 $> git push origin main
 ```
 
-<git-memoir name='github' chapter='bob-fix' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='bob-fix' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
 
 ### :exclamation: Alice: make other changes
 
@@ -429,7 +429,7 @@ $> git add index.html
 $> git commit -m "Improve layout"
 ```
 
-<git-memoir name='github' chapter='alice-fix' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-fix' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
 
 ```bash
 $> git push origin main
@@ -450,9 +450,10 @@ hint: (e.g., 'git pull ...') before pushing again.
 hint: See the 'Note about fast-forwards' in 'git push --help' for details.
 ```
 
-This is the state of **Alice**'s repository right now.
+This is the state of **Alice**'s repository right now, compared to the state of
+shared repository:
 
-<git-memoir name='github' chapter='alice-fix' controls='false' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-fix-check' controls='false' svg-height='350px' style='--memoir-min-height: 350px'></git-memoir>
 
 #### Alice: fetch the changes
 
@@ -463,7 +464,7 @@ date, try fetching those changes:
 $> git fetch origin
 ```
 
-<git-memoir name='github' chapter='alice-fetch-changes' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-fetch-changes' svg-height='600px' style='--memoir-min-height: 600px'></git-memoir>
 
 #### Alice: try to push again
 
@@ -480,16 +481,17 @@ hint: 'git pull ...') before pushing again.
 hint: See the 'Note about fast-forwards' in 'git push --help' for details.
 ```
 
-This is the state of **Alice**'s repository right now.
+This is the state of **Alice**'s and the shared repository right now:
 
-<git-memoir name='github' chapter='alice-fetch-changes' controls='false' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-fetch-changes-check' controls='false' svg-height='425px' style='--memoir-min-height: 425px'></git-memoir>
 
 ### :exclamation: Divergent history
 
-It's for the same reason as in the previous tutorial: **Bob** and **Alice**'s
-work have diverged from a common ancestor (`92fb8c` in this example).
+The conflict occurred for the same reason as in the previous tutorial: **Bob**
+and **Alice**'s work have diverged from a common ancestor (`92fb8c` in this
+example).
 
-<git-memoir name='github' chapter='alice-fetch-changes' controls='false' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-fetch-changes-check-both' controls='false' svg-height='600px' style='--memoir-min-height: 600px'></git-memoir>
 
 A remote repository will **only accept fast-forward pushes** by default.
 
@@ -554,7 +556,7 @@ Now the state of **Alice**'s local repository is consistent with the state of
 the shared repository: the commit pointed to by `main` is ahead of the commit
 pointed to by `origin/main`.
 
-<git-memoir name='github' chapter='alice-pull-changes' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-pull-changes' svg-height='600px' style='--memoir-min-height: 600px'></git-memoir>
 
 ### :exclamation: Alice: push the changes
 
@@ -564,7 +566,7 @@ The push will be accepted now:
 $> git push origin main
 ```
 
-<git-memoir name='github' chapter='alice-push-merge' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='alice-push-merge' svg-height='600px' style='--memoir-min-height: 600px'></git-memoir>
 
 ### :exclamation: Bob: pull the changes
 
@@ -574,7 +576,7 @@ $> git push origin main
 $> git pull origin main
 ```
 
-<git-memoir name='github' chapter='bob-pull-merge' svg-height='350px'></git-memoir>
+<git-memoir name='github' chapter='bob-pull-merge' svg-height='675px' style='--memoir-min-height: 675px'></git-memoir>
 
 ## :checkered_flag: What have I done?
 

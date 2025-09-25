@@ -267,14 +267,7 @@ import {
       .chapter('bob-push')
       .push('origin', 'main')
 
-      .chapter('alice-remote', {
-        before: function (_step, drawer) {
-          drawer
-            .requireExtension(drawFileSystemExtensionPredicate)
-            .getViewStrategy()
-            .setHiddenFileSystems(['bob']);
-        }
-      })
+      .chapter('alice-remote')
       .fileSystem('alice', _fs => {}, {
         /*icon: {
           svg: getComputerIcon(),
@@ -292,12 +285,25 @@ import {
           drawer.requireExtension(
             horizontalLayoutExtensionPredicate
           ).minRepositoryGridColumns = 4;
+
+          drawer
+            .requireExtension(drawFileSystemExtensionPredicate)
+            .getViewStrategy()
+            .setHiddenFileSystems(['bob']);
         }
       })
 
       .chapter('alice-commit')
       .commit({ commit: { hash: '92fb8c' } })
 
+      .chapter('alice-push-settings', {
+        before: function (_step, drawer) {
+          drawer
+            .requireExtension(drawFileSystemExtensionPredicate)
+            .getViewStrategy()
+            .setHiddenFileSystems([]);
+        }
+      })
       .chapter('alice-push')
       .push('origin', 'main')
 
@@ -311,6 +317,15 @@ import {
       })
       .fileSystem('bob')
       .repo('bob-project')
+
+      .chapter('bob-fetch-settings', {
+        before: function (_step, drawer) {
+          drawer
+            .requireExtension(drawFileSystemExtensionPredicate)
+            .getViewStrategy()
+            .setHiddenFileSystems([]);
+        }
+      })
 
       .chapter('bob-fetch')
       .fetch({ remote: 'origin' })
@@ -330,7 +345,14 @@ import {
       .commit({ commit: { hash: '55e12a' } })
       .push('origin', 'main')
 
-      .chapter('alice-fix-prepare', {
+      .chapter('alice-fix-prepare')
+      .fileSystem('alice')
+      .repo('alice-project')
+
+      .chapter('alice-fix')
+      .commit({ commit: { hash: '102c34' } })
+
+      .chapter('alice-fix-check', {
         before: function (_step, drawer) {
           drawer
             .requireExtension(drawFileSystemExtensionPredicate)
@@ -338,14 +360,36 @@ import {
             .setHiddenFileSystems(['bob']);
         }
       })
-      .fileSystem('alice')
-      .repo('alice-project')
 
-      .chapter('alice-fix')
-      .commit({ commit: { hash: '102c34' } })
+      .chapter('alice-fetch-changes-settings', {
+        before: function (_step, drawer) {
+          drawer
+            .requireExtension(drawFileSystemExtensionPredicate)
+            .getViewStrategy()
+            .setHiddenFileSystems([]);
+        }
+      })
 
       .chapter('alice-fetch-changes')
       .fetch({ remote: 'origin' })
+
+      .chapter('alice-fetch-changes-check', {
+        before: function (_step, drawer) {
+          drawer
+            .requireExtension(drawFileSystemExtensionPredicate)
+            .getViewStrategy()
+            .setHiddenFileSystems(['bob']);
+        }
+      })
+
+      .chapter('alice-fetch-changes-check-both', {
+        before: function (_step, drawer) {
+          drawer
+            .requireExtension(drawFileSystemExtensionPredicate)
+            .getViewStrategy()
+            .setHiddenFileSystems([]);
+        }
+      })
 
       .chapter('alice-pull-changes-settings', {
         before: function (_step, drawer) {
@@ -361,14 +405,7 @@ import {
       .chapter('alice-push-merge')
       .push('origin', 'main')
 
-      .chapter('bob-pull-merge-prepare', {
-        before: function (_step, drawer) {
-          drawer
-            .requireExtension(drawFileSystemExtensionPredicate)
-            .getViewStrategy()
-            .setHiddenFileSystems(['alice']);
-        }
-      })
+      .chapter('bob-pull-merge-prepare')
       .fileSystem('bob')
       .repo('bob-project')
 
