@@ -105,6 +105,7 @@ multiple points before integrating them.
 ---
 
 ### GitHub
+
 <!-- .element: class="hidden" -->
 
 <img class="w-1/2" src="../images/github.png" alt="GitHub" />
