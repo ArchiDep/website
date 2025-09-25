@@ -455,6 +455,12 @@ with this command:
 $> mv hi.txt people.txt
 ```
 
+{% note type: more %}
+
+The [`mv` (**m**o**v**e) command][mv] moves a source file to a target path.
+
+{% endnote %}
+
 Then see what Git tells you:
 
 ```bash
@@ -796,6 +802,7 @@ this if you have already shared this commit with others.
 [hash]: https://en.wikipedia.org/wiki/Hash_function
 [install-git]: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 [mercurial]: https://www.mercurial-scm.org/
+[mv]: https://en.wikipedia.org/wiki/Mv_(Unix)
 [rcs]: https://en.wikipedia.org/wiki/Revision_Control_System
 [sha1]: https://en.wikipedia.org/wiki/SHA-1
 [svn]: https://subversion.apache.org/
