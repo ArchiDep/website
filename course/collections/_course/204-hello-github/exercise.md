@@ -9,8 +9,9 @@ This tutorial is meant to be performed by a group of two. Throughout the rest of
 the document, the members of the group will be referred to as **Bob** and
 **Alice**.
 
-The tutorial assumes that you have followed the [previous Git
-tutorial][git-tutorial] and have kept your calculator repository.
+The tutorial follows the [previous Git branching tutorial][git-tutorial]. If you
+have done this demonstration on your computer, you can continue from there,
+otherwise we will provide a repository with the correct starting state.
 
 <!-- more -->
 
@@ -131,6 +132,25 @@ to remember which is which.)
 
 Let's start sharing stuff by pushing, cloning and pulling.
 
+### :question: Bob: clone the starting state
+
+If **Bob** has performed the [calculator exercise]({% link
+_course/202-git-branching/slides.md %}), he should continue from that
+repository. Otherwise, he should clone the [Hello GitHub exercise
+repository](https://github.com/ArchiDep/hello-github-ex) as a clean starting
+state:
+
+```bash
+$> git clone https://github.com/ArchiDep/hello-github-ex.git
+```
+
+Then move into the repository and delete the remote:
+
+```bash
+$> cd hello-github-ex
+$> git rm origin
+```
+
 ### :exclamation: Bob: create a repository on GitHub
 
 **Bob** should create a repository from the GitHub menu:
@@ -175,12 +195,16 @@ selected by default).
 remote:
 
 ```bash
-$> cd /path/to/projects/comem-archidep-git-branching
+$> cd /path/to/projects/git-branching-or-hello-github-ex
 
 $> git remote add origin git@github.com:bob/github-demo.git
 ```
 
+{% note type: more %}
+
 It's a convention to name the default remote **origin**.
+
+{% endnote %}
 
 You can check what remotes are available with `git remote`:
 
