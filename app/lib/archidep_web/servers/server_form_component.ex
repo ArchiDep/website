@@ -306,7 +306,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                       )
                     }
                   />
-                  <span class="label">{gettext("MB")} (±10%)</span>
+                  <span class="label">{gettext("MB")} (±20%)</span>
                 </label>
                 <.errors_for field={expected_properties_form[:memory]} />
                 {inherited_notice(
