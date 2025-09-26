@@ -96,6 +96,5 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
 
   defp to_keys_data([%ClassFormSshPublicKey{value: ""}]), do: []
 
-  defp to_keys_data(teacher_ssh_public_keys),
-    do: teacher_ssh_public_keys |> Enum.map(& &1.value) |> Enum.uniq()
+  defp to_keys_data(teacher_ssh_public_keys), do: Enum.map(teacher_ssh_public_keys, & &1.value)
 end

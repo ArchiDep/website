@@ -32,6 +32,8 @@ defmodule ArchiDep.Course.Schemas.Class do
           updated_at: DateTime.t()
         }
 
+  @max_ssh_key_length 2000
+
   schema "classes" do
     field(:name, :binary)
     field(:start_date, :date)
@@ -265,23 +267,52 @@ defmodule ArchiDep.Course.Schemas.Class do
     if changed?(changeset, field) do
       keys = get_field(changeset, field, [])
 
-      invalid_keys =
-        keys
-        |> Enum.with_index(1)
-        |> Enum.filter(fn {key, _index} ->
-          not String.match?(key, ~r/^ssh-(?:[^\s]+) [^\s]+/) or String.length(key) > 1000
-        end)
-        |> Enum.map(fn {_key, index} -> index end)
+      keys
+      |> Enum.with_index()
+      |> Enum.reduce({[], MapSet.new()}, fn {key, index}, {errors, seen} ->
+        {
+          [
+            if(MapSet.member?(seen, key), do: {:duplicate, index: index}),
+            if(not String.match?(key, ~r/^ssh-(?:[^\s]+) [^\s]+/),
+              do: {:malformed, index: index}
+            ),
+            if(String.length(key) > @max_ssh_key_length,
+              do:
+                {:too_long,
+                 index: index, actual: String.length(key), expected: @max_ssh_key_length}
+            )
+          ]
+          |> Enum.filter(& &1)
+          |> Enum.reduce(errors, fn err, acc -> [err | acc] end),
+          MapSet.put(seen, key)
+        }
+      end)
+      |> elem(0)
+      |> Enum.reduce(changeset, fn
+        {:duplicate, [index: index] = opts}, acc ->
+          add_error(
+            acc,
+            field,
+            "must not contain duplicate keys (key ##{index + 1} is a duplicate of a previous key)",
+            opts
+          )
 
-      if invalid_keys == [] do
-        changeset
-      else
-        add_error(
-          changeset,
-          field,
-          "contains invalid SSH public keys (positions: #{Enum.join(invalid_keys, ", ")})"
-        )
-      end
+        {:malformed, [index: index] = opts}, acc ->
+          add_error(
+            acc,
+            field,
+            "must contain valid SSH public keys (key ##{index + 1} does not start with 'ssh-<type>')",
+            opts
+          )
+
+        {:too_long, [index: index, actual: actual, expected: expected] = opts}, acc ->
+          add_error(
+            acc,
+            field,
+            "must contains keys at most #{expected} characters long (key ##{index + 1} is #{actual} characters long)",
+            opts
+          )
+      end)
     else
       changeset
     end

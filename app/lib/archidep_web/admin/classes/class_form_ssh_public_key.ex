@@ -26,7 +26,4 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormSshPublicKey do
       |> cast(params, [:value])
       |> update_change(:value, &trim/1)
       |> validate_required([:value])
-      |> validate_format(:value, ~r/^ssh-(rsa|ed25519|ecdsa) /,
-        message: "must start with 'ssh-rsa', 'ssh-ed25519' or 'ssh-ecdsa'"
-      )
 end

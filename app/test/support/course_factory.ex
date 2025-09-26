@@ -9,6 +9,7 @@ defmodule ArchiDep.Support.CourseFactory do
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Course.Types
   alias ArchiDep.Support.SSHFactory
 
   @spec class_factory(map()) :: Class.t()
@@ -67,6 +68,33 @@ defmodule ArchiDep.Support.CourseFactory do
       version: version,
       created_at: created_at,
       updated_at: updated_at
+    }
+  end
+
+  @spec class_data_factory(map()) :: Types.class_data()
+  def class_data_factory(attrs!) do
+    {name, attrs!} =
+      Map.pop_lazy(attrs!, :name, fn -> sequence(:class_name, &"Class #{&1}") end)
+
+    {start_date, attrs!} =
+      Map.pop_lazy(attrs!, :start_date, optionally(fn -> Faker.Date.backward(365) end))
+
+    {end_date, attrs!} =
+      Map.pop_lazy(attrs!, :end_date, optionally(fn -> Faker.Date.forward(365) end))
+
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+    {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
+    {teacher_ssh_public_keys, attrs!} = Map.pop(attrs!, :teacher_ssh_public_keys, [])
+
+    [] = Map.keys(attrs!)
+
+    %{
+      name: name,
+      start_date: start_date,
+      end_date: end_date,
+      active: active,
+      servers_enabled: servers_enabled,
+      teacher_ssh_public_keys: teacher_ssh_public_keys
     }
   end
 
