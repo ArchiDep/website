@@ -7,9 +7,29 @@ module ArchiDep
       .sub(/\A.*version:\s*"([^"]+?)".*\z/m, '\1')
       .strip
 
+  GIT_BRANCH =
+    (
+      if File.exist?(".git-branch")
+        File.read!(".git-branch").trim
+      else
+        `git rev-parse --abbrev-ref HEAD`.strip
+      end
+    )
+
+  GIT_REVISION =
+    (
+      if File.exist?(".git-revision")
+        File.read!(".git-revision")
+      else
+        `git rev-parse HEAD`.strip
+      end
+    )
+
   class Generator < Jekyll::Generator
     def generate(site)
       site.data["version"] = VERSION
+      site.data["git_branch"] = GIT_BRANCH
+      site.data["git_revision"] = GIT_REVISION
 
       course_docs = site.collections["course"].docs
       sections = site.data["course"]["sections"]

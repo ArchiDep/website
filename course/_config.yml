@@ -13,6 +13,7 @@ destination: '../app/priv/static'
 strict_front_matter: true
 archidep_standalone: false
 archidep_years: 2025-2026
+archidep_years_short: 25-26
 
 collections:
   cheatsheets:

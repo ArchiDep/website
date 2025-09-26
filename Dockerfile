@@ -158,6 +158,11 @@ COPY --chown=build:build ./app/mix.exs /build/app/mix.exs
 COPY --chown=build:build --from=course-assets /build/app/priv/static/assets/course/ /build/app/priv/static/assets/course/
 COPY --chown=build:build --from=digest /build/digest/priv/static/ /build/app/priv/static/
 
+COPY ./.git/ /tmp/.git/
+RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\///' > /build/course/.git-branch && \
+    touch /build/course/.git-dirty && \
+    cat /tmp/.git/HEAD | awk '{print "/tmp/.git/"$2}' | xargs cat > /build/course/.git-revision
+
 ENV JEKYLL_ENV=production
 
 RUN bundle exec jekyll build

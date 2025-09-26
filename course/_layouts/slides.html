@@ -51,9 +51,19 @@
 
     <div
       id='footer'
-      class='absolute bottom-4 left-0 right-0 text-center font-meta text-sm opacity-25 hover:opacity-100'
+      class='tooltip absolute bottom-4 left-0 right-0 text-center font-meta text-sm opacity-25 hover:opacity-100'
     >
-      <a href='https://archidep.ch' class='!no-underline hover:!underline'>ArchiDep {{ site.archidep_years }}</a>
+      <div class='tooltip-content'>
+        <ul class='list-none m-0 p-0'>
+          <li>Architecture & Deployment 2025-2026</li>
+          <li class='text-xs'>Git branch: {{ site.data.git_branch }}</li>
+          <li class='text-xs'>Rev: {{ site.data.git_revision }}</li>
+        </ul>
+      </div>
+      <a href='https://archidep.ch' class='!no-underline hover:!underline'>
+        ArchiDep {{ site.archidep_years_short }}
+        {{ site.data.git_branch }}@{{ site.data.git_revision | slice: 0, 7 }}
+      </a>
     </div>
   </body>
 </html>

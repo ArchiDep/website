@@ -20,7 +20,10 @@
         </span>
         <span class='font-title'>ArchiDep</span>
       </a>
-      <span class='font-title'>{{ site.data.version }}</span>
+      <span class='tooltip tooltip-left'>
+        <span class='tooltip-content'>{{ site.data.git_branch }}@{{ site.data.git_revision | slice: 0, 7 }}</span>
+        <span class='font-title'>{{ site.data.version }}</span>
+      </span>
     </p>
   </div>
 </footer>
