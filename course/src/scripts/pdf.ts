@@ -114,7 +114,7 @@ for (const doc of docsToExport) {
   const basename = [
     `ArchiDep ${doc.num} - ${doc.section.title} - ${doc.title}`,
     match(doc.course_type)
-      .with('subject', () => (doc.slides ? ' - Subject' : undefined))
+      .with('subject', () => ' - Subject')
       .with('slides', () => ' - Slides')
       .with('exercise', () => ' - Exercise')
       .with('cheatsheet', () => ' - Cheatsheet')
