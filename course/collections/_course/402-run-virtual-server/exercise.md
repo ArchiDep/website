@@ -19,7 +19,7 @@ Azure resources as a student.
 You can display your public SSH key in your terminal with the following command:
 
 ```bash
-$> cat ~/.ssh/id_e25519.pub
+$> cat ~/.ssh/id_ed25519.pub
 ```
 
 {% note type: tip %}
