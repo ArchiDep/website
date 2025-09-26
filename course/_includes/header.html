@@ -61,3 +61,22 @@
     {% endunless %}
   </div>
 </header>
+
+<div class='hidden print:block w-full'>
+  <ul class='list-none m-0 p-0 flex flex-wrap gap-2 text-xs text-base-content/50'>
+    <li>{{ site.archidep_years }}</li>
+    <li>
+      v{{ site.data.version }} on branch
+      <a href='{{ site.archidep_repo }}/tree/{{ site.data.git_branch }}'>{{ site.data.git_branch }}</a>
+    </li>
+    <li>
+      {% assign subpath = '/collections' %}
+      {% if page.url == '/' %}
+        {% assign subpath = '' %}
+      {% endif %}
+      <a href='{{ site.archidep_repo }}/blob/{{ site.data.git_revision }}/course{{ subpath }}/{{ page.path }}'>
+        Rev: {{ site.data.git_revision }}
+      </a>
+    </li>
+  </ul>
+</div>
