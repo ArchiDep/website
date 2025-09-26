@@ -230,7 +230,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     fake_facts = %{
-      "ansible_hostname" => "test-server",
+      "ansible_hostname" => "test",
+      "ansible_nodename" => "test-server",
       "ansible_machine_id" => "1234567890abcdef",
       "ansible_processor_count" => 2,
       "ansible_processor_cores" => 4,
@@ -389,7 +390,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     fake_facts = %{
-      "ansible_hostname" => "test-server",
+      "ansible_nodename" => "test-server",
       "ansible_machine_id" => "1234567890abcdef",
       "ansible_processor_count" => 2,
       "ansible_processor_cores" => 4,
@@ -545,7 +546,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     fake_facts = %{
-      "ansible_hostname" => "current-hostname",
+      "ansible_nodename" => "current-hostname",
       "ansible_machine_id" => "current-machine-id",
       "ansible_processor_count" => 1,
       "ansible_processor_cores" => 1,
@@ -680,7 +681,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     fake_facts = %{
-      "ansible_hostname" => "test-server",
+      "ansible_nodename" => "test-server",
       "ansible_machine_id" => "1234567890abcdef",
       "ansible_processor_count" => 4,
       "ansible_processor_cores" => 7,
@@ -856,7 +857,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     fake_facts = %{
-      "ansible_hostname" => "test-server",
+      "ansible_nodename" => "test-server",
       "ansible_machine_id" => "1234567890abcdef",
       "ansible_processor_count" => 4,
       "ansible_processor_cores" => 7,
@@ -1034,7 +1035,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     fake_facts = %{
-      "ansible_hostname" => "test-server",
+      "ansible_nodename" => "test-server",
       "ansible_machine_id" => "1234567890abcdef",
       "ansible_processor_count" => 4,
       "ansible_processor_cores" => 7,
@@ -1193,7 +1194,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     fake_facts = %{
-      "ansible_hostname" => "#{server.username}.#{server.owner.group_member.domain}",
+      "ansible_nodename" => "#{server.username}.#{server.owner.group_member.domain}",
       "ansible_machine_id" => "1234567890abcdef",
       "ansible_processor_count" => 2,
       "ansible_processor_cores" => 4,

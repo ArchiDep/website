@@ -140,7 +140,7 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
       server_properties
       |> cast(
         %{
-          hostname: facts["ansible_hostname"],
+          hostname: facts["ansible_nodename"],
           machine_id: facts["ansible_machine_id"],
           cpus: facts["ansible_processor_count"],
           cores: facts["ansible_processor_cores"],
