@@ -46,6 +46,8 @@
       {%- assign current_section = forloop.index -%}
       {% if section.progress == 'done' %}
         {% assign section_color = 'border-r-4 border-success/50 hover:border-success' %}
+      {% elsif section.progress == 'due' %}
+        {% assign section_color = 'border-r-4 border-warning/50 hover:border-warning' %}
       {% elsif section.progress == 'next' %}
         {% assign section_color = 'border-r-4 border-info/50 hover:border-info' %}
       {% else %}

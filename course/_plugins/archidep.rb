@@ -142,6 +142,8 @@ module ArchiDep
         section["progress"] = case section_num
         when *done_chapters
           "done"
+        when *due_chapters
+          "due"
         when *next_chapters
           "next"
         else
