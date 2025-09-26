@@ -269,8 +269,8 @@ system; it wraps and hides the lower-level kernel interface.
 
 Also a type of shell <!-- .element: class="subtitle" -->
 
-<div class="grid grid-cols-10">
-  <div class="col-span-6 col-start-3">
+<div class="grid grid-cols-12">
+  <div class="col-span-6 col-start-4">
     <img src="{{ 'images/xerox-star.jpg' | relative_file_url }}" alt="Shell">
   </div>
 </div>
