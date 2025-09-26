@@ -335,12 +335,14 @@ end
 Jekyll::Hooks.register :site, :post_write do |site|
   File.write(
     File.join(site.dest, "version.json"),
-    JSON.pretty_generate({
-      version: ArchiDep::VERSION,
-      git: {
-        branch: ArchiDep::GIT_BRANCH,
-        revision: ArchiDep::GIT_REVISION
+    JSON.pretty_generate(
+      {
+        version: ArchiDep::VERSION,
+        git: {
+          branch: ArchiDep::GIT_BRANCH,
+          revision: ArchiDep::GIT_REVISION
+        }
       }
-    })
+    )
   )
 end
