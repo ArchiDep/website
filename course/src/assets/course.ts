@@ -44,7 +44,8 @@ if (forceGitMemoirs) {
     root: null,
     rootMargin: '0px',
     scrollMargin: '0px',
-    threshold: 1.0
+    threshold: 0.25,
+    delay: 100
   };
 
   const observer = new IntersectionObserver(entries => {
