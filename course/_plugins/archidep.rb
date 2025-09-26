@@ -10,7 +10,7 @@ module ArchiDep
   GIT_BRANCH =
     (
       if File.exist?(".git-branch")
-        File.read!(".git-branch").trim
+        File.read(".git-branch").trim
       else
         `git rev-parse --abbrev-ref HEAD`.strip
       end
@@ -19,7 +19,7 @@ module ArchiDep
   GIT_REVISION =
     (
       if File.exist?(".git-revision")
-        File.read!(".git-revision")
+        File.read(".git-revision")
       else
         `git rev-parse HEAD`.strip
       end
