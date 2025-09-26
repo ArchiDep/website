@@ -35,7 +35,6 @@ book](https://git-scm.com/book/en/v2) (online & free).
   - [A successful branching model considered harmful](https://barro.github.io/2016/02/a-succesful-git-branching-model-considered-harmful/)
   - [Branch-per-feature](http://dymitruk.com/blog/2012/02/05/branch-per-feature/)
   - [Trunk-based development](https://trunkbaseddevelopment.com)
-- Use a [Git-aware prompt](https://github.com/magicmonty/bash-git-prompt)
 - Enable [Git Rerere](https://git-scm.com/book/en/v2/Git-Tools-Rerere)
 
 ## One-time configuration
