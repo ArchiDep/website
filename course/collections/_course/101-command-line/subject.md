@@ -521,7 +521,7 @@ $> cd /path/to/projects
 ```
 
 This means that you use **the path to the directory in which you store your projects**.
-For example, on John Doe's macOS system, it could be `/Users/jdoe/Projects`.
+For example, on John Doe's macOS system, it could be `/Users/jde/Projects`.
 
 {% note type: warning %}
 
@@ -1074,7 +1074,7 @@ Hello World
 ```bash
 $> cd
 $> pwd
-/Users/jdoe
+/Users/jde
 $> hello
 Hello World
 ```
@@ -1085,14 +1085,14 @@ And your CLI knows where it is:
 
 ```bash
 $> which hello
-/Users/jdoe/hello-program/bin/hello
+/Users/jde/hello-program/bin/hello
 ```
 
 It knows this because the directory containing the script is now in your PATH:
 
 ```bash
 $> echo $PATH
-/Users/jdoe/hello-program/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+/Users/jde/hello-program/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 ```
 
 #### What have I done?

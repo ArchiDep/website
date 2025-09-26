@@ -274,7 +274,7 @@ $> ls -la /root
 ls: cannot open directory '/root': Permission denied
 
 $> sudo ls -la /root
-[sudo] password for jdoe:
+[sudo] password for jde:
 drwx------  4 root root 4096 Sep 12 14:53 .
 drwxr-xr-x 24 root root 4096 Sep 12 14:44 ..
 -rw-------  1 root root  137 Sep 11 09:51 .bash_history
@@ -421,18 +421,18 @@ Each line in [`/etc/passwd`][etc-passwd] defines a user account, with data
 separated by semicolons:
 
 ```
-jdoe:x:500:500:jdoe:/home/jdoe:/bin/bash
+jde:x:500:500:jde:/home/jde:/bin/bash
 ```
 
-- **Username** (`jdoe`) - The name of the user account (used to log in)
+- **Username** (`jde`) - The name of the user account (used to log in)
 - **Password** (`x`) - User password (or `x` if it is stored in `/etc/shadow`)
 - **User ID (UID)** (`500`) - The numerical equivalent of the username
 - **Group ID (GID)** (`500`) - The numerical equivalent of the user's primary
   group name (often the same as the UID for most users, on a Unix system with
   default settings)
-- **GECOS** (`jdoe`) - Historical field used to store extra information (usually
+- **GECOS** (`jde`) - Historical field used to store extra information (usually
   the user's full name)
-- **Home directory** (`/home/jdoe`) - Absolute path to the user's home directory
+- **Home directory** (`/home/jde`) - Absolute path to the user's home directory
 - **Shell** (`/bin/bash`) - The program automatically launched whenever the user
   logs in (e.g. on a terminal or through SSH)
 
@@ -525,16 +525,16 @@ log in to the machine), you will need to use the `useradd` and `passwd`
 commands:
 
 ```bash
-$> sudo useradd -m -s /bin/bash jdoe
+$> sudo useradd -m -s /bin/bash jde
 
-$> sudo passwd jdoe
+$> sudo passwd jde
 Enter new UNIX password:
 Retype new UNIX password:
 passwd: password updated successfully
 ```
 
 The `-m` option to the `useradd` command instructs it to also create a ho**m**e
-directory for the user, which by default will be `/home/jdoe` in this case.
+directory for the user, which by default will be `/home/jde` in this case.
 
 The `-s` option specifies the user's login **s**hell. Since it defaults to a
 simple [Bourne shell][sh] (`/bin/sh`) on most systems, in this example we use
@@ -555,10 +555,10 @@ by looking at the last line of the relevant user database files:
 
 ```bash
 $> tail -n 1 /etc/passwd
-jdoe:x:1004:1004::/home/jdoe:/bin/bash
+jde:x:1004:1004::/home/jde:/bin/bash
 
 $> tail -n 1 /etc/group
-jdoe:x:1004:
+jde:x:1004:
 ```
 
 {% callout type: more, id: tail-and-uid-range %}
@@ -658,13 +658,13 @@ judicious use of the `usermod` command.
 
 Here's a few command examples for common administrative tasks:
 
-| Example                                  | Effect                                                                                                                                                  |
-| :--------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `usermod -a -G vip jdoe`                 | Add (**a**ppend) user `jdoe` to **g**roup `vip`.                                                                                                        |
-| `deluser jdoe vip`                       | Remove user `jdoe` from group `vip`.                                                                                                                    |
-| `userdel -r jdoe`                        | **R**emove user `jdoe` and its home directory                                                                                                           |
-| `passwd --lock jdoe`                     | Lock the password for user `jdoe` (note that it may still be possible for that user to log in using other authentication methods, such as a public key) |
-| `usermod --shell /usr/sbin/nologin jdoe` | Lock user `jdoe` out of the system (note that this will not disconnect the user if already connected, but it prevents future logins)                    |
+| Example                                 | Effect                                                                                                                                                 |
+| :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `usermod -a -G vip jde`                 | Add (**a**ppend) user `jde` to **g**roup `vip`.                                                                                                        |
+| `deluser jde vip`                       | Remove user `jde` from group `vip`.                                                                                                                    |
+| `userdel -r jde`                        | **R**emove user `jde` and its home directory                                                                                                           |
+| `passwd --lock jde`                     | Lock the password for user `jde` (note that it may still be possible for that user to log in using other authentication methods, such as a public key) |
+| `usermod --shell /usr/sbin/nologin jde` | Lock user `jde` out of the system (note that this will not disconnect the user if already connected, but it prevents future logins)                    |
 
 ## Permission management
 

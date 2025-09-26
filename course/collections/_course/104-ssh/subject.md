@@ -27,9 +27,9 @@ Here's a few examples:
 
 - `ssh example.com` - Connect to the SSH server at `example.com` and log in
   (with the same username as in your current shell).
-- `ssh jdoe@example.com` - Connect to the SSH server at `example.com` and log in
-  as user `jdoe`.
-- `ssh jdoe@192.168.50.4 hostname` - Run the `hostname` command as user `jdoe`
+- `ssh jde@example.com` - Connect to the SSH server at `example.com` and log in
+  as user `jde`.
+- `ssh jde@192.168.50.4 hostname` - Run the `hostname` command as user `jde`
   on the SSH server at `192.168.50.4`.
 
 Run `man ssh` to see available options (or just `ssh` in Git Bash).
@@ -170,18 +170,18 @@ to log in as**.
 
 How you authenticate depends on how the SSH server is configured. **Password
 authentication** is one method. When enabled, the SSH server will prompt you for
-the correct password; in this example, the password of the user named `jdoe` in
+the correct password; in this example, the password of the user named `jde` in
 the server's user database:
 
 ```bash
-$> ssh jdoe@192.168.50.4
+$> ssh jde@192.168.50.4
 
 The authenticity of host '192.168.50.4 (192.168.50.4)' can't be established.
 ECDSA key fingerprint is SHA256:E4GYJCEoz+G5wv+EdkPyRLytgP7aTj9BS9lr1d38Xg==.
 Are you sure you want to continue connecting (yes/no)? yes
 Warning: Permanently added '192.168.50.4' (ECDSA) to the list of known hosts.
 
-jdoe@192.168.50.4's password:
+jde@192.168.50.4's password:
 ```
 
 {% note type: tip %}
@@ -198,8 +198,8 @@ password, **SSH will run the default [shell][shell]** configured for that user,
 typically [Bash][bash] on Linux servers:
 
 ```bash
-$> ssh jdoe@192.168.50.4
-jdoe@192.168.50.4's password:
+$> ssh jde@192.168.50.4
+jde@192.168.50.4's password:
 Welcome to Ubuntu 18.04.1 LTS (GNU/Linux 4.15.0-33-generic x86_64)
 
   System information as of Wed Oct 21 04:29:00 UTC 2015
@@ -249,8 +249,8 @@ name of the current machine:
 $> hostname
 MyComputer.local
 
-$> ssh jdoe@192.168.50.4
-jdoe@192.168.50.4's password:
+$> ssh jde@192.168.50.4
+jde@192.168.50.4's password:
 
 $ hostname
 example.com
@@ -274,7 +274,7 @@ Run this from your local shell:
 $> hostname
 MyComputer.local
 
-$> ssh jdoe@192.168.50.4 echo Hello World
+$> ssh jde@192.168.50.4 echo Hello World
 Hello World
 
 $> hostname
@@ -355,7 +355,7 @@ the private key file you want to use:
 
 ```bash
 $> ssh-keygen -f custom_key
-$> ssh -i ~/.ssh/custom_key jdoe@192.168.50.4
+$> ssh -i ~/.ssh/custom_key jde@192.168.50.4
 ```
 
 {% note %}

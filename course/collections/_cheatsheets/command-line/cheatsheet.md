@@ -16,7 +16,7 @@ Use the `history` command to list all the commands you previously typed:
 $> history
 24 ls
 25 cd foo
-26 ssh jdoe@archidep.ch
+26 ssh jde@archidep.ch
 27 cat file.txt
 ```
 
@@ -25,7 +25,7 @@ followed by that number to retrieve the command:
 
 ```bash
 $> !26
-$> ssh jdoe@archidep.ch
+$> ssh jde@archidep.ch
 ```
 
 If you're looking for a specific command, you can filter your command history by
@@ -36,7 +36,7 @@ commands containing the word "ssh" in your history:
 $> history | grep ssh
 19 ssh-keygen --help
 20 ssh-keygen
-26 ssh jdoe@archidep.ch
+26 ssh jde@archidep.ch
 ```
 
 ## Getting help (`man`, `--help`)
@@ -54,7 +54,7 @@ Use the `pwd` command, meaning **p**rint **w**orking **d**irectory:
 
 ```bash
 $> pwd
-/Users/jdoe/Downloads
+/Users/jde/Downloads
 ```
 
 ### What is there? (`ls`)
