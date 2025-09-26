@@ -674,17 +674,11 @@ If you are using Git Bash, it's `/c` instead of `/mnt/c`.
 **Copy/Paste**
 
 Since `Ctrl-C` is used to stop the current process, it **can't** be used as a
-shortcut to copy things from the CLI. Instead, Git Bash has two custom
-shortcuts:
+shortcut to copy things from the CLI. Instead, the **W**indows **S**ubsystem for
+**L**inux (WSL) has two custom shortcuts:
 
-- `Ctrl-Insert` to **copy** things from the CLI
-
-  You can also simply **select any text** in Git Bash and it will automatically
-  be copied to your clipboard.
-
-- `Shift-Insert` to **paste** things to the CLI
-
-  Or use **Right-click & Paste** if you don't have an `Insert` key.
+- `Shift-Ctrl-C` to **copy** things from the CLI
+- `Shift-Ctrl-P` to **paste** things to the CLI
 
 ## Vim
 
