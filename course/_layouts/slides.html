@@ -39,13 +39,21 @@
       </a>
 
       <a
+        href='{{ site.archidep_repo }}/blob/{{ site.data.git_revision }}/course/collections/{{ page.path }}'
+        class='tooltip'
+        data-tip='Source code'
+      >
+        {%- include icons/github.html class="size-6 opacity-50 hover:opacity-100" -%}
+      </a>
+
+      <a
         id='download-pdf'
         href='{{ site.baseurl }}/pdf/ArchiDep {{ page.num }} - {{ page.section_title }} - {{ page.title }} - Slides.pdf'
         class='print:hidden tooltip'
         data-tip='Download PDF'
         download
       >
-        {%- include icons/document-arrow-down.html class="size-6 opacity-25 hover:opacity-100" -%}
+        {%- include icons/document-arrow-down.html class="size-6 opacity-50 hover:opacity-100" -%}
       </a>
     </div>
 
@@ -54,7 +62,7 @@
       class='tooltip absolute bottom-4 left-0 right-0 text-center font-meta text-sm opacity-25 hover:opacity-100'
     >
       <div class='tooltip-content'>
-        <ul class='list-none m-0 p-0'>
+        <ul class='list-none m-0 p-0 flex flex-col gap-1'>
           <li>Architecture & Deployment 2025-2026</li>
           <li class='text-xs'>Git branch: {{ site.data.git_branch }}</li>
           <li class='text-xs'>Rev: {{ site.data.git_revision }}</li>
