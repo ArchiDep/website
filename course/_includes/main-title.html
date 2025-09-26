@@ -1,12 +1,14 @@
-<div class='flex items-center gap-4'>
-  <img src='{{ "/favicons/archidep-512-flat.png" | relative_url }}' alt='ArchiDep logo' class='!m-0 w-40'>
+<div class='flex flex-wrap xs:flex-nowrap items-center gap-4'>
+  <div class='flex items-center gap-4'>
+    <img src='{{ "/favicons/archidep-512-flat.png" | relative_url }}' alt='ArchiDep logo' class='!m-0 w-40'>
+  </div>
   <div>
     <h1 class='text-2xl md:text-2xl lg:text-3xl xl:text-3xl 2xl:text-5xl !mb-0 dark:text-white print:hidden'>
       Architecture & Deployment
     </h1>
     <div class='flex flex-wrap 2xl:flex-nowrap items-center gap-x-4 gap-y-2'>
       <span class='flex items-center gap-2'>
-        <a href='https://heig-vd.ch/' target='_blank'>
+        <a href='https://heig-vd.ch' target='_blank'>
           <img src='{{ "/favicons/heig.png" | relative_url }}' alt='HEIG-VD logo' class='!m-0 w-8'>
         </a>
         <small class='text-xl font-title whitespace-normal sm:whitespace-nowrap'>
@@ -22,11 +24,12 @@
         </small>
       </span>
 
-      <ul class='not-prose flex flex-wrap md:flex-nowrap items-center gap-x-2 gap-y-1'>
+      <ul class='not-prose flex flex-wrap md:flex-nowrap items-center gap-2'>
         {% unless site.archidep_standalone %}
           <li class='print:hidden'>
             <a href='https://status.archidep.ch'>
               <img
+                class='!m-0'
                 src='https://status.archidep.ch/badge/_/status?labelColor=&color=&style=flat&label=status'
                 alt='Status'
               >
@@ -34,13 +37,21 @@
           </li>
           <li class='print:hidden'>
             <a href='https://github.com/ArchiDep/website/actions/workflows/build.yml'>
-              <img src='https://github.com/ArchiDep/website/actions/workflows/build.yml/badge.svg' alt='Build'>
+              <img
+                class='!m-0'
+                src='https://github.com/ArchiDep/website/actions/workflows/build.yml/badge.svg'
+                alt='Build'
+              >
             </a>
           </li>
         {% endunless %}
         <li>
           <a href='https://opensource.org/licenses/MIT'>
-            <img src='https://img.shields.io/static/v1?label=license&message=MIT&color=informational' alt='MIT License'>
+            <img
+              class='!m-0'
+              src='https://img.shields.io/static/v1?label=license&message=MIT&color=informational'
+              alt='MIT License'
+            >
           </a>
         </li>
       </ul>

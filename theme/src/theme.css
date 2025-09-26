@@ -9,6 +9,7 @@
 }
 
 @theme {
+  --breakpoint-xs: 30rem;
   --font-title: 'Bitcount Prop Single', 'PT Sans', sans-serif;
 }
 
