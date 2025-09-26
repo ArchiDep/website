@@ -174,12 +174,14 @@ module ArchiDep
       last_due =
         progress_docs.reverse.find { |doc| doc.data["due"] }&.data&.[]("due") ||
           []
-      next_due_exercises =
+      next_due_chapters =
         course_docs.select do |doc|
-          doc.data["course_type"] == "exercise" &&
-            last_due.include?(doc.data["num"])
+          (
+            doc.data["course_type"] == "subject" ||
+              doc.data["course_type"] == "exercise"
+          ) && last_due.include?(doc.data["num"])
         end
-      home_page_doc.data["next_due_exercises"] = next_due_exercises
+      home_page_doc.data["next_due_exercises"] = next_due_chapters
 
       next_chapter_nums =
         progress_docs
