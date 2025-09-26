@@ -268,7 +268,9 @@ defmodule ArchiDep.Course.Schemas.Class do
       invalid_keys =
         keys
         |> Enum.with_index(1)
-        |> Enum.filter(fn {key, _index} -> not String.match?(key, ~r/^ssh-(?:[^\s]+) [^\s]+/) end)
+        |> Enum.filter(fn {key, _index} ->
+          not String.match?(key, ~r/^ssh-(?:[^\s]+) [^\s]+/) or String.length(key) > 1000
+        end)
         |> Enum.map(fn {_key, index} -> index end)
 
       if invalid_keys == [] do
