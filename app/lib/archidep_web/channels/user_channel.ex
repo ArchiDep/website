@@ -11,6 +11,9 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDepWeb.ClientCloudServerData
   alias ArchiDepWeb.ClientSessionData
   alias Phoenix.Channel
@@ -51,6 +54,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
         {:class_updated, %Class{id: id} = updated_class, _event},
         %Socket{
           assigns: %{
+            active_servers: active_servers,
             student: %Student{class: %Class{id: id} = current_class} = student
           }
         } = socket
@@ -58,6 +62,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
       do:
         socket
         |> assign(
+          active_servers: update_class_of_active_servers(active_servers, updated_class),
           student: %Student{student | class: Class.refresh!(current_class, updated_class)}
         )
         |> send_active_server_data()
@@ -65,14 +70,17 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
   @impl Channel
   def handle_info(
-        {:class_deleted, %Class{id: id}},
+        {:class_deleted, %Class{id: id} = deleted_class},
         %Socket{
-          assigns: %{student: %Student{class: %Class{id: id}}}
+          assigns: %{active_servers: active_servers, student: %Student{class: %Class{id: id}}}
         } = socket
       ),
       do:
         socket
-        |> assign(student: nil)
+        |> assign(
+          active_servers: remove_active_servers_of_class(active_servers, deleted_class),
+          student: nil
+        )
         |> send_active_server_data()
         |> noreply()
 
@@ -81,26 +89,33 @@ defmodule ArchiDepWeb.Channels.UserChannel do
         {:student_updated, %Student{id: id} = updated_student},
         %Socket{
           assigns: %{
+            active_servers: active_servers,
             student: %Student{id: id} = student
           }
         } = socket
       ),
       do:
         socket
-        |> assign(student: Student.refresh!(student, updated_student))
+        |> assign(
+          active_servers: update_student_of_active_servers(active_servers, updated_student),
+          student: Student.refresh!(student, updated_student)
+        )
         |> send_active_server_data()
         |> noreply()
 
   @impl Channel
   def handle_info(
-        {:student_deleted, %Student{id: student_id}},
+        {:student_deleted, %Student{id: student_id} = deleted_student},
         %Socket{
-          assigns: %{student: %Student{id: student_id}}
+          assigns: %{active_servers: active_servers, student: %Student{id: student_id}}
         } = socket
       ),
       do:
         socket
-        |> assign(student: nil)
+        |> assign(
+          active_servers: remove_active_servers_of_student(active_servers, deleted_student),
+          student: nil
+        )
         |> send_active_server_data()
         |> noreply()
 
@@ -157,6 +172,52 @@ defmodule ArchiDepWeb.Channels.UserChannel do
         |> assign(active_servers: delete_server(active_servers, deleted_server))
         |> send_active_server_data()
         |> noreply()
+
+  defp update_class_of_active_servers(active_servers, %Class{id: class_id} = updated_class),
+    do:
+      Enum.map(active_servers, fn
+        %Server{group: %ServerGroup{id: ^class_id} = group} = server ->
+          %Server{server | group: ServerGroup.refresh!(group, updated_class)}
+
+        server ->
+          server
+      end)
+
+  defp remove_active_servers_of_class(active_servers, %Class{id: class_id}),
+    do: Enum.reject(active_servers, &(&1.group_id == class_id))
+
+  defp update_student_of_active_servers(
+         active_servers,
+         %Student{id: student_id} = updated_student
+       ),
+       do:
+         Enum.map(active_servers, fn
+           %Server{
+             owner: %ServerOwner{group_member: %ServerGroupMember{id: ^student_id} = group_member}
+           } = server ->
+             %Server{
+               server
+               | owner: %ServerOwner{
+                   server.owner
+                   | group_member: ServerGroupMember.refresh!(group_member, updated_student)
+                 }
+             }
+
+           server ->
+             server
+         end)
+
+  defp remove_active_servers_of_student(active_servers, %Student{id: student_id}),
+    do:
+      Enum.reject(active_servers, fn
+        %Server{
+          owner: %ServerOwner{group_member: %ServerGroupMember{id: ^student_id}}
+        } ->
+          true
+
+        _other ->
+          false
+      end)
 
   defp send_active_server_data(
          %Socket{
