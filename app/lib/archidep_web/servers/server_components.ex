@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   use ArchiDepWeb, :component
 
+  import ArchiDep.Helpers.LoadingHelpers
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDepWeb.Helpers.AuthHelpers
   alias ArchiDep.Authentication
@@ -313,7 +314,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     do: gettext("Setting up application user")
 
   defp server_card_body(connected_state(), :gathering_facts, _auth, _server),
-    do: gettext("Gathering facts")
+    do: random_loading_message()
 
   defp server_card_body(connected_state(), :checking_open_ports, _auth, _server),
     do: gettext("Checking open ports")

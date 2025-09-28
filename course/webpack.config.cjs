@@ -9,7 +9,13 @@ const baseConfig = {
   devtool: 'source-map',
   mode: production ? 'production' : 'development',
   resolve: {
-    extensions: ['.js', '.ts']
+    alias: {
+      react: 'preact/compat',
+      'react-dom/test-utils': 'preact/test-utils',
+      'react-dom': 'preact/compat', // Must be below test-utils
+      'react/jsx-runtime': 'preact/jsx-runtime'
+    },
+    extensions: ['.js', '.ts', '.tsx']
   }
 };
 
@@ -35,7 +41,7 @@ module.exports = [
           type: 'asset/source'
         },
         {
-          test: /\.ts$/,
+          test: /\.tsx?$/,
           use: {
             loader: 'ts-loader',
             options: {
@@ -80,7 +86,7 @@ module.exports = [
           type: 'asset/source'
         },
         {
-          test: /\.ts$/,
+          test: /\.tsx?$/,
           use: {
             loader: 'ts-loader',
             options: {

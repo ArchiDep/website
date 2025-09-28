@@ -25,13 +25,12 @@ defmodule ArchiDepWeb.ClientSessionData do
         session_id: session_id,
         session_expires_at: session_expires_at,
         impersonated_id: impersonated_id
-      }) do
-    %__MODULE__{
-      username: username,
-      root: root,
-      impersonating: impersonated_id != nil,
-      sessionId: session_id,
-      sessionExpiresAt: DateTime.to_iso8601(session_expires_at)
-    }
-  end
+      }),
+      do: %__MODULE__{
+        username: username,
+        root: root,
+        impersonating: impersonated_id != nil,
+        sessionId: session_id,
+        sessionExpiresAt: DateTime.to_iso8601(session_expires_at)
+      }
 end

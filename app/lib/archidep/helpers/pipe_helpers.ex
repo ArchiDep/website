@@ -68,6 +68,20 @@ defmodule ArchiDep.Helpers.PipeHelpers do
   def ok(value, extra), do: {:ok, value, extra}
 
   @doc """
+  Wraps a value in an OK tuple with an additional value before the first value.
+
+  ## Examples
+
+      iex> import ArchiDep.Helpers.PipeHelpers
+      iex> ok_with(42, foo: :bar)
+      {:ok, [foo: :bar], 42}
+      iex> ok_with(nil, :foo)
+      {:ok, :foo, nil}
+  """
+  @spec ok_with(term, term) :: {:ok, term, term}
+  def ok_with(value, extra), do: {:ok, extra, value}
+
+  @doc """
   Wraps a value in an error tuple.
 
   ## Examples

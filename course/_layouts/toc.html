@@ -28,6 +28,16 @@ layout: base
         </nav>
       </div>
 
+      {% if page.cloud_server %}
+        <div class='pt-2 sticky top-0'>
+          <div
+            class='cloud-server-data not-prose xl:hidden'
+            data-mode='{{ page.cloud_server }}'
+            data-layout='horizontal'
+          ></div>
+        </div>
+      {% endif %}
+
       {{ content | remove_first: page.excerpt }}
     </main>
   </div>
@@ -98,9 +108,15 @@ layout: base
         {%- include icons/github.html class="size-6 opacity-50 hover:opacity-100" -%}
       </a>
     </div>
-    <a href='#top' id='back-to-top' class='btn btn-ghost btn-sm mt-2 sticky top-0'>
-      {%- include icons/arrow-up.html class="size-4" -%}
-      Back to top
-    </a>
+    <div class='pt-2 sticky top-0'>
+      {% if page.cloud_server %}
+        <div class='cloud-server-data' data-mode='{{ page.cloud_server }}'></div>
+      {% endif %}
+
+      <a href='#top' id='back-to-top' class='btn btn-ghost btn-sm'>
+        {%- include icons/arrow-up.html class="size-4" -%}
+        Back to top
+      </a>
+    </div>
   </aside>
 </div>

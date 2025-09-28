@@ -1,25 +1,27 @@
 import { G, O, pipe } from '@mobily/ts-belt';
 import { init } from '@plausible-analytics/tracker';
-import { computed, effect, signal } from '@preact/signals-core';
+import { effect } from '@preact/signals';
+import ClipboardJS from 'clipboard';
 import { isRight } from 'fp-ts/lib/Either';
-import * as t from 'io-ts';
-import { DateTime } from 'luxon';
 import { Socket } from 'phoenix';
 
-import { iso8601DateTime } from '../shared/codecs/iso8601-date-time';
-import { parseJsonSafe, required, toggleClass } from './utils';
-import { HttpAuthenticationError } from './errors';
-import './course/tell-me-more';
 import './course/back-to-top';
+import { cloudServer, cloudServerDataType } from './course/cloud-server';
 import './course/search';
+import { me, root, sessionType } from './course/session';
+import './course/tell-me-more';
 import './course/toc';
-import log from './logging';
-import './git-memoir/git-memoirs-registry';
+import { HttpAuthenticationError } from './errors';
 import { GitMemoirController } from './git-memoir/git-memoir-controller';
+import './git-memoir/git-memoirs-registry';
+import log from './logging';
+import { required, toggleClass } from './utils';
 
 const logger = log.getLogger('course');
 
 logger.info('ArchiDep 🚀');
+
+new ClipboardJS('[data-clipboard-target], [data-clipboard-text]');
 
 const standalone =
   document.querySelector('head')?.dataset['archidepStandalone'] === 'true';
@@ -60,38 +62,6 @@ if (forceGitMemoirs) {
 }
 
 window['logOut'] = logOut;
-
-const sessionType = t.readonly(
-  t.intersection([
-    t.exact(
-      t.type({
-        root: t.boolean,
-        impersonating: t.boolean,
-        sessionExpiresAt: iso8601DateTime
-      })
-    ),
-    t.exact(
-      t.partial({
-        username: t.union([t.string, t.null])
-      })
-    )
-  ])
-);
-
-type Session = t.TypeOf<typeof sessionType>;
-
-const cachedSessionString = window.localStorage.getItem('archidep:session');
-const decodedCachedSession = pipe(
-  O.fromNullable(cachedSessionString),
-  O.mapNullable(parseJsonSafe),
-  O.map(sessionType.decode),
-  O.flatMap(decoded => (isRight(decoded) ? O.Some(decoded.right) : O.None)),
-  O.filter(session => session.sessionExpiresAt > DateTime.now()),
-  O.toUndefined
-);
-
-const me = signal<Session | undefined>(decodedCachedSession);
-const root = computed(() => me.value?.root === true);
 
 if (!standalone) {
   const $sidebarAdminItem = required(
@@ -215,6 +185,18 @@ function connectSocket(): void {
       socket.connect();
 
       const channel = socket.channel('me', {});
+
+      channel.on('cloudServerData', payload => {
+        cloudServer.value = pipe(
+          O.fromNullable(payload),
+          O.map(cloudServerDataType.decode),
+          O.flatMap(decoded =>
+            isRight(decoded) ? O.Some(decoded.right) : O.None
+          ),
+          O.toUndefined
+        );
+      });
+
       channel
         .join()
         .receive('ok', resp => {

@@ -1,5 +1,6 @@
 ---
 title: Run your own virtual server on Microsoft Azure
+cloud_server: creation
 ---
 
 This guide describes how to run a virtual server appropriate for the Media
@@ -87,14 +88,19 @@ cheapest.
 
 #### :exclamation: Configure your administator account
 
-Under the **Administrator account** settings, configure your username. Replace
-`jde` in this screenshot with the username you have selected for the course:
+Under the **Administrator account** settings, configure your username.
+
+{% callout type: exercise %}
+
+Replace `jde` with the username you have selected for the course.
+
+{% endcallout %}
 
 ![Azure: VM SSH admin settings](images/azure-vm-admin-settings.png)
 
-Select **SSH public key** authentication, set the source to Use existing public
-key, and paste your public SSH key (the one you copied earlier) in the text
-area.
+Select **SSH public key** authentication, set the source to **Use existing
+public key**, and paste your public SSH key (the one you copied earlier) in the
+text area.
 
 {% note type: warning %}
 
@@ -321,7 +327,7 @@ $> echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB1TC4ygWjzpRemdOyrtqQYmOARxMMks71f
 {% note type: more %}
 
 This adds the teacher's public SSH key to your user's `~/.ssh/authorized_keys`,
-allowing the teacher to also authenticate to your virtual server with his
+allowing the teachers to also authenticate to your virtual server with their
 private SSH key to help debug issues.
 
 {% endnote %}
