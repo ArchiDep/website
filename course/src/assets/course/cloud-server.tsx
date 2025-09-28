@@ -320,7 +320,7 @@ function CloudServerDetails({
   const instructionsClass = layout === 'horizontal' ? 'sr-only' : 'mb-4';
   const instructions =
     mode === 'creation'
-      ? "Congratulations! You've successfully set up your cloud server:"
+      ? "Congratulations! You've successfully set up your cloud server."
       : [
           'Here are the connection details for your cloud server',
           pipe(
@@ -331,7 +331,7 @@ function CloudServerDetails({
           '.'
         ]
           .filter(G.isNotNullable)
-          .join(':');
+          .join('');
 
   let cardProps = cloudServerCardSuccessProps;
   if (layout === 'horizontal') {

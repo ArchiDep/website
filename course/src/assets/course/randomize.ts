@@ -47,6 +47,15 @@ class Randomizer {
       return undefined;
     }
 
+    const tooltipEnabled = element.dataset['tooltip'] ?? 'true';
+    if (tooltipEnabled !== 'false' && tooltipEnabled !== 'true') {
+      logger.warn(
+        `Cannot create a randomizer for element with ID ${id} because its data-tooltip attribute is not "true" or "false" (got "${tooltipEnabled}")`,
+        element
+      );
+      return undefined;
+    }
+
     const codeElement =
       document.querySelector<HTMLElement>(`#${id} + * code`) ?? undefined;
     if (!codeElement) {
@@ -63,10 +72,12 @@ class Randomizer {
       template
     );
 
-    const parent = codeElement.parentElement?.parentElement?.parentElement;
-    if (parent) {
-      parent.classList.add('tooltip', 'block');
-      parent.dataset['tip'] = 'Copy-pasting this seems like a bad idea...';
+    if (tooltipEnabled === 'true') {
+      const parent = codeElement.parentElement?.parentElement?.parentElement;
+      if (parent) {
+        parent.classList.add('tooltip', 'tooltip-accent', 'block');
+        parent.dataset['tip'] = 'Remember to change the values!';
+      }
     }
 
     codeElement[randomizerKey] = randomizer;
@@ -81,27 +92,7 @@ class Randomizer {
     private readonly regexp: RegExp,
     private readonly template: string
   ) {
-    this.#textNodes = Array.from(codeElement.childNodes).reduce(
-      (acc, node) => {
-        if (node.nodeType !== Node.TEXT_NODE) {
-          return acc;
-        }
-
-        const textContent = node.textContent;
-        if (!textContent) {
-          return acc;
-        }
-
-        const match = regexp.exec(textContent);
-        if (!match) {
-          return acc;
-        }
-
-        return [...acc, [node, textContent, match?.groups ?? {}] as const];
-      },
-      [] as readonly [ChildNode, string, Record<string, string>][]
-    );
-
+    this.#textNodes = findChildNodesMatching(codeElement, regexp);
     this.initialize();
   }
 
@@ -113,12 +104,15 @@ class Randomizer {
             ? 'jde'
             : this.#randomizeUsername(replacements['username']);
         const ipAddress = this.#randomizeIpAddress(replacements['ipAddress']);
+        const domain = this.#randomizeDomain(replacements['domain']);
         replacements['ipAddress'] = ipAddress;
         replacements['username'] = username;
+        replacements['domain'] = domain;
 
         const text = this.template
           .replace('<username>', username)
-          .replace('<ipAddress>', ipAddress);
+          .replace('<ipAddress>', ipAddress)
+          .replace('<domain>', domain);
 
         node.textContent = originalText.replace(this.regexp, text);
 
@@ -130,39 +124,44 @@ class Randomizer {
   randomize(): void {
     this.#textNodes = this.#textNodes.map(
       ([node, originalText, replacements]) => {
-        if (chance.bool()) {
+        const part = shuffle(
+          ['username', 'ipAddress', 'domain'].filter(
+            part => part in replacements
+          )
+        )[0];
+
+        if (part === 'username') {
           replacements['username'] = this.#randomizeUsername(
             replacements['username']
           );
-        } else {
+        } else if (part === 'ipAddress') {
           replacements['ipAddress'] = this.#randomizeIpAddress(
             replacements['ipAddress']
+          );
+        } else if (part === 'domain') {
+          replacements['domain'] = this.#randomizeDomain(
+            replacements['domain']
           );
         }
 
         const username = replacements['username'] ?? this.#randomizeUsername();
         const ipAddress =
           replacements['ipAddress'] ?? this.#randomizeIpAddress();
+        const domain = replacements['domain'] ?? this.#randomizeDomain();
         replacements['username'] = username;
         replacements['ipAddress'] = ipAddress;
+        replacements['domain'] = domain;
 
         const text = this.template
           .replace('<username>', username)
-          .replace('<ipAddress>', ipAddress);
+          .replace('<ipAddress>', ipAddress)
+          .replace('<domain>', domain);
 
         node.textContent = originalText.replace(this.regexp, text);
 
         return [node, originalText, replacements] as const;
       }
     );
-  }
-
-  reset(): void {
-    this.#textNodes = this.#textNodes.map(([node, originalText]) => {
-      node.textContent = originalText;
-      const match = this.regexp.exec(originalText);
-      return [node, originalText, match?.groups ?? {}] as const;
-    });
   }
 
   #randomizeUsername(previousUsername?: string): string {
@@ -268,6 +267,25 @@ class Randomizer {
 
     return parts.join('.');
   }
+
+  #randomizeDomain(previousDomain?: string): string {
+    if (previousDomain === undefined) {
+      return `archidep${randomDigit()}.ch`;
+    }
+
+    const [domain, tld, ...rest] = previousDomain.split('.');
+    if (domain === undefined || tld === undefined || rest.length !== 0) {
+      return previousDomain;
+    }
+
+    if (chance.bool()) {
+      return `${domain}.${tld}`;
+    } else if (!domain.startsWith('archidep')) {
+      return `archidep${randomDigit()}.${tld}`;
+    }
+
+    return `archidep${randomDigit(domain[8])}.${tld}`;
+  }
 }
 
 const randomizeElements = document.getElementsByClassName(
@@ -284,13 +302,25 @@ function setUpRandomizers(elements: HTMLCollectionOf<HTMLElement>) {
     root: null,
     rootMargin: '0px',
     scrollMargin: '0px',
-    threshold: 0.1
+    threshold: 0.5
   };
 
   const observer = new IntersectionObserver(entries => {
-    currentElements.value = entries
-      .filter(entry => entry.isIntersecting)
-      .map(entry => entry.target as HTMLElement);
+    const currentEls = currentElements.value;
+    const hiddenEntries = entries.filter(entry => !entry.isIntersecting);
+    const stillVisible = currentEls.filter(
+      el => !hiddenEntries.some(he => he.target === el)
+    );
+    currentElements.value = [
+      ...stillVisible,
+      ...entries
+        .filter(
+          entry =>
+            entry.isIntersecting &&
+            !stillVisible.includes(entry.target as HTMLElement)
+        )
+        .map(entry => entry.target as HTMLElement)
+    ];
   }, options);
 
   for (const el of elements) {
@@ -317,17 +347,41 @@ function setUpRandomizers(elements: HTMLCollectionOf<HTMLElement>) {
       }
     }, 350);
 
-    return () => {
-      for (const el of els) {
-        const randomizer = el[randomizerKey];
-        if (randomizer instanceof Randomizer) {
-          randomizer.reset();
-        }
-      }
-
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   });
+}
+
+function findChildNodesMatching(
+  node: Node,
+  regexp: RegExp
+): readonly [ChildNode, string, Readonly<Record<string, string>>][] {
+  const matchingNodes: [ChildNode, string, Readonly<Record<string, string>>][] =
+    [];
+  for (const childNode of node.childNodes) {
+    if (childNode.nodeType === Node.ELEMENT_NODE) {
+      matchingNodes.push(
+        ...findChildNodesMatching(childNode as HTMLElement, regexp)
+      );
+      continue;
+    } else if (childNode.nodeType !== Node.TEXT_NODE) {
+      continue;
+    }
+
+    const textContent = childNode.textContent;
+    if (!textContent) {
+      continue;
+    }
+
+    const match = regexp.exec(textContent);
+    if (!match) {
+      continue;
+    }
+
+    console.debug('@@@ child text node', childNode);
+    matchingNodes.push([childNode, textContent, match?.groups ?? {}] as const);
+  }
+
+  return matchingNodes;
 }
 
 function randomAlphabeticChar(): string {
@@ -342,6 +396,15 @@ function randomAlphanumericChar(not?: string): string {
   });
   if (random === not) {
     return randomAlphanumericChar(not);
+  }
+
+  return random;
+}
+
+function randomDigit(not?: string): string {
+  const random = chance.character({ numeric: true });
+  if (random === not) {
+    return randomDigit(not);
   }
 
   return random;

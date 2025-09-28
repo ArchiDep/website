@@ -297,14 +297,10 @@ purposes of the course.
 
 ### :exclamation: Connect to your new virtual machine over SSH
 
-{% callout type: exercise %}
-
 Connect to your virtual machine using the `ssh <username>@<host>` command,
-replacing `<username>` with the username you chose for the course (and used for
-the machine's administrator account), and `<host>` with the IP address you
-copied from the virtual machine's information.
-
-{% endcallout %}
+replacing `<username>` with the username you chose for the course (the one you
+used for the machine's administrator account), and `<host>` with the IP address
+you copied from the virtual machine's information.
 
 <div
   class="archidep-randomize"
@@ -312,7 +308,7 @@ copied from the virtual machine's information.
   data-template="<username>@<ipAddress>"></div>
 
 ```bash
-$> ssh jde@ST.U.VW.XYZ
+$> ssh jde@87.65.43.210
 ```
 
 {% note type: more %}
@@ -356,12 +352,22 @@ pick the same username/domain combination as someone else in the class.
 
 {% endnote %}
 
+<div
+  class="archidep-randomize"
+  data-regexp="(?<username>[a-z][a-z0-9]+)\.(?<domain>archidep[0-9]\.ch)"
+  data-template="<username>.<domain>"></div>
+
 ```bash
 $> sudo hostname jde.archidep2.ch
 ```
 
 Also save your new hostname to the `/etc/hostname` file so that it will persist
 when you reboot the server:
+
+<div
+  class="archidep-randomize"
+  data-regexp="(?<username>[a-z][a-z0-9]+)\.(?<domain>archidep[0-9]\.ch)"
+  data-template="<username>.<domain>"></div>
 
 ```bash
 $> echo "jde.archidep2.ch" | sudo tee /etc/hostname
@@ -386,15 +392,30 @@ $> sudo reboot
 ```
 
 **Once the server has restarted** (it might take a couple of minutes), check
-that you can still connect and that your hostname is correct:
+that you can still connect:
+
+<div
+  class="archidep-randomize"
+  data-regexp="(?<username>[a-z][a-z0-9]+)@(?<ipAddress>[a-z0-9]+(?:\.[a-z0-9]+){3})"
+  data-template="<username>@<ipAddress>"></div>
 
 ```bash
-$> ssh jde@W.X.Y.Z
+$> ssh jde@87.65.43.210
 Welcome to Ubuntu 24.04 LTS
 ...
+```
 
+Also check that your hostname is correct:
+
+<div
+  class="archidep-randomize"
+  data-regexp="(?<username>[a-z][a-z0-9]+)\.(?<domain>archidep[0-9]\.ch)"
+  data-template="<username>.<domain>"
+  data-tooltip="false"></div>
+
+```bash
 $> hostname
-jde.archidep.ch
+jde.archidep2.ch
 ```
 
 ### :exclamation: Add swap space to your virtual server
