@@ -1,12 +1,9 @@
 ---
 title: Unix Permissions
+cloud_server: details
 ---
 
 This exercise illustrates how you can restrict access to files and directories using Unix permissions.
-
-{% callout type: warning %}
-Replace jde by your actual username.
-{% endcallout %}
 
 ## :exclamation: Setup
 
@@ -59,9 +56,13 @@ $> sudo su --login alice
 When you are done, you can go back to being you with the `exit` command. Your command line prompt should remind you who you are. When in doubt, use the `whoami` command.
 {% endnote %}
 
-{% callout type: more, id: login-abbreviation %}
-The `--login` option can also be abbreviated to `-l` or even simply `-` (yes, the people who designed Unix were lazy enough that they did not even want to type one more letter).
-{% endcallout %}
+{% note type: more %}
+
+The `--login` option can also be abbreviated to `-l` or even simply `-` (yes,
+the people who designed Unix were lazy enough that they did not even want to
+type one more letter).
+
+{% endnote %}
 
 You should be able to read the file in the home directory:
 
@@ -105,9 +106,13 @@ $> cat /tmp/for_alice/writable.txt
 Hello, I'm Alice
 ```
 
-{% callout type: more, id: standard-output-to-file %}
-As a reminder, in Bash, `>>` means to redirect the standard output of a command into a file and to append to the end of that file. If you wanted to overwrite the whole contents of the file, you could use `>` instead.
-{% endcallout %}
+{% note type: more %}
+
+As a reminder, in Bash, `>>` means to redirect the standard output of a command
+into a file and to append to the end of that file. If you wanted to overwrite
+the whole contents of the file, you could use `>` instead.
+
+{% endnote %}
 
 ## :checkered_flag: What have I done?
 

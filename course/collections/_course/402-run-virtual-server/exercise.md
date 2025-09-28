@@ -1,5 +1,6 @@
 ---
 title: Run your own virtual server on Microsoft Azure
+cloud_server: creation
 ---
 
 This guide describes how to run a virtual server appropriate for the Media
@@ -321,7 +322,7 @@ $> echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB1TC4ygWjzpRemdOyrtqQYmOARxMMks71f
 {% note type: more %}
 
 This adds the teacher's public SSH key to your user's `~/.ssh/authorized_keys`,
-allowing the teacher to also authenticate to your virtual server with his
+allowing the teachers to also authenticate to your virtual server with their
 private SSH key to help debug issues.
 
 {% endnote %}

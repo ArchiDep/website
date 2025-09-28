@@ -273,6 +273,10 @@ main .solution .highlighter-rouge:last-child pre.highlight {
     @apply border-r-4 border-success/50 hover:border-success;
   }
 
+  .course-section-due {
+    @apply border-r-4 border-warning/50 hover:border-warning;
+  }
+
   .course-section-next {
     @apply border-r-4 border-info/50 hover:border-info;
   }

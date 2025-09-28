@@ -24,6 +24,13 @@ defmodule ArchiDepWeb do
   def channel do
     quote do
       use Phoenix.Channel
+
+      import ArchiDep.Helpers.PipeHelpers
+      alias ArchiDep.Authentication
+      alias Phoenix.Channel
+      alias Phoenix.Socket
+
+      unquote(verified_routes())
     end
   end
 
