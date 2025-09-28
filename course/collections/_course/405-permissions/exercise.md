@@ -1,9 +1,19 @@
 ---
 title: Unix Permissions
 cloud_server: details
+excerpt_separator: <!-- more -->
 ---
 
-This exercise illustrates how you can restrict access to files and directories using Unix permissions.
+This exercise illustrates how you can restrict access to files and directories
+using Unix permissions.
+
+{% callout type: exercise %}
+
+Connect to your virtual server with SSH for this exercise.
+
+{% endcallout %}
+
+<!-- more -->
 
 ## :exclamation: Setup
 

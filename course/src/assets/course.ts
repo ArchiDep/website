@@ -7,6 +7,7 @@ import { Socket } from 'phoenix';
 
 import './course/back-to-top';
 import { cloudServer, cloudServerDataType } from './course/cloud-server';
+import './course/randomize';
 import './course/search';
 import { me, root, sessionType } from './course/session';
 import './course/tell-me-more';

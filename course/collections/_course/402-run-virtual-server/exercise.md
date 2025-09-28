@@ -297,12 +297,22 @@ purposes of the course.
 
 ### :exclamation: Connect to your new virtual machine over SSH
 
-Assuming the virtual machine's public IP address is `W.X.Y.Z` (replace with the
-IP address you copied from your virtual machine's information), and the
-administrator account you created is `jde`, you can connect with this command:
+{% callout type: exercise %}
+
+Connect to your virtual machine using the `ssh <username>@<host>` command,
+replacing `<username>` with the username you chose for the course (and used for
+the machine's administrator account), and `<host>` with the IP address you
+copied from the virtual machine's information.
+
+{% endcallout %}
+
+<div
+  class="archidep-randomize"
+  data-regexp="(?<username>[a-z][a-z0-9]+)@(?<ipAddress>[a-z0-9]+(?:\.[a-z0-9]+){3})"
+  data-template="<username>@<ipAddress>"></div>
 
 ```bash
-$> ssh jde@W.X.Y.Z
+$> ssh jde@ST.U.VW.XYZ
 ```
 
 {% note type: more %}
