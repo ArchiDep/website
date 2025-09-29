@@ -254,7 +254,7 @@ function StudentCloudServerCreationInstructions({
 
   const dlClass =
     layout === 'horizontal'
-      ? 'grid grid-cols-2 sm:grid-cols-12 gap-1 md:gap-2 xl:gap-4'
+      ? 'grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-12 gap-1 md:gap-2 xl:gap-4'
       : '';
   const instructionsClass = layout === 'horizontal' ? 'sr-only' : '';
 
@@ -315,7 +315,9 @@ function CloudServerDetails({
   }
 
   const dlClass =
-    layout === 'horizontal' ? 'grid grid-cols-2 gap-1 md:gap-2 xl:gap-4' : '';
+    layout === 'horizontal'
+      ? 'grid grid-cols-1 xs:grid-cols-2 gap-1 md:gap-2 xl:gap-4'
+      : '';
 
   const instructionsClass = layout === 'horizontal' ? 'sr-only' : 'mb-4';
   const instructions =
