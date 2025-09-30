@@ -100,7 +100,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
     expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-    expect(Course.ContextMock, :fetch_authenticated_student, 3, fn ^auth -> {:ok, student} end)
+    expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
 
     {:ok, _view, html} = live(conn!, @path)
 
@@ -176,7 +176,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
 
     if student != nil do
-      expect(Course.ContextMock, :fetch_authenticated_student, 3, fn ^auth -> {:ok, student} end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
     end
 
     {:ok, _view, html} = live(conn!, @path)
@@ -247,7 +247,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
 
     if student != nil do
-      expect(Course.ContextMock, :fetch_authenticated_student, 3, fn ^auth -> {:ok, student} end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
     end
 
     {:ok, view, html} = live(conn!, @path)
@@ -314,7 +314,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
 
     if student != nil do
-      expect(Course.ContextMock, :fetch_authenticated_student, 3, fn ^auth -> {:ok, student} end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
     end
 
     {:ok, view, html} = live(conn!, @path)
