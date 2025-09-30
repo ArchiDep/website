@@ -11,17 +11,7 @@ import {
 } from '../../shared/icons';
 import { loadingMessages } from '../../shared/loading';
 import { CopyButton } from './copy-button';
-import { me } from './session';
-
-const studentType = t.readonly(
-  t.exact(
-    t.type({
-      username: t.string,
-      usernameConfirmed: t.boolean,
-      domain: t.string
-    })
-  )
-);
+import { currentSession, Student } from './session';
 
 const cloudServerType = t.readonly(
   t.exact(
@@ -37,14 +27,12 @@ const cloudServerType = t.readonly(
 export const cloudServerDataType = t.readonly(
   t.exact(
     t.type({
-      student: t.union([studentType, t.null]),
       server: t.union([cloudServerType, t.null]),
       serversEnabled: t.boolean
     })
   )
 );
 
-export type Student = t.TypeOf<typeof studentType>;
 export type CloudServer = t.TypeOf<typeof cloudServerType>;
 export type CloudServerData = t.TypeOf<typeof cloudServerDataType>;
 
@@ -74,9 +62,10 @@ function CloudServerInstructions(
   props: CloudServerInstructionsProps
 ): JSX.Element {
   const { mode } = props;
-  const session = me.value;
-  const cloudServerData = cloudServer.value;
   const layout = props.layout ?? 'vertical';
+
+  const session = currentSession.value ?? undefined;
+  const cloudServerData = cloudServer.value ?? undefined;
 
   if (session === undefined) {
     return (
@@ -90,26 +79,27 @@ function CloudServerInstructions(
         <CloudServerLoadingIndicator />
       </CloudServerCard>
     );
-  } else if (cloudServerData.student === null) {
-    return cloudServerData.server === null ? (
+  }
+
+  const student = session.student ?? undefined;
+  const server = cloudServerData.server ?? undefined;
+  const serversEnabled = cloudServerData.serversEnabled;
+
+  if (student === undefined) {
+    return server === undefined ? (
       <CloudServerCard {...cloudServerCardWarningProps}>
         <NoRootCloudServer />
       </CloudServerCard>
     ) : (
-      <CloudServerDetails
-        mode="details"
-        layout={layout}
-        server={cloudServerData.server}
-      />
+      <CloudServerDetails mode="details" layout={layout} server={server} />
     );
   }
 
-  const student = cloudServerData.student;
-  if (!cloudServerData.serversEnabled) {
+  if (!serversEnabled) {
     return <StudentCloudServerDisabled mode={mode} />;
   } else if (!student.usernameConfirmed) {
     return <StudentUsernameConfirmationRequired mode={mode} />;
-  } else if (cloudServerData.server === null) {
+  } else if (server === undefined) {
     return mode === 'creation' ? (
       <StudentCloudServerCreationInstructions
         layout={layout}
@@ -121,7 +111,6 @@ function CloudServerInstructions(
     );
   }
 
-  const server = cloudServerData.server;
   return (
     <CloudServerDetails
       mode={mode}
@@ -142,7 +131,7 @@ function CloudServerLoginInstructions(): JSX.Element {
         created for this course. Log in and make sure you are connected to the
         internet to see your server's details.
       </p>
-      <div className="card-actions justify-end">
+      <div className="mt-2 card-actions justify-end">
         <a className="btn" href={loginUrl}>
           Log in
         </a>
@@ -169,7 +158,7 @@ function NoRootCloudServer(): JSX.Element {
         You are root and either have not registered a server or have too many.
         Make sure only one is active to see its details here.
       </p>
-      <div className="card-actions justify-end">
+      <div className="mt-2 card-actions justify-end">
         <a className="btn btn-secondary" href="/app/my-servers">
           My servers
         </a>
@@ -193,7 +182,7 @@ function StudentUsernameConfirmationRequired(
   return (
     <CloudServerCard {...cloudServerCardWarningProps}>
       <p>{instructions}</p>
-      <div className="card-actions justify-end">
+      <div className="mt-2 card-actions justify-end">
         <a className="btn btn-secondary" href="/app">
           Let's do that
         </a>
@@ -227,7 +216,7 @@ function StudentCloudServerCreationRequired(): JSX.Element {
       <p>
         You must create your cloud server before proceeding with this exercise.
       </p>
-      <div className="card-actions justify-end">
+      <div className="mt-2 card-actions justify-end">
         <a className="btn btn-secondary" href="/app">
           Create my server
         </a>
@@ -264,7 +253,7 @@ function StudentCloudServerCreationInstructions({
         Follow this exercise to create your cloud server. Use the following
         information.
       </p>
-      <dl className={dlClass}>
+      <dl className={`mt-2 ${dlClass}`}>
         <div className="sm:col-span-3 flex flex-col">
           <dt className="font-bold text-xs">Username</dt>
           <dd className="flex items-center gap-2">
@@ -322,7 +311,7 @@ function CloudServerDetails({
   const instructionsClass = layout === 'horizontal' ? 'sr-only' : 'mb-4';
   const instructions =
     mode === 'creation'
-      ? "Congratulations! You've successfully set up your cloud server."
+      ? "Congratulations! You've successfully set up your cloud server. You can now use it for the next exercises."
       : [
           'Here are the connection details for your cloud server',
           pipe(
@@ -346,7 +335,7 @@ function CloudServerDetails({
   return (
     <CloudServerCard title={title} {...cardProps}>
       <p className={instructionsClass}>{instructions}</p>
-      <dl className={dlClass}>
+      <dl className={`mt-2 ${dlClass}`}>
         <div className="flex flex-col">
           <dt className="font-bold text-xs">Username</dt>
           <dd className="flex items-center gap-2">

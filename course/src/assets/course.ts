@@ -9,7 +9,11 @@ import './course/back-to-top';
 import { cloudServer, cloudServerDataType } from './course/cloud-server';
 import './course/randomize';
 import './course/search';
-import { me, root, sessionType } from './course/session';
+import {
+  currentSession,
+  currentSessionRootFlag,
+  sessionType
+} from './course/session';
 import './course/tell-me-more';
 import './course/toc';
 import { HttpAuthenticationError } from './errors';
@@ -91,19 +95,27 @@ if (!standalone) {
   );
 
   effect(() => {
-    toggleClass($sidebarAdminItem, 'hidden', !root.value);
+    toggleClass($sidebarAdminItem, 'hidden', !currentSessionRootFlag.value);
   });
 
   effect(() => {
-    toggleClass($loginButton, 'flex', me.value === undefined);
-    toggleClass($loginButton, 'hidden', me.value !== undefined);
-    toggleClass($navbarProfile, 'hidden', me.value === undefined);
+    toggleClass($loginButton, 'flex', currentSession.value === undefined);
+    toggleClass($loginButton, 'hidden', currentSession.value !== undefined);
+    toggleClass($navbarProfile, 'hidden', currentSession.value === undefined);
     $logoutButton.removeAttribute('disabled');
   });
 
   effect(() => {
-    toggleClass($navbarProfileUser, 'hidden', me.value?.impersonating === true);
-    toggleClass($navbarProfileImpersonator, 'hidden', !me.value?.impersonating);
+    toggleClass(
+      $navbarProfileUser,
+      'hidden',
+      currentSession.value?.impersonating === true
+    );
+    toggleClass(
+      $navbarProfileImpersonator,
+      'hidden',
+      !currentSession.value?.impersonating
+    );
   });
 
   $logoutButton.addEventListener('click', logOut);
@@ -172,7 +184,7 @@ function connectSocket(): void {
         socketLogger.info(
           `Connection closed; will reconnect in ${retryInterval / 1000} seconds`
         );
-        me.value = undefined;
+        currentSession.value = undefined;
 
         if (localStorage.getItem('archidep:session') !== null) {
           connectionAttempt++;
@@ -198,17 +210,25 @@ function connectSocket(): void {
         );
       });
 
+      channel.on('session', payload => {
+        const decodedSession = sessionType.decode(payload);
+        if (isRight(decodedSession)) {
+          const session = decodedSession.right;
+          currentSession.value = session;
+          socketLogger.debug(`Session ${session.sessionId} updated`);
+          localStorage.setItem('archidep:session', JSON.stringify(session));
+        }
+      });
+
       channel
         .join()
         .receive('ok', resp => {
-          const decodedMe = sessionType.decode(resp);
-          if (isRight(decodedMe)) {
-            const payload = decodedMe.right;
-            me.value = payload;
+          const decodedSession = sessionType.decode(resp);
+          if (isRight(decodedSession)) {
+            const payload = decodedSession.right;
+            currentSession.value = payload;
             socketLogger.debug(`Welcome, ${payload.username}!`);
-            if (localStorage.getItem('archidep:session') === null) {
-              localStorage.setItem('archidep:session', JSON.stringify(payload));
-            }
+            localStorage.setItem('archidep:session', JSON.stringify(payload));
           } else {
             socketLogger.error(
               `Failed to decode 'me' channel payload: ${JSON.stringify(resp)}`

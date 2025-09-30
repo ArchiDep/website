@@ -38,16 +38,22 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
     now = DateTime.utc_now()
     active_servers = auth |> Servers.list_my_servers() |> Enum.filter(&Server.active?(&1, now))
+    current_client_session_data = ClientSessionData.new(auth, student)
 
     send(self(), :after_join)
 
     socket
-    |> assign(active_servers: active_servers, student: student)
-    |> ok_with(ClientSessionData.new(auth))
+    |> assign(
+      active_servers: active_servers,
+      student: student,
+      current_client_session_data: current_client_session_data,
+      current_cloud_server_data: nil
+    )
+    |> ok_with(current_client_session_data)
   end
 
   @impl Channel
-  def handle_info(:after_join, socket), do: socket |> send_active_server_data() |> noreply()
+  def handle_info(:after_join, socket), do: socket |> send_updated_data() |> noreply()
 
   @impl Channel
   def handle_info(
@@ -65,7 +71,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
           active_servers: update_class_of_active_servers(active_servers, updated_class),
           student: %Student{student | class: Class.refresh!(current_class, updated_class)}
         )
-        |> send_active_server_data()
+        |> send_updated_data()
         |> noreply()
 
   @impl Channel
@@ -81,7 +87,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
           active_servers: remove_active_servers_of_class(active_servers, deleted_class),
           student: nil
         )
-        |> send_active_server_data()
+        |> send_updated_data()
         |> noreply()
 
   @impl Channel
@@ -100,7 +106,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
           active_servers: update_student_of_active_servers(active_servers, updated_student),
           student: Student.refresh!(student, updated_student)
         )
-        |> send_active_server_data()
+        |> send_updated_data()
         |> noreply()
 
   @impl Channel
@@ -116,7 +122,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
           active_servers: remove_active_servers_of_student(active_servers, deleted_student),
           student: nil
         )
-        |> send_active_server_data()
+        |> send_updated_data()
         |> noreply()
 
   @impl Channel
@@ -135,7 +141,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
           active_servers:
             add_created_server_if_active(active_servers, created_server, DateTime.utc_now())
         )
-        |> send_active_server_data()
+        |> send_updated_data()
         |> noreply()
 
   @impl Channel
@@ -154,7 +160,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
           active_servers:
             add_or_remove_updated_server(active_servers, updated_server, DateTime.utc_now())
         )
-        |> send_active_server_data()
+        |> send_updated_data()
         |> noreply()
 
   @impl Channel
@@ -170,7 +176,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
       do:
         socket
         |> assign(active_servers: delete_server(active_servers, deleted_server))
-        |> send_active_server_data()
+        |> send_updated_data()
         |> noreply()
 
   defp update_class_of_active_servers(active_servers, %Class{id: class_id} = updated_class),
@@ -219,30 +225,55 @@ defmodule ArchiDepWeb.Channels.UserChannel do
           false
       end)
 
-  defp send_active_server_data(
+  defp send_updated_data(socket),
+    do:
+      socket
+      |> send_new_client_session_data()
+      |> send_cloud_server_data()
+
+  defp send_new_client_session_data(
+         %Socket{
+           assigns: %{
+             auth: auth,
+             student: student,
+             current_client_session_data: current_client_session_data
+           }
+         } = socket
+       ) do
+    new_client_session_data = ClientSessionData.new(auth, student)
+
+    if new_client_session_data == current_client_session_data do
+      socket
+    else
+      push(socket, "session", Map.from_struct(new_client_session_data))
+      assign(socket, current_client_session_data: new_client_session_data)
+    end
+  end
+
+  defp send_cloud_server_data(
          %Socket{
            assigns: %{active_servers: [active_server], student: student}
          } = socket
-       ) do
-    push(
-      socket,
-      "cloudServerData",
-      student
-      |> ClientCloudServerData.new({active_server, ~p"/servers/#{active_server.id}"})
-      |> Map.from_struct()
-    )
+       ),
+       do:
+         send_new_cloud_server_data(
+           socket,
+           ClientCloudServerData.new(student, {active_server, ~p"/servers/#{active_server.id}"})
+         )
 
+  defp send_cloud_server_data(%Socket{assigns: %{student: student}} = socket),
+    do: send_new_cloud_server_data(socket, ClientCloudServerData.new(student, nil))
+
+  defp send_new_cloud_server_data(
+         %Socket{assigns: %{current_cloud_server_data: cloud_server_data}} = socket,
+         cloud_server_data
+       ) do
     socket
   end
 
-  defp send_active_server_data(%Socket{assigns: %{student: student}} = socket) do
-    push(
-      socket,
-      "cloudServerData",
-      student |> ClientCloudServerData.new(nil) |> Map.from_struct()
-    )
-
-    socket
+  defp send_new_cloud_server_data(socket, new_cloud_server_data) do
+    push(socket, "cloudServerData", Map.from_struct(new_cloud_server_data))
+    assign(socket, current_cloud_server_data: new_cloud_server_data)
   end
 
   defp add_created_server_if_active(active_servers, created_server, now)
@@ -281,11 +312,13 @@ defmodule ArchiDepWeb.Channels.UserChannel do
     do:
       active_servers
       |> Enum.reduce({[], false}, fn
-        %Server{id: ^server_id}, acc -> {[active_server | acc], true}
+        %Server{id: ^server_id}, {acc, _found} -> {[active_server | acc], true}
         server, {acc, found} -> {[server | acc], found}
       end)
       |> then(fn
         {updated_servers, true} -> updated_servers
         {_updated_servers, false} -> [active_server | active_servers]
       end)
+
+  defp add_active_server(active_servers, _inactive_server), do: active_servers
 end

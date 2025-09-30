@@ -6,12 +6,14 @@ defmodule ArchiDepWeb.LiveAuth do
   use ArchiDepWeb, :verified_routes
   use Gettext, backend: ArchiDepWeb.Gettext
   import ArchiDep.Helpers.PipeHelpers
+  import ArchiDepWeb.Helpers.AuthHelpers
   import Flashy
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView
   alias ArchiDep.Accounts
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.ClientMetadata
+  alias ArchiDep.Course
   alias ArchiDepWeb.ClientSessionData
   alias ArchiDepWeb.Components.Notifications.Message
   alias Phoenix.LiveView.Socket
@@ -48,9 +50,19 @@ defmodule ArchiDepWeb.LiveAuth do
        when is_binary(token) do
     case Accounts.validate_session_token(token, socket_metadata(socket)) do
       {:ok, auth} ->
+        student =
+          if root?(auth) do
+            nil
+          else
+            case Course.fetch_authenticated_student(auth) do
+              {:ok, student} -> student
+              {:error, _reason} -> nil
+            end
+          end
+
         socket
         |> assign(:auth, auth)
-        |> push_event("authenticated", ClientSessionData.new(auth))
+        |> push_event("authenticated", ClientSessionData.new(auth, student))
 
       {:error, :session_not_found} ->
         socket
