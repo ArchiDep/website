@@ -39,6 +39,13 @@ layout: base
       {% endif %}
 
       {{ content | remove_first: page.excerpt }}
+
+      <div class='xl:hidden w-full flex justify-center items-center'>
+        <a href='#top' id='back-to-top-bottom' class='btn btn-ghost btn-sm'>
+          {%- include icons/arrow-up.html class="size-4" -%}
+          Back to top
+        </a>
+      </div>
     </main>
   </div>
   <aside class='hidden xl:block xl:w-xs'>
@@ -113,7 +120,7 @@ layout: base
         <div class='cloud-server-data' data-mode='{{ page.cloud_server }}'></div>
       {% endif %}
 
-      <a href='#top' id='back-to-top' class='btn btn-ghost btn-sm'>
+      <a href='#top' id='back-to-top-side' class='btn btn-ghost btn-sm'>
         {%- include icons/arrow-up.html class="size-4" -%}
         Back to top
       </a>

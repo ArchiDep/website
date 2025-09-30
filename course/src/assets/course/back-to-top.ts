@@ -1,9 +1,14 @@
-const $backToTopButton = document.getElementById('back-to-top');
+const $backToTopSideButton = document.getElementById('back-to-top-side');
 
-if ($backToTopButton) {
-  $backToTopButton.classList.add('hidden');
-  $backToTopButton.addEventListener('click', goBackToTop);
-  window.addEventListener('scroll', scroll($backToTopButton));
+if ($backToTopSideButton) {
+  $backToTopSideButton.classList.add('hidden');
+  $backToTopSideButton.addEventListener('click', goBackToTop);
+  window.addEventListener('scroll', scroll($backToTopSideButton));
+}
+
+const $backToTopBottomButton = document.getElementById('back-to-top-bottom');
+if ($backToTopBottomButton) {
+  $backToTopBottomButton.addEventListener('click', goBackToTop);
 }
 
 function scroll(button: HTMLElement): () => void {
