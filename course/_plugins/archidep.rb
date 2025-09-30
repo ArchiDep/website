@@ -268,11 +268,12 @@ Jekyll::Hooks.register :site, :post_render do |site|
 
       html_doc = Nokogiri.HTML(doc.content)
 
-      type = if doc.data["course_type"] == "exercise" and doc.data["graded"] == true
-        "graded-exercise"
-      else
-        doc.data["course_type"] || doc.data["id"]
-      end
+      type =
+        if doc.data["course_type"] == "exercise" and doc.data["graded"] == true
+          "graded-exercise"
+        else
+          doc.data["course_type"] || doc.data["id"]
+        end
 
       current_search_element = {
         id: doc.data["search_url"] || doc.url,
