@@ -11,7 +11,7 @@ import {
 } from '../../shared/icons';
 import { loadingMessages } from '../../shared/loading';
 import { CopyButton } from './copy-button';
-import { currentSession, Student } from './session';
+import { currentSession, getSession, Student } from './session';
 
 const cloudServerType = t.readonly(
   t.exact(
@@ -64,7 +64,7 @@ function CloudServerInstructions(
   const { mode } = props;
   const layout = props.layout ?? 'vertical';
 
-  const session = currentSession.value ?? undefined;
+  const session = getSession(currentSession.value);
   const cloudServerData = cloudServer.value ?? undefined;
 
   if (session === undefined) {

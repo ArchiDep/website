@@ -10,8 +10,13 @@ import { cloudServer, cloudServerDataType } from './course/cloud-server';
 import './course/randomize';
 import './course/search';
 import {
+  anonymousSession,
+  cachedSession,
+  connectedSession,
   currentSession,
   currentSessionRootFlag,
+  getSession,
+  sessionConnectionError,
   sessionType
 } from './course/session';
 import './course/tell-me-more';
@@ -99,9 +104,21 @@ if (!standalone) {
   });
 
   effect(() => {
-    toggleClass($loginButton, 'flex', currentSession.value === undefined);
-    toggleClass($loginButton, 'hidden', currentSession.value !== undefined);
-    toggleClass($navbarProfile, 'hidden', currentSession.value === undefined);
+    toggleClass(
+      $loginButton,
+      'flex',
+      getSession(currentSession.value) === undefined
+    );
+    toggleClass(
+      $loginButton,
+      'hidden',
+      getSession(currentSession.value) !== undefined
+    );
+    toggleClass(
+      $navbarProfile,
+      'hidden',
+      getSession(currentSession.value) === undefined
+    );
     $logoutButton.removeAttribute('disabled');
   });
 
@@ -109,12 +126,12 @@ if (!standalone) {
     toggleClass(
       $navbarProfileUser,
       'hidden',
-      currentSession.value?.impersonating === true
+      getSession(currentSession.value)?.impersonating === true
     );
     toggleClass(
       $navbarProfileImpersonator,
       'hidden',
-      !currentSession.value?.impersonating
+      getSession(currentSession.value)?.impersonating !== true
     );
   });
 
@@ -174,8 +191,13 @@ function connectSocket(): void {
       });
 
       socket.onError(error => {
-        socketLogger.warn(
-          `Connection error ${G.isString(error) || G.isNumber(error) ? String(error) : '(unknown)'}`
+        const errorMessage =
+          G.isString(error) || G.isNumber(error) ? String(error) : '(unknown)';
+        socketLogger.warn(`Connection error ${errorMessage}`);
+
+        currentSession.value = sessionConnectionError(
+          errorMessage,
+          getSession(currentSession.value)
         );
       });
 
@@ -184,7 +206,9 @@ function connectSocket(): void {
         socketLogger.info(
           `Connection closed; will reconnect in ${retryInterval / 1000} seconds`
         );
-        currentSession.value = undefined;
+        const session = getSession(currentSession.value);
+        currentSession.value =
+          session === undefined ? anonymousSession() : cachedSession(session);
 
         if (localStorage.getItem('archidep:session') !== null) {
           connectionAttempt++;
@@ -214,9 +238,20 @@ function connectSocket(): void {
         const decodedSession = sessionType.decode(payload);
         if (isRight(decodedSession)) {
           const session = decodedSession.right;
-          currentSession.value = session;
+          currentSession.value = connectedSession(session);
           socketLogger.debug(`Session ${session.sessionId} updated`);
           localStorage.setItem('archidep:session', JSON.stringify(session));
+        } else {
+          socketLogger.error(
+            `Failed to decode 'session' channel payload: ${JSON.stringify(
+              payload
+            )}`
+          );
+          currentSession.value = sessionConnectionError(
+            'Failed to decode session payload',
+            getSession(currentSession.value)
+          );
+          localStorage.removeItem('archidep:session');
         }
       });
 
@@ -225,10 +260,10 @@ function connectSocket(): void {
         .receive('ok', resp => {
           const decodedSession = sessionType.decode(resp);
           if (isRight(decodedSession)) {
-            const payload = decodedSession.right;
-            currentSession.value = payload;
-            socketLogger.debug(`Welcome, ${payload.username}!`);
-            localStorage.setItem('archidep:session', JSON.stringify(payload));
+            const session = decodedSession.right;
+            currentSession.value = connectedSession(session);
+            socketLogger.debug(`Welcome, ${session.username}!`);
+            localStorage.setItem('archidep:session', JSON.stringify(session));
           } else {
             socketLogger.error(
               `Failed to decode 'me' channel payload: ${JSON.stringify(resp)}`
@@ -242,7 +277,7 @@ function connectSocket(): void {
         });
     })
     .catch(err => {
-      socketLogger.warn(
+      socketLogger.info(
         `Failed to connect because: ${err.message}; will retry in ${retryInterval / 1000} second(s)`
       );
 
@@ -252,6 +287,8 @@ function connectSocket(): void {
         // reconnect. The user will have to leave the page to log in again.
         connectionAttempt = 0;
         socketLogger.info('Authentication failed, giving up on reconnecting');
+        currentSession.value = anonymousSession();
+        localStorage.removeItem('archidep:session');
         clearTimeout(connectionTimeout);
       } else {
         connectionAttempt++;
