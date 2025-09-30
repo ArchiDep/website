@@ -6,4 +6,4 @@ categories: progress
 next: [100, 101, 102, 103, 104, 105]
 ---
 
-First post.
+Start of the course
