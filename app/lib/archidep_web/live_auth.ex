@@ -50,15 +50,7 @@ defmodule ArchiDepWeb.LiveAuth do
        when is_binary(token) do
     case Accounts.validate_session_token(token, socket_metadata(socket)) do
       {:ok, auth} ->
-        student =
-          if root?(auth) do
-            nil
-          else
-            case Course.fetch_authenticated_student(auth) do
-              {:ok, student} -> student
-              {:error, _reason} -> nil
-            end
-          end
+        student = fetch_authenticated_student(auth)
 
         socket
         |> assign(:auth, auth)
@@ -70,6 +62,17 @@ defmodule ArchiDepWeb.LiveAuth do
   end
 
   defp authenticate_with_token(socket), do: socket
+
+  defp fetch_authenticated_student(auth) do
+    if root?(auth) do
+      nil
+    else
+      case Course.fetch_authenticated_student(auth) do
+        {:ok, student} -> student
+        {:error, _reason} -> nil
+      end
+    end
+  end
 
   defp require_authenticated_user(socket) do
     if socket.assigns[:auth] do
