@@ -13,7 +13,9 @@ pretty_print: true
   {%- for item in section.items -%}
     {"title":{{ item.title | jsonify }},"num":{{ item.num | jsonify }},"course_type":
     {{- item.course_type | jsonify -}}
-    ,"course_slug":{{ item.course_slug | jsonify }} ,"section":{{ item.section | jsonify }},"section_chapter":
+    ,"graded":{{ item.graded | default: false | jsonify }},"course_slug":{{ item.course_slug | jsonify }} ,"section":
+    {{- item.section | jsonify -}}
+    ,"section_chapter":
     {{- item.section_chapter | jsonify -}}
     ,"progress":
     {{- item.progress | jsonify -}}

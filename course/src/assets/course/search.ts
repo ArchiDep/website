@@ -22,6 +22,7 @@ const searchElementType = t.union([
   t.literal('cheatsheet'),
   t.literal('dashboard'),
   t.literal('exercise'),
+  t.literal('graded-exercise'),
   t.literal('home'),
   t.literal('slides'),
   t.literal('subject')
@@ -396,6 +397,7 @@ function renderSearchResults(
       )
       .with('cheatsheet', () => '📝')
       .with('exercise', () => '🛠️')
+      .with('graded-exercise', () => '💥')
       .with('home', () => '🏠')
       .with('slides', () => '🎬')
       .with('subject', () => '📖')

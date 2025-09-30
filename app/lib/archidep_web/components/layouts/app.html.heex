@@ -231,7 +231,10 @@
                     <%= if item["course_type"] == "slides" do %>
                       🎬
                     <% end %>
-                    <%= if item["course_type"] == "exercise" do %>
+                    <%= if item["course_type"] == "exercise" and item["graded"] == true do %>
+                      💥️
+                    <% end %>
+                    <%= if item["course_type"] == "exercise" and item["graded"] != true do %>
                       🛠️
                     <% end %>
                     <%= if item["course_type"] != "slides" and item["course_type"] != "exercise" do %>
