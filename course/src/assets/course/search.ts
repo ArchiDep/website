@@ -397,7 +397,7 @@ function renderSearchResults(
       )
       .with('cheatsheet', () => '📝')
       .with('exercise', () => '🛠️')
-      .with('graded-exercise', () => '💥')
+      .with('graded-exercise', () => '🏆')
       .with('home', () => '🏠')
       .with('slides', () => '🎬')
       .with('subject', () => '📖')
