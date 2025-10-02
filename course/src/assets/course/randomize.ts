@@ -377,7 +377,6 @@ function findChildNodesMatching(
       continue;
     }
 
-    console.debug('@@@ child text node', childNode);
     matchingNodes.push([childNode, textContent, match?.groups ?? {}] as const);
   }
 
