@@ -166,7 +166,7 @@ module ArchiDep
           &.[]("done") || []
       previous_chapters =
         course_docs.select do |doc|
-          doc.data["course_type"] == "subject" &&
+          (doc.data["course_type"] != "slides" || doc.data["subject"].nil?) &&
             last_done.include?(doc.data["num"])
         end
       home_page_doc.data["previous_chapters"] = previous_chapters
