@@ -1,6 +1,6 @@
 ---
 layout: post
-title: CLI
+title: SSH & Git Introduction
 date: 2025-09-26 15:29:39 +0100
 categories: progress
 done: [103, 104]
