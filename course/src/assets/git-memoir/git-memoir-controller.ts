@@ -21,8 +21,6 @@ const MODES: readonly Mode[] = [
   'visualization'
 ];
 
-const gitMemoirs: Record<string, () => Memoir> = window['gitMemoirs'] ?? {};
-
 export class GitMemoirController {
   static startNewGitMemoir(element: Element): GitMemoirController {
     const existingController = $(element).data('controller');
@@ -120,7 +118,7 @@ export class GitMemoirController {
     this.controlsEnabled =
       !controlsAttr || /^(1|y|yes|t|true)$/i.exec(controlsAttr) !== null;
 
-    const memoirFactory = gitMemoirs[this.name];
+    const memoirFactory = getGitMemoirFactory(this.name);
     if (!memoirFactory) {
       throw new Error(
         `No memoir found named "${this.name}"; assign a factory function to "window.gitMemoirs.${this.name}"`
@@ -394,4 +392,9 @@ function isLocalStorageAvailable() {
 
 function isMode(value: string): value is Mode {
   return MODES.includes(value as Mode);
+}
+
+function getGitMemoirFactory(name: string): (() => Memoir) | undefined {
+  const gitMemoirs: Record<string, () => Memoir> = window['gitMemoirs'] ?? {};
+  return gitMemoirs[name];
 }
