@@ -2,7 +2,7 @@
 title: PHP Todolist
 excerpt_separator: <!-- more -->
 graded: true
-published: false
+published: true
 ---
 
 The goal of this exercise is to collaborate on a simple project on GitHub as a
