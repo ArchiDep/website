@@ -148,7 +148,7 @@ Then move into the repository and delete the remote:
 
 ```bash
 $> cd hello-github-ex
-$> git rm origin
+$> git remote rm origin
 ```
 
 ### :exclamation: Bob: create a repository on GitHub
