@@ -89,6 +89,21 @@ Open MAMP to see where its document root is:
 
 ![MAMP document root](./images/mamp-document-root.png)
 
+{% note type: tip %}
+
+On Windows, the root is displayed in the preferences:
+
+![MAMP document root](./images/mamp-document-root-windows.png)
+
+To reach it on the command line, execute the following command (adapt the path
+to match your own installation if necessary):
+
+```bash
+$> cd /mnt/c/MAMP/htdocs
+```
+
+{% endnote %}
+
 Clone Alice's forked repository on your local machine under MAMP's document
 root. You should use the SSH (not the HTTPS) URL:
 
@@ -128,10 +143,9 @@ Click the **Start** button in MAMP:
 
 ![MAMP start](./images/mamp-start.png)
 
-It should automatically open
-[http://localhost:8888/MAMP/](http://localhost:8888/MAMP/) in your browser, and
-you should be able to reach the [phpMyAdmin MySQL administration
-console](http://localhost:8888/phpMyAdmin5/) from there:
+On macOS, it will automatically open the MAMP start page in your browser. On
+Windows, click the Open WebStart Page button. You should then be able to reach
+the phpMyAdmin MySQL administration console from there:
 
 ![MAMP start](./images/mamp-phpmyadmin.png)
 
