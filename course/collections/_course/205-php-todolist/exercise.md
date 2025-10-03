@@ -106,6 +106,21 @@ commits later.
 
 {% endcallout %}
 
+{% note type: tip %}
+
+If you prefer, an alternative is also to clone the repository wherever you want,
+typically in your projects directory for this course, and to temporarily change
+MAMP's document root, to point directly to this directory:
+
+```bash
+$> cd /path/to/projects
+$> git clone git@github.com:Alice/php-todo-ex.git
+
+# Set MAMP's document root to /path/to/projects/php-todo-ex
+```
+
+{% endnote %}
+
 ## :exclamation: All team members: set up the database
 
 Click the **Start** button in MAMP:
@@ -161,12 +176,17 @@ should at least see an error page.
 
 {% note type: tip %}
 
-The value of `BASE_URL` must match the URL at which the application is
-available. For example, if you put the cloned `php-todo-ex` repository in MAMP's
-`htdocs` directory, the application will be accessible at
+The value of `BASE_URL` must match the path of URL at which the application is
+available. For example, if you've put the cloned `php-todo-ex` repository in
+MAMP's `htdocs` directory, the application will be accessible at
 [http://localhost:8888/php-todo-ex/](http://localhost:8888/php-todo-ex/) (with
-the default ports). In this situation, the value of `BASE_URL` should be
-`/php-todo-ex/`.
+the default document root and ports). In this situation, the value of `BASE_URL`
+should be `/php-todo-ex/`.
+
+If you have changed MAMP's document root to point directly to the `php-todo-ex`
+repository, it will be accessible directly under
+[http://localhost:8888](http://localhost:8888) (with the default ports). In this
+case, the value of `BASE_URL` should simply be `/`.
 
 {% endnote %}
 
