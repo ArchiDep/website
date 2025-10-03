@@ -85,24 +85,34 @@ setup if you already have one
 
 ## :exclamation: All team members: clone Alice's repository
 
-Open MAMP to see where its document root is:
+Open MAMP to see where its document root is.
+
+{% cols %}
+
+On macOS, the document root is shown in the main window:
 
 ![MAMP document root](./images/mamp-document-root.png)
 
-{% note type: tip %}
+To reach it in the macOS Terminal, execute the following command:
 
-On Windows, the root is displayed in the preferences:
+```bash
+$> cd /Applications/MAMP/htdocs
+```
+
+<!-- col -->
+
+On Windows, the document root is shown in the preferences:
 
 ![MAMP document root](./images/mamp-document-root-windows.png)
 
-To reach it on the command line, execute the following command (adapt the path
-to match your own installation if necessary):
+To reach it in the WSL, execute the following command (adapt the path if you
+chose another installation directory):
 
 ```bash
 $> cd /mnt/c/MAMP/htdocs
 ```
 
-{% endnote %}
+{% endcols %}
 
 Clone Alice's forked repository on your local machine under MAMP's document
 root. You should use the SSH (not the HTTPS) URL:
@@ -110,7 +120,6 @@ root. You should use the SSH (not the HTTPS) URL:
 ![GitHub clone with SSH URL](./images/github-clone.png)
 
 ```bash
-$> cd /path/to/mamp/document/root
 $> git clone git@github.com:Alice/php-todo-ex.git
 ```
 
@@ -125,8 +134,8 @@ commits later.
 {% note type: tip %}
 
 If you prefer, an alternative is also to clone the repository wherever you want,
-typically in your projects directory for this course, and to temporarily change
-MAMP's document root, to point directly to this directory:
+typically in your projects directory for this course, and to temporarily update
+MAMP's settings to point its document root directly to this directory:
 
 ```bash
 $> cd /path/to/projects
@@ -139,19 +148,38 @@ $> git clone git@github.com:Alice/php-todo-ex.git
 
 ## :exclamation: All team members: set up the database
 
-Click the **Start** button in MAMP:
+Open the MAMP web page.
+
+{% cols %}
+
+On macOS, it should open automatically after clicking the **Start** button:
 
 ![MAMP start](./images/mamp-start.png)
 
-On macOS, it will automatically open the MAMP start page in your browser. On
-Windows, click the Open WebStart Page button. You should then be able to reach
+The opened page should be
+[http://localhost:8888/MAMP/](http://localhost:8888/MAMP/) (with the default
+settings).
+
+<!-- col -->
+
+On Windows, click the **Open WebStart Page** button:
+
+![MAMP start](./images/mamp-start-windows.png)
+
+The opened page should be [http://localhost/MAMP/](http://localhost/MAMP/) (with
+the default settings).
+
+{% endcols %}
+
+You should then be able to reach
 the phpMyAdmin MySQL administration console from there:
 
 ![MAMP start](./images/mamp-phpmyadmin.png)
 
 The exercise repository you have cloned to your machine contains a
 `todolist.sql` file you can use to create the database for this project. You
-should **change the password** in the SQL before running it.
+should **change the password** in the SQL before running it. It will probably be
+simpler if all team members agree on the same password to use for this exercise.
 
 {% note type: tip %}
 
@@ -180,28 +208,34 @@ to have Notepad or Notepad++ as your favorite editor), and update the [constants
 at the top of `index.php`][ex-constants] to match your local installation:
 
 - Update the password if you changed it.
-- Update the port to use MAMP's default MySQL database port which is 8889 (you
-  can see and change this in MAMP's preferences).
+- If necessary, update the port to use MAMP's MySQL database port. The port is
+  8889 on macOS and 3306 on Windows with the default settings. You can see and
+  change this port in MAMP's preferences.
 - Update the base URL to match the name of the todo list's directory.
 
 You should then be able to access the todo list in your browser at
-[https://localhost:8888/php-todo-ex/](https://localhost:8888/php-todo-ex/). It
-will most likely not work yet since you haven't finished the exercise. But you
-should at least see an error page.
+[https://localhost:8888/php-todo-ex/](https://localhost:8888/php-todo-ex/) on
+macOS or [http://localhost/php-todo-ex/](http://localhost/php-todo-ex/) on
+Windows with the default settings. Adapt the port and/or path if necessary.
+
+The todolist will most likely not work yet since you haven't finished the
+exercise. But you should at least see an error page.
 
 {% note type: tip %}
 
 The value of `BASE_URL` must match the path of URL at which the application is
 available. For example, if you've put the cloned `php-todo-ex` repository in
 MAMP's `htdocs` directory, the application will be accessible at
-[http://localhost:8888/php-todo-ex/](http://localhost:8888/php-todo-ex/) (with
-the default document root and ports). In this situation, the value of `BASE_URL`
-should be `/php-todo-ex/`.
+[http://localhost:8888/php-todo-ex/](http://localhost:8888/php-todo-ex/) on
+macOS or [http://localhost/php-todo-ex/](http://localhost/php-todo-ex/) on
+Windows (with the default document root and ports). In this situation, the value
+of `BASE_URL` should be `/php-todo-ex/`.
 
 If you have changed MAMP's document root to point directly to the `php-todo-ex`
 repository, it will be accessible directly under
-[http://localhost:8888](http://localhost:8888) (with the default ports). In this
-case, the value of `BASE_URL` should simply be `/`.
+[http://localhost:8888](http://localhost:8888) on macOS or
+[http://localhost/](http://localhost/) on Windows (with the default ports). In
+this case, the value of `BASE_URL` should simply be `/`.
 
 {% endnote %}
 
