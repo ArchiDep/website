@@ -480,7 +480,7 @@ shared repository:
 
 <git-memoir name='github' chapter='alice-fix-check' controls='false' svg-height='350px' style='--memoir-min-height: 350px'></git-memoir>
 
-#### Alice: fetch the changes
+#### :exclamation: Alice: fetch the changes
 
 Since Git tells Alice that the local copy of the remote repository is out of
 date, try fetching those changes:
@@ -491,7 +491,7 @@ $> git fetch origin
 
 <git-memoir name='github' chapter='alice-fetch-changes' svg-height='600px' style='--memoir-min-height: 600px'></git-memoir>
 
-#### Alice: try to push again
+#### :exclamation: Alice: try to push again
 
 The push is **rejected again**! **Why?**
 
@@ -538,6 +538,14 @@ Auto-merging index.html
 CONFLICT (content): Merge conflict in index.html
 Automatic merge failed; fix conflicts and then commit the result.
 ```
+
+{% note type: troubleshooting %}
+
+If the `git pull` command fails with a warning about reconciling divergent
+branches, see the [troubleshooting tip about configure Git's merge
+behavior](#boom-alices-git-pull-command-fails-with-a-warning).
+
+{% endnote %}
 
 The fetch succeeded, but the merge failed because of a **conflict** on
 `index.html`.
@@ -615,6 +623,55 @@ You've practiced creating repositories, making commits, pushing and pulling
 changes. You've also explored how to contribute to projects, review changes, and
 resolve merge conflicts, gaining hands-on experience with essential tools for
 team-based software development.
+
+## :boom: Troubleshooting
+
+Here's a few tips about some problems you may encounter during this exercise.
+
+### :boom: Alice's `git pull` command fails with a warning
+
+If you see a warning that looks like this the first time you try to use `git
+pull`:
+
+```bash
+$> git pull origin main
+hint: You have divergent branches and need to specify how to reconcile them.
+hint: You can do so by running one of the following commands sometime before
+hint: your next pull:
+hint:
+hint:   git config pull.rebase false  # merge
+hint:   git config pull.rebase true   # rebase
+hint:   git config pull.ff only       # fast-forward only
+hint:
+hint: You can replace "git config" with "git config --global" to set a default
+hint: preference for all repositories. You can also pass --rebase, --no-rebase,
+hint: or --ff-only on the command line to override the configured default per
+hint: invocation.
+fatal: ...
+```
+
+It's because Git used to define some behaviors by default, like whether to
+create a merge commit when merging divergent branches, but you now have to
+specify which behavior you prefer.
+
+You can solve this issue by running the following command once on your machine:
+
+```bash
+git config --global pull.rebase false
+```
+
+This will configure Git to always create a merge commit when merging divergent
+branches, which used to be the default and is what most people do.
+
+{% note type: more %}
+
+With the `--global` option, this setting will be saved in your global
+`~/.gitconfig` file, and you won't have to do the same thing for other
+repositories on your machine.
+
+{% endnote %}
+
+You can then re-run your pull command, which should work this time.
 
 [git]: https://git-scm.com
 
