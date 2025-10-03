@@ -24,7 +24,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
     field(:active, :boolean, default: false)
     field(:servers_enabled, :boolean, default: false)
     embeds_many(:teacher_ssh_public_keys, ClassFormSshPublicKey, on_replace: :delete)
-    field(:ssh_exercise_vm_host_key_fingerprints, :string)
+    field(:ssh_exercise_vm_md5_host_key_fingerprints, :string)
+    field(:ssh_exercise_vm_sha256_host_key_fingerprints, :string)
   end
 
   @spec add_teacher_ssh_public_key(t()) :: t()
@@ -50,7 +51,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
         :end_date,
         :active,
         :servers_enabled,
-        :ssh_exercise_vm_host_key_fingerprints
+        :ssh_exercise_vm_md5_host_key_fingerprints,
+        :ssh_exercise_vm_sha256_host_key_fingerprints
       ]
     )
     |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
@@ -69,7 +71,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       servers_enabled: class.servers_enabled,
       teacher_ssh_public_keys:
         Enum.map(class.teacher_ssh_public_keys, &ClassFormSshPublicKey.new(&1)),
-      ssh_exercise_vm_host_key_fingerprints: class.ssh_exercise_vm_host_key_fingerprints
+      ssh_exercise_vm_md5_host_key_fingerprints: class.ssh_exercise_vm_md5_host_key_fingerprints,
+      ssh_exercise_vm_sha256_host_key_fingerprints:
+        class.ssh_exercise_vm_sha256_host_key_fingerprints
     }
     |> cast(
       fixed_params,
@@ -79,7 +83,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
         :end_date,
         :active,
         :servers_enabled,
-        :ssh_exercise_vm_host_key_fingerprints
+        :ssh_exercise_vm_md5_host_key_fingerprints,
+        :ssh_exercise_vm_sha256_host_key_fingerprints
       ]
     )
     |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)

@@ -139,20 +139,41 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormComponent do
         </div>
 
         <label class="fieldset-label mt-2">
-          {gettext("SSH exercise VM host key fingerprints")}
+          {gettext("SSH exercise VM MD5 host key fingerprints")}
         </label>
         <textarea
-          id={@form[:ssh_exercise_vm_host_key_fingerprints].id}
+          id={@form[:ssh_exercise_vm_md5_host_key_fingerprints].id}
           class="textarea w-full"
-          name={@form[:ssh_exercise_vm_host_key_fingerprints].name}
+          name={@form[:ssh_exercise_vm_md5_host_key_fingerprints].name}
+          rows="3"
+          placeholder={
+            gettext(
+              "256 MD5:36:10:41:64:a0:10:0a:ff:e1:49:71:fc:71:74:d4:4c root@server (ED25519)\n256 MD5:8e:b0:cb:56:ed:d1:09:67:d9:88:62:af:60:c0:25:39 root@server (ECDSA)\n3072 MD5:85:29:3c:60:33:4d:36:4b:29:72:27:c1:b8:1e:c5:76 root@server (RSA)"
+            )
+          }
+        ><%= @form[:ssh_exercise_vm_md5_host_key_fingerprints].value %></textarea>
+        <.errors_for field={@form[:ssh_exercise_vm_md5_host_key_fingerprints]} />
+        <.field_help>
+          <code>
+            find /etc/ssh -name "*.pub" -exec ssh-keygen -lf {"{}"} -E md5 \;
+          </code>
+        </.field_help>
+
+        <label class="fieldset-label mt-2">
+          {gettext("SSH exercise VM SHA256 host key fingerprints")}
+        </label>
+        <textarea
+          id={@form[:ssh_exercise_vm_sha256_host_key_fingerprints].id}
+          class="textarea w-full"
+          name={@form[:ssh_exercise_vm_sha256_host_key_fingerprints].name}
           rows="3"
           placeholder={
             gettext(
               "3072 SHA256:x4gxcQl96qBWfIL/8BxVU2WECUuF/TmnHlEQUQcqE7w= root@server (RSA)\n256 SHA256:LTmRTt/Zc7t48a0bF1hI0tlLLOWpIu9c+ZAAytialxw= root@server (ED25519)\n256 SHA256:4wjltFerVQi4J8+rqS3atzUI7jZyUXeuCXhfdH1QKg0= root@server (ECDSA)"
             )
           }
-        ><%= @form[:ssh_exercise_vm_host_key_fingerprints].value %></textarea>
-        <.errors_for field={@form[:ssh_exercise_vm_host_key_fingerprints]} />
+        ><%= @form[:ssh_exercise_vm_sha256_host_key_fingerprints].value %></textarea>
+        <.errors_for field={@form[:ssh_exercise_vm_sha256_host_key_fingerprints]} />
         <.field_help>
           <code>
             find /etc/ssh -name "*.pub" -exec ssh-keygen -lf {"{}"} \;

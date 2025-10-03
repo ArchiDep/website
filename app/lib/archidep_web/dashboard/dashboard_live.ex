@@ -36,8 +36,17 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         )
       ])
 
-    ssh_exercise_vm_host_key_fingerprints =
-      with %Student{class: %Class{ssh_exercise_vm_host_key_fingerprints: fingerprints}}
+    ssh_exercise_vm_md5_host_key_fingerprints =
+      with %Student{class: %Class{ssh_exercise_vm_md5_host_key_fingerprints: fingerprints}}
+           when is_binary(fingerprints) <- student,
+           {:ok, valid, _invalid} <- SSH.parse_ssh_host_key_fingerprints(fingerprints) do
+        valid
+      else
+        _anything -> []
+      end
+
+    ssh_exercise_vm_sha256_host_key_fingerprints =
+      with %Student{class: %Class{ssh_exercise_vm_sha256_host_key_fingerprints: fingerprints}}
            when is_binary(fingerprints) <- student,
            {:ok, valid, _invalid} <- SSH.parse_ssh_host_key_fingerprints(fingerprints) do
         valid
@@ -74,7 +83,8 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     |> assign(
       page_title: gettext("Dashboard"),
       student: student,
-      ssh_exercise_vm_host_key_fingerprints: ssh_exercise_vm_host_key_fingerprints,
+      ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
+      ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints,
       servers: active_servers,
       inactive_servers: inactive_servers |> Enum.map(& &1.id) |> MapSet.new(),
       server_state_map: ServerTracker.server_state_map(active_servers),

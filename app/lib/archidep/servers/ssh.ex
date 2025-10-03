@@ -9,11 +9,16 @@ defmodule ArchiDep.Servers.SSH do
           {:ok, list(SSHKeyFingerprint.t()), list({String.t(), SSHKeyFingerprint.parse_error()})}
           | {:error,
              :no_keys_found | {:invalid_keys, list({String.t(), SSHKeyFingerprint.parse_error()})}}
-  def parse_ssh_host_key_fingerprints(fingerprints) when is_binary(fingerprints) do
+  @spec parse_ssh_host_key_fingerprints(String.t(), :md5 | :sha256 | :any) ::
+          {:ok, list(SSHKeyFingerprint.t()), list({String.t(), SSHKeyFingerprint.parse_error()})}
+          | {:error,
+             :no_keys_found | {:invalid_keys, list({String.t(), SSHKeyFingerprint.parse_error()})}}
+  def parse_ssh_host_key_fingerprints(fingerprints, digest_alg \\ :any)
+      when is_binary(fingerprints) do
     non_empty_lines =
       fingerprints |> String.split("\n") |> Enum.map(&String.trim/1) |> Enum.filter(&(&1 != ""))
 
-    results = Enum.map(non_empty_lines, &{&1, SSHKeyFingerprint.parse(&1)})
+    results = Enum.map(non_empty_lines, &{&1, SSHKeyFingerprint.parse(&1, digest_alg)})
 
     valid_results =
       Enum.flat_map(results, fn

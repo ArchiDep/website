@@ -34,14 +34,29 @@ defmodule ArchiDep.Support.CourseFactory do
     {teacher_ssh_public_keys, attrs!} =
       Map.pop(attrs!, :teacher_ssh_public_keys, [])
 
-    {ssh_exercise_vm_host_key_fingerprints, attrs!} =
+    {ssh_exercise_vm_md5_host_key_fingerprints, attrs!} =
       Map.pop_lazy(
         attrs!,
-        :ssh_exercise_vm_host_key_fingerprints,
+        :ssh_exercise_vm_md5_host_key_fingerprints,
         optionally(fn ->
           1
           |> Range.new(Faker.random_between(1, 3))
-          |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)
+          |> Enum.map_join("\n", fn _n ->
+            SSHFactory.random_ssh_host_key_fingerprint_string(:md5)
+          end)
+        end)
+      )
+
+    {ssh_exercise_vm_sha256_host_key_fingerprints, attrs!} =
+      Map.pop_lazy(
+        attrs!,
+        :ssh_exercise_vm_sha256_host_key_fingerprints,
+        optionally(fn ->
+          1
+          |> Range.new(Faker.random_between(1, 3))
+          |> Enum.map_join("\n", fn _n ->
+            SSHFactory.random_ssh_host_key_fingerprint_string(:sha256)
+          end)
         end)
       )
 
@@ -62,7 +77,8 @@ defmodule ArchiDep.Support.CourseFactory do
       active: active,
       servers_enabled: servers_enabled,
       teacher_ssh_public_keys: teacher_ssh_public_keys,
-      ssh_exercise_vm_host_key_fingerprints: ssh_exercise_vm_host_key_fingerprints,
+      ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
+      ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints,
       expected_server_properties: expected_server_properties,
       expected_server_properties_id: expected_server_properties.id,
       version: version,

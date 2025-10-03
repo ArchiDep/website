@@ -74,6 +74,34 @@ defmodule ArchiDep.Servers.SSH.SSHKeyFingerprint do
     end
   end
 
+  @doc """
+  Parses a single SSH public key fingerprint in MD5 or SHA256 format.
+  """
+  @spec parse(String.t(), :md5 | :sha256 | :any) :: {:ok, t()} | {:error, parse_error()}
+  def parse(fingerprint, :any) when is_binary(fingerprint) do
+    parse(fingerprint)
+  end
+
+  def parse(fingerprint, :md5) when is_binary(fingerprint) do
+    with {:ok, "MD5:" <> fingerprint_string, key_alg, raw} <-
+           parse_ssh_keygen_output_line(fingerprint),
+         {:ok, decoded_fingerprint} <- decode_key_fingerprint("MD5:" <> fingerprint_string) do
+      {:ok, new(decoded_fingerprint, key_alg, raw)}
+    else
+      {:ok, _fingerprint_string, _key_alg, _raw} -> {:error, :invalid_md5_fingerprint}
+    end
+  end
+
+  def parse(fingerprint, :sha256) when is_binary(fingerprint) do
+    with {:ok, "SHA256:" <> fingerprint_string, key_alg, raw} <-
+           parse_ssh_keygen_output_line(fingerprint),
+         {:ok, decoded_fingerprint} <- decode_key_fingerprint("SHA256:" <> fingerprint_string) do
+      {:ok, new(decoded_fingerprint, key_alg, raw)}
+    else
+      {:ok, _fingerprint_string, _key_alg, _raw} -> {:error, :invalid_sha256_fingerprint}
+    end
+  end
+
   defp parse_ssh_keygen_output_line(line) do
     case Regex.run(
            ~r"^.*((?:MD5(?::[A-Fa-f0-9]{2})+)|(?:SHA256:[A-Za-z0-9+/]+={0,2})).*\(([^)]+)\).*$",
