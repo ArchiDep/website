@@ -36,7 +36,7 @@ defmodule ArchiDep.Support.SSHFactory do
   end
 
   @spec random_ssh_host_key_fingerprint_string() :: String.t()
-  def random_ssh_host_key_fingerprint_string() do
+  def random_ssh_host_key_fingerprint_string do
     if bool() do
       random_ssh_host_key_fingerprint_string(:md5)
     else
