@@ -8,12 +8,19 @@ defmodule ArchiDepWeb.Helpers.DialogHelpers do
   alias Phoenix.LiveView.JS
   alias Phoenix.LiveView.Socket
 
+  @spec open_dialog(String.t()) :: JS.t()
+  def open_dialog(id),
+    do:
+      %JS{}
+      |> JS.push("opened", target: "##{id}")
+      |> JS.dispatch("open-dialog", detail: %{dialog: id})
+
   @spec close_dialog(String.t()) :: JS.t()
-  def close_dialog(id) do
-    %JS{}
-    |> JS.push("closed", target: "##{id}")
-    |> JS.dispatch("phx:close-dialog", detail: %{dialog: id})
-  end
+  def close_dialog(id),
+    do:
+      %JS{}
+      |> JS.push("closed", target: "##{id}")
+      |> JS.dispatch("phx:close-dialog", detail: %{dialog: id})
 
   @spec validate_dialog_form(
           atom,

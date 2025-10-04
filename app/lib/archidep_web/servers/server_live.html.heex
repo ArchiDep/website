@@ -58,9 +58,7 @@
         type="button"
         class="join-item btn btn-warning"
         disabled={ServerRealTimeState.busy?(@state)}
-        phx-click={
-          JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(@server)})
-        }
+        phx-click={EditServerDialogLive.open(@server)}
       >
         <span class="flex items-center gap-x-2">
           <Heroicons.pencil class="size-4" />

@@ -17,6 +17,27 @@ defmodule ArchiDepWeb.Components.FormComponents do
     """
   end
 
+  attr :current_value, :string, required: true, doc: "the current value of the field"
+  attr :old_value, :any, doc: "the old value of the field"
+  attr :new_value, :any, doc: "the new value of the field"
+
+  @spec concurrent_modification_warning(map()) :: Rendered.t()
+  def concurrent_modification_warning(assigns) do
+    ~H"""
+    <div class="flex flex-wrap sm:flex-nowrap justify-end items-center gap-2">
+      <span :if={@new_value != old_value} class="text-xs italic text-warning">
+        value has been modified
+      </span>
+      <span :if={@old_value != @current_value} class="badge badge-soft badge-warning badge-xs">
+        {@old_value}
+      </span>
+      <span :if={@new_value} class="badge badge-warning badge-xs cursor-pointer">
+        {@new_value}
+      </span>
+    </div>
+    """
+  end
+
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from a form, for example: @form[:email]"
 

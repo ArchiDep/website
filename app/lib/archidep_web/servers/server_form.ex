@@ -33,6 +33,9 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     embeds_one(:expected_properties, ServerPropertiesForm, on_replace: :update)
   end
 
+  @spec blank_changeset() :: Changeset.t(t())
+  def blank_changeset, do: change(%__MODULE__{})
+
   @spec create_changeset(Authentication.t(), map) :: Changeset.t(Types.server_data())
   def create_changeset(auth, params \\ %{}) when is_map(params) do
     %__MODULE__{

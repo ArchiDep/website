@@ -91,6 +91,22 @@ defmodule ArchiDep.Servers.Schemas.Server do
   @spec set_up?(t()) :: boolean()
   def set_up?(%__MODULE__{set_up_at: set_up_at}), do: set_up_at != nil
 
+  @spec changed?(t(), t(), list(atom())) :: boolean()
+  def changed?(
+        %__MODULE__{group_id: group_id, owner_id: owner_id} = a,
+        %__MODULE__{group_id: group_id, owner_id: owner_id} = b,
+        fields
+      )
+      when is_list(fields),
+      do:
+        Enum.any?(fields, fn
+          :expected_properties ->
+            ServerProperties.changed?(a.expected_properties, b.expected_properties)
+
+          field ->
+            Map.get(a, field) != Map.get(b, field)
+        end)
+
   @spec valid_ssh_host_key_fingerprints(t()) :: list(SSHKeyFingerprint.t())
   def valid_ssh_host_key_fingerprints(%__MODULE__{
         ssh_host_key_fingerprints: ssh_host_key_fingerprints

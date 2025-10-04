@@ -46,6 +46,23 @@
     <Heroicons.check_circle :if={@student.active} class="size-5 text-success" />
     <Heroicons.x_circle :if={not @student.active} class="size-5 text-error" />
   </.data_display_element>
+  <.data_display_element title={gettext("Servers enabled")} class="flex items-center gap-2">
+    <Heroicons.check_circle :if={@student.servers_enabled} class="size-5 text-success" />
+    <Heroicons.x_circle :if={not @student.servers_enabled} class="size-5 text-error" />
+    <span
+      :if={@student.servers_enabled != @student.class.servers_enabled}
+      class="text-info text-sm italic"
+    >
+      <%= if @student.class.servers_enabled do %>
+        {gettext("enabled for class")}
+      <% else %>
+        {gettext("disabled for class")}
+      <% end %>
+    </span>
+  </.data_display_element>
+  <.data_display_element title={gettext("Domain")} class="font-mono">
+    {@student.domain}
+  </.data_display_element>
   <.data_display_element title={gettext("User account")}>
     <%= if @student.user do %>
       <span

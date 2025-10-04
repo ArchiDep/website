@@ -31,6 +31,8 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
           distribution_version: String.t() | nil
         }
 
+  @significant_fields ~w(hostname machine_id cpus cores vcpus memory swap system architecture os_family distribution distribution_release distribution_version)a
+
   schema "server_properties" do
     field(:hostname, :string)
     field(:machine_id, :string)
@@ -46,6 +48,10 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
     field(:distribution_release, :string)
     field(:distribution_version, :string)
   end
+
+  @spec changed?(t(), t()) :: boolean()
+  def changed?(%__MODULE__{} = a, %__MODULE__{} = b),
+    do: Enum.any?(@significant_fields, &(Map.get(a, &1) != Map.get(b, &1)))
 
   @spec blank(UUID.t()) :: t()
   def blank(id), do: %__MODULE__{id: id}

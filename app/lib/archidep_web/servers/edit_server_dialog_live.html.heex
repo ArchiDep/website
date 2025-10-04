@@ -8,13 +8,24 @@
       id="edit-server-form"
       auth={@auth}
       form={@form}
+      server={if(@open != false, do: @open)}
+      changed_server={changed_server(@open, @server)}
       group={@server.group}
       title={gettext("Edit Server")}
+      loading={@open == false}
       busy={ServerRealTimeState.busy?(@state)}
       on_submit="update"
       on_close={close(@server)}
       target={@myself}
     >
+      <:header>
+        <div :if={changed_server(@open, @server) != nil} role="alert" class="alert alert-warning">
+          <Heroicons.exclamation_triangle class="size-4" />
+          {gettext(
+            "This server has been modified since you started editing it. Please review the changes before saving."
+          )}
+        </div>
+      </:header>
       <:footer>
         <div
           :if={ServerRealTimeState.busy?(@state)}
