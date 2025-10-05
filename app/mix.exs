@@ -33,7 +33,7 @@ defmodule ArchiDep.MixProject do
           validate_compile_env: false
         ]
       ],
-      test_coverage: [tool: ExCoveralls]
+      test_coverage: [tool: ExCoveralls, export: "cov"]
     ]
   end
 
