@@ -55,7 +55,6 @@ defmodule ArchiDep.MixProject do
     [
       {:bandit, "~> 1.5"},
       {:csv, "~> 3.2"},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dns_cluster, "~> 0.2.0"},
       {:ecto_network, "~> 1.5.0"},
       {:ecto_sql, "~> 3.10"},
@@ -97,6 +96,7 @@ defmodule ArchiDep.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:credo_contrib, "~> 0.2.0", only: [:dev, :test], runtime: false},
       {:credo_naming, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_machina, "~> 2.8.0", only: :test},
       {:excoveralls, "~> 0.18.1", only: :test},
       {:faker, "~> 0.18.0", only: :test},
