@@ -83,13 +83,7 @@ defmodule ArchiDep.MixProject do
       {:swoosh, "~> 1.5"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
-      # Use the latest version of ua_inspector from the master branch because of
-      # a compilation issue with OTP 28 that has not yet been released. Switch
-      # back to the published version once 3.11 is out. See
-      # https://github.com/elixir-inspector/ua_inspector/blob/master/CHANGELOG.md.
-      # {:ua_inspector, "~> 3.0"},
-      {:ua_inspector,
-       git: "https://github.com/elixir-inspector/ua_inspector.git", branch: "master"},
+      {:ua_inspector, "~> 3.11"},
       {:ueberauth, "~> 0.10.8"},
       {:ueberauth_oidcc, "~> 0.4.1"},
       # Development & test dependencies
