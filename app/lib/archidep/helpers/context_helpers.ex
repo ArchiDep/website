@@ -1,6 +1,10 @@
 defmodule ArchiDep.Helpers.ContextHelpers do
   @moduledoc """
-  Helpers to implement application contexts.
+  Helpers to implement application contexts. The main goal of the macros in this
+  module is to provide a way to define a context behaviour with documentation
+  and typespecs, and then simply reference the behaviour in both the public API
+  module and the implementation module, without having to repeat the
+  documentation and typespecs.
 
   See https://hexdocs.pm/phoenix/contexts.html.
   """
