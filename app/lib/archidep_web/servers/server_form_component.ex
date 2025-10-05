@@ -11,36 +11,44 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
-  attr :id, :string, doc: "the id of the form"
-  attr :auth, Authentication, doc: "the authentication context"
-  attr :form, Form, doc: "the form to render"
-  attr :server, Server, default: nil, doc: "the server being edited, if any"
+  attr(:id, :string, doc: "the id of the form")
+  attr(:auth, Authentication, doc: "the authentication context")
+  attr(:form, Form, doc: "the form to render")
 
-  attr :changed_server, Server,
+  attr(:server, Server,
     default: nil,
-    doc: "the new state of the server that differs from the server being edited, if any"
+    doc: "the previous state of the server being edited, if any"
+  )
 
-  attr :group, ServerGroup, default: nil, doc: "the group to which the server belongs"
-  attr :groups, :list, default: nil, doc: "a list of server groups to choose from"
-  attr :title, :string, doc: "the title of the form"
+  attr(:changed_server, Server,
+    default: nil,
+    doc: "the new state of the server being edited, if any"
+  )
 
-  attr :loading, :boolean, default: false, doc: "whether the form is loading"
+  attr(:group, ServerGroup, default: nil, doc: "the group to which the server belongs")
+  attr(:groups, :list, default: nil, doc: "a list of server groups to choose from")
+  attr(:title, :string, doc: "the title of the form")
 
-  attr :busy, :boolean,
+  attr(:loading, :boolean, default: false, doc: "whether the form is loading")
+
+  attr(:busy, :boolean,
     default: false,
     doc: "whether the server is busy and cannot be updated"
+  )
 
-  attr :on_submit, :string, doc: "the event to trigger on form submission"
-  attr :on_close, JS, default: nil, doc: "optional JS to execute when the form is closed"
-  attr :target, :string, default: nil, doc: "the target for the form submission"
+  attr(:on_submit, :string, doc: "the event to trigger on form submission")
+  attr(:on_close, JS, default: nil, doc: "optional JS to execute when the form is closed")
+  attr(:target, :string, default: nil, doc: "the target for the form submission")
 
-  slot :header,
+  slot(:header,
     required: false,
     doc: "optional header displayed at the top of the form, below the title"
+  )
 
-  slot :footer,
+  slot(:footer,
     required: false,
     doc: "optional footer displayed at the bottom of the form, above the actions"
+  )
 
   @spec server_form(map()) :: Rendered.t()
   def server_form(assigns) do
@@ -75,17 +83,13 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             value={@form[:name].value}
             placeholder={gettext("Give it a name if you want, e.g. My Precious")}
           />
-          <div class="flex flex-wrap sm:flex-nowrap justify-end items-center gap-2">
-            <span class="text-xs italic text-warning">
-              value has been modified
-            </span>
-            <span class="badge badge-soft badge-warning badge-xs">
-              old value
-            </span>
-            <span class="badge badge-warning badge-xs cursor-pointer">
-              New Value
-            </span>
-          </div>
+          <.concurrent_modification_warning
+            :if={@server != nil and @changed_server != nil}
+            class="justify-end"
+            current_value={@form[:name].value}
+            old_value={@server.name}
+            new_value={@changed_server.name}
+          />
           <.errors_for field={@form[:name]} />
         <% end %>
 
@@ -124,6 +128,21 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             />
             {gettext("Active")}
           </label>
+          <.concurrent_modification_warning
+            :if={@server != nil and @changed_server != nil}
+            current_value={@form[:active].value}
+            old_value={@server.active}
+            new_value={@changed_server.active}
+            process_value={&process_boolean/1}
+          >
+            <:value_display :let={value}>
+              <%= if value do %>
+                Active
+              <% else %>
+                Inactive
+              <% end %>
+            </:value_display>
+          </.concurrent_modification_warning>
           <.errors_for field={@form[:active]} />
         <% end %>
       </fieldset>
@@ -144,6 +163,15 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             value={@form[:ip_address].value}
             placeholder={gettext("e.g. 1.2.3.4")}
           />
+          <.concurrent_modification_warning
+            :if={@server != nil and @changed_server != nil}
+            class="justify-end"
+            current_value={@form[:ip_address].value}
+            old_value={@server.ip_address.address}
+            new_value={@changed_server.ip_address.address}
+            process_value={&process_ip_address/1}
+            display_value={&display_ip_address/1}
+          />
           <.errors_for field={@form[:ip_address]} />
         <% end %>
         <.field_help>
@@ -162,6 +190,13 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             name={@form[:username].name}
             value={@form[:username].value}
             placeholder={gettext("e.g. jde")}
+          />
+          <.concurrent_modification_warning
+            :if={@server != nil and @changed_server != nil}
+            class="justify-end"
+            current_value={@form[:username].value}
+            old_value={@server.username}
+            new_value={@changed_server.username}
           />
           <.errors_for field={@form[:username]} />
         <% end %>
@@ -184,6 +219,13 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               name={@form[:app_username].name}
               value={@form[:app_username].value}
             />
+            <.concurrent_modification_warning
+              :if={@server != nil and @changed_server != nil}
+              class="justify-end"
+              current_value={@form[:app_username].value}
+              old_value={@server.app_username}
+              new_value={@changed_server.app_username}
+            />
             <.errors_for field={@form[:app_username]} />
           <% end %>
         <% end %>
@@ -204,6 +246,14 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             step="1"
             placeholder={gettext("22 by default")}
           />
+          <.concurrent_modification_warning
+            :if={@server != nil and @changed_server != nil}
+            class="justify-end"
+            current_value={@form[:ssh_port].value || 22}
+            old_value={@server.ssh_port || 22}
+            new_value={@changed_server.ssh_port || 22}
+            process_value={&process_integer/1}
+          />
           <.errors_for field={@form[:ssh_port]} />
         <% end %>
 
@@ -223,6 +273,25 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
               )
             }
           ><%= @form[:ssh_host_key_fingerprints].value %></textarea>
+          <.concurrent_modification_warning
+            :if={@server != nil and @changed_server != nil}
+            class="justify-end !gap-1 sm:flex-wrap"
+            current_value={@form[:ssh_host_key_fingerprints].value}
+            old_value={@server.ssh_host_key_fingerprints}
+            show_old_value={false}
+            new_value={@changed_server.ssh_host_key_fingerprints}
+            new_value_style={:raw}
+          >
+            <:value_display :let={value}>
+              <div class="w-full tooltip" data-tip={gettext("New value")}>
+                <textarea
+                  class="textarea w-full border-warning bg-warning/10 text-warning"
+                  rows="3"
+                  readonly
+                ><%= value %></textarea>
+              </div>
+            </:value_display>
+          </.concurrent_modification_warning>
           <.errors_for field={@form[:ssh_host_key_fingerprints]} />
         <% end %>
         <.field_help>
@@ -665,6 +734,29 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
     </.form>
     """
   end
+
+  defp process_boolean(value) when is_boolean(value), do: {:ok, value}
+  defp process_boolean("true"), do: {:ok, true}
+  defp process_boolean("false"), do: {:ok, false}
+  defp process_boolean(_value), do: :error
+
+  defp process_integer(value) when is_integer(value), do: {:ok, value}
+
+  defp process_integer(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {int, ""} -> {:ok, int}
+      _anything_else -> :error
+    end
+  end
+
+  defp process_integer(_value), do: :error
+
+  defp process_ip_address(value) when is_binary(value),
+    do: value |> to_charlist() |> :inet.parse_address()
+
+  defp process_ip_address(_value), do: :error
+
+  defp display_ip_address(addr) when is_tuple(addr), do: addr |> :inet.ntoa() |> to_string()
 
   defp expected_placeholder(nil, _field, default), do: default
 

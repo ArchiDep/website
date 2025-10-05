@@ -103,6 +103,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
           :expected_properties ->
             ServerProperties.changed?(a.expected_properties, b.expected_properties)
 
+          :ssh_port ->
+            Map.get(a, :ssh_port, 22) != Map.get(b, :ssh_port, 22)
+
           field ->
             Map.get(a, field) != Map.get(b, field)
         end)

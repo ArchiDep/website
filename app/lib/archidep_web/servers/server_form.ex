@@ -73,7 +73,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
   def update_changeset(server, params \\ %{}) when is_struct(server, Server) and is_map(params) do
     %__MODULE__{
       name: server.name,
-      ip_address: :inet.ntoa(server.ip_address.address),
+      ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: server.username,
       ssh_port: server.ssh_port,
       ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,

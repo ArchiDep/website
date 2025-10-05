@@ -100,16 +100,33 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
     auth = socket.assigns.auth
     server = socket.assigns.server
 
-    validate_dialog_form(
-      :server,
-      ServerForm.update_changeset(server, params),
-      &Servers.validate_existing_server(
-        auth,
-        server.id,
-        ServerForm.to_update_data(&1)
-      ),
-      socket
-    )
+    changeset = ServerForm.update_changeset(server, params)
+
+    with {:ok, form_data} <- Changeset.apply_action(changeset, :validate),
+         {:ok, result_changeset} <-
+           Servers.validate_existing_server(
+             auth,
+             server.id,
+             ServerForm.to_update_data(form_data)
+           ) do
+      {:noreply,
+       assign(socket,
+         form:
+           to_form(%Changeset{changeset | errors: result_changeset.errors},
+             as: :server,
+             action: :validate
+           )
+       )}
+    else
+      {:error, %Changeset{} = result_changeset} ->
+        {:noreply,
+         assign(socket,
+           form:
+             to_form(%Changeset{changeset | errors: changeset.errors ++ result_changeset.errors},
+               as: :server
+             )
+         )}
+    end
   end
 
   def handle_event("update", %{"server" => params}, socket) do
