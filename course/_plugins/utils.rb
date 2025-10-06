@@ -22,7 +22,7 @@ module ArchiDep
       unless refs.empty?
         refs.reduce(text) do |content, link_reference|
           content.gsub(
-            /\]\[#{link_reference[:reference]}\]/,
+            /\]\[#{Regexp.escape(link_reference[:reference])}\]/,
             "](#{link_reference[:url]})"
           )
         end
