@@ -8,6 +8,7 @@
 @plugin "daisyui";
 
 @source "../../course/collections/_course/**/slides/**/*.md";
+@source "../../course/collections/_course/**/slides.md";
 @source "../../course/_layouts/slides.html";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
