@@ -1,1 +1,12 @@
+# Jekyll configuration overrides to run the site in development mode with the
+# dashboard application.
+
+# Force insertion of the live reload script tag in the HTML layout even if not
+# accessed through the standard Jekyll server. This is needed because the
+# dashboard application serves the compiled files directly, bypassing the
+# Jekyll server.
+#
+# A side effect is that the live reload script will be included twice when
+# accessing the site through the Jekyll server, but you should be accessing the
+# site through the dashboard application anyway.
 livereload_script_forced: true

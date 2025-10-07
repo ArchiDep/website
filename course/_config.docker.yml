@@ -1,1 +1,5 @@
+# Jekyll configuration overrides for running the site in development mode in a
+# Docker container with live reload.
+
+# Allow access from outside the container.
 host: 0.0.0.0

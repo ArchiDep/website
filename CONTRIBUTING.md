@@ -70,9 +70,12 @@ subdirectories (`app`, `course` and `theme`) for more specific guidelines.
   - Theme: DaisyUI & Tailwind CSS
 
 - **General Style**
+  - Follow the conventions and best practices of the main frameworks, languages
+    and libraries used in each component of the project (see above).
   - Prioritize clarity and maintainability over cleverness.
   - Avoid code duplication where possible, but do not over-engineer.
   - Consider accessibility in all UI changes.
+  - Write modular and reusable code with clear separation of concerns.
   - Keep functions concise; prefer single-responsibility functions.
   - Avoid deeply nested code; refactor complex logic into smaller functions.
 

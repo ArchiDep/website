@@ -17,7 +17,7 @@ for AI assistants and automated agents.
 
 ---
 
-## Theme Overview
+## Overview
 
 The `theme` directory provides a shared Tailwind CSS theme for both the Phoenix
 backend and Jekyll frontend. It includes custom CSS files, Tailwind

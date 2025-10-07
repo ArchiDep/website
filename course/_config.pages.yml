@@ -1,2 +1,5 @@
+# Jekyll configuration overrides to build the site for deployment to GitHub
+# Pages.
+
 baseurl: '/website'
 archidep_standalone: true
