@@ -254,6 +254,72 @@ Students can also choose to expand all `more` callouts at once from any open
 `more` callout box. This setting is persisted to the browser's local storage, so
 that all `more` callouts remain expanded on subsequent visits to the site.
 
+#### Side-by-Side Columns
+
+The `cols` tag creates responsive side-by-side columns to organize content
+horizontally. It is useful for comparing two or more items, such as commands,
+code snippets, or images. The content within the `cols` tag is split into
+separate columns using the `<!-- col -->` delimiter. The columns are displayed
+side-by-side on larger screens and stacked vertically on smaller screens for
+better readability.
+
+Prefer adding a new line after the opening tag and before the closing tag for
+better readability and to avoid issues when wrapping lines.
+
+The `cols` tag is implemented in the [`_plugins/tags/cols.rb`
+file](./_plugins/tags/cols.rb).
+
+**Example usage:**
+
+```liquid
+{% cols %}
+
+This is the first column.
+
+<!-- col -->
+
+This is the second column.
+
+{% endcols %}
+```
+
+More columns can be added by specifying the `columns` attribute:
+
+```liquid
+{% cols columns: 3 %}
+
+This is the first column.
+
+<!-- col -->
+
+This is the second column.
+
+<!-- col -->
+
+This is the third column.
+
+{% endcols %}
+```
+
+Classes can be added to each column within the `<!-- col -->` delimiter:
+
+```liquid
+{% cols %}
+
+<!-- col text-red-500 -->
+
+This is the first column with a custom class.
+
+<!-- col text-center font-bold -->
+
+This is the second column with multiple custom classes.
+
+{% endcols %}
+```
+
+Note that the whitespace between the opening tag and the first delimiter is
+ignored and not included in the first column.
+
 TODO: cloud server, randomization (chance), revealjs, progress tracking
 
 - Use [Mermaid][mermaid] for diagrams and visualizations where appropriate.
