@@ -107,9 +107,156 @@ the dashboard functionality is only available during the current semester).
 
 ---
 
-## Course Material Guidelines
+## Course Material
 
-TODO: notes, callouts, tell me more, cloud server, randomization (chance), revealjs, real slides
+This section describes features and guidelines used in the actual course
+materials.
+
+### Writing Guidelines
+
+- Use Markdown for formatting text, code blocks, lists, and other elements.
+- Include images, diagrams, and other media to enhance understanding where
+  appropriate.
+- Ensure all links are valid and point to relevant resources.
+- Use consistent terminology and style throughout the materials.
+- Follow accessibility best practices to ensure content is usable by all
+  students.
+
+### Document Types
+
+- A subject is a comprehensive document covering a specific topic, often
+  including detailed explanations, examples, and exercises. It is meant to be
+  read and studied in depth.
+- Slides are more concise and visual, used for presentations or summarizing key
+  points. They can be standalone (shown in the sidebar) or introduce a subject
+  (embedded at the beginning of a subject).
+- Exercises are practical tasks or problems for students to solve, often related
+  to a subject. They can be graded or not.
+- Cheatsheets are quick reference guides summarizing key concepts, commands,
+  or procedures. They are meant to be used as a handy resource during study or
+  practice.
+
+### File Naming Conventions
+
+Take care to respect the following conventions to ensure proper display,
+ordering and identification of documents. The `_plugins/archidep.rb` plugin
+relies on these conventions to extract metadata from filenames and directory
+structures.
+
+- Store subjects, slides and exercises in the [`collections/_course`
+  directory](./collections/_course).
+  - Name subdirectories with a three-digit numeric code followed by a short
+    URL-friendly name, e.g. `101-introduction`, `201-deployment.md`,
+    `202-git-basics.md`. The numeric code is used for ordering and
+    identification.
+  - The first digit of the numeric code indicates the section (1 for section 1,
+    2 for section 2, etc). Sections are defined in the `_data/course.yml` file.
+    The second and third digits indicate the order of documents within each
+    section.
+  - The main file in each subdirectory should be named `subject.md`, `slides.md`
+    or `exercise.md` depending on the type of document.
+  - A subject can also have accompanying slides. In this case, place a `slides`
+    subdirectory next to the `subject.md` file, and put the `slides.md` file
+    inside it.
+  - Subjects, slides and exercices can have additional files, such as images or
+    data files, placed in an `images` subdirectory next to their respective
+    Markdown files.
+- Store cheatsheets in the [`collections/_cheatsheets`
+  directory](./collections/_cheatsheets).
+  - Each cheatsheet should have its own subdirectory named with a short
+    URL-friendly name, e.g. `command-line`, `git`.
+  - The main file in each subdirectory should be named `cheatsheet.md`.
+  - A cheatsheet can have additional files, such as images or data files, placed
+    in an `images` subdirectory next to the `cheatsheet.md` file.
+
+### Special Tags and Features
+
+This section describes special Liquid tags and features available for use in
+course materials. Use them to enhance the content and improve the learning
+experience.
+
+#### Notes
+
+The `note` tag creates a styled note box to highlight various kinds of
+information. The following note types are available:
+
+- `info`: Side note shown as a discreet gray box (default)
+- `tip`: Helpful tip with a blue accent
+- `warning`: Warning or caution with an orange accent
+- `troubleshooting`: Troubleshooting advice with a red accent
+- `more`: Additional information or resources with a green accent
+- `advanced`: Advanced topic or challenge with a purple accent
+
+Prefer adding a new line after the opening tag and before the closing tag for
+better readability and to avoid issues when wrapping lines.
+
+The `note` tag is implemented in the [`_plugins/tags/note.rb`
+file](./_plugins/tags/note.rb).
+
+**Example usage:**
+
+```liquid
+{% note type: tip %}
+
+This is a helpful tip.
+
+{% endnote %}
+```
+
+#### Callouts
+
+The `callout` tag creates a styled callout box to draw attention to very
+important information. It is much more prominent than a note and should be used
+sparingly. The following callout types are available:
+
+- `exercise`: Callout for an exercise or task with a blue accent
+- `warning`: Warning with an orange accent, used for important cautions
+- `danger`: Critical warning with a red accent, used for severe risks
+- `more`: Additional information or resources with a green accent
+
+Prefer adding a new line after the opening tag and before the closing tag for
+better readability and to avoid issues when wrapping lines.
+
+The `callout` tag is implemented in the [`_plugins/tags/callout.rb`
+file](./_plugins/tags/callout.rb).
+
+**Example usage:**
+
+```liquid
+{% callout type: warning %}
+
+This is an important warning.
+
+{% endcallout %}
+```
+
+A `more` callout requires an ID that is unique within the whole course:
+
+```liquid
+{% callout type: more, id: some-stuff %}
+
+This is additional information with a unique ID.
+
+{% endcallout %}
+```
+
+##### Tell Me More
+
+`more` callouts are collapsible boxes that can be toggled open and closed. They
+are collapsed by default, showing only the first few lines of content. A "Tell
+me more" button can be clicked to expand the box and reveal the full content.
+
+Use them to provide extensive additional information or resources that are not
+essential for understanding the main content, but may be of interest to some
+students.
+
+Students can also choose to expand all `more` callouts at once from any open
+`more` callout box. This setting is persisted to the browser's local storage, so
+that all `more` callouts remain expanded on subsequent visits to the site.
+
+TODO: cloud server, randomization (chance), revealjs, progress tracking
+
+- Use [Mermaid][mermaid] for diagrams and visualizations where appropriate.
 
 ---
 
@@ -126,6 +273,10 @@ See the next sections for more specific guidelines.
   - [Preact][preact] and [Preact signals][preact-signals] with TSX for
     client-side interactive components
   - [Lunr][lunr] for full-text search
+- **Liquid Guidelines**
+  - Keep logic in Liquid templates minimal; prefer to handle complex logic in
+    Ruby plugins. Look for refactoring opportunities as this may not currently
+    be the case.
 - **Client Assets Guidelines**
   - Use [Preact][preact] for interactive components
   - Use [Preact signals][preact-signals] for state management
@@ -134,11 +285,9 @@ See the next sections for more specific guidelines.
 - **TypeScript Guidelines**
   - Use strict typing and interfaces to ensure type safety.
   - Try to make impossible states unrepresentable.
-  - Use
-- **Liquid Guidelines**
-  - Keep logic in Liquid templates minimal; prefer to handle complex logic in
-    Ruby plugins. Look for refactoring opportunities as this may not currently
-    be the case.
+  - Never use `any`. If you cannot know about the type of a value, create an
+    [`io-ts` codec][io-ts-concepts] to validate it at runtime.
+  - Use [ts-pattern][ts-pattern] for exhaustive pattern matching.
 
 ---
 
@@ -194,7 +343,7 @@ TODO: [Iconfify][iconify]
 - [Ruby][ruby]
   - [Ruby Documentation][ruby-docs]
 - [TypeScript][typescript]
-  - [ts-pattern][ts-pattern] for exhaustive pattern matching in TypeScript
+  - [ts-pattern][ts-pattern] for exhaustive pattern matching
 - [Webpack][webpack] for bundling JavaScript and TypeScript
   - [Webpack Documentation][webpack-docs]
 
@@ -208,6 +357,7 @@ agents.
 
 [iconify]: https://github.com/iconify/iconify
 [io-ts]: https://github.com/gcanti/io-ts
+[io-ts-concepts]: https://gcanti.github.io/io-ts/
 [io-ts-docs]: https://github.com/gcanti/io-ts/blob/master/index.md
 [jekyll]: https://jekyllrb.com
 [jekyll-docs]: https://jekyllrb.com/docs
