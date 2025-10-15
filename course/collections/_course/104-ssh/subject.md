@@ -4,8 +4,6 @@ title: Secure Shell (SSH)
 
 Learn about the SSH cryptographic network protocol and how to use the SSH command line tool to connect to other computers.
 
-<!-- slide-include ../../BANNER.md -->
-
 **You will need**
 
 - A Unix CLI

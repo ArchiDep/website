@@ -6,7 +6,7 @@ This exercise guides you through establishing a raw TCP connection between two
 servers and manually sending an HTTP request to a web server, illustrating how
 network protocols work in practice.
 
-## :exclamation: **Bob:** listen for TCP clients
+## :exclamation: Establish a bi-directional TCP connection
 
 {% callout type: exercise %}
 
@@ -14,12 +14,14 @@ You need to find a partner for this part of the exercise, since the goal is to
 establish a TCP connection between two of the servers you have set up for the
 course.
 
-Let's call you **Bob** and your partner **Alice**.
+Let's call you and your partner **Bob** and **Alice**.
 
 Alice will need to know the public IP address of Bob's server. We will refer to
 it as `W.X.Y.Z`.
 
 {% endcallout %}
+
+### :exclamation: **Bob:** listen for TCP clients
 
 Bob should run the `nc` command on his server to listen for TCP connections on
 port 3000:
@@ -35,7 +37,7 @@ console, waiting for a TCP client to connect.
 
 {% endnote %}
 
-## :exclamation: **Alice:** connect to Bob's server
+### :exclamation: **Alice:** connect to Bob's server
 
 Alice should run the `nc` command on her server to connect to TCP port 3000 on
 Bob's server:
@@ -51,7 +53,9 @@ Bob's server.
 
 {% endnote %}
 
-## :exclamation: Communicate!
+### :exclamation: **Bob** and **Alice**: communicate!
+
+{% cols %}
 
 Bob should type "Hello" and press `Enter` to send this text:
 
@@ -60,6 +64,8 @@ $> nc -l 3000
 Hello
 ```
 
+<!-- col -->
+
 It should be immediately displayed in Alice's terminal:
 
 ```bash
@@ -67,7 +73,12 @@ $> nc W.X.Y.Z 3000
 Hello
 ```
 
-Similarly, if Alice types "World" after that and presses `Enter`:
+{% endcols %}
+
+Similarly, if Alice types "World" after that and presses `Enter`, it should
+immediately appear in Bob's terminal:
+
+{% cols %}
 
 ```bash
 $> nc W.X.Y.Z 3000
@@ -75,7 +86,7 @@ Hello
 World
 ```
 
-It should appear in Bob's terminal:
+<!-- col -->
 
 ```bash
 $> nc -l 3000
@@ -83,11 +94,19 @@ Hello
 World
 ```
 
+{% endcols %}
+
 You have a two-way raw TCP connection running.
 
 Once you're done, you can close the connection with `Ctrl-C`.
 
 ## :exclamation: Talk ~~dirty~~ HTTP to Google
+
+{% callout type: exercise %}
+
+You can do the rest of this exercise individually.
+
+{% endcallout %}
 
 Let's do something that your browser does every day: an HTTP request.
 
