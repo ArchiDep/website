@@ -65,18 +65,18 @@ Here are a few commands you might find useful for the exercise. They all operate
 on the data received from their standard input stream, and print the result on
 their standard output stream, so they can be piped into each other:
 
-| Command                             | Description                                                                                  |
-| :---------------------------------- | :------------------------------------------------------------------------------------------- |
-| `cut -d ' ' -f <n>`                 | Select word in column `<n>` of each line (using one space as the delimiter)                  |
-| `fold -w 1`                         | Print one character by line                                                                  |
-| `grep [-i] <letterOrWord>`          | Select only lines that contain a given letter or word, e.g. `grep foo` (`-i` to ignore case) |
-| `grep "^<text>$"`                   | Select only lines that contain this exact text (e.g. `grep "^foo$"`)                         |
-| `gzip -c`                           | Compress data                                                                                |
-| `sort [-n]`                         | Sort lines alphabetically (`-n` to sort numerically)                                         |
-| `tr '[:upper:]' '[:lower:]'`        | Convert all uppercase characters to lowercase                                                |
-| `tr -s '[[:punct:][:space:]]' '\n'` | Split by word                                                                                |
-| `uniq [-c]`                         | Filter out repeated lines (`-c` also counts them)                                            |
-| `wc [-l] [-w] [-m]`                 | Count lines, words or characters                                                             |
+| Command                             | Description                                                                                                    |
+| :---------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| `cut -d ' ' -f <n>`                 | Select word in column `<n>` of each line (using one space as the delimiter)                                    |
+| `fold -w 1`                         | Print one character by line                                                                                    |
+| `grep [-i] <letterOrWord>`          | Select only lines that contain a given letter or word, e.g. `grep foo` (`-i` to ignore case)                   |
+| `grep "^<text>$"`                   | Select only lines that contain this exact text (e.g. `grep "^foo$"`)                                           |
+| `gzip -c`                           | Compress data                                                                                                  |
+| `sort [-bnr]`                       | Sort lines alphabetically (`-b` to ignore leading blanks, `-n` to sort numerically, `-r` to reverse the order) |
+| `tr '[:upper:]' '[:lower:]'`        | Convert all uppercase characters to lowercase                                                                  |
+| `tr -s '[[:punct:][:space:]]' '\n'` | Split by word                                                                                                  |
+| `uniq [-c]`                         | Filter out repeated lines (`-c` also counts them)                                                              |
+| `wc [-l] [-w] [-m]`                 | Count lines, words or characters                                                                               |
 
 {% note type: tip %}
 Remember that if you want to know more about any of these commands or
