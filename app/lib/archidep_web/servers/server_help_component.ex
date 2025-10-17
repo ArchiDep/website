@@ -132,8 +132,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
             target="_blank"
           >add the course's SSH public key to your user's authorized keys</a>?
           We won't be able to log in without it. Make sure to copy the entire
-          command from the exercise and to replace `jde` with your own username
-          before running it on your server.
+          command from the exercise and to run it on your server.
         </li>
       </ul>
     </.troubleshooting_note>
