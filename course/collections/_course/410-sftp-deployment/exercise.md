@@ -66,9 +66,7 @@ security of your MySQL installation.
 
 We suggest that you configure low password strength validation in MySQL when
 asked. [A password that is hard to remember is not a good
-password](https://xkcd.com/936/). You're better off [using a
-passphrase](https://www.useapassphrase.com) (here's a [French
-version](https://passwordcreator.org/fr.html#good)).
+password.](https://xkcd.com/936/)
 
 {% endnote %}
 
