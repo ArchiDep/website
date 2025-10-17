@@ -117,7 +117,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
           Did you configure the correct username? We might be trying to log in
           with the wrong user. We need the
           <a
-            href={"#{Material.run_virtual_server_exercise().url}#exclamation-give-the-teacher-access-to-your-virtual-machine"}
+            href={"#{Material.run_virtual_server_exercise().url}#exclamation-configure-your-administator-account"}
             class="underline hover:no-underline"
             target="_blank"
           >
