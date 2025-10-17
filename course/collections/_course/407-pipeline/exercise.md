@@ -42,8 +42,13 @@ Use command pipelines and stream redirections to:
 - Compress the text and save it to `rainbow.txt.gz`
 - Count the number of times the letter `e` is used (case-insensitive)
 - Count the number of times the word `the` is used (case-insensitive)
-- Answer the question: what are the five most used words in the
-  text (case-insensitive) and how many times are they used?
+
+{% note type: advanced, title: "Challenge" %}
+
+Answer the question: what are the five most used words in the text
+(case-insensitive) and how many times are they used?
+
+{% endnote %}
 
 ## :gem: Example
 
