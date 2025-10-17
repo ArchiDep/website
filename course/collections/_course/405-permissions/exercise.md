@@ -9,7 +9,7 @@ using Unix permissions.
 
 {% callout type: exercise %}
 
-Connect to your virtual server with SSH for this exercise.
+Connect to your cloud server with SSH for this exercise.
 
 {% endcallout %}
 

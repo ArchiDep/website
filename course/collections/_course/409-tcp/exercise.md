@@ -1,5 +1,6 @@
 ---
 title: Make TCP connections
+cloud_server: details
 ---
 
 This exercise guides you through establishing a raw TCP connection between two

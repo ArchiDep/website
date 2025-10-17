@@ -1,18 +1,29 @@
 ---
 title: Deploy a PHP application with SFTP
+cloud_server: details
+excerpt_separator: <!-- more -->
 ---
 
 This guide describes how to deploy a [PHP][php] application over [SFTP][sftp] on
 a server with PHP and [MySQL][mysql] installed, using the PHP development
 server.
 
+{% callout type: exercise %}
+
+Connect to your cloud server with SSH for this exercise.
+
+{% endcallout %}
+
+<!-- more -->
+
 ## :exclamation: Setup
 
-Use the previous PHP Todolist Exercice. Clone the [PHP Todolist Exercice][php-todolist] on your local machine if you do not have it. Be sure to use a version with the three SQL queries implemented.
+Use the previous PHP Todolist Exercice. Clone the [PHP Todolist
+Exercice][php-todolist] on your local machine if you do not have it. Be sure to
+use a version with the three SQL queries implemented, i.e. the fork you worked
+on as a group.
 
 ### :exclamation: Install MySQL
-
-**Connect to your server with SSH.**
 
 Update your package lists and install the MySQL database server:
 
@@ -23,12 +34,22 @@ $> sudo apt install mysql-server
 ```
 
 {% note type: tip %}
-APT may prompt you to restart some services. See the troubleshooting section about [:boom: Daemons using outdated libraries](#boom-daemons-using-outdated-libraries) if necessary.
+
+APT may prompt you to restart some services. See the troubleshooting section
+about [:boom: Daemons using outdated
+libraries](#boom-daemons-using-outdated-libraries) if necessary.
+
 {% endnote %}
 
-{% callout type: more, id:apt %}
-[**A**dvanced **P**ackaging **T**ool (APT)][apt] is the [package manager][package-manager] for Ubuntu (and some other Linux distributions). We will not discuss this tool, but you can read more about it in the [installation & upgrading section of the system administration cheatsheet][sysadmin-cheatsheet-apt].
-{% endcallout %}
+{% note type: more %}
+
+[**A**dvanced **P**ackaging **T**ool (APT)][apt] is the [package
+manager][package-manager] for Ubuntu (and some other Linux distributions). We
+will not discuss this tool, but you can read more about it in the [installation
+& upgrading section of the system administration
+cheatsheet][sysadmin-cheatsheet-apt].
+
+{% endnote %}
 
 APT should automatically start MySQL after installation. You can check this with
 the following command:
@@ -39,7 +60,17 @@ $> sudo systemctl status mysql
 
 Secure your installation by running the `mysql_secure_installation` tool that
 comes with MySQL. It will ask you several questions to help you improve the
-security of your MySQL installation:
+security of your MySQL installation.
+
+{% note type: tip %}
+
+We suggest that you configure low password strength validation in MySQL when
+asked. [A password that is hard to remember is not a good
+password](https://xkcd.com/936/). You're better off [using a
+passphrase](https://www.useapassphrase.com) (here's a [French
+version](https://passwordcreator.org/fr.html#good)).
+
+{% endnote %}
 
 ```bash
 $> sudo mysql_secure_installation
@@ -61,7 +92,7 @@ LOW    Length >= 8
 MEDIUM Length >= 8, numeric, mixed case, and special characters
 STRONG Length >= 8, numeric, mixed case, special characters and dictionary file
 
-Please enter 0 = LOW, 1 = MEDIUM and 2 = STRONG: 1
+Please enter 0 = LOW, 1 = MEDIUM and 2 = STRONG: 0
 Please set the password for root here.
 
 New password: ***
@@ -122,45 +153,81 @@ $> sudo apt install php-fpm php-mysql
 ```
 
 {% callout type: more, id: php-runtime %}
-:books: Traditionally, PHP is deployed using the [Apache web server][apache], which is a generic [web server][web-server] and [reverse proxy][reverse-proxy] but is also capable of executing PHP code. To simplify things in this exercise, we will not install Apache, but instead execute the PHP application directly from the command line using the simpler [PHP development server][php-dev-server].
+
+Traditionally, PHP is deployed using the [Apache web server][apache], which is a
+generic [web server][web-server] and [reverse proxy][reverse-proxy] but is also
+capable of executing PHP code. To simplify things in this exercise, we will not
+install Apache, but instead execute the PHP application directly from the
+command line using the simpler [PHP development server][php-dev-server].
+
 {% endcallout %}
 
 ## :exclamation: Use a real password
 
-The `todolist.sql` file creates a `todolist` user with the password `change-me-now` by default. You should change the password to a more secure value. Make sure that the password you choose is strong enough per the minimum password requirements you chose when you secured the MySQL installation.
+The `todolist.sql` file creates a `todolist` user with the password
+`change-me-now` by default. You should change the password to a more secure
+value. Make sure that the password you choose is strong enough per the minimum
+password requirements you chose when you secured the MySQL installation.
 
 {% note type: tip %}
-Need help choosing a good password? [Don't use something that is hard to remember](https://xkcd.com/936/). You're better off [using a passphrase](https://www.useapassphrase.com) (here's a [French version](https://passwordcreator.org/fr.html#good)).
+
+Need help choosing a good password? [Don't use something that is hard to
+remember](https://xkcd.com/936/). You're better off [using a
+passphrase](https://www.useapassphrase.com) (here's a [French
+version](https://passwordcreator.org/fr.html#good)).
+
 {% endnote %}
 
 {% callout type: more, id: mysql-users %}
-It is good practice to create a different user and password for each application that connects to the MySQL database server. That way, if one of the applications is compromised, it cannot access or modify the databases of the other applications (provided you configured appropriate access privileges).
 
-Notably, you should never use the MySQL `root` password to connect an application to its database. You, the system administrator, should be the only person who knows that password.
+It is good practice to create a different user and password for each application
+that connects to the MySQL database server. That way, if one of the applications
+is compromised, it cannot access or modify the databases of the other
+applications (provided you configured appropriate access privileges).
+
+Notably, you should never use the MySQL `root` password to connect an
+application to its database. You, the system administrator, should be the only
+person who knows that password.
+
 {% endcallout %}
 
 ## :exclamation: Upload the application
 
-**On your local machine**, use an SFTP client like [FileZilla][filezilla] or [Cyberduck][cyberduck] to upload the application to the server.
+**On your local machine**, use an SFTP client like [FileZilla][filezilla] or
+[Cyberduck][cyberduck] to upload the application to the server.
 
-Connect the SFTP client to your server using SSH public key authentication. In FileZilla, open the Site Manager and configure your connection like this:
+Connect the SFTP client to your server using SSH public key authentication. In
+FileZilla, open the Site Manager and configure your connection like this:
 
 ![Filezilla: SFTP configuration](images/filezilla-pubkey.png)
 
-You must select your **private key** (`id_rsa` and not `id_rsa.pub`) in FileZilla. The server you are connecting to has your public key. Just like when you use SSH on the command line, FileZilla will use your private key to prove to the server that you are the owner of your public key.
+You must select your **private key** (`id_ed25519` and not `id_ed25519.pub`) in
+FileZilla. The server you are connecting to has your public key. Just like when
+you use SSH on the command line, FileZilla will use your private key to prove to
+the server that you are the owner of your public key.
 
 {% note type: tip %}
-On Windows, you can toggle the display of hidden files in the View tab of the explorer to access your `.ssh` directory manually. On macOS, type `open
-~/.ssh` in your Terminal or use the `Cmd-Shift-.` shortcut to display hidden files. On most Linux distributions, the file manager will have an option to show hidden files under its menu.
+
+On Windows, you can toggle the display of hidden files in the View tab of the
+explorer to access your `.ssh` directory manually. On macOS, type `open ~/.ssh`
+in your Terminal or use the `Cmd-Shift-.` shortcut to display hidden files. On
+most Linux distributions, the file manager will have an option to show hidden
+files under its menu.
+
 {% endnote %}
 
 {% note type: tip %}
-On Windows, FileZilla may ask you to convert your private key to another format. You can do so.
+
+On Windows, FileZilla may ask you to convert your private key to another format.
+You can do so.
+
 {% endnote %}
 
-Once you are connected to your server with your SFTP client, copy the application to `/home/jde/todolist` (replacing `jde` with your Unix username).
+Once you are connected to your server with your SFTP client, copy the
+application to `/home/jde/todolist` (replacing `jde` with your Unix username).
 
-In FileZilla, you can simply drag-and-drop the directory from your machine on the left to the server on the right. You can then rename it if necessary.
+In FileZilla, you can simply drag-and-drop the directory from your machine on
+the left to the server on the right. You can then rename it if necessary.
 
 ## :exclamation: Initialize the database
 
@@ -180,9 +247,15 @@ for the MySQL `root` user's password you defined earlier):
 $> sudo mysql < todolist.sql
 ```
 
-{% callout type: more, id: unix-redirection %}
-This uses the [Unix redirection operator `<`][unix-redirection] to send the contents of the `todolist.sql` file into the [standard input stream][unix-input-stream] of the `sudo mysql` command. When provided with SQL queries on its input stream, the `mysql` command will connect to the MySQL server and execute them, then stop.
-{% endcallout %}
+{% note type: more %}
+
+This uses the [Unix redirection operator `<`][unix-redirection] to send the
+contents of the `todolist.sql` file into the [standard input
+stream][unix-input-stream] of the `sudo mysql` command. When provided with SQL
+queries on its input stream, the `mysql` command will connect to the MySQL
+server and execute them, then stop.
+
+{% endnote %}
 
 ### :question: Optional: make sure it worked
 
@@ -233,32 +306,19 @@ define('DB_PORT', '3306');
 ```
 
 {% note type: tip %}
-The `index.php` file **on the server** must be modified. There are several ways you can do this:
 
-- Edit the file locally, then copy it to the server again using your SFTP client like FileZilla.
+The `index.php` file **on the server** must be modified. There are several ways
+you can do this:
+
+- Edit the file locally, then copy it to the server again using your SFTP client
+  like FileZilla.
 - Edit the file directly on the server with `nano` or `vim`.
-- Some SFTP clients allow you to open a remote file in your local editor. In FileZilla, right-click a file, select View/Edit, then choose your favorite editor. Make your changes and save the file. FileZilla should automatically prompt you to upload the changes.
-  {% endnote %}
-  [apache]: https://www.apache.org
-  [apt]: https://en.wikipedia.org/wiki/APT_(software)
-  [cyberduck]: https://cyberduck.io
-  [filezilla]: https://filezilla-project.org
-  [http-500]: https://www.webfx.com/web-development/glossary/http-status-codes/what-is-a-500-status-code/
-  [linux-unattended-upgrades]: https://wiki.debian.org/UnattendedUpgrades
-  [mysql]: https://www.mysql.com
-  [mysql-socket-auth]: https://dev.mysql.com/doc/refman/8.0/en/socket-pluggable-authentication.html
-  [package-manager]: https://en.wikipedia.org/wiki/Package_manager
-  [php]: https://www.php.net
-  [php-dev-server]: https://www.php.net/manual/en/features.commandline.webserver.php
-  [php-fpm]: https://www.php.net/manual/en/install.fpm.php
-  [php-mysql]: https://www.php.net/manual/en/set.mysqlinfo.php
-  [php-todolist]: https://github.com/MediaComem/comem-archidep-php-todo-exercise
-  [reverse-proxy]: https://en.wikipedia.org/wiki/Reverse_proxy
-  [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
-  [sysadmin-cheatsheet-apt]: ../701-sysadmin-cheatsheet/#installing--upgrading
-  [unix-input-stream]: https://en.wikipedia.org/wiki/Standard_streams#Standard_input_(stdin)
-  [unix-redirection]: https://www.guru99.com/linux-redirection.html
-  [web-server]: https://en.wikipedia.org/wiki/Web_server
+- Some SFTP clients allow you to open a remote file in your local editor. In
+  FileZilla, right-click a file, select View/Edit, then choose your favorite
+  editor. Make your changes and save the file. FileZilla should automatically
+  prompt you to upload the changes.
+
+{% endnote %}
 
 ## :exclamation: Run the PHP development server
 
@@ -269,61 +329,36 @@ server][php-dev-server] on port 3000:
 $> php -S 0.0.0.0:3000
 ```
 
-{% note type: more %}
-The `-S <addr:port>` option of the `php` command starts the [built-in web **s**erver][php-dev-server] on the given local address and port.
-{% endnote %}
-
 {% note type: tip %}
-You **must really use `0.0.0.0` for the `php -S` command, and not your server's IP address**. `0.0.0.0` is not an actual IP address; it is a special notation that tells the PHP development server to accept connections from any IP address.
+
+You **must really use `0.0.0.0` for the `php -S` command, and not your server's
+IP address**. `0.0.0.0` is not an actual IP address; it is a special notation
+that tells the PHP development server to accept connections from any IP address.
+
 {% endnote %}
 
-You (and everbody else) should be able to access the application in a browser at your server's IP address and the correct port (e.g. `http://W.X.Y.Z:3000`).
+{% note type: more %}
+
+The `-S <addr:port>` option of the `php` command starts the [built-in web
+**s**erver][php-dev-server] on the given local address and port.
+
+{% endnote %}
+
+You (and everbody else) should be able to access the application in a browser at
+your server's IP address and the correct port (e.g. `http://W.X.Y.Z:3000`).
 
 ## :checkered_flag: What have I done?
 
-You have **deployed** a PHP application to a server running in the Microsoft Azure cloud.
+You have **deployed** a PHP application to a server running in the Microsoft
+Azure cloud.
 
-The application is now publicly accessible by anyone on the Internet, at your instance's public IP address.
+The application is now publicly accessible by anyone on the Internet, at your
+instance's public IP address.
 
-This is a simplified architecture of the main running processes and communication flow at the end of this exercise:
+This is a simplified architecture of the main running processes and
+communication flow at the end of this exercise:
 
 ![Architecture](images/sftp-deployment-architecture.png)
-
-## How to improve our basic deployment
-
-The basic SFTP deployment of the PHP TodoList has several flaws which we will
-fix during the rest of the course:
-
-- Transfering files manually through SFTP is slow and error-prone. We will use
-  **Git** to reliably transfer files [from our central
-  codebase][12factor-codebase] and easily keep our deployment up-to-date over
-  time.
-- [Hardcoding configuration is a bad practice][12factor-config]. We will use
-  **environment variables** so that our application can be dynamically
-  configured and deployed in any environment without changing its source code.
-- Starting our application manually is not suitable for a production deployment.
-  We will use a **process manager** to manage the lifecycle of our application:
-  starting it automatically when the server boots, and restarting it
-  automatically if it crashes.
-- Accessing a web application through an IP address is not user-friendly. We
-  will obtain a domain and configure its DNS zone file so that our application
-  is accessible with a human-readable **domain name**.
-- Using a non-standard port is not user-friendly either. We will run the
-  application on **port 80 or 443** so that the end user does not have to
-  specify a port in the browser's address bar.
-- Running our application server directly on port 80 or 443 will cause a
-  problem: only one process can listen on a given port at the same time. We need
-  another tool to support **multiple production deployments on the same
-  server**. That will be the job of a reverse proxy like [Apache][apache] or
-  [nginx][nginx].
-- Our application is not secure as indicated by the browser, because it is
-  served over HTTP and not HTTPS. We will obtain a **TLS/SSL certificate**
-  signed by a trusted certificate authority so that our application can be
-  served over HTTPS and recognized as secure by browsers.
-- The [PHP Development Server][php-dev-server] is not meant to deploy
-  applications in production environments. We will use the [**FastCGI Process
-  Manager**][php-fpm] to perform a production-grade deployment, making our
-  application more resilient and able to serve more clients concurrently.
 
 ## :boom: Troubleshooting
 
@@ -563,10 +598,10 @@ If you do not remember the password, follow the troubleshooting instructions for
 [php-dev-server]: https://www.php.net/manual/en/features.commandline.webserver.php
 [php-fpm]: https://www.php.net/manual/en/install.fpm.php
 [php-mysql]: https://www.php.net/manual/en/set.mysqlinfo.php
-[php-todolist]: https://github.com/MediaComem/comem-archidep-php-todo-exercise
+[php-todolist]: https://github.com/ArchiDep/php-todo-ex
 [reverse-proxy]: https://en.wikipedia.org/wiki/Reverse_proxy
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
-[sysadmin-cheatsheet-apt]: ../701-sysadmin-cheatsheet/#installing--upgrading
+[sysadmin-cheatsheet-apt]: ../../cheatsheets/sysadmin/#installing--upgrading
 [unix-input-stream]: https://en.wikipedia.org/wiki/Standard_streams#Standard_input_(stdin)
 [unix-redirection]: https://www.guru99.com/linux-redirection.html
 [web-server]: https://en.wikipedia.org/wiki/Web_server

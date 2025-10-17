@@ -1,8 +1,19 @@
 ---
 title: Unix Pipeline
+cloud_server: details
+excerpt_separator: <!-- more -->
 ---
 
 This exercise teaches you how to use Unix command pipelines and stream redirections to analyze and manipulate text files efficiently.
+
+{% callout type: exercise %}
+
+You can do this exercise locally (in the macOS Terminal or the WSL on Windows)
+or on your cloud server through SSH. Both will work.
+
+{% endcallout %}
+
+<!-- more -->
 
 ## :exclamation: Setup
 
