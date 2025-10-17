@@ -79,10 +79,10 @@ Securing the MySQL server deployment.
 
 Connecting to MySQL using a blank password.
 
-VALIDATE PASSWORD PLUGIN can be used to test passwords
+VALIDATE PASSWORD COMPONENT can be used to test passwords
 and improve security. It checks the strength of password
 and allows the users to set only those passwords which are
-secure enough. Would you like to setup VALIDATE PASSWORD plugin?
+secure enough. Would you like to setup VALIDATE PASSWORD component?
 
 Press y|Y for Yes, any other key for No: y
 
@@ -93,13 +93,10 @@ MEDIUM Length >= 8, numeric, mixed case, and special characters
 STRONG Length >= 8, numeric, mixed case, special characters and dictionary file
 
 Please enter 0 = LOW, 1 = MEDIUM and 2 = STRONG: 0
-Please set the password for root here.
 
-New password: ***
-Re-enter new password: ***
-
-Estimated strength of the password: 100
-Do you wish to continue with the password provided?(Press y|Y for Yes, any other key for No) : y
+Skipping password set for root as authentication with auth_socket is used by default.
+If you would like to use password authentication instead, this can be done with the "ALTER_USER" command.
+See https://dev.mysql.com/doc/refman/8.0/en/alter-user.html#alter-user-password-management for more information.
 
 By default, a MySQL installation has an anonymous user,
 allowing anyone to log into MySQL without having to have
