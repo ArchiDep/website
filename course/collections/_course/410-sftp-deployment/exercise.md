@@ -350,10 +350,21 @@ Azure cloud.
 The application is now publicly accessible by anyone on the Internet, at your
 instance's public IP address.
 
-This is a simplified architecture of the main running processes and
-communication flow at the end of this exercise:
+## :classical_building: Architecture
 
-![Architecture](images/sftp-deployment-architecture.png)
+This is a simplified architecture of the main running processes and
+communication flow at the end of this exercise.
+
+![Diagram](./images/architecture.png)
+
+<div class="flex items-center gap-2">
+  <a href="./images/architecture.pdf" download="PHP Todolist Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/architecture.png" download="PHP Todolist Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
 
 ## :boom: Troubleshooting
 
