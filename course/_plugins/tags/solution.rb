@@ -30,7 +30,7 @@ module ArchiDep
               <span>Solution</span>
             </div>
           </div>
-          <div class="collapse-content">
+          <div class="collapse-content overflow-x-auto">
           #{
         context.registers[:site].find_converter_instance(
           Jekyll::Converters::Markdown
