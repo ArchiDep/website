@@ -36,12 +36,113 @@ Somewhere over the rainbow
 Use command pipelines and stream redirections to:
 
 - Count the number of lines and characters in the text
+
+{% solution %}
+
+```bash
+$> cat rainbow.txt | wc -l
+50
+$> cat rainbow.txt | wc -m
+1284
+```
+
+**Counting the number of characters excluding new lines:**
+
+```bash
+$> cat rainbow.txt | fold -w 1 | wc -l
+1242
+```
+
+{% endsolution %}
+
 - Print the lines of the text containing the word `rainbow`
+
+{% solution %}
+
+```bash
+$> cat rainbow.txt | grep rainbow
+Somewhere over the rainbow
+Somewhere over the rainbow
+Somewhere over the rainbow
+The colors of the rainbow so pretty in the sky
+Oh, somewhere over the rainbow
+```
+
+Note that this looks for occurrences of the work "rainbow" exactly like this, in
+lowercase. If you wanted to make a case-insensitive search, you would use the
+`grep` command's `-i` or `--ignore-case` option.
+
+{% endsolution %}
+
 - Do the same but without any duplicates
+
+{% solution %}
+
+```bash
+$> cat rainbow.txt | grep rainbow | sort | uniq
+Oh, somewhere over the rainbow
+Somewhere over the rainbow
+The colors of the rainbow so pretty in the sky
+```
+
+{% endsolution %}
+
 - Print the second word of each line in the text
+
+{% solution %}
+
+```bash
+$> cat rainbow.txt | cut -d ' ' -f 2
+over
+up
+the
+in
+
+over
+fly
+...
+```
+
+{% endsolution %}
+
 - Compress the text and save it to `rainbow.txt.gz`
+
+{% solution %}
+
+```bash
+$> cat rainbow.txt | gzip -c > rainbow.txt.gz
+```
+
+{% endsolution %}
+
 - Count the number of times the letter `e` is used (case-insensitive)
+
+{% solution %}
+
+```bash
+$> cat rainbow.txt | fold -w 1 | grep -i e | wc -l
+131
+```
+
+{% endsolution %}
+
 - Count the number of times the word `the` is used (case-insensitive)
+
+{% solution %}
+
+```bash
+$> cat rainbow.txt | \
+     tr '[:upper:]' '[:lower:]' | \
+     tr -s '[[:punct:][:space:]]' '\n' | \
+     grep -i '^the$' | \
+     wc -l
+```
+
+Instead of using a regular expression (`^the$`) with `grep`, you could also use
+its `-w` (**w**ord regexp) option which does the same thing in this case: `grep
+-i -w the`.
+
+{% endsolution %}
 
 {% note type: advanced, title: "Challenge" %}
 
@@ -49,6 +150,25 @@ Answer the question: what are the five most used words in the text
 (case-insensitive) and how many times are they used?
 
 {% endnote %}
+
+{% solution %}
+
+```bash
+cat rainbow.txt | \
+  tr '[:upper:]' '[:lower:]' | \
+  tr -s '[[:punct:][:space:]]' '\n' | \
+  sort | \
+  uniq -c | \
+  sort -r | \
+  head -n 5
+```
+
+By luck, simply sorting alphabetically works because the numbers are correctly
+aligned. But if you want a more robust solution, you can add the `-b` or
+`--ignore-leading-blanks` option and the `-n` or `--numeric-sort` option to the
+`sort` command: `sort -bnr`.
+
+{% endsolution %}
 
 ## :gem: Example
 
