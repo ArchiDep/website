@@ -124,7 +124,7 @@ $FOO is not set
 You can prefix a command by an environment variable assigment:
 
 ```bash
-$> `FOO=bar` ./print-env-var.sh FOO
+$> FOO=bar ./print-env-var.sh FOO
 The value of $FOO is bar
 ```
 
@@ -143,7 +143,7 @@ The `export` command exports an environment variable to all the child processes
 running in the current shell session:
 
 ```bash
-$> `export FOO=bar`
+$> export FOO=bar
 
 $> ./print-env-var.sh FOO
 The value of $FOO is bar
@@ -169,7 +169,7 @@ If you add the `export` command to your shell configuration file
 shell:
 
 ```bash
-$> `echo 'export FOO=bar' >> ~/.bash_profile`
+$> echo 'export FOO=bar' >> ~/.bash_profile
 
 $> cat ~/.bash_profile
 export FOO=bar
