@@ -272,6 +272,25 @@
             {gettext("Not completed")}
           </span>
         </.data_display_element>
+        <.data_display_element :if={server.owner.group_member} title={gettext("Hostname")}>
+          <code class="font-mono">
+            {server.username}@{server.owner.group_member.domain}
+          </code>
+          <button
+            type="button"
+            id={"server-#{server.id}-hostname-copy"}
+            class="cursor-pointer text-base-content/75 hover:text-base-content tooltip"
+            data-clipboard-text={"#{server.username}@#{server.owner.group_member.domain}"}
+            data-tip={gettext("Copy to clipboard")}
+            phx-click={
+              JS.set_attribute({"data-tip", gettext("Copied!")})
+              |> JS.add_class("tooltip-open")
+              |> JS.dispatch("hide-tooltip", detail: %{tooltip: gettext("Copy to clipboard")})
+            }
+          >
+            <Heroicons.clipboard_document class="size-4" />
+          </button>
+        </.data_display_element>
       </.data_display>
     </div>
     <div class="w-full flex flex-col gap-y-4">
