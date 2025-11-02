@@ -169,6 +169,11 @@ structures.
   - A cheatsheet can have additional files, such as images or data files, placed
     in an `images` subdirectory next to the `cheatsheet.md` file.
 
+### Progress Tracking
+
+Progress during the course is visually indicated in the sidebar as a colored
+border next to each subject, slide and exercise. Three cards
+
 ### Special Tags and Features
 
 This section describes special Liquid tags and features available for use in
