@@ -15,11 +15,7 @@ server.
 
 <!-- more -->
 
-## :exclamation: Requirements
-
-The following requirements must be installed on your server:
-
-- [Node.js][node] 24.x ([installation instructions][node-install])
+## :exclamation: The application
 
 The application you will deploy is **Revprod**, a marketing web application
 where customers can leave testimonials about **The Revolutionary Product**. This
@@ -61,6 +57,26 @@ The **disadvantages** are:
   compatible versions of all components together.
 
 {% endcallout %}
+
+## :exclamation: Install Node.js
+
+As described in the READMEs of both application, you need Node.js version 24
+installed on your server to run them. Use the following commands to install
+the correct version of Node.js:
+
+```bash
+$> sudo apt-get install -y curl
+$> curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+$> sudo apt-get install -y nodejs
+$> node -v
+24.x.y
+```
+
+{% note %}
+
+Installation instructions from [NodeSource][node-install].
+
+{% endnote %}
 
 ## :exclamation: Deploy the components separately
 
@@ -561,6 +577,6 @@ server_names_hash_bucket_size 256;
 [cors]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 [nginx-server-and-location]: https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
 [node]: https://nodejs.org
-[node-install]: https://github.com/nodesource/distributions/blob/master/README.md
+[node-install]: https://nodesource.com/products/distributions
 [revprod-backend-config]: https://github.com/ArchiDep/revprod-backend#configuration
 [sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
