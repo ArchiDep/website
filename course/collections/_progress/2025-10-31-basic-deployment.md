@@ -5,7 +5,7 @@ date: 2025-10-31 14:30:00 +0100
 categories: progress
 done: [410, 411, 500, 502, 503, 505]
 due: [501, 504, 506]
-next: []
+next: [507, 508, 509, 510, 511]
 ---
 
 Fifth session
