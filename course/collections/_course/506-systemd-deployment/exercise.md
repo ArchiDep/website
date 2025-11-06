@@ -262,6 +262,43 @@ $> sudo reboot
 
 The application should still be running.
 
+{% solution %}
+
+The `/etc/systemd/system/todolist.service` file on your server should look
+something like this:
+
+```
+[Unit]
+Description=PHP todolist
+
+# The todolist should start after MySQL since it requires the database to
+# list, create, update and delete its todos.
+After=mysql.service
+
+[Service]
+
+# Listen on port 3000 with the PHP development server.
+ExecStart=/usr/bin/php -S 0.0.0.0:3000
+
+# Run the development server in the directory of the todolist repository.
+WorkingDirectory=/home/jde/todolist-repo
+
+# Run the development server as my user.
+User=jde
+
+# Provide the database connection password through the environment.
+Environment="TODOLIST_DB_PASS=CHANGEME"
+
+Restart=on-failure
+
+[Install]
+
+# Automatically start on boot.
+WantedBy=multi-user.target
+```
+
+{% endsolution %}
+
 ## :checkered_flag: What have I done?
 
 You have configured your operating system's process manager (systemd, which
