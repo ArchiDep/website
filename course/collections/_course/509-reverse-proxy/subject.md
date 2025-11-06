@@ -146,20 +146,35 @@ By convention, nginx has two directories for website configuration files:
   This directory is included by nginx. Configuration files in it (or links to
   configuration files) are automatically loaded.
 
+```
+/etc/nginx/sites-enabled/example -> /etc/nginx/sites-available/example
+```
+
 Things are set up like this so that you can work on configuration files in
 `sites-available` but not actually enable them until you put the symbolic link
 in `sites-enabled`. It also allows you to **quickly disable** a website without
 deleting its configuration file.
 
-```
-/etc/nginx/sites-available/example-site
-/etc/nginx/sites-enabled/example-site -> /etc/nginx/sites-available/example-site
+For example, you could quickly disable a site by deleting its symbolic link:
+
+```bash
+$> sudo rm /etc/nginx/sites-enabled/example
 ```
 
-#### Reloading nginx's configuration
+And re-enable it whenever you want by re-creating the link:
 
-When you put new symbolic links in `sites-enabled`, nginx will not automatically
-reload them.
+```bash
+# Create a symbolic link in sites-enabled, pointing to sites-available:
+$> sudo ln -s /etc/nginx/sites-available/example /etc/nginx/sites-enabled/
+```
+
+All this without touching the actual configuration file:
+`/etc/nginx/sites-available/example`.
+
+### Reloading nginx's configuration
+
+When you put new symbolic links in `sites-enabled`, or modify configurations in
+`sites-available`, nginx will not automatically reload them.
 
 You can restart nginx, which will make it reload the configuration, but you can
 also tell it to **reload its configuration without shutting down**. Nginx reacts
@@ -174,20 +189,20 @@ send the signal for you:
 $> sudo systemctl reload nginx
 ```
 
-#### Common nginx directives
+### Common nginx directives
 
 Nginx has many [directives][nginx-directives] that can be put in various contexts.
 
 These are the most commonly used ones in the `server` context,
 used to serve websites (static or dynamic):
 
-| Directive                              | Example value                              | Description                                                                                   |
-| :------------------------------------- | :----------------------------------------- | :-------------------------------------------------------------------------------------------- |
-| [`listen`][nginx-directive-listen]     | `80`, `localhost:8000`                     | Port (and optional address) on which to listen and accept requests from.                      |
-| [`server_name`][nginx-server-names]    | `example.com, www.example.com`             | Comma-separated list of domain names. Determine which `server` block handles client requests. |
-| [`root`][nginx-directive-root]         | `/home/john_doe/www/site`, `/var/www/site` | The root directory for requests.                                                              |
-| [`index`][nginx-directive-index]       | `index.html`                               | Define files that will be used as an index, i.e. served by default if there is no URL path.   |
-| [`location`][nginx-directive-location] | `/api`, `~* \.jpg$`                        | Vary configuration based on the URL.                                                          |
+| Directive                              | Example value                         | Description                                                                                   |
+| :------------------------------------- | :------------------------------------ | :-------------------------------------------------------------------------------------------- |
+| [`listen`][nginx-directive-listen]     | `80`, `localhost:8000`                | Port (and optional address) on which to listen and accept requests from.                      |
+| [`server_name`][nginx-server-names]    | `example.com, www.example.com`        | Comma-separated list of domain names. Determine which `server` block handles client requests. |
+| [`root`][nginx-directive-root]         | `/home/jde/www/site`, `/var/www/site` | The root directory for requests.                                                              |
+| [`index`][nginx-directive-index]       | `index.html`                          | Define files that will be used as an index, i.e. served by default if there is no URL path.   |
+| [`location`][nginx-directive-location] | `/api`, `~* \.jpg$`                   | Vary configuration based on the URL.                                                          |
 
 ## nginx configuration examples
 
@@ -200,8 +215,10 @@ used to serve websites (static or dynamic):
 Each of the following examples can be put in a separate file in the `/etc/nginx/sites-available` directory:
 
 - Copy a website configuration example.
-- Save it in `/etc/nginx/sites-available/example`.
-- Create a symbolic link to it in `/etc/nginx/sites-enabled` with this command (this is one command on 3 lines):
+- Save it in `/etc/nginx/sites-available/example`. (Replace `example` with
+  whatever name you want to name your site.)
+- Create a symbolic link to it in `/etc/nginx/sites-enabled` with this command
+  (this is one command on 3 lines):
 
   ```bash
   $> sudo ln -s \
@@ -224,17 +241,18 @@ Each of the following examples can be put in a separate file in the `/etc/nginx/
 ### Static website configuration
 
 This configuration tells nginx to serve the static files in the directory
-`/home/john_doe/example` when a request arrives on port 80 for the domain
+`/home/jde/example` when a request arrives on port 80 for the domain
 `example.com`. This demonstrates nginx's capabilities as a basic **web server**.
 
 ```nginx
 server {
   listen 80;
   server_name example.com;
-  root /home/john_doe/example;
+  root /home/jde/example;
   index index.html;
 
-  # Cache images, icons, video, audio, HTC, etc.
+  # Instruct the browser to cache images, icons,
+  # video, audio, HTC, etc for 30 days.
   location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|mp4|ogg|ogv|webm|htc)$ {
     access_log off;
     add_header Cache-Control "max-age=2592000";

@@ -6,6 +6,13 @@ excerpt_separator: <!-- more -->
 
 The goal of this exercise is to set up a real domain name for your application.
 
+{% callout type: exercise %}
+
+You only need your favorite browser for this exercise (assuming you have
+completed previous exercises and the PHP todolist is running on your server).
+
+{% endcallout %}
+
 <!-- more -->
 
 ## :exclamation: Requirements

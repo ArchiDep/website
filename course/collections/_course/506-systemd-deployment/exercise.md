@@ -7,6 +7,12 @@ excerpt_separator: <!-- more -->
 This guide describes how to create a [systemd][systemd] service to run the PHP
 todolist application.
 
+{% callout type: exercise %}
+
+Connect to your cloud server with SSH for this exercise.
+
+{% endcallout %}
+
 <!-- more -->
 
 ## :exclamation: Requirements

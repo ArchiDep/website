@@ -42,7 +42,7 @@ The meaning of each field is:
 - `record type` - Type of record.
 - `record data` - Record data (depending on the record type).
 
-#### DNS record types
+### DNS record types
 
 There are multiple [record types][dns-record-types]. These are some of the
 most common:
@@ -56,7 +56,7 @@ most common:
 | `SOA`   | Start of authority    | Authoritative information about the zone, e.g. primary name server & email of the domain administrator. |
 | `TXT`   | Text record           | Arbitrary machine-readable data.                                                                        |
 
-#### DNS record example
+### DNS record example
 
 Let's look at a real example which you might find in a zone file:
 
@@ -75,7 +75,7 @@ here is how to read that record:
 - It defines a cache time of 1800 seconds (30 minutes) during which clients will
   not perform DNS resolution again if they have the mapping already.
 
-#### DNS subdomain record example
+### DNS subdomain record example
 
 Let's look at another example:
 

@@ -7,6 +7,12 @@ excerpt_separator: <!-- more -->
 The goal of this exercise is to deploy a static website (only HTML, JavaScript
 and CSS) with [nginx][nginx].
 
+{% callout type: exercise %}
+
+Connect to your cloud server with SSH for this exercise.
+
+{% endcallout %}
+
 <!-- more -->
 
 ## :exclamation: Requirements
@@ -51,30 +57,25 @@ not need its configuration to have a particular extension.
 
 {% endnote %}
 
-Take the static configuration that was [presented during the
-course][nginx-static-conf] and put it in the file. You should modify it to:
+Take the [static configuration example from the course]({% link
+_course/509-reverse-proxy/subject.md %}#static-website-configuration) and put it
+in the file. You should modify it to:
 
 - Use the subdomain you configured for your server during the previous DNS
-  exercise (e.g. `jde.archidep.ch`).
+  exercise. This is done by customizing [nginx's `server_name`
+  directive](http://nginx.org/en/docs/http/server_names.html) in your `server`
+  block.
+- Serve the files in the repository you just cloned. This is done by customizing
+  [nginx's `root`
+  directive](http://nginx.org/en/docs/http/ngx_http_core_module.html#root).
 
-{% note type: tip %}
+{% note type: more %}
 
-This is done by customizing [nginx's `server_name`
-directive](http://nginx.org/en/docs/http/server_names.html) in your `server`
-block. Read [How nginx processes a
-request](http://nginx.org/en/docs/http/request_processing.html) if you want to
-know more.
-
-{% endnote %}
-
-- Serve the files in the repository you just cloned.
-
-{% note type: tip %}
-
-This is done by customizing [nginx's `root`
-directive](http://nginx.org/en/docs/http/ngx_http_core_module.html#root). You
-can learn more about it in the [Serving Static Content section of the nginx
-Beginner's Guide](http://nginx.org/en/docs/beginners_guide.html#static).
+Read [How nginx processes a
+request](http://nginx.org/en/docs/http/request_processing.html) and [Serving
+Static Content section of the nginx Beginner's
+Guide](http://nginx.org/en/docs/beginners_guide.html#static) if you want to know
+more..
 
 {% endnote %}
 
@@ -223,7 +224,8 @@ configuration.
 ## :exclamation: See it in action
 
 Visit the subdomain of your server, e.g. http://jde.archidep.ch (replacing `jde`
-with your username) and you should see the website working.
+with your username and `archidep.ch` with your assigned subdomain) and you
+should see the website working.
 
 ## :checkered_flag: What have I done?
 

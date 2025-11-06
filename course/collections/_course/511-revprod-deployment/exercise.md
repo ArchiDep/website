@@ -13,6 +13,12 @@ running on a server, and that you have a DNS wildcard entry preconfigured to
 make various subdomains (`*.jde.archidep.ch` in this guide) point to that
 server.
 
+{% callout type: exercise %}
+
+Connect to your cloud server with SSH for this exercise.
+
+{% endcallout %}
+
 <!-- more -->
 
 ## :exclamation: The application
@@ -80,12 +86,24 @@ Installation instructions from [NodeSource][node-install].
 
 ## :exclamation: Deploy the components separately
 
-Let's start by deploying the revprod backend and frontend separately at these
-URLs (replacing `jde` with your name as you configured it during the DNS
+In the following steps, we will start by deploying the revprod backend and
+frontend separately at these URLs (replacing `jde` with your name and
+`archidep.ch` with your assigned subdomain, as you configured it during the DNS
 exercise):
 
 - `http://revprod-backend.jde.archidep.ch`
 - `http://revprod-landing.jde.archidep.ch`
+
+{% callout type: exercise %}
+
+Every time this exercise mentions `jde` or `jde.archidep.ch`, be sure to replace
+`jde` with your server's username and `archidep.ch` with your assigned subdomain
+for the course.
+
+If you are logged in, you can see what you should use under **Hostname** in your
+cloud server's details card.
+
+{% endcallout %}
 
 ### :exclamation: Deploy the revprod landing page
 
@@ -121,9 +139,10 @@ WantedBy=multi-user.target
 
 {% note type: tip %}
 
-Replace `jde` with your name in the `WorkingDirectory` and `User` options, as
-well as `jde` in the second `Environment` option indicating the URL of the
-landing page.
+Replace `jde` with your name in the `WorkingDirectory` and `User` options. Also
+replace `jde` with your name and `archidep.ch` with your assigned subdomain in
+the second `Environment` option indicating the URL of the backend (the second
+component which you have not yet deployed).
 
 {% endnote %}
 
@@ -158,8 +177,8 @@ server {
 
 {% note type: tip %}
 
-Replace `jde` with your name in the `server_name` directive, as well as `jde` in
-the `root` directive.
+Replace `jde` with your name and `archidep.ch` with your assigned subdomain in
+the `server_name` directive, as well as `jde` in the `root` directive.
 
 {% endnote %}
 
@@ -215,9 +234,9 @@ WantedBy=multi-user.target
 
 {% note type: tip %}
 
-Replace `jde` with your name in the `WorkingDirectory` and `User` options, as
-well as `jde` in the second `Environment` option indicating the URL of the
-landing page.
+Replace `jde` with your name in the `WorkingDirectory` and `User` options. Also
+replace `jde` with your name and `archidep.ch` with your assigned subdomain in
+the second `Environment` option indicating the URL of the landing page.
 
 {% endnote %}
 
@@ -252,8 +271,8 @@ server {
 
 {% note type: tip %}
 
-Replace `jde` with your name in the `server_name` directive, as well as `jde` in
-the `root` directive.
+Replace `jde` with your name and `archidep.ch` with your assigned subdomain in
+the `server_name` directive, as well as `jde` in the `root` directive.
 
 {% endnote %}
 
@@ -310,19 +329,19 @@ remote resource at http://revprod-backend.jde.archidep.ch/comments.
 
 ![Revprod SOP error in the developer console](./images/revprod-sop-error.png)
 
-{% callout type: more, id: same-origin-policy %}
-
 The landing page's AJAX request to fetch the comments from the backend has been
 blocked by the browser because the request is to a different **origin**: the
 landing page is at `http://revprod-landing.jde.archidep.ch` and is attempting to
 access `http://revprod-backend.jde.archidep.ch` which is **another domain
 entirely**.
 
-This is called the [**Same-Origin Policy**][sop]. It is a critical security
-mechanism that restricts how a document or script loaded by one origin can
-interact with a resource from another origin.
+This is called the [**Same-Origin Policy (SOP)**][sop]. It is a critical
+security mechanism that restricts how a document or script loaded by one origin
+can interact with a resource from another origin.
 
-It helps isolate potentially malicious documents, reducing possible attack
+{% callout type: more, id: same-origin-policy %}
+
+The SOP helps isolate potentially malicious documents, reducing possible attack
 vectors. For example, it prevents a malicious website on the Internet from
 running JS in a browser to read data from a third-party webmail or e-banking
 service (which the user is signed into) or a company intranet (which is
@@ -350,8 +369,8 @@ Environment="REVPROD_CORS_ORIGINS=http://revprod-landing.jde.archidep.ch"
 
 {% note type: tip %}
 
-Replace `jde` with your name in the definition of the second environment
-variable.
+Replace `jde` with your name and `archidep.ch` with your assigned subdomain in
+the definition of the second environment variable.
 
 {% endnote %}
 
@@ -362,9 +381,8 @@ $> sudo systemctl daemon-reload
 $> sudo systemctl restart revprod-backend
 ```
 
-Refresh the revprod landing page at
-http://revprod-landing.jde.archidep.ch again. The comments should work
-this time!
+Refresh the revprod landing page at http://revprod-landing.jde.archidep.ch
+again. The comments should work this time!
 
 If you look at your browser's developer console when refreshing the page, you
 should see that the backend now sends the following header in the comments
@@ -461,7 +479,7 @@ the following criteria:
 - The `listen` directive must still use port `80` like the previous
   configurations in this exercise.
 - The `server_name` directive must be `revprod.jde.archidep.ch` (replacing
-  `jde` with your name).
+  `jde` with your name and `archidep.ch` with your assigned subdomain).
 - The `root` directive must be the same as the one from the landing page's site
   configuration.
 - There must be **multiple `location` blocks** in the `server` block, to serve

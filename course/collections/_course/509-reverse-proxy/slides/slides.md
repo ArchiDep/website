@@ -249,7 +249,7 @@ requests to different servers, spreading the load between them.
 <img class='w-8/10' src='images/apache-vs-nginx.png' />
 
 [nginx][nginx] is a concurrent of the well-known [Apache HTTP server][apache]
-developed to solve the [C10k problem][c10k].
+developed in 2004 to solve the [C10k problem][c10k].
 
 **Notes:**
 
