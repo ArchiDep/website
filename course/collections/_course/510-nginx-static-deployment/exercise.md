@@ -154,12 +154,6 @@ One way to quickly do this by adding the `www-data` user to your group (replace
 $> sudo usermod -a -G jde www-data
 ```
 
-Then restart nginx:
-
-```bash
-$> sudo nginx -s reload
-```
-
 {% callout type: more, id: www-data-security-note %}
 
 This is not necessarily the best solution from a security standpoint. It means
