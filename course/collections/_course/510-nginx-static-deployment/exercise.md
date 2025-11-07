@@ -172,7 +172,7 @@ chmod o-a /var/www/clock`).
 
 {% endcallout %}
 
-### :exclamation: Reload the nginx configuration
+## :exclamation: Reload the nginx configuration
 
 Nginx does not automatically reload its configuration files when they change.
 
