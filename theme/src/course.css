@@ -210,7 +210,7 @@ main .solution .highlighter-rouge:last-child pre.highlight {
 }
 
 .callout .container {
-  @apply flex flex-col items-end group-has-checked/callout:items-center group-has-[#always-tell-me-more]/body:items-end;
+  @apply flex flex-col items-end group-has-checked/callout:items-center group-has-[#always-tell-me-more]/body:items-end min-w-0;
 }
 
 .callout .icon {
