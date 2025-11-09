@@ -179,7 +179,7 @@ modify the application itself.
 
 ### Scalability
 
-![Horizontal vs. vertical scaling](images/horizontal-vs-vertical-scaling.png)
+<img class="w-6/10" src="./images/horizontal-vs-vertical-scaling.png" alt="Horizontal vs. vertical scaling" />
 
 [Scalability][scalability] is the capability of a computer system to handle a
 growing amount of work (e.g. client requests).
