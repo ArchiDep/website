@@ -138,9 +138,9 @@ $> git pull
 ```
 
 If you've worked on the same files, there might be a **merge**. **If there is a
-merge conflict**, [resolve
-it](https://mediacomem.github.io/comem-archidep/2024-2025/subjects/git-branching/?home=MediaComem%2Fcomem-archidep%23readme#33)
-and complete the merge with `git commit`.
+merge conflict**, [resolve it]({% link
+_course/202-git-branching/slides.md %}#/37) and complete the merge with `git
+commit`.
 
 ### Add an SSH key to my GitHub account
 
