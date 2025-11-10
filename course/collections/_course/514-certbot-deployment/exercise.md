@@ -12,6 +12,12 @@ This exercise assumes that you have deployed at least one web site or
 application during previous exercises, and that you have configured nginx to
 serve it.
 
+{% callout type: exercise %}
+
+Connect to your cloud server with SSH for this exercise.
+
+{% endcallout %}
+
 <!-- more -->
 
 ## :exclamation: Install Certbot
@@ -114,10 +120,9 @@ will have to change your subdomain for Certbot to recognize it as valid.
 
 There are two things you need to do:
 
-- Log back into [Gandi.net][gandi] and add a new A record for
-  your Azure VM just like you did during the [Configure a domain
-  name](https://github.com/MediaComem/comem-archidep/blob/main/ex/dns-configuration.md)
-  exercise.
+- Log back into [Gandi.net][gandi] and add a new A record for your Azure VM just
+  like you did during the [Domain name configuration]({% link
+  _course/508-dns-config/exercise.md %}) exercise.
 
   Use something short like `jde` and `*.jde` (as long as it does not conflict
   with anyone else's subdomain), with the same IP address as before (the public

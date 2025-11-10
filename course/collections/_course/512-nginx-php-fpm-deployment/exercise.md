@@ -10,9 +10,11 @@ exercises, but this time behind nginx acting as a reverse proxy, and with the
 server][php-dev-server], which is much more suitable for a production
 deployment.
 
-This guide assumes that you are familiar with [reverse proxying][slides], that
-you have nginx installed, and that you have done the [DNS exercise][dns-ex] and
-the [systemd exercise][systemd-ex].
+This guide assumes that you are familiar with [reverse proxying]({% link
+_course/509-reverse-proxy/subject.md %}), that you have nginx installed, and
+that you have done the [systemd exercise]({% link
+_course/506-systemd-deployment/exercise.md %}) and the the [DNS exercise]({%
+link _course/508-dns-config/exercise.md %}).
 
 {% callout type: exercise %}
 
@@ -47,15 +49,17 @@ will need to **modify the commands containing the version number accordingly**.
 
 {% callout type: more, id: php-fpm %}
 
-When you did the [systemd exercise][systemd-ex], you used the PHP development
+When you did the [systemd exercise]({% link
+_course/506-systemd-deployment/exercise.md %}), you used the PHP development
 server (with the command `/usr/bin/php -S 0.0.0.0:3000`). As [its documentation
 states][php-dev-server], it is meant for development, not to be used on a
 production server. One of the main reasons it's a bad idea to use it on a server
 is because it is **single-threaded**, and can only serve _one request at a
 time_.
 
-During the [SFTP exercise][sftp-ex], you installed the `php-fpm` package, which
-provides the PHP [FastCGI Process Manager (FPM)][php-fpm].
+During the [SFTP exercise]({% link _course/410-sftp-deployment/exercise.md %}),
+you installed the `php-fpm` package, which provides the PHP [FastCGI Process
+Manager (FPM)][php-fpm].
 
 PHP-FPM is both a **process manager** and a **FastCGI server**:
 
@@ -199,7 +203,8 @@ LISTEN  0       128              [::]:22            [::]:*     (sshd IPv6)
 The PHP todolist application requires the `TODOLIST_DB_PASS` environment
 variable to successfully connect to its database. You previously set that
 variable in the systemd service file you created during the [systemd
-exercise][systemd-ex]: `/etc/systemd/system/todolist.service`.
+exercise]({% link _course/506-systemd-deployment/exercise.md %}):
+`/etc/systemd/system/todolist.service`.
 
 In this exercise, systemd will no longer be running your application directly.
 It runs [PHP-FPM][php-fpm], which will in turn execute your application's PHP
@@ -273,9 +278,9 @@ receives a request for the PHP todolist, it should proxy it to PHP-FPM (in other
 words, nginx should ask PHP-FPM to execute the application's PHP code, because
 nginx itself does not know how to execute PHP code).
 
-You can start with the [reverse proxy
-configuration](https://mediacomem.github.io/comem-archidep/2024-2025/subjects/reverse-proxy/?home=MediaComem%2Fcomem-archidep%23readme#29),
-but you need to make the following changes:
+You can start with the [reverse proxy configuration]({% link
+_course/509-reverse-proxy/subject.md %}#reverse-proxy-configuration), but you
+need to make the following changes:
 
 - Like in the previous exercise, adapt the server name and root directory.
 
@@ -418,15 +423,10 @@ ignoring the other applications we have also deployed on the server.
 
 {% endnote %}
 
-[dns-ex]: dns-configuration.md
 [fastcgi]: https://en.wikipedia.org/wiki/FastCGI
 [php-dev-server]: http://php.net/manual/en/features.commandline.webserver.php
 [php-fpm]: http://php.net/manual/en/install.fpm.php
-[repo]: https://github.com/MediaComem/comem-archidep-php-todo-exercise
-[nginx-ex]: nginx-static-deployment.md
+[repo]: https://github.com/ArchiDep/php-todo-ex
 [nginx-fastcgi-pass]: http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_pass
 [nginx-proxy-pass]: http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass
-[slides]: https://mediacomem.github.io/comem-archidep/2024-2025/subjects/reverse-proxy/?home=MediaComem%2Fcomem-archidep%23readme#1
-[sftp-ex]: sftp-deployment.md
-[systemd-ex]: systemd-deployment.md
 [unix-socket]: https://en.wikipedia.org/wiki/Unix_domain_socket

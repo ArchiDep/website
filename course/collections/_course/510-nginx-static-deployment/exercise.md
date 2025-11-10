@@ -34,7 +34,7 @@ It is suggested that you use the provided [HTML, JavaScript and CSS
 clock][repo], but you could deploy any other static HTML website.
 
 **Still on your server**, clone the following repository into your home
-directory: https://github.com/MediaComem/static-clock-website
+directory: [https://github.com/ArchiDep/static-clock-website][repo]
 
 Make sure the files are there:
 
@@ -337,5 +337,4 @@ directory actually exist?
 [nginx-signals]: http://nginx.org/en/docs/control.html
 [nginx-static]: https://docs.nginx.com/nginx/admin-guide/web-server/serving-static-content/
 [previous-ex]: dns-configuration.md
-[repo]: https://github.com/MediaComem/static-clock-website
-[slides]: https://mediacomem.github.io/comem-archidep/2024-2025/subjects/reverse-proxy/?home=MediaComem%2Fcomem-archidep%23readme#1
+[repo]: https://github.com/ArchiDep/static-clock-website

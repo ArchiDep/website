@@ -1,5 +1,5 @@
 ---
-title: Domain Name Configuration
+title: Domain name configuration
 cloud_server: details
 excerpt_separator: <!-- more -->
 ---
