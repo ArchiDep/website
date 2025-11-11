@@ -476,7 +476,7 @@ You may now **stop** the load testing scenario.
 
 ![Stop the Locust test](./images/fibscale-locust-10-users-stop.png)
 
-## :gem: What to do?
+## :question: What to do?
 
 Our application is far too slow and the user experience is horrible. We have to
 speed it up!
