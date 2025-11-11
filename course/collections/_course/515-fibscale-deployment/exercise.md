@@ -389,9 +389,9 @@ http://locust.fibscale.jde.archidep.ch.
 ### :exclamation: Start load testing the application with a small number of users
 
 The **Host** field tells Locust what the base URL for the load testing scenario
-is. Enter the address of FibScale: `http://fibscale.jde.archidep.ch`. Set
-the **Number of users** to 1 and the **Spawn rate** to 1 for now, and run the
-scenario.
+is. Enter the address of FibScale: `http://fibscale.jde.archidep.ch`. Set the
+**Number of users** to 1 and the **Ramp Up** (used to be called spawn rate) to 1
+for now, and run the scenario.
 
 ![Configure Locust with 1 user](./images/fibscale-locust-1-user.png)
 
@@ -414,7 +414,7 @@ by the load testing scenario. Our single users ends up making 1 request every 2
 seconds, which is 0.5 RPS.
 
 Click the **Edit** button in the top bar and change the **Number of users** to 2
-without changing the spawn rate.
+without changing the ramp up (or spawn rate).
 
 ![Configure Locust with 2 users](./images/fibscale-locust-2-users.png)
 
@@ -425,14 +425,14 @@ requests per seconds stabilizing at ~1. Everything is as we expect so far.
 
 ### :exclamation: Increase the load
 
-Now change the **Number of users** to 10 and leave the **Spawn rate** to 1. This
-will add 8 more users to our existing 2.
+Now change the **Number of users** to 10 and leave the **Ramp Up** (spawn rate)
+to 1. This will add 8 more users to our existing 2.
 
 {% note type: more %}
 
-The spawn rate is the number of new users added every second, meaning that it
-will take 8 seconds (1 per new user) to reach our target number of 10 users
-starting from the 2 we already have.
+The ramp up (previously called the spawn rate) is the number of new users added
+every second, meaning that it will take 8 seconds (1 per new user) to reach our
+target number of 10 users starting from the 2 we already have.
 
 {% endnote %}
 
@@ -644,10 +644,11 @@ passed as argument).
 
 ### :exclamation: Load-test the new FibScale service
 
-Access Locust at http://locust.fibscale.jde.archidep.ch and run the same
-load testing scenario as before: test the **Host**
-http://fibscale.jde.archidep.ch with the **Number of users** set to 10 and
-the **Spawn rate** set to 1.
+Access Locust at http://locust.fibscale.jde.archidep.ch and run the same load
+testing scenario as before: test the **Host** http://fibscale.jde.archidep.ch
+with the **Number of users** set to 10 and the **Ramp Up** (spawn rate) set to
+
+1.
 
 ![Configure Locust with 10 users again](./images/fibscale-locust-10-users-again.png)
 
