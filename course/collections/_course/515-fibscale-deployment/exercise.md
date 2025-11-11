@@ -29,7 +29,7 @@ computes [Fibonacci numbers][fib].
 
 The following requirements should be installed on your server:
 
-- [Ruby][ruby] 3.1+ and compilation tools
+- [Ruby][ruby] 3.2+ and compilation tools
 
   You can install those by running the following commands:
 
