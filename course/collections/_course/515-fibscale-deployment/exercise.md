@@ -899,8 +899,7 @@ the overall throughput and decreasing the response time for each client.
 ### :classical_building: Architecture
 
 This is a simplified architecture of the main running processes and
-communication flow at the end of this exercise (after completing all previous
-course exercises:
+communication flow at the end of this exercise:
 
 ![Diagram](./images/architecture.png)
 
