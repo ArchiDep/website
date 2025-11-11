@@ -308,29 +308,30 @@ server.
     include snippets/fastcgi-php.conf;
     ```
 
-{% note %}
+  - You must tell nginx to proxy requests with the FastCGI protocol, and where
+    to proxy them to, with its [`fastcgi_pass` directive][nginx-fastcgi-pass].
+    This allows you to proxy requests either to a domain and IP address (e.g.
+    `localhost:9000`) or to a [Unix domain socket][unix-socket].
 
-This will include the file `/etc/nginx/snippets/fastcgi-php.conf`, which will in
-turn include `/etc/nginx/fastcgi.conf`. If you want to know what is required to
-make nginx properly proxy a request with the FastCGI protocol, you can look at
-the contents of these two files.
+    You have previously configured PHP-FPM to listen on a port. Therefore,
+    according to the [documentation][nginx-fastcgi-pass], you should configure a
+    FastCGI proxy to `localhost` or `127.0.0.1` (since PHP-FPM is running on the
+    same machine as nginx) and the same port you used in the PHP-FPM web
+    configuration file for the `listen` key.
+
+    This will make nginx proxy HTTP requests to PHP-FPM through that local port.
+    PHP-FPM will then execute the PHP code and give the result to nginx, which
+    will send it back to the client in the HTTP response.
+
+{% note type: more %}
+
+The `include` directive provided above will include the file
+`/etc/nginx/snippets/fastcgi-php.conf`, which will in turn include
+`/etc/nginx/fastcgi.conf`. If you want to know what is required to make nginx
+properly proxy a request with the FastCGI protocol, you can look at the contents
+of these two files.
 
 {% endnote %}
-
-- You must tell nginx to proxy requests with the FastCGI protocol, and where
-  to proxy them to, with its [`fastcgi_pass` directive][nginx-fastcgi-pass].
-  This allows you to proxy requests either to a domain and IP address (e.g.
-  `localhost:9000`) or to a [Unix domain socket][unix-socket].
-
-  You have previously configured PHP-FPM to listen on a port. Therefore,
-  according to the [documentation][nginx-fastcgi-pass], you should configure a
-  FastCGI proxy to `localhost` or `127.0.0.1` (since PHP-FPM is running on the
-  same machine as nginx) and the same port you used in the PHP-FPM web
-  configuration file for the `listen` key.
-
-  This will make nginx proxy HTTP requests to PHP-FPM through that local port.
-  PHP-FPM will then execute the PHP code and give the result to nginx, which
-  will send it back to the client in the HTTP response.
 
 ### :exclamation: Enable the nginx configuration
 
@@ -365,8 +366,9 @@ $> sudo nginx -s reload
 
 ## :exclamation: See it in action
 
-Visit http://todolist.jde.archidep.ch (replacing `jde` with your username) and
-you should see the PHP todolist working.
+Visit http://todolist.jde.archidep.ch (replacing `jde` with your username and
+`archidep.ch` with your assigned domain) and you should see the PHP todolist
+working.
 
 ## :checkered_flag: What have I done?
 
