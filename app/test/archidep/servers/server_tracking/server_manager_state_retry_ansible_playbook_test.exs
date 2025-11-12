@@ -73,7 +73,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               ansible_playbook: {playbook_run, nil, retried_event}
+               ansible: {playbook_run, nil, retried_event}
            }
 
     assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
@@ -172,7 +172,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               ansible_playbook: {playbook_run, nil, retried_event}
+               ansible: {playbook_run, nil, retried_event}
            }
 
     assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
@@ -295,7 +295,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
         problems: [
           ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
         ],
-        ansible_playbook: {running_playbook, nil, fake_cause}
+        ansible: {running_playbook, nil, fake_cause}
       )
 
     assert retry_ansible_playbook.(initial_state, "setup") ==
@@ -347,8 +347,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
              } = run_started_event
            ] =
              Repo.all(
-               from e in StoredEvent,
+               from(e in StoredEvent,
                  order_by: [asc: e.occurred_at]
+               )
              )
 
     assert_in_delta DateTime.diff(now, retried_occurred_at, :second), 0, 1

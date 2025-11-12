@@ -19,11 +19,14 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
     tracked_playbooks =
       if connected?(socket) do
         set_process_label(__MODULE__, auth)
-        :ok = PubSub.subscribe(@pubsub, "tracker:ansible-playbooks")
+        :ok = PubSub.subscribe(@pubsub, "tracker:ansible-queue")
 
         @tracker
-        |> Tracker.list("ansible-playbooks")
-        |> Enum.reduce(%{}, fn {key, meta}, acc -> Map.put(acc, key, meta) end)
+        |> Tracker.list("ansible-queue")
+        |> Enum.reduce(%{}, fn
+          {"playbook:" <> run_id, %{type: :playbook} = meta}, acc -> Map.put(acc, run_id, meta)
+          {_key, _meta}, acc -> acc
+        end)
       else
         %{}
       end
@@ -45,7 +48,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
 
   @impl LiveView
   def handle_info(
-        {action, run_id, %{state: state, events: events} = meta},
+        {action, "playbook:" <> run_id, %{type: :playbook, state: state, events: events} = meta},
         %Socket{assigns: %{playbook_runs: playbook_runs, tracked_playbooks: tracked_playbooks}} =
           socket
       )
@@ -89,7 +92,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
 
   @impl LiveView
   def handle_info(
-        {:leave, run_id, %{}},
+        {:leave, "playbook:" <> run_id, %{}},
         %Socket{assigns: %{playbook_runs: playbook_runs, tracked_playbooks: tracked_playbooks}} =
           socket
       ),
@@ -107,6 +110,13 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
           tracked_playbooks: Map.delete(tracked_playbooks, run_id)
         )
         |> noreply()
+
+  @impl LiveView
+  def handle_info(
+        {_action, "gather-facts:" <> _server_id, %{}},
+        socket
+      ),
+      do: noreply(socket)
 
   @impl LiveView
   def handle_info(:tick, socket),

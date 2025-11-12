@@ -57,7 +57,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     actions: [],
     # TODO: tasks, ansible playbook and load average timer should be part of the connected state
     tasks: %{},
-    ansible_playbook: nil,
+    ansible: nil,
     problems: [],
     # TODO: retry timer should be part of the retry connecting state
     retry_timer: nil,
@@ -72,7 +72,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           username: String.t(),
           actions: list(action()),
           tasks: %{optional(atom()) => reference()},
-          ansible_playbook: {AnsiblePlaybookRun.t(), String.t() | nil, EventReference.t()} | nil,
+          ansible:
+            :gathering_facts
+            | {AnsiblePlaybookRun.t(), String.t() | nil, EventReference.t()}
+            | nil,
           problems: list(server_problem()),
           retry_timer: reference() | nil,
           load_average_timer: reference() | nil,
@@ -96,7 +99,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
               t())}
   @type demonitor_action :: {:demonitor, reference()}
   @type gather_facts_action ::
-          {:gather_facts, (t(), (String.t() -> Task.t()) -> t())}
+          {:gather_facts, String.t()}
   @type monitor_action :: {:monitor, pid()}
   @type notify_server_offline_action :: :notify_server_offline
   @type run_command_action ::
@@ -368,20 +371,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         |> handle_load_average_result(result)
         |> drop_task(:get_load_average, get_load_average_ref)
 
-  # Handle fact gathering result
-  def handle_task_result(
-        %__MODULE__{
-          connection_state: connected_state(),
-          tasks: %{gather_facts: gather_facts_ref}
-        } = state,
-        gather_facts_ref,
-        result
-      ),
-      do:
-        state
-        |> handle_facts_gathering_result(result)
-        |> drop_task(:gather_facts, gather_facts_ref)
-
   # Handle test ports result
   def handle_task_result(
         %__MODULE__{
@@ -628,10 +617,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Server manager has sudo access to server #{state.server.id} as #{app_username}; gathering facts..."
     )
 
-    add_actions(state, [
+    add_actions(%__MODULE__{state | ansible: :gathering_facts}, [
       update_tracking_action(),
       get_load_average(),
-      gather_facts_action()
+      gather_facts_action(app_username)
     ])
   end
 
@@ -706,37 +695,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
 
     add_action(state, measure_load_average_action())
-  end
-
-  defp handle_facts_gathering_result(
-         %__MODULE__{connection_state: connected_state(connection_event: connection_event)} =
-           state,
-         {:ok, facts}
-       ) do
-    Logger.debug("Received fact gathering result from server #{state.server.id}")
-
-    updated_server = Server.update_last_known_properties!(state.server, facts, connection_event)
-
-    setup_playbook = Ansible.setup_playbook()
-
-    last_setup_runs =
-      AnsiblePlaybookRun.fetch_last_playbook_runs(updated_server, setup_playbook, 3)
-
-    state
-    |> set_updated_server(updated_server)
-    |> add_action(update_tracking_action())
-    |> detect_server_properties_mismatches()
-    |> test_ports_or_rerun_setup(last_setup_runs, setup_playbook)
-  end
-
-  defp handle_facts_gathering_result(state, {:error, reason}) do
-    Logger.warning(
-      "Server manager could not gather facts for server #{state.server.id} because #{inspect(reason)}"
-    )
-
-    state
-    |> add_action(update_tracking_action())
-    |> set_problem(server_fact_gathering_failed_problem(reason))
   end
 
   defp test_ports_or_rerun_setup(%__MODULE__{server: server} = state, [], _playbook) do
@@ -878,9 +836,50 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   @impl ServerManagerBehaviour
 
+  def ansible_facts_gathered(
+        %__MODULE__{
+          connection_state: connected_state(connection_event: connection_event),
+          ansible: :gathering_facts
+        } =
+          state,
+        {:ok, facts}
+      ) do
+    Logger.debug("Gathered facts from server #{state.server.id}")
+
+    updated_server = Server.update_last_known_properties!(state.server, facts, connection_event)
+
+    setup_playbook = Ansible.setup_playbook()
+
+    last_setup_runs =
+      AnsiblePlaybookRun.fetch_last_playbook_runs(updated_server, setup_playbook, 3)
+
+    state
+    |> clear_current_ansible_task()
+    |> set_updated_server(updated_server)
+    |> add_action(update_tracking_action())
+    |> detect_server_properties_mismatches()
+    |> test_ports_or_rerun_setup(last_setup_runs, setup_playbook)
+  end
+
+  def ansible_facts_gathered(
+        %__MODULE__{connection_state: connected_state(), ansible: :gathering_facts} = state,
+        {:error, reason}
+      ) do
+    Logger.warning(
+      "Server manager could not gather facts for server #{state.server.id} because #{inspect(reason)}"
+    )
+
+    state
+    |> clear_current_ansible_task()
+    |> add_action(update_tracking_action())
+    |> set_problem(server_fact_gathering_failed_problem(reason))
+  end
+
+  @impl ServerManagerBehaviour
+
   def ansible_playbook_event(
         %__MODULE__{
-          ansible_playbook: {%AnsiblePlaybookRun{id: run_id}, _previous_task, _cause}
+          ansible: {%AnsiblePlaybookRun{id: run_id}, _previous_task, _cause}
         } = state,
         run_id,
         ongoing_task
@@ -902,7 +901,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def ansible_playbook_completed(
         %__MODULE__{
           connection_state: connected_state(),
-          ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, _cause}
+          ansible: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, _cause}
         } = state,
         run_id
       ) do
@@ -914,7 +913,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     state
     |> add_action(update_tracking_action())
     |> handle_ansible_playbook_completed(run)
-    |> clear_running_ansible_playbook()
+    |> clear_current_ansible_task()
   end
 
   def ansible_playbook_completed(state, run_id) do
@@ -934,7 +933,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
              ),
            server: %Server{username: username, app_username: app_username} = server,
            username: username,
-           ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, cause}
+           ansible: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, cause}
          } = state,
          %AnsiblePlaybookRun{id: run_id, playbook: "setup", state: :succeeded}
        ) do
@@ -964,7 +963,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp handle_ansible_playbook_completed(
          %__MODULE__{
            connection_state: connected_state(),
-           ansible_playbook: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, _cause}
+           ansible: {%AnsiblePlaybookRun{id: run_id, playbook: "setup"}, _task, _cause}
          } = state,
          %AnsiblePlaybookRun{id: run_id} = run
        ),
@@ -986,7 +985,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           username: username,
           problems: problems,
           tasks: tasks,
-          ansible_playbook: nil
+          ansible: nil
         } = state,
         "setup"
       )
@@ -1041,7 +1040,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           server: server,
           problems: problems,
           tasks: tasks,
-          ansible_playbook: nil
+          ansible: nil
         } = state
       )
       when tasks == %{} do
@@ -1214,7 +1213,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         auth
       ) do
     case state do
-      %__MODULE__{connection_state: not_connected_state(), tasks: tasks, ansible_playbook: nil}
+      %__MODULE__{connection_state: not_connected_state(), tasks: tasks, ansible: nil}
       when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
         with_reply(state, :ok)
@@ -1222,7 +1221,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       %__MODULE__{
         connection_state: retry_connecting_state(connection_pid: connection_pid),
         tasks: tasks,
-        ansible_playbook: nil
+        ansible: nil
       }
       when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
@@ -1236,7 +1235,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         connection_state: connected_state(connection_pid: connection_pid),
         server: server,
         tasks: tasks,
-        ansible_playbook: nil
+        ansible: nil
       }
       when tasks == %{} ->
         :ok = ServerConnection.disconnect(server)
@@ -1249,7 +1248,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       %__MODULE__{
         connection_state: connection_failed_state(connection_pid: connection_pid),
         tasks: tasks,
-        ansible_playbook: nil
+        ansible: nil
       }
       when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
@@ -1261,7 +1260,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       %__MODULE__{
         connection_state: disconnected_state(),
         tasks: tasks,
-        ansible_playbook: nil
+        ansible: nil
       }
       when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
@@ -1374,17 +1373,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp maybe_test_ports(%__MODULE__{} = state), do: state
 
-  defp gather_facts_action,
-    do:
-      {:gather_facts,
-       fn task_state, task_factory ->
-         task = task_factory.(task_state.username)
-
-         %__MODULE__{
-           task_state
-           | tasks: Map.put(task_state.tasks, :gather_facts, task.ref)
-         }
-       end}
+  defp gather_facts_action(username),
+    do: {:gather_facts, username}
 
   defp check_open_ports_action(server),
     do:
@@ -1515,7 +1505,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       %{connection_state: connected_state(), tasks: %{check_access: _ref}} ->
         :checking_access
 
-      %{connection_state: connected_state(), tasks: %{gather_facts: _ref}} ->
+      %{connection_state: connected_state(), ansible: :gathering_facts} ->
         :gathering_facts
 
       %{connection_state: connected_state(), tasks: %{test_ports: _ref}} ->
@@ -1526,7 +1516,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
       %{
         connection_state: connected_state(),
-        ansible_playbook: {%AnsiblePlaybookRun{id: id, playbook: playbook}, task, _cause}
+        ansible: {%AnsiblePlaybookRun{id: id, playbook: playbook}, task, _cause}
       } ->
         {:running_playbook, playbook, id, task}
 
@@ -1558,21 +1548,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     {playbook_run, start_event} = start_setup_playbook(state.server, vars, vars_digest, cause)
 
     add_action(
-      %__MODULE__{state | ansible_playbook: {playbook_run, nil, cause}},
+      %__MODULE__{state | ansible: {playbook_run, nil, cause}},
       run_playbook_action(playbook_run, start_event)
     )
   end
 
   defp update_ongoing_playbook_task(
-         %__MODULE__{ansible_playbook: {playbook_run, _previous_task, cause}} = state,
+         %__MODULE__{ansible: {playbook_run, _previous_task, cause}} = state,
          ongoing_task
        ),
        do: %__MODULE__{
          state
-         | ansible_playbook: {playbook_run, ongoing_task, cause}
+         | ansible: {playbook_run, ongoing_task, cause}
        }
 
-  defp clear_running_ansible_playbook(state), do: %__MODULE__{state | ansible_playbook: nil}
+  defp clear_current_ansible_task(state), do: %__MODULE__{state | ansible: nil}
 
   defp start_setup_playbook(server, vars, vars_digest, cause) do
     playbook = Ansible.setup_playbook()

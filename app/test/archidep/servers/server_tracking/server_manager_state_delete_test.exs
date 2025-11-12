@@ -215,14 +215,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
           username: server.username,
           server: server,
           tasks: tasks,
-          ansible_playbook: ansible_playbook
+          ansible: ansible_playbook
         )
 
       assert delete_server.(initial_state, auth) == {initial_state, {:error, :server_busy}}
     end
 
     assert_no_stored_events!()
-    assert Repo.exists?(from s in Server, where: s.id == ^server.id)
+    assert Repo.exists?(from(s in Server, where: s.id == ^server.id))
   end
 
   defp assert_server_deleted!(server, now) do
@@ -231,7 +231,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
                id: event_id,
                occurred_at: occurred_at
              } = registered_event
-           ] = Repo.all(from e in StoredEvent, order_by: [asc: e.occurred_at])
+           ] = Repo.all(from(e in StoredEvent, order_by: [asc: e.occurred_at]))
 
     assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
 

@@ -201,7 +201,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.username,
-        ansible_playbook: {running_playbook, nil, fake_cause},
+        ansible: {running_playbook, nil, fake_cause},
         problems: port_checking_problems
       )
 

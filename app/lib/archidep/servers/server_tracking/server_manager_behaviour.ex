@@ -22,6 +22,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
   @callback retry_connecting(state(), :manual | :automated | {:event, EventReference.t()}) ::
               state()
   @callback handle_task_result(state(), reference(), result) :: state() when result: term()
+  @callback ansible_facts_gathered(state(), {:ok, Types.ansible_facts()} | {:error, term()}) ::
+              state()
   @callback ansible_playbook_event(state(), UUID.t(), String.t() | nil) :: state()
   @callback ansible_playbook_completed(state(), UUID.t()) :: state()
   @callback retry_ansible_playbook(state(), String.t()) ::

@@ -320,40 +320,61 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
            end) == :ok
   end
 
-  test "have a server manager gather ansible facts for its server", %{
-    initialize: initialize,
-    server: server,
-    test_pid: test_pid
-  } do
+  test "have a server manager request that the ansible pipeline queue gather ansible facts for its server",
+       %{
+         initialize: initialize,
+         server: server,
+         test: test,
+         test_pid: test_pid
+       } do
+    server_id = server.id
+    app_username = server.app_username
+    queue_name = AnsiblePipelineQueue.name(test)
+
+    # Start a fake ansible pipeline queue process that will forward all calls to
+    # the test process.
+    start_link_supervised!(%{
+      id: AnsiblePipelineQueue,
+      start: {GenServerProxy, :start_link, [self(), queue_name]}
+    })
+
+    init_actions = [{:gather_facts, app_username}]
+
+    assert test_server_manager!(
+             initialize,
+             test_pid,
+             fn done, %{starting_version: starting_version} ->
+               expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+                 done.(%ServerManagerState{state | version: starting_version})
+               end)
+
+               assert_receive {:proxy, ^queue_name,
+                               {:call, {:gather_facts, ^server_id, ^app_username}, from}},
+                              500
+
+               GenServer.reply(from, :ok)
+
+               ServerManager.connection_idle(server.id, test_pid)
+             end,
+             actions: init_actions,
+             wait_for_started_message: false
+           ) == :ok
+  end
+
+  test "have a server manager report ansible fact gathering success for its server",
+       %{
+         initialize: initialize,
+         server: server,
+         test_pid: test_pid
+       } do
     fake_facts = %{"cake" => "lie", "truth" => "out there"}
 
-    expect(Ansible.Mock, :gather_facts, fn ^server, "alice" ->
-      {:ok, fake_facts}
-    end)
-
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
-             expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
-               %ServerManagerState{
-                 state
-                 | actions: [
-                     {:gather_facts,
-                      fn task_state, task_factory ->
-                        task = task_factory.("alice")
-                        Process.unlink(task.pid)
-                        task_state
-                      end}
-                   ]
-               }
-             end)
-
-             expect(ServerManagerMock, :handle_task_result, fn state,
-                                                               task_ref,
-                                                               {:ok, ^fake_facts} ->
-               Process.demonitor(task_ref, [:flush])
+             expect(ServerManagerMock, :ansible_facts_gathered, fn state, {:ok, ^fake_facts} ->
                done.(state)
              end)
 
-             :ok = ServerManager.connection_idle(server.id, test_pid)
+             ServerManager.ansible_facts_gathered(server, {:ok, fake_facts})
            end) == :ok
   end
 
@@ -371,33 +392,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
          } do
       fake_error = unquote(ansible_error)
 
-      expect(Ansible.Mock, :gather_facts, fn ^server, "alice" ->
-        {:error, fake_error}
-      end)
-
       assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
-               expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
-                 %ServerManagerState{
-                   state
-                   | actions: [
-                       {:gather_facts,
-                        fn task_state, task_factory ->
-                          task = task_factory.("alice")
-                          Process.unlink(task.pid)
-                          task_state
-                        end}
-                     ]
-                 }
-               end)
-
-               expect(ServerManagerMock, :handle_task_result, fn state,
-                                                                 task_ref,
-                                                                 {:error, ^fake_error} ->
-                 Process.demonitor(task_ref, [:flush])
+               expect(ServerManagerMock, :ansible_facts_gathered, fn state,
+                                                                     {:error, ^fake_error} ->
                  done.(state)
                end)
 
-               :ok = ServerManager.connection_idle(server.id, test_pid)
+               ServerManager.ansible_facts_gathered(server, {:error, fake_error})
              end) == :ok
     end
   end

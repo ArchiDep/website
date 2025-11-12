@@ -696,7 +696,7 @@ defmodule ArchiDep.Support.ServersFactory do
 
     {actions, attrs!} = Map.pop(attrs!, :actions, [])
     {tasks, attrs!} = Map.pop(attrs!, :tasks, %{})
-    {ansible_playbook, attrs!} = Map.pop(attrs!, :ansible_playbook, nil)
+    {ansible, attrs!} = Map.pop(attrs!, :ansible, nil)
     {problems, attrs!} = Map.pop(attrs!, :problems, [])
     {retry_timer, attrs!} = Map.pop(attrs!, :retry_timer, nil)
     {load_average_timer, attrs!} = Map.pop(attrs!, :load_average_timer, nil)
@@ -711,7 +711,7 @@ defmodule ArchiDep.Support.ServersFactory do
       username: username,
       actions: actions,
       tasks: tasks,
-      ansible_playbook: ansible_playbook,
+      ansible: ansible,
       problems: problems,
       retry_timer: retry_timer,
       load_average_timer: load_average_timer,

@@ -1,4 +1,4 @@
-defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringTaskResultTest do
+defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGatheringTest do
   use ArchiDep.Support.DataCase, async: true
 
   import ArchiDep.Support.ServerManagerStateTestUtils
@@ -37,14 +37,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   setup_all do
     %{
-      handle_task_result:
-        protect({ServerManagerState, :handle_task_result, 3}, ServerManagerBehaviour)
+      ansible_facts_gathered:
+        protect({ServerManagerState, :ansible_facts_gathered, 2}, ServerManagerBehaviour)
     }
   end
 
   test "run the port testing script after facts have been gathered",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true)
     server_secret_key = server.secret_key
@@ -60,7 +60,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -69,7 +68,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -77,16 +76,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, %{}}
       )
 
     assert %{
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -97,7 +94,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               tasks: %{}
+               ansible: nil
            }
 
     fake_task = Task.completed(:fake)
@@ -123,7 +120,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "the connection process is complete after facts have been gathered if open ports have already been checked",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server = insert_active_server!(set_up_at: true, open_ports_checked_at: true, ssh_port: true)
     server_secret_key = server.secret_key
@@ -139,7 +136,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -148,7 +144,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -156,16 +152,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, %{}}
       )
 
     assert %{
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
@@ -175,7 +169,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               tasks: %{}
+               ansible: nil
            }
 
     assert update_tracking_fn.(result) ==
@@ -190,7 +184,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "detected properties are saved after gathering facts the first time",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server =
       insert_active_server!(
@@ -213,7 +207,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -222,7 +215,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -251,9 +244,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     now = DateTime.utc_now()
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, fake_facts}
       )
 
@@ -264,7 +256,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                } = updated_server,
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -306,7 +297,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                    version: server.version + 1
                },
                actions: actions,
-               tasks: %{}
+               ansible: nil
            }
 
     assert_receive {:server_updated, ^updated_server}
@@ -334,7 +325,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "last known server properties are updated after gathering facts",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server =
       insert_active_server!(
@@ -373,7 +364,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -382,7 +372,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -410,9 +400,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     now = DateTime.utc_now()
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, fake_facts}
       )
 
@@ -420,7 +409,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
              server: updated_server,
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -462,7 +450,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                    version: server.version + 1
                },
                actions: actions,
-               tasks: %{}
+               ansible: nil
            }
 
     assert_receive {:server_updated, ^updated_server}
@@ -490,7 +478,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "last known server properties are not updated after gathering facts if they have not changed",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server =
       insert_active_server!(
@@ -529,7 +517,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -538,7 +525,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -563,16 +550,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     }
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, fake_facts}
       )
 
     assert %{
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -583,7 +568,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               tasks: %{}
+               ansible: nil
            }
 
     fake_task = Task.completed(:fake)
@@ -609,7 +594,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "server property mismatches are detected after gathering facts",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server =
       insert_active_server!(
@@ -660,7 +645,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -669,7 +653,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref},
+        ansible: :gathering_facts,
         problems: [
           ServersFactory.server_expected_property_mismatch_problem(),
           ServersFactory.server_expected_property_mismatch_problem()
@@ -698,9 +682,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     now = DateTime.utc_now()
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, fake_facts}
       )
 
@@ -708,7 +691,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
              server: %Server{last_known_properties_id: last_known_properties_id} = updated_server,
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -747,7 +729,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                    version: server.version + 1
                },
                actions: actions,
-               tasks: %{},
+               ansible: nil,
                problems: [
                  {:server_expected_property_mismatch, :cpus, 2, 4},
                  {:server_expected_property_mismatch, :cores, 8, 7},
@@ -784,7 +766,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "the hostname of a group member's server is expected to be the server's username and the server group member's domain by default",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server =
       insert_active_server!(
@@ -836,7 +818,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -845,7 +826,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref},
+        ansible: :gathering_facts,
         problems: [
           ServersFactory.server_expected_property_mismatch_problem(),
           ServersFactory.server_expected_property_mismatch_problem()
@@ -874,9 +855,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     now = DateTime.utc_now()
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, fake_facts}
       )
 
@@ -884,7 +864,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
              server: %Server{last_known_properties_id: last_known_properties_id} = updated_server,
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -923,7 +902,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                    version: server.version + 1
                },
                actions: actions,
-               tasks: %{},
+               ansible: nil,
                problems: [
                  {:server_expected_property_mismatch, :hostname,
                   "#{server.username}.#{server.owner.group_member.domain}", "test-server"},
@@ -962,7 +941,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "the hostname of a root user's server has no expected value by default",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server =
       insert_active_server!(
@@ -1014,7 +993,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -1023,7 +1001,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref},
+        ansible: :gathering_facts,
         problems: [
           ServersFactory.server_expected_property_mismatch_problem(),
           ServersFactory.server_expected_property_mismatch_problem()
@@ -1052,9 +1030,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     now = DateTime.utc_now()
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, fake_facts}
       )
 
@@ -1062,7 +1039,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
              server: %Server{last_known_properties_id: last_known_properties_id} = updated_server,
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -1101,7 +1077,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                    version: server.version + 1
                },
                actions: actions,
-               tasks: %{},
+               ansible: nil,
                problems: [
                  {:server_expected_property_mismatch, :cpus, 2, 4},
                  {:server_expected_property_mismatch, :cores, 8, 7},
@@ -1138,7 +1114,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "no hostname mismatch is detected if the server's hostname matches the expected value",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server =
       insert_active_server!(
@@ -1177,7 +1153,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -1186,7 +1161,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -1214,9 +1189,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     now = DateTime.utc_now()
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, fake_facts}
       )
 
@@ -1224,7 +1198,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
              server: updated_server,
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -1266,7 +1239,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                    version: server.version + 1
                },
                actions: actions,
-               tasks: %{}
+               ansible: nil
            }
 
     assert_receive {:server_updated, ^updated_server}
@@ -1294,11 +1267,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "a warning is logged if no previous ansible setup playbook run is found after gathering facts",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -1307,7 +1279,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -1316,9 +1288,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
     {result, log} =
       with_log(fn ->
-        handle_task_result.(
+        ansible_facts_gathered.(
           initial_state,
-          fake_gather_facts_ref,
           {:ok, %{}}
         )
       end)
@@ -1328,7 +1299,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert %{
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -1339,7 +1309,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               tasks: %{}
+               ansible: nil
            }
 
     fake_task = Task.completed(:fake)
@@ -1365,7 +1335,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "the setup playbook is rerun after gathering facts if the previous run failed",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server =
       insert_active_server!(
@@ -1387,7 +1357,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       Faker.random_bytes(10)
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -1396,7 +1365,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -1407,9 +1376,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     fake_facts = %{"ansible_machine_id" => "1234567890abcdef"}
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, fake_facts}
       )
 
@@ -1420,7 +1388,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                } = updated_server,
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_playbook,
                   %{
                     git_revision: git_revision,
@@ -1466,9 +1433,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
                    updated_at: updated_server.updated_at,
                    version: server.version + 1
                },
-               ansible_playbook: {playbook_run, nil, fake_connection_event},
-               actions: actions,
-               tasks: %{}
+               ansible: {playbook_run, nil, fake_connection_event},
+               actions: actions
            }
 
     assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
@@ -1519,7 +1485,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "the setup playbook is not rerun after gathering facts if the three previous runs failed",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true)
 
@@ -1534,7 +1500,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       end)
       |> Enum.sort_by(& &1.created_at, {:desc, DateTime})
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -1543,7 +1508,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -1552,9 +1517,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
     {result, msg} =
       with_log(fn ->
-        handle_task_result.(
+        ansible_facts_gathered.(
           initial_state,
-          fake_gather_facts_ref,
           {:ok, %{}}
         )
       end)
@@ -1565,7 +1529,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert %{
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
@@ -1575,7 +1538,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               tasks: %{},
+               ansible: nil,
                problems: [
                  {:server_ansible_playbook_repeatedly_failed,
                   Enum.map(failed_playbooks, &{"setup", &1.state, AnsiblePlaybookRun.stats(&1)})}
@@ -1595,7 +1558,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "the setup playbook is rerun after gathering facts if its digest has changed",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true)
     server_secret_key = server.secret_key
@@ -1611,7 +1574,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -1620,7 +1582,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -1630,16 +1592,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     now = DateTime.utc_now()
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, %{}}
       )
 
     assert %{
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_playbook,
                   %{
                     git_revision: git_revision,
@@ -1666,9 +1626,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
     assert result == %ServerManagerState{
              initial_state
-             | ansible_playbook: {playbook_run, nil, fake_connection_event},
-               actions: actions,
-               tasks: %{}
+             | ansible: {playbook_run, nil, fake_connection_event},
+               actions: actions
            }
 
     assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
@@ -1717,7 +1676,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "the setup playbook is rerun after gathering facts if the digest of its variables has changed",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true)
     server_secret_key = server.secret_key
@@ -1733,7 +1692,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       successful_run.vars_digest <> <<0>>
     end)
 
-    fake_gather_facts_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
     initial_state =
@@ -1742,7 +1700,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     :ok = PubSub.subscribe(@pubsub, "servers:#{server.id}")
@@ -1752,16 +1710,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     now = DateTime.utc_now()
 
     result =
-      handle_task_result.(
+      ansible_facts_gathered.(
         initial_state,
-        fake_gather_facts_ref,
         {:ok, %{}}
       )
 
     assert %{
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:run_playbook,
                   %{
                     git_revision: git_revision,
@@ -1788,9 +1744,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
     assert result == %ServerManagerState{
              initial_state
-             | ansible_playbook: {playbook_run, nil, fake_connection_event},
-               actions: actions,
-               tasks: %{}
+             | ansible: {playbook_run, nil, fake_connection_event},
+               actions: actions
            }
 
     assert_in_delta DateTime.diff(now, playbook_created_at, :second), 0, 1
@@ -1839,7 +1794,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
 
   test "a fact gathering error stops the connection process",
        %{
-         handle_task_result: handle_task_result
+         ansible_facts_gathered: ansible_facts_gathered
        } do
     server = insert_active_server!(set_up_at: true, ssh_port: true)
 
@@ -1849,23 +1804,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
       playbook_digest: Ansible.setup_playbook().digest
     )
 
-    fake_gather_facts_ref = make_ref()
-
     initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.app_username,
-        tasks: %{gather_facts: fake_gather_facts_ref}
+        ansible: :gathering_facts
       )
 
     fact_gathering_error = Faker.Lorem.sentence()
 
     {result, log} =
       with_log(fn ->
-        handle_task_result.(
+        ansible_facts_gathered.(
           initial_state,
-          fake_gather_facts_ref,
           {:error, fact_gathering_error}
         )
       end)
@@ -1876,7 +1828,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert %{
              actions:
                [
-                 {:demonitor, ^fake_gather_facts_ref},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
            } = result
@@ -1884,7 +1835,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleFactGatheringT
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               tasks: %{},
+               ansible: nil,
                problems: [
                  {:server_fact_gathering_failed, fact_gathering_error}
                ]

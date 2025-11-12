@@ -25,6 +25,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
     handle_task_result: handle_task_result
   } do
     server = build_active_server(set_up_at: true, ssh_port: true)
+    app_username = server.app_username
 
     fake_check_access_task_ref = make_ref()
 
@@ -51,7 +52,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
              actions:
                [
                  {:demonitor, ^fake_check_access_task_ref},
-                 {:gather_facts, gather_facts_fn},
+                 {:gather_facts, ^app_username},
                  {:run_command, run_command_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -60,27 +61,20 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               tasks: %{}
+               tasks: %{},
+               ansible: :gathering_facts
            }
-
-    fake_facts_task = Task.completed(:fake)
-    app_username = server.app_username
-
-    facts_result = gather_facts_fn.(result, fn ^app_username -> fake_facts_task end)
-
-    assert facts_result ==
-             %ServerManagerState{result | tasks: %{gather_facts: fake_facts_task.ref}}
 
     fake_loadavg_task = Task.completed(:fake)
 
     loadavg_result =
-      run_command_fn.(facts_result, fn "cat /proc/loadavg", 10_000 ->
+      run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
         fake_loadavg_task
       end)
 
     assert loadavg_result == %ServerManagerState{
-             facts_result
-             | tasks: Map.put(facts_result.tasks, :get_load_average, fake_loadavg_task.ref)
+             result
+             | tasks: Map.put(result.tasks, :get_load_average, fake_loadavg_task.ref)
            }
 
     assert update_tracking_fn.(loadavg_result) ==
@@ -153,7 +147,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               ansible_playbook: {playbook_run, nil, fake_connection_event},
+               ansible: {playbook_run, nil, fake_connection_event},
                tasks: %{}
            }
 
@@ -267,7 +261,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
     assert result == %ServerManagerState{
              initial_state
              | actions: actions,
-               ansible_playbook: {playbook_run, nil, fake_connection_event},
+               ansible: {playbook_run, nil, fake_connection_event},
                tasks: %{}
            }
 

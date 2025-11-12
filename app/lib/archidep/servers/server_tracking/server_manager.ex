@@ -14,7 +14,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   alias ArchiDep.Course
   alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Http
-  alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
@@ -60,6 +59,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   @spec connection_idle(UUID.t(), pid()) :: :ok
   def connection_idle(server_id, connection_pid),
     do: GenServer.cast(name(server_id), {:connection_idle, connection_pid})
+
+  @spec ansible_facts_gathered(Server.t(), {:ok, Types.ansible_facts()} | {:error, term()}) :: :ok
+  def ansible_facts_gathered(server, result),
+    do: GenServer.call(name(server), {:ansible_facts_gathered, result})
 
   @spec ansible_playbook_event(AnsiblePlaybookRun.t(), AnsiblePlaybookEvent.t()) :: :ok
   def ansible_playbook_event(run, event),
@@ -155,6 +158,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
       state
       |> state_module.online?()
       |> reply({state_module, state})
+
+  def handle_call({:ansible_facts_gathered, result}, _from, {state_module, state}),
+    do:
+      state
+      |> state_module.ansible_facts_gathered(result)
+      |> execute_actions()
+      |> pair(state_module)
+      |> reply_with(:ok)
 
   def handle_call({:ansible_playbook_completed, run_id}, _from, {state_module, state}),
     do:
@@ -331,10 +342,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     state
   end
 
-  defp execute_action(state, {:gather_facts, factory}) do
-    factory.(state, fn username ->
-      Task.async(fn -> Ansible.gather_facts(state.server, username) end)
-    end)
+  defp execute_action(state, {:gather_facts, username}) do
+    :ok =
+      AnsiblePipelineQueue.gather_facts(
+        state.pipeline,
+        state.server,
+        username
+      )
+
+    state
   end
 
   defp execute_action(state, {:monitor, pid}) do

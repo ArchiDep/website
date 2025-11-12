@@ -1,9 +1,10 @@
 defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   @moduledoc """
-  Runner that executes playbook runs from the queue. It starts a task for each
-  playbook run and ensures that the playbook is executed only if the server is
-  online. It then runs the actual Ansible playbook and saves the events as they
-  come in.
+  Runner that executes Ansible tasks from the queue, such as gathering server
+  facts or running playbooks. An Elixir `Task` is started for each task.
+
+  Ansible playbooks are only executed if the server is online. Playbook events
+  are saved as they come in.
   """
 
   import ArchiDep.Helpers.UseCaseHelpers
@@ -14,6 +15,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   alias ArchiDep.Servers.Events.AnsiblePlaybookRunFinished
   alias ArchiDep.Servers.Events.AnsiblePlaybookRunRunning
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
+  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManager
   alias Ecto.Multi
   alias Ecto.UUID
@@ -21,17 +23,45 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   require Logger
 
   @tracker ArchiDep.Tracker
-  @event_base [:archidep, :servers, :ansible, :playbook_run]
+  @event_base [:archidep, :servers, :ansible]
 
-  @spec start_link({UUID.t(), EventReference.t()}) :: {:ok, pid()}
-  def start_link({run_id, cause}),
+  @spec start_link(
+          {:gather_facts, UUID.t(), String.t()}
+          | {:run_playbook, UUID.t(), EventReference.t()}
+        ) :: {:ok, pid()}
+  def start_link(event),
     do:
       Task.start_link(fn ->
-        process_event(run_id, cause)
+        process_event(event)
       end)
 
-  @spec process_event(UUID.t(), EventReference.t()) :: :ok
-  def process_event(run_id, cause) do
+  @spec process_event({:gather_facts, UUID.t(), String.t()}) :: :ok
+  def process_event({:gather_facts, server_id, username}) do
+    {:ok, server} = Server.fetch_server(server_id)
+
+    if ServerManager.online?(server) do
+      Logger.debug("Gathering facts for server #{server.id}...")
+
+      case Ansible.gather_facts(server, username) do
+        {:ok, facts} ->
+          Logger.debug("Gathered facts for server #{server.id}")
+
+          ServerManager.ansible_facts_gathered(server, {:ok, facts})
+
+        {:error, reason} ->
+          Logger.notice(
+            "Failed to gather facts for server #{server.id} because: #{inspect(reason)}"
+          )
+
+          ServerManager.ansible_facts_gathered(server, {:error, reason})
+      end
+    else
+      Logger.warning("Cannot gather facts for server #{server.id} because it is offline")
+    end
+  end
+
+  @spec process_event({:run_playbook, UUID.t(), EventReference.t()}) :: :ok
+  def process_event({:run_playbook, run_id, cause}) do
     case AnsiblePlaybookRun.get_pending_run(run_id) do
       nil ->
         Logger.warning("No pending Ansible playbook run found with ID #{run_id}")
@@ -46,7 +76,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   defp process_pending_run(pending_run, cause) do
     if ServerManager.online?(pending_run.server) do
       :telemetry.span(
-        @event_base,
+        @event_base ++ [:playbook_run],
         start_event_metadata(pending_run),
         fn ->
           finished_run =
@@ -62,7 +92,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
       |> Repo.transaction()
       |> then(fn {:ok, %{run: interrupted_run}} ->
         :telemetry.execute(
-          @event_base ++ [:interrupted],
+          @event_base ++ [:playbook_run, :interrupted],
           %{duration: AnsiblePlaybookRun.duration(interrupted_run)},
           finished_event_metadata(interrupted_run)
         )
@@ -71,7 +101,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   end
 
   defp run_playbook(%AnsiblePlaybookRun{id: run_id} = pending_run, cause) do
-    track!(run_id, %{state: :pending, events: 0, current_task: nil})
+    track_playbook!(run_id, %{type: :playbook, state: :pending, events: 0, current_task: nil})
 
     {:ok, %{run: running_run, stored_event: running_event}} =
       Multi.new()
@@ -79,37 +109,43 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
       |> Multi.insert(:stored_event, &ansible_playbook_run_running(&1.run, cause))
       |> Repo.transaction()
 
-    update_tracking!(run_id, fn meta -> %{meta | state: :running} end)
+    update_playbook_tracking!(run_id, fn meta -> %{meta | state: :running} end)
 
     running_run
     |> Ansible.run_playbook(cause, StoredEvent.to_reference(running_event))
     |> Stream.each(fn
       {:event, event} ->
-        update_tracking!(run_id, fn meta ->
+        update_playbook_tracking!(run_id, fn meta ->
           %{meta | events: meta.events + 1, current_task: event.task_name}
         end)
 
         :ok = ServerManager.ansible_playbook_event(running_run, event)
 
       {:succeeded, succeeded_run} ->
-        update_tracking!(run_id, fn meta -> %{meta | state: :succeeded, current_task: nil} end)
+        update_playbook_tracking!(run_id, fn meta ->
+          %{meta | state: :succeeded, current_task: nil}
+        end)
+
         :ok = ServerManager.ansible_playbook_completed(succeeded_run)
 
       {:failed, failed_run} ->
-        update_tracking!(run_id, fn meta -> %{meta | state: :failed, current_task: nil} end)
+        update_playbook_tracking!(run_id, fn meta ->
+          %{meta | state: :failed, current_task: nil}
+        end)
+
         :ok = ServerManager.ansible_playbook_completed(failed_run)
     end)
     |> Enum.at(-1)
   end
 
-  defp track!(run_id, meta) do
+  defp track_playbook!(run_id, meta) do
     {:ok, _ref} =
-      Tracker.track(@tracker, self(), "ansible-playbooks", run_id, meta)
+      Tracker.track(@tracker, self(), "ansible-queue", "playbook:#{run_id}", meta)
   end
 
-  defp update_tracking!(run_id, update) do
+  defp update_playbook_tracking!(run_id, update) do
     {:ok, _ref} =
-      Tracker.update(@tracker, self(), "ansible-playbooks", run_id, update)
+      Tracker.update(@tracker, self(), "ansible-queue", "playbook:#{run_id}", update)
   end
 
   defp finished_run_from_result({:succeeded, run}), do: run

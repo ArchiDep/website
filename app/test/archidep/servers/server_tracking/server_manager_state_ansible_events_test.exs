@@ -53,7 +53,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.username,
-        ansible_playbook: {playbook_run, previous_task, fake_cause}
+        ansible: {playbook_run, previous_task, fake_cause}
       )
 
     event_name = Faker.Lorem.word()
@@ -76,7 +76,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     assert result == %ServerManagerState{
              initial_state
-             | ansible_playbook: {playbook_run, event_name, fake_cause},
+             | ansible: {playbook_run, event_name, fake_cause},
                actions: actions
            }
 
@@ -109,7 +109,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         ServersFactory.build(:server_manager_state,
           connection_state: state,
           server: server,
-          ansible_playbook: nil
+          ansible: nil
         )
 
       playbook_run_id = UUID.generate()
@@ -158,7 +158,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.username,
-        ansible_playbook: {playbook_run, previous_task, fake_connection_event}
+        ansible: {playbook_run, previous_task, fake_connection_event}
       )
 
     connected_state(connection_pid: connection_pid, connection_ref: connection_ref) =
@@ -203,7 +203,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
-               ansible_playbook: nil,
+               ansible: nil,
                actions: actions
            }
 
@@ -251,7 +251,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.username,
-        ansible_playbook: {playbook_run, previous_task, fake_cause},
+        ansible: {playbook_run, previous_task, fake_cause},
         problems: [
           ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
         ]
@@ -301,7 +301,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
-               ansible_playbook: nil,
+               ansible: nil,
                actions: actions,
                problems: []
            }
@@ -351,7 +351,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.username,
-        ansible_playbook: {playbook_run, previous_task, fake_connection_event},
+        ansible: {playbook_run, previous_task, fake_connection_event},
         tasks: %{get_load_average: fake_loadavg_task_ref}
       )
 
@@ -398,7 +398,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
-               ansible_playbook: nil,
+               ansible: nil,
                actions: actions,
                tasks: %{}
            }
@@ -447,7 +447,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
         server: server,
         username: server.username,
-        ansible_playbook: {playbook_run, previous_task, fake_connection_event},
+        ansible: {playbook_run, previous_task, fake_connection_event},
         load_average_timer: fake_loadavg_timer_ref
       )
 
@@ -494,7 +494,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                  ),
                server: %Server{server | set_up_at: set_up_at, version: server.version + 1},
                username: server.app_username,
-               ansible_playbook: nil,
+               ansible: nil,
                actions: actions,
                load_average_timer: nil
            }
@@ -541,7 +541,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.app_username,
-        ansible_playbook: {playbook_run, previous_task, fake_cause}
+        ansible: {playbook_run, previous_task, fake_cause}
       )
 
     result =
@@ -561,7 +561,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     assert result == %ServerManagerState{
              initial_state
-             | ansible_playbook: nil,
+             | ansible: nil,
                actions: actions
            }
 
@@ -606,7 +606,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.username,
-        ansible_playbook: {playbook_run, previous_task, fake_cause}
+        ansible: {playbook_run, previous_task, fake_cause}
       )
 
     result =
@@ -626,7 +626,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     assert result == %ServerManagerState{
              initial_state
-             | ansible_playbook: nil,
+             | ansible: nil,
                actions: actions,
                problems: [
                  {:server_ansible_playbook_failed, "setup", :failed,
@@ -683,7 +683,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.app_username,
-        ansible_playbook: {playbook_run, previous_task, fake_cause}
+        ansible: {playbook_run, previous_task, fake_cause}
       )
 
     result =
@@ -703,7 +703,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     assert result == %ServerManagerState{
              initial_state
-             | ansible_playbook: nil,
+             | ansible: nil,
                actions: actions,
                problems: [
                  {:server_ansible_playbook_failed, "setup", :failed,
@@ -803,7 +803,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         connection_state: ServersFactory.random_connected_state(),
         server: server,
         username: server.username,
-        ansible_playbook: {playbook_run, previous_task, fake_cause},
+        ansible: {playbook_run, previous_task, fake_cause},
         problems: [
           ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
         ]
@@ -826,7 +826,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     assert result == %ServerManagerState{
              initial_state
-             | ansible_playbook: nil,
+             | ansible: nil,
                actions: actions,
                problems: [
                  {:server_ansible_playbook_failed, "setup", :failed,
@@ -865,9 +865,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
              } = reconnecting_event
            ] =
              Repo.all(
-               from e in StoredEvent,
+               from(e in StoredEvent,
                  where: e.id not in ^ids_to_exclude,
                  order_by: [asc: e.occurred_at]
+               )
              )
 
     assert_in_delta DateTime.diff(now, setup_occurred_at, :second), 0, 1
