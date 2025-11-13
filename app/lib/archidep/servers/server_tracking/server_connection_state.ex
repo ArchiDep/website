@@ -9,6 +9,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
 
   Record.defrecord(:not_connected_state, connection_pid: nil)
 
+  Record.defrecord(:connection_pending_state,
+    connection_pid: nil,
+    causation_event: nil
+  )
+
   Record.defrecord(:connecting_state,
     connection_ref: nil,
     connection_pid: nil,
@@ -51,6 +56,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
 
   @type not_connected_state :: record(:not_connected_state, connection_pid: pid() | nil)
 
+  @type connection_pending_state ::
+          record(:connection_pending_state,
+            connection_pid: pid(),
+            causation_event: EventReference.t() | nil
+          )
+
   @type connecting_state ::
           record(:connecting_state,
             connection_ref: reference(),
@@ -90,6 +101,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
 
   @type connection_state ::
           not_connected_state()
+          | connection_pending_state()
           | connecting_state()
           | retry_connecting_state()
           | connected_state()
@@ -114,6 +126,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionState do
 
   @spec connection_pid(connection_state()) :: pid() | nil
   def connection_pid(not_connected_state(connection_pid: pid)), do: pid
+  def connection_pid(connection_pending_state(connection_pid: pid)), do: pid
   def connection_pid(connecting_state(connection_pid: pid)), do: pid
   def connection_pid(retry_connecting_state(connection_pid: pid)), do: pid
   def connection_pid(connected_state(connection_pid: pid)), do: pid

@@ -18,6 +18,145 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
     }
   end
 
+  test "receive a message to connect", %{on_message: on_message} do
+    test_pid = self()
+
+    server =
+      build_active_server(
+        set_up_at: nil,
+        ssh_port: true
+      )
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connection_pending_state(),
+        username: server.username,
+        server: server
+      )
+
+    connection_pending_state(causation_event: causation_event) = initial_state.connection_state
+
+    result = on_message.(initial_state, :connect)
+
+    assert %ServerManagerState{
+             connection_state:
+               connecting_state(connection_ref: connection_ref, time: connection_time),
+             actions:
+               [
+                 {:monitor, ^test_pid},
+                 {:connect, connect_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert is_reference(connection_ref)
+    assert_no_stored_events!()
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connecting_state(
+                   connection_ref: connection_ref,
+                   connection_pid: test_pid,
+                   time: connection_time,
+                   retrying: false,
+                   causation_event: causation_event
+                 ),
+               actions: actions
+           }
+
+    connect_result = assert_connect_fn!(connect_fn, result, server.username)
+
+    assert update_tracking_fn.(connect_result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                current_job: :connecting,
+                version: result.version + 1
+              ), %ServerManagerState{connect_result | version: result.version + 1}}
+  end
+
+  test "specific problems are dropped when receiving a message to connect", %{
+    on_message: on_message
+  } do
+    test_pid = self()
+
+    server =
+      build_active_server(
+        set_up_at: nil,
+        ssh_port: true
+      )
+
+    dropped_problems =
+      Enum.shuffle([
+        ServersFactory.server_missing_sudo_access_problem(),
+        ServersFactory.server_reconnection_failed_problem(),
+        ServersFactory.server_sudo_access_check_failed_problem()
+      ])
+
+    kept_problems =
+      Enum.shuffle([
+        ServersFactory.server_ansible_playbook_failed_problem(),
+        ServersFactory.server_authentication_failed_problem(),
+        ServersFactory.server_connection_refused_problem(),
+        ServersFactory.server_connection_timed_out_problem(),
+        ServersFactory.server_expected_property_mismatch_problem(),
+        ServersFactory.server_fact_gathering_failed_problem(),
+        ServersFactory.server_key_exchange_failed_problem(),
+        ServersFactory.server_open_ports_check_failed_problem(),
+        ServersFactory.server_port_testing_script_failed_problem()
+      ])
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connection_pending_state(),
+        username: server.username,
+        server: server,
+        problems: apply(&Kernel.++/2, Enum.shuffle([dropped_problems, kept_problems]))
+      )
+
+    connection_pending_state(causation_event: causation_event) = initial_state.connection_state
+
+    result = on_message.(initial_state, :connect)
+
+    assert %ServerManagerState{
+             connection_state:
+               connecting_state(connection_ref: connection_ref, time: connection_time),
+             actions:
+               [
+                 {:monitor, ^test_pid},
+                 {:connect, connect_fn},
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert is_reference(connection_ref)
+    assert_no_stored_events!()
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 connecting_state(
+                   connection_ref: connection_ref,
+                   connection_pid: test_pid,
+                   time: connection_time,
+                   retrying: false,
+                   causation_event: causation_event
+                 ),
+               actions: actions,
+               problems: kept_problems
+           }
+
+    connect_result = assert_connect_fn!(connect_fn, result, server.username)
+
+    assert update_tracking_fn.(connect_result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                current_job: :connecting,
+                problems: result.problems,
+                version: result.version + 1
+              ), %ServerManagerState{connect_result | version: result.version + 1}}
+  end
+
   test "receive a message to measure the server's load average", %{on_message: on_message} do
     server =
       build_active_server(

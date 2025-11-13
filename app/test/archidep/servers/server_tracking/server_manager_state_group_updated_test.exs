@@ -486,7 +486,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
               ), %ServerManagerState{result | version: result.version + 1}}
   end
 
-  test "a server manager connects to its server when it becomes active following a group update",
+  test "a server manager schedules a connection to its server when it becomes active following a group update",
        %{group_updated: group_updated} do
     expected_server_properties =
       CourseFactory.build(:expected_server_properties,
@@ -555,12 +555,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_not_connected_state(),
+        connection_state: ServersFactory.random_not_connected_state(%{connection_pid: self()}),
         server: server,
         username: server.username
       )
-
-    not_connected_state(connection_pid: connection_pid) = initial_state.connection_state
 
     updated_class = %Class{
       class
@@ -570,33 +568,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     event = EventsFactory.build(:event_reference)
 
-    now = DateTime.utc_now()
     result = group_updated.(initial_state, updated_class, event)
 
     assert_no_stored_events!()
 
     assert %ServerManagerState{
-             connection_state:
-               connecting_state(connection_ref: connection_ref, time: connecting_time),
              actions: [
-               {:monitor, ^connection_pid},
-               {:connect, connect_fn},
+               {:send_message, send_message_fn},
                {:update_tracking, "servers", update_tracking_fn}
              ]
            } = result
 
-    assert_in_delta DateTime.diff(now, connecting_time, :second), 0, 1
-
     assert result == %ServerManagerState{
              initial_state
              | connection_state:
-                 connecting_state(
-                   connection_pid: connection_pid,
-                   connection_ref: connection_ref,
-                   time: connecting_time,
-                   retrying: false,
-                   causation_event: event
-                 ),
+                 connection_pending_state(connection_pid: self(), causation_event: event),
                server: %Server{
                  server
                  | group: %ServerGroup{
@@ -608,14 +594,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
                actions: result.actions
            }
 
-    connect_result = assert_connect_fn!(connect_fn, result, server.username)
+    fake_timer_ref = make_ref()
 
-    assert update_tracking_fn.(connect_result) ==
+    send_message_result =
+      send_message_fn.(result, fn :connect, _connect_delay ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
+             %ServerManagerState{result | connection_timer: fake_timer_ref}
+
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: result.connection_state,
-                current_job: :connecting,
                 version: result.version + 1
-              ), %ServerManagerState{connect_result | version: result.version + 1}}
+              ), %ServerManagerState{send_message_result | version: result.version + 1}}
   end
 
   test "a server manager shuts down when its server becomes inactive following a group update", %{

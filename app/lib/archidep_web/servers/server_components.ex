@@ -15,7 +15,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias Phoenix.LiveView.JS
 
-  attr :server, Server, doc: "the server whose name to display"
+  attr(:server, Server, doc: "the server whose name to display")
 
   @spec server_name(map()) :: Rendered.t()
   def server_name(assigns) do
@@ -30,22 +30,24 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
-  attr :auth, Authentication, doc: "the authentication context"
-  attr :server, Server, doc: "the server to display"
-  attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
-  attr :class, :string, doc: "extra CSS classes to apply to the card", default: nil
-  attr :details_link, :string, doc: "the link to the server's details page", default: nil
-  attr :edit_enabled, :boolean, doc: "whether editing the server is enabled", default: false
+  attr(:auth, Authentication, doc: "the authentication context")
+  attr(:server, Server, doc: "the server to display")
+  attr(:state, ServerRealTimeState, doc: "the current state of the server", default: nil)
+  attr(:class, :string, doc: "extra CSS classes to apply to the card", default: nil)
+  attr(:details_link, :string, doc: "the link to the server's details page", default: nil)
+  attr(:edit_enabled, :boolean, doc: "whether editing the server is enabled", default: false)
 
-  attr :on_edit, JS, doc: "JS command to execute when editing the server", default: nil
+  attr(:on_edit, JS, doc: "JS command to execute when editing the server", default: nil)
 
-  attr :on_retry_connection, JS,
+  attr(:on_retry_connection, JS,
     doc: "JS command to execute when retrying the connection",
     default: nil
+  )
 
-  attr :on_retry_operation, JS,
+  attr(:on_retry_operation, JS,
     doc: "function to call when retrying an operation",
     default: nil
+  )
 
   @spec server_card(map()) :: Rendered.t()
   def server_card(assigns) do
@@ -152,11 +154,11 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
-  attr :auth, Authentication, doc: "the authentication context"
-  attr :server, Server, doc: "the server to display"
-  attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
-  attr :class, :string, doc: "extra CSS classes to apply to the card", default: nil
-  attr :details_link, :string, doc: "the link to the server's details page", default: nil
+  attr(:auth, Authentication, doc: "the authentication context")
+  attr(:server, Server, doc: "the server to display")
+  attr(:state, ServerRealTimeState, doc: "the current state of the server", default: nil)
+  attr(:class, :string, doc: "extra CSS classes to apply to the card", default: nil)
+  attr(:details_link, :string, doc: "the link to the server's details page", default: nil)
 
   @spec admin_server_card(map()) :: Rendered.t()
   def admin_server_card(assigns) do
@@ -236,6 +238,13 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   defp server_card_class(nil, _problems), do: "bg-neutral text-neutral-content"
   defp server_card_class(not_connected_state(), _problems), do: "bg-neutral text-neutral-content"
+
+  defp server_card_class(connection_pending_state(), []),
+    do: "bg-info text-info-content"
+
+  defp server_card_class(connection_pending_state(), _problems),
+    do: "bg-warning text-warning-content"
+
   defp server_card_class(connecting_state(), []), do: "bg-info text-info-content animate-pulse"
 
   defp server_card_class(connecting_state(), _problems),
@@ -263,6 +272,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   defp server_card_badge(_server, not_connected_state()),
     do: {"badge-info", gettext("Not connected")}
 
+  defp server_card_badge(_server, connection_pending_state()),
+    do: {"badge-info", gettext("Connection pending")}
+
   defp server_card_badge(_server, connecting_state()),
     do: {"badge-primary", gettext("Connecting")}
 
@@ -281,10 +293,13 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     do: {"badge-primary", gettext("Disconnected")}
 
   defp server_card_body(nil, _current_job, _auth, _server),
-    do: gettext("No connection to this server.")
+    do: gettext("No connection to this server")
 
   defp server_card_body(not_connected_state(), _current_job, _auth, _server),
-    do: gettext("No connection to this server.")
+    do: gettext("No connection to this server")
+
+  defp server_card_body(connection_pending_state(), _current_job, _auth, _server),
+    do: gettext("Will connect soon")
 
   defp server_card_body(connecting_state(), _current_job, _auth, _server),
     do: gettext("Connecting to the server")
@@ -360,6 +375,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   defp server_card_short_status(not_connected_state(), _current_job, _auth, _server),
     do: gettext("n/a")
 
+  defp server_card_short_status(connection_pending_state(), _current_job, _auth, _server),
+    do: gettext("pending")
+
   defp server_card_short_status(connecting_state(), _current_job, _auth, _server),
     do: gettext("connecting")
 
@@ -426,14 +444,15 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   defp server_connecting_or_reconnecting?(_state), do: false
 
-  attr :auth, Authentication, doc: "the authentication context"
-  attr :problem, :any, doc: "the problem to display"
-  attr :connected, :boolean, doc: "whether the server is connected", default: false
-  attr :current_job, :any, doc: "the current job of the server", default: nil
+  attr(:auth, Authentication, doc: "the authentication context")
+  attr(:problem, :any, doc: "the problem to display")
+  attr(:connected, :boolean, doc: "whether the server is connected", default: false)
+  attr(:current_job, :any, doc: "the current job of the server", default: nil)
 
-  attr :on_retry_operation, JS,
+  attr(:on_retry_operation, JS,
     doc: "function to call when retrying an operation",
     default: nil
+  )
 
   @spec server_problem(map()) :: Rendered.t()
 

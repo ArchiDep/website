@@ -45,6 +45,39 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
     assert_server_deleted!(server, now)
   end
 
+  test "delete a server with a pending connection", %{delete_server: delete_server} do
+    server =
+      insert_active_server!(
+        set_up_at: nil,
+        ssh_port: true
+      )
+
+    connection_timer = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connection_pending_state(),
+        username: server.username,
+        server: server,
+        connection_timer: connection_timer
+      )
+
+    auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
+
+    now = DateTime.utc_now()
+    result = delete_server.(initial_state, auth)
+
+    assert result ==
+             {%ServerManagerState{
+                initial_state
+                | connection_state: not_connected_state(connection_pid: self()),
+                  actions: [{:cancel_timer, connection_timer}],
+                  connection_timer: nil
+              }, :ok}
+
+    assert_server_deleted!(server, now)
+  end
+
   test "delete a server that is retrying to connect", %{delete_server: delete_server} do
     server =
       insert_active_server!(

@@ -25,6 +25,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnlineTest do
     for state <-
           [
             ServersFactory.random_not_connected_state(),
+            ServersFactory.random_connection_pending_state(),
             ServersFactory.random_connecting_state(),
             ServersFactory.random_retry_connecting_state(),
             ServersFactory.random_reconnecting_state(),

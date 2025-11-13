@@ -62,6 +62,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     # TODO: retry timer should be part of the retry connecting state
     retry_timer: nil,
     load_average_timer: nil,
+    connection_timer: nil,
     version: 0
   ]
 
@@ -79,6 +80,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
           problems: list(server_problem()),
           retry_timer: reference() | nil,
           load_average_timer: reference() | nil,
+          connection_timer: reference() | nil,
           version: non_neg_integer()
         }
 
@@ -178,13 +180,23 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   @impl ServerManagerBehaviour
 
   def connection_idle(
-        %__MODULE__{connection_state: not_connected_state(), server: server} = state,
+        %__MODULE__{
+          connection_state: not_connected_state(connection_pid: nil),
+          server: server,
+          connection_timer: nil
+        } = state,
         connection_pid
       ) do
     Logger.debug("Connection idle for server #{server.id}")
 
     if Server.active?(server, DateTime.utc_now()) do
-      connect(state, connection_pid, false, nil)
+      state
+      |> change_connection_state(connection_pending_state(connection_pid: connection_pid))
+      |> add_actions([
+        update_tracking_action(),
+        monitor_action(connection_pid),
+        schedule_connection_action()
+      ])
     else
       state
       |> change_connection_state(not_connected_state(connection_pid: connection_pid))
@@ -1173,6 +1185,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     |> change_connection_state(disconnected_state(time: DateTime.utc_now()))
     |> add_actions([update_tracking_action(), notify_server_offline_action()])
     |> stop_measuring_load_average()
+    |> maybe_cancel_connection_timer()
     |> maybe_cancel_retry_timer()
     |> drop_remaining_tasks()
     |> drop_connected_problems()
@@ -1217,6 +1230,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       when tasks == %{} ->
         :ok = DeleteServer.delete_server(auth, state.server)
         with_reply(state, :ok)
+
+      %__MODULE__{
+        connection_state: connection_pending_state(connection_pid: connection_pid),
+        tasks: tasks,
+        ansible: nil
+      }
+      when tasks == %{} ->
+        :ok = DeleteServer.delete_server(auth, state.server)
+
+        state
+        |> change_connection_state(not_connected_state(connection_pid: connection_pid))
+        |> maybe_cancel_connection_timer()
+        |> with_reply(:ok)
 
       %__MODULE__{
         connection_state: retry_connecting_state(connection_pid: connection_pid),
@@ -1281,7 +1307,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     if Server.active?(server, DateTime.utc_now()) do
       case connection_state do
         not_connected_state(connection_pid: connection_pid) when connection_pid != nil ->
-          connect(state, connection_pid, false, causation_event)
+          state
+          |> change_connection_state(
+            connection_pending_state(
+              connection_pid: connection_pid,
+              causation_event: causation_event
+            )
+          )
+          |> add_actions([update_tracking_action(), schedule_connection_action()])
 
         _any_other_state ->
           add_action(state, update_tracking_action())
@@ -1289,6 +1322,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     else
       state |> add_action(update_tracking_action()) |> deactivate()
     end
+  end
+
+  defp deactivate(
+         %__MODULE__{
+           connection_state: connection_pending_state(connection_pid: connection_pid)
+         } = state
+       ) do
+    state
+    |> maybe_cancel_connection_timer()
+    |> change_connection_state(not_connected_state(connection_pid: connection_pid))
   end
 
   defp deactivate(
@@ -1327,6 +1370,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   end
 
   @impl ServerManagerBehaviour
+
+  def on_message(
+        %__MODULE__{
+          connection_state:
+            connection_pending_state(
+              connection_pid: connection_pid,
+              causation_event: causation_event
+            )
+        } = state,
+        :connect
+      ),
+      do:
+        state
+        |> maybe_cancel_connection_timer()
+        |> connect(connection_pid, false, causation_event)
+
   def on_message(%__MODULE__{connection_state: connected_state()} = state, :measure_load_average),
     do: add_action(state, get_load_average())
 
@@ -1606,6 +1665,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp drop_problems(state, predicate_fn) when is_function(predicate_fn, 1),
     do: %__MODULE__{state | problems: Enum.reject(state.problems, &predicate_fn.(&1))}
 
+  defp maybe_cancel_connection_timer(%__MODULE__{connection_timer: nil} = state), do: state
+
+  defp maybe_cancel_connection_timer(%__MODULE__{connection_timer: timer} = state)
+       when timer != nil,
+       do: state |> clear_connection_timer() |> add_action(cancel_timer_action(timer))
+
+  defp clear_connection_timer(state), do: %__MODULE__{state | connection_timer: nil}
+
   defp stop_measuring_load_average(state),
     do:
       state
@@ -1718,6 +1785,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp monitor_action(pid), do: {:monitor, pid}
   defp demonitor_action(ref), do: {:demonitor, ref}
+
+  defp schedule_connection_action,
+    do: send_message_action(:connect, 2000 + :rand.uniform(5000), :connection_timer)
 
   defp run_playbook_action(playbook_run, cause), do: {:run_playbook, playbook_run, cause}
 

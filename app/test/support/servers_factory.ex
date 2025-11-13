@@ -232,6 +232,7 @@ defmodule ArchiDep.Support.ServersFactory do
     do:
       [
         &__MODULE__.random_not_connected_state/0,
+        &__MODULE__.random_connection_pending_state/0,
         &__MODULE__.random_connecting_state/0,
         &__MODULE__.random_connected_state/0,
         &__MODULE__.random_retry_connecting_state/0,
@@ -243,7 +244,34 @@ defmodule ArchiDep.Support.ServersFactory do
       |> apply([])
 
   @spec random_not_connected_state() :: ServerConnectionState.not_connected_state()
-  def random_not_connected_state, do: not_connected_state(connection_pid: self())
+  @spec random_not_connected_state(map()) :: ServerConnectionState.not_connected_state()
+  def random_not_connected_state(attrs! \\ %{}) do
+    {connection_pid, attrs!} =
+      Map.pop_lazy(attrs!, :connection_pid, fn ->
+        if bool(), do: self(), else: nil
+      end)
+
+    [] = Map.keys(attrs!)
+
+    not_connected_state(connection_pid: connection_pid)
+  end
+
+  @spec random_connection_pending_state() :: ServerConnectionState.connection_pending_state()
+  @spec random_connection_pending_state(map()) :: ServerConnectionState.connection_pending_state()
+  def random_connection_pending_state(attrs! \\ %{}) do
+    {causation_event, attrs!} =
+      Map.pop_lazy(attrs!, :causation_event, fn ->
+        if bool() do
+          EventsFactory.build(:event_reference)
+        else
+          nil
+        end
+      end)
+
+    [] = Map.keys(attrs!)
+
+    connection_pending_state(connection_pid: self(), causation_event: causation_event)
+  end
 
   @spec random_connecting_state(map()) :: ServerConnectionState.connecting_state()
   def random_connecting_state(attrs! \\ %{}) do
@@ -700,6 +728,7 @@ defmodule ArchiDep.Support.ServersFactory do
     {problems, attrs!} = Map.pop(attrs!, :problems, [])
     {retry_timer, attrs!} = Map.pop(attrs!, :retry_timer, nil)
     {load_average_timer, attrs!} = Map.pop(attrs!, :load_average_timer, nil)
+    {connection_timer, attrs!} = Map.pop(attrs!, :connection_timer, nil)
     {version, attrs!} = pop_entity_version(attrs!)
 
     [] = Map.keys(attrs!)
@@ -715,6 +744,7 @@ defmodule ArchiDep.Support.ServersFactory do
       problems: problems,
       retry_timer: retry_timer,
       load_average_timer: load_average_timer,
+      connection_timer: connection_timer,
       version: version
     }
   end

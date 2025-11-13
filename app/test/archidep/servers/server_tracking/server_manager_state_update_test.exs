@@ -203,7 +203,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_not_connected_state(),
+        connection_state: ServersFactory.random_not_connected_state(%{connection_pid: self()}),
         username: server.username,
         server: server
       )
@@ -225,7 +225,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     now = DateTime.utc_now()
     result = update_server.(initial_state, auth, data)
-    test_pid = self()
 
     updated_event =
       assert_server_updated_event!(
@@ -234,30 +233,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       )
 
     assert {%ServerManagerState{
-              connection_state:
-                connecting_state(connection_ref: connection_ref, time: connecting_time),
               server: %Server{updated_at: updated_at} = updated_server,
               actions:
                 [
-                  {:monitor, ^test_pid},
-                  {:connect, connect_fn},
+                  {:send_message, send_message_fn},
                   {:update_tracking, "servers", update_tracking_fn}
                 ] = actions
             } = new_state, {:ok, updated_server, ^updated_event}} = result
 
-    assert is_reference(connection_ref)
-    assert_in_delta DateTime.diff(now, connecting_time, :second), 0, 1
     assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
 
     assert result ==
              {%ServerManagerState{
                 initial_state
                 | connection_state:
-                    connecting_state(
+                    connection_pending_state(
                       connection_pid: self(),
-                      connection_ref: connection_ref,
-                      time: connecting_time,
-                      retrying: false,
                       causation_event: updated_event
                     ),
                   server: %Server{
@@ -279,16 +270,23 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                    version: server.version + 1
                }, updated_event}}
 
-    connect_result = assert_connect_fn!(connect_fn, new_state, new_server_username)
+    fake_timer_ref = make_ref()
 
-    assert update_tracking_fn.(connect_result) ==
+    send_message_result =
+      send_message_fn.(new_state, fn :connect, _connect_delay ->
+        fake_timer_ref
+      end)
+
+    assert send_message_result ==
+             %ServerManagerState{new_state | connection_timer: fake_timer_ref}
+
+    assert update_tracking_fn.(send_message_result) ==
              {real_time_state(server,
                 connection_state: new_state.connection_state,
                 conn_params: conn_params(server, username: new_server_username),
-                current_job: :connecting,
                 username: new_server_username,
                 version: new_state.version + 1
-              ), %ServerManagerState{connect_result | version: new_state.version + 1}}
+              ), %ServerManagerState{send_message_result | version: new_state.version + 1}}
   end
 
   test "update and deactivate an active connected server", %{update_server: update_server} do
@@ -729,7 +727,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     initial_state =
       ServersFactory.build(:server_manager_state,
-        connection_state: ServersFactory.random_not_connected_state(),
+        connection_state: ServersFactory.random_not_connected_state(%{connection_pid: nil}),
         username: server.username,
         server: server
       )
@@ -772,7 +770,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     assert result ==
              {%ServerManagerState{
                 initial_state
-                | connection_state: not_connected_state(connection_pid: self()),
+                | connection_state: not_connected_state(),
                   server: %Server{
                     server
                     | active: false,
@@ -782,6 +780,95 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                   },
                   username: new_server_username,
                   actions: actions
+              },
+              {:ok,
+               %Server{
+                 server
+                 | active: false,
+                   username: new_server_username,
+                   updated_at: updated_at,
+                   version: server.version + 1
+               }, updated_event}}
+
+    assert update_tracking_fn.(new_state) ==
+             {real_time_state(server,
+                connection_state: new_state.connection_state,
+                conn_params: conn_params(server, username: new_server_username),
+                username: new_server_username,
+                version: new_state.version + 1
+              ), %ServerManagerState{new_state | version: new_state.version + 1}}
+  end
+
+  test "update and deactivate an active server with a pending connection", %{
+    update_server: update_server
+  } do
+    server =
+      insert_active_server!(
+        set_up_at: nil,
+        ssh_port: true,
+        server_expected_properties: @no_server_properties
+      )
+
+    connection_timer = make_ref()
+
+    initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connection_pending_state(),
+        username: server.username,
+        server: server,
+        connection_timer: connection_timer
+      )
+
+    auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
+
+    new_server_username = Faker.Internet.user_name()
+
+    data = %{
+      name: server.name,
+      ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
+      username: new_server_username,
+      ssh_port: server.ssh_port,
+      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      active: false,
+      app_username: server.app_username,
+      expected_properties: Enum.into(@no_server_properties, %{})
+    }
+
+    now = DateTime.utc_now()
+
+    result = update_server.(initial_state, auth, data)
+
+    updated_event =
+      assert_server_updated_event!(
+        %Server{server | username: new_server_username, active: false},
+        now
+      )
+
+    assert {%ServerManagerState{
+              server: %Server{updated_at: updated_at} = updated_server,
+              actions:
+                [
+                  {:cancel_timer, ^connection_timer},
+                  {:update_tracking, "servers", update_tracking_fn}
+                ] = actions
+            } = new_state, {:ok, updated_server, ^updated_event}} = result
+
+    assert_in_delta DateTime.diff(now, updated_at, :second), 0, 1
+
+    assert result ==
+             {%ServerManagerState{
+                initial_state
+                | connection_state: not_connected_state(connection_pid: self()),
+                  server: %Server{
+                    server
+                    | active: false,
+                      username: new_server_username,
+                      updated_at: updated_at,
+                      version: server.version + 1
+                  },
+                  username: new_server_username,
+                  actions: actions,
+                  connection_timer: nil
               },
               {:ok,
                %Server{
@@ -967,7 +1054,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                id: event_id,
                occurred_at: occurred_at
              } = registered_event
-           ] = Repo.all(from e in StoredEvent, order_by: [asc: e.occurred_at])
+           ] = Repo.all(from(e in StoredEvent, order_by: [asc: e.occurred_at]))
 
     assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
 

@@ -37,6 +37,10 @@ defmodule ArchiDep.Servers.Schemas.ServerRealTimeState do
   @spec busy?(t() | nil) :: boolean()
   def busy?(nil), do: false
   def busy?(%__MODULE__{connection_state: not_connected_state(), current_job: nil}), do: false
+
+  def busy?(%__MODULE__{connection_state: connection_pending_state(), current_job: nil}),
+    do: false
+
   def busy?(%__MODULE__{connection_state: connected_state(), current_job: nil}), do: false
 
   def busy?(%__MODULE__{connection_state: retry_connecting_state(), current_job: nil}),
