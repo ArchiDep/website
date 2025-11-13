@@ -38,7 +38,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineConsumer do
 
     ConsumerSupervisor.init(children,
       strategy: :one_for_one,
-      subscribe_to: [{AnsiblePipelineQueue.name(pipeline), min_demand: 3, max_demand: 5}]
+      subscribe_to: [{AnsiblePipelineQueue.name(pipeline), min_demand: 5, max_demand: 7}]
     )
   end
 end
