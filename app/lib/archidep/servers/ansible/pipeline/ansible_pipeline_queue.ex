@@ -8,6 +8,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   use GenStage
 
   import ArchiDep.Helpers.GenStageHelpers
+  import ArchiDep.Helpers.PipeHelpers, only: [pair: 2]
   import ArchiDep.Helpers.ProcessHelpers
   import ArchiDep.Helpers.UseCaseHelpers
   alias ArchiDep.Events.Store.EventReference
@@ -18,13 +19,17 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   alias ArchiDep.Servers.Schemas.Server
   alias Ecto.Multi
   alias Ecto.UUID
+  alias Phoenix.Tracker
   require Logger
+
+  @tracker ArchiDep.Tracker
 
   defmodule State do
     @moduledoc false
 
-    @enforce_keys [:pending_tasks]
+    @enforce_keys [:pipeline, :pending_tasks]
     defstruct [
+      :pipeline,
       :pending_tasks,
       stored_demand: 0,
       last_activity: nil
@@ -56,15 +61,16 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
             last_activity: DateTime.t() | nil
           }
 
-    @spec init() :: t()
-    def init,
+    @spec init(Pipeline.t()) :: t()
+    def init(pipeline),
       do: %__MODULE__{
+        pipeline: pipeline,
         stored_demand: 0,
         pending_tasks: {0, :queue.new()},
         last_activity: nil
       }
 
-    @spec store_demand(t, pos_integer) :: t
+    @spec store_demand(t(), pos_integer) :: t
     def store_demand(state, demand) when is_demand(demand) do
       total_demand = state.stored_demand + demand
 
@@ -244,7 +250,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   def name(pipeline), do: {:global, {__MODULE__, pipeline}}
 
   @spec start_link(Pipeline.t()) :: GenServer.on_start()
-  def start_link(pipeline), do: GenStage.start_link(__MODULE__, nil, name: name(pipeline))
+  def start_link(pipeline), do: GenStage.start_link(__MODULE__, pipeline, name: name(pipeline))
 
   @spec gather_facts(
           Pipeline.t(),
@@ -282,13 +288,16 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   def health(pipeline), do: GenStage.call(name(pipeline), :health)
 
   @impl GenStage
-  def init(nil) do
+  def init(pipeline) do
     set_process_label(__MODULE__)
     Logger.info("Init Ansible pipeline queue")
 
     mark_incomplete_playbook_runs_as_timed_out()
 
-    {:producer, State.init()}
+    pipeline
+    |> State.init()
+    |> track!()
+    |> pair(:producer)
   end
 
   @impl GenStage
@@ -297,6 +306,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       state
       |> State.store_demand(demand)
       |> State.consume_events()
+      |> update_tracking!()
       |> noreply()
 
   @impl GenStage
@@ -309,6 +319,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
         state
         |> State.gather_facts(server_id, username)
         |> State.consume_events()
+        |> update_tracking!()
         |> reply(:ok)
 
   @impl GenStage
@@ -317,6 +328,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       state
       |> State.run_playbook(playbook_run_id, server_id, cause)
       |> State.consume_events()
+      |> update_tracking!()
       |> reply(:ok)
 
   @impl GenStage
@@ -328,6 +340,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       state
       |> State.server_offline(server_id)
       |> State.consume_events()
+      |> update_tracking!()
       |> noreply()
 
   defp mark_incomplete_playbook_runs_as_timed_out do
@@ -360,4 +373,36 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       |> new_event(%{}, occurred_at: run.finished_at)
       |> add_to_stream(run.server)
       |> initiated_by(run.server)
+
+  defp track!(state) do
+    {:ok, _ref} =
+      Tracker.track(
+        @tracker,
+        self(),
+        "ansible-queue",
+        "queue:#{state.pipeline}",
+        tracking_metadata(state)
+      )
+
+    state
+  end
+
+  defp update_tracking!({_events, state} = data) do
+    {:ok, _ref} =
+      Tracker.update(
+        @tracker,
+        self(),
+        "ansible-queue",
+        "queue:#{state.pipeline}",
+        tracking_metadata(state)
+      )
+
+    data
+  end
+
+  defp tracking_metadata(%State{stored_demand: demand, pending_tasks: {tasks, _queue}}),
+    do: %{
+      demand: demand,
+      pending: tasks
+    }
 end
