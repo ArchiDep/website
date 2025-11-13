@@ -46,6 +46,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
         @event_base ++ [:gather_facts],
         %{server_id: server_id},
         fn ->
+          track_gather_facts!(server.id, %{type: :gather_facts})
           {gather_server_facts(server, username), %{server_id: server_id}}
         end
       )
@@ -146,6 +147,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
         :ok = ServerManager.ansible_playbook_completed(failed_run)
     end)
     |> Enum.at(-1)
+  end
+
+  defp track_gather_facts!(server_id, meta) do
+    {:ok, _ref} =
+      Tracker.track(@tracker, self(), "ansible-queue", "gather-facts:#{server_id}", meta)
   end
 
   defp track_playbook!(run_id, meta) do
