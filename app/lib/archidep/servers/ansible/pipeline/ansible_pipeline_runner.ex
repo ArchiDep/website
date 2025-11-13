@@ -42,19 +42,13 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
     if ServerManager.online?(server) do
       Logger.debug("Gathering facts for server #{server.id}...")
 
-      case Ansible.gather_facts(server, username) do
-        {:ok, facts} ->
-          Logger.debug("Gathered facts for server #{server.id}")
-
-          ServerManager.ansible_facts_gathered(server, {:ok, facts})
-
-        {:error, reason} ->
-          Logger.notice(
-            "Failed to gather facts for server #{server.id} because: #{inspect(reason)}"
-          )
-
-          ServerManager.ansible_facts_gathered(server, {:error, reason})
-      end
+      :telemetry.span(
+        @event_base ++ [:gather_facts],
+        %{server_id: server_id},
+        fn ->
+          {gather_server_facts(server, username), %{server_id: server_id}}
+        end
+      )
     else
       Logger.warning("Cannot gather facts for server #{server.id} because it is offline")
     end
@@ -71,6 +65,22 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
     end
 
     :ok
+  end
+
+  defp gather_server_facts(server, username) do
+    case Ansible.gather_facts(server, username) do
+      {:ok, facts} ->
+        Logger.debug("Gathered facts for server #{server.id}")
+
+        ServerManager.ansible_facts_gathered(server, {:ok, facts})
+
+      {:error, reason} ->
+        Logger.notice(
+          "Failed to gather facts for server #{server.id} because: #{inspect(reason)}"
+        )
+
+        ServerManager.ansible_facts_gathered(server, {:error, reason})
+    end
   end
 
   defp process_pending_run(pending_run, cause) do
