@@ -3,7 +3,6 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Course
-  alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
@@ -13,6 +12,11 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   alias ArchiDep.Servers.SSH
   alias ArchiDepWeb.Admin.AdminClassServersLive
   alias Ecto.UUID
+  alias Phoenix.PubSub
+  alias Phoenix.Tracker
+
+  @pubsub ArchiDep.PubSub
+  @tracker ArchiDep.Tracker
 
   @spec real_time_states_for(list(Server.t()), %{optional(UUID.t()) => ServerRealTimeState.t()}) ::
           %{optional(UUID.t()) => ServerRealTimeState.t()}
@@ -39,15 +43,32 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
     active_classes = Course.list_active_classes(auth)
 
-    if connected?(socket) do
-      set_process_label(__MODULE__, auth)
+    ansible =
+      if connected?(socket) do
+        set_process_label(__MODULE__, auth)
 
-      :ok = PubSub.subscribe_classes()
+        :ok = Course.PubSub.subscribe_classes()
+        :ok = PubSub.subscribe(@pubsub, "tracker:ansible-queue")
 
-      for class <- active_classes do
-        :ok = Servers.PubSub.subscribe_server_group_servers(class.id)
+        for class <- active_classes do
+          :ok = Servers.PubSub.subscribe_server_group_servers(class.id)
+        end
+
+        @tracker
+        |> Tracker.list("ansible-queue")
+        |> Enum.reduce(%{pending: 0, ongoing: MapSet.new()}, fn
+          {"queue:" <> _queue, %{pending: pending}}, acc ->
+            Map.put(acc, :pending, pending)
+
+          {key, _meta}, %{ongoing: ongoing} = acc ->
+            Map.put(acc, :ongoing, MapSet.put(ongoing, key))
+        end)
+      else
+        %{
+          pending: 0,
+          ongoing: MapSet.new()
+        }
       end
-    end
 
     servers_by_class_id =
       active_classes
@@ -75,7 +96,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       servers_by_class_id: servers_by_class_id,
       server_state_map: ServerTracker.server_state_map(all_servers),
       server_tracker: tracker,
-      ssh_public_key: SSH.ssh_public_key()
+      ssh_public_key: SSH.ssh_public_key(),
+      ansible: ansible
     )
     |> ok()
   end
@@ -284,6 +306,48 @@ defmodule ArchiDepWeb.Admin.AdminLive do
         |> assign(
           server_state_map: ServerTracker.update_server_state_map(server_state_map, update)
         )
+        |> noreply()
+
+  @impl LiveView
+
+  def handle_info(
+        {action, "queue:" <> _queue, %{pending: pending}},
+        %Socket{assigns: %{ansible: ansible}} = socket
+      )
+      when action in [:join, :update],
+      do:
+        socket
+        |> assign(ansible: Map.put(ansible, :pending, pending))
+        |> noreply()
+
+  def handle_info(
+        {action, key, %{}},
+        %Socket{assigns: %{ansible: %{ongoing: ongoing} = ansible}} = socket
+      )
+      when action in [:join, :update],
+      do:
+        socket
+        |> assign(ansible: Map.put(ansible, :ongoing, MapSet.put(ongoing, key)))
+        |> noreply()
+
+  @impl LiveView
+
+  def handle_info(
+        {:leave, "queue:" <> _queue, %{}},
+        %Socket{assigns: %{ansible: ansible}} = socket
+      ),
+      do:
+        socket
+        |> assign(ansible: Map.put(ansible, :pending, 0))
+        |> noreply()
+
+  def handle_info(
+        {:leave, key, %{}},
+        %Socket{assigns: %{ansible: %{ongoing: ongoing} = ansible}} = socket
+      ),
+      do:
+        socket
+        |> assign(ansible: Map.put(ansible, :ongoing, MapSet.delete(ongoing, key)))
         |> noreply()
 
   defp add_class(classes, class) do

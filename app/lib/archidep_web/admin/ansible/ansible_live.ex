@@ -112,11 +112,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
         |> noreply()
 
   @impl LiveView
-  def handle_info(
-        {_action, "gather-facts:" <> _server_id, %{}},
-        socket
-      ),
-      do: noreply(socket)
+  def handle_info({_action, _key, %{}}, socket), do: noreply(socket)
 
   @impl LiveView
   def handle_info(:tick, socket),

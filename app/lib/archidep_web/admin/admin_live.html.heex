@@ -8,7 +8,40 @@
     </div>
   </dl>
 
-  <div class="stats shadow shrink-0">
+  <div class="stats stats-vertical xl:stats-horizontal shadow shrink-0">
+    <div class="stat">
+      <div class="stat-figure text-secondary">
+        <Heroicons.clock class={[
+          "inline-block h-8 w-8 stroke-current",
+          if(@ansible.pending == 0, do: "text-success", else: "text-warning")
+        ]} />
+      </div>
+      <div class="stat-title">Ansible Queue</div>
+      <div class={[
+        "stat-value text-secondary",
+        if(@ansible.pending == 0, do: "text-success", else: "text-warning")
+      ]}>
+        {@ansible.pending}
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-figure text-secondary">
+        <Heroicons.cog_8_tooth class={[
+          "inline-block h-8 w-8 stroke-current",
+          if(MapSet.size(@ansible.ongoing) == 0,
+            do: "text-success",
+            else: "text-warning animate-spin"
+          )
+        ]} />
+      </div>
+      <div class="stat-title">Ansible Jobs</div>
+      <div class={[
+        "stat-value text-secondary",
+        if(MapSet.size(@ansible.ongoing) == 0, do: "text-success", else: "text-warning")
+      ]}>
+        {MapSet.size(@ansible.ongoing)}
+      </div>
+    </div>
     <div class="stat">
       <div class="stat-figure text-secondary">
         <Heroicons.bolt class={[
