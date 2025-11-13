@@ -504,6 +504,44 @@ Algorithms][nginx-server-and-location] if you want more detailed information.
 
 {% endnote %}
 
+{% solution %}
+
+Your `/etc/nginx/sites-available/revprod` file on your server should look
+something like this:
+
+```
+server {
+  listen 80;
+  server_name revprod.jde.archidep.ch;
+  root /home/jde/revprod-landing-page/public;
+
+  # Proxy requests for dynamic content to another server/application.
+  location / {
+    proxy_pass http://localhost:4201;
+  }
+
+  location /comments {
+    proxy_pass http://localhost:4200;
+  }
+
+  location /share {
+    proxy_pass http://localhost:4200;
+  }
+}
+```
+
+If you know your [regular
+expressions](https://en.wikipedia.org/wiki/Regular_expression), you can also
+combine the last two location blocks into one:
+
+```
+location ~ \/(comments|share) {
+  proxy_pass http://localhost:4200;
+}
+```
+
+{% endsolution %}
+
 Enable the new configuration with the following command:
 
 ```bash
@@ -596,5 +634,6 @@ server_names_hash_bucket_size 256;
 [nginx-server-and-location]: https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms
 [node]: https://nodejs.org
 [node-install]: https://nodesource.com/products/distributions
+[regexp]: https://en.wikipedia.org/wiki/Regular_expression
 [revprod-backend-config]: https://github.com/ArchiDep/revprod-backend#configuration
 [sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy

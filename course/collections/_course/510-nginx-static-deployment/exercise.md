@@ -79,6 +79,28 @@ more..
 
 {% endnote %}
 
+{% solution %}
+
+You `/etc/nginx/sites-available/clock` file on your server should look something
+like this:
+
+```nginx
+server {
+  listen 80;
+  server_name jde.archidep.ch;
+  root /home/jde/static-clock-website;
+  index index.html;
+
+  # Cache images, icons, video, audio, HTC, etc.
+  location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|mp4|ogg|ogv|webm|htc)$ {
+    access_log off;
+    add_header Cache-Control "max-age=2592000";
+  }
+}
+```
+
+{% endsolution %}
+
 ### :exclamation: Enable the nginx configuration
 
 By default, configurations stored in the `sites-available` directory are
