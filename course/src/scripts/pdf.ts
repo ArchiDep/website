@@ -112,7 +112,7 @@ for (const doc of docsToExport) {
   progress.render({ what: doc.title });
 
   const basename = [
-    `ArchiDep ${doc.num} - ${doc.section.title} - ${doc.title}`,
+    `ArchiDep ${doc.num} - ${doc.section.title.replaceAll('/', ' ')} - ${doc.title.replaceAll('/', ' ')}`,
     match(doc.course_type)
       .with('subject', () => ' - Subject')
       .with('slides', () => ' - Slides')
@@ -158,7 +158,7 @@ for (const cheatsheet of courseData.cheatsheets) {
   const exportUrl = `${baseUrl}${cheatsheet.url}`;
   progress.render({ what: cheatsheet.title });
 
-  const basename = `ArchiDep 999 - ${cheatsheet.title}.pdf`;
+  const basename = `ArchiDep 999 - ${cheatsheet.title.replaceAll('/', ' ')}.pdf`;
   const file = path.join(pdfExportDir, basename);
 
   await exportPageToPdf(page, exportUrl, file);
