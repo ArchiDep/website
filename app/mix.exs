@@ -18,14 +18,6 @@ defmodule ArchiDep.MixProject do
         plt_add_apps: [:ex_unit, :mix]
       ],
       listeners: [Phoenix.CodeReloader],
-      preferred_cli_env: [
-        check: :test,
-        coveralls: :test,
-        "coveralls.html": :test,
-        dialyzer: :test,
-        test: :test,
-        "test.watch": :test
-      ],
       releases: [
         archidep: [
           include_executables_for: [:unix],
@@ -45,6 +37,19 @@ defmodule ArchiDep.MixProject do
       mod: {ArchiDep.Application, []},
       extra_applications: [:logger, :observer, :runtime_tools, :ssh, :wx],
       start_phases: [seed_prom_ex_telemetry: []]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
+        check: :test,
+        coveralls: :test,
+        "coveralls.html": :test,
+        dialyzer: :test,
+        test: :test,
+        "test.watch": :test
+      ]
     ]
   end
 
