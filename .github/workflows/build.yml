@@ -301,7 +301,7 @@ jobs:
     name: Publish to GitHub Pages
     runs-on: ubuntu-24.04
     needs: [build-course]
-    if: github.ref == 'refs/heads/main'
+    if: github.repository == 'ArchiDep/website' && github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

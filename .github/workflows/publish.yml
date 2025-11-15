@@ -13,6 +13,7 @@ env:
 
 jobs:
   publish:
+    if: github.repository == 'ArchiDep/website'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
