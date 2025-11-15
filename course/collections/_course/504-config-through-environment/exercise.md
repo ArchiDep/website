@@ -217,10 +217,10 @@ communicate.
 ![Diagram](./images/architecture.png)
 
 <div class="flex items-center gap-2">
-  <a href="./images/architecture.pdf" download="PHP Todolist Architecture" class="tooltip" data-tip="Download PDF">
+  <a href="./images/architecture.pdf" download="Configuration Through Environment Architecture" class="tooltip" data-tip="Download PDF">
     {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
   </a>
-  <a href="./images/architecture.png" download="PHP Todolist Architecture" class="tooltip" data-tip="Download PNG">
+  <a href="./images/architecture.png" download="Configuration Through Environment Architecture" class="tooltip" data-tip="Download PNG">
     {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
   </a>
 </div>
