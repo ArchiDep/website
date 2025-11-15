@@ -5,4 +5,5 @@ sections:
   - title: Security
   - title: Basic Deployment
   - title: Advanced Deployment
+  - title: Automated Deployment
   - title: Managed Deployment
