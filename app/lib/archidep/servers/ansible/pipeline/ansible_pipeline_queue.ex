@@ -202,10 +202,6 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       {Enum.reverse(events), new_state}
     end
 
-    defp collect_events_to_consume({events, %__MODULE__{stored_demand: 0} = state}) do
-      {events, state}
-    end
-
     defp collect_events_to_consume(
            {events,
             %__MODULE__{
@@ -216,11 +212,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     end
 
     defp collect_events_to_consume(
-           {events,
-            %__MODULE__{
-              stored_demand: stored_demand,
-              pending_tasks: {number_pending, pending_tasks_queue}
-            } = state}
+           {events, %__MODULE__{pending_tasks: {number_pending, pending_tasks_queue}} = state}
          ) do
       {{:value, task}, new_queue} = :queue.out(pending_tasks_queue)
 
@@ -236,8 +228,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       {[event | events],
        %__MODULE__{
          state
-         | stored_demand: stored_demand - 1,
-           pending_tasks: {number_pending - 1, new_queue},
+         | pending_tasks: {number_pending - 1, new_queue},
            last_activity: DateTime.utc_now()
        }}
     end
