@@ -17,11 +17,14 @@
         ]} />
       </div>
       <div class="stat-title">Ansible Queue</div>
-      <div class={[
-        "stat-value text-secondary",
-        if(@ansible.pending == 0, do: "text-success", else: "text-warning")
-      ]}>
-        {@ansible.pending}
+      <div
+        class={[
+          "stat-value text-secondary tooltip",
+          if(@ansible.pending == 0, do: "text-success", else: "text-warning")
+        ]}
+        data-tip={gettext("Pending / Demand")}
+      >
+        {@ansible.pending}/{@ansible.demand}
       </div>
     </div>
     <div class="stat">

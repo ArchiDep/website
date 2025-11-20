@@ -56,15 +56,18 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
         @tracker
         |> Tracker.list("ansible-queue")
-        |> Enum.reduce(%{pending: 0, ongoing: MapSet.new()}, fn
-          {"queue:" <> _queue, %{pending: pending}}, acc ->
-            Map.put(acc, :pending, pending)
+        |> Enum.reduce(%{demand: 0, pending: 0, ongoing: MapSet.new()}, fn
+          {"queue:" <> _queue, %{demand: demand, pending: pending}}, acc ->
+            acc
+            |> Map.put(:demand, demand)
+            |> Map.put(:pending, pending)
 
           {key, _meta}, %{ongoing: ongoing} = acc ->
             Map.put(acc, :ongoing, MapSet.put(ongoing, key))
         end)
       else
         %{
+          demand: 0,
           pending: 0,
           ongoing: MapSet.new()
         }
