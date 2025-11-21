@@ -323,6 +323,27 @@ server.
     PHP-FPM will then execute the PHP code and give the result to nginx, which
     will send it back to the client in the HTTP response.
 
+{% solution %}
+
+Your `/etc/nginx/sites-available/todolist` file on your server should look
+something like this:
+
+```
+server {
+  listen 80;
+  server_name todolist.jde.archidep.ch;
+  root /home/jde/todolist-repo;
+
+  # Proxy requests for dynamic content to PHP-FPM.
+  location / {
+    include snippets/fastcgi-php.conf;
+    fastcgi_pass localhost:9000;
+  }
+}
+```
+
+{% endsolution %}
+
 {% note type: more %}
 
 The `include` directive provided above will include the file
