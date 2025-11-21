@@ -20,6 +20,18 @@ ENV MIX_ENV=prod
 RUN mix local.hex --force && \
     mix deps.get --only prod
 
+# Compile dependencies in a dedicated stage so compiled artifacts can be
+# reused by the release stage. This avoids recompiling deps every time the
+# release image is built.
+FROM app-deps AS app-deps-compiled
+WORKDIR /build
+USER build:build
+ENV MIX_ENV=prod
+
+# Compile only dependencies (not the application) and keep compiled artifacts
+# under /build/_build and /build/deps to be copied into the release stage.
+RUN mix deps.compile --only prod
+
 ##########################
 ### Application Assets ###
 ##########################
@@ -183,7 +195,13 @@ WORKDIR /usr/src/app
 USER app:app
 
 COPY --chown=app:app ./app/mix.exs ./app/mix.lock /usr/src/app/
-COPY --chown=app:app --from=app-deps /build/deps/ /usr/src/app/deps/
+
+# Copy compiled dependencies (deps and _build) from the compiled-deps stage so
+# the release stage does not need to recompile dependencies. The
+# `app-deps-compiled` stage runs `mix deps.compile` and preserves the compiled
+# artifacts under `/build/_build`.
+COPY --chown=app:app --from=app-deps-compiled /build/deps/ /usr/src/app/deps/
+COPY --chown=app:app --from=app-deps-compiled /build/_build/ /usr/src/app/_build/
 
 ENV MIX_ENV=prod
 
