@@ -33,6 +33,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Ensure Buildx is available in 'docker-container' mode so BuildKit can
+      # export cache to a registry. The default docker driver does not support
+      # cache export to registry and will fail with "Cache export is not
+      # supported for the docker driver" when using `cache-to: type=registry`.
+      - name: Set up QEMU (optional, enables cross-platform builds)
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx (container driver)
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker-container
+          install: true
+
       # https://github.com/docker/metadata-action
       - name: Extract metadata (tags, labels) for the app image
         id: app-meta
@@ -55,8 +68,10 @@ jobs:
           push: true
           tags: ${{ steps.app-meta.outputs.tags }}
           labels: ${{ steps.app-meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/archidep/app:latest
-          cache-to: type=inline
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/archidep/app:buildcache
+            type=registry,ref=${{ env.REGISTRY }}/archidep/app:latest
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/archidep/app:buildcache,mode=max
 
       # https://github.com/actions/attest-build-provenance
       - name: Generate artifact attestation for the app image
@@ -88,8 +103,10 @@ jobs:
           push: true
           tags: ${{ steps.assets-meta.outputs.tags }}
           labels: ${{ steps.assets-meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/archidep/assets:latest
-          cache-to: type=inline
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache
+            type=registry,ref=${{ env.REGISTRY }}/archidep/assets:latest
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache,mode=max
 
       # https://github.com/actions/attest-build-provenance
       - name: Generate artifact attestation for the assets image
