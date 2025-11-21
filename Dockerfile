@@ -1,3 +1,5 @@
+ARG DEPS_IMAGE=app-deps-compiled
+
 ################################
 ### Application dependencies ###
 ################################
@@ -184,6 +186,8 @@ RUN bundle exec jekyll build
 ###########################
 FROM elixir:1.18.4-otp-28-alpine AS release
 
+ARG DEPS_IMAGE
+
 RUN apk add --no-cache git nodejs npm && \
     addgroup -S app && \
     adduser -D -G app -H -h /home/app -S app && \
@@ -200,8 +204,8 @@ COPY --chown=app:app ./app/mix.exs ./app/mix.lock /usr/src/app/
 # the release stage does not need to recompile dependencies. The
 # `app-deps-compiled` stage runs `mix deps.compile` and preserves the compiled
 # artifacts under `/build/_build`.
-COPY --chown=app:app --from=app-deps-compiled /build/deps/ /usr/src/app/deps/
-COPY --chown=app:app --from=app-deps-compiled /build/_build/ /usr/src/app/_build/
+COPY --chown=app:app --from=${DEPS_IMAGE} /build/deps/ /usr/src/app/deps/
+COPY --chown=app:app --from=${DEPS_IMAGE} /build/_build/ /usr/src/app/_build/
 
 ENV MIX_ENV=prod
 

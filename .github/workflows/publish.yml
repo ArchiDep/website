@@ -98,6 +98,8 @@ jobs:
         with:
           context: .
           target: app
+          build-args: |
+            DEPS_IMAGE=${{ env.REGISTRY }}/archidep/app-deps-compiled:app-deps-cache-${{ steps.deps-hash.outputs.deps_hash }}-otp-${{ env.ELIXIR_OTP }}
           push: true
           tags: ${{ steps.app-meta.outputs.tags }}
           labels: ${{ steps.app-meta.outputs.labels }}
