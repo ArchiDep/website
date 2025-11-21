@@ -1,4 +1,4 @@
-ARG DEPS_IMAGE=app-deps-compiled
+ARG APP_DEPS_IMAGE=app-deps-compiled
 
 ################################
 ### Application dependencies ###
@@ -33,6 +33,11 @@ ENV MIX_ENV=prod
 # Compile only dependencies (not the application) and keep compiled artifacts
 # under /build/_build and /build/deps to be copied into the release stage.
 RUN mix deps.compile --only prod
+
+## Named stage that references the registry-pulled compiled-deps image.
+## This stage is created from the `APP_DEPS_IMAGE` build-arg so we can reliably
+## use `COPY --from=app-deps-image` below (avoids variable expansion in --from).
+FROM ${APP_DEPS_IMAGE} AS app-deps-image
 
 ##########################
 ### Application Assets ###
@@ -186,7 +191,7 @@ RUN bundle exec jekyll build
 ###########################
 FROM elixir:1.18.4-otp-28-alpine AS release
 
-ARG DEPS_IMAGE
+ARG APP_DEPS_IMAGE
 
 RUN apk add --no-cache git nodejs npm && \
     addgroup -S app && \
@@ -204,8 +209,8 @@ COPY --chown=app:app ./app/mix.exs ./app/mix.lock /usr/src/app/
 # the release stage does not need to recompile dependencies. The
 # `app-deps-compiled` stage runs `mix deps.compile` and preserves the compiled
 # artifacts under `/build/_build`.
-COPY --chown=app:app --from=${DEPS_IMAGE} /build/deps/ /usr/src/app/deps/
-COPY --chown=app:app --from=${DEPS_IMAGE} /build/_build/ /usr/src/app/_build/
+COPY --chown=app:app --from=app-deps-image /build/deps/ /usr/src/app/deps/
+COPY --chown=app:app --from=app-deps-image /build/_build/ /usr/src/app/_build/
 
 ENV MIX_ENV=prod
 
