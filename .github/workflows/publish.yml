@@ -55,8 +55,10 @@ jobs:
           push: true
           tags: ${{ steps.app-meta.outputs.tags }}
           labels: ${{ steps.app-meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/archidep/app:latest
-          cache-to: type=inline
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/archidep/app:buildcache
+            type=registry,ref=${{ env.REGISTRY }}/archidep/app:latest
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/archidep/app:buildcache,mode=max
 
       # https://github.com/actions/attest-build-provenance
       - name: Generate artifact attestation for the app image
@@ -88,8 +90,10 @@ jobs:
           push: true
           tags: ${{ steps.assets-meta.outputs.tags }}
           labels: ${{ steps.assets-meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/archidep/assets:latest
-          cache-to: type=inline
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache
+            type=registry,ref=${{ env.REGISTRY }}/archidep/assets:latest
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache,mode=max
 
       # https://github.com/actions/attest-build-provenance
       - name: Generate artifact attestation for the assets image
