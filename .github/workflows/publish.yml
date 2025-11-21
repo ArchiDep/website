@@ -117,11 +117,13 @@ jobs:
           push-to-registry: true
 
       # List pushed cache images (GHCR tags) so we can easily verify cache artifacts
-      - name: List GHCR tags for cache images
+      - name: List GHCR package versions (via GitHub API)
         shell: bash
         run: |
           set -eux
-          echo "Listing GHCR tags for archidep/app"
-          curl -sS -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" "https://ghcr.io/v2/archidep/app/tags/list" || true
-          echo "\nListing GHCR tags for archidep/assets"
-          curl -sS -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" "https://ghcr.io/v2/archidep/assets/tags/list" || true
+          echo "Listing GHCR package versions for archidep/app via GitHub API"
+          curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/orgs/ArchiDep/packages/container/app/versions" | python -m json.tool || true
+          echo "\nListing GHCR package versions for archidep/assets via GitHub API"
+          curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/orgs/ArchiDep/packages/container/assets/versions" | python -m json.tool || true
