@@ -147,18 +147,10 @@ Start by making sure you have installed all the requirements described in the
   You should install a package named `openjdk-<version>-jdk` where `<version>`
   is the Java version required by the Flood It application.
 
-- **How to install Maven:** depending on your Ubuntu version, the version of
-  Maven available from APT might not be compatible with Java 17. You will
-  therefore install a newer version, using a script located in the Flood It
-  application's repository.
-
-  Download and run the [`maven-install.sh`
-  script](https://github.com/ArchiDep/floodit/blob/main/maven-install.sh) from
-  the Flood It repository:
+- **How to install Maven:** you can simply install it with APT as well:
 
   ```bash
-  $> curl -s https://raw.githubusercontent.com/ArchiDep/floodit/main/maven-install.sh | sudo bash
-  $> source /etc/profile.d/maven.sh
+  $> sudo apt install maven
   ```
 
 {% note type: tip %}
@@ -263,15 +255,13 @@ systemd service:
 ```bash
 $> sudo systemctl status postgresql
 ● postgresql.service - PostgreSQL RDBMS
-    Loaded: loaded (/lib/systemd/system/postgresql.service; enabled; vendor preset: enabled)
-    Active: active (exited) since Fri 2021-12-10 20:54:52 UTC; 3 days ago
-  Main PID: 2724 (code=exited, status=0/SUCCESS)
-      Tasks: 0 (limit: 1087)
-    Memory: 0B
-    CGroup: /system.slice/postgresql.service
+     Loaded: loaded (/usr/lib/systemd/system/postgresql.service; enabled; preset: enabled)
+     Active: active (exited) since Thu 2025-11-20 18:20:52 UTC; 6 days ago
+   Main PID: 1155 (code=exited, status=0/SUCCESS)
+        CPU: 5ms
 
-Dec 10 20:54:52 jde.archidep.ch systemd[1]: Starting PostgreSQL RDBMS...
-Dec 10 20:54:52 jde.archidep.ch systemd[1]: Finished PostgreSQL RDBMS.
+Nov 20 18:20:52 soy.archidep.ch systemd[1]: Starting postgresql.service - PostgreSQL RDBMS...
+Nov 20 18:20:52 soy.archidep.ch systemd[1]: Finished postgresql.service - PostgreSQL RDBMS.
 ```
 
 You can also verify that PostgreSQL is working by listing available databases,
@@ -546,22 +536,22 @@ caching][webpack-caching]. This optimizes the delivery of web assets to browsers
 especially when they come back to your website after having already visited
 once.
 
-You can list the `frontend/dist` directory to see the digested assets: `ls
-frontend/dist`. Observe that a file named `runtime.a185471aecb581c1.js` (the
-hash may differ) has appeared. The hash part of the file name
-(`a185471aecb581c1` in this case) depends on the content. When the content
-changes, the hash changes. This means you can instruct client browsers to cache
-web assets indefinitely, since you know that an asset's name will not change as
-long as its content does not change as well and, conversely, that an asset's
-name will always change if it has been modified.
+You can list the `frontend/dist/browser` directory to see the digested assets:
+`ls frontend/dist/browser`. Observe that a file named `main-CE7IO7ZI.js` (the
+hash may differ) has appeared. The hash part of the file name (`CE7IO7ZI` in
+this case) depends on the content. When the content changes, the hash changes.
+This means you can instruct client browsers to cache web assets indefinitely,
+since you know that an asset's name will not change as long as its content does
+not change as well and, conversely, that an asset's name will always change if
+it has been modified.
 
 {% endcallout %}
 
 ## :exclamation: Create a systemd service
 
-Create and enable a systemd unit file like in the [systemd
-exercise][systemd-ex]. Make the necessary changes to run the Flood It
-application instead of the PHP todolist.
+Create and enable a systemd unit file like in the [systemd exercise]({% link
+_course/506-systemd-deployment/exercise.md %}). Make the necessary changes to
+run the Flood It application instead of the PHP todolist.
 
 {% note type: tip %}
 
@@ -597,11 +587,11 @@ later.
 ## :exclamation: Serve the application through nginx
 
 Create an nginx proxy configuration to serve the application like in the [nginx
-PHP-FPM exercise][nginx-php-fpm-ex].
+PHP-FPM exercise]({% link _course/512-nginx-php-fpm-deployment/exercise.md %}).
 
-The `root` directive in your nginx configuration should point to the
-`frontend/dist` directory in the repository since that is the directory that
-contains the application's public web assets.
+The [`root` directive][nginx-root] in your nginx configuration should point to
+the directory that contains the static web assets of the application's compiled
+frontend (this is documented in [the README][readme-production]).
 
 {% note type: tip %}
 
@@ -612,8 +602,24 @@ The `include` and `fastcgi_pass` directives used in the PHP-FPM exercise make no
 sense for a non-PHP application. You should replace them with a [`proxy_pass`
 directive](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass),
 as [presented during the course]({% link _course/509-reverse-proxy/subject.md
-%}#reverse-proxy-configuration) and as you have done in the [multi-component
-exercise]({% link _course/511-revprod-deployment/exercise.md %}).
+%}#reverse-proxy-configuration).
+
+Similarly to the [multi-component exercise]({% link
+_course/511-revprod-deployment/exercise.md %}), you will need to define multiple
+locations because the application is in two parts:
+
+- A frontend with compiled static files. There is no port here; there are simply
+  files to serve like in the [static deployment exercise]({% link
+  _course/510-nginx-static-deployment/exercise.md %}). For this location, you
+  might want to use the [`try_files` directive][nginx-try-files]:
+
+  ```
+  try_files $uri $uri/ /index.html =404;
+  ```
+
+- A backend which listens on a port (that you configured) and responds to
+  requests under the `/api` path. This location is where you want to use
+  `proxy_pass`.
 
 {% endnote %}
 
@@ -627,7 +633,8 @@ structure. That way you will not have to modify it later.
 ## :exclamation: Provision a TLS certificate
 
 Obtain and configure a TLS certificate to serve the application over HTTPS like
-in the [certbot exercise][certbot-ex].
+in the [certbot exercise]({% link _course/514-certbot-deployment/exercise.md
+%}).
 
 ## :exclamation: Set up an automated deployment with Git hooks
 
@@ -790,6 +797,21 @@ Note that some of these errors can happen in various situations:
 - When running a command manually from your terminal.
 - When systemd tries to start your service.
 - When your `post-receive` Git hook executes.
+
+### :boom: I see warnings when running Maven
+
+If you see these warnings every time you run a `mvn` command:
+
+```
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/usr/share/maven/lib/guava.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+```
+
+You can ignore them. This is due to an incompatibility between some internal
+libraries used by the Flood It application. You don't have to worry about it and
+it will not prevent the application from working.
 
 ### :boom: Daemons using outdated libraries
 
@@ -1170,7 +1192,6 @@ Please notify the teachers immediately if you run into this issue.
 [angular]: https://angular.io
 [api]: https://en.wikipedia.org/wiki/API
 [automated-tests]: https://en.wikipedia.org/wiki/Test_automation
-[certbot-ex]: certbot-deployment.md
 [composer]: https://getcomposer.org
 [cross-platform]: https://en.wikipedia.org/wiki/Cross-platform_software
 [fork]: https://docs.github.com/en/get-started/quickstart/fork-a-repo
@@ -1191,9 +1212,9 @@ Please notify the teachers immediately if you run into this issue.
 [mvc]: https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller
 [mvn]: https://maven.apache.org
 [mvn-central]: https://search.maven.org
-[nginx-php-fpm-ex]: nginx-php-fpm-deployment.md
 [nginx-proxy-pass]: http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass
-[nginx-rp-conf]: https://mediacomem.github.io/comem-archidep/2020-2021/subjects/reverse-proxy/?home=MediaComem%2Fcomem-archidep%23readme#29
+[nginx-root]: https://nginx.org/en/docs/http/ngx_http_core_module.html#root
+[nginx-try-files]: https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files
 [node]: https://nodejs.org
 [node-install]: https://nodesource.com/products/distributions
 [node-lts]: https://nodejs.org/en/about/releases/
@@ -1207,9 +1228,9 @@ Please notify the teachers immediately if you run into this issue.
 [spring]: https://spring.io
 [spring-boot]: https://spring.io/projects/spring-boot
 [readme]: https://github.com/ArchiDep/floodit#readme
+[readme-production]: https://github.com/ArchiDep/floodit#run-the-application-in-production-mode
 [repo]: https://github.com/ArchiDep/floodit
 [sun]: https://en.wikipedia.org/wiki/Sun_Microsystems
-[systemd-ex]: systemd-deployment.md
 [tailwind]: https://tailwindcss.com
 [ui]: https://en.wikipedia.org/wiki/User_interface
 [url]: https://en.wikipedia.org/wiki/URL#Syntax
