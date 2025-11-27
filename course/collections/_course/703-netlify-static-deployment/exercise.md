@@ -330,5 +330,5 @@ install` command which previously failed should now work.
 [nodenv]: https://github.com/nodenv/nodenv
 [npm]: https://www.npmjs.com/
 [nvm]: https://github.com/nvm-sh/nvm
-[static-clock-repo]: https://github.com/MediaComem/static-clock-website
+[static-clock-repo]: https://github.com/ArchiDep/static-clock-website
 [volta]: https://github.com/volta-cli/volta
