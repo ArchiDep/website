@@ -775,6 +775,12 @@ Here's some visible changes you could easily make:
   `frontend/src/app/pages/dashboard/dashboard.component.html`
   file](https://github.com/ArchiDep/floodit/blob/04cf2bdad154aae574d974d7984d8d19e4dcb504/frontend/src/app/pages/dashboard/dashboard.component.html#L7-L38).
 
+## :exclamation: Delivery instructions
+
+Send an email to Simon Oulevay & Simon Pinkas with the URL to your deployed
+application (e.g. https://floodit.jde.archidep.ch), no later than December 10th
+2025 at 13:15:00.000.
+
 ## :checkered_flag: What have I done?
 
 You have deployed a new backend/frontend web application to your server from
