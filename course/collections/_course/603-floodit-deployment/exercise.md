@@ -153,15 +153,6 @@ Start by making sure you have installed all the requirements described in the
   $> sudo apt install maven
   ```
 
-{% note type: tip %}
-
-If you prefer not to run a strange script from the Internet on your server, you
-can also read [the
-script](https://github.com/ArchiDep/floodit/blob/main/maven-install.sh) and
-execute the commands yourself.
-
-{% endnote %}
-
 - **How to install Node.js:** there are several methods to install Node.js. One
   of the simplest is to use the [binary distributions provided by
   NodeSource][node-install]. You should look for installation instructions
