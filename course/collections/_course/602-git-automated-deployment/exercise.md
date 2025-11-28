@@ -255,7 +255,7 @@ version of the project's files, as checked out by the `post-receive` hook:
 
 ```bash
 $> ls ~/todolist-automated
-LICENSE.txt  README.md  images  index.php  todolist.sql  update.sh
+LICENSE.txt  README.md  index.php  todolist.sql
 ```
 
 ## :exclamation: Commit a change to the project and deploy it
