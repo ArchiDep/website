@@ -59,15 +59,7 @@ psql (PostgreSQL) 18.x (Homebrew)
 
 ### Windows
 
-Go to the [PostgreSQL downloads page][postgresql-downloads] and choose version
-**18.x for Windows x86-64**. Launch the installer and follow the installation
-instructions. You can decide to install **only** the command-line tools. The
-following instructions assume you installed PostgreSQL in the default directory on
-your C drive.
-
-The installer does not take care of adding `psql` to your shell's path. You will
-therefore add it manually. Open your WSL terminal and enter the following
-commands:
+Open your WSL terminal and install PostgreSQL with APT:
 
 ```bash
 $> sudo apt install postgresql-client-16
@@ -77,7 +69,7 @@ Check that you have access to the `psql` command by entering:
 
 ```bash
 $> psql --version
-psql (PostgreSQL) 18.x (Homebrew)
+psql (PostgreSQL) 16.x
 ```
 
 ## :exclamation: Getting your Todolist fork up-to-date.
