@@ -66,11 +66,11 @@ following instructions assume you installed PostgreSQL in the default directory 
 your C drive.
 
 The installer does not take care of adding `psql` to your shell's path. You will
-therefore add it manually. Open your terminal and enter the following commands:
+therefore add it manually. Open your WSL terminal and enter the following
+commands:
 
 ```bash
-$> echo 'export PATH=$PATH:"/c/Program Files/PostgreSQL/18/bin/"' >> ~/.bashrc
-$> source .bashrc
+$> sudo apt install postgresql-client-16
 ```
 
 Check that you have access to the `psql` command by entering:
