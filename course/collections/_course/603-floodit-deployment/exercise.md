@@ -506,6 +506,32 @@ should be able to visit http://W.X.Y.Z:3001 to check that the application works
 (replacing `W.X.Y.Z` by your server's IP address). Stop both components by
 typing `Ctrl-C` once you are done.
 
+This is a simplified architecture of the running processes and communication
+flow when you are running the Flood It application in development mode (it is up
+to you to choose and configure ports `N` and `M`):
+
+![Diagram](./images/development-architecture.png)
+
+<div class="flex items-center gap-2">
+  <a href="./images/development-architecture.pdf" download="Flood It Development Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/development-architecture.png" download="Flood It Development Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
+
+{% note type: warning %}
+
+This is **NOT** the final architecture of this exercise. This is a temporary
+development version that you can manually launch to make sure that the Flood It
+application is working correctly.
+
+Note that at this stage, you are not yet using nginx or systemd for most
+server processes.
+
+{% endnote %}
+
 ### :exclamation: Run the application in production mode
 
 Follow the instructions in the [project's README][readme] to run the application
@@ -537,6 +563,29 @@ not change as well and, conversely, that an asset's name will always change if
 it has been modified.
 
 {% endcallout %}
+
+From this step until the end of the exercise, your goal is to deploy the
+following architecture:
+
+![Diagram](./images/architecture.png)
+
+<div class="flex items-center gap-2">
+  <a href="./images/architecture.pdf" download="Flood It Deployment Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/architecture.png" download="Flood It Deployment Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
+
+{% note type: tip %}
+
+Note that unlike in development mode, you will not be using the Angular
+development server in production mode. The frontend application will be built
+into static files. It will be nginx's job to serve them (and your job to
+configure nginx to do so).
+
+{% endnote %}
 
 ## :exclamation: Create a systemd service
 
@@ -785,6 +834,22 @@ application (e.g. https://floodit.jde.archidep.ch), no later than December 10th
 
 You have deployed a new backend/frontend web application to your server from
 scratch, using the knowledge you acquired during previous deployment exercises.
+
+### :classical_building: Architecture
+
+This is a simplified architecture of the main running processes and
+communication flow at the end of this exercise:
+
+![Diagram](./images/architecture.png)
+
+<div class="flex items-center gap-2">
+  <a href="./images/architecture.pdf" download="Flood It Deployment Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/architecture.png" download="Flood It Deployment Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
 
 ## :boom: Troubleshooting
 
