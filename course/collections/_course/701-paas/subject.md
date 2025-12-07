@@ -20,6 +20,8 @@ and [Render][render].
   _course/203-git-collaborating/slides.md %}), [Git hooks]({% link
   _course/601-git-hooks/subject.md %})
 
+<!-- more -->
+
 ## What is PaaS?
 
 **Platform-as-a-Service (PaaS)** is a **cloud deployment** service model where
