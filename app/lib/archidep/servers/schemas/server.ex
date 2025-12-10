@@ -134,12 +134,33 @@ defmodule ArchiDep.Servers.Schemas.Server do
     case Repo.all(
            from(s in __MODULE__,
              join: o in assoc(s, :owner),
-             where: s.active and o.group_member_id == ^group_member_id
+             left_join: ogm in assoc(o, :group_member),
+             left_join: ogmg in assoc(ogm, :group),
+             join: g in assoc(s, :group),
+             join: gesp in assoc(g, :expected_server_properties),
+             join: ep in assoc(s, :expected_properties),
+             left_join: lkp in assoc(s, :last_known_properties),
+             where: s.active and o.group_member_id == ^group_member_id,
+             preload: [
+               group: {g, expected_server_properties: gesp},
+               expected_properties: ep,
+               last_known_properties: lkp,
+               owner: {o, group_member: {ogm, group: ogmg}}
+             ]
            )
          ) do
-      [server] -> {:ok, server}
-      [] -> {:error, :server_not_found}
-      multiple_servers -> {:error, {:multiple_servers_found, Enum.map(multiple_servers, & &1.id)}}
+      [server] ->
+        if active?(server, DateTime.utc_now()) do
+          {:ok, server}
+        else
+          {:error, :server_not_found}
+        end
+
+      [] ->
+        {:error, :server_not_found}
+
+      multiple_servers ->
+        {:error, {:multiple_servers_found, Enum.map(multiple_servers, & &1.id)}}
     end
   end
 
@@ -445,6 +466,75 @@ defmodule ArchiDep.Servers.Schemas.Server do
         {:ok, %{server: updated_server}} -> updated_server
       end
     end
+  end
+
+  @spec refresh!(t(), map()) :: t()
+  def refresh!(
+        %__MODULE__{
+          id: id,
+          version: current_version
+        } = server,
+        %{
+          id: id,
+          name: name,
+          ip_address: ip_address,
+          username: username,
+          app_username: app_username,
+          ssh_port: ssh_port,
+          ssh_host_key_fingerprints: ssh_host_key_fingerprints,
+          secret_key: secret_key,
+          active: active,
+          group: group,
+          group_id: group_id,
+          owner: owner,
+          owner_id: owner_id,
+          expected_properties: expected_properties,
+          expected_properties_id: expected_properties_id,
+          last_known_properties: last_known_properties,
+          last_known_properties_id: last_known_properties_id,
+          version: version,
+          set_up_at: set_up_at,
+          open_ports_checked_at: open_ports_checked_at,
+          updated_at: updated_at
+        }
+      )
+      when version == current_version + 1 do
+    %__MODULE__{
+      server
+      | name: name,
+        ip_address: ip_address,
+        username: username,
+        app_username: app_username,
+        ssh_port: ssh_port,
+        ssh_host_key_fingerprints: ssh_host_key_fingerprints,
+        secret_key: secret_key,
+        active: active,
+        group: group,
+        group_id: group_id,
+        owner: owner,
+        owner_id: owner_id,
+        expected_properties: expected_properties,
+        expected_properties_id: expected_properties_id,
+        last_known_properties: last_known_properties,
+        last_known_properties_id: last_known_properties_id,
+        version: version,
+        set_up_at: set_up_at,
+        open_ports_checked_at: open_ports_checked_at,
+        updated_at: updated_at
+    }
+  end
+
+  def refresh!(%__MODULE__{id: id, version: current_version} = server, %{
+        id: id,
+        version: version
+      })
+      when version <= current_version do
+    server
+  end
+
+  def refresh!(%__MODULE__{id: id}, %{id: id}) do
+    {:ok, fresh_server} = fetch_server(id)
+    fresh_server
   end
 
   @spec mark_as_set_up!(t(), EventReference.t()) :: t()

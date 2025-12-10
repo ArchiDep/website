@@ -31,7 +31,11 @@
     {@student.name}
   </.data_display_element>
   <.data_display_element title={gettext("Email")}>{@student.email}</.data_display_element>
-  <.data_display_element title={gettext("Class")}>{@student.class.name}</.data_display_element>
+  <.data_display_element title={gettext("Class")}>
+    <a href={~p"/admin/classes/#{@student.class_id}"}>
+      {@student.class.name}
+    </a>
+  </.data_display_element>
   <.data_display_element title={gettext("Academic class")}>
     <%= if @student.academic_class do %>
       {@student.academic_class}
@@ -80,6 +84,21 @@
       </span>
     <% else %>
       <.no_data text={gettext("Not registered yet")} />
+    <% end %>
+  </.data_display_element>
+  <.data_display_element title={gettext("Active server")}>
+    <%= if @active_server do %>
+      <a
+        href={~p"/admin/servers/#{@active_server.id}"}
+        class={[
+          "flex items-center gap-x-2"
+        ]}
+      >
+        <Heroicons.server solid class="size-5" />
+        {@active_server.name || Server.default_hostname(@active_server)}
+      </a>
+    <% else %>
+      <.no_data text={gettext("None registered")} />
     <% end %>
   </.data_display_element>
 </.data_display>

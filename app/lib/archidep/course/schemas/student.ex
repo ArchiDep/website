@@ -151,10 +151,14 @@ defmodule ArchiDep.Course.Schemas.Student do
       from(s in __MODULE__,
         where: s.class_id == ^class_id and s.id == ^id,
         join: c in assoc(s, :class),
+        join: cesp in assoc(c, :expected_server_properties),
         left_join: u in assoc(s, :user),
         left_join: us in assoc(u, :student),
         left_join: usc in assoc(us, :class),
-        preload: [class: c, user: {u, student: {us, class: usc}}]
+        preload: [
+          class: {c, expected_server_properties: cesp},
+          user: {u, student: {us, class: usc}}
+        ]
       )
       |> Repo.one()
       |> truthy_or(:student_not_found)
