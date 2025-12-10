@@ -522,7 +522,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
                end)
 
                assert_receive {:proxy, ^server_conn_name,
-                               {:call, {:run_command, ^fake_command}, from}},
+                               {:call, {:run_command, ^fake_command, ^fake_timeout}, from}},
                               500
 
                GenServer.reply(from, {:ok, fake_result})

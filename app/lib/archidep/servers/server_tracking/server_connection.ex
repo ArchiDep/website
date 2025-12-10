@@ -44,7 +44,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   @spec run_command(Server.t(), String.t(), pos_integer()) ::
           {:ok, String.t(), String.t(), 0..255} | {:error, :not_connected} | {:error, term()}
   def run_command(server, command, timeout),
-    do: GenServer.call(name(server), {:run_command, command}, timeout)
+    do: GenServer.call(name(server), {:run_command, command, timeout}, timeout)
 
   @spec disconnect(Server.t()) :: :ok
   def disconnect(server), do: GenServer.call(name(server), :disconnect)
@@ -90,12 +90,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
     open_ssh_connection(host, port, username, options, server_id)
   end
 
-  def handle_call({:run_command, command}, _from, {:connected, connection_ref, server_id}) do
-    result = SSHEx.run(connection_ref, command, separate_streams: true)
+  def handle_call(
+        {:run_command, command, timeout},
+        _from,
+        {:connected, connection_ref, server_id}
+      ) do
+    result = SSHEx.run(connection_ref, command, exec_timeout: timeout, separate_streams: true)
     {:reply, result, {:connected, connection_ref, server_id}}
   end
 
-  def handle_call({:run_command, _command}, _from, state) do
+  def handle_call({:run_command, _command, _timeout}, _from, state) do
     {:reply, {:error, :not_connected}, state}
   end
 
