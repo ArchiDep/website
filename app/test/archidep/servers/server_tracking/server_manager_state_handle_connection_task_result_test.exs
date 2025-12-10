@@ -89,7 +89,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     fake_task = Task.completed(:fake)
 
     check_access_result =
-      run_command_fn.(result, fn "sudo -n ls", 10_000 ->
+      run_command_fn.(result, fn "sudo -n ls", 15_000 ->
         fake_task
       end)
 
@@ -184,7 +184,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     fake_task = Task.completed(:fake)
 
     check_access_result =
-      run_command_fn.(result, fn "sudo -n ls", 10_000 ->
+      run_command_fn.(result, fn "sudo -n ls", 15_000 ->
         fake_task
       end)
 
@@ -291,7 +291,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     fake_task = Task.completed(:fake)
 
     check_access_result =
-      run_command_fn.(result, fn "sudo -n ls", 10_000 ->
+      run_command_fn.(result, fn "sudo -n ls", 15_000 ->
         fake_task
       end)
 
