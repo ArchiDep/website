@@ -159,6 +159,12 @@
   </h3>
 
   <div class="join">
+    <a class="join-item btn btn-neutral btn-sm" href={~p"/admin/classes/#{@class.id}/csv"}>
+      <span class="flex items-center gap-x-2">
+        <Heroicons.list_bullet class="size-4" />
+        <span>{gettext("CSV")}</span>
+      </span>
+    </a>
     <a
       class="join-item btn btn-neutral btn-sm"
       href={~p"/admin/classes/#{@class.id}/ssh-exercise-vm-inventory"}
