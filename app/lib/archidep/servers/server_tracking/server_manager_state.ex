@@ -1448,7 +1448,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        end}
 
   defp get_load_average, do: run_command_action(:get_load_average, "cat /proc/loadavg", 10_000)
-  defp check_sudo_access, do: run_command_action(:check_access, "sudo -n ls", 15_000)
+  defp check_sudo_access, do: run_command_action(:check_access, "sudo -n ls", 20_000)
 
   defp test_ports,
     do:
