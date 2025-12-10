@@ -13,23 +13,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
       {:ok, class} ->
         students = Course.list_students(auth, class)
 
-        server_data =
-          students
-          |> Enum.sort_by(fn %Student{name: name, academic_class: academic_class} ->
-            "#{academic_class} - #{name}"
-          end)
-          |> Enum.map(fn %Student{id: student_id} ->
-            Task.async(fn ->
-              case Server.find_active_server_for_group_member(student_id) do
-                {:ok, server} -> {student_id, server.ip_address, server.username}
-                _anything -> {student_id, nil, nil}
-              end
-            end)
-          end)
-          |> Task.await_many()
-          |> Enum.reduce(%{}, fn {student_id, ip_address, username}, acc ->
-            Map.put(acc, student_id, {ip_address, username})
-          end)
+        server_data = load_server_data_for(students)
 
         csv =
           students
@@ -68,6 +52,27 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
 
       _anything ->
         send_resp(conn, 401, "Unauthorized")
+    end
+  end
+
+  defp load_server_data_for(students) do
+    students
+    |> Enum.sort_by(fn %Student{name: name, academic_class: academic_class} ->
+      "#{academic_class} - #{name}"
+    end)
+    |> Enum.map(fn %Student{id: student_id} ->
+      Task.async(fn -> find_active_server_data_for(student_id) end)
+    end)
+    |> Task.await_many()
+    |> Enum.reduce(%{}, fn {student_id, ip_address, username}, acc ->
+      Map.put(acc, student_id, {ip_address, username})
+    end)
+  end
+
+  defp find_active_server_data_for(student_id) do
+    case Server.find_active_server_for_group_member(student_id) do
+      {:ok, server} -> {student_id, server.ip_address, server.username}
+      _anything -> {student_id, nil, nil}
     end
   end
 

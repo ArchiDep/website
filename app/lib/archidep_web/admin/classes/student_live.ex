@@ -26,14 +26,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
         if connected?(socket) do
           set_process_label(__MODULE__, auth, student)
-
-          :ok = Accounts.PubSub.subscribe_preregistered_user(id)
-          :ok = Course.PubSub.subscribe_student(student.id)
-          :ok = Course.PubSub.subscribe_class(student.class_id)
-
-          if student.user_id do
-            :ok = Servers.PubSub.subscribe_server_owner_servers(student.user_id)
-          end
+          subscribe(student)
         end
 
         socket
@@ -51,6 +44,16 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
         |> put_notification(Message.new(:error, gettext("Student not found")))
         |> push_navigate(to: ~p"/admin/classes/#{class_id}")
         |> ok()
+    end
+  end
+
+  defp subscribe(student) do
+    :ok = Accounts.PubSub.subscribe_preregistered_user(student.id)
+    :ok = Course.PubSub.subscribe_student(student.id)
+    :ok = Course.PubSub.subscribe_class(student.class_id)
+
+    if student.user_id do
+      :ok = Servers.PubSub.subscribe_server_owner_servers(student.user_id)
     end
   end
 
