@@ -29,6 +29,13 @@
       <.data_display_element title={gettext("Username")} class="font-mono">
         {@server.username}
       </.data_display_element>
+      <.data_display_element title={gettext("Domain")} class="font-mono">
+        <%= if @server.owner.group_member do %>
+          {@server.owner.group_member.domain}
+        <% else %>
+          <.no_data />
+        <% end %>
+      </.data_display_element>
       <.data_display_element title={gettext("SSH port")} class="font-mono">
         {@server.ssh_port || 22}
       </.data_display_element>
