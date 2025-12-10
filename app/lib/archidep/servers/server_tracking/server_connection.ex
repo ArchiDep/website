@@ -95,7 +95,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
         _from,
         {:connected, connection_ref, server_id}
       ) do
-    result = SSHEx.run(connection_ref, command, exec_timeout: timeout, separate_streams: true)
+    result =
+      SSHEx.run(connection_ref, command,
+        channel_timeout: div(timeout, 2),
+        exec_timeout: div(timeout, 2),
+        separate_streams: true
+      )
+
     {:reply, result, {:connected, connection_ref, server_id}}
   end
 
