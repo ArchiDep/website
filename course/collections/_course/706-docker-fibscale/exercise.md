@@ -1,13 +1,13 @@
 ---
-title: Containerize a static site using Docker
+title: Containerize a web application using Docker
 excerpt_separator: <!-- more -->
 ---
 
 In this exercise, you will apply your knowledge of Docker and Linux
 administration to containerize a standalone web application (without a
-database). The application you will be containerizing is FibScale from the
-[horizontal scaling exercise]({% link _course/603-floodit-deployment/exercise.md
-%}).
+database). The application you will be containerizing is
+[FibScale][fibscale-repo] from the [horizontal scaling exercise]({% link
+_course/603-floodit-deployment/exercise.md %}).
 
 {% callout type: exercise %}
 
