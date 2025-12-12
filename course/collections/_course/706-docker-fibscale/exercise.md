@@ -1,6 +1,7 @@
 ---
 title: Containerize a web application using Docker
 excerpt_separator: <!-- more -->
+cloud_server: details
 ---
 
 In this exercise, you will apply your knowledge of Docker and Linux
@@ -9,15 +10,15 @@ database). The application you will be containerizing is
 [FibScale][fibscale-repo] from the [horizontal scaling exercise]({% link
 _course/603-floodit-deployment/exercise.md %}).
 
-{% callout type: exercise %}
-
-Perform this exercise on your local machine, not your cloud server.
-
-{% endcallout %}
-
 <!-- more -->
 
 ## :exclamation: Requirements
+
+{% callout type: exercise %}
+
+Most of this exercise will happen on your local machine.
+
+{% endcallout %}
 
 You need to have Docker installed on your machine. To do so, install [Docker
 Desktop][docker-desktop] and use the recommended settings.
@@ -495,6 +496,72 @@ $> git add .
 $> git commit -m "Containerize FibScale with Docker"
 $> git push origin main
 ```
+
+## :exclamation: Run the recipe on your cloud server
+
+{% callout type: exercise %}
+
+Connect to your cloud server with SSH for the rest of this exercise.
+
+{% endcallout %}
+
+Now that your Dockerfile is ready and committed to your Git repository, it's
+time to run it on your cloud server, and to see how easy it is to deploy your
+containerized application anywhere Docker is installed!
+
+### :exclamation: Install Docker on the server
+
+Follow the [official instructions to install Docker on
+Ubuntu](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository)
+on your cloud server.
+
+### :exclamation: Clone your repository on the server
+
+Then clone your new repository on your server:
+
+```bash
+$> git clone https://github.com/<YourGitHubUser>/fibscale.git fibscale-docker
+```
+
+### :exclamation: Build the Docker image on the server
+
+You can now build your Docker image on the server by running the same command as
+before:
+
+```bash
+$> cd fibscale-docker
+$> docker build -t fibscale .
+```
+
+### :exclamation: Run the containerized FibScale application on the server
+
+Finally, run your containerized FibScale application by running:
+
+```bash
+$> docker run -d -p 3001:3000 fibscale
+```
+
+{% note type: tip %}
+
+For the first port of the `-p` option, you need to use a port that is publicly
+accessible and not already in use on your cloud server. In this example, we are
+using port `3001`, which is one of the two ports we asked that you open when you
+[set up your cloud server]({% link _course/402-run-virtual-server/exercise.md
+%}#exclamation-configure-open-ports).
+
+The second port is the port FibScale listens on within the container, which is
+`3000`.
+
+{% endnote %}
+
+You should now be able to access your FibScale application by visiting
+[http://jde.archidep.ch:3001](http://jde.archidep.ch:3001) in your web browser!
+
+{% note type: tip %}
+
+Replace `jde` with your username and `archidep.ch` with your assigned domain.
+
+{% endnote %}
 
 ## :checkered_flag: What have I done?
 
