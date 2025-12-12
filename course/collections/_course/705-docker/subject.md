@@ -1459,20 +1459,11 @@ ports and map them to high-order ports.
 ## References
 
 - [What is Docker?][what-is-docker]
-- [What is a Container?][what-is-container]
+- [What is a Container?][what-container]
 - [Docker Security][docker-security]
 - [Dockerfile Reference][dockerfile]
-  - [Best Practices for Writing Dockerfiles][dockerfile-best-practices]
-  - [Trapping Signals in Docker Containers][docker-signals]
-- [Docker Networking Overview][docker-networking]
-  - [Docker Bridge Networks][docker-bridge-networks]
-  - [Docker Networking Deep Dive (SlideShare)][docker-networking-deep-dive]
-- [Manage Data in Docker][docker-storage]
-  - [Docker Storage Drivers][docker-storage-drivers]
-  - [Use Volumes][docker-storage-volumes]
-  - [Use Bind Mounts][docker-storage-bind]
-  - [Use tmpfs Mounts][docker-storage-tmpfs]
-- [Starting containers automatically][docker-restart-policy]
+  - [Best Practices for Writing Dockerfiles](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+  - [Trapping Signals in Docker Containers](https://medium.com/@gchudnov/trapping-signals-in-docker-containers-7a57fdda7d86)
 - [The Twelve-Factor App][12factor]
 
 [12factor]: https://12factor.net
@@ -1480,69 +1471,22 @@ ports and map them to high-order ports.
 [alpine]: https://alpinelinux.org
 [alpine-size]: https://news.ycombinator.com/item?id=10782897
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
-[consul]: https://www.consul.io
 [cow]: https://en.wikipedia.org/wiki/Copy-on-write
-[dmz]: https://en.wikipedia.org/wiki/DMZ_(computing)
-[docker-bridge-networks]: https://docs.docker.com/network/bridge/
-[docker-ce]: https://www.docker.com/community-edition
 [docker-desktop]: https://www.docker.com/products/docker-desktop/
 [docker-ignore]: https://docs.docker.com/engine/reference/builder/#dockerignore-file
-[docker-multi-stage-builds]: https://docs.docker.com/develop/develop-images/multistage-build/
-[docker-network-overlay]: https://docs.docker.com/network/overlay/
-[docker-networking]: https://docs.docker.com/network/
-[docker-networking-deep-dive]: https://www.slideshare.net/MadhuVenugopal2/dcus17-docker-networking-deep-dive
-[docker-restart-policy]: https://docs.docker.com/config/containers/start-containers-automatically/
-[docker-registry]: https://docs.docker.com/registry/deploying/
-[docker-registry-insecure]: https://docs.docker.com/registry/insecure/#use-self-signed-certificates
 [docker-security]: https://docs.docker.com/engine/security/security/
-[docker-signals]: https://medium.com/@gchudnov/trapping-signals-in-docker-containers-7a57fdda7d86
-[docker-storage]: https://docs.docker.com/storage/
-[docker-storage-bind]: https://docs.docker.com/storage/bind-mounts/
-[docker-storage-drivers]: https://docs.docker.com/storage/storagedriver/
-[docker-storage-tmpfs]: https://docs.docker.com/storage/tmpfs/
-[docker-storage-volume-drivers]: https://docs.docker.com/storage/volumes/#use-a-volume-driver
-[docker-storage-volumes]: https://docs.docker.com/storage/volumes/
 [dockerfile]: https://docs.docker.com/engine/reference/builder/
-[dockerfile-best-practices]: https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 [dockerfile-copy]: https://docs.docker.com/reference/dockerfile/#copy
 [dockerfile-from]: https://docs.docker.com/reference/dockerfile/#from
 [dockerfile-run]: https://docs.docker.com/reference/dockerfile/#run
-[dockerfile-tips]: #dockerfile-tips
-[dockerfile-tips-waiting]: #waiting-for-other-containers
-[express]: http://expressjs.com
 [fortune]: https://en.wikipedia.org/wiki/Fortune_(Unix)
-[git-bash]: https://git-scm.com/downloads
 [glibc-etc]: http://www.etalabs.net/compare_libcs.html
-[go]: https://golang.org
-[horizontal-scaling]: https://en.wikipedia.org/wiki/Scalability#Horizontal_and_vertical_scaling
 [hub]: https://hub.docker.com
 [hub-alpine]: https://hub.docker.com/_/alpine/
 [hub-explore]: https://hub.docker.com/explore/
-[hub-golang]: https://hub.docker.com/_/golang/
-[hub-mongo]: https://hub.docker.com/_/mongo/
-[hub-mongo-dockerfile]: https://github.com/docker-library/mongo/blob/dd8ceb3b3552d11c901a603d0b8b303e2fe4bc2e/3.6/Dockerfile
-[hub-nginx]: https://hub.docker.com/_/nginx/
-[hub-node]: https://hub.docker.com/_/node/
 [hub-ubuntu]: https://hub.docker.com/_/ubuntu/
-[lxc]: https://linuxcontainers.org
-[mongo]: https://www.mongodb.com
-[mongo-replication]: https://docs.mongodb.com/manual/replication/
 [musl-libc]: http://www.musl-libc.org
-[nginx]: https://www.nginx.com
-[nginx-lb]: http://nginx.org/en/docs/http/load_balancing.html
-[node]: https://nodejs.org/en/
-[open-container-initiative]: https://www.opencontainers.org
-[raft]: https://raft.github.io
-[serf]: https://www.serf.io
-[service-discovery]: https://en.wikipedia.org/wiki/Service_discovery
-[squashing-layers]: #squashing-image-layers
-[swarmkit]: https://github.com/docker/swarmkit
 [ubuntu]: https://www.ubuntu.com
 [union-fs]: https://en.wikipedia.org/wiki/UnionFS
-[vagrant]: https://www.vagrantup.com
-[virtualbox]: https://www.virtualbox.org
-[what-is-container]: https://www.docker.com/what-container
-[what-is-docker]: https://www.docker.com/what-docker
-[wsl]: https://docs.microsoft.com/en-us/windows/wsl/install-win10
-[yaml]: http://yaml.org
-[zookeeper]: https://zookeeper.apache.org
+[what-container]: https://www.docker.com/resources/what-container/
+[what-is-docker]: https://docs.docker.com/get-started/docker-overview/
