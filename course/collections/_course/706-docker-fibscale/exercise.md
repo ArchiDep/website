@@ -434,7 +434,7 @@ Sadly... 😭
 
 Pause and think about what could possibly be wrong. 🤔
 
-## :exclamation: Mapping your container's ports
+## :exclamation: Map your container's ports
 
 When you run a Docker container, it operates in its own isolated network
 environment. This means that services running inside the container, such the
@@ -484,6 +484,17 @@ and can guide them in setting up proper port mappings when they run the
 container.
 
 {% endcallout %}
+
+## :exclamation: Commit your changes
+
+Finally, don't forget to commit your changes to your Git repository for
+posterity:
+
+```bash
+$> git add .
+$> git commit -m "Containerize FibScale with Docker"
+$> git push origin main
+```
 
 ## :checkered_flag: What have I done?
 
