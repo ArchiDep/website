@@ -5,6 +5,39 @@ sidebar_title: Docker
 
 Useful commands and tips for working with Docker.
 
+## Common Docker commands
+
+| Command                                                    | Purpose                                                        |
+| :--------------------------------------------------------- | :------------------------------------------------------------- |
+| [`docker run <image>`][docker-commands-run]                | Create and start a container from an image.                    |
+| [`docker ps [-a] [-s]`][docker-commands-ps]                | Lists running containers.                                      |
+| [`docker stop <container>`][docker-commands-stop]          | Gracefully stops a running container.                          |
+| [`docker start <container>`][docker-commands-start]        | Restarts a stopped container.                                  |
+| [`docker rm <container>`][docker-commands-rm]              | Removes a container.                                           |
+| [`docker exec -it <container> bash`][docker-commands-exec] | Provides shell access to a running container.                  |
+| [`docker logs <container>`][docker-commands-logs]          | Displays a container's logs.                                   |
+| [`docker stats`][docker-commands-stats]                    | Shows a live stream of container(s) resource usage statistics. |
+
+To see a full list of Docker commands and their options, see the [Dockerfile CLI
+reference][docker-cli-reference].
+
+## Common Dockerfile instructions
+
+| Instruction                                     | Purpose                                                          |
+| :---------------------------------------------- | :--------------------------------------------------------------- |
+| [`FROM image_name`][dockerfile-from]            | Specifies the base image to use for the new image.               |
+| [`WORKDIR /some/path`][dockerfile-workdir]      | Sets the working directory for the instructions that follow.     |
+| [`COPY <src> <dest>`][dockerfile-copy]          | Copies files or directories from the build context to the image. |
+| [`RUN <command>`][dockerfile-run]               | Executes commands in the shell during image builds.              |
+| [`EXPOSE <port>`][dockerfile-expose]            | Port(s) Docker will be listening on at runtime.                  |
+| [`ENV KEY=VALUE`][dockerfile-env]               | Sets environment variables.                                      |
+| [`USER user`][dockerfile-user]                  | Set user and group ID.                                           |
+| [`CMD <command>`][dockerfile-cmd]               | The default command to execute when the container starts.        |
+| [`ENTRYPOINT <command>`][dockerfile-entrypoint] | Similar as `CMD`, but cannot be overriden.                       |
+
+To see a full list of Dockerfile instructions, see the [Dockerfile
+reference][dockerfile-reference].
+
 ## Dockerfile tips
 
 The following tips suggest various best practices for writing Dockerfiles.
@@ -186,13 +219,32 @@ ports and map them to high-order ports.
 [alpine-size]: https://news.ycombinator.com/item?id=10782897
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [cow]: https://en.wikipedia.org/wiki/Copy-on-write
+[docker-cli-reference]: https://docs.docker.com/reference/cli/docker/
+[docker-commands-build]: https://docs.docker.com/engine/reference/commandline/build/
+[docker-commands-exec]: https://docs.docker.com/engine/reference/commandline/exec/
+[docker-commands-images]: https://docs.docker.com/engine/reference/commandline/images/
+[docker-commands-logs]: https://docs.docker.com/engine/reference/commandline/logs/
+[docker-commands-pull]: https://docs.docker.com/engine/reference/commandline/pull/
+[docker-commands-ps]: https://docs.docker.com/engine/reference/commandline/ps/
+[docker-commands-rm]: https://docs.docker.com/engine/reference/commandline/rm/
+[docker-commands-run]: https://docs.docker.com/engine/reference/commandline/run/
+[docker-commands-start]: https://docs.docker.com/engine/reference/commandline/start/
+[docker-commands-stats]: https://docs.docker.com/engine/reference/commandline/stats/
+[docker-commands-stop]: https://docs.docker.com/engine/reference/commandline/stop/
 [docker-desktop]: https://www.docker.com/products/docker-desktop/
 [docker-ignore]: https://docs.docker.com/engine/reference/builder/#dockerignore-file
 [docker-security]: https://docs.docker.com/engine/security/security/
 [dockerfile]: https://docs.docker.com/engine/reference/builder/
+[dockerfile-cmd]: https://docs.docker.com/reference/dockerfile/#cmd
 [dockerfile-copy]: https://docs.docker.com/reference/dockerfile/#copy
+[dockerfile-env]: https://docs.docker.com/reference/dockerfile/#env
+[dockerfile-entrypoint]: https://docs.docker.com/reference/dockerfile/#entrypoint
+[dockerfile-expose]: https://docs.docker.com/reference/dockerfile/#expose
 [dockerfile-from]: https://docs.docker.com/reference/dockerfile/#from
+[dockerfile-reference]: https://docs.docker.com/reference/dockerfile/
 [dockerfile-run]: https://docs.docker.com/reference/dockerfile/#run
+[dockerfile-user]: https://docs.docker.com/reference/dockerfile/#user
+[dockerfile-workdir]: https://docs.docker.com/reference/dockerfile/#workdir
 [fortune]: https://en.wikipedia.org/wiki/Fortune_(Unix)
 [glibc-etc]: http://www.etalabs.net/compare_libcs.html
 [hub]: https://hub.docker.com
