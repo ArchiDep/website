@@ -27,19 +27,6 @@ In pursuit of this goal, you will learn:
 This course is a [Media Engineering][media-engineering] web development course
 taught at [HEIG-VD][heig].
 
-## Architecture so far
-
-![Architecture so far](./images/architecture-so-far.png)
-
-<div class="flex items-center gap-2">
-  <a href="./images/architecture-so-far.pdf" download="ArchiDep Architecture" class="tooltip" data-tip="Download PDF">
-    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-  <a href="./images/architecture-so-far.png" download="ArchiDep Architecture" class="tooltip" data-tip="Download PNG">
-    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-</div>
-
 ## What you will need
 
 - A Unix CLI
