@@ -549,8 +549,15 @@ using port `3001`, which is one of the two ports we asked that you open when you
 [set up your cloud server]({% link _course/402-run-virtual-server/exercise.md
 %}#exclamation-configure-open-ports).
 
-The second port is the port FibScale listens on within the container, which is
-`3000`.
+If neither port is available, you can use another like 3002, but make sure to
+[open that port in your cloud server's firewall settings]({% link
+_course/402-run-virtual-server/exercise.md
+%}#boom-i-forgot-to-open-some-or-all-of-the-ports-in-the-firewall).
+Alternatively, you could stop whatever service is using port 3001 to free it
+(**as long as it's not your delivery for the graded exercise**).
+
+The second port of the `-p` option is the port FibScale listens on within the
+container, which is `3000`.
 
 {% endnote %}
 
