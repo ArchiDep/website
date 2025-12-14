@@ -7,3 +7,4 @@ sections:
   - title: Advanced Deployment
   - title: Automated Deployment
   - title: Managed Deployment
+  - title: Docker Deployment
