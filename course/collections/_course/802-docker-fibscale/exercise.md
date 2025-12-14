@@ -486,6 +486,27 @@ container.
 
 {% endcallout %}
 
+This is a simplified architecture of the main running processes and
+communication flow you have set up in this exercise so far:
+
+![Diagram](./images/local-architecture.png)
+
+<div class="flex items-center gap-2">
+  <a href="./images/local-architecture.pdf" download="Docker Local Deployment Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/local-architecture.png" download="Docker Local Deployment Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
+
+{% note %}
+
+We will learn more about Docker networking and the default bridge network in a
+later course.
+
+{% endnote %}
+
 ## :exclamation: Commit your changes
 
 Finally, don't forget to commit your changes to your Git repository for
@@ -569,6 +590,20 @@ http://jde.archidep.ch:3001 in your web browser!
 Replace `jde` with your username and `archidep.ch` with your assigned domain.
 
 {% endnote %}
+
+This is a simplified architecture of the main running processes and
+communication flow you have set up on your cloud server in this exercise:
+
+![Diagram](./images/server-architecture.png)
+
+<div class="flex items-center gap-2">
+  <a href="./images/server-architecture.pdf" download="Docker Server Deployment Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/server-architecture.png" download="Docker Server Deployment Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
 
 ## :checkered_flag: What have I done?
 
