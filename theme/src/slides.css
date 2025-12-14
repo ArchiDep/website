@@ -103,3 +103,9 @@ pre.mermaid.loading {
     margin-bottom: 0.2em;
   }
 }
+
+pre.full-height-code {
+  code {
+    max-height: none;
+  }
+}
