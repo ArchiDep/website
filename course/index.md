@@ -45,9 +45,6 @@ apt install git` command][install-git-on-linux], or with their other
 
 ## Resources
 
-- [Last year's course](https://github.com/MediaComem/comem-archidep) which
-  contains most of the material at this time. We have not yet finished migrating
-  to this site.
 - [All the course's subjects, slides & cheatsheets as PDF](/pdf/ArchiDep.zip)
 
 {% note type: warning %}
