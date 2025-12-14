@@ -562,7 +562,7 @@ container, which is `3000`.
 {% endnote %}
 
 You should now be able to access your FibScale application by visiting
-[http://jde.archidep.ch:3001](http://jde.archidep.ch:3001) in your web browser!
+http://jde.archidep.ch:3001 in your web browser!
 
 {% note type: tip %}
 
