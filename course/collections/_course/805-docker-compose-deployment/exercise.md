@@ -984,6 +984,12 @@ associated volumes: `docker compose down -v`.
 To demonstrate how portable Docker Compose is, you will now deploy your new
 Compose project on your cloud server, based on the same Compose file.
 
+{% callout type: exercise %}
+
+Connect to your cloud server with SSH for the rest of this exercise.
+
+{% endcallout %}
+
 ### :exclamation: Retrieve your Compose project on the server
 
 If you followed the course's exercises so far, you should have the PHP todolist
