@@ -588,8 +588,9 @@ environment.
 Launching FibScale inside the container and making it accessible via port
 mapping were critical steps that brought your application to life.
 
-Finally, you deployed your containerized application on a cloud server,
-demonstrating the portability and ease of deployment that Docker offers.
+Finally, you have replicated the deployment of your containerized application on
+a cloud server, demonstrating the portability and ease of deployment that Docker
+offers.
 
 [alpine]: https://www.alpinelinux.org
 [apk]: https://wiki.alpinelinux.org/wiki/Alpine_Package_Keeper
