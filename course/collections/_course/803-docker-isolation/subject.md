@@ -643,7 +643,7 @@ root@b720d8b8d7d7:/# apt install -y nano  # or vim
 Now open the `index.html` file:
 
 ```bash
-root@b720d8b8d7d7:/# nano /usr/share/nginx/html/index.html
+root@b720d8b8d7d7:/# nano /usr/share/nginx/html/index.html  # or vim
 ```
 
 Modify this line:
@@ -793,6 +793,20 @@ When you just re-ran the container, a new and **empty** thin writable layer was
 created on top of the same read-only image layers, so any changes you had
 previously made were lost.
 
+Stop and remove the `web` container again:
+
+```bash
+$> docker rm -f web
+web
+```
+
+{% note type: more %}
+
+The `-f` (or `--force`) option of the `docker rm` subcommand forces the removal
+of a running container by stopping it first.
+
+{% endnote %}
+
 One way to persist data beyond the lifetime of a container, as we've already
 seen in the previous lesson, is to [create an image from the modified container
 using `docker commit`]({% link _course/801-docker/subject.md
@@ -803,9 +817,13 @@ new containers from that image, where the changes will be present.
 This works, and is the basis of how Docker images are built with Dockerfiles as
 you've previously seen. It is a good way to persist:
 
-- The code of an application that you intend to containerize.
-- Dependencies required by that application.
-- System packages and libraries required by that application.
+- The code of an application that you intend to containerize (e.g. the code of
+  the FibScale application you copied with a `COPY` instruction in the
+  Dockerfile).
+- Dependencies required by that application (e.g. the Ruby gems that you
+  installed for the FibScale application with the `bundle install` command).
+- System packages and libraries required by that application (e.g. the base
+  Ubuntu image and any additional packages you might install with `apt`).
 
 All of these are things that you want to bake into Docker images so that new
 containers can be started from those images with the basics already in place.
@@ -819,6 +837,283 @@ especially these types of data:
 
 For these types of data, it's better to use bind mounts or volumes, which we
 will see next.
+
+### Using bind mounts
+
+Bind mounts allow you to mount a directory from the host machine into a
+container. This way, any data created or modified in that directory inside the
+container is actually stored on the host machine, and thus persists beyond the
+lifetime of the container.
+
+Let's create a directory for this demonstration:
+
+```bash
+$> cd /path/to/projects
+$> mkdir docker-bind-mount-demo
+$> cd docker-bind-mount-demo
+```
+
+Use your favorite editor to create an `index.html` file in this directory with
+the following content:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Welcome to nginx!</title>
+    <style>
+      html {
+        color-scheme: light dark;
+      }
+      body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Welcome to nginx!</h1>
+    <p>
+      The nginx web server is successfully installed and running in a Docker
+      container.
+    </p>
+    <p><em>Thank you for using my container.</em></p>
+  </body>
+</html>
+```
+
+You should now have a directory with an `index.html` file in it:
+
+```bash
+$> ls
+index.html
+```
+
+Now run a new `web` container
+Now run a new container from the official `nginx` image, this time using the
+`-v` (or `--volume`) option to create a bind mount that mounts the current
+directory from the host machine into the container at the path
+`/usr/share/nginx/html`, where nginx serves its static files from:
+
+```bash
+$> docker run --d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.29
+```
+
+The new `-v` (or `--volume`) option creates a **bind mount** from the current
+directory on the host machine to the `/usr/share/nginx/html` directory inside
+the container (expressed as `<host-path>:<container-path>`).
+
+{% note type: more %}
+
+The `$PWD` environment variable, meaning **p**rint **w**orking **d**irectory,
+contains the absolute path of the current directory on a Unix system.
+
+{% endnote %}
+
+Visit [http://localhost:3000](http://localhost:3000) in your browser and you
+should see the welcome page you just created:
+
+![Docker nginx bind mount](./images/docker-nginx-bind-mount.png)
+
+Note that this welcome page is different from the default one you saw earlier.
+This is because nginx is now serving the `index.html` file from the bind mount
+you created, which is located on your host machine.
+
+Run a shell session inside the running `web` container:
+
+```bash
+$> docker exec -it web /bin/bash
+```
+
+Your prompt should have changed to reflect that you are now inside the
+container. Install your favorite command line editor again (remember, this is a
+brand new container):
+
+```bash
+root@556448e19250:/# apt update
+root@556448e19250:/# apt install -y nano  # or vim
+```
+
+Edit the `index.html` file in the container:
+
+```bash
+root@556448e19250:/# nano /usr/share/nginx/html/index.html  # or vim
+```
+
+Modify this line:
+
+```html
+<h1>Welcome to nginx!</h1>
+```
+
+To this:
+
+```html
+<h1>Welcome to nginx modified!</h1>
+```
+
+Visit [http://localhost:3000](http://localhost:3000) in your browser again. You
+should see the updated welcome message:
+
+![Docker nginx bind mount
+modified](./images/docker-nginx-bind-mount-modified.png)
+
+Great! You have successfully modified a file inside the container that is part of
+a bind mount. Now exit the container:
+
+```bash
+root@556448e19250:/# exit
+```
+
+Now check the `index.html` file on your host machine in the current directory:
+
+```bash
+$> cat index.html
+```
+
+You should see the modified title:
+
+```html
+<h1>Welcome to nginx modified!</h1>
+```
+
+Amazing! This shows you what a bind mount is: the `/usr/share/nginx/html`
+directory inside the container is currently mapped by the Docker daemon to the
+current directory on the host machine. Any changes made to files in this
+directory inside the container will actually be made to the files on the host
+machine, and vice versa.
+
+Modify the `index.html` file again, but this time do so on your machine (not
+inside the container), using your favorite editor (command line or not).
+
+Modify this line:
+
+```html
+<h1>Welcome to nginx modified!</h1>
+```
+
+To this:
+
+```html
+<h1>Welcome to nginx modified again!</h1>
+```
+
+Visit [http://localhost:3000](http://localhost:3000) in your browser again. You
+should see the updated welcome message:
+
+![Docker nginx bind mount modified
+again](./images/docker-nginx-bind-mount-modified-again.png)
+
+This demonstrates that changes made to files in the bind mount directory on the
+host machine are immediately reflected inside the container.
+
+Indeed, you can display the contents of the `index.html` file from inside the
+container again to confirm that the changes you made on the host machine are
+also visible from inside the container:
+
+```bash
+$> docker exec web cat /usr/share/nginx/html/index.html
+```
+
+You should see the modified title:
+
+```html
+<h1>Welcome to nginx modified again!</h1>
+```
+
+{% callout type: more, id: docker-bind-mount-unix %}
+
+Note that a bind mount is not a copy. Instead, the directory on the host machine
+is directly mounted into the container as a traditional Unix mount, much like an
+external hard drive or network drive would be mounted. You are actually seeing
+the same directory from both the host machine and the container. This is
+magically handled for you by the Docker daemon using the `-v/--volume` option.
+
+You can confirm this using the [`df` command you previously used to inspect disk
+usage when learning about Unix basics]({% link
+_course/404-unix-basics/subject.md %}#inspecting-volumes). If you run this
+command inside the container, you should see that the `/usr/share/nginx/html`
+directory is a separate mount:
+
+```bash
+$> docker exec web df -h
+Filesystem            Size  Used Avail Use% Mounted on
+overlay               911G  6.7G  858G   1% /
+tmpfs                  64M     0   64M   0% /dev
+shm                    64M     0   64M   0% /dev/shm
+/dev/vda1             911G  6.7G  858G   1% /etc/hosts
+/run/host_mark/Users  927G  684G  244G  74% /usr/share/nginx/html
+tmpfs                 3.9G     0  3.9G   0% /proc/scsi
+tmpfs                 3.9G     0  3.9G   0% /sys/firmware
+```
+
+Additionally, the indicated `Size`, `Used` and `Avail` values for the
+`/usr/share/nginx/html` mount should match those of your own host machine (at
+least on Unix systems).
+
+{% endcallout %}
+
+Now stop and remove the `web` container:
+
+```bash
+$> docker rm -f web
+web
+```
+
+Confirm that the container is no longer running:
+
+```bash
+$> docker ps
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
+
+Confirm that the container has been completely removed by listing all
+containers (including stopped ones):
+
+```bash
+$> docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+...
+```
+
+{% note type: tip %}
+
+You might see container from previous Docker experiments in the list, but the
+`web` container you just removed should no longer be there.
+
+{% endnote %}
+
+Visit [http://localhost:3000](http://localhost:3000) in your browser again. You
+should no longer be able to access the nginx server, since the container has
+been removed:
+
+![Docker nginx connection refused](./images/docker-nginx-connection-refused.png)
+
+Re-run the `web` container with the same command as before, including the bind
+mount:
+
+```bash
+$> docker run --d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.29
+```
+
+Visit [http://localhost:3000](http://localhost:3000) in your browser again. You
+should still see the modified welcome message:
+
+![Docker nginx bind mount modified
+again](./images/docker-nginx-bind-mount-modified-again.png)
+
+Great! You've learned a way to persist data beyond the lifetime of a container
+using bind mounts.
+
+When you remove a container that has a bind mount, the thin writable layer of
+the container is deleted, as before, but the bind mount is separate from that
+layer. The data in the bind mount directory on the host machine remains intact.
+
+This means that when you run a fresh new container with an empty thin writable
+layer, but with the same bind mount, the data in the bind mount directory is
+still there and accessible from the new container, since it exists on your host
+machine, independent of the container's lifecycle.
 
 [caddy]: https://caddyserver.com
 [docker-bind-mounts]: https://docs.docker.com/engine/storage/bind-mounts/
