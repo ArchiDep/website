@@ -555,6 +555,13 @@ RUN bundle install
 CMD ["bundle", "exec", "ruby", "fibscale.rb"]
 ```
 
+If you want to learn more about Docker image best practices, you can read about
+[image optimization](https://docs.docker.com/build-cloud/optimization/) and
+[multi-stage builds](https://docs.docker.com/build/building/multi-stage/), and
+you will find a more advanced Dockerfile integrating these concepts in the
+[`docker` branch of the FibScale
+repository](https://github.com/ArchiDep/fibscale/blob/docker/Dockerfile).
+
 {% endsolution %}
 
 ### :classical_building: Local architecture
