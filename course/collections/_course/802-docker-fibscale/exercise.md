@@ -12,13 +12,15 @@ _course/603-floodit-deployment/exercise.md %}).
 
 <!-- more -->
 
-## :exclamation: Requirements
+## :exclamation: Containerize FibScale
 
 {% callout type: exercise %}
 
-Most of this exercise will happen on your local machine.
+This exercise begins on your local machine.
 
 {% endcallout %}
+
+### :exclamation: Requirements
 
 You need to have Docker installed on your machine. To do so, install [Docker
 Desktop][docker-desktop] and use the recommended settings.
@@ -32,7 +34,7 @@ $> git clone git@github.com:<YourGitHubUser>/fibscale.git
 
 Open the project in your favorite text editor.
 
-## :exclamation: Create a `.dockerignore` file
+### :exclamation: Create a `.dockerignore` file
 
 If you look at the FibScale repository from the [horizontal scaling exercise]({%
 link _course/603-floodit-deployment/exercise.md %}) (on your cloud server), you
@@ -111,7 +113,7 @@ to building the project's Docker image.
 
 {% endcallout %}
 
-## :exclamation: Create a Dockerfile
+### :exclamation: Create a Dockerfile
 
 To build a Docker image, you need to create a file named "Dockerfile" at the
 root of the project, so go ahead and do that.
@@ -127,7 +129,7 @@ information about each instruction.
 
 {% endnote %}
 
-## :exclamation: Choose a base image
+### :exclamation: Choose a base image
 
 The first step when building an image is to choose a **base image**. A base
 image in a Dockerfile serves as the foundational layer upon which all other
@@ -161,7 +163,7 @@ footprint.
 
 {% endnote %}
 
-## :exclamation: Create a group and user
+### :exclamation: Create a group and user
 
 {% callout type: warning %}
 
@@ -213,7 +215,7 @@ These commands do two things:
 Given this information, insert the necessary `RUN` instructions into your
 Dockerfile.
 
-## :exclamation: Create a working directory
+### :exclamation: Create a working directory
 
 It's a good idea to define a dedicated workspace within the container for our
 app. It avoids the need for repetitive `cd` (**c**hange **d**irectory) commands
@@ -231,7 +233,7 @@ The `WORKDIR` instruction in a Dockerfile is used to set the working directory
 for any subsequent `RUN`, `CMD`, `ENTRYPOINT`, `COPY`, and `ADD` instructions in
 the Dockerfile.
 
-## :exclamation: Copy files to the working directory and change permissions
+### :exclamation: Copy files to the working directory and change permissions
 
 At this point, you have a base image, a new user and a working directory.
 However, none of the application's files are actually anywhere in the image.
@@ -277,7 +279,7 @@ $> chown fibscale:fibscale .
 Add the necessary `RUN` instruction to your Dockerfile to change the ownership of
 the working directory.
 
-## :exclamation: Install build tools
+### :exclamation: Install build tools
 
 Before installing the application's dependencies, you will need to install some
 build tools depending on the base image you chose. Here are the commands to run
@@ -313,7 +315,7 @@ fail, causing the build of the Docker image to fail.
 
 {% endcallout %}
 
-## :exclamation: Switch user
+### :exclamation: Switch user
 
 Up to this point in our Docker environment, we have created a user named
 `fibscale`, yet all operations have been executed with root privileges. While
@@ -327,7 +329,7 @@ This instruction changes the user context, meaning that all subsequent `RUN`,
 `CMD`, `ENTRYPOINT`, and `COPY` instructions in the Dockerfile will be executed
 under the user you specify rather than `root`.
 
-## :exclamation: Install dependencies
+### :exclamation: Install dependencies
 
 You may then install the application's dependencies (as [documented in the
 README][fibscale-setup]) with the following line in your Dockerfile:
@@ -336,7 +338,7 @@ README][fibscale-setup]) with the following line in your Dockerfile:
 RUN bundle install
 ```
 
-## :exclamation: Launch the application
+### :exclamation: Launch the application
 
 The last step in your Dockerfile will be to determine the command executed when
 running the container. This is done using the `CMD` instruction, which there can
@@ -368,7 +370,7 @@ The `CMD` instruction can be specified in [two formats][docker-exec-shell-form]:
 
 {% endnote %}
 
-## :exclamation: Build and run the image
+### :exclamation: Build and run the image
 
 Your Dockerfile should now be ready to be built. To do so, navigate to your
 project directory in the command line and start the building process:
@@ -435,7 +437,7 @@ Sadly... 😭
 
 Pause and think about what could possibly be wrong. 🤔
 
-## :exclamation: Map your container's ports
+### :exclamation: Map your container's ports
 
 When you run a Docker container, it operates in its own isolated network
 environment. This means that services running inside the container, such the
@@ -486,6 +488,8 @@ container.
 
 {% endcallout %}
 
+### :classical_building: Local architecture
+
 This is a simplified architecture of the main running processes and
 communication flow you have set up in this exercise so far:
 
@@ -507,7 +511,7 @@ later course.
 
 {% endnote %}
 
-## :exclamation: Commit your changes
+### :exclamation: Commit your changes
 
 Finally, don't forget to commit your changes to your Git repository for
 posterity:
@@ -590,6 +594,8 @@ http://jde.archidep.ch:3001 in your web browser!
 Replace `jde` with your username and `archidep.ch` with your assigned domain.
 
 {% endnote %}
+
+### :classical_building: Server architecture
 
 This is a simplified architecture of the main running processes and
 communication flow you have set up on your cloud server in this exercise:
