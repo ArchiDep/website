@@ -419,9 +419,417 @@ manually as shown above, but it's more common to automate this using Compose
 files. We will see how to do this when we learn about [Docker Compose]({% link
 _course/804-docker-compose/subject.md %}) next.
 
+## Persistent storage
+
+There are two main ways to persist data in Docker:
+
+- Using [bind mounts][docker-bind-mounts] to mount a directory from the host
+  machine into the container.
+- Using [volumes][docker-volumes], which are managed by Docker (stored in a
+  specific location on the host machine by default).
+
+We will first demonstrate that data created inside a container is lost when the
+container is removed, and then we will see how to persist data using both bind
+mounts and volumes.
+
+### Container file system isolation
+
+As you learned in the previous [Docker]({% link _course/801-docker/subject.md
+%}) lesson, the file system of a container is a thin writable layer over its
+image's read-only layers. This means that any data created or modified inside a
+container is lost when the container is removed.
+
+Let's demonstrate this. Run a new container from the official `nginx` image:
+
+```bash
+$> docker run --d --name web --p 3000:80 nginx:1.29
+```
+
+{% note type: more %}
+
+The `-d` (or `--detach`) option runs the container in the background. The
+`--name` option gives the container a name for easier reference. The `-p` (or
+`--publish`) option maps port `3000` on the host machine to port `80` in the
+container.
+
+{% endnote %}
+
+You should see this container running with `docker ps`:
+
+```bash
+$> docker ps
+CONTAINER ID   IMAGE        COMMAND                  CREATED         STATUS        PORTS                                     NAMES
+b720d8b8d7d7   nginx:1.29   "/docker-entrypoint.…"   2 seconds ago   Up 1 second   0.0.0.0:3000->80/tcp, [::]:3000->80/tcp   web
+```
+
+Since you have published its main port, you should also be able to access this
+nginx server in your browser at [http://localhost:3000](http://localhost:3000):
+
+![Docker nginx](./images/docker-nginx.png)
+
+Great! You have nginx running in a container on your machine.
+
+Let's make a small change. Start a shell session inside the running `web`
+container:
+
+```bash
+$> docker exec -it web /bin/bash
+```
+
+{% note type: more %}
+
+The `docker exec` subcommand executes a command in a running container. The `-i`
+(or `--interactive`) option keeps standard input open, and the `-t` (or `--tty`)
+option allocates a pseudo-TTY (terminal). Both options are needed to run an
+interactive shell session.
+
+{% endnote %}
+
+Your prompt should have changed to reflect that you are now inside the
+container.
+
+Let's investigate a bit. We know that the main nginx configuration file is
+generally located at `/etc/nginx/nginx.conf`. Let's see what's in it:
+
+```bash
+root@b720d8b8d7d7:/# cat /etc/nginx/nginx.conf
+
+user  nginx;
+worker_processes  auto;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    include /etc/nginx/conf.d/*.conf;
+}
+```
+
+The line that interests us most is the [`include` directive][nginx-include] at
+the end:
+
+```
+    include /etc/nginx/conf.d/*.conf;
+```
+
+This tells nginx to include any configuration files located in the
+`/etc/nginx/conf.d/` directory.
+
+{% callout type: more, id: docker-nginx-simple-config %}
+
+Note that this is a simpler nginx configuration than what you find when you
+install nginx on a regular server [like you did when you learned about reverse
+proxying]({% link _course/509-reverse-proxy/subject.md %}#includes).
+
+There are no `sites-available` or `sites-enabled` directories here, for example;
+only `conf.d`. Containers are intended to be minimal, so they often have simpler
+configurations than a full-fledged installation.
+
+Additionally, containers are also supposed to be ephemeral: you are not supposed
+to modify running containers directly in production, so the rationale for the
+`sites-available` and `sites-enabled` directories, i.e. to be able to quickly
+disable/enable sites, does not apply here. The Docker way would be to build a
+new image with the desired configuration changes instead, or to use a reverse
+proxy that is aware of Docker and able to re-configure itself automatically,
+like [Traefik][traefik] or [Caddy][caddy].
+
+{% endcallout %}
+
+So let's see what's in this `conf.d` directory:
+
+```bash
+root@b720d8b8d7d7:/# ls /etc/nginx/conf.d
+default.conf
+```
+
+Just one site configuration file: `default.conf`. Let's see what's in it:
+
+```bash
+root@b720d8b8d7d7:/# cat /etc/nginx/conf.d/default.conf
+server {
+    listen       80;
+    listen  [::]:80;
+    server_name  localhost;
+
+    #access_log  /var/log/nginx/host.access.log  main;
+
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+    }
+
+    #error_page  404              /404.html;
+
+    # redirect server error pages to the static page /50x.html
+    #
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+
+    ...
+}
+```
+
+This is a simple site configuration that serves static files, similar to [the
+one you created during the nginx static site deployment exercise]({% link
+_course/510-nginx-static-deployment/exercise.md %}):
+
+- The [`root` directive][nginx-root] specifies the directory where the static
+  files are located: the `/usr/share/nginx/html` directory inside the container.
+- The [`index` directive][nginx-index] specifies the default files to serve when
+  a directory is requested: `index.html` or `index.htm`.
+
+So let's look at that `index.html` file:
+
+```bash
+root@b720d8b8d7d7:/# cat /usr/share/nginx/html/index.html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+```
+
+Great! You've found the HTML for the default nginx welcome page that you see in
+your browser:
+
+![Docker nginx](./images/docker-nginx.png)
+
+Now let's modify this file to see what happens. Of course, Docker images are
+minimal, so you don't even have a text editor installed by default. Install your
+favorite command line editor:
+
+```bash
+root@b720d8b8d7d7:/# apt update
+root@b720d8b8d7d7:/# apt install -y nano  # or vim
+```
+
+Now open the `index.html` file:
+
+```bash
+root@b720d8b8d7d7:/# nano /usr/share/nginx/html/index.html
+```
+
+Modify this line:
+
+```html
+<h1>Welcome to nginx!</h1>
+```
+
+To this:
+
+```html
+<h1>Welcome to nginx in a container!</h1>
+```
+
+{% note type: tip %}
+
+Save with `Ctrl-X`, then `Y`, then `Enter` if you are using nano. Save with
+`Esc`, then `:wq`, then `Enter` if you are using Vim.
+
+{% endnote %}
+
+Now exit the container shell:
+
+```bash
+root@b720d8b8d7d7:/# exit
+```
+
+Reload the page in your browser at
+[http://localhost:3000](http://localhost:3000). You should see the updated
+welcome message:
+
+![Docker nginx modified](./images/docker-nginx-modified.png)
+
+Amazing! You have successfully modified a file inside a running container.
+
+Going back to what we discussed about layers in the previous lesson, you have
+modified the thin writable layer of the container at the top of the Union File
+System:
+
+![Docker thin writable layer](./images/docker-nginx-layers.jpg)
+
+Now stop the `web` container:
+
+```bash
+$> docker stop web
+web
+```
+
+Confirm the container is no longer running:
+
+```bash
+$> docker ps
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
+
+Stopping the container has stopped the nginx server that was running in it, so
+you should no longer be able to access it in your browser:
+
+![Docker nginx connection refused](./images/docker-nginx-connection-refused.png)
+
+Start the container again:
+
+```bash
+$> docker start web
+web
+```
+
+Visit [http://localhost:3000](http://localhost:3000) again in your browser:
+
+![Docker nginx modified](./images/docker-nginx-modified.png)
+
+Yay! The modified welcome message is still there. This is because the thin
+writable layer of the container is preserved when the container is stopped, so
+your changes are still there.
+
+Run a second container named `web2` based on the same official `nginx` image:
+
+```bash
+$> docker run --d --name web2 --p 3001:80 nginx:1.29
+```
+
+You should have two containers running, one exposed on port 3000 and the other
+on port 3001:
+
+```bash
+$> docker ps
+CONTAINER ID   IMAGE        COMMAND                  CREATED          STATUS         PORTS                                     NAMES
+d85ff1b3ecf4   nginx:1.29   "/docker-entrypoint.…"   2 minutes ago    Up 2 minutes   0.0.0.0:3001->80/tcp, [::]:3001->80/tcp   web2
+b720d8b8d7d7   nginx:1.29   "/docker-entrypoint.…"   49 minutes ago   Up 3 minutes   0.0.0.0:3000->80/tcp, [::]:3000->80/tcp   web
+```
+
+Now visit both [http://localhost:3000](http://localhost:3000) and
+[http://localhost:3001](http://localhost:3001) in your browser. You should see
+the modified welcome message on port 3000, since it's served by the `web`
+container that you modified earlier; and the original welcome message on port
+3001, since it's served by the fresh `web2` container that you just created and
+never modified:
+
+![Docker nginx two containers](./images/docker-nginx-two-containers.png)
+
+This shows you that **each container has its own isolated file system**. Changes
+made in one container do not affect other containers, even if they are based on
+the same image.
+
+At a lower level, each container has its own thin writable layer on top of the
+same read-only image layers:
+
+![Docker shared layers](./images/docker-nginx-sharing-layers.jpg)
+
+{% note type: more %}
+
+If you want to take this demonstration a step further, start a shell session
+into the new `web2` container and make a different change to the welcome page,
+then see the effect in your browser. You will see that the changes you make in
+the `web` container do not affect the `web2` container, and vice versa.
+
+{% endnote %}
+
+Stop and remove both containers:
+
+```bash
+$> docker stop web web2
+web
+web2
+
+$> docker rm web web2
+web
+web2
+```
+
+Now you haven't just stopped the containers, you have also removed them. Re-run
+the `web` container with the same command as before:
+
+```bash
+$> docker run --d --name web --p 3000:80 nginx:1.29
+```
+
+Visit [http://localhost:3000](http://localhost:3000) in your browser again:
+
+![Docker nginx](./images/docker-nginx.png)
+
+You are seeing the original welcome message again. This is because when you
+removed the `web` container, its thin writable layer was permanently deleted by
+the Docker daemon. It only existed as long as the container existed.
+
+When you just re-ran the container, a new and **empty** thin writable layer was
+created on top of the same read-only image layers, so any changes you had
+previously made were lost.
+
+One way to persist data beyond the lifetime of a container, as we've already
+seen in the previous lesson, is to [create an image from the modified container
+using `docker commit`]({% link _course/801-docker/subject.md
+%}#commit-a-containers-state-to-an-image-manually). This persists the thin
+writable layer of the container as a new read-only image layer. You can then run
+new containers from that image, where the changes will be present.
+
+This works, and is the basis of how Docker images are built with Dockerfiles as
+you've previously seen. It is a good way to persist:
+
+- The code of an application that you intend to containerize.
+- Dependencies required by that application.
+- System packages and libraries required by that application.
+
+All of these are things that you want to bake into Docker images so that new
+containers can be started from those images with the basics already in place.
+**However, this is not the recommended way to persist data** in Docker,
+especially these types of data:
+
+- Application data, such as database files.
+- User-generated content, such as uploaded files.
+- Configuration files that may change frequently (and may contain sensitive
+  data).
+
+For these types of data, it's better to use bind mounts or volumes, which we
+will see next.
+
+[caddy]: https://caddyserver.com
+[docker-bind-mounts]: https://docs.docker.com/engine/storage/bind-mounts/
 [docker-bridge-network]: https://docs.docker.com/engine/network/drivers/bridge/
 [docker-host-network]: https://docs.docker.com/engine/network/drivers/host/
 [docker-network-drivers]: https://docs.docker.com/engine/network/drivers/
 [docker-network-ls]: https://docs.docker.com/reference/cli/docker/network/ls/
 [docker-networking]: https://docs.docker.com/engine/network/
 [docker-none-network]: https://docs.docker.com/engine/network/drivers/none/
+[docker-volumes]: https://docs.docker.com/engine/storage/volumes/
+[nginx-include]: https://nginx.org/en/docs/ngx_core_module.html#include
+[nginx-index]: https://nginx.org/en/docs/http/ngx_http_index_module.html
+[nginx-root]: https://nginx.org/en/docs/http/ngx_http_core_module.html#root
+[traefik]: https://traefik.io
