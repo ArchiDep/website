@@ -75,9 +75,9 @@ changes.
 ## :exclamation: Create a compose file to deploy the PHP todolist application
 
 Take a look at the [architecture of the PHP todolist deployment with nginx and
-the FastCGI process manager]({% link
+the FastCGI process manager exercise]({% link
 _course/512-nginx-php-fpm-deployment/exercise.md
-%}#classical_building-architecture):
+%}#classical_building-architecture) you did earlier in the course:
 
 ![Simplified architecture](./images/original-architecture.png)
 
@@ -1291,8 +1291,8 @@ reverse proxy to communicate with the application):
 
 ```yml
 networks:
-  back-tier:
-  front-tier:
+  back_tier:
+  front_tier:
 ```
 
 You can then connect the appropriate services into each network:
@@ -1302,22 +1302,57 @@ services:
   rp:
     # ...
     networks:
-      - front-tier
+      - front_tier
   app:
     # ...
     networks:
-      - front-tier
-      - back-tier
+      - front_tier
+      - back_tier
   db:
     # ...
     networks:
-      - back-tier
+      - back_tier
+```
+
+Simply re-run the Compose command to recreate the containers with the new
+networking setup:
+
+```bash
+$> docker compose up --build --detach
 ```
 
 This setup allows the reverse proxy and application to communicate since they
 are both in the frontend network. It also allows the application and database to
 communicate since they are both in the backend network. However, the reverse
 proxy and database cannot reach each other, as it should be.
+
+The architecture of the main running processes and communication flow now looks
+like this, with two colors to differentiate the two networks:
+
+![Diagram](./images/secure-architecture.png)
+
+<div class="flex items-center gap-2">
+  <a href="./images/secure-architecture.pdf" download="Docker Compose Secure Deployment Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/secure-architecture.png" download="Docker Compose Secure Deployment Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
+
+{% note type: more %}
+
+Note that the red arrow between the reverse proxy and the application, as well
+as the yellow arrow between the application and the database, are not crossing
+any network boundary. The reverse proxy and application can communicate within
+the `todolist_back_tier` network they are both part of; similar,y the
+application and database can communicate within the `todolist_front_tier`
+network they are both part of.
+
+The reverse proxy and database cannot communicate directly since they are not
+part of any common network.
+
+{% endnote %}
 
 ### :space_invader: One-command horizontal scaling
 
@@ -1353,10 +1388,44 @@ todolist-repo-db-1    mysql:9.5.0           "docker-entrypoint.s…"   db       
 todolist-repo-rp-1    nginx:1.29-alpine     "/docker-entrypoint.…"   rp        14 seconds ago   Up 12 seconds   0.0.0.0:12000->80/tcp, :::12000->80/tcp
 ```
 
-Not only that, but Compose will automagically load-balance traffic from the
-reverse proxy service's container to the application service's containers.
+Starting from the initial architecture of the exercise, the architecture of the
+main running processes and communication flow now looks like this:
+
+![Diagram](./images/scaled-architecture.png)
+
+<div class="flex items-center gap-2">
+  <a href="./images/scaled-architecture.pdf" download="Docker Compose Scaled Deployment Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/scaled-architecture.png" download="Docker Compose Scaled Deployment Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
+
+Compose not only manages those three containers for you, but automatically
+load-balances the traffic from the reverse proxy service's container to the
+application service's containers.
+
+You don't even have to use [an nginx `upstream` directive][nginx-upstream]
+directive like you did in the [original horizontal scaling exercise]({% link
+_course/515-fibscale-deployment/exercise.md
+%}#exclamation-configure-nginx-to-balance-the-load-among-the-available-fibscale-instances).
+Nginx simply contacts the service available at the `app` hostname, and Docker
+Compose balances the load across the service's containers out of the box!
 
 Well, that was easy.
+
+{% note type: more %}
+
+It is left as an exercise to the reader to visualize what the architecture would
+look like with both isolated networks and horizontal scaling.
+
+{% endnote %}
+
+### :space_invader: Docker is so cool! I want more!
+
+Then containerize the [Flood It deployment]({% link
+_course/603-floodit-deployment/exercise.md %}). On your own. Off you go!
 
 [compose-file-build]: https://docs.docker.com/compose/compose-file/05-services/#build
 [compose-file-depends-on]: https://docs.docker.com/compose/compose-file/05-services/#depends_on
@@ -1385,5 +1454,6 @@ Well, that was easy.
 [mysql-docker-image-init]: https://hub.docker.com/_/mysql#initializing-a-fresh-instance
 [nginx]: https://www.nginx.com/
 [nginx-docker-image]: https://hub.docker.com/_/nginx
+[nginx-upstream]: https://nginx.org/en/docs/http/ngx_http_upstream_module.html#upstream
 [php-fpm-image]: https://hub.docker.com/r/bitnami/php-fpm
 [tag-docker-image]: https://kodekloud.com/blog/docker-image-tag/
