@@ -557,6 +557,25 @@ $> docker build -t todolist/app .
 
 There should be no errors in the output.
 
+{% solution %}
+
+Your Dockerfile should look something like this:
+
+```Dockerfile
+FROM bitnami/php-fpm
+
+COPY index.php /app/
+
+RUN echo >> "/opt/bitnami/php/etc/php-fpm.d/www.conf" && \
+    echo 'env["TODOLIST_DB_USER"] = $TODOLIST_DB_USER' >> "/opt/bitnami/php/etc/php-fpm.d/www.conf" && \
+    echo 'env["TODOLIST_DB_PASS"] = $TODOLIST_DB_PASS' >> "/opt/bitnami/php/etc/php-fpm.d/www.conf" && \
+    echo 'env["TODOLIST_DB_NAME"] = $TODOLIST_DB_NAME' >> "/opt/bitnami/php/etc/php-fpm.d/www.conf" && \
+    echo 'env["TODOLIST_DB_HOST"] = $TODOLIST_DB_HOST' >> "/opt/bitnami/php/etc/php-fpm.d/www.conf" && \
+    echo 'env["TODOLIST_DB_PORT"] = $TODOLIST_DB_PORT' >> "/opt/bitnami/php/etc/php-fpm.d/www.conf"
+```
+
+{% endsolution %}
+
 #### :exclamation: Write the application service
 
 It is now finally time to define the application service. Here's what you want
@@ -1058,6 +1077,100 @@ $> git push
 
 You should see those files appear in your repository on GitHub.
 
+{% solution %}
+
+Your Compose file should look something like this if you've chosen volume-based
+storage:
+
+```yml
+name: todolist
+
+services:
+  rp:
+    image: nginx:1.29-alpine
+    ports:
+      - '12000:80'
+    depends_on:
+      - app
+    restart: on-failure
+    volumes:
+      - './site.conf:/etc/nginx/conf.d/default.conf:ro'
+
+  app:
+    build: .
+    image: todolist/app
+    depends_on:
+      - db
+    environment:
+      TODOLIST_DB_HOST: db
+      TODOLIST_DB_PASS:
+    restart: on-failure
+
+  db:
+    image: mysql:9.5.0
+    environment:
+      MYSQL_ROOT_PASSWORD:
+      MYSQL_DATABASE: todolist
+      MYSQL_USER: todolist
+      MYSQL_PASSWORD:
+    restart: on-failure
+    volumes:
+      - './todolist.sql:/docker-entrypoint-initdb.d/todolist.sql:ro'
+      - 'db_data:/var/lib/mysql'
+
+volumes:
+  db_data:
+```
+
+And if you've chosen a bind mount for storage:
+
+```yml
+name: todolist
+
+services:
+  rp:
+    image: nginx:1.29-alpine
+    ports:
+      - '12000:80'
+    depends_on:
+      - app
+    restart: on-failure
+    volumes:
+      - './site.conf:/etc/nginx/conf.d/default.conf:ro'
+
+  app:
+    build: .
+    image: todolist/app
+    depends_on:
+      - db
+    environment:
+      TODOLIST_DB_HOST: db
+      TODOLIST_DB_PASS:
+    restart: on-failure
+
+  db:
+    image: mysql:9.5.0
+    environment:
+      MYSQL_ROOT_PASSWORD:
+      MYSQL_DATABASE: todolist
+      MYSQL_USER: todolist
+      MYSQL_PASSWORD:
+    restart: on-failure
+    volumes:
+      - './todolist.sql:/docker-entrypoint-initdb.d/todolist.sql:ro'
+      - './data:/var/lib/mysql'
+```
+
+And here's a `.env` file that works for both:
+
+```
+MYSQL_PASSWORD=changeme
+TODOLIST_DB_PASS=changeme
+MYSQL_ROOT_PASSWORD=noreallychangeme
+```
+
+{% endsolution %}
+
 ## :exclamation: Deploy it on your cloud server
 
 To demonstrate how portable Docker Compose is, you will now deploy your new
@@ -1345,7 +1458,7 @@ like this, with two colors to differentiate the two networks:
 Note that the red arrow between the reverse proxy and the application, as well
 as the yellow arrow between the application and the database, are not crossing
 any network boundary. The reverse proxy and application can communicate within
-the `todolist_back_tier` network they are both part of; similar,y the
+the `todolist_back_tier` network they are both part of; similarly the
 application and database can communicate within the `todolist_front_tier`
 network they are both part of.
 
@@ -1421,6 +1534,64 @@ It is left as an exercise to the reader to visualize what the architecture would
 look like with both isolated networks and horizontal scaling.
 
 {% endnote %}
+
+{% solution %}
+
+Here's a Compose file example with volume-based storage and all suggested
+improvements in place:
+
+```yml
+name: todolist
+
+services:
+  rp:
+    image: nginx:1.29-alpine
+    ports:
+      - '${TODOLIST_PORT:-12000}:80'
+    depends_on:
+      - app
+    networks:
+      - front_tier
+    restart: on-failure
+    volumes:
+      - './site.conf:/etc/nginx/conf.d/default.conf:ro'
+
+  app:
+    build: .
+    image: todolist/app
+    depends_on:
+      - db
+    environment:
+      TODOLIST_DB_HOST: db
+      TODOLIST_DB_PASS:
+    networks:
+      - front_tier
+      - back_tier
+    restart: on-failure
+
+  db:
+    image: mysql:9.5.0
+    environment:
+      MYSQL_ROOT_PASSWORD:
+      MYSQL_DATABASE: todolist
+      MYSQL_USER: todolist
+      MYSQL_PASSWORD:
+    networks:
+      - back_tier
+    restart: on-failure
+    volumes:
+      - './todolist.sql:/docker-entrypoint-initdb.d/todolist.sql:ro'
+      - 'db_data:/var/lib/mysql'
+
+networks:
+  back_tier:
+  front_tier:
+
+volumes:
+  db_data:
+```
+
+{% endsolution %}
 
 ### :space_invader: Docker is so cool! I want more!
 
