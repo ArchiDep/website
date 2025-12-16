@@ -1193,6 +1193,37 @@ You could even get rid of the nginx installation on the server and run it
 entirely as a Docker container as well, but that would require containerizing
 all other deployments you have made so far.
 
+## :checkered_flag: What have I done?
+
+You have learned another way to deploy a web application: with Docker and Docker
+Compose. As you have seen, once you have your Compose file working locally,
+deploying it to a server is trivial. You basically only need to install Docker
+and deploy away. Docker Compose really makes it easy to package an entire
+project's architecture and replicate it on other machines.
+
+### :classical_building: Architecture
+
+This is a simplified architecture of the main running processes and
+communication flow at the end of this exercise:
+
+![Diagram](./images/architecture.png)
+
+<div class="flex items-center gap-2">
+  <a href="./images/architecture.pdf" download="Docker Compose Deployment Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/architecture.png" download="Docker Compose Deployment Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
+
+{% note %}
+
+Note that this diagram only shows the processes involved in this exercise,
+ignoring the other applications we have also deployed on the server.
+
+{% endnote %}
+
 ## :space_invader: Going further
 
 There's a lot more you can do with Docker and Docker Compose. Here's a few
@@ -1326,37 +1357,6 @@ Not only that, but Compose will automagically load-balance traffic from the
 reverse proxy service's container to the application service's containers.
 
 Well, that was easy.
-
-## :checkered_flag: What have I done?
-
-You have learned another way to deploy a web application: with Docker and Docker
-Compose. As you have seen, once you have your Compose file working locally,
-deploying it to a server is trivial. You basically only need to install Docker
-and deploy away. Docker Compose really makes it easy to package an entire
-project's architecture and replicate it on other machines.
-
-### :classical_building: Architecture
-
-This is a simplified architecture of the main running processes and
-communication flow at the end of this exercise:
-
-![Diagram](./images/architecture.png)
-
-<div class="flex items-center gap-2">
-  <a href="./images/architecture.pdf" download="Docker Compose Deployment Architecture" class="tooltip" data-tip="Download PDF">
-    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-  <a href="./images/architecture.png" download="Docker Compose Deployment Architecture" class="tooltip" data-tip="Download PNG">
-    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-</div>
-
-{% note %}
-
-Note that this diagram only shows the processes involved in this exercise,
-ignoring the other applications we have also deployed on the server.
-
-{% endnote %}
 
 [compose-file-build]: https://docs.docker.com/compose/compose-file/05-services/#build
 [compose-file-depends-on]: https://docs.docker.com/compose/compose-file/05-services/#depends_on
