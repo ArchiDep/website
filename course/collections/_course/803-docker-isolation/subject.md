@@ -840,10 +840,11 @@ will see next.
 
 ### Using bind mounts
 
-Bind mounts allow you to mount a directory from the host machine into a
-container. This way, any data created or modified in that directory inside the
-container is actually stored on the host machine, and thus persists beyond the
-lifetime of the container.
+[Docker bind mounts][docker-bind-mounts] allow you to mount a directory from the
+host machine (the machine running the Docker daemon) into a container. This way,
+any data created or modified in that directory inside the container is actually
+stored on the host machine, and thus persists beyond the lifetime of the
+container.
 
 Let's create a directory for this demonstration:
 

@@ -34,7 +34,7 @@ You need an up-to-date PHP todolist. Move to your PHP todolist repository **on
 your local machine**:
 
 ```bash
-$> cd /path/to/todolist
+$> cd /path/to/projects/todolist
 ```
 
 **If you performed the [Render deployment exercise]({% link
@@ -55,10 +55,12 @@ you. In this exercise, you will write one yourself, step by step.
 Make sure your `index.php` file supports configuration through environment
 variables. If you performed the [relevant exercise]({% link
 _course/504-config-through-environment/exercise.md %}) earlier in the course,
-the definition of the database connection parameters at the top should look
-something like this:
+the definition of the base URL and database connection parameters at the top
+should look something like this:
 
 ```php
+define('BASE_URL', getenv('TODOLIST_BASE_URL') ?: '/');
+
 // Database connection parameters.
 define('DB_USER', getenv('TODOLIST_DB_USER') ?: 'todolist');
 define('DB_PASS', getenv('TODOLIST_DB_PASS'));
@@ -101,7 +103,7 @@ Start by naming these services. Choose a naming convention:
 You will sometimes use these names on the command line when running Compose
 commands, e.g. `docker compose up app`, so [choose
 wisely](https://martinfowler.com/bliki/TwoHardThings.html). The rest of the
-instructions in this exercise will assume the last choice.
+instructions in this exercise will assume the second choice.
 
 {% endnote %}
 
@@ -155,7 +157,7 @@ takes care of step 1 and most of step 2.
 
 #### :question: Find out how to configure the service appropriately
 
-Look at the [**"Environment Variables"** section of the image's
+Look at the ["Environment Variables" section of the image's
 documentation][mysql-docker-image-env]. It describes a few variables you will
 find useful. As part of step 2, you manually configured the MySQL root password
 in the original deployment exercise. With this Docker image, you will do that
@@ -167,7 +169,7 @@ container starts.
 
 When running a container manually, you set environment variables with the `-e
 VAR=VALUE` or `--env VAR=VALUE` options, e.g. `docker run -e
-MYSQL_ROOT_PASSWORD=changeme mysql:8.3.0`. But you will not be doing that in
+MYSQL_ROOT_PASSWORD=changeme mysql:9.5.0`. But you will not be doing that in
 this exercise. You will describe the configuration of the database service in
 the Compose file, and Docker Compose will run the container for you.
 
@@ -201,7 +203,7 @@ can be divided into two sections:
   );
   ```
 
-If you read the [**"Environment Variables"** section of the MySQL Docker image's
+If you read the ["Environment Variables" section of the MySQL Docker image's
 documentation][mysql-docker-image-env] again, you will notice that there are 3
 environment variables you can set that will take care of the first part of the
 setup for you:
@@ -221,10 +223,10 @@ the PHP todolist.
 So you need to run the second part of the `todolist.sql` script in the context
 of the MySQL database server running in the container. How?
 
-Read the [**"Initializing a fresh instance"** section of the MySQL Docker
-image's documentation][mysql-docker-image-init]. It explains that any SQL script
-you place in the `/docker-entrypoint-initdb.d` directory of the container will
-be executed when the MySQL database server is initialized the first time the
+Read the ["Initializing a fresh instance" section of the MySQL Docker image's
+documentation][mysql-docker-image-init]. It explains that any SQL script you
+place in the `/docker-entrypoint-initdb.d` directory of the container will be
+executed when the MySQL database server is initialized the first time the
 container starts.
 
 This means that you simply have to put the `todolist.sql` script in this
@@ -248,8 +250,9 @@ production deployments.
 
 When running containers with Docker Compose, the Docker daemon will assume the
 responsibility of managing the containers, e.g. starting and restarting them,
-depending on how you define your Compose services. The Docker daemon itself will
-be managed by systemd.
+depending on how you define your Compose services. Later, when you replicate
+your Compose deployment on your cloud server, the Docker daemon itself will be
+managed by systemd.
 
 {% endnote %}
 
@@ -336,11 +339,24 @@ Here are a few things you want to watch out for:
 {% note type: more %}
 
 An even better way to manage sensitive information in a Compose project is to
-use [Compose `secrets`][compose-secrets], but we that would require setting up
+use [Compose `secrets`][compose-secrets], but that would require setting up
 [Docker Swarm][docker-swarm]. We will definitely not go that far in this
 exercise.
 
 {% endnote %}
+
+- When specifying the host part of a bind mount in a Compose file, you can use
+  `.` as a reference to the directory containing the Compose file, e.g.:
+
+  ```yml
+  services:
+    example:
+      volumes:
+        - ./some-file.txt:/container/path/some-file.txt
+  ```
+
+  This bind-mounts the `some-file.txt` file located in the same directory as the
+  Compose file into the container in the `/container/path` directory.
 
 - When you specify volume mounts, whether they are files or directories, the
   mounts are **read-write** by default, meaning that the process running inside
@@ -359,22 +375,22 @@ Once you are done, you can run this service:
 ```bash
 $> docker compose up db
 Attaching to db-1
-db-1  | 2024-01-25 18:38:13+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.3.0-1.el8 started.
+db-1  | 2024-01-25 18:38:13+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 9.5.0-1.el8 started.
 ...
 db-1  | 2024-01-25 18:38:21+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/todolist.sql
-db-1  | 2024-01-25T18:38:21.700943Z 13 [Warning] [MY-013360] [Server] Plugin mysql_native_password reported: ''mysql_native_password' is deprecated and will be removed in a future release. Please use caching_sha2_password instead'
 ...
 db-1  | 2024-01-25T18:38:22.761176Z 0 [System] [MY-015015] [Server] MySQL Server - start.
 ...
-db-1  | 2024-01-25T18:38:23.262642Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.3.0'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
+db-1  | 2024-01-25T18:38:23.262642Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '9.5.0'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
 ```
 
 {% note type: more %}
 
 As you can see in the above example, the logs should indicate the execution of
-the `todolist.sql` script, as well as the successful launch of the MySQL
-database server at the end ("ready for connections"). There will probably be
-lots of logs in between, as indicated by the `...`.
+the `todolist.sql` script (without any errors after it), as well as the
+successful launch of the MySQL database server at the end ("ready for
+connections"). There will probably be lots of logs in between, as indicated by
+the `...`.
 
 {% endnote %}
 
@@ -385,8 +401,9 @@ If you get errors, stop the container with `Ctrl-C`, delete everything with
 
 {% endnote %}
 
-Great, you have the database running! It's not accessible by anything, so that's
-not very interesting. Stop it with `Ctrl-C`, and let's move on to the next step.
+Great, you have the database running! It's not accessible by anything yet, so
+that's not very interesting. Stop it with `Ctrl-C`, and let's move on to the
+next step.
 
 ### :exclamation: Define the application service
 
@@ -538,6 +555,8 @@ valid, you can try to build it:
 $> docker build -t todolist/app .
 ```
 
+There should be no errors in the output.
+
 #### :exclamation: Write the application service
 
 It is now finally time to define the application service. Here's what you want
@@ -664,27 +683,30 @@ _course/802-docker-fibscale/exercise.md
 %}#exclamation-map-your-containers-ports).
 
 The reverse proxy must **proxy requests to the application** service. You know
-how to do this from the [FPM
-exercise](./nginx-php-fpm-deployment.md#exclamation-create-an-nginx-configuration-file-to-serve-the-application):
-you must create an nginx site configuration file to serve the application.
+how to do this from the [FPM exercise]({% link
+_course/512-nginx-php-fpm-deployment/exercise.md
+%}#exclamation-create-an-nginx-configuration-file-to-serve-the-application): you
+must create an nginx site configuration file to serve the application.
 
-If you read the [`nginx` image's documentation][nginx-docker-image] and run a
-few commands to look around in the container, you will see that the setup of
-nginx is a little bit simpler than your cloud server's full-fledged
-installation:
+As we've seen before when learning about [container file system
+isolation]({%link _course/803-docker-isolation/subject.md
+%}#container-file-system-isolation), and as is indicated in the [`nginx` image's
+documentation][nginx-docker-image], the setup of nginx is a little bit simpler
+than your cloud server's full-fledged installation. You can see that by running
+a few commands to look around in the container:
 
 ```bash
 # List the contents of the /etc/nginx directory
-$> docker run --rm -it --entrypoint ls nginx:1.25.3-alpine /etc/nginx
+$> docker run --rm -it --entrypoint ls nginx:1.29-alpine /etc/nginx
 conf.d fastcgi.conf fastcgi_params mime.types modules nginx.conf scgi_params uwsgi_params
 
 # List the includes in nginx's main configuration file
-$> docker run --rm -it --entrypoint grep nginx:1.25.3-alpine include /etc/nginx/nginx.conf
+$> docker run --rm -it --entrypoint grep nginx:1.29-alpine include /etc/nginx/nginx.conf
     include       /etc/nginx/mime.types;
     include /etc/nginx/conf.d/*.conf;
 
 # Display the contents of the default site configuration present in the image
-$> docker run --rm -it --entrypoint ls nginx:1.25.3-alpine /etc/nginx/conf.d
+$> docker run --rm -it --entrypoint ls nginx:1.29-alpine /etc/nginx/conf.d
 default.conf
 ```
 
@@ -811,8 +833,16 @@ bad, and the ugly~~, the database, the application, and the reverse proxy.
 All that's left to do is run it:
 
 ```bash
-$> docker compose up --build rp
+$> docker compose up --build
 ```
+
+{% note type: more %}
+
+Running `docker compose up` without specifying a service name (like `app` or
+`rp`) will run all services and show the combined logs for all of them in your
+terminal.
+
+{% endnote %}
 
 You should see a mix of logs concerning the database and reverse proxy, and
 still not much from the application at this point.
@@ -822,6 +852,9 @@ correctly, you should be able to use the PHP todolist at
 [http://localhost:12000](http://localhost:12000)!
 
 Yay! 🎉
+
+Add a few todos. (Surely you have some laundry to clean or a galaxy to save this
+week.)
 
 ## :exclamation: Run services in the background
 
@@ -834,7 +867,7 @@ Compose hand over the services to the Docker daemon and handle everything for
 you:
 
 ```bash
-$> docker compose up --build --detach rp
+$> docker compose up --build --detach
 ```
 
 Note that you gain back control of your terminal, and the PHP todolist is again
@@ -847,8 +880,8 @@ services defined in the Compose file:
 $> docker compose ps
 NAME             IMAGE                 COMMAND                  SERVICE   CREATED          STATUS         PORTS
 todolist-app-1   todolist/app          "php-fpm -F --pid /o…"   app       28 minutes ago   Up 3 seconds   9000/tcp
-todolist-db-1    mysql:8.3.0           "docker-entrypoint.s…"   db        28 minutes ago   Up 3 seconds   3306/tcp, 33060/tcp
-todolist-rp-1    nginx:1.25.3-alpine   "/docker-entrypoint.…"   rp        28 minutes ago   Up 3 seconds   0.0.0.0:12000->80/tcp
+todolist-db-1    mysql:9.5.0           "docker-entrypoint.s…"   db        28 minutes ago   Up 3 seconds   3306/tcp, 33060/tcp
+todolist-rp-1    nginx:1.29-alpine     "/docker-entrypoint.…"   rp        28 minutes ago   Up 3 seconds   0.0.0.0:12000->80/tcp
 ```
 
 You can also use `docker compose stop [service]`, `docker compose start
@@ -877,30 +910,32 @@ $> docker compose down
 Now bring the whole thing back up:
 
 ```bash
-$> docker compose up --build --detach rp
+$> docker compose up --build --detach
 ```
 
-Note that if you visit [http://localhost:12000](http://localhost:12000), the
-data in your PHP todolist is gone!
+Visit [http://localhost:12000](http://localhost:12000) again. Oh no! All your
+todos are gone!
 
 Remember that Docker containers are supposed to be **ephemeral**: the MySQL
 server running in the database service container is storing its data in the
-container's file system. That file system was destroyed when the container was
-deleted by Compose's `down` command.
+container's file system, i.e. the thin writable layer on top of the image's
+layers. That layer was destroyed when the container was deleted by Compose's
+`down` command.
 
 You don't want your data to be dependent on the life of a specific container.
 Containers should easily be destroyed and recreated as necessary.
 
-You must store data in a more persistent way. There are two ways to do that with
-Docker and Docker Compose:
+You must store data in a more persistent way. As you've seen, [there are two
+ways to do that with Docker]({%link _course/803-docker-isolation/subject.md
+%}#persistent-storage) (and Docker Compose):
 
-- Mount a host directory into the container.
+- Bind-mount a host directory into the container.
 - Use a Docker-managed volume.
 
-If you read the [**Where to Store Data** section of the `mysql` image's
-documentation][mysql-docker-image-data], you will see that the MySQL database server
-stores its data in the `/var/lib/mysql` directory inside the container's file
-system.
+If you read the ["Where to Store Data" section of the `mysql` image's
+documentation][mysql-docker-image-data], you will see that the MySQL database
+server stores its data in the `/var/lib/mysql` directory inside the container's
+file system.
 
 You can mount a directory of your host machine in place of that directory:
 
@@ -962,22 +997,66 @@ service has changed, and restart that service's containers. It may also restart
 the containers of services that depend on the database (all of them in this
 case, directly or indirectly).
 
-You may now use the PHP todolist and gleefully destroy and recreate your
-containers without any data loss:
+You may now use the PHP todolist (add a few todos) and gleefully destroy and
+recreate your containers without any data loss:
 
 ```bash
 $> docker compose down
 $> docker compose up --build --detach rp
 ```
 
+If you've chosen to persist your data with a bind mount, you can list the
+contents of the `data` directory on your host machine to see the raw database
+files created by MySQL:
+
+```bash
+$> ls data
+auto.cnf ca-key.pem ib_buffer_pool mysql_upgrade_history private_key.pem sys
+...
+```
+
+If instead you've chosen to use a named volume, you can list your Docker volumes
+with the `docker volume ls` command:
+
+```bash
+$> docker volume ls
+DRIVER    VOLUME NAME
+local     todolist_db_data
+...
+```
+
+You should see a volume named `todolist_db_data`, assuming your Compose project
+is named `todolist` (the volume name is prefixed with the project name by
+default). If you want to see what's in it, you can spin off a temporary Alpine
+Linux container with that volume mounted and list its contents:
+
+```bash
+$> docker run --rm -v todolist_db_data:/mnt/data alpine ls /mnt/data
+auto.cnf ca-key.pem ib_buffer_pool mysql_upgrade_history private_key.pem sys
+...
+```
+
 {% note type: tip %}
 
-If you chose host-based storage, you can still erase your data by simply
-deleting the `data` directory yourself. If you chose volume-based storage, you
-can add the `-v` or `--volumes` option to the `down` command to also delete
-associated volumes: `docker compose down -v`.
+If you've chosen host-based storage, you can still erase your data by simply
+deleting the `data` directory yourself (stop the containers first). If you've
+chosen volume-based storage, you can add the `-v` or `--volumes` option to the
+`down` command to also delete associated volumes: `docker compose down -v`.
 
 {% endnote %}
+
+## :exclamation: Commit and push your changes
+
+Now that you have a working Docker Compose deployment ready, add, commit and
+push all the files you have created:
+
+```bash
+$> git add .gitignore Dockerfile compose.yml site.conf
+$> git commit -m "Add docker compose file"
+$> git push
+```
+
+You should see those files appear in your repository on GitHub.
 
 ## :exclamation: Deploy it on your cloud server
 
@@ -993,22 +1072,10 @@ Connect to your cloud server with SSH for the rest of this exercise.
 ### :exclamation: Retrieve your Compose project on the server
 
 If you followed the course's exercises so far, you should have the PHP todolist
-repository on GitHub and a clone of it on your cloud server as well. Let's share
-everything you just did into those repositories.
+repository on GitHub and a clone of it on your cloud server as well.
 
-In the PHP todolist repository **on your local machine**, add, commit and push
-all the files you have created:
-
-```bash
-$> git add .dockerignore .gitignore Dockerfile compose.yml site.conf
-$> git commit -m "Add docker compose file"
-$> git push
-```
-
-You should see those files appear in your repository on GitHub.
-
-Now **connect to your cloud server** with SSH, go into the PHP todolist
-repository and pull the changes you just pushed:
+Once you are connected to your cloud server, go into the PHP todolist repository
+and pull the changes you just pushed:
 
 ```bash
 $> cd todolist-repo
@@ -1022,13 +1089,13 @@ your server.
 
 {% endnote %}
 
-### :exclamation: Install Docker on your cloud server
+### :question: Make sure Docker works on your cloud server
 
-**Connect to your Azure server** and follow the [`apt`-based instructions to
-install Docker on Ubuntu](https://docs.docker.com/engine/install/ubuntu/).
-
-You should be able to run `sudo docker run hello-world` as instructed and see
-the "Hello from Docker!" message without error.
+You should already have [installed Docker on your cloud server during the
+previous exercise]({% link _course/802-docker-fibscale/exercise.md
+%}#exclamation-install-docker-on-the-server). You can run `sudo docker run
+hello-world` to check everything works. You should see the "Hello from Docker!"
+message without error.
 
 ### :exclamation: Copy your `.env` file to the server
 
@@ -1059,10 +1126,11 @@ todolist repository with `nano .env`, and paste and save the contents there.
 ### :exclamation: Run the Compose project on your server
 
 Now run the application service **on your cloud server**. Assuming you are in
-the PHP todolist repository:
+the PHP todolist repository (the `todolist-repo` directory), where your
+`compose.yml` file is located, run the same command as before (with `sudo`):
 
 ```bash
-$> sudo docker compose up --build --detach rp
+$> sudo docker compose up --build --detach
 ```
 
 The same containers should now be running on your server:
@@ -1071,8 +1139,8 @@ The same containers should now be running on your server:
 $> sudo docker compose ps
 NAME             IMAGE                 COMMAND                  SERVICE   CREATED          STATUS          PORTS
 todolist-app-1   todolist/app          "php-fpm -F --pid /o…"   app       2 minutes ago    Up 2 minutes    9000/tcp
-todolist-db-1    mysql:8.3.0           "docker-entrypoint.s…"   db        20 minutes ago   Up 20 minutes   3306/tcp, 33060/tcp
-todolist-rp-1    nginx:1.25.3-alpine   "/docker-entrypoint.…"   rp        2 minutes ago    Up 2 minutes    0.0.0.0:12000->80/tcp, :::12000->80/tcp
+todolist-db-1    mysql:9.5.0           "docker-entrypoint.s…"   db        20 minutes ago   Up 20 minutes   3306/tcp, 33060/tcp
+todolist-rp-1    nginx:1.29-alpine     "/docker-entrypoint.…"   rp        2 minutes ago    Up 2 minutes    0.0.0.0:12000->80/tcp, :::12000->80/tcp
 ```
 
 Create a new nginx site configuration file on your server with `sudo nano
@@ -1108,12 +1176,22 @@ $> sudo nginx -s reload
 You should now be able to visit http://todolist-docker.jde.archidep.ch in
 your browser and see your Compose deployment live online!
 
-{% note type: more %}
+{% note type: tip %}
 
 Note that this deployment is using an isolated database from your previous
-deployment at http://todolist.jde.archidep.ch.
+deployment at http://todolist.jde.archidep.ch. Changes in one will not be
+reflected in the other.
 
 {% endnote %}
+
+Note that the only requirement to perform this deployment on a fresh server is
+to have Docker and nginx installed on the server. You don't have to install PHP,
+PHP-FPM, MySQL or to configure systemd. Docker handles (almost) everything for
+you.
+
+You could even get rid of the nginx installation on the server and run it
+entirely as a Docker container as well, but that would require containerizing
+all other deployments you have made so far.
 
 ## :space_invader: Going further
 
@@ -1148,14 +1226,31 @@ by adding `TODOLIST_PORT=...` to the `.env` file.
 
 ### :space_invader: Make it more secure
 
-Docker is all about **isolation**, including network isolation. As you've seen,
-Compose creates a default network to connect all the services defined in your
-Compose file.
+Docker is all about **isolation**, including [network isolation]({% link
+_course/803-docker-isolation/subject.md %}#create-isolated-networks) as we've
+previously learned.
+
+As you've seen in this exercise, Compose creates a default network to connect
+all the services defined in your Compose file. You can see this network with the
+`docker network ls` command:
+
+```bash
+$> docker network ls
+NETWORK ID     NAME               DRIVER    SCOPE
+79343837cf3b   bridge             bridge    local
+0dca506f97c0   host               host      local
+d54b832d124f   none               null      local
+9e0c4d2551f4   todolist_default   bridge    local
+```
+
+The containers for the three services of your Compose project (`rp`, `app` and
+`db`) are in this `todolist_default` network, allowing them to communicate with
+each other.
 
 But think about it: is there a reason for the reverse proxy service to be able
 to communicate directly with the database service without going through the
-application service first? No way, there is no reason for the reverse proxy to
-talk to the database directly.
+application service first? No way! The reverse proxy should not be able to talk
+to the database directly.
 
 Using the [top-level `networks` key][compose-file-top-networks] of the Compose
 file, you can define isolated networks in your Compose project. For example, for
@@ -1199,14 +1294,20 @@ If you performed the [horizontal scaling exercise with the Fibscale
 application]({% link _course/515-fibscale-deployment/exercise.md %}), you may
 recall that configuring horizontal scaling with systemd was fairly complex.
 
-Do you know what it takes to perform horizontal scaling on your server with
-Docker Compose?
+Do you know what it takes to perform horizontal scaling on your machine or on
+your server with Docker Compose?
 
 One command:
 
 ```bash
 $> sudo docker compose scale app=3
 ```
+
+{% note type: tip %}
+
+Drop the `sudo` if you are running this on your local machine.
+
+{% endnote %}
 
 You now have 3 instances of the application service running in separate
 containers:
@@ -1217,8 +1318,8 @@ NAME                  IMAGE                 COMMAND                  SERVICE   C
 todolist-repo-app-1   todolist/app          "php-fpm -F --pid /o…"   app       14 seconds ago   Up 13 seconds   9000/tcp
 todolist-repo-app-2   todolist/app          "php-fpm -F --pid /o…"   app       5 seconds ago    Up 2 seconds    9000/tcp
 todolist-repo-app-3   todolist/app          "php-fpm -F --pid /o…"   app       5 seconds ago    Up 3 seconds    9000/tcp
-todolist-repo-db-1    mysql:8.3.0           "docker-entrypoint.s…"   db        51 minutes ago   Up 51 minutes   3306/tcp, 33060/tcp
-todolist-repo-rp-1    nginx:1.25.3-alpine   "/docker-entrypoint.…"   rp        14 seconds ago   Up 12 seconds   0.0.0.0:12000->80/tcp, :::12000->80/tcp
+todolist-repo-db-1    mysql:9.5.0           "docker-entrypoint.s…"   db        51 minutes ago   Up 51 minutes   3306/tcp, 33060/tcp
+todolist-repo-rp-1    nginx:1.29-alpine     "/docker-entrypoint.…"   rp        14 seconds ago   Up 12 seconds   0.0.0.0:12000->80/tcp, :::12000->80/tcp
 ```
 
 Not only that, but Compose will automagically load-balance traffic from the
@@ -1253,8 +1354,7 @@ communication flow at the end of this exercise:
 {% note %}
 
 Note that this diagram only shows the processes involved in this exercise,
-ignoring the other applications (such as the PHP Todolist) we have also deployed
-on the server.
+ignoring the other applications we have also deployed on the server.
 
 {% endnote %}
 
