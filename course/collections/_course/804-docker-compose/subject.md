@@ -12,7 +12,7 @@ running **multi-container applications**.
 
 <!-- more -->
 
-### The Docker Compose command line
+## The Docker Compose command line
 
 Docker Compose is also a **Docker subcommand**. Based on a Compose file, it can:
 
@@ -32,7 +32,7 @@ compose help` for a complete list of commands and options.
 
 {% endnote %}
 
-### Other Compose concepts
+## Other Compose concepts
 
 [**Networks**][docker-networking] are the layer that allow services to
 communicate with each other. Compose lets you [configure named
