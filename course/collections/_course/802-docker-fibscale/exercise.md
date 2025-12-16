@@ -488,6 +488,75 @@ container.
 
 {% endcallout %}
 
+{% solution %}
+
+Here's what your Dockerfile could look like with an Alpine Linux base:
+
+```Dockerfile
+# Base image
+FROM ruby:3.4.7-alpine
+
+# Create dedicated user & group
+RUN addgroup -S fibscale
+RUN adduser -D -G fibscale -S fibscale
+
+# Set working directory
+WORKDIR /fibscale
+
+# Copy source files
+COPY --chown=fibscale:fibscale ./ ./
+
+# Fix ownership of working directory
+RUN chown fibscale:fibscale .
+
+# Install build tools
+RUN apk add --no-cache g++ make patch
+
+# Switch to dedicated user
+USER fibscale:fibscale
+
+# Install dependencies
+RUN bundle install
+
+# Set the command to launch the application
+CMD ["bundle", "exec", "ruby", "fibscale.rb"]
+```
+
+And with an Ubuntu base:
+
+```Dockerfile
+# Base image
+FROM ruby:3.4.7
+
+# Create dedicated user & group
+RUN groupadd --system fibscale
+RUN useradd --create-home --gid fibscale --system fibscale
+
+# Set working directory
+WORKDIR /fibscale
+
+# Copy source files
+COPY --chown=fibscale:fibscale ./ ./
+
+# Fix ownership of working directory
+RUN chown fibscale:fibscale .
+
+# Install build tools
+RUN apt update
+RUN apt install -y g++ make patch
+
+# Switch to dedicated user
+USER fibscale:fibscale
+
+# Install dependencies
+RUN bundle install
+
+# Set the command to launch the application
+CMD ["bundle", "exec", "ruby", "fibscale.rb"]
+```
+
+{% endsolution %}
+
 ### :classical_building: Local architecture
 
 This is a simplified architecture of the main running processes and
