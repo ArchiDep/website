@@ -287,8 +287,8 @@ depending on which base image you chose:
 
 ```bash
 # Debian/Ubuntu (often the default base for Docker images when not specified)
-$> apt-get update
-$> apt-get install -y g++ make patch
+$> apt update
+$> apt install -y g++ make patch
 
 # Alpine Linux
 $> apk add --no-cache g++ make patch
