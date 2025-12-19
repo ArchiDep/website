@@ -1424,8 +1424,12 @@ look like with both isolated networks and horizontal scaling.
 
 ### :space_invader: Docker is so cool! I want more!
 
-Then containerize the [Flood It deployment]({% link
-_course/603-floodit-deployment/exercise.md %}). On your own. Off you go!
+You can read the [Docker documentation][docker-docs] or about [going further
+with Docker]({% link _course/804-docker-compose/subject.md %}#going-further).
+
+Want a challenge? Containerize the [Flood It deployment]({% link
+_course/603-floodit-deployment/exercise.md %}) (or an app of yours). On your
+own. Off you go!
 
 [compose-file-build]: https://docs.docker.com/compose/compose-file/05-services/#build
 [compose-file-depends-on]: https://docs.docker.com/compose/compose-file/05-services/#depends_on
@@ -1441,6 +1445,7 @@ _course/603-floodit-deployment/exercise.md %}). On your own. Off you go!
 [compose-networking]: https://docs.docker.com/compose/networking/
 [compose-secrets]: https://docs.docker.com/compose/compose-file/09-secrets/
 [docker-desktop]: https://www.docker.com/products/docker-desktop/
+[docker-docs]: https://docs.docker.com
 [docker-hub]: https://hub.docker.com
 [docker-swarm]: https://docs.docker.com/engine/swarm/
 [dockerfile-copy]: https://docs.docker.com/engine/reference/builder/#copy
