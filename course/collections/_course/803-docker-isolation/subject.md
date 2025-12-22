@@ -442,7 +442,7 @@ container is lost when the container is removed.
 Let's demonstrate this. Run a new container from the official `nginx` image:
 
 ```bash
-$> docker run --d --name web --p 3000:80 nginx:1.29
+$> docker run -d --name web -p 3000:80 nginx:1.29
 ```
 
 {% note type: more %}
@@ -722,7 +722,7 @@ your changes are still there.
 Run a second container named `web2` based on the same official `nginx` image:
 
 ```bash
-$> docker run --d --name web2 --p 3001:80 nginx:1.29
+$> docker run -d --name web2 -p 3001:80 nginx:1.29
 ```
 
 You should have two containers running, one exposed on port 3000 and the other
@@ -778,7 +778,7 @@ Now you haven't just stopped the containers, you have also removed them. Re-run
 the `web` container with the same command as before:
 
 ```bash
-$> docker run --d --name web --p 3000:80 nginx:1.29
+$> docker run -d --name web -p 3000:80 nginx:1.29
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) in your browser again:
@@ -898,7 +898,7 @@ directory from the host machine into the container at the path
 `/usr/share/nginx/html`, where nginx serves its static files from:
 
 ```bash
-$> docker run --d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.29
+$> docker run -d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.29
 ```
 
 The new `-v` (or `--volume`) option creates a **bind mount** from the current
@@ -1095,7 +1095,7 @@ Re-run the `web` container with the same command as before, including the bind
 mount:
 
 ```bash
-$> docker run --d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.29
+$> docker run -d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.29
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) in your browser again. You
