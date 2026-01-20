@@ -14,9 +14,9 @@ evaluation. It also indicates what you do not need to remember by heart.
   - [Advanced deployment](#advanced-deployment)
   - [Automated deployment](#automated-deployment)
   - [Managed Deployments](#managed-deployments)
+  - [Docker Deployments](#docker-deployments)
 - [Exercices](#exercices)
 - [Architecture](#architecture)
-  - [Examples](#examples)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -81,7 +81,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   - The basic Git workflow.
   - The purpose (but not the syntax or options) of the main Git subcommands
     used to perform that workflow:
-    - `git checkout`
+    - `git checkout/switch`
     - `git add`
     - `git commit`
   - The purpose (but not the syntax or options) of the other basic Git
@@ -142,20 +142,6 @@ evaluation. It also indicates what you do not need to remember by heart.
   You must know:
   - Why it's not a good idea to run a web application (or any application in
     general) as `root`.
-
-- ~~The CSRF security demonstration~~
-
-  _We did not perform this demonstration in 2023-2024, so this does not
-  apply._
-
-  ~~You must know:~~
-  - ~~That the OWASP organization has resouces to help you know about and
-    protect against attacks on web applications.~~
-
-  ~~You do not need to know:~~
-  - ~~The specifics of the CSRF attack or the demonstration made during the
-    course. (Although it is a good thing to know, and the attack is
-    [documented by OWASP](https://owasp.org/www-community/attacks/csrf).)~~
 
 ### Basic deployment
 
@@ -357,14 +343,18 @@ evaluation. It also indicates what you do not need to remember by heart.
   - The getting started procedure.
   - The precise steps to configure environment variables.
 
-- [Docker](https://archidep.ch/course/803-docker-isolation/)
+### Docker Deployments
+
+- [Docker](https://archidep.ch/course/801-docker/)
 
   You must know:
-  - The difference between a Virtual Machine and a Container
-  - What a Docker Image is
+  - The difference between a Virtual Machine and a Container.
+  - What a Docker Image is.
   - What a Docker Container is.
   - The different parts of a Docker workflow.
-  - What a Dockerfile is the purpose (not the syntax) of the following
+  - That the processes and file system of a Docker Container are isolated by
+    default.
+  - What a Dockerfile is and the purpose (not the syntax) of the following
     instructions:
     - [`CMD`](https://docs.docker.com/engine/reference/builder/#cmd)
     - [`COPY`](https://docs.docker.com/engine/reference/builder/#copy)
@@ -374,8 +364,24 @@ evaluation. It also indicates what you do not need to remember by heart.
   You do not need to know:
   - Other Dockerfile instructions.
   - Private Docker Image registries.
+  - The details of how committing layers and Docker images work.
 
 - [Docker Isolation](https://archidep.ch/course/803-docker-isolation/)
+
+  You must know:
+  - That Docker Containers are isolated from the host system by default when
+    it comes to networking.
+  - That Docker Containers are in the same default Docker Network unless you
+    specify otherwise, and that you can create other Docker Networks yourself to
+    further isolate Containers from each other.
+  - That Docker Container data can be persisted outside of the Container using
+    Bind Mounts (on the host) or Docker Volumes (managed by Docker).
+
+  You do not need to know:
+  - The list of default Docker networks (bridge, host, none).
+  - The technical details of how Docker network isolation works and the commands
+    to manage Docker networks.
+  - The commands or options to manage Docker Bind Mounts and Volumes.
 
 - [Docker Compose](https://archidep.ch/course/804-docker-compose/)
 

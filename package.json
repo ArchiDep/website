@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/ArchiDep/website#readme",
   "scripts": {
-    "doctoc": "doctoc --github --notitle README.md",
+    "doctoc": "doctoc --github --notitle README.md TEST-MATTER.md && prettier --write README.md TEST-MATTER.md",
     "format": "npm run format:root && npm run --workspace course format",
     "format:root": "prettier --check .",
     "format:root:write": "prettier --write .",
