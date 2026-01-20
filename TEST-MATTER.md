@@ -375,6 +375,8 @@ evaluation. It also indicates what you do not need to remember by heart.
   - That Docker Containers are in the same default Docker Network unless you
     specify otherwise, and that you can create other Docker Networks yourself to
     further isolate Containers from each other.
+  - That data stored inside a Docker Container is lost when the Container is
+    destroyed.
   - That Docker Container data can be persisted outside of the Container using
     Bind Mounts (on the host) or Docker Volumes (managed by Docker).
 
