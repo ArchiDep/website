@@ -406,9 +406,9 @@ evaluation. It also indicates what you do not need to remember by heart.
 
 ## Exercices
 
-> The exercises of this course illustrate the theoretical concepts. You should
-> understand the concepts behind what you did during the exercises, but you do
-> not need to remember the exact commands used.
+The exercises of this course illustrate the theoretical concepts. You should
+understand the concepts behind what you did during the exercises, but you do not
+need to remember the exact commands used.
 
 You must know how to deploy a PHP web application on a cloud platform with the
 Infrastructure-as-a-Service (IaaS) service model, which you put in practice
