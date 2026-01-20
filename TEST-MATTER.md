@@ -335,6 +335,7 @@ evaluation. It also indicates what you do not need to remember by heart.
 - [Platform-as-a-Service (PaaS)](https://archidep.ch/course/701-paas/)
 
   You must know:
+  - What GitHub Pages is and how the platform works in principle.
   - What Netlify is and how the platform works in principle.
   - What Render is and how the platform works in principle.
   - That you can configure environment variables for your Render applications.
