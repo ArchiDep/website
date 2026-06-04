@@ -45,6 +45,8 @@ instructions targeted towards AI agents.
   - When generating Markdown, prefer reference links over inline links for URLs
     and anchors if there are at least two occurrences of the same URL or anchor
     in the document.
+  - After editing Markdown documentation, run `npm run lint:md` (documented in
+    [`./CONTRIBUTING.md`][contributing]) and fix any reported issues.
   - When changing the public API of application contexts, update the relevant
     documentation in the appropriate `CONTRIBUTING.md` file.
   - There should generally be no need to add a new bounded context without

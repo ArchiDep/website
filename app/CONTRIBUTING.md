@@ -17,15 +17,18 @@ for AI assistants and automated agents.
   - [Authentication](#authentication)
   - [Authorization](#authorization)
   - [Impersonation](#impersonation)
+  - [Events & Auditing](#events--auditing)
   - [Notifications](#notifications)
   - [Telemetry](#telemetry)
   - [Other Libraries & Tools](#other-libraries--tools)
 - [Formatting & Linting](#formatting--linting)
 - [Testing](#testing)
+  - [Test Support](#test-support)
   - [Test coverage](#test-coverage)
   - [Test fixtures](#test-fixtures)
   - [Mocks & Contract Tests](#mocks--contract-tests)
 - [Useful Commands](#useful-commands)
+  - [Setup & Composite Commands](#setup--composite-commands)
   - [Formatting Commands](#formatting-commands)
   - [Linting Commands](#linting-commands)
   - [Testing Commands](#testing-commands)
@@ -33,7 +36,7 @@ for AI assistants and automated agents.
 
 ---
 
-## Overview
+## Application Overview
 
 This application is a real-time dashboard for teachers and students of the Media
 Engineering Architecture & Deployment course. It is one of the two main parts of
@@ -72,7 +75,25 @@ components, can be found in the `theme` directory (see [`CONTRIBUTING.md` in the
 - **Main Parts**
   - `lib/archidep`: The main Elixir application that implements all the business
     logic, including user management, class/student and server management, and
-    automatic interactions with cloud servers.
+    automatic interactions with cloud servers. Most of this logic lives in the
+    [bounded contexts](#bounded-contexts), but the directory also contains a
+    number of cross-cutting modules:
+    - `application.ex`: The OTP application and supervision tree.
+    - `repo.ex`: The [Ecto][ecto] repository (PostgreSQL).
+    - `authentication.ex`: The current [authenticated
+      user/session](#authentication).
+    - `policy.ex`: The [authorization policy](#authorization) behaviour.
+    - `config.ex` & `config/`: Typed access to application configuration.
+    - `mailer.ex`: Email delivery via Swoosh.
+    - `tracker.ex`: Presence tracking (Phoenix Presence).
+    - `prom_ex.ex` & `monitoring/`: [Telemetry and metrics](#telemetry).
+    - `sentry.ex`: [Error reporting](#telemetry) filtering for Sentry.
+    - `git.ex`, `client_metadata.ex`, `http/`, `errors/`, `release.ex`: Git
+      build metadata, business-event client metadata, the HTTP client wrapper,
+      shared error types, and release tasks.
+    - `helpers/`: Shared helper modules used across contexts (e.g.
+      [`ContextHelpers`](./lib/archidep/helpers/context_helpers.ex),
+      `ChangesetHelpers`, `SchemaHelpers`, `UseCaseHelpers`, `GenStageHelpers`).
   - `lib/archidep_web`: The Phoenix web interface, including controllers, views,
     APIs, templates, live views, and channels.
 - **Supporting Files**
@@ -142,10 +163,12 @@ implementation, formatting and testing.
     clear purpose and interface.
   - If a [GenServer][gen-server] is non-trivial, separate its API from its
     implementation. Define the API in a module (e.g.
-    `ArchiDep.SomeContext.SomeGenServer`) and the implementation in a nested
-    module (e.g. `ArchiDep.SomeContext.SomeGenServer.State`) to faciliate unit
-    testing of the implementation. Split these modules into separate files if
-    they grow too large.
+    `ArchiDep.Servers.ServerTracking.ServerManager`) and the implementation in a
+    separate companion module suffixed with `State` (e.g.
+    `ArchiDep.Servers.ServerTracking.ServerManagerState`) to facilitate unit
+    testing of the implementation. A `Behaviour` companion module (e.g.
+    `ServerManagerBehaviour`) can also be defined so the GenServer can be
+    [mocked](#mocks--contract-tests).
 
     The API module should handle starting the GenServer and managing its
     lifecycle and process-related aspects, while the implementation module
@@ -169,7 +192,7 @@ implementation, formatting and testing.
   - Always persist business events in the same `Ecto.Multi` operation as
     the main action they relate to, to ensure consistency between the system's
     state and its event log.
-  - Use [`Ecto.Changeset`][ecto-changesets] for data validation and casting.
+  - Use [`Ecto.Changeset`][ecto-changeset] for data validation and casting.
     Define changesets in the related schema modules. All changeset-producing
     functions should be suffixed with `_changeset`. Look for refactoring
     opportunities as that may not always be the case in existing code.
@@ -220,9 +243,9 @@ are exported as JSON files for integration with this application.
 In development, this application will serve requests for the static site's
 contents from the `priv/static` directory, which is populated by a local Jekyll
 server that compiles the course material with live reload. See the [Run the
-website in development mode](#run-the-website-in-development-mode) section in
-the main [README.md](../README.md) file for instructions on how to set up the
-development environment.
+website in development mode](../README.md#run-the-website-in-development-mode)
+section in the main [README.md](../README.md) file for instructions on how to
+set up the development environment.
 
 ### Internal architecture
 
@@ -231,7 +254,8 @@ This application follows a three-tier layered architecture:
 - **Web Layer**: The [`ArchiDepWeb` module](./lib/archidep_web.ex) contains all
   web-related functionality, including controllers, views, templates, live
   views, channels, and plugs. It handles HTTP requests and responses, user
-  sessions, and real-time communication via WebSockets.
+  sessions, and real-time communication via WebSockets. It is documented in
+  detail in [`lib/archidep_web/CONTRIBUTING.md`](./lib/archidep_web/CONTRIBUTING.md).
 
   It also redirects the user to [Switch edu-ID][switch-edu-id] for
   authentication and handles the authentication callback.
@@ -241,15 +265,15 @@ This application follows a three-tier layered architecture:
   specific area of functionality, such as user accounts or servers. Contexts
   expose a public API for interacting with the underlying data and operations.
 
-  The [servers context](#servers-context) also interacts with the cloud servers
-  registered by students via [SSH][ssh] and [Ansible][ansible] to perform
-  automatic setup and monitoring.
+  The [servers context](./lib/archidep/servers.ex) also interacts with the cloud
+  servers registered by students via [SSH][ssh] and [Ansible][ansible] to
+  perform automatic setup and monitoring.
 
 - **Data Layer**: The data layer is implemented in the contexts using
   [Ecto][ecto], [Ecto SQL][ecto-sql] and [Postgrex][postgrex], with the main
   data store being a [PostgreSQL][postgresql] database. Each context manages its
-  own data with [Ecto Schemas][ecto-schemas] and [Ecto
-  Changesets][ecto-changesets], and provides functions to query and manipulate
+  own data with [Ecto Schemas][ecto-schema] and [Ecto
+  Changesets][ecto-changeset], and provides functions to query and manipulate
   it.
 
 ### Bounded contexts
@@ -299,49 +323,25 @@ These are the current context in this application (read each main context module
 for an overview of its area of responsibility):
 
 - [`Accounts` context](./lib/archidep/accounts.ex): user account and session
-  management, including registration, login, logout and impersonation
+  management — registration, login (Switch edu-ID OIDC and login links), logout,
+  sessions and impersonation. Documented in detail in
+  [`lib/archidep/accounts/CONTRIBUTING.md`](./lib/archidep/accounts/CONTRIBUTING.md).
 
-  Modules: [`Behaviour`](./lib/archidep/accounts/behaviour.ex),
-  [`UseCases`](./lib/archidep/accounts/use_cases),
-  [`Types`](./lib/archidep/accounts/types.ex),
-  [`Context`](./lib/archidep/accounts/context.ex),
-  [`Schemas`](./lib/archidep/accounts/schemas),
-  [`Policy`](./lib/archidep/accounts/policy.ex),
-  [`Events`](./lib/archidep/accounts/events),
-  [`PubSub`](./lib/archidep/accounts/pub_sub.ex)
-
-- [`Course` context](./lib/archidep/course.ex): class/student management and
-  integration with course material
-
-  Modules: [`Behaviour`](./lib/archidep/course/behaviour.ex),
-  [`UseCases`](./lib/archidep/course/use_cases),
-  [`Types`](.lib/archidep/course/types.ex),
-  [`Context`](./lib/archidep/course/context.ex),
-  [`Schemas`](./lib/archidep/course/schemas),
-  [`Policy`](./lib/archidep/course/policy.ex),
-  [`Events`](./lib/archidep/course/events),
-  [`PubSub`](./lib/archidep/course/pub_sub.ex)
+- [`Course` context](./lib/archidep/course.ex): class and student management,
+  bulk student import, expected server properties, and integration with the
+  course material. Documented in detail in
+  [`lib/archidep/course/CONTRIBUTING.md`](./lib/archidep/course/CONTRIBUTING.md).
 
 - [`ArchiDep.Servers` context](./lib/archidep/servers.ex): cloud server
-  registration and management via [SSH][ssh] and [Ansible][ansible]
+  registration and management — students register their server and the
+  application connects to it via [SSH][ssh] and configures and monitors it with
+  [Ansible][ansible]. Documented in detail in
+  [`lib/archidep/servers/CONTRIBUTING.md`](./lib/archidep/servers/CONTRIBUTING.md).
 
-  Modules: [`Behaviour`](./lib/archidep/servers/behaviour.ex),
-  [`UseCases`](./lib/archidep/servers/use_cases),
-  [`Types`](./lib/archidep/servers/types.ex),
-  [`Context`](./lib/archidep/servers/context.ex),
-  [`Schemas`](./lib/archidep/servers/schemas),
-  [`Policy`](./lib/archidep/servers/policy.ex),
-  [`Events`](./lib/archidep/servers/events),
-  [`PubSub`](./lib/archidep/servers/pub_sub.ex)
-
-- [Events](#events-context): business event logging and auditing
-
-  Modules: [`Behaviour`](./lib/archidep/events/behaviour.ex),
-  [`UseCases`](./lib/archidep/events/use_cases),
-  [`Types`](./lib/archidep/events/types.ex),
-  [`Context`](./lib/archidep/events/context.ex),
-  [`Store`](./lib/archidep/events/store),
-  [`Policy`](./lib/archidep/events/policy.ex)
+- [`Events` context](./lib/archidep/events.ex): the event-sourcing and audit
+  backbone — it stores the business events recorded by all the other contexts
+  and exposes an admin-only read API over them. See [Events &
+  Auditing](#events--auditing).
 
 Note that some contexts have schemas that represent different views of the same
 database tables. There will generally be one main schema used for writes in the
@@ -363,34 +363,13 @@ of the same data for their specific purposes. For example:
 
 ### Authentication
 
-Teachers and students can register and log in using their existing [Switch
-edu-ID][switch-edu-id] accounts.
-
-Authentication is implemented with the [Ueberauth][ueberauth] library and the
-[Ueberauth OIDC][ueberauth-oidcc] strategy, which provides OpenID Connect (OIDC)
-support. The application is registered as an [OIDC client with Switch
-edu-ID][switch-edu-id-oidc].
-
-Look at the following modules for the implementation:
-
-- The [`ArchiDep.Authentication` module](./lib/archidep/authentication.ex)
-  represents the currently logged-in user and their session. It is used in
-  Phoenix contexts to load the current user and check their permissions in
-  authorization policies.
-- The [`ArchiDepWeb.Auth.AuthController`
-  module](./lib/archidep_web/auth/auth_controller.ex) is the main entry
-  point for authentication-related actions such as login, logout, CSRF
-  protection, auth token generation and impersonation.
-- The [`ArchiDepWeb.Auth` module](./lib/archidep_web/auth.ex) holds the
-  functionality to handle the HTTP headers, session and cookies related to
-  authentication.
-- The [`ArchiDepWeb.Helpers.AuthHelpers`
-  module](./lib/archidep_web/helpers/auth_helpers.ex) provides helper
-  functions to check whether a user is logged in, what their role is, and
-  [impersonation-related features](#impersonation) in controllers, live views
-  and templates.
-- The [`ArchiDepWeb.LiveAuth` module](./lib/archidep_web/live_auth.ex)
-  provides helper functions to handle authentication in live views.
+Teachers and students register and log in using their existing [Switch
+edu-ID][switch-edu-id] accounts over OpenID Connect (via [Ueberauth][ueberauth]
+and the [Ueberauth OIDC][ueberauth-oidcc] strategy), with one-time login links
+as a fallback. Authentication, sessions and the related web wiring
+(`ArchiDep.Authentication`, `ArchiDepWeb.Auth*`, `LiveAuth`) are implemented in,
+and documented with, the [Accounts
+context](./lib/archidep/accounts/CONTRIBUTING.md#authentication).
 
 ### Authorization
 
@@ -406,51 +385,78 @@ Look at the following modules for the implementation:
   [`ArchiDep.Accounts.Policy` module](./lib/archidep/accounts/policy.ex) for
   the accounts context.
 - The [`ArchiDep.Helpers.AuthHelpers`
-  module](app/lib/archidep/helpers/auth_helpers.ex) provides helper functions to
+  module](./lib/archidep/helpers/auth_helpers.ex) provides helper functions to
   use authorization policy modules in the implementation of contexts.
 
 ### Impersonation
 
-Teachers can impersonate students to help them with issues. Once a teacher
-starts impersonating a student, they can see the application exactly as the
-student would see it, including all their data. The teacher can stop
-impersonating the student at any time to return to their own account.
+Teachers can impersonate students to help them with issues, seeing the
+application exactly as the student would, and stop at any time. Impersonation is
+recorded on the teacher's own session and is implemented in the [Accounts
+context](./lib/archidep/accounts/CONTRIBUTING.md#impersonation).
 
-Look at the following modules for the implementation:
+### Events & Auditing
 
-- The [`ArchiDep.Accounts.Schemas.UserSession`
-  schema](./lib/archidep/accounts/schemas/user_session.ex) represents the
-  session of a logged-in user, including whether they are currently
-  impersonating another user.
-- The [`ArchiDep.Accounts.UseCases.Impersonate` use
-  case](./lib/archidep/accounts/use_cases/impersonate.ex) implements the
-  logic to start and stop impersonation.
+The [`Events` context](./lib/archidep/events.ex) implements **event sourcing**
+for auditing: every significant action across the application is persisted as an
+immutable business event, and the context exposes a read API over the resulting
+audit log.
+
+- **Recording events.** Each context defines event modules under its `Events`
+  submodule (e.g. `ArchiDep.Course.Events.ClassCreated`) with `use ArchiDep,
+:event`; they implement the
+  [`Event` protocol](./lib/archidep/events/store/event.ex) (`event_stream/1`,
+  `event_type/1`). Events are built with the helpers in
+  [`ArchiDep.Helpers.UseCaseHelpers`](./lib/archidep/helpers/use_case_helpers.ex)
+  (`new_creation_event/3`, `new_update_event/3`, `add_to_stream/2`, …) and
+  persisted into the `events` table
+  ([`StoredEvent`](./lib/archidep/events/store/stored_event.ex)) within the
+  **same `Ecto.Multi`** as the action they describe, so application state and the
+  audit log always stay consistent (see the [coding
+  guidelines](#general-coding-guidelines)).
+- **Streams, initiators and chains.** Events are grouped into per-entity streams
+  (e.g. `course:classes:{id}`) with a monotonically increasing `version`. The
+  entity that caused an event (a user or a tracked server) is recorded through
+  the [`EventInitiator`
+  protocol](./lib/archidep/events/store/event_initiator.ex), which
+  `ArchiDep.Authentication` implements. Events also carry `causation_id` and
+  `correlation_id` so related events form chains: pass a prior event (or an
+  [`EventReference`](./lib/archidep/events/store/event_reference.ex)) as the
+  `:caused_by` option to link them.
+- **Reading the audit log.** The context's public API
+  ([`events.ex`](./lib/archidep/events.ex)) exposes `fetch_events/2` (keyset
+  pagination via `:older_than`/`:newer_than` cursors and a `:limit`) and
+  `fetch_event/2`; both resolve each event's affected entity across the
+  Accounts, Course and Servers contexts for display. Reading the audit log is
+  **root-only** ([`Policy`](./lib/archidep/events/policy.ex)).
 
 ### Notifications
 
 The application uses [Flashy][flashy] to display user notifications (toasts) for
-success, error and informational messages. These can be used in controllers,
-live views and live components.
-
-Look at the following modules for the implementation:
-
-- The [`ArchiDepWeb.Components.Notifications.Message`
-  module](./lib/archidep_web/components/notifications/message.ex) represents
-  a single notification message to be rendered.
-- The [`ArchiDepWeb.Components.Notifications.Disconnected`
-  module](./lib/archidep_web/components/notifications/disconnected.ex) is
-  used to display a notification when the current live view is disconnected.
+success, error and informational messages, from controllers, live views and live
+components. This is part of the web layer and is documented in
+[`lib/archidep_web/CONTRIBUTING.md`](./lib/archidep_web/CONTRIBUTING.md#notifications).
 
 ### Telemetry
 
 This application uses the standard [Telemetry][telemetry] integration provided
 by [Phoenix][phoenix-telemetry] and [Ecto][ecto-telemetry] to track basic
-metrics such as request durations, database query times, etc.
+metrics such as request durations, database query times, etc. The [Phoenix
+LiveDashboard][live-dashboard] (with `ArchiDepWeb.Telemetry`) and the Swoosh
+mailbox preview are mounted in development.
 
-It also uses the [PromEx][prom-ex] library to collect and expose metrics in
-[Prometheus][prometheus] format. The [`ArchiDep.Monitoring.Metrics`
-module](./lib/archidep/monitoring/metrics.ex) defines application-specific
-metrics as a [PromEx plugin][prom-ex-plugin].
+It also uses the [PromEx][prom-ex] library
+([`ArchiDep.PromEx`](./lib/archidep/prom_ex.ex)) to collect and expose metrics
+in [Prometheus][prometheus] format. Besides the standard PromEx plugins
+(Application, BEAM, Ecto, Phoenix and Phoenix LiveView), the
+[`ArchiDep.Monitoring.Metrics` module](./lib/archidep/monitoring/metrics.ex)
+defines application-specific metrics as a [PromEx plugin][prom-ex-plugin]:
+
+- **Event metrics**, derived from `:telemetry` events — logins and logouts,
+  Ansible playbook run outcomes, and server-tracking connection state changes.
+- **Polling metrics**, which periodically count domain data — user accounts and
+  sessions, classes and students, stored events, and servers and Ansible
+  pipeline state.
 
 ### Other Libraries & Tools
 
@@ -475,7 +481,7 @@ metrics as a [PromEx plugin][prom-ex-plugin].
   demand-driven I/O.
 
 - [Heroicons][heroicons] for SVG icons in the web interface, via the
-  [ExHeroicons][ex-heroicons] library.
+  [`heroicons` Hex package][heroicons-hex].
 
 - [Sentry][sentry] and its [Elixir integration][sentry-elixir] to report errors
   and exceptions in development and production. You will find the related
@@ -510,7 +516,9 @@ format`][mix-format] command before submitting changes. Prefer formatting
 - Use [Credo][credo] for static code analysis. Run the `mix credo --strict`
   command before submitting changes. Prefer running Credo on individual files or
   specific directories that have changed. See [Linting
-  Commands](#linting-commands) below.
+  Commands](#linting-commands) below. The Credo configuration (`.credo.exs`)
+  also enables additional checks from the [CredoContrib][credo-contrib] and
+  [CredoNaming][credo-naming] plugins.
 - When modifying code, look for opportunities to fix existing Credo issues in
   the same file or function. Suggest simple fixes and ask for confirmation
   before making more complex changes.
@@ -535,6 +543,31 @@ format`][mix-format] command before submitting changes. Prefer formatting
 - Write separate tests for the API and implementation of [GenServer][gen-server]
   modules to facilitate unit testing of the implementation.
 
+### Test Support
+
+The `test/support/` directory provides shared testing infrastructure beyond the
+[fixtures](#test-fixtures) and [mocks](#mocks--contract-tests) described below:
+
+- **Case templates** (used with `use`):
+  - `ArchiDep.Support.DataCase` (`test/support/data_case.ex`) for tests that
+    access the data layer; it sets up the Ecto SQL sandbox so database changes
+    are rolled back after each test.
+  - `ArchiDepWeb.Support.ConnCase` (`test/support/conn_case.ex`) for
+    controller/request tests built on `Phoenix.ConnTest`.
+  - `ArchiDepWeb.Support.LiveCase` (`test/support/live_case.ex`) for live view
+    and live component tests.
+- **GenServer testing utilities** (supporting the API/implementation split
+  above): `ArchiDep.Support.GenServerProxy` forwards calls, casts and messages
+  to a target process so a test can act as another process;
+  `ArchiDep.Support.NoOpGenServer` is an inert GenServer; and
+  `ArchiDep.Support.ServerManagerStateTestUtils` helps test the server manager
+  state.
+- **Helper modules**: `ArchiDep.Support.ProcessTestHelpers` (wait for a
+  process's state to satisfy a condition), `ArchiDep.Support.DateTestHelpers`
+  (manipulate dates/datetimes), `ArchiDep.Support.TelemetryTestHelpers` (assert
+  on telemetry events) and `ArchiDepWeb.Support.HtmlTestHelpers` (Floki HTML
+  helpers).
+
 ### Test coverage
 
 - Use [ExCoveralls][ex-coveralls] to measure test coverage. See [Testing
@@ -549,9 +582,11 @@ format`][mix-format] command before submitting changes. Prefer formatting
   database when possible. Otherwise, use ExMachine's `insert` function to insert
   records in the database.
 - Define factory modules scoped by context under `test/support/` to generate all
-  common data for each context. The module names should be suffixed with
-  `Factory` and their files named accordingly (e.g. `AccountsFactory` in
-  `test/support/accounts_factory.ex`).
+  common data for each context. The modules are namespaced under
+  `ArchiDep.Support`, suffixed with `Factory`, and their files named accordingly
+  (e.g. `ArchiDep.Support.AccountsFactory` in
+  `test/support/accounts_factory.ex`). Common building blocks live in the shared
+  `ArchiDep.Support.Factory` and `ArchiDep.Support.FactoryHelpers` modules.
 - When writing tests, prefer reusing existing factories rather than creating new
   ones. If existing factories do not meet your needs, consider extending them
   or creating new ones in the appropriate context.
@@ -565,12 +600,14 @@ format`][mix-format] command before submitting changes. Prefer formatting
 
 ### Mocks & Contract Tests
 
-- Use [Mox][mox] and [Hammox][hammox] for mocks and contract tests.
+- Use [Hammox][hammox] for mocks and contract tests. Hammox builds on
+  [Mox][mox] and additionally verifies at runtime that mock expectations conform
+  to the mocked behaviour's typespecs. (Mox itself is not a direct dependency.)
 - Define behaviour modules for all context modules and for complex internal
   dependencies to facilitate mocking.
-- Use Mox to create mocks for these behaviours in tests. See
-  `app/test/support/mocks.ex` for existing mocks.
-- Use Hammox to verify that mocks conform to the defined behaviours.
+- Define mocks with `Hammox.defmock` for these behaviours. See
+  `test/support/mocks.ex` for existing mocks (the per-context `ContextMock`s as
+  well as `ServerManagerMock`, `Ansible.Mock` and `Http.Mock`).
 - Prefer testing the web application with mocks of the context modules.
 - Prefer testing context modules with complex internal dependencies using mocks.
 - But do write integration tests that do not use mocks for critical paths.
@@ -579,6 +616,27 @@ format`][mix-format] command before submitting changes. Prefer formatting
 
 ## Useful Commands
 
+### Setup & Composite Commands
+
+These [Mix aliases](./mix.exs) bundle common workflows:
+
+- `mix setup`: Install dependencies, set up the database (create, migrate,
+  seed), download the [UAInspector][ua-inspector] database, and install and
+  build the frontend assets. Run this after cloning; see the main
+  [README.md](../README.md).
+- `mix ecto.setup`: Create the database, run migrations and run the seed script.
+- `mix ecto.reset`: Drop and recreate the database (`ecto.drop` then
+  `ecto.setup`).
+- `mix check`: Run the full quality suite — test coverage (`coveralls.html
+--raise`), formatting check, Dialyzer and an unused-dependency check. This
+  mirrors what runs in CI.
+- `mix check.security`: Run the [Sobelow][sobelow] security scanner.
+- `mix start` (alias for `mix phx.server`): Start the Phoenix server.
+
+Continuous integration runs the equivalent checks via the workflows in
+[`.github/workflows`](../.github/workflows) (`build.yml`), so running `mix
+check` locally before submitting changes is recommended.
+
 ### Formatting Commands
 
 - `mix format`: Format the code in the whole project according to the rules
@@ -586,8 +644,8 @@ format`][mix-format] command before submitting changes. Prefer formatting
 - `mix format path/to/file.ex`: Format a specific file.
 - `mix format path/to/directory/**/*.{ex,exs}`: Format all files in a specific
   directory.
-- `mix format --check-formatted`: Check if the code is correctly formatted without
-  making any changes. This is useful for CI pipelines.
+- `mix format --check-formatted`: Check if the code is correctly formatted
+  without making any changes. This is useful for CI pipelines.
 
 ### Linting Commands
 
@@ -657,6 +715,8 @@ agents.
 [cldr]: https://hexdocs.pm/ex_cldr/readme.html
 [cldr-messages]: https://hexdocs.pm/ex_cldr_messages/readme.html
 [credo]: https://hexdocs.pm/credo/overview.html
+[credo-contrib]: https://hexdocs.pm/credo_contrib/readme.html
+[credo-naming]: https://hexdocs.pm/credo_naming/readme.html
 [dialyxir]: https://hexdocs.pm/dialyxir/readme.html
 [dialyxir-mix]: https://hexdocs.pm/dialyxir/Mix.Tasks.Dialyzer.html
 [dialyzer]: https://www.erlang.org/doc/apps/dialyzer/dialyzer.html
@@ -671,7 +731,7 @@ agents.
 [elixir-style-guide]: https://github.com/christopheradams/elixir_style_guide
 [ex-cmd]: https://hexdocs.pm/ex_cmd/readme.html
 [ex-coveralls]: https://hexdocs.pm/excoveralls/readme.html
-[ex-heroicons]: https://hexdocs.pm/ex_heroicons/Heroicons.html
+[heroicons-hex]: https://hexdocs.pm/heroicons
 [ex-machina]: https://hexdocs.pm/ex_machina/readme.html
 [ex-unit]: https://hexdocs.pm/ex_unit/ExUnit.html
 [ex-unit-doctests]: https://hexdocs.pm/ex_unit/ExUnit.DocTest.html
@@ -683,6 +743,8 @@ agents.
 [gettext]: https://hexdocs.pm/gettext/Gettext.html
 [hammox]: https://github.com/msz/hammox
 [heroicons]: https://heroicons.com
+[jekyll]: https://jekyllrb.com
+[live-dashboard]: https://hexdocs.pm/phoenix_live_dashboard
 [mix-format]: https://hexdocs.pm/mix/1.18.4/Mix.Tasks.Format.html
 [mox]: https://hexdocs.pm/mox/Mox.html
 [phoenix]: https://www.phoenixframework.org
@@ -696,6 +758,7 @@ agents.
 [prometheus]: https://prometheus.io
 [sentry]: https://sentry.io
 [sentry-elixir]: https://docs.sentry.io/platforms/elixir/
+[sobelow]: https://github.com/nccgroup/sobelow
 [ssh]: https://en.wikipedia.org/wiki/Secure_Shell
 [ssh-ex]: https://github.com/witchtails/sshex
 [switch-edu-id]: https://eduid.ch/

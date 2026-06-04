@@ -107,8 +107,8 @@ subdirectories (`app`, `course` and `theme`) for more specific guidelines.
 - **Communication**
   - Use clear, professional, concise, and constructive language in comments,
     suggestions and references.
-  - This project is intended for educational purposes. Ensure that all content is
-    appropriate for a learning environment.
+  - This project is intended for educational purposes. Ensure that all content
+    is appropriate for a learning environment.
   - That said, this project also contains some humorous elements and cultural
     references (mainly movies, sci-fi and video games). Feel free to engage with
     these in a light-hearted manner, but always maintain a respectful and
@@ -147,10 +147,15 @@ component-specific frameworks, languages and tools.
   the repository.
 - [Prettier](https://prettier.io) is used to format a significant part of the
   code in this project (Ruby, JavaScript/TypeScript and HTML files that are not
-  part of the Phoenix application). See the [`.prettierrc`](./.prettierrc) file
-  at the root of the repository and in the `course` directory. Note that
-  Prettier is not used for Elixir code in the `app` directory, as there is no
-  widely adopted code
+  part of the Phoenix application). See the
+  [`.prettierrc.yml`](./.prettierrc.yml) file at the root of the repository and
+  in the `course` directory. Note that Prettier is not used for Elixir code in
+  the `app` directory, as there is no widely adopted code
+- [remark](https://remark.js.org) is used to lint the project's Markdown
+  documentation — it validates internal links, heading structure and
+  fenced-code-block languages. See the [`.remarkrc.yml`](./.remarkrc.yml) and
+  [`.remarkignore`](./.remarkignore) files at the root of the repository, and the
+  `npm run lint:md` command in [Project Commands](#project-commands).
 
 ---
 
@@ -166,7 +171,10 @@ and `theme`) for component-specific commands.
   Prefer using the component-specific commands documented in the
   `CONTRIBUTING.md` files in subdirectories (`app`, `course` and `theme`) when
   working on a specific component.
-- `npm run format:write`: Apply the source code formatting checked by `npm run format`.
+- `npm run format:write`: Apply the source code formatting checked by `npm run
+format`.
+- `npm run lint:md`: Lint the project's Markdown documentation with remark
+  (validating internal links, heading structure and fenced-code languages).
 - `npm run pdf`: Generate the PDF version of the course materials.
 
 ---

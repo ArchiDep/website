@@ -1,0 +1,25 @@
+plugins:
+  # Parse and skip YAML frontmatter so it is not treated as Markdown content.
+  # Without this, the closing "---" of frontmatter is misread as a setext
+  # heading underline, triggering false heading-style warnings.
+  - remark-frontmatter
+
+  # Validate internal links.
+  - remark-validate-links
+
+  # Consistent style — locks to whichever style appears first in each file.
+  # Prettier normalises bullets to "-", code blocks to fenced, and rules to
+  # "---", so in practice this enforces Prettier's output style.
+  - remark-preset-lint-consistent
+
+  # Pin heading style to ATX (e.g. "## Heading") to match Prettier's output.
+  - - remark-lint-heading-style
+    - atx
+
+  # Structural rules
+  - remark-lint-no-duplicate-headings
+  - remark-lint-heading-increment
+
+  # All fenced code blocks must declare a language tag.
+  - - remark-lint-fenced-code-flag
+    - allowEmpty: false

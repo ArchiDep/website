@@ -6,6 +6,31 @@ structured and what guidelines to follow when contributing.
 The adjacent [`AGENTS.md`](./AGENTS.md) file contains additional instructions
 for AI assistants and automated agents.
 
+- [Overview](#overview)
+  - [Integration With Other Components](#integration-with-other-components)
+  - [Standalone Mode](#standalone-mode)
+- [Site Structure](#site-structure)
+- [Course Material](#course-material)
+  - [Writing Guidelines](#writing-guidelines)
+  - [Document Types](#document-types)
+  - [File Naming Conventions](#file-naming-conventions)
+  - [Document Front Matter](#document-front-matter)
+  - [Progress Tracking](#progress-tracking)
+  - [Special Tags and Features](#special-tags-and-features)
+- [General Coding Guidelines](#general-coding-guidelines)
+- [Site Implementation](#site-implementation)
+  - [Custom Jekyll Plugins](#custom-jekyll-plugins)
+  - [Configuration & Deployment Modes](#configuration--deployment-modes)
+  - [Build Output & Asset URLs](#build-output--asset-urls)
+  - [JSON Exports](#json-exports)
+  - [Client-Side Architecture](#client-side-architecture)
+  - [Search](#search)
+  - [Slides](#slides)
+  - [PDF Generation](#pdf-generation)
+  - [Home Page](#home-page)
+- [Formatting and Linting](#formatting-and-linting)
+- [References](#references)
+
 ---
 
 ## Overview
@@ -69,24 +94,39 @@ the dashboard functionality is only available during the current semester).
   - `_plugins/archidep.rb`: Custom Jekyll plugin to enrich documents with
     additional metadata, such as determining the type of document (subject,
     slide, exercise, cheatsheet) and extracting the numeric code from filenames,
-    building the search data, and various other things.
+    building the search data, and various other things. See [Custom Jekyll
+    Plugins](#custom-jekyll-plugins).
+  - `_plugins/utils.rb`: Shared Ruby helpers used by the custom tags and
+    plugins, such as Markdown rendering, SVG icon rendering and Markdown
+    reference-link resolution.
+  - `_plugins/filters.rb`: Custom Liquid filters (e.g. `collapse_whitespace`).
+  - `_plugins/relative_asset_url.rb`: Custom Liquid filters that resolve
+    cache-busted asset URLs from the Webpack and Phoenix manifests. See [Build
+    Output & Asset URLs](#build-output--asset-urls).
   - `_plugins/tags/**/*.rb`: Custom Liquid tags to spruce up course content,
     such as callout boxes, styled notes, responsive side-by-side columns,
-    mermaid diagrams, and more.
-  - `src/assets/course.ts` & `src/assets/course/**/*.{ts,html}`: TypeScript and
-    HTML files for client-side interactivity, such as copy-to-clipboard buttons,
-    analytics, search functionality, and more.
+    collapsible solutions and Mermaid diagrams. See [Special Tags and
+    Features](#special-tags-and-features).
+  - `src/assets/course.ts` & `src/assets/course/**/*.{ts,tsx,html}`: TypeScript
+    and HTML files for client-side interactivity, such as the search dialog,
+    copy-to-clipboard buttons, the cloud server widget, randomized exercise
+    values, analytics and real-time integration with the dashboard. See
+    [Client-Side Architecture](#client-side-architecture).
+  - `src/assets/utils.ts` & `src/assets/errors.ts`: Small shared helpers and
+    error types used across the client-side modules.
   - `src/assets/git-memoir/**/*.ts`: TypeScript definitions of interactive Git
     diagrams shown in some slides and exercises, and a renderer to display them.
-  - `src/assets/slides.ts`: TypeScript file to enhance slide presentations with
-    features like Git diagrams.
+  - `src/assets/slides.ts` & `src/assets/slides/**/*.ts`: TypeScript files to
+    enhance slide presentations with features like Git diagrams.
   - `src/assets/slides-mermaid.ts`: TypeScript file to render Mermaid diagrams
     in slides.
 - **Other Things**
   - `favicons`: Favicons for various platforms and devices.
   - `Gemfile` & `Gemfile.lock`: Ruby dependencies for Jekyll and its plugins.
-  - `_config.yml` & `_config.*.yml`: Main configuration file and configuration
-    overrides for Jekyll. See the explanations in each file.
+  - `_config.yml` & `_config.*.yml`: Main Jekyll configuration file and
+    environment-specific overrides (Docker development, proxied development and
+    standalone GitHub Pages builds). See [Configuration & Deployment
+    Modes](#configuration--deployment-modes) and the explanations in each file.
   - `dashboard.txt`: Placeholder document to have the dashboard show up as an
     entry in search results.
   - `_includes`: Reusable Liquid templates for various parts of the
@@ -168,6 +208,68 @@ structures.
   - The main file in each subdirectory should be named `cheatsheet.md`.
   - A cheatsheet can have additional files, such as images or data files, placed
     in an `images` subdirectory next to the `cheatsheet.md` file.
+
+### Document Front Matter
+
+Most document metadata is computed automatically by the
+[`_plugins/archidep.rb`](./_plugins/archidep.rb) plugin from the filename and
+directory structure (`num`, `section`, `course_type`, `permalink`, `layout`,
+`progress`, `has_slides`, etc.). Do not set these keys manually, as they will be
+overwritten. See [Custom Jekyll Plugins](#custom-jekyll-plugins).
+
+The following front matter keys are meant to be set by authors:
+
+- `title`: The document title. May include emoji shortcodes (rendered by
+  [jemoji][jemoji]), e.g. `:rocket:`.
+- `graded: true`: Marks an exercise as graded. Graded exercises are flagged in
+  the UI and indexed as a distinct `graded-exercise` type for search.
+- `published: false`: Hides a work-in-progress document (standard Jekyll
+  behaviour).
+- `cloud_server: creation` or `cloud_server: details`: Embeds the [cloud server
+  widget](#cloud-server-widget) in an exercise. Use `creation` on the exercise
+  where students first create their server, and `details` on later exercises
+  that only need to display the server's connection details.
+- `sidebar_title`: An alternate, usually shorter, title to display in the
+  sidebar (used by some cheatsheets).
+- `excerpt_separator: <!-- more -->`: Marks the boundary of the excerpt shown at
+  the top of a document.
+- `standalone: false`: Excludes the document from the search index in
+  [standalone builds](#configuration--deployment-modes) (e.g. content that only
+  makes sense alongside the dashboard).
+- `search_url`, `search_subtitle`, `search_extra_text`: Override the URL,
+  subtitle and extra indexed text used when building the search data.
+
+### Progress Tracking
+
+The course's progress through the semester is tracked with documents in the
+[`collections/_progress`](./collections/_progress) directory, one per teaching
+session. Each is a front-matter-only post whose `done`, `due` and `next` keys
+list chapter numbers (the computed `num` of each document, e.g. `201`):
+
+```yaml
+---
+layout: post
+title: 'Git Branching and Collaborating'
+date: 2025-10-03 19:00:00 +0100
+categories: progress
+done: [105, 200, 201, 202, 203]
+due: [204, 205]
+next: [300, 301, 400, 401, 402, 403]
+---
+```
+
+The [`_plugins/archidep.rb`](./_plugins/archidep.rb) plugin aggregates these
+lists across all progress documents and assigns each chapter and section one of
+four progress states, which drive the sidebar indicators, the home page cards
+and search filtering:
+
+- `done`: listed in any `done` array.
+- `due`: listed in `due` but not yet `done`.
+- `next`: listed in `next` but not `done` or `due`.
+- `future`: not listed anywhere (the default).
+
+To advance the course, add a new progress document for the session rather than
+editing existing ones.
 
 ### Special Tags and Features
 
@@ -320,9 +422,104 @@ This is the second column with multiple custom classes.
 Note that the whitespace between the opening tag and the first delimiter is
 ignored and not included in the first column.
 
-TODO: cloud server, randomization (chance), revealjs, progress tracking
+#### Solutions
 
-- Use [Mermaid][mermaid] for diagrams and visualizations where appropriate.
+The `solution` tag creates a collapsible box, hidden by default, that reveals
+its content when clicked. Use it to hide exercise solutions so students can
+attempt the exercise first. It accepts an optional `title` attribute (default
+"Solution").
+
+The `solution` tag is implemented in the [`_plugins/tags/solution.rb`
+file](./_plugins/tags/solution.rb).
+
+**Example usage:**
+
+```liquid
+{% solution %}
+
+Here is the solution to the exercise.
+
+{% endsolution %}
+```
+
+#### Mermaid Diagrams
+
+The `mermaid` tag renders a [Mermaid][mermaid] diagram from its content. The
+diagram is rendered client-side (it shows a loading skeleton until then). Use
+Mermaid for diagrams and visualizations where appropriate.
+
+The `mermaid` tag is implemented in the [`_plugins/tags/mermaid.rb`
+file](./_plugins/tags/mermaid.rb). Mermaid diagrams on slides are rendered by
+[`src/assets/slides-mermaid.ts`](./src/assets/slides-mermaid.ts).
+
+**Example usage:**
+
+```liquid
+{% mermaid %}
+graph LR A[Client] --> B[Server]
+{% endmermaid %}
+```
+
+#### Forced Markdown
+
+The `markdown` tag wraps its content in a `<div class="markdown">` and forces
+Markdown rendering of the block. It is useful when content nested inside raw
+HTML would otherwise not be processed as Markdown. It is implemented in the
+[`_plugins/tags/markdown.rb` file](./_plugins/tags/markdown.rb).
+
+#### Cloud Server Widget
+
+Setting `cloud_server: creation` or `cloud_server: details` in an exercise's
+[front matter](#document-front-matter) embeds a live widget that displays the
+student's cloud server details (username, IP address, SSH command, etc.) with
+copy-to-clipboard buttons. The widget is rendered into a `cloud-server-data`
+element by the [layout](./_layouts/toc.html) and driven by real-time updates
+from the dashboard (see [Client-Side Architecture](#client-side-architecture)).
+It is implemented as a Preact component in
+[`src/assets/course/cloud-server.tsx`](./src/assets/course/cloud-server.tsx).
+
+#### Randomized Values
+
+Exercises can display example values (usernames, IP addresses, domains) that are
+randomized and continuously change while on screen, to discourage students from
+blindly copy-pasting and to encourage them to substitute their own values. Add a
+raw HTML element with the `archidep-randomize` class next to the relevant code
+block:
+
+```html
+<div
+  class="archidep-randomize"
+  data-regexp="(?<username>[a-z][a-z0-9]+)@(?<ipAddress>[a-z0-9]+(?:\.[a-z0-9]+){3})"
+  data-template="<username>@<ipAddress>"
+></div>
+```
+
+- `data-regexp`: A regular expression with named capture groups identifying the
+  parts to randomize. Supported group names are `username`, `ipAddress` and
+  `domain`.
+- `data-template`: The template used to rebuild the text, referencing the groups
+  with `<username>`, `<ipAddress>` and `<domain>` placeholders.
+- `data-tooltip="false"`: Optionally disables the reminder tooltip.
+
+This feature is implemented in
+[`src/assets/course/randomize.ts`](./src/assets/course/randomize.ts).
+
+#### Interactive Git Diagrams
+
+Some slides and exercises embed interactive [Git memoir][git-memoir] diagrams
+that animate Git operations (commits, branches, merges, push/pull) step by step.
+Add a raw `<git-memoir>` element referencing a named diagram and a height:
+
+```html
+<git-memoir name="branching" svg-height="400px"></git-memoir>
+```
+
+The named diagrams are defined as factory functions in
+[`src/assets/git-memoir/git-memoirs-registry.ts`](./src/assets/git-memoir/git-memoirs-registry.ts)
+(registered on `window.gitMemoirs`), and rendered by the controller in
+[`src/assets/git-memoir/git-memoir-controller.ts`](./src/assets/git-memoir/git-memoir-controller.ts).
+Diagrams support several playback modes (autoplay, manual, visualization); see
+[Slides](#slides) for their integration with reveal.js.
 
 ---
 
@@ -361,25 +558,167 @@ See the next sections for more specific guidelines.
 
 This section describes the technical implementation of the course material site.
 
-### Home Page
+### Custom Jekyll Plugins
 
-TODO
+The site relies on several custom plugins in the [`_plugins`](./_plugins)
+directory:
+
+- [`archidep.rb`](./_plugins/archidep.rb): The main plugin. Its `Generator`
+  computes per-document metadata from filenames and the
+  [`_data/course.yml`](./_data/course.yml) sections (`num`, `section`,
+  `section_title`, `course_type`, `layout`, `permalink`, `progress`,
+  `has_slides`, `toc`, etc.), links subjects to their slides, attaches items to
+  their sections, and prepares the data shown on the [home page](#home-page).
+  Its hooks also expose the application version and Git revision (read from
+  `../app/mix.exs` and Git), render each document's `raw_markdown` (used by the
+  [slide layout](#slides)), build the [search data](#search), and write the
+  [JSON exports](#json-exports).
+- [`utils.rb`](./_plugins/utils.rb): Shared `ArchiDep::Utils` helpers used by
+  the custom tags — `render_markdown`, `render_icon` (renders an SVG from
+  [`_includes/icons`](./_includes)) and the Markdown reference-link resolution
+  used so that reference-style links keep working inside tags and slides.
+- [`filters.rb`](./_plugins/filters.rb): Custom Liquid filters such as
+  `collapse_whitespace`.
+- [`relative_asset_url.rb`](./_plugins/relative_asset_url.rb): Liquid filters
+  that resolve cache-busted asset URLs (see [Build Output & Asset
+  URLs](#build-output--asset-urls)).
+
+### Configuration & Deployment Modes
+
+The base configuration is [`_config.yml`](./_config.yml). Notable settings:
+
+- `destination: '../app/priv/static'`: The site is built directly into the
+  dashboard application's static directory.
+- `collections`: The `course`, `cheatsheets`, `json`, `progress` (and a reserved
+  `notices`) collections, with `collections_dir: collections`.
+- `plugins`: `jekyll-feed`, `jekyll-target-blank`, `jekyll-toc` and `jemoji`.
+- `keep_files: [assets, cache_manifest.json]`: Preserves the assets and Phoenix
+  cache manifest produced by the other build steps so Jekyll does not delete
+  them when writing into `priv/static`.
+- `archidep_standalone`, `archidep_years`, `archidep_repo` and similar custom
+  keys used throughout the templates.
+
+Environment-specific overrides are layered on top (e.g. `jekyll build --config
+_config.yml,_config.proxied.yml`):
+
+- [`_config.docker.yml`](./_config.docker.yml): Sets `host: 0.0.0.0` so the dev
+  server is reachable from outside its Docker container.
+- [`_config.proxied.yml`](./_config.proxied.yml): Forces the livereload script
+  into the HTML so live reload works when the dashboard application serves the
+  compiled files directly, bypassing the Jekyll server. This is the normal
+  development setup (visit the site through the application).
+- [`_config.pages.yml`](./_config.pages.yml): Builds the **standalone** site for
+  GitHub Pages — sets `baseurl: '/website'` and `archidep_standalone: true`,
+  which hides dashboard-only UI and excludes dashboard-only content from search.
+
+### Build Output & Asset URLs
+
+Client-side assets are bundled by [Webpack][webpack]
+([`webpack.config.cjs`](./webpack.config.cjs)), which exports two
+configurations:
+
+- The main config bundles the `course`, `slides` and `slides-mermaid` entry
+  points (and their CSS) into `app/priv/static/assets/course`, with
+  content-hashed filenames in production for cache busting.
+- A second config bundles the `search` entry point into
+  `app/priv/static/assets/search`.
+
+In production, the main config writes a `manifest.json` mapping logical asset
+paths to their hashed filenames. The
+[`relative_asset_url.rb`](./_plugins/relative_asset_url.rb) plugin reads this
+manifest (and the Phoenix `cache_manifest.json`) so templates can reference
+assets by their logical name and get the correct hashed URL. **Do not hardcode
+hashed asset paths in templates** — use the asset-url filters instead. In
+development, the filters fall back to the plain path when no manifest exists.
 
 ### JSON Exports
 
-The following JSON files are exported during the build process for integration
-with the dashboard application:
+The following JSON files are written into the application's static directory
+during the build for integration with (and archival of) the dashboard
+application:
 
-- The course structure is exported to `app/priv/static/archidep.json` so that
-  the dashboard application can replicate the sidebar markup and navigation.
-- The full-text search index built with [Lunr][lunr] is exported to
-  `app/priv/static/lunr.json` so that the dashboard application can perform
-  the same client-side search.
+- The course structure is exported to `app/priv/static/archidep.json` (from
+  [`collections/_json/archidep.json.liquid`](./collections/_json)) so that the
+  dashboard application can replicate the sidebar markup and navigation.
 - The source data used to build the search index is exported to
   `app/priv/static/search.json` so that the dashboard application can display
   the same search results interface.
+- The full-text search index built with [Lunr][lunr] is exported to
+  `app/priv/static/lunr.json` (by the `npm run idx` script, see
+  [Search](#search)) so that the dashboard application can perform the same
+  client-side search.
+- Build metadata (application version, Git branch and revision) is exported to
+  `app/priv/static/version.json`.
 
-TODO: [Iconfify][iconify]
+### Client-Side Architecture
+
+The main client entry point is
+[`src/assets/course.ts`](./src/assets/course.ts), bundled by Webpack and loaded
+on every page. It initializes the interactive features ([search](#search),
+copy buttons, [randomized values](#randomized-values), the [cloud server
+widget](#cloud-server-widget), the table of contents, "back to top", [tell me
+more](#tell-me-more), [Git memoirs](#interactive-git-diagrams)) and the
+real-time integration described below. Components are built with
+[Preact][preact] and [Preact signals][preact-signals]; external JSON is
+validated at runtime with [`io-ts`][io-ts] codecs (see
+[`src/shared/codecs`](./src/shared)). Logging goes through
+[`src/assets/logging.ts`](./src/assets/logging.ts) ([loglevel][loglevel]).
+
+**Real-time dashboard integration.** When not in standalone mode, the client
+opens a [Phoenix][phoenix] WebSocket channel to the dashboard application
+(authenticated via a token fetched from the application). Through this channel
+it receives the current session and live cloud server data, reconnecting
+automatically with exponential backoff. The session is cached in `localStorage`
+and modelled as a small state machine (anonymous, cached, connected, connection
+error) in [`src/assets/course/session.ts`](./src/assets/course/session.ts); it
+drives the login/logout/impersonation UI and the [cloud server
+widget](#cloud-server-widget). In standalone builds, this integration and
+analytics are disabled.
+
+### Search
+
+Full-text search uses [Lunr][lunr]. At build time, the
+[`archidep.rb`](./_plugins/archidep.rb) plugin extracts a searchable element for
+each document and heading and writes `search.json`; the `npm run idx` script
+([`src/scripts/idx.ts`](./src/scripts/idx.ts)) then builds the Lunr index into
+`lunr.json` (boosting the `extraText` field and keeping match positions for
+highlighting). On the client,
+[`src/assets/course/search.ts`](./src/assets/course/search.ts) lazily loads both
+files, renders the dialog from the `*.template.html` templates, and supports
+keyboard activation (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd>) and quick
+shortcuts.
+
+### Slides
+
+Slides are presented with [reveal.js][reveal], configured in
+[`src/assets/slides.ts`](./src/assets/slides.ts) (Markdown, highlight, notes and
+search plugins). The slide [layout](./_layouts) feeds the document's
+pre-rendered `raw_markdown` into reveal.js. Mermaid diagrams are rendered lazily
+per slide by
+[`src/assets/slides-mermaid.ts`](./src/assets/slides-mermaid.ts), and
+[interactive Git diagrams](#interactive-git-diagrams) are wired into the slide
+lifecycle by [`src/assets/slides/git-memoirs.ts`](./src/assets/slides). Useful
+query parameters include `?print-pdf` (PDF export layout), `?view=scroll`
+(continuous scroll) and `?show-notes`.
+
+### PDF Generation
+
+The `npm run pdf` script ([`src/scripts/pdf.ts`](./src/scripts/pdf.ts))
+generates PDF versions of the course materials using [Puppeteer][puppeteer]. It
+reads the exported `archidep.json`, drives a headless browser to each document
+and slide deck (with the appropriate query parameters), prints each to a PDF in
+the `pdf/` directory, and bundles them into a `pdf/ArchiDep.zip` archive. **It
+requires a running instance of the website** (it defaults to
+`http://localhost:42000`). As noted in the [`AGENTS.md`](./AGENTS.md), this is
+an expensive operation; a human runs it when needed.
+
+### Home Page
+
+The home page ([`index.md`](./index.md), `home` layout) summarizes course
+progress with three cards — what was covered previously, what is due next, and
+what is coming up — built from the most recent [progress
+documents](#progress-tracking) by the [`archidep.rb`](./_plugins/archidep.rb)
+plugin (`previous_chapters`, `next_due_exercises`, `next_chapters`).
 
 ---
 
@@ -395,11 +734,14 @@ TODO: [Iconfify][iconify]
 - [Jekyll][jekyll] for static site generation
   - [Jekyll Documentation][jekyll-docs]
 - [Liquid Documentation][liquid] for HTML templating
+- [Git memoir][git-memoir] for interactive Git diagrams
 - [io-ts][io-ts] for runtime type checking and validation
   - [io-ts Documentation][io-ts-docs]
+- [jemoji][jemoji] for emoji shortcode rendering
 - [Loglevel][loglevel] for client-side logging
 - [Lunr][lunr] for full-text search
 - [Mermaid][mermaid] for diagrams and visualizations
+- [Phoenix][phoenix] for real-time integration with the dashboard application
 - [Plausible Analytics][plausible] for privacy-friendly web analytics
 - [Preact][preact] for client-side interactivity
   - [Preact Signals][preact-signals] for state management
@@ -425,9 +767,12 @@ agents.
 [io-ts]: https://github.com/gcanti/io-ts
 [io-ts-concepts]: https://gcanti.github.io/io-ts/
 [io-ts-docs]: https://github.com/gcanti/io-ts/blob/master/index.md
+[git-memoir]: https://github.com/AlphaHydrae/git-memoir
 [jekyll]: https://jekyllrb.com
 [jekyll-docs]: https://jekyllrb.com/docs
+[jemoji]: https://github.com/jekyll/jemoji
 [liquid]: https://shopify.github.io/liquid/
+[phoenix]: https://hexdocs.pm/phoenix/Phoenix.Channel.html
 [loglevel]: https://github.com/pimterry/loglevel
 [lunr]: https://lunrjs.com
 [mermaid]: https://mermaid.js.org

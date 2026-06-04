@@ -1,6 +1,6 @@
 defmodule ArchiDep.Accounts.Events.PreregisteredUserLoginLinkCreated do
   @moduledoc """
-  A user deleted one of their sessions.
+  A login link was created for a preregistered user.
   """
 
   use ArchiDep, :event

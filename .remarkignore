@@ -1,0 +1,37 @@
+# App files
+
+/app/\_build/
+/app/cover/
+/app/deps/
+/app/doc/
+/app/.elixir_ls
+/app/tmp/
+/app/priv/ssh
+/app/priv/static
+/app/priv/uploads/
+/app/assets/node_modules/
+
+# Course files
+
+/course/.bundle
+/course/collections
+/course/dist
+/course/index.md
+/course/.jekyll-cache
+/course/.jekyll-metadata
+/course/node_modules
+/course/pdf
+/course/\_site
+/course/vendor
+
+# Theme files
+
+/theme/dist
+
+# Root files
+
+/.env
+!/.env.sample
+/node_modules
+/tmp
+/.vault-password
