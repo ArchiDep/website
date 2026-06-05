@@ -62,7 +62,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -75,7 +76,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, %{}}
@@ -99,7 +101,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -138,7 +141,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -151,7 +155,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, %{}}
@@ -186,7 +191,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
        %{
          ansible_facts_gathered: ansible_facts_gathered
        } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: true,
         ssh_port: true,
@@ -209,7 +215,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -243,7 +250,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, fake_facts}
@@ -306,7 +314,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -327,7 +336,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
        %{
          ansible_facts_gathered: ansible_facts_gathered
        } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: true,
         ssh_port: true,
@@ -366,7 +376,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -399,7 +410,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, fake_facts}
@@ -459,7 +471,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -519,7 +532,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -549,7 +563,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
       "ansible_distribution_version" => "0.1"
     }
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, fake_facts}
@@ -573,7 +588,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -596,7 +612,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
        %{
          ansible_facts_gathered: ansible_facts_gathered
        } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: true,
         ssh_port: true,
@@ -647,7 +664,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -681,7 +699,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, fake_facts}
@@ -746,7 +765,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -768,7 +788,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
        %{
          ansible_facts_gathered: ansible_facts_gathered
        } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         root: false,
         set_up_at: true,
@@ -820,7 +841,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -854,7 +876,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, fake_facts}
@@ -921,7 +944,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -943,7 +967,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
        %{
          ansible_facts_gathered: ansible_facts_gathered
        } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         root: true,
         set_up_at: true,
@@ -995,7 +1020,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -1029,7 +1055,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, fake_facts}
@@ -1094,7 +1121,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -1116,7 +1144,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
        %{
          ansible_facts_gathered: ansible_facts_gathered
        } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         root: false,
         set_up_at: true,
@@ -1155,7 +1184,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -1188,7 +1218,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, fake_facts}
@@ -1248,7 +1279,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -1273,7 +1305,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -1286,7 +1319,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         ansible_facts_gathered.(
           initial_state,
@@ -1314,7 +1347,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -1337,7 +1371,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
        %{
          ansible_facts_gathered: ansible_facts_gathered
        } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: true,
         ssh_port: true,
@@ -1359,7 +1394,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -1375,7 +1411,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
     now = DateTime.utc_now()
     fake_facts = %{"ansible_machine_id" => "1234567890abcdef"}
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, fake_facts}
@@ -1502,7 +1539,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -1515,7 +1553,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    {result, msg} =
+    {%ServerManagerState{} = result, msg} =
       with_log(fn ->
         ansible_facts_gathered.(
           initial_state,
@@ -1576,7 +1614,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -1591,7 +1630,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, %{}}
@@ -1694,7 +1734,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -1709,7 +1750,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_facts_gathered.(
         initial_state,
         {:ok, %{}}
@@ -1804,7 +1846,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
       playbook_digest: Ansible.setup_playbook().digest
     )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -1814,7 +1857,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleFactGathering
 
     fact_gathering_error = Faker.Lorem.sentence()
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         ansible_facts_gathered.(
           initial_state,

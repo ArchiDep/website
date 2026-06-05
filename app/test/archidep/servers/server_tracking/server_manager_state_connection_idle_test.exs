@@ -25,7 +25,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
         set_up_at: nil
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_not_connected_state(%{connection_pid: nil}),
         server: server,
@@ -33,7 +34,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
         version: 24
       )
 
-    result = connection_idle.(initial_state, self())
+    %ServerManagerState{} = result = connection_idle.(initial_state, self())
 
     assert_no_stored_events!()
 
@@ -56,7 +57,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :connect, _connect_delay ->
         fake_timer_ref
       end)
@@ -80,7 +82,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
         set_up_at: nil
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_disconnected_state(),
         server: server,
@@ -88,7 +91,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
       )
 
     now = DateTime.utc_now()
-    result = connection_idle.(initial_state, self())
+    %ServerManagerState{} = result = connection_idle.(initial_state, self())
 
     assert_no_stored_events!()
 
@@ -125,7 +128,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :retry_connecting, 5_000 ->
         fake_timer_ref
       end)
@@ -144,7 +148,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
        %{connection_idle: connection_idle} do
     server = ServersFactory.build(:server, active: false, username: "alice", set_up_at: nil)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_not_connected_state(%{connection_pid: nil}),
         server: server,
@@ -169,7 +174,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
        %{connection_idle: connection_idle} do
     server = ServersFactory.build(:server, active: false, username: "alice", set_up_at: nil)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_disconnected_state(),
         server: server,
@@ -177,7 +183,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
         version: 42
       )
 
-    result = connection_idle.(initial_state, self())
+    %ServerManagerState{} = result = connection_idle.(initial_state, self())
 
     assert_no_stored_events!()
 

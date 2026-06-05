@@ -185,7 +185,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
              initialize,
              test_pid,
              fn done, %{manager_pid: server_manager_pid} ->
-               expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+               expect(ServerManagerMock, :connection_idle, fn %ServerManagerState{} = state,
+                                                              ^test_pid ->
                  task = Task.async(fn -> :timer.sleep(1_000_000) end)
 
                  # Unlink the task so that killing it does not also kill the
@@ -242,7 +243,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     end)
 
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
-             expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+             expect(ServerManagerMock, :connection_idle, fn %ServerManagerState{} = state,
+                                                            ^test_pid ->
                %ServerManagerState{
                  state
                  | actions: [
@@ -285,7 +287,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     end)
 
     assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
-             expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+             expect(ServerManagerMock, :connection_idle, fn %ServerManagerState{} = state,
+                                                            ^test_pid ->
                %ServerManagerState{
                  state
                  | actions: [
@@ -344,7 +347,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
              initialize,
              test_pid,
              fn done, %{starting_version: starting_version} ->
-               expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+               expect(ServerManagerMock, :connection_idle, fn %ServerManagerState{} = state,
+                                                              ^test_pid ->
                  done.(%ServerManagerState{state | version: starting_version})
                end)
 
@@ -429,7 +433,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
              initialize,
              test_pid,
              fn done, %{starting_version: starting_version} ->
-               expect(ServerManagerMock, :connection_idle, fn state, ^test_pid ->
+               expect(ServerManagerMock, :connection_idle, fn %ServerManagerState{} = state,
+                                                              ^test_pid ->
                  done.(%ServerManagerState{state | version: starting_version})
                end)
 
@@ -566,7 +571,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
              fn done, %{manager_pid: server_manager_pid} ->
                ref = make_ref()
 
-               expect(ServerManagerMock, :handle_task_result, fn state, ^ref, :ok ->
+               expect(ServerManagerMock, :handle_task_result, fn %ServerManagerState{} = state,
+                                                                 ^ref,
+                                                                 :ok ->
                  %ServerManagerState{
                    state
                    | actions: [
@@ -767,7 +774,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
 
   test "update a server through its manager", %{
     initialize: initialize,
-    server: server,
+    server: %Server{} = server,
     test_pid: test_pid
   } do
     updated_server = %Server{server | username: Faker.Internet.user_name()}
@@ -933,7 +940,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     # We use this message to know when the server manager has finished
     # initializing (including processing its initial actions).
     if wait_for_started_message do
-      expect(ServerManagerMock, :on_message, fn state, :started ->
+      expect(ServerManagerMock, :on_message, fn %ServerManagerState{} = state, :started ->
         send(test_pid, :started)
         # Add the starting version so that we can verify later that the server
         # manager has actually updated its state during initialization.

@@ -43,7 +43,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
       time: connecting_time
     ) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -53,7 +54,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
       )
 
     now = DateTime.utc_now()
-    result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
+
+    %ServerManagerState{} =
+      result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
 
     [connection_event] = fetch_new_stored_events([fake_event])
 
@@ -88,7 +91,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_task = Task.completed(:fake)
 
-    check_access_result =
+    %ServerManagerState{} =
+      check_access_result =
       run_command_fn.(result, fn "sudo -n ls", 20_000 ->
         fake_task
       end)
@@ -138,7 +142,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
       time: connecting_time
     ) = reconnecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: reconnecting,
         server: server,
@@ -148,7 +153,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
       )
 
     now = DateTime.utc_now()
-    result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
+
+    %ServerManagerState{} =
+      result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
 
     [connection_event] = fetch_new_stored_events([fake_event])
 
@@ -183,7 +190,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_task = Task.completed(:fake)
 
-    check_access_result =
+    %ServerManagerState{} =
+      check_access_result =
       run_command_fn.(result, fn "sudo -n ls", 20_000 ->
         fake_task
       end)
@@ -245,7 +253,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
         ServersFactory.server_sudo_access_check_failed_problem()
       ])
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -256,7 +265,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
       )
 
     now = DateTime.utc_now()
-    result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
+
+    %ServerManagerState{} =
+      result = handle_task_result.(initial_state, fake_connect_task_ref, :ok)
 
     [connection_event] = fetch_new_stored_events()
     connection_event_ref = assert_server_connected_event!(connection_event, server, now)
@@ -290,7 +301,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_task = Task.completed(:fake)
 
-    check_access_result =
+    %ServerManagerState{} =
+      check_access_result =
       run_command_fn.(result, fn "sudo -n ls", 20_000 ->
         fake_task
       end)
@@ -319,7 +331,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -328,7 +341,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
         version: 9
       )
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -382,7 +395,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -391,7 +405,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
         version: 9
       )
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -445,7 +459,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -454,7 +469,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
         version: 9
       )
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -511,7 +526,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -525,7 +541,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
         version: 9
       )
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -581,7 +597,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -591,7 +608,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,
@@ -635,7 +653,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :retry_connecting, 5_000 ->
         fake_timer_ref
       end)
@@ -661,7 +680,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -676,7 +696,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,
@@ -720,7 +741,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :retry_connecting, 5_000 ->
         fake_timer_ref
       end)
@@ -746,7 +768,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -756,7 +779,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,
@@ -800,7 +824,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :retry_connecting, 5_000 ->
         fake_timer_ref
       end)
@@ -826,7 +851,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -841,7 +867,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,
@@ -885,7 +912,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :retry_connecting, 5_000 ->
         fake_timer_ref
       end)
@@ -911,7 +939,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -922,7 +951,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,
@@ -963,7 +993,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :retry_connecting, 5_000 ->
         fake_timer_ref
       end)
@@ -988,7 +1019,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -1004,7 +1036,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,
@@ -1046,7 +1079,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :retry_connecting, 5_000 ->
         fake_timer_ref
       end)
@@ -1071,7 +1105,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: %{retry: 1, backoff: 0}})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -1084,7 +1119,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connection_error =
       Enum.random([:timeout, :econnrefused, "Oops"])
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,
@@ -1126,7 +1162,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :retry_connecting, 5_000 ->
         fake_timer_ref
       end)
@@ -1152,7 +1189,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connecting = ServersFactory.random_connecting_state(%{retrying: %{retry: 4, backoff: 3}})
     connecting_state(connection_pid: connection_pid) = connecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connecting,
         server: server,
@@ -1165,7 +1203,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     connection_error =
       Enum.random([:timeout, :econnrefused, "Oops"])
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,
@@ -1207,7 +1246,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :retry_connecting, 20_000 ->
         fake_timer_ref
       end)
@@ -1233,7 +1273,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     reconnecting = ServersFactory.random_reconnecting_state()
     reconnecting_state(connection_pid: connection_pid) = reconnecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: reconnecting,
         server: server,
@@ -1243,7 +1284,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     connection_failure_reason = ServersFactory.random_connection_failure_reason()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,
@@ -1292,7 +1334,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     reconnecting = ServersFactory.random_reconnecting_state()
     reconnecting_state(connection_pid: connection_pid) = reconnecting
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: reconnecting,
         server: server,
@@ -1317,7 +1360,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
 
     connection_failure_reason = ServersFactory.random_connection_failure_reason()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_connect_task_ref,

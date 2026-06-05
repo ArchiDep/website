@@ -27,7 +27,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
         ssh_port: true
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connection_pending_state(),
         username: server.username,
@@ -65,7 +66,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
                actions: actions
            }
 
-    connect_result = assert_connect_fn!(connect_fn, result, server.username)
+    %ServerManagerState{} =
+      connect_result = assert_connect_fn!(connect_fn, result, server.username)
 
     assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
@@ -106,7 +108,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
         ServersFactory.server_port_testing_script_failed_problem()
       ])
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connection_pending_state(),
         username: server.username,
@@ -146,7 +149,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
                problems: kept_problems
            }
 
-    connect_result = assert_connect_fn!(connect_fn, result, server.username)
+    %ServerManagerState{} =
+      connect_result = assert_connect_fn!(connect_fn, result, server.username)
 
     assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
@@ -164,14 +168,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
         ssh_port: true
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,
         server: server
       )
 
-    result = on_message.(initial_state, :measure_load_average)
+    %ServerManagerState{} = result = on_message.(initial_state, :measure_load_average)
 
     assert %ServerManagerState{
              actions:
@@ -242,7 +247,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
 
     fake_retry_timer_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_retry_connecting_state(),
         server: server,
@@ -287,7 +293,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
                retry_timer: nil
            }
 
-    connect_result = assert_connect_fn!(connect_fn, result, server.username)
+    %ServerManagerState{} =
+      connect_result = assert_connect_fn!(connect_fn, result, server.username)
 
     assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
@@ -305,7 +312,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
         ssh_port: true
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,
@@ -334,7 +342,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
         ssh_port: true
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,

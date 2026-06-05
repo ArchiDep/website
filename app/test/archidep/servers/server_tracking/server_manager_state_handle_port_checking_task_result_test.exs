@@ -30,7 +30,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     fake_test_ports_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -38,7 +39,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
         tasks: %{test_ports: fake_test_ports_ref}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_test_ports_ref,
@@ -66,7 +68,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     server_ip_address = server.ip_address.address
 
-    check_open_ports_result =
+    %ServerManagerState{} =
+      check_open_ports_result =
       check_open_ports_fn.(result, fn ^server_ip_address, [80, 443, 3000, 3001] ->
         fake_task
       end)
@@ -90,7 +93,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     fake_test_ports_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -102,7 +106,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
         ]
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_test_ports_ref,
@@ -131,7 +136,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     server_ip_address = server.ip_address.address
 
-    check_open_ports_result =
+    %ServerManagerState{} =
+      check_open_ports_result =
       check_open_ports_fn.(result, fn ^server_ip_address, [80, 443, 3000, 3001] ->
         fake_task
       end)
@@ -155,7 +161,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     fake_test_ports_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -166,7 +173,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     port_testing_stderr = Faker.Lorem.sentence()
     port_testing_exit_code = Faker.random_between(1, 255)
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -214,7 +221,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     fake_test_ports_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -229,7 +237,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     port_testing_stderr = Faker.Lorem.sentence()
     port_testing_exit_code = Faker.random_between(1, 255)
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -277,7 +285,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     fake_test_ports_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -287,7 +296,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     port_testing_error = Faker.Lorem.sentence()
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -334,7 +343,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     fake_test_ports_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -348,7 +358,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     port_testing_error = Faker.Lorem.sentence()
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -396,7 +406,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     fake_check_open_ports_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -411,7 +422,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_open_ports_ref,
@@ -471,7 +483,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
     fake_retry_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(
@@ -489,7 +502,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_open_ports_ref,
@@ -558,7 +572,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     fake_check_open_ports_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -567,7 +582,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
         problems: previous_problems
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_open_ports_ref,
@@ -613,7 +629,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     fake_check_open_ports_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -629,7 +646,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
     :ok = PubSub.subscribe(@pubsub, "server-groups:#{server.group_id}:servers")
     :ok = PubSub.subscribe(@pubsub, "server-owners:#{server.owner_id}:servers")
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_open_ports_ref,
@@ -688,7 +706,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     fake_check_open_ports_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -698,7 +717,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     port_problems = [{80, Faker.Lorem.sentence()}, {3000, :oops}]
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_open_ports_ref,
@@ -746,7 +766,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     fake_check_open_ports_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -757,7 +778,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     port_problems = [{80, Faker.Lorem.sentence()}, {3000, :oops}]
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_open_ports_ref,

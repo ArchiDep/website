@@ -254,7 +254,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
     end
   end
 
-  defp maybe_refresh_server_group(server, updated_class, _student),
+  defp maybe_refresh_server_group(%Server{} = server, updated_class, _student),
     do: %Server{server | group: ServerGroup.refresh!(server.group, updated_class)}
 
   defp maybe_refresh_server_group_member(nil, updated_student) do

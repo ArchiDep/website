@@ -32,7 +32,7 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
       |> fetch_entities_by_type()
       |> to_entities_by_stream()
 
-    Enum.map(events, fn stored_event ->
+    Enum.map(events, fn %StoredEvent{} = stored_event ->
       %StoredEvent{stored_event | entity: Map.get(entities, stored_event.stream)}
     end)
   end

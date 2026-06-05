@@ -41,7 +41,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         distribution_version: nil
       )
 
-    class =
+    %Class{} =
+      class =
       CourseFactory.build(:class,
         active: true,
         servers_enabled: true,
@@ -80,7 +81,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
       updated_at: class.updated_at
     }
 
-    server =
+    %Server{} =
+      server =
       build_active_server(
         group: group,
         root: true,
@@ -89,7 +91,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         last_known_properties: nil
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -105,7 +108,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     event = EventsFactory.build(:event_reference)
 
-    result = group_updated.(initial_state, updated_class, event)
+    %ServerManagerState{} = result = group_updated.(initial_state, updated_class, event)
 
     assert_no_stored_events!()
 
@@ -137,7 +140,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
   end
 
   test "ignore outdated server group updates", %{group_updated: group_updated} do
-    class = CourseFactory.build(:class, active: true, servers_enabled: true)
+    %Class{} = class = CourseFactory.build(:class, active: true, servers_enabled: true)
 
     group = %ServerGroup{
       id: class.id,
@@ -204,7 +207,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
   test "server property mismatches are re-evaluated when a group is updated", %{
     group_updated: group_updated
   } do
-    expected_server_properties =
+    %ExpectedServerProperties{} =
+      expected_server_properties =
       CourseFactory.build(:expected_server_properties,
         hostname: nil,
         machine_id: nil,
@@ -221,7 +225,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         distribution_version: nil
       )
 
-    class =
+    %Class{} =
+      class =
       CourseFactory.build(:class,
         active: true,
         servers_enabled: true,
@@ -260,6 +265,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
       updated_at: class.updated_at
     }
 
+    %ServerProperties{} = group_expected_server_properties = group.expected_server_properties
+
     expected_properties =
       ServersFactory.build(:server_properties,
         hostname: nil,
@@ -279,7 +286,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     last_known_properties = ServersFactory.build(:server_properties, cpus: 2)
 
-    server =
+    %Server{} =
+      server =
       build_active_server(
         group: group,
         root: true,
@@ -289,7 +297,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         last_known_properties: last_known_properties
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -307,7 +316,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     event = EventsFactory.build(:event_reference)
 
-    result = group_updated.(initial_state, updated_class, event)
+    %ServerManagerState{} = result = group_updated.(initial_state, updated_class, event)
 
     assert_no_stored_events!()
 
@@ -324,7 +333,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
                  | group: %ServerGroup{
                      group
                      | expected_server_properties: %ServerProperties{
-                         group.expected_server_properties
+                         group_expected_server_properties
                          | cpus: 4
                        },
                        version: updated_class.version
@@ -346,7 +355,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
   test "server property mismatches cannot be re-evaluated if the server has no last known properties",
        %{group_updated: group_updated} do
-    expected_server_properties =
+    %ExpectedServerProperties{} =
+      expected_server_properties =
       CourseFactory.build(:expected_server_properties,
         hostname: nil,
         machine_id: nil,
@@ -363,7 +373,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         distribution_version: nil
       )
 
-    class =
+    %Class{} =
+      class =
       CourseFactory.build(:class,
         active: true,
         servers_enabled: true,
@@ -402,6 +413,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
       updated_at: class.updated_at
     }
 
+    %ServerProperties{} = group_expected_server_properties = group.expected_server_properties
+
     expected_properties =
       ServersFactory.build(:server_properties,
         hostname: nil,
@@ -419,7 +432,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         distribution_version: nil
       )
 
-    server =
+    %Server{} =
+      server =
       build_active_server(
         group: group,
         root: true,
@@ -429,7 +443,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         last_known_properties: nil
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -452,7 +467,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     event = EventsFactory.build(:event_reference)
 
-    result = group_updated.(initial_state, updated_class, event)
+    %ServerManagerState{} = result = group_updated.(initial_state, updated_class, event)
 
     assert_no_stored_events!()
 
@@ -469,7 +484,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
                  | group: %ServerGroup{
                      group
                      | expected_server_properties: %ServerProperties{
-                         group.expected_server_properties
+                         group_expected_server_properties
                          | cpus: 4
                        },
                        version: updated_class.version
@@ -505,7 +520,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         distribution_version: nil
       )
 
-    class =
+    %Class{} =
+      class =
       CourseFactory.build(:class,
         active: false,
         servers_enabled: true,
@@ -544,7 +560,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
       updated_at: class.updated_at
     }
 
-    server =
+    %Server{} =
+      server =
       build_active_server(
         group: group,
         root: true,
@@ -553,7 +570,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         last_known_properties: nil
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_not_connected_state(%{connection_pid: self()}),
         server: server,
@@ -568,7 +586,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     event = EventsFactory.build(:event_reference)
 
-    result = group_updated.(initial_state, updated_class, event)
+    %ServerManagerState{} = result = group_updated.(initial_state, updated_class, event)
 
     assert_no_stored_events!()
 
@@ -596,7 +614,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(result, fn :connect, _connect_delay ->
         fake_timer_ref
       end)
@@ -631,7 +650,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         distribution_version: nil
       )
 
-    class =
+    %Class{} =
+      class =
       CourseFactory.build(:class,
         active: true,
         servers_enabled: true,
@@ -670,7 +690,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
       updated_at: class.updated_at
     }
 
-    server =
+    %Server{} =
+      server =
       build_active_server(
         group: group,
         root: true,
@@ -679,7 +700,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         last_known_properties: nil
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -696,7 +718,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
 
     event = EventsFactory.build(:event_reference)
 
-    result =
+    %ServerManagerState{} =
+      result =
       assert_server_connection_disconnected!(server, fn ->
         group_updated.(initial_state, updated_class, event)
       end)

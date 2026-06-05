@@ -42,53 +42,56 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
   def create_changeset(params \\ %{}) when is_map(params) do
     fixed_params = params |> tmp_boolify("active") |> tmp_boolify("servers_enabled")
 
-    %__MODULE__{}
-    |> cast(
-      fixed_params,
-      [
-        :name,
-        :start_date,
-        :end_date,
-        :active,
-        :servers_enabled,
-        :ssh_exercise_vm_md5_host_key_fingerprints,
-        :ssh_exercise_vm_sha256_host_key_fingerprints
-      ]
-    )
-    |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
-    |> validate_required([:name, :active, :servers_enabled])
+    %Changeset{} =
+      %__MODULE__{}
+      |> cast(
+        fixed_params,
+        [
+          :name,
+          :start_date,
+          :end_date,
+          :active,
+          :servers_enabled,
+          :ssh_exercise_vm_md5_host_key_fingerprints,
+          :ssh_exercise_vm_sha256_host_key_fingerprints
+        ]
+      )
+      |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
+      |> validate_required([:name, :active, :servers_enabled])
   end
 
   @spec update_changeset(Class.t(), map()) :: Changeset.t(Types.class_data())
   def update_changeset(class, params \\ %{}) when is_struct(class, Class) and is_map(params) do
     fixed_params = params |> tmp_boolify("active") |> tmp_boolify("servers_enabled")
 
-    %__MODULE__{
-      name: class.name,
-      start_date: class.start_date,
-      end_date: class.end_date,
-      active: class.active,
-      servers_enabled: class.servers_enabled,
-      teacher_ssh_public_keys:
-        Enum.map(class.teacher_ssh_public_keys, &ClassFormSshPublicKey.new(&1)),
-      ssh_exercise_vm_md5_host_key_fingerprints: class.ssh_exercise_vm_md5_host_key_fingerprints,
-      ssh_exercise_vm_sha256_host_key_fingerprints:
-        class.ssh_exercise_vm_sha256_host_key_fingerprints
-    }
-    |> cast(
-      fixed_params,
-      [
-        :name,
-        :start_date,
-        :end_date,
-        :active,
-        :servers_enabled,
-        :ssh_exercise_vm_md5_host_key_fingerprints,
-        :ssh_exercise_vm_sha256_host_key_fingerprints
-      ]
-    )
-    |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
-    |> validate_required([:name, :active, :servers_enabled])
+    %Changeset{} =
+      %__MODULE__{
+        name: class.name,
+        start_date: class.start_date,
+        end_date: class.end_date,
+        active: class.active,
+        servers_enabled: class.servers_enabled,
+        teacher_ssh_public_keys:
+          Enum.map(class.teacher_ssh_public_keys, &ClassFormSshPublicKey.new(&1)),
+        ssh_exercise_vm_md5_host_key_fingerprints:
+          class.ssh_exercise_vm_md5_host_key_fingerprints,
+        ssh_exercise_vm_sha256_host_key_fingerprints:
+          class.ssh_exercise_vm_sha256_host_key_fingerprints
+      }
+      |> cast(
+        fixed_params,
+        [
+          :name,
+          :start_date,
+          :end_date,
+          :active,
+          :servers_enabled,
+          :ssh_exercise_vm_md5_host_key_fingerprints,
+          :ssh_exercise_vm_sha256_host_key_fingerprints
+        ]
+      )
+      |> cast_embed(:teacher_ssh_public_keys, drop_param: :delete_keys)
+      |> validate_required([:name, :active, :servers_enabled])
   end
 
   @spec to_class_data(t()) :: Types.class_data()

@@ -42,7 +42,7 @@ defmodule ArchiDep.Config.ConfigValue do
   be included in error messages.
   """
   @spec format(t(), String.t()) :: t()
-  def format(config_value, description) when is_binary(description) do
+  def format(%__MODULE__{} = config_value, description) when is_binary(description) do
     %__MODULE__{config_value | format_description: description}
   end
 
@@ -52,7 +52,7 @@ defmodule ArchiDep.Config.ConfigValue do
   @spec env_var(t(), %{String.t() => String.t()}, String.t(), env_var_parser) ::
           t()
   def env_var(
-        config_value,
+        %__MODULE__{} = config_value,
         env,
         name,
         parser \\ &no_op_parser/1

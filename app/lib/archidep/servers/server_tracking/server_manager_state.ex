@@ -1438,7 +1438,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp check_open_ports_action(server),
     do:
       {:check_open_ports,
-       fn task_state, task_factory ->
+       fn %__MODULE__{} = task_state, task_factory ->
          task = task_factory.(server.ip_address.address, @ports_to_check)
 
          %__MODULE__{
@@ -1461,7 +1461,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp run_command_action(name, command, timeout),
     do:
       {:run_command,
-       fn task_state, task_factory ->
+       fn %__MODULE__{} = task_state, task_factory ->
          task = task_factory.(command, timeout)
 
          %__MODULE__{
@@ -1511,7 +1511,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp add_problem(state, problem), do: set_problems(state, [problem | state.problems])
 
   defp set_problem(state, problem), do: set_problems(state, [problem])
-  defp set_problems(state, problems), do: %__MODULE__{state | problems: problems}
+  defp set_problems(%__MODULE__{} = state, problems), do: %__MODULE__{state | problems: problems}
 
   defp drop_connection_problems(state),
     do:
@@ -1599,7 +1599,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   end
 
   defp run_setup_playbook(
-         state,
+         %__MODULE__{} = state,
          cause,
          vars_and_digest \\ nil
        ) do
@@ -1621,7 +1621,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          | ansible: {playbook_run, ongoing_task, cause}
        }
 
-  defp clear_current_ansible_task(state), do: %__MODULE__{state | ansible: nil}
+  defp clear_current_ansible_task(%__MODULE__{} = state), do: %__MODULE__{state | ansible: nil}
 
   defp start_setup_playbook(server, vars, vars_digest, cause) do
     playbook = Ansible.setup_playbook()
@@ -1662,7 +1662,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp drop_problems(state, problems) when is_list(problems),
     do: drop_problems(state, &(elem(&1, 0) in problems))
 
-  defp drop_problems(state, predicate_fn) when is_function(predicate_fn, 1),
+  defp drop_problems(%__MODULE__{} = state, predicate_fn) when is_function(predicate_fn, 1),
     do: %__MODULE__{state | problems: Enum.reject(state.problems, &predicate_fn.(&1))}
 
   defp maybe_cancel_connection_timer(%__MODULE__{connection_timer: nil} = state), do: state
@@ -1671,7 +1671,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        when timer != nil,
        do: state |> clear_connection_timer() |> add_action(cancel_timer_action(timer))
 
-  defp clear_connection_timer(state), do: %__MODULE__{state | connection_timer: nil}
+  defp clear_connection_timer(%__MODULE__{} = state),
+    do: %__MODULE__{state | connection_timer: nil}
 
   defp stop_measuring_load_average(state),
     do:
@@ -1684,16 +1685,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp maybe_cancel_load_average_timer(%__MODULE__{load_average_timer: timer} = state),
     do: state |> clear_load_average_timer() |> add_action(cancel_timer_action(timer))
 
-  defp clear_load_average_timer(state), do: %__MODULE__{state | load_average_timer: nil}
+  defp clear_load_average_timer(%__MODULE__{} = state),
+    do: %__MODULE__{state | load_average_timer: nil}
 
   defp maybe_cancel_retry_timer(%__MODULE__{retry_timer: nil} = state), do: state
 
   defp maybe_cancel_retry_timer(%__MODULE__{retry_timer: timer} = state),
     do: state |> clear_retry_timer() |> add_action(cancel_timer_action(timer))
 
-  defp clear_retry_timer(state), do: %__MODULE__{state | retry_timer: nil}
+  defp clear_retry_timer(%__MODULE__{} = state), do: %__MODULE__{state | retry_timer: nil}
 
-  defp drop_remaining_tasks(state),
+  defp drop_remaining_tasks(%__MODULE__{} = state),
     do: %__MODULE__{
       state
       | tasks: %{},
@@ -1707,12 +1709,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp maybe_manually_retry(retrying, :manual), do: %{retrying | backoff: 0}
   defp maybe_manually_retry(retrying, {:event, _event}), do: %{retrying | backoff: 0}
 
-  defp change_connection_state(state, connection_state),
+  defp change_connection_state(%__MODULE__{} = state, connection_state),
     do: %__MODULE__{state | connection_state: connection_state}
 
   defp set_updated_server(%__MODULE__{server: server} = state, server), do: state
 
-  defp set_updated_server(state, updated_server, publish \\ true) do
+  defp set_updated_server(%__MODULE__{} = state, updated_server, publish \\ true) do
     if publish do
       :ok = PubSub.publish_server_updated(updated_server)
     end
@@ -1725,7 +1727,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp add_actions(state, [action | remaining_actions]),
     do: state |> add_action(action) |> add_actions(remaining_actions)
 
-  defp add_action(state, action), do: %__MODULE__{state | actions: [action | state.actions]}
+  defp add_action(%__MODULE__{} = state, action),
+    do: %__MODULE__{state | actions: [action | state.actions]}
 
   defp cancel_timer_action(timer_ref), do: {:cancel_timer, timer_ref}
 
@@ -1737,7 +1740,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     ssh_host_key_fingerprints = Server.valid_ssh_host_key_fingerprints(server)
 
     {:connect,
-     fn task_state, task_factory ->
+     fn %__MODULE__{} = task_state, task_factory ->
        task =
          task_factory.(host, port, username,
            silently_accept_hosts:
@@ -1766,7 +1769,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
   defp notify_server_offline_action, do: :notify_server_offline
 
-  defp track(state),
+  defp track(%__MODULE__{} = state),
     do: %__MODULE__{
       state
       | actions:
@@ -1777,7 +1780,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp update_tracking_action,
     do:
       {:update_tracking, "servers",
-       fn state ->
+       fn %__MODULE__{} = state ->
          new_state = %__MODULE__{state | version: state.version + 1}
          real_time_state = to_real_time_state(new_state)
          {real_time_state, new_state}

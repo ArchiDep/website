@@ -39,14 +39,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   end
 
   test "update a server", %{update_server: update_server} do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: nil,
         ssh_port: true,
         server_expected_properties: @no_server_properties
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,
@@ -114,7 +116,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   end
 
   test "update the application username of a server", %{update_server: update_server} do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         root: true,
         set_up_at: true,
@@ -122,7 +125,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
         server_expected_properties: @no_server_properties
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.app_username,
@@ -193,7 +197,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   end
 
   test "update and activate a deactivated server", %{update_server: update_server} do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         active: false,
         set_up_at: nil,
@@ -201,7 +206,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
         server_expected_properties: @no_server_properties
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_not_connected_state(%{connection_pid: self()}),
         username: server.username,
@@ -272,7 +278,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     fake_timer_ref = make_ref()
 
-    send_message_result =
+    %ServerManagerState{} =
+      send_message_result =
       send_message_fn.(new_state, fn :connect, _connect_delay ->
         fake_timer_ref
       end)
@@ -290,14 +297,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   end
 
   test "update and deactivate an active connected server", %{update_server: update_server} do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: nil,
         ssh_port: true,
         server_expected_properties: @no_server_properties
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,
@@ -377,14 +386,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   test "update and deactivate an active server that is retrying to connect", %{
     update_server: update_server
   } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: nil,
         ssh_port: true,
         server_expected_properties: @no_server_properties
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_retry_connecting_state(),
         username: server.username,
@@ -461,7 +472,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   test "update and deactivate an active server that is retrying to connect after a given time", %{
     update_server: update_server
   } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: nil,
         ssh_port: true,
@@ -470,7 +482,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     fake_retry_timer_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_retry_connecting_state(),
         username: server.username,
@@ -550,14 +563,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   test "update and deactivate an active disconnected server", %{
     update_server: update_server
   } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: nil,
         ssh_port: true,
         server_expected_properties: @no_server_properties
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_disconnected_state(),
         username: server.username,
@@ -634,14 +649,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   test "update and deactivate an active server that has failed to connect", %{
     update_server: update_server
   } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: nil,
         ssh_port: true,
         server_expected_properties: @no_server_properties
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connection_failed_state(),
         username: server.username,
@@ -718,14 +735,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   test "update and deactivate an active server that is not connected", %{
     update_server: update_server
   } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: nil,
         ssh_port: true,
         server_expected_properties: @no_server_properties
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_not_connected_state(%{connection_pid: nil}),
         username: server.username,
@@ -802,7 +821,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   test "update and deactivate an active server with a pending connection", %{
     update_server: update_server
   } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         set_up_at: nil,
         ssh_port: true,
@@ -811,7 +831,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     connection_timer = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connection_pending_state(),
         username: server.username,
@@ -891,7 +912,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
   test "server properties mismatches are re-evaluated when the server is udpated", %{
     update_server: update_server
   } do
-    server =
+    %Server{} =
+      server =
       insert_active_server!(
         root: true,
         set_up_at: nil,
@@ -901,7 +923,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
         server_last_known_properties: Keyword.merge(@no_server_properties, cpus: 2)
       )
 
-    initial_state =
+    %ServerProperties{} = server_expected_properties = server.expected_properties
+
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,
@@ -947,7 +972,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                     server
                     | updated_at: updated_at,
                       expected_properties: %ServerProperties{
-                        server.expected_properties
+                        server_expected_properties
                         | cpus: 4
                       },
                       version: server.version + 1
@@ -962,7 +987,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                  server
                  | updated_at: updated_at,
                    expected_properties: %ServerProperties{
-                     server.expected_properties
+                     server_expected_properties
                      | cpus: 4
                    },
                    version: server.version + 1

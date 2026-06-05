@@ -38,21 +38,22 @@ defmodule ArchiDepWeb.Servers.ServerForm do
 
   @spec create_changeset(Authentication.t(), map) :: Changeset.t(Types.server_data())
   def create_changeset(auth, params \\ %{}) when is_map(params) do
-    %__MODULE__{
-      app_username: "archidep"
-    }
-    |> cast(params, [
-      :name,
-      :ip_address,
-      :username,
-      :ssh_port,
-      :active,
-      :app_username,
-      :ssh_host_key_fingerprints,
-      :group_id
-    ])
-    |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
-    |> validate_required(if(root?(auth), do: @root_required_fields, else: @required_fields))
+    %Changeset{} =
+      %__MODULE__{
+        app_username: "archidep"
+      }
+      |> cast(params, [
+        :name,
+        :ip_address,
+        :username,
+        :ssh_port,
+        :active,
+        :app_username,
+        :ssh_host_key_fingerprints,
+        :group_id
+      ])
+      |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
+      |> validate_required(if(root?(auth), do: @root_required_fields, else: @required_fields))
   end
 
   @spec to_create_data(t()) :: Types.server_data()
@@ -71,28 +72,29 @@ defmodule ArchiDepWeb.Servers.ServerForm do
 
   @spec update_changeset(Server.t(), map) :: Changeset.t(Types.server_data())
   def update_changeset(server, params \\ %{}) when is_struct(server, Server) and is_map(params) do
-    %__MODULE__{
-      name: server.name,
-      ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
-      username: server.username,
-      ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
-      active: server.active,
-      group_id: server.group_id,
-      app_username: server.app_username,
-      expected_properties: ServerPropertiesForm.from(server.expected_properties)
-    }
-    |> cast(params, [
-      :name,
-      :ip_address,
-      :username,
-      :ssh_port,
-      :ssh_host_key_fingerprints,
-      :active,
-      :app_username
-    ])
-    |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
-    |> validate_required([:ip_address, :username, :active, :ssh_host_key_fingerprints])
+    %Changeset{} =
+      %__MODULE__{
+        name: server.name,
+        ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
+        username: server.username,
+        ssh_port: server.ssh_port,
+        ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+        active: server.active,
+        group_id: server.group_id,
+        app_username: server.app_username,
+        expected_properties: ServerPropertiesForm.from(server.expected_properties)
+      }
+      |> cast(params, [
+        :name,
+        :ip_address,
+        :username,
+        :ssh_port,
+        :ssh_host_key_fingerprints,
+        :active,
+        :app_username
+      ])
+      |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
+      |> validate_required([:ip_address, :username, :active, :ssh_host_key_fingerprints])
   end
 
   @spec to_update_data(t()) :: Types.server_data()

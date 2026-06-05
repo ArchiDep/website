@@ -31,7 +31,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     connected = ServersFactory.random_connected_state()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connected,
         server: server,
@@ -39,7 +40,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
         tasks: %{check_access: fake_check_access_task_ref}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_access_task_ref,
@@ -67,7 +69,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     fake_loadavg_task = Task.completed(:fake)
 
-    loadavg_result =
+    %ServerManagerState{} =
+      loadavg_result =
       run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
         fake_loadavg_task
       end)
@@ -95,7 +98,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
     connected = ServersFactory.random_connected_state(connection_event: fake_connection_event)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connected,
         server: server,
@@ -109,7 +113,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_access_task_ref,
@@ -209,7 +214,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
     connected = ServersFactory.random_connected_state(connection_event: fake_connection_event)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connected,
         server: server,
@@ -223,7 +229,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     now = DateTime.utc_now()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_access_task_ref,
@@ -328,7 +335,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
     connected = ServersFactory.random_connected_state(connection_event: fake_connection_event)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connected,
         server: server,
@@ -336,7 +344,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
         tasks: %{check_access: fake_check_access_task_ref}
       )
 
-    {result, msg} =
+    {%ServerManagerState{} = result, msg} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -383,7 +391,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     fake_check_access_task_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -393,7 +402,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     check_access_stderr = Faker.Lorem.sentence()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_access_task_ref,
@@ -420,7 +430,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     fake_loadavg_task = Task.completed(:fake)
 
-    loadavg_result =
+    %ServerManagerState{} =
+      loadavg_result =
       run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
         fake_loadavg_task
       end)
@@ -445,7 +456,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     fake_check_access_task_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -455,7 +467,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     check_access_stderr = Faker.Lorem.sentence()
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_check_access_task_ref,
@@ -482,7 +495,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     fake_loadavg_task = Task.completed(:fake)
 
-    loadavg_result =
+    %ServerManagerState{} =
+      loadavg_result =
       run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
         fake_loadavg_task
       end)
@@ -508,7 +522,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     fake_check_access_task_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -518,7 +533,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     check_access_error = Faker.Lorem.sentence()
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -549,7 +564,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     fake_loadavg_task = Task.completed(:fake)
 
-    loadavg_result =
+    %ServerManagerState{} =
+      loadavg_result =
       run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
         fake_loadavg_task
       end)
@@ -574,7 +590,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     fake_check_access_task_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -584,7 +601,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     check_access_error = Faker.Lorem.sentence()
 
-    {result, log} =
+    {%ServerManagerState{} = result, log} =
       with_log(fn ->
         handle_task_result.(
           initial_state,
@@ -616,7 +633,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
 
     fake_loadavg_task = Task.completed(:fake)
 
-    loadavg_result =
+    %ServerManagerState{} =
+      loadavg_result =
       run_command_fn.(result, fn "cat /proc/loadavg", 10_000 ->
         fake_loadavg_task
       end)

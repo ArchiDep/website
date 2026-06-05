@@ -28,7 +28,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
         set_up_at: nil
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,
@@ -40,7 +41,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
     now = DateTime.utc_now()
     crash_reason = Faker.Lorem.sentence()
 
-    result = connection_crashed.(initial_state, self(), crash_reason)
+    %ServerManagerState{} = result = connection_crashed.(initial_state, self(), crash_reason)
 
     assert_server_disconnected_event!(server, now, crash_reason)
 
@@ -98,7 +99,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
           ServersFactory.random_reconnecting_state(),
           ServersFactory.random_connection_failed_state()
         ] do
-      initial_state =
+      %ServerManagerState{} =
+        initial_state =
         ServersFactory.build(:server_manager_state,
           connection_state: connection_state,
           username: server.username,
@@ -108,7 +110,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
       now = DateTime.utc_now()
       crash_reason = Faker.Lorem.sentence()
 
-      result = connection_crashed.(initial_state, self(), crash_reason)
+      %ServerManagerState{} = result = connection_crashed.(initial_state, self(), crash_reason)
 
       assert_no_stored_events!()
 
@@ -158,7 +160,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
     fake_retry_timer_ref = make_ref()
     fake_loadavg_timer_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,
@@ -176,7 +179,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
     now = DateTime.utc_now()
     crash_reason = :foo
 
-    result = connection_crashed.(initial_state, self(), crash_reason)
+    %ServerManagerState{} = result = connection_crashed.(initial_state, self(), crash_reason)
 
     assert_server_disconnected_event!(server, now, ":foo")
 
@@ -220,7 +223,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
         set_up_at: nil
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_disconnected_state(),
         username: server.username,
@@ -230,7 +234,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
     now = DateTime.utc_now()
     crash_reason = Faker.Lorem.sentence()
 
-    result = connection_crashed.(initial_state, self(), crash_reason)
+    %ServerManagerState{} = result = connection_crashed.(initial_state, self(), crash_reason)
 
     assert_no_stored_events!()
 

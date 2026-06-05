@@ -30,7 +30,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
       state: ServersFactory.ansible_playbook_run_failed_state()
     )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -46,7 +47,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
 
     now = DateTime.utc_now()
 
-    assert {result, :ok} =
+    assert {%ServerManagerState{} = result, :ok} =
              retry_ansible_playbook.(
                initial_state,
                "setup"
@@ -128,7 +129,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
       state: ServersFactory.ansible_playbook_run_failed_state()
     )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -145,7 +147,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
 
     now = DateTime.utc_now()
 
-    assert {result, :ok} =
+    assert {%ServerManagerState{} = result, :ok} =
              retry_ansible_playbook.(
                initial_state,
                "setup"

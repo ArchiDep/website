@@ -29,7 +29,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
       {:ok,
        %{
          user_account: user_account,
-         user_session: session,
+         user_session: %UserSession{} = session,
          linked_preregistered_user: preregistered_user
        }} ->
         if preregistered_user != nil do

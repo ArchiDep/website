@@ -233,7 +233,7 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
       |> validate_length(:distribution_version, max: 20)
 
   @spec merge(t(), t()) :: t()
-  def merge(properties, overrides),
+  def merge(%__MODULE__{} = properties, %__MODULE__{} = overrides),
     do: %__MODULE__{
       properties
       | hostname: merge_property(properties, overrides, :hostname),

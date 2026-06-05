@@ -48,7 +48,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     fake_cause = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -58,7 +59,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     event_name = Faker.Lorem.word()
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_playbook_event.(
         initial_state,
         playbook_run.id,
@@ -152,7 +154,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -245,7 +248,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
     fake_cause = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -345,7 +349,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
     fake_loadavg_task_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -441,7 +446,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
     fake_loadavg_timer_ref = make_ref()
     fake_connection_event = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state:
           ServersFactory.random_connected_state(connection_event: fake_connection_event),
@@ -536,7 +542,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     fake_cause = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -544,7 +551,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         ansible: {playbook_run, previous_task, fake_cause}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_playbook_completed.(
         initial_state,
         playbook_run.id
@@ -601,7 +609,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     fake_cause = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -609,7 +618,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         ansible: {playbook_run, previous_task, fake_cause}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_playbook_completed.(
         initial_state,
         playbook_run.id
@@ -678,7 +688,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     fake_cause = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -686,7 +697,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         ansible: {playbook_run, previous_task, fake_cause}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_playbook_completed.(
         initial_state,
         playbook_run.id
@@ -798,7 +810,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
 
     fake_cause = :stored_event |> EventsFactory.insert() |> StoredEvent.to_reference()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -809,7 +822,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         ]
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       ansible_playbook_completed.(
         initial_state,
         playbook_run.id

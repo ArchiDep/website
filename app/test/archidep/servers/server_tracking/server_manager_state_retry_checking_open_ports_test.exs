@@ -23,7 +23,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
   } do
     server = build_active_server(set_up_at: nil, ssh_port: true)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -34,7 +35,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
       )
 
     now = DateTime.utc_now()
-    assert {result, :ok} = retry_checking_open_ports.(initial_state)
+    assert {%ServerManagerState{} = result, :ok} = retry_checking_open_ports.(initial_state)
 
     [retried_event] = fetch_new_stored_events()
 
@@ -58,7 +59,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)
@@ -80,7 +82,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
   } do
     server = build_active_server(set_up_at: nil, ssh_port: true)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         server: server,
@@ -91,7 +94,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
       )
 
     now = DateTime.utc_now()
-    assert {result, :ok} = retry_checking_open_ports.(initial_state)
+    assert {%ServerManagerState{} = result, :ok} = retry_checking_open_ports.(initial_state)
 
     [retried_event] = fetch_new_stored_events()
 
@@ -115,7 +118,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
 
     fake_task = Task.completed(:fake)
 
-    run_command_result =
+    %ServerManagerState{} =
+      run_command_result =
       run_command_fn.(result, fn "sudo /usr/local/sbin/test-ports 80 443 3000 3001", 10_000 ->
         fake_task
       end)

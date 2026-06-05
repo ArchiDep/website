@@ -52,7 +52,7 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
                ^inserted = length(new_students)
 
                new_students
-               |> Enum.map(&%Student{&1 | class: class})
+               |> Enum.map(fn %Student{} = student -> %Student{student | class: class} end)
                |> ok()
              end)
              |> insert_events(auth, class, import_list, now)

@@ -25,7 +25,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     connected = ServersFactory.random_connected_state()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connected,
         server: server,
@@ -33,7 +34,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         tasks: %{get_load_average: fake_get_load_average_ref}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_get_load_average_ref,
@@ -72,7 +74,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     connected = ServersFactory.random_connected_state()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connected,
         server: server,
@@ -80,7 +83,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         tasks: %{get_load_average: fake_get_load_average_ref}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_get_load_average_ref,
@@ -119,7 +123,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     connected = ServersFactory.random_connected_state()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connected,
         server: server,
@@ -127,7 +132,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         tasks: %{get_load_average: fake_get_load_average_ref}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_get_load_average_ref,
@@ -166,7 +172,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     connected = ServersFactory.random_connected_state()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connected,
         server: server,
@@ -174,7 +181,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         tasks: %{get_load_average: fake_get_load_average_ref}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_get_load_average_ref,
@@ -214,7 +222,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
 
     connected = ServersFactory.random_connected_state()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: connected,
         server: server,
@@ -222,7 +231,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleTaskResultTest
         tasks: %{check_access: fake_check_access_ref, get_load_average: fake_get_load_average_ref}
       )
 
-    result =
+    %ServerManagerState{} =
+      result =
       handle_task_result.(
         initial_state,
         fake_get_load_average_ref,

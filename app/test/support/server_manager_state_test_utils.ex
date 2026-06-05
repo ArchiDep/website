@@ -34,7 +34,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
 
   @spec assert_connect_fn!(connect_fn(), ServerManagerState.t(), String.t()) ::
           ServerManagerState.t()
-  def assert_connect_fn!(connect_fn, state, username) do
+  def assert_connect_fn!(connect_fn, %ServerManagerState{} = state, username) do
     fake_task = Task.completed(:fake)
 
     test_pid = self()
@@ -42,7 +42,8 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
     expected_host = server.ip_address.address
     expected_port = server.ssh_port || 22
 
-    result =
+    %ServerManagerState{} =
+      result =
       connect_fn.(state, fn ^expected_host, ^expected_port, ^username, opts! ->
         assert {{:sha256, silently_accept_hosts}, opts!} =
                  Keyword.pop!(opts!, :silently_accept_hosts)
@@ -218,7 +219,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
       )
     )
 
-    id |> Server.fetch_server() |> unpair_ok()
+    %Server{} = id |> Server.fetch_server() |> unpair_ok()
   end
 
   @spec real_time_state(Server.t(), Keyword.t()) :: ServerRealTimeState.t()

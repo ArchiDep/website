@@ -31,7 +31,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     retry_timer = Process.send_after(self(), :retry, 30_000)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_retry_connecting_state(),
         server: server,
@@ -73,7 +74,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                retry_timer: nil
            }
 
-    connect_result = assert_connect_fn!(connect_fn, result, "dave")
+    %ServerManagerState{} = connect_result = assert_connect_fn!(connect_fn, result, "dave")
 
     assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
@@ -95,7 +96,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     retry_timer = Process.send_after(self(), :retry, 30_000)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_retry_connecting_state(),
         server: server,
@@ -150,7 +152,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                retry_timer: nil
            }
 
-    connect_result = assert_connect_fn!(connect_fn, result, "dave")
+    %ServerManagerState{} = connect_result = assert_connect_fn!(connect_fn, result, "dave")
 
     assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
@@ -172,7 +174,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     retry_timer = Process.send_after(self(), :retry, 30_000)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_retry_connecting_state(),
         server: server,
@@ -216,7 +219,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                retry_timer: nil
            }
 
-    connect_result = assert_connect_fn!(connect_fn, result, "dave")
+    %ServerManagerState{} = connect_result = assert_connect_fn!(connect_fn, result, "dave")
 
     assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,
@@ -238,7 +241,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
 
     retry_timer = Process.send_after(self(), :retry, 30_000)
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connection_failed_state(),
         server: server,
@@ -278,7 +282,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                retry_timer: nil
            }
 
-    connect_result = assert_connect_fn!(connect_fn, result, "frank")
+    %ServerManagerState{} = connect_result = assert_connect_fn!(connect_fn, result, "frank")
 
     assert update_tracking_fn.(connect_result) ==
              {real_time_state(server,

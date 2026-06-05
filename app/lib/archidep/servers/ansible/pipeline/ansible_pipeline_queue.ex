@@ -71,7 +71,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       }
 
     @spec store_demand(t(), pos_integer) :: t
-    def store_demand(state, demand) when is_demand(demand) do
+    def store_demand(%__MODULE__{} = state, demand) when is_demand(demand) do
       total_demand = state.stored_demand + demand
 
       Logger.debug(
@@ -87,7 +87,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
             String.t()
           ) :: t()
     def gather_facts(
-          state,
+          %__MODULE__{} = state,
           server_id,
           username
         ) do
@@ -123,7 +123,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
             EventReference.t()
           ) :: t()
     def run_playbook(
-          state,
+          %__MODULE__{} = state,
           playbook_run_id,
           server_id,
           cause

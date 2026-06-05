@@ -54,7 +54,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
 
     connection_timer = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connection_pending_state(),
         username: server.username,
@@ -85,7 +86,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
         ssh_port: true
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_retry_connecting_state(),
         username: server.username,
@@ -117,7 +119,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
 
     fake_retry_timer_ref = make_ref()
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_retry_connecting_state(),
         username: server.username,
@@ -148,7 +151,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
         ssh_port: true
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connected_state(),
         username: server.username,
@@ -178,7 +182,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
         ssh_port: true
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_connection_failed_state(),
         username: server.username,
@@ -205,7 +210,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateDeleteTest do
         ssh_port: true
       )
 
-    initial_state =
+    %ServerManagerState{} =
+      initial_state =
       ServersFactory.build(:server_manager_state,
         connection_state: ServersFactory.random_disconnected_state(),
         username: server.username,

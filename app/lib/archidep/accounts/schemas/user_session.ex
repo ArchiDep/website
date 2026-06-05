@@ -235,7 +235,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
 
   @spec touch(t(), ClientMetadata.t()) ::
           {:ok, t()} | {:error, :session_not_found}
-  def touch(session, client_metadata) do
+  def touch(%__MODULE__{} = session, client_metadata) do
     now = DateTime.utc_now()
 
     client_ip_address =

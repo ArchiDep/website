@@ -31,7 +31,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       {:ok,
        %{
          user_account: user_account,
-         user_session: session,
+         user_session: %UserSession{} = session,
          linked_preregistered_user: preregistered_user
        }} ->
         if preregistered_user != nil do
@@ -129,15 +129,21 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     # Create a new session for the user account which is logging in.
     |> Multi.insert(
       :user_session,
-      &UserSession.new_session(
-        if &1.linked_user_account != nil do
-          %UserAccount{&1.linked_user_account | preregistered_user: &1.linked_preregistered_user}
-        else
-          &1.user_account
-        end,
-        client_metadata,
-        now
-      )
+      fn changes ->
+        user_account =
+          if changes.linked_user_account != nil do
+            %UserAccount{} = linked_user_account = changes.linked_user_account
+
+            %UserAccount{
+              linked_user_account
+              | preregistered_user: changes.linked_preregistered_user
+            }
+          else
+            changes.user_account
+          end
+
+        UserSession.new_session(user_account, client_metadata, now)
+      end
     )
     # Store either a registration or a login event as appropriate.
     |> insert(:stored_event, fn
