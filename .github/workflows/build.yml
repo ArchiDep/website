@@ -297,6 +297,31 @@ jobs:
           git status --porcelain
           test -z "$(git status --porcelain)"
 
+  lint:
+    runs-on: ubuntu-24.04
+    name: Lint Markdown
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: npm
+          cache-dependency-path: package-lock.json
+          node-version: 24.4.0
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint Markdown
+        run: npm run lint:md
+
+      - name: Ensure there are no uncommitted changes
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+
   publish-pages:
     name: Publish to GitHub Pages
     runs-on: ubuntu-24.04
