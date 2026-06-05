@@ -375,6 +375,46 @@ Tracker][phoenix-tracker] (the `ArchiDep.Tracker` on the `servers` topic). A
 live view starts a `ServerTracker` for the servers it displays and receives
 updates as their state changes.
 
+This is how a cloud server's live state — connection status, setup progress and
+problems — reaches a student's screen during the exercises, with no polling:
+
+```mermaid
+flowchart LR
+    browser(["Student's browser"])
+
+    subgraph web["Web layer (per connected browser)"]
+        lv["LiveView<br/>(MyServersLive / ServerLive / …)"]
+        st["ServerTracker<br/>(GenServer started by the live view)"]
+    end
+
+    tracker["Phoenix.Tracker — ArchiDep.Tracker<br/>(servers topic)"]
+
+    subgraph tracking["Per-server tracking"]
+        sm["ServerManager<br/>(holds ServerRealTimeState)"]
+    end
+
+    browser -. "mount /live<br/>(session validated by LiveAuth)" .-> lv
+    lv -. "on mount: track displayed servers" .-> st
+    sm -- "track / update<br/>%{state: ServerRealTimeState}" --> tracker
+    tracker -- "presence diff" --> st
+    st -- "{:server_state, id, state}" --> lv
+    lv -- "render diff over /live socket" --> browser
+```
+
+Reading the diagram:
+
+- **Dashed edges** are the one-time setup: the browser mounts the LiveView over
+  the authenticated `/live` socket (the session is validated by
+  [`LiveAuth`](../../archidep_web/live_auth.ex) `on_mount`), and on mount the
+  LiveView starts a `ServerTracker` for the servers it displays.
+- **Solid edges** are the runtime data flow: each per-server
+  [`ServerManager`](./server_tracking/server_manager.ex) publishes its
+  [`ServerRealTimeState`](./schemas/server_real_time_state.ex) to the shared
+  `Phoenix.Tracker` as that state changes (driven upstream by the SSH connection
+  and Ansible progress); the LiveView's `ServerTracker` receives the presence
+  diff and forwards a `{:server_state, id, state}` message, and the LiveView
+  re-renders and pushes the DOM diff to the browser.
+
 ---
 
 ## Ansible Pipeline
@@ -441,6 +481,47 @@ sequenceDiagram
     Pipe-->>Mgr: events + result
     Mgr-->>Ctx: record events, update live state
 ```
+
+The `notify up (token)` arrow above is a single step in that overview, but the
+token behind it has a lifecycle of its own. Each server has a per-server
+`secret_key` (see [Domain Model](#domain-model)); the application never sends the
+`secret_key` itself to the server — it provisions a **signed token** derived from
+it, and the server replays that token to authenticate its callback:
+
+```mermaid
+sequenceDiagram
+    participant Mgr as ServerManager
+    participant Pipe as Ansible (setup.yml)
+    participant Srv as Cloud server
+    participant API as ServerCallbacksController
+    participant UC as Servers.notify_server_up/2
+
+    Note over Mgr,Srv: During setup — app-initiated over SSH
+    Mgr->>Mgr: Token.sign(secret_key, "server auth", server_id)
+    Mgr->>Pipe: run setup.yml with server_token var
+    Pipe->>Srv: write /etc/archidep/token (+ server-id),<br/>install notify-server-up script
+
+    Note over Srv,Mgr: Later — each time the server boots
+    Srv->>API: POST /api/callbacks/servers/{id}/up<br/>Authorization: Bearer &lt;token&gt;
+    API->>UC: notify_server_up(server_id, token)
+    UC->>UC: Token.verify(secret_key, "server auth", token)
+    alt valid token
+        UC->>Mgr: wake (record ServerNotifiedUp)
+        UC-->>API: :ok
+        API-->>Srv: 202 Accepted
+    else missing / invalid token, or server not found
+        UC-->>API: :server_not_found
+        API-->>Srv: 401 Unauthorized
+    end
+```
+
+The token is a [`Phoenix.Token`](./use_cases/server_callbacks.ex) scoped to
+`"server auth"` and valid for one year. Verification uses the **same**
+per-server `secret_key`, so the application never stores the token itself.
+Failures — a missing bearer header, an invalid or expired token, or an unknown
+server — are all reported as `401`, and an unknown server is still verified
+against a dummy key to keep the response time constant (mitigating timing
+attacks).
 
 ---
 

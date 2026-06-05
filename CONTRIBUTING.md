@@ -10,6 +10,7 @@ guidelines to follow when contributing.
 - [Coding Guidelines](#coding-guidelines)
 - [Project Tooling](#project-tooling)
 - [Project Commands](#project-commands)
+- [Glossary](#glossary)
 - [For AI Agents](#for-ai-agents)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -22,6 +23,42 @@ This project contains multiple components which form a single system deployed
 under a single base URL. Each components has its own `CONTRIBUTING.md` (and
 `AGENTS.md`) files with component-specific instructions and guidelines. Refer to
 those files for more details.
+
+The dashboard application (`app/`) is the deployed system: the course material
+site (`course/`) and the shared theme (`theme/`) are built into its
+`priv/static` directory, and the application serves everything under a single
+base URL while talking to PostgreSQL, Switch edu-ID and the students' cloud
+servers at runtime.
+
+```mermaid
+flowchart TB
+    user(["Teacher / student<br/>browser"])
+
+    subgraph build["Build time"]
+        course["course/<br/>(Jekyll)"]
+        theme["theme/<br/>(Tailwind + DaisyUI)"]
+    end
+
+    subgraph runtime["Runtime — single base URL"]
+        app["app/<br/>(Phoenix + LiveView)"]
+        static[("priv/static<br/>compiled site + assets")]
+    end
+
+    course -->|compiles into| static
+    theme -->|builds into| static
+    app -->|serves| static
+    user <-->|HTTPS / WebSocket| app
+
+    db[("PostgreSQL")]
+    oidc{{"Switch edu-ID<br/>(OpenID Connect)"}}
+    servers["Students' cloud servers"]
+    obs{{"Sentry + Prometheus"}}
+
+    app -->|Ecto| db
+    app -->|authenticates via| oidc
+    app -->|SSH + Ansible| servers
+    app -->|errors / metrics| obs
+```
 
 - **Main Components**
   - [`app/`](./app): Dashboard application for teachers and students,
@@ -182,6 +219,52 @@ format`.
 - `npm run lint:md`: Lint the project's Markdown documentation with remark
   (validating internal links, heading structure and fenced-code languages).
 - `npm run pdf`: Generate the PDF version of the course materials.
+
+---
+
+## Glossary
+
+Short definitions of domain terms that recur across the documentation. This list
+is only an **index**: each entry links to the section that describes the concept
+in full, which remains the source of truth.
+
+- **Business event** — an immutable record of a significant action (a login, a
+  class being edited, a server finishing setup, …), persisted for auditing in
+  the same transaction as the action it describes. See [Events &
+  Auditing][gl-events].
+- **Expected server properties** — the characteristics a student's cloud server
+  is expected to have (CPU, memory, hostname, …), configured per class and
+  checked against the real server. See [Expected Server
+  Properties][gl-expected-props].
+- **Impersonation** — a root user (teacher) temporarily acting as a student to
+  see the application as they do, recorded on the teacher's own session. See
+  [Impersonation][gl-impersonation].
+- **Login link** — a one-time link a root user generates so a preregistered
+  student can log in when [Switch edu-ID][switch-edu-id] is unavailable. See
+  [Login Links][gl-login-links].
+- **Preregistered user** — a student created ahead of time in a class by the
+  Course context, matched by email and linked to a user account on first login
+  (students do not self-register). See [Accounts overview][gl-accounts-users].
+- **Root user** — a teacher/administrator account (`root: true`) recognized at
+  login from a configured list of identifiers, with elevated, application-wide
+  privileges. See [Accounts overview][gl-accounts-users].
+- **Server group** — the Servers context's view of a class/cohort: the students
+  and servers managed together (backed by the same `classes` and `students`
+  tables the Course context owns). See [Server Groups & Members][gl-server-groups].
+- **SSH exercise VM** — a shared virtual machine students connect to at the start
+  of the course to learn SSH, before creating their own cloud servers. The
+  application stores its host-key fingerprints (per class) and a generated
+  per-student password, and displays them as credentials on the dashboard. See
+  [Students][gl-students].
+
+[gl-events]: ./app/CONTRIBUTING.md#events--auditing
+[gl-expected-props]: ./app/lib/archidep/course/CONTRIBUTING.md#expected-server-properties
+[gl-impersonation]: ./app/lib/archidep/accounts/CONTRIBUTING.md#impersonation
+[gl-login-links]: ./app/lib/archidep/accounts/CONTRIBUTING.md#login-links
+[gl-accounts-users]: ./app/lib/archidep/accounts/CONTRIBUTING.md#overview
+[gl-server-groups]: ./app/lib/archidep/servers/CONTRIBUTING.md#server-groups--members
+[gl-students]: ./app/lib/archidep/course/CONTRIBUTING.md#students
+[switch-edu-id]: https://eduid.ch/
 
 ---
 

@@ -260,11 +260,39 @@ set up the development environment.
 
 This application follows a three-tier layered architecture:
 
+```mermaid
+flowchart TB
+    browser(["Browser"])
+    oidc{{"Switch edu-ID"}}
+
+    subgraph web["Web layer — ArchiDepWeb"]
+        wl["Controllers · LiveViews ·<br/>Channels · Plugs"]
+    end
+
+    subgraph app["Application layer — ArchiDep"]
+        ctx["Bounded contexts<br/>(Accounts · Course · Servers · Events)"]
+    end
+
+    subgraph data["Data layer"]
+        ecto["Ecto schemas &amp; changesets"]
+        db[("PostgreSQL")]
+    end
+
+    servers["Students' cloud servers"]
+
+    browser <-->|HTTP / WebSocket| web
+    web <-->|OIDC redirect &amp; callback| oidc
+    web -->|context API calls| app
+    app --> ecto --> db
+    app -->|SSH + Ansible| servers
+```
+
 - **Web Layer**: The [`ArchiDepWeb` module](./lib/archidep_web.ex) contains all
   web-related functionality, including controllers, views, templates, live
   views, channels, and plugs. It handles HTTP requests and responses, user
   sessions, and real-time communication via WebSockets. It is documented in
-  detail in [`lib/archidep_web/CONTRIBUTING.md`](./lib/archidep_web/CONTRIBUTING.md).
+  detail in
+  [`lib/archidep_web/CONTRIBUTING.md`](./lib/archidep_web/CONTRIBUTING.md).
 
   It also redirects the user to [Switch edu-ID][switch-edu-id] for
   authentication and handles the authentication callback.
@@ -369,6 +397,63 @@ of the same data for their specific purposes. For example:
   server-related operations. This schema is also backed by the `user_accounts`
   table in the database but is mostly used for reads or updates of a few
   server-related fields.
+
+The diagram below summarises which context owns (writes) which table and which
+tables are read across context boundaries through such read-view schemas:
+
+```mermaid
+flowchart LR
+    subgraph accounts["Accounts"]
+        ua[("user_accounts")]
+        usess[("user_sessions")]
+        seid[("switch_edu_ids")]
+        ll[("login_links")]
+    end
+
+    subgraph course["Course"]
+        cl[("classes")]
+        st[("students")]
+    end
+
+    subgraph servers["Servers"]
+        sv[("servers")]
+        apr[("ansible_playbook_runs")]
+        ape[("ansible_playbook_events")]
+    end
+
+    sp[("server_properties<br/>(shared)")]
+    ev[("events")]
+
+    course -. read .-> ua
+    servers -. read .-> ua
+    accounts -. read .-> cl
+    accounts -. read .-> st
+    servers -. read .-> cl
+    servers -. read .-> st
+
+    course -->|expected| sp
+    servers -->|actual| sp
+
+    accounts ==> ev
+    course ==> ev
+    servers ==> ev
+```
+
+Reading the diagram:
+
+- A **table inside a context box** is owned and written by that context.
+- A **dashed `read` edge** is a read-view schema: `Course.User` and
+  `Servers.ServerOwner` read `user_accounts`; `Accounts.UserGroup` /
+  `Servers.ServerGroup` read `classes`; `Accounts.PreregisteredUser` /
+  `Servers.ServerGroupMember` read `students`.
+- **`server_properties`** is genuinely shared — Course writes the _expected_
+  properties of a class while Servers writes the _actual_ properties detected on
+  a server.
+- The **thick edges** to `events` show that every context appends business
+  events to the Events-owned `events` table (see [Events &
+  Auditing](#events--auditing)); the Events context in turn resolves each
+  event's affected entity back across the Accounts, Course and Servers contexts
+  (read-only).
 
 ### Authentication
 

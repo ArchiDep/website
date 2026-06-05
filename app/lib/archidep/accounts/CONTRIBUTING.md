@@ -142,6 +142,33 @@ use case drives the flow on the callback:
    [`UserLoggedInWithSwitchEduId`](./events/user_logged_in_with_switch_edu_id.ex)
    event.
 
+The full OpenID Connect authorization-code flow, from the browser to the
+[`AuthController`](../../archidep_web/auth/auth_controller.ex) and back, is:
+
+```mermaid
+sequenceDiagram
+    actor Browser
+    participant App as AuthController<br/>(Ueberauth OIDC)
+    participant Switch as Switch edu-ID<br/>(OIDC provider)
+    participant Accounts as Accounts context
+
+    Browser->>App: GET /login → GET /auth/switch-edu-id
+    App-->>Browser: 302 redirect to Switch edu-ID
+    Browser->>Switch: Authenticate &amp; consent
+    Switch-->>Browser: 302 to /auth/switch-edu-id/callback?code=…
+    Browser->>App: GET /auth/switch-edu-id/callback?code=…
+    App->>Switch: Exchange code for tokens
+    Switch-->>App: ID token + claims
+    App->>Accounts: LogInOrRegisterWithSwitchEduId(claims)
+    Note over Accounts: Single Ecto.Multi —<br/>upsert SwitchEduId identity,<br/>decide root vs student,<br/>create / relink UserAccount,<br/>create UserSession + business event
+    Accounts-->>App: auth + session
+    App-->>Browser: Set session token + remember-me cookie,<br/>302 to dashboard
+```
+
+The live socket is authenticated separately afterwards (see [Web
+Wiring](#web-wiring)): the browser fetches a short-lived token from
+`/auth/socket` and presents it when connecting.
+
 ### Login Links
 
 When Switch edu-ID is not usable, a root user can generate a **one-time login
