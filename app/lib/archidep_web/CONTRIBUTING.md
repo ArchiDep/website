@@ -12,6 +12,9 @@ document first.
 > integration, the user-facing pages, the [admin console](#admin-console), the
 > [server UI](#servers-ui) and the shared UI, notifications and i18n.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 - [Overview](#overview)
 - [The Web Kernel](#the-web-kernel)
 - [Routing, Endpoint & Pipelines](#routing-endpoint--pipelines)
@@ -26,6 +29,8 @@ document first.
 - [Errors, Health & Telemetry](#errors-health--telemetry)
 - [Authentication & Authorization](#authentication--authorization)
 - [References](#references)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ---
 

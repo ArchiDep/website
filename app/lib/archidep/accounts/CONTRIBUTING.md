@@ -7,6 +7,9 @@ covers the overall architecture, the general [bounded context
 anatomy][bounded-contexts], coding guidelines, [authorization][authorization]
 and tooling that also apply here. Read that document first.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 - [Overview](#overview)
 - [Context Structure](#context-structure)
 - [Domain Model](#domain-model)
@@ -20,6 +23,8 @@ and tooling that also apply here. Read that document first.
 - [Business Events](#business-events)
 - [Authorization](#authorization)
 - [References](#references)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ---
 

@@ -3,10 +3,16 @@
 Please read this document to understand how this project is structured and what
 guidelines to follow when contributing.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 - [Project Structure](#project-structure)
 - [Coding Guidelines](#coding-guidelines)
 - [Project Tooling](#project-tooling)
 - [Project Commands](#project-commands)
+- [For AI Agents](#for-ai-agents)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ---
 

@@ -7,25 +7,43 @@ agents interacting with this project.
 
 ## Contribution guidelines
 
-Read the following files to understand how this project is structured and what
-guidelines to follow when contributing:
+Use this map to jump straight to the right documentation instead of reading
+every file. Each `CONTRIBUTING.md` is the source of truth for its component and
+has its own table of contents; the entries below are starting points, not an
+exhaustive index.
 
-- [CONTRIBUTING.md][contributing]: General contribution guidelines for the
-  entire project.
-- [app/CONTRIBUTING.md](./app/CONTRIBUTING.md): Contribution guidelines
-  specific to the dashboard application.
-- [app/AGENTS.md](./app/AGENTS.md): Additional instructions for AI agents
-  working within the dashboard application.
-- [course/CONTRIBUTING.md](./course/CONTRIBUTING.md): Contribution guidelines
-  specific to the course material site.
-- [course/AGENTS.md](./course/AGENTS.md): Additional instructions for AI agents
-  working within the course material site.
-- [theme/CONTRIBUTING.md](./theme/CONTRIBUTING.md): Contribution guidelines
-  specific to the Tailwind CSS theme.
-- [theme/AGENTS.md](./theme/AGENTS.md): Additional instructions for AI agents
-  working within the Tailwind CSS theme.
+- **Whole project** — repository layout, cross-component tooling, project-wide
+  coding and security guidelines: [`CONTRIBUTING.md`][contributing]
+- **Course material site** — writing guidelines, document types, front matter,
+  Liquid/Jekyll, slides, PDF generation:
+  [`course/CONTRIBUTING.md`](./course/CONTRIBUTING.md)
+- **Theme** — Tailwind/DaisyUI, dark mode, typography, syntax highlighting:
+  [`theme/CONTRIBUTING.md`](./theme/CONTRIBUTING.md)
+- **Dashboard application** — overall architecture, development environment,
+  testing, formatting and linting, commands:
+  [`app/CONTRIBUTING.md`](./app/CONTRIBUTING.md)
+  - Bounded context anatomy (how every context is structured):
+    [`app/CONTRIBUTING.md`](./app/CONTRIBUTING.md#bounded-contexts)
+  - Web layer — routing, LiveView, components, i18n, admin console, server UI:
+    [`app/lib/archidep_web/CONTRIBUTING.md`](./app/lib/archidep_web/CONTRIBUTING.md)
+  - Accounts context — user accounts, sessions, Switch edu-ID/OIDC
+    authentication, login links, impersonation:
+    [`app/lib/archidep/accounts/CONTRIBUTING.md`](./app/lib/archidep/accounts/CONTRIBUTING.md)
+  - Course context — classes and students, student import, expected server
+    properties:
+    [`app/lib/archidep/course/CONTRIBUTING.md`](./app/lib/archidep/course/CONTRIBUTING.md)
+  - Servers context — cloud servers, server groups, server tracking, Ansible
+    pipeline:
+    [`app/lib/archidep/servers/CONTRIBUTING.md`](./app/lib/archidep/servers/CONTRIBUTING.md)
+  - Events context — event sourcing and audit log (covered in the app
+    documentation, no separate file):
+    [`app/CONTRIBUTING.md`](./app/CONTRIBUTING.md#events--auditing)
 
-`CONTRIBUTING.md` documents are for both humans and AI agents. They are to take
+For AI-specific instructions within a component, also read its `AGENTS.md`:
+[`app/AGENTS.md`](./app/AGENTS.md), [`course/AGENTS.md`](./course/AGENTS.md) and
+[`theme/AGENTS.md`](./theme/AGENTS.md).
+
+`CONTRIBUTING.md` documents are for both humans and AI agents. They take
 precedence over instructions in the `AGENTS.md` files, which contain additional
 instructions targeted towards AI agents.
 
@@ -47,24 +65,11 @@ instructions targeted towards AI agents.
     in the document.
   - After editing Markdown documentation, run `npm run lint:md` (documented in
     [`./CONTRIBUTING.md`][contributing]) and fix any reported issues.
-  - When changing the public API of application contexts, update the relevant
-    documentation in the appropriate `CONTRIBUTING.md` file.
-  - There should generally be no need to add a new bounded context without
-    explicit instructions from a human. If you believe a new context is needed,
-    explain why in your response and ask for confirmation.
 
 - **Commands**
   - Do not execute the `npm run pdf` command documented in
     [`./CONTRIBUTING.md`][contributing]. It is an expensive operation that
     generates PDF files for all course slides. A human will run this command
     when needed.
-
-- **External Resources**
-  - Read linked documentation in this file and in subdirectory-specific
-    `AGENTS.md` and `CONTRIBUTING.md` files to better understand the languages,
-    frameworks and libraries used in this project, as well as the architecture,
-    conventions and standards to follow.
-  - Do not hesitate to read and quote this information in the context of your
-    changes.
 
 [contributing]: ./CONTRIBUTING.md

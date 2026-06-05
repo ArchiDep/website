@@ -317,6 +317,9 @@ jobs:
       - name: Lint Markdown
         run: npm run lint:md
 
+      - name: Check Markdown tables of contents are up to date
+        run: npm run doctoc
+
       - name: Ensure there are no uncommitted changes
         run: |
           git status --porcelain

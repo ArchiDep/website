@@ -24,6 +24,10 @@
 /course/\_site
 /course/vendor
 
+# Digest files
+/digest/\_build
+/digest/deps
+
 # Theme files
 
 /theme/dist

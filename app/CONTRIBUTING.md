@@ -6,12 +6,16 @@ is structured and what guidelines to follow when contributing.
 The adjacent [`AGENTS.md`](./AGENTS.md) file contains additional instructions
 for AI assistants and automated agents.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 - [Application Overview](#application-overview)
+  - [Integration with other components](#integration-with-other-components)
 - [Application Structure](#application-structure)
 - [General Coding Guidelines](#general-coding-guidelines)
 - [Application Architecture & Implementation](#application-architecture--implementation)
   - [Overall system](#overall-system)
-  - [Development Environment](#development-environment)
+    - [Development Environment](#development-environment)
   - [Internal architecture](#internal-architecture)
   - [Bounded contexts](#bounded-contexts)
   - [Authentication](#authentication)
@@ -33,6 +37,11 @@ for AI assistants and automated agents.
   - [Linting Commands](#linting-commands)
   - [Testing Commands](#testing-commands)
 - [References](#references)
+  - [Tooling References](#tooling-references)
+  - [Testing References](#testing-references)
+- [For AI Agents](#for-ai-agents)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ---
 

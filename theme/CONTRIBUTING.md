@@ -6,6 +6,9 @@ what guidelines to follow when contributing.
 The adjacent [`AGENTS.md`](./AGENTS.md) file contains additional instructions
 for AI assistants and automated agents.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 - [Overview](#overview)
   - [Integration With Other Components](#integration-with-other-components)
   - [Build Output](#build-output)
@@ -22,6 +25,9 @@ for AI assistants and automated agents.
 - [Formatting & Linting](#formatting--linting)
 - [Useful Commands](#useful-commands)
 - [References](#references)
+- [For AI Agents](#for-ai-agents)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ---
 

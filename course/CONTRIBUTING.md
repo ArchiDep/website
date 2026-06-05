@@ -6,6 +6,9 @@ structured and what guidelines to follow when contributing.
 The adjacent [`AGENTS.md`](./AGENTS.md) file contains additional instructions
 for AI assistants and automated agents.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 - [Overview](#overview)
   - [Integration With Other Components](#integration-with-other-components)
   - [Standalone Mode](#standalone-mode)
@@ -17,6 +20,16 @@ for AI assistants and automated agents.
   - [Document Front Matter](#document-front-matter)
   - [Progress Tracking](#progress-tracking)
   - [Special Tags and Features](#special-tags-and-features)
+    - [Notes](#notes)
+    - [Callouts](#callouts)
+      - [Tell Me More](#tell-me-more)
+    - [Side-by-Side Columns](#side-by-side-columns)
+    - [Solutions](#solutions)
+    - [Mermaid Diagrams](#mermaid-diagrams)
+    - [Forced Markdown](#forced-markdown)
+    - [Cloud Server Widget](#cloud-server-widget)
+    - [Randomized Values](#randomized-values)
+    - [Interactive Git Diagrams](#interactive-git-diagrams)
 - [General Coding Guidelines](#general-coding-guidelines)
 - [Site Implementation](#site-implementation)
   - [Custom Jekyll Plugins](#custom-jekyll-plugins)
@@ -30,6 +43,9 @@ for AI assistants and automated agents.
   - [Home Page](#home-page)
 - [Formatting and Linting](#formatting-and-linting)
 - [References](#references)
+- [For AI Agents](#for-ai-agents)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ---
 

@@ -61,6 +61,8 @@ plugins:
 #   - vendor/gems/
 #   - vendor/ruby/
 exclude:
+  - AGENTS.md
+  - CONTRIBUTING.md
   - .editorconfig
   - package.json
   - package-lock.json
