@@ -15,7 +15,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
 
   @spec login(Conn.t(), map) :: Conn.t()
   def login(conn, _params) do
-    render(conn, "login.html")
+    render(conn, :login)
   end
 
   @spec log_in_with_link(Conn.t(), map) :: Conn.t()

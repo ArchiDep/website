@@ -1,4 +1,4 @@
-FROM elixir:1.18.4-otp-28-alpine
+FROM elixir:1.19.5-otp-28-alpine
 
 ARG ARCHIDEP_UID
 

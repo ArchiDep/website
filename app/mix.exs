@@ -11,21 +11,15 @@ defmodule ArchiDep.MixProject do
       aliases: aliases(),
       deps: project_dependencies(),
       dialyzer: [
-        # Remove :no_opaque warnings to avoid issues with Dialyzer in OTP 28.
-        # This should no longer be necessary once Elixir 1.19 is released. (Make
-        # sure to also remove it from ".vscode/settings.json).
+        # Suppress :no_opaque warnings from manipulating opaque structs
+        # (Ecto.Changeset, DateTime) under OTP 28. Still required on Elixir
+        # 1.19.5 / OTP 28: dropping this flag yields 42 call_without_opaque
+        # warnings. Keep the matching ".vscode/settings.json" setting
+        # ("elixirLS.dialyzerWarnOpts") in sync.
         flags: [:no_opaque],
         plt_add_apps: [:ex_unit, :mix]
       ],
       listeners: [Phoenix.CodeReloader],
-      preferred_cli_env: [
-        check: :test,
-        coveralls: :test,
-        "coveralls.html": :test,
-        dialyzer: :test,
-        test: :test,
-        "test.watch": :test
-      ],
       releases: [
         archidep: [
           include_executables_for: [:unix],
@@ -45,6 +39,19 @@ defmodule ArchiDep.MixProject do
       mod: {ArchiDep.Application, []},
       extra_applications: [:logger, :observer, :runtime_tools, :ssh, :wx],
       start_phases: [seed_prom_ex_telemetry: []]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
+        check: :test,
+        coveralls: :test,
+        "coveralls.html": :test,
+        dialyzer: :test,
+        test: :test,
+        "test.watch": :test
+      ]
     ]
   end
 

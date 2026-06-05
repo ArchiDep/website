@@ -839,7 +839,7 @@ agents.
 [heroicons]: https://heroicons.com
 [jekyll]: https://jekyllrb.com
 [live-dashboard]: https://hexdocs.pm/phoenix_live_dashboard
-[mix-format]: https://hexdocs.pm/mix/1.18.4/Mix.Tasks.Format.html
+[mix-format]: https://mix.hexdocs.pm/Mix.Tasks.Format.html
 [mox]: https://hexdocs.pm/mox/Mox.html
 [phoenix]: https://www.phoenixframework.org
 [phoenix-live-view]: https://hexdocs.pm/phoenix_live_view/welcome.html

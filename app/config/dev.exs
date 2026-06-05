@@ -34,9 +34,9 @@ config :archidep, ArchiDepWeb.Endpoint,
 config :archidep, ArchiDepWeb.Endpoint,
   live_reload: [
     patterns: [
-      ~r"priv/gettext/.*(po)$",
-      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"lib/archidep_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"priv/gettext/.*(po)$"E,
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$"E,
+      ~r"lib/archidep_web/(controllers|live|components)/.*(ex|heex)$"E
     ]
   ]
 

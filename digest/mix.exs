@@ -5,7 +5,7 @@ defmodule Digest.MixProject do
     [
       app: :archidep_digest,
       version: "0.0.0",
-      elixir: "~> 1.18",
+      elixir: "~> 1.19",
       start_permanent: false,
       deps: deps(),
       aliases: aliases()
@@ -15,7 +15,7 @@ defmodule Digest.MixProject do
   defp deps do
     [
       {:jason, "~> 1.2"},
-      {:phoenix, "~> 1.7.19"}
+      {:phoenix, "~> 1.8"}
     ]
   end
 

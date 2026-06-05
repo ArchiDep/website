@@ -3,7 +3,7 @@ ARG APP_DEPS_IMAGE=app-deps-compiled
 ################################
 ### Application dependencies ###
 ################################
-FROM elixir:1.18.4-otp-28-alpine AS app-deps
+FROM elixir:1.19.5-otp-28-alpine AS app-deps
 
 RUN apk add --no-cache git && \
     addgroup -S build && \
@@ -123,7 +123,7 @@ RUN npm run --workspace theme build
 #####################
 ### Digest Assets ###
 #####################
-FROM elixir:1.18.4-otp-28-alpine AS digest
+FROM elixir:1.19.5-otp-28-alpine AS digest
 
 RUN addgroup -S build && \
     adduser -D -G build -H -h /build -S build && \
@@ -189,7 +189,7 @@ RUN bundle exec jekyll build
 ###########################
 ### Application Release ###
 ###########################
-FROM elixir:1.18.4-otp-28-alpine AS release
+FROM elixir:1.19.5-otp-28-alpine AS release
 
 ARG APP_DEPS_IMAGE
 
@@ -226,7 +226,7 @@ RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\/
     touch /usr/src/app/.git-dirty && \
     cat /tmp/.git/HEAD | awk '{print "/tmp/.git/"$2}' | xargs cat > /usr/src/app/.git-revision
 
-RUN mix do ua_inspector.download --force
+RUN mix ua_inspector.download --force
 
 COPY --chown=app:app --from=course /build/app/priv/static/ /usr/src/app/priv/static/
 
@@ -236,7 +236,7 @@ RUN mix sentry.package_source_code && \
 ###################
 ### Application ###
 ###################
-FROM elixir:1.18.4-otp-28-alpine AS app
+FROM elixir:1.19.5-otp-28-alpine AS app
 
 WORKDIR /archidep
 

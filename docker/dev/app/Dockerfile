@@ -1,4 +1,4 @@
-FROM elixir:1.18.4-otp-28-alpine
+FROM elixir:1.19.5-otp-28-alpine
 
 RUN apk add --no-cache bash git inotify-tools nodejs npm && \
     addgroup -S archidep && \
