@@ -5,7 +5,7 @@ defmodule ArchiDep.MixProject do
     [
       app: :archidep,
       version: "0.1.0",
-      elixir: "~> 1.18",
+      elixir: "~> 1.19",
       elixirc_paths: compilation_paths_for(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -85,7 +85,7 @@ defmodule ArchiDep.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:prom_ex, "~> 1.11.0"},
       {:req, "~> 0.5.15"},
-      {:sentry, "~> 11.0.3"},
+      {:sentry, "~> 13.1"},
       {:sshex, "~> 2.2"},
       {:swoosh, "~> 1.5"},
       {:telemetry_metrics, "~> 1.0"},
