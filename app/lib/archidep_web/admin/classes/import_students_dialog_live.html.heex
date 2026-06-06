@@ -1,6 +1,7 @@
 <dialog
   id={id()}
   class="modal"
+  phx-mounted={JS.ignore_attributes(["open"])}
   data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id()})}
 >
   <div class={["modal-box max-h-11/12", if(@state == :uploaded, do: "w-11/12 max-w-5xl")]}>

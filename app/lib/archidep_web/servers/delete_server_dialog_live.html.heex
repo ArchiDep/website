@@ -1,4 +1,4 @@
-<dialog id={id(@server)} class="modal">
+<dialog id={id(@server)} class="modal" phx-mounted={JS.ignore_attributes(["open"])}>
   <div class="modal-box">
     <h3 class="text-lg font-bold">{gettext("Delete Server")}</h3>
     <p class="mt-4">

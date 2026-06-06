@@ -4,6 +4,7 @@
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
     <.admin_server_card
       :for={server <- @servers}
+      :key={server.id}
       class="cursor-pointer"
       auth={@auth}
       server={server}

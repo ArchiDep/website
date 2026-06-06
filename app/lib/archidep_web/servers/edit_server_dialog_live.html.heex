@@ -1,6 +1,7 @@
 <dialog
   id={id(@server)}
   class="modal"
+  phx-mounted={JS.ignore_attributes(["open"])}
   data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id(@server)})}
 >
   <div class="modal-box w-11/12 max-w-3xl">

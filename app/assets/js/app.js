@@ -46,18 +46,6 @@ const liveSocket = new LiveSocket('/live', Socket, {
       }
     },
     ...FlashyHooks
-  },
-  dom: {
-    onBeforeElUpdated: (fromEl, toEl) => {
-      if (fromEl.tagName !== 'DIALOG') {
-        return true;
-      }
-
-      // Prevent DOM updates from nuking the dialog state.
-      toEl.open = fromEl.open;
-
-      return false;
-    }
   }
 });
 

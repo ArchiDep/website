@@ -64,7 +64,7 @@
 </div>
 
 <ul class="mt-4">
-  <li :for={class <- @active_classes}>
+  <li :for={class <- @active_classes} :key={class.id}>
     <.live_component
       module={AdminClassServersLive}
       id={AdminClassServersLive.id(class)}

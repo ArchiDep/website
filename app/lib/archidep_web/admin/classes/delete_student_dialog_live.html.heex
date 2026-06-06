@@ -1,4 +1,4 @@
-<dialog id={id(@student)} class="modal">
+<dialog id={id(@student)} class="modal" phx-mounted={JS.ignore_attributes(["open"])}>
   <div class="modal-box">
     <h3 class="text-lg font-bold">{gettext("Delete Student")}</h3>
     <p class="mt-4">
