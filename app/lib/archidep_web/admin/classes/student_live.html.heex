@@ -1,195 +1,199 @@
-<div class="breadcrumbs text-xs">
-  <ul>
-    <li class="text-error">
-      <span class="flex items-center gap-1 !cursor-default !no-underline">
-        <Heroicons.fire outline class="size-4" />
-        <span>{gettext("Admin")}</span>
-      </span>
-    </li>
-    <li>
-      <.link class="flex items-center gap-1" navigate={~p"/admin/classes"}>
-        <Heroicons.academic_cap solid class="size-4" />
-        <span>{gettext("Classes")}</span>
-      </.link>
-    </li>
-    <li>
-      <.link class="flex items-center gap-1" navigate={~p"/admin/classes/#{@class.id}"}>
-        <Heroicons.academic_cap solid class="size-4" />
-        <span>{@class.name}</span>
-      </.link>
-    </li>
-  </ul>
-</div>
-
-<h2 class="text-2xl font-bold my-2 flex items-center gap-x-2">
-  <Heroicons.user solid class="size-6" />
-  {@student.name}
-</h2>
-
-<.data_display class="mt-4">
-  <.data_display_element title={gettext("Name")}>
-    {@student.name}
-  </.data_display_element>
-  <.data_display_element title={gettext("Email")}>{@student.email}</.data_display_element>
-  <.data_display_element title={gettext("Class")}>
-    <a href={~p"/admin/classes/#{@student.class_id}"}>
-      {@student.class.name}
-    </a>
-  </.data_display_element>
-  <.data_display_element title={gettext("Academic class")}>
-    <%= if @student.academic_class do %>
-      {@student.academic_class}
-    <% else %>
-      <.no_data />
-    <% end %>
-  </.data_display_element>
-  <.data_display_element title={gettext("Server username")}>
-    <.student_username student={@student} />
-  </.data_display_element>
-  <.data_display_element title={gettext("Active")}>
-    <Heroicons.check_circle :if={@student.active} class="size-5 text-success" />
-    <Heroicons.x_circle :if={not @student.active} class="size-5 text-error" />
-  </.data_display_element>
-  <.data_display_element title={gettext("Servers enabled")} class="flex items-center gap-2">
-    <Heroicons.check_circle :if={@student.servers_enabled} class="size-5 text-success" />
-    <Heroicons.x_circle :if={not @student.servers_enabled} class="size-5 text-error" />
-    <span
-      :if={@student.servers_enabled != @student.class.servers_enabled}
-      class="text-info text-sm italic"
-    >
-      <%= if @student.class.servers_enabled do %>
-        {gettext("enabled for class")}
-      <% else %>
-        {gettext("disabled for class")}
-      <% end %>
-    </span>
-  </.data_display_element>
-  <.data_display_element title={gettext("Domain")} class="font-mono">
-    {@student.domain}
-  </.data_display_element>
-  <.data_display_element title={gettext("User account")}>
-    <%= if @student.user do %>
-      <span
-        class={[
-          "flex items-center gap-x-2",
-          if(@student.user.student_id != @student.id,
-            do: "text-base-content/50 line-through tooltip",
-            else: nil
-          )
-        ]}
-        data-tip={student_not_in_class_tooltip(@student)}
-      >
-        <Heroicons.user solid class="size-5" />
-        {@student.username}
-      </span>
-    <% else %>
-      <.no_data text={gettext("Not registered yet")} />
-    <% end %>
-  </.data_display_element>
-  <.data_display_element title={gettext("Active server")}>
-    <%= if @active_server do %>
-      <a
-        href={~p"/admin/servers/#{@active_server.id}"}
-        class={[
-          "flex items-center gap-x-2"
-        ]}
-      >
-        <Heroicons.server solid class="size-5" />
-        {@active_server.name || Server.default_hostname(@active_server)}
-      </a>
-    <% else %>
-      <.no_data text={gettext("None registered")} />
-    <% end %>
-  </.data_display_element>
-</.data_display>
-
-<.form
-  :if={@student.user != nil and can_impersonate?(@auth, @student.user)}
-  id={"impersonate-user-#{@student.user_id}-form"}
-  for={%{}}
-  action={~p"/auth/impersonate"}
-  method="POST"
-  class="join-item flex items-center"
->
-</.form>
-
-<div :if={@login_link} role="alert" class="my-4 max-w-xl alert alert-success alert-soft">
-  <Heroicons.check_circle solid class="size-5 text-success" />
-  <div class="flex flex-col gap-4">
-    <strong>{gettext("Login link created")}</strong>
-    <span>
-      {gettext(
-        "The following link will allow the student to log in one time within the next 24 hours. Their session will last one day once the link has been used. All previous login links for this student are now invalid."
-      )}
-    </span>
-    <label class="w-full input">
-      <Heroicons.link class="h-[1em] opacity-50" />
-      <input
-        type="text"
-        class="grow"
-        value={url(~p"/auth/link?#{%{token: Base.encode64(@login_link.token)}}")}
-        readonly
-      />
-    </label>
+<Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
+  <div class="breadcrumbs text-xs">
+    <ul>
+      <li class="text-error">
+        <span class="flex items-center gap-1 !cursor-default !no-underline">
+          <Heroicons.fire outline class="size-4" />
+          <span>{gettext("Admin")}</span>
+        </span>
+      </li>
+      <li>
+        <.link class="flex items-center gap-1" navigate={~p"/admin/classes"}>
+          <Heroicons.academic_cap solid class="size-4" />
+          <span>{gettext("Classes")}</span>
+        </.link>
+      </li>
+      <li>
+        <.link class="flex items-center gap-1" navigate={~p"/admin/classes/#{@class.id}"}>
+          <Heroicons.academic_cap solid class="size-4" />
+          <span>{@class.name}</span>
+        </.link>
+      </li>
+    </ul>
   </div>
-</div>
 
-<div class="mt-4 join">
-  <button
+  <h2 class="text-2xl font-bold my-2 flex items-center gap-x-2">
+    <Heroicons.user solid class="size-6" />
+    {@student.name}
+  </h2>
+
+  <.data_display class="mt-4">
+    <.data_display_element title={gettext("Name")}>
+      {@student.name}
+    </.data_display_element>
+    <.data_display_element title={gettext("Email")}>{@student.email}</.data_display_element>
+    <.data_display_element title={gettext("Class")}>
+      <a href={~p"/admin/classes/#{@student.class_id}"}>
+        {@student.class.name}
+      </a>
+    </.data_display_element>
+    <.data_display_element title={gettext("Academic class")}>
+      <%= if @student.academic_class do %>
+        {@student.academic_class}
+      <% else %>
+        <.no_data />
+      <% end %>
+    </.data_display_element>
+    <.data_display_element title={gettext("Server username")}>
+      <.student_username student={@student} />
+    </.data_display_element>
+    <.data_display_element title={gettext("Active")}>
+      <Heroicons.check_circle :if={@student.active} class="size-5 text-success" />
+      <Heroicons.x_circle :if={not @student.active} class="size-5 text-error" />
+    </.data_display_element>
+    <.data_display_element title={gettext("Servers enabled")} class="flex items-center gap-2">
+      <Heroicons.check_circle :if={@student.servers_enabled} class="size-5 text-success" />
+      <Heroicons.x_circle :if={not @student.servers_enabled} class="size-5 text-error" />
+      <span
+        :if={@student.servers_enabled != @student.class.servers_enabled}
+        class="text-info text-sm italic"
+      >
+        <%= if @student.class.servers_enabled do %>
+          {gettext("enabled for class")}
+        <% else %>
+          {gettext("disabled for class")}
+        <% end %>
+      </span>
+    </.data_display_element>
+    <.data_display_element title={gettext("Domain")} class="font-mono">
+      {@student.domain}
+    </.data_display_element>
+    <.data_display_element title={gettext("User account")}>
+      <%= if @student.user do %>
+        <span
+          class={[
+            "flex items-center gap-x-2",
+            if(@student.user.student_id != @student.id,
+              do: "text-base-content/50 line-through tooltip",
+              else: nil
+            )
+          ]}
+          data-tip={student_not_in_class_tooltip(@student)}
+        >
+          <Heroicons.user solid class="size-5" />
+          {@student.username}
+        </span>
+      <% else %>
+        <.no_data text={gettext("Not registered yet")} />
+      <% end %>
+    </.data_display_element>
+    <.data_display_element title={gettext("Active server")}>
+      <%= if @active_server do %>
+        <a
+          href={~p"/admin/servers/#{@active_server.id}"}
+          class={[
+            "flex items-center gap-x-2"
+          ]}
+        >
+          <Heroicons.server solid class="size-5" />
+          {@active_server.name || Server.default_hostname(@active_server)}
+        </a>
+      <% else %>
+        <.no_data text={gettext("None registered")} />
+      <% end %>
+    </.data_display_element>
+  </.data_display>
+
+  <.form
     :if={@student.user != nil and can_impersonate?(@auth, @student.user)}
-    type="submit"
-    form={"impersonate-user-#{@student.user_id}-form"}
-    class="join-item btn btn-accent tooltip"
-    data-tip={gettext("Temporarily assume the identity of that user for debugging")}
-    name="user_account_id"
-    value={@student.user.id}
+    id={"impersonate-user-#{@student.user_id}-form"}
+    for={%{}}
+    action={~p"/auth/impersonate"}
+    method="POST"
+    class="join-item flex items-center"
   >
-    <Heroicons.eye solid class="size-4 cursor-pointer hover:opacity-85" />
-    {gettext("Impersonate")}
-  </button>
+  </.form>
 
-  <button type="button" class="join-item btn btn-secondary" phx-click="generate-login-link">
-    <span class="flex items-center gap-x-2">
-      <Heroicons.arrow_right_end_on_rectangle class="size-4" />
-      <span>{gettext("Generate login link")}</span>
-    </span>
-  </button>
+  <div :if={@login_link} role="alert" class="my-4 max-w-xl alert alert-success alert-soft">
+    <Heroicons.check_circle solid class="size-5 text-success" />
+    <div class="flex flex-col gap-4">
+      <strong>{gettext("Login link created")}</strong>
+      <span>
+        {gettext(
+          "The following link will allow the student to log in one time within the next 24 hours. Their session will last one day once the link has been used. All previous login links for this student are now invalid."
+        )}
+      </span>
+      <label class="w-full input">
+        <Heroicons.link class="h-[1em] opacity-50" />
+        <input
+          type="text"
+          class="grow"
+          value={url(~p"/auth/link?#{%{token: Base.encode64(@login_link.token)}}")}
+          readonly
+        />
+      </label>
+    </div>
+  </div>
 
-  <button
-    type="button"
-    class="join-item btn btn-warning"
-    phx-click={JS.dispatch("open-dialog", detail: %{dialog: EditStudentDialogLive.id(@student)})}
-  >
-    <span class="flex items-center gap-x-2">
-      <Heroicons.pencil class="size-4" />
-      <span>{gettext("Edit")}</span>
-    </span>
-  </button>
+  <div class="mt-4 join">
+    <button
+      :if={@student.user != nil and can_impersonate?(@auth, @student.user)}
+      type="submit"
+      form={"impersonate-user-#{@student.user_id}-form"}
+      class="join-item btn btn-accent tooltip"
+      data-tip={gettext("Temporarily assume the identity of that user for debugging")}
+      name="user_account_id"
+      value={@student.user.id}
+    >
+      <Heroicons.eye solid class="size-4 cursor-pointer hover:opacity-85" />
+      {gettext("Impersonate")}
+    </button>
 
-  <button
-    type="button"
-    class="join-item btn btn-error"
-    phx-click={
-      JS.dispatch("open-dialog", detail: %{dialog: DeleteStudentDialogLive.id(@student)})
-    }
-  >
-    <span class="flex items-center gap-x-2">
-      <Heroicons.trash class="size-4" />
-      <span>{gettext("Delete")}</span>
-    </span>
-  </button>
-</div>
+    <button type="button" class="join-item btn btn-secondary" phx-click="generate-login-link">
+      <span class="flex items-center gap-x-2">
+        <Heroicons.arrow_right_end_on_rectangle class="size-4" />
+        <span>{gettext("Generate login link")}</span>
+      </span>
+    </button>
 
-<.live_component
-  module={EditStudentDialogLive}
-  id={EditStudentDialogLive.id(@student)}
-  auth={@auth}
-  student={@student}
-/>
+    <button
+      type="button"
+      class="join-item btn btn-warning"
+      phx-click={
+        JS.dispatch("open-dialog", detail: %{dialog: EditStudentDialogLive.id(@student)})
+      }
+    >
+      <span class="flex items-center gap-x-2">
+        <Heroicons.pencil class="size-4" />
+        <span>{gettext("Edit")}</span>
+      </span>
+    </button>
 
-<.live_component
-  module={DeleteStudentDialogLive}
-  id={DeleteStudentDialogLive.id(@student)}
-  auth={@auth}
-  student={@student}
-/>
+    <button
+      type="button"
+      class="join-item btn btn-error"
+      phx-click={
+        JS.dispatch("open-dialog", detail: %{dialog: DeleteStudentDialogLive.id(@student)})
+      }
+    >
+      <span class="flex items-center gap-x-2">
+        <Heroicons.trash class="size-4" />
+        <span>{gettext("Delete")}</span>
+      </span>
+    </button>
+  </div>
+
+  <.live_component
+    module={EditStudentDialogLive}
+    id={EditStudentDialogLive.id(@student)}
+    auth={@auth}
+    student={@student}
+  />
+
+  <.live_component
+    module={DeleteStudentDialogLive}
+    id={DeleteStudentDialogLive.id(@student)}
+    auth={@auth}
+    student={@student}
+  />
+</Layouts.app>

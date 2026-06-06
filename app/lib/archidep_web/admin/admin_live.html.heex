@@ -1,79 +1,84 @@
-<div class="flex justify-between items-center gap-4">
-  <dl>
-    <div class="flex flex-col">
-      <dt class="mb-1 text-sm text-base-content/50">SSH public key</dt>
-      <dd class="font-mono text-xs break-all">
-        {@ssh_public_key}
-      </dd>
-    </div>
-  </dl>
+<Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
+  <div class="flex justify-between items-center gap-4">
+    <dl>
+      <div class="flex flex-col">
+        <dt class="mb-1 text-sm text-base-content/50">SSH public key</dt>
+        <dd class="font-mono text-xs break-all">
+          {@ssh_public_key}
+        </dd>
+      </div>
+    </dl>
 
-  <div class="stats stats-vertical xl:stats-horizontal shadow shrink-0">
-    <div class="stat">
-      <div class="stat-figure text-secondary">
-        <Heroicons.clock class={[
-          "inline-block h-8 w-8 stroke-current",
-          if(@ansible.pending == 0, do: "text-success", else: "text-warning")
-        ]} />
+    <div class="stats stats-vertical xl:stats-horizontal shadow shrink-0">
+      <div class="stat">
+        <div class="stat-figure text-secondary">
+          <Heroicons.clock class={[
+            "inline-block h-8 w-8 stroke-current",
+            if(@ansible.pending == 0, do: "text-success", else: "text-warning")
+          ]} />
+        </div>
+        <div class="stat-title">Ansible Queue</div>
+        <div
+          class={[
+            "stat-value text-secondary tooltip",
+            if(@ansible.pending == 0, do: "text-success", else: "text-warning")
+          ]}
+          data-tip={gettext("Pending / Demand")}
+        >
+          {@ansible.pending}/{@ansible.demand}
+        </div>
       </div>
-      <div class="stat-title">Ansible Queue</div>
-      <div
-        class={[
-          "stat-value text-secondary tooltip",
-          if(@ansible.pending == 0, do: "text-success", else: "text-warning")
-        ]}
-        data-tip={gettext("Pending / Demand")}
-      >
-        {@ansible.pending}/{@ansible.demand}
+      <div class="stat">
+        <div class="stat-figure text-secondary">
+          <Heroicons.cog_8_tooth class={[
+            "inline-block h-8 w-8 stroke-current",
+            if(MapSet.size(@ansible.ongoing) == 0,
+              do: "text-success",
+              else: "text-warning animate-spin"
+            )
+          ]} />
+        </div>
+        <div class="stat-title">Ansible Jobs</div>
+        <div class={[
+          "stat-value text-secondary",
+          if(MapSet.size(@ansible.ongoing) == 0, do: "text-success", else: "text-warning")
+        ]}>
+          {MapSet.size(@ansible.ongoing)}
+        </div>
       </div>
-    </div>
-    <div class="stat">
-      <div class="stat-figure text-secondary">
-        <Heroicons.cog_8_tooth class={[
-          "inline-block h-8 w-8 stroke-current",
-          if(MapSet.size(@ansible.ongoing) == 0,
-            do: "text-success",
-            else: "text-warning animate-spin"
-          )
-        ]} />
-      </div>
-      <div class="stat-title">Ansible Jobs</div>
-      <div class={[
-        "stat-value text-secondary",
-        if(MapSet.size(@ansible.ongoing) == 0, do: "text-success", else: "text-warning")
-      ]}>
-        {MapSet.size(@ansible.ongoing)}
-      </div>
-    </div>
-    <div class="stat">
-      <div class="stat-figure text-secondary">
-        <Heroicons.bolt class={[
-          "inline-block h-8 w-8 stroke-current",
+      <div class="stat">
+        <div class="stat-figure text-secondary">
+          <Heroicons.bolt class={[
+            "inline-block h-8 w-8 stroke-current",
+            if(count_connected(@server_state_map) == 0,
+              do: "text-secondary",
+              else: "text-success"
+            )
+          ]} />
+        </div>
+        <div class="stat-title">Connected Servers</div>
+        <div class={[
+          "stat-value text-secondary",
           if(count_connected(@server_state_map) == 0, do: "text-secondary", else: "text-success")
-        ]} />
-      </div>
-      <div class="stat-title">Connected Servers</div>
-      <div class={[
-        "stat-value text-secondary",
-        if(count_connected(@server_state_map) == 0, do: "text-secondary", else: "text-success")
-      ]}>
-        {count_connected(@server_state_map)}
+        ]}>
+          {count_connected(@server_state_map)}
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<ul class="mt-4">
-  <li :for={class <- @active_classes} :key={class.id}>
-    <.live_component
-      module={AdminClassServersLive}
-      id={AdminClassServersLive.id(class)}
-      auth={@auth}
-      class={class}
-      servers={Map.get(@servers_by_class_id, class.id, [])}
-      server_state_map={
-        @servers_by_class_id |> Map.fetch!(class.id) |> real_time_states_for(@server_state_map)
-      }
-    />
-  </li>
-</ul>
+  <ul class="mt-4">
+    <li :for={class <- @active_classes} :key={class.id}>
+      <.live_component
+        module={AdminClassServersLive}
+        id={AdminClassServersLive.id(class)}
+        auth={@auth}
+        class={class}
+        servers={Map.get(@servers_by_class_id, class.id, [])}
+        server_state_map={
+          @servers_by_class_id |> Map.fetch!(class.id) |> real_time_states_for(@server_state_map)
+        }
+      />
+    </li>
+  </ul>
+</Layouts.app>

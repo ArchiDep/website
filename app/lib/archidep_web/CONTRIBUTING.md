@@ -171,7 +171,7 @@ is enforced because each page loads **root-only [context
 operations][authorization]** in `mount` (the policy rejects non-root users —
 e.g. `AdminLive` calls `Course.list_active_classes/1`), and the admin menu is
 only shown to root users in the [`app`
-layout](./components/layouts/app.html.heex). See [Authentication &
+layout](./components/layouts.ex). See [Authentication &
 Authorization](#authentication--authorization).
 
 The areas map directly onto the bounded contexts:
@@ -262,16 +262,16 @@ steps.
 - **[`Layouts`](./components/layouts.ex)** — the
   [`root`](./components/layouts/root.html.heex) layout (HTML skeleton, assets,
   the shared [theme](../../../theme/CONTRIBUTING.md)) and the
-  [`app`](./components/layouts/app.html.heex) layout (the header and sidebar
-  shared with the course site, the flash container, and the admin menu shown to
-  root users).
+  [`app`](./components/layouts.ex) layout function component (the header and
+  sidebar shared with the course site, the flash container, and the admin menu
+  shown to root users).
 
 ---
 
 ## Notifications
 
 User notifications (toasts) use [Flashy][flashy] and are rendered by the flash
-container in the [`app` layout](./components/layouts/app.html.heex):
+container in the [`app` layout](./components/layouts.ex):
 
 - **[`Notifications.Message`](./components/notifications/message.ex)** renders a
   single toast (info/success/warning/error, with an icon and optional

@@ -1,279 +1,284 @@
-<div class="breadcrumbs text-xs">
-  <ul>
-    <li class="text-error">
-      <.link class="flex items-center gap-1" navigate={~p"/admin"}>
-        <Heroicons.fire outline class="size-4" />
-        <span>{gettext("Admin")}</span>
-      </.link>
-    </li>
-    <li>
-      <.link class="flex items-center gap-1" navigate={~p"/admin/classes"}>
-        <Heroicons.academic_cap solid class="size-4" />
-        <span>{gettext("Classes")}</span>
-      </.link>
-    </li>
-  </ul>
-</div>
+<Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
+  <div class="breadcrumbs text-xs">
+    <ul>
+      <li class="text-error">
+        <.link class="flex items-center gap-1" navigate={~p"/admin"}>
+          <Heroicons.fire outline class="size-4" />
+          <span>{gettext("Admin")}</span>
+        </.link>
+      </li>
+      <li>
+        <.link class="flex items-center gap-1" navigate={~p"/admin/classes"}>
+          <Heroicons.academic_cap solid class="size-4" />
+          <span>{gettext("Classes")}</span>
+        </.link>
+      </li>
+    </ul>
+  </div>
 
-<h2 class="text-2xl font-bold my-2 flex items-center gap-x-2">
-  <Heroicons.academic_cap solid class="size-6" />
-  {@class.name}
-</h2>
+  <h2 class="text-2xl font-bold my-2 flex items-center gap-x-2">
+    <Heroicons.academic_cap solid class="size-6" />
+    {@class.name}
+  </h2>
 
-<div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
-  <.data_display
-    class="col-span-1 md:col-span-3"
-    responsive_class="md:grid-cols-2 2xl:grid-cols-3"
-  >
-    <.data_display_element title={gettext("Start date")}>
-      <%= if @class.start_date do %>
-        {format_date(@class.start_date)}
-      <% else %>
-        <.no_data />
-      <% end %>
-    </.data_display_element>
-    <.data_display_element title={gettext("End date")}>
-      <%= if @class.end_date do %>
-        {format_date(@class.end_date)}
-      <% else %>
-        <.no_data />
-      <% end %>
-    </.data_display_element>
-    <.data_display_element title={gettext("Active")}>
-      <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
-      <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
-    </.data_display_element>
-    <.data_display_element title={gettext("Servers enabled")}>
-      <Heroicons.check_circle :if={@class.servers_enabled} class="size-5 text-success" />
-      <Heroicons.x_circle :if={not @class.servers_enabled} class="size-5 text-error" />
-    </.data_display_element>
-    <.data_display_element title={gettext("Teacher SSH public keys")}>
-      {length(@class.teacher_ssh_public_keys)}
-    </.data_display_element>
-  </.data_display>
+  <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
+    <.data_display
+      class="col-span-1 md:col-span-3"
+      responsive_class="md:grid-cols-2 2xl:grid-cols-3"
+    >
+      <.data_display_element title={gettext("Start date")}>
+        <%= if @class.start_date do %>
+          {format_date(@class.start_date)}
+        <% else %>
+          <.no_data />
+        <% end %>
+      </.data_display_element>
+      <.data_display_element title={gettext("End date")}>
+        <%= if @class.end_date do %>
+          {format_date(@class.end_date)}
+        <% else %>
+          <.no_data />
+        <% end %>
+      </.data_display_element>
+      <.data_display_element title={gettext("Active")}>
+        <Heroicons.check_circle :if={@class.active} class="size-5 text-success" />
+        <Heroicons.x_circle :if={not @class.active} class="size-5 text-error" />
+      </.data_display_element>
+      <.data_display_element title={gettext("Servers enabled")}>
+        <Heroicons.check_circle :if={@class.servers_enabled} class="size-5 text-success" />
+        <Heroicons.x_circle :if={not @class.servers_enabled} class="size-5 text-error" />
+      </.data_display_element>
+      <.data_display_element title={gettext("Teacher SSH public keys")}>
+        {length(@class.teacher_ssh_public_keys)}
+      </.data_display_element>
+    </.data_display>
 
-  <div class="col-span1 md:col-span-2">
-    <div class="card bg-base-300 card-sm shadow-sm">
-      <div class="card-body">
-        <div class="card-title flex justify-between gap-x-4">
-          <h2>{gettext("Expected server properties")}</h2>
-          <button
-            :if={not ExpectedServerProperties.blank?(@class.expected_server_properties)}
-            type="button"
-            class="btn btn-warning btn-xs"
-            phx-click={
-              JS.dispatch("open-dialog",
-                detail: %{dialog: EditClassExpectedServerPropertiesDialogLive.id(@class)}
-              )
-            }
-          >
-            <span class="flex items-center gap-x-2">
-              <Heroicons.pencil class="size-4" />
-              <span>
-                {gettext("Edit")}
+    <div class="col-span1 md:col-span-2">
+      <div class="card bg-base-300 card-sm shadow-sm">
+        <div class="card-body">
+          <div class="card-title flex justify-between gap-x-4">
+            <h2>{gettext("Expected server properties")}</h2>
+            <button
+              :if={not ExpectedServerProperties.blank?(@class.expected_server_properties)}
+              type="button"
+              class="btn btn-warning btn-xs"
+              phx-click={
+                JS.dispatch("open-dialog",
+                  detail: %{dialog: EditClassExpectedServerPropertiesDialogLive.id(@class)}
+                )
+              }
+            >
+              <span class="flex items-center gap-x-2">
+                <Heroicons.pencil class="size-4" />
+                <span>
+                  {gettext("Edit")}
+                </span>
               </span>
-            </span>
-          </button>
-        </div>
+            </button>
+          </div>
 
-        <.expected_server_properties properties={@class.expected_server_properties} />
+          <.expected_server_properties properties={@class.expected_server_properties} />
 
-        <div :if={ExpectedServerProperties.blank?(@class.expected_server_properties)} class="flex">
-          <button
-            type="button"
-            class="btn btn-accent"
-            phx-click={
-              JS.dispatch("open-dialog",
-                detail: %{dialog: EditClassExpectedServerPropertiesDialogLive.id(@class)}
-              )
-            }
+          <div
+            :if={ExpectedServerProperties.blank?(@class.expected_server_properties)}
+            class="flex"
           >
-            <span class="flex items-center gap-x-2">
-              <Heroicons.cog class="size-4" />
-              <span>
-                {gettext("Define")}
+            <button
+              type="button"
+              class="btn btn-accent"
+              phx-click={
+                JS.dispatch("open-dialog",
+                  detail: %{dialog: EditClassExpectedServerPropertiesDialogLive.id(@class)}
+                )
+              }
+            >
+              <span class="flex items-center gap-x-2">
+                <Heroicons.cog class="size-4" />
+                <span>
+                  {gettext("Define")}
+                </span>
               </span>
-            </span>
-          </button>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<.live_component
-  module={EditClassExpectedServerPropertiesDialogLive}
-  id={EditClassExpectedServerPropertiesDialogLive.id(@class)}
-  auth={@auth}
-  class={@class}
-/>
+  <.live_component
+    module={EditClassExpectedServerPropertiesDialogLive}
+    id={EditClassExpectedServerPropertiesDialogLive.id(@class)}
+    auth={@auth}
+    class={@class}
+  />
 
-<div class="mt-4 join">
-  <button
-    type="button"
-    class="join-item btn btn-warning"
-    phx-click={JS.dispatch("open-dialog", detail: %{dialog: EditClassDialogLive.id(@class)})}
-  >
-    <span class="flex items-center gap-x-2">
-      <Heroicons.pencil class="size-4" />
-      <span>{gettext("Edit")}</span>
-    </span>
-  </button>
-
-  <button
-    type="button"
-    class="join-item btn btn-error"
-    phx-click={JS.dispatch("open-dialog", detail: %{dialog: DeleteClassDialogLive.id(@class)})}
-  >
-    <span class="flex items-center gap-x-2">
-      <Heroicons.trash class="size-4" />
-      <span>{gettext("Delete")}</span>
-    </span>
-  </button>
-</div>
-
-<.live_component
-  module={EditClassDialogLive}
-  id={EditClassDialogLive.id(@class)}
-  auth={@auth}
-  class={@class}
-/>
-
-<.live_component
-  module={DeleteClassDialogLive}
-  id={DeleteClassDialogLive.id(@class)}
-  auth={@auth}
-  class={@class}
-  servers_count={@server_ids |> elem(0) |> MapSet.size()}
-/>
-
-<div class="mt-4 mb-2 flex justify-between items-end">
-  <h3 class="text-xl font-bold">
-    {gettext("Students")}
-    <small :if={not Enum.empty?(@students)} class="ml-2 text-base-content/75">
-      {gettext("{count}/{total} registered",
-        count: Enum.count(@students, &(&1.user_id != nil)),
-        total: length(@students)
-      )}
-    </small>
-  </h3>
-
-  <div class="join">
-    <a class="join-item btn btn-neutral btn-sm" href={~p"/admin/classes/#{@class.id}/csv"}>
-      <span class="flex items-center gap-x-2">
-        <Heroicons.list_bullet class="size-4" />
-        <span>{gettext("CSV")}</span>
-      </span>
-    </a>
-    <a
-      class="join-item btn btn-neutral btn-sm"
-      href={~p"/admin/classes/#{@class.id}/ssh-exercise-vm-inventory"}
-    >
-      <span class="flex items-center gap-x-2">
-        <Heroicons.cog_6_tooth class="size-4" />
-        <span>{gettext("Inventory")}</span>
-      </span>
-    </a>
+  <div class="mt-4 join">
     <button
       type="button"
-      class="join-item btn btn-secondary btn-sm"
-      phx-click={JS.dispatch("open-dialog", detail: %{dialog: ImportStudentsDialogLive.id()})}
+      class="join-item btn btn-warning"
+      phx-click={JS.dispatch("open-dialog", detail: %{dialog: EditClassDialogLive.id(@class)})}
     >
       <span class="flex items-center gap-x-2">
-        <Heroicons.document_arrow_up class="size-4" />
-        <span>{gettext("Import")}</span>
+        <Heroicons.pencil class="size-4" />
+        <span>{gettext("Edit")}</span>
       </span>
     </button>
+
     <button
       type="button"
-      class="join-item btn btn-success btn-sm"
-      phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewStudentDialogLive.id()})}
+      class="join-item btn btn-error"
+      phx-click={JS.dispatch("open-dialog", detail: %{dialog: DeleteClassDialogLive.id(@class)})}
     >
       <span class="flex items-center gap-x-2">
-        <Heroicons.plus class="size-4" />
-        <span>{gettext("Student")}</span>
+        <Heroicons.trash class="size-4" />
+        <span>{gettext("Delete")}</span>
       </span>
     </button>
   </div>
-</div>
 
-<.live_component
-  module={ImportStudentsDialogLive}
-  id={ImportStudentsDialogLive.id()}
-  auth={@auth}
-  class={@class}
-/>
+  <.live_component
+    module={EditClassDialogLive}
+    id={EditClassDialogLive.id(@class)}
+    auth={@auth}
+    class={@class}
+  />
 
-<.live_component
-  module={NewStudentDialogLive}
-  id={NewStudentDialogLive.id()}
-  auth={@auth}
-  class={@class}
-/>
+  <.live_component
+    module={DeleteClassDialogLive}
+    id={DeleteClassDialogLive.id(@class)}
+    auth={@auth}
+    class={@class}
+    servers_count={@server_ids |> elem(0) |> MapSet.size()}
+  />
 
-<table class="table">
-  <thead>
-    <tr>
-      <th>{gettext("Name")}</th>
-      <th>{gettext("Academic class")}</th>
-      <th>{gettext("Email")}</th>
-      <th>{gettext("Username")}</th>
-      <th>{gettext("Active")}</th>
-      <th>{gettext("User account")}</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr :if={Enum.empty?(@students)}>
-      <td colspan="1000">
-        <.no_data text={gettext("No students in this class")} />
-      </td>
-    </tr>
-    <tr
-      :for={student <- @students}
-      :key={student.id}
-      id={"student-#{student.id}"}
-      class="hover:bg-base-300 even:bg-base-200 cursor-pointer"
-      phx-click={JS.navigate(~p"/admin/classes/#{@class.id}/students/#{student.id}")}
-    >
-      <td>
-        {student.name}
-      </td>
-      <td>
-        <%= if student.academic_class do %>
-          {student.academic_class}
-        <% else %>
-          <.no_data />
-        <% end %>
-      </td>
-      <td>
-        {student.email}
-      </td>
-      <td>
-        <.student_username student={student} />
-      </td>
-      <td>
-        <Heroicons.check_circle :if={student.active} class="size-5 text-success" />
-        <Heroicons.x_circle :if={not student.active} class="size-5 text-error" />
-      </td>
-      <td>
-        <%= if student.user do %>
-          <span
-            class={[
-              "flex items-center gap-x-2",
-              if(student.user.student_id != student.id,
-                do: "text-base-content/50 line-through tooltip tooltip-left",
-                else: nil
-              )
-            ]}
-            data-tip={student_not_in_class_tooltip(student)}
-          >
-            <Heroicons.user solid class="size-5" />
-            {student.username}
-          </span>
-        <% else %>
-          <.no_data text={gettext("Not registered yet")} />
-        <% end %>
-      </td>
-    </tr>
-  </tbody>
-</table>
+  <div class="mt-4 mb-2 flex justify-between items-end">
+    <h3 class="text-xl font-bold">
+      {gettext("Students")}
+      <small :if={not Enum.empty?(@students)} class="ml-2 text-base-content/75">
+        {gettext("{count}/{total} registered",
+          count: Enum.count(@students, &(&1.user_id != nil)),
+          total: length(@students)
+        )}
+      </small>
+    </h3>
+
+    <div class="join">
+      <a class="join-item btn btn-neutral btn-sm" href={~p"/admin/classes/#{@class.id}/csv"}>
+        <span class="flex items-center gap-x-2">
+          <Heroicons.list_bullet class="size-4" />
+          <span>{gettext("CSV")}</span>
+        </span>
+      </a>
+      <a
+        class="join-item btn btn-neutral btn-sm"
+        href={~p"/admin/classes/#{@class.id}/ssh-exercise-vm-inventory"}
+      >
+        <span class="flex items-center gap-x-2">
+          <Heroicons.cog_6_tooth class="size-4" />
+          <span>{gettext("Inventory")}</span>
+        </span>
+      </a>
+      <button
+        type="button"
+        class="join-item btn btn-secondary btn-sm"
+        phx-click={JS.dispatch("open-dialog", detail: %{dialog: ImportStudentsDialogLive.id()})}
+      >
+        <span class="flex items-center gap-x-2">
+          <Heroicons.document_arrow_up class="size-4" />
+          <span>{gettext("Import")}</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        class="join-item btn btn-success btn-sm"
+        phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewStudentDialogLive.id()})}
+      >
+        <span class="flex items-center gap-x-2">
+          <Heroicons.plus class="size-4" />
+          <span>{gettext("Student")}</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <.live_component
+    module={ImportStudentsDialogLive}
+    id={ImportStudentsDialogLive.id()}
+    auth={@auth}
+    class={@class}
+  />
+
+  <.live_component
+    module={NewStudentDialogLive}
+    id={NewStudentDialogLive.id()}
+    auth={@auth}
+    class={@class}
+  />
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{gettext("Name")}</th>
+        <th>{gettext("Academic class")}</th>
+        <th>{gettext("Email")}</th>
+        <th>{gettext("Username")}</th>
+        <th>{gettext("Active")}</th>
+        <th>{gettext("User account")}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr :if={Enum.empty?(@students)}>
+        <td colspan="1000">
+          <.no_data text={gettext("No students in this class")} />
+        </td>
+      </tr>
+      <tr
+        :for={student <- @students}
+        :key={student.id}
+        id={"student-#{student.id}"}
+        class="hover:bg-base-300 even:bg-base-200 cursor-pointer"
+        phx-click={JS.navigate(~p"/admin/classes/#{@class.id}/students/#{student.id}")}
+      >
+        <td>
+          {student.name}
+        </td>
+        <td>
+          <%= if student.academic_class do %>
+            {student.academic_class}
+          <% else %>
+            <.no_data />
+          <% end %>
+        </td>
+        <td>
+          {student.email}
+        </td>
+        <td>
+          <.student_username student={student} />
+        </td>
+        <td>
+          <Heroicons.check_circle :if={student.active} class="size-5 text-success" />
+          <Heroicons.x_circle :if={not student.active} class="size-5 text-error" />
+        </td>
+        <td>
+          <%= if student.user do %>
+            <span
+              class={[
+                "flex items-center gap-x-2",
+                if(student.user.student_id != student.id,
+                  do: "text-base-content/50 line-through tooltip tooltip-left",
+                  else: nil
+                )
+              ]}
+              data-tip={student_not_in_class_tooltip(student)}
+            >
+              <Heroicons.user solid class="size-5" />
+              {student.username}
+            </span>
+          <% else %>
+            <.no_data text={gettext("Not registered yet")} />
+          <% end %>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</Layouts.app>

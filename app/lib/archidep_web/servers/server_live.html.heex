@@ -1,121 +1,123 @@
-<div class="breadcrumbs text-xs">
-  <ul>
-    <li :if={@admin_ui} class="text-error">
-      <.link class="flex items-center gap-1" navigate={~p"/admin"}>
-        <Heroicons.fire outline class="size-4" />
-        <span>{gettext("Admin")}</span>
-      </.link>
-    </li>
-    <li :if={not @admin_ui}>
-      <.link class="flex items-center gap-1" navigate={~p"/app"}>
-        <Heroicons.cube solid class="size-4" />
-        <span>{gettext("Dashboard")}</span>
-      </.link>
-    </li>
-  </ul>
-</div>
-
-<h2 class="text-2xl font-bold my-2 flex items-center gap-x-2">
-  <Heroicons.server solid class="size-6" />
-  <.server_name server={@server} />
-</h2>
-
-<div class="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
-  <div>
-    <.data_display responsive_class="md:grid-cols-2 2xl:grid-cols-3">
-      <.data_display_element title={gettext("IP address")} class="font-mono">
-        {:inet.ntoa(@server.ip_address.address)}
-      </.data_display_element>
-      <.data_display_element title={gettext("Username")} class="font-mono">
-        {@server.username}
-      </.data_display_element>
-      <.data_display_element title={gettext("Domain")} class="font-mono">
-        <%= if @server.owner.group_member do %>
-          {@server.owner.group_member.domain}
-        <% else %>
-          <.no_data />
-        <% end %>
-      </.data_display_element>
-      <.data_display_element title={gettext("SSH port")} class="font-mono">
-        {@server.ssh_port || 22}
-      </.data_display_element>
-      <.data_display_element title={gettext("Active")}>
-        <Heroicons.check_circle :if={@server.active} class="size-5 text-success" />
-        <Heroicons.x_circle :if={not @server.active} class="size-5 text-error" />
-      </.data_display_element>
-      <.data_display_element :if={root?(@auth)} title={gettext("Group")}>
-        <.link navigate={~p"/admin/classes/#{@server.group_id}"}>
-          {@server.group.name}
+<Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
+  <div class="breadcrumbs text-xs">
+    <ul>
+      <li :if={@admin_ui} class="text-error">
+        <.link class="flex items-center gap-1" navigate={~p"/admin"}>
+          <Heroicons.fire outline class="size-4" />
+          <span>{gettext("Admin")}</span>
         </.link>
-      </.data_display_element>
-      <.data_display_element
-        :if={root?(@auth) and not same_user?(@auth, @server.owner) and not @server.owner.root}
-        title={gettext("Owner")}
-      >
-        <.link navigate={
-          ~p"/admin/classes/#{@server.group_id}/students/#{@server.owner.group_member_id}"
-        }>
-          {@server.owner.group_member.name}
+      </li>
+      <li :if={not @admin_ui}>
+        <.link class="flex items-center gap-1" navigate={~p"/app"}>
+          <Heroicons.cube solid class="size-4" />
+          <span>{gettext("Dashboard")}</span>
         </.link>
-      </.data_display_element>
-    </.data_display>
+      </li>
+    </ul>
+  </div>
 
-    <div class="mt-4 join">
-      <button
-        type="button"
-        class="join-item btn btn-warning"
-        disabled={ServerRealTimeState.busy?(@state)}
-        phx-click={EditServerDialogLive.open(@server)}
-      >
-        <span class="flex items-center gap-x-2">
-          <Heroicons.pencil class="size-4" />
-          <span>{gettext("Edit")}</span>
-        </span>
-      </button>
+  <h2 class="text-2xl font-bold my-2 flex items-center gap-x-2">
+    <Heroicons.server solid class="size-6" />
+    <.server_name server={@server} />
+  </h2>
 
-      <button
-        :if={root?(@auth)}
-        type="button"
-        class="join-item btn btn-error"
-        disabled={ServerRealTimeState.busy?(@state)}
-        phx-click={
-          JS.dispatch("open-dialog", detail: %{dialog: DeleteServerDialogLive.id(@server)})
-        }
-      >
-        <span class="flex items-center gap-x-2">
-          <Heroicons.trash class="size-4" />
-          <span>{gettext("Delete")}</span>
-        </span>
-      </button>
+  <div class="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
+    <div>
+      <.data_display responsive_class="md:grid-cols-2 2xl:grid-cols-3">
+        <.data_display_element title={gettext("IP address")} class="font-mono">
+          {:inet.ntoa(@server.ip_address.address)}
+        </.data_display_element>
+        <.data_display_element title={gettext("Username")} class="font-mono">
+          {@server.username}
+        </.data_display_element>
+        <.data_display_element title={gettext("Domain")} class="font-mono">
+          <%= if @server.owner.group_member do %>
+            {@server.owner.group_member.domain}
+          <% else %>
+            <.no_data />
+          <% end %>
+        </.data_display_element>
+        <.data_display_element title={gettext("SSH port")} class="font-mono">
+          {@server.ssh_port || 22}
+        </.data_display_element>
+        <.data_display_element title={gettext("Active")}>
+          <Heroicons.check_circle :if={@server.active} class="size-5 text-success" />
+          <Heroicons.x_circle :if={not @server.active} class="size-5 text-error" />
+        </.data_display_element>
+        <.data_display_element :if={root?(@auth)} title={gettext("Group")}>
+          <.link navigate={~p"/admin/classes/#{@server.group_id}"}>
+            {@server.group.name}
+          </.link>
+        </.data_display_element>
+        <.data_display_element
+          :if={root?(@auth) and not same_user?(@auth, @server.owner) and not @server.owner.root}
+          title={gettext("Owner")}
+        >
+          <.link navigate={
+            ~p"/admin/classes/#{@server.group_id}/students/#{@server.owner.group_member_id}"
+          }>
+            {@server.owner.group_member.name}
+          </.link>
+        </.data_display_element>
+      </.data_display>
+
+      <div class="mt-4 join">
+        <button
+          type="button"
+          class="join-item btn btn-warning"
+          disabled={ServerRealTimeState.busy?(@state)}
+          phx-click={EditServerDialogLive.open(@server)}
+        >
+          <span class="flex items-center gap-x-2">
+            <Heroicons.pencil class="size-4" />
+            <span>{gettext("Edit")}</span>
+          </span>
+        </button>
+
+        <button
+          :if={root?(@auth)}
+          type="button"
+          class="join-item btn btn-error"
+          disabled={ServerRealTimeState.busy?(@state)}
+          phx-click={
+            JS.dispatch("open-dialog", detail: %{dialog: DeleteServerDialogLive.id(@server)})
+          }
+        >
+          <span class="flex items-center gap-x-2">
+            <Heroicons.trash class="size-4" />
+            <span>{gettext("Delete")}</span>
+          </span>
+        </button>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4">
+      <.server_card
+        auth={@auth}
+        server={@server}
+        state={@state}
+        on_retry_connection={JS.push("retry_connecting", value: %{server_id: @server.id})}
+        on_retry_operation={JS.push("retry_operation", value: %{server_id: @server.id})}
+      />
+
+      <.server_help auth={@auth} server={@server} state={@state} />
     </div>
   </div>
-  <div class="flex flex-col gap-4">
-    <.server_card
-      auth={@auth}
-      server={@server}
-      state={@state}
-      on_retry_connection={JS.push("retry_connecting", value: %{server_id: @server.id})}
-      on_retry_operation={JS.push("retry_operation", value: %{server_id: @server.id})}
-    />
 
-    <.server_help auth={@auth} server={@server} state={@state} />
-  </div>
-</div>
-
-<.live_component
-  module={EditServerDialogLive}
-  id={EditServerDialogLive.id(@server)}
-  auth={@auth}
-  server={@server}
-  state={@state}
-/>
-
-<%= if root?(@auth) do %>
   <.live_component
-    module={DeleteServerDialogLive}
-    id={DeleteServerDialogLive.id(@server)}
+    module={EditServerDialogLive}
+    id={EditServerDialogLive.id(@server)}
     auth={@auth}
     server={@server}
     state={@state}
   />
-<% end %>
+
+  <%= if root?(@auth) do %>
+    <.live_component
+      module={DeleteServerDialogLive}
+      id={DeleteServerDialogLive.id(@server)}
+      auth={@auth}
+      server={@server}
+      state={@state}
+    />
+  <% end %>
+</Layouts.app>

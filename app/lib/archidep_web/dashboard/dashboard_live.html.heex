@@ -1,359 +1,385 @@
-<div
-  :if={@student != nil and not Student.can_create_servers?(@student)}
-  class="hero my-4 rounded-lg bg-base-200"
->
-  <div class="hero-content p-10 text-center">
-    <div class="max-w-md">
-      <h1 class="text-5xl font-bold">{gettext("Welcome!")}</h1>
-      <p class="my-6">
-        {gettext(
-          "Welcome to the Architecture & Deployment course dashboard. There's not much to see here yet, but come back for more later."
-        )}
-      </p>
-      <p>
-        {gettext(
-          "In the meantime, here's your connection details to the SSH server we have set up for you for the Hello SSH exercise:"
-        )}
-      </p>
-      <div>
-        <.data_display class="mt-4" responsive_class="sm:grid-cols-2">
-          <.data_display_element title={gettext("Username")}>
-            <span class="font-mono">{@student.username}</span>
-          </.data_display_element>
-          <.data_display_element title={gettext("Password")}>
-            <div id="student-ssh-exercise-password" class="flex justify-center items-center gap-2">
-              <div class="toggle-password font-mono">********</div>
-              <div class="toggle-password font-mono hidden">
-                {@student.ssh_exercise_password}
-              </div>
-              <button
-                type="button"
-                id="student-ssh-exercise-password-copy"
-                class="cursor-pointer text-base-content/75 hover:text-base-content tooltip"
-                data-clipboard-text={@student.ssh_exercise_password}
-                data-tip={gettext("Copy to clipboard")}
-                phx-click={
-                  JS.set_attribute({"data-tip", gettext("Copied!")})
-                  |> JS.add_class("tooltip-open")
-                  |> JS.dispatch("hide-tooltip", detail: %{tooltip: gettext("Copy to clipboard")})
-                }
-              >
-                <Heroicons.clipboard_document class="size-4" />
-              </button>
-              <Heroicons.eye
-                class="toggle-password size-4 cursor-pointer text-base-content/75 hover:text-base-content"
-                phx-click={
-                  JS.toggle_class("hidden", to: "#student-ssh-exercise-password .toggle-password")
-                }
-              />
-              <Heroicons.eye_slash
-                class="toggle-password size-4 hidden cursor-pointer text-base-content/75 hover:text-base-content"
-                phx-click={
-                  JS.toggle_class("hidden", to: "#student-ssh-exercise-password .toggle-password")
-                }
-              />
-            </div>
-          </.data_display_element>
-        </.data_display>
-        <.data_display
-          :if={
-            @ssh_exercise_vm_md5_host_key_fingerprints != [] or
-              @ssh_exercise_vm_sha256_host_key_fingerprints != []
-          }
-          class="mt-4"
-          responsive={false}
-        >
-          <.data_display_element title={gettext("Exercise server SSH host key fingerprints")}>
-            <ul class="flex flex-col gap-1">
-              <li
-                :for={fingerprint <- @ssh_exercise_vm_sha256_host_key_fingerprints}
-                class="text-xs"
-              >
-                <code class="break-all">{SSHKeyFingerprint.fingerprint_human(fingerprint)}</code>
-                ({fingerprint.key_alg})
-              </li>
-              <li :for={fingerprint <- @ssh_exercise_vm_md5_host_key_fingerprints} class="text-xs">
-                <code class="break-all">{SSHKeyFingerprint.fingerprint_human(fingerprint)}</code>
-                ({fingerprint.key_alg})
-              </li>
-            </ul>
-          </.data_display_element>
-        </.data_display>
-      </div>
-    </div>
-  </div>
-</div>
-
-<.live_component
-  :if={
-    @student != nil and Student.can_create_servers?(@student) and not @student.username_confirmed
-  }
-  module={WhatIsYourNameLive}
-  id={WhatIsYourNameLive.id()}
-  auth={@auth}
-  student={@student}
-/>
-
-<div
-  :if={
-    (root?(@auth) or
-       (@student != nil and Student.can_create_servers?(@student) and @student.username_confirmed)) and
-      Enum.empty?(@servers)
-  }
-  class="hero rounded-lg mt-4 bg-base-300"
->
-  <div class="hero-content p-10 text-center">
-    <div class="max-w-md">
-      <div :if={@student != nil} class="badge badge-outline badge-accent badge-lg">
-        {gettext("Action Required!")}
-      </div>
-      <h1 class="mt-2 text-5xl font-bold">{gettext("Let's get started!")}</h1>
-      <%= if root?(@auth) do %>
-        <p class="py-6">
-          {gettext("You are root. Register as many servers as you like.")}
-        </p>
-      <% else %>
-        <p class="py-6">
-          {gettext("The time has come to get your own server!")}
-        </p>
-        <div class="text-5xl animate-bounce">🎉</div>
-        <p class="pt-3 pb-6">
-          {gettext(
-            "Armed with your username, {cs}{username}{ce}, and your assigned domain, {cs}{domain}{ce}, battle through the {as}{ss}{exercise}{se}{ae} exercise, then come back here to register your hard-won server.",
-            username: @student.username |> html_escape() |> safe_to_string(),
-            domain: @student.domain |> html_escape() |> safe_to_string(),
-            exercise:
-              Material.run_virtual_server_exercise().title |> html_escape() |> safe_to_string(),
-            cs: "<code class=\"text-info\">",
-            ce: "</code>",
-            as: "<a href=\"#{Material.run_virtual_server_exercise().url}\">",
-            ae: "</a>",
-            ss: "<strong class=\"underline\">",
-            se: "</strong>"
-          )
-          |> raw()}
-        </p>
-      <% end %>
-      <div class="mb-4">
-        <button
-          :if={@run_virtual_server_exercise_done and @student != nil}
-          type="button"
-          class="btn btn-success btn-xl animate-pulse"
-          phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewServerDialogLive.id()})}
-        >
-          <span class="flex items-center gap-x-2">
-            <Heroicons.plus class="size-4" />
-            <span>{gettext("My server stands ready")}</span>
-          </span>
-        </button>
-        <a
-          :if={not @run_virtual_server_exercise_done and @student != nil}
-          class="join-item btn btn-primary btn-xl"
-          href={Material.run_virtual_server_exercise().url}
-        >
-          <span class="flex items-center gap-2 md:gap-3">
-            <span>⚔️</span>
-            <span class="md:hidden">{gettext("I am ready")}</span>
-            <span class="hidden md:inline">{gettext("I am ready to undertake this quest")}</span>
-          </span>
-        </a>
-      </div>
-      <div class="join">
-        <.link
-          :if={Enum.any?(@inactive_servers)}
-          navigate={~p"/app/my-servers"}
-          class="join-item btn btn-secondary"
-        >
-          <span class="flex items-center gap-x-2">
-            <Heroicons.server_stack class="size-4" />
-            <span>{gettext("My servers")}</span>
-          </span>
-        </.link>
-        <button
-          :if={@student != nil and Enum.empty?(@servers)}
-          type="button"
-          class="btn btn-neutral"
-          phx-click={JS.dispatch("open-dialog", detail: %{dialog: ChangeUsernameDialogLive.id()})}
-        >
-          <span class="flex items-center gap-2">
-            <Heroicons.pencil class="size-4" />
-            <span>{gettext("Change username")}</span>
-          </span>
-        </button>
-        <a
-          :if={@run_virtual_server_exercise_done}
-          class="join-item btn btn-primary"
-          href={Material.run_virtual_server_exercise().url}
-        >
-          <span class="flex items-center gap-x-2">
-            <Heroicons.arrow_left_circle class="size-4" />
-            <span>{gettext("Take me back to the exercise")}</span>
-          </span>
-        </a>
-        <button
-          :if={not @run_virtual_server_exercise_done}
-          type="button"
-          class="join-item btn btn-success"
-          phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewServerDialogLive.id()})}
-        >
-          <span class="flex items-center gap-x-2">
-            <Heroicons.plus class="size-4" />
-            <span>
-              <%= if root?(@auth) do %>
-                {gettext("All right!")}
-              <% else %>
-                {gettext("It has been done")}
-              <% end %>
-            </span>
-          </span>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<.live_component
-  :if={
-    @student != nil and Student.can_create_servers?(@student) and @student.username_confirmed and
-      Enum.empty?(@servers)
-  }
-  module={ChangeUsernameDialogLive}
-  id={ChangeUsernameDialogLive.id()}
-  auth={@auth}
-  student={@student}
-/>
-
-<div class="flex flex-col items-center gap-8">
+<Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
   <div
-    :for={server <- @servers}
-    :key={server.id}
-    class="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-2 gap-4"
+    :if={@student != nil and not Student.can_create_servers?(@student)}
+    class="hero my-4 rounded-lg bg-base-200"
   >
-    <div>
-      <h2 class="mb-4 text-4xl">{gettext("Your server")}</h2>
-      <.data_display responsive_class="md:grid-cols-2">
-        <.data_display_element
-          title={gettext("How do I connect?")}
-          class="flex items-center gap-2"
-        >
-          <code class="font-mono">
-            ssh {server.username}@{server.ip_address.address |> :inet.ntoa() |> to_string()}
-          </code>
-          <button
-            type="button"
-            id={"server-#{server.id}-ssh-command-copy"}
-            class="cursor-pointer text-base-content/75 hover:text-base-content tooltip"
-            data-clipboard-text={"ssh #{server.username}@#{server.ip_address.address |> :inet.ntoa() |> to_string()}"}
-            data-tip={gettext("Copy to clipboard")}
-            phx-click={
-              JS.set_attribute({"data-tip", gettext("Copied!")})
-              |> JS.add_class("tooltip-open")
-              |> JS.dispatch("hide-tooltip", detail: %{tooltip: gettext("Copy to clipboard")})
+    <div class="hero-content p-10 text-center">
+      <div class="max-w-md">
+        <h1 class="text-5xl font-bold">{gettext("Welcome!")}</h1>
+        <p class="my-6">
+          {gettext(
+            "Welcome to the Architecture & Deployment course dashboard. There's not much to see here yet, but come back for more later."
+          )}
+        </p>
+        <p>
+          {gettext(
+            "In the meantime, here's your connection details to the SSH server we have set up for you for the Hello SSH exercise:"
+          )}
+        </p>
+        <div>
+          <.data_display class="mt-4" responsive_class="sm:grid-cols-2">
+            <.data_display_element title={gettext("Username")}>
+              <span class="font-mono">{@student.username}</span>
+            </.data_display_element>
+            <.data_display_element title={gettext("Password")}>
+              <div
+                id="student-ssh-exercise-password"
+                class="flex justify-center items-center gap-2"
+              >
+                <div class="toggle-password font-mono">********</div>
+                <div class="toggle-password font-mono hidden">
+                  {@student.ssh_exercise_password}
+                </div>
+                <button
+                  type="button"
+                  id="student-ssh-exercise-password-copy"
+                  class="cursor-pointer text-base-content/75 hover:text-base-content tooltip"
+                  data-clipboard-text={@student.ssh_exercise_password}
+                  data-tip={gettext("Copy to clipboard")}
+                  phx-click={
+                    JS.set_attribute({"data-tip", gettext("Copied!")})
+                    |> JS.add_class("tooltip-open")
+                    |> JS.dispatch("hide-tooltip",
+                      detail: %{tooltip: gettext("Copy to clipboard")}
+                    )
+                  }
+                >
+                  <Heroicons.clipboard_document class="size-4" />
+                </button>
+                <Heroicons.eye
+                  class="toggle-password size-4 cursor-pointer text-base-content/75 hover:text-base-content"
+                  phx-click={
+                    JS.toggle_class("hidden",
+                      to: "#student-ssh-exercise-password .toggle-password"
+                    )
+                  }
+                />
+                <Heroicons.eye_slash
+                  class="toggle-password size-4 hidden cursor-pointer text-base-content/75 hover:text-base-content"
+                  phx-click={
+                    JS.toggle_class("hidden",
+                      to: "#student-ssh-exercise-password .toggle-password"
+                    )
+                  }
+                />
+              </div>
+            </.data_display_element>
+          </.data_display>
+          <.data_display
+            :if={
+              @ssh_exercise_vm_md5_host_key_fingerprints != [] or
+                @ssh_exercise_vm_sha256_host_key_fingerprints != []
             }
+            class="mt-4"
+            responsive={false}
           >
-            <Heroicons.clipboard_document class="size-4" />
-          </button>
-        </.data_display_element>
-        <.data_display_element title={gettext("Setup")}>
-          <span
-            :if={Server.set_up?(server)}
-            class="badge badge-sm badge-success tooltip"
-            data-tip={
-              gettext("You have successfully set up your server and can use it for exercises.")
-            }
-          >
-            {gettext("Completed")}
-          </span>
-          <span
-            :if={not Server.set_up?(server)}
-            class="badge badge-sm badge-warning tooltip"
-            data-tip={
-              gettext(
-                "You have not completed the initial server setup yet. You should not proceed with deployment exercises until you have done so."
-              )
-            }
-          >
-            {gettext("Not completed")}
-          </span>
-        </.data_display_element>
-        <.data_display_element :if={server.owner.group_member} title={gettext("Hostname")}>
-          <code class="font-mono">
-            {server.username}@{server.owner.group_member.domain}
-          </code>
-          <button
-            type="button"
-            id={"server-#{server.id}-hostname-copy"}
-            class="cursor-pointer text-base-content/75 hover:text-base-content tooltip"
-            data-clipboard-text={"#{server.username}@#{server.owner.group_member.domain}"}
-            data-tip={gettext("Copy to clipboard")}
-            phx-click={
-              JS.set_attribute({"data-tip", gettext("Copied!")})
-              |> JS.add_class("tooltip-open")
-              |> JS.dispatch("hide-tooltip", detail: %{tooltip: gettext("Copy to clipboard")})
-            }
-          >
-            <Heroicons.clipboard_document class="size-4" />
-          </button>
-        </.data_display_element>
-      </.data_display>
+            <.data_display_element title={gettext("Exercise server SSH host key fingerprints")}>
+              <ul class="flex flex-col gap-1">
+                <li
+                  :for={fingerprint <- @ssh_exercise_vm_sha256_host_key_fingerprints}
+                  class="text-xs"
+                >
+                  <code class="break-all">
+                    {SSHKeyFingerprint.fingerprint_human(fingerprint)}
+                  </code>
+                  ({fingerprint.key_alg})
+                </li>
+                <li
+                  :for={fingerprint <- @ssh_exercise_vm_md5_host_key_fingerprints}
+                  class="text-xs"
+                >
+                  <code class="break-all">
+                    {SSHKeyFingerprint.fingerprint_human(fingerprint)}
+                  </code>
+                  ({fingerprint.key_alg})
+                </li>
+              </ul>
+            </.data_display_element>
+          </.data_display>
+        </div>
+      </div>
     </div>
-    <div class="w-full flex flex-col gap-y-4">
-      <div class="w-full">
-        <.server_card
-          auth={@auth}
-          server={server}
-          state={Map.get(@server_state_map, server.id)}
-          details_link={~p"/servers/#{server.id}"}
-          on_edit={JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})}
-          edit_enabled={
+  </div>
+
+  <.live_component
+    :if={
+      @student != nil and Student.can_create_servers?(@student) and
+        not @student.username_confirmed
+    }
+    module={WhatIsYourNameLive}
+    id={WhatIsYourNameLive.id()}
+    auth={@auth}
+    student={@student}
+  />
+
+  <div
+    :if={
+      (root?(@auth) or
+         (@student != nil and Student.can_create_servers?(@student) and
+            @student.username_confirmed)) and
+        Enum.empty?(@servers)
+    }
+    class="hero rounded-lg mt-4 bg-base-300"
+  >
+    <div class="hero-content p-10 text-center">
+      <div class="max-w-md">
+        <div :if={@student != nil} class="badge badge-outline badge-accent badge-lg">
+          {gettext("Action Required!")}
+        </div>
+        <h1 class="mt-2 text-5xl font-bold">{gettext("Let's get started!")}</h1>
+        <%= if root?(@auth) do %>
+          <p class="py-6">
+            {gettext("You are root. Register as many servers as you like.")}
+          </p>
+        <% else %>
+          <p class="py-6">
+            {gettext("The time has come to get your own server!")}
+          </p>
+          <div class="text-5xl animate-bounce">🎉</div>
+          <p class="pt-3 pb-6">
+            {gettext(
+              "Armed with your username, {cs}{username}{ce}, and your assigned domain, {cs}{domain}{ce}, battle through the {as}{ss}{exercise}{se}{ae} exercise, then come back here to register your hard-won server.",
+              username: @student.username |> html_escape() |> safe_to_string(),
+              domain: @student.domain |> html_escape() |> safe_to_string(),
+              exercise:
+                Material.run_virtual_server_exercise().title |> html_escape() |> safe_to_string(),
+              cs: "<code class=\"text-info\">",
+              ce: "</code>",
+              as: "<a href=\"#{Material.run_virtual_server_exercise().url}\">",
+              ae: "</a>",
+              ss: "<strong class=\"underline\">",
+              se: "</strong>"
+            )
+            |> raw()}
+          </p>
+        <% end %>
+        <div class="mb-4">
+          <button
+            :if={@run_virtual_server_exercise_done and @student != nil}
+            type="button"
+            class="btn btn-success btn-xl animate-pulse"
+            phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewServerDialogLive.id()})}
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.plus class="size-4" />
+              <span>{gettext("My server stands ready")}</span>
+            </span>
+          </button>
+          <a
+            :if={not @run_virtual_server_exercise_done and @student != nil}
+            class="join-item btn btn-primary btn-xl"
+            href={Material.run_virtual_server_exercise().url}
+          >
+            <span class="flex items-center gap-2 md:gap-3">
+              <span>⚔️</span>
+              <span class="md:hidden">{gettext("I am ready")}</span>
+              <span class="hidden md:inline">
+                {gettext("I am ready to undertake this quest")}
+              </span>
+            </span>
+          </a>
+        </div>
+        <div class="join">
+          <.link
+            :if={Enum.any?(@inactive_servers)}
+            navigate={~p"/app/my-servers"}
+            class="join-item btn btn-secondary"
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.server_stack class="size-4" />
+              <span>{gettext("My servers")}</span>
+            </span>
+          </.link>
+          <button
+            :if={@student != nil and Enum.empty?(@servers)}
+            type="button"
+            class="btn btn-neutral"
+            phx-click={
+              JS.dispatch("open-dialog", detail: %{dialog: ChangeUsernameDialogLive.id()})
+            }
+          >
+            <span class="flex items-center gap-2">
+              <Heroicons.pencil class="size-4" />
+              <span>{gettext("Change username")}</span>
+            </span>
+          </button>
+          <a
+            :if={@run_virtual_server_exercise_done}
+            class="join-item btn btn-primary"
+            href={Material.run_virtual_server_exercise().url}
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.arrow_left_circle class="size-4" />
+              <span>{gettext("Take me back to the exercise")}</span>
+            </span>
+          </a>
+          <button
+            :if={not @run_virtual_server_exercise_done}
+            type="button"
+            class="join-item btn btn-success"
+            phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewServerDialogLive.id()})}
+          >
+            <span class="flex items-center gap-x-2">
+              <Heroicons.plus class="size-4" />
+              <span>
+                <%= if root?(@auth) do %>
+                  {gettext("All right!")}
+                <% else %>
+                  {gettext("It has been done")}
+                <% end %>
+              </span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <.live_component
+    :if={
+      @student != nil and Student.can_create_servers?(@student) and @student.username_confirmed and
+        Enum.empty?(@servers)
+    }
+    module={ChangeUsernameDialogLive}
+    id={ChangeUsernameDialogLive.id()}
+    auth={@auth}
+    student={@student}
+  />
+
+  <div class="flex flex-col items-center gap-8">
+    <div
+      :for={server <- @servers}
+      :key={server.id}
+      class="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-2 gap-4"
+    >
+      <div>
+        <h2 class="mb-4 text-4xl">{gettext("Your server")}</h2>
+        <.data_display responsive_class="md:grid-cols-2">
+          <.data_display_element
+            title={gettext("How do I connect?")}
+            class="flex items-center gap-2"
+          >
+            <code class="font-mono">
+              ssh {server.username}@{server.ip_address.address |> :inet.ntoa() |> to_string()}
+            </code>
+            <button
+              type="button"
+              id={"server-#{server.id}-ssh-command-copy"}
+              class="cursor-pointer text-base-content/75 hover:text-base-content tooltip"
+              data-clipboard-text={"ssh #{server.username}@#{server.ip_address.address |> :inet.ntoa() |> to_string()}"}
+              data-tip={gettext("Copy to clipboard")}
+              phx-click={
+                JS.set_attribute({"data-tip", gettext("Copied!")})
+                |> JS.add_class("tooltip-open")
+                |> JS.dispatch("hide-tooltip", detail: %{tooltip: gettext("Copy to clipboard")})
+              }
+            >
+              <Heroicons.clipboard_document class="size-4" />
+            </button>
+          </.data_display_element>
+          <.data_display_element title={gettext("Setup")}>
+            <span
+              :if={Server.set_up?(server)}
+              class="badge badge-sm badge-success tooltip"
+              data-tip={
+                gettext("You have successfully set up your server and can use it for exercises.")
+              }
+            >
+              {gettext("Completed")}
+            </span>
+            <span
+              :if={not Server.set_up?(server)}
+              class="badge badge-sm badge-warning tooltip"
+              data-tip={
+                gettext(
+                  "You have not completed the initial server setup yet. You should not proceed with deployment exercises until you have done so."
+                )
+              }
+            >
+              {gettext("Not completed")}
+            </span>
+          </.data_display_element>
+          <.data_display_element :if={server.owner.group_member} title={gettext("Hostname")}>
+            <code class="font-mono">
+              {server.username}@{server.owner.group_member.domain}
+            </code>
+            <button
+              type="button"
+              id={"server-#{server.id}-hostname-copy"}
+              class="cursor-pointer text-base-content/75 hover:text-base-content tooltip"
+              data-clipboard-text={"#{server.username}@#{server.owner.group_member.domain}"}
+              data-tip={gettext("Copy to clipboard")}
+              phx-click={
+                JS.set_attribute({"data-tip", gettext("Copied!")})
+                |> JS.add_class("tooltip-open")
+                |> JS.dispatch("hide-tooltip", detail: %{tooltip: gettext("Copy to clipboard")})
+              }
+            >
+              <Heroicons.clipboard_document class="size-4" />
+            </button>
+          </.data_display_element>
+        </.data_display>
+      </div>
+      <div class="w-full flex flex-col gap-y-4">
+        <div class="w-full">
+          <.server_card
+            auth={@auth}
+            server={server}
+            state={Map.get(@server_state_map, server.id)}
+            details_link={~p"/servers/#{server.id}"}
+            on_edit={
+              JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})
+            }
+            edit_enabled={
+              not Server.set_up?(server) and
+                ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
+                  :server_authentication_failed,
+                  :server_connection_timed_out,
+                  :server_connection_refused,
+                  :server_key_exchange_failed
+                ])
+            }
+            on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
+            on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
+          />
+
+          <div class="mt-1">
+            <.link
+              :if={not root?(@auth)}
+              class="flex justify-end items-center gap-1 text-sm text-base-content/75"
+              navigate={~p"/app/my-servers"}
+            >
+              <Heroicons.server_stack class="size-4" />
+              <span>Manage my servers</span>
+            </.link>
+          </div>
+        </div>
+
+        <.server_help auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} />
+
+        <.live_component
+          :if={
             not Server.set_up?(server) and
               ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
                 :server_authentication_failed,
                 :server_connection_timed_out,
-                :server_connection_refused,
-                :server_key_exchange_failed
+                :server_connection_refused
               ])
           }
-          on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
-          on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
+          module={EditServerDialogLive}
+          id={EditServerDialogLive.id(server)}
+          auth={@auth}
+          server={server}
+          state={Map.get(@server_state_map, server.id)}
         />
-
-        <div class="mt-1">
-          <.link
-            :if={not root?(@auth)}
-            class="flex justify-end items-center gap-1 text-sm text-base-content/75"
-            navigate={~p"/app/my-servers"}
-          >
-            <Heroicons.server_stack class="size-4" />
-            <span>Manage my servers</span>
-          </.link>
-        </div>
       </div>
-
-      <.server_help auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} />
-
-      <.live_component
-        :if={
-          not Server.set_up?(server) and
-            ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
-              :server_authentication_failed,
-              :server_connection_timed_out,
-              :server_connection_refused
-            ])
-        }
-        module={EditServerDialogLive}
-        id={EditServerDialogLive.id(server)}
-        auth={@auth}
-        server={server}
-        state={Map.get(@server_state_map, server.id)}
-      />
     </div>
   </div>
-</div>
 
-<.live_component
-  module={NewServerDialogLive}
-  id={NewServerDialogLive.id()}
-  auth={@auth}
-  groups={@groups}
-/>
+  <.live_component
+    module={NewServerDialogLive}
+    id={NewServerDialogLive.id()}
+    auth={@auth}
+    groups={@groups}
+  />
+</Layouts.app>

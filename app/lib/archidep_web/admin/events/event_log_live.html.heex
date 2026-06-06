@@ -1,66 +1,70 @@
-<div class="breadcrumbs text-xs">
-  <ul>
-    <li class="text-error">
-      <.link class="flex items-center gap-1" navigate={~p"/admin"}>
-        <Heroicons.fire outline class="size-4" />
-        <span>{gettext("Admin")}</span>
-      </.link>
-    </li>
-  </ul>
-</div>
-
-<h2 class="my-2 text-2xl font-bold flex items-center gap-x-2">
-  <Heroicons.book_open solid class="size-6" />
-  {gettext("Event Log")}
-</h2>
-
-<table class="table table-zebra w-full">
-  <thead>
-    <tr>
-      <th>
-        <span class="md:hidden">{gettext("Event")}</span>
-        <span class="hidden md:inline">{gettext("Context")}</span>
-      </th>
-      <th class="hidden md:table-cell">{gettext("Action")}</th>
-      <th class="hidden md:table-cell">{gettext("Entity")}</th>
-      <th>{gettext("Occurred at")}</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr
-      :for={event <- @events}
-      :key={event.id}
-      class="hover:bg-base-200 hover:even:bg-base-300"
-      phx-click={JS.navigate(~p"/admin/events/#{event.id}")}
-    >
-      <td>
-        <span class="flex flex-wrap gap-2">
-          <.event_context event={event} />
-          <.event_action event={event} extra_class="md:hidden" />
-          <.event_entity event={event} extra_class="md:hidden" />
-        </span>
-      </td>
-      <td class="hidden md:table-cell">
-        <.event_action event={event} />
-      </td>
-      <td class="hidden md:table-cell">
-        <.event_entity event={event} />
-      </td>
-      <td>{format_date_time(event.occurred_at)}</td>
-    </tr>
-  </tbody>
-</table>
-
-<div :if={@end_of_timeline?} class="mt-3 mb-5 flex justify-center">
-  <p class="italic text-info">{gettext("This is the beginning of time.")}</p>
-</div>
-
-<div class="mt-4 flex justify-center">
-  <div class="join">
-    <button :if={not @beginning?} class="join-item btn" phx-click="first-page">first</button>
-    <button :if={not @beginning?} class="join-item btn" phx-click="previous-page">
-      previous
-    </button>
-    <button :if={not @end_of_timeline?} class="join-item btn" phx-click="next-page">next</button>
+<Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
+  <div class="breadcrumbs text-xs">
+    <ul>
+      <li class="text-error">
+        <.link class="flex items-center gap-1" navigate={~p"/admin"}>
+          <Heroicons.fire outline class="size-4" />
+          <span>{gettext("Admin")}</span>
+        </.link>
+      </li>
+    </ul>
   </div>
-</div>
+
+  <h2 class="my-2 text-2xl font-bold flex items-center gap-x-2">
+    <Heroicons.book_open solid class="size-6" />
+    {gettext("Event Log")}
+  </h2>
+
+  <table class="table table-zebra w-full">
+    <thead>
+      <tr>
+        <th>
+          <span class="md:hidden">{gettext("Event")}</span>
+          <span class="hidden md:inline">{gettext("Context")}</span>
+        </th>
+        <th class="hidden md:table-cell">{gettext("Action")}</th>
+        <th class="hidden md:table-cell">{gettext("Entity")}</th>
+        <th>{gettext("Occurred at")}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        :for={event <- @events}
+        :key={event.id}
+        class="hover:bg-base-200 hover:even:bg-base-300"
+        phx-click={JS.navigate(~p"/admin/events/#{event.id}")}
+      >
+        <td>
+          <span class="flex flex-wrap gap-2">
+            <.event_context event={event} />
+            <.event_action event={event} extra_class="md:hidden" />
+            <.event_entity event={event} extra_class="md:hidden" />
+          </span>
+        </td>
+        <td class="hidden md:table-cell">
+          <.event_action event={event} />
+        </td>
+        <td class="hidden md:table-cell">
+          <.event_entity event={event} />
+        </td>
+        <td>{format_date_time(event.occurred_at)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div :if={@end_of_timeline?} class="mt-3 mb-5 flex justify-center">
+    <p class="italic text-info">{gettext("This is the beginning of time.")}</p>
+  </div>
+
+  <div class="mt-4 flex justify-center">
+    <div class="join">
+      <button :if={not @beginning?} class="join-item btn" phx-click="first-page">first</button>
+      <button :if={not @beginning?} class="join-item btn" phx-click="previous-page">
+        previous
+      </button>
+      <button :if={not @end_of_timeline?} class="join-item btn" phx-click="next-page">
+        next
+      </button>
+    </div>
+  </div>
+</Layouts.app>

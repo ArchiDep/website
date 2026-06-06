@@ -48,9 +48,7 @@ defmodule ArchiDepWeb do
   @spec controller :: Macro.t()
   def controller do
     quote do
-      use Phoenix.Controller,
-        formats: [:html],
-        layouts: [html: ArchiDepWeb.Components.Layouts]
+      use Phoenix.Controller, formats: [:html]
 
       use Gettext, backend: ArchiDepWeb.Gettext
 
@@ -69,8 +67,7 @@ defmodule ArchiDepWeb do
   @spec live_view :: Macro.t()
   def live_view do
     quote do
-      use Phoenix.LiveView,
-        layout: {ArchiDepWeb.Components.Layouts, :app}
+      use Phoenix.LiveView
 
       import ArchiDep.Helpers.PipeHelpers
       import ArchiDepWeb.Helpers.AuthHelpers
@@ -135,6 +132,8 @@ defmodule ArchiDepWeb do
       # Flash helpers
       import Flashy
 
+      # Application layouts (e.g. <Layouts.app>)
+      alias ArchiDepWeb.Components.Layouts
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
 
