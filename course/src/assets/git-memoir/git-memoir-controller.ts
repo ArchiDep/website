@@ -163,7 +163,7 @@ export class GitMemoirController {
         '<button type="button" class="mode tooltip" data-dynamictitle="true"><span class="icon" /></button>'
       );
       if (isLocalStorageAvailable()) {
-        this.$modeButton.appendTo($controls);
+        this.$modeButton?.appendTo($controls);
       }
 
       this.$playButton = $<HTMLButtonElement>(
