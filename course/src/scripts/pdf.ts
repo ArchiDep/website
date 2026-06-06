@@ -1,5 +1,5 @@
 import { N } from '@mobily/ts-belt';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import { isLeft } from 'fp-ts/lib/Either.js';
 import * as t from 'io-ts';
 import { createWriteStream } from 'node:fs';
@@ -177,7 +177,7 @@ await rename(
 );
 
 function zipDirectory(sourceDir: string, outPath: string): Promise<void> {
-  const archive = archiver('zip', { zlib: { level: 9 } });
+  const archive = new ZipArchive({ zlib: { level: 9 } });
   const stream = createWriteStream(outPath);
 
   return new Promise((resolve, reject) => {

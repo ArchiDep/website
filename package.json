@@ -38,6 +38,7 @@
     "theme"
   ],
   "devDependencies": {
+    "@types/archiver": "^8.0.0",
     "doctoc": "^2.2.1",
     "prettier": "^3.6.2",
     "remark": "^15.0.1",
