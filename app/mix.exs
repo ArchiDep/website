@@ -124,6 +124,7 @@ defmodule ArchiDep.MixProject do
       check: [
         "coveralls.html --raise",
         "format --check-formatted",
+        "credo --strict",
         "dialyzer",
         "deps.unlock --check-unused"
       ],
