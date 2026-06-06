@@ -30,10 +30,7 @@ defmodule ArchiDep.Course.UseCases.DeleteClass do
           :ok
 
         {:error, :class, changeset, _changes} ->
-          case Keyword.get(changeset.errors, :servers) do
-            {"class has servers", _opts} ->
-              {:error, :class_has_servers}
-          end
+          class_deletion_error(changeset)
       end
     end
   end
@@ -45,4 +42,11 @@ defmodule ArchiDep.Course.UseCases.DeleteClass do
       |> new_event(auth, occurred_at: now)
       |> add_to_stream(class)
       |> initiated_by(auth)
+
+  defp class_deletion_error(changeset) do
+    case Keyword.get(changeset.errors, :servers) do
+      {"class has servers", _opts} ->
+        {:error, :class_has_servers}
+    end
+  end
 end

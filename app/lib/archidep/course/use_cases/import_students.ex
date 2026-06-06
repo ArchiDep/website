@@ -32,40 +32,47 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
         insert_data =
           StudentImportList.to_insert_data(import_list, class, existing_usernames, now)
 
-        case Multi.new()
-             |> Multi.insert_all(
-               :students,
-               Student,
-               insert_data,
-               on_conflict: :nothing,
-               conflict_target: [:class_id, :email],
-               returning: true
-             )
-             |> Multi.run(:new_students, fn _repo, %{students: {inserted, students}} ->
-               # Identify the newly inserted students, omitting any that might
-               # already have been inserted in the database with the same email.
-               # Any newly inserted student will have one of the IDs generated
-               # for the insert all operation. Students with other IDs were
-               # already present in the database.
-               generated_ids = insert_data |> Enum.map(& &1.id) |> MapSet.new()
-               new_students = Enum.filter(students, &MapSet.member?(generated_ids, &1.id))
-               ^inserted = length(new_students)
-
-               new_students
-               |> Enum.map(fn %Student{} = student -> %Student{student | class: class} end)
-               |> ok()
-             end)
-             |> insert_events(auth, class, import_list, now)
-             |> transaction() do
-          {:ok, %{new_students: new_students}} ->
-            :ok = PubSub.publish_students_imported(class, new_students)
-            {:ok, new_students}
-
-          {:error, :students, %Changeset{} = changeset, _changes} ->
-            {:error, changeset}
-        end
+        run_import(auth, class, import_list, insert_data, now)
       end
     end
+  end
+
+  defp run_import(auth, class, import_list, insert_data, now) do
+    case Multi.new()
+         |> Multi.insert_all(
+           :students,
+           Student,
+           insert_data,
+           on_conflict: :nothing,
+           conflict_target: [:class_id, :email],
+           returning: true
+         )
+         |> Multi.run(:new_students, fn _repo, changes ->
+           identify_new_students(changes, insert_data, class)
+         end)
+         |> insert_events(auth, class, import_list, now)
+         |> transaction() do
+      {:ok, %{new_students: new_students}} ->
+        :ok = PubSub.publish_students_imported(class, new_students)
+        {:ok, new_students}
+
+      {:error, :students, %Changeset{} = changeset, _changes} ->
+        {:error, changeset}
+    end
+  end
+
+  # Identify the newly inserted students, omitting any that might already have
+  # been inserted in the database with the same email. Any newly inserted
+  # student will have one of the IDs generated for the insert all operation.
+  # Students with other IDs were already present in the database.
+  defp identify_new_students(%{students: {inserted, students}}, insert_data, class) do
+    generated_ids = insert_data |> Enum.map(& &1.id) |> MapSet.new()
+    new_students = Enum.filter(students, &MapSet.member?(generated_ids, &1.id))
+    ^inserted = length(new_students)
+
+    new_students
+    |> Enum.map(fn %Student{} = student -> %Student{student | class: class} end)
+    |> ok()
   end
 
   defp insert_events(multi, auth, class, import_list, now),

@@ -402,7 +402,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       length(headers) < 2 ->
         {:error, :not_enough_columns}
 
-      length(students) < 1 ->
+      students == [] ->
         {:error, :no_valid_rows}
 
       true ->
