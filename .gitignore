@@ -3,4 +3,5 @@
 !/.env.sample
 /node_modules
 /tmp
+/.tmuxinator.yml
 /.vault-password
