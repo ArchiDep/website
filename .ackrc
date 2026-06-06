@@ -7,4 +7,5 @@
 --ignore-dir=course/.jekyll-cache
 --ignore-dir=tmp
 --ignore-file=is:erl_crash.dump
+--ignore-file=is:mix.lock
 --ignore-file=is:package-lock.json
