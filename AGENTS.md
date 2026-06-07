@@ -65,6 +65,9 @@ instructions targeted towards AI agents.
     in the document.
   - After editing Markdown documentation, run `npm run lint:md` (documented in
     [`./CONTRIBUTING.md`][contributing]) and fix any reported issues.
+  - When you complete a task tracked by a checkbox in a backlog document (such
+    as `wip/testing.md`), check its box (`- [ ]` → `- [x]`) as part of the same
+    change.
 
 - **Commands**
   - Do not execute the `npm run pdf` command documented in
