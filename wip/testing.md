@@ -74,10 +74,10 @@ target honest. Can be a single PR or three small ones.
 - [x] **Add a `ChannelCase`.** `user_channel.ex` / `user_socket.ex` have no
       `Phoenix.ChannelTest` support. Add the case template (no tests yet — those
       land in §3). _Files:_ `test/support/channel_case.ex`.
-- [ ] **Coverage config & regression ratchet.** There is no `coveralls.json`.
+- [x] **Coverage config & regression ratchet.** There is no `coveralls.json`.
       Add one — but **do not `skip_files` anything yet**. We want every file in
-      the denominator while we sweep, and will revisit exclusions only at the end
-      (see the final task) once we can see real coverage. For now, set
+      the denominator while we sweep, and will revisit exclusions only at the
+      end (see the final task) once we can see real coverage. For now, set
       `minimum_coverage` to a ratchet: start it at the current project coverage
       (~65%) and bump it upward as chunks land so coverage can never regress in
       CI, without demanding 90% before the work is done. _Files:_
