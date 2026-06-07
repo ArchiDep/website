@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/ArchiDep/website#readme",
   "scripts": {
-    "doctoc": "doctoc --github --notitle CONTRIBUTING.md README.md TEST-MATTER.md app/CONTRIBUTING.md app/lib/archidep/accounts/CONTRIBUTING.md app/lib/archidep/course/CONTRIBUTING.md app/lib/archidep/servers/CONTRIBUTING.md app/lib/archidep_web/CONTRIBUTING.md course/CONTRIBUTING.md theme/CONTRIBUTING.md && prettier --write CONTRIBUTING.md README.md TEST-MATTER.md app/CONTRIBUTING.md app/lib/archidep/accounts/CONTRIBUTING.md app/lib/archidep/course/CONTRIBUTING.md app/lib/archidep/servers/CONTRIBUTING.md app/lib/archidep_web/CONTRIBUTING.md course/CONTRIBUTING.md theme/CONTRIBUTING.md",
+    "doctoc": "doctoc --github --notitle CONTRIBUTING.md README.md TEST-MATTER.md app/CONTRIBUTING.md app/lib/archidep/accounts/CONTRIBUTING.md app/lib/archidep/course/CONTRIBUTING.md app/lib/archidep/servers/CONTRIBUTING.md app/lib/archidep_web/CONTRIBUTING.md course/CONTRIBUTING.md theme/CONTRIBUTING.md wip/*.md && prettier --write CONTRIBUTING.md README.md TEST-MATTER.md app/CONTRIBUTING.md app/lib/archidep/accounts/CONTRIBUTING.md app/lib/archidep/course/CONTRIBUTING.md app/lib/archidep/servers/CONTRIBUTING.md app/lib/archidep_web/CONTRIBUTING.md course/CONTRIBUTING.md theme/CONTRIBUTING.md wip/*.md",
     "format": "npm run format:root && npm run --workspace course format",
     "format:root": "prettier --check .",
     "format:root:write": "prettier --write .",
