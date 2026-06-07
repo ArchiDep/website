@@ -71,7 +71,7 @@ target honest. Can be a single PR or three small ones.
       boilerplate in `profile_live_test.exs` to prove it out. This roughly
       halves every future web test. _Files:_ `test/support/conn_case.ex`,
       `test/support/live_case.ex`, `profile_live_test.exs`.
-- [ ] **Add a `ChannelCase`.** `user_channel.ex` / `user_socket.ex` have no
+- [x] **Add a `ChannelCase`.** `user_channel.ex` / `user_socket.ex` have no
       `Phoenix.ChannelTest` support. Add the case template (no tests yet — those
       land in §3). _Files:_ `test/support/channel_case.ex`.
 - [ ] **Coverage config & regression ratchet.** There is no `coveralls.json`.

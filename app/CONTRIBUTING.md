@@ -650,6 +650,8 @@ The `test/support/` directory provides shared testing infrastructure beyond the
     controller/request tests built on `Phoenix.ConnTest`.
   - `ArchiDepWeb.Support.LiveCase` (`test/support/live_case.ex`) for live view
     and live component tests.
+  - `ArchiDepWeb.Support.ChannelCase` (`test/support/channel_case.ex`) for
+    channel and socket tests built on `Phoenix.ChannelTest`.
 - **Authentication setup helpers** (defined in `ConnCase`, also available to
   `LiveCase`): `conn_with_auth/2` authenticates a connection with a given
   session, while `register_and_log_in_root/1` and `register_and_log_in_student/1`
