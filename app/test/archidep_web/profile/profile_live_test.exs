@@ -5,9 +5,6 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   alias ArchiDep.Accounts
   alias ArchiDep.Course
   alias ArchiDep.Support.AccountsFactory
-  alias ArchiDep.Support.CourseFactory
-  alias ArchiDep.Support.Factory
-  alias ArchiDep.Support.FactoryHelpers
 
   @path "/profile"
   @current_sessions_table_id "current-sessions"
@@ -20,115 +17,217 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
   setup :verify_on_exit!
 
-  test "show the profile page", %{conn: conn!} do
-    {student, preregistered_user} =
-      if FactoryHelpers.bool() do
-        student = CourseFactory.build(:student, user: nil)
-        preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
-        {student, preregistered_user}
-      else
-        {nil, nil}
-      end
+  describe "as a root user" do
+    setup :register_and_log_in_root
 
-    user_account =
-      AccountsFactory.build(:user_account,
-        root: preregistered_user == nil,
-        active: true,
-        preregistered_user: preregistered_user
-      )
+    test "show the profile page", %{
+      conn: conn,
+      auth: auth,
+      session: session,
+      user_account: user_account
+    } do
+      expect(Accounts.ContextMock, :user_account, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, fn ^auth -> [session] end)
 
-    session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        client_user_agent: Factory.user_agent()
-      )
-
-    %{conn: conn!, auth: auth} = conn_with_auth(conn!, session: session)
-
-    expect(Accounts.ContextMock, :user_account, fn ^auth -> user_account end)
-    expect(Accounts.ContextMock, :fetch_active_sessions, fn ^auth -> [session] end)
-
-    if student != nil do
-      expect(Course.ContextMock, :fetch_authenticated_student, 2, fn ^auth -> {:ok, student} end)
+      conn
+      |> get(@path)
+      |> html_response(200)
+      |> assert_html_title("Profile · ArchiDep")
     end
 
-    conn!
-    |> get(@path)
-    |> html_response(200)
-    |> assert_html_title("Profile · ArchiDep")
+    test "render the current sessions table", %{
+      conn: conn,
+      auth: auth,
+      session: session,
+      user_account: user_account
+    } do
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+
+      {:ok, _view, html} = live(conn, @path)
+
+      html
+      |> assert_html_title("Profile · ArchiDep")
+      |> with_current_sessions_table_rows(fn rows ->
+        assert [
+                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
+               ] = rows
+      end)
+    end
+
+    test "delete a session", %{
+      conn: conn,
+      auth: auth,
+      session: current_session,
+      user_account: user_account
+    } do
+      other_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: days_ago(20),
+          used_at: days_ago(8)
+        )
+
+      sessions = [current_session, other_session]
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
+
+      {:ok, view, html} = live(conn, @path)
+
+      html
+      |> assert_html_title("Profile · ArchiDep")
+      |> with_current_sessions_table_rows(fn rows ->
+        eight_days_ago = gettext("{time} ago", time: "8 days")
+
+        assert [
+                 [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
+                 [_login2, ^eight_days_ago, _exp2, _ip2, _client2, @delete_session_text]
+               ] = rows
+      end)
+
+      id = other_session.id
+      expect(Accounts.ContextMock, :delete_session, fn ^auth, ^id -> {:ok, other_session} end)
+
+      view
+      |> element("tr:nth-child(2) button.delete-session")
+      |> render_click()
+      |> with_current_sessions_table_rows(fn rows ->
+        assert [
+                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
+               ] = rows
+      end)
+    end
+
+    test "show a notification when deleting a session that no longer exists", %{
+      conn: conn,
+      auth: auth,
+      session: current_session,
+      user_account: user_account
+    } do
+      other_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: days_ago(20),
+          used_at: days_ago(8)
+        )
+
+      sessions = [current_session, other_session]
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
+
+      {:ok, view, html} = live(conn, @path)
+
+      html
+      |> assert_html_title("Profile · ArchiDep")
+      |> with_current_sessions_table_rows(fn rows ->
+        assert [
+                 [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
+                 [_login2, _last_used2, _exp2, _ip2, _client2, @delete_session_text]
+               ] = rows
+      end)
+
+      id = other_session.id
+
+      expect(Accounts.ContextMock, :delete_session, fn ^auth, ^id ->
+        {:error, :session_not_found}
+      end)
+
+      view
+      |> element("tr:nth-child(2) button.delete-session")
+      |> render_click()
+      |> with_current_sessions_table_rows(fn rows ->
+        assert [
+                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
+               ] = rows
+      end)
+
+      wait_for_socket_assigns!(
+        view,
+        &match?(
+          [%{message: "Session no longer exists", type: :warning}],
+          Map.values(&1.flash)
+        ),
+        "session no longer exists notification"
+      )
+    end
   end
 
-  test "connect to the profile page as a root user", %{conn: conn!} do
-    user_account = AccountsFactory.build(:user_account, root: true)
+  describe "as a student" do
+    setup :register_and_log_in_student
 
-    session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        client_user_agent: Factory.user_agent()
-      )
+    test "render the current sessions table", %{
+      conn: conn,
+      auth: auth,
+      session: session,
+      user_account: user_account,
+      student: student
+    } do
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
 
-    %{conn: conn!, auth: auth} = conn_with_auth(conn!, session: session)
+      {:ok, _view, html} = live(conn, @path)
 
-    expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-    expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      html
+      |> assert_html_title("Profile · ArchiDep")
+      |> with_current_sessions_table_rows(fn rows ->
+        assert [
+                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
+               ] = rows
+      end)
+    end
 
-    {:ok, _view, html} = live(conn!, @path)
+    test "delete a session", %{
+      conn: conn,
+      auth: auth,
+      session: current_session,
+      user_account: user_account,
+      student: student
+    } do
+      other_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: days_ago(20),
+          used_at: days_ago(8)
+        )
 
-    html
-    |> assert_html_title("Profile · ArchiDep")
-    |> with_current_sessions_table_rows(fn rows ->
-      assert [
-               [_login, @current_session_text, _exp, _ip, _client, @no_actions]
-             ] = rows
-    end)
-  end
+      sessions = [current_session, other_session]
 
-  test "connect to the profile page as a student", %{conn: conn!} do
-    student = CourseFactory.build(:student, user: nil)
-    preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
 
-    user_account =
-      AccountsFactory.build(:user_account, root: false, preregistered_user: preregistered_user)
+      {:ok, view, html} = live(conn, @path)
 
-    session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        client_user_agent: Factory.user_agent()
-      )
+      html
+      |> assert_html_title("Profile · ArchiDep")
+      |> with_current_sessions_table_rows(fn rows ->
+        eight_days_ago = gettext("{time} ago", time: "8 days")
 
-    %{conn: conn!, auth: auth} = conn_with_auth(conn!, session: session)
+        assert [
+                 [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
+                 [_login2, ^eight_days_ago, _exp2, _ip2, _client2, @delete_session_text]
+               ] = rows
+      end)
 
-    expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-    expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-    expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      id = other_session.id
+      expect(Accounts.ContextMock, :delete_session, fn ^auth, ^id -> {:ok, other_session} end)
 
-    {:ok, _view, html} = live(conn!, @path)
-
-    html
-    |> assert_html_title("Profile · ArchiDep")
-    |> with_current_sessions_table_rows(fn rows ->
-      assert [
-               [_login, @current_session_text, _exp, _ip, _client, @no_actions]
-             ] = rows
-    end)
+      view
+      |> element("tr:nth-child(2) button.delete-session")
+      |> render_click()
+      |> with_current_sessions_table_rows(fn rows ->
+        assert [
+                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
+               ] = rows
+      end)
+    end
   end
 
   test "all sessions are shown in the current sessions table of the profile page", %{conn: conn!} do
-    {student, preregistered_user} =
-      if FactoryHelpers.bool() do
-        student = CourseFactory.build(:student, user: nil)
-        preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
-        {student, preregistered_user}
-      else
-        {nil, nil}
-      end
-
-    user_account =
-      AccountsFactory.build(:user_account,
-        root: preregistered_user == nil,
-        active: true,
-        preregistered_user: preregistered_user
-      )
+    user_account = AccountsFactory.build(:user_account, root: true, active: true)
 
     most_recent_session =
       AccountsFactory.build(:user_session,
@@ -175,10 +274,6 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
     expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
 
-    if student != nil do
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
-    end
-
     {:ok, _view, html} = live(conn!, @path)
 
     html
@@ -208,149 +303,6 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
                ]
              ] = rows
     end)
-  end
-
-  test "delete a session in the profile page", %{conn: conn!} do
-    {student, preregistered_user} =
-      if FactoryHelpers.bool() do
-        student = CourseFactory.build(:student, user: nil)
-        preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
-        {student, preregistered_user}
-      else
-        {nil, nil}
-      end
-
-    user_account =
-      AccountsFactory.build(:user_account,
-        root: preregistered_user == nil,
-        active: true,
-        preregistered_user: preregistered_user
-      )
-
-    current_session = AccountsFactory.build(:current_session, user_account: user_account)
-
-    other_session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        created_at: days_ago(20),
-        used_at: days_ago(8)
-      )
-
-    sessions = [
-      current_session,
-      other_session
-    ]
-
-    %{conn: conn!, auth: auth} = conn_with_auth(conn!, session: current_session)
-
-    expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-    expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
-
-    if student != nil do
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
-    end
-
-    {:ok, view, html} = live(conn!, @path)
-
-    html
-    |> assert_html_title("Profile · ArchiDep")
-    |> with_current_sessions_table_rows(fn rows ->
-      eight_days_ago = gettext("{time} ago", time: "8 days")
-
-      assert [
-               [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
-               [_login2, ^eight_days_ago, _exp2, _ip2, _client2, @delete_session_text]
-             ] = rows
-    end)
-
-    id = other_session.id
-    expect(Accounts.ContextMock, :delete_session, fn ^auth, ^id -> {:ok, other_session} end)
-
-    view
-    |> element("tr:nth-child(2) button.delete-session")
-    |> render_click()
-    |> with_current_sessions_table_rows(fn rows ->
-      assert [
-               [_login, @current_session_text, _exp, _ip, _client, @no_actions]
-             ] = rows
-    end)
-  end
-
-  test "a notification is shown in the profile page when deleting a session that no longer exists",
-       %{conn: conn!} do
-    {student, preregistered_user} =
-      if FactoryHelpers.bool() do
-        student = CourseFactory.build(:student, user: nil)
-        preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
-        {student, preregistered_user}
-      else
-        {nil, nil}
-      end
-
-    user_account =
-      AccountsFactory.build(:user_account,
-        root: preregistered_user == nil,
-        active: true,
-        preregistered_user: preregistered_user
-      )
-
-    current_session = AccountsFactory.build(:current_session, user_account: user_account)
-
-    other_session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        created_at: days_ago(20),
-        used_at: days_ago(8)
-      )
-
-    sessions = [
-      current_session,
-      other_session
-    ]
-
-    %{auth: auth, conn: conn!} = conn_with_auth(conn!, session: current_session)
-
-    expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-    expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
-
-    if student != nil do
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
-    end
-
-    {:ok, view, html} = live(conn!, @path)
-
-    html
-    |> assert_html_title("Profile · ArchiDep")
-    |> with_current_sessions_table_rows(fn rows ->
-      assert [
-               [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
-               [_login2, _last_used2, _exp2, _ip2, _client2, @delete_session_text]
-             ] = rows
-    end)
-
-    id = other_session.id
-
-    expect(Accounts.ContextMock, :delete_session, fn ^auth, ^id ->
-      {:error, :session_not_found}
-    end)
-
-    view
-    |> element("tr:nth-child(2) button.delete-session")
-    |> render_click()
-    |> with_current_sessions_table_rows(fn rows ->
-      assert [
-               [_login, @current_session_text, _exp, _ip, _client, @no_actions]
-             ] = rows
-    end)
-
-    wait_for_socket_assigns!(
-      view,
-      &match?(
-        [%{message: "Session no longer exists", type: :warning}],
-        Map.values(&1.flash)
-      ),
-      "session no longer exists notification"
-    )
   end
 
   test "accessing the profile page redirects to the login page without authentication", %{

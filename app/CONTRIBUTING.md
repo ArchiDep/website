@@ -650,6 +650,14 @@ The `test/support/` directory provides shared testing infrastructure beyond the
     controller/request tests built on `Phoenix.ConnTest`.
   - `ArchiDepWeb.Support.LiveCase` (`test/support/live_case.ex`) for live view
     and live component tests.
+- **Authentication setup helpers** (defined in `ConnCase`, also available to
+  `LiveCase`): `conn_with_auth/2` authenticates a connection with a given
+  session, while `register_and_log_in_root/1` and `register_and_log_in_student/1`
+  are named `ExUnit` setup helpers (use as `setup :register_and_log_in_root`)
+  that build a user account and authenticate the test connection, adding
+  `:conn`, `:auth`, `:session` and `:user_account` (plus `:student` and
+  `:preregistered_user` for the student variant) to the test context. Prefer
+  these over hand-rolling authentication boilerplate in web tests.
 - **GenServer testing utilities** (supporting the API/implementation split
   above): `ArchiDep.Support.GenServerProxy` forwards calls, casts and messages
   to a target process so a test can act as another process;

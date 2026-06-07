@@ -50,7 +50,9 @@ Plumbing → Helpers**. Foundations unblock everything; the business layer holds
 the densest untested logic; the web layer is the largest by file count but is
 mostly mechanical once its canon is set.
 
-Pick the next unchecked task, ship it as one PR, get it reviewed, check the box.
+Pick the next unchecked task, implement it as one reviewable chunk, and check
+the box once you consider it complete (tests passing, formatted, linted). A
+human reviews afterward and will flag anything missed.
 
 ---
 
@@ -61,7 +63,7 @@ Pick the next unchecked task, ship it as one PR, get it reviewed, check the box.
 These are small, self-contained, and make every later chunk faster or the 90%
 target honest. Can be a single PR or three small ones.
 
-- [ ] **Shared auth/setup fixtures.** Add named `ExUnit` setup helpers to
+- [x] **Shared auth/setup fixtures.** Add named `ExUnit` setup helpers to
       `ConnCase`/`LiveCase` (e.g. `register_and_log_in_root`,
       `register_and_log_in_student`) returning
       `%{conn, auth, user_account, session}`, usable as
