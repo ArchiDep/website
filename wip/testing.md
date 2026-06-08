@@ -54,6 +54,14 @@ Pick the next unchecked task, implement it as one reviewable chunk, and check
 the box once you consider it complete (tests passing, formatted, linted). A
 human reviews afterward and will flag anything missed.
 
+**Coordinating with the DDD plan.** A few chunks here touch code that
+[`ddd.md`](./ddd.md) refactors — the `refresh!` functions, the server-count
+columns on `user_accounts`, and the PubSub broadcast shapes. To avoid writing
+those tests twice, write **black-box behavioral** tests now and defer those
+three structural slices to ship with the DDD tasks that finalize them. See
+[Sequencing with the testing plan](./ddd.md#sequencing-with-the-testing-plan) in
+`ddd.md` for the full ordering.
+
 ---
 
 ## Backlog
