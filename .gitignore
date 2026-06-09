@@ -1,4 +1,5 @@
 # https://git-scm.com/docs/gitignore
+/.claude/settings.local.json
 /.env
 !/.env.sample
 /node_modules
