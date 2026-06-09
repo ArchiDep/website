@@ -29,8 +29,6 @@ for AI assistants and automated agents.
 - [Testing](#testing)
   - [Test Support](#test-support)
   - [Test coverage](#test-coverage)
-  - [Test fixtures](#test-fixtures)
-  - [Mocks & Contract Tests](#mocks--contract-tests)
 - [Useful Commands](#useful-commands)
   - [Setup & Composite Commands](#setup--composite-commands)
   - [Formatting Commands](#formatting-commands)
@@ -177,7 +175,7 @@ implementation, formatting and testing.
     `ArchiDep.Servers.ServerTracking.ServerManagerState`) to facilitate unit
     testing of the implementation. A `Behaviour` companion module (e.g.
     `ServerManagerBehaviour`) can also be defined so the GenServer can be
-    [mocked](#mocks--contract-tests).
+    [mocked](./docs/testing.md#contract-checking-the-real-implementation).
 
     The API module should handle starting the GenServer and managing its
     lifecycle and process-related aspects, while the implementation module
@@ -326,7 +324,7 @@ minimal structure:
   typespecs specific to the context.
 - A behaviour module (e.g. `ArchiDep.SomeContext.Behaviour`) that defines the
   interface for the context. This is useful for [mocking the context in
-  tests](#mocks--contract-tests).
+  tests](./docs/testing.md#contract-checking-the-real-implementation).
 - An implementation module (e.g. `ArchiDep.SomeContext.Context`) that implements
   the behaviour. It generally does not contain the actual business logic but
   delegates to use case modules.
@@ -625,22 +623,15 @@ format`][mix-format] command before submitting changes. Prefer formatting
 
 ## Testing
 
-- Use [ExUnit][ex-unit] for unit and integration tests.
-- All new code should include relevant tests in the `test/` directory.
-- Prefer [doctests][ex-unit-doctests] for helper modules with simple functions.
-- Write tests for edge cases and error handling.
-- Prefer writing tests in a test-driven manner (TDD).
-- Prefer running tests in specific files or directories that have changed. See
-  [Testing Commands](#testing-commands) below.
-- Prefer comprehensive unit test coverage and a few integration tests for
-  critical paths.
-- Write separate tests for the API and implementation of [GenServer][gen-server]
-  modules to facilitate unit testing of the implementation.
+**How we write tests** — assertion conventions, fixtures, mocks, deterministic
+time, and the per-layer patterns — is documented in
+[`docs/testing.md`](./docs/testing.md). This section is the inventory of the
+test support _infrastructure_ that those conventions build on; the per-layer
+testing guides own the prescriptive rules.
 
 ### Test Support
 
-The `test/support/` directory provides shared testing infrastructure beyond the
-[fixtures](#test-fixtures) and [mocks](#mocks--contract-tests) described below:
+The `test/support/` directory provides shared testing infrastructure:
 
 - **Case templates** (used with `use`):
   - `ArchiDep.Support.DataCase` (`test/support/data_case.ex`) for tests that
@@ -671,6 +662,16 @@ The `test/support/` directory provides shared testing infrastructure beyond the
   (manipulate dates/datetimes), `ArchiDep.Support.TelemetryTestHelpers` (assert
   on telemetry events) and `ArchiDepWeb.Support.HtmlTestHelpers` (Floki HTML
   helpers).
+- **Factories**: per-context [ExMachina][ex-machina] factories under
+  `test/support/` (`ArchiDep.Support.AccountsFactory`, `CourseFactory`,
+  `EventsFactory`, `ServersFactory`, …), plus the shared
+  `ArchiDep.Support.Factory` and `ArchiDep.Support.FactoryHelpers`. Usage
+  conventions are in [`docs/testing.md`](./docs/testing.md#factories).
+- **Mocks**: [Hammox][hammox] mocks of the context behaviours (and complex
+  internal dependencies) defined in `test/support/mocks.ex` — the per-context
+  `ContextMock`s plus `ServerManagerMock`, `Ansible.Mock` and `Http.Mock`. When
+  to mock vs. exercise the real implementation is covered in
+  [`docs/testing.md`](./docs/testing.md#contract-checking-the-real-implementation).
 
 ### Test coverage
 
@@ -678,43 +679,6 @@ The `test/support/` directory provides shared testing infrastructure beyond the
   Commands](#testing-commands) below.
 - Aim for high coverage, but do not sacrifice code quality or maintainability
   just to increase coverage numbers.
-
-### Test fixtures
-
-- Use [ExMachina][ex-machina] for test fixtures.
-- Prefer using ExMachina's `build` function and not interacting with the
-  database when possible. Otherwise, use ExMachine's `insert` function to insert
-  records in the database.
-- Define factory modules scoped by context under `test/support/` to generate all
-  common data for each context. The modules are namespaced under
-  `ArchiDep.Support`, suffixed with `Factory`, and their files named accordingly
-  (e.g. `ArchiDep.Support.AccountsFactory` in
-  `test/support/accounts_factory.ex`). Common building blocks live in the shared
-  `ArchiDep.Support.Factory` and `ArchiDep.Support.FactoryHelpers` modules.
-- When writing tests, prefer reusing existing factories rather than creating new
-  ones. If existing factories do not meet your needs, consider extending them
-  or creating new ones in the appropriate context.
-- Use ExMachina sequences to generate unique values for unique fields (e.g.
-  usernames or email addresses).
-- Use [Faker][faker] to generate realistic random data.
-- Prefer generating random but valid data in standard factories to help catch
-  edge cases and improve test robustness.
-- Write specific tests with hardcoded values when necessary to test particular
-  edge cases or scenarios.
-
-### Mocks & Contract Tests
-
-- Use [Hammox][hammox] for mocks and contract tests. Hammox builds on
-  [Mox][mox] and additionally verifies at runtime that mock expectations conform
-  to the mocked behaviour's typespecs. (Mox itself is not a direct dependency.)
-- Define behaviour modules for all context modules and for complex internal
-  dependencies to facilitate mocking.
-- Define mocks with `Hammox.defmock` for these behaviours. See
-  `test/support/mocks.ex` for existing mocks (the per-context `ContextMock`s as
-  well as `ServerManagerMock`, `Ansible.Mock` and `Http.Mock`).
-- Prefer testing the web application with mocks of the context modules.
-- Prefer testing context modules with complex internal dependencies using mocks.
-- But do write integration tests that do not use mocks for critical paths.
 
 ---
 
@@ -838,8 +802,6 @@ agents.
 [heroicons-hex]: https://hexdocs.pm/heroicons
 [ex-machina]: https://hexdocs.pm/ex_machina/readme.html
 [ex-unit]: https://hexdocs.pm/ex_unit/ExUnit.html
-[ex-unit-doctests]: https://hexdocs.pm/ex_unit/ExUnit.DocTest.html
-[faker]: https://hexdocs.pm/faker/readme.html
 [flashy]: https://hexdocs.pm/flashy/readme.html
 [floki]: https://hexdocs.pm/floki/Floki.html
 [gen-server]: https://hexdocs.pm/elixir/GenServer.html

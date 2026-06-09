@@ -20,8 +20,11 @@ exhaustive index.
 - **Theme** — Tailwind/DaisyUI, dark mode, typography, syntax highlighting:
   [`theme/CONTRIBUTING.md`](./theme/CONTRIBUTING.md)
 - **Dashboard application** — overall architecture, development environment,
-  testing, formatting and linting, commands:
+  test support inventory, formatting and linting, commands:
   [`app/CONTRIBUTING.md`](./app/CONTRIBUTING.md)
+  - Testing conventions — how we write tests (exact assertions, fixtures, mocks,
+    deterministic time, per-layer patterns):
+    [`app/docs/testing.md`](./app/docs/testing.md)
   - Bounded context anatomy (how every context is structured):
     [`app/CONTRIBUTING.md`](./app/CONTRIBUTING.md#bounded-contexts)
   - Web layer — routing, LiveView, components, i18n, admin console, server UI:
@@ -63,6 +66,8 @@ instructions targeted towards AI agents.
   - When generating Markdown, prefer reference links over inline links for URLs
     and anchors if there are at least two occurrences of the same URL or anchor
     in the document.
+  - When writing or modifying tests, follow the conventions in
+    [`app/docs/testing.md`](./app/docs/testing.md).
   - After editing Markdown documentation, run `npm run lint:md` (documented in
     [`./CONTRIBUTING.md`][contributing]) and fix any reported issues.
   - When you complete a task tracked by a checkbox in a backlog document (such
