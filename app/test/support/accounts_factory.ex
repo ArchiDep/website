@@ -116,11 +116,12 @@ defmodule ArchiDep.Support.AccountsFactory do
     {swiss_edu_person_unique_id, attrs!} =
       Map.pop_lazy(attrs!, :swiss_edu_person_unique_id, &Faker.String.base64/0)
 
-    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+    {now, attrs!} = pop_now(attrs!)
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!, now)
 
     {used_at, attrs!} =
       Map.pop_lazy(attrs!, :used_at, fn ->
-        Faker.DateTime.between(created_at, DateTime.utc_now())
+        Faker.DateTime.between(created_at, now)
       end)
 
     [] = Map.keys(attrs!)
@@ -209,7 +210,8 @@ defmodule ArchiDep.Support.AccountsFactory do
         end
       end)
 
-    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+    {now, attrs!} = pop_now(attrs!)
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!, now)
 
     [] = Map.keys(attrs!)
 

@@ -16,6 +16,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Accounts.Types
   alias ArchiDep.ClientMetadata
+  alias ArchiDep.Clock
 
   @spec log_in_or_register_with_switch_edu_id(
           Types.switch_edu_id_login_data(),
@@ -57,7 +58,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   end
 
   defp log_in_or_register(switch_edu_id_data, client_metadata) do
-    now = DateTime.utc_now()
+    now = Clock.now()
 
     Multi.new()
     # Create or update the Switch edu-ID identity. It might or might not already
@@ -76,7 +77,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
             new_user_account(switch_edu_id, switch_edu_id_data, now)
 
           user_account ->
-            existing_user_account(switch_edu_id_data, user_account)
+            existing_user_account(switch_edu_id_data, user_account, now)
         end
       end
     )
@@ -174,12 +175,13 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     # account.
     if matched_id = configured_root_user_identifier(data) do
       {:ok,
-       {:new_root, UserAccount.new_root_switch_edu_id_account(switch_edu_id, matched_id), nil}}
+       {:new_root, UserAccount.new_root_switch_edu_id_account(switch_edu_id, matched_id, now),
+        nil}}
     else
       # Otherwise check whether there is a preregistered user for that email...
       case PreregisteredUser.list_available_preregistered_users_for_emails(
              data.emails,
-             DateTime.utc_now()
+             now
            ) do
         # If there is exactly one active preregistered user with a matching
         # email that is not yet linked to a user account, create a new student
@@ -190,7 +192,8 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
              :new_student,
              UserAccount.new_preregistered_switch_edu_id_account(
                switch_edu_id,
-               exactly_one_preregistered_user
+               exactly_one_preregistered_user,
+               now
              ),
              exactly_one_preregistered_user
            }}
@@ -218,13 +221,13 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
     end
   end
 
-  defp existing_user_account(switch_edu_id_data, user_account) do
+  defp existing_user_account(switch_edu_id_data, user_account, now) do
     # If the user account already exists, check whether it is still active (it
     # might be linked to a class from the previous year, or it or its linked
     # preregistered user might have been deactivated).
     #
     # If the user account is active, log it in.
-    if UserAccount.active?(user_account, DateTime.utc_now()) do
+    if UserAccount.active?(user_account, now) do
       {:ok, {:existing_account, change(user_account), nil}}
     else
       # Otherwise, check whether there is a new preregistered user for the same
@@ -232,7 +235,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
       # preregistered user will have been created in a new class)...
       case PreregisteredUser.list_available_preregistered_users_for_emails(
              switch_edu_id_data.emails,
-             DateTime.utc_now()
+             now
            ) do
         # If there is exactly one active preregistered user with a matching
         # email that is not yet linked to a user account, link the user account

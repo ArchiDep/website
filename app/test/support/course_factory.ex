@@ -21,11 +21,8 @@ defmodule ArchiDep.Support.CourseFactory do
         sequence(:class_name, &"Class #{&1}")
       end)
 
-    {start_date, attrs!} =
-      Map.pop_lazy(attrs!, :start_date, optionally(fn -> Faker.Date.backward(365) end))
-
-    {end_date, attrs!} =
-      Map.pop_lazy(attrs!, :end_date, optionally(fn -> Faker.Date.forward(365) end))
+    {now, attrs!} = pop_now(attrs!)
+    {start_date, end_date, attrs!} = pop_class_date_window(attrs!, now)
 
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
 
@@ -65,7 +62,7 @@ defmodule ArchiDep.Support.CourseFactory do
         build(:expected_server_properties)
       end)
 
-    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!, now)
 
     [] = Map.keys(attrs!)
 
@@ -92,11 +89,8 @@ defmodule ArchiDep.Support.CourseFactory do
     {name, attrs!} =
       Map.pop_lazy(attrs!, :name, fn -> sequence(:class_name, &"Class #{&1}") end)
 
-    {start_date, attrs!} =
-      Map.pop_lazy(attrs!, :start_date, optionally(fn -> Faker.Date.backward(365) end))
-
-    {end_date, attrs!} =
-      Map.pop_lazy(attrs!, :end_date, optionally(fn -> Faker.Date.forward(365) end))
+    {now, attrs!} = pop_now(attrs!)
+    {start_date, end_date, attrs!} = pop_class_date_window(attrs!, now)
 
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
     {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
@@ -227,7 +221,8 @@ defmodule ArchiDep.Support.CourseFactory do
         end
       end)
 
-    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+    {now, attrs!} = pop_now(attrs!)
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!, now)
 
     [] = Map.keys(attrs!)
 
@@ -289,5 +284,30 @@ defmodule ArchiDep.Support.CourseFactory do
       created_at: created_at,
       updated_at: updated_at
     }
+  end
+
+  # Pops the class date window from the given attributes, generating random but
+  # valid `start_date`/`end_date` values that bracket the reference time. The
+  # reference time defaults to the current time but can be overridden with a
+  # `:now` attribute so that a class is active at a pinned instant (see
+  # `docs/testing.md`).
+  defp pop_class_date_window(attrs!, now) do
+    today = DateTime.to_date(now)
+
+    {start_date, attrs!} =
+      Map.pop_lazy(
+        attrs!,
+        :start_date,
+        optionally(fn -> Faker.Date.between(Date.add(today, -365), today) end)
+      )
+
+    {end_date, attrs!} =
+      Map.pop_lazy(
+        attrs!,
+        :end_date,
+        optionally(fn -> Faker.Date.between(today, Date.add(today, 365)) end)
+      )
+
+    {start_date, end_date, attrs!}
   end
 end

@@ -132,10 +132,10 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
         )
       )
 
-  @spec new_root_switch_edu_id_account(SwitchEduId.t(), String.t()) :: Changeset.t(t())
-  def new_root_switch_edu_id_account(switch_edu_id, matched_identifier) do
+  @spec new_root_switch_edu_id_account(SwitchEduId.t(), String.t(), DateTime.t()) ::
+          Changeset.t(t())
+  def new_root_switch_edu_id_account(switch_edu_id, matched_identifier, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     %__MODULE__{}
     |> cast(
@@ -155,11 +155,11 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
 
   @spec new_preregistered_switch_edu_id_account(
           SwitchEduId.t(),
-          PreregisteredUser.t()
+          PreregisteredUser.t(),
+          DateTime.t()
         ) :: Changeset.t(t())
-  def new_preregistered_switch_edu_id_account(switch_edu_id, preregistered_user) do
+  def new_preregistered_switch_edu_id_account(switch_edu_id, preregistered_user, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     %__MODULE__{}
     |> cast(

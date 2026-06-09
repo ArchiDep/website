@@ -235,6 +235,11 @@ async test sets its own clock without affecting concurrent tests. A global
 `Application.put_env` of "the current time" would **not** be safe under async —
 one test's clock would bleed into others. Use the mock, not a global value.
 
+`DataCase` installs a **default stub** that returns the real system time, so
+tests that don't care about time need no clock setup and behave as before. Only
+tests that assert timestamps override it, pinning a fixed instant with their own
+`stub`/`expect`.
+
 One caveat, identical to the context mocks: the stub is only seen when the code
 under test runs **in the test process**. The use cases documented here run their
 transaction synchronously in the caller, so this holds. If a use case ever

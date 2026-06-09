@@ -10,6 +10,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Authentication
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
@@ -19,7 +20,18 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
   @root_user_email "root@archidep.ch"
 
+  # Pinned instant returned by the injected clock for the duration of each test,
+  # so that every timestamp produced by the use case can be asserted exactly
+  # (see docs/testing.md).
+  @now ~U[2024-03-15 10:30:00.000000Z]
+  @session_validity_in_seconds 30 * 24 * 60 * 60
+
   setup :verify_on_exit!
+
+  setup do
+    stub(Clock.Mock, :now, fn -> @now end)
+    :ok
+  end
 
   setup_all do
     %{
@@ -55,14 +67,15 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   test "register a new student user account with Switch edu-ID", %{
     log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
   } do
-    class = CourseFactory.insert(:class, active: true, start_date: nil, end_date: nil)
+    class = CourseFactory.insert(:class, active: true, now: @now)
 
     student =
       CourseFactory.insert(:student,
         email: "bob@archidep.ch",
         active: true,
         class: class,
-        user: nil
+        user: nil,
+        now: @now
       )
 
     switch_edu_id_login_data =
@@ -115,7 +128,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
          log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
        } do
     switch_edu_id =
-      AccountsFactory.insert(:switch_edu_id)
+      AccountsFactory.insert(:switch_edu_id, now: @now)
 
     switch_edu_id_login_data =
       AccountsFactory.build(:switch_edu_id_login_data,
@@ -138,21 +151,29 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   test "log in an existing root user account with Switch edu-ID", %{
     log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
   } do
+    switch_edu_id =
+      AccountsFactory.insert(:switch_edu_id,
+        swiss_edu_person_unique_id: "foobar",
+        first_name: "John",
+        last_name: "Doe",
+        now: @now
+      )
+
     switch_edu_id_login_data =
       AccountsFactory.build(:switch_edu_id_login_data,
         emails: [@root_user_email],
-        first_name: nil,
+        first_name: "John",
+        last_name: "Doe",
         swiss_edu_person_unique_id: "foobar"
       )
-
-    switch_edu_id = AccountsFactory.insert(:switch_edu_id, swiss_edu_person_unique_id: "foobar")
 
     user_account =
       AccountsFactory.insert(:user_account,
         username: @root_user_email,
         root: true,
         active: true,
-        switch_edu_id: switch_edu_id
+        switch_edu_id: switch_edu_id,
+        now: @now
       )
 
     metadata = Factory.build(:client_metadata)
@@ -172,24 +193,33 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   test "log in an existing student user account with Switch edu-ID", %{
     log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
   } do
-    class = CourseFactory.insert(:class, active: true)
-    student = CourseFactory.insert(:student, active: true, class: class, user: nil)
+    class = CourseFactory.insert(:class, active: true, now: @now)
+    student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
     student_id = student.id
+
+    switch_edu_id =
+      AccountsFactory.insert(:switch_edu_id,
+        swiss_edu_person_unique_id: "foobar",
+        first_name: "John",
+        last_name: "Doe",
+        now: @now
+      )
 
     switch_edu_id_login_data =
       AccountsFactory.build(:switch_edu_id_login_data,
         emails: [student.email],
+        first_name: "John",
+        last_name: "Doe",
         swiss_edu_person_unique_id: "foobar"
       )
-
-    switch_edu_id = AccountsFactory.insert(:switch_edu_id, swiss_edu_person_unique_id: "foobar")
 
     user_account =
       AccountsFactory.insert(:user_account,
         root: false,
         active: true,
         switch_edu_id: switch_edu_id,
-        preregistered_user_id: student.id
+        preregistered_user_id: student.id,
+        now: @now
       )
 
     Repo.update_all(from(s in Student, where: s.id == ^student_id),
@@ -221,8 +251,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
        %{
          log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
        } do
-    class = CourseFactory.insert(:class, active: true)
-    student = CourseFactory.insert(:student, active: true, class: class, user: nil)
+    class = CourseFactory.insert(:class, active: true, now: @now)
+    student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
     student_id = student.id
 
     switch_edu_id_login_data =
@@ -236,7 +266,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
         root: false,
         active: true,
         switch_edu_id: nil,
-        preregistered_user_id: student.id
+        preregistered_user_id: student.id,
+        now: @now
       )
 
     Repo.update_all(from(s in Student, where: s.id == ^student_id),
@@ -267,8 +298,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   test "log in an existing inactive student user account to a new student with Switch edu-ID", %{
     log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
   } do
-    class = CourseFactory.insert(:class, active: true)
-    student = CourseFactory.insert(:student, active: true, class: class, user: nil)
+    class = CourseFactory.insert(:class, active: true, now: @now)
+    student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
     old_class = CourseFactory.insert(:class, active: false)
 
@@ -282,20 +313,29 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     old_student_id = old_student.id
 
+    switch_edu_id =
+      AccountsFactory.insert(:switch_edu_id,
+        swiss_edu_person_unique_id: "foobar",
+        first_name: "John",
+        last_name: "Doe",
+        now: @now
+      )
+
     switch_edu_id_login_data =
       AccountsFactory.build(:switch_edu_id_login_data,
         emails: [student.email],
+        first_name: "John",
+        last_name: "Doe",
         swiss_edu_person_unique_id: "foobar"
       )
-
-    switch_edu_id = AccountsFactory.insert(:switch_edu_id, swiss_edu_person_unique_id: "foobar")
 
     user_account =
       AccountsFactory.insert(:user_account,
         root: false,
         active: true,
         switch_edu_id: switch_edu_id,
-        preregistered_user_id: old_student.id
+        preregistered_user_id: old_student.id,
+        now: @now
       )
 
     Repo.update_all(from(s in Student, where: s.id == ^old_student_id),
@@ -333,8 +373,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert %Authentication{
              principal_id: user_account_id,
              session_id: session_id,
-             session_token: session_token,
-             session_expires_at: session_expires_at
+             session_token: session_token
            } = auth
 
     assert auth == %Authentication{
@@ -343,11 +382,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              root: root,
              session_id: session_id,
              session_token: session_token,
-             session_expires_at: session_expires_at,
+             session_expires_at: DateTime.add(@now, @session_validity_in_seconds, :second),
              impersonated_id: nil
            }
-
-    assert DateTime.diff(session_expires_at, DateTime.utc_now(), :day) >= 29
 
     auth
   end
@@ -362,10 +399,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert [
              %StoredEvent{
                id: event_id,
-               data: %{"switch_edu_id" => %{"id" => switch_edu_id_id}},
-               occurred_at: occurred_at
+               data: %{"switch_edu_id" => %{"id" => switch_edu_id_id}}
              } = registered_event
-           ] = Repo.all(from e in StoredEvent, order_by: [asc: e.occurred_at])
+           ] = fetch_new_stored_events()
 
     assert registered_event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),
@@ -407,7 +443,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              initiator: "accounts:user-accounts:#{user_account_id}",
              causation_id: event_id,
              correlation_id: event_id,
-             occurred_at: occurred_at,
+             occurred_at: @now,
              entity: nil
            }
 
@@ -425,10 +461,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert [
              %StoredEvent{
                id: event_id,
-               data: %{"switch_edu_id" => %{"id" => switch_edu_id_id}},
-               occurred_at: occurred_at
+               data: %{"switch_edu_id" => %{"id" => switch_edu_id_id}}
              } = logged_in_event
-           ] = Repo.all(from e in StoredEvent, order_by: [asc: e.occurred_at])
+           ] = fetch_new_stored_events()
 
     assert logged_in_event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),
@@ -475,7 +510,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              initiator: "accounts:user-accounts:#{user_account_id}",
              causation_id: event_id,
              correlation_id: event_id,
-             occurred_at: occurred_at,
+             occurred_at: @now,
              entity: nil
            }
 
@@ -493,8 +528,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              },
              "client_ip_address" => client_ip_address,
              "client_user_agent" => client_user_agent
-           },
-           occurred_at: occurred_at
+           }
          },
          %Authentication{
            principal_id: user_account_id,
@@ -505,33 +539,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
          root,
          student \\ nil
        ) do
-    assert [
-             %UserSession{
-               user_account: %UserAccount{
-                 switch_edu_id: %SwitchEduId{
-                   created_at: switch_edu_id_created_at
-                 }
-               },
-               created_at: session_created_at
-             } = user_session
-           ] =
-             Repo.all(
-               from us in UserSession,
-                 join: ua in assoc(us, :user_account),
-                 left_join: pu in assoc(ua, :preregistered_user),
-                 join: sei in assoc(ua, :switch_edu_id),
-                 left_join: iua in assoc(us, :impersonated_user_account),
-                 preload: [
-                   user_account: {ua, preregistered_user: pu, switch_edu_id: sei},
-                   impersonated_user_account: iua
-                 ]
-             )
+    assert [%UserSession{} = user_session] = all_user_sessions()
 
     assert user_session == %UserSession{
              __meta__: loaded(UserSession, "user_sessions"),
              id: session_id,
              token: session_token,
-             created_at: session_created_at,
+             created_at: @now,
              client_ip_address: client_ip_address,
              client_user_agent: client_user_agent,
              user_account: %UserAccount{
@@ -547,20 +561,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                  last_name: last_name,
                  swiss_edu_person_unique_id: swiss_edu_person_unique_id,
                  version: 1,
-                 created_at: switch_edu_id_created_at,
-                 updated_at: switch_edu_id_created_at,
-                 used_at: switch_edu_id_created_at
+                 created_at: @now,
+                 updated_at: @now,
+                 used_at: @now
                },
                switch_edu_id_id: switch_edu_id_id,
                preregistered_user:
                  if student do
-                   [preregistered_user_updated_at] =
-                     Repo.one(
-                       from pu in PreregisteredUser,
-                         select: [pu.updated_at],
-                         where: pu.id == ^student.id
-                     )
-
                    %PreregisteredUser{
                      __meta__: loaded(PreregisteredUser, "students"),
                      id: student.id,
@@ -574,15 +581,15 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                      user_account: not_loaded(:user_account, PreregisteredUser),
                      user_account_id: user_account_id,
                      version: student.version + 1,
-                     updated_at: preregistered_user_updated_at
+                     updated_at: @now
                    }
                  else
                    nil
                  end,
                preregistered_user_id: student && student.id,
                version: 1,
-               created_at: occurred_at,
-               updated_at: occurred_at
+               created_at: @now,
+               updated_at: @now
              },
              user_account_id: user_account_id,
              impersonated_user_account: nil,
@@ -601,8 +608,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              },
              "client_ip_address" => client_ip_address,
              "client_user_agent" => client_user_agent
-           },
-           occurred_at: occurred_at
+           }
          },
          %Authentication{
            principal_id: user_account_id,
@@ -615,34 +621,26 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
          updated,
          student \\ nil
        ) do
-    assert [
-             %UserSession{
-               user_account: %UserAccount{
-                 switch_edu_id: %SwitchEduId{
-                   created_at: switch_edu_id_created_at,
-                   updated_at: switch_edu_id_updated_at
-                 }
-               },
-               created_at: session_created_at
-             } = user_session
-           ] =
-             Repo.all(
-               from us in UserSession,
-                 join: ua in assoc(us, :user_account),
-                 left_join: pu in assoc(ua, :preregistered_user),
-                 join: sei in assoc(ua, :switch_edu_id),
-                 left_join: iua in assoc(us, :impersonated_user_account),
-                 preload: [
-                   user_account: {ua, preregistered_user: pu, switch_edu_id: sei},
-                   impersonated_user_account: iua
-                 ]
-             )
+    # A pre-existing Switch edu-ID keeps its created/updated timestamps (the
+    # login data deliberately matches its name so nothing is touched); only its
+    # version is bumped and its used-at is refreshed. A brand new Switch edu-ID
+    # (login data passed instead of a struct) is fully stamped at `@now`.
+    {switch_edu_id_created_at, switch_edu_id_updated_at, switch_edu_id_version} =
+      case switch_edu_id do
+        %SwitchEduId{} = existing ->
+          {existing.created_at, existing.updated_at, existing.version + 1}
+
+        _login_data ->
+          {@now, @now, 1}
+      end
+
+    assert [%UserSession{} = user_session] = all_user_sessions()
 
     assert user_session == %UserSession{
              __meta__: loaded(UserSession, "user_sessions"),
              id: session_id,
              token: session_token,
-             created_at: session_created_at,
+             created_at: @now,
              client_ip_address: client_ip_address,
              client_user_agent: client_user_agent,
              user_account: %UserAccount{
@@ -657,14 +655,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                  first_name: first_name,
                  last_name: last_name,
                  swiss_edu_person_unique_id: swiss_edu_person_unique_id,
-                 version:
-                   case switch_edu_id do
-                     %SwitchEduId{} -> switch_edu_id.version + 1
-                     _otherwise -> 1
-                   end,
+                 version: switch_edu_id_version,
                  created_at: switch_edu_id_created_at,
                  updated_at: switch_edu_id_updated_at,
-                 used_at: session_created_at
+                 used_at: @now
                },
                switch_edu_id_id: switch_edu_id_id,
                preregistered_user:
@@ -684,7 +678,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                      version: update_version_if(student, :student, updated),
                      updated_at:
                        if updated == true or updated == :student do
-                         occurred_at
+                         @now
                        else
                          student.updated_at
                        end
@@ -697,7 +691,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                created_at: user_account.created_at,
                updated_at:
                  if updated == true or updated == :user_account do
-                   occurred_at
+                   @now
                  else
                    user_account.updated_at
                  end
@@ -706,6 +700,20 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              impersonated_user_account: nil,
              impersonated_user_account_id: nil
            }
+  end
+
+  defp all_user_sessions do
+    Repo.all(
+      from us in UserSession,
+        join: ua in assoc(us, :user_account),
+        left_join: pu in assoc(ua, :preregistered_user),
+        join: sei in assoc(ua, :switch_edu_id),
+        left_join: iua in assoc(us, :impersonated_user_account),
+        preload: [
+          user_account: {ua, preregistered_user: pu, switch_edu_id: sei},
+          impersonated_user_account: iua
+        ]
+    )
   end
 
   defp update_version_if(%{version: version}, _key, true), do: version + 1

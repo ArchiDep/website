@@ -40,6 +40,13 @@ defmodule ArchiDep.Support.DataCase do
 
   setup tags do
     DataCase.setup_sandbox(tags)
+
+    # By default the injected clock returns the real system time, so tests that
+    # do not care about time behave as if `DateTime.utc_now/0` were called
+    # directly. Tests that assert exact timestamps override this with their own
+    # `stub`/`expect` pinning a fixed instant (see `docs/testing.md`).
+    Hammox.stub(ArchiDep.Clock.Mock, :now, &ArchiDep.Clock.SystemClock.now/0)
+
     :ok
   end
 
