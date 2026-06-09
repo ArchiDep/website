@@ -2,7 +2,7 @@ import Config
 
 config :archidep,
   auth: [
-    root_users: [switch_edu_id: ["root@archidep.ch"]]
+    root_users: [switch_edu_id: ["root@archidep.ch", "root-by-unique-id"]]
   ],
   servers: [
     api_base_url: "http://localhost:42000/api",

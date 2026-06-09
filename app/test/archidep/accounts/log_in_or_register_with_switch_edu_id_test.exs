@@ -21,6 +21,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   alias ArchiDep.Support.Factory
 
   @root_user_email "root@archidep.ch"
+  @root_user_swiss_edu_person_unique_id "root-by-unique-id"
 
   # Pinned instant returned by the injected clock for the duration of each test,
   # so that every timestamp produced by the use case can be asserted exactly
@@ -68,6 +69,35 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     |> assert_login_telemetry()
     |> assert_registered_event(metadata, "root@archidep.ch", switch_edu_id_login_data)
     |> assert_user_session_for_new_user(auth, "root@archidep.ch", true)
+  end
+
+  test "register a new root user account matched by Switch edu-ID unique identifier", %{
+    log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
+  } do
+    switch_edu_id_login_data =
+      AccountsFactory.build(:switch_edu_id_login_data,
+        emails: ["not-a-root@archidep.ch"],
+        first_name: nil,
+        swiss_edu_person_unique_id: @root_user_swiss_edu_person_unique_id
+      )
+
+    metadata = Factory.build(:client_metadata)
+
+    assert {:ok, auth} =
+             log_in_or_register_with_switch_edu_id.(
+               switch_edu_id_login_data,
+               metadata
+             )
+
+    auth
+    |> assert_auth(@root_user_swiss_edu_person_unique_id, true)
+    |> assert_login_telemetry()
+    |> assert_registered_event(
+      metadata,
+      @root_user_swiss_edu_person_unique_id,
+      switch_edu_id_login_data
+    )
+    |> assert_user_session_for_new_user(auth, @root_user_swiss_edu_person_unique_id, true)
   end
 
   test "register a new student user account with Switch edu-ID", %{
@@ -163,24 +193,59 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     refute_login_telemetry()
   end
 
-  test "log in an existing root user account with Switch edu-ID", %{
+  test "an unknown user cannot register when their email matches several preregistered users", %{
     log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
   } do
-    switch_edu_id =
-      AccountsFactory.insert(:switch_edu_id,
-        swiss_edu_person_unique_id: "foobar",
-        first_name: "John",
-        last_name: "Doe",
+    email = "duplicate@archidep.ch"
+
+    class_one = CourseFactory.insert(:class, active: true, now: @now)
+
+    student_one =
+      CourseFactory.insert(:student,
+        email: email,
+        active: true,
+        class: class_one,
+        user: nil,
         now: @now
       )
 
-    switch_edu_id_login_data =
-      AccountsFactory.build(:switch_edu_id_login_data,
-        emails: [@root_user_email],
-        first_name: "John",
-        last_name: "Doe",
-        swiss_edu_person_unique_id: "foobar"
+    class_two = CourseFactory.insert(:class, active: true, now: @now)
+
+    student_two =
+      CourseFactory.insert(:student,
+        email: email,
+        active: true,
+        class: class_two,
+        user: nil,
+        now: @now
       )
+
+    subscribe_to_preregistered_user(student_one)
+    subscribe_to_preregistered_user(student_two)
+
+    switch_edu_id_login_data =
+      AccountsFactory.build(:switch_edu_id_login_data, emails: [email])
+
+    metadata = Factory.build(:client_metadata)
+
+    assert {:error, :unauthorized_switch_edu_id} =
+             log_in_or_register_with_switch_edu_id.(
+               switch_edu_id_login_data,
+               metadata
+             )
+
+    assert [] = Repo.all(SwitchEduId)
+    assert [] = Repo.all(UserAccount)
+    assert [] = Repo.all(UserSession)
+    assert_no_stored_events!()
+    refute_login_telemetry()
+    refute_preregistered_user_broadcast()
+  end
+
+  test "log in an existing root user account with Switch edu-ID", %{
+    log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
+  } do
+    {switch_edu_id, switch_edu_id_login_data} = insert_existing_switch_edu_id([@root_user_email])
 
     user_account =
       AccountsFactory.insert(:user_account,
@@ -211,25 +276,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   } do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
-    student_id = student.id
 
     subscribe_to_preregistered_user(student)
 
-    switch_edu_id =
-      AccountsFactory.insert(:switch_edu_id,
-        swiss_edu_person_unique_id: "foobar",
-        first_name: "John",
-        last_name: "Doe",
-        now: @now
-      )
-
-    switch_edu_id_login_data =
-      AccountsFactory.build(:switch_edu_id_login_data,
-        emails: [student.email],
-        first_name: "John",
-        last_name: "Doe",
-        swiss_edu_person_unique_id: "foobar"
-      )
+    {switch_edu_id, switch_edu_id_login_data} = insert_existing_switch_edu_id([student.email])
 
     user_account =
       AccountsFactory.insert(:user_account,
@@ -240,9 +290,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
         now: @now
       )
 
-    Repo.update_all(from(s in Student, where: s.id == ^student_id),
-      set: [user_id: user_account.id]
-    )
+    link_student_to_user_account(student, user_account)
 
     metadata = Factory.build(:client_metadata)
 
@@ -274,7 +322,6 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
        } do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
-    student_id = student.id
 
     subscribe_to_preregistered_user(student)
 
@@ -293,9 +340,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
         now: @now
       )
 
-    Repo.update_all(from(s in Student, where: s.id == ^student_id),
-      set: [user_id: user_account.id]
-    )
+    link_student_to_user_account(student, user_account)
 
     metadata = Factory.build(:client_metadata)
 
@@ -339,23 +384,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
         user: nil
       )
 
-    old_student_id = old_student.id
-
-    switch_edu_id =
-      AccountsFactory.insert(:switch_edu_id,
-        swiss_edu_person_unique_id: "foobar",
-        first_name: "John",
-        last_name: "Doe",
-        now: @now
-      )
-
-    switch_edu_id_login_data =
-      AccountsFactory.build(:switch_edu_id_login_data,
-        emails: [student.email],
-        first_name: "John",
-        last_name: "Doe",
-        swiss_edu_person_unique_id: "foobar"
-      )
+    {switch_edu_id, switch_edu_id_login_data} = insert_existing_switch_edu_id([student.email])
 
     user_account =
       AccountsFactory.insert(:user_account,
@@ -366,9 +395,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
         now: @now
       )
 
-    Repo.update_all(from(s in Student, where: s.id == ^old_student_id),
-      set: [user_id: user_account.id]
-    )
+    link_student_to_user_account(old_student, user_account)
 
     metadata = Factory.build(:client_metadata)
 
@@ -398,6 +425,54 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     )
 
     assert_preregistered_user_broadcast(student)
+  end
+
+  test "an existing inactive user account cannot log in without a new preregistration", %{
+    log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id
+  } do
+    old_class = CourseFactory.insert(:class, active: false)
+    old_student = CourseFactory.insert(:student, active: true, class: old_class, user: nil)
+
+    subscribe_to_preregistered_user(old_student)
+
+    {switch_edu_id, switch_edu_id_login_data} = insert_existing_switch_edu_id([old_student.email])
+
+    user_account =
+      AccountsFactory.insert(:user_account,
+        root: false,
+        active: true,
+        switch_edu_id: switch_edu_id,
+        preregistered_user_id: old_student.id,
+        now: @now
+      )
+
+    link_student_to_user_account(old_student, user_account)
+
+    metadata = Factory.build(:client_metadata)
+
+    assert {:error, :unauthorized_switch_edu_id} =
+             log_in_or_register_with_switch_edu_id.(
+               switch_edu_id_login_data,
+               metadata
+             )
+
+    # The Switch edu-ID and user account are left untouched (the transaction
+    # rolled back, so used-at, version and updated-at were not bumped) and no
+    # session, event, telemetry or broadcast was produced.
+    assert [^switch_edu_id] = Repo.all(SwitchEduId)
+
+    assert Repo.all(UserAccount) == [
+             %{
+               user_account
+               | switch_edu_id: not_loaded(:switch_edu_id, UserAccount),
+                 preregistered_user: not_loaded(:preregistered_user, UserAccount)
+             }
+           ]
+
+    assert [] = Repo.all(UserSession)
+    assert_no_stored_events!()
+    refute_login_telemetry()
+    refute_preregistered_user_broadcast()
   end
 
   defp assert_auth(auth, username, root) do
@@ -454,6 +529,40 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
   defp refute_preregistered_user_broadcast do
     refute_received {:preregistered_user_updated, _payload}
+  end
+
+  # Inserts a Switch edu-ID identity and builds login data that matches it: the
+  # same unique identifier (so the use case finds and updates the existing
+  # identity rather than creating a new one) and the same name (so logging in
+  # does not touch its `updated_at` — see
+  # assert_user_session_for_existing_user).
+  defp insert_existing_switch_edu_id(emails) do
+    switch_edu_id =
+      AccountsFactory.insert(:switch_edu_id,
+        swiss_edu_person_unique_id: "foobar",
+        first_name: "John",
+        last_name: "Doe",
+        now: @now
+      )
+
+    login_data =
+      AccountsFactory.build(:switch_edu_id_login_data,
+        emails: emails,
+        first_name: "John",
+        last_name: "Doe",
+        swiss_edu_person_unique_id: "foobar"
+      )
+
+    {switch_edu_id, login_data}
+  end
+
+  defp link_student_to_user_account(%{id: student_id}, %UserAccount{id: user_account_id}) do
+    {1, nil} =
+      Repo.update_all(from(s in Student, where: s.id == ^student_id),
+        set: [user_id: user_account_id]
+      )
+
+    :ok
   end
 
   defp assert_registered_event(
@@ -584,7 +693,77 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     logged_in_event
   end
 
-  defp assert_user_session_for_new_user(
+  defp assert_user_session_for_new_user(event, auth, username, root, student \\ nil) do
+    preregistered_user =
+      if student do
+        expected_preregistered_user(student, auth.principal_id, student.version + 1, @now)
+      end
+
+    assert_persisted_user_session(
+      event,
+      auth,
+      %{username: username, root: root, version: 1, created_at: @now, updated_at: @now},
+      %{version: 1, created_at: @now, updated_at: @now},
+      preregistered_user
+    )
+  end
+
+  defp assert_user_session_for_existing_user(
+         event,
+         auth,
+         %UserAccount{} = user_account,
+         switch_edu_id,
+         root,
+         updated,
+         student \\ nil
+       ) do
+    # A pre-existing Switch edu-ID keeps its created/updated timestamps (the
+    # login data deliberately matches its name so nothing is touched); only its
+    # version is bumped and its used-at is refreshed. A brand new Switch edu-ID
+    # (login data passed instead of a struct) is fully stamped at `@now`.
+    switch_edu_id_attrs =
+      case switch_edu_id do
+        %SwitchEduId{} = existing ->
+          %{
+            version: existing.version + 1,
+            created_at: existing.created_at,
+            updated_at: existing.updated_at
+          }
+
+        _login_data ->
+          %{version: 1, created_at: @now, updated_at: @now}
+      end
+
+    preregistered_user =
+      if student do
+        expected_preregistered_user(
+          student,
+          user_account.id,
+          update_version_if(student, :student, updated),
+          if(updated in [true, :student], do: @now, else: student.updated_at)
+        )
+      end
+
+    assert_persisted_user_session(
+      event,
+      auth,
+      %{
+        username: user_account.username,
+        root: root,
+        version: update_version_if(user_account, :user_account, updated),
+        created_at: user_account.created_at,
+        updated_at: if(updated in [true, :user_account], do: @now, else: user_account.updated_at)
+      },
+      switch_edu_id_attrs,
+      preregistered_user
+    )
+  end
+
+  # Asserts the single persisted session (with its preloaded user account,
+  # Switch edu-ID identity and preregistered user) by exact equality. Callers
+  # supply the expected user-account and Switch edu-ID version/timestamps, which
+  # is the only thing that differs between registration and login.
+  defp assert_persisted_user_session(
          %StoredEvent{
            data: %{
              "switch_edu_id" => %{
@@ -602,9 +781,19 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
            session_id: session_id,
            session_token: session_token
          },
-         username,
-         root,
-         student \\ nil
+         %{
+           username: username,
+           root: root,
+           version: account_version,
+           created_at: account_created_at,
+           updated_at: account_updated_at
+         },
+         %{
+           version: switch_edu_id_version,
+           created_at: switch_edu_id_created_at,
+           updated_at: switch_edu_id_updated_at
+         },
+         preregistered_user
        ) do
     assert [%UserSession{} = user_session] = all_user_sessions()
 
@@ -627,36 +816,17 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                  first_name: first_name,
                  last_name: last_name,
                  swiss_edu_person_unique_id: swiss_edu_person_unique_id,
-                 version: 1,
-                 created_at: @now,
-                 updated_at: @now,
+                 version: switch_edu_id_version,
+                 created_at: switch_edu_id_created_at,
+                 updated_at: switch_edu_id_updated_at,
                  used_at: @now
                },
                switch_edu_id_id: switch_edu_id_id,
-               preregistered_user:
-                 if student do
-                   %PreregisteredUser{
-                     __meta__: loaded(PreregisteredUser, "students"),
-                     id: student.id,
-                     name: student.name,
-                     email: student.email,
-                     username: student.username,
-                     username_confirmed: student.username_confirmed,
-                     active: true,
-                     group: not_loaded(:group, PreregisteredUser),
-                     group_id: student.class_id,
-                     user_account: not_loaded(:user_account, PreregisteredUser),
-                     user_account_id: user_account_id,
-                     version: student.version + 1,
-                     updated_at: @now
-                   }
-                 else
-                   nil
-                 end,
-               preregistered_user_id: student && student.id,
-               version: 1,
-               created_at: @now,
-               updated_at: @now
+               preregistered_user: preregistered_user,
+               preregistered_user_id: preregistered_user && preregistered_user.id,
+               version: account_version,
+               created_at: account_created_at,
+               updated_at: account_updated_at
              },
              user_account_id: user_account_id,
              impersonated_user_account: nil,
@@ -664,109 +834,22 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
            }
   end
 
-  defp assert_user_session_for_existing_user(
-         %StoredEvent{
-           data: %{
-             "switch_edu_id" => %{
-               "id" => switch_edu_id_id,
-               "first_name" => first_name,
-               "last_name" => last_name,
-               "swiss_edu_person_unique_id" => swiss_edu_person_unique_id
-             },
-             "client_ip_address" => client_ip_address,
-             "client_user_agent" => client_user_agent
-           }
-         },
-         %Authentication{
-           principal_id: user_account_id,
-           session_id: session_id,
-           session_token: session_token
-         },
-         %UserAccount{id: user_account_id} = user_account,
-         switch_edu_id,
-         root,
-         updated,
-         student \\ nil
-       ) do
-    # A pre-existing Switch edu-ID keeps its created/updated timestamps (the
-    # login data deliberately matches its name so nothing is touched); only its
-    # version is bumped and its used-at is refreshed. A brand new Switch edu-ID
-    # (login data passed instead of a struct) is fully stamped at `@now`.
-    {switch_edu_id_created_at, switch_edu_id_updated_at, switch_edu_id_version} =
-      case switch_edu_id do
-        %SwitchEduId{} = existing ->
-          {existing.created_at, existing.updated_at, existing.version + 1}
-
-        _login_data ->
-          {@now, @now, 1}
-      end
-
-    assert [%UserSession{} = user_session] = all_user_sessions()
-
-    assert user_session == %UserSession{
-             __meta__: loaded(UserSession, "user_sessions"),
-             id: session_id,
-             token: session_token,
-             created_at: @now,
-             client_ip_address: client_ip_address,
-             client_user_agent: client_user_agent,
-             user_account: %UserAccount{
-               __meta__: loaded(UserAccount, "user_accounts"),
-               id: user_account_id,
-               username: user_account.username,
-               root: root,
-               active: true,
-               switch_edu_id: %SwitchEduId{
-                 __meta__: loaded(SwitchEduId, "switch_edu_ids"),
-                 id: switch_edu_id_id,
-                 first_name: first_name,
-                 last_name: last_name,
-                 swiss_edu_person_unique_id: swiss_edu_person_unique_id,
-                 version: switch_edu_id_version,
-                 created_at: switch_edu_id_created_at,
-                 updated_at: switch_edu_id_updated_at,
-                 used_at: @now
-               },
-               switch_edu_id_id: switch_edu_id_id,
-               preregistered_user:
-                 if student do
-                   %PreregisteredUser{
-                     __meta__: loaded(PreregisteredUser, "students"),
-                     id: student.id,
-                     name: student.name,
-                     email: student.email,
-                     username: student.username,
-                     username_confirmed: student.username_confirmed,
-                     active: true,
-                     group: not_loaded(:group, PreregisteredUser),
-                     group_id: student.class_id,
-                     user_account: not_loaded(:user_account, PreregisteredUser),
-                     user_account_id: user_account_id,
-                     version: update_version_if(student, :student, updated),
-                     updated_at:
-                       if updated == true or updated == :student do
-                         @now
-                       else
-                         student.updated_at
-                       end
-                   }
-                 else
-                   nil
-                 end,
-               preregistered_user_id: student && student.id,
-               version: update_version_if(user_account, :user_account, updated),
-               created_at: user_account.created_at,
-               updated_at:
-                 if updated == true or updated == :user_account do
-                   @now
-                 else
-                   user_account.updated_at
-                 end
-             },
-             user_account_id: user_account_id,
-             impersonated_user_account: nil,
-             impersonated_user_account_id: nil
-           }
+  defp expected_preregistered_user(student, user_account_id, version, updated_at) do
+    %PreregisteredUser{
+      __meta__: loaded(PreregisteredUser, "students"),
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      username: student.username,
+      username_confirmed: student.username_confirmed,
+      active: true,
+      group: not_loaded(:group, PreregisteredUser),
+      group_id: student.class_id,
+      user_account: not_loaded(:user_account, PreregisteredUser),
+      user_account_id: user_account_id,
+      version: version,
+      updated_at: updated_at
+    }
   end
 
   defp all_user_sessions do
