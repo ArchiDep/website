@@ -6,6 +6,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   import ArchiDep.Support.TelemetryTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
+  alias ArchiDep.Accounts.PubSub
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
@@ -83,6 +84,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
         now: @now
       )
 
+    subscribe_to_preregistered_user(student)
+
     switch_edu_id_login_data =
       AccountsFactory.build(:switch_edu_id_login_data,
         emails: [student.email],
@@ -108,6 +111,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       student
     )
     |> assert_user_session_for_new_user(auth, nil, false, student)
+
+    assert_preregistered_user_broadcast(student)
   end
 
   test "an unknown user cannot register even if their Switch edu-ID account is valid", %{
@@ -127,7 +132,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert [] = Repo.all(SwitchEduId)
     assert [] = Repo.all(UserAccount)
     assert [] = Repo.all(UserSession)
-
+    assert_no_stored_events!()
     refute_login_telemetry()
   end
 
@@ -154,7 +159,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert [^switch_edu_id] = Repo.all(SwitchEduId)
     assert [] = Repo.all(UserAccount)
     assert [] = Repo.all(UserSession)
-
+    assert_no_stored_events!()
     refute_login_telemetry()
   end
 
@@ -208,6 +213,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
     student_id = student.id
 
+    subscribe_to_preregistered_user(student)
+
     switch_edu_id =
       AccountsFactory.insert(:switch_edu_id,
         swiss_edu_person_unique_id: "foobar",
@@ -257,6 +264,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       false,
       student
     )
+
+    refute_preregistered_user_broadcast()
   end
 
   test "log in an existing student user account with Switch edu-ID when it has previous logged in with a link",
@@ -266,6 +275,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
     student_id = student.id
+
+    subscribe_to_preregistered_user(student)
 
     switch_edu_id_login_data =
       AccountsFactory.build(:switch_edu_id_login_data,
@@ -306,6 +317,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       :user_account,
       student
     )
+
+    assert_preregistered_user_broadcast(student)
   end
 
   test "log in an existing inactive student user account to a new student with Switch edu-ID", %{
@@ -313,6 +326,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   } do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
+
+    subscribe_to_preregistered_user(student)
 
     old_class = CourseFactory.insert(:class, active: false)
 
@@ -381,6 +396,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       true,
       student
     )
+
+    assert_preregistered_user_broadcast(student)
   end
 
   defp assert_auth(auth, username, root) do
@@ -415,6 +432,28 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
   defp refute_login_telemetry do
     refute_received {:telemetry_event, @login_telemetry_event, _data}
+  end
+
+  defp subscribe_to_preregistered_user(%{id: id, class_id: class_id}) do
+    :ok = PubSub.subscribe_preregistered_user(id)
+    :ok = PubSub.subscribe_user_group_preregistered_users(class_id)
+  end
+
+  defp assert_preregistered_user_broadcast(%{id: id}) do
+    # The use case broadcasts the updated preregistered user on two topics (the
+    # preregistered user itself and its user group), so two messages are
+    # expected, and no more.
+    #
+    # TODO DDD: assert the full payload by equality once the DDD refactoring
+    # stabilizes the broadcast shape. For now this is intentionally partial
+    # (message tag + id only) — see docs/testing.md.
+    assert_receive {:preregistered_user_updated, %PreregisteredUser{id: ^id}}
+    assert_receive {:preregistered_user_updated, %PreregisteredUser{id: ^id}}
+    refute_received {:preregistered_user_updated, _payload}
+  end
+
+  defp refute_preregistered_user_broadcast do
+    refute_received {:preregistered_user_updated, _payload}
   end
 
   defp assert_registered_event(
