@@ -39,6 +39,10 @@ config :archidep, ArchiDep.Servers, ArchiDep.Servers.ContextMock
 config :archidep, ArchiDep.Servers.Ansible, ArchiDep.Servers.Ansible.Mock
 config :archidep, ArchiDep.Http, ArchiDep.Http.Mock
 
+# Inject a mock clock so tests can pin the current time and assert exact
+# timestamps (see the testing guide in `docs/testing.md`).
+config :archidep, ArchiDep.Clock, ArchiDep.Clock.Mock
+
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 

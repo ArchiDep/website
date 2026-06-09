@@ -46,3 +46,10 @@ Hammox.defmock(ArchiDep.Http.Mock,
   Mock of the HTTP client.
   """
 )
+
+Hammox.defmock(ArchiDep.Clock.Mock,
+  for: ArchiDep.Clock.Behaviour,
+  moduledoc: """
+  Mock of the clock used to obtain the current time.
+  """
+)

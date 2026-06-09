@@ -218,13 +218,15 @@ asserts that every persisted and emitted timestamp equals exactly that instant
 **Inject the clock the same way contexts are injected, not by threading `now`
 through every function.** Adding a `now` argument to each public use case would
 leak a test concern into the contract; instead we use the dependency-injection
-pattern the web layer already uses for context mocks. A small `ArchiDep.Clock`
-behaviour (`now/0`) is resolved through `Application.compile_env!/2`, points at
-the real implementation in production, and points at a `Hammox.defmock`'d
-`ClockMock` in the test environment. Each test then sets the instant it wants:
+pattern the web layer already uses for context mocks. The `ArchiDep.Clock`
+facade (a `now/0` callback defined by `ArchiDep.Clock.Behaviour`) is resolved
+through `Application.compile_env!/2`: it points at `ArchiDep.Clock.SystemClock`
+in production and at the `Hammox.defmock`'d `ArchiDep.Clock.Mock` in the test
+environment. Business logic calls `ArchiDep.Clock.now/0` instead of
+`DateTime.utc_now/0`, and each test sets the instant it wants:
 
 ```elixir
-stub(ClockMock, :now, fn -> ~U[2025-01-01 12:00:00.000000Z] end)
+stub(ArchiDep.Clock.Mock, :now, fn -> ~U[2025-01-01 12:00:00.000000Z] end)
 ```
 
 The reason this works under `async: true` is the **same** reason the context
@@ -399,7 +401,7 @@ We use [Hammox][hammox] — which builds on [Mox][mox] and additionally verifies
 at runtime that expectations conform to the mocked behaviour's typespecs. Every
 context module has a behaviour, and mocks are defined with `Hammox.defmock` in
 `test/support/mocks.ex` (the per-context `ContextMock`s plus
-`ServerManagerMock`, `Ansible.Mock`, `Http.Mock`, and the `ClockMock` from [the
+`ServerManagerMock`, `Ansible.Mock`, `Http.Mock`, and the `Clock.Mock` from [the
 time section](#deterministic-time-via-an-injectable-clock)).
 
 Business-layer tests call the **real** use-case implementation (under
