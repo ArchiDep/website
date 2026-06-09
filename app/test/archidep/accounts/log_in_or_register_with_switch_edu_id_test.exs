@@ -3,6 +3,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
   import Ecto.Query, only: [from: 2]
   import Hammox
+  import ArchiDep.Support.TelemetryTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
@@ -26,10 +27,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   @now ~U[2024-03-15 10:30:00.000000Z]
   @session_validity_in_seconds 30 * 24 * 60 * 60
 
+  @login_telemetry_event [:archidep, :accounts, :auth, :login]
+
   setup :verify_on_exit!
 
-  setup do
+  setup context do
     stub(Clock.Mock, :now, fn -> @now end)
+    attach_telemetry_handler!(context, @login_telemetry_event)
     :ok
   end
 
@@ -60,6 +64,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     auth
     |> assert_auth("root@archidep.ch", true)
+    |> assert_login_telemetry()
     |> assert_registered_event(metadata, "root@archidep.ch", switch_edu_id_login_data)
     |> assert_user_session_for_new_user(auth, "root@archidep.ch", true)
   end
@@ -95,6 +100,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     auth
     |> assert_auth(nil, false)
+    |> assert_login_telemetry()
     |> assert_registered_event(
       metadata,
       nil,
@@ -121,6 +127,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert [] = Repo.all(SwitchEduId)
     assert [] = Repo.all(UserAccount)
     assert [] = Repo.all(UserSession)
+
+    refute_login_telemetry()
   end
 
   test "an unknown user cannot register even if their Switch edu-ID account is in the database",
@@ -146,6 +154,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert [^switch_edu_id] = Repo.all(SwitchEduId)
     assert [] = Repo.all(UserAccount)
     assert [] = Repo.all(UserSession)
+
+    refute_login_telemetry()
   end
 
   test "log in an existing root user account with Switch edu-ID", %{
@@ -186,6 +196,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     auth
     |> assert_auth(@root_user_email, true)
+    |> assert_login_telemetry()
     |> assert_logged_in_event(metadata, user_account, switch_edu_id_login_data, false)
     |> assert_user_session_for_existing_user(auth, user_account, switch_edu_id, true, false)
   end
@@ -236,6 +247,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     auth
     |> assert_auth(user_account.username, false)
+    |> assert_login_telemetry()
     |> assert_logged_in_event(metadata, user_account, switch_edu_id_login_data, false, student)
     |> assert_user_session_for_existing_user(
       auth,
@@ -284,6 +296,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     auth
     |> assert_auth(user_account.username, false)
+    |> assert_login_telemetry()
     |> assert_logged_in_event(metadata, user_account, switch_edu_id_login_data, true, student)
     |> assert_user_session_for_existing_user(
       auth,
@@ -352,6 +365,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     auth
     |> assert_auth(user_account.username, false)
+    |> assert_login_telemetry()
     |> assert_logged_in_event(
       metadata,
       user_account,
@@ -387,6 +401,20 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
            }
 
     auth
+  end
+
+  defp assert_login_telemetry(%Authentication{principal_id: principal_id} = auth) do
+    assert assert_telemetry_event!(@login_telemetry_event) == %{
+             measurements: %{},
+             metadata: %{method: :switch_edu_id, principal_id: principal_id},
+             config: nil
+           }
+
+    auth
+  end
+
+  defp refute_login_telemetry do
+    refute_received {:telemetry_event, @login_telemetry_event, _data}
   end
 
   defp assert_registered_event(
