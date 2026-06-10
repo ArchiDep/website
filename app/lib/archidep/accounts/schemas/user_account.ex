@@ -179,10 +179,9 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
     |> validate()
   end
 
-  @spec new_preregistered_account(PreregisteredUser.t()) :: Changeset.t(t())
-  def new_preregistered_account(preregistered_user) do
+  @spec new_preregistered_account(PreregisteredUser.t(), DateTime.t()) :: Changeset.t(t())
+  def new_preregistered_account(preregistered_user, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     %__MODULE__{}
     |> change(

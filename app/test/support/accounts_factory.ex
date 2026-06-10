@@ -6,6 +6,7 @@ defmodule ArchiDep.Support.AccountsFactory do
   use ArchiDep.Support, :factory
 
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
+  alias ArchiDep.Accounts.Schemas.LoginLink
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserGroup
@@ -34,6 +35,56 @@ defmodule ArchiDep.Support.AccountsFactory do
       )
 
     user_session_factory(attrs_with_defaults)
+  end
+
+  @spec login_link_factory(map()) :: LoginLink.t()
+  def login_link_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+
+    {token, attrs!} =
+      Map.pop_lazy(attrs!, :token, fn -> :crypto.strong_rand_bytes(100) end)
+
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, fn -> true end)
+    {used_at, attrs!} = Map.pop(attrs!, :used_at, nil)
+
+    {preregistered_user, attrs!} = Map.pop(attrs!, :preregistered_user, nil)
+
+    {preregistered_user_id, attrs!} =
+      Map.pop_lazy(attrs!, :preregistered_user_id, fn ->
+        case preregistered_user do
+          %PreregisteredUser{} -> preregistered_user.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {user_account, attrs!} = Map.pop(attrs!, :user_account, nil)
+
+    {user_account_id, attrs!} =
+      Map.pop_lazy(attrs!, :user_account_id, fn ->
+        case user_account do
+          %UserAccount{} -> user_account.id
+          nil -> nil
+          _not_loaded -> UUID.generate()
+        end
+      end)
+
+    {now, attrs!} = pop_now(attrs!)
+    {created_at, attrs!} = pop_entity_created_at(attrs!, now)
+
+    [] = Map.keys(attrs!)
+
+    %LoginLink{
+      id: id,
+      token: token,
+      active: active,
+      used_at: used_at,
+      preregistered_user: preregistered_user,
+      preregistered_user_id: preregistered_user_id,
+      user_account: user_account,
+      user_account_id: user_account_id,
+      created_at: created_at
+    }
   end
 
   @spec preregistered_user_factory(map()) :: PreregisteredUser.t()

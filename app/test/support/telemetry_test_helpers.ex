@@ -15,11 +15,19 @@ defmodule ArchiDep.Support.TelemetryTestHelpers do
         handler_id,
         event,
         fn ^event, measurements, metadata, config ->
-          send(
-            test_pid,
-            {:telemetry_event, event,
-             %{measurements: measurements, metadata: metadata, config: config}}
-          )
+          # Telemetry handlers are global, so this handler fires for every
+          # emission of the event across the whole VM — including events emitted
+          # by other tests running concurrently under `async: true`. These use
+          # cases emit synchronously in the test process, so only forward events
+          # emitted by this test's own process to avoid cross-talk between tests
+          # that share an event name (see `docs/testing.md`).
+          if self() == test_pid do
+            send(
+              test_pid,
+              {:telemetry_event, event,
+               %{measurements: measurements, metadata: metadata, config: config}}
+            )
+          end
         end,
         nil
       )

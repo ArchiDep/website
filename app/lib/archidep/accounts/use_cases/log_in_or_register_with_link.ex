@@ -14,6 +14,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.ClientMetadata
+  alias ArchiDep.Clock
 
   @spec log_in_or_register_with_link(
           binary(),
@@ -79,7 +80,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
            preregistered_user,
          client_metadata
        ) do
-    now = DateTime.utc_now()
+    now = Clock.now()
 
     if PreregisteredUser.active?(preregistered_user, now) do
       Multi.new()
@@ -91,7 +92,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
       )
       |> Multi.update(
         :used_login_link,
-        LoginLink.mark_as_used_changeset(link)
+        LoginLink.mark_as_used_changeset(link, now)
       )
       |> Multi.insert(
         :stored_event,
@@ -107,11 +108,14 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
          %PreregisteredUser{user_account: nil} = preregistered_user,
          client_metadata
        ) do
-    now = DateTime.utc_now()
+    now = Clock.now()
 
     if PreregisteredUser.active?(preregistered_user, now) do
       Multi.new()
-      |> Multi.insert(:user_account, UserAccount.new_preregistered_account(preregistered_user))
+      |> Multi.insert(
+        :user_account,
+        UserAccount.new_preregistered_account(preregistered_user, now)
+      )
       |> Multi.update(
         :linked_preregistered_user,
         &PreregisteredUser.link_to_user_account(
@@ -126,7 +130,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
       )
       |> Multi.update(
         :used_login_link,
-        LoginLink.mark_as_used_changeset(link)
+        LoginLink.mark_as_used_changeset(link, now)
       )
       |> Multi.insert(
         :stored_event,

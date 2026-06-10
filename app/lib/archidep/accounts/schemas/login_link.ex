@@ -76,11 +76,11 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
     |> validate_required([:id, :token, :preregistered_user, :preregistered_user_id, :created_at])
   end
 
-  @spec mark_as_used_changeset(t()) :: Changeset.t(t())
-  def mark_as_used_changeset(%__MODULE__{} = login_link),
+  @spec mark_as_used_changeset(t(), DateTime.t()) :: Changeset.t(t())
+  def mark_as_used_changeset(%__MODULE__{} = login_link, now),
     do:
       login_link
-      |> change(%{used_at: DateTime.utc_now()})
+      |> change(%{used_at: now})
       |> optimistic_lock(:active, fn true -> false end)
       |> validate()
 
