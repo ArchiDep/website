@@ -125,6 +125,25 @@ DataCase + the real `UseCases.*` modules (optionally wrapped in
       already exists as a reference; extend the canon to
       `LogInOrRegisterWithLink` and `CreateLoginLinks`, confirm the conventions
       hold for the login-link path, get reviewed. _Scope:_ 2–3 use cases.
+      _Progress:_ `log_in_or_register_with_link_test.exs` has landed (9 branches,
+      clock injected into the login-link path); `CreateLoginLinks` still
+      remains, so this box stays unchecked until it is covered too.
+- [ ] **🔒 Security invariant — login links never authenticate a root account.**
+      A login link is a bearer token in a URL (it leaks via browser history,
+      proxy/server logs and `Referer` headers); root is the highest-privilege
+      principal, so a link must never grant it. Today this holds only by
+      accident — the account-reuse branch in `LogInOrRegisterWithLink` reuses
+      the linked account without checking `root`. Enforce it explicitly: in
+      `log_in_or_register_with_link.ex` match `%UserAccount{active: true, root:
+  false}` (so a `root: true` account fails closed with `:invalid_link`), and
+      confirm `CreateLoginLinks` has no path to target a root account. _Tests:_
+      on the consumption side, an active root account linked to a preregistered
+      user still yields `:invalid_link` (with no session, event, telemetry or
+      broadcast); on the generation side, `CreateLoginLinks` cannot produce a
+      link for a root account. The break-glass alternative for root users locked
+      out when Switch edu-ID is down is deliberately _not_ this mechanism — it
+      is tracked separately in
+      [`app/docs/future-work.md`](../app/docs/future-work.md).
 - [ ] **Accounts — session lifecycle use cases.** `Sessions`, `DeleteSession`,
       `LogOut`, `Impersonate`. Impersonation has its own authorization rules —
       assert them. _Scope:_ 4 use cases.
