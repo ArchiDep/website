@@ -36,6 +36,7 @@ that silently rots.
   - [Authorization and policy](#authorization-and-policy)
   - [Changeset and validation errors](#changeset-and-validation-errors)
   - [Covering every branch](#covering-every-branch)
+  - [Testing create use cases](#testing-create-use-cases)
   - [Factories](#factories)
   - [Contract-checking the real implementation](#contract-checking-the-real-implementation)
 - [Web layer (LiveViews & controllers)](#web-layer-liveviews--controllers)
@@ -405,10 +406,46 @@ assert them explicitly rather than relying on a single happy-path principal.
 
 ### Changeset and validation errors
 
-For use cases that validate input, assert the exact error returned for invalid
-data. Use `errors_on/1` from [`DataCase`][data-case] to assert the precise
-validation messages per field, and assert that the invalid call left no side
-effects.
+Validations live in the **schema changesets**, so that is where they are tested
+**exhaustively** — one case per rule, with the exact messages, in the schema's
+own unit test (see [`class_test.exs`][class-test], which covers every
+`teacher_ssh_public_keys` rule). Pure changeset validations need no database, so
+those tests build the changeset and call `errors_on/1` directly; a DB-backed
+validation (uniqueness) runs under `DataCase`.
+
+A **use case's** test does _not_ re-test every rule — that would duplicate the
+schema suite and let it rot in two places. It includes a **minimal smoke test**
+instead: drive the `{:error, changeset}` path with one representative invalid
+input (usually a missing required field) and assert the exact errors map _and_
+that the call left no side effects. That smoke test is not redundant — it pins
+what the schema test cannot: that the use case surfaces the invalid changeset as
+an error, rolls back, and writes/broadcasts/emits nothing.
+
+Repeat a _specific_ validation in the use case only when it is of particular
+interest at that boundary:
+
+- **DB-backed / uniqueness checks** (`unsafe_validate_unique` +
+  `unique_constraint`): they depend on pre-existing database state and on the
+  use case's transaction, so the use-case test verifies the conflict end to end —
+  it is rejected _and_ the transaction rolled everything back — which the schema
+  test does not. (The class name-uniqueness test is an example.)
+- **Business invariants and security-relevant rules** important enough to assert
+  at the boundary that enforces them (e.g. the login-link root invariant).
+
+This division applies to **schema** validations. Guards that live in the use
+case itself — authorization, input-format checks (`validate_uuid`),
+cross-context preconditions — have no schema test to defer to, so they are
+always covered in the use case's own test.
+
+**Choosing the right changeset is a use-case concern.** Schemas usually expose
+more than one changeset — commonly a create and an update one, with different
+cast lists, defaults, or locking. The schema test covers what each changeset
+does; proving the use case calls the _right_ one is the use-case test's job, and
+it is asserted through the observable result, not by spying on the call. When
+the distinction matters — a field settable on update but not on creation (or
+vice versa), a default applied only on create, a version bumped only on update —
+assert it: that the field is applied when it should be and ignored when it
+should not, in the persisted row and the emitted event.
 
 ### Covering every branch
 
@@ -418,6 +455,40 @@ single-match vs. zero-or-many cases, optimistic-lock conflicts, and so on. The
 [exemplar][exemplar] enumerates the register/login/unauthorized branches this
 way. Aim for one test per observable behaviour, each making the full set of
 assertions from the [checklist](#what-a-business-layer-test-must-assert).
+
+### Testing create use cases
+
+Our factories generate random-but-valid data, which keeps tests honest — but a
+single run rarely lands on the interesting combinations (every optional set, or
+none). So a "create" use case gets **three** happy-path tests, each pinning the
+full output exactly (the random one included — you pass the factory's output in,
+so you hold every value and assert against it):
+
+1. **Random** — let the factory fill as much as possible; pin only what the test
+   genuinely cannot run without (often nothing). Over many CI runs this
+   exercises field combinations no single pinned test would. For this to be
+   meaningful the factory must generate _every_ optional field (including ones
+   that are off-by-default), so extend the `*_data` factory if it doesn't.
+2. **Minimal** — only the required fields, every optional left out, pinning the
+   defaults the use case applies (empty lists, `nil`s). **Build this input by
+   hand** rather than via the factory, so the minimal valid set is explicit and
+   does not silently drift when the factory changes.
+3. **Full** — every optional set to a non-default value, so the test pins that
+   each one is persisted and audited. **Build this input by hand** too:
+   ExMachina has no trait system, so `build(:thing_data, :full)` does not work —
+   pass an explicit map (drawing valid values from sub-factories where useful,
+   e.g. SSH fingerprints).
+
+These complement, not replace, the error/branch tests (authorization failure,
+each validation failure, conflicts). A matching strategy for **update** use
+cases (e.g. an "update everything" and a "clear every optional" test) will be
+defined when we reach those.
+
+A worked example is [`create_class_test.exs`][create-class-test]. Writing the
+full test there surfaced two bugs where a field had been added to the schema but
+not propagated: the `ClassCreated` event and the `class_data` type both omitted
+the SSH host-key fingerprints — exactly the kind of gap the
+reconstruct-the-row-from-the-event rule and a full-set test are meant to catch.
 
 ### Factories
 
@@ -501,6 +572,8 @@ function components with Floki._
 [data-case]: ../test/support/data_case.ex
 [telemetry]: ../test/support/telemetry_test_helpers.ex
 [exemplar]: ../test/archidep/accounts/log_in_or_register_with_switch_edu_id_test.exs
+[create-class-test]: ../test/archidep/course/create_class_test.exs
+[class-test]: ../test/archidep/course/schemas/class_test.exs
 [ex-unit]: https://hexdocs.pm/ex_unit/ExUnit.html
 [ex-unit-doctests]: https://hexdocs.pm/ex_unit/ExUnit.DocTest.html
 [gen-server]: https://hexdocs.pm/elixir/GenServer.html

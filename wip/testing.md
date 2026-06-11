@@ -70,6 +70,7 @@ This is the bird's-eye view: each item links to its full description under
   - [ ] [Course — student use cases](#course--student-use-cases)
   - [ ] [Course — student import](#course--student-import)
   - [ ] [Course — remaining schemas](#course--remaining-schemas)
+  - [ ] [Course — backfill exhaustive schema validation tests](#course--backfill-exhaustive-schema-validation-tests)
   - [ ] 🧭 [Canon — accounts auth use cases](#canon--accounts-auth-use-cases)
   - [x] 🔒 [Security invariant — login links never authenticate a root account](#security-invariant--login-links-never-authenticate-a-root-account)
   - [ ] [Accounts — session lifecycle use cases](#accounts--session-lifecycle-use-cases)
@@ -159,6 +160,19 @@ how to assert emitted events
 (`fetch_new_stored_events`/`assert_no_stored_events!`), authorization/policy
 assertions, and factory usage. Get reviewed, refactor, agree. Output: a short
 "how we test the business layer" note + the reviewed example tests.
+_Progress:_ `create_class_test.exs` has landed as the first course-class
+exemplar, following the three-test create strategy now documented in
+`docs/testing.md` (random / minimal / full) plus the authorization, validation,
+uniqueness, and PubSub branches. The conventions refined on the accounts auth
+use cases transferred cleanly. Findings from the spike, all resolved: (1) the
+course path was not yet clock-injected, so `Class.new/1` became `Class.new/2`
+taking `now` (use case calls `Clock.now/0`), matching Accounts; (2) writing the
+"full" test surfaced two latent bugs where the SSH host-key fingerprints had
+been added to the schema but not propagated — the `ClassCreated` event and the
+`class_data` type both omitted them; both fixed (the event now carries them and
+the type lists them). One or two more class use cases (e.g. `UpdateClass`,
+`DeleteClass`) plus review remain before this box is checked; the update test
+strategy is to be defined when those are tackled.
 
 ### Course — class use cases (remainder)
 
@@ -177,8 +191,22 @@ worth its own chunk). _Scope:_ 1 use case + 1 schema.
 
 ### Course — remaining schemas
 
-`User`, `ExpectedServerProperties` (`Class`/`Student` already covered). _Scope:_
-2 schemas.
+`User`, `ExpectedServerProperties` (`Class`/`Student` partially covered — see the
+backfill task below). _Scope:_ 2 schemas.
+
+### Course — backfill exhaustive schema validation tests
+
+The canon makes each Ecto schema's unit test the **exhaustive** source of truth
+for its changeset validations, so use-case tests can stay thin (see [Changeset
+and validation errors](../app/docs/testing.md#changeset-and-validation-errors)).
+The existing `class_test.exs` and `student_test.exs` predate this and cover only
+a subset — e.g. `class_test.exs` asserts the `teacher_ssh_public_keys` rules but
+not the name length limit or the start/end-date ordering rule. Backfill them so
+every validation in `Class` and `Student` is asserted with exact messages,
+including each of a schema's changeset functions where they validate differently
+(e.g. `Class.new/2` vs. `Class.update/2` vs.
+`update_expected_server_properties/2`). New schema tests (`User`,
+`ExpectedServerProperties`) should be exhaustive from the start.
 
 ### Canon — accounts auth use cases
 

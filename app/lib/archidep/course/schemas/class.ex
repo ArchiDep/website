@@ -95,10 +95,9 @@ defmodule ArchiDep.Course.Schemas.Class do
       |> Repo.one()
       |> truthy_or(:class_not_found)
 
-  @spec new(Types.class_data()) :: Changeset.t(t())
-  def new(data) do
+  @spec new(Types.class_data(), DateTime.t()) :: Changeset.t(t())
+  def new(data, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     %__MODULE__{}
     |> cast(data, [

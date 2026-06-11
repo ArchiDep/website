@@ -15,7 +15,9 @@ defmodule ArchiDep.Course.Events.ClassCreated do
     :end_date,
     :active,
     :servers_enabled,
-    :teacher_ssh_public_keys
+    :teacher_ssh_public_keys,
+    :ssh_exercise_vm_md5_host_key_fingerprints,
+    :ssh_exercise_vm_sha256_host_key_fingerprints
   ]
   defstruct [
     :id,
@@ -24,7 +26,9 @@ defmodule ArchiDep.Course.Events.ClassCreated do
     :end_date,
     :active,
     :servers_enabled,
-    :teacher_ssh_public_keys
+    :teacher_ssh_public_keys,
+    :ssh_exercise_vm_md5_host_key_fingerprints,
+    :ssh_exercise_vm_sha256_host_key_fingerprints
   ]
 
   @type t :: %__MODULE__{
@@ -34,7 +38,9 @@ defmodule ArchiDep.Course.Events.ClassCreated do
           end_date: Date.t() | nil,
           active: boolean(),
           servers_enabled: boolean(),
-          teacher_ssh_public_keys: list(String.t())
+          teacher_ssh_public_keys: list(String.t()),
+          ssh_exercise_vm_md5_host_key_fingerprints: String.t() | nil,
+          ssh_exercise_vm_sha256_host_key_fingerprints: String.t() | nil
         }
 
   @spec new(Class.t()) :: t()
@@ -46,7 +52,9 @@ defmodule ArchiDep.Course.Events.ClassCreated do
       end_date: end_date,
       active: active,
       servers_enabled: servers_enabled,
-      teacher_ssh_public_keys: teacher_ssh_public_keys
+      teacher_ssh_public_keys: teacher_ssh_public_keys,
+      ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
+      ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints
     } = class
 
     %__MODULE__{
@@ -56,7 +64,9 @@ defmodule ArchiDep.Course.Events.ClassCreated do
       end_date: end_date,
       active: active,
       servers_enabled: servers_enabled,
-      teacher_ssh_public_keys: teacher_ssh_public_keys
+      teacher_ssh_public_keys: teacher_ssh_public_keys,
+      ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
+      ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints
     }
   end
 

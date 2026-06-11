@@ -4,6 +4,10 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
   import ArchiDep.Support.CourseFactory
   alias ArchiDep.Course.Schemas.Class
 
+  # These changeset validations do not depend on the creation timestamp; a fixed
+  # instant keeps the `Class.new/2` calls deterministic.
+  @now ~U[2024-01-01 08:00:00.000000Z]
+
   describe "validations" do
     test "accept valid SSH public keys" do
       valid_keys = [
@@ -14,7 +18,7 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
       changeset =
         :class_data
         |> build(teacher_ssh_public_keys: valid_keys)
-        |> Class.new()
+        |> Class.new(@now)
 
       assert errors_on(changeset) == %{}
     end
@@ -25,7 +29,7 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
       changeset =
         :class_data
         |> build(teacher_ssh_public_keys: [key, key])
-        |> Class.new()
+        |> Class.new(@now)
 
       assert errors_on(changeset) == %{
                teacher_ssh_public_keys: [
@@ -43,7 +47,7 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
       changeset =
         :class_data
         |> build(teacher_ssh_public_keys: keys)
-        |> Class.new()
+        |> Class.new(@now)
 
       assert errors_on(changeset) == %{
                teacher_ssh_public_keys: [
@@ -59,7 +63,7 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
       changeset =
         :class_data
         |> build(teacher_ssh_public_keys: [long_key])
-        |> Class.new()
+        |> Class.new(@now)
 
       assert errors_on(changeset) == %{
                teacher_ssh_public_keys: [
@@ -72,7 +76,7 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
       changeset =
         :class_data
         |> build(teacher_ssh_public_keys: [])
-        |> Class.new()
+        |> Class.new(@now)
 
       assert errors_on(changeset) == %{}
     end

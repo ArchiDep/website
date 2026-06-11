@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.CreateClass do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Events.ClassCreated
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
@@ -12,7 +13,7 @@ defmodule ArchiDep.Course.UseCases.CreateClass do
   @spec validate_class(Authentication.t(), Types.class_data()) :: Changeset.t()
   def validate_class(auth, data) do
     authorize!(auth, Policy, :course, :validate_class, nil)
-    Class.new(data)
+    Class.new(data, Clock.now())
   end
 
   @spec create_class(Authentication.t(), Types.class_data()) ::
@@ -20,8 +21,10 @@ defmodule ArchiDep.Course.UseCases.CreateClass do
   def create_class(auth, data) do
     authorize!(auth, Policy, :course, :create_class, nil)
 
+    now = Clock.now()
+
     case Multi.new()
-         |> Multi.insert(:class, Class.new(data))
+         |> Multi.insert(:class, Class.new(data, now))
          |> Multi.insert(:stored_event, &class_created(auth, &1.class))
          |> Repo.transaction() do
       {:ok, %{class: class}} ->
