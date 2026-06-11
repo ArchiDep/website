@@ -11,6 +11,7 @@ defmodule ArchiDep.Accounts.UseCases.CreateLoginLinks do
   alias ArchiDep.Accounts.Policy
   alias ArchiDep.Accounts.Schemas.LoginLink
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
+  alias ArchiDep.Clock
 
   @spec create_login_link_for_preregistered_user(Authentication.t(), UUID.t()) ::
           {:ok, LoginLink.t()} | {:error, :preregistered_user_not_found} | {:error, :unauthorized}
@@ -37,6 +38,8 @@ defmodule ArchiDep.Accounts.UseCases.CreateLoginLinks do
   end
 
   defp do_create_login_link_for_preregistered_user(auth, preregistered_user) do
+    now = Clock.now()
+
     case Multi.new()
          |> Multi.update_all(
            :deactivate_existing_links,
@@ -47,7 +50,7 @@ defmodule ArchiDep.Accounts.UseCases.CreateLoginLinks do
          )
          |> Multi.insert(
            :login_link,
-           LoginLink.new_token_for_preregistered_user_changeset(preregistered_user)
+           LoginLink.new_token_for_preregistered_user_changeset(preregistered_user, now)
          )
          |> Multi.insert(
            :stored_event,

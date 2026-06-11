@@ -71,7 +71,7 @@ This is the bird's-eye view: each item links to its full description under
   - [ ] [Course — student import](#course--student-import)
   - [ ] [Course — remaining schemas](#course--remaining-schemas)
   - [ ] 🧭 [Canon — accounts auth use cases](#canon--accounts-auth-use-cases)
-  - [ ] 🔒 [Security invariant — login links never authenticate a root account](#security-invariant--login-links-never-authenticate-a-root-account)
+  - [x] 🔒 [Security invariant — login links never authenticate a root account](#security-invariant--login-links-never-authenticate-a-root-account)
   - [ ] [Accounts — session lifecycle use cases](#accounts--session-lifecycle-use-cases)
   - [ ] [Accounts — schemas](#accounts--schemas)
   - [ ] [Events context](#events-context)
@@ -186,9 +186,11 @@ worth its own chunk). _Scope:_ 1 use case + 1 schema.
 `log_in_or_register_with_switch_edu_id_test.exs` already exists as a reference;
 extend the canon to `LogInOrRegisterWithLink` and `CreateLoginLinks`, confirm the
 conventions hold for the login-link path, get reviewed. _Scope:_ 2–3 use cases.
-_Progress:_ `log_in_or_register_with_link_test.exs` has landed (9 branches, clock
-injected into the login-link path); `CreateLoginLinks` still remains, so this box
-stays unchecked until it is covered too.
+_Progress:_ both login-link use cases are now covered —
+`log_in_or_register_with_link_test.exs` (consumption, 10 branches, clock injected
+into the consumption path) and `create_login_links_test.exs` (generation, 6
+branches, clock injected into the creation path). The box stays unchecked pending
+the canon sign-off (human review of and agreement on the conventions).
 
 ### Security invariant — login links never authenticate a root account
 
@@ -210,9 +212,12 @@ has landed in `log_in_or_register_with_link.ex` (the account-reuse clause now
 matches `%UserAccount{active: true, root: false}`, so a `root: true` account
 falls through and fails closed with `:invalid_link`), covered on the consumption
 side by `log_in_or_register_with_link_test.exs` ("a login link must never
-authenticate a root account"). The generation side — confirming `CreateLoginLinks`
-has no path to target a root account, with its test — still remains, so this box
-stays unchecked until it is covered too.
+authenticate a root account"). The generation side is covered too:
+`CreateLoginLinks` structurally only targets a preregistered user (there is no
+parameter or code path to a user account), and `create_login_links_test.exs`
+pins that the created link carries `user_account_id: nil` even when the student
+is linked to a root account — so a link can never be minted for a root account.
+Both sides done; box checked.
 
 ### Accounts — session lifecycle use cases
 

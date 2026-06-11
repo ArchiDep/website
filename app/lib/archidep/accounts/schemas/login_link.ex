@@ -57,10 +57,10 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
       |> Repo.one()
       |> truthy_or(:invalid_link)
 
-  @spec new_token_for_preregistered_user_changeset(PreregisteredUser.t()) :: Changeset.t(t())
-  def new_token_for_preregistered_user_changeset(preregistered_user) do
+  @spec new_token_for_preregistered_user_changeset(PreregisteredUser.t(), DateTime.t()) ::
+          Changeset.t(t())
+  def new_token_for_preregistered_user_changeset(preregistered_user, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
     token = :crypto.strong_rand_bytes(100)
 
     %__MODULE__{}

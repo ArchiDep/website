@@ -202,6 +202,27 @@ _and_ that exactly one row exists. Do this for every table the use case could
 plausibly write to, including tables it is _not_ supposed to touch, so a stray
 insert is caught.
 
+**Reconstruct the expected row from the audit event, not from the return
+value.** Assert the stored event _first_, then build each expected database row
+from the values that event carries — ids, foreign keys, `occurred_at` —
+supplying by hand only what the event deliberately omits, such as a redacted
+secret. This is the ordering the [exemplar][exemplar] uses: the event helper
+runs before the row/session helper, which receives the event and pulls fields
+out of it. It buys two things:
+
+- It proves the **event is a complete audit log.** If a column cannot be rebuilt
+  from the event payload — or implied by the event's _type_, e.g. a "link
+  created" event meaning `active: true` and `used_at: nil` — that is a gap in
+  the audit trail, surfaced here as a failing assertion rather than discovered
+  later. Genuinely sensitive values (tokens, password hashes) are the deliberate
+  exception: they are kept out of the event and passed into the row helper
+  separately.
+- It stops a row-assertion helper from being handed the use case's **own output
+  and silently checking it against itself.** Pass these helpers the event plus
+  the minimal extra inputs — never the returned struct. A helper that takes the
+  whole returned entity invites `assert Repo.get!(…) == returned`, which holds
+  by construction and proves nothing about what was actually persisted.
+
 ### Deterministic time via an injectable clock
 
 Timestamps are side effects and must be asserted exactly, not approximately. A
@@ -276,6 +297,18 @@ Injecting UUIDs would add ceremony for no behavioural coverage and would be _mor
 fragile than a clock: a fixed generator must yield distinct values per call, so
 the test would become coupled to call order and count. Bind and cross-reference
 instead.
+
+**Randomly generated secrets** — login-link tokens and the like — are bound and
+cross-referenced the same way, because their exact value is just as
+unpredictable. But unlike a UUID, a secret's _length_ encodes behaviour: it is
+the entropy that makes the secret unguessable. So assert a minimum byte length
+in addition to binding the value, so that shortening or emptying the secret
+fails a test:
+
+```elixir
+assert %LoginLink{token: token} = login_link
+assert byte_size(token) >= 32
+```
 
 ### Asserting PubSub broadcasts
 
