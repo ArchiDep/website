@@ -76,7 +76,13 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
 
   defp log_in_or_register_preregistered_user(
          link,
-         %PreregisteredUser{user_account: %UserAccount{active: true} = user_account} =
+         # Security invariant: a login link must never authenticate a root
+         # account. A link is a bearer token in a URL (it leaks via browser
+         # history, proxy/server logs and `Referer` headers), so it must never
+         # grant the highest-privilege principal. Matching `root: false` makes a
+         # `root: true` account fall through to the catch-all clause below and
+         # fail closed with `:invalid_link`.
+         %PreregisteredUser{user_account: %UserAccount{active: true, root: false} = user_account} =
            preregistered_user,
          client_metadata
        ) do

@@ -144,6 +144,14 @@ DataCase + the real `UseCases.*` modules (optionally wrapped in
       out when Switch edu-ID is down is deliberately _not_ this mechanism — it
       is tracked separately in
       [`app/docs/future-work.md`](../app/docs/future-work.md).
+      _Progress:_ enforcement has landed in `log_in_or_register_with_link.ex`
+      (the account-reuse clause now matches `%UserAccount{active: true, root:
+      false}`, so a `root: true` account falls through and fails closed with
+      `:invalid_link`), covered on the consumption side by
+      `log_in_or_register_with_link_test.exs` ("a login link must never
+      authenticate a root account"). The generation side — confirming
+      `CreateLoginLinks` has no path to target a root account, with its test —
+      still remains, so this box stays unchecked until it is covered too.
 - [ ] **Accounts — session lifecycle use cases.** `Sessions`, `DeleteSession`,
       `LogOut`, `Impersonate`. Impersonation has its own authorization rules —
       assert them. _Scope:_ 4 use cases.

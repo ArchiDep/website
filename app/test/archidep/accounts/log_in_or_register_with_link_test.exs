@@ -209,6 +209,43 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     assert_login_link_untouched(login_link)
   end
 
+  test "a login link must never authenticate a root account", %{
+    log_in_or_register_with_link: log_in_or_register_with_link
+  } do
+    class = CourseFactory.insert(:class, active: true, now: @now)
+    student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
+
+    subscribe_to_preregistered_user(student)
+
+    # Security invariant: a login link is a bearer token in a URL and must never
+    # grant the highest-privilege principal. A root account is standalone — its
+    # own `student_id` is null per the user_accounts_root_or_student_check
+    # constraint — but a student's `user_account_id` can still point at it,
+    # which loads the root account on the link's preregistered user and would
+    # otherwise reach the account-reuse branch. An active root account so linked
+    # must still fail closed.
+    user_account =
+      AccountsFactory.insert(:user_account,
+        root: true,
+        active: true,
+        switch_edu_id: nil,
+        now: @now
+      )
+
+    link_student_to_user_account(student, user_account)
+
+    login_link = insert_login_link(preregistered_user_id: student.id)
+
+    metadata = Factory.build(:client_metadata)
+
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+
+    assert_no_login_side_effects()
+    assert_user_account_untouched(user_account)
+    refute_preregistered_user_broadcast()
+    assert_login_link_untouched(login_link)
+  end
+
   test "a login link associated with a user account cannot be used to log in", %{
     log_in_or_register_with_link: log_in_or_register_with_link
   } do

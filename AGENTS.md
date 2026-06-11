@@ -68,6 +68,13 @@ instructions targeted towards AI agents.
     in the document.
   - When writing or modifying tests, follow the conventions in
     [`app/docs/testing.md`](./app/docs/testing.md).
+  - Keep code and test comments self-contained: do not reference short-lived
+    documentation (work-in-progress backlogs such as `wip/*.md`, future-work
+    docs, or specific sections that will eventually be removed), and do not
+    mention task-tracking concerns (e.g. which checkbox a change covers). Such
+    references rot when the document or section disappears. Explain the
+    reasoning directly instead. Stable docs (such as `app/docs/testing.md`) may
+    still be cited.
   - After editing Markdown documentation, run `npm run lint:md` (documented in
     [`./CONTRIBUTING.md`][contributing]) and fix any reported issues.
   - When you complete a task tracked by a checkbox in a backlog document (such
