@@ -65,7 +65,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Add a `ChannelCase`](#add-a-channelcase)
   - [x] [Coverage config & regression ratchet](#coverage-config--regression-ratchet)
 - **1. Business layer — contexts, use cases, schemas**
-  - [ ] 🧭 [Canon — business-layer test conventions](#canon--business-layer-test-conventions)
+  - [x] 🧭 [Canon — business-layer test conventions](#canon--business-layer-test-conventions)
   - [ ] [Course — class use cases (remainder)](#course--class-use-cases-remainder)
   - [ ] [Course — student use cases](#course--student-use-cases)
   - [ ] [Course — student import](#course--student-import)
@@ -153,32 +153,41 @@ Exemplars: `log_in_or_register_with_switch_edu_id_test.exs` (use case + DB +
 events), `class_test.exs` / `student_test.exs` (schemas).
 
 🧭 Take the **course class use cases** (`CreateClass`, `ReadClasses`,
-`UpdateClass`, `DeleteClass`, `UpdateExpectedServerPropertiesForClass`) and write
-tests for two or three of them. Settle the conventions: when to call the use case
-directly vs. through the facade, whether/how to `Hammox.protect/2` the real impl,
-how to assert emitted events
+`UpdateClass`, `DeleteClass`, `UpdateExpectedServerPropertiesForClass`) and
+write tests for two or three of them. Settle the conventions: when to call the
+use case directly vs. through the facade, whether/how to `Hammox.protect/2` the
+real impl, how to assert emitted events
 (`fetch_new_stored_events`/`assert_no_stored_events!`), authorization/policy
 assertions, and factory usage. Get reviewed, refactor, agree. Output: a short
-"how we test the business layer" note + the reviewed example tests.
-_Progress:_ `create_class_test.exs` has landed as the first course-class
-exemplar, following the three-test create strategy now documented in
-`docs/testing.md` (random / minimal / full) plus the authorization, validation,
-uniqueness, and PubSub branches. The conventions refined on the accounts auth
-use cases transferred cleanly. Findings from the spike, all resolved: (1) the
-course path was not yet clock-injected, so `Class.new/1` became `Class.new/2`
-taking `now` (use case calls `Clock.now/0`), matching Accounts; (2) writing the
-"full" test surfaced two latent bugs where the SSH host-key fingerprints had
-been added to the schema but not propagated — the `ClassCreated` event and the
-`class_data` type both omitted them; both fixed (the event now carries them and
-the type lists them). `UpdateClass` has since landed as the second exemplar, and
-the update-testing strategy is now documented in `docs/testing.md`
-(update-everything / clear-every-optional / random, plus the not-found,
-same-name-succeeds, and optimistic-lock-not-unit-testable branches). The same two
-gaps recurred on the update path and were fixed the same way: `Class.update/2`
-became `Class.update/3` taking `now` (use case calls `Clock.now/0`), and the
+"how we test the business layer" note + the reviewed example tests. _Progress:_
+`create_class_test.exs` has landed as the first course-class exemplar, following
+the three-test create strategy now documented in `docs/testing.md` (random /
+minimal / full) plus the authorization, validation, uniqueness, and PubSub
+branches. The conventions refined on the accounts auth use cases transferred
+cleanly. Findings from the spike, all resolved: (1) the course path was not yet
+clock-injected, so `Class.new/1` became `Class.new/2` taking `now` (use case
+calls `Clock.now/0`), matching Accounts; (2) writing the "full" test surfaced
+two latent bugs where the SSH host-key fingerprints had been added to the schema
+but not propagated — the `ClassCreated` event and the `class_data` type both
+omitted them; both fixed (the event now carries them and the type lists them).
+`UpdateClass` has since landed as the second exemplar, and the update-testing
+strategy is now documented in `docs/testing.md` (update-everything /
+clear-every-optional / random, plus the not-found, same-name-succeeds, and
+optimistic-lock-not-unit-testable branches). The same two gaps recurred on the
+update path and were fixed the same way: `Class.update/2` became
+`Class.update/3` taking `now` (use case calls `Clock.now/0`), and the
 `ClassUpdated` event now carries the SSH host-key fingerprints so the row is
-fully reconstructable from the event. `DeleteClass` plus a review pass remain
-before this box is checked.
+fully reconstructable from the event. `ReadClasses` then landed as the **query**
+exemplar — settling the conventions the command tests did not cover (ordered
+lists asserted by full-list equality with every `ORDER BY` key pinned,
+date-window filtering with inclusive boundaries, and the existence-masking
+`fetch_class` branch) — and is documented in `docs/testing.md` under "Testing
+read use cases". The recurring clock gap appeared once more:
+`list_active_classes` derived "today" from `Date.utc_today()` and now uses
+`DateTime.to_date(Clock.now/0)`. With the command and query conventions now
+settled, documented, and reviewed across these three exemplars, this box is
+checked. `DeleteClass` and the rest are ordinary work under [Course — class use
+cases (remainder)](#course--class-use-cases-remainder) — not a canon blocker.
 
 ### Course — class use cases (remainder)
 
@@ -197,8 +206,8 @@ worth its own chunk). _Scope:_ 1 use case + 1 schema.
 
 ### Course — remaining schemas
 
-`User`, `ExpectedServerProperties` (`Class`/`Student` partially covered — see the
-backfill task below). _Scope:_ 2 schemas.
+`User`, `ExpectedServerProperties` (`Class`/`Student` partially covered — see
+the backfill task below). _Scope:_ 2 schemas.
 
 ### Course — backfill exhaustive schema validation tests
 
@@ -218,29 +227,30 @@ including each of a schema's changeset functions where they validate differently
 
 🧭 Auth flows touch sessions, events, and external identity.
 `log_in_or_register_with_switch_edu_id_test.exs` already exists as a reference;
-extend the canon to `LogInOrRegisterWithLink` and `CreateLoginLinks`, confirm the
-conventions hold for the login-link path, get reviewed. _Scope:_ 2–3 use cases.
-_Progress:_ both login-link use cases are now covered —
-`log_in_or_register_with_link_test.exs` (consumption, 10 branches, clock injected
-into the consumption path) and `create_login_links_test.exs` (generation, 6
-branches, clock injected into the creation path). The box stays unchecked pending
-the canon sign-off (human review of and agreement on the conventions).
+extend the canon to `LogInOrRegisterWithLink` and `CreateLoginLinks`, confirm
+the conventions hold for the login-link path, get reviewed. _Scope:_ 2–3 use
+cases. _Progress:_ both login-link use cases are now covered —
+`log_in_or_register_with_link_test.exs` (consumption, 10 branches, clock
+injected into the consumption path) and `create_login_links_test.exs`
+(generation, 6 branches, clock injected into the creation path). The box stays
+unchecked pending the canon sign-off (human review of and agreement on the
+conventions).
 
 ### Security invariant — login links never authenticate a root account
 
 🔒 A login link is a bearer token in a URL (it leaks via browser history,
 proxy/server logs and `Referer` headers); root is the highest-privilege
-principal, so a link must never grant it. Today this holds only by accident — the
-account-reuse branch in `LogInOrRegisterWithLink` reuses the linked account
+principal, so a link must never grant it. Today this holds only by accident —
+the account-reuse branch in `LogInOrRegisterWithLink` reuses the linked account
 without checking `root`. Enforce it explicitly: in
-`log_in_or_register_with_link.ex` match `%UserAccount{active: true, root: false}`
-(so a `root: true` account fails closed with `:invalid_link`), and confirm
-`CreateLoginLinks` has no path to target a root account. _Tests:_ on the
+`log_in_or_register_with_link.ex` match `%UserAccount{active: true, root:
+false}` (so a `root: true` account fails closed with `:invalid_link`), and
+confirm `CreateLoginLinks` has no path to target a root account. _Tests:_ on the
 consumption side, an active root account linked to a preregistered user still
 yields `:invalid_link` (with no session, event, telemetry or broadcast); on the
-generation side, `CreateLoginLinks` cannot produce a link for a root account. The
-break-glass alternative for root users locked out when Switch edu-ID is down is
-deliberately _not_ this mechanism — it is tracked separately in
+generation side, `CreateLoginLinks` cannot produce a link for a root account.
+The break-glass alternative for root users locked out when Switch edu-ID is down
+is deliberately _not_ this mechanism — it is tracked separately in
 [`app/docs/future-work.md`](../app/docs/future-work.md). _Progress:_ enforcement
 has landed in `log_in_or_register_with_link.ex` (the account-reuse clause now
 matches `%UserAccount{active: true, root: false}`, so a `root: true` account

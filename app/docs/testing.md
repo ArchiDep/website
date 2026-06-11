@@ -37,6 +37,8 @@ that silently rots.
   - [Changeset and validation errors](#changeset-and-validation-errors)
   - [Covering every branch](#covering-every-branch)
   - [Testing create use cases](#testing-create-use-cases)
+  - [Testing update use cases](#testing-update-use-cases)
+  - [Testing read use cases](#testing-read-use-cases)
   - [Factories](#factories)
   - [Contract-checking the real implementation](#contract-checking-the-real-implementation)
 - [Web layer (LiveViews & controllers)](#web-layer-liveviews--controllers)
@@ -131,6 +133,14 @@ A test that leaves any of these unaddressed is incomplete, even if it passes.
   statements.
 - **Build vs. insert.** Use factory `build` for the input data you pass into the
   use case and factory `insert` for the pre-existing state the use case reads.
+- **Keep factory calls visible; don't wrap them in helpers.** Call
+  `Factory.insert(:thing, %{…})` directly at each call site rather than hiding
+  it behind a custom `insert_thing/1` helper — the wrapper obscures standard
+  ExMachina use and what the fixture actually is, for little gain. If a
+  non-trivial set of options genuinely repeats across call sites, hoist a plain
+  map of defaults in the test and merge per-call (`Map.merge(defaults, %{…})`)
+  rather than a helper function — but for a single flag, just inline it
+  (`Map.merge` is longer than repeating `active: true`).
 - **Verify mocks.** Use `setup :verify_on_exit!` so any contract-checked mock
   expectations are verified at the end of the test.
 
@@ -242,7 +252,10 @@ The practice: **inject the current time** rather than calling
 `DateTime.utc_now/0` deep inside a use case. The test fixes a known instant and
 asserts that every persisted and emitted timestamp equals exactly that instant
 (or a known offset from it — e.g. `session_expires_at == DateTime.add(now, 30,
-:day)`).
+:day)`). This applies to **dates** too: a use case that filters or stamps by
+"the current day" must derive it from the clock
+(`DateTime.to_date(Clock.now())`), not `Date.utc_today/0`, so the test can pin
+"today".
 
 **Inject the clock the same way contexts are injected, not by threading `now`
 through every function.** Adding a `now` argument to each public use case would
@@ -551,6 +564,49 @@ path — `Class.update` was not clock-injected, and the `ClassUpdated` event
 omitted the SSH host-key fingerprints — both fixed so timestamps are assertable
 and the row is fully reconstructable from the event.
 
+### Testing read use cases
+
+A read (query) use case writes nothing — no rows, events, broadcasts, or
+telemetry — so the [checklist](#what-a-business-layer-test-must-assert)
+collapses to two things: the **exact returned value** and the **absence of side
+effects** (`assert_no_stored_events!()`; reads publish nothing, so there is no
+broadcast to await). Insert the pre-existing state with factory `insert` and
+assert the return against those fixtures by full equality (the insert-returned
+struct equals the re-read row).
+
+- **Assert lists by full-list equality, in order.** Pin _every_ `ORDER BY` key
+  in the fixtures so the expected order is unambiguous, and insert them out of
+  order so the test proves the query sorts rather than returning insertion
+  order. Include a fixture that forces each tie-break (two rows equal on all
+  earlier keys, differing only on the next), and one that exercises `NULL`
+  ordering (PostgreSQL sorts `NULL`s first under `desc`) — a reviewer who
+  changes the clause should break the test. Where a sort key is irrelevant to a
+  given fixture's position, let the factory auto-generate it (e.g. unique names)
+  rather than inventing values.
+- **Test the empty case.** With no matching rows the use case returns `[]` (or
+  its documented empty value), still with no side effects — a distinct branch
+  from the populated list, and a cheap guard against a query that, say, only
+  works once a row exists.
+- **Cover each filter branch and boundary with one fixture.** For a windowed
+  query, insert one row per reason to include (inside the window, open-ended
+  bounds) and one per reason to exclude (each predicate that fails), plus rows
+  exactly on each inclusive boundary. Assert the result contains exactly the
+  included rows. Any "now"/"today" the filter depends on must come from the
+  injected clock (see [Deterministic
+  time](#deterministic-time-via-an-injectable-clock)) so the window is
+  deterministic.
+- **Existence-masking on single-resource reads.** When a `fetch`/`get` use case
+  hides authorization failures as "not found" (so it cannot leak the existence
+  of a resource the caller may not see), assert that an unauthorized caller gets
+  the exact same not-found result as for an unknown id — not an authorization
+  error and not a raise.
+
+A worked example is [`read_classes_test.exs`][read-classes-test]. Writing it
+surfaced the same class of gap as the create/update spikes:
+`list_active_classes` derived "today" from `Date.utc_today()` instead of the
+injected clock, so it could not be tested deterministically; it now uses
+`DateTime.to_date(Clock.now())`.
+
 ### Factories
 
 We use [ExMachina][ex-machina] factories scoped per context.
@@ -635,6 +691,7 @@ function components with Floki._
 [exemplar]: ../test/archidep/accounts/log_in_or_register_with_switch_edu_id_test.exs
 [create-class-test]: ../test/archidep/course/create_class_test.exs
 [update-class-test]: ../test/archidep/course/update_class_test.exs
+[read-classes-test]: ../test/archidep/course/read_classes_test.exs
 [class-test]: ../test/archidep/course/schemas/class_test.exs
 [ex-unit]: https://hexdocs.pm/ex_unit/ExUnit.html
 [ex-unit-doctests]: https://hexdocs.pm/ex_unit/ExUnit.DocTest.html

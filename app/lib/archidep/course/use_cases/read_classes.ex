@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.Schemas.Class
 
@@ -30,6 +31,6 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
   @spec list_active_classes(Authentication.t()) :: list(Class.t())
   def list_active_classes(auth) do
     authorize!(auth, Policy, :course, :list_active_classes, nil)
-    Class.list_active_classes(Date.utc_today())
+    Class.list_active_classes(DateTime.to_date(Clock.now()))
   end
 end
