@@ -58,6 +58,18 @@ defmodule ArchiDep.Support.DataCase do
   def not_loaded(field, owner),
     do: %NotLoaded{__field__: field, __owner__: owner, __cardinality__: :one}
 
+  # Stored-event payloads serialise dates to ISO-8601 strings (via Jason), so
+  # tests that reconstruct an expected event payload, or rebuild a row from one,
+  # convert between `Date` structs and those strings with these helpers.
+
+  @spec date_to_iso8601(Date.t() | nil) :: String.t() | nil
+  def date_to_iso8601(nil), do: nil
+  def date_to_iso8601(%Date{} = date), do: Date.to_iso8601(date)
+
+  @spec date_from_iso8601(String.t() | nil) :: Date.t() | nil
+  def date_from_iso8601(nil), do: nil
+  def date_from_iso8601(iso) when is_binary(iso), do: Date.from_iso8601!(iso)
+
   @spec assert_no_stored_events!() :: :ok
   def assert_no_stored_events! do
     assert Repo.all(StoredEvent) == []

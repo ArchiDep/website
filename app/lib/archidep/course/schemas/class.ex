@@ -127,10 +127,9 @@ defmodule ArchiDep.Course.Schemas.Class do
     end)
   end
 
-  @spec update(t(), Types.class_data()) :: Changeset.t(t())
-  def update(class, data) do
+  @spec update(t(), Types.class_data(), DateTime.t()) :: Changeset.t(t())
+  def update(class, data, now) do
     id = class.id
-    now = DateTime.utc_now()
 
     class
     |> cast(data, [

@@ -170,9 +170,15 @@ taking `now` (use case calls `Clock.now/0`), matching Accounts; (2) writing the
 "full" test surfaced two latent bugs where the SSH host-key fingerprints had
 been added to the schema but not propagated — the `ClassCreated` event and the
 `class_data` type both omitted them; both fixed (the event now carries them and
-the type lists them). One or two more class use cases (e.g. `UpdateClass`,
-`DeleteClass`) plus review remain before this box is checked; the update test
-strategy is to be defined when those are tackled.
+the type lists them). `UpdateClass` has since landed as the second exemplar, and
+the update-testing strategy is now documented in `docs/testing.md`
+(update-everything / clear-every-optional / random, plus the not-found,
+same-name-succeeds, and optimistic-lock-not-unit-testable branches). The same two
+gaps recurred on the update path and were fixed the same way: `Class.update/2`
+became `Class.update/3` taking `now` (use case calls `Clock.now/0`), and the
+`ClassUpdated` event now carries the SSH host-key fingerprints so the row is
+fully reconstructable from the event. `DeleteClass` plus a review pass remain
+before this box is checked.
 
 ### Course — class use cases (remainder)
 

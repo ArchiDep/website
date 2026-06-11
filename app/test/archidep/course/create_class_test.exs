@@ -240,8 +240,8 @@ defmodule ArchiDep.Course.CreateClassTest do
              data: %{
                "id" => id,
                "name" => data.name,
-               "start_date" => date_to_iso(data.start_date),
-               "end_date" => date_to_iso(data.end_date),
+               "start_date" => date_to_iso8601(data.start_date),
+               "end_date" => date_to_iso8601(data.end_date),
                "active" => data.active,
                "servers_enabled" => data.servers_enabled,
                "teacher_ssh_public_keys" => data.teacher_ssh_public_keys,
@@ -284,8 +284,8 @@ defmodule ArchiDep.Course.CreateClassTest do
              __meta__: loaded(Class, "classes"),
              id: id,
              name: name,
-             start_date: parse_date(start_date),
-             end_date: parse_date(end_date),
+             start_date: date_from_iso8601(start_date),
+             end_date: date_from_iso8601(end_date),
              active: active,
              servers_enabled: servers_enabled,
              teacher_ssh_public_keys: teacher_ssh_public_keys,
@@ -326,12 +326,6 @@ defmodule ArchiDep.Course.CreateClassTest do
         preload: [:expected_server_properties]
     )
   end
-
-  defp date_to_iso(nil), do: nil
-  defp date_to_iso(%Date{} = date), do: Date.to_iso8601(date)
-
-  defp parse_date(nil), do: nil
-  defp parse_date(iso) when is_binary(iso), do: Date.from_iso8601!(iso)
 
   defp assert_only_one_class_persisted do
     # Exactly one class and its one (blank) expected server properties row, and

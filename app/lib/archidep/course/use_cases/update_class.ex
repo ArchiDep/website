@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.UpdateClass do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
@@ -15,7 +16,7 @@ defmodule ArchiDep.Course.UseCases.UpdateClass do
     with :ok <- validate_uuid(id, :class_not_found),
          {:ok, class} <- Class.fetch_class(id) do
       authorize!(auth, Policy, :course, :validate_existing_class, class)
-      {:ok, Class.update(class, data)}
+      {:ok, Class.update(class, data, Clock.now())}
     end
   end
 
@@ -26,12 +27,14 @@ defmodule ArchiDep.Course.UseCases.UpdateClass do
          {:ok, class} <- Class.fetch_class(id) do
       authorize!(auth, Policy, :course, :update_class, class)
 
+      now = Clock.now()
+
       case Multi.new()
-           |> Multi.update(:class, Class.update(class, data))
+           |> Multi.update(:class, Class.update(class, data, now))
            |> Multi.insert(:stored_event, &class_updated(auth, &1.class))
            |> Repo.transaction() do
         {:ok, %{class: updated_class, stored_event: event}} ->
-          :ok = PubSub.publish_class_updated(updated_class, event)
+          :ok = PubSub.publish_class_updated(updated_class, StoredEvent.to_reference(event))
           {:ok, updated_class}
 
         {:error, :class, changeset, _changes} ->

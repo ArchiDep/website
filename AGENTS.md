@@ -57,6 +57,12 @@ instructions targeted towards AI agents.
 - **General Guidance**
   - Explain your reasoning for any non-trivial code edits or suggestions.
   - When in doubt, ask for clarification or provide options.
+  - When a reviewer points out that you missed a documented guideline or
+    convention, treat it as a process problem, not just a one-off fix. Take the
+    time to work out _why_ it was missed and what durable change would stop it
+    recurring — clarifying the guideline itself, the relevant docs, or these
+    instructions — then apply or proactively propose that change in the same
+    turn, in addition to fixing the specific instance.
 
 - **Editing Behavior**
   - Never make commits; a human will review and commit changes.

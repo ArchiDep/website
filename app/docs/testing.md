@@ -116,12 +116,19 @@ A test that leaves any of these unaddressed is incomplete, even if it passes.
   (`<use_case>_test.exs`) and the module after it. If it grows unwieldy, split
   it into multiple files by branch, but avoid grouping multiple use cases in one
   file unless their tests are trivially short.
-- **Group assertions into composable private helpers.** Each helper makes the
-  exact assertions for one concern (the auth result, the stored event, the
-  resulting session, …) and returns a value the next helper consumes, so a test
-  body reads as a short pipeline. See `assert_auth/3`,
+- **Group assertions into composable private helpers, chained with `|>`.** Each
+  helper makes the exact assertions for one concern (the auth result, the stored
+  event, the resulting session, …) and returns the value the next helper
+  consumes, so the main assertions form a single `|>` pipeline rather than a
+  sequence of separate statements. See `assert_auth/3`,
   `assert_registered_event/5`, and `assert_user_session_for_new_user/5` in the
-  [exemplar][exemplar].
+  [exemplar][exemplar], and `assert_updated_class/3` →
+  `assert_class_updated_event/3` → `assert_persisted_class/2` in
+  [`update_class_test.exs`][update-class-test]. When a later step also needs a
+  value produced earlier in the chain, keep that value bound in the test (e.g.
+  the struct pattern-matched from the use-case call) or have a helper thread it
+  through its return value — do not abandon the pipeline for separate
+  statements.
 - **Build vs. insert.** Use factory `build` for the input data you pass into the
   use case and factory `insert` for the pre-existing state the use case reads.
 - **Verify mocks.** Use `setup :verify_on_exit!` so any contract-checked mock
@@ -480,15 +487,69 @@ so you hold every value and assert against it):
    e.g. SSH fingerprints).
 
 These complement, not replace, the error/branch tests (authorization failure,
-each validation failure, conflicts). A matching strategy for **update** use
-cases (e.g. an "update everything" and a "clear every optional" test) will be
-defined when we reach those.
+each validation failure, conflicts). The matching strategy for **update** use
+cases is in [Testing update use cases](#testing-update-use-cases).
 
 A worked example is [`create_class_test.exs`][create-class-test]. Writing the
 full test there surfaced two bugs where a field had been added to the schema but
 not propagated: the `ClassCreated` event and the `class_data` type both omitted
 the SSH host-key fingerprints — exactly the kind of gap the
 reconstruct-the-row-from-the-event rule and a full-set test are meant to catch.
+
+### Testing update use cases
+
+An update use case starts from an existing persisted record, so its tests must
+prove two things a create test cannot: that the supplied fields _overwrite_ the
+prior values, and that the record's `version` and `updated_at` advance while its
+identity and `created_at` stay fixed. Insert the starting record with a factory,
+then read it back from the database as the baseline to assert against (the
+factory randomises `version`/`created_at`, so derive every expected value from
+that persisted baseline rather than pinning it). Reconstruct the expected row
+from the **audit event** for every field the event carries, and take only what
+the update genuinely leaves untouched (`created_at`, unrelated associations)
+from the baseline.
+
+Like a create, an update gets **three** happy-path tests, each pinning the full
+output exactly. The first two are mirror images that together exercise every
+optional in both transition directions:
+
+1. **Update everything** — start from a **minimal** record (every optional at
+   its default) and update every field to a non-default value. This drives the
+   empty → set direction for each optional, and because every field differs
+   before/after, a field missing from the update changeset's cast list fails to
+   change and is caught. Build both the minimal starting record and the full
+   update map by hand (drawing valid values from sub-factories where useful).
+2. **Clear every optional** — start from a **fully-populated** record and reset
+   every optional to its default. This drives the set → empty direction and pins
+   that the update overwrites previously-set values rather than retaining them —
+   a failure mode unique to update. Build the input by hand.
+3. **Random** — start from a random record and update with the factory's
+   `*_data` output, exercising field combinations across CI runs.
+
+These complement the error/branch tests, which for an update add paths a create
+has no equivalent of:
+
+- **Not found** — a well-formed but unknown id returns the not-found error with
+  no side effects. If the use case reports not-found _before_ its authorization
+  check, assert that an unauthorized caller still gets not-found (not an
+  authorization error) for an unknown id. A malformed (non-UUID) id cannot be
+  exercised through a `Hammox.protect`ed use case whose contract types the id as
+  `Ecto.UUID.t()` — the guard against it belongs to the schema/web layer.
+- **Same-value uniqueness** — a uniqueness check that excludes the record being
+  updated must let it keep its own value; assert that re-saving the record with
+  its current name succeeds, alongside the usual "rename to another record's
+  name is rejected" test.
+- **Optimistic-lock conflict** — when the use case re-fetches the record and
+  accepts no caller-supplied version, a stale-version conflict cannot be
+  triggered deterministically from a single process, so it is not unit-tested;
+  the version _bump_ is still asserted in every happy-path test. Use cases that
+  _do_ take a caller-supplied version should test the conflict.
+
+A worked example is [`update_class_test.exs`][update-class-test]. As with the
+create spike, writing it surfaced the same two propagation gaps on the update
+path — `Class.update` was not clock-injected, and the `ClassUpdated` event
+omitted the SSH host-key fingerprints — both fixed so timestamps are assertable
+and the row is fully reconstructable from the event.
 
 ### Factories
 
@@ -573,6 +634,7 @@ function components with Floki._
 [telemetry]: ../test/support/telemetry_test_helpers.ex
 [exemplar]: ../test/archidep/accounts/log_in_or_register_with_switch_edu_id_test.exs
 [create-class-test]: ../test/archidep/course/create_class_test.exs
+[update-class-test]: ../test/archidep/course/update_class_test.exs
 [class-test]: ../test/archidep/course/schemas/class_test.exs
 [ex-unit]: https://hexdocs.pm/ex_unit/ExUnit.html
 [ex-unit-doctests]: https://hexdocs.pm/ex_unit/ExUnit.DocTest.html
