@@ -298,17 +298,24 @@ fragile than a clock: a fixed generator must yield distinct values per call, so
 the test would become coupled to call order and count. Bind and cross-reference
 instead.
 
-**Randomly generated secrets** — login-link tokens and the like — are bound and
-cross-referenced the same way, because their exact value is just as
-unpredictable. But unlike a UUID, a secret's _length_ encodes behaviour: it is
-the entropy that makes the secret unguessable. So assert a minimum byte length
-in addition to binding the value, so that shortening or emptying the secret
-fails a test:
+**Randomly generated secrets** — login-link tokens, session tokens — are bound
+and cross-referenced the same way, because their exact value is just as
+unpredictable. But unlike a UUID, a secret's _quality_ encodes behaviour: its
+length and its randomness are the entropy that makes it unguessable. So assert
+those properties in addition to binding the value, using the
+`assert_secure_random_token/1` helper (from
+`ArchiDep.Support.TokenTestHelpers`), so that shortening, emptying, or
+substituting a low-entropy placeholder (`"seeeeeecret"`) for the secret fails a
+test:
 
 ```elixir
 assert %LoginLink{token: token} = login_link
-assert byte_size(token) >= 32
+assert_secure_random_token(token)
 ```
+
+The helper asserts a minimum byte length _and_ a minimum number of distinct byte
+values — a cheap entropy floor that random `:crypto.strong_rand_bytes/1` output
+clears comfortably while a hand-written constant does not.
 
 ### Asserting PubSub broadcasts
 

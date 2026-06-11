@@ -4,6 +4,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
   import Ecto.Query, only: [from: 2]
   import Hammox
   import ArchiDep.Support.TelemetryTestHelpers
+  import ArchiDep.Support.TokenTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
   alias ArchiDep.Accounts.PubSub
@@ -295,6 +296,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
              session_id: session_id,
              session_token: session_token
            } = auth
+
+    assert_secure_random_token(session_token)
 
     assert auth == %Authentication{
              principal_id: user_account_id,

@@ -4,6 +4,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   import Ecto.Query, only: [from: 2]
   import Hammox
   import ArchiDep.Support.TelemetryTestHelpers
+  import ArchiDep.Support.TokenTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
   alias ArchiDep.Accounts.PubSub
@@ -482,6 +483,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              session_token: session_token
            } = auth
 
+    assert_secure_random_token(session_token)
+
     assert auth == %Authentication{
              principal_id: user_account_id,
              username: username,
@@ -760,9 +763,17 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   end
 
   # Asserts the single persisted session (with its preloaded user account,
-  # Switch edu-ID identity and preregistered user) by exact equality. Callers
-  # supply the expected user-account and Switch edu-ID version/timestamps, which
-  # is the only thing that differs between registration and login.
+  # Switch edu-ID identity and preregistered user) by exact equality. Following
+  # the audit-log discipline (see `docs/testing.md`), the values the event
+  # carries — the Switch edu-ID identity and the client metadata — are read
+  # back out of the already-asserted stored event rather than re-passed, which
+  # proves the event captures everything needed to reconstruct that part of the
+  # row; and taking the event rather than the returned session avoids checking
+  # the row against the use case's own output. The session token is bound from
+  # the returned auth instead, since it is a secret deliberately kept out of
+  # the event. Callers supply the expected user-account and Switch edu-ID
+  # version/timestamps, the only thing that differs between registration and
+  # login.
   defp assert_persisted_user_session(
          %StoredEvent{
            data: %{

@@ -3,6 +3,7 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
 
   import Ecto.Query, only: [from: 2]
   import Hammox
+  import ArchiDep.Support.TokenTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
   alias ArchiDep.Accounts.Schemas.LoginLink
@@ -21,12 +22,6 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
   # so that every timestamp produced by the use case can be asserted exactly
   # (see docs/testing.md).
   @now ~U[2024-03-15 10:30:00.000000Z]
-
-  # A login-link token is a bearer secret, so its randomly generated value
-  # cannot be pinned — but its length is a security property (entropy) that a bug
-  # could silently weaken, so we assert a conservative floor. The implementation
-  # currently generates 100 bytes.
-  @minimum_token_bytes 32
 
   setup :verify_on_exit!
 
@@ -184,13 +179,13 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
   # bound to the preregistered user (with its association echoed back as the use
   # case loaded it) and to no user account, stamped at the pinned instant. The
   # token cannot be pinned to an exact value, so it is bound for cross-reference
-  # and separately checked to carry at least the minimum expected entropy.
+  # and separately checked to look like a securely generated secret.
   defp assert_created_login_link(
          %LoginLink{} = login_link,
          %PreregisteredUser{} = preregistered_user
        ) do
     assert %LoginLink{id: id, token: token} = login_link
-    assert byte_size(token) >= @minimum_token_bytes
+    assert_secure_random_token(token)
 
     assert login_link == %LoginLink{
              __meta__: loaded(LoginLink, "login_links"),
