@@ -167,8 +167,11 @@ defmodule ArchiDep.Course.CreateClassTest do
     assert [persisted] = Repo.all(Class)
     assert persisted.id == existing.id
     assert [_only_one] = Repo.all(ExpectedServerProperties)
+
+    # No event stored already proves no broadcast (the use case broadcasts only
+    # after the creation commits); the rejected creation has no class ID to
+    # scope a refute to.
     assert_no_stored_events!()
-    refute_class_created_broadcast()
   end
 
   test "validate valid class data without creating anything", %{validate_class: validate_class} do
@@ -184,6 +187,23 @@ defmodule ArchiDep.Course.CreateClassTest do
 
     assert %Changeset{} = changeset = validate_class.(auth, data)
     assert errors_on(changeset) == %{}
+
+    # Validation is side-effect free.
+    assert_no_class_persisted()
+  end
+
+  test "validate surfaces validation errors without creating anything", %{
+    validate_class: validate_class
+  } do
+    :ok = PubSub.subscribe_classes()
+
+    # One representative invalid value proves validation actually runs — the
+    # function returns the changeset either way, with the errors in it.
+    data = CourseFactory.build(:class_data, name: "")
+    auth = Factory.build(:authentication, root: true)
+
+    assert %Changeset{} = changeset = validate_class.(auth, data)
+    assert errors_on(changeset) == %{name: ["can't be blank"]}
 
     # Validation is side-effect free.
     assert_no_class_persisted()
@@ -334,22 +354,20 @@ defmodule ArchiDep.Course.CreateClassTest do
     assert [_only_one] = Repo.all(ExpectedServerProperties)
   end
 
-  defp assert_class_created_broadcast(%Class{} = class) do
-    assert_receive {:class_created, broadcast_class}
+  defp assert_class_created_broadcast(%Class{id: id} = class) do
+    # Pin the class ID so the assertions match only this test's broadcasts — the
+    # global "classes" topic is shared across async tests and not sandboxed (see
+    # docs/testing.md).
+    assert_receive {:class_created, %Class{id: ^id} = broadcast_class}
     assert broadcast_class == class
-    refute_received {:class_created, _payload}
+    refute_received {:class_created, %Class{id: ^id}}
   end
 
-  defp refute_class_created_broadcast do
-    refute_received {:class_created, _payload}
-  end
-
-  # Asserts the full set of effects that must NOT happen when no class is created:
-  # no class row, no expected-server-properties row, no event, no broadcast.
+  # Asserts no class was created: no class row, no properties row, no event
+  # (which also implies no broadcast, emitted only after the creation commits).
   defp assert_no_class_persisted do
     assert [] = Repo.all(Class)
     assert [] = Repo.all(ExpectedServerProperties)
     assert_no_stored_events!()
-    refute_class_created_broadcast()
   end
 end

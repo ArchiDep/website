@@ -97,6 +97,52 @@ defmodule ArchiDep.Support.DataCase do
   end
 
   @doc """
+  Captures each given schema's current row count, for `assert_row_count_diff/2`
+  or `assert_no_row_count_diff/1`. Snapshot before invoking the use case, then
+  assert how the counts changed afterwards.
+  """
+  @spec count_rows([module()]) :: %{module() => non_neg_integer()}
+  def count_rows(schemas),
+    do: Map.new(schemas, fn schema -> {schema, Repo.aggregate(schema, :count)} end)
+
+  @doc """
+  Asserts how the row counts captured by `count_rows/1` changed: each watched
+  table must have changed by exactly the delta given for it, and every watched
+  table _not_ listed in `expected_diff` must be unchanged. This states what a
+  use case did to the database as a difference rather than asserting absolute
+  counts.
+
+      previous_counts = count_rows([Class, ExpectedServerProperties, StoredEvent])
+      assert delete_class.(auth, class.id) == :ok
+      assert_row_count_diff(previous_counts, %{Class => -1, ExpectedServerProperties => -1, StoredEvent => 1})
+  """
+  @spec assert_row_count_diff(%{module() => non_neg_integer()}, %{module() => integer()}) :: :ok
+  def assert_row_count_diff(previous_counts, expected_diff) do
+    after_counts = count_rows(Map.keys(previous_counts))
+
+    actual_diff =
+      Map.new(previous_counts, fn {schema, before} -> {schema, after_counts[schema] - before} end)
+
+    expected_diff_with_zeros =
+      Map.new(previous_counts, fn {schema, _before} ->
+        {schema, Map.get(expected_diff, schema, 0)}
+      end)
+
+    assert actual_diff == expected_diff_with_zeros
+
+    :ok
+  end
+
+  @doc """
+  Asserts none of the row counts captured by `count_rows/1` changed — every
+  watched table has exactly as many rows as before. Use it to prove a rejected
+  or side-effect-free call (an error path, or a `validate_*` function) wrote
+  nothing.
+  """
+  @spec assert_no_row_count_diff(%{module() => non_neg_integer()}) :: :ok
+  def assert_no_row_count_diff(previous_counts), do: assert_row_count_diff(previous_counts, %{})
+
+  @doc """
   Sets up the sandbox based on the test tags.
   """
   @spec setup_sandbox(map()) :: :ok

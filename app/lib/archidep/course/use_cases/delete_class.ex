@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.DeleteClass do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
@@ -15,7 +16,7 @@ defmodule ArchiDep.Course.UseCases.DeleteClass do
          {:ok, class} <- Class.fetch_class(id) do
       authorize!(auth, Policy, :course, :delete_class, class)
 
-      now = DateTime.utc_now()
+      now = Clock.now()
 
       case Multi.new()
            |> Multi.delete(:class, Class.delete(class))

@@ -72,7 +72,12 @@ These apply to every layer; the per-layer sections build on them.
   test. See [Contract-checking the real
   implementation](#contract-checking-the-real-implementation).
 - **Run the tests you changed.** Prefer running specific files or directories
-  while iterating; see the testing commands in `CONTRIBUTING.md`.
+  while iterating; see the testing commands in `CONTRIBUTING.md`. When touching
+  `async: true` tests — especially ones asserting PubSub broadcasts or other
+  process-global state the SQL sandbox does not isolate — check their stability
+  with `mix test … --repeat-until-failure <n>`, which re-seeds each run and
+  stops at the first failure; a single green run can hide an ordering-dependent
+  race.
 
 ## Business layer
 
@@ -143,8 +148,13 @@ A test that leaves any of these unaddressed is incomplete, even if it passes.
   merged options (`Factory.insert(:thing, thing_attrs(extra))`). What matters is
   that the `Factory.insert`/`build` call stays visible at the call site; a
   builder that returns data is fine, a wrapper that performs the insert is not.
-  For a single flag, just inline it (the merge is longer than repeating
-  `active: true`).
+  For a single flag, just inline it (the merge is longer than repeating `active:
+true`). This holds even when a fixture needs **several interdependent
+  inserts** — e.g. a server that blocks a class deletion needs an owner and its
+  two server-properties rows inserted before the server itself. "It's multi-step
+  setup" is not an exception: keep those inserts inline at the call site (or,
+  only if the exact same setup genuinely repeats across many tests, behind a
+  named `setup`), never behind a one-off helper that performs the inserts.
 - **Verify mocks.** Use `setup :verify_on_exit!` so any contract-checked mock
   expectations are verified at the end of the test.
 
@@ -362,6 +372,32 @@ case is expected to publish to, and assert the **absence** of a broadcast on
 paths where none should occur (see
 [below](#asserting-the-absence-of-out-of-band-effects)).
 
+**Pin the resource id in every broadcast pattern — PubSub is not sandboxed.**
+Unlike the SQL sandbox, `Phoenix.PubSub` is process-global: a broadcast to a
+**shared topic** (e.g. a context-wide `"classes"` topic that every list view
+subscribes to) is delivered to _all_ subscribed processes, including other
+`async: true` tests running concurrently. So a bare `assert_receive
+{:class_updated, class, _}` can bind another test's leaked broadcast, and a bare
+`refute_received {:class_updated, _, _}` can fail on one — both flaky, and both
+worsen as more tests publish the same message. Make the patterns **selective**
+by pinning the resource id the test owns (a unique UUID):
+
+```elixir
+assert_receive {:class_updated, %Class{id: ^id} = broadcast, _ref}
+# …
+refute_received {:class_updated, %Class{id: ^id}, _ref}
+```
+
+`assert_receive` then skips messages for other ids and waits for this test's own
+(which is delivered synchronously, so it is already in the mailbox), and
+`refute_received` ignores other ids entirely. This keeps the positive assertions
+on _both_ the resource-specific and shared topics exact while staying race-free.
+On a failure path where **no resource id exists** (a rejected create, an
+unknown-id not-found), there is nothing to pin and no reliable refute on a
+shared topic — rely on `assert_no_stored_events!/0` instead: the use case
+broadcasts only after its transaction commits, so no stored event already proves
+no broadcast.
+
 > **Interim note (DDD refactoring).** Until the DDD refactoring lands, broadcast
 > payloads are still being reshaped, so for now PubSub assertions may stay
 > _partially black box_: assert that the expected message tag is received on the
@@ -460,6 +496,17 @@ This division applies to **schema** validations. Guards that live in the use
 case itself — authorization, input-format checks (`validate_uuid`),
 cross-context preconditions — have no schema test to defer to, so they are
 always covered in the use case's own test.
+
+**Side-effect-free `validate_*` companions need a failing case too.** Many
+commands ship with a sibling `validate_*` function that a live form calls on
+every keystroke: it builds and returns the changeset without committing (`{:ok,
+changeset}`, or the bare changeset for a create — the errors live _in_ it, it
+does not return `{:error, …}`). Test it from **both** directions, not just the
+happy one: valid input yields a changeset with `errors_on/1 == %{}`, and one
+representative invalid input yields a changeset carrying the exact expected
+errors — both with no side effects. A "validate valid data" test alone passes
+even if the function ignored its input entirely and always returned a clean
+changeset; the failing case is what proves it actually runs the validation.
 
 **Choosing the right changeset is a use-case concern.** Schemas usually expose
 more than one changeset — commonly a create and an update one, with different
@@ -611,6 +658,94 @@ surfaced the same class of gap as the create/update spikes:
 injected clock, so it could not be tested deterministically; it now uses
 `DateTime.to_date(Clock.now())`.
 
+### Testing delete use cases
+
+A delete use case has **no input fields to vary**, so unlike a create or update
+it gets a **single** happy-path test — add a second only where deletion
+behaviour genuinely differs (e.g. an owned association that is sometimes blank,
+sometimes populated). That test still makes the full set of assertions from the
+[checklist](#what-a-business-layer-test-must-assert), with two delete-specific
+emphases:
+
+- **Assert every row is gone, including owned/cascaded associations.** A
+  delete's characteristic failure mode is leaving children behind, so assert the
+  target table _and_ every table it owns are empty (`Repo.all(Schema) == []`).
+  In the class case the use case deletes the expected-server-properties row
+  explicitly — the foreign key is on the `classes` table, so a missing delete
+  would orphan it — and the test pins that both tables end empty.
+- **Assert the deletion event, but do not reconstruct a row from it.** A
+  deletion event is intentionally **minimal** — it carries only the deleted
+  entity's identity (id and name), enough to know _what_ was removed — so the
+  [reconstruct-the-row-from-the-event](#exact-assertions-on-database-side-effects)
+  rule does not apply: there is no row left to rebuild. Assert the event whole
+  (stream, type, payload, metadata, `occurred_at`) and, separately, that the
+  rows are gone. The event's `version` is the entity's current version (a delete
+  does not bump it), so derive it from the inserted baseline rather than
+  assuming `1`.
+
+The branch tests cover the rest:
+
+- **Constraint-blocked delete.** A delete guarded by a database constraint (a
+  foreign key, e.g. "a class with servers cannot be deleted") is a **DB-backed
+  branch** like a uniqueness check: build the blocking state (insert a row that
+  references the target), assert the exact domain error the use case maps the
+  constraint to, and assert the whole transaction rolled back — nothing deleted,
+  no event, no broadcast. Setting up the blocking row may require fixtures from
+  another context (a class-blocking server needs an owner and its
+  server-properties rows); that cross-context coupling is real and worth the
+  fixture.
+- **Not found** and **authorization**, exactly as for an update: an unknown id
+  returns the not-found error with no side effects (and, when not-found is
+  reported before the authorization check, an unauthorized caller gets not-found
+  too), and an unauthorized principal is rejected with no side effects.
+
+A worked example is [`delete_class_test.exs`][delete-class-test]. Writing it
+surfaced the same recurring gap as the create/update/read spikes: `DeleteClass`
+stamped the deletion event with `DateTime.utc_now()` instead of the injected
+clock, so the event's `occurred_at` could not be pinned; it now uses
+`Clock.now()`.
+
+### Testing sub-aspect (child-association) update use cases
+
+Some update use cases do not update a record's own fields but a **child
+association** of it — and bump the **parent's** `version`/`updated_at` as part
+of the same transaction — while **returning the child**. `UpdateClass` rewrites
+the class's columns; `UpdateExpectedServerPropertiesForClass` rewrites the
+class's expected-server-properties association and returns those properties. The
+[update strategy](#testing-update-use-cases) still applies, with the axes
+shifted onto the child:
+
+- **The three happy-path tests vary the child's fields.** "Update everything"
+  (start from a blank child, set every field), "clear every optional" (start
+  from a full child, reset every field), and a random one — exactly the
+  update-testing trio, applied to the association's fields.
+- **Assert both the returned child and the untouched parent.** Assert the
+  returned child struct whole, _and_ separately assert the parent: its `version`
+  bumped, its `updated_at` advanced to the pinned instant, and **every other
+  parent field equal to the original**. That last assertion is the point of a
+  sub-aspect update — it must change the child and the parent's metadata and
+  _nothing else_ — so pin it (the worked example asserts the persisted class
+  equals the original with only `version`, `updated_at` and the child replaced).
+- **The audit event embeds a denormalized parent reference.** A child-update
+  event typically carries a small `{id, name}` snapshot of the parent plus every
+  child field; assert it whole like any other event. Both parent-reference
+  fields are unchanged by a child-only update, so they equal the original's.
+- **Existence-masking on the mutation.** When the use case masks an
+  authorization failure as not-found (so it cannot leak the existence of a
+  resource the caller may not see), assert the unauthorized caller gets the
+  exact not-found result — not a raise — with no side effects. A
+  side-effect-free `validate` sibling must mask **consistently** with its
+  committing counterpart.
+
+A worked example is
+[`update_expected_server_properties_for_class_test.exs`][update-expected-properties-test].
+Writing it surfaced two latent bugs the earlier spikes' patterns predict:
+`Class.update_expected_server_properties` stamped `updated_at` with
+`DateTime.utc_now()` instead of the injected clock (fixed by threading `now`, as
+for `Class.update`), and the use case's `with/else` did not pass `{:error,
+:class_not_found}` through, so any unknown ID crashed with a `WithClauseError` —
+caught only because the not-found branch was finally tested.
+
 ### Factories
 
 We use [ExMachina][ex-machina] factories scoped per context.
@@ -696,6 +831,8 @@ function components with Floki._
 [create-class-test]: ../test/archidep/course/create_class_test.exs
 [update-class-test]: ../test/archidep/course/update_class_test.exs
 [read-classes-test]: ../test/archidep/course/read_classes_test.exs
+[delete-class-test]: ../test/archidep/course/delete_class_test.exs
+[update-expected-properties-test]: ../test/archidep/course/update_expected_server_properties_for_class_test.exs
 [class-test]: ../test/archidep/course/schemas/class_test.exs
 [ex-unit]: https://hexdocs.pm/ex_unit/ExUnit.html
 [ex-unit-doctests]: https://hexdocs.pm/ex_unit/ExUnit.DocTest.html

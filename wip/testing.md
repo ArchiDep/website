@@ -66,7 +66,8 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Coverage config & regression ratchet](#coverage-config--regression-ratchet)
 - **1. Business layer — contexts, use cases, schemas**
   - [x] 🧭 [Canon — business-layer test conventions](#canon--business-layer-test-conventions)
-  - [ ] [Course — class use cases (remainder)](#course--class-use-cases-remainder)
+  - [ ] [Roll out the row-count-diff assertion](#roll-out-the-row-count-diff-assertion)
+  - [x] [Course — class use cases (remainder)](#course--class-use-cases-remainder)
   - [ ] [Course — student use cases](#course--student-use-cases)
   - [ ] [Course — student import](#course--student-import)
   - [ ] [Course — remaining schemas](#course--remaining-schemas)
@@ -189,10 +190,79 @@ settled, documented, and reviewed across these three exemplars, this box is
 checked. `DeleteClass` and the rest are ordinary work under [Course — class use
 cases (remainder)](#course--class-use-cases-remainder) — not a canon blocker.
 
+### Roll out the row-count-diff assertion
+
+_Context:_ checklist item 4 ("Pinned row counts: no stray inserts") and the
+delete/persistence assertions are currently expressed by asserting the
+database's _absolute_ state (`[only_one] = Repo.all(Schema)`, `Repo.all(Schema)
+== []`), which reads as semantically off — the meaningful statement is what a
+use case _changed_. A `DataCase` helper now expresses that as a difference:
+`count_rows([…])` snapshots the watched tables before the call and
+`assert_row_count_diff(counts, %{Schema => delta})` asserts each watched table
+changed by exactly its delta (unlisted watched tables must be unchanged). It was
+introduced and proven on `delete_class_test.exs` and
+`update_expected_server_properties_for_class_test.exs`, in two complementary
+roles: a **non-zero diff** on success paths (the deletion is `%{Class => -1,
+ExpectedServerProperties => -1, StoredEvent => 1}`), and an **all-zero diff** on
+every no-effect / side-effect-free path that has a fixture the call could have
+touched (rejected mutations and — most importantly — the side-effect-free
+`validate_*` functions, where "writes nothing" is the whole contract). The
+all-zero diff complements, not replaces, the exact `persisted_class == original`
+content check: the content check pins the one known row, the diff catches a
+stray insert or delete anywhere in the watched tables. (Pure not-found paths,
+which insert no fixture, skip it — an all-zero diff over empty tables proves
+nothing; `assert_no_stored_events!/0` covers them.)
+
+This task makes it the canon: (1) document it in `docs/testing.md` (the "What a
+business-layer test must assert" checklist, the create/update/delete sections,
+and the "absence of out-of-band effects" section for the all-zero no-effect/
+validate usage) as the standard way to assert row counts, replacing the
+absolute-state phrasing; (2) roll it back through the already-written exemplars
+(`create_class_test.exs`, `update_class_test.exs`, the accounts auth tests) so
+they assert deltas instead of `[only_one] = Repo.all(…)`; (3) apply it as the
+default in every later business-layer chunk. _Scope:_ `docs/testing.md` + the
+existing business-layer test files. _Files:_ `test/support/data_case.ex` (helper
+already landed).
+
 ### Course — class use cases (remainder)
 
 Finish any of the 5 class use cases not written during the canon task. _Scope:_
-`course/use_cases` class-related modules.
+`course/use_cases` class-related modules. _Done:_ the two remaining use cases
+are covered — `delete_class_test.exs` (delete: happy path, the
+`class_has_servers` foreign-key branch, not-found, authorization) and
+`update_expected_server_properties_for_class_test.exs` (a child-association
+"sub-aspect" update: update-everything / clear-every / random over the 13
+properties, plus the validation, not-found and existence-masking branches, and
+the side-effect-free validate function). The work needed **two new
+`docs/testing.md` strategies** the create/update/read canon did not cover —
+"Testing delete use cases" and "Testing sub-aspect (child-association) update
+use cases" — since neither fit the existing sections. It also surfaced and fixed
+the recurring issues the canon predicts: the clock gap appeared on both paths
+(`DeleteClass` stamped the event with `DateTime.utc_now()`, now `Clock.now()`;
+`Class.update_expected_server_properties/2` became `/3` taking `now`, matching
+`Class.update`), a latent `WithClauseError` in
+`UpdateExpectedServerPropertiesForClass` where the `with/else` swallowed
+`{:error, :class_not_found}` and crashed on any unknown id (fixed), and a
+validate/mutate authorization asymmetry (validate raised while the mutation
+masked) aligned so both existence-mask. Finally, writing a second
+`{:class_updated}` broadcaster exposed a **PubSub test-isolation bug**:
+assertions on the shared, non-sandboxed `"classes"` topic caught concurrent
+tests' broadcasts. All class-use-case broadcast assertions (including the
+`create_class`/`update_class` exemplars) now pin the resource id so selective
+receive ignores other tests' messages; the convention is documented under
+"Asserting PubSub broadcasts". Human review then drove four refinements: (1) the
+absolute-state row-count assertions were replaced with a `count_rows` /
+`assert_row_count_diff` helper that asserts what the use case _changed_ (the
+delete asserts this specific class and its properties row are gone, plus the
+table deltas) — proven here and queued for rollout under [Roll out the
+row-count-diff assertion](#roll-out-the-row-count-diff-assertion); (2) the
+missing **failing** case for the side-effect-free `validate_*` functions was
+added to all three of create/update/update-properties, and the gap documented as
+a canon rule; (3) a one-off factory-wrapping helper for the blocking-server
+fixture was inlined and the "keep factory calls visible" guideline tightened to
+cover multi-step setup; and (4) an `expected_server_properties_data` factory
+that wrongly delegated to the struct factory was rewritten to build its map
+independently, like `class_data_factory`.
 
 ### Course — student use cases
 

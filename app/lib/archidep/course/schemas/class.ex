@@ -154,11 +154,9 @@ defmodule ArchiDep.Course.Schemas.Class do
     end)
   end
 
-  @spec update_expected_server_properties(t(), Types.expected_server_properties()) ::
+  @spec update_expected_server_properties(t(), Types.expected_server_properties(), DateTime.t()) ::
           Changeset.t(t())
-  def update_expected_server_properties(class, data) do
-    now = DateTime.utc_now()
-
+  def update_expected_server_properties(class, data, now) do
     class
     |> cast(
       %{

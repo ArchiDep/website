@@ -22,3 +22,11 @@ and automated agents interacting with this project.
 - There should generally be no need to add a new bounded context without
   explicit instructions from a human. If you believe a new context is needed,
   explain why in your response and ask for confirmation.
+- When you touch `async: true` tests — especially ones asserting PubSub
+  broadcasts or other process-global state that the SQL sandbox does not isolate
+  — verify their stability by re-running them with:
+
+      mix test <files> --repeat-until-failure <n>
+
+  ExUnit re-seeds each run and stops at the first failure. Prefer it to a shell
+  loop; a single green run can hide an ordering-dependent race.

@@ -172,6 +172,63 @@ defmodule ArchiDep.Support.CourseFactory do
     }
   end
 
+  @spec expected_server_properties_data_factory(map()) :: Types.expected_server_properties()
+  def expected_server_properties_data_factory(attrs!) do
+    {hostname, attrs!} =
+      Map.pop_lazy(attrs!, :hostname, optionally(&Faker.Internet.domain_name/0))
+
+    {machine_id, attrs!} = Map.pop_lazy(attrs!, :machine_id, optionally(&Faker.String.base64/0))
+
+    {cpus, attrs!} =
+      Map.pop_lazy(attrs!, :cpus, optionally(fn -> Faker.random_between(1, 16) end))
+
+    {cores, attrs!} =
+      Map.pop_lazy(attrs!, :cores, optionally(fn -> Faker.random_between(1, 16) end))
+
+    {vcpus, attrs!} =
+      Map.pop_lazy(attrs!, :vcpus, optionally(fn -> Faker.random_between(1, 32) end))
+
+    {memory, attrs!} =
+      Map.pop_lazy(attrs!, :memory, optionally(fn -> Faker.random_between(1, 16) * 128 end))
+
+    {swap, attrs!} =
+      Map.pop_lazy(attrs!, :swap, optionally(fn -> Faker.random_between(1, 16) * 128 end))
+
+    {system, attrs!} = Map.pop_lazy(attrs!, :system, optionally(&Faker.Company.buzzword/0))
+
+    {architecture, attrs!} =
+      Map.pop_lazy(attrs!, :architecture, optionally(&Faker.Company.buzzword/0))
+
+    {os_family, attrs!} = Map.pop_lazy(attrs!, :os_family, optionally(&Faker.Company.buzzword/0))
+
+    {distribution, attrs!} =
+      Map.pop_lazy(attrs!, :distribution, optionally(&Faker.Company.buzzword/0))
+
+    {distribution_release, attrs!} =
+      Map.pop_lazy(attrs!, :distribution_release, &Faker.Company.buzzword/0)
+
+    {distribution_version, attrs!} =
+      Map.pop_lazy(attrs!, :distribution_version, &Faker.Company.buzzword/0)
+
+    [] = Map.keys(attrs!)
+
+    %{
+      hostname: hostname,
+      machine_id: machine_id,
+      cpus: cpus,
+      cores: cores,
+      vcpus: vcpus,
+      memory: memory,
+      swap: swap,
+      system: system,
+      architecture: architecture,
+      os_family: os_family,
+      distribution: distribution,
+      distribution_release: distribution_release,
+      distribution_version: distribution_version
+    }
+  end
+
   @spec student_factory(map()) :: Student.t()
   def student_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)

@@ -286,6 +286,26 @@ defmodule ArchiDep.Course.UpdateClassTest do
     assert_update_had_no_effect(original)
   end
 
+  test "validate surfaces validation errors for an existing class without changing anything", %{
+    validate_existing_class: validate_existing_class
+  } do
+    original = CourseFactory.insert(:class, %{now: @past})
+
+    :ok = PubSub.subscribe_classes()
+    :ok = PubSub.subscribe_class(original.id)
+
+    # One representative invalid value proves validation actually runs — the
+    # function returns the changeset either way, with the errors in it.
+    data = CourseFactory.build(:class_data, name: "", now: @now)
+    auth = Factory.build(:authentication, root: true)
+
+    assert {:ok, %Changeset{} = changeset} = validate_existing_class.(auth, original.id, data)
+    assert errors_on(changeset) == %{name: ["can't be blank"]}
+
+    # Validation is side-effect free.
+    assert_update_had_no_effect(original)
+  end
+
   test "validating update data for a class that does not exist returns an error", %{
     validate_existing_class: validate_existing_class
   } do
@@ -440,22 +460,25 @@ defmodule ArchiDep.Course.UpdateClassTest do
   # to — the class-specific one and the global one — each carrying the updated
   # class and a reference to the stored event, and that nothing else was
   # broadcast.
-  defp assert_class_updated_broadcast(%Class{} = class, %StoredEvent{} = event) do
+  defp assert_class_updated_broadcast(%Class{id: id} = class, %StoredEvent{} = event) do
     expected_reference = StoredEvent.to_reference(event)
 
-    assert_receive {:class_updated, class_specific, reference_specific}
-    assert_receive {:class_updated, global, reference_global}
+    # Pin the class ID so the assertions match only this test's broadcasts — the
+    # global "classes" topic is shared across async tests and not sandboxed (see
+    # docs/testing.md).
+    assert_receive {:class_updated, %Class{id: ^id} = class_specific, reference_specific}
+    assert_receive {:class_updated, %Class{id: ^id} = global, reference_global}
 
     assert class_specific == class
     assert global == class
     assert reference_specific == expected_reference
     assert reference_global == expected_reference
 
-    refute_received {:class_updated, _class, _event}
+    refute_received {:class_updated, %Class{id: ^id}, _event}
   end
 
-  defp refute_class_updated_broadcast do
-    refute_received {:class_updated, _class, _event}
+  defp refute_class_updated_broadcast(id) do
+    refute_received {:class_updated, %Class{id: ^id}, _event}
   end
 
   # Asserts a class row is exactly as it was. Used to check a class left
@@ -464,12 +487,12 @@ defmodule ArchiDep.Course.UpdateClassTest do
     assert persisted_class(class.id) == class
   end
 
-  # Asserts that a rejected update left no trace: the class row is unchanged, and
-  # no event or broadcast was emitted.
+  # Asserts that a rejected update left no trace: the class row is unchanged,
+  # and no event or broadcast was emitted.
   defp assert_update_had_no_effect(%Class{} = original) do
     assert_class_unchanged(original)
     assert_no_stored_events!()
-    refute_class_updated_broadcast()
+    refute_class_updated_broadcast(original.id)
   end
 
   # Asserts the full set of effects that must NOT happen when no class exists to
@@ -478,7 +501,8 @@ defmodule ArchiDep.Course.UpdateClassTest do
   defp assert_no_class_persisted do
     assert [] = Repo.all(Class)
     assert [] = Repo.all(ExpectedServerProperties)
+    # No event stored already proves no broadcast (emitted only after the update
+    # commits); there is no class ID to scope a refute to.
     assert_no_stored_events!()
-    refute_class_updated_broadcast()
   end
 end

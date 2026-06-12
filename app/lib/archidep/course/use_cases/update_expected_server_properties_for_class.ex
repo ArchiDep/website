@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.UpdateExpectedServerPropertiesForClass do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
@@ -19,12 +20,18 @@ defmodule ArchiDep.Course.UseCases.UpdateExpectedServerPropertiesForClass do
           | {:error, :class_not_found}
   def validate_expected_server_properties_for_class(auth, id, data) do
     with :ok <- validate_uuid(id, :class_not_found),
-         {:ok, class} <- Class.fetch_class(id) do
-      authorize!(auth, Policy, :course, :update_expected_server_properties_for_class, class)
-
+         {:ok, class} <- Class.fetch_class(id),
+         :ok <-
+           authorize(auth, Policy, :course, :update_expected_server_properties_for_class, class) do
       class.expected_server_properties
       |> ExpectedServerProperties.update(data)
       |> ok()
+    else
+      {:error, {:access_denied, :course, :update_expected_server_properties_for_class}} ->
+        {:error, :class_not_found}
+
+      {:error, :class_not_found} ->
+        {:error, :class_not_found}
     end
   end
 
@@ -42,16 +49,20 @@ defmodule ArchiDep.Course.UseCases.UpdateExpectedServerPropertiesForClass do
          {:ok, class} <- Class.fetch_class(id),
          :ok <-
            authorize(auth, Policy, :course, :update_expected_server_properties_for_class, class) do
-      transaction(auth, class, data)
+      transaction(auth, class, data, Clock.now())
     else
       {:error, {:access_denied, :course, :update_expected_server_properties_for_class}} ->
+        {:error, :class_not_found}
+
+      {:error, :class_not_found} ->
         {:error, :class_not_found}
     end
   end
 
-  defp transaction(auth, class, data) when is_struct(class, Class) and is_map(data) do
+  defp transaction(auth, class, data, now)
+       when is_struct(class, Class) and is_map(data) do
     case Multi.new()
-         |> Multi.update(:class, Class.update_expected_server_properties(class, data))
+         |> Multi.update(:class, Class.update_expected_server_properties(class, data, now))
          |> Multi.insert(
            :stored_event,
            &class_expected_properties_updated(auth, &1.class)
