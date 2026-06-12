@@ -137,10 +137,14 @@ A test that leaves any of these unaddressed is incomplete, even if it passes.
   `Factory.insert(:thing, %{…})` directly at each call site rather than hiding
   it behind a custom `insert_thing/1` helper — the wrapper obscures standard
   ExMachina use and what the fixture actually is, for little gain. If a
-  non-trivial set of options genuinely repeats across call sites, hoist a plain
-  map of defaults in the test and merge per-call (`Map.merge(defaults, %{…})`)
-  rather than a helper function — but for a single flag, just inline it
-  (`Map.merge` is longer than repeating `active: true`).
+  non-trivial set of options genuinely repeats across call sites, hoist the
+  shared options — either a plain map/keyword of defaults merged per-call
+  (`Map.merge(defaults, %{…})`), or a pure attrs-builder helper that returns the
+  merged options (`Factory.insert(:thing, thing_attrs(extra))`). What matters is
+  that the `Factory.insert`/`build` call stays visible at the call site; a
+  builder that returns data is fine, a wrapper that performs the insert is not.
+  For a single flag, just inline it (the merge is longer than repeating
+  `active: true`).
 - **Verify mocks.** Use `setup :verify_on_exit!` so any contract-checked mock
   expectations are verified at the end of the test.
 

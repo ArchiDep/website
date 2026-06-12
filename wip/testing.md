@@ -71,7 +71,7 @@ This is the bird's-eye view: each item links to its full description under
   - [ ] [Course — student import](#course--student-import)
   - [ ] [Course — remaining schemas](#course--remaining-schemas)
   - [ ] [Course — backfill exhaustive schema validation tests](#course--backfill-exhaustive-schema-validation-tests)
-  - [ ] 🧭 [Canon — accounts auth use cases](#canon--accounts-auth-use-cases)
+  - [x] 🧭 [Canon — accounts auth use cases](#canon--accounts-auth-use-cases)
   - [x] 🔒 [Security invariant — login links never authenticate a root account](#security-invariant--login-links-never-authenticate-a-root-account)
   - [ ] [Accounts — session lifecycle use cases](#accounts--session-lifecycle-use-cases)
   - [ ] [Accounts — schemas](#accounts--schemas)
@@ -229,12 +229,13 @@ including each of a schema's changeset functions where they validate differently
 `log_in_or_register_with_switch_edu_id_test.exs` already exists as a reference;
 extend the canon to `LogInOrRegisterWithLink` and `CreateLoginLinks`, confirm
 the conventions hold for the login-link path, get reviewed. _Scope:_ 2–3 use
-cases. _Progress:_ both login-link use cases are now covered —
-`log_in_or_register_with_link_test.exs` (consumption, 10 branches, clock
-injected into the consumption path) and `create_login_links_test.exs`
-(generation, 6 branches, clock injected into the creation path). The box stays
-unchecked pending the canon sign-off (human review of and agreement on the
-conventions).
+cases. _Done:_ both login-link use cases are covered —
+`log_in_or_register_with_link_test.exs` (consumption, 10 branches) and
+`create_login_links_test.exs` (generation, 6 branches), each with the clock
+injected. The canon conventions are settled and signed off: pipe-chained
+assertion helpers, factory calls kept visible at the call site (with pure
+attrs-builders for repeated options), exact assertions, and event/telemetry/
+broadcast assertions asserted only where the use case emits them.
 
 ### Security invariant — login links never authenticate a root account
 

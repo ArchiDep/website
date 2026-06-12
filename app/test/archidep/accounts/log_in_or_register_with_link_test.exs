@@ -52,7 +52,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     subscribe_to_preregistered_user(student)
 
-    login_link = insert_login_link(preregistered_user_id: student.id)
+    login_link =
+      AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
 
     metadata = Factory.build(:client_metadata)
 
@@ -77,9 +78,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     subscribe_to_preregistered_user(student)
 
-    user_account = insert_linked_user_account(student, active: true)
+    user_account =
+      AccountsFactory.insert(:user_account, student_user_account_attrs(student, active: true))
 
-    login_link = insert_login_link(preregistered_user_id: student.id)
+    link_student_to_user_account(student, user_account)
+
+    login_link =
+      AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
 
     metadata = Factory.build(:client_metadata)
 
@@ -117,7 +122,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     subscribe_to_preregistered_user(student)
 
-    login_link = insert_login_link(preregistered_user_id: student.id, active: false)
+    login_link =
+      AccountsFactory.insert(
+        :login_link,
+        login_link_attrs(preregistered_user_id: student.id, active: false)
+      )
 
     metadata = Factory.build(:client_metadata)
 
@@ -136,7 +145,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     subscribe_to_preregistered_user(student)
 
-    login_link = insert_login_link(preregistered_user_id: student.id, used_at: @now)
+    login_link =
+      AccountsFactory.insert(
+        :login_link,
+        login_link_attrs(preregistered_user_id: student.id, used_at: @now)
+      )
 
     metadata = Factory.build(:client_metadata)
 
@@ -155,7 +168,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     subscribe_to_preregistered_user(student)
 
-    login_link = insert_login_link(preregistered_user_id: student.id)
+    login_link =
+      AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
 
     metadata = Factory.build(:client_metadata)
 
@@ -174,9 +188,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     subscribe_to_preregistered_user(student)
 
-    user_account = insert_linked_user_account(student, active: true)
+    user_account =
+      AccountsFactory.insert(:user_account, student_user_account_attrs(student, active: true))
 
-    login_link = insert_login_link(preregistered_user_id: student.id)
+    link_student_to_user_account(student, user_account)
+
+    login_link =
+      AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
 
     metadata = Factory.build(:client_metadata)
 
@@ -196,9 +214,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     subscribe_to_preregistered_user(student)
 
-    user_account = insert_linked_user_account(student, active: false)
+    user_account =
+      AccountsFactory.insert(:user_account, student_user_account_attrs(student, active: false))
 
-    login_link = insert_login_link(preregistered_user_id: student.id)
+    link_student_to_user_account(student, user_account)
+
+    login_link =
+      AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
 
     metadata = Factory.build(:client_metadata)
 
@@ -235,7 +257,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     link_student_to_user_account(student, user_account)
 
-    login_link = insert_login_link(preregistered_user_id: student.id)
+    login_link =
+      AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
 
     metadata = Factory.build(:client_metadata)
 
@@ -260,7 +283,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
         now: @now
       )
 
-    login_link = insert_login_link(user_account_id: user_account.id)
+    login_link =
+      AccountsFactory.insert(:login_link, login_link_attrs(user_account_id: user_account.id))
 
     metadata = Factory.build(:client_metadata)
 
@@ -271,23 +295,15 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     assert_login_link_untouched(login_link)
   end
 
-  defp insert_login_link(attrs) do
-    AccountsFactory.insert(:login_link, Keyword.merge([active: true, created_at: @now], attrs))
+  defp login_link_attrs(extra) do
+    Keyword.merge([active: true, created_at: @now], extra)
   end
 
-  defp insert_linked_user_account(student, attrs) do
-    user_account =
-      AccountsFactory.insert(
-        :user_account,
-        Keyword.merge(
-          [root: false, switch_edu_id: nil, preregistered_user_id: student.id, now: @now],
-          attrs
-        )
-      )
-
-    link_student_to_user_account(student, user_account)
-
-    user_account
+  defp student_user_account_attrs(student, extra) do
+    Keyword.merge(
+      [root: false, switch_edu_id: nil, preregistered_user_id: student.id, now: @now],
+      extra
+    )
   end
 
   defp assert_auth(auth, username, root) do
