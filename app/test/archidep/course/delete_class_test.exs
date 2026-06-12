@@ -27,6 +27,13 @@ defmodule ArchiDep.Course.DeleteClassTest do
   # fixture's own timestamps.
   @past ~U[2023-09-15 09:42:17.000000Z]
 
+  # Every table this use case can affect. Snapshot all of them with
+  # `count_rows/1` before each call so the row-count diff catches a stray write
+  # to any of them, not just the ones a given test happens to think about (see
+  # docs/testing.md). `Server` is watched because a server's foreign key is what
+  # blocks (or fails to block) a class deletion.
+  @affected_tables [Class, ExpectedServerProperties, StoredEvent, Server]
+
   setup :verify_on_exit!
 
   setup do
@@ -49,7 +56,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties, StoredEvent])
+    previous_counts = count_rows(@affected_tables)
 
     assert delete_class.(auth, class.id) == :ok
 
@@ -89,7 +96,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties, Server, StoredEvent])
+    previous_counts = count_rows(@affected_tables)
 
     assert delete_class.(auth, class.id) == {:error, :class_has_servers}
 
@@ -104,6 +111,8 @@ defmodule ArchiDep.Course.DeleteClassTest do
   test "a class that does not exist cannot be deleted", %{delete_class: delete_class} do
     :ok = PubSub.subscribe_classes()
 
+    previous_counts = count_rows(@affected_tables)
+
     root = Factory.build(:authentication, root: true)
     assert delete_class.(root, Ecto.UUID.generate()) == {:error, :class_not_found}
 
@@ -112,8 +121,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
     non_root = Factory.build(:authentication, root: false)
     assert delete_class.(non_root, Ecto.UUID.generate()) == {:error, :class_not_found}
 
-    # No event stored already proves no broadcast (the use case broadcasts only
-    # after the deletion commits); there is no class ID to scope a refute to.
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
   end
 
@@ -125,7 +133,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
 
     auth = Factory.build(:authentication, root: false)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties])
+    previous_counts = count_rows(@affected_tables)
 
     assert_raise UnauthorizedError, fn -> delete_class.(auth, class.id) end
 

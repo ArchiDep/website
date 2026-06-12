@@ -20,8 +20,15 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
 
   # Pinned instant returned by the injected clock for the duration of each test,
   # so that every timestamp produced by the use case can be asserted exactly
-  # (see docs/testing.md).
+  # (see `docs/testing.md`).
   @now ~U[2024-03-15 10:30:00.000000Z]
+
+  # Every table this use case can affect. Snapshot all of them with
+  # `count_rows/1` before each call so the row-count diff catches a stray write
+  # to any of them, not just the ones a given test happens to think about (see
+  # `docs/testing.md`). `UserAccount` is watched so the diff proves the security
+  # invariant that creating a link never creates a user account.
+  @affected_tables [LoginLink, StoredEvent, UserAccount]
 
   setup :verify_on_exit!
 
@@ -43,10 +50,13 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
 
     auth = Factory.build(:authentication, root: true)
 
-    # The use case echoes back the link with its `preregistered_user` association
-    # loaded exactly as the use case fetched it (group preloaded, no user
-    # account); `user_account` is left unloaded. Bind the same fetch to pin it.
+    # The use case echoes back the link with its `preregistered_user`
+    # association loaded exactly as the use case fetched it (group preloaded, no
+    # user account); `user_account` is left unloaded. Bind the same fetch to pin
+    # it.
     {:ok, preregistered_user} = PreregisteredUser.fetch_preregistered_user(student.id)
+
+    previous_counts = count_rows(@affected_tables)
 
     assert {:ok, login_link} = create_login_link.(auth, student.id)
 
@@ -55,7 +65,7 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
     |> assert_link_created_event(auth, student)
     |> assert_persisted_login_link(login_link.token)
 
-    assert [_only_one] = persisted_login_links()
+    assert_row_count_diff(previous_counts, %{LoginLink => 1, StoredEvent => 1})
   end
 
   test "deactivate any previous login links for the preregistered user", %{
@@ -77,6 +87,8 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
 
     {:ok, preregistered_user} = PreregisteredUser.fetch_preregistered_user(student.id)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, login_link} = create_login_link.(auth, student.id)
 
     login_link
@@ -90,11 +102,11 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
       assert_login_link_deactivated(previous_link)
     end
 
-    # Exactly the two previous links plus the freshly created one, with only the
-    # new link left active.
-    links = persisted_login_links()
-    assert length(links) == 3
-    assert [active_link] = Enum.filter(links, & &1.active)
+    # One new link added to the two pre-existing ones, with only the new link
+    # left active.
+    assert_row_count_diff(previous_counts, %{LoginLink => 1, StoredEvent => 1})
+
+    assert [active_link] = Enum.filter(persisted_login_links(), & &1.active)
     assert active_link.id == login_link.id
   end
 
@@ -104,9 +116,11 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
 
     auth = Factory.build(:authentication, root: false)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :unauthorized} = create_login_link.(auth, student.id)
 
-    assert [] = persisted_login_links()
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
   end
 
@@ -115,9 +129,11 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
   } do
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :preregistered_user_not_found} = create_login_link.(auth, UUID.generate())
 
-    assert [] = persisted_login_links()
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
   end
 
@@ -129,10 +145,12 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
     # A 36-byte string satisfies the behaviour's `UUID.t()` contract (so the
     # protected call is not rejected before it runs) but is not a valid UUID, so
     # the use case's own `validate_uuid` guard rejects it.
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :preregistered_user_not_found} =
              create_login_link.(auth, String.duplicate("x", 36))
 
-    assert [] = persisted_login_links()
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
   end
 
@@ -164,6 +182,8 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
 
     {:ok, preregistered_user} = PreregisteredUser.fetch_preregistered_user(student.id)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, login_link} = create_login_link.(auth, student.id)
 
     login_link
@@ -171,7 +191,7 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
     |> assert_link_created_event(auth, student)
     |> assert_persisted_login_link(login_link.token)
 
-    assert [_only_one] = persisted_login_links()
+    assert_row_count_diff(previous_counts, %{LoginLink => 1, StoredEvent => 1})
     assert_user_account_untouched(root_account)
   end
 

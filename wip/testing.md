@@ -66,7 +66,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Coverage config & regression ratchet](#coverage-config--regression-ratchet)
 - **1. Business layer — contexts, use cases, schemas**
   - [x] 🧭 [Canon — business-layer test conventions](#canon--business-layer-test-conventions)
-  - [ ] [Roll out the row-count-diff assertion](#roll-out-the-row-count-diff-assertion)
+  - [x] [Roll out the row-count-diff assertion](#roll-out-the-row-count-diff-assertion)
   - [x] [Course — class use cases (remainder)](#course--class-use-cases-remainder)
   - [ ] [Course — student use cases](#course--student-use-cases)
   - [ ] [Course — student import](#course--student-import)
@@ -223,6 +223,37 @@ they assert deltas instead of `[only_one] = Repo.all(…)`; (3) apply it as the
 default in every later business-layer chunk. _Scope:_ `docs/testing.md` + the
 existing business-layer test files. _Files:_ `test/support/data_case.ex` (helper
 already landed).
+
+_Done:_ documented as canon — checklist item 4, the "exact assertions on
+database side effects" section (the `[only_one] = Repo.all(…)` recommendation is
+replaced with the snapshot/diff approach), the "absence of out-of-band effects"
+section (all-zero diff on no-effect/validate paths), and the delete section now
+point at `count_rows/1` + `assert_row_count_diff/2` /
+`assert_no_row_count_diff/1`. The `assert_no_row_count_diff/1` convenience
+wrapper landed alongside. Converted the pure-count `[only_one]`/`[_only_one]`
+and no-effect count assertions in `create_class_test.exs`,
+`update_class_test.exs`, `create_login_links_test.exs`, and
+`log_in_or_register_with_link_test.exs` (success paths assert the
+creation/update delta; rejected and side-effect-free paths assert an all-zero
+diff). **Deliberately left:** content/identity assertions that bind the actual
+rows (`[^row] = Repo.all(…)`, `Repo.all(…) == [struct]`) — a count diff is
+weaker than pinning the row, so those stay.
+
+_Follow-up (review feedback):_ the first pass watched too few tables per call
+and skipped many tests, which defeats the check. Resolved by adopting an
+`@affected_tables [...]` module attribute per test file — the full set of tables
+the use case can affect (writes plus adjacent tables it must leave alone, always
+including `StoredEvent`) — passed to **every** `count_rows/1` snapshot. The diff
+in each test now only spells out the non-zero deltas; everything else in
+`@affected_tables` is pinned unchanged. Applied to all six business-layer
+use-case test files, comprehensively (every success, rejected, and not-found
+path now snapshots and asserts), including the previously-skipped
+`log_in_or_register_with_switch_edu_id_test.exs`. This caught the real
+under-specification: `log_in_or_register_with_link_test.exs` had watched only
+`UserAccount`, missing the `UserSession` and `StoredEvent` each login creates.
+`count_rows/1` was left generic (it does **not** auto-add `StoredEvent`) — the
+`@affected_tables` list is the single, explicit "don't forget a table"
+mechanism. Convention documented in `docs/testing.md`.
 
 ### Course — class use cases (remainder)
 

@@ -26,11 +26,17 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
   # Pinned instant returned by the injected clock for the duration of each test,
   # so that every timestamp produced by the use case can be asserted exactly
-  # (see docs/testing.md).
+  # (see `docs/testing.md`).
   @now ~U[2024-03-15 10:30:00.000000Z]
   @session_validity_in_seconds 30 * 24 * 60 * 60
 
   @login_telemetry_event [:archidep, :accounts, :auth, :login]
+
+  # Every table this use case can affect. Snapshot all of them with
+  # `count_rows/1` before each call so the row-count diff catches a stray write
+  # to any of them, not just the ones a given test happens to think about (see
+  # `docs/testing.md`).
+  @affected_tables [SwitchEduId, UserAccount, UserSession, StoredEvent]
 
   setup :verify_on_exit!
 
@@ -59,6 +65,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, auth} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
@@ -70,6 +78,15 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     |> assert_login_telemetry()
     |> assert_registered_event(metadata, "root@archidep.ch", switch_edu_id_login_data)
     |> assert_user_session_for_new_user(auth, "root@archidep.ch", true)
+
+    # Registration creates the Switch edu-ID identity, the user account, its
+    # session and the event.
+    assert_row_count_diff(previous_counts, %{
+      SwitchEduId => 1,
+      UserAccount => 1,
+      UserSession => 1,
+      StoredEvent => 1
+    })
   end
 
   test "register a new root user account matched by Switch edu-ID unique identifier", %{
@@ -83,6 +100,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       )
 
     metadata = Factory.build(:client_metadata)
+
+    previous_counts = count_rows(@affected_tables)
 
     assert {:ok, auth} =
              log_in_or_register_with_switch_edu_id.(
@@ -99,6 +118,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       switch_edu_id_login_data
     )
     |> assert_user_session_for_new_user(auth, @root_user_swiss_edu_person_unique_id, true)
+
+    assert_row_count_diff(previous_counts, %{
+      SwitchEduId => 1,
+      UserAccount => 1,
+      UserSession => 1,
+      StoredEvent => 1
+    })
   end
 
   test "register a new student user account with Switch edu-ID", %{
@@ -126,6 +152,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, auth} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
@@ -143,6 +171,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     )
     |> assert_user_session_for_new_user(auth, nil, false, student)
 
+    assert_row_count_diff(previous_counts, %{
+      SwitchEduId => 1,
+      UserAccount => 1,
+      UserSession => 1,
+      StoredEvent => 1
+    })
+
     assert_preregistered_user_broadcast(student)
   end
 
@@ -154,15 +189,15 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :unauthorized_switch_edu_id} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
                metadata
              )
 
-    assert [] = Repo.all(SwitchEduId)
-    assert [] = Repo.all(UserAccount)
-    assert [] = Repo.all(UserSession)
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
     refute_login_telemetry()
   end
@@ -181,6 +216,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :unauthorized_switch_edu_id} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
@@ -188,8 +225,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              )
 
     assert [^switch_edu_id] = Repo.all(SwitchEduId)
-    assert [] = Repo.all(UserAccount)
-    assert [] = Repo.all(UserSession)
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
     refute_login_telemetry()
   end
@@ -229,15 +265,15 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :unauthorized_switch_edu_id} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
                metadata
              )
 
-    assert [] = Repo.all(SwitchEduId)
-    assert [] = Repo.all(UserAccount)
-    assert [] = Repo.all(UserSession)
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
     refute_login_telemetry()
     refute_preregistered_user_broadcast()
@@ -259,6 +295,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, auth} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
@@ -270,6 +308,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     |> assert_login_telemetry()
     |> assert_logged_in_event(metadata, user_account, switch_edu_id_login_data, false)
     |> assert_user_session_for_existing_user(auth, user_account, switch_edu_id, true, false)
+
+    # The existing account is reused: only a session and the event are added.
+    assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 1})
   end
 
   test "log in an existing student user account with Switch edu-ID", %{
@@ -295,6 +336,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, auth} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
@@ -313,6 +356,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       false,
       student
     )
+
+    assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 1})
 
     refute_preregistered_user_broadcast()
   end
@@ -345,6 +390,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, auth} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
@@ -363,6 +410,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       :user_account,
       student
     )
+
+    # The account had no Switch edu-ID yet (it had only logged in with a link),
+    # so this login creates and links one, plus the session and event.
+    assert_row_count_diff(previous_counts, %{SwitchEduId => 1, UserSession => 1, StoredEvent => 1})
 
     assert_preregistered_user_broadcast(student)
   end
@@ -400,6 +451,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, auth} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
@@ -424,6 +477,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       true,
       student
     )
+
+    assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 1})
 
     assert_preregistered_user_broadcast(student)
   end
@@ -451,6 +506,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :unauthorized_switch_edu_id} =
              log_in_or_register_with_switch_edu_id.(
                switch_edu_id_login_data,
@@ -470,7 +527,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              }
            ]
 
-    assert [] = Repo.all(UserSession)
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
     refute_login_telemetry()
     refute_preregistered_user_broadcast()

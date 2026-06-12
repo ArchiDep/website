@@ -107,8 +107,10 @@ assertion that the effect did _not_ occur:
 3. **Every database side effect**: rows created, updated, deleted — asserted by
    exact equality on the full schema struct, including version bumps and
    timestamps.
-4. **Pinned row counts**: that exactly the expected number of rows exist in
-   every affected table — no stray inserts.
+4. **Pinned row counts**, asserted as a diff from before the call
+   (`assert_row_count_diff/2` / `assert_no_row_count_diff/1`): every affected
+   table changed by exactly the expected delta and no other watched table
+   changed — no stray inserts or deletes.
 5. **Every PubSub broadcast** the use case is expected to emit (and none that it
    should not).
 6. **Every telemetry event** the use case is expected to emit.
@@ -229,10 +231,50 @@ _not_ change, assert it is byte-for-byte the record you inserted
 empty, assert `Repo.all(Schema) == []`. These negative assertions are currently
 missing from some tests and must be added.
 
-**Pin row counts.** Binding `[only_one] = Repo.all(…)` asserts both the contents
-_and_ that exactly one row exists. Do this for every table the use case could
-plausibly write to, including tables it is _not_ supposed to touch, so a stray
-insert is caught.
+**Pin row counts as a diff, not as absolute state.** A use case's effect on row
+counts is best stated as _what it changed_: snapshot the watched tables with
+[`count_rows/1`][data-case] before the call, then assert the delta afterwards
+with `assert_row_count_diff/2` (each listed table changed by exactly its delta;
+every other watched table is unchanged) or `assert_no_row_count_diff/1` for a
+path that must write nothing:
+
+```elixir
+# at the top of the test module:
+@affected_tables [Class, ExpectedServerProperties, StoredEvent]
+
+# in every test that calls the use case:
+previous_counts = count_rows(@affected_tables)
+assert {:ok, _class} = create_class.(auth, data)
+assert_row_count_diff(previous_counts, %{Class => 1, ExpectedServerProperties => 1, StoredEvent => 1})
+```
+
+This reads as the behaviour ("one class and its properties row added, one event
+stored, nothing else touched") and stays correct regardless of how many rows
+pre-existed — unlike `[only_one] = Repo.all(…)`, which asserts an absolute
+end-state ("exactly one row exists") that only makes sense on an empty table and
+says nothing about _what the call did_.
+
+**Declare the watch-set once with `@affected_tables`.** The diff is only as good
+as the set of tables it watches, so don't hand-pick a subset per call — that is
+how a test ends up watching `UserAccount` but silently missing the `UserSession`
+and `StoredEvent` the same login created. Instead declare a module attribute
+`@affected_tables` listing _every_ table the use case can affect — the ones it
+writes **plus** the adjacent ones it must leave alone (e.g. `UserAccount` in the
+login-link tests, to pin that creating a link never creates an account) — and
+pass it to **every** `count_rows/@affected_tables` snapshot in the file. Then
+each test only spells out the non-zero deltas; every other watched table is
+asserted unchanged for free, and adding a table to the list retroactively
+strengthens every test. Always include `StoredEvent` in `@affected_tables` for a
+use case that emits events (the snapshot complements, it does not replace, the
+exact event assertions). This applies to **every** test that invokes the use
+case, including not-found/no-op paths — they snapshot `@affected_tables` and
+assert `assert_no_row_count_diff/1`, so even an early-return path is pinned not
+to write.
+
+Use the diff for the **count**; keep asserting the **contents** of a specific
+row by exact equality (and a specific deletion by "this row no longer exists",
+e.g. `refute Repo.exists?(from r in Schema, where: r.id == ^id)`), since a count
+diff cannot pin a row's fields.
 
 **Reconstruct the expected row from the audit event, not from the return
 value.** Assert the stored event _first_, then build each expected database row
@@ -428,7 +470,12 @@ Failure and no-op paths need the mirror image of the success assertions. When a
 use case returns an error (or deliberately does nothing), assert that it had
 **no** side effects:
 
-- no rows created/changed (`Repo.all(Schema) == []` or `[^unchanged] = …`);
+- no rows created or removed — snapshot `@affected_tables` before the call and
+  assert `assert_no_row_count_diff/1`, plus the exact-equality content check on
+  any specific fixture row that must stay unchanged (`persisted == original`).
+  Do this on _every_ rejected path, including early-return not-found cases
+  (where the snapshot is mostly empty but still pins that the early return wrote
+  nothing);
 - no events stored (`assert_no_stored_events!/0,1`);
 - no PubSub broadcast (subscribe beforehand, then refute — see below);
 - no telemetry event emitted (attach a handler beforehand, then refute).
@@ -667,12 +714,15 @@ sometimes populated). That test still makes the full set of assertions from the
 [checklist](#what-a-business-layer-test-must-assert), with two delete-specific
 emphases:
 
-- **Assert every row is gone, including owned/cascaded associations.** A
-  delete's characteristic failure mode is leaving children behind, so assert the
-  target table _and_ every table it owns are empty (`Repo.all(Schema) == []`).
-  In the class case the use case deletes the expected-server-properties row
-  explicitly — the foreign key is on the `classes` table, so a missing delete
-  would orphan it — and the test pins that both tables end empty.
+- **Assert the specific rows are gone, including owned/cascaded associations.**
+  A delete's characteristic failure mode is leaving children behind, so assert
+  the deleted row _and_ every row it owns no longer exist (`refute
+Repo.exists?(from r in Schema, where: r.id == ^id)`), and pin the counts with
+  a diff (`%{Schema => -1, OwnedSchema => -1, …}`) so exactly those rows were
+  removed and nothing else. In the class case the use case deletes the
+  expected-server-properties row explicitly — the foreign key is on the
+  `classes` table, so a missing delete would orphan it — and the test pins that
+  both rows are gone.
 - **Assert the deletion event, but do not reconstruct a row from it.** A
   deletion event is intentionally **minimal** — it carries only the deleted
   entity's identity (id and name), enough to know _what_ was removed — so the

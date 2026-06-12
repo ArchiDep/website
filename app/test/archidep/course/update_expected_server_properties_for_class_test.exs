@@ -59,6 +59,12 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     distribution_version: nil
   }
 
+  # Every table this use case can affect. Snapshot all of them with
+  # `count_rows/1` before each call so the row-count diff catches a stray write
+  # to any of them, not just the ones a given test happens to think about (see
+  # `docs/testing.md`).
+  @affected_tables [Class, ExpectedServerProperties, StoredEvent]
+
   setup :verify_on_exit!
 
   setup do
@@ -102,7 +108,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties, StoredEvent])
+    previous_counts = count_rows(@affected_tables)
 
     assert {:ok, properties} = update.(auth, original.id, @full_properties)
 
@@ -136,7 +142,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties, StoredEvent])
+    previous_counts = count_rows(@affected_tables)
 
     assert {:ok, properties} = update.(auth, original.id, @blank_properties)
 
@@ -164,7 +170,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     data = CourseFactory.build(:expected_server_properties_data)
     auth = Factory.build(:authentication, root: true)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties, StoredEvent])
+    previous_counts = count_rows(@affected_tables)
 
     assert {:ok, properties} = update.(auth, original.id, data)
 
@@ -193,7 +199,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     data = Map.merge(@blank_properties, %{cpus: 100_000})
     auth = Factory.build(:authentication, root: true)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties])
+    previous_counts = count_rows(@affected_tables)
 
     assert {:error, changeset} = update.(auth, original.id, data)
     assert errors_on(changeset) == %{cpus: ["must be between 1 and {number}"]}
@@ -208,8 +214,11 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert update.(auth, Ecto.UUID.generate(), @full_properties) == {:error, :class_not_found}
 
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
   end
 
@@ -223,7 +232,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
 
     auth = Factory.build(:authentication, root: false)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties])
+    previous_counts = count_rows(@affected_tables)
 
     # The use case masks the authorization failure as :class_not_found so it
     # cannot leak the existence of a class the caller may not see.
@@ -242,7 +251,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties])
+    previous_counts = count_rows(@affected_tables)
 
     assert {:ok, %Changeset{} = changeset} = validate.(auth, original.id, @full_properties)
     assert errors_on(changeset) == %{}
@@ -264,7 +273,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     data = Map.merge(@blank_properties, %{cpus: 100_000})
     auth = Factory.build(:authentication, root: true)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties])
+    previous_counts = count_rows(@affected_tables)
 
     assert {:ok, %Changeset{} = changeset} = validate.(auth, original.id, data)
     assert errors_on(changeset) == %{cpus: ["must be between 1 and {number}"]}
@@ -277,8 +286,11 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
        %{validate_expected_server_properties_for_class: validate} do
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert validate.(auth, Ecto.UUID.generate(), @full_properties) == {:error, :class_not_found}
 
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
   end
 
@@ -292,7 +304,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
 
     auth = Factory.build(:authentication, root: false)
 
-    previous_counts = count_rows([Class, ExpectedServerProperties])
+    previous_counts = count_rows(@affected_tables)
 
     # Validation masks the authorization failure the same way the mutation does,
     # so an unauthorized caller cannot tell an existing class from an unknown

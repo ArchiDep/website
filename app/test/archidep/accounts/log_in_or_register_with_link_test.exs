@@ -29,6 +29,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
   @login_telemetry_event [:archidep, :accounts, :auth, :login]
 
+  # Every table this use case can affect. Snapshot all of them with
+  # `count_rows/1` before each call so the row-count diff catches a stray write
+  # to any of them, not just the ones a given test happens to think about (see
+  # `docs/testing.md`).
+  @affected_tables [UserAccount, UserSession, StoredEvent, LoginLink]
+
   setup :verify_on_exit!
 
   setup context do
@@ -57,6 +63,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, auth} = log_in_or_register_with_link.(login_link.token, metadata)
 
     auth
@@ -66,7 +74,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     |> assert_persisted_session_for_new_user(auth, student)
 
     assert_login_link_used(login_link)
-    assert [_user_account] = Repo.all(UserAccount)
+    # Registration creates the user account, its session and the event; the link
+    # is consumed in place (no new link row).
+    assert_row_count_diff(previous_counts, %{UserAccount => 1, UserSession => 1, StoredEvent => 1})
+
     assert_preregistered_user_broadcast(student)
   end
 
@@ -88,6 +99,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, auth} = log_in_or_register_with_link.(login_link.token, metadata)
 
     auth
@@ -97,7 +110,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     |> assert_persisted_session_for_existing_user(auth, user_account, student)
 
     assert_login_link_used(login_link)
-    assert [_user_account] = Repo.all(UserAccount)
+    # The existing account is reused (not duplicated): only a session and the
+    # event are added, and the link is consumed in place.
+    assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 1})
     # The existing account is reused as-is, so the preregistered user is not
     # touched and nothing is broadcast.
     refute_preregistered_user_broadcast()
@@ -108,10 +123,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
   } do
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :invalid_link} =
              log_in_or_register_with_link.(:crypto.strong_rand_bytes(100), metadata)
 
-    assert_no_login_side_effects()
+    assert_no_login_side_effects(previous_counts)
   end
 
   test "a deactivated login link cannot be used to log in", %{
@@ -130,9 +147,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
-    assert_no_login_side_effects()
+    assert_no_login_side_effects(previous_counts)
     refute_preregistered_user_broadcast()
     assert_login_link_untouched(login_link)
   end
@@ -153,9 +172,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
-    assert_no_login_side_effects()
+    assert_no_login_side_effects(previous_counts)
     refute_preregistered_user_broadcast()
     assert_login_link_untouched(login_link)
   end
@@ -173,9 +194,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
-    assert_no_login_side_effects()
+    assert_no_login_side_effects(previous_counts)
     refute_preregistered_user_broadcast()
     assert_login_link_untouched(login_link)
   end
@@ -198,9 +221,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
-    assert_no_login_side_effects()
+    assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
     refute_preregistered_user_broadcast()
     assert_login_link_untouched(login_link)
@@ -224,9 +249,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
-    assert_no_login_side_effects()
+    assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
     refute_preregistered_user_broadcast()
     assert_login_link_untouched(login_link)
@@ -262,9 +289,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
-    assert_no_login_side_effects()
+    assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
     refute_preregistered_user_broadcast()
     assert_login_link_untouched(login_link)
@@ -288,9 +317,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     metadata = Factory.build(:client_metadata)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
-    assert_no_login_side_effects()
+    assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
     assert_login_link_untouched(login_link)
   end
@@ -343,11 +374,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
   end
 
   # Asserts the full set of effects that must NOT happen on a rejected login: no
-  # session, no stored event and no telemetry. Callers add the assertions that
+  # rows added or removed in any watched table (no account, session or link
+  # created), no stored event and no telemetry. Callers add the assertions that
   # are specific to the scenario (login link untouched, user account untouched,
-  # no broadcast).
-  defp assert_no_login_side_effects do
-    assert [] = Repo.all(UserSession)
+  # no broadcast). `previous_counts` must be captured before the call.
+  defp assert_no_login_side_effects(previous_counts) do
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
     refute_login_telemetry()
   end

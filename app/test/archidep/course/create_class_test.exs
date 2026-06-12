@@ -17,10 +17,16 @@ defmodule ArchiDep.Course.CreateClassTest do
 
   # Pinned instant returned by the injected clock for the duration of each test,
   # so that every timestamp produced by the use case can be asserted exactly
-  # (see docs/testing.md).
+  # (see `docs/testing.md`).
   @now ~U[2024-03-15 10:30:00.000000Z]
 
   @teacher_ssh_public_key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC3randomkey== teacher@host"
+
+  # Every table this use case can affect. Snapshot all of them with
+  # `count_rows/1` before each call so the row-count diff catches a stray write
+  # to any of them, not just the ones a given test happens to think about (see
+  # `docs/testing.md`).
+  @affected_tables [Class, ExpectedServerProperties, StoredEvent]
 
   setup :verify_on_exit!
 
@@ -37,11 +43,11 @@ defmodule ArchiDep.Course.CreateClassTest do
   end
 
   # The three creation tests below follow the create-testing strategy documented
-  # in docs/testing.md: a random one (let the factory fill as much as possible),
-  # a minimal one (only the required fields, every optional left out), and a
-  # full one (every optional set). The random and full ones exercise field
-  # combinations a single pinned test never would; the minimal one pins the
-  # defaults the use case applies for omitted optionals.
+  # in `docs/testing.md`: a random one (let the factory fill as much as
+  # possible), a minimal one (only the required fields, every optional left
+  # out), and a full one (every optional set). The random and full ones exercise
+  # field combinations a single pinned test never would; the minimal one pins
+  # the defaults the use case applies for omitted optionals.
 
   test "create a class", %{create_class: create_class} do
     :ok = PubSub.subscribe_classes()
@@ -51,6 +57,8 @@ defmodule ArchiDep.Course.CreateClassTest do
     data = CourseFactory.build(:class_data, now: @now)
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, class} = create_class.(auth, data)
 
     class
@@ -58,7 +66,12 @@ defmodule ArchiDep.Course.CreateClassTest do
     |> assert_class_created_event(auth, data)
     |> assert_persisted_class()
 
-    assert_only_one_class_persisted()
+    assert_row_count_diff(previous_counts, %{
+      Class => 1,
+      ExpectedServerProperties => 1,
+      StoredEvent => 1
+    })
+
     assert_class_created_broadcast(class)
   end
 
@@ -82,6 +95,8 @@ defmodule ArchiDep.Course.CreateClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, class} = create_class.(auth, data)
 
     class
@@ -89,7 +104,12 @@ defmodule ArchiDep.Course.CreateClassTest do
     |> assert_class_created_event(auth, data)
     |> assert_persisted_class()
 
-    assert_only_one_class_persisted()
+    assert_row_count_diff(previous_counts, %{
+      Class => 1,
+      ExpectedServerProperties => 1,
+      StoredEvent => 1
+    })
+
     assert_class_created_broadcast(class)
   end
 
@@ -114,6 +134,8 @@ defmodule ArchiDep.Course.CreateClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, class} = create_class.(auth, data)
 
     class
@@ -121,7 +143,12 @@ defmodule ArchiDep.Course.CreateClassTest do
     |> assert_class_created_event(auth, data)
     |> assert_persisted_class()
 
-    assert_only_one_class_persisted()
+    assert_row_count_diff(previous_counts, %{
+      Class => 1,
+      ExpectedServerProperties => 1,
+      StoredEvent => 1
+    })
+
     assert_class_created_broadcast(class)
   end
 
@@ -131,9 +158,11 @@ defmodule ArchiDep.Course.CreateClassTest do
     data = CourseFactory.build(:class_data)
     auth = Factory.build(:authentication, root: false)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert_raise UnauthorizedError, fn -> create_class.(auth, data) end
 
-    assert_no_class_persisted()
+    assert_no_class_persisted(previous_counts)
   end
 
   test "a class cannot be created with invalid data", %{create_class: create_class} do
@@ -142,10 +171,12 @@ defmodule ArchiDep.Course.CreateClassTest do
     data = CourseFactory.build(:class_data, name: "")
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, changeset} = create_class.(auth, data)
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
-    assert_no_class_persisted()
+    assert_no_class_persisted(previous_counts)
   end
 
   test "a class cannot be created with a name that is already taken", %{
@@ -159,18 +190,17 @@ defmodule ArchiDep.Course.CreateClassTest do
     data = CourseFactory.build(:class_data, name: "info-2024")
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, changeset} = create_class.(auth, data)
     assert errors_on(changeset) == %{name: ["has already been taken"]}
 
-    # Only the pre-existing class and its expected server properties remain; the
-    # failed creation wrote nothing and emitted no event or broadcast.
-    assert [persisted] = Repo.all(Class)
-    assert persisted.id == existing.id
-    assert [_only_one] = Repo.all(ExpectedServerProperties)
-
+    # The failed creation wrote nothing; the pre-existing class is untouched.
+    assert persisted_class(existing.id) == existing
+    assert_no_row_count_diff(previous_counts)
     # No event stored already proves no broadcast (the use case broadcasts only
-    # after the creation commits); the rejected creation has no class ID to
-    # scope a refute to.
+    # after the creation commits); the rejected creation has no class ID to scope
+    # a refute to.
     assert_no_stored_events!()
   end
 
@@ -185,11 +215,13 @@ defmodule ArchiDep.Course.CreateClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert %Changeset{} = changeset = validate_class.(auth, data)
     assert errors_on(changeset) == %{}
 
     # Validation is side-effect free.
-    assert_no_class_persisted()
+    assert_no_class_persisted(previous_counts)
   end
 
   test "validate surfaces validation errors without creating anything", %{
@@ -202,11 +234,13 @@ defmodule ArchiDep.Course.CreateClassTest do
     data = CourseFactory.build(:class_data, name: "")
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert %Changeset{} = changeset = validate_class.(auth, data)
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
     # Validation is side-effect free.
-    assert_no_class_persisted()
+    assert_no_class_persisted(previous_counts)
   end
 
   test "a non-root user cannot validate class data", %{validate_class: validate_class} do
@@ -347,13 +381,6 @@ defmodule ArchiDep.Course.CreateClassTest do
     )
   end
 
-  defp assert_only_one_class_persisted do
-    # Exactly one class and its one (blank) expected server properties row, and
-    # nothing else.
-    assert [_only_one] = Repo.all(Class)
-    assert [_only_one] = Repo.all(ExpectedServerProperties)
-  end
-
   defp assert_class_created_broadcast(%Class{id: id} = class) do
     # Pin the class ID so the assertions match only this test's broadcasts — the
     # global "classes" topic is shared across async tests and not sandboxed (see
@@ -363,11 +390,10 @@ defmodule ArchiDep.Course.CreateClassTest do
     refute_received {:class_created, %Class{id: ^id}}
   end
 
-  # Asserts no class was created: no class row, no properties row, no event
+  # Asserts no class was created: no class or properties rows added, and no event
   # (which also implies no broadcast, emitted only after the creation commits).
-  defp assert_no_class_persisted do
-    assert [] = Repo.all(Class)
-    assert [] = Repo.all(ExpectedServerProperties)
+  defp assert_no_class_persisted(previous_counts) do
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
   end
 end

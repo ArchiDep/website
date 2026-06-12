@@ -17,7 +17,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
 
   # Pinned instant returned by the injected clock for the duration of each test,
   # so that every timestamp produced by the use case can be asserted exactly
-  # (see docs/testing.md).
+  # (see `docs/testing.md`).
   @now ~U[2024-03-15 10:30:00.000000Z]
 
   # An instant safely before `@now`, used to persist the class fixtures in the
@@ -25,6 +25,12 @@ defmodule ArchiDep.Course.UpdateClassTest do
   @past ~U[2023-09-15 09:42:17.000000Z]
 
   @teacher_ssh_public_key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC3randomkey== teacher@host"
+
+  # Every table this use case can affect. Snapshot all of them with
+  # `count_rows/1` before each call so the row-count diff catches a stray write
+  # to any of them, not just the ones a given test happens to think about (see
+  # `docs/testing.md`).
+  @affected_tables [Class, ExpectedServerProperties, StoredEvent]
 
   setup :verify_on_exit!
 
@@ -89,6 +95,8 @@ defmodule ArchiDep.Course.UpdateClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, class} = update_class.(auth, original.id, data)
 
     event =
@@ -97,7 +105,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
       |> assert_class_updated_event(auth, data)
       |> assert_persisted_class(original)
 
-    assert_only_one_class_persisted()
+    assert_row_count_diff(previous_counts, %{StoredEvent => 1})
     assert_class_updated_broadcast(class, event)
   end
 
@@ -139,6 +147,8 @@ defmodule ArchiDep.Course.UpdateClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, class} = update_class.(auth, original.id, data)
 
     event =
@@ -147,7 +157,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
       |> assert_class_updated_event(auth, data)
       |> assert_persisted_class(original)
 
-    assert_only_one_class_persisted()
+    assert_row_count_diff(previous_counts, %{StoredEvent => 1})
     assert_class_updated_broadcast(class, event)
   end
 
@@ -162,6 +172,8 @@ defmodule ArchiDep.Course.UpdateClassTest do
     data = CourseFactory.build(:class_data, now: @now)
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, class} = update_class.(auth, original.id, data)
 
     event =
@@ -170,7 +182,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
       |> assert_class_updated_event(auth, data)
       |> assert_persisted_class(original)
 
-    assert_only_one_class_persisted()
+    assert_row_count_diff(previous_counts, %{StoredEvent => 1})
     assert_class_updated_broadcast(class, event)
   end
 
@@ -185,6 +197,8 @@ defmodule ArchiDep.Course.UpdateClassTest do
     data = CourseFactory.build(:class_data, name: "INFO-2024", now: @now)
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, class} = update_class.(auth, original.id, data)
 
     event =
@@ -193,7 +207,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
       |> assert_class_updated_event(auth, data)
       |> assert_persisted_class(original)
 
-    assert_only_one_class_persisted()
+    assert_row_count_diff(previous_counts, %{StoredEvent => 1})
     assert_class_updated_broadcast(class, event)
   end
 
@@ -206,9 +220,11 @@ defmodule ArchiDep.Course.UpdateClassTest do
     data = CourseFactory.build(:class_data, now: @now)
     auth = Factory.build(:authentication, root: false)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert_raise UnauthorizedError, fn -> update_class.(auth, original.id, data) end
 
-    assert_update_had_no_effect(original)
+    assert_update_had_no_effect(original, previous_counts)
   end
 
   test "a class that does not exist cannot be updated", %{update_class: update_class} do
@@ -216,6 +232,8 @@ defmodule ArchiDep.Course.UpdateClassTest do
 
     data = CourseFactory.build(:class_data, now: @now)
     root = Factory.build(:authentication, root: true)
+
+    previous_counts = count_rows(@affected_tables)
 
     # A well-formed but unknown ID reports the class as missing.
     assert update_class.(root, Ecto.UUID.generate(), data) == {:error, :class_not_found}
@@ -225,7 +243,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
     non_root = Factory.build(:authentication, root: false)
     assert update_class.(non_root, Ecto.UUID.generate(), data) == {:error, :class_not_found}
 
-    assert_no_class_persisted()
+    assert_no_class_persisted(previous_counts)
   end
 
   test "a class cannot be updated with invalid data", %{update_class: update_class} do
@@ -237,10 +255,12 @@ defmodule ArchiDep.Course.UpdateClassTest do
     data = CourseFactory.build(:class_data, name: "", now: @now)
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, changeset} = update_class.(auth, original.id, data)
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
-    assert_update_had_no_effect(original)
+    assert_update_had_no_effect(original, previous_counts)
   end
 
   test "a class cannot be renamed to a name that is already taken", %{update_class: update_class} do
@@ -254,12 +274,14 @@ defmodule ArchiDep.Course.UpdateClassTest do
     data = CourseFactory.build(:class_data, name: "info-2024", now: @now)
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:error, changeset} = update_class.(auth, original.id, data)
     assert errors_on(changeset) == %{name: ["has already been taken"]}
 
     # Neither class changed, no event was stored and no broadcast was emitted.
     assert_class_unchanged(other)
-    assert_update_had_no_effect(original)
+    assert_update_had_no_effect(original, previous_counts)
   end
 
   test "validate valid update data for an existing class without changing anything", %{
@@ -279,11 +301,13 @@ defmodule ArchiDep.Course.UpdateClassTest do
 
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, %Changeset{} = changeset} = validate_existing_class.(auth, original.id, data)
     assert errors_on(changeset) == %{}
 
     # Validation is side-effect free.
-    assert_update_had_no_effect(original)
+    assert_update_had_no_effect(original, previous_counts)
   end
 
   test "validate surfaces validation errors for an existing class without changing anything", %{
@@ -299,11 +323,13 @@ defmodule ArchiDep.Course.UpdateClassTest do
     data = CourseFactory.build(:class_data, name: "", now: @now)
     auth = Factory.build(:authentication, root: true)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert {:ok, %Changeset{} = changeset} = validate_existing_class.(auth, original.id, data)
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
     # Validation is side-effect free.
-    assert_update_had_no_effect(original)
+    assert_update_had_no_effect(original, previous_counts)
   end
 
   test "validating update data for a class that does not exist returns an error", %{
@@ -329,9 +355,11 @@ defmodule ArchiDep.Course.UpdateClassTest do
     data = CourseFactory.build(:class_data, now: @now)
     auth = Factory.build(:authentication, root: false)
 
+    previous_counts = count_rows(@affected_tables)
+
     assert_raise UnauthorizedError, fn -> validate_existing_class.(auth, original.id, data) end
 
-    assert_update_had_no_effect(original)
+    assert_update_had_no_effect(original, previous_counts)
   end
 
   # Asserts the use case's return value exactly: the original class with every
@@ -449,13 +477,6 @@ defmodule ArchiDep.Course.UpdateClassTest do
     )
   end
 
-  defp assert_only_one_class_persisted do
-    # Exactly one class and its one expected server properties row, and nothing
-    # else.
-    assert [_only_one] = Repo.all(Class)
-    assert [_only_one] = Repo.all(ExpectedServerProperties)
-  end
-
   # Asserts the class-updated message reached both topics the use case publishes
   # to — the class-specific one and the global one — each carrying the updated
   # class and a reference to the stored event, and that nothing else was
@@ -487,20 +508,20 @@ defmodule ArchiDep.Course.UpdateClassTest do
     assert persisted_class(class.id) == class
   end
 
-  # Asserts that a rejected update left no trace: the class row is unchanged,
-  # and no event or broadcast was emitted.
-  defp assert_update_had_no_effect(%Class{} = original) do
+  # Asserts a rejected update left no trace: the class row is unchanged, no rows
+  # were added or removed anywhere, and no event or broadcast was emitted.
+  # `previous_counts` must be captured before the call.
+  defp assert_update_had_no_effect(%Class{} = original, previous_counts) do
     assert_class_unchanged(original)
+    assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
     refute_class_updated_broadcast(original.id)
   end
 
   # Asserts the full set of effects that must NOT happen when no class exists to
-  # update: no class row, no expected-server-properties row, no event, no
-  # broadcast.
-  defp assert_no_class_persisted do
-    assert [] = Repo.all(Class)
-    assert [] = Repo.all(ExpectedServerProperties)
+  # update: no class or properties rows added, no event, no broadcast.
+  defp assert_no_class_persisted(previous_counts) do
+    assert_no_row_count_diff(previous_counts)
     # No event stored already proves no broadcast (emitted only after the update
     # commits); there is no class ID to scope a refute to.
     assert_no_stored_events!()
