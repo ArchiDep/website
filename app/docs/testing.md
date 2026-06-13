@@ -39,6 +39,8 @@ that silently rots.
   - [Testing create use cases](#testing-create-use-cases)
   - [Testing update use cases](#testing-update-use-cases)
   - [Testing read use cases](#testing-read-use-cases)
+  - [Testing delete use cases](#testing-delete-use-cases)
+  - [Testing sub-aspect (child-association) update use cases](#testing-sub-aspect-child-association-update-use-cases)
   - [Factories](#factories)
   - [Contract-checking the real implementation](#contract-checking-the-real-implementation)
 - [Web layer (LiveViews & controllers)](#web-layer-liveviews--controllers)
