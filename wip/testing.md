@@ -69,7 +69,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Roll out the row-count-diff assertion](#roll-out-the-row-count-diff-assertion)
   - [x] [Course — class use cases (remainder)](#course--class-use-cases-remainder)
   - [x] [Course — student use cases](#course--student-use-cases)
-  - [ ] [Course — student import](#course--student-import)
+  - [x] [Course — student import](#course--student-import)
   - [ ] [Course — remaining schemas](#course--remaining-schemas)
   - [ ] [Course — backfill exhaustive schema validation tests](#course--backfill-exhaustive-schema-validation-tests)
   - [x] 🧭 [Canon — accounts auth use cases](#canon--accounts-auth-use-cases)
@@ -324,12 +324,28 @@ the delete test covers only unlinked students.
 ### Course — student import
 
 `ImportStudents` + `StudentImportList` schema (parsing/validation is
-logic-dense; worth its own chunk). _Scope:_ 1 use case + 1 schema. _Before
-testing:_ `import_students/3` reads `DateTime.utc_now()` directly instead of
-threading `Clock.now()` from the use case (see [Deterministic
-time](../app/docs/testing.md#deterministic-time-via-an-injectable-clock));
-convert it so the imported students' and events' timestamps can be pinned, as
-was done for the other student use cases.
+logic-dense; worth its own chunk). _Scope:_ 1 use case + 1 schema. _Done:_ both
+covered (`import_students_test.exs`, `schemas/student_import_list_test.exs`).
+This is a **bulk create** with no single-record equivalent, so a few assertions
+depart from the create canon and are flagged inline: list output matched by
+email (`insert_all` order is unspecified); the per-student SSH password bound
+and cross-referenced (5 bytes base32 — too short for
+`assert_secure_random_token`); the two-level audit trail (one
+`StudentsImportedInClass` event plus one `StudentCreated` per new student)
+matched by type/id rather than position since all events share `occurred_at`,
+with the causation chain asserted; and the generated usernames bound and
+cross-referenced in the use-case test (one exact value pinned to anchor the
+wiring) while the generation algorithm is pinned exhaustively in the schema
+test. Four latent bugs were fixed along the way (flag for review):
+`import_students/3` stamped its own `DateTime.utc_now()` instead of taking
+`Clock.now()` (timestamps were unpinnable); it called the raising `authorize!/5`
+with no `else`, so a non-root caller hit an `UnauthorizedError` instead of the
+masked `:class_not_found` its siblings return; the `import_student_data` type
+required a `username` field that no caller supplies and the schema ignores (it
+generates its own), so the type was corrected to `{name, email}`; and the use
+case broadcast `{:students_imported, class, []}` even when every student already
+existed and nothing was inserted, so the broadcast is now skipped when no
+student was imported (the test verifies no notification is published).
 
 ### Course — remaining schemas
 

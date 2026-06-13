@@ -4,6 +4,7 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
   use ArchiDep, :use_case
 
   import ArchiDep.Events.Store.StoredEvent, only: [to_insert_data: 1]
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Events.StudentCreated
   alias ArchiDep.Course.Events.StudentsImportedInClass
   alias ArchiDep.Course.Policy
@@ -17,10 +18,9 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
           {:ok, list(Student.t())} | {:error, Changeset.t()} | {:error, :class_not_found}
   def import_students(auth, class_id, data) do
     with :ok <- validate_uuid(class_id, :class_not_found),
-         {:ok, class} <- Class.fetch_class(class_id) do
-      authorize!(auth, Policy, :course, :import_students, class)
-
-      now = DateTime.utc_now()
+         {:ok, class} <- Class.fetch_class(class_id),
+         :ok <- authorize(auth, Policy, :course, :import_students, class) do
+      now = Clock.now()
       changeset = StudentImportList.changeset(data)
 
       existing_usernames =
@@ -34,6 +34,12 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
 
         run_import(auth, class, import_list, insert_data, now)
       end
+    else
+      {:error, {:access_denied, :course, :import_students}} ->
+        {:error, :class_not_found}
+
+      {:error, :class_not_found} ->
+        {:error, :class_not_found}
     end
   end
 
@@ -52,6 +58,9 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
          end)
          |> insert_events(auth, class, import_list, now)
          |> transaction() do
+      {:ok, %{new_students: []}} ->
+        {:ok, []}
+
       {:ok, %{new_students: new_students}} ->
         :ok = PubSub.publish_students_imported(class, new_students)
         {:ok, new_students}

@@ -30,8 +30,7 @@ defmodule ArchiDep.Course.Types do
 
   @type import_student_data :: %{
           name: String.t(),
-          email: String.t(),
-          username: String.t()
+          email: String.t()
         }
 
   @type student_config :: %{
