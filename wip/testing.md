@@ -70,8 +70,8 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Course — class use cases (remainder)](#course--class-use-cases-remainder)
   - [x] [Course — student use cases](#course--student-use-cases)
   - [x] [Course — student import](#course--student-import)
-  - [ ] [Course — remaining schemas](#course--remaining-schemas)
-  - [ ] [Course — backfill exhaustive schema validation tests](#course--backfill-exhaustive-schema-validation-tests)
+  - [x] [Course — remaining schemas](#course--remaining-schemas)
+  - [x] [Course — backfill exhaustive schema validation tests](#course--backfill-exhaustive-schema-validation-tests)
   - [x] 🧭 [Canon — accounts auth use cases](#canon--accounts-auth-use-cases)
   - [x] 🔒 [Security invariant — login links never authenticate a root account](#security-invariant--login-links-never-authenticate-a-root-account)
   - [ ] [Accounts — session lifecycle use cases](#accounts--session-lifecycle-use-cases)
@@ -350,7 +350,15 @@ student was imported (the test verifies no notification is published).
 ### Course — remaining schemas
 
 `User`, `ExpectedServerProperties` (`Class`/`Student` partially covered — see
-the backfill task below). _Scope:_ 2 schemas.
+the backfill task below). _Scope:_ 2 schemas. _Done:_ `ExpectedServerProperties`
+is covered exhaustively (`schemas/expected_server_properties_test.exs`): the
+per-field length limits and the numeric bounds for every integer field
+(generated once each via a `for` comprehension over the field/limit list), the
+`{number}` placeholder asserted literally since the translation layer resolves
+it at render time, plus the `trim_to_nil` behavior. **`User` was deliberately
+skipped:** it has no changeset/validation functions — only `fetch_user/1`,
+`fetch_authenticated/1` and the in-memory `refresh!/2` — so there is nothing to
+validate-test. Its query/refresh logic can be covered later if coverage demands.
 
 ### Course — backfill exhaustive schema validation tests
 
@@ -365,6 +373,38 @@ including each of a schema's changeset functions where they validate differently
 (e.g. `Class.new/2` vs. `Class.update/2` vs.
 `update_expected_server_properties/2`). New schema tests (`User`,
 `ExpectedServerProperties`) should be exhaustive from the start.
+
+_Done:_ `class_test.exs` and `student_test.exs` now assert every changeset rule
+with exact messages. Rules shared by the create and update changesets are written
+once and generated for both via a `for variant <- [:new, :update]` comprehension
+that `unquote`s the variant into each test (a small private builder dispatches to
+`new`/`update`); divergent behavior (name/email/username uniqueness with
+self-exclusion, and `validate_required`, which cannot fail on the update path)
+lives in plain per-variant `describe` blocks. The new `for`+`unquote` convention
+is documented in `docs/testing.md` under [Changeset and validation
+errors](../app/docs/testing.md#changeset-and-validation-errors). Three bugs were
+found and fixed along the way (flag for review):
+
+1. `Class`'s SHA256 host-key-fingerprint validation added its error under
+   `:ssh_exercise_vm_host_key_fingerprints` — a non-existent field — so the error
+   was silently swallowed and never reached the form (the form already binds the
+   correct field). Corrected to `:ssh_exercise_vm_sha256_host_key_fingerprints`;
+   no web change needed.
+2. `Student.new/3` and `Student.update/3` rejected hyphens in usernames
+   (`~r/\A[a-z][a-z0-9]*\z/i`) even though their error message and the
+   student-facing dialogs say hyphens are allowed; aligned them with
+   `configure_changeset/3` (`~r/\A[a-z][\-a-z0-9]*\z/i`). The stale
+   no-hyphen comment in the `student_data` factory was updated, and the admin
+   student form's "(alphanumeric)" help text is flagged for the reviewer as now
+   slightly inaccurate.
+3. _Found but not fixed (separate context):_
+   `ArchiDep.Servers.SSH.SSHKeyFingerprint.parse/2` raises a `WithClauseError`
+   on a fully-malformed fingerprint line (its `with/else` only handles the
+   `{:ok, …}` fallthrough, not `{:error, :malformed}`), so garbage fingerprint
+   input crashes the class changeset instead of producing a validation error.
+   The schema test sidesteps it by using a well-formed wrong-digest fingerprint.
+   Documented in [`app/docs/known-issues.md`](../app/docs/known-issues.md), with
+   a note to add a malformed-input test once the parser is fixed.
 
 ### Canon — accounts auth use cases
 

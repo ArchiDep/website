@@ -10,6 +10,7 @@ and the options for resolving it.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Deleting a student who has logged in fails](#deleting-a-student-who-has-logged-in-fails)
+- [SSH host key fingerprint parsing crashes on malformed input](#ssh-host-key-fingerprint-parsing-crashes-on-malformed-input)
 
 <!-- END doctoc -->
 
@@ -42,3 +43,32 @@ sessions/servers) as part of the same transaction.
 
 Coverage note: `delete_student_test.exs` therefore covers only the unlinked
 case; the linked case has no test pending this decision.
+
+## SSH host key fingerprint parsing crashes on malformed input
+
+`ArchiDep.Servers.SSH.SSHKeyFingerprint.parse/2` raises a `WithClauseError` on a
+fingerprint line that matches no known fingerprint format at all. The `:md5` and
+`:sha256` clauses use a `with` whose `else` only handles the `{:ok,
+fingerprint_string, key_alg, raw}` fallthrough (a well-formed line whose digest
+is the wrong type or otherwise invalid). When `parse_ssh_keygen_output_line/1`
+instead returns `{:error, :malformed}` — i.e. the line does not match the regex
+— no `else` clause matches and the function crashes.
+
+This is reachable from the course layer: `Class`'s `validate/1` calls
+`SSH.parse_ssh_host_key_fingerprints/2` on the
+`ssh_exercise_vm_md5_host_key_fingerprints` /
+`ssh_exercise_vm_sha256_host_key_fingerprints` fields, expecting a graceful
+`{:error, reason}`. A teacher who pastes arbitrary text into either field of the
+class form therefore crashes the changeset validation (and the LiveView) instead
+of seeing the intended "must contain at least one valid SSH host key
+fingerprint…" error.
+
+Decision to make: make `parse/2` (or `parse_ssh_keygen_output_line/1`) return
+`{:error, :malformed}` through the `with` rather than raising, so the schema
+surfaces it as a normal validation error.
+
+Coverage note: `class_test.exs` currently exercises the invalid-fingerprint path
+with a well-formed _wrong-digest_ fingerprint (which the parser handles
+gracefully), deliberately sidestepping this crash. Once the parser is fixed, add
+a case that feeds genuinely malformed text (e.g. `"not-a-fingerprint"`) to both
+fingerprint fields and asserts the expected validation error.

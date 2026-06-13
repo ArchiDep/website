@@ -605,6 +605,34 @@ vice versa), a default applied only on create, a version bumped only on update â
 assert it: that the field is applied when it should be and ignored when it
 should not, in the persisted row and the emitted event.
 
+**Share rules common to several changesets; keep divergent ones separate.** When
+two changesets (typically create and update) run the same validations, write
+each rule once and generate one test per changeset with a `for` comprehension
+that `unquote`s the variant into each `test`, dispatching through a small
+private builder. This stays DRY _and_ granular â€” a failure names both the
+variant and the rule (see [`class_test.exs`][class-test] /
+[`student_test.exs`][student-test]):
+
+```elixir
+for variant <- [:new, :update] do
+  describe "#{variant} value validations" do
+    test "the name cannot be longer than 50 characters" do
+      assert errors_on(changeset(unquote(variant), name: String.duplicate("a", 51))) ==
+               %{name: ["should be at most 50 character(s)"]}
+    end
+  end
+end
+
+defp changeset(:new, overrides), do: :class_data |> build(overrides) |> Class.new(@now)
+defp changeset(:update, overrides), do: :class |> insert(now: @now) |> Class.update(build(:class_data, overrides), @now)
+```
+
+Only put rules that validate a _provided_ value in the shared loop. Two things
+do **not** belong there: `validate_required`, which cannot fail on the update
+path (an omitted field keeps the persisted value), and any rule that diverges
+between the changesets (uniqueness self-exclusion, a stricter create-only
+format). Those get their own plain `describe` blocks per variant.
+
 ### Covering every branch
 
 Each distinct path through a use case is its own test: new vs. existing record,
@@ -924,6 +952,7 @@ function components with Floki._
 [delete-class-test]: ../test/archidep/course/delete_class_test.exs
 [update-expected-properties-test]: ../test/archidep/course/update_expected_server_properties_for_class_test.exs
 [class-test]: ../test/archidep/course/schemas/class_test.exs
+[student-test]: ../test/archidep/course/schemas/student_test.exs
 [ex-unit]: https://hexdocs.pm/ex_unit/ExUnit.html
 [ex-unit-doctests]: https://hexdocs.pm/ex_unit/ExUnit.DocTest.html
 [gen-server]: https://hexdocs.pm/elixir/GenServer.html

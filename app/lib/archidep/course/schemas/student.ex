@@ -362,7 +362,7 @@ defmodule ArchiDep.Course.Schemas.Student do
       |> validate_length(:academic_class, max: 30)
       # Username
       |> validate_length(:username, max: 20)
-      |> validate_format(:username, ~r/\A[a-z][a-z0-9]*\z/i,
+      |> validate_format(:username, ~r/\A[a-z][\-a-z0-9]*\z/i,
         message:
           "must contain only letters (without accents), numbers and hyphens, and start with a letter"
       )

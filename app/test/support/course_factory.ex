@@ -322,12 +322,8 @@ defmodule ArchiDep.Support.CourseFactory do
         optionally(fn -> sequence(:student_academic_class, &"Academic class #{&1}") end)
       )
 
-    # No hyphen: `Student.new/3` and `Student.update/3` accept only letters and
-    # digits in a username (unlike `configure_changeset/3`, which allows
-    # hyphens), so a hyphenated value would fail validation as create/update
-    # input.
     {username, attrs!} =
-      Map.pop_lazy(attrs!, :username, fn -> sequence(:student_data_username, &"student#{&1}") end)
+      Map.pop_lazy(attrs!, :username, fn -> sequence(:student_data_username, &"student-#{&1}") end)
 
     {domain, attrs!} = Map.pop_lazy(attrs!, :domain, &Faker.Internet.domain_name/0)
 

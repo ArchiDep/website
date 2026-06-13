@@ -275,7 +275,7 @@ defmodule ArchiDep.Course.Schemas.Class do
 
           {:error, reason} ->
             [
-              ssh_exercise_vm_host_key_fingerprints:
+              ssh_exercise_vm_sha256_host_key_fingerprints:
                 {"must contain at least one valid SSH host key fingerprint, with new lines between each fingerprint",
                  [reason: reason]}
             ]
