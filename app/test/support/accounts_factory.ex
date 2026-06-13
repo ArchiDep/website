@@ -226,14 +226,20 @@ defmodule ArchiDep.Support.AccountsFactory do
   def user_account_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
 
-    {username, attrs!} =
+    {requested_username, attrs!} =
       Map.pop_lazy(
         attrs!,
         :username,
-        optionally(fn ->
-          sequence(:user_account_username, &"user-account-#{&1}")
-        end)
+        optionally(fn -> generated_user_account_username() end)
       )
+
+    # `username: :generate` forces a generated username, for the
+    # cases that need a non-nil one (the factory otherwise leaves it optional).
+    username =
+      case requested_username do
+        :generate -> generated_user_account_username()
+        other -> other
+      end
 
     {root, attrs!} = Map.pop_lazy(attrs!, :root, &bool/0)
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
@@ -375,4 +381,7 @@ defmodule ArchiDep.Support.AccountsFactory do
       impersonated_user_account_id: impersonated_user_account_id
     }
   end
+
+  defp generated_user_account_username,
+    do: sequence(:user_account_username, &"user-account-#{&1}")
 end

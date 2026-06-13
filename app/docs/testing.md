@@ -108,7 +108,11 @@ assertion that the effect did _not_ occur:
    stream, version, and metadata — and that _no other_ events were stored.
 3. **Every database side effect**: rows created, updated, deleted — asserted by
    exact equality on the full schema struct, including version bumps and
-   timestamps.
+   timestamps. **Reconstruct the expected row from the stored event (asserted in
+   step 2), never by comparing the re-read row to the use case's return value**
+   — `assert Repo.get!(…) == returned` holds by construction and proves nothing
+   (see [Exact assertions on database side
+   effects](#exact-assertions-on-database-side-effects)).
 4. **Pinned row counts**, asserted as a diff from before the call
    (`assert_row_count_diff/2` / `assert_no_row_count_diff/1`): every affected
    table changed by exactly the expected delta and no other watched table
@@ -352,6 +356,15 @@ consistent (e.g. that the session's `created_at` equals the event's
 `occurred_at`), but the end state is an exact assertion against the injected
 instant, and new code should be written that way from the start.
 
+**The use case is the only place that reads the clock.** `Clock.now/0` is
+resolved once at the top of the use case and threaded down into the schema
+changeset builders (`Schema.new(data, now)`, `Schema.update(record, data, now)`)
+and event constructors — exactly as the class use cases do. A schema changeset
+function or a delete/import path that calls `DateTime.utc_now/0` for itself
+defeats the injected clock: its timestamps cannot be pinned, so the test cannot
+assert them. Thread the clock from the use case so every persisted and emitted
+timestamp can be asserted exactly.
+
 ### Generated identifiers
 
 We deliberately do **not** inject UUID generation, even though it would let us
@@ -512,6 +525,31 @@ authorized principal succeeds, and that each unauthorized principal is rejected
 with the exact expected error — **and** that the rejection produced none of the
 side effects above. Impersonation and root-only operations have their own rules;
 assert them explicitly rather than relying on a single happy-path principal.
+
+**Self-service (non-root) authorization needs a persisted principal.** When a
+use case authorizes an action against the principal's _own_ record (a student
+confirming their own username, an owner editing their own resource) rather than
+a blanket root check, the policy matches on the link between the principal and
+the entity — so the test must persist that link in the database, not just build
+an `authentication/1`. The recipe: insert the owned record, insert the linking
+projection row (e.g. the course `User` over `user_accounts`) so that its ID
+equals the principal ID and it points back at the record (and the record points
+back at it), then build `authentication(principal_id: <that id>, root: false)`.
+A root principal still has to be persisted too if the use case loads the account
+_before_ the policy's root short-circuit — otherwise the load fails closed.
+Drive every distinct principal: the owner (succeeds), a _different_ non-root
+principal (rejected), a root principal (per the policy), and a principal with no
+linked record at all.
+
+**Assert masked errors explicitly — once per upstream cause.** A use case often
+collapses several distinct failures — access denied, "not a user", "not found" —
+into one opaque error (e.g. `:student_not_found`) so it never leaks whether a
+record exists or who owns it. A single not-found test does not prove the masking
+holds: drive **each** upstream condition separately (a wrong owner, a missing
+account, an unknown ID, a malformed ID) and assert they all return the same
+masked result, each with no side effects. This is also where copy-paste bugs in
+the masking surface — an `else` clause matching the wrong action atom, or a `=`
+where a `<-` was meant, only fails when the masked branch is actually exercised.
 
 ### Changeset and validation errors
 

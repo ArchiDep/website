@@ -255,10 +255,9 @@ defmodule ArchiDep.Course.Schemas.Student do
     fresh_student
   end
 
-  @spec new(Types.student_data(), Class.t()) :: Changeset.t(t())
-  def new(data, class) do
+  @spec new(Types.student_data(), Class.t(), DateTime.t()) :: Changeset.t(t())
+  def new(data, class, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     %__MODULE__{}
     |> cast(data, [
@@ -283,11 +282,10 @@ defmodule ArchiDep.Course.Schemas.Student do
     |> validate(id, class.id)
   end
 
-  @spec update(t(), Types.student_data()) :: Changeset.t(t())
-  def update(student, data) do
+  @spec update(t(), Types.student_data(), DateTime.t()) :: Changeset.t(t())
+  def update(student, data, now) do
     id = student.id
     class_id = student.class_id
-    now = DateTime.utc_now()
 
     student
     |> cast(data, [
@@ -304,10 +302,8 @@ defmodule ArchiDep.Course.Schemas.Student do
     |> validate(id, class_id)
   end
 
-  @spec configure_changeset(t(), Types.student_config()) :: Changeset.t()
-  def configure_changeset(%__MODULE__{} = student, data) do
-    now = DateTime.utc_now()
-
+  @spec configure_changeset(t(), Types.student_config(), DateTime.t()) :: Changeset.t()
+  def configure_changeset(%__MODULE__{} = student, data, now) do
     student
     |> cast(data, [:username])
     |> change(username_confirmed: true)

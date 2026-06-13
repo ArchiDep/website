@@ -7,7 +7,8 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
   test "a student cannot choose the 'archidep' username" do
     student = CourseFactory.build(:student)
 
-    changeset = Student.configure_changeset(student, %{username: "archidep"})
+    changeset =
+      Student.configure_changeset(student, %{username: "archidep"}, DateTime.utc_now())
 
     # get list of error field and message tuples
     assert errors_on(changeset) == %{username: ["this username is reserved and cannot be used"]}

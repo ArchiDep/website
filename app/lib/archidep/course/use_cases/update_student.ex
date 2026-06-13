@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.UpdateStudent do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
@@ -15,7 +16,7 @@ defmodule ArchiDep.Course.UseCases.UpdateStudent do
     with :ok <- validate_uuid(id, :student_not_found),
          {:ok, student} <- Student.fetch_student(id) do
       authorize!(auth, Policy, :course, :validate_existing_student, student)
-      {:ok, Student.update(student, data)}
+      {:ok, Student.update(student, data, Clock.now())}
     end
   end
 
@@ -26,8 +27,10 @@ defmodule ArchiDep.Course.UseCases.UpdateStudent do
          {:ok, student} <- Student.fetch_student(id) do
       authorize!(auth, Policy, :course, :update_student, student)
 
+      now = Clock.now()
+
       case Multi.new()
-           |> Multi.update(:student, Student.update(student, data))
+           |> Multi.update(:student, Student.update(student, data, now))
            |> Multi.insert(:stored_event, &student_updated(auth, &1.student))
            |> Repo.transaction() do
         {:ok, %{student: student}} ->

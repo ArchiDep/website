@@ -660,8 +660,10 @@ The `test/support/` directory provides shared testing infrastructure:
 - **Helper modules**: `ArchiDep.Support.ProcessTestHelpers` (wait for a
   process's state to satisfy a condition), `ArchiDep.Support.DateTestHelpers`
   (manipulate dates/datetimes), `ArchiDep.Support.TelemetryTestHelpers` (assert
-  on telemetry events) and `ArchiDepWeb.Support.HtmlTestHelpers` (Floki HTML
-  helpers).
+  on telemetry events), `ArchiDep.Support.CourseTestHelpers` (set up
+  course-context fixtures that span contexts, such as a student linked to a user
+  account in both directions) and `ArchiDepWeb.Support.HtmlTestHelpers` (Floki
+  HTML helpers).
 - **Factories**: per-context [ExMachina][ex-machina] factories under
   `test/support/` (`ArchiDep.Support.AccountsFactory`, `CourseFactory`,
   `EventsFactory`, `ServersFactory`, …), plus the shared

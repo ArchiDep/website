@@ -308,6 +308,57 @@ defmodule ArchiDep.Support.CourseFactory do
     }
   end
 
+  @spec student_data_factory(map()) :: Types.student_data()
+  def student_data_factory(attrs!) do
+    {name, attrs!} =
+      Map.pop_lazy(attrs!, :name, fn -> sequence(:student_name, &"Student #{&1}") end)
+
+    {email, attrs!} = Map.pop_lazy(attrs!, :email, &Faker.Internet.email/0)
+
+    {academic_class, attrs!} =
+      Map.pop_lazy(
+        attrs!,
+        :academic_class,
+        optionally(fn -> sequence(:student_academic_class, &"Academic class #{&1}") end)
+      )
+
+    # No hyphen: `Student.new/3` and `Student.update/3` accept only letters and
+    # digits in a username (unlike `configure_changeset/3`, which allows
+    # hyphens), so a hyphenated value would fail validation as create/update
+    # input.
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn -> sequence(:student_data_username, &"student#{&1}") end)
+
+    {domain, attrs!} = Map.pop_lazy(attrs!, :domain, &Faker.Internet.domain_name/0)
+
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+    {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
+
+    [] = Map.keys(attrs!)
+
+    %{
+      name: name,
+      email: email,
+      academic_class: academic_class,
+      username: username,
+      domain: domain,
+      active: active,
+      servers_enabled: servers_enabled
+    }
+  end
+
+  @spec student_config_data_factory(map()) :: Types.student_config()
+  def student_config_data_factory(attrs!) do
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn ->
+        sequence(:student_config_username, &"student#{&1}")
+      end)
+
+    [] = Map.keys(attrs!)
+
+    %{username: username}
+  end
+
   @spec user_factory(map()) :: User.t()
   def user_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)

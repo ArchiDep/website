@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.DeleteStudent do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Events.StudentDeleted
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
@@ -15,7 +16,7 @@ defmodule ArchiDep.Course.UseCases.DeleteStudent do
          {:ok, student} <- Student.fetch_student(id) do
       authorize!(auth, Policy, :course, :delete_student, student)
 
-      now = DateTime.utc_now()
+      now = Clock.now()
 
       # TODO: shut down server
       case Multi.new()

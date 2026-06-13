@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.ConfigureStudent do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Events.StudentConfigured
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
@@ -21,7 +22,7 @@ defmodule ArchiDep.Course.UseCases.ConfigureStudent do
          {:ok, student} <- Student.fetch_student(id),
          {:ok, user} <- User.fetch_authenticated(auth),
          :ok <- authorize(auth, Policy, :course, :configure_student, {user, student}) do
-      {:ok, Student.configure_changeset(student, data)}
+      {:ok, Student.configure_changeset(student, data, Clock.now())}
     else
       {:error, :student_not_found} ->
         {:error, :student_not_found}
@@ -44,11 +45,11 @@ defmodule ArchiDep.Course.UseCases.ConfigureStudent do
           | {:error, :student_not_found}
   def configure_student(auth, id, data) do
     with :ok <- validate_uuid(id, :student_not_found),
-         {:ok, user} = User.fetch_authenticated(auth),
+         {:ok, user} <- User.fetch_authenticated(auth),
          {:ok, student} <- Student.fetch_student(id),
          :ok <-
            authorize(auth, Policy, :course, :configure_student, {user, student}),
-         {:ok, updated_student} <- transaction(auth, student, data) do
+         {:ok, updated_student} <- transaction(auth, student, data, Clock.now()) do
       :ok = PubSub.publish_student_updated(updated_student)
       {:ok, updated_student}
     else
@@ -66,9 +67,9 @@ defmodule ArchiDep.Course.UseCases.ConfigureStudent do
     end
   end
 
-  defp transaction(auth, student, data) do
+  defp transaction(auth, student, data, now) do
     case Multi.new()
-         |> Multi.update(:student, Student.configure_changeset(student, data))
+         |> Multi.update(:student, Student.configure_changeset(student, data, now))
          |> Multi.insert(:stored_event, &student_configured(auth, &1.student))
          |> Repo.transaction() do
       {:ok, %{student: updated_student}} ->

@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.CreateStudent do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Events.StudentCreated
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
@@ -16,7 +17,7 @@ defmodule ArchiDep.Course.UseCases.CreateStudent do
     with :ok <- validate_uuid(class_id, :class_not_found),
          {:ok, class} <- Class.fetch_class(class_id),
          :ok <- authorize(auth, Policy, :course, :validate_student, class) do
-      {:ok, Student.new(data, class)}
+      {:ok, Student.new(data, class, Clock.now())}
     else
       {:error, {:access_denied, :course, :validate_student}} ->
         {:error, :class_not_found}
@@ -32,8 +33,10 @@ defmodule ArchiDep.Course.UseCases.CreateStudent do
     with :ok <- validate_uuid(class_id, :class_not_found),
          {:ok, class} <- Class.fetch_class(class_id),
          :ok <- authorize(auth, Policy, :course, :create_student, class) do
+      now = Clock.now()
+
       case Multi.new()
-           |> Multi.insert(:student, Student.new(data, class))
+           |> Multi.insert(:student, Student.new(data, class, now))
            |> Multi.insert(:stored_event, &student_created(auth, &1.student))
            |> transaction() do
         {:ok, %{student: student}} ->
@@ -44,7 +47,7 @@ defmodule ArchiDep.Course.UseCases.CreateStudent do
           {:error, changeset}
       end
     else
-      {:error, {:access_denied, :course, :validate_student}} ->
+      {:error, {:access_denied, :course, :create_student}} ->
         {:error, :class_not_found}
 
       {:error, :class_not_found} ->

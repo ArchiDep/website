@@ -68,7 +68,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] 🧭 [Canon — business-layer test conventions](#canon--business-layer-test-conventions)
   - [x] [Roll out the row-count-diff assertion](#roll-out-the-row-count-diff-assertion)
   - [x] [Course — class use cases (remainder)](#course--class-use-cases-remainder)
-  - [ ] [Course — student use cases](#course--student-use-cases)
+  - [x] [Course — student use cases](#course--student-use-cases)
   - [ ] [Course — student import](#course--student-import)
   - [ ] [Course — remaining schemas](#course--remaining-schemas)
   - [ ] [Course — backfill exhaustive schema validation tests](#course--backfill-exhaustive-schema-validation-tests)
@@ -298,12 +298,38 @@ independently, like `class_data_factory`.
 ### Course — student use cases
 
 `CreateStudent`, `ReadStudents`, `UpdateStudent`, `ConfigureStudent`,
-`DeleteStudent`. _Scope:_ 5 modules.
+`DeleteStudent`. _Scope:_ 5 modules. _Done:_ all five covered
+(`create_student_test.exs`, `read_students_test.exs`, `update_student_test.exs`,
+`configure_student_test.exs`, `delete_student_test.exs`) following the
+create/update/read/delete strategies. Students were the course context's first
+**non-root, self-service** authorization (`configure_student`,
+`fetch_authenticated_student`), which drove two new canon rules: how to set up a
+persisted self-service principal, and asserting masked errors once per upstream
+cause (see [Authorization and
+policy](../app/docs/testing.md#authorization-and-policy)). Threading the
+injected clock all the way down was also extended into canon (see [Deterministic
+time](../app/docs/testing.md#deterministic-time-via-an-injectable-clock)). Three
+latent bugs were fixed along the way (flag for review): the student schema and
+`delete_student` stamped their own `DateTime.utc_now()` instead of taking
+`Clock.now()` from the use case (timestamps were unpinnable); `create_student`'s
+`else` masked the wrong action atom (`:validate_student`), so a non-root caller
+hit a `WithClauseError` instead of `:class_not_found`; and `configure_student`
+used `=` instead of `<-` for `User.fetch_authenticated`, raising `MatchError`
+for a principal with no account instead of the masked `:student_not_found`.
+_Note:_ deleting a student who has already logged in is unsupported and was
+documented as a deferred [known
+issue](../app/docs/known-issues.md#deleting-a-student-who-has-logged-in-fails);
+the delete test covers only unlinked students.
 
 ### Course — student import
 
-`ImportStudents` + `StudentImportList` schema (parsing/validation is logic-dense;
-worth its own chunk). _Scope:_ 1 use case + 1 schema.
+`ImportStudents` + `StudentImportList` schema (parsing/validation is
+logic-dense; worth its own chunk). _Scope:_ 1 use case + 1 schema. _Before
+testing:_ `import_students/3` reads `DateTime.utc_now()` directly instead of
+threading `Clock.now()` from the use case (see [Deterministic
+time](../app/docs/testing.md#deterministic-time-via-an-injectable-clock));
+convert it so the imported students' and events' timestamps can be pinned, as
+was done for the other student use cases.
 
 ### Course — remaining schemas
 
@@ -385,7 +411,14 @@ context; one chunk. _Scope:_ ~8 files.
 
 The 8 `servers/use_cases` modules (server group/server CRUD orchestration). The
 state machine is already heavily covered; this is the facade/use-case layer
-around it. _Scope:_ 8 use cases, possibly split server-group vs. server.
+around it. _Scope:_ 8 use cases, possibly split server-group vs. server. _Watch
+for:_ `create_server/3` has the same masking-typo bug that was found and fixed
+in `create_student/3` — its `with`/`else` authorizes `:create_server` but the
+`else` clause matches `{:access_denied, :servers, :validate_server}`, so a
+denied non-root caller hits a `WithClauseError` instead of the intended masked
+`:server_group_not_found`. Fix the action atom and cover the denied path (see
+the masked-errors guidance in [Authorization and
+policy](../app/docs/testing.md#authorization-and-policy)).
 
 ### Servers — remaining schemas & Ansible pipeline
 
