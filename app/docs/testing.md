@@ -146,23 +146,38 @@ A test that leaves any of these unaddressed is incomplete, even if it passes.
   statements.
 - **Build vs. insert.** Use factory `build` for the input data you pass into the
   use case and factory `insert` for the pre-existing state the use case reads.
-- **Keep factory calls visible; don't wrap them in helpers.** Call
-  `Factory.insert(:thing, %{…})` directly at each call site rather than hiding
-  it behind a custom `insert_thing/1` helper — the wrapper obscures standard
-  ExMachina use and what the fixture actually is, for little gain. If a
-  non-trivial set of options genuinely repeats across call sites, hoist the
-  shared options — either a plain map/keyword of defaults merged per-call
-  (`Map.merge(defaults, %{…})`), or a pure attrs-builder helper that returns the
-  merged options (`Factory.insert(:thing, thing_attrs(extra))`). What matters is
-  that the `Factory.insert`/`build` call stays visible at the call site; a
-  builder that returns data is fine, a wrapper that performs the insert is not.
-  For a single flag, just inline it (the merge is longer than repeating `active:
-true`). This holds even when a fixture needs **several interdependent
-  inserts** — e.g. a server that blocks a class deletion needs an owner and its
-  two server-properties rows inserted before the server itself. "It's multi-step
-  setup" is not an exception: keep those inserts inline at the call site (or,
-  only if the exact same setup genuinely repeats across many tests, behind a
-  named `setup`), never behind a one-off helper that performs the inserts.
+- **Keep factory calls visible; never hide a single insert behind a helper.**
+  This is a recurring review failure — read it before writing any fixture. The
+  one hard rule: a **single** `Factory.insert`/`build` call must stay visible at
+  the test call site. Do not wrap one insert in a helper to "DRY" it.
+
+  | Form                                                                                                                        | Verdict    |
+  | --------------------------------------------------------------------------------------------------------------------------- | ---------- |
+  | `Factory.insert(:thing, …)` inline at the call site                                                                         | ✅ default |
+  | a pure **attrs-builder** that returns options, insert still at the call site (`Factory.insert(:thing, thing_attrs(extra))`) | ✅         |
+  | a named `setup` for setup that repeats verbatim across a file                                                               | ✅         |
+  | `insert_thing(opts)` / `insert_account` / `insert_session` — a helper that **performs** one insert                          | ❌ never   |
+
+  The test below has the failure mode: every `insert_account`/`insert_session`
+  in a file is the ❌ form, even when each "only forwards a couple of options."
+  Forwarding options is exactly what an attrs-builder returning **data** does
+  without hiding the insert — reach for that, or just inline (for one or two
+  options the inline call is shorter than the wrapper anyway).
+
+  **The one exception — multi-entity orchestration in a shared helper module.**
+  A fixture that is several **interdependent** inserts plus the linking between
+  them (not one insert with options) — e.g. an active student account: an active
+  class, an active student in it, and a user account linked to that student in
+  both directions — may live as a named helper **in a shared `*TestHelpers`
+  support module** that **returns the built fixtures**. See
+  [`CourseTestHelpers.register_student`](../test/support/course_test_helpers.ex)
+  and
+  [`AccountsTestHelpers.register_active_student`](../test/support/accounts_test_helpers.ex).
+  The line is about _shape_, not just location: orchestration of a whole
+  multi-row graph → a returning helper is fine; a wrapper around a single
+  `Factory.insert` → always inline it (or use an attrs-builder). When unsure,
+  inline.
+
 - **Verify mocks.** Use `setup :verify_on_exit!` so any contract-checked mock
   expectations are verified at the end of the test.
 

@@ -106,10 +106,12 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   @spec fetch_active_session_by_id(UUID.t(), DateTime.t()) ::
           {:ok, t()} | {:error, :session_not_found}
   def fetch_active_session_by_id(id, now) do
+    cutoff = session_validity_cutoff(now)
+
     where =
       dynamic(
         [user_session: us],
-        us.id == ^id and us.created_at > ago(@session_validity_in_days, "day") and
+        us.id == ^id and us.created_at > ^cutoff and
           ^where_user_account_active(now)
       )
 
@@ -137,10 +139,12 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
 
   @spec count_active_sessions(DateTime.t()) :: non_neg_integer()
   def count_active_sessions(now) do
+    cutoff = session_validity_cutoff(now)
+
     where =
       dynamic(
         [user_session: us],
-        us.created_at > ago(@session_validity_in_days, "day") and
+        us.created_at > ^cutoff and
           ^where_user_account_active(now)
       )
 
@@ -163,10 +167,12 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   @spec fetch_active_session_by_token(String.t(), DateTime.t()) ::
           {:ok, t()} | {:error, :session_not_found}
   def fetch_active_session_by_token(token, now) do
+    cutoff = session_validity_cutoff(now)
+
     where =
       dynamic(
         [user_session: us],
-        us.token == ^token and us.created_at > ago(@session_validity_in_days, "day") and
+        us.token == ^token and us.created_at > ^cutoff and
           ^where_user_account_active(now)
       )
 
@@ -204,6 +210,9 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       |> uuid_or(:session_not_found)
       |> ok_then(&fetch_by_uuid/1)
 
+  # The impersonated user account is preloaded with its identity and
+  # preregistered user (like the session's own user account) so impersonation
+  # audit events can describe both accounts the way other account events do.
   defp fetch_by_uuid(uuid),
     do:
       from(us in __MODULE__,
@@ -211,33 +220,35 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
         left_join: sei in assoc(ua, :switch_edu_id),
         left_join: pu in assoc(ua, :preregistered_user),
         left_join: iua in assoc(us, :impersonated_user_account),
+        left_join: isei in assoc(iua, :switch_edu_id),
+        left_join: ipu in assoc(iua, :preregistered_user),
         preload: [
           user_account: {ua, preregistered_user: pu, switch_edu_id: sei},
-          impersonated_user_account: iua
+          impersonated_user_account: {iua, preregistered_user: ipu, switch_edu_id: isei}
         ]
       )
       |> Repo.get(uuid)
       |> truthy_or(:session_not_found)
 
-  @spec fetch_active_sessions_by_user_account_id(String.t()) :: list(t())
-  def fetch_active_sessions_by_user_account_id(id),
-    do:
-      Repo.all(
-        from(us in __MODULE__,
-          join: ua in assoc(us, :user_account),
-          left_join: sei in assoc(ua, :switch_edu_id),
-          left_join: pu in assoc(ua, :preregistered_user),
-          where: ua.id == ^id and us.created_at > ago(@session_validity_in_days, "day"),
-          order_by: [desc: us.created_at],
-          preload: [user_account: {ua, preregistered_user: pu, switch_edu_id: sei}]
-        )
+  @spec fetch_active_sessions_by_user_account_id(String.t(), DateTime.t()) :: list(t())
+  def fetch_active_sessions_by_user_account_id(id, now) do
+    cutoff = session_validity_cutoff(now)
+
+    Repo.all(
+      from(us in __MODULE__,
+        join: ua in assoc(us, :user_account),
+        left_join: sei in assoc(ua, :switch_edu_id),
+        left_join: pu in assoc(ua, :preregistered_user),
+        where: ua.id == ^id and us.created_at > ^cutoff,
+        order_by: [desc: us.created_at],
+        preload: [user_account: {ua, preregistered_user: pu, switch_edu_id: sei}]
       )
+    )
+  end
 
-  @spec touch(t(), ClientMetadata.t()) ::
+  @spec touch(t(), ClientMetadata.t(), DateTime.t()) ::
           {:ok, t()} | {:error, :session_not_found}
-  def touch(%__MODULE__{} = session, client_metadata) do
-    now = DateTime.utc_now()
-
+  def touch(%__MODULE__{} = session, client_metadata, now) do
     client_ip_address =
       if client_metadata.ip_address,
         do: ClientMetadata.serialize_ip_address(client_metadata.ip_address),
@@ -264,7 +275,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     end
   end
 
-  @spec impersonate(t(), UserAccount.t()) :: t()
+  @spec impersonate(t(), UserAccount.t()) :: Changeset.t(t())
   def impersonate(
         %__MODULE__{user_account_id: current_user_account_id, impersonated_user_account_id: nil} =
           session,
@@ -272,29 +283,28 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       )
       when current_user_account_id != user_account_id,
       do:
-        session
-        |> change(
+        change(session,
           impersonated_user_account: user_account,
           impersonated_user_account_id: user_account.id
         )
-        |> Repo.update!()
 
-  @spec stop_impersonating(t()) :: t()
+  @spec stop_impersonating(t()) :: Changeset.t(t())
 
   def stop_impersonating(%__MODULE__{impersonated_user_account_id: nil} = session),
-    do: session
+    do: change(session)
 
-  def stop_impersonating(
-        %__MODULE__{} =
-          session
-      ) do
-    session
-    |> change(
-      impersonated_user_account: nil,
-      impersonated_user_account_id: nil
-    )
-    |> Repo.update!()
-  end
+  def stop_impersonating(%__MODULE__{} = session),
+    do:
+      change(session,
+        impersonated_user_account: nil,
+        impersonated_user_account_id: nil
+      )
+
+  # The earliest creation instant a session may have and still be valid. Derived
+  # from the injected clock so the validity window is deterministic and can be
+  # pinned in tests.
+  defp session_validity_cutoff(now),
+    do: DateTime.add(now, -@session_validity_in_days * @one_day_in_seconds, :second)
 
   defp generate_session_token do
     time = System.os_time(:microsecond)

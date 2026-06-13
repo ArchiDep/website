@@ -74,7 +74,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Course — backfill exhaustive schema validation tests](#course--backfill-exhaustive-schema-validation-tests)
   - [x] 🧭 [Canon — accounts auth use cases](#canon--accounts-auth-use-cases)
   - [x] 🔒 [Security invariant — login links never authenticate a root account](#security-invariant--login-links-never-authenticate-a-root-account)
-  - [ ] [Accounts — session lifecycle use cases](#accounts--session-lifecycle-use-cases)
+  - [x] [Accounts — session lifecycle use cases](#accounts--session-lifecycle-use-cases)
   - [ ] [Accounts — schemas](#accounts--schemas)
   - [ ] [Events context](#events-context)
   - [ ] [Servers — context use cases](#servers--context-use-cases)
@@ -451,6 +451,49 @@ Both sides done; box checked.
 
 `Sessions`, `DeleteSession`, `LogOut`, `Impersonate`. Impersonation has its own
 authorization rules — assert them. _Scope:_ 4 use cases.
+
+_Done:_ all four covered (`sessions_test.exs` for `fetch_active_sessions` /
+`validate_session_token` / `validate_session_id` / `user_account`,
+`delete_session_test.exs`, `log_out_test.exs`, `impersonate_test.exs` for
+`impersonate` / `stop_impersonating`). No new `docs/testing.md` section was
+warranted: with impersonation now event-emitting, the only no-event in-place
+writer left is the session-refresh path (`validate_*` → `touch`), and the
+existing canon (the diff pins counts not contents; reload-and-pin the row;
+assert the absence of side effects) already covers it. The recurring clock gap
+appeared again and was fixed by threading the injected clock (flag for review):
+`validate_session_token`/`validate_session_id` and `LogOut` read
+`DateTime.utc_now/0` directly (so the refreshed `used_at` and the
+logout/deletion events' `occurred_at` were unpinnable), and
+`UserSession.touch/2` stamped its own `used_at`; `touch/2` became `touch/3`
+taking `now`, and the `delete_session`/`log_out` events now pass `occurred_at:
+Clock.now()`. The 30-day validity window itself was also moved onto the injected
+clock: the SQL `ago/2` fragment (database clock) was replaced by a cutoff
+derived from `Clock.now()` (`fetch_active_sessions_by_user_account_id/1` became
+`/2` taking `now`), so the whole window is deterministic and expiry-boundary
+tests pin `created_at` relative to the pinned `@now` rather than to wall-clock
+time. Each use case covers both a root and a **student** account (the
+`AccountsTestHelpers.register_active_student` orchestration sets up the
+active-class/active-student/linked-account chain). Three approved semantics
+changes landed (flag for review): (1) `delete_session` used the raising
+`authorize!`, leaking session existence to a non-owner via `UnauthorizedError`
+while an unknown id returned `:session_not_found`; it now masks the unauthorized
+path as `:session_not_found` too. (2) Impersonation mutated the session in place
+with no audit trail; `impersonate`/`stop_impersonating` now run inside an
+`Ecto.Multi` that stores a `UserImpersonated` / `UserStoppedImpersonating` event
+and emit `[:archidep, :accounts, :auth, :impersonate]` / `:stop_impersonating`
+telemetry (the schema's `impersonate/2` and `stop_impersonating/1` now return
+changesets instead of calling `Repo.update!`). Each event embeds the full
+account representation other account events use (id, username, root, Switch
+edu-ID and preregistered-user sub-maps) for **both** the impersonator and the
+impersonated, so the audit log can display a student by name/email — which
+needed deeper preloads on `UserSession.fetch_by_id` (impersonated account's
+identity/preregistration) and `UserAccount.fetch_by_id` (Switch edu-ID). Adding
+the stop event surfaced a latent policy ordering bug: the root catch-all sat
+before the `:stop_impersonating` clause, so a root user who was not
+impersonating passed authorization (a silent no-op before, a crash once the
+event build required a non-nil impersonated account); the `:stop_impersonating`
+clause was moved above the root catch-all so its `impersonated_id != nil` guard
+applies to everyone.
 
 ### Accounts — schemas
 

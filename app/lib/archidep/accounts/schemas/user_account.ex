@@ -108,10 +108,11 @@ defmodule ArchiDep.Accounts.Schemas.UserAccount do
   def fetch_by_id(user_account_id) do
     case Repo.one(
            from(ua in __MODULE__,
+             left_join: sei in assoc(ua, :switch_edu_id),
              left_join: pu in assoc(ua, :preregistered_user),
              left_join: ug in assoc(pu, :group),
              where: ua.id == ^user_account_id,
-             preload: [preregistered_user: {pu, group: ug}]
+             preload: [switch_edu_id: sei, preregistered_user: {pu, group: ug}]
            )
          ) do
       nil -> {:error, :user_account_not_found}

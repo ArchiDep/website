@@ -10,6 +10,7 @@ defmodule ArchiDep.Accounts.UseCases.Sessions do
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.ClientMetadata
+  alias ArchiDep.Clock
 
   @spec fetch_active_sessions(Authentication.t()) :: list(UserSession.t())
   def fetch_active_sessions(auth),
@@ -17,15 +18,15 @@ defmodule ArchiDep.Accounts.UseCases.Sessions do
       auth
       |> authorize!(Policy, :accounts, :fetch_active_sessions, nil)
       |> Authentication.principal_id()
-      |> UserSession.fetch_active_sessions_by_user_account_id()
+      |> UserSession.fetch_active_sessions_by_user_account_id(Clock.now())
 
   @spec validate_session_token(String.t(), ClientMetadata.t()) ::
           {:ok, Authentication.t()} | {:error, :session_not_found}
   def validate_session_token(token, client_metadata) do
-    now = DateTime.utc_now()
+    now = Clock.now()
 
     with {:ok, session} <- UserSession.fetch_active_session_by_token(token, now),
-         {:ok, touched_session} <- UserSession.touch(session, client_metadata) do
+         {:ok, touched_session} <- UserSession.touch(session, client_metadata, now) do
       {:ok, UserSession.authentication(touched_session)}
     end
   end
@@ -33,10 +34,10 @@ defmodule ArchiDep.Accounts.UseCases.Sessions do
   @spec validate_session_id(UUID.t(), ClientMetadata.t()) ::
           {:ok, Authentication.t()} | {:error, :session_not_found}
   def validate_session_id(id, client_metadata) do
-    now = DateTime.utc_now()
+    now = Clock.now()
 
     with {:ok, session} <- UserSession.fetch_active_session_by_id(id, now),
-         {:ok, touched_session} <- UserSession.touch(session, client_metadata) do
+         {:ok, touched_session} <- UserSession.touch(session, client_metadata, now) do
       {:ok, UserSession.authentication(touched_session)}
     end
   end

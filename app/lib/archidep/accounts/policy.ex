@@ -18,6 +18,20 @@ defmodule ArchiDep.Accounts.Policy do
       ),
       do: principal_id != impersonated_user_id
 
+  # Only a user who is currently impersonating another user can stop
+  # impersonating — including root users, so this clause must come before the
+  # root catch-all below (otherwise a root user who is not impersonating would
+  # be authorized to "stop", with nothing to stop).
+  def authorize(
+        :accounts,
+        :stop_impersonating,
+        %Authentication{
+          impersonated_id: impersonated_id
+        },
+        _params
+      ),
+      do: impersonated_id != nil
+
   # Root users can perform any other action.
   def authorize(
         :accounts,
@@ -35,17 +49,6 @@ defmodule ArchiDep.Accounts.Policy do
         _params
       ),
       do: true
-
-  # A user who is currently impersonating another user can stop impersonating.
-  def authorize(
-        :accounts,
-        :stop_impersonating,
-        %Authentication{
-          impersonated_id: impersonated_id
-        },
-        _params
-      ),
-      do: impersonated_id != nil
 
   # A user can delete one of their own sessions.
   def authorize(

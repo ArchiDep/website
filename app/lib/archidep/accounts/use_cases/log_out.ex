@@ -9,13 +9,15 @@ defmodule ArchiDep.Accounts.UseCases.LogOut do
   alias ArchiDep.Accounts.Events.UserLoggedOut
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Authentication
+  alias ArchiDep.Clock
 
   @spec log_out(Authentication.t()) :: :ok | {:error, :session_not_found}
   def log_out(auth) do
     token = Authentication.session_token(auth)
+    now = Clock.now()
 
-    with {:ok, session} <- fetch_session_by_token(token) do
-      {:ok, _multi} = delete_session(session, auth)
+    with {:ok, session} <- UserSession.fetch_active_session_by_token(token, now) do
+      {:ok, _multi} = delete_session(session, auth, now)
 
       :telemetry.execute([:archidep, :accounts, :auth, :logout], %{}, %{
         principal_id: Authentication.principal_id(auth)
@@ -25,10 +27,7 @@ defmodule ArchiDep.Accounts.UseCases.LogOut do
     end
   end
 
-  defp fetch_session_by_token(token),
-    do: UserSession.fetch_active_session_by_token(token, DateTime.utc_now())
-
-  defp delete_session(session, auth) do
+  defp delete_session(session, auth, now) do
     %UserSession{user_account: user_account} = session
 
     Multi.new()
@@ -37,7 +36,7 @@ defmodule ArchiDep.Accounts.UseCases.LogOut do
       :stored_event,
       session
       |> UserLoggedOut.new()
-      |> new_event(auth)
+      |> new_event(auth, occurred_at: now)
       |> add_to_stream(user_account)
     )
     |> transaction()

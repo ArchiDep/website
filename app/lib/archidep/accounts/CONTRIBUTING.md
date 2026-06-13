@@ -238,7 +238,9 @@ Users can review and revoke their own sessions from the profile page
 component), which highlights the current session and ones expiring soon.
 Revocation goes through [`DeleteSession`](./use_cases/delete_session.ex) (a user
 may delete their own sessions; a root user may delete any), and broadcasts a
-disconnect so the affected live socket is dropped.
+disconnect so the affected live socket is dropped. An unauthorized deletion is
+masked as not found (the same result as for an unknown session), so a user
+cannot probe for the existence of sessions they may not touch.
 
 ---
 
@@ -253,9 +255,12 @@ resolves the **principal** to the impersonated user, so all downstream
 authorization uses the student's identity.
 
 - [`Impersonate`](./use_cases/impersonate.ex) implements both
-  `impersonate/2` (start) and `stop_impersonating/1` (stop).
+  `impersonate/2` (start) and `stop_impersonating/1` (stop). Each records an
+  audit event ([`UserImpersonated`](./events/user_impersonated.ex) /
+  [`UserStoppedImpersonating`](./events/user_stopped_impersonating.ex)).
 - The [Policy](#authorization) allows a root user to impersonate anyone but
-  themselves, and only allows stopping while currently impersonating.
+  themselves, and only allows stopping while currently impersonating (this guard
+  precedes the root catch-all, so it applies to root users too).
 - In the web layer, `/auth/impersonate` and `/auth/stop-impersonating` (see
   [`AuthController`](../../archidep_web/auth/auth_controller.ex)) trigger these
   and disconnect the previous live socket;
@@ -306,6 +311,8 @@ written to the preregistered user's stream.
   [`UserLoggedInWithLink`](./events/user_logged_in_with_link.ex)
 - [`UserLoggedOut`](./events/user_logged_out.ex)
 - [`SessionDeleted`](./events/session_deleted.ex)
+- [`UserImpersonated`](./events/user_impersonated.ex) /
+  [`UserStoppedImpersonating`](./events/user_stopped_impersonating.ex)
 - [`PreregisteredUserLoginLinkCreated`](./events/preregistered_user_login_link_created.ex)
 
 ---
