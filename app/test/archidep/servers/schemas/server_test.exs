@@ -4,13 +4,17 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Support.ServersFactory
 
+  # The instant threaded into the changeset builders; these tests assert
+  # validation errors only, so its value is irrelevant.
+  @now ~U[2024-03-15 10:30:00.000000Z]
+
   test "a server group member cannot create a server with the username 'archidep'" do
     data = ServersFactory.random_server_data(username: "archidep")
 
     owner =
       ServersFactory.build(:server_owner, root: false, active_server_count: 0, server_count: 0)
 
-    changeset = Server.new_group_member_server(data, owner)
+    changeset = Server.new_group_member_server(data, owner, @now)
 
     assert errors_on(changeset) == %{username: ["this username is reserved and cannot be used"]}
   end
@@ -21,7 +25,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     owner =
       ServersFactory.build(:server_owner, root: false, active_server_count: 0, server_count: 0)
 
-    changeset = Server.new_group_member_server(data, owner)
+    changeset = Server.new_group_member_server(data, owner, @now)
 
     assert errors_on(changeset) == %{username: ["this username is reserved and cannot be used"]}
   end
@@ -33,7 +37,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     server = ServersFactory.build(:server, active: true, username: "validusername", owner: owner)
     data = ServersFactory.random_server_data(username: "archidep")
 
-    changeset = Server.update_group_member_server(server, data, owner)
+    changeset = Server.update_group_member_server(server, data, owner, @now)
 
     assert errors_on(changeset) == %{username: ["this username is reserved and cannot be used"]}
   end
@@ -45,7 +49,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     server = ServersFactory.build(:server, active: true, username: "validusername", owner: owner)
     data = ServersFactory.random_server_data(username: "ARCHIDEP")
 
-    changeset = Server.update_group_member_server(server, data, owner)
+    changeset = Server.update_group_member_server(server, data, owner, @now)
 
     assert errors_on(changeset) == %{username: ["this username is reserved and cannot be used"]}
   end

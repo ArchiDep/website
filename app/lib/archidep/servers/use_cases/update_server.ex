@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Servers.Events.ServerUpdated
@@ -29,7 +30,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
          {:ok, server} <- Server.fetch_server(id),
          :ok <- authorize(auth, Policy, :servers, :validate_existing_server, server) do
       owner = ServerOwner.fetch_authenticated(auth)
-      {:ok, update_server_changeset(auth, server, data, owner)}
+      {:ok, update_server_changeset(auth, server, data, owner, Clock.now())}
     else
       {:error, {:access_denied, :servers, :validate_existing_server}} ->
         {:error, :server_not_found}
@@ -62,12 +63,13 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   @spec update_server(Authentication.t(), Server.t(), Types.server_data()) ::
           {:ok, Server.t(), EventReference.t()} | {:error, Changeset.t()}
   def update_server(auth, server, data) when is_struct(server, Server) do
+    now = Clock.now()
     owner = ServerOwner.fetch_authenticated(auth)
 
     {:ok, fresh_server_owner} = ServerOwner.fetch_server_owner(server.owner_id)
 
     case Multi.new()
-         |> Multi.update(:server, update_server_changeset(auth, server, data, owner))
+         |> Multi.update(:server, update_server_changeset(auth, server, data, owner, now))
          |> Multi.merge(&update_active_server_count(fresh_server_owner, server.active, &1.server))
          |> Multi.insert(:stored_event, &server_updated(auth, &1.server))
          |> Repo.transaction() do
@@ -80,11 +82,11 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
     end
   end
 
-  defp update_server_changeset(auth, server, data, owner) do
+  defp update_server_changeset(auth, server, data, owner, now) do
     if root?(auth) do
-      Server.update(server, data)
+      Server.update(server, data, now)
     else
-      Server.update_group_member_server(server, data, owner)
+      Server.update_group_member_server(server, data, owner, now)
     end
   end
 

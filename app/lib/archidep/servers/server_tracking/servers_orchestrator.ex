@@ -40,9 +40,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestrator do
   def handle_continue(:load_servers, pipeline) do
     set_process_label(__MODULE__)
 
-    :ok = PubSub.subscribe_server_created()
-
+    # Only a node that tracks servers reacts to newly created ones; when
+    # tracking is disabled (e.g. in the test environment) the orchestrator stays
+    # inert and does not subscribe, so a `server_created` broadcast never wakes
+    # it to query the database outside of any caller's transaction.
     if @track_on_boot do
+      :ok = PubSub.subscribe_server_created()
+
       active_servers = Server.list_active_servers(DateTime.utc_now())
       Logger.notice("Tracking #{length(active_servers)} active server(s)")
 

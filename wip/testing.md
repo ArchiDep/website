@@ -78,6 +78,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Accounts — schemas](#accounts--schemas)
   - [x] [Events context](#events-context)
   - [ ] [Servers — context use cases](#servers--context-use-cases)
+  - [ ] [Servers — tracking-coupled use cases](#servers--tracking-coupled-use-cases)
   - [ ] [Servers — remaining schemas & Ansible pipeline](#servers--remaining-schemas--ansible-pipeline)
 - **2. Web layer — LiveViews & controllers**
   - [ ] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
@@ -579,6 +580,72 @@ denied non-root caller hits a `WithClauseError` instead of the intended masked
 `:server_group_not_found`. Fix the action atom and cover the denied path (see
 the masked-errors guidance in [Authorization and
 policy](../app/docs/testing.md#authorization-and-policy)).
+
+_Done (part 1):_ the directly-testable slice landed — everything that does
+**not** call into the server-tracking GenServers, in five files under
+`test/archidep/servers/`: the two read modules (`read_server_groups_test.exs`
+covering all six reads including `watch_server_ids`' subscribe/id-set/reducer,
+and `read_servers_test.exs`), `create_server_test.exs` (the random/minimal/full
+trio for both the root and group-member changesets, plus the validation,
+uniqueness, limit and authorization-masking branches), and the
+**database-mutating `%Server{}` arities** of update and delete
+(`update_server_test.exs`, `delete_server_test.exs` — the update trio, the
+active-server-count transitions, and the cascaded delete of the
+expected-properties row). A `ServersTestHelpers` support module persists the
+owner/group/member read-view graph (a class + a linked non-root student/account,
+or a root account). Findings, all resolved: (1) the predicted **masking-typo
+bug** was real and fixed — `create_server`'s `else` matched `{:access_denied,
+:servers, :validate_server}` while `authorize` used `:create_server`, so a
+denied non-root caller crashed with a `WithClauseError`; the denied path is now
+covered. (2) The recurring **clock gap**: `Server.new`,
+`new_group_member_server`, `update` and `update_group_member_server` stamped
+`DateTime.utc_now()` themselves and `delete_server` did too, so timestamps were
+unpinnable; all now take `now` from the use case's `Clock.now()`, matching the
+course/accounts schemas. (3) The `ServersOrchestrator` subscribed to the
+`servers:new` topic unconditionally, so a `server_created` broadcast woke it to
+query the database outside any test's sandbox transaction and crash; it now only
+subscribes when `track_on_boot` is set (a non-tracking node, e.g. the test
+environment, stays inert). _Flagged for review:_ the
+`ServerCreated`/`ServerUpdated` events omit `ssh_host_key_fingerprints`, so a
+server row is not fully reconstructable from its event (the tests supply that
+field by hand alongside the redacted secret key); and the owner server-count
+assertions are kept **black-box** (the observable count change, not the full
+`ServerOwner` row) pending the `ddd.md` reshaping of those columns. The
+remaining tracking-coupled glue is split out below.
+
+_Follow-up — `ServerCreated`/`ServerUpdated` omit the SSH host-key
+fingerprints:_ unlike the `ClassCreated`/`ClassUpdated` fix made during the
+class-use-case canon, the server creation and update events (and their
+`server_data` event-data type) carry no `ssh_host_key_fingerprints` field, so a
+`servers` row is **not** fully reconstructable from its event — the part-1
+`create_server`/`update_server` tests supply that field by hand alongside the
+redacted secret key. Next, propagate the field into both events and the type
+(mirroring the class fix: add it to the `@enforce_keys`/`defstruct`/`@type` and
+populate it where each event is built) so the row reconstructs from the event
+alone, then drop the by-hand field from those two tests and assert the event
+carries it.
+
+### Servers — tracking-coupled use cases
+
+The server use cases that delegate to the server-tracking GenServers, deferred
+from the part-1 slice above: the **binary-id arities** of `update_server` /
+`delete_server` (each fetches, authorizes, calls
+`ServersOrchestrator.ensure_started/1`, then serializes the mutation through
+`ServerManager`), `ManageServer` (`retry_connecting`, `retry_ansible_playbook`,
+`retry_checking_open_ports`), and `ServerCallbacks.notify_server_up` (token
+verification + event insert + a `ServerManager` cast). The DB-mutating halves of
+update/delete are already covered (their `%Server{}` arities, part 1); what
+remains is the thin fetch/authorize/delegate layer plus the token logic. The
+error and authorization-masking branches return **before** any manager call, so
+they are directly testable and `async`; only the happy paths and the
+`:server_busy` passthrough reach a manager and need it intercepted. The
+recommended approach is **`GenServerProxy` interception** (register a proxy
+under the real `:global` registered name the use case calls and reply from the
+test) — `ServerManager`'s name is server-id-scoped, so interception is
+async-safe, but `ServersOrchestrator`'s is a fixed global name, so the
+update/delete glue tests run `async: false`. (`notify_server_up`'s clock is
+still the wall clock — `ServerCallbacks` stamps `DateTime.utc_now()` — and
+should be threaded onto the injected `Clock` as part of this task.)
 
 ### Servers — remaining schemas & Ansible pipeline
 

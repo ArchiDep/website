@@ -4,6 +4,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
   use ArchiDep, :use_case
 
   import Authentication, only: [root?: 1]
+  alias ArchiDep.Clock
   alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.PubSub
@@ -19,7 +20,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
          {:ok, group} <- ServerGroup.fetch_server_group(group_id),
          owner = ServerOwner.fetch_authenticated(auth),
          :ok <- authorize(auth, Policy, :servers, :validate_server, {data, group, owner}) do
-      {:ok, new_server(auth, data, group, owner)}
+      {:ok, new_server(auth, data, group, owner, Clock.now())}
     else
       {:error, {:access_denied, :servers, :validate_server}} ->
         {:error, :server_group_not_found}
@@ -40,7 +41,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
          owner = ServerOwner.fetch_authenticated(auth),
          :ok <- authorize(auth, Policy, :servers, :create_server, {data, group, owner}) do
       case Multi.new()
-           |> Multi.insert(:server, new_server(auth, data, group, owner))
+           |> Multi.insert(:server, new_server(auth, data, group, owner, Clock.now()))
            |> Multi.update(:server_limit, ServerOwner.update_server_count(owner, 1))
            |> Multi.merge(&increase_active_server_count(&1.server_limit, &1.server))
            |> Multi.insert(:stored_event, &server_created(auth, &1.server))
@@ -53,7 +54,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
           {:error, changeset}
       end
     else
-      {:error, {:access_denied, :servers, :validate_server}} ->
+      {:error, {:access_denied, :servers, :create_server}} ->
         {:error, :server_group_not_found}
 
       {:error, :server_group_not_found} ->
@@ -61,11 +62,11 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
     end
   end
 
-  defp new_server(auth, data, group, owner) do
+  defp new_server(auth, data, group, owner, now) do
     if root?(auth) do
-      Server.new(data, group, owner)
+      Server.new(data, group, owner, now)
     else
-      Server.new_group_member_server(data, owner)
+      Server.new_group_member_server(data, owner, now)
     end
   end
 

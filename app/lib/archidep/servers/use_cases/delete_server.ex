@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.PubSub
@@ -35,7 +36,7 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
 
   @spec delete_server(Authentication.t(), Server.t()) :: :ok
   def delete_server(auth, server) when is_struct(server, Server) do
-    now = DateTime.utc_now()
+    now = Clock.now()
 
     {:ok, fresh_server_owner} = ServerOwner.fetch_server_owner(server.owner_id)
 

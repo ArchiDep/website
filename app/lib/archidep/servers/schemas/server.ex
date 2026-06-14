@@ -292,10 +292,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
       |> Repo.one()
       |> truthy_or(:server_not_found)
 
-  @spec new(Types.server_data(), ServerGroup.t(), ServerOwner.t()) :: Changeset.t(t())
-  def new(data, group, owner) do
+  @spec new(Types.server_data(), ServerGroup.t(), ServerOwner.t(), DateTime.t()) ::
+          Changeset.t(t())
+  def new(data, group, owner, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     %__MODULE__{}
     |> cast(data, [
@@ -323,11 +323,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_username_and_app_username()
   end
 
-  @spec new_group_member_server(Types.server_data(), ServerOwner.t()) ::
+  @spec new_group_member_server(Types.server_data(), ServerOwner.t(), DateTime.t()) ::
           Changeset.t(t())
-  def new_group_member_server(data, owner) do
+  def new_group_member_server(data, owner, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     %__MODULE__{}
     |> cast(data, [
@@ -379,10 +378,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end)
   end
 
-  @spec update(t(), Types.server_data()) :: Changeset.t(t())
-  def update(server, data) do
+  @spec update(t(), Types.server_data(), DateTime.t()) :: Changeset.t(t())
+  def update(server, data, now) do
     id = server.id
-    now = DateTime.utc_now()
 
     data = Map.put(data, :expected_properties, Map.put(data.expected_properties, :id, id))
 
@@ -403,11 +401,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_username_and_app_username()
   end
 
-  @spec update_group_member_server(t(), Types.server_data(), ServerOwner.t()) ::
+  @spec update_group_member_server(t(), Types.server_data(), ServerOwner.t(), DateTime.t()) ::
           Changeset.t(t())
-  def update_group_member_server(server, data, owner) do
+  def update_group_member_server(server, data, owner, now) do
     id = server.id
-    now = DateTime.utc_now()
 
     server
     |> cast(data, [

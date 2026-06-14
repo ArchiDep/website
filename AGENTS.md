@@ -89,13 +89,48 @@ instructions targeted towards AI agents.
     making the change. Avoiding duplication is never a justification — use a
     helper that builds a well-known shape and accepts overrides so each test
     still asserts the whole value by equality.
-  - Keep code and test comments self-contained: do not reference short-lived
-    documentation (work-in-progress backlogs such as `wip/*.md`, future-work
-    docs, or specific sections that will eventually be removed), and do not
-    mention task-tracking concerns (e.g. which checkbox a change covers). Such
-    references rot when the document or section disappears. Explain the
-    reasoning directly instead. Stable docs (such as `app/docs/testing.md`) may
-    still be cited.
+  - **Code and test comments exist to explain the _purpose_ of the code as it
+    stands now** — what it does and why, for a reader who has no other context.
+    A comment that would be wrong or meaningless once some _other_ artifact
+    changes is a comment that will rot. Concretely, a comment **must not**:
+    - **Reference a short-lived document or its sections** — work-in-progress
+      backlogs (`wip/*.md`), future-work docs, planning notes, or "see the X
+      task/backlog". These disappear and you will not remember to update the
+      comment. (Stable docs such as `app/docs/testing.md` _may_ be cited.) Do
+      not mention task-tracking concerns either (e.g. which checkbox a change
+      covers).
+    - **Duplicate the testing guidelines.** Do not restate rules from
+      `app/docs/testing.md` in a test file or support module; cite the doc at
+      most. The reviewer will remove duplicated guidance.
+    - **Record historical rationale** — why the code was changed, a past bug it
+      fixes, what it "used to" do, or that a typo "was" mistyped. That belongs
+      in the commit message, not the code. The one exception is a **regression
+      test**, where describing the past behaviour is what makes the test
+      meaningful.
+  - **Before you finish any task that adds or changes tests, run an explicit
+    self-audit of your diff** — do not declare the work done until you have:
+    1. **Listed every assertion you added or changed and classified each one.**
+       Any assertion that is not a whole-value equality (`==`) is suspect:
+       - Single-field check (`assert x.field == v`)
+       - Partial map/struct pattern used as the assertion:
+         - `assert %{k: v} = map`
+         - `assert {:ok, %S{f: ^v}} = ...`
+       - `errors_on(cs)` matched with `=` instead of `==`
+       - asserting only some fields of a returned value
+
+       For each, either rewrite it to assert the whole value by equality, or
+       confirm a **specific** documented exception applies (re-read
+       `app/docs/testing.md`; do not rely on memory). If neither, you are
+       **FORBIDDEN** to keep it without **EXPLICIT** human approval — flag it
+       and ask.
+
+    2. **Re-read every comment you added** against the comment rules above and
+       deleted or rewritten any that reference a short-lived doc, duplicate the
+       guidelines, or record historical rationale. This audit is mandatory and
+       is the last step before reporting completion — these rules existed and
+       were still violated, so treat the audit as the enforcement mechanism, not
+       the prose alone.
+
   - After editing Markdown documentation, run `npm run lint:md` (documented in
     [`./CONTRIBUTING.md`][contributing]) and fix any reported issues.
   - When you complete a task tracked by a checkbox in a backlog document (such
