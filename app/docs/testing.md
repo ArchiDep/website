@@ -648,6 +648,81 @@ path (an omitted field keeps the persisted value), and any rule that diverges
 between the changesets (uniqueness self-exclusion, a stricter create-only
 format). Those get their own plain `describe` blocks per variant.
 
+**Assert a changeset's effect as the whole applied struct, not field by field.**
+A changeset-producing schema function (`new_*`, `link_*`, `create_or_update`, …)
+is pinned by `Changeset.apply_changes/1` followed by **one exact-equality
+assertion on the resulting struct** — every field at once, with `not_loaded/2`
+for associations the function leaves unset and the generated `id`/token bound
+from the result (see [Generated identifiers](#generated-identifiers)).
+`apply_changes` resolves an association set through `change/2`/`put_assoc` back
+to its struct, whereas the raw `changes` map stores it as a nested
+`%Ecto.Changeset{}`, so the applied struct is both the more exact and the more
+readable assertion. For an **update** changeset, reload the row first
+(`Repo.get_by!`/`Repo.reload!`) and assert `apply_changes(changeset) ==
+%{reloaded | changed_field: …}`: that pins the touched fields _and_ proves every
+other field untouched in a single assertion. A no-op changeset asserts
+`changeset.changes == %{}`.
+
+**Optimistic locking is observed through the changeset's filters, not a
+change.** `optimistic_lock(field)` does **not** put the bumped value into the
+changeset's `changes` — it records the **current** value in `changeset.filters`
+and applies the increment only at `Repo.update` time. So a schema test asserts
+`changeset.filters == %{version: 2}` (or `%{active: true}` for a boolean-toggle
+lock); the conflicting-update behaviour itself — a stale write raising
+`StaleEntryError` — is a DB-backed concern covered by the use case that commits
+the changeset, not the schema test. The same holds for
+`unsafe_validate_unique_*` self-exclusion queries: assert the rejection
+(`errors_on/1` carries `"has already been taken"`) by inserting a
+**conflicting** row, since the query runs against the real `Repo` under
+`DataCase`.
+
+### Testing pure predicate functions over a date window
+
+A schema may expose a pure boolean predicate — `active?(record, now)` on
+`UserGroup`, `PreregisteredUser`, and `UserAccount` — that decides membership of
+an inclusive `[start_date, end_date]` window. This is the in-memory sibling of
+the query-level [windowed read](#testing-read-use-cases): same boundary
+thinking, but tested by calling the function on `build`-only fixtures (no
+database) rather than asserting a query's result set. Cover the **whole boundary
+matrix**, one case per branch: the disabling flag short-circuits regardless of
+dates; no bounds is always in; before the start is out; **on the start is in
+(inclusive)**; strictly within is in; **on the end is in (inclusive)**; after
+the end is out; and the start-only and end-only open-ended windows. For a
+composite predicate (`PreregisteredUser.active?` is `active and
+UserGroup.active?`), drive each factor independently so both halves are pinned.
+
+One gotcha worth a case of its own: an in-memory predicate and its query
+counterpart may compare at **different granularities**. `UserGroup.active?/2`
+does `DateTime.to_date(now)` and compares **dates**, whereas the parallel
+`where_user_group_active/1` compares the raw `DateTime` against the date column
+— so a fixture that lands between midnight and `now`'s time of day can disagree
+between the two. Pin the boundary at the granularity the function under test
+actually uses. A worked example is [`user_group_test.exs`][user-group-test].
+
+### Testing create-or-update (upsert) changesets
+
+Some schemas expose a single function that returns **either** an insert or an
+update changeset depending on whether a matching row already exists
+(`SwitchEduId.create_or_update/2` keys on `swiss_edu_person_unique_id` via
+`Repo.get_by`). Unlike a pure changeset, it reads the database, so it runs under
+`DataCase`, and it has **two structurally different branches** to drive
+separately:
+
+- **No existing row** → the insert branch. Build the input with a factory, call
+  the function, and assert the whole applied struct: the new-record defaults
+  (fresh `id`, `version: 1`, all of `created_at`/`updated_at`/`used_at` at the
+  injected instant) plus the cast data.
+- **Existing row** → the update branch, plus any **conditional touch**.
+  `create_or_update` bumps `used_at` on every login but only bumps `updated_at`
+  when the identity's name actually changed. Reload the row and assert the whole
+  applied struct as a diff from it, in two cases: name-changed →
+  `%{reloaded | first_name: …, updated_at: now, used_at: now}` (**both**
+  timestamps move), and name-unchanged → `%{reloaded | used_at: now}`, which pins
+  the held `updated_at` and the unchanged names in one assertion. Assert the
+  version filter from the optimistic lock on both.
+
+A worked example is [`switch_edu_id_test.exs`][switch-edu-id-test].
+
 ### Covering every branch
 
 Each distinct path through a use case is its own test: new vs. existing record,
@@ -968,6 +1043,8 @@ function components with Floki._
 [update-expected-properties-test]: ../test/archidep/course/update_expected_server_properties_for_class_test.exs
 [class-test]: ../test/archidep/course/schemas/class_test.exs
 [student-test]: ../test/archidep/course/schemas/student_test.exs
+[user-group-test]: ../test/archidep/accounts/schemas/user_group_test.exs
+[switch-edu-id-test]: ../test/archidep/accounts/schemas/identity/switch_edu_id_test.exs
 [ex-unit]: https://hexdocs.pm/ex_unit/ExUnit.html
 [ex-unit-doctests]: https://hexdocs.pm/ex_unit/ExUnit.DocTest.html
 [gen-server]: https://hexdocs.pm/elixir/GenServer.html

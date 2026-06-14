@@ -75,7 +75,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] 🧭 [Canon — accounts auth use cases](#canon--accounts-auth-use-cases)
   - [x] 🔒 [Security invariant — login links never authenticate a root account](#security-invariant--login-links-never-authenticate-a-root-account)
   - [x] [Accounts — session lifecycle use cases](#accounts--session-lifecycle-use-cases)
-  - [ ] [Accounts — schemas](#accounts--schemas)
+  - [x] [Accounts — schemas](#accounts--schemas)
   - [ ] [Events context](#events-context)
   - [ ] [Servers — context use cases](#servers--context-use-cases)
   - [ ] [Servers — remaining schemas & Ansible pipeline](#servers--remaining-schemas--ansible-pipeline)
@@ -498,8 +498,29 @@ applies to everyone.
 ### Accounts — schemas
 
 `UserAccount`, `UserSession`, `LoginLink`, `PreregisteredUser`, `UserGroup`,
-`SwitchEduId` identity. Split into two chunks if changesets are heavy. _Scope:_ 6
-schemas.
+`SwitchEduId` identity. Split into two chunks if changesets are heavy. _Scope:_
+6 schemas.
+
+_Done:_ all six covered (`schemas/user_group_test.exs`,
+`schemas/preregistered_user_test.exs`, `schemas/user_account_test.exs`,
+`schemas/identity/switch_edu_id_test.exs`, `schemas/user_session_test.exs`,
+`schemas/login_link_test.exs`), written in three reviewable chunks
+(predicates/linking, account+identity, credentials). Unlike the course schemas
+these have **thin changesets** but a **logic-dense pure/query surface**, so the
+focus was the un-covered logic — date-window `active?/2` predicates, the
+`SwitchEduId.create_or_update/2` upsert with its conditional touch, secure-token
+generation (asserted at the schema level via `assert_secure_random_token`),
+impersonation transitions, and name composition — while the thin query wrappers
+stay covered by the session-lifecycle and auth use-case tests. Two new
+`docs/testing.md` strategies the create/update/read/delete canon did not cover
+were settled and documented: "Testing pure predicate functions over a date
+window" (the boundary matrix and the `DateTime.to_date` in-memory-vs-query
+granularity gotcha) and "Testing create-or-update (upsert) changesets" (the two
+structural branches and the touch-only-when-changed assertion), plus a canon
+note that **optimistic locking is observed through `changeset.filters`, not a
+change** (the increment is applied only at `Repo.update` time). No latent bugs
+were found: every accounts changeset already threaded the injected clock, so the
+recurring clock gap the earlier spikes predicted did not recur here.
 
 ### Events context
 
