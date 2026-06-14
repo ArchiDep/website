@@ -3,6 +3,7 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Course.Schemas.Class
@@ -88,6 +89,9 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
         ["accounts", "user-accounts", id], map ->
           Map.update(map, "accounts:user-accounts", [id], fn ids -> [id | ids] end)
 
+        ["accounts", "switch-edu-id", id], map ->
+          Map.update(map, "accounts:switch-edu-id", [id], fn ids -> [id | ids] end)
+
         ["course", "classes", id], map ->
           Map.update(map, "course:classes", [id], fn ids -> [id | ids] end)
 
@@ -96,6 +100,13 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
 
         ["servers", "servers", id], map ->
           Map.update(map, "servers:servers", [id], fn ids -> [id | ids] end)
+
+        # An event whose stream is none of the recognised entity types (for
+        # example an events-context stream, or a future stream type) has no
+        # entity to resolve; leaving it out of the map yields a nil entity
+        # rather than crashing the whole read.
+        _stream_parts, map ->
+          map
       end)
 
   defp fetch_entities_by_type(entity_ids_by_type) when is_map(entity_ids_by_type),
@@ -129,6 +140,9 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
         preload: [switch_edu_id: sei, preregistered_user: pu]
       )
 
+  defp fetch_entities_by_type({"accounts:switch-edu-id", ids}) when is_list(ids),
+    do: from(sei in SwitchEduId, where: sei.id in ^ids)
+
   defp fetch_entities_by_type({"course:classes", ids}) when is_list(ids),
     do: from(c in Class, where: c.id in ^ids)
 
@@ -149,6 +163,11 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
         {"accounts:user-accounts", users}, map ->
           Enum.reduce(users, map, fn user, acc ->
             Map.put(acc, "accounts:user-accounts:#{user.id}", user)
+          end)
+
+        {"accounts:switch-edu-id", identities}, map ->
+          Enum.reduce(identities, map, fn identity, acc ->
+            Map.put(acc, "accounts:switch-edu-id:#{identity.id}", identity)
           end)
 
         {"course:classes", classes}, map ->

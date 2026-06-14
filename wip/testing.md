@@ -76,7 +76,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] 🔒 [Security invariant — login links never authenticate a root account](#security-invariant--login-links-never-authenticate-a-root-account)
   - [x] [Accounts — session lifecycle use cases](#accounts--session-lifecycle-use-cases)
   - [x] [Accounts — schemas](#accounts--schemas)
-  - [ ] [Events context](#events-context)
+  - [x] [Events context](#events-context)
   - [ ] [Servers — context use cases](#servers--context-use-cases)
   - [ ] [Servers — remaining schemas & Ansible pipeline](#servers--remaining-schemas--ansible-pipeline)
 - **2. Web layer — LiveViews & controllers**
@@ -526,6 +526,46 @@ recurring clock gap the earlier spikes predicted did not recur here.
 
 Event store + core event operations (`use_cases`, `store`, errors). Small
 context; one chunk. _Scope:_ ~8 files.
+
+Done in `test/archidep/events/fetch_events_test.exs` (the read use cases
+`fetch_events/2` and `fetch_event/2`) and `test/archidep/events/store/`
+`stored_event_test.exs` (the store helpers `new/3`, `stream/4`,
+`initiated_by/2`, `to_insert_data/1`, `to_reference/1`, `fetch_event/1`). The
+context is read-only and owns the shared store, so the seven-point assertion
+checklist collapses to exact return values plus absence of side effects, with
+the store helpers covered as schema-style changeset tests. The protocols
+(`Event`, `EventInitiator`) and `EventReference`/`EventHasNoIdentityError` carry
+no logic of their own and are exercised through other contexts and the store
+helpers, so they get no direct files.
+
+The two patterns this context forces — composite `(occurred_at, id)` cursor
+pagination and cross-context entity enrichment into the `entity` virtual field —
+live as **comments in the test file**, not in
+[`app/docs/testing.md`](../app/docs/testing.md): each exists in exactly one
+place (`fetch_events/2`) and is not reused, so promoting it to general canon
+would dilute the doc. _Follow-up:_ if a second use case ever adopts either
+pattern, lift the shared rule into the testing guidelines at that point.
+
+_Latent bug found and fixed:_ `FetchEvents.to_entity_ids_by_type/1` matched only
+the known stream types with no catch-all, so any event with an unrecognised
+stream crashed the whole read with a `FunctionClauseError`. A red test drove the
+fix (a trailing catch-all that leaves such events with a `nil` entity).
+
+_Stream coverage completed:_ audited every event stream the app can emit by
+tracing the `add_to_stream/2` call sites — the only entities streamed are
+classes, students, user accounts, preregistered users and servers (server groups
+emit no events of their own). All five resolve. The one stream prefix declared
+in the domain (the `SwitchEduId.event_stream/1` helper,
+`accounts:switch-edu-id`) but not yet resolved was added to the resolver with a
+matching test, so every declared stream now resolves to its entity; the
+catch-all remains only for genuinely unknown/future streams.
+
+_Follow-up — `StoredEvent.new/3` wall-clock default:_ its default `occurred_at`
+calls `DateTime.utc_now/0` directly rather than the injected `ArchiDep.Clock`.
+It is effectively dead today (every caller passes `occurred_at`), but it is a
+clock-injection deviation that should be removed (make `occurred_at` required,
+or thread the value in). The tests work around it by always passing
+`occurred_at`.
 
 ### Servers — context use cases
 

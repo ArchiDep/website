@@ -74,6 +74,21 @@ instructions targeted towards AI agents.
     in the document.
   - When writing or modifying tests, follow the conventions in
     [`app/docs/testing.md`](./app/docs/testing.md).
+  - **You are forbidden to write any partial test assertion without first
+    stopping and analyzing the testing guidelines.** A partial assertion is any
+    assertion that checks a subset of a value instead of the whole — e.g. a
+    pattern match binding only some fields, or asserting only some fields,
+    instead of full-struct/exact equality. Before writing ANY such assertion you
+    MUST stop and read the relevant sections of
+    [`app/docs/testing.md`](./app/docs/testing.md) (read them — do not skim, and
+    do not assume the rule fails to apply to your change) to check whether they
+    grant a **specific** exception for that case. If a specific exception
+    applies, follow it. If none does, you are **ABSOLUTELY FORBIDDEN** to write
+    the assertion on your own judgement: you may argue that an exception is
+    warranted, but you must get **EXPLICIT** prior approval from a human before
+    making the change. Avoiding duplication is never a justification — use a
+    helper that builds a well-known shape and accepts overrides so each test
+    still asserts the whole value by equality.
   - Keep code and test comments self-contained: do not reference short-lived
     documentation (work-in-progress backlogs such as `wip/*.md`, future-work
     docs, or specific sections that will eventually be removed), and do not
