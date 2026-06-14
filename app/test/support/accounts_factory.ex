@@ -226,22 +226,29 @@ defmodule ArchiDep.Support.AccountsFactory do
   def user_account_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
 
-    {requested_username, attrs!} =
-      Map.pop_lazy(
-        attrs!,
-        :username,
-        optionally(fn -> generated_user_account_username() end)
-      )
+    {root, attrs!} = Map.pop_lazy(attrs!, :root, &bool/0)
 
-    # `username: :generate` forces a generated username, for the
-    # cases that need a non-nil one (the factory otherwise leaves it optional).
+    # A root account always has a username in production — it is the matched
+    # identifier of its Switch edu-ID (see
+    # `UserAccount.new_root_switch_edu_id_account/3`), whereas only a non-root
+    # account is created with `username: nil`. The factory mirrors that
+    # invariant: a `root: true` account defaults to a generated username, while
+    # a non-root account's username stays optional (nil until the student
+    # confirms one). `username: :generate` still forces a non-nil username
+    # regardless of `root`.
+    {requested_username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn ->
+        if root,
+          do: generated_user_account_username(),
+          else: optional(fn -> generated_user_account_username() end)
+      end)
+
     username =
       case requested_username do
         :generate -> generated_user_account_username()
         other -> other
       end
 
-    {root, attrs!} = Map.pop_lazy(attrs!, :root, &bool/0)
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
 
     {switch_edu_id, attrs!} =

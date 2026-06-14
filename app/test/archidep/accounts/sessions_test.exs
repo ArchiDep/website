@@ -2,6 +2,7 @@ defmodule ArchiDep.Accounts.SessionsTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+  import ArchiDep.Support.AccountsTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
   alias ArchiDep.Accounts.Schemas.UserSession
@@ -10,7 +11,6 @@ defmodule ArchiDep.Accounts.SessionsTest do
   alias ArchiDep.Clock
   alias ArchiDep.Repo
   alias ArchiDep.Support.AccountsFactory
-  alias ArchiDep.Support.AccountsTestHelpers
   alias ArchiDep.Support.Factory
   alias Ecto.UUID
 
@@ -47,58 +47,41 @@ defmodule ArchiDep.Accounts.SessionsTest do
       fetch_active_sessions: fetch_active_sessions
     } do
       account =
-        AccountsFactory.insert(:user_account,
-          username: :generate,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+        AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
       # Inserted out of chronological order to prove the query sorts rather than
       # returning insertion order. There is a single sort key (created_at desc)
       # and no tie-break column, so the fixtures use distinct timestamps.
       middle =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -2, :hour)
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, created_at: DateTime.add(@now, -2, :hour))
         )
 
       newest =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -1, :hour)
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, created_at: DateTime.add(@now, -1, :hour))
         )
 
       oldest =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -3, :hour)
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, created_at: DateTime.add(@now, -3, :hour))
         )
 
       # Excluded: an expired session of the same user, and another user's
       # session.
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -31, :day)
+      AccountsFactory.insert(
+        :user_session,
+        session_attrs(account, @now, created_at: DateTime.add(@now, -31, :day))
       )
 
-      other_account =
-        AccountsFactory.insert(:user_account,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+      other_account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-      AccountsFactory.insert(:user_session,
-        user_account: other_account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -1, :hour)
+      AccountsFactory.insert(
+        :user_session,
+        session_attrs(other_account, @now, created_at: DateTime.add(@now, -1, :hour))
       )
 
       auth = authentication_for(account)
@@ -119,13 +102,7 @@ defmodule ArchiDep.Accounts.SessionsTest do
       fetch_active_sessions: fetch_active_sessions
     } do
       account =
-        AccountsFactory.insert(:user_account,
-          username: :generate,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+        AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
       assert fetch_active_sessions.(authentication_for(account)) == []
       assert_no_stored_events!()
@@ -137,20 +114,9 @@ defmodule ArchiDep.Accounts.SessionsTest do
       validate_session_token: validate_session_token
     } do
       account =
-        AccountsFactory.insert(:user_account,
-          username: :generate,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+        AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-      session =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -1, :hour)
-        )
+      session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
       metadata = client_metadata()
 
@@ -170,14 +136,9 @@ defmodule ArchiDep.Accounts.SessionsTest do
     test "validates an active student session and refreshes it", %{
       validate_session_token: validate_session_token
     } do
-      {account, _student} = AccountsTestHelpers.register_active_student(@now)
+      {account, _student} = register_active_student(@now)
 
-      session =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -1, :hour)
-        )
+      session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
       metadata = client_metadata()
 
@@ -200,19 +161,12 @@ defmodule ArchiDep.Accounts.SessionsTest do
     end
 
     test "rejects an expired session", %{validate_session_token: validate_session_token} do
-      account =
-        AccountsFactory.insert(:user_account,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+      account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
       session =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -31, :day)
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, created_at: DateTime.add(@now, -31, :day))
         )
 
       previous_counts = count_rows(@affected_tables)
@@ -228,20 +182,9 @@ defmodule ArchiDep.Accounts.SessionsTest do
     test "rejects a session of an inactive user account", %{
       validate_session_token: validate_session_token
     } do
-      account =
-        AccountsFactory.insert(:user_account,
-          root: true,
-          active: false,
-          switch_edu_id: nil,
-          now: @now
-        )
+      account = AccountsFactory.insert(:user_account, root_account_attrs(@now, active: false))
 
-      session =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -1, :hour)
-        )
+      session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
       previous_counts = count_rows(@affected_tables)
 
@@ -259,20 +202,9 @@ defmodule ArchiDep.Accounts.SessionsTest do
       validate_session_id: validate_session_id
     } do
       account =
-        AccountsFactory.insert(:user_account,
-          username: :generate,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+        AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-      session =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -1, :hour)
-        )
+      session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
       metadata = client_metadata()
 
@@ -295,19 +227,12 @@ defmodule ArchiDep.Accounts.SessionsTest do
     end
 
     test "rejects an expired session", %{validate_session_id: validate_session_id} do
-      account =
-        AccountsFactory.insert(:user_account,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+      account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
       session =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -31, :day)
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, created_at: DateTime.add(@now, -31, :day))
         )
 
       previous_counts = count_rows(@affected_tables)
@@ -322,20 +247,9 @@ defmodule ArchiDep.Accounts.SessionsTest do
     test "rejects a session of an inactive user account", %{
       validate_session_id: validate_session_id
     } do
-      account =
-        AccountsFactory.insert(:user_account,
-          root: true,
-          active: false,
-          switch_edu_id: nil,
-          now: @now
-        )
+      account = AccountsFactory.insert(:user_account, root_account_attrs(@now, active: false))
 
-      session =
-        AccountsFactory.insert(:user_session,
-          user_account: account,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -1, :hour)
-        )
+      session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
       previous_counts = count_rows(@affected_tables)
 
@@ -350,13 +264,7 @@ defmodule ArchiDep.Accounts.SessionsTest do
   describe "user_account/1" do
     test "returns the user account of the authenticated principal", %{user_account: user_account} do
       account =
-        AccountsFactory.insert(:user_account,
-          username: :generate,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+        AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
       assert user_account.(authentication_for(account)) == account
       assert_no_stored_events!()
@@ -402,14 +310,6 @@ defmodule ArchiDep.Accounts.SessionsTest do
                client_ip_address: ClientMetadata.serialize_ip_address(metadata.ip_address),
                client_user_agent: metadata.user_agent,
                user_account: not_loaded(:user_account, UserSession),
-               impersonated_user_account: not_loaded(:impersonated_user_account, UserSession)
-           }
-  end
-
-  defp assert_session_untouched(session) do
-    assert Repo.get!(UserSession, session.id) == %{
-             session
-             | user_account: not_loaded(:user_account, UserSession),
                impersonated_user_account: not_loaded(:impersonated_user_account, UserSession)
            }
   end

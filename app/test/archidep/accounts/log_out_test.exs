@@ -2,6 +2,7 @@ defmodule ArchiDep.Accounts.LogOutTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+  import ArchiDep.Support.AccountsTestHelpers
   import ArchiDep.Support.TelemetryTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
@@ -10,7 +11,6 @@ defmodule ArchiDep.Accounts.LogOutTest do
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Support.AccountsFactory
-  alias ArchiDep.Support.AccountsTestHelpers
   alias ArchiDep.Support.Factory
 
   # Pinned instant returned by the injected clock; the logout event's
@@ -36,20 +36,9 @@ defmodule ArchiDep.Accounts.LogOutTest do
 
   test "a root user logs out of the current session", %{log_out: log_out} do
     account =
-      AccountsFactory.insert(:user_account,
-        username: :generate,
-        root: true,
-        active: true,
-        switch_edu_id: nil,
-        now: @now
-      )
+      AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-    session =
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -1, :hour)
-      )
+    session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
     auth = authentication_for(account, session)
 
@@ -66,14 +55,9 @@ defmodule ArchiDep.Accounts.LogOutTest do
   end
 
   test "a student logs out of the current session", %{log_out: log_out} do
-    {account, student} = AccountsTestHelpers.register_active_student(@now)
+    {account, student} = register_active_student(@now)
 
-    session =
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -1, :hour)
-      )
+    session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
     auth = authentication_for(account, session)
 
@@ -90,20 +74,9 @@ defmodule ArchiDep.Accounts.LogOutTest do
   end
 
   test "logging out with an unknown session token does nothing", %{log_out: log_out} do
-    account =
-      AccountsFactory.insert(:user_account,
-        root: true,
-        active: true,
-        switch_edu_id: nil,
-        now: @now
-      )
+    account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-    session =
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -1, :hour)
-      )
+    session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
     auth = Map.put(authentication_for(account, session), :session_token, "unknown-session-token")
 
@@ -118,19 +91,12 @@ defmodule ArchiDep.Accounts.LogOutTest do
   end
 
   test "logging out of an expired session does nothing", %{log_out: log_out} do
-    account =
-      AccountsFactory.insert(:user_account,
-        root: true,
-        active: true,
-        switch_edu_id: nil,
-        now: @now
-      )
+    account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
     session =
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -31, :day)
+      AccountsFactory.insert(
+        :user_session,
+        session_attrs(account, @now, created_at: DateTime.add(@now, -31, :day))
       )
 
     auth = authentication_for(account, session)
@@ -196,17 +162,4 @@ defmodule ArchiDep.Accounts.LogOutTest do
     refute Repo.exists?(from(us in UserSession, where: us.id == ^session.id))
     session
   end
-
-  defp assert_session_untouched(session) do
-    assert Repo.get!(UserSession, session.id) == %{
-             session
-             | user_account: not_loaded(:user_account, UserSession),
-               impersonated_user_account: not_loaded(:impersonated_user_account, UserSession)
-           }
-  end
-
-  defp preregistered_user_data(nil), do: nil
-
-  defp preregistered_user_data(student),
-    do: %{"id" => student.id, "name" => student.name, "email" => student.email}
 end

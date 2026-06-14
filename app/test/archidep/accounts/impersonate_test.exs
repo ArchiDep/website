@@ -2,6 +2,7 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+  import ArchiDep.Support.AccountsTestHelpers
   import ArchiDep.Support.TelemetryTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
@@ -10,7 +11,6 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Support.AccountsFactory
-  alias ArchiDep.Support.AccountsTestHelpers
   alias ArchiDep.Support.Factory
   alias Ecto.UUID
 
@@ -44,22 +44,11 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
   describe "impersonate/2" do
     test "a root user impersonates a student", %{impersonate: impersonate} do
       impersonator =
-        AccountsFactory.insert(:user_account,
-          username: :generate,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+        AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-      session =
-        AccountsFactory.insert(:user_session,
-          user_account: impersonator,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -1, :hour)
-        )
+      session = AccountsFactory.insert(:user_session, session_attrs(impersonator, @now))
 
-      {target, student} = AccountsTestHelpers.register_active_student(@now)
+      {target, student} = register_active_student(@now)
 
       auth = authentication_for(impersonator, session)
 
@@ -80,20 +69,9 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
 
     test "a root user cannot impersonate themselves", %{impersonate: impersonate} do
       impersonator =
-        AccountsFactory.insert(:user_account,
-          username: :generate,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+        AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-      session =
-        AccountsFactory.insert(:user_session,
-          user_account: impersonator,
-          impersonated_user_account: nil,
-          created_at: DateTime.add(@now, -1, :hour)
-        )
+      session = AccountsFactory.insert(:user_session, session_attrs(impersonator, @now))
 
       auth = authentication_for(impersonator, session)
 
@@ -108,7 +86,7 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
     end
 
     test "a non-root user cannot impersonate anyone", %{impersonate: impersonate} do
-      {target, _student} = AccountsTestHelpers.register_active_student(@now)
+      {target, _student} = register_active_student(@now)
 
       auth = Factory.build(:authentication, root: false)
 
@@ -152,22 +130,15 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
 
   describe "stop_impersonating/1" do
     test "stop impersonating a student", %{stop_impersonating: stop_impersonating} do
-      impersonator =
-        AccountsFactory.insert(:user_account,
-          username: :generate,
-          root: true,
-          active: true,
-          switch_edu_id: nil,
-          now: @now
-        )
+      {target, student} = register_active_student(@now)
 
-      {target, student} = AccountsTestHelpers.register_active_student(@now)
+      impersonator =
+        AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
       session =
-        AccountsFactory.insert(:user_session,
-          user_account: impersonator,
-          impersonated_user_account: target,
-          created_at: DateTime.add(@now, -1, :hour)
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(impersonator, @now, impersonated_user_account: target)
         )
 
       auth = impersonating_authentication_for(session, target)
@@ -331,11 +302,6 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
       "switch_edu_id" => nil,
       "preregistered_user" => preregistered_user_data(student)
     }
-
-  defp preregistered_user_data(nil), do: nil
-
-  defp preregistered_user_data(student),
-    do: %{"id" => student.id, "name" => student.name, "email" => student.email}
 
   defp refute_impersonation_telemetry do
     refute_received {:telemetry_event, @impersonate_telemetry_event, _data}

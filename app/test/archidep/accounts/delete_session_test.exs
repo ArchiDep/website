@@ -2,6 +2,7 @@ defmodule ArchiDep.Accounts.DeleteSessionTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+  import ArchiDep.Support.AccountsTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
   alias ArchiDep.Accounts.Schemas.UserSession
@@ -9,7 +10,6 @@ defmodule ArchiDep.Accounts.DeleteSessionTest do
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Support.AccountsFactory
-  alias ArchiDep.Support.AccountsTestHelpers
   alias ArchiDep.Support.Factory
   alias Ecto.UUID
 
@@ -33,20 +33,9 @@ defmodule ArchiDep.Accounts.DeleteSessionTest do
 
   test "a root user deletes one of their own sessions", %{delete_session: delete_session} do
     account =
-      AccountsFactory.insert(:user_account,
-        username: :generate,
-        root: true,
-        active: true,
-        switch_edu_id: nil,
-        now: @now
-      )
+      AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-    session =
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -1, :hour)
-      )
+    session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
     auth = authentication_for(account)
 
@@ -63,14 +52,9 @@ defmodule ArchiDep.Accounts.DeleteSessionTest do
   end
 
   test "a student deletes one of their own sessions", %{delete_session: delete_session} do
-    {account, student} = AccountsTestHelpers.register_active_student(@now)
+    {account, student} = register_active_student(@now)
 
-    session =
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -1, :hour)
-      )
+    session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
     auth = authentication_for(account)
 
@@ -91,20 +75,9 @@ defmodule ArchiDep.Accounts.DeleteSessionTest do
 
   test "a root user can delete any user's session", %{delete_session: delete_session} do
     account =
-      AccountsFactory.insert(:user_account,
-        username: :generate,
-        root: true,
-        active: true,
-        switch_edu_id: nil,
-        now: @now
-      )
+      AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-    session =
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -1, :hour)
-      )
+    session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
     # A different principal, acting as root, deletes the session: the event is
     # stored on the session owner's stream but initiated by the root user.
@@ -126,19 +99,12 @@ defmodule ArchiDep.Accounts.DeleteSessionTest do
     # Deletion fetches the session without the validity check that login uses, so
     # a user can still revoke a session that has already expired.
     account =
-      AccountsFactory.insert(:user_account,
-        username: :generate,
-        root: true,
-        active: true,
-        switch_edu_id: nil,
-        now: @now
-      )
+      AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
     session =
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -31, :day)
+      AccountsFactory.insert(
+        :user_session,
+        session_attrs(account, @now, created_at: DateTime.add(@now, -31, :day))
       )
 
     auth = authentication_for(account)
@@ -162,20 +128,9 @@ defmodule ArchiDep.Accounts.DeleteSessionTest do
     # whether it exists, so the unauthorized deletion is masked as not-found
     # rather than raising or returning an authorization error.
     account =
-      AccountsFactory.insert(:user_account,
-        username: :generate,
-        root: true,
-        active: true,
-        switch_edu_id: nil,
-        now: @now
-      )
+      AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
-    session =
-      AccountsFactory.insert(:user_session,
-        user_account: account,
-        impersonated_user_account: nil,
-        created_at: DateTime.add(@now, -1, :hour)
-      )
+    session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
     other_user_auth = Factory.build(:authentication, root: false)
 
@@ -260,17 +215,4 @@ defmodule ArchiDep.Accounts.DeleteSessionTest do
     refute Repo.exists?(from(us in UserSession, where: us.id == ^session.id))
     session
   end
-
-  defp assert_session_untouched(session) do
-    assert Repo.get!(UserSession, session.id) == %{
-             session
-             | user_account: not_loaded(:user_account, UserSession),
-               impersonated_user_account: not_loaded(:impersonated_user_account, UserSession)
-           }
-  end
-
-  defp preregistered_user_data(nil), do: nil
-
-  defp preregistered_user_data(student),
-    do: %{"id" => student.id, "name" => student.name, "email" => student.email}
 end
