@@ -35,6 +35,8 @@ that silently rots.
   - [Asserting the absence of out-of-band effects](#asserting-the-absence-of-out-of-band-effects)
   - [Authorization and policy](#authorization-and-policy)
   - [Changeset and validation errors](#changeset-and-validation-errors)
+  - [Testing pure predicate functions over a date window](#testing-pure-predicate-functions-over-a-date-window)
+  - [Testing create-or-update (upsert) changesets](#testing-create-or-update-upsert-changesets)
   - [Covering every branch](#covering-every-branch)
   - [Testing create use cases](#testing-create-use-cases)
   - [Testing update use cases](#testing-update-use-cases)
