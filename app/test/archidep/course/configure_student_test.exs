@@ -84,6 +84,67 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       assert_student_updated_broadcast(configured)
     end
 
+    # Impersonation fully swaps the principal: a root user impersonating a
+    # non-root student is authorized as that student, never with root's
+    # override. The only trace of impersonation is `impersonated_id`, which the
+    # policy ignores — so the impersonator gains exactly the student's
+    # self-service access and nothing more.
+    test "a root user impersonating a student configures that student's own username", %{
+      configure_student: configure_student
+    } do
+      {student, account, _auth} = register_student(username_confirmed: false)
+
+      impersonating_auth =
+        Factory.build(:authentication,
+          principal_id: account.id,
+          root: false,
+          impersonated_id: account.id
+        )
+
+      :ok = PubSub.subscribe_student(student.id)
+      :ok = PubSub.subscribe_class_students(student.class_id)
+
+      data = %{username: "as-the-student"}
+
+      previous_counts = count_rows(@affected_tables)
+
+      assert {:ok, configured} = configure_student.(impersonating_auth, student.id, data)
+
+      configured
+      |> assert_configured_student(student, data)
+      |> assert_student_configured_event(impersonating_auth, data)
+      |> assert_persisted_student(student)
+
+      assert_row_count_diff(previous_counts, %{StoredEvent => 1})
+      assert_student_updated_broadcast(configured)
+    end
+
+    test "a root user impersonating a student cannot configure another student", %{
+      configure_student: configure_student
+    } do
+      {target, _target_account, _target_auth} = register_student(username_confirmed: false)
+      {_impersonated, impersonated_account, _impersonated_auth} = register_student()
+
+      impersonating_auth =
+        Factory.build(:authentication,
+          principal_id: impersonated_account.id,
+          root: false,
+          impersonated_id: impersonated_account.id
+        )
+
+      baseline = persisted_student(target.id)
+
+      :ok = PubSub.subscribe_student(target.id)
+      :ok = PubSub.subscribe_class_students(target.class_id)
+
+      previous_counts = count_rows(@affected_tables)
+
+      assert configure_student.(impersonating_auth, target.id, %{username: "stolen"}) ==
+               {:error, :student_not_found}
+
+      assert_configure_had_no_effect(baseline, previous_counts)
+    end
+
     # The masked-error branches below all collapse to `{:error,
     # :student_not_found}` so the use case never leaks whether a student exists
     # or who owns it. Each upstream condition is driven separately and asserted
