@@ -33,6 +33,20 @@ Hammox.defmock(ArchiDep.Servers.ServerTracking.ServerManagerMock,
   """
 )
 
+Hammox.defmock(ArchiDep.Servers.ServerTracking.ServerManagerClientMock,
+  for: ArchiDep.Servers.ServerTracking.ServerManagerClientBehaviour,
+  moduledoc: """
+  Mock of the client API of the module responsible for managing interactions with a registered server.
+  """
+)
+
+Hammox.defmock(ArchiDep.Servers.ServerTracking.ServersOrchestratorClientMock,
+  for: ArchiDep.Servers.ServerTracking.ServersOrchestratorBehaviour,
+  moduledoc: """
+  Mock of the client API of the orchestrator responsible for tracking active servers.
+  """
+)
+
 Hammox.defmock(ArchiDep.Servers.Ansible.Mock,
   for: ArchiDep.Servers.Ansible.Behaviour,
   moduledoc: """

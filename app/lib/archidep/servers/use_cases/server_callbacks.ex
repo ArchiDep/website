@@ -6,10 +6,12 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
 
   import ArchiDep.Helpers.DataHelpers
   import ArchiDep.Helpers.UseCaseHelpers
+  alias ArchiDep.Clock
+  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Events.ServerNotifiedUp
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerTracking.ServerManager
+  alias ArchiDep.Servers.ServerTracking.ServerManagerClient
   alias Ecto.UUID
   alias Phoenix.Token
   require Logger
@@ -29,10 +31,10 @@ defmodule ArchiDep.Servers.UseCases.ServerCallbacks do
         %{server_id: server_id}
       )
 
-      now = DateTime.utc_now()
+      now = Clock.now()
       event = server |> server_notified_up(now) |> Repo.insert!()
 
-      :ok = ServerManager.notify_server_up(server_id, event)
+      :ok = ServerManagerClient.notify_server_up(server_id, StoredEvent.to_reference(event))
     else
       {:error, :server_not_found} ->
         # Verify a token anyway against timing attacks

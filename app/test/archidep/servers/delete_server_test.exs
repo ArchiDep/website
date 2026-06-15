@@ -1,7 +1,9 @@
 defmodule ArchiDep.Servers.DeleteServerTest do
-  # Tests the database-mutating arity `delete_server(auth, %Server{})` that
-  # removes a server and its owned rows; the binary-id arity that serializes the
-  # deletion through the server-tracking processes is tested separately.
+  # Covers both arities of `delete_server`: the database-mutating
+  # `delete_server(auth, %Server{})` that removes a server and its owned rows,
+  # and the binary-ID `delete_server(auth, server_id)` that fetches and
+  # authorizes the server, ensures it is tracked, then serializes the deletion
+  # through the server-tracking processes (which are mocked here).
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
@@ -10,9 +12,13 @@ defmodule ArchiDep.Servers.DeleteServerTest do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
+  alias ArchiDep.Servers.ServerTracking.ServerManagerClientMock
+  alias ArchiDep.Servers.ServerTracking.ServersOrchestratorClientMock
   alias ArchiDep.Servers.UseCases.DeleteServer
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.Factory
   alias ArchiDep.Support.ServersTestHelpers
+  alias Ecto.UUID
 
   @now ~U[2024-03-15 10:30:00.000000Z]
   @past ~U[2023-09-15 09:42:17.000000Z]
@@ -90,10 +96,75 @@ defmodule ArchiDep.Servers.DeleteServerTest do
     assert_owner_counts(owner_id, server_count: 0, active_server_count: 0)
   end
 
+  describe "delete_server/2 (binary ID)" do
+    test "deletes a server through the server-tracking processes" do
+      {auth, owner_id, group_id} = root_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServersOrchestratorClientMock, :ensure_started, fn ^server -> :ok end)
+      expect(ServerManagerClientMock, :delete_server, fn ^server, ^auth -> :ok end)
+
+      assert DeleteServer.delete_server(auth, server.id) == :ok
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "passes through a server-busy error" do
+      {auth, owner_id, group_id} = root_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServersOrchestratorClientMock, :ensure_started, fn ^server -> :ok end)
+
+      expect(ServerManagerClientMock, :delete_server, fn ^server, ^auth ->
+        {:error, :server_busy}
+      end)
+
+      assert DeleteServer.delete_server(auth, server.id) == {:error, :server_busy}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "rejects a malformed server ID" do
+      {auth, _owner_id, _group_id} = root_owner_and_group()
+      previous_counts = count_rows(@affected_tables)
+
+      assert DeleteServer.delete_server(auth, "not-a-uuid") == {:error, :server_not_found}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "rejects an unknown server ID" do
+      {auth, _owner_id, _group_id} = root_owner_and_group()
+      previous_counts = count_rows(@affected_tables)
+
+      assert DeleteServer.delete_server(auth, UUID.generate()) == {:error, :server_not_found}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "masks an unauthorized caller as a missing server" do
+      {_auth, owner_id, group_id} = root_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
+      other = Factory.build(:authentication, principal_id: UUID.generate(), root: false)
+      previous_counts = count_rows(@affected_tables)
+
+      assert DeleteServer.delete_server(other, server.id) == {:error, :server_not_found}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+  end
+
   defp root_owner_and_group do
     {auth, account} = ServersTestHelpers.register_root(@past)
     group = CourseFactory.insert(:class, now: @past)
     {auth, account.id, group.id}
+  end
+
+  defp assert_no_tracking_side_effects(previous_counts) do
+    assert_no_row_count_diff(previous_counts)
+    assert_no_stored_events!()
   end
 
   # The deletion event is intentionally minimal — only the deleted server's

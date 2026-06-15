@@ -8,7 +8,7 @@ defmodule ArchiDep.Servers.UseCases.ManageServer do
 
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerTracking.ServerManager
+  alias ArchiDep.Servers.ServerTracking.ServerManagerClient
 
   @spec retry_connecting(Authentication.t(), UUID.t()) ::
           :ok | {:error, :server_not_found}
@@ -16,9 +16,12 @@ defmodule ArchiDep.Servers.UseCases.ManageServer do
     with :ok <- validate_uuid(server_id, :server_not_found),
          {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :retry_connecting, server) do
-      ServerManager.retry_connecting(server)
+      ServerManagerClient.retry_connecting(server)
     else
       {:error, {:access_denied, :servers, :retry_connecting}} ->
+        {:error, :server_not_found}
+
+      {:error, :server_not_found} ->
         {:error, :server_not_found}
     end
   end
@@ -32,9 +35,12 @@ defmodule ArchiDep.Servers.UseCases.ManageServer do
     with :ok <- validate_uuid(server_id, :server_not_found),
          {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :retry_ansible_playbook, {server, playbook}) do
-      ServerManager.retry_ansible_playbook(server, playbook)
+      ServerManagerClient.retry_ansible_playbook(server, playbook)
     else
       {:error, {:access_denied, :servers, :retry_ansible_playbook}} ->
+        {:error, :server_not_found}
+
+      {:error, :server_not_found} ->
         {:error, :server_not_found}
     end
   end
@@ -48,9 +54,12 @@ defmodule ArchiDep.Servers.UseCases.ManageServer do
     with :ok <- validate_uuid(server_id, :server_not_found),
          {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :retry_checking_open_ports, server) do
-      ServerManager.retry_checking_open_ports(server)
+      ServerManagerClient.retry_checking_open_ports(server)
     else
       {:error, {:access_denied, :servers, :retry_checking_open_ports}} ->
+        {:error, :server_not_found}
+
+      {:error, :server_not_found} ->
         {:error, :server_not_found}
     end
   end

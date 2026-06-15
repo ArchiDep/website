@@ -8,6 +8,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
 
   use GenServer
 
+  @behaviour ArchiDep.Servers.ServerTracking.ServerManagerClientBehaviour
+
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Servers.Helpers
   alias ArchiDep.Authentication
@@ -21,6 +23,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
+  alias ArchiDep.Servers.ServerTracking.ServerManagerClientBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Servers.Types
   alias Ecto.Changeset
@@ -72,27 +75,35 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   def ansible_playbook_completed(run),
     do: GenServer.call(name(run.server), {:ansible_playbook_completed, run.id})
 
+  @impl ServerManagerClientBehaviour
   @spec retry_connecting(Server.t() | UUID.t()) :: :ok
   def retry_connecting(server), do: GenServer.call(name(server), :retry_connecting)
 
+  @impl ServerManagerClientBehaviour
   @spec retry_ansible_playbook(Server.t(), String.t()) ::
           :ok | {:error, :server_not_connected} | {:error, :server_busy}
   def retry_ansible_playbook(server, playbook),
     do: GenServer.call(name(server), {:retry_ansible_playbook, playbook})
 
+  @impl ServerManagerClientBehaviour
   @spec retry_checking_open_ports(Server.t()) ::
           :ok | {:error, :server_not_connected} | {:error, :server_busy}
   def retry_checking_open_ports(server),
     do: GenServer.call(name(server), :retry_checking_open_ports)
 
+  @impl ServerManagerClientBehaviour
   @spec update_server(Server.t(), Authentication.t(), Types.server_data()) ::
-          {:ok, Server.t()} | {:error, Changeset.t()}
+          {:ok, Server.t(), EventReference.t()}
+          | {:error, Changeset.t()}
+          | {:error, :server_busy}
   def update_server(server, auth, data),
     do: GenServer.call(name(server), {:update_server, auth, data})
 
+  @impl ServerManagerClientBehaviour
   @spec delete_server(Server.t(), Authentication.t()) :: :ok | {:error, :server_busy}
   def delete_server(server, auth), do: GenServer.call(name(server), {:delete_server, auth})
 
+  @impl ServerManagerClientBehaviour
   @spec notify_server_up(UUID.t(), EventReference.t()) :: :ok
   def notify_server_up(server_id, event),
     do: GenServer.cast(name(server_id), {:retry_connecting, event})

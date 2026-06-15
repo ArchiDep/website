@@ -17,8 +17,8 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
-  alias ArchiDep.Servers.ServerTracking.ServerManager
-  alias ArchiDep.Servers.ServerTracking.ServersOrchestrator
+  alias ArchiDep.Servers.ServerTracking.ServerManagerClient
+  alias ArchiDep.Servers.ServerTracking.ServersOrchestratorClient
 
   @spec delete_server(Authentication.t(), UUID.t()) ::
           :ok | {:error, :server_busy} | {:error, :server_not_found}
@@ -26,10 +26,13 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
     with :ok <- validate_uuid(server_id, :server_not_found),
          {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :delete_server, server) do
-      :ok = ServersOrchestrator.ensure_started(server)
-      ServerManager.delete_server(server, auth)
+      :ok = ServersOrchestratorClient.ensure_started(server)
+      ServerManagerClient.delete_server(server, auth)
     else
       {:error, {:access_denied, :servers, :delete_server}} ->
+        {:error, :server_not_found}
+
+      {:error, :server_not_found} ->
         {:error, :server_not_found}
     end
   end

@@ -6,11 +6,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestrator do
 
   use GenServer
 
+  @behaviour ArchiDep.Servers.ServerTracking.ServersOrchestratorBehaviour
+
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor
+  alias ArchiDep.Servers.ServerTracking.ServersOrchestratorBehaviour
   require Logger
 
   @name {:global, __MODULE__}
@@ -22,6 +25,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestrator do
 
   # Client API
 
+  @impl ServersOrchestratorBehaviour
   @spec ensure_started(Server.t()) ::
           :ok | {:error, :server_not_found}
   def ensure_started(server) do

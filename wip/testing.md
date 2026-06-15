@@ -77,8 +77,8 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Accounts — session lifecycle use cases](#accounts--session-lifecycle-use-cases)
   - [x] [Accounts — schemas](#accounts--schemas)
   - [x] [Events context](#events-context)
-  - [ ] [Servers — context use cases](#servers--context-use-cases)
-  - [ ] [Servers — tracking-coupled use cases](#servers--tracking-coupled-use-cases)
+  - [x] [Servers — context use cases](#servers--context-use-cases)
+  - [x] [Servers — tracking-coupled use cases](#servers--tracking-coupled-use-cases)
   - [ ] [Servers — remaining schemas & Ansible pipeline](#servers--remaining-schemas--ansible-pipeline)
 - **2. Web layer — LiveViews & controllers**
   - [ ] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
@@ -628,25 +628,51 @@ from the part-1 slice above: the **binary-id arities** of `update_server` /
 `ServersOrchestrator.ensure_started/1`, then serializes the mutation through
 `ServerManager`), `ManageServer` (`retry_connecting`, `retry_ansible_playbook`,
 `retry_checking_open_ports`), and `ServerCallbacks.notify_server_up` (token
-verification + event insert + a `ServerManager` cast). The DB-mutating halves of
-update/delete are already covered (their `%Server{}` arities, part 1); what
-remains is the thin fetch/authorize/delegate layer plus the token logic. The
-error and authorization-masking branches return **before** any manager call, so
-they are directly testable and `async`; only the happy paths and the
-`:server_busy` passthrough reach a manager and need it intercepted. The
-recommended approach is **`GenServerProxy` interception** (register a proxy
-under the real `:global` registered name the use case calls and reply from the
-test) — `ServerManager`'s name is server-id-scoped, so interception is
-async-safe, but `ServersOrchestrator`'s is a fixed global name, so the
-update/delete glue tests run `async: false`. (`notify_server_up`'s clock is
-still the wall clock — `ServerCallbacks` stamps `DateTime.utc_now()` — and
-should be threaded onto the injected `Clock` as part of this task.)
+verification + event insert + a `ServerManager` cast).
+
+_Done — the managers are mockable behind a Hammox boundary, not
+`GenServerProxy`._ Rather than intercept the GenServers (which forces `async:
+false` for the fixed-global `ServersOrchestrator` and validates no contracts),
+the `ServerManager` client API and `ServersOrchestrator` are now reached through
+thin injectable façades mirroring `ArchiDep.Http`/`ArchiDep.Clock`:
+`ServerManagerClient` (backed by `ServerManagerClientBehaviour`, distinct from
+the state-machine `ServerManagerBehaviour`) and `ServersOrchestratorClient`
+(backed by `ServersOrchestratorBehaviour`). Each resolves to the real GenServer
+via `Application.compile_env!` in `config/config.exs` and to a `*ClientMock` in
+`config/test.exs`; the use cases call the façades, and the real GenServers
+declare the new behaviours. Hammox contract-checks every expectation against the
+behaviour's typespec, so the use-case ↔ manager boundary is validated and all
+the glue tests run `async: true` (the mock dispatches to the calling process).
+The DB-mutating halves of update/delete keep their part-1 `%Server{}` coverage;
+the binary-id tests (folded into
+`update_server_test.exs`/`delete_server_test.exs`) assert
+fetch/authorize/`ensure_started`/delegate and the `:server_busy` / changeset
+passthroughs, with no DB writes of their own (the manager is mocked).
+`manage_server_test.exs` covers the three retries (happy path, the
+`:server_not_connected` / `:server_busy` passthroughs, and the masked
+not-found/unauthorized branches); `server_callbacks_test.exs` covers
+`notify_server_up` with the full event/row/telemetry checklist plus the
+expired/invalid/mismatched-token branches.
+
+_Findings, all resolved:_ (1) `ManageServer`'s three functions and
+`DeleteServer.delete_server/2` (binary) handled only the `access_denied` clause
+in their `with`/`else`, so a malformed or unknown id — which surfaces as
+`{:error, :server_not_found}` from `validate_uuid`/`fetch_server` — raised a
+`WithClauseError` instead of returning the masked not-found (the
+`:server_not_found` passthrough clause that `update_server/2` already had was
+missing). (2) `ServerCallbacks.notify_server_up` passed the full
+`%StoredEvent{}` to `ServerManager.notify_server_up/2`, whose contract is
+`EventReference.t()`; it now converts with `StoredEvent.to_reference/1` (as
+`update_server` already does), which Hammox now enforces. (3) The recurring
+**clock gap**: `notify_server_up` stamped `DateTime.utc_now()`, so its
+`ServerNotifiedUp` event's `occurred_at` was unpinnable; it now takes `now` from
+the use case's `Clock.now()`.
 
 ### Servers — remaining schemas & Ansible pipeline
 
 Untested schemas and the `servers/ansible` pipeline pieces not covered by the
-existing `ansible/context_test.exs`. Triage against coverage before sizing; split
-into reviewable chunks (e.g. schemas / ansible-events / ansible-pipeline).
+existing `ansible/context_test.exs`. Triage against coverage before sizing;
+split into reviewable chunks (e.g. schemas / ansible-events / ansible-pipeline).
 
 ### Canon — web-layer LiveView test conventions
 

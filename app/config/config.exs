@@ -34,6 +34,14 @@ config :archidep, ArchiDep.Clock, ArchiDep.Clock.SystemClock
 config :archidep, ArchiDep.Http, Req
 config :archidep, ArchiDep.Servers.Ansible, ArchiDep.Servers.Ansible.Context
 
+config :archidep,
+       ArchiDep.Servers.ServerTracking.ServerManagerClient,
+       ArchiDep.Servers.ServerTracking.ServerManager
+
+config :archidep,
+       ArchiDep.Servers.ServerTracking.ServersOrchestratorClient,
+       ArchiDep.Servers.ServerTracking.ServersOrchestrator
+
 config :archidep, ArchiDep.Repo, pool_size: 10, socket_options: []
 
 # Endpoint configuration

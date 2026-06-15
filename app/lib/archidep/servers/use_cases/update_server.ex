@@ -19,8 +19,8 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
-  alias ArchiDep.Servers.ServerTracking.ServerManager
-  alias ArchiDep.Servers.ServerTracking.ServersOrchestrator
+  alias ArchiDep.Servers.ServerTracking.ServerManagerClient
+  alias ArchiDep.Servers.ServerTracking.ServersOrchestratorClient
   alias ArchiDep.Servers.Types
 
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.server_data()) ::
@@ -49,8 +49,8 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
     with :ok <- validate_uuid(server_id, :server_not_found),
          {:ok, server} <- Server.fetch_server(server_id),
          :ok <- authorize(auth, Policy, :servers, :update_server, server) do
-      :ok = ServersOrchestrator.ensure_started(server)
-      ServerManager.update_server(server, auth, data)
+      :ok = ServersOrchestratorClient.ensure_started(server)
+      ServerManagerClient.update_server(server, auth, data)
     else
       {:error, {:access_denied, :servers, :update_server}} ->
         {:error, :server_not_found}

@@ -1,7 +1,9 @@
 defmodule ArchiDep.Servers.UpdateServerTest do
-  # Tests the database-mutating arity `update_server(auth, %Server{}, data)`
-  # that rewrites a server's columns; the binary-ID arity that serializes the
-  # change through the server-tracking processes is tested separately.
+  # Covers both arities of `update_server`: the database-mutating
+  # `update_server(auth, %Server{}, data)` that rewrites a server's columns, and
+  # the binary-ID `update_server(auth, server_id, data)` that fetches and
+  # authorizes the server, ensures it is tracked, then serializes the change
+  # through the server-tracking processes (which are mocked here).
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
@@ -11,11 +13,16 @@ defmodule ArchiDep.Servers.UpdateServerTest do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
+  alias ArchiDep.Servers.ServerTracking.ServerManagerClientMock
+  alias ArchiDep.Servers.ServerTracking.ServersOrchestratorClientMock
   alias ArchiDep.Servers.UseCases.UpdateServer
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.EventsFactory
+  alias ArchiDep.Support.Factory
   alias ArchiDep.Support.ServersFactory
   alias ArchiDep.Support.ServersTestHelpers
   alias ArchiDep.Support.SSHFactory
+  alias Ecto.UUID
 
   @now ~U[2024-03-15 10:30:00.000000Z]
   @past ~U[2023-09-15 09:42:17.000000Z]
@@ -257,6 +264,94 @@ defmodule ArchiDep.Servers.UpdateServerTest do
     end
   end
 
+  describe "update_server/3 (binary ID)" do
+    test "updates a server through the server-tracking processes" do
+      {auth, owner_id, group_id} = root_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
+      data = ServersFactory.random_server_data(active: false)
+      ref = EventsFactory.build(:event_reference)
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServersOrchestratorClientMock, :ensure_started, fn ^server -> :ok end)
+
+      expect(ServerManagerClientMock, :update_server, fn ^server, ^auth, ^data ->
+        {:ok, server, ref}
+      end)
+
+      assert UpdateServer.update_server(auth, server.id, data) == {:ok, server, ref}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "passes through a changeset error" do
+      {auth, owner_id, group_id} = root_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
+      data = ServersFactory.random_server_data(active: false)
+      changeset = Server.update(server, data, @now)
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServersOrchestratorClientMock, :ensure_started, fn ^server -> :ok end)
+
+      expect(ServerManagerClientMock, :update_server, fn ^server, ^auth, ^data ->
+        {:error, changeset}
+      end)
+
+      assert UpdateServer.update_server(auth, server.id, data) == {:error, changeset}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "passes through a server-busy error" do
+      {auth, owner_id, group_id} = root_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
+      data = ServersFactory.random_server_data(active: false)
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServersOrchestratorClientMock, :ensure_started, fn ^server -> :ok end)
+
+      expect(ServerManagerClientMock, :update_server, fn ^server, ^auth, ^data ->
+        {:error, :server_busy}
+      end)
+
+      assert UpdateServer.update_server(auth, server.id, data) == {:error, :server_busy}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "rejects a malformed server ID" do
+      {auth, _owner_id, _group_id} = root_owner_and_group()
+      data = ServersFactory.random_server_data(active: false)
+      previous_counts = count_rows(@affected_tables)
+
+      assert UpdateServer.update_server(auth, "not-a-uuid", data) == {:error, :server_not_found}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "rejects an unknown server ID" do
+      {auth, _owner_id, _group_id} = root_owner_and_group()
+      data = ServersFactory.random_server_data(active: false)
+      previous_counts = count_rows(@affected_tables)
+
+      assert UpdateServer.update_server(auth, UUID.generate(), data) ==
+               {:error, :server_not_found}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "masks an unauthorized caller as a missing server" do
+      {_auth, owner_id, group_id} = root_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
+      data = ServersFactory.random_server_data(active: false)
+      other = Factory.build(:authentication, principal_id: UUID.generate(), root: false)
+      previous_counts = count_rows(@affected_tables)
+
+      assert UpdateServer.update_server(other, server.id, data) == {:error, :server_not_found}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+  end
+
   # Drives a root update and runs the full set of assertions: the returned
   # server, the audit event, the persisted row, the row-count diff and the
   # broadcasts.
@@ -282,6 +377,11 @@ defmodule ArchiDep.Servers.UpdateServerTest do
     {auth, account} = ServersTestHelpers.register_root(@past)
     group = CourseFactory.insert(:class, now: @past)
     {auth, account.id, group.id}
+  end
+
+  defp assert_no_tracking_side_effects(previous_counts) do
+    assert_no_row_count_diff(previous_counts)
+    assert_no_stored_events!()
   end
 
   # Asserts the returned server: every field overwritten by `data` (the root

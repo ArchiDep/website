@@ -39,6 +39,14 @@ config :archidep, ArchiDep.Servers, ArchiDep.Servers.ContextMock
 config :archidep, ArchiDep.Servers.Ansible, ArchiDep.Servers.Ansible.Mock
 config :archidep, ArchiDep.Http, ArchiDep.Http.Mock
 
+config :archidep,
+       ArchiDep.Servers.ServerTracking.ServerManagerClient,
+       ArchiDep.Servers.ServerTracking.ServerManagerClientMock
+
+config :archidep,
+       ArchiDep.Servers.ServerTracking.ServersOrchestratorClient,
+       ArchiDep.Servers.ServerTracking.ServersOrchestratorClientMock
+
 # Inject a mock clock so tests can pin the current time and assert exact
 # timestamps (see the testing guide in `docs/testing.md`).
 config :archidep, ArchiDep.Clock, ArchiDep.Clock.Mock
