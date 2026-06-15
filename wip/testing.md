@@ -79,7 +79,13 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Events context](#events-context)
   - [x] [Servers — context use cases](#servers--context-use-cases)
   - [x] [Servers — tracking-coupled use cases](#servers--tracking-coupled-use-cases)
-  - [ ] [Servers — remaining schemas & Ansible pipeline](#servers--remaining-schemas--ansible-pipeline)
+  - [ ] [Servers — `Server` schema validations](#servers--server-schema-validations)
+  - [ ] [Servers — `Server` persistence functions & helpers](#servers--server-persistence-functions--helpers)
+  - [ ] [Servers — `ServerProperties` schema](#servers--serverproperties-schema)
+  - [ ] [Servers — `AnsiblePlaybookRun` schema](#servers--ansibleplaybookrun-schema)
+  - [ ] [Servers — `AnsiblePlaybookEvent` schema](#servers--ansibleplaybookevent-schema)
+  - [ ] [Servers — Ansible `Tracker` persistence & events](#servers--ansible-tracker-persistence--events)
+  - [ ] [Servers — small schema leftovers](#servers--small-schema-leftovers)
 - **2. Web layer — LiveViews & controllers**
   - [ ] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
   - [ ] [Servers web — server detail & dialogs (remainder)](#servers-web--server-detail--dialogs-remainder)
@@ -102,7 +108,12 @@ This is the bird's-eye view: each item links to its full description under
   - [ ] 🧭 [Canon — components & web helpers](#canon--components--web-helpers)
   - [ ] [Web helpers (remainder)](#web-helpers-remainder)
   - [ ] [Shared components](#shared-components)
-- **6. Finalize coverage policy (do this last)**
+- **6. Runtime processes — server tracking & Ansible pipeline (integration)**
+  - [ ] 🧭 [Canon — testing runtime processes](#canon--testing-runtime-processes)
+  - [ ] [Ansible pipeline — Runner & GenStage](#ansible-pipeline--runner--genstage)
+  - [ ] [Server tracking — SSH connection](#server-tracking--ssh-connection)
+  - [ ] [Server tracking — orchestrator & Tracker](#server-tracking--orchestrator--tracker)
+- **7. Finalize coverage policy (do this last)**
   - [ ] [Decide exclusions](#decide-exclusions)
   - [ ] [Lock the global threshold](#lock-the-global-threshold)
   - [ ] [(Optional) Per-critical-path enforcement](#optional-per-critical-path-enforcement)
@@ -668,11 +679,129 @@ missing). (2) `ServerCallbacks.notify_server_up` passed the full
 `ServerNotifiedUp` event's `occurred_at` was unpinnable; it now takes `now` from
 the use case's `Clock.now()`.
 
-### Servers — remaining schemas & Ansible pipeline
+### Servers — remaining schemas & Ansible pipeline (overview)
 
-Untested schemas and the `servers/ansible` pipeline pieces not covered by the
-existing `ansible/context_test.exs`. Triage against coverage before sizing;
-split into reviewable chunks (e.g. schemas / ansible-events / ansible-pipeline).
+The untested servers schemas plus the testable core of the `servers/ansible`
+pipeline, split into the seven reviewable chunks below. Two scope decisions
+shape them:
+
+1. **Schemas + `Tracker` logic only.** The runtime _process_ modules (the
+   `Runner` subprocess, the GenStage pipeline, `ServerConnection`,
+   `ServersOrchestrator`, `ServerTracker`) are split out into their own phase —
+   see [6. Runtime processes](#canon--testing-runtime-processes) — because they
+   need integration-style scaffolding rather than `DataCase` unit tests.
+2. **Thread the injected clock.** The ansible/tracking schema builders currently
+   call `DateTime.utc_now/0` directly (the recurring clock gap every prior chunk
+   has fixed); make them take `now` and have the runtime callers pass
+   `Clock.now/0`, per [Deterministic
+   time](../app/docs/testing.md#deterministic-time-via-an-injectable-clock).
+
+All chunks follow the settled canon: the random/minimal/full create strategy,
+the update strategies, the `for variant <- […]` + `unquote` convention for rules
+shared across changeset variants (as in `class_test.exs`/`student_test.exs`),
+exact `errors_on(cs) == …` maps, and `count_rows/1` + `assert_row_count_diff/2`
+on every DB-mutating path. Reuse `ServersFactory`, `SSHFactory` and
+`ServersTestHelpers`. Expect the recurring clock gap and `with`/`else` masking
+bugs to recur; fix and flag for review as established.
+
+**Out of scope here** (deferred, not skipped): the runtime processes (phase 6);
+`ServerOwner`'s count-mutation changesets (`update_active_server_count/2`,
+`update_server_count/2`) and **every** `refresh!/2`, which the [DDD
+plan](./ddd.md#sequencing-with-the-testing-plan) reshapes; `ServerGroup` /
+`ServerGroupMember` (no changesets — queries are covered through the read
+use-case tests); `Server`'s query functions (already covered by
+`read_servers_test.exs`); and the `SSHKeyFingerprint` malformed-input case
+(blocked on the parser-crash [known
+issue](../app/docs/known-issues.md#ssh-host-key-fingerprint-parsing-crashes-on-malformed-input)).
+
+### Servers — `Server` schema validations
+
+Extend `schemas/server_test.exs` (today only the 4 reserved-username cases).
+Cover all four builders — `new/4`, `new_group_member_server/3`, `update/3`,
+`update_group_member_server/4` — exhaustively for every rule in `validate/1` and
+the builder-specific validators: required fields; `name` length ≤50 and
+uniqueness within the group; `username` / `app_username` length ≤32; the
+`username == app_username` conflict; the reserved-username rule; `ssh_port`
+numeric bounds; `ssh_host_key_fingerprints` parse validation; `ip_address`
+uniqueness; and the active-server-limit / server-limit `validate_change`
+branches on the group-member builders. Write rules shared across the
+create/update variants once via `for variant <- […]` + `unquote`; keep divergent
+rules (uniqueness self-exclusion on update, `validate_required` that cannot fail
+on update) in per-variant blocks. This is the `Server` analogue of the
+`class_test.exs` / `student_test.exs` backfill.
+
+### Servers — `Server` persistence functions & helpers
+
+The three DB-mutating bang functions under `DataCase`: `mark_as_set_up!/2` (→
+`ServerSetUp` event), `mark_open_ports_checked!/3` (→ `ServerOpenPortsChecked`),
+and `update_last_known_properties!/3` (→ `ServerFactsGathered`, including the
+no-change short-circuit that writes nothing). Assert the reloaded row, the
+emitted event, and the `assert_row_count_diff` deltas (including `StoredEvent`).
+**Thread `now`:** these three call `DateTime.utc_now/0` directly, as does
+`find_active_server_for_group_member/1`; convert them to take `now` from the
+runtime caller. Also cover the pure helpers not exercised elsewhere:
+`active?/2`, `set_up?/1`, `changed?/3`, `valid_ssh_host_key_fingerprints/1`,
+`default_hostname/1`, `name_or_default/1`, `ssh_connection_description/1`,
+`event_stream/1`.
+
+### Servers — `ServerProperties` schema
+
+`detect_mismatches/2` is already covered. Add the changeset builders `new/3`,
+`update/2`, `blank_changeset/1`, and the logic-dense
+`update_from_ansible_facts/2` (fact-key mapping plus the invalid-field-nilifying
+behaviour — assert an out-of-range fact is cleared, not rejected), with the
+length limits and numeric bounds for every field generated via a `for` over the
+field/limit list. (Note this is `Servers.Schemas.ServerProperties`, distinct
+from the course `ExpectedServerProperties` already covered — it needs its own
+tests.) Plus the pure helpers: `changed?/2`, `merge/2` (the `"*"` / `0` / `nil`
+override semantics), `set_default_hostname/2`, `refresh/2`, `blank/1`.
+
+### Servers — `AnsiblePlaybookRun` schema
+
+New `schemas/ansible_playbook_run_test.exs`. The state-transition builders
+`new_pending/5`, `start_running/1`, `succeed/1`, `fail/2`, `interrupt/1`,
+`time_out/1` (assert the resulting state / exit code / timestamps and the
+`validate/1` rules: required fields, `playbook` / `user` length, `port` and
+stats numeric bounds, state inclusion). The update-query builders
+`touch_new_event/2` and `update_stats/2` run against a persisted row under
+`DataCase`. The pure helpers `done?/1`, `duration/1`,
+`ssh_connection_description/1`, `display_variables/1` (visible/hidden
+classification), `stats/1`. **Thread `now`** into all six builders. **Flag for
+review:** `validate_started_at_and_finished_at` compares with `Date.compare/2`
+on `DateTime`s, so a same-day `finished_at` before `started_at` is not rejected
+— likely should be `DateTime.compare/2`.
+
+### Servers — `AnsiblePlaybookEvent` schema
+
+New `schemas/ansible_playbook_event_test.exs`. The `new/2` extraction builder:
+each nested-path field present / missing / wrong-type (`binary_or`,
+`utc_datetime_or_nil`), the 255-char truncation, `occurred_at` from `_timestamp`
+vs. the now-fallback, and the `validate/1` length rules. Plus
+`fetch_events_for_run/1` ordering under `DataCase`. **Thread `now`** into
+`new/2`.
+
+### Servers — Ansible `Tracker` persistence & events
+
+New `ansible/tracker_test.exs` under `DataCase`. `track_playbook!/6` (inserts
+the pending run + `AnsiblePlaybookRunStarted`, returns the reference).
+`track_playbook_event/4`: the `{:event, data}` path (insert event + touch the
+run counters + the conditional `update_stats` only on `"v2_playbook_on_stats"` +
+`AnsiblePlaybookEventOccurred`) and all three `{:exit, …}` branches — `{:status,
+0}` → `succeed` + `AnsiblePlaybookRunFinished`, `{:status, code}` → `fail`,
+`:epipe` → `fail(nil)`. Assert the persisted rows, the emitted domain events,
+and the `assert_row_count_diff` deltas. This also covers the
+`AnsiblePlaybookRunStarted` / `AnsiblePlaybookEventOccurred` /
+`AnsiblePlaybookRunFinished` event structs end-to-end.
+
+### Servers — small schema leftovers
+
+One PR (or attach to an adjacent chunk) for the tiny pure surfaces:
+`ServerRealTimeState.busy?/1` (the matrix over connection states ×
+`current_job`) and `problem?/2`; `AnsiblePlaybook.name/1` and `new/2`; and the
+untested `SSHKeyFingerprint` parsers (`parse/1`, `parse/3`,
+`fingerprint_human/1`, `key_algorithm/1` — `match?/2` is covered). **Triage
+first** against the existing `ssh_test.exs` / `ssh_key_fingerprint_test.exs` to
+avoid overlap, and leave the malformed-input case for the known-issue fix.
 
 ### Canon — web-layer LiveView test conventions
 
@@ -786,6 +915,57 @@ _Scope:_ ~8 files.
 
 `core`, `form`, `course`, `server`, `layouts` components. _Scope:_ ~6 files,
 split by component family.
+
+### Canon — testing runtime processes
+
+_Context:_ the server-tracking and Ansible-pipeline _process_ modules are the
+last big untested area and the only one with no proven test pattern. Unlike the
+business layer they are not `DataCase` unit tests: they involve OTP supervision,
+a GenStage producer/consumer with back-pressure, an `ExCmd` subprocess, an
+Erlang `:ssh` connection, and `Phoenix.Tracker` presence. The
+`ServerManagerState` state machine is already tested in isolation (19 files);
+this phase is about the _processes_ around it. Split out from [Servers —
+remaining schemas & Ansible
+pipeline](#servers--remaining-schemas--ansible-pipeline-overview) because the
+scaffolding (supervised processes, subprocess/SSH stubs, drained mailboxes) is a
+different discipline from the schema chunks.
+
+🧭 Pick one tractable process — the **`Ansible.Runner`** (its stream parsing and
+exit handling, with the actual `ansible-playbook` invocation stubbed) or a
+**GenStage** slice — and settle the conventions: how to start the unit under
+`start_supervised!`, how to stub the subprocess / SSH boundary (mock vs. a fake
+command), how to drive and assert messages without timing flakiness, and whether
+each module is reachable as a focused unit test or only as an integration test.
+Get reviewed, refactor, agree. Output: a short "how we test runtime processes"
+note + the reviewed example. Only once signed off do the follow-up chunks below
+become mechanical.
+
+### Ansible pipeline — Runner & GenStage
+
+`Ansible.Runner` (subprocess invocation + JSON/JSONL stream parsing + exit-code
+handling) and the GenStage pipeline (`AnsiblePipelineQueue` producer with its
+task-dropping-when-offline logic, `AnsiblePipelineConsumer`,
+`AnsiblePipelineRunner`, `AnsiblePipelineSupervisor`). Stub the
+`ansible-playbook` process at the `Runner` boundary so no real Ansible runs.
+_Scope:_ ~5 modules; split Runner vs. pipeline if the canon task does not
+already cover one.
+
+### Server tracking — SSH connection
+
+`ServerConnection` (the `:ssh`-linked GenServer and its crash/restart behaviour)
+and `ServerConnectionState` (the record-based state machine — testable as pure
+data even where the GenServer needs a stubbed SSH boundary). Plus
+`ServerProblems` (pure problem constructors/predicates), which can fold in here
+or into the orchestrator chunk. _Scope:_ ~3 modules.
+
+### Server tracking — orchestrator & Tracker
+
+`ServersOrchestrator` (decides which servers to track; starts/stops per-server
+supervisors — its `track_on_boot` gating is already relied on by the use-case
+tests), `ServerDynamicSupervisor`, and `ServerTracker` (live state over
+`Phoenix.Tracker`, notifying the web layer). Cover the three client/manager
+behaviours' real implementations where they carry logic. Test with
+`start_supervised!` and `Phoenix.PubSub` assertions. _Scope:_ ~4–6 modules.
 
 ### Decide exclusions
 
