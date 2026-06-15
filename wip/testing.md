@@ -605,25 +605,20 @@ course/accounts schemas. (3) The `ServersOrchestrator` subscribed to the
 `servers:new` topic unconditionally, so a `server_created` broadcast woke it to
 query the database outside any test's sandbox transaction and crash; it now only
 subscribes when `track_on_boot` is set (a non-tracking node, e.g. the test
-environment, stays inert). _Flagged for review:_ the
-`ServerCreated`/`ServerUpdated` events omit `ssh_host_key_fingerprints`, so a
-server row is not fully reconstructable from its event (the tests supply that
-field by hand alongside the redacted secret key); and the owner server-count
+environment, stays inert). _Flagged for review:_ the owner server-count
 assertions are kept **black-box** (the observable count change, not the full
 `ServerOwner` row) pending the `ddd.md` reshaping of those columns. The
 remaining tracking-coupled glue is split out below.
 
-_Follow-up — `ServerCreated`/`ServerUpdated` omit the SSH host-key
-fingerprints:_ unlike the `ClassCreated`/`ClassUpdated` fix made during the
-class-use-case canon, the server creation and update events (and their
-`server_data` event-data type) carry no `ssh_host_key_fingerprints` field, so a
-`servers` row is **not** fully reconstructable from its event — the part-1
-`create_server`/`update_server` tests supply that field by hand alongside the
-redacted secret key. Next, propagate the field into both events and the type
-(mirroring the class fix: add it to the `@enforce_keys`/`defstruct`/`@type` and
-populate it where each event is built) so the row reconstructs from the event
-alone, then drop the by-hand field from those two tests and assert the event
-carries it.
+_Done — `ServerCreated`/`ServerUpdated` now carry the SSH host-key
+fingerprints:_ mirroring the `ClassCreated`/`ClassUpdated` fix from the
+class-use-case canon, `ssh_host_key_fingerprints` is now part of both server
+events (added to each `@enforce_keys`/`defstruct`/`@type` and populated by
+`new/1` from the `%Server{}`), so a `servers` row reconstructs from its event
+alone. The `create_server`/`update_server` tests no longer supply the field by
+hand: the persisted-row assertions read it back from the event data and the
+event assertions assert it; the `server_manager` update-event test asserts it
+too. The redacted secret key remains the only field the event omits.
 
 ### Servers — tracking-coupled use cases
 

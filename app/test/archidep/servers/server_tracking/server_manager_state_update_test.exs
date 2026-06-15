@@ -1096,6 +1096,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                "username" => server.username,
                "app_username" => server.app_username,
                "ssh_port" => server.ssh_port,
+               "ssh_host_key_fingerprints" => server.ssh_host_key_fingerprints,
                "active" => server.active,
                "group" => %{
                  "id" => server.group.id,

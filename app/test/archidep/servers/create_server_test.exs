@@ -62,7 +62,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       server
       |> assert_created_server(data, group, owner, data.expected_properties)
       |> assert_server_created_event(auth, group, owner)
-      |> assert_persisted_server(data, server.secret_key)
+      |> assert_persisted_server(server.secret_key)
 
       assert_row_count_diff(previous_counts, %{
         Server => 1,
@@ -101,7 +101,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       server
       |> assert_created_server(data, group, owner, data.expected_properties)
       |> assert_server_created_event(auth, group, owner)
-      |> assert_persisted_server(data, server.secret_key)
+      |> assert_persisted_server(server.secret_key)
 
       assert_row_count_diff(previous_counts, %{
         Server => 1,
@@ -151,7 +151,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       server
       |> assert_created_server(data, group, owner, data.expected_properties)
       |> assert_server_created_event(auth, group, owner)
-      |> assert_persisted_server(data, server.secret_key)
+      |> assert_persisted_server(server.secret_key)
 
       assert_row_count_diff(previous_counts, %{
         Server => 1,
@@ -187,7 +187,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
         blank_properties_data()
       )
       |> assert_server_created_event(auth, group, owner)
-      |> assert_persisted_server(data, server.secret_key)
+      |> assert_persisted_server(server.secret_key)
 
       assert_row_count_diff(previous_counts, %{
         Server => 1,
@@ -411,6 +411,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
                "username" => server.username,
                "app_username" => server.app_username,
                "ssh_port" => server.ssh_port,
+               "ssh_host_key_fingerprints" => server.ssh_host_key_fingerprints,
                "active" => server.active,
                "group" => %{"id" => group.id, "name" => group.name},
                "owner" => %{
@@ -433,12 +434,10 @@ defmodule ArchiDep.Servers.CreateServerTest do
   end
 
   # Asserts the persisted `servers` row (associations unloaded) rebuilt entirely
-  # from the audit event, proving the event captures the row. The two fields the
-  # event does not carry are supplied directly: the random secret key (kept out
-  # of the event because it is sensitive) and `ssh_host_key_fingerprints` from
-  # the input (the event omits it, so the row is not fully reconstructable from
-  # the event — worth carrying in the event).
-  defp assert_persisted_server(%StoredEvent{data: event_data}, input_data, secret_key) do
+  # from the audit event, proving the event captures the row. The only field the
+  # event does not carry is the random secret key, kept out of the event because
+  # it is sensitive, so it is supplied directly.
+  defp assert_persisted_server(%StoredEvent{data: event_data}, secret_key) do
     id = event_data["id"]
 
     assert Repo.get!(Server, id) == %Server{
@@ -449,7 +448,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
              username: event_data["username"],
              app_username: event_data["app_username"],
              ssh_port: event_data["ssh_port"],
-             ssh_host_key_fingerprints: input_data.ssh_host_key_fingerprints,
+             ssh_host_key_fingerprints: event_data["ssh_host_key_fingerprints"],
              secret_key: secret_key,
              active: event_data["active"],
              group: not_loaded(:group, Server),

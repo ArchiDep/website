@@ -250,7 +250,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
 
       updated
       |> assert_server_updated_event(auth, ref)
-      |> assert_persisted_server(data, server)
+      |> assert_persisted_server(server)
 
       assert_row_count_diff(previous_counts, %{StoredEvent => 1})
       assert_server_updated_broadcast(updated)
@@ -270,7 +270,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
     updated
     |> assert_updated_server(server, data)
     |> assert_server_updated_event(auth, ref)
-    |> assert_persisted_server(data, server)
+    |> assert_persisted_server(server)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
     assert_server_updated_broadcast(updated)
@@ -345,6 +345,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
                "username" => server.username,
                "app_username" => server.app_username,
                "ssh_port" => server.ssh_port,
+               "ssh_host_key_fingerprints" => server.ssh_host_key_fingerprints,
                "active" => server.active,
                "group" => %{"id" => server.group.id, "name" => server.group.name},
                "owner" => %{
@@ -368,13 +369,11 @@ defmodule ArchiDep.Servers.UpdateServerTest do
 
   # Asserts the persisted `servers` row (associations unloaded) rebuilt from the
   # audit event, proving the row was updated. The fields the event does not
-  # carry come from the unchanged prior state: the SSH fingerprints from the
-  # input (the event omits them), and the secret key, creation/setup timestamps
-  # and last-known-properties link from the original server (an update leaves
-  # them).
+  # carry come from the unchanged prior state of the original server (an update
+  # leaves them): the secret key, the creation/setup timestamps and the
+  # last-known-properties link.
   defp assert_persisted_server(
          %StoredEvent{data: event_data, version: version},
-         input_data,
          original
        ) do
     id = event_data["id"]
@@ -387,7 +386,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
              username: event_data["username"],
              app_username: event_data["app_username"],
              ssh_port: event_data["ssh_port"],
-             ssh_host_key_fingerprints: input_data.ssh_host_key_fingerprints,
+             ssh_host_key_fingerprints: event_data["ssh_host_key_fingerprints"],
              secret_key: original.secret_key,
              active: event_data["active"],
              group: not_loaded(:group, Server),
