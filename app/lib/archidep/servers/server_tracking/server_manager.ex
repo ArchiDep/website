@@ -6,9 +6,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   process.
   """
 
-  use GenServer
-
   @behaviour ArchiDep.Servers.ServerTracking.ServerManagerClientBehaviour
+
+  use GenServer
 
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Servers.Helpers

@@ -4,9 +4,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestrator do
   and running their supervisors.
   """
 
-  use GenServer
-
   @behaviour ArchiDep.Servers.ServerTracking.ServersOrchestratorBehaviour
+
+  use GenServer
 
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Ansible.Pipeline
