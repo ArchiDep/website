@@ -79,7 +79,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Events context](#events-context)
   - [x] [Servers — context use cases](#servers--context-use-cases)
   - [x] [Servers — tracking-coupled use cases](#servers--tracking-coupled-use-cases)
-  - [ ] [Servers — `Server` schema validations](#servers--server-schema-validations)
+  - [x] [Servers — `Server` schema validations](#servers--server-schema-validations)
   - [ ] [Servers — `Server` persistence functions & helpers](#servers--server-persistence-functions--helpers)
   - [ ] [Servers — `ServerProperties` schema](#servers--serverproperties-schema)
   - [ ] [Servers — `AnsiblePlaybookRun` schema](#servers--ansibleplaybookrun-schema)
@@ -729,6 +729,28 @@ create/update variants once via `for variant <- […]` + `unquote`; keep diverge
 rules (uniqueness self-exclusion on update, `validate_required` that cannot fail
 on update) in per-variant blocks. This is the `Server` analogue of the
 `class_test.exs` / `student_test.exs` backfill.
+
+_Done:_ `schemas/server_test.exs` now covers all four builders exhaustively.
+The shared `validate/1` value rules (name length/trim, `username` length,
+`ssh_port` bounds, `ssh_host_key_fingerprints` parsing, error accumulation, and
+a valid-data baseline) are written once and generated for all four builders via
+`for variant <- [:new, :new_group_member, :update, :update_group_member]` +
+`unquote`, dispatching through a private `changeset/2`. The divergent rules live
+in their own blocks: `app_username` length and the `username == app_username`
+conflict over the two root builders; the reserved-username rule over the two
+group-member builders; required fields over the two create builders (plus the
+root-only `app_username` requirement); DB-backed `name` / `ip_address`
+uniqueness on `new/4` (no self-exclusion) and `update/3` (self-exclusion, plus a
+keeps-its-own-value case); and the active-server-limit / server-limit
+`validate_change` branches on the group-member builders. No latent bugs: these
+builders already thread the injected `now` (the clock gap earlier chunks
+predicted does not apply to `validate/1`), and there is no `with`/`else` masking
+to misfire. One observation worth recording: unlike the course SHA256 field, the
+server field parses fingerprints with the `:any` digest (`parse/1`), which
+returns `{:error, :malformed}` cleanly, so a fully-malformed line could be
+asserted directly rather than worked around — the
+[parser-crash known issue](../app/docs/known-issues.md#ssh-host-key-fingerprint-parsing-crashes-on-malformed-input)
+only affects the digest-specific `parse/2` paths.
 
 ### Servers — `Server` persistence functions & helpers
 
