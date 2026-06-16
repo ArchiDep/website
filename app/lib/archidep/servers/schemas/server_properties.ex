@@ -176,14 +176,21 @@ defmodule ArchiDep.Servers.Schemas.ServerProperties do
           :distribution_version
         ]
       )
+      |> validate()
       |> then(fn changeset ->
-        # Clear out any fields that have errors because we are going to save
-        # this changeset to the database even in the presence of errors. We'll
-        # just clear out the invalid fields.
-        changeset.errors
-        |> Keyword.keys()
-        |> Enum.uniq()
-        |> Enum.reduce(changeset, &put_change(&2, &1, nil))
+        # Gathered facts are observational monitoring data, never user input, so
+        # an out-of-range or wrong-typed value must not reject the whole update.
+        # Discard the change for every invalid field (keeping the last known
+        # good value) and drop its error so the changeset stays valid and saves.
+        invalid_fields = changeset.errors |> Keyword.keys() |> Enum.uniq()
+        remaining_errors = Keyword.drop(changeset.errors, invalid_fields)
+
+        %{
+          changeset
+          | changes: Map.drop(changeset.changes, invalid_fields),
+            errors: remaining_errors,
+            valid?: remaining_errors == []
+        }
       end)
 
   # TODO: adapt minimum and allow/deny "*" depending on the context

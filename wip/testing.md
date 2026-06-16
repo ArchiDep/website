@@ -81,7 +81,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers — tracking-coupled use cases](#servers--tracking-coupled-use-cases)
   - [x] [Servers — `Server` schema validations](#servers--server-schema-validations)
   - [x] [Servers — `Server` persistence functions & helpers](#servers--server-persistence-functions--helpers)
-  - [ ] [Servers — `ServerProperties` schema](#servers--serverproperties-schema)
+  - [x] [Servers — `ServerProperties` schema](#servers--serverproperties-schema)
   - [ ] [Servers — `AnsiblePlaybookRun` schema](#servers--ansibleplaybookrun-schema)
   - [ ] [Servers — `AnsiblePlaybookEvent` schema](#servers--ansibleplaybookevent-schema)
   - [ ] [Servers — Ansible `Tracker` persistence & events](#servers--ansible-tracker-persistence--events)
@@ -777,6 +777,48 @@ field/limit list. (Note this is `Servers.Schemas.ServerProperties`, distinct
 from the course `ExpectedServerProperties` already covered — it needs its own
 tests.) Plus the pure helpers: `changed?/2`, `merge/2` (the `"*"` / `0` / `nil`
 override semantics), `set_default_hostname/2`, `refresh/2`, `blank/1`.
+
+_Done:_ `schemas/server_properties_test.exs` now covers all the changeset
+builders and pure helpers. The shared `validate/1` rules (per-field string
+length limits, per-field numeric bounds — here `0`-based, message `"must be
+between 0 and {number}"`, unlike the course schema's `1`-based — trimming,
+blank→nil, and error accumulation) are written once and generated for both
+data-bearing builders via `for variant <- [:new, :update]` + `unquote`
+dispatching through a private `changeset/2`; each builder's effect is pinned as
+the **whole applied struct** (`Changeset.apply_changes/1` + one exact equality,
+generated `id` bound from the result), per the settled canon. `new/3`'s
+id-setting and `blank_changeset/1`'s validity get their own blocks, and the pure
+helpers (`changed?/2`, `merge/2`'s `nil`/`"*"`/`0` override semantics,
+`set_default_hostname/2`, `refresh/2`, `blank/1`) are asserted by whole-value
+equality. The existing `detect_mismatches/2` tests were kept. **No clock gap
+here** — `ServerProperties` has no `timestamps()` and no builder calls
+`DateTime.utc_now/0`, so the overview's "thread the injected clock" step does
+not apply to this schema.
+
+_Latent bug found and fixed (flag for review):_ `update_from_ansible_facts/2`
+called `cast` but **never `validate/1`**, so the length/numeric-bound rules
+`new/3`/`update/2` enforce were not applied to ansible-gathered facts; and its
+error-clearing block only `put_change`d the offending field to `nil` without
+dropping the matching `changeset.errors` entry, so the changeset stayed `valid?:
+false` — defeating its own stated goal ("save even in the presence of errors").
+The net effect was the opposite of leniency: any abnormal fact **crashed** the
+write. Confirmed end to end — a wrong-typed fact makes the nested changeset (and
+thus the parent built by `change(server, last_known_properties: …)`) invalid, so
+the `Multi.update` returns `{:error, …}` and the `{:ok, …}`-only `case` in
+`update_last_known_properties!` raises a `CaseClauseError`; an over-255-char
+hostname (Ecto `:string` → `varchar(255)`) takes the other route and overflows
+the column on insert, crashing the same `case`. Both crash the per-server
+tracking GenServer (`ServerManagerState.ansible_facts_gathered/2`), and gathered
+facts come from an arbitrary student VM, so they are genuinely untrusted. Fixed
+so the function realizes its intent: it now calls `validate/1` and then, for
+every invalid field, **drops the change** (keeping the last known good value)
+**and** the error, so the changeset stays valid and saves. Covered in
+`server_properties_test.exs` (an over-range/over-length/wrong-typed fact is
+cleared, `errors_on/1 == %{}`, valid facts map through; a now-invalid fact keeps
+the previous value) and by a regression test in `server_test.exs`
+(`update_last_known_properties!/4` no longer fails on an invalid fact — it
+clears the field, stores the rest, and still records the raw facts in the
+`ServerFactsGathered` audit event).
 
 ### Servers — `AnsiblePlaybookRun` schema
 

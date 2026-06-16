@@ -386,6 +386,72 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
       assert_row_count_diff(previous_counts, %{ServerProperties => 1, StoredEvent => 1})
     end
 
+    # Gathered facts come from an arbitrary server, so an invalid value (here a
+    # hostname longer than the column allows) must not reject the whole update:
+    # the offending field is cleared while the rest is stored, and the raw facts
+    # are still recorded in the audit event.
+    test "clears invalid gathered facts instead of failing the update" do
+      {owner, group} = persisted_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner.id, group.id, last_known_properties: nil)
+      cause = StoredEvent.to_reference(EventsFactory.insert(:stored_event))
+
+      facts = %{
+        "ansible_nodename" => String.duplicate("a", 256),
+        "ansible_machine_id" => "abc123",
+        "ansible_processor_count" => 4,
+        "ansible_processor_cores" => 8,
+        "ansible_processor_vcpus" => 16,
+        "ansible_memory_mb" => %{"real" => %{"total" => 2048}, "swap" => %{"total" => 1024}},
+        "ansible_system" => "Linux",
+        "ansible_architecture" => "x86_64",
+        "ansible_os_family" => "Debian",
+        "ansible_distribution" => "Ubuntu",
+        "ansible_distribution_release" => "jammy",
+        "ansible_distribution_version" => "22.04"
+      }
+
+      previous_counts = count_rows(@affected_tables)
+
+      updated = Server.update_last_known_properties!(server, facts, cause, @now)
+
+      assert %Server{last_known_properties: %ServerProperties{id: properties_id}} = updated
+
+      expected_properties = %ServerProperties{
+        __meta__: loaded(ServerProperties, "server_properties"),
+        id: properties_id,
+        hostname: nil,
+        machine_id: "abc123",
+        cpus: 4,
+        cores: 8,
+        vcpus: 16,
+        memory: 2048,
+        swap: 1024,
+        system: "Linux",
+        architecture: "x86_64",
+        os_family: "Debian",
+        distribution: "Ubuntu",
+        distribution_release: "jammy",
+        distribution_version: "22.04"
+      }
+
+      assert updated == %{
+               server
+               | last_known_properties: expected_properties,
+                 last_known_properties_id: properties_id,
+                 updated_at: @now,
+                 version: server.version + 1
+             }
+
+      updated
+      |> assert_server_facts_gathered_event(cause, facts)
+      |> assert_persisted_server(server,
+        last_known_properties_id: properties_id,
+        updated_at: @now
+      )
+
+      assert_row_count_diff(previous_counts, %{ServerProperties => 1, StoredEvent => 1})
+    end
+
     test "writes nothing when the facts produce no change" do
       {owner, group} = persisted_owner_and_group()
       server = ServersTestHelpers.insert_server(owner.id, group.id, last_known_properties: nil)
