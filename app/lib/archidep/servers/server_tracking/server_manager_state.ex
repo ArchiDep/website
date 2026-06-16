@@ -842,7 +842,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          |> add_problem(server_open_ports_check_failed_problem(port_problems))
 
   defp maybe_mark_open_ports_checked(%Server{open_ports_checked_at: nil} = server, cause),
-    do: Server.mark_open_ports_checked!(server, @ports_to_check, cause)
+    do: Server.mark_open_ports_checked!(server, @ports_to_check, cause, DateTime.utc_now())
 
   defp maybe_mark_open_ports_checked(server, _cause), do: server
 
@@ -858,7 +858,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       ) do
     Logger.debug("Gathered facts from server #{state.server.id}")
 
-    updated_server = Server.update_last_known_properties!(state.server, facts, connection_event)
+    updated_server =
+      Server.update_last_known_properties!(
+        state.server,
+        facts,
+        connection_event,
+        DateTime.utc_now()
+      )
 
     setup_playbook = Ansible.setup_playbook()
 
@@ -949,7 +955,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          } = state,
          %AnsiblePlaybookRun{id: run_id, playbook: "setup", state: :succeeded}
        ) do
-    updated_server = Server.mark_as_set_up!(server, cause)
+    updated_server = Server.mark_as_set_up!(server, cause, DateTime.utc_now())
 
     reconnecting_event =
       updated_server

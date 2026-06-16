@@ -80,7 +80,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers — context use cases](#servers--context-use-cases)
   - [x] [Servers — tracking-coupled use cases](#servers--tracking-coupled-use-cases)
   - [x] [Servers — `Server` schema validations](#servers--server-schema-validations)
-  - [ ] [Servers — `Server` persistence functions & helpers](#servers--server-persistence-functions--helpers)
+  - [x] [Servers — `Server` persistence functions & helpers](#servers--server-persistence-functions--helpers)
   - [ ] [Servers — `ServerProperties` schema](#servers--serverproperties-schema)
   - [ ] [Servers — `AnsiblePlaybookRun` schema](#servers--ansibleplaybookrun-schema)
   - [ ] [Servers — `AnsiblePlaybookEvent` schema](#servers--ansibleplaybookevent-schema)

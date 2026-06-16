@@ -235,7 +235,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   end
 
   defp find_active_server(student) do
-    case Server.find_active_server_for_group_member(student.id) do
+    case Server.find_active_server_for_group_member(student.id, DateTime.utc_now()) do
       {:ok, server} -> server
       {:error, _any_reason} -> nil
     end

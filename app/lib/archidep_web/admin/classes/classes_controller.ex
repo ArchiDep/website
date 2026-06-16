@@ -70,7 +70,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
   end
 
   defp find_active_server_data_for(student_id) do
-    case Server.find_active_server_for_group_member(student_id) do
+    case Server.find_active_server_for_group_member(student_id, DateTime.utc_now()) do
       {:ok, server} -> {student_id, server.ip_address, server.username}
       _anything -> {student_id, nil, nil}
     end

@@ -129,8 +129,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
 
   def default_hostname(_server), do: nil
 
-  @spec find_active_server_for_group_member(UUID.t()) :: {:ok, t()} | {:error, :server_not_found}
-  def find_active_server_for_group_member(group_member_id) do
+  @spec find_active_server_for_group_member(UUID.t(), DateTime.t()) ::
+          {:ok, t()} | {:error, :server_not_found}
+  def find_active_server_for_group_member(group_member_id, now) do
     case Repo.all(
            from(s in __MODULE__,
              join: o in assoc(s, :owner),
@@ -150,7 +151,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
            )
          ) do
       [server] ->
-        if active?(server, DateTime.utc_now()) do
+        if active?(server, now) do
           {:ok, server}
         else
           {:error, :server_not_found}
@@ -432,10 +433,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end)
   end
 
-  @spec update_last_known_properties!(t(), map(), EventReference.t()) :: t()
-  def update_last_known_properties!(server, ansible_facts, cause) do
-    now = DateTime.utc_now()
-
+  @spec update_last_known_properties!(t(), map(), EventReference.t(), DateTime.t()) :: t()
+  def update_last_known_properties!(server, ansible_facts, cause, now) do
     new_properties =
       ServerProperties.update_from_ansible_facts(
         server.last_known_properties || %ServerProperties{id: UUID.generate()},
@@ -534,10 +533,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     fresh_server
   end
 
-  @spec mark_as_set_up!(t(), EventReference.t()) :: t()
-  def mark_as_set_up!(%__MODULE__{set_up_at: nil} = server, cause) do
-    now = DateTime.utc_now()
-
+  @spec mark_as_set_up!(t(), EventReference.t(), DateTime.t()) :: t()
+  def mark_as_set_up!(%__MODULE__{set_up_at: nil} = server, cause, now) do
     case Multi.new()
          |> Multi.update(:server, server |> change(set_up_at: now) |> optimistic_lock(:version))
          |> Multi.insert(:stored_event, &server_set_up(&1.server, cause))
@@ -546,10 +543,13 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end
   end
 
-  @spec mark_open_ports_checked!(t(), list(1..65_535), EventReference.t()) :: t()
-  def mark_open_ports_checked!(%__MODULE__{open_ports_checked_at: nil} = server, ports, cause) do
-    now = DateTime.utc_now()
-
+  @spec mark_open_ports_checked!(t(), list(1..65_535), EventReference.t(), DateTime.t()) :: t()
+  def mark_open_ports_checked!(
+        %__MODULE__{open_ports_checked_at: nil} = server,
+        ports,
+        cause,
+        now
+      ) do
     case Multi.new()
          |> Multi.update(
            :server,

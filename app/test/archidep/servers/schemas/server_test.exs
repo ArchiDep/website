@@ -3,8 +3,12 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerProperties
+  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias ArchiDep.Support.ServersTestHelpers
   alias Ecto.Changeset
@@ -12,6 +16,15 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   # These changeset validations do not depend on the creation timestamp; a fixed
   # instant keeps the changeset calls deterministic.
   @now ~U[2024-03-15 10:30:00.000000Z]
+
+  # The tables the persistence functions can write to, watched by every
+  # row-count diff in this file.
+  @affected_tables [Server, ServerProperties, StoredEvent]
+
+  # `changed?/3` only compares two servers that share an owner and a group, so
+  # its fixtures pin both ids to the same fixed values.
+  @group_id "11111111-1111-1111-1111-111111111111"
+  @owner_id "22222222-2222-2222-2222-222222222222"
 
   # A safely-past instant for persisted owner/group/server fixtures, so a
   # conflict is set up before the changeset under test runs at `@now`.
@@ -261,6 +274,324 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     end
   end
 
+  describe "mark_as_set_up!/3" do
+    test "marks a server as set up and stores a set-up event" do
+      {owner, group} = persisted_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner.id, group.id, set_up_at: nil)
+      cause = StoredEvent.to_reference(EventsFactory.insert(:stored_event))
+
+      previous_counts = count_rows(@affected_tables)
+
+      updated = Server.mark_as_set_up!(server, cause, @now)
+
+      # The set-up transition stamps `set_up_at` and bumps the version, but
+      # deliberately leaves `updated_at` untouched.
+      assert updated == %{server | set_up_at: @now, version: server.version + 1}
+
+      updated
+      |> assert_server_set_up_event(cause)
+      |> assert_persisted_server(server, set_up_at: @now, updated_at: server.updated_at)
+
+      assert_row_count_diff(previous_counts, %{StoredEvent => 1})
+    end
+  end
+
+  describe "mark_open_ports_checked!/4" do
+    test "records the checked ports and stores an open-ports-checked event" do
+      {owner, group} = persisted_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner.id, group.id, open_ports_checked_at: nil)
+      cause = StoredEvent.to_reference(EventsFactory.insert(:stored_event))
+      ports = [22, 80, 443]
+
+      previous_counts = count_rows(@affected_tables)
+
+      updated = Server.mark_open_ports_checked!(server, ports, cause, @now)
+
+      assert updated ==
+               %{
+                 server
+                 | open_ports_checked_at: @now,
+                   updated_at: @now,
+                   version: server.version + 1
+               }
+
+      updated
+      |> assert_server_open_ports_checked_event(cause, ports)
+      |> assert_persisted_server(server, open_ports_checked_at: @now, updated_at: @now)
+
+      assert_row_count_diff(previous_counts, %{StoredEvent => 1})
+    end
+  end
+
+  describe "update_last_known_properties!/4" do
+    test "stores the gathered facts as the last known properties and an event" do
+      {owner, group} = persisted_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner.id, group.id, last_known_properties: nil)
+      cause = StoredEvent.to_reference(EventsFactory.insert(:stored_event))
+
+      facts = %{
+        "ansible_nodename" => "host.example.com",
+        "ansible_machine_id" => "abc123",
+        "ansible_processor_count" => 4,
+        "ansible_processor_cores" => 8,
+        "ansible_processor_vcpus" => 16,
+        "ansible_memory_mb" => %{"real" => %{"total" => 2048}, "swap" => %{"total" => 1024}},
+        "ansible_system" => "Linux",
+        "ansible_architecture" => "x86_64",
+        "ansible_os_family" => "Debian",
+        "ansible_distribution" => "Ubuntu",
+        "ansible_distribution_release" => "jammy",
+        "ansible_distribution_version" => "22.04"
+      }
+
+      previous_counts = count_rows(@affected_tables)
+
+      updated = Server.update_last_known_properties!(server, facts, cause, @now)
+
+      assert %Server{last_known_properties: %ServerProperties{id: properties_id}} = updated
+
+      expected_properties = %ServerProperties{
+        __meta__: loaded(ServerProperties, "server_properties"),
+        id: properties_id,
+        hostname: "host.example.com",
+        machine_id: "abc123",
+        cpus: 4,
+        cores: 8,
+        vcpus: 16,
+        memory: 2048,
+        swap: 1024,
+        system: "Linux",
+        architecture: "x86_64",
+        os_family: "Debian",
+        distribution: "Ubuntu",
+        distribution_release: "jammy",
+        distribution_version: "22.04"
+      }
+
+      assert updated == %{
+               server
+               | last_known_properties: expected_properties,
+                 last_known_properties_id: properties_id,
+                 updated_at: @now,
+                 version: server.version + 1
+             }
+
+      updated
+      |> assert_server_facts_gathered_event(cause, facts)
+      |> assert_persisted_server(server,
+        last_known_properties_id: properties_id,
+        updated_at: @now
+      )
+
+      assert_row_count_diff(previous_counts, %{ServerProperties => 1, StoredEvent => 1})
+    end
+
+    test "writes nothing when the facts produce no change" do
+      {owner, group} = persisted_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner.id, group.id, last_known_properties: nil)
+      cause = StoredEvent.to_reference(EventsFactory.insert(:stored_event))
+
+      previous_counts = count_rows(@affected_tables)
+
+      assert Server.update_last_known_properties!(server, %{}, cause, @now) == server
+
+      assert_no_row_count_diff(previous_counts)
+      assert_no_stored_events!([cause])
+    end
+  end
+
+  describe "active?/2" do
+    test "is true for an active server in an active group owned by an active root owner" do
+      assert Server.active?(active_server([]), @now)
+    end
+
+    test "is false when the server itself is inactive" do
+      refute Server.active?(active_server(active: false), @now)
+    end
+
+    test "is false when the server's group is inactive" do
+      group = ServersFactory.build(:server_group, active: false, start_date: nil, end_date: nil)
+      refute Server.active?(active_server(group: group), @now)
+    end
+
+    test "is false when the owner is inactive" do
+      owner = ServersFactory.build(:server_owner, root: true, active: false, group_member: nil)
+      refute Server.active?(active_server(owner: owner), @now)
+    end
+
+    test "is true when the owner's group member belongs to the server's group" do
+      group = ServersFactory.build(:server_group, active: true, start_date: nil, end_date: nil)
+
+      member =
+        ServersFactory.build(:server_group_member, active: true, group: group, group_id: group.id)
+
+      owner = ServersFactory.build(:server_owner, root: false, active: true, group_member: member)
+
+      assert Server.active?(active_server(group: group, owner: owner), @now)
+    end
+
+    test "is false when the owner's group member belongs to a different group" do
+      group = ServersFactory.build(:server_group, active: true, start_date: nil, end_date: nil)
+
+      other_group =
+        ServersFactory.build(:server_group, active: true, start_date: nil, end_date: nil)
+
+      member =
+        ServersFactory.build(:server_group_member,
+          active: true,
+          group: other_group,
+          group_id: other_group.id
+        )
+
+      owner = ServersFactory.build(:server_owner, root: false, active: true, group_member: member)
+
+      refute Server.active?(active_server(group: group, owner: owner), @now)
+    end
+  end
+
+  describe "set_up?/1" do
+    test "is true when the server has a set-up timestamp" do
+      assert Server.set_up?(ServersFactory.build(:server, set_up_at: @now))
+    end
+
+    test "is false when the server has no set-up timestamp" do
+      refute Server.set_up?(ServersFactory.build(:server, set_up_at: nil))
+    end
+  end
+
+  describe "changed?/3" do
+    test "is false when none of the compared fields differ" do
+      a = ServersFactory.build(:server, group_id: @group_id, owner_id: @owner_id, name: "Same")
+      b = %{a | id: Ecto.UUID.generate()}
+
+      refute Server.changed?(a, b, [:name, :username])
+    end
+
+    test "is true when a compared field differs" do
+      a = ServersFactory.build(:server, group_id: @group_id, owner_id: @owner_id, name: "Before")
+      b = %{a | name: "After"}
+
+      assert Server.changed?(a, b, [:name])
+    end
+
+    test "compares the SSH port" do
+      a = ServersFactory.build(:server, group_id: @group_id, owner_id: @owner_id, ssh_port: 2222)
+
+      refute Server.changed?(a, %{a | ssh_port: 2222}, [:ssh_port])
+      assert Server.changed?(a, %{a | ssh_port: 22}, [:ssh_port])
+    end
+
+    test "compares the expected properties through ServerProperties.changed?/2" do
+      properties = ServersFactory.build(:server_properties, cpus: 4)
+
+      a =
+        ServersFactory.build(:server,
+          group_id: @group_id,
+          owner_id: @owner_id,
+          expected_properties: properties
+        )
+
+      refute Server.changed?(a, a, [:expected_properties])
+
+      assert Server.changed?(a, %{a | expected_properties: %{properties | cpus: 8}}, [
+               :expected_properties
+             ])
+    end
+  end
+
+  describe "valid_ssh_host_key_fingerprints/1" do
+    test "returns the parsed fingerprints" do
+      sha256 = :binary.copy(<<1>>, 32)
+      line = "256 SHA256:#{Base.encode64(sha256, padding: false)} root@server (ED25519)"
+      server = ServersFactory.build(:server, ssh_host_key_fingerprints: line)
+
+      assert Server.valid_ssh_host_key_fingerprints(server) == [
+               %SSHKeyFingerprint{fingerprint: {:sha256, sha256}, key_alg: "ED25519", raw: line}
+             ]
+    end
+
+    test "ignores lines that fail to parse" do
+      sha256 = :binary.copy(<<2>>, 32)
+      valid = "256 SHA256:#{Base.encode64(sha256, padding: false)} root@server (ED25519)"
+      server = ServersFactory.build(:server, ssh_host_key_fingerprints: "#{valid}\nnope")
+
+      assert Server.valid_ssh_host_key_fingerprints(server) == [
+               %SSHKeyFingerprint{fingerprint: {:sha256, sha256}, key_alg: "ED25519", raw: valid}
+             ]
+    end
+
+    test "returns an empty list when no fingerprint is valid" do
+      server = ServersFactory.build(:server, ssh_host_key_fingerprints: "not-a-fingerprint")
+
+      assert Server.valid_ssh_host_key_fingerprints(server) == []
+    end
+  end
+
+  describe "default_hostname/1" do
+    test "joins the username and the group member domain" do
+      member = ServersFactory.build(:server_group_member, domain: "example.archidep.ch")
+      owner = ServersFactory.build(:server_owner, root: false, group_member: member)
+      server = ServersFactory.build(:server, username: "alice", owner: owner)
+
+      assert Server.default_hostname(server) == "alice.example.archidep.ch"
+    end
+
+    test "is nil when the owner has no group member" do
+      owner = ServersFactory.build(:server_owner, root: true, group_member: nil)
+      server = ServersFactory.build(:server, owner: owner)
+
+      assert Server.default_hostname(server) == nil
+    end
+  end
+
+  describe "name_or_default/1" do
+    test "returns the name when one is set" do
+      assert Server.name_or_default(ServersFactory.build(:server, name: "My Server")) ==
+               "My Server"
+    end
+
+    test "falls back to the SSH connection description when the name is nil" do
+      server =
+        ServersFactory.build(:server,
+          name: nil,
+          username: "bob",
+          ip_address: %Postgrex.INET{address: {203, 0, 113, 7}, netmask: nil},
+          ssh_port: nil
+        )
+
+      assert Server.name_or_default(server) == "bob@203.0.113.7"
+    end
+  end
+
+  describe "ssh_connection_description/1" do
+    test "omits the port when none is set" do
+      assert Server.ssh_connection_description(connection_server(ssh_port: nil)) ==
+               "bob@203.0.113.7"
+    end
+
+    test "omits the port when it is the default SSH port" do
+      assert Server.ssh_connection_description(connection_server(ssh_port: 22)) ==
+               "bob@203.0.113.7"
+    end
+
+    test "includes the port when it differs from the default SSH port" do
+      assert Server.ssh_connection_description(connection_server(ssh_port: 2222)) ==
+               "bob@203.0.113.7:2222"
+    end
+  end
+
+  describe "event_stream/1" do
+    test "builds the stream from a server id" do
+      id = Ecto.UUID.generate()
+      assert Server.event_stream(id) == "servers:servers:#{id}"
+    end
+
+    test "builds the stream from a server struct" do
+      server = ServersFactory.build(:server)
+      assert Server.event_stream(server) == "servers:servers:#{server.id}"
+    end
+  end
+
   defp changeset(:new, overrides) do
     group = ServersFactory.build(:server_group)
     owner = ServersFactory.build(:server_owner, root: true)
@@ -302,4 +633,136 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
   defp ip_string(%Server{ip_address: ip_address}),
     do: ip_address.address |> :inet.ntoa() |> to_string()
+
+  defp active_server(overrides) do
+    group = ServersFactory.build(:server_group, active: true, start_date: nil, end_date: nil)
+    owner = ServersFactory.build(:server_owner, root: true, active: true, group_member: nil)
+
+    ServersFactory.build(
+      :server,
+      Keyword.merge([active: true, group: group, owner: owner], overrides)
+    )
+  end
+
+  defp connection_server(overrides) do
+    ServersFactory.build(
+      :server,
+      Keyword.merge(
+        [username: "bob", ip_address: %Postgrex.INET{address: {203, 0, 113, 7}, netmask: nil}],
+        overrides
+      )
+    )
+  end
+
+  defp assert_server_set_up_event(%Server{} = server, cause),
+    do:
+      assert_server_event(
+        server,
+        cause,
+        "archidep/servers/server-set-up",
+        server_snapshot_data(server)
+      )
+
+  defp assert_server_open_ports_checked_event(%Server{} = server, cause, ports),
+    do:
+      assert_server_event(
+        server,
+        cause,
+        "archidep/servers/server-open-ports-checked",
+        Map.put(server_snapshot_data(server), "ports", ports)
+      )
+
+  defp assert_server_facts_gathered_event(%Server{} = server, cause, facts),
+    do:
+      assert_server_event(
+        server,
+        cause,
+        "archidep/servers/server-facts-gathered",
+        Map.put(server_snapshot_data(server), "facts", facts)
+      )
+
+  defp assert_server_event(%Server{id: id} = server, cause, type, data) do
+    assert [%StoredEvent{id: event_id} = event] = fetch_new_stored_events([cause])
+
+    assert event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{id}",
+             version: server.version,
+             type: type,
+             data: data,
+             meta: %{},
+             initiator: "servers:servers:#{id}",
+             causation_id: cause.id,
+             correlation_id: cause.correlation_id,
+             occurred_at: @now,
+             entity: nil
+           }
+
+    event
+  end
+
+  defp server_snapshot_data(%Server{} = server),
+    do: %{
+      "id" => server.id,
+      "name" => server.name,
+      "ip_address" => to_string(:inet.ntoa(server.ip_address.address)),
+      "username" => server.username,
+      "ssh_username" => server.app_username,
+      "ssh_port" => server.ssh_port,
+      "group" => %{"id" => server.group.id, "name" => server.group.name},
+      "owner" => %{
+        "id" => server.owner.id,
+        "username" => server.owner.username,
+        "name" => owner_name(server.owner),
+        "root" => server.owner.root
+      }
+    }
+
+  # Rebuilds the persisted `servers` row from the audit event for every field the
+  # event carries, taking the fields the event deliberately omits (the secret
+  # key, the active flag, the SSH fingerprints, the timestamps) from the
+  # unchanged original. `overrides` carries the fields the persistence function
+  # changed.
+  defp assert_persisted_server(%StoredEvent{data: data, version: version}, original, overrides) do
+    id = data["id"]
+
+    expected = %Server{
+      __meta__: loaded(Server, "servers"),
+      id: id,
+      name: data["name"],
+      ip_address: parse_inet(data["ip_address"]),
+      username: data["username"],
+      app_username: data["ssh_username"],
+      ssh_port: data["ssh_port"],
+      ssh_host_key_fingerprints: original.ssh_host_key_fingerprints,
+      secret_key: original.secret_key,
+      active: original.active,
+      group: not_loaded(:group, Server),
+      group_id: data["group"]["id"],
+      owner: not_loaded(:owner, Server),
+      owner_id: data["owner"]["id"],
+      expected_properties: not_loaded(:expected_properties, Server),
+      expected_properties_id: original.expected_properties_id,
+      last_known_properties: not_loaded(:last_known_properties, Server),
+      last_known_properties_id: original.last_known_properties_id,
+      version: version,
+      created_at: original.created_at,
+      set_up_at: original.set_up_at,
+      open_ports_checked_at: original.open_ports_checked_at,
+      updated_at: original.updated_at
+    }
+
+    assert Repo.get!(Server, id) == struct!(expected, overrides)
+  end
+
+  defp owner_name(%ServerOwner{group_member: %ServerGroupMember{name: name}}), do: name
+  defp owner_name(%ServerOwner{group_member: nil}), do: nil
+
+  # Re-derives the stored `Postgrex.INET` from the event's address string, the
+  # same way the schema casts it.
+  defp parse_inet(string) do
+    {:ok, inet} = EctoNetwork.INET.cast(string)
+    inet
+  end
 end

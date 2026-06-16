@@ -31,7 +31,7 @@ defmodule ArchiDep.Release do
     timeout = Keyword.get(opts, :timeout, 30_000)
 
     with {:ok, student} <- Student.find_active_registered_student_by_name(student_name, now),
-         {:ok, server} <- Server.find_active_server_for_group_member(student.id),
+         {:ok, server} <- Server.find_active_server_for_group_member(student.id, now),
          {:ok, stdout, stderr, exit_code} <-
            ServerConnection.run_command(server, command, timeout) do
       # credo:disable-for-next-line Credo.Check.Refactor.IoPuts
