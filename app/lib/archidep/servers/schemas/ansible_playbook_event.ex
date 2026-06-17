@@ -54,10 +54,9 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
         )
       )
 
-  @spec new(%{String.t() => term()}, AnsiblePlaybookRun.t()) :: Changeset.t(t())
-  def new(data, run) do
+  @spec new(%{String.t() => term()}, AnsiblePlaybookRun.t(), DateTime.t()) :: Changeset.t(t())
+  def new(data, run, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     %__MODULE__{}
     |> change(

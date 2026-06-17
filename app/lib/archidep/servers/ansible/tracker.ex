@@ -62,7 +62,9 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
       {:event, data} ->
         {:ok, %{event: event}} =
           Multi.new()
-          |> Multi.insert(:event, fn _changes -> AnsiblePlaybookEvent.new(data, run) end)
+          |> Multi.insert(:event, fn _changes ->
+            AnsiblePlaybookEvent.new(data, run, Clock.now())
+          end)
           |> Multi.update_all(
             :run_touch,
             fn %{event: event} ->

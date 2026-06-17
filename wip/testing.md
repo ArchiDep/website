@@ -83,7 +83,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers — `Server` persistence functions & helpers](#servers--server-persistence-functions--helpers)
   - [x] [Servers — `ServerProperties` schema](#servers--serverproperties-schema)
   - [x] [Servers — `AnsiblePlaybookRun` schema](#servers--ansibleplaybookrun-schema)
-  - [ ] [Servers — `AnsiblePlaybookEvent` schema](#servers--ansibleplaybookevent-schema)
+  - [x] [Servers — `AnsiblePlaybookEvent` schema](#servers--ansibleplaybookevent-schema)
   - [ ] [Servers — Ansible `Tracker` persistence & events](#servers--ansible-tracker-persistence--events)
   - [ ] [Servers — small schema leftovers](#servers--small-schema-leftovers)
 - **2. Web layer — LiveViews & controllers**
@@ -872,6 +872,23 @@ each nested-path field present / missing / wrong-type (`binary_or`,
 vs. the now-fallback, and the `validate/1` length rules. Plus
 `fetch_events_for_run/1` ordering under `DataCase`. **Thread `now`** into
 `new/2`.
+
+_Done:_ `schemas/ansible_playbook_event_test.exs` covers the extraction builder
+(each `binary_or` / `boolean_or` / `utc_datetime_or_nil` fallback for a present
+/ missing / wrong-type nested path, the `_timestamp` extraction vs. the
+now-fallback including the non-zero-offset and bad-format rejections, the `trim`
+/ `trim_to_nil` normalization, and the 255-char truncation) by
+whole-applied-struct equality via a defaults-with-overrides helper, plus
+`fetch_events_for_run/1` ordering under `DataCase` (full-list equality,
+descending `occurred_at`, excluding another run's events). The recurring **clock
+gap** was fixed as canon: `new/2` became `new/3` taking `now`, and the sole
+runtime caller (`ansible/tracker.ex`) passes `Clock.now()`. _Reachable-subset
+decision (human-approved):_ the `validate_length(max: 255)` rules cannot fire —
+each field is truncated to 255 before the length check — and `run_id` / `data` /
+`occurred_at` always receive a value through `new/3`, so those defensive rules
+are left untested with a single self-contained note; only `name` can be made
+blank (a whitespace-only `_event` trims to `""`), and that one reachable
+`validate_required` branch is asserted.
 
 ### Servers — Ansible `Tracker` persistence & events
 
