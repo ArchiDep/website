@@ -53,7 +53,7 @@ defmodule ArchiDep.Support.ServersFactory do
       Map.pop_lazy(attrs!, :occurred_at, fn -> Faker.DateTime.backward(1) end)
 
     {created_at, attrs!} =
-      Map.pop_lazy(attrs!, :occurred_at, fn -> Faker.DateTime.backward(1) end)
+      Map.pop_lazy(attrs!, :created_at, fn -> Faker.DateTime.backward(1) end)
 
     [] = Map.keys(attrs!)
 

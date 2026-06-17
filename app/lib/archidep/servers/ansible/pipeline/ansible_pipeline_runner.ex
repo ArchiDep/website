@@ -8,6 +8,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   """
 
   import ArchiDep.Helpers.UseCaseHelpers
+  alias ArchiDep.Clock
   alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
@@ -98,7 +99,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
       )
     else
       Multi.new()
-      |> Multi.update(:run, AnsiblePlaybookRun.interrupt(pending_run))
+      |> Multi.update(:run, AnsiblePlaybookRun.interrupt(pending_run, Clock.now()))
       |> Multi.insert(:stored_event, &ansible_playbook_run_finished(&1.run, cause))
       |> Repo.transaction()
       |> then(fn {:ok, %{run: interrupted_run}} ->
@@ -116,7 +117,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
 
     {:ok, %{run: running_run, stored_event: running_event}} =
       Multi.new()
-      |> Multi.update(:run, AnsiblePlaybookRun.start_running(pending_run))
+      |> Multi.update(:run, AnsiblePlaybookRun.start_running(pending_run, Clock.now()))
       |> Multi.insert(:stored_event, &ansible_playbook_run_running(&1.run, cause))
       |> Repo.transaction()
 

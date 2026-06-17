@@ -82,7 +82,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers — `Server` schema validations](#servers--server-schema-validations)
   - [x] [Servers — `Server` persistence functions & helpers](#servers--server-persistence-functions--helpers)
   - [x] [Servers — `ServerProperties` schema](#servers--serverproperties-schema)
-  - [ ] [Servers — `AnsiblePlaybookRun` schema](#servers--ansibleplaybookrun-schema)
+  - [x] [Servers — `AnsiblePlaybookRun` schema](#servers--ansibleplaybookrun-schema)
   - [ ] [Servers — `AnsiblePlaybookEvent` schema](#servers--ansibleplaybookevent-schema)
   - [ ] [Servers — Ansible `Tracker` persistence & events](#servers--ansible-tracker-persistence--events)
   - [ ] [Servers — small schema leftovers](#servers--small-schema-leftovers)
@@ -834,6 +834,35 @@ classification), `stats/1`. **Thread `now`** into all six builders. **Flag for
 review:** `validate_started_at_and_finished_at` compares with `Date.compare/2`
 on `DateTime`s, so a same-day `finished_at` before `started_at` is not rejected
 — likely should be `DateTime.compare/2`.
+
+_Done:_ `schemas/ansible_playbook_run_test.exs` covers the six builders (each
+asserted as the whole applied struct via `Changeset.apply_changes/1`, with the
+`new_pending` shape pinned through a defaults-with-overrides helper), the two
+update-queries against a persisted row (reloaded as the baseline so the INET
+`/32` round-trip — `netmask: nil` built vs. `32` reloaded — does not spuriously
+differ, with an all-zero `assert_row_count_diff`), and the pure helpers, all by
+whole-value equality. The recurring **clock gap** was fixed as canon: all six
+builders now take `now` and the three runtime callers (`ansible/tracker.ex`,
+`ansible/pipeline/ansible_pipeline_queue.ex`,
+`ansible/pipeline/ansible_pipeline_runner.ex`) pass `Clock.now()`.
+
+Two bugs fixed (flag for review): (1) the predicted
+`validate_started_at_and_finished_at` bug was real — `Date.compare/2` on two
+`DateTime`s ignored the time of day, so a same-day out-of-order `finished_at`
+was accepted; switched to `DateTime.compare/2` and pinned by a regression test.
+(2) A copy-paste bug in the `ansible_playbook_event` factory popped `created_at`
+with the `:occurred_at` key, leaving `created_at` unsettable; corrected to
+`:created_at`.
+
+_Decision (reachable-subset, human-approved):_ several `validate/1` rules cannot
+be driven through the public builders — the `stats_*` columns are written only
+by the non-validating `update_stats/2` query, `number_of_events` only by
+`touch_new_event/2`, `exit_code` is guarded non-negative at `fail/3`'s head,
+`state` is always a valid literal, the `port` comes from a `Server` already
+constrained to `1..65_535` (or defaults to 22), and `assoc_constraint(:server)`
+only fires at insert time. These defensive rules are left untested with a single
+self-contained note in the test rather than forced through a hand-built
+changeset back door.
 
 ### Servers — `AnsiblePlaybookEvent` schema
 

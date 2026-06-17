@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
   """
 
   import ArchiDep.Helpers.UseCaseHelpers
+  alias ArchiDep.Clock
   alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
@@ -41,7 +42,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
     case Multi.new()
          |> Multi.insert(
            :run,
-           AnsiblePlaybookRun.new_pending(playbook, server, user, vars, vars_digest)
+           AnsiblePlaybookRun.new_pending(playbook, server, user, vars, vars_digest, Clock.now())
          )
          |> Multi.insert(:stored_event, &ansible_playbook_run_started(&1.run, causation_event))
          |> Repo.transaction() do
@@ -85,7 +86,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
           {:status, 0} ->
             {:ok, %{run: succeeded_run}} =
               Multi.new()
-              |> Multi.update(:run, AnsiblePlaybookRun.succeed(run))
+              |> Multi.update(:run, AnsiblePlaybookRun.succeed(run, Clock.now()))
               |> Multi.insert(
                 :stored_event,
                 &ansible_playbook_run_finished(&1.run, started_cause)
@@ -97,7 +98,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
           {:status, exit_code} ->
             {:ok, %{run: failed_run}} =
               Multi.new()
-              |> Multi.update(:run, AnsiblePlaybookRun.fail(run, exit_code))
+              |> Multi.update(:run, AnsiblePlaybookRun.fail(run, exit_code, Clock.now()))
               |> Multi.insert(
                 :stored_event,
                 &ansible_playbook_run_finished(&1.run, started_cause)
@@ -109,7 +110,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
           :epipe ->
             {:ok, %{run: failed_run}} =
               Multi.new()
-              |> Multi.update(:run, AnsiblePlaybookRun.fail(run, nil))
+              |> Multi.update(:run, AnsiblePlaybookRun.fail(run, nil, Clock.now()))
               |> Multi.insert(
                 :stored_event,
                 &ansible_playbook_run_finished(&1.run, started_cause)

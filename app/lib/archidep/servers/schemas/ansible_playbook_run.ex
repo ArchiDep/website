@@ -232,12 +232,12 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
           Server.t(),
           String.t(),
           Types.ansible_variables(),
-          binary()
+          binary(),
+          DateTime.t()
         ) ::
           Changeset.t(t())
-  def new_pending(playbook, server, user, vars, vars_digest) do
+  def new_pending(playbook, server, user, vars, vars_digest, now) do
     id = UUID.generate()
-    now = DateTime.utc_now()
 
     %__MODULE__{}
     |> change(
@@ -260,10 +260,8 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> validate()
   end
 
-  @spec start_running(t()) :: Changeset.t(t())
-  def start_running(%__MODULE__{state: :pending} = run) do
-    now = DateTime.utc_now()
-
+  @spec start_running(t(), DateTime.t()) :: Changeset.t(t())
+  def start_running(%__MODULE__{state: :pending} = run, now) do
     run
     |> change(
       state: :running,
@@ -319,10 +317,8 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     )
   end
 
-  @spec succeed(t()) :: Changeset.t(t())
-  def succeed(%__MODULE__{state: :running} = run) do
-    now = DateTime.utc_now()
-
+  @spec succeed(t(), DateTime.t()) :: Changeset.t(t())
+  def succeed(%__MODULE__{state: :running} = run, now) do
     run
     |> change(
       state: :succeeded,
@@ -333,11 +329,9 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> validate()
   end
 
-  @spec fail(t(), non_neg_integer() | nil) :: Changeset.t(t())
-  def fail(%__MODULE__{state: :running} = run, exit_code)
+  @spec fail(t(), non_neg_integer() | nil, DateTime.t()) :: Changeset.t(t())
+  def fail(%__MODULE__{state: :running} = run, exit_code, now)
       when is_nil(exit_code) or (is_integer(exit_code) and exit_code >= 0) do
-    now = DateTime.utc_now()
-
     run
     |> change(
       state: :failed,
@@ -348,10 +342,8 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> validate()
   end
 
-  @spec interrupt(t()) :: Changeset.t(t())
-  def interrupt(run) do
-    now = DateTime.utc_now()
-
+  @spec interrupt(t(), DateTime.t()) :: Changeset.t(t())
+  def interrupt(run, now) do
     run
     |> change(
       state: :interrupted,
@@ -361,10 +353,8 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
     |> validate()
   end
 
-  @spec time_out(t()) :: Changeset.t(t())
-  def time_out(run) do
-    now = DateTime.utc_now()
-
+  @spec time_out(t(), DateTime.t()) :: Changeset.t(t())
+  def time_out(run, now) do
     run
     |> change(
       state: :timeout,
@@ -431,7 +421,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookRun do
   end
 
   defp validate_started_at_and_finished_at(changeset, started_at, finished_at) do
-    if Date.compare(started_at, finished_at) == :gt do
+    if DateTime.compare(started_at, finished_at) == :gt do
       add_error(changeset, :finished_at, "must be after the start date")
     else
       changeset

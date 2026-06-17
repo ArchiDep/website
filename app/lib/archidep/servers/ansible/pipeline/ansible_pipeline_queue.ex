@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   import ArchiDep.Helpers.PipeHelpers, only: [pair: 2]
   import ArchiDep.Helpers.ProcessHelpers
   import ArchiDep.Helpers.UseCaseHelpers
+  alias ArchiDep.Clock
   alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible.Pipeline
@@ -373,7 +374,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   defp mark_incomplete_playbook_run_as_timed_out(run),
     do:
       Multi.new()
-      |> Multi.update(:run, AnsiblePlaybookRun.time_out(run))
+      |> Multi.update(:run, AnsiblePlaybookRun.time_out(run, Clock.now()))
       |> Multi.insert(:stored_event, &ansible_playbook_run_finished(&1.run))
       |> Repo.transaction()
 
