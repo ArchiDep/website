@@ -84,7 +84,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers — `ServerProperties` schema](#servers--serverproperties-schema)
   - [x] [Servers — `AnsiblePlaybookRun` schema](#servers--ansibleplaybookrun-schema)
   - [x] [Servers — `AnsiblePlaybookEvent` schema](#servers--ansibleplaybookevent-schema)
-  - [ ] [Servers — Ansible `Tracker` persistence & events](#servers--ansible-tracker-persistence--events)
+  - [x] [Servers — Ansible `Tracker` persistence & events](#servers--ansible-tracker-persistence--events)
   - [ ] [Servers — small schema leftovers](#servers--small-schema-leftovers)
 - **2. Web layer — LiveViews & controllers**
   - [ ] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
@@ -902,6 +902,21 @@ run counters + the conditional `update_stats` only on `"v2_playbook_on_stats"` +
 and the `assert_row_count_diff` deltas. This also covers the
 `AnsiblePlaybookRunStarted` / `AnsiblePlaybookEventOccurred` /
 `AnsiblePlaybookRunFinished` event structs end-to-end.
+
+_Done:_ `ansible/tracker_test.exs` covers `track_playbook!/6` and every
+`track_playbook_event/4` branch — the non-stats `{:event, …}` path (with the
+`update_stats` no-op as the negative control), the stats `{:event, …}` path, and
+the `{:status, 0}` / `{:status, code}` / `:epipe` exits — asserting the
+persisted run and event rows, the three domain events (full `%StoredEvent{}`
+equality, including the causation/correlation chain off the inbound references),
+and the `assert_row_count_diff` deltas, all by whole-value equality. A
+group-member owner graph pins the events' nested `server`/`group`/`owner` maps
+to non-nil values. The Tracker already threaded `Clock.now/0` (the clock-gap
+fixes landed with the `AnsiblePlaybookRun`/`AnsiblePlaybookEvent` schema
+chunks), so no source change was needed; no latent bugs surfaced. One
+reachable-subset note: the `{:exit, …}` branches ignore the `running_cause`
+argument, so the tests reuse `started_cause` there rather than mint an unused
+stored event.
 
 ### Servers — small schema leftovers
 
