@@ -38,7 +38,8 @@ defmodule ArchiDep.Servers.Ansible.TrackerTest do
       {run, ref} = Tracker.track_playbook!(playbook(), server, @user, @vars, @vars_digest, cause)
 
       event =
-        assert_pending_run(run, server)
+        run
+        |> assert_pending_run(server)
         |> assert_run_started_event(server, cause, existing)
 
       assert ref == StoredEvent.to_reference(event)
