@@ -102,7 +102,6 @@ defmodule ArchiDep.MixProject do
       {:ex_machina, "~> 2.8.0", only: :test},
       {:excoveralls, "~> 0.18.1", only: :test},
       {:faker, "~> 0.18.0", only: :test},
-      {:floki, "~> 0.38.0", only: :test},
       {:hammox, "~> 0.7.1", only: :test},
       {:lazy_html, ">= 0.0.0", only: :test},
       {:mix_test_watch, "~> 1.0", only: :test, runtime: false},

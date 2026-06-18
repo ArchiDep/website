@@ -15,8 +15,11 @@ that silently rots.
 
 > **Status.** We are documenting our practices layer by layer as we write the
 > tests. The [business layer](#business-layer) section is complete and
-> authoritative. The remaining sections are placeholders to be filled in as we
-> reach those layers.
+> authoritative. The [web layer](#web-layer-liveviews--controllers) section is
+> the proposed canon — being settled and human-reviewed through the web-layer
+> spike — so treat it as authoritative for new web tests but expect refinements.
+> The remaining sections are placeholders to be filled in as we reach those
+> layers.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -46,6 +49,12 @@ that silently rots.
   - [Factories](#factories)
   - [Contract-checking the real implementation](#contract-checking-the-real-implementation)
 - [Web layer (LiveViews & controllers)](#web-layer-liveviews--controllers)
+  - [What a web-layer test asserts — two kinds of output](#what-a-web-layer-test-asserts--two-kinds-of-output)
+  - [Asserting the DOM: a meaningful projection, not exact markup](#asserting-the-dom-a-meaningful-projection-not-exact-markup)
+  - [Tools](#tools)
+  - [Mounting, auth, and mocking contexts](#mounting-auth-and-mocking-contexts)
+  - [Forms, validation, and interactions](#forms-validation-and-interactions)
+  - [Flash, notifications, and PubSub-driven updates](#flash-notifications-and-pubsub-driven-updates)
 - [Channels](#channels)
 - [Plumbing (router, plugs, auth)](#plumbing-router-plugs-auth)
 - [Helpers & components](#helpers--components)
@@ -1008,13 +1017,158 @@ the test.
 
 ## Web layer (LiveViews & controllers)
 
-_To be documented when we write the web-layer tests. This layer uses
-`ConnCase`/`LiveCase`, the shared auth setup fixtures, and Hammox mocks of the
-context behaviours so LiveViews and controllers are tested in isolation from the
-real business logic. Topics to cover: mounting with auth fixtures, mocking
-context calls, asserting rendered HTML (Floki), form submission and validation,
-flash/notification assertions, PubSub-driven updates, and anonymous-redirect
-checks._
+The web layer is the LiveViews, components, and controllers under
+`lib/archidep_web/…`. Its tests run under
+[`ArchiDepWeb.Support.LiveCase`][live-case] (LiveViews and components) or
+[`ArchiDepWeb.Support.ConnCase`][conn-case] (controllers and request tests).
+Unlike the business layer, these tests do **not** touch the database or the real
+use cases: every context is replaced by its [`Hammox`][hammox] mock
+(`Accounts.ContextMock`, `Course.ContextMock`, …), so a web test exercises
+_only_ the web layer — rendering, event handling, redirects — against canned
+context responses. The business logic itself is proven separately under
+`DataCase`.
+
+The canonical worked example is [`profile_live_test.exs`][profile-live-test].
+
+### What a web-layer test asserts — two kinds of output
+
+The guiding principle from the top of this guide still holds: pin the entire
+_observable_ behaviour. But a LiveView produces two very different kinds of
+observable output, and they get different treatment:
+
+1. **Exact-value outputs** — everything whose value the test fully controls and
+   that is _not_ incidental markup: the rendered **page title**, **flash
+   messages** and notifications (message _and_ type), **pushed events**
+   (`push_event`), **redirects** (target path and flash), **PubSub broadcasts**
+   the LiveView itself emits, the **mock interactions** (each context function
+   called the expected number of times with the expected arguments), and the
+   **data values** the page displays (a formatted date, a username, an IP).
+   These are asserted **exactly, by whole-value equality**, exactly as in the
+   business layer. There is no excuse to be loose here: a flash message is a
+   known string, a pushed event is a known map.
+
+2. **DOM structure** — the HTML tags, attributes, CSS classes, and nesting that
+   carry those values. This is **not** asserted exactly. See below.
+
+### Asserting the DOM: a meaningful projection, not exact markup
+
+We deliberately do **not** assert an exact DOM tree. The markup is incidental:
+which wrapper `<div>` holds a value, which Tailwind classes style it, how deeply
+it nests — none of that is behaviour, and pinning it makes every styling tweak
+break unrelated tests, which trains everyone to update assertions blindly and
+destroys their signal.
+
+What a test _does_ care about is that the page **works as intended**: the right
+information is shown, and the right interactive affordances are present in the
+right state. So assert a deliberately-chosen **semantic projection** of the
+DOM — just enough to prove that — and nothing about the structural envelope
+around it.
+
+"Just enough" is not licence to assert a convenient subset and move on — that is
+the [partial-assertion](#exact-assertions-on-return-values) failure mode the
+business layer forbids, and it rots the same way. The discipline that keeps a
+projection honest:
+
+- **Anchor on stable, semantic selectors.** Target IDs (`#current-sessions`),
+  ARIA roles, `data-*` hooks, and meaningful component classes
+  (`.delete-session`), plus positional selectors that encode _meaning_
+  (`tr:nth-child(2)` for "the second session"). Never anchor on incidental tag
+  names, utility CSS classes, or deep structural paths — those are exactly the
+  things we are refusing to pin.
+- **Once you choose a projection, assert it wholly.** If the projection is "the
+  rows of the sessions table", extract _every_ row and assert the **full list by
+  equality** — not "a row exists matching …". Within each row, pin every cell
+  the behaviour concerns. Do not wildcard a value you actually care about; if a
+  cell is genuinely irrelevant to the behaviour under test, prefer to _project
+  it out_ (don't extract it) rather than extract it and match it with `_`, so
+  the shape of the assertion documents what matters. A bound wildcard in the
+  middle of a tuple is a value silently going unchecked — the diff self-audit in
+  [`AGENTS.md`](../../AGENTS.md) flags these.
+- **Presence and absence are both assertions.** Assert that an affordance that
+  _should_ render does, with the right label and state (the Delete button on a
+  deletable session); and assert that one that should _not_ render is **absent**
+  (no Delete button on the current session; no Change-username button until the
+  username is confirmed). `has_element?/2` and `refute has_element?/2` are the
+  tools — an element merely existing is not enough; its absence on the negative
+  branch is what proves the `:if` guard.
+
+The net effect: a change in _behaviour_ (a column drops, a button appears on the
+wrong row, a flash goes missing) fails a test; a change in _markup_ (a restyle,
+a re-nest) does not. That is the line — exact where we own the value,
+structural-minimal where we do not.
+
+### Tools
+
+- **Prefer LiveViewTest's own semantic helpers** where they suffice: `element/2`
+  with `render_click/2`, `render_submit/2`, `render_change/2` to drive
+  interactions; `has_element?/2` for presence/absence; `render(view) =~ text`
+  for a quick content check. These select by CSS selector and never make you
+  handle raw markup.
+- **Reach for the HTML helpers** in
+  [`ArchiDepWeb.Support.HtmlTestHelpers`][html-test-helpers] when you need to
+  extract _structured, multi-value_ content — a table into rows-of-cells — and
+  assert it as one value: `find_html_elements/2` (returns each match as its own
+  document, so you can map over matches and query within each),
+  `html_element_text/1` (normalized text content), and `assert_html_title/2`.
+  HTML is parsed with [LazyHTML][lazy-html] — the engine LiveView itself uses.
+- `with_current_sessions_table_rows/2` in the exemplar shows the pattern: select
+  the table by id, map each `tbody tr` to its list of cell texts, and assert the
+  **whole** list of rows by equality (relative-time formatting, the
+  current/expired markers, the per-row action) — a complete projection of one
+  component, anchored on a stable id.
+
+### Mounting, auth, and mocking contexts
+
+- **Use the shared auth fixtures.** `setup :register_and_log_in_root` /
+  `:register_and_log_in_student` (in [`ConnCase`][conn-case]) replace `:conn`
+  with an authenticated connection and add `:auth`, `:session`, `:user_account`
+  (and `:student` for the student fixture); `conn_with_auth/2` builds one for an
+  explicit session. Drive **each principal the LiveView branches on** (root vs.
+  student, and — where the UI differs — owner vs. other), asserting the
+  projection that distinguishes them, not merely that the page mounts.
+- **Mock every context call the mount and interactions make**, and pin the
+  **call count**. With `setup :verify_on_exit!`, an `expect(Ctx.Mock, :fun, n,
+fn … end)` asserts the function is called exactly `n` times with matching
+  arguments — a real assertion about the LiveView's data dependencies. Counts
+  above one are normal: a LiveView mounts twice (the disconnected HTTP render,
+  then the connected socket), so a value read on every mount is fetched twice.
+  Pin the argument too (`fn ^auth -> … end`).
+- **Anonymous access redirects to login.** Use
+  `assert_live_anonymous_user_redirected_to_login/2` (in
+  [`LiveCase`][live-case]), which covers the no-token, invalid-session-token,
+  and invalid-remember-me-cookie cases in one call.
+
+### Forms, validation, and interactions
+
+A LiveView form is driven through its events, and **both** directions are
+asserted:
+
+- **`render_change` (validation).** Submit invalid input and assert the rendered
+  form surfaces the expected validation error (the message text, projected from
+  the DOM), and that valid input clears it. The exhaustive per-rule coverage
+  lives in the form schema's own changeset test (as in the [business
+  layer](#changeset-and-validation-errors)); the LiveView test pins only that
+  the form is _wired_ — it calls the validation and renders its result.
+- **`render_submit` (the action).** On success, assert the observable result:
+  the success **flash/notification** (exact message and type), any **pushed
+  event** (e.g. the `execute-action` that closes a dialog), and the post-submit
+  form state. On failure, assert the error is rendered (the mocked context
+  having returned `{:error, changeset}`).
+
+### Flash, notifications, and PubSub-driven updates
+
+- **Flash and notifications are exact.** Assert the message string and its
+  `type` (`:success`, `:warning`, `:error`) by equality. When the notification
+  is delivered asynchronously to the socket, `wait_for_socket_assigns!/3` (in
+  [`LiveCase`][live-case]) waits for the flash to match rather than racing on
+  it.
+- **PubSub-driven re-renders are behaviour.** When a LiveView subscribes to a
+  topic and updates on a broadcast (the profile page refreshes the student on
+  `{:student_updated, …}`), test it: broadcast the message to the topic the
+  LiveView subscribed to, then assert the re-rendered projection reflects the
+  change. These topics are keyed by resource ID, so the assertion is naturally
+  selective and safe under `async: true` (see the [business-layer PubSub
+  note](#asserting-pubsub-broadcasts) on pinning the ID).
 
 ## Channels
 
@@ -1032,7 +1186,8 @@ redirect/halt/assign assertions and authenticated vs. anonymous pipelines._
 
 _To be documented when we write the helper and component tests. Topics to cover:
 unit-testing pure helper functions (and doctests), and rendering/asserting
-function components with Floki._
+function components with the [LazyHTML][lazy-html]-based
+[`HtmlTestHelpers`][html-test-helpers]._
 
 [contributing]: ../CONTRIBUTING.md#testing
 [data-case]: ../test/support/data_case.ex
@@ -1054,3 +1209,8 @@ function components with Floki._
 [faker]: https://hexdocs.pm/faker/readme.html
 [hammox]: https://github.com/msz/hammox
 [mox]: https://hexdocs.pm/mox/Mox.html
+[live-case]: ../test/support/live_case.ex
+[conn-case]: ../test/support/conn_case.ex
+[html-test-helpers]: ../test/support/html_test_helpers.ex
+[profile-live-test]: ../test/archidep_web/profile/profile_live_test.exs
+[lazy-html]: https://hexdocs.pm/lazy_html

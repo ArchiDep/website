@@ -962,13 +962,65 @@ _Context:_ the web layer is tested with LiveCase/ConnCase + context Hammox mocks
   largest area by file count (77 web files) but the least logic-dense — mostly
   render/interaction/redirect assertions.
 
-🧭 Pick **`server_live.ex` + its three dialogs**
-(`new`/`edit`/`delete_server_dialog_live`) and write tests for the main LiveView
-plus one dialog. Settle: mounting with auth fixtures, mocking context calls via
-Hammox, asserting rendered HTML (Floki helpers), form submission + validation,
-flash/notification assertions, PubSub-driven updates, and anonymous-redirect
-checks. Get reviewed, refactor, agree. Output: "how we test LiveViews" note +
-reviewed examples.
+🧭 **The conventions note is drafted** — see the [Web layer
+section](../app/docs/testing.md#web-layer-liveviews--controllers) of the testing
+guide: the two-kinds-of-output split (exact-value outputs — title, flash, pushed
+events, redirects, broadcasts, mock interactions, displayed data values — vs.
+the DOM), the DOM-as-meaningful-projection philosophy (anchor on semantic
+selectors; once a projection is chosen, assert it wholly; presence _and_
+absence), the LiveViewTest-vs-`HtmlTestHelpers` tool split, the
+mounting/auth/Hammox-mock conventions (including the disconnected+connected
+double-mount call counts), forms (`render_change`/`render_submit`), and
+flash/PubSub assertions.
+
+The test HTML parser was also switched from Floki to **LazyHTML** (the engine
+Phoenix LiveView 1.1 uses internally): `HtmlTestHelpers` is rewritten on
+`LazyHTML`, the `floki` dependency is dropped from `mix.exs`, and
+`profile_live_test.exs` is migrated — one HTML parser across the suite. One real
+divergence surfaced and is handled: `LazyHTML.query("title")` also matches
+SVG-icon `<title>` nodes in the body and `LazyHTML.text/1` concatenates them, so
+`assert_html_title` scopes its query to `head > title`.
+
+The remaining spike work — and **the next task to pick up** — is to bring the
+chosen worked example, the **profile page**, up to this drafted canon and get it
+reviewed. `profile_live_test.exs` today covers the page title and the sessions
+table well (the "all sessions" test is the model to follow) but falls short of
+the bar in six ways the new conventions name; close them, refactor, and agree:
+
+1. **The `data_display` section is entirely untested.** Assert the six rows in
+   `profile_live.html.heex` — account username, email, Switch edu-ID name,
+   confirmed username + Change button, Swiss edu person unique ID (root-only),
+   registration date — each behind an `:if`. Pin the displayed value _and_ the
+   presence/absence per branch (the Swiss-edu-ID row shows only for root; the
+   Change button only when `username_confirmed`).
+2. **The student tests assert nothing student-specific.** The `as a student`
+   block re-tests the sessions table but never the email row, the username row,
+   or the Change-username button only the student path renders. Assert the
+   student-only projection.
+3. **`ChangeUsernameDialogLive` is untested.** Cover the `validate` event (live
+   changeset validation renders / clears the error) and the `configure` event —
+   success (the `"Username changed to {name}"` notification, the
+   `push_event("execute-action", close)`, the reset form) and failure (changeset
+   re-render).
+4. **The `student_updated` PubSub handler is untested.** Broadcast
+   `{:student_updated, …}` on the subscribed per-student topic and assert the
+   re-rendered username reflects the update.
+5. **The delete-session _success_ notification is unasserted.** The happy path
+   asserts only that the row disappears; assert the `"Deleted session"` success
+   flash too (the not-found path already asserts its warning), so the success
+   path is no less thorough than the error path.
+6. **Tighten the partial table assertions and small gaps.** Most per-row matches
+   wildcard the cells the test claims to care about (`_login`, `_exp`, `_ip`,
+   `_client`); bring them to the projection discipline (project out what is
+   irrelevant; pin what matters). Also cover the `expires_soon?` highlighting
+   and make the flash-message expectations consistent (`gettext` vs. hardcoded
+   English).
+
+Output: the signed-off conventions note (above) + the brought-up-to-canon
+profile tests as the reviewed example. `server_live.ex` + its three dialogs then
+become an ordinary follow-up second example under [Servers web — server detail &
+dialogs (remainder)](#servers-web--server-detail--dialogs-remainder), no longer
+the canon blocker.
 
 ### Servers web — server detail & dialogs (remainder)
 
@@ -1027,8 +1079,14 @@ _Scope:_ 3 files.
 
 ### Profile (remainder)
 
-Extend beyond `profile_live_test.exs` to cover `current_sessions` LiveView.
-_Scope:_ 1–2 files.
+Most of the profile work is folded into the [web-layer canon
+task](#canon--web-layer-liveview-test-conventions), which brings
+`profile_live_test.exs` up to canon (the six gaps listed there, including the
+`ChangeUsernameDialogLive` form and the `student_updated` PubSub handler). What
+remains here is any focused, standalone coverage of the `current_sessions_live`
+component not already exercised through the profile page — e.g. the pure
+`expired?/1` / `expires_soon?/1` / `expires_at/1` helpers in isolation. _Scope:_
+1 file.
 
 ### Canon + tests — channels
 

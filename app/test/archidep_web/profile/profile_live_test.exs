@@ -314,13 +314,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   defp with_current_sessions_table_rows(html, fun) do
     html
     |> find_html_elements("##{@current_sessions_table_id} tbody tr")
-    |> Enum.map(fn {"tr", _attrs, children} ->
-      children |> Floki.find("td") |> Enum.map(&html_text/1)
+    |> Enum.map(fn row ->
+      row |> find_html_elements("td") |> Enum.map(&html_element_text/1)
     end)
     |> fun.()
 
     html
   end
-
-  defp html_text(element), do: [element] |> Floki.text() |> String.trim()
 end
