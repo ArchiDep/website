@@ -85,7 +85,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers — `AnsiblePlaybookRun` schema](#servers--ansibleplaybookrun-schema)
   - [x] [Servers — `AnsiblePlaybookEvent` schema](#servers--ansibleplaybookevent-schema)
   - [x] [Servers — Ansible `Tracker` persistence & events](#servers--ansible-tracker-persistence--events)
-  - [ ] [Servers — small schema leftovers](#servers--small-schema-leftovers)
+  - [x] [Servers — small schema leftovers](#servers--small-schema-leftovers)
 - **2. Web layer — LiveViews & controllers**
   - [ ] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
   - [ ] [Servers web — server detail & dialogs (remainder)](#servers-web--server-detail--dialogs-remainder)
@@ -927,6 +927,32 @@ untested `SSHKeyFingerprint` parsers (`parse/1`, `parse/3`,
 `fingerprint_human/1`, `key_algorithm/1` — `match?/2` is covered). **Triage
 first** against the existing `ssh_test.exs` / `ssh_key_fingerprint_test.exs` to
 avoid overlap, and leave the malformed-input case for the known-issue fix.
+
+_Done:_ all three pure surfaces covered, with no DB/event/clock involvement so
+they run under plain `ExUnit.Case` (matching the existing
+`ssh_key_fingerprint_test.exs`). New `schemas/server_real_time_state_test.exs`
+pins `busy?/1` across the full connection-state × current-job matrix (the six
+states that are idle only when jobless, the same six busy once a job is set, and
+the two states — `connecting` / `reconnecting` — that have no jobless clause and
+are therefore always busy), generating the shared cases with a `for` over the
+state list, plus `problem?/2` over its empty/nil/match/no-match/multi branches
+using the `ServersFactory` problem builders. New
+`schemas/ansible_playbook_test.exs` pins `new/2` (whole-struct) and `name/1`
+(`Path.basename(_, ".yml")`, including a non-`.yml` extension left intact).
+`ssh/ssh_key_fingerprint_test.exs` was extended (the six `match?/2` tests
+untouched) with direct unit tests for `parse/1` and `parse/2` (the format
+function is arity 2, not the `parse/3` the backlog text guessed): the MD5/SHA256
+success structs, the wrong-length decode errors, `parse/1`'s graceful
+`:malformed`, `:any` delegation (success + graceful malformed), and the
+`:md5`/`:sha256` format-mismatch errors — plus `fingerprint_human/1` (both
+digests, exact strings) and `key_algorithm/1`. _Reachable-subset decision:_ the
+`parse/2` `:md5`/`:sha256` **fully-malformed** crash is left undriven (the
+parser-crash [known
+issue](../app/docs/known-issues.md#ssh-host-key-fingerprint-parsing-crashes-on-malformed-input)),
+and `decode_key_fingerprint`'s `:unknown_fingerprint_format` branch is
+unreachable through `parse` (the regex only ever yields an `MD5:`/`SHA256:`
+prefix); both are recorded in a single self-contained comment. No latent bugs
+and no clock gap surfaced — these are pure functions.
 
 ### Canon — web-layer LiveView test conventions
 
