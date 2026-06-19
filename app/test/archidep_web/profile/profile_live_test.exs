@@ -601,6 +601,127 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
   end
 
+  describe "profile student updates" do
+    test "re-render the data display when the student is updated", %{conn: conn} do
+      user_account =
+        AccountsFactory.build(:user_account,
+          root: false,
+          active: true,
+          username: "alice",
+          switch_edu_id:
+            AccountsFactory.build(:switch_edu_id,
+              first_name: "Jane",
+              last_name: "Doe",
+              swiss_edu_person_unique_id: "swiss-id-123"
+            ),
+          created_at: @registered_at
+        )
+
+      student =
+        CourseFactory.build(:student,
+          username: "current-name",
+          username_confirmed: true,
+          email: "student@example.com",
+          user: CourseFactory.build(:user)
+        )
+
+      session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          client_user_agent: "Mozilla/5.0",
+          impersonated_user_account: nil
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+
+      {:ok, view, html} = live(conn, @path)
+
+      assert data_display_rows(html) == [
+               {"Account username", "alice", []},
+               {"Email", "student@example.com", []},
+               {"Switch edu-ID name", "Jane Doe", []},
+               {"Username", "current-name", ["Change"]},
+               @registration_row
+             ]
+
+      updated = %{student | username: "renamed", version: student.version + 1}
+      :ok = Course.PubSub.publish_student_updated(updated)
+
+      wait_for_socket_assigns!(view, &(&1.student.username == "renamed"), "student renamed")
+
+      assert view |> render() |> data_display_rows() == [
+               {"Account username", "alice", []},
+               {"Email", "student@example.com", []},
+               {"Switch edu-ID name", "Jane Doe", []},
+               {"Username", "renamed", ["Change"]},
+               @registration_row
+             ]
+    end
+
+    test "reveal the username row when the student confirms their username", %{conn: conn} do
+      user_account =
+        AccountsFactory.build(:user_account,
+          root: false,
+          active: true,
+          username: "alice",
+          switch_edu_id:
+            AccountsFactory.build(:switch_edu_id,
+              first_name: "Jane",
+              last_name: "Doe",
+              swiss_edu_person_unique_id: "swiss-id-123"
+            ),
+          created_at: @registered_at
+        )
+
+      student =
+        CourseFactory.build(:student,
+          username: "current-name",
+          username_confirmed: false,
+          email: "student@example.com",
+          user: CourseFactory.build(:user)
+        )
+
+      session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          client_user_agent: "Mozilla/5.0",
+          impersonated_user_account: nil
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+
+      {:ok, view, html} = live(conn, @path)
+
+      assert data_display_rows(html) == [
+               {"Account username", "alice", []},
+               {"Email", "student@example.com", []},
+               {"Switch edu-ID name", "Jane Doe", []},
+               @registration_row
+             ]
+
+      updated = %{student | username_confirmed: true, version: student.version + 1}
+      :ok = Course.PubSub.publish_student_updated(updated)
+
+      wait_for_socket_assigns!(view, & &1.student.username_confirmed, "username confirmed")
+
+      assert view |> render() |> data_display_rows() == [
+               {"Account username", "alice", []},
+               {"Email", "student@example.com", []},
+               {"Switch edu-ID name", "Jane Doe", []},
+               {"Username", "current-name", ["Change"]},
+               @registration_row
+             ]
+    end
+  end
+
   test "all sessions are shown in the current sessions table of the profile page", %{conn: conn!} do
     user_account = AccountsFactory.build(:user_account, root: true, active: true)
 
