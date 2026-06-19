@@ -13,10 +13,9 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   @change_username_dialog_id "change-username-dialog"
   @registered_at ~U[2024-01-15 09:30:00Z]
   @registration_row {"Registration date", "Mon, January 15, 2024 at 09:30:00", []}
-  @no_actions ""
+  @now ~U[2026-06-19 12:00:00Z]
+  @firefox_user_agent "Mozilla/5.0 (Macintosh; Intel Mac OS X x.y; rv:42.0) Gecko/20100101 Firefox/43.4"
   @current_session_text gettext("Current session")
-  @expired_session_text gettext("Expired")
-  @delete_session_text gettext("Delete")
   @never_used_session_text gettext("Never")
   @unknown_user_agent_text gettext("Unknown")
 
@@ -39,99 +38,178 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
       |> html_response(200)
       |> assert_html_title("Profile · ArchiDep")
     end
+  end
 
-    test "render the current sessions table", %{
-      conn: conn,
-      auth: auth,
-      session: session,
-      user_account: user_account
-    } do
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-
-      {:ok, _view, html} = live(conn, @path)
-
-      html
-      |> assert_html_title("Profile · ArchiDep")
-      |> with_current_sessions_table_rows(fn rows ->
-        assert [
-                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
-               ] = rows
-      end)
+  describe "current sessions table" do
+    setup do
+      stub(ArchiDep.Clock.Mock, :now, fn -> @now end)
+      :ok
     end
 
-    test "delete a session", %{
-      conn: conn,
-      auth: auth,
-      session: current_session,
-      user_account: user_account
-    } do
-      other_session =
+    test "render every session state", %{conn: conn} do
+      user_account = AccountsFactory.build(:user_account, root: true, active: true)
+
+      recent_session =
         AccountsFactory.build(:user_session,
           user_account: user_account,
-          created_at: days_ago(20),
-          used_at: days_ago(8)
+          created_at: DateTime.add(@now, -2, :day),
+          used_at: DateTime.add(@now, -1, :day),
+          client_ip_address: "1.2.3.4",
+          client_user_agent: @firefox_user_agent
         )
 
-      sessions = [current_session, other_session]
+      never_used_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: DateTime.add(@now, -7, :day),
+          used_at: nil,
+          client_ip_address: nil,
+          client_user_agent: "--- foobar ---"
+        )
+
+      current_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: DateTime.add(@now, -10, :day),
+          used_at: @now,
+          client_ip_address: nil,
+          client_user_agent: @firefox_user_agent
+        )
+
+      expiring_soon_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: DateTime.add(@now, -29, :day),
+          used_at: DateTime.add(@now, -3, :day),
+          client_ip_address: "5.6.7.8",
+          client_user_agent: @firefox_user_agent
+        )
+
+      expired_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: DateTime.add(@now, -61, :day),
+          used_at: DateTime.add(@now, -42, :day),
+          client_ip_address: nil,
+          client_user_agent: nil
+        )
+
+      sessions = [
+        recent_session,
+        never_used_session,
+        current_session,
+        expiring_soon_session,
+        expired_session
+      ]
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: current_session)
 
       expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
       expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
 
+      {:ok, _view, html} = live(conn, @path)
+
+      assert current_sessions_table(html) == [
+               {"Wed, June 17, 2026 at 12:00:00", "1 day ago", {:ok, "28 days"}, "1.2.3.4",
+                "Firefox on Mac", :delete},
+               {"Fri, June 12, 2026 at 12:00:00", @never_used_session_text, {:ok, "23 days"}, "-",
+                @unknown_user_agent_text, :delete},
+               {"Tue, June 09, 2026 at 12:00:00", @current_session_text, {:ok, "20 days"}, "-",
+                "Firefox on Mac", :none},
+               {"Thu, May 21, 2026 at 12:00:00", "3 days ago", {:soon, "1 day"}, "5.6.7.8",
+                "Firefox on Mac", :delete},
+               {"Sun, April 19, 2026 at 12:00:00", "42 days ago", :expired, "-", "-", :delete}
+             ]
+    end
+
+    test "delete a session", %{conn: conn} do
+      user_account = AccountsFactory.build(:user_account, root: true, active: true)
+
+      current_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: DateTime.add(@now, -10, :day),
+          used_at: @now,
+          client_ip_address: "1.2.3.4",
+          client_user_agent: @firefox_user_agent
+        )
+
+      other_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: DateTime.add(@now, -20, :day),
+          used_at: DateTime.add(@now, -8, :day),
+          client_ip_address: "5.6.7.8",
+          client_user_agent: @firefox_user_agent
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: current_session)
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth ->
+        [current_session, other_session]
+      end)
+
       {:ok, view, html} = live(conn, @path)
 
-      html
-      |> assert_html_title("Profile · ArchiDep")
-      |> with_current_sessions_table_rows(fn rows ->
-        eight_days_ago = gettext("{time} ago", time: "8 days")
-
-        assert [
-                 [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
-                 [_login2, ^eight_days_ago, _exp2, _ip2, _client2, @delete_session_text]
-               ] = rows
-      end)
+      assert current_sessions_table(html) == [
+               {"Tue, June 09, 2026 at 12:00:00", @current_session_text, {:ok, "20 days"},
+                "1.2.3.4", "Firefox on Mac", :none},
+               {"Sat, May 30, 2026 at 12:00:00", "8 days ago", {:ok, "10 days"}, "5.6.7.8",
+                "Firefox on Mac", :delete}
+             ]
 
       id = other_session.id
       expect(Accounts.ContextMock, :delete_session, fn ^auth, ^id -> {:ok, other_session} end)
 
-      view
-      |> element("tr:nth-child(2) button.delete-session")
-      |> render_click()
-      |> with_current_sessions_table_rows(fn rows ->
-        assert [
-                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
-               ] = rows
-      end)
+      assert view
+             |> element("tr:nth-child(2) button.delete-session")
+             |> render_click()
+             |> current_sessions_table() == [
+               {"Tue, June 09, 2026 at 12:00:00", @current_session_text, {:ok, "20 days"},
+                "1.2.3.4", "Firefox on Mac", :none}
+             ]
+
+      deleted = gettext("Deleted session")
+
+      wait_for_socket_assigns!(
+        view,
+        &match?([%{message: ^deleted, type: :success}], Map.values(&1.flash)),
+        "deleted session notification"
+      )
     end
 
-    test "show a notification when deleting a session that no longer exists", %{
-      conn: conn,
-      auth: auth,
-      session: current_session,
-      user_account: user_account
-    } do
+    test "show a notification when deleting a session that no longer exists", %{conn: conn} do
+      user_account = AccountsFactory.build(:user_account, root: true, active: true)
+
+      current_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: DateTime.add(@now, -10, :day),
+          used_at: @now,
+          client_ip_address: "1.2.3.4",
+          client_user_agent: @firefox_user_agent
+        )
+
       other_session =
         AccountsFactory.build(:user_session,
           user_account: user_account,
-          created_at: days_ago(20),
-          used_at: days_ago(8)
+          created_at: DateTime.add(@now, -20, :day),
+          used_at: DateTime.add(@now, -8, :day),
+          client_ip_address: "5.6.7.8",
+          client_user_agent: @firefox_user_agent
         )
 
-      sessions = [current_session, other_session]
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: current_session)
 
       expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
 
-      {:ok, view, html} = live(conn, @path)
-
-      html
-      |> assert_html_title("Profile · ArchiDep")
-      |> with_current_sessions_table_rows(fn rows ->
-        assert [
-                 [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
-                 [_login2, _last_used2, _exp2, _ip2, _client2, @delete_session_text]
-               ] = rows
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth ->
+        [current_session, other_session]
       end)
+
+      {:ok, view, _html} = live(conn, @path)
 
       id = other_session.id
 
@@ -139,95 +217,48 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
         {:error, :session_not_found}
       end)
 
-      view
-      |> element("tr:nth-child(2) button.delete-session")
-      |> render_click()
-      |> with_current_sessions_table_rows(fn rows ->
-        assert [
-                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
-               ] = rows
-      end)
+      assert view
+             |> element("tr:nth-child(2) button.delete-session")
+             |> render_click()
+             |> current_sessions_table() == [
+               {"Tue, June 09, 2026 at 12:00:00", @current_session_text, {:ok, "20 days"},
+                "1.2.3.4", "Firefox on Mac", :none}
+             ]
+
+      gone = gettext("Session no longer exists")
 
       wait_for_socket_assigns!(
         view,
-        &match?(
-          [%{message: "Session no longer exists", type: :warning}],
-          Map.values(&1.flash)
-        ),
+        &match?([%{message: ^gone, type: :warning}], Map.values(&1.flash)),
         "session no longer exists notification"
       )
     end
-  end
 
-  describe "as a student" do
-    setup :register_and_log_in_student
+    test "render the sessions table for a student", %{conn: conn} do
+      user_account = AccountsFactory.build(:user_account, root: false, active: true)
+      student = CourseFactory.build(:student, user: CourseFactory.build(:user))
 
-    test "render the current sessions table", %{
-      conn: conn,
-      auth: auth,
-      session: session,
-      user_account: user_account,
-      student: student
-    } do
+      current_session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          created_at: DateTime.add(@now, -10, :day),
+          used_at: @now,
+          client_ip_address: "1.2.3.4",
+          client_user_agent: @firefox_user_agent
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: current_session)
+
       expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [current_session] end)
       expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
 
       {:ok, _view, html} = live(conn, @path)
 
-      html
-      |> assert_html_title("Profile · ArchiDep")
-      |> with_current_sessions_table_rows(fn rows ->
-        assert [
-                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
-               ] = rows
-      end)
-    end
-
-    test "delete a session", %{
-      conn: conn,
-      auth: auth,
-      session: current_session,
-      user_account: user_account,
-      student: student
-    } do
-      other_session =
-        AccountsFactory.build(:user_session,
-          user_account: user_account,
-          created_at: days_ago(20),
-          used_at: days_ago(8)
-        )
-
-      sessions = [current_session, other_session]
-
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
-
-      {:ok, view, html} = live(conn, @path)
-
-      html
-      |> assert_html_title("Profile · ArchiDep")
-      |> with_current_sessions_table_rows(fn rows ->
-        eight_days_ago = gettext("{time} ago", time: "8 days")
-
-        assert [
-                 [_login1, @current_session_text, _exp1, _ip1, _client1, @no_actions],
-                 [_login2, ^eight_days_ago, _exp2, _ip2, _client2, @delete_session_text]
-               ] = rows
-      end)
-
-      id = other_session.id
-      expect(Accounts.ContextMock, :delete_session, fn ^auth, ^id -> {:ok, other_session} end)
-
-      view
-      |> element("tr:nth-child(2) button.delete-session")
-      |> render_click()
-      |> with_current_sessions_table_rows(fn rows ->
-        assert [
-                 [_login, @current_session_text, _exp, _ip, _client, @no_actions]
-               ] = rows
-      end)
+      assert current_sessions_table(html) == [
+               {"Tue, June 09, 2026 at 12:00:00", @current_session_text, {:ok, "20 days"},
+                "1.2.3.4", "Firefox on Mac", :none}
+             ]
     end
   end
 
@@ -722,100 +753,32 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
   end
 
-  test "all sessions are shown in the current sessions table of the profile page", %{conn: conn!} do
-    user_account = AccountsFactory.build(:user_account, root: true, active: true)
-
-    most_recent_session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        created_at: days_ago(2),
-        used_at: days_ago(1),
-        client_ip_address: "1.2.3.4"
-      )
-
-    unused_session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        created_at: days_ago(7),
-        used_at: nil,
-        client_user_agent: "--- foobar ---"
-      )
-
-    current_session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        created_at: days_ago(10),
-        used_at: utc_now(),
-        client_user_agent:
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X x.y; rv:42.0) Gecko/20100101 Firefox/43.4"
-      )
-
-    expired_session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        created_at: days_ago(61),
-        used_at: days_ago(42),
-        client_user_agent: nil
-      )
-
-    sessions = [
-      most_recent_session,
-      unused_session,
-      current_session,
-      expired_session
-    ]
-
-    %{conn: conn!, auth: auth} = conn_with_auth(conn!, session: current_session)
-
-    expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-    expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
-
-    {:ok, _view, html} = live(conn!, @path)
-
-    html
-    |> assert_html_title("Profile · ArchiDep")
-    |> with_current_sessions_table_rows(fn rows ->
-      one_day_ago = gettext("{time} ago", time: "1 day")
-      forty_two_days_ago = gettext("{time} ago", time: "42 days")
-
-      assert [
-               [_login, ^one_day_ago, _exp, "1.2.3.4", _client, @delete_session_text],
-               [
-                 _login1,
-                 @never_used_session_text,
-                 _exp1,
-                 _ip1,
-                 @unknown_user_agent_text,
-                 @delete_session_text
-               ],
-               [_login2, @current_session_text, _exp2, _ip2, "Firefox on Mac", @no_actions],
-               [
-                 _login3,
-                 ^forty_two_days_ago,
-                 @expired_session_text,
-                 _ip3,
-                 "-",
-                 @delete_session_text
-               ]
-             ] = rows
-    end)
-  end
-
   test "accessing the profile page redirects to the login page without authentication", %{
     conn: conn
   } do
     assert_live_anonymous_user_redirected_to_login(conn, @path)
   end
 
-  defp with_current_sessions_table_rows(html, fun) do
+  defp current_sessions_table(html) do
     html
     |> find_html_elements("##{@current_sessions_table_id} tbody tr")
     |> Enum.map(fn row ->
-      row |> find_html_elements("td") |> Enum.map(&html_element_text/1)
-    end)
-    |> fun.()
+      [login, last_used, expiration, ip, client, _actions] = find_html_elements(row, "td")
+      action = if find_html_elements(row, "button.delete-session") != [], do: :delete, else: :none
 
-    html
+      {html_element_text(login), html_element_text(last_used), expiration_state(expiration),
+       html_element_text(ip), html_element_text(client), action}
+    end)
+  end
+
+  # Projects the expiration cell to its semantic state: the badge colour encodes
+  # whether the session is expired, expiring soon, or fine.
+  defp expiration_state(td) do
+    cond do
+      find_html_elements(td, ".badge-error") != [] -> :expired
+      find_html_elements(td, ".badge-warning") != [] -> {:soon, html_element_text(td)}
+      find_html_elements(td, ".badge-success") != [] -> {:ok, html_element_text(td)}
+    end
   end
 
   defp data_display_rows(html) do

@@ -1111,11 +1111,16 @@ structural-minimal where we do not.
   document, so you can map over matches and query within each),
   `html_element_text/1` (normalized text content), and `assert_html_title/2`.
   HTML is parsed with [LazyHTML][lazy-html] — the engine LiveView itself uses.
-- `with_current_sessions_table_rows/2` in the exemplar shows the pattern: select
-  the table by id, map each `tbody tr` to its list of cell texts, and assert the
-  **whole** list of rows by equality (relative-time formatting, the
-  current/expired markers, the per-row action) — a complete projection of one
-  component, anchored on a stable id.
+- `current_sessions_table/1` in the exemplar shows the pattern: select the table
+  by id, map each `tbody tr` to a tuple of its meaningful cells, and assert the
+  **whole** list of rows by equality — a complete projection of one component,
+  anchored on a stable id.
+- **Project a cell's visual state to a semantic value.** When a cell's meaning
+  is carried by styling (an expiry badge that is `badge-error` / `badge-warning`
+  / `badge-success`), don't pin the CSS class — derive the _meaning_ and assert
+  that: the exemplar's `expiration_state/1` maps the badge to `:expired` /
+  `{:soon, text}` / `{:ok, text}`, which becomes one field of the row tuple. The
+  test then breaks if the highlight is wrong, not if the palette is restyled.
 
 ### Mounting, auth, and mocking contexts
 
@@ -1137,6 +1142,17 @@ fn … end)` asserts the function is called exactly `n` times with matching
   `assert_live_anonymous_user_redirected_to_login/2` (in
   [`LiveCase`][live-case]), which covers the no-token, invalid-session-token,
   and invalid-remember-me-cookie cases in one call.
+- **Control time through the injectable clock**, exactly as the [business
+  layer](#deterministic-time-via-an-injectable-clock) does. A LiveView that
+  renders time-dependent output (relative "_n_ ago", remaining durations, an
+  expiry badge) must read the current time from `ArchiDep.Clock`, not
+  `DateTime.utc_now/0`. [`LiveCase`][live-case] installs a default
+  `ArchiDep.Clock.Mock` → `SystemClock` stub (mirroring [`DataCase`][data-case])
+  so tests that don't care about time still render; a test that asserts
+  time-dependent output pins a fixed instant with `stub(ArchiDep.Clock.Mock,
+:now, fn -> @now end)` and builds its fixtures at fixed offsets from `@now`,
+  so every rendered date, duration, and badge state is deterministic and
+  pinnable.
 
 ### Forms, validation, and interactions
 

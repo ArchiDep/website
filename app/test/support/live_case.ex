@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Support.LiveCase do
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
   alias ArchiDep.Accounts
+  alias ArchiDep.Clock.SystemClock
   alias ArchiDepWeb.Endpoint
   alias Phoenix.LiveViewTest.View
   alias Plug.Conn
@@ -39,6 +40,11 @@ defmodule ArchiDepWeb.Support.LiveCase do
   end
 
   setup do
+    # Default the injectable clock to the real system clock; a test that needs
+    # deterministic time-dependent rendering overrides this with a fixed
+    # instant.
+    Hammox.stub(ArchiDep.Clock.Mock, :now, &SystemClock.now/0)
+
     {:ok, conn: build_conn(), start: DateTime.utc_now()}
   end
 

@@ -87,7 +87,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers — Ansible `Tracker` persistence & events](#servers--ansible-tracker-persistence--events)
   - [x] [Servers — small schema leftovers](#servers--small-schema-leftovers)
 - **2. Web layer — LiveViews & controllers**
-  - [ ] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
+  - [x] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
   - [ ] [Servers web — server detail & dialogs (remainder)](#servers-web--server-detail--dialogs-remainder)
   - [ ] [Servers web — forms & components](#servers-web--forms--components)
   - [ ] [Servers web — controllers & retry handlers](#servers-web--controllers--retry-handlers)

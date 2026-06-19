@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Profile.CurrentSessionsLive do
   import ArchiDep.Accounts.Schemas.UserSession, only: [current_session?: 2]
   alias ArchiDep.Accounts
   alias ArchiDep.Accounts.Schemas.UserSession
+  alias ArchiDep.Clock
   alias ArchiDepWeb.LiveAuth
 
   @id "current-sessions"
@@ -30,17 +31,17 @@ defmodule ArchiDepWeb.Profile.CurrentSessionsLive do
   @doc """
   Indicates whether the specified session has expired.
   """
-  @spec expired?(UserSession.t()) :: boolean
-  def expired?(session),
-    do: session |> expires_at() |> DateTime.diff(DateTime.utc_now()) < 0
+  @spec expired?(UserSession.t(), DateTime.t()) :: boolean
+  def expired?(session, now),
+    do: session |> expires_at() |> DateTime.diff(now) < 0
 
   @doc """
   Indicates whether the specified session is about to expire and should be
   highlighted in the UI.
   """
-  @spec expires_soon?(UserSession.t()) :: boolean
-  def expires_soon?(session),
-    do: session |> expires_at() |> DateTime.diff(DateTime.utc_now()) < @two_days_in_seconds
+  @spec expires_soon?(UserSession.t(), DateTime.t()) :: boolean
+  def expires_soon?(session, now),
+    do: session |> expires_at() |> DateTime.diff(now) < @two_days_in_seconds
 
   @doc """
   Deletes the specified session.
@@ -60,7 +61,7 @@ defmodule ArchiDepWeb.Profile.CurrentSessionsLive do
     |> assign(
       auth: assigns.auth,
       active_sessions: fetch_active_sessions(assigns.auth),
-      now: DateTime.utc_now()
+      now: Clock.now()
     )
     |> ok()
   end
