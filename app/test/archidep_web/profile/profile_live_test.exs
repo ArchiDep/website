@@ -5,9 +5,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   alias ArchiDep.Accounts
   alias ArchiDep.Course
   alias ArchiDep.Support.AccountsFactory
+  alias Ecto.Changeset
 
   @path "/profile"
   @current_sessions_table_id "current-sessions"
+  @change_username_dialog_id "change-username-dialog"
   @no_actions ""
   @current_session_text gettext("Current session")
   @expired_session_text gettext("Expired")
@@ -226,6 +228,153 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
   end
 
+  describe "changing the username as a student" do
+    setup :register_and_log_in_student
+
+    test "the change-username dialog is not rendered until the username is confirmed", %{
+      conn: conn,
+      auth: auth,
+      session: session,
+      user_account: user_account,
+      student: student
+    } do
+      student = %{student | username_confirmed: false}
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+
+      {:ok, view, _html} = live(conn, @path)
+
+      refute has_element?(view, "##{@change_username_dialog_id}")
+    end
+
+    test "validate the new username", %{
+      conn: conn,
+      auth: auth,
+      session: session,
+      user_account: user_account,
+      student: student
+    } do
+      student = %{student | username_confirmed: true, username: "current-name"}
+      id = student.id
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+
+      expect(Course.ContextMock, :validate_student_config, fn ^auth,
+                                                              ^id,
+                                                              %{username: "bad name"} ->
+        {:ok,
+         student
+         |> cast_username("bad name")
+         |> Changeset.add_error(:username, "is invalid")}
+      end)
+
+      expect(Course.ContextMock, :validate_student_config, fn ^auth,
+                                                              ^id,
+                                                              %{username: "good-name"} ->
+        {:ok, cast_username(student, "good-name")}
+      end)
+
+      {:ok, view, _html} = live(conn, @path)
+
+      assert has_element?(view, "##{@change_username_dialog_id}")
+
+      assert view
+             |> form("##{@change_username_dialog_id} form[phx-submit=\"configure\"]",
+               student_config: %{username: "bad name"}
+             )
+             |> render_change()
+             |> change_username_errors() == ["is invalid"]
+
+      assert view
+             |> form("##{@change_username_dialog_id} form[phx-submit=\"configure\"]",
+               student_config: %{username: "good-name"}
+             )
+             |> render_change()
+             |> change_username_errors() == []
+    end
+
+    test "change the username", %{
+      conn: conn,
+      auth: auth,
+      session: session,
+      user_account: user_account,
+      student: student
+    } do
+      student = %{student | username_confirmed: true, username: "current-name"}
+      id = student.id
+      configured_student = %{student | username: "new-name"}
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+
+      expect(Course.ContextMock, :configure_student, fn ^auth, ^id, %{username: "new-name"} ->
+        {:ok, configured_student}
+      end)
+
+      {:ok, view, _html} = live(conn, @path)
+
+      assert view
+             |> form("##{@change_username_dialog_id} form[phx-submit=\"configure\"]",
+               student_config: %{username: "new-name"}
+             )
+             |> render_submit()
+             |> change_username_errors() == []
+
+      assert_push_event(view, "execute-action", %{
+        to: "##{@change_username_dialog_id}",
+        action: "close"
+      })
+
+      notification = gettext("Username changed to {name}", name: "new-name")
+
+      wait_for_socket_assigns!(
+        view,
+        &match?([%{message: ^notification, type: :success}], Map.values(&1.flash)),
+        "username changed notification"
+      )
+
+      assert has_element?(view, ~s(##{@change_username_dialog_id} input[value="new-name"]))
+    end
+
+    test "show an error when the new username cannot be changed", %{
+      conn: conn,
+      auth: auth,
+      session: session,
+      user_account: user_account,
+      student: student
+    } do
+      student = %{student | username_confirmed: true, username: "current-name"}
+      id = student.id
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+
+      expect(Course.ContextMock, :configure_student, fn ^auth, ^id, %{username: "taken"} ->
+        student
+        |> cast_username("taken")
+        |> Changeset.add_error(:username, "has already been taken")
+        |> Changeset.apply_action(:update)
+      end)
+
+      {:ok, view, _html} = live(conn, @path)
+
+      assert view
+             |> form("##{@change_username_dialog_id} form[phx-submit=\"configure\"]",
+               student_config: %{username: "taken"}
+             )
+             |> render_submit()
+             |> change_username_errors() == ["has already been taken"]
+
+      refute_push_event(view, "execute-action", %{action: "close"})
+    end
+  end
+
   test "all sessions are shown in the current sessions table of the profile page", %{conn: conn!} do
     user_account = AccountsFactory.build(:user_account, root: true, active: true)
 
@@ -321,4 +470,13 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
     html
   end
+
+  defp change_username_errors(html),
+    do:
+      html
+      |> find_html_elements("##{@change_username_dialog_id} p.text-error")
+      |> Enum.map(&html_element_text/1)
+
+  defp cast_username(student, username),
+    do: Changeset.cast(student, %{username: username}, [:username])
 end

@@ -1153,7 +1153,12 @@ asserted:
   the success **flash/notification** (exact message and type), any **pushed
   event** (e.g. the `execute-action` that closes a dialog), and the post-submit
   form state. On failure, assert the error is rendered (the mocked context
-  having returned `{:error, changeset}`).
+  having returned `{:error, changeset}`). Build that error changeset by
+  **casting the params and giving it an action** (e.g. via
+  `Changeset.apply_action/2`): the form renders a field's errors only once the
+  field is "used" (`Phoenix.Component.used_input?/1`), so a bare
+  `Changeset.change/1` with an added error renders nothing — mirror the
+  cast-with-action changeset the real context returns.
 
 ### Flash, notifications, and PubSub-driven updates
 
