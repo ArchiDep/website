@@ -5,11 +5,14 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   alias ArchiDep.Accounts
   alias ArchiDep.Course
   alias ArchiDep.Support.AccountsFactory
+  alias ArchiDep.Support.CourseFactory
   alias Ecto.Changeset
 
   @path "/profile"
   @current_sessions_table_id "current-sessions"
   @change_username_dialog_id "change-username-dialog"
+  @registered_at ~U[2024-01-15 09:30:00Z]
+  @registration_row {"Registration date", "Mon, January 15, 2024 at 09:30:00", []}
   @no_actions ""
   @current_session_text gettext("Current session")
   @expired_session_text gettext("Expired")
@@ -375,6 +378,229 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
   end
 
+  describe "profile data display" do
+    test "render the data display for a root user with a Switch edu-ID", %{conn: conn} do
+      user_account =
+        AccountsFactory.build(:user_account,
+          root: true,
+          active: true,
+          username: "alice",
+          switch_edu_id:
+            AccountsFactory.build(:switch_edu_id,
+              first_name: "Jane",
+              last_name: "Doe",
+              swiss_edu_person_unique_id: "swiss-id-123"
+            ),
+          created_at: @registered_at
+        )
+
+      session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          client_user_agent: "Mozilla/5.0",
+          impersonated_user_account: nil
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+
+      {:ok, _view, html} = live(conn, @path)
+
+      assert data_display_rows(html) == [
+               {"Account username", "alice", []},
+               {"Switch edu-ID name", "Jane Doe", []},
+               {"Swiss edu person unique ID", "swiss-id-123", []},
+               @registration_row
+             ]
+    end
+
+    test "render the data display for a root user without a Switch edu-ID", %{conn: conn} do
+      user_account =
+        AccountsFactory.build(:user_account,
+          root: true,
+          active: true,
+          username: "alice",
+          switch_edu_id: nil,
+          created_at: @registered_at
+        )
+
+      session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          client_user_agent: "Mozilla/5.0",
+          impersonated_user_account: nil
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+
+      {:ok, _view, html} = live(conn, @path)
+
+      assert data_display_rows(html) == [
+               {"Account username", "alice", []},
+               @registration_row
+             ]
+    end
+
+    test "render the data display for a root user whose Switch edu-ID has no name", %{conn: conn} do
+      user_account =
+        AccountsFactory.build(:user_account,
+          root: true,
+          active: true,
+          username: "alice",
+          switch_edu_id:
+            AccountsFactory.build(:switch_edu_id,
+              first_name: nil,
+              last_name: nil,
+              swiss_edu_person_unique_id: "swiss-id-123"
+            ),
+          created_at: @registered_at
+        )
+
+      session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          client_user_agent: "Mozilla/5.0",
+          impersonated_user_account: nil
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+
+      {:ok, _view, html} = live(conn, @path)
+
+      assert data_display_rows(html) == [
+               {"Account username", "alice", []},
+               {"Swiss edu person unique ID", "swiss-id-123", []},
+               @registration_row
+             ]
+    end
+
+    test "render the data display for a student with a confirmed username", %{conn: conn} do
+      user_account =
+        AccountsFactory.build(:user_account,
+          root: false,
+          active: true,
+          username: "alice",
+          switch_edu_id:
+            AccountsFactory.build(:switch_edu_id,
+              first_name: "Jane",
+              last_name: "Doe",
+              swiss_edu_person_unique_id: "swiss-id-123"
+            ),
+          created_at: @registered_at
+        )
+
+      student =
+        CourseFactory.build(:student,
+          username: "current-name",
+          username_confirmed: true,
+          email: "student@example.com"
+        )
+
+      session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          client_user_agent: "Mozilla/5.0",
+          impersonated_user_account: nil
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+
+      {:ok, _view, html} = live(conn, @path)
+
+      assert data_display_rows(html) == [
+               {"Account username", "alice", []},
+               {"Email", "student@example.com", []},
+               {"Switch edu-ID name", "Jane Doe", []},
+               {"Username", "current-name", ["Change"]},
+               @registration_row
+             ]
+    end
+
+    test "render the data display for a student with an unconfirmed username", %{conn: conn} do
+      user_account =
+        AccountsFactory.build(:user_account,
+          root: false,
+          active: true,
+          username: "alice",
+          switch_edu_id:
+            AccountsFactory.build(:switch_edu_id,
+              first_name: "Jane",
+              last_name: "Doe",
+              swiss_edu_person_unique_id: "swiss-id-123"
+            ),
+          created_at: @registered_at
+        )
+
+      student =
+        CourseFactory.build(:student,
+          username: "current-name",
+          username_confirmed: false,
+          email: "student@example.com"
+        )
+
+      session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          client_user_agent: "Mozilla/5.0",
+          impersonated_user_account: nil
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+
+      {:ok, _view, html} = live(conn, @path)
+
+      assert data_display_rows(html) == [
+               {"Account username", "alice", []},
+               {"Email", "student@example.com", []},
+               {"Switch edu-ID name", "Jane Doe", []},
+               @registration_row
+             ]
+    end
+
+    test "hide the account username row when the account has no username", %{conn: conn} do
+      user_account =
+        AccountsFactory.build(:user_account,
+          root: true,
+          active: true,
+          username: nil,
+          switch_edu_id: nil,
+          created_at: @registered_at
+        )
+
+      session =
+        AccountsFactory.build(:user_session,
+          user_account: user_account,
+          client_user_agent: "Mozilla/5.0",
+          impersonated_user_account: nil
+        )
+
+      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
+
+      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
+      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+
+      {:ok, _view, html} = live(conn, @path)
+
+      assert data_display_rows(html) == [@registration_row]
+    end
+  end
+
   test "all sessions are shown in the current sessions table of the profile page", %{conn: conn!} do
     user_account = AccountsFactory.build(:user_account, root: true, active: true)
 
@@ -469,6 +695,25 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     |> fun.()
 
     html
+  end
+
+  defp data_display_rows(html) do
+    html
+    |> find_html_elements("dl > div")
+    |> Enum.map(fn row ->
+      [title] = row |> find_html_elements("dt") |> Enum.map(&html_element_text/1)
+      [dd] = find_html_elements(row, "dd")
+      controls = dd |> find_html_elements("button") |> Enum.map(&html_element_text/1)
+
+      # Strip control labels from the cell text so the data value and the
+      # interactive affordances are projected as distinct fields.
+      value =
+        controls
+        |> Enum.reduce(html_element_text(dd), &String.replace(&2, &1, ""))
+        |> String.trim()
+
+      {title, value, controls}
+    end)
   end
 
   defp change_username_errors(html),
