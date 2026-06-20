@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   import Hammox
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Servers
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -26,7 +27,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
           teacher_ssh_public_keys: []
         )
 
-      stub_class_page(auth, class: class, server_group: server_group)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
 
       {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
 
@@ -81,7 +82,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
     test "validate the edited class against the context", %{conn: conn, auth: auth} do
       {class, server_group} = build_class_and_group(name: "Original")
-      stub_class_page(auth, class: class, server_group: server_group)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
       class_id = class.id
 
       invalid = Changeset.add_error(Changeset.change(%Class{}), :name, "is invalid")
@@ -100,12 +101,12 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       assert view
              |> form("#edit-class-form", class: %{name: "Bad"})
              |> render_change()
-             |> class_form_errors("edit-class-form") == ["is invalid"]
+             |> form_errors("edit-class-form") == ["is invalid"]
 
       assert view
              |> form("#edit-class-form", class: %{name: "Good"})
              |> render_change()
-             |> class_form_errors("edit-class-form") == []
+             |> form_errors("edit-class-form") == []
     end
 
     test "update the class from a full submission", %{conn: conn, auth: auth} do
@@ -121,7 +122,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
           ssh_exercise_vm_sha256_host_key_fingerprints: nil
         )
 
-      stub_class_page(auth, class: class, server_group: server_group)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
       class_id = class.id
 
       updated = CourseFactory.build(:class, name: "Updated Class")
@@ -169,14 +170,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       edit_dialog_id = "#edit-class-dialog-#{class.id}"
       assert_push_event(view, "execute-action", %{to: ^edit_dialog_id, action: "close"})
 
-      wait_for_socket_assigns!(
+      assert_flash_notification(
         view,
-        &has_flash_notification?(&1, :success),
-        "updated class notification"
+        :success,
+        gettext("Updated class {class}", class: "Updated Class")
       )
-
-      assert flash_notifications(view) ==
-               [{:success, gettext("Updated class {class}", class: "Updated Class")}]
     end
 
     test "update the class clearing every optional field", %{conn: conn, auth: auth} do
@@ -192,7 +190,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
           ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
         )
 
-      stub_class_page(auth, class: class, server_group: server_group)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
       class_id = class.id
 
       updated = CourseFactory.build(:class, name: "Cleared")
@@ -231,11 +229,17 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
                ssh_exercise_vm_md5_host_key_fingerprints: nil,
                ssh_exercise_vm_sha256_host_key_fingerprints: nil
              }
+
+      assert_flash_notification(
+        view,
+        :success,
+        gettext("Updated class {class}", class: "Cleared")
+      )
     end
 
     test "render errors when the class cannot be updated", %{conn: conn, auth: auth} do
       {class, server_group} = build_class_and_group(name: "Original")
-      stub_class_page(auth, class: class, server_group: server_group)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
       class_id = class.id
 
       {:error, errored} =
@@ -253,14 +257,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       assert view
              |> form("#edit-class-form", class: %{name: "Taken"})
              |> render_submit()
-             |> class_form_errors("edit-class-form") == ["has already been taken"]
+             |> form_errors("edit-class-form") == ["has already been taken"]
 
       refute_push_event(view, "execute-action", %{action: "close"})
     end
 
     test "add a teacher SSH public key field", %{conn: conn, auth: auth} do
       {class, server_group} = build_class_and_group(name: "Original", teacher_ssh_public_keys: [])
-      stub_class_page(auth, class: class, server_group: server_group)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
 
       {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
 
@@ -285,7 +289,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     test "render a confirmation prompt when the class has no servers", %{conn: conn, auth: auth} do
       {class, server_group} = build_class_and_group()
 
-      stub_class_page(auth,
+      stub_class_page_calls(auth,
         class: class,
         server_group: server_group,
         server_ids: [],
@@ -307,7 +311,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       {class, server_group} = build_class_and_group()
       students = [CourseFactory.build(:student), CourseFactory.build(:student)]
 
-      stub_class_page(auth,
+      stub_class_page_calls(auth,
         class: class,
         server_group: server_group,
         server_ids: [],
@@ -326,7 +330,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     test "block deletion when the class has linked servers", %{conn: conn, auth: auth} do
       {class, server_group} = build_class_and_group()
 
-      stub_class_page(auth,
+      stub_class_page_calls(auth,
         class: class,
         server_group: server_group,
         server_ids: [UUID.generate()],
@@ -346,7 +350,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     test "delete the class", %{conn: conn, auth: auth} do
       {class, server_group} = build_class_and_group()
 
-      stub_class_page(auth,
+      stub_class_page_calls(auth,
         class: class,
         server_group: server_group,
         server_ids: [],
@@ -370,7 +374,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     test "show an error when the class cannot be deleted", %{conn: conn, auth: auth} do
       {class, server_group} = build_class_and_group(name: "Doomed")
 
-      stub_class_page(auth,
+      stub_class_page_calls(auth,
         class: class,
         server_group: server_group,
         server_ids: [],
@@ -389,23 +393,266 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       |> element(~s(#delete-class-dialog-#{class.id} button[phx-click="delete"]))
       |> render_click()
 
-      wait_for_socket_assigns!(
+      assert_flash_notification(
         view,
-        &has_flash_notification?(&1, :error),
-        "delete error notification"
+        :error,
+        gettext(
+          "Class {class} cannot be deleted because at least one server is linked to it.",
+          class: "Doomed"
+        )
       )
-
-      assert flash_notifications(view) ==
-               [
-                 {:error,
-                  gettext(
-                    "Class {class} cannot be deleted because at least one server is linked to it.",
-                    class: "Doomed"
-                  )}
-               ]
 
       delete_dialog_id = "#delete-class-dialog-#{class.id}"
       assert_push_event(view, "execute-action", %{to: ^delete_dialog_id, action: "close"})
+    end
+  end
+
+  describe "the edit expected-server-properties dialog" do
+    setup :register_and_log_in_root
+
+    test "validate the edited properties against the context", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group(name: "Original")
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      class_id = class.id
+      form_id = "edit-class-expected-server-properties-dialog-#{class.id}-form"
+
+      invalid =
+        %ExpectedServerProperties{}
+        |> Changeset.cast(%{cpus: 1}, [:cpus])
+        |> Changeset.add_error(:cpus, "is invalid")
+
+      valid = Changeset.cast(%ExpectedServerProperties{}, %{cpus: 2}, [:cpus])
+
+      expect(
+        Course.ContextMock,
+        :validate_expected_server_properties_for_class,
+        fn ^auth, ^class_id, %{cpus: 1} -> {:ok, invalid} end
+      )
+
+      expect(
+        Course.ContextMock,
+        :validate_expected_server_properties_for_class,
+        fn ^auth, ^class_id, %{cpus: 2} -> {:ok, valid} end
+      )
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert view
+             |> form("##{form_id}", expected_server_properties: %{cpus: "1"})
+             |> render_change()
+             |> form_errors(form_id) == ["is invalid"]
+
+      assert view
+             |> form("##{form_id}", expected_server_properties: %{cpus: "2"})
+             |> render_change()
+             |> form_errors(form_id) == []
+    end
+
+    test "update the expected server properties from a full submission", %{
+      conn: conn,
+      auth: auth
+    } do
+      {class, server_group} = build_class_and_group(name: "Crypto 101")
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      class_id = class.id
+      dialog_id = "edit-class-expected-server-properties-dialog-#{class.id}"
+
+      updated = CourseFactory.build(:expected_server_properties)
+      test_pid = self()
+
+      expect(
+        Course.ContextMock,
+        :update_expected_server_properties_for_class,
+        fn ^auth, ^class_id, data ->
+          send(test_pid, {:updated_with, data})
+          {:ok, updated}
+        end
+      )
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view
+      |> form("##{dialog_id}-form",
+        expected_server_properties: %{
+          cpus: "4",
+          cores: "2",
+          vcpus: "8",
+          memory: "2048",
+          swap: "1024",
+          system: "Linux",
+          architecture: "x86_64",
+          os_family: "Debian",
+          distribution: "Ubuntu",
+          distribution_release: "noble",
+          distribution_version: "24.04"
+        }
+      )
+      |> render_submit()
+
+      assert_receive {:updated_with, data}
+
+      assert data == %{
+               cpus: 4,
+               cores: 2,
+               vcpus: 8,
+               memory: 2048,
+               swap: 1024,
+               system: "Linux",
+               architecture: "x86_64",
+               os_family: "Debian",
+               distribution: "Ubuntu",
+               distribution_release: "noble",
+               distribution_version: "24.04"
+             }
+
+      push_to = "##{dialog_id}"
+      assert_push_event(view, "execute-action", %{to: ^push_to, action: "close"})
+
+      assert_flash_notification(
+        view,
+        :success,
+        gettext("Updated expected server properties for {class}", class: "Crypto 101")
+      )
+    end
+
+    test "update the expected server properties clearing every field", %{conn: conn, auth: auth} do
+      {class, server_group} =
+        build_class_and_group(
+          name: "Crypto 101",
+          expected_server_properties:
+            CourseFactory.build(:expected_server_properties,
+              cpus: 4,
+              cores: 2,
+              vcpus: 8,
+              memory: 2048,
+              swap: 1024,
+              system: "Linux",
+              architecture: "x86_64",
+              os_family: "Debian",
+              distribution: "Ubuntu",
+              distribution_release: "noble",
+              distribution_version: "24.04"
+            )
+        )
+
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      class_id = class.id
+      dialog_id = "edit-class-expected-server-properties-dialog-#{class.id}"
+
+      updated = CourseFactory.build(:expected_server_properties)
+      test_pid = self()
+
+      expect(
+        Course.ContextMock,
+        :update_expected_server_properties_for_class,
+        fn ^auth, ^class_id, data ->
+          send(test_pid, {:updated_with, data})
+          {:ok, updated}
+        end
+      )
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view
+      |> form("##{dialog_id}-form",
+        expected_server_properties: %{
+          cpus: "",
+          cores: "",
+          vcpus: "",
+          memory: "",
+          swap: "",
+          system: "",
+          architecture: "",
+          os_family: "",
+          distribution: "",
+          distribution_release: "",
+          distribution_version: ""
+        }
+      )
+      |> render_submit()
+
+      assert_receive {:updated_with, data}
+
+      assert data == %{
+               cpus: nil,
+               cores: nil,
+               vcpus: nil,
+               memory: nil,
+               swap: nil,
+               system: nil,
+               architecture: nil,
+               os_family: nil,
+               distribution: nil,
+               distribution_release: nil,
+               distribution_version: nil
+             }
+
+      assert_flash_notification(
+        view,
+        :success,
+        gettext("Updated expected server properties for {class}", class: "Crypto 101")
+      )
+    end
+
+    test "render errors when the properties cannot be updated", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group(name: "Crypto 101")
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      class_id = class.id
+      form_id = "edit-class-expected-server-properties-dialog-#{class.id}-form"
+
+      {:error, errored} =
+        %ExpectedServerProperties{}
+        |> Changeset.cast(%{cpus: 99}, [:cpus])
+        |> Changeset.add_error(:cpus, "must be between 1 and 16")
+        |> Changeset.apply_action(:update)
+
+      expect(
+        Course.ContextMock,
+        :update_expected_server_properties_for_class,
+        fn ^auth, ^class_id, _data -> {:error, errored} end
+      )
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert view
+             |> form("##{form_id}", expected_server_properties: %{cpus: "99"})
+             |> render_submit()
+             |> form_errors(form_id) == ["must be between 1 and 16"]
+
+      assert_flash_notification(view, :error, gettext("The form is invalid."))
+
+      refute_push_event(view, "execute-action", %{action: "close"})
+    end
+
+    test "show the edit trigger when the class has expected properties", %{conn: conn, auth: auth} do
+      {class, server_group} =
+        build_class_and_group(
+          expected_server_properties: CourseFactory.build(:expected_server_properties, cpus: 4)
+        )
+
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert has_element?(view, ".edit-expected-server-properties")
+      refute has_element?(view, ".define-expected-server-properties")
+    end
+
+    test "show the define trigger when the class has no expected properties", %{
+      conn: conn,
+      auth: auth
+    } do
+      {class, server_group} =
+        build_class_and_group(
+          expected_server_properties: ExpectedServerProperties.blank(UUID.generate())
+        )
+
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert has_element?(view, ".define-expected-server-properties")
+      refute has_element?(view, ".edit-expected-server-properties")
     end
   end
 
@@ -423,7 +670,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
           teacher_ssh_public_keys: []
         )
 
-      stub_class_page(auth, class: class, server_group: server_group)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
 
       {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
 
@@ -455,7 +702,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
     test "navigate away when the class is deleted over PubSub", %{conn: conn, auth: auth} do
       {class, server_group} = build_class_and_group(name: "Gone")
-      stub_class_page(auth, class: class, server_group: server_group)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
 
       {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
 
@@ -499,7 +746,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   # variable number of times across the disconnected/connected mounts and any
   # later re-render. They are stubbed so each test can `expect` only the one
   # mutation it asserts.
-  defp stub_class_page(auth, opts) do
+  defp stub_class_page_calls(auth, opts) do
     class = Keyword.fetch!(opts, :class)
     server_group = Keyword.fetch!(opts, :server_group)
     students = Keyword.get(opts, :students, [])
@@ -534,7 +781,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   defp icon_state(element),
     do: if(find_html_elements(element, ".text-success") != [], do: :active, else: :inactive)
 
-  defp class_form_errors(html, form_id),
+  defp form_errors(html, form_id),
     do:
       html
       |> find_html_elements("##{form_id} p.text-error")

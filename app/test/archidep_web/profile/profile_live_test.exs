@@ -190,13 +190,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       deleted = gettext("Deleted session")
 
-      wait_for_socket_assigns!(
-        view,
-        &has_flash_notification?(&1, :success),
-        "deleted session notification"
-      )
-
-      assert flash_notifications(view) == [{:success, deleted}]
+      assert_flash_notification(view, :success, deleted)
     end
 
     test "show a notification when deleting a session that no longer exists", %{conn: conn} do
@@ -245,13 +239,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       gone = gettext("Session no longer exists")
 
-      wait_for_socket_assigns!(
-        view,
-        &has_flash_notification?(&1, :warning),
-        "session no longer exists notification"
-      )
-
-      assert flash_notifications(view) == [{:warning, gone}]
+      assert_flash_notification(view, :warning, gone)
     end
 
     test "render the sessions table for a student", %{conn: conn} do
@@ -394,13 +382,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       notification = gettext("Username changed to {name}", name: "new-name")
 
-      wait_for_socket_assigns!(
-        view,
-        &has_flash_notification?(&1, :success),
-        "username changed notification"
-      )
-
-      assert flash_notifications(view) == [{:success, notification}]
+      assert_flash_notification(view, :success, notification)
 
       assert has_element?(view, ~s(##{@change_username_dialog_id} input[value="new-name"]))
     end

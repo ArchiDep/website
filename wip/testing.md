@@ -1106,15 +1106,37 @@ the whole re-render, vs. the list page's global-topic per-row assertions) was
 already documented. One latent bug was fixed and flagged:
 `edit_class_dialog_live.ex`'s `update`-failure branch set no form `action`, so a
 rejected update rendered no errors (added `action: :update`, the update analogue
-of the new-class `action: :insert` fix). _Remaining:_
-`edit_class_expected_server_properties_dialog_live`, `admin_class_servers_live`,
-and `classes_controller` (a ConnCase request test — separate controller canon),
-plus `class_live`'s student/server table and its student/server PubSub handlers
-(with the **Admin — students** chunk). A `ClassForm` exhaustive changeset test
+of the new-class `action: :insert` fix).
+`edit_class_expected_server_properties_dialog_live` (the third and last dialog
+hosted on the detail page) has since landed in the same `class_live_test.exs`,
+reusing the existing `build_class_and_group`/ `stub_class_page` infrastructure:
+validate wiring, a full and a clear-every-optional update (both pinning the
+exact submitted data map), the update-failure error rendering + `"The form is
+invalid."` flash, and the page-level **Edit** (set) vs **Define** (blank)
+trigger branch. No `action:` fix was needed here: unlike the edit-class dialog
+(which renders its own action-less form changeset with merged errors), this
+dialog renders the context's changeset directly, and that changeset already
+carries both the cast params and an action, so its errors render. One latent
+**type** bug was fixed and flagged: `Course.Types.expected_server_properties`
+declared all 13 keys `required`, but the dialog legitimately passes a
+**partial** map (it omits `hostname`/`machine_id`, which it cannot edit, so
+`ExpectedServerProperties.update`'s `cast` preserves them) — Hammox enforced the
+over-strict type and rejected the call. The type now uses `optional(...)` keys,
+which is the accurate model (every caller casts a subset; behaviour-preserving
+for the full-map callers). _Helper reuse evaluated:_ the only genuinely shared
+helper is errors-within-a-form-by-id, already parameterized in
+`class_live_test.exs` and renamed `class_form_errors/2` → `form_errors/2`; no
+shared support module was created — `classes_live_test.exs`'s value readers
+(`form_values`, input/textarea/checkbox) are single-consumer and hardcoded to
+the new-class form, and the expected-properties tests capture submitted data
+through the mock rather than the DOM, so they need no readers. Revisit
+extraction when a third consumer (the `class_form_component` test) needs the
+value readers. _Remaining:_ `admin_class_servers_live` and `classes_controller`
+(a ConnCase request test — separate controller canon), plus `class_live`'s
+student/server table and its student/server PubSub handlers (with the **Admin —
+students** chunk). A `ClassForm` exhaustive changeset test
 (`class_form_test.exs`) is the natural sibling (the dialog tests pin only
-wiring). Whether the class-form projection helpers (`form_values`,
-`class_form_errors`, the input/textarea/checkbox readers) should move to a
-shared support module is to be evaluated now that two test files exercise them.
+wiring).
 
 ### Admin — class form components
 

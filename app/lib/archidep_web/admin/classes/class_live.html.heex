@@ -61,7 +61,7 @@
             <button
               :if={not ExpectedServerProperties.blank?(@class.expected_server_properties)}
               type="button"
-              class="btn btn-warning btn-xs"
+              class="btn btn-warning btn-xs edit-expected-server-properties"
               phx-click={
                 JS.dispatch("open-dialog",
                   detail: %{dialog: EditClassExpectedServerPropertiesDialogLive.id(@class)}
@@ -85,7 +85,7 @@
           >
             <button
               type="button"
-              class="btn btn-accent"
+              class="btn btn-accent define-expected-server-properties"
               phx-click={
                 JS.dispatch("open-dialog",
                   detail: %{dialog: EditClassExpectedServerPropertiesDialogLive.id(@class)}

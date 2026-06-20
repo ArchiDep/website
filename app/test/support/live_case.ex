@@ -169,4 +169,26 @@ defmodule ArchiDepWeb.Support.LiveCase do
       Enum.any?(flash_notifications(view_or_assigns), fn {notification_type, _message} ->
         notification_type == type
       end)
+
+  @doc """
+  Waits for a flash notification of `type` to arrive, then asserts the live
+  view's flash holds exactly that one `{type, message}` notification.
+
+  A convenience for the common single-notification case: it combines the
+  asynchronous wait (`wait_for_socket_assigns!/3` + `has_flash_notification?/2`)
+  with the exact projection assertion (`flash_notifications/1`). When more than
+  one notification is expected, assert `flash_notifications/1` directly.
+  """
+  @spec assert_flash_notification(struct(), atom(), String.t()) :: :ok
+  def assert_flash_notification(view, type, message)
+      when is_struct(view, View) and is_atom(type) do
+    wait_for_socket_assigns!(
+      view,
+      &has_flash_notification?(&1, type),
+      "#{type} flash notification"
+    )
+
+    assert flash_notifications(view) == [{type, message}]
+    :ok
+  end
 end

@@ -287,13 +287,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
 
       notification = gettext("Created class {class}", class: "New Class")
 
-      wait_for_socket_assigns!(
-        view,
-        &has_flash_notification?(&1, :success),
-        "created class notification"
-      )
-
-      assert flash_notifications(view) == [{:success, notification}]
+      assert_flash_notification(view, :success, notification)
     end
 
     test "create a class from a full submission", %{conn: conn, auth: auth} do

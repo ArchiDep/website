@@ -38,18 +38,18 @@ defmodule ArchiDep.Course.Types do
         }
 
   @type expected_server_properties :: %{
-          hostname: String.t() | nil,
-          machine_id: String.t() | nil,
-          cpus: pos_integer() | nil,
-          cores: pos_integer() | nil,
-          vcpus: pos_integer() | nil,
-          memory: pos_integer() | nil,
-          swap: pos_integer() | nil,
-          system: String.t() | nil,
-          architecture: String.t() | nil,
-          os_family: String.t() | nil,
-          distribution: String.t() | nil,
-          distribution_release: String.t() | nil,
-          distribution_version: String.t() | nil
+          optional(:hostname) => String.t() | nil,
+          optional(:machine_id) => String.t() | nil,
+          optional(:cpus) => pos_integer() | nil,
+          optional(:cores) => pos_integer() | nil,
+          optional(:vcpus) => pos_integer() | nil,
+          optional(:memory) => pos_integer() | nil,
+          optional(:swap) => pos_integer() | nil,
+          optional(:system) => String.t() | nil,
+          optional(:architecture) => String.t() | nil,
+          optional(:os_family) => String.t() | nil,
+          optional(:distribution) => String.t() | nil,
+          optional(:distribution_release) => String.t() | nil,
+          optional(:distribution_version) => String.t() | nil
         }
 end
