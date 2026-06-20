@@ -94,7 +94,7 @@ This is the bird's-eye view: each item links to its full description under
   - [ ] [Admin — classes list/detail + class dialogs](#admin--classes-listdetail--class-dialogs)
   - [x] [Admin — class form components](#admin--class-form-components)
   - [ ] [Admin — students list + student dialogs](#admin--students-list--student-dialogs)
-  - [ ] [Admin — student form components](#admin--student-form-components)
+  - [x] [Admin — student form components](#admin--student-form-components)
   - [ ] [Admin — events views](#admin--events-views)
   - [ ] [Admin — ansible views](#admin--ansible-views)
   - [ ] [Admin — top-level shell](#admin--top-level-shell)
@@ -1174,6 +1174,42 @@ the Page or In Isolation" canon it carries no logic and gets no isolated test.
 
 `student_form`, `student_form_component`, `import_students_form`. _Scope:_ 3
 files.
+
+_Done:_ the two form-layer embedded schemas are now covered exhaustively under
+`DataCase` (for `errors_on/1` + the `CourseFactory`; no rows are written — these
+are pure embedded changesets), mirroring the [class form
+components](#admin--class-form-components) sibling. `student_form_test.exs` runs
+the shared value rules (the six `validate_not_nil` fields rejected when nil —
+message `"cannot be nil"`, not `"can't be blank"` — and an invalid boolean) once
+over both `create_changeset/1` and `update_changeset/2` via the settled `for
+variant <- [:create, :update]` + `unquote` convention, plus per-variant blocks
+asserting the **whole applied struct** by equality: create minimal/full and
+update update-everything/clear-`academic_class` (the lone nilable field; the
+remaining string fields cannot be blanked without tripping `validate_not_nil`,
+and booleans coerce natively without `ClassForm`'s `tmp_boolify`). It also pins
+`to_student_data/1` by whole-map equality (with and without an academic class).
+`import_students_form_test.exs` covers the logic-dense `changeset/2 (params,
+students)`: the required-fields map, both `name_column` rejections (all-emails
+and the < 90%-unique pluralized message — `gettext` resolves the ICU
+`{count}`/plural at call time, so `errors_on/1` receives the final string), both
+`email_column` rejections (no-email, duplicates), the `academic_class`/`domain`
+length limits, the domain format message, and a valid-mapping baseline — each by
+whole `errors_on/1 == %{...}` equality. No latent bugs or clock gap surfaced —
+these schemas have no `timestamps()` and no `DateTime.utc_now/0` call.
+_Component decision:_ `student_form_component` is a pure presentational function
+component (7 scalar inputs, no logic) embedded only in the new- and edit-student
+dialogs; per the "Components: Through the Page or In Isolation" canon it gets no
+isolated test and will be exercised through the page when the [Admin — students
+list + student dialogs](#admin--students-list--student-dialogs) chunk lands.
+Unlike `class_form_component` (already page-covered), it is **not yet** covered
+today — that chunk is blocked on a `Servers` seam (`student_live` calls
+`Server.find_active_server_for_group_member/2` directly rather than through a
+Hammox-mocked context facade, and stamps wall-clock time), so its lines land
+with the dialog chunk once the seam exists. _Coverage ratchet:_ with the suite
+at 59.4%, `coveralls.json`'s `minimum_coverage` was bumped 35 → 55 (a safety
+margin below the measured value for fixture-randomness variance); the final 90%
+target stays deferred to [Lock the global
+threshold](#lock-the-global-threshold).
 
 ### Admin — events views
 
