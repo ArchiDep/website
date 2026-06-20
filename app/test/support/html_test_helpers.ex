@@ -61,6 +61,25 @@ defmodule ArchiDepWeb.Support.HtmlTestHelpers do
     do: html |> parse_html() |> LazyHTML.text() |> normalize_whitespace()
 
   @doc """
+  Returns the value of the given attribute on the first matching HTML element,
+  or `nil` if it has no such attribute. A valueless (boolean) attribute reads as
+  the empty string.
+
+  ## Examples
+
+      iex> import ArchiDepWeb.Support.HtmlTestHelpers
+      iex> ~s(<input value="hi" />) |> find_html_elements("input") |> hd() |> html_element_attribute("value")
+      "hi"
+
+      iex> import ArchiDepWeb.Support.HtmlTestHelpers
+      iex> "<input />" |> find_html_elements("input") |> hd() |> html_element_attribute("value")
+      nil
+  """
+  @spec html_element_attribute(html(), String.t()) :: String.t() | nil
+  def html_element_attribute(html, name) when is_html(html) and is_binary(name),
+    do: html |> parse_html() |> LazyHTML.attribute(name) |> List.first()
+
+  @doc """
   Asserts that the title of an HTML page is as expected, returning the parsed
   document so further assertions can be chained.
 

@@ -1027,6 +1027,28 @@ the canon blocker.
 Finish `server_live` + `new`/`edit`/`delete_server_dialog_live` not done in the
 canon task.
 
+_Blocked (needs a seam first):_ `server_live.mount/3` calls the `ServerTracker`
+runtime GenServer **directly** — `ServerTracker.start_link/1` and
+`ServerTracker.get_current_server_state/1`, the latter _outside_ the
+`connected?(socket)` guard, so even a disconnected `get/2` render needs a live
+tracker. `ArchiDep.Servers.ServerTracking.ServerTracker` is not in the
+`config/test.exs` mock swap and has no injectable seam, so the page cannot be
+web-tested today. **Prerequisite:** introduce a `ServerTrackerClient` façade +
+`ServerTrackerClientBehaviour` mirroring `ServerManagerClient` /
+`ServersOrchestratorClient` (`@implementation
+Application.compile_env!(:archidep, __MODULE__)`, `defdelegate`s for
+`start_link` / `get_current_server_state` / watch), wired to the real tracker in
+`config/config.exs` and to a `ServerTrackerClientMock` in `config/test.exs`;
+`server_live` then calls the client. This belongs with [6. Runtime
+processes](#canon--testing-runtime-processes) (the `ServerTracker` chunk). Until
+it lands, the servers-web LiveView chunks are blocked.
+
+_Re-sequencing:_ because of this blocker, the **second web-layer exemplar** is
+the admin classes list + create-class dialog (see [Admin — classes list/detail +
+class dialogs](#admin--classes-listdetail--class-dialogs)), which is driven
+purely by the Hammox-mocked `Course` context with no runtime coupling.
+`server_live` + its dialogs follow once the `ServerTrackerClient` seam exists.
+
 ### Servers web — forms & components
 
 `server_form`, `server_form_component`, `server_properties_form`,
@@ -1043,6 +1065,33 @@ _Scope:_ 2 files.
 `new`/`edit`/`delete_class_dialog_live`,
 `edit_class_expected_server_properties_dialog_live`, `admin_class_servers_live`.
 _Scope:_ ~8 files.
+
+_In progress — this is the **second web-layer exemplar**_ (the canon task's
+`server_live` example is
+[blocked](#servers-web--server-detail--dialogs-remainder) on the `ServerTracker`
+seam). `classes_live` + `new_class_dialog_live` (with `class_form`) have landed
+in `classes_live_test.exs`, settling three conventions the profile page didn't
+exercise, now documented in
+[`docs/testing.md`](../app/docs/testing.md#web-layer-liveviews--controllers): a
+**list/table page with PubSub mutations** (full-list assertion at mount, but
+per-row-by-id assertions after a broadcast on the shared, non-keyed `"classes"`
+topic, which is not async-isolated), a **multi-field/nested-embed form** (wiring
+only — validate/submit + adding an embedded SSH-key sub-field; exhaustive rules
+stay in the form-schema test), and an **authorization-delegated (admin) page**
+(no web-layer root guard, so the both-principals rule resolves to root +
+anonymous at the web layer). Two latent bugs in `new_class_dialog_live.ex` were
+fixed and flagged: the `validate` handler ran validation twice (a discarded
+`validate_dialog_form/4` call left beside a manual reimplementation —
+`Course.validate_class` was called twice per keystroke; removed the dead call),
+and the `create` failure branch built `changeset.errors ++ result_changeset`
+(list `++` struct) and lacked an action, so a rejected create crashed instead of
+rendering the error (now `++ result_changeset.errors` with `action: :insert`).
+_Remaining:_ `class_live` detail, `edit`/`delete_class_dialog_live`,
+`edit_class_expected_server_properties_dialog_live`, `admin_class_servers_live`,
+and `classes_controller` (a ConnCase request test — separate controller canon)
+are mechanical follow-ups. A `ClassForm` exhaustive changeset test
+(`class_form_test.exs`) is the natural sibling (the dialog test pins only
+wiring).
 
 ### Admin — class form components
 

@@ -1146,7 +1146,13 @@ structural-minimal where we do not.
   them: that the page mounts and renders for each principal is itself the
   behaviour under test, and pinning it guards the page against a future change
   that makes it principal-specific. (A component reused across pages need not
-  repeat this if the pages embedding it already cover both principals.)
+  repeat this if the pages embedding it already cover both principals.) Where a
+  page **delegates authorization to the context** — admin pages have no
+  root-only guard in the router or `on_mount`; the mocked context enforces
+  access — the only principal the _web layer_ branches on is
+  authenticated-vs-anonymous, so test it for **root** (renders) and
+  **anonymous** (redirects to login); a student principal would only assert the
+  mock's canned return and adds nothing at the web layer.
 - **Mock every context call the mount and interactions make**, and pin the
   **call count**. With `setup :verify_on_exit!`, an `expect(Ctx.Mock, :fun, n,
 fn … end)` asserts the function is called exactly `n` times with matching
@@ -1191,6 +1197,31 @@ asserted:
   field is "used" (`Phoenix.Component.used_input?/1`), so a bare
   `Changeset.change/1` with an added error renders nothing — mirror the
   cast-with-action changeset the real context returns.
+- **Multi-field and nested-embed forms** are still only pinned for _wiring_.
+  Beyond `render_change`/`render_submit`, assert that an embedded sub-item can
+  be added: `render_click` the add button, then assert one more sub-field input
+  is rendered — Phoenix renders a hidden tracking input per embed, so filter to
+  the value input (`input[type="text"][name^="…"]`) when counting. The
+  exhaustive per-rule validation of the form schema still lives in its own
+  changeset test, not here.
+- **Cover a create form with a minimal _and_ a full submission**, mirroring the
+  business-layer [create strategy](#testing-create-use-cases) (there is no
+  "random" web variant — the test controls the inputs). Submit once with only
+  the **required** fields and once with **every** field filled (`render_click`
+  to add any embedded sub-items first), and in each assert the **exact data map
+  the context received**, by equality: capture it by having the mock forward its
+  argument to the test (`send(test_pid, {:created_with, data})`) then
+  `assert_receive`. The minimal submission proves the unfilled fields default
+  correctly; the full one proves every field (including embeds) is wired. A mock
+  matcher that pins only `%{name: …}` is a partial assertion — it lets the other
+  fields go unchecked.
+- **Pin the form's own state by projection.** When a test asserts the form's
+  state rather than the context call (e.g. that closing a dialog resets it),
+  project the editable field values into a map — input values via
+  `html_element_attribute/2`, textareas via `html_element_text/1`, checkboxes by
+  the presence of `checked`, embeds as the list of their value inputs — and
+  assert the **whole map** by equality (populated, then blank), not a single
+  field.
 
 ### Flash, notifications, and PubSub-driven updates
 
@@ -1213,6 +1244,15 @@ message}` tuples; assert the **whole list** by equality, message string and
   change. These topics are keyed by resource ID, so the assertion is naturally
   selective and safe under `async: true` (see the [business-layer PubSub
   note](#asserting-pubsub-broadcasts) on pinning the ID).
+- **A list view on a _global_ topic needs per-row assertions.** Some list
+  LiveViews subscribe to a shared, non-keyed topic (the admin classes list on
+  `"classes"`, not a per-resource topic). Such a topic receives broadcasts from
+  every concurrent test, so after driving a create/update/delete (via the
+  context's `publish_*` helper) do **not** assert the whole list — assert the
+  **affected row by id** (`#class-<id>` present/absent and its projected
+  content) and wait on that id in the socket assigns. The mount-time full-list
+  assertion stays exact: it renders the mocked `list_*` return captured before
+  any broadcast arrives.
 
 ### Testing components: through the page or in isolation
 

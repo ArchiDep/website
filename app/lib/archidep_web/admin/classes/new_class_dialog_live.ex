@@ -39,13 +39,6 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
 
     changeset = ClassForm.create_changeset(params)
 
-    validate_dialog_form(
-      :class,
-      ClassForm.create_changeset(params),
-      fn data -> auth |> Course.validate_class(ClassForm.to_class_data(data)) |> ok() end,
-      socket
-    )
-
     case Changeset.apply_action(changeset, :validate) do
       {:ok, form_data} ->
         class_changeset = Course.validate_class(auth, ClassForm.to_class_data(form_data))
@@ -91,8 +84,9 @@ defmodule ArchiDepWeb.Admin.Classes.NewClassDialogLive do
         socket
         |> assign(
           form:
-            to_form(%Changeset{changeset | errors: changeset.errors ++ result_changeset},
-              as: :class
+            to_form(%Changeset{changeset | errors: changeset.errors ++ result_changeset.errors},
+              as: :class,
+              action: :insert
             )
         )
         |> noreply()

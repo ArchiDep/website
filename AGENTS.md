@@ -117,6 +117,12 @@ instructions targeted towards AI agents.
          - `assert {:ok, %S{f: ^v}} = ...`
        - `errors_on(cs)` matched with `=` instead of `==`
        - asserting only some fields of a returned value
+       - a mock/`expect` matcher that pins only part of an argument the test is
+         meant to verify (e.g. `fn ^auth, %{name: v} -> … end` when the test
+         should assert the **whole** value the code passed) — matching to
+         _select_ between clauses or to ignore an opaque/irrelevant argument is
+         fine; substituting a partial match for a full-value assertion of what
+         the code sent is not (capture the argument and assert it by `==`)
 
        For each, either rewrite it to assert the whole value by equality, or
        confirm a **specific** documented exception applies (re-read
