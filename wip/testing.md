@@ -92,7 +92,7 @@ This is the bird's-eye view: each item links to its full description under
   - [ ] [Servers web — forms & components](#servers-web--forms--components)
   - [ ] [Servers web — controllers & retry handlers](#servers-web--controllers--retry-handlers)
   - [ ] [Admin — classes list/detail + class dialogs](#admin--classes-listdetail--class-dialogs)
-  - [ ] [Admin — class form components](#admin--class-form-components)
+  - [x] [Admin — class form components](#admin--class-form-components)
   - [ ] [Admin — students list + student dialogs](#admin--students-list--student-dialogs)
   - [ ] [Admin — student form components](#admin--student-form-components)
   - [ ] [Admin — events views](#admin--events-views)
@@ -1142,6 +1142,28 @@ wiring).
 
 `class_form`, `class_form_component`, `class_form_ssh_public_key`. _Scope:_ 3
 files.
+
+_Done:_ the two form-layer embedded schemas the [Admin — classes dialog
+tests](#admin--classes-listdetail--class-dialogs) deferred to are now covered
+exhaustively, under `DataCase` (for `errors_on/1` + the `CourseFactory`; no rows
+are written — these are pure embedded changesets). `class_form_test.exs` runs
+the shared cast/value rules (required `name`, invalid date casting, the nested
+blank-teacher-key error, accumulation) once over both `create_changeset/1` and
+`update_changeset/2` via the settled `for variant <- [:create, :update]` +
+`unquote` convention, plus per-variant blocks asserting the **whole applied
+struct** by equality: create minimal/full and update update-everything/
+clear-every-optional (the full/update cases double as the `tmp_boolify`
+boolean-coercion proof, so no partial single-field assertion is needed). It also
+pins `to_class_data/1` (full map, the single-blank-key → `[]` collapse, empty
+list) and `add_teacher_ssh_public_key/1` (append from a non-empty and an empty
+form), all by whole-value equality. `class_form_ssh_public_key_test.exs` covers
+`new/1` and `changeset/2` (trim, required, whitespace-only → blank). No latent
+bugs or clock gap surfaced — these schemas have no `timestamps()` and no
+`DateTime.utc_now/0` call. _Component decision:_ `class_form_component` is a
+pure presentational function component embedded only in the new- and edit-class
+dialogs, whose rendered values and errors are already asserted through
+`classes_live_test.exs` / `class_live_test.exs`; per the "Components: Through
+the Page or In Isolation" canon it carries no logic and gets no isolated test.
 
 ### Admin — students list + student dialogs
 
