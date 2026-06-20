@@ -1086,12 +1086,35 @@ fixed and flagged: the `validate` handler ran validation twice (a discarded
 and the `create` failure branch built `changeset.errors ++ result_changeset`
 (list `++` struct) and lacked an action, so a rejected create crashed instead of
 rendering the error (now `++ result_changeset.errors` with `action: :insert`).
-_Remaining:_ `class_live` detail, `edit`/`delete_class_dialog_live`,
+`class_live` (the detail page) + `edit_class_dialog_live` +
+`delete_class_dialog_live` have since landed in `class_live_test.exs`. The
+detail page is the most coupled admin page so far — its `mount/3` reads **two**
+contexts (`Course.fetch_class` +
+`Servers.fetch_server_group`/`watch_server_ids`, both Hammox-mocked;
+`watch_server_ids` is pure, so no `ServerTracker` coupling) and subscribes to
+four per-resource topics. The edit/delete dialogs are `live_component`s hosted
+**only** here (the list page navigates to the detail page), so they are tested
+through it. This settled one new convention now in
+[`docs/testing.md`](../app/docs/testing.md#web-layer-liveviews--controllers):
+**deep pages stub their ambient context reads and `expect` only the action under
+test** (the detail page lists students three times per render — its own load
+plus the delete and import dialogs — and a child notification re-renders the
+parent, re-firing every child's `update/2`, so exact counts are brittle); plus a
+small **update-form** addition (a full and a clear-every-optional submission,
+both pinning the exact submitted data map). The per-resource-topic case (assert
+the whole re-render, vs. the list page's global-topic per-row assertions) was
+already documented. One latent bug was fixed and flagged:
+`edit_class_dialog_live.ex`'s `update`-failure branch set no form `action`, so a
+rejected update rendered no errors (added `action: :update`, the update analogue
+of the new-class `action: :insert` fix). _Remaining:_
 `edit_class_expected_server_properties_dialog_live`, `admin_class_servers_live`,
-and `classes_controller` (a ConnCase request test — separate controller canon)
-are mechanical follow-ups. A `ClassForm` exhaustive changeset test
-(`class_form_test.exs`) is the natural sibling (the dialog test pins only
-wiring).
+and `classes_controller` (a ConnCase request test — separate controller canon),
+plus `class_live`'s student/server table and its student/server PubSub handlers
+(with the **Admin — students** chunk). A `ClassForm` exhaustive changeset test
+(`class_form_test.exs`) is the natural sibling (the dialog tests pin only
+wiring). Whether the class-form projection helpers (`form_values`,
+`class_form_errors`, the input/textarea/checkbox readers) should move to a
+shared support module is to be evaluated now that two test files exercise them.
 
 ### Admin — class form components
 

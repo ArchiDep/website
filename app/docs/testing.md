@@ -1093,6 +1093,22 @@ projection honest:
   username is confirmed). `has_element?/2` and `refute has_element?/2` are the
   tools — an element merely existing is not enough; its absence on the negative
   branch is what proves the `:if` guard.
+- **Asserting translated text: re-call `gettext` for simple messages, pin the
+  literal for complex ones.** For a short message whose interesting part is an
+  interpolated value, build the expected string by re-calling the same `gettext`
+  with the same bindings (`gettext("Created class {class}", class: "New
+Class")`) — it stays in sync and verifies the wiring and the interpolated
+  value, which is what the page controls. But for a message carrying
+  **resolution logic** (an ICU `plural`/`select`, as in the delete-class
+  dialog's "1 server"/"# servers" warnings), re-calling `gettext` with the same
+  args only asserts `gettext(x) == gettext(x)`: it proves the msgid and count
+  are wired, but the wording and the plural branch are resolved identically on
+  both sides and go unverified — and it duplicates a long, opaque ICU template
+  in the test. Assert the **exact resolved literal** instead ("…because 1 server
+  is linked to it…"): it is a true independent oracle (a typo, wrong plural
+  branch, or wrong count fails it) and reads as the sentence the user sees.
+  Confirm the literal by running the test rather than hand-resolving the plural.
+  The same rule applies to flash/notification messages.
 
 The net effect: a change in _behaviour_ (a column drops, a button appears on the
 wrong row, a flash goes missing) fails a test; a change in _markup_ (a restyle,
@@ -1160,6 +1176,18 @@ fn … end)` asserts the function is called exactly `n` times with matching
   above one are normal: a LiveView mounts twice (the disconnected HTTP render,
   then the connected socket), so a value read on every mount is fetched twice.
   Pin the argument too (`fn ^auth -> … end`).
+- **Deep pages with child components: stub the ambient reads, `expect` only the
+  action.** Pinning an exact call count (above) works when a page reads a value
+  a fixed number of times. It breaks down on a page whose eagerly-rendered child
+  `live_component`s also read context: the admin class detail page lists the
+  class students three times per render — its own load plus the delete and
+  import dialogs — and a child notification re-renders the parent, re-firing
+  every child's `update/2`, so the count is variable and not the behaviour under
+  test. There, `stub/3` the ambient reads (a stable canned return) and reserve
+  `expect/4` for the single mutation the test asserts (the `update_class` /
+  `delete_class` call). Corollary: to mount such a page you must satisfy
+  **every** child component's `update/2`, including dialogs you are not testing
+  — stub their reads too so the page renders.
 - **Anonymous access redirects to login.** Use
   `assert_live_anonymous_user_redirected_to_login/2` (in
   [`LiveCase`][live-case]), which covers the no-token, invalid-session-token,
@@ -1215,6 +1243,14 @@ asserted:
   correctly; the full one proves every field (including embeds) is wired. A mock
   matcher that pins only `%{name: …}` is a partial assertion — it lets the other
   fields go unchecked.
+- **Cover an update form with a full _and_ a clear-every-optional submission** —
+  the update analogue of the minimal/full create pair. Submit once changing
+  **every** field, and once **clearing every optional** field (blank the dates,
+  empty the fingerprints), asserting in each the **exact data map the context
+  received**, by equality (captured the same way). The full submission proves
+  every field is wired; the clear submission proves a blanked input serializes
+  to `nil`/`[]` (Ecto casts an empty value to the field default) rather than
+  silently keeping the prior value.
 - **Pin the form's own state by projection.** When a test asserts the form's
   state rather than the context call (e.g. that closing a dialog resets it),
   project the editable field values into a map — input values via

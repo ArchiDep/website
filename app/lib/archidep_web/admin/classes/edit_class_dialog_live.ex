@@ -95,7 +95,8 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
         |> assign(
           form:
             to_form(%Changeset{changeset | errors: changeset.errors ++ result_changeset.errors},
-              as: :class
+              as: :class,
+              action: :update
             )
         )
         |> noreply()
