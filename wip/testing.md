@@ -99,7 +99,7 @@ This is the bird's-eye view: each item links to its full description under
   - [ ] [Admin — ansible views](#admin--ansible-views)
   - [ ] [Admin — top-level shell](#admin--top-level-shell)
   - [ ] [Dashboard](#dashboard)
-  - [ ] [Profile (remainder)](#profile-remainder)
+  - [x] [Profile (remainder)](#profile-remainder)
 - **3. Channels**
   - [ ] 🧭 [Canon + tests — channels](#canon--tests--channels)
 - **4. Plumbing — router, plugs, auth controller**
@@ -1087,6 +1087,22 @@ remains here is any focused, standalone coverage of the `current_sessions_live`
 component not already exercised through the profile page — e.g. the pure
 `expired?/1` / `expires_soon?/1` / `expires_at/1` helpers in isolation. _Scope:_
 1 file.
+
+_Done:_ `current_sessions_live_test.exs` covers the pure threshold helpers
+`expired?/2` and `expires_soon?/2` exhaustively at their boundaries (the `< 0`
+expiry boundary and the `< 2 days` "soon" threshold, each pinned at the
+threshold and one second either side, plus the already-expired case) under plain
+`ExUnit.Case`. `expires_at/1` is **not** re-tested: it delegates to
+`UserSession.expires_at/1`, already covered exhaustively in
+`user_session_test.exs`. The rendered three-state badge wiring stays asserted
+through the profile page's sessions table. The split — full logic/boundaries in
+the isolated helper test, wiring in the page, no re-testing of delegations — is
+now documented as canon under [Pure helpers on a LiveView or
+component](../app/docs/testing.md#pure-helpers-on-a-liveview-or-component). The
+profile-page canon work (shared-fixture overrides, the `{type, message}`
+notification projection via `flash_notifications/1`, the both-principals page
+rule, the static-render assertion, and the dialog `closed` no-op) landed with
+the [web-layer canon task](#canon--web-layer-liveview-test-conventions).
 
 ### Canon + tests — channels
 

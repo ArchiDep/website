@@ -55,6 +55,8 @@ that silently rots.
   - [Mounting, auth, and mocking contexts](#mounting-auth-and-mocking-contexts)
   - [Forms, validation, and interactions](#forms-validation-and-interactions)
   - [Flash, notifications, and PubSub-driven updates](#flash-notifications-and-pubsub-driven-updates)
+  - [Testing components: through the page or in isolation](#testing-components-through-the-page-or-in-isolation)
+  - [Pure helpers on a LiveView or component](#pure-helpers-on-a-liveview-or-component)
 - [Channels](#channels)
 - [Plumbing (router, plugs, auth)](#plumbing-router-plugs-auth)
 - [Helpers & components](#helpers--components)
@@ -1128,9 +1130,23 @@ structural-minimal where we do not.
   `:register_and_log_in_student` (in [`ConnCase`][conn-case]) replace `:conn`
   with an authenticated connection and add `:auth`, `:session`, `:user_account`
   (and `:student` for the student fixture); `conn_with_auth/2` builds one for an
-  explicit session. Drive **each principal the LiveView branches on** (root vs.
-  student, and — where the UI differs — owner vs. other), asserting the
-  projection that distinguishes them, not merely that the page mounts.
+  explicit session. Both fixtures also have a two-argument form
+  (`register_and_log_in_root(context, overrides)`) for use **inside a test**
+  (not as a `setup` hook) when you need to pin specific displayed values: the
+  `overrides` keyword carries `:user_account`, `:session` and (for the student
+  fixture) `:student` keyword lists merged into the respective factory builds.
+  Reach for the override form instead of hand-rolling the whole authenticated
+  graph — pin only the attributes the test asserts (a username, a registration
+  date), and let the factory randomize the rest.
+- **Drive every principal, and test the full page for both.** Drive **each
+  principal the LiveView branches on** (root vs. student, and — where the UI
+  differs — owner vs. other), asserting the projection that distinguishes them.
+  Beyond that, every **full LiveView page** must be tested with **both** a root
+  and a student principal even when the page currently renders identically for
+  them: that the page mounts and renders for each principal is itself the
+  behaviour under test, and pinning it guards the page against a future change
+  that makes it principal-specific. (A component reused across pages need not
+  repeat this if the pages embedding it already cover both principals.)
 - **Mock every context call the mount and interactions make**, and pin the
   **call count**. With `setup :verify_on_exit!`, an `expect(Ctx.Mock, :fun, n,
 fn … end)` asserts the function is called exactly `n` times with matching
@@ -1178,11 +1194,18 @@ asserted:
 
 ### Flash, notifications, and PubSub-driven updates
 
-- **Flash and notifications are exact.** Assert the message string and its
-  `type` (`:success`, `:warning`, `:error`) by equality. When the notification
-  is delivered asynchronously to the socket, `wait_for_socket_assigns!/3` (in
-  [`LiveCase`][live-case]) waits for the flash to match rather than racing on
-  it.
+- **Flash and notifications are exact, asserted by projection.** A notification
+  is a `Flashy.Normal` struct whose `component` field holds a render function,
+  so it cannot be asserted by whole-value `==`; its `{type, message}` is the
+  meaningful, comparable projection (the notification analogue of the
+  DOM-projection discipline). `flash_notifications/1` (in
+  [`LiveCase`][live-case]) returns the current notifications as `{type,
+message}` tuples; assert the **whole list** by equality, message string and
+  `type` (`:success`, `:warning`, `:error`) included. When the notification is
+  delivered asynchronously to the socket, wait for the projection first with
+  `wait_for_socket_assigns!/3` (which accepts the socket assigns, so
+  `&(flash_notifications(&1) == [{:success, msg}])` is a valid predicate) rather
+  than racing on it, then assert `flash_notifications(view)` by equality.
 - **PubSub-driven re-renders are behaviour.** When a LiveView subscribes to a
   topic and updates on a broadcast (the profile page refreshes the student on
   `{:student_updated, …}`), test it: broadcast the message to the topic the
@@ -1190,6 +1213,52 @@ asserted:
   change. These topics are keyed by resource ID, so the assertion is naturally
   selective and safe under `async: true` (see the [business-layer PubSub
   note](#asserting-pubsub-broadcasts) on pinning the ID).
+
+### Testing components: through the page or in isolation
+
+A LiveView component (`live_component`) can be tested through a parent page or
+on its own with `live_isolated/3`. Choose by reuse:
+
+- **Through its parent page** when the component is only ever embedded there and
+  its behaviour is observable in the page's projection — as with
+  `CurrentSessionsLive` on the profile page, whose rendering, `delete_session`
+  event, and `update/2` are all driven via `live(conn, "/profile")`. This tests
+  the real wiring (the assigns the parent passes, the PubSub subscriptions)
+  without `live_isolated` ceremony, and is the default.
+- **In isolation** (`live_isolated/3`) when the component is **reused across
+  multiple pages** — test it once on its own, then assert only a wiring
+  smoke-test in each parent, rather than re-testing the whole component through
+  every page that embeds it — or when its internal branches are awkward to drive
+  through a parent.
+
+Pure helper functions on a component get isolated unit tests regardless of how
+the component itself is tested (see below).
+
+_The `live_isolated/3` mechanics will be settled against a real reviewed example
+when the first genuinely reused component is tested; the principle above is the
+decision rule until then._
+
+### Pure helpers on a LiveView or component
+
+A LiveView or component often exposes pure helper functions that carry real
+logic — a threshold, a branch, a classification (e.g.
+`CurrentSessionsLive.expired?/2` and `expires_soon?/2`, which compare a
+session's expiry against a clock with a `< 0` and a `< 2 days` boundary). Split
+their coverage exactly as the form-schema-vs-LiveView split above:
+
+- **The helper's full logic and boundaries** are pinned in a **focused unit
+  test** of the module (under plain `ExUnit.Case` when the helper touches
+  neither the database nor processes), the same way a schema's changeset rules
+  are pinned in the schema test. Cover each branch and each boundary exactly (at
+  the threshold, one unit either side). See
+  [`current_sessions_live_test.exs`][current-sessions-live-test].
+- **The rendered page asserts only that the helper is wired** — that its
+  resulting states actually appear (the expired / expiring-soon / fine badges in
+  the sessions table), not the boundary matrix.
+- **A helper that merely delegates to an already-tested function is not
+  re-tested.** `CurrentSessionsLive.expires_at/1` just delegates to
+  `UserSession.expires_at/1`, which the schema test already covers exhaustively,
+  so it gets no separate test.
 
 ## Channels
 
@@ -1234,4 +1303,5 @@ function components with the [LazyHTML][lazy-html]-based
 [conn-case]: ../test/support/conn_case.ex
 [html-test-helpers]: ../test/support/html_test_helpers.ex
 [profile-live-test]: ../test/archidep_web/profile/profile_live_test.exs
+[current-sessions-live-test]: ../test/archidep_web/profile/current_sessions_live_test.exs
 [lazy-html]: https://hexdocs.pm/lazy_html

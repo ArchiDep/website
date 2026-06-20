@@ -139,13 +139,24 @@ defmodule ArchiDepWeb.Support.ConnCase do
   Replaces `:conn` in the test context with an authenticated connection and adds
   `:auth`, `:session` and `:user_account`. Use it as
   `setup :register_and_log_in_root`.
+
+  When called directly (rather than as a `setup` hook), `overrides` may carry
+  `:user_account` and `:session` keyword lists that are merged into the
+  respective factory builds — use this to pin specific displayed values (a
+  username, a registration date, an IP address) instead of hand-rolling the
+  whole authenticated graph.
   """
-  @spec register_and_log_in_root(%{:conn => Conn.t(), optional(atom()) => term()}) ::
+  @spec register_and_log_in_root(%{:conn => Conn.t(), optional(atom()) => term()}, keyword()) ::
           logged_in_context()
-  def register_and_log_in_root(%{conn: conn}) do
-    :user_account
-    |> AccountsFactory.build(root: true, active: true)
-    |> log_in_user_account(conn)
+  def register_and_log_in_root(context, overrides \\ [])
+
+  def register_and_log_in_root(%{conn: conn}, overrides) when is_list(overrides) do
+    {user_account_overrides, session_overrides} = split_login_overrides(overrides)
+
+    [root: true, active: true]
+    |> Keyword.merge(user_account_overrides)
+    |> then(&AccountsFactory.build(:user_account, &1))
+    |> log_in_user_account(conn, session_overrides)
   end
 
   @doc """
@@ -155,31 +166,57 @@ defmodule ArchiDepWeb.Support.ConnCase do
   Replaces `:conn` in the test context with an authenticated connection and adds
   `:auth`, `:session`, `:user_account`, `:student` and `:preregistered_user`.
   Use it as `setup :register_and_log_in_student`.
+
+  When called directly (rather than as a `setup` hook), `overrides` may carry
+  `:user_account`, `:student` and `:session` keyword lists that are merged into
+  the respective factory builds.
   """
-  @spec register_and_log_in_student(%{:conn => Conn.t(), optional(atom()) => term()}) ::
-          logged_in_student_context()
-  def register_and_log_in_student(%{conn: conn}) do
-    student = CourseFactory.build(:student, user: nil)
+  @spec register_and_log_in_student(
+          %{:conn => Conn.t(), optional(atom()) => term()},
+          keyword()
+        ) :: logged_in_student_context()
+  def register_and_log_in_student(context, overrides! \\ [])
+
+  def register_and_log_in_student(%{conn: conn}, overrides!) when is_list(overrides!) do
+    {student_overrides, overrides!} = Keyword.pop(overrides!, :student, [])
+    {user_account_overrides, session_overrides} = split_login_overrides(overrides!)
+
+    student = CourseFactory.build(:student, Keyword.merge([user: nil], student_overrides))
     preregistered_user = AccountsFactory.build(:preregistered_user, id: student.id)
 
     user_account =
-      AccountsFactory.build(:user_account,
-        root: false,
-        active: true,
-        preregistered_user: preregistered_user
+      AccountsFactory.build(
+        :user_account,
+        Keyword.merge(
+          [root: false, active: true, preregistered_user: preregistered_user],
+          user_account_overrides
+        )
       )
 
     user_account
-    |> log_in_user_account(conn)
+    |> log_in_user_account(conn, session_overrides)
     |> Map.merge(%{student: student, preregistered_user: preregistered_user})
   end
 
-  defp log_in_user_account(user_account, conn) do
+  defp split_login_overrides(overrides!) do
+    {user_account_overrides, overrides!} = Keyword.pop(overrides!, :user_account, [])
+    {session_overrides, overrides!} = Keyword.pop(overrides!, :session, [])
+    [] = Keyword.keys(overrides!)
+    {user_account_overrides, session_overrides}
+  end
+
+  defp log_in_user_account(user_account, conn, session_overrides) do
     session =
-      AccountsFactory.build(:user_session,
-        user_account: user_account,
-        client_user_agent: Factory.user_agent(),
-        impersonated_user_account: nil
+      AccountsFactory.build(
+        :user_session,
+        Keyword.merge(
+          [
+            user_account: user_account,
+            client_user_agent: Factory.user_agent(),
+            impersonated_user_account: nil
+          ],
+          session_overrides
+        )
       )
 
     conn_with_auth(conn, session: session)

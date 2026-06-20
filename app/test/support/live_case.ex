@@ -123,4 +123,50 @@ defmodule ArchiDepWeb.Support.LiveCase do
           fn state -> fun.(state.socket.assigns) end,
           "socket assigns never matched #{description}"
         )
+
+  @doc """
+  Returns the notifications currently in the live view's flash, projected to
+  `{type, message}` tuples ordered by flash key.
+
+  A flash notification is a `Flashy.Normal` struct whose `component` field holds
+  a render function, so it cannot be asserted by whole-value equality; its
+  `{type, message}` is the meaningful projection (mirroring the DOM-projection
+  discipline of the web layer).
+
+  Notifications sent to the socket are delivered asynchronously, so wait for one
+  to arrive with `wait_for_socket_assigns!/3` and `has_flash_notification?/2`,
+  then assert the full projection by equality:
+
+      wait_for_socket_assigns!(view, &has_flash_notification?(&1, :success), "deleted")
+      assert flash_notifications(view) == [{:success, "Deleted session"}]
+
+  Accepts either a `Phoenix.LiveViewTest.View` or a map of socket assigns (the
+  latter for use inside a `wait_for_socket_assigns!/3` predicate).
+  """
+  @spec flash_notifications(struct() | map()) :: [{atom(), String.t()}]
+  def flash_notifications(view) when is_struct(view, View),
+    do: flash_notifications(:sys.get_state(view.pid).socket.assigns)
+
+  def flash_notifications(assigns) when is_map(assigns),
+    do:
+      assigns.flash
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.map(fn {_key, notification} -> {notification.type, notification.message} end)
+
+  @doc """
+  Indicates whether the live view's flash currently holds a notification of the
+  given type (`:success`, `:warning`, `:error`).
+
+  Intended as a loose wait condition for `wait_for_socket_assigns!/3` — wait for
+  the notification to arrive, then assert its exact `{type, message}` projection
+  with `flash_notifications/1`.
+
+  Accepts either a `Phoenix.LiveViewTest.View` or a map of socket assigns.
+  """
+  @spec has_flash_notification?(struct() | map(), atom()) :: boolean()
+  def has_flash_notification?(view_or_assigns, type) when is_atom(type),
+    do:
+      Enum.any?(flash_notifications(view_or_assigns), fn {notification_type, _message} ->
+        notification_type == type
+      end)
 end

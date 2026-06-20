@@ -22,21 +22,40 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   setup :verify_on_exit!
 
   describe "as a root user" do
-    setup :register_and_log_in_root
+    setup do
+      stub(ArchiDep.Clock.Mock, :now, fn -> @now end)
+      :ok
+    end
 
-    test "show the profile page", %{
-      conn: conn,
-      auth: auth,
-      session: session,
-      user_account: user_account
-    } do
-      expect(Accounts.ContextMock, :user_account, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, fn ^auth -> [session] end)
+    test "render the profile page over a static (disconnected) request", %{conn: conn} do
+      %{conn: conn, auth: auth, session: session, user_account: user_account} =
+        register_and_log_in_root(%{conn: conn},
+          user_account: [username: "alice", switch_edu_id: nil, created_at: @registered_at],
+          session: [
+            created_at: DateTime.add(@now, -10, :day),
+            client_ip_address: "1.2.3.4",
+            client_user_agent: @firefox_user_agent
+          ]
+        )
 
-      conn
-      |> get(@path)
-      |> html_response(200)
-      |> assert_html_title("Profile · ArchiDep")
+      expect_profile_page_calls(auth, mounts: 1, user_account: user_account, sessions: [session])
+
+      html =
+        conn
+        |> get(@path)
+        |> html_response(200)
+
+      assert_html_title(html, "Profile · ArchiDep")
+
+      assert data_display_rows(html) == [
+               {"Account username", "alice", []},
+               @registration_row
+             ]
+
+      assert current_sessions_table(html) == [
+               {"Tue, June 09, 2026 at 12:00:00", @current_session_text, {:ok, "20 days"},
+                "1.2.3.4", "Firefox on Mac", :none}
+             ]
     end
   end
 
@@ -104,8 +123,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       %{conn: conn, auth: auth} = conn_with_auth(conn, session: current_session)
 
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> sessions end)
+      expect_profile_page_calls(auth, user_account: user_account, sessions: sessions)
 
       {:ok, _view, html} = live(conn, @path)
 
@@ -145,11 +163,10 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       %{conn: conn, auth: auth} = conn_with_auth(conn, session: current_session)
 
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth ->
-        [current_session, other_session]
-      end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [current_session, other_session]
+      )
 
       {:ok, view, html} = live(conn, @path)
 
@@ -175,9 +192,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       wait_for_socket_assigns!(
         view,
-        &match?([%{message: ^deleted, type: :success}], Map.values(&1.flash)),
+        &has_flash_notification?(&1, :success),
         "deleted session notification"
       )
+
+      assert flash_notifications(view) == [{:success, deleted}]
     end
 
     test "show a notification when deleting a session that no longer exists", %{conn: conn} do
@@ -203,11 +222,10 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       %{conn: conn, auth: auth} = conn_with_auth(conn, session: current_session)
 
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth ->
-        [current_session, other_session]
-      end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [current_session, other_session]
+      )
 
       {:ok, view, _html} = live(conn, @path)
 
@@ -229,9 +247,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       wait_for_socket_assigns!(
         view,
-        &match?([%{message: ^gone, type: :warning}], Map.values(&1.flash)),
+        &has_flash_notification?(&1, :warning),
         "session no longer exists notification"
       )
+
+      assert flash_notifications(view) == [{:warning, gone}]
     end
 
     test "render the sessions table for a student", %{conn: conn} do
@@ -249,9 +269,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       %{conn: conn, auth: auth} = conn_with_auth(conn, session: current_session)
 
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [current_session] end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [current_session],
+        student: student
+      )
 
       {:ok, _view, html} = live(conn, @path)
 
@@ -274,9 +296,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     } do
       student = %{student | username_confirmed: false}
 
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [session],
+        student: student
+      )
 
       {:ok, view, _html} = live(conn, @path)
 
@@ -293,9 +317,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
       student = %{student | username_confirmed: true, username: "current-name"}
       id = student.id
 
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [session],
+        student: student
+      )
 
       expect(Course.ContextMock, :validate_student_config, fn ^auth,
                                                               ^id,
@@ -342,9 +368,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
       id = student.id
       configured_student = %{student | username: "new-name"}
 
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [session],
+        student: student
+      )
 
       expect(Course.ContextMock, :configure_student, fn ^auth, ^id, %{username: "new-name"} ->
         {:ok, configured_student}
@@ -368,9 +396,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       wait_for_socket_assigns!(
         view,
-        &match?([%{message: ^notification, type: :success}], Map.values(&1.flash)),
+        &has_flash_notification?(&1, :success),
         "username changed notification"
       )
+
+      assert flash_notifications(view) == [{:success, notification}]
 
       assert has_element?(view, ~s(##{@change_username_dialog_id} input[value="new-name"]))
     end
@@ -385,9 +415,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
       student = %{student | username_confirmed: true, username: "current-name"}
       id = student.id
 
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [session],
+        student: student
+      )
 
       expect(Course.ContextMock, :configure_student, fn ^auth, ^id, %{username: "taken"} ->
         student
@@ -407,35 +439,52 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
       refute_push_event(view, "execute-action", %{action: "close"})
     end
+
+    test "closing the dialog backdrop changes nothing", %{
+      conn: conn,
+      auth: auth,
+      session: session,
+      user_account: user_account,
+      student: student
+    } do
+      student = %{student | username_confirmed: true, username: "current-name"}
+
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [session],
+        student: student
+      )
+
+      {:ok, view, _html} = live(conn, @path)
+
+      assert view
+             |> element(~s(##{@change_username_dialog_id} form.modal-backdrop))
+             |> render_click()
+             |> change_username_errors() == []
+
+      assert has_element?(view, ~s(##{@change_username_dialog_id} input[value="current-name"]))
+      refute_push_event(view, "execute-action", %{})
+      assert flash_notifications(view) == []
+    end
   end
 
   describe "profile data display" do
     test "render the data display for a root user with a Switch edu-ID", %{conn: conn} do
-      user_account =
-        AccountsFactory.build(:user_account,
-          root: true,
-          active: true,
-          username: "alice",
-          switch_edu_id:
-            AccountsFactory.build(:switch_edu_id,
-              first_name: "Jane",
-              last_name: "Doe",
-              swiss_edu_person_unique_id: "swiss-id-123"
-            ),
-          created_at: @registered_at
+      %{conn: conn, auth: auth, session: session, user_account: user_account} =
+        register_and_log_in_root(%{conn: conn},
+          user_account: [
+            username: "alice",
+            switch_edu_id:
+              AccountsFactory.build(:switch_edu_id,
+                first_name: "Jane",
+                last_name: "Doe",
+                swiss_edu_person_unique_id: "swiss-id-123"
+              ),
+            created_at: @registered_at
+          ]
         )
 
-      session =
-        AccountsFactory.build(:user_session,
-          user_account: user_account,
-          client_user_agent: "Mozilla/5.0",
-          impersonated_user_account: nil
-        )
-
-      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
-
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect_profile_page_calls(auth, user_account: user_account, sessions: [session])
 
       {:ok, _view, html} = live(conn, @path)
 
@@ -448,26 +497,12 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
 
     test "render the data display for a root user without a Switch edu-ID", %{conn: conn} do
-      user_account =
-        AccountsFactory.build(:user_account,
-          root: true,
-          active: true,
-          username: "alice",
-          switch_edu_id: nil,
-          created_at: @registered_at
+      %{conn: conn, auth: auth, session: session, user_account: user_account} =
+        register_and_log_in_root(%{conn: conn},
+          user_account: [username: "alice", switch_edu_id: nil, created_at: @registered_at]
         )
 
-      session =
-        AccountsFactory.build(:user_session,
-          user_account: user_account,
-          client_user_agent: "Mozilla/5.0",
-          impersonated_user_account: nil
-        )
-
-      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
-
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect_profile_page_calls(auth, user_account: user_account, sessions: [session])
 
       {:ok, _view, html} = live(conn, @path)
 
@@ -478,31 +513,21 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
 
     test "render the data display for a root user whose Switch edu-ID has no name", %{conn: conn} do
-      user_account =
-        AccountsFactory.build(:user_account,
-          root: true,
-          active: true,
-          username: "alice",
-          switch_edu_id:
-            AccountsFactory.build(:switch_edu_id,
-              first_name: nil,
-              last_name: nil,
-              swiss_edu_person_unique_id: "swiss-id-123"
-            ),
-          created_at: @registered_at
+      %{conn: conn, auth: auth, session: session, user_account: user_account} =
+        register_and_log_in_root(%{conn: conn},
+          user_account: [
+            username: "alice",
+            switch_edu_id:
+              AccountsFactory.build(:switch_edu_id,
+                first_name: nil,
+                last_name: nil,
+                swiss_edu_person_unique_id: "swiss-id-123"
+              ),
+            created_at: @registered_at
+          ]
         )
 
-      session =
-        AccountsFactory.build(:user_session,
-          user_account: user_account,
-          client_user_agent: "Mozilla/5.0",
-          impersonated_user_account: nil
-        )
-
-      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
-
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect_profile_page_calls(auth, user_account: user_account, sessions: [session])
 
       {:ok, _view, html} = live(conn, @path)
 
@@ -514,39 +539,30 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
 
     test "render the data display for a student with a confirmed username", %{conn: conn} do
-      user_account =
-        AccountsFactory.build(:user_account,
-          root: false,
-          active: true,
-          username: "alice",
-          switch_edu_id:
-            AccountsFactory.build(:switch_edu_id,
-              first_name: "Jane",
-              last_name: "Doe",
-              swiss_edu_person_unique_id: "swiss-id-123"
-            ),
-          created_at: @registered_at
+      %{conn: conn, auth: auth, session: session, user_account: user_account, student: student} =
+        register_and_log_in_student(%{conn: conn},
+          user_account: [
+            username: "alice",
+            switch_edu_id:
+              AccountsFactory.build(:switch_edu_id,
+                first_name: "Jane",
+                last_name: "Doe",
+                swiss_edu_person_unique_id: "swiss-id-123"
+              ),
+            created_at: @registered_at
+          ],
+          student: [
+            username: "current-name",
+            username_confirmed: true,
+            email: "student@example.com"
+          ]
         )
 
-      student =
-        CourseFactory.build(:student,
-          username: "current-name",
-          username_confirmed: true,
-          email: "student@example.com"
-        )
-
-      session =
-        AccountsFactory.build(:user_session,
-          user_account: user_account,
-          client_user_agent: "Mozilla/5.0",
-          impersonated_user_account: nil
-        )
-
-      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
-
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [session],
+        student: student
+      )
 
       {:ok, _view, html} = live(conn, @path)
 
@@ -560,39 +576,30 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
 
     test "render the data display for a student with an unconfirmed username", %{conn: conn} do
-      user_account =
-        AccountsFactory.build(:user_account,
-          root: false,
-          active: true,
-          username: "alice",
-          switch_edu_id:
-            AccountsFactory.build(:switch_edu_id,
-              first_name: "Jane",
-              last_name: "Doe",
-              swiss_edu_person_unique_id: "swiss-id-123"
-            ),
-          created_at: @registered_at
+      %{conn: conn, auth: auth, session: session, user_account: user_account, student: student} =
+        register_and_log_in_student(%{conn: conn},
+          user_account: [
+            username: "alice",
+            switch_edu_id:
+              AccountsFactory.build(:switch_edu_id,
+                first_name: "Jane",
+                last_name: "Doe",
+                swiss_edu_person_unique_id: "swiss-id-123"
+              ),
+            created_at: @registered_at
+          ],
+          student: [
+            username: "current-name",
+            username_confirmed: false,
+            email: "student@example.com"
+          ]
         )
 
-      student =
-        CourseFactory.build(:student,
-          username: "current-name",
-          username_confirmed: false,
-          email: "student@example.com"
-        )
-
-      session =
-        AccountsFactory.build(:user_session,
-          user_account: user_account,
-          client_user_agent: "Mozilla/5.0",
-          impersonated_user_account: nil
-        )
-
-      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
-
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [session],
+        student: student
+      )
 
       {:ok, _view, html} = live(conn, @path)
 
@@ -605,26 +612,12 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
 
     test "hide the account username row when the account has no username", %{conn: conn} do
-      user_account =
-        AccountsFactory.build(:user_account,
-          root: true,
-          active: true,
-          username: nil,
-          switch_edu_id: nil,
-          created_at: @registered_at
+      %{conn: conn, auth: auth, session: session, user_account: user_account} =
+        register_and_log_in_root(%{conn: conn},
+          user_account: [username: nil, switch_edu_id: nil, created_at: @registered_at]
         )
 
-      session =
-        AccountsFactory.build(:user_session,
-          user_account: user_account,
-          client_user_agent: "Mozilla/5.0",
-          impersonated_user_account: nil
-        )
-
-      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
-
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
+      expect_profile_page_calls(auth, user_account: user_account, sessions: [session])
 
       {:ok, _view, html} = live(conn, @path)
 
@@ -634,40 +627,31 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
 
   describe "profile student updates" do
     test "re-render the data display when the student is updated", %{conn: conn} do
-      user_account =
-        AccountsFactory.build(:user_account,
-          root: false,
-          active: true,
-          username: "alice",
-          switch_edu_id:
-            AccountsFactory.build(:switch_edu_id,
-              first_name: "Jane",
-              last_name: "Doe",
-              swiss_edu_person_unique_id: "swiss-id-123"
-            ),
-          created_at: @registered_at
+      %{conn: conn, auth: auth, session: session, user_account: user_account, student: student} =
+        register_and_log_in_student(%{conn: conn},
+          user_account: [
+            username: "alice",
+            switch_edu_id:
+              AccountsFactory.build(:switch_edu_id,
+                first_name: "Jane",
+                last_name: "Doe",
+                swiss_edu_person_unique_id: "swiss-id-123"
+              ),
+            created_at: @registered_at
+          ],
+          student: [
+            username: "current-name",
+            username_confirmed: true,
+            email: "student@example.com",
+            user: CourseFactory.build(:user)
+          ]
         )
 
-      student =
-        CourseFactory.build(:student,
-          username: "current-name",
-          username_confirmed: true,
-          email: "student@example.com",
-          user: CourseFactory.build(:user)
-        )
-
-      session =
-        AccountsFactory.build(:user_session,
-          user_account: user_account,
-          client_user_agent: "Mozilla/5.0",
-          impersonated_user_account: nil
-        )
-
-      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
-
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [session],
+        student: student
+      )
 
       {:ok, view, html} = live(conn, @path)
 
@@ -694,40 +678,31 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     end
 
     test "reveal the username row when the student confirms their username", %{conn: conn} do
-      user_account =
-        AccountsFactory.build(:user_account,
-          root: false,
-          active: true,
-          username: "alice",
-          switch_edu_id:
-            AccountsFactory.build(:switch_edu_id,
-              first_name: "Jane",
-              last_name: "Doe",
-              swiss_edu_person_unique_id: "swiss-id-123"
-            ),
-          created_at: @registered_at
+      %{conn: conn, auth: auth, session: session, user_account: user_account, student: student} =
+        register_and_log_in_student(%{conn: conn},
+          user_account: [
+            username: "alice",
+            switch_edu_id:
+              AccountsFactory.build(:switch_edu_id,
+                first_name: "Jane",
+                last_name: "Doe",
+                swiss_edu_person_unique_id: "swiss-id-123"
+              ),
+            created_at: @registered_at
+          ],
+          student: [
+            username: "current-name",
+            username_confirmed: false,
+            email: "student@example.com",
+            user: CourseFactory.build(:user)
+          ]
         )
 
-      student =
-        CourseFactory.build(:student,
-          username: "current-name",
-          username_confirmed: false,
-          email: "student@example.com",
-          user: CourseFactory.build(:user)
-        )
-
-      session =
-        AccountsFactory.build(:user_session,
-          user_account: user_account,
-          client_user_agent: "Mozilla/5.0",
-          impersonated_user_account: nil
-        )
-
-      %{conn: conn, auth: auth} = conn_with_auth(conn, session: session)
-
-      expect(Accounts.ContextMock, :user_account, 2, fn ^auth -> user_account end)
-      expect(Accounts.ContextMock, :fetch_active_sessions, 2, fn ^auth -> [session] end)
-      expect(Course.ContextMock, :fetch_authenticated_student, 4, fn ^auth -> {:ok, student} end)
+      expect_profile_page_calls(auth,
+        user_account: user_account,
+        sessions: [session],
+        student: student
+      )
 
       {:ok, view, html} = live(conn, @path)
 
@@ -757,6 +732,34 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     conn: conn
   } do
     assert_live_anonymous_user_redirected_to_login(conn, @path)
+  end
+
+  # Sets up the context mocks the profile page reads on mount. The page fetches
+  # the authenticated account and its active sessions on every mount, and a
+  # LiveView mounts twice — the disconnected HTTP render, then the connected
+  # socket — so each read is expected twice (pass `mounts: 1` for a static
+  # `get/2` request, which mounts once). When a `:student` is given, the
+  # authenticated student is fetched both by the `LiveAuth` on-mount hook and by
+  # the LiveView itself, hence twice per mount.
+  defp expect_profile_page_calls(auth, opts) do
+    mounts = Keyword.get(opts, :mounts, 2)
+    user_account = Keyword.fetch!(opts, :user_account)
+    sessions = Keyword.fetch!(opts, :sessions)
+
+    expect(Accounts.ContextMock, :user_account, mounts, fn ^auth -> user_account end)
+    expect(Accounts.ContextMock, :fetch_active_sessions, mounts, fn ^auth -> sessions end)
+
+    case Keyword.fetch(opts, :student) do
+      {:ok, student} ->
+        expect(Course.ContextMock, :fetch_authenticated_student, 2 * mounts, fn ^auth ->
+          {:ok, student}
+        end)
+
+      :error ->
+        :ok
+    end
+
+    :ok
   end
 
   defp current_sessions_table(html) do
