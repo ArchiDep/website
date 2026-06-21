@@ -90,7 +90,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
   - [ ] [Servers web — server detail & dialogs (remainder)](#servers-web--server-detail--dialogs-remainder)
   - [ ] [Servers web — forms & components](#servers-web--forms--components)
-  - [ ] [Servers web — controllers & retry handlers](#servers-web--controllers--retry-handlers)
+  - [x] [Servers web — controllers & retry handlers](#servers-web--controllers--retry-handlers)
   - [ ] [Admin — classes list/detail + class dialogs](#admin--classes-listdetail--class-dialogs)
   - [x] [Admin — class form components](#admin--class-form-components)
   - [ ] [Admin — students list + student dialogs](#admin--students-list--student-dialogs)
@@ -1058,6 +1058,37 @@ purely by the Hammox-mocked `Course` context with no runtime coupling.
 
 `server_callbacks_controller` (ConnCase request tests), `server_retry_handlers`.
 _Scope:_ 2 files.
+
+_Done:_ both covered (`servers/server_callbacks_controller_test.exs`,
+`servers/server_retry_handlers_test.exs`), each at 100%. The controller test is
+the suite's first non-trivial **controller request test** (beyond the minimal
+`page_controller_test.exs`): it drives the public `POST
+/api/callbacks/servers/:server_id/up` webhook with verified routes, asserting
+the response status **and** the empty body, and pinning the
+`Servers.notify_server_up` mock interaction by `==` — including the bearer-token
+branches (missing / malformed / multiple `authorization` headers), where setting
+**no** mock expectation makes `verify_on_exit!` prove the notification is never
+attempted. The retry-handler test exercises the three handlers as isolated
+socket transformers: it builds a minimal `%Phoenix.LiveView.Socket{}` with
+`auth` + an empty `flash` and asserts the **whole** returned socket by equality
+— the flash through the existing `LiveCase.flash_notifications/1` projection and
+everything else (other assigns, `redirected`, pushed events) compared directly,
+with only the framework's flash bookkeeping (`assigns.__changed__` and
+`private.live_temp[:flash]`) normalized away — so a stray assign, redirect or
+push would fail the test. Each mocked context call is pinned by `==`. The
+controller request-test shape is kept as a single in-file comment (one
+consumer); promote to the controller subsection of `docs/testing.md` when a
+second controller chunk (`classes_controller`, the auth controller) reuses it.
+_Latent bug found and fixed (flag for review):_ none of the three retry handlers
+handled the `{:error, :server_not_found}` their context functions declare —
+`handle_retry_connecting_event` did a bare `:ok = …` match (crashing with a
+`MatchError`) and the ansible / open-ports `case` blocks omitted the clause
+(crashing with a `CaseClauseError`); since the `server_id` comes from a rendered
+page, a server deleted between render and the retry click crashed the live view.
+All three now handle it consistently with a graceful error notification ("Cannot
+retry because the server no longer exists."), each covered by a test. No clock
+gap (these handlers stamp no time). _Coverage ratchet:_ with the suite at 61.4%,
+`coveralls.json`'s `minimum_coverage` was bumped 58 → 60.
 
 ### Admin — classes list/detail + class dialogs
 

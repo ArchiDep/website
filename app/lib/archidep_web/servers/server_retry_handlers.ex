@@ -17,8 +17,13 @@ defmodule ArchiDepWeb.Servers.ServerRetryHandlers do
         %Socket{assigns: %{auth: auth}} = socket,
         server_id
       ) do
-    :ok = Servers.retry_connecting(auth, server_id)
-    noreply(socket)
+    case Servers.retry_connecting(auth, server_id) do
+      :ok ->
+        noreply(socket)
+
+      {:error, :server_not_found} ->
+        server_not_found(socket)
+    end
   end
 
   @spec handle_retry_ansible_playbook_event(
@@ -35,6 +40,9 @@ defmodule ArchiDepWeb.Servers.ServerRetryHandlers do
     case Servers.retry_ansible_playbook(auth, server_id, playbook) do
       :ok ->
         noreply(socket)
+
+      {:error, :server_not_found} ->
+        server_not_found(socket)
 
       {:error, :server_not_connected} ->
         server_not_connected(socket)
@@ -53,6 +61,9 @@ defmodule ArchiDepWeb.Servers.ServerRetryHandlers do
       :ok ->
         noreply(socket)
 
+      {:error, :server_not_found} ->
+        server_not_found(socket)
+
       {:error, :server_not_connected} ->
         server_not_connected(socket)
 
@@ -60,6 +71,17 @@ defmodule ArchiDepWeb.Servers.ServerRetryHandlers do
         server_is_busy(socket)
     end
   end
+
+  defp server_not_found(socket),
+    do:
+      socket
+      |> put_notification(
+        Message.new(
+          :error,
+          gettext("Cannot retry because the server no longer exists.")
+        )
+      )
+      |> noreply()
 
   defp server_not_connected(socket),
     do:
