@@ -95,7 +95,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Admin — class form components](#admin--class-form-components)
   - [ ] [Admin — students list + student dialogs](#admin--students-list--student-dialogs)
   - [x] [Admin — student form components](#admin--student-form-components)
-  - [ ] [Admin — events views](#admin--events-views)
+  - [x] [Admin — events views](#admin--events-views)
   - [ ] [Admin — ansible views](#admin--ansible-views)
   - [ ] [Admin — top-level shell](#admin--top-level-shell)
   - [ ] [Dashboard](#dashboard)
@@ -1214,6 +1214,45 @@ threshold](#lock-the-global-threshold).
 ### Admin — events views
 
 `event_live`, `event_log_live`, `events_components`. _Scope:_ 3 files.
+
+_Done:_ all three covered, the first unblocked admin chunk after the classes
+work (the servers/students/ansible/dashboard pages are blocked on a
+`ServerTracker`/`Tracker`/wall-clock seam; the events pages read only the
+fully-mocked `Events` context). `events_components_test.exs` covers the three
+presentational helpers (`event_context`/`event_action`/`event_entity`) **in
+isolation** with `render_component/2` — they are reused across both event pages
+and classify by `StoredEvent.type`/`.entity`, so each documented branch is
+pinned by a `{text, sorted-class-tokens}` (or `{text, wrapper-class-tokens}`)
+whole-value projection; the fallback's literal `class="badge badge"` is asserted
+faithfully rather than deduplicated. `event_log_live_test.exs` settles a
+**cursor-paginated list page**: every test asserts one whole-page projection
+(`%{rows, pagination}` — the table plus the first/previous/next control
+visibility and the end-of-timeline message), and the `fetch_events` cursor for
+each request is pinned **exactly in the mock matcher** (`[limit: 50]` at
+first/reset, `[limit: 50, older_than: {id, occurred_at}]` on next, `newer_than`
+on previous), so a wrong request fails the call rather than going unobserved. A
+full page is built from interchangeable events (the rendered table is the same
+row repeated `@limit` times, the per-page timestamp telling one full page from
+the next across a navigation), which keeps the whole-table assertion exact
+without hand-listing 50 rows. `event_live_test.exs` covers the detail page with
+a single whole-page projection too (`%{data_display, data, metadata}`): the
+`data_display` rows whole — context/cause cells projected as their badge-label
+lists since adjacent badges render with no separating text, and each cause cell
+additionally carrying its link target — plus the `Jason`-pretty data/metadata
+panels. It also pins the `Task.await_many` immediate/root-cause fetches, the
+self-cause skip (an exact two-call `fetch_event` count, proving the related
+fetches are elided), and the not-found redirect to `/admin/events`.
+
+No latent bugs or clock gaps surfaced (these are read-only pages over a mocked
+context). The cursor-pagination conventions were left as in-file comments rather
+than promoted to `docs/testing.md`: the pattern lives in exactly one page today,
+so per the existing meta-rule (lift a pattern into the canon only when a second
+consumer adopts it) it stays local until a second paginated page lands. One
+reachable-subset decision: `paginate_events`'s `{:next, nil, nil}` clause is
+unreachable through the UI (an empty first page sets `end_of_timeline?`, hiding
+the next control), so it is left uncovered as a defensive guard. _Coverage
+ratchet:_ with the suite at 60.9%, `coveralls.json`'s `minimum_coverage` was
+bumped 55 → 58.
 
 ### Admin — ansible views
 
