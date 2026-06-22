@@ -1054,6 +1054,43 @@ purely by the Hammox-mocked `Course` context with no runtime coupling.
 `server_form`, `server_form_component`, `server_properties_form`,
 `server_components`, `server_help_component`. _Scope:_ 5 files.
 
+_Done (part 1) — the two embedded form schemas:_ `server_form_test.exs` and
+`server_properties_form_test.exs` cover `ServerForm` and `ServerPropertiesForm`
+exhaustively under `DataCase` (pure embedded changesets — no rows written), the
+direct analogue of the [class form components](#admin--class-form-components)
+and [student form components](#admin--student-form-components) siblings. Both
+source files are at 100%. `ServerForm` follows the settled canon: the shared
+cast/value rules (invalid `ssh_port`, invalid `active`, the nested
+`expected_properties` error, accumulation) are written once and generated for
+both `create_changeset/2` and `update_changeset/2` via `for variant <- [:create,
+:update]` + `unquote` dispatching through a private `changeset/2`; the
+**auth-conditional required fields** are the one novel branch (`group_id` is
+required only for a root caller, asserted by the whole `errors_on` map for a
+non-root vs. root auth); and each builder's effect is pinned as the **whole
+applied struct** via `Changeset.apply_changes/1` (create minimal/full, update
+update-everything/ clear-every-optional, with the seeded `group_id` retained
+since it is not in the update cast list, and the seeded `expected_properties`
+reconstructed through `ServerPropertiesForm.from/1`). `to_create_data/1` (group
+dropped, the nil → `%{}` branch), `to_update_data/1` (group retained), and
+`blank_changeset/0` are pinned by whole-value equality. `ServerPropertiesForm`
+covers `changeset/2` (cast + the invalid-integer branch), both `from/1`
+overloads (from an `ExpectedServerProperties` and a `ServerProperties`, the only
+place each is exercised), and `to_data/1`. No latent bugs or clock gap surfaced
+— these form schemas have no `timestamps()` and no `DateTime.utc_now/0` call.
+
+_Remaining (box left open):_ the three presentational components.
+`server_form_component` is a pure presentational function component (no logic),
+deferred-to-page per the "Components: Through the Page or In Isolation" canon —
+it lands with the servers-web pages once the `ServerTrackerClient` seam exists
+(see [Servers web — server detail & dialogs
+(remainder)](#servers-web--server-detail--dialogs-remainder)). `server_components`
+and `server_help_component` carry real logic (problem classification, status/badge
+text, state predicates) but are likewise rendered only through the
+seam-blocked servers-web pages, and `server_components` additionally has a direct
+`DateTime.utc_now/0` call (a wall-clock gap to fix when it is covered); both stay
+deferred until the seam lands. _Coverage ratchet:_ with the suite at 61.9%,
+`coveralls.json`'s `minimum_coverage` was bumped 60 → 61.
+
 ### Servers web — controllers & retry handlers
 
 `server_callbacks_controller` (ConnCase request tests), `server_retry_handlers`.
