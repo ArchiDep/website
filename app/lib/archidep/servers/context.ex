@@ -22,6 +22,7 @@ defmodule ArchiDep.Servers.Context do
   implement(&Behaviour.list_server_group_members/2, UseCases.ReadServerGroups)
 
   implement(&Behaviour.fetch_authenticated_server_group_member/1, UseCases.ReadServerGroups)
+  implement(&Behaviour.fetch_authenticated_server_owner/1, UseCases.ReadServerGroups)
 
   # Servers
   # =======

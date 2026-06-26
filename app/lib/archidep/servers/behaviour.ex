@@ -7,6 +7,7 @@ defmodule ArchiDep.Servers.Behaviour do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Types
 
   # Server groups
@@ -59,6 +60,11 @@ defmodule ArchiDep.Servers.Behaviour do
     fetch_authenticated_server_group_member(auth: Authentication.t()) ::
       {:ok, ServerGroupMember.t()} | {:error, :not_a_server_group_member}
   )
+
+  @doc """
+  Fetches the authenticated principal as a server owner.
+  """
+  callback(fetch_authenticated_server_owner(auth: Authentication.t()) :: ServerOwner.t())
 
   # Servers
   # =======

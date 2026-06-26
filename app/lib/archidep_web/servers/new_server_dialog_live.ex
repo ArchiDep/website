@@ -26,7 +26,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
   def update(assigns, socket) do
     auth = assigns.auth
 
-    owner = ServerOwner.fetch_authenticated(auth)
+    owner = Servers.fetch_authenticated_server_owner(auth)
 
     socket
     |> assign(assigns)

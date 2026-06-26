@@ -7,7 +7,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
   alias ArchiDep.Servers
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerTracking.ServerTracker
+  alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
   @impl LiveView
@@ -34,7 +34,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
 
         :ok = PubSub.subscribe_server_created()
 
-        {:ok, pid} = ServerTracker.start_link(servers)
+        {:ok, pid} = ServerTrackerClient.start_link(servers)
         pid
       else
         nil
@@ -43,7 +43,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
     socket
     |> assign(
       servers: servers,
-      server_state_map: ServerTracker.server_state_map(servers),
+      server_state_map: ServerTrackerClient.server_state_map(servers),
       server_tracker: tracker,
       groups: groups
     )
@@ -65,7 +65,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
       do:
         socket
         |> assign(
-          server_state_map: ServerTracker.update_server_state_map(server_state_map, update)
+          server_state_map: ServerTrackerClient.update_server_state_map(server_state_map, update)
         )
         |> noreply()
 
@@ -87,9 +87,9 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
     |> assign(
       servers: sort_servers([created_server | servers]),
       server_state_map:
-        ServerTracker.update_server_state_map(
+        ServerTrackerClient.update_server_state_map(
           server_state_map,
-          ServerTracker.track(tracker, created_server)
+          ServerTrackerClient.track(tracker, created_server)
         )
     )
     |> noreply()
@@ -137,9 +137,9 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
     |> assign(
       servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
       server_state_map:
-        ServerTracker.update_server_state_map(
+        ServerTrackerClient.update_server_state_map(
           server_state_map,
-          ServerTracker.untrack(tracker, server)
+          ServerTrackerClient.untrack(tracker, server)
         )
     )
     |> noreply()

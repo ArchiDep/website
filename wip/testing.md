@@ -1388,6 +1388,38 @@ files.
 `dashboard_live`, `my_servers_live`, `components/what_is_your_name_live`.
 _Scope:_ 3 files.
 
+_In progress — `my_servers_live` landed first._ `my_servers_live_test.exs`
+covers the student-facing servers page: the per-server card projection at mount
+(keyed by each card's details link, holding the displayed name and real-time
+status badge), the empty state, the `retry_connecting` delegation, all four live
+PubSub handlers (`:server_state`, the owner-add vs. unrelated-no-op
+`:server_created` split, `:server_updated` rename, `:server_deleted` removal),
+and the hosted `new_server_dialog_live` (validate wiring, a full create pinning
+the exact submitted data map, and the create-failure error rendering) — which
+also exercises `server_components`/`server_form_component` through the page. A
+root variant covers the `list_server_groups` branch and the group selector. The
+page is at 96.2% and the dialog at 90.0%. Two source changes were needed and are
+flagged for review: (1) `my_servers_live` now reaches the tracker through the
+`ServerTrackerClient` seam instead of calling the `ServerTracker` GenServer
+directly, the established adoption already proven on `server_live`; (2) the
+always-rendered `new_server_dialog_live` called the schema query
+`ServerOwner.fetch_authenticated/1` directly, which raises off any mocked auth
+and made the page un-mountable in a test — it now goes through a new
+`Servers.fetch_authenticated_server_owner/1` context facade (Behaviour callback
+
+- `ReadServerGroups` impl), the sibling of
+  `fetch_authenticated_server_group_member/1`. One latent type bug was fixed and
+  flagged: `ServerTrackerClientBehaviour` declared the
+  `server_state_map`/`update_server_state_map` maps with `required` keys, but
+  the map is legitimately empty when a principal has no servers; the keys are
+  now `optional(...)`, the accurate model (the same `required` → `optional`
+  map-type fix made earlier on `Types.server_properties`). No clock gap surfaced
+  (`my_servers_live` stamps no time). _Coverage ratchet:_ with the suite at
+  69.4%, `coveralls.json`'s `minimum_coverage` was bumped 66 → 68. _Remaining:_
+  `dashboard_live`, `components/what_is_your_name_live`,
+  `server_help_component`, and the edit/delete server dialogs hosted on
+  `dashboard_live`.
+
 ### Profile (remainder)
 
 Most of the profile work is folded into the [web-layer canon

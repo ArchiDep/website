@@ -20,12 +20,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour do
 
   @callback untrack(pid(), Server.t()) :: ServerTracker.server_state_update()
 
-  @callback server_state_map(list(Server.t())) :: %{UUID.t() => ServerRealTimeState.t()}
+  @callback server_state_map(list(Server.t())) :: %{optional(UUID.t()) => ServerRealTimeState.t()}
 
   @callback update_server_state_map(
-              %{UUID.t() => ServerRealTimeState.t()},
+              %{optional(UUID.t()) => ServerRealTimeState.t()},
               ServerTracker.server_state_update()
-            ) :: %{UUID.t() => ServerRealTimeState.t()}
+            ) :: %{optional(UUID.t()) => ServerRealTimeState.t()}
 
   @callback get_current_server_state(Server.t() | UUID.t()) :: ServerRealTimeState.t() | nil
 end

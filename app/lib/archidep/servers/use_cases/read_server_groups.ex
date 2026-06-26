@@ -10,6 +10,7 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.Schemas.ServerOwner
 
   @spec list_server_groups(Authentication.t()) ::
           list(ServerGroup.t())
@@ -78,6 +79,9 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
         {:error, :not_a_server_group_member}
     end
   end
+
+  @spec fetch_authenticated_server_owner(Authentication.t()) :: ServerOwner.t()
+  def fetch_authenticated_server_owner(auth), do: ServerOwner.fetch_authenticated(auth)
 
   @spec list_all_servers_in_group(Authentication.t(), UUID.t()) ::
           {:ok, list(Server.t())} | {:error, :server_group_not_found}

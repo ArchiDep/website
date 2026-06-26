@@ -22,6 +22,7 @@ defmodule ArchiDep.Servers do
   # Server group members
   delegate(&Behaviour.list_server_group_members/2)
   delegate(&Behaviour.fetch_authenticated_server_group_member/1)
+  delegate(&Behaviour.fetch_authenticated_server_owner/1)
 
   # Servers
   delegate(&Behaviour.validate_server/3)
