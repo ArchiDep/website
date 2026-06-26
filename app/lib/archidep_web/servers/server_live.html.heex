@@ -64,6 +64,7 @@
       <div class="mt-4 join">
         <button
           type="button"
+          id="edit-server-button"
           class="join-item btn btn-warning"
           disabled={ServerRealTimeState.busy?(@state)}
           phx-click={EditServerDialogLive.open(@server)}
@@ -77,6 +78,7 @@
         <button
           :if={root?(@auth)}
           type="button"
+          id="delete-server-button"
           class="join-item btn btn-error"
           disabled={ServerRealTimeState.busy?(@state)}
           phx-click={

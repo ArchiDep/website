@@ -47,6 +47,13 @@ Hammox.defmock(ArchiDep.Servers.ServerTracking.ServersOrchestratorClientMock,
   """
 )
 
+Hammox.defmock(ArchiDep.Servers.ServerTracking.ServerTrackerClientMock,
+  for: ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour,
+  moduledoc: """
+  Mock of the client API of the tracker responsible for the real-time state of servers.
+  """
+)
+
 Hammox.defmock(ArchiDep.Servers.Ansible.Mock,
   for: ArchiDep.Servers.Ansible.Behaviour,
   moduledoc: """

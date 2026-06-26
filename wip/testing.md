@@ -88,7 +88,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers — small schema leftovers](#servers--small-schema-leftovers)
 - **2. Web layer — LiveViews & controllers**
   - [x] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
-  - [ ] [Servers web — server detail & dialogs (remainder)](#servers-web--server-detail--dialogs-remainder)
+  - [x] [Servers web — server detail & dialogs (remainder)](#servers-web--server-detail--dialogs-remainder)
   - [ ] [Servers web — forms & components](#servers-web--forms--components)
   - [x] [Servers web — controllers & retry handlers](#servers-web--controllers--retry-handlers)
   - [ ] [Admin — classes list/detail + class dialogs](#admin--classes-listdetail--class-dialogs)
@@ -1048,6 +1048,58 @@ the admin classes list + create-class dialog (see [Admin — classes list/detail
 class dialogs](#admin--classes-listdetail--class-dialogs)), which is driven
 purely by the Hammox-mocked `Course` context with no runtime coupling.
 `server_live` + its dialogs follow once the `ServerTrackerClient` seam exists.
+
+_Done — the seam is introduced as phase-2 work and the page is covered._ The
+`ServerTrackerClient` façade + `ServerTrackerClientBehaviour` now mirror
+`ServerManagerClient` / `ServersOrchestratorClient` exactly (`@implementation
+Application.compile_env!`, `defdelegate`s for the full tracker client surface:
+`start_link` / `track` / `untrack` / `server_state_map` /
+`update_server_state_map` / `get_current_server_state`), wired to the real
+`ServerTracker` in `config/config.exs` and to a `ServerTrackerClientMock` in
+`config/test.exs`, with the GenServer now declaring the client behaviour. Only
+`server_live` is migrated to the client in this chunk (the other tracker
+consumers — `admin_live` / `my_servers_live` / `dashboard_live` — adopt it with
+their own test chunks, which each carry additional gaps; the behaviour already
+covers their surface so no behaviour change is needed). `server_live_test.exs`
+covers the detail page through both the `/admin/servers/:id` (root) and
+`/servers/:id` (owner) routes — the whole data-display projection per principal
+(group/owner rows and the delete dialog are root-only), the not-found redirect,
+the edit dialog (validate wiring; a full and a clear-every-optional update each
+pinning the exact submitted data map; the update-failure error + flash), the
+delete dialog, the `{:server_updated}` / `{:server_deleted}` / `{:server_state}`
+live updates, and the three retry-event delegations. The tracker client and
+`fetch_server` are stubbed (they fire across the disconnected+connected mounts);
+each mutation is `expect`ed once.
+
+_Scope note:_ `new_server_dialog_live` is **not** hosted on `server_live` (it
+lives on `dashboard_live` / `my_servers_live`); per the "components are tested
+through their host page" canon it moves to the [Dashboard](#dashboard) chunk.
+
+_The `server_components` clock gap is fixed (flag for review):_ its two retry
+countdown helpers called `DateTime.utc_now/0` directly; they now read the
+injectable `ArchiDep.Clock`, matching `current_sessions_live` and the
+clock-injection canon, so the page renders deterministically under the
+`Clock.Mock`.
+
+_Two latent type bugs found and fixed (flag for review):_ (1)
+`ServerForm.to_update_data/1` put a `:group_id` key into the data map even
+though `Types.server_data()` has no such key (and `to_create_data/1` already
+dropped it) — the real context silently ignored the extra key, but Hammox
+rejects it; it now `Map.delete`s `:group_id` like its create sibling (the
+`server_form_test.exs` expectation was updated to match). (2)
+`Types.server_properties` declared all 13 keys `required`, but the form's
+`expected_properties` map legitimately omits the non-editable
+`hostname`/`machine_id` (and casts a subset) — the same partial-map type bug
+fixed earlier on `Course.Types.expected_server_properties`; the keys are now
+`optional(...)`, the accurate model (behaviour-preserving for the full-map
+ansible callers). _Coverage ratchet:_ with the suite at 67.8%,
+`coveralls.json`'s `minimum_coverage` was bumped 61 → 66.
+
+_Follow-up unblocked:_ `classes_controller` and `student_live` are still blocked
+by a **separate** seam — they call the schema query
+`Server.find_active_server_for_group_member/2` directly (plus
+`DateTime.utc_now`) rather than a mocked context facade; route that through
+`ArchiDep.Servers` (and the injected clock) in a later chunk to unblock them.
 
 ### Servers web — forms & components
 

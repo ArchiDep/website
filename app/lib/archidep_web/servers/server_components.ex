@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDepWeb.Helpers.AuthHelpers
   alias ArchiDep.Authentication
+  alias ArchiDep.Clock
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
@@ -976,7 +977,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         0,
         DateTime.diff(
           end_time,
-          DateTime.utc_now(),
+          Clock.now(),
           :second
         )
       )
@@ -1019,7 +1020,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
         0,
         DateTime.diff(
           end_time,
-          DateTime.utc_now(),
+          Clock.now(),
           :second
         )
       )

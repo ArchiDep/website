@@ -102,5 +102,6 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     do:
       form
       |> Map.from_struct()
+      |> Map.delete(:group_id)
       |> Map.put(:expected_properties, ServerPropertiesForm.to_data(form.expected_properties))
 end

@@ -4,12 +4,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   the server states and notifies interested parties.
   """
 
+  @behaviour ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour
+
   use GenServer
 
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour
   alias Ecto.UUID
   alias Phoenix.PubSub
   alias Phoenix.Tracker
@@ -20,6 +23,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
 
   @type server_state_update :: {:server_state, UUID.t(), ServerRealTimeState.t() | nil}
 
+  @impl ServerTrackerClientBehaviour
   @spec start_link(list(Server.t())) :: GenServer.on_start()
   def start_link(servers) when is_list(servers),
     do: GenServer.start_link(__MODULE__, {self(), Enum.map(servers, & &1.id)})
@@ -30,15 +34,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
 
   # Client API
 
+  @impl ServerTrackerClientBehaviour
   @spec track(pid(), Server.t()) :: server_state_update()
   def track(tracker, server), do: GenServer.call(tracker, {:track, server.id})
 
+  @impl ServerTrackerClientBehaviour
   @spec untrack(pid(), Server.t()) :: server_state_update()
   def untrack(tracker, server), do: GenServer.call(tracker, {:untrack, server.id})
 
+  @impl ServerTrackerClientBehaviour
   @spec server_state_map(list(Server.t())) :: %{UUID.t() => ServerRealTimeState.t()}
   def server_state_map(servers), do: servers |> Enum.map(& &1.id) |> get_current_server_states()
 
+  @impl ServerTrackerClientBehaviour
   @spec update_server_state_map(
           %{UUID.t() => ServerRealTimeState.t()},
           server_state_update()
@@ -46,6 +54,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   def update_server_state_map(map, {:server_state, id, new_server_state}),
     do: Map.put(map, id, new_server_state)
 
+  @impl ServerTrackerClientBehaviour
   @spec get_current_server_state(Server.t() | UUID.t()) :: ServerRealTimeState.t() | nil
 
   def get_current_server_state(%Server{id: server_id}) do

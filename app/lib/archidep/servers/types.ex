@@ -85,18 +85,18 @@ defmodule ArchiDep.Servers.Types do
         }
 
   @type server_properties :: %{
-          hostname: String.t() | nil,
-          machine_id: String.t() | nil,
-          cpus: non_neg_integer() | nil,
-          cores: non_neg_integer() | nil,
-          vcpus: non_neg_integer() | nil,
-          memory: non_neg_integer() | nil,
-          swap: non_neg_integer() | nil,
-          system: String.t() | nil,
-          architecture: String.t() | nil,
-          os_family: String.t() | nil,
-          distribution: String.t() | nil,
-          distribution_release: String.t() | nil,
-          distribution_version: String.t() | nil
+          optional(:hostname) => String.t() | nil,
+          optional(:machine_id) => String.t() | nil,
+          optional(:cpus) => non_neg_integer() | nil,
+          optional(:cores) => non_neg_integer() | nil,
+          optional(:vcpus) => non_neg_integer() | nil,
+          optional(:memory) => non_neg_integer() | nil,
+          optional(:swap) => non_neg_integer() | nil,
+          optional(:system) => String.t() | nil,
+          optional(:architecture) => String.t() | nil,
+          optional(:os_family) => String.t() | nil,
+          optional(:distribution) => String.t() | nil,
+          optional(:distribution_release) => String.t() | nil,
+          optional(:distribution_version) => String.t() | nil
         }
 end

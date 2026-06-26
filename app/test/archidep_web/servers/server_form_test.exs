@@ -266,7 +266,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
   end
 
   describe "to_update_data/1" do
-    test "maps a full form, retaining the group and mapping the expected properties" do
+    test "maps a full form, dropping the group and mapping the expected properties" do
       form = full_form()
 
       assert ServerForm.to_update_data(form) == %{
@@ -276,7 +276,6 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
                ssh_port: 2222,
                ssh_host_key_fingerprints: "fp-full",
                active: false,
-               group_id: "22222222-2222-2222-2222-222222222222",
                app_username: "myapp",
                expected_properties: seeded_expected_properties_map()
              }
