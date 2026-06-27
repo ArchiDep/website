@@ -1420,6 +1420,50 @@ and made the page un-mountable in a test — it now goes through a new
   `server_help_component`, and the edit/delete server dialogs hosted on
   `dashboard_live`.
 
+_In progress — `dashboard_live` (the landing page) landed next._
+`dashboard_live_test.exs` covers the page across its student states and its
+hosted dialogs (`dashboard_live` at 95.0%). Every render test asserts a **single
+whole-page projection** — `%{welcome, name_prompt?, call_to_action,
+change_username_dialog?, servers}` — by equality, so a conditional-logic bug
+that leaks one region onto a page that should show another fails a test; this
+drove a new canon rule, [Project the whole page state, not one region in
+isolation](../app/docs/testing.md#asserting-the-dom-a-meaningful-projection-not-exact-markup).
+The projection pins the data each region owns, not just its presence: the
+**welcome screen** asserts the rendered SSH key fingerprints exactly (a fixed
+fingerprint pair with a deterministic human form) plus the username and
+password, and the **call to action** distinguishes the `:student` and `:root`
+variants. The interaction paths are covered too: the **what-is-your-name
+prompt** and **change-username dialog** (validate wiring + a configure
+submission pinning the exact data map), the always-rendered
+`new_server_dialog_live` (full create / error), the **edit server dialog**
+(rendered on a connection problem, pinning the whole update data map), and all
+live handlers. The live-update tests publish **real broadcasts** (the production
+path) rather than sending synthetic messages: the page subscribes to each owned
+active server on both its per-server topic and the owner's servers topic, so a
+broadcast is delivered more than once — real behaviour the tests now exercise
+(the tracker is stubbed to tolerate the redundant deliveries; the assertions pin
+the converged page). Real-time state updates arrive directly from the tracker
+process, so those are still sent.
+
+Two source changes, both flagged for review. (1) The established seam adoption
+already proven on `my_servers_live`/`server_live`: `dashboard_live` reaches the
+tracker through the `ServerTrackerClient` seam instead of the `ServerTracker`
+GenServer, so the page is mountable under test. (2) The **wall-clock gap is
+fixed, not deferred**: `Student.can_create_servers?/2` already accepts `now`, so
+`mount/3` now reads `Clock.now()` and the template calls the 2-arity version
+with the injected clock — the page no longer reads wall-clock time, and the
+tests pin `@now`. One **latent DOM bug fixed** (this is exactly the kind of
+issue these tests exist to surface): the page renders the new-server and
+edit-server forms simultaneously, and both built their form with `to_form(…, as:
+:server)`, so their inputs collided on ids like `server_active` — duplicate DOM
+ids that LiveView warns are undefined behaviour. Each dialog now passes a
+distinct `id:` to `to_form` (`"new-server-form"` / `"edit-server-form"`), so the
+inputs are unique. _Coverage ratchet:_ with the suite at 71.2%,
+`coveralls.json`'s `minimum_coverage` was bumped 68 → 70. _Remaining:_
+`server_help_component` (its problem-classification branches, testable in
+isolation via `render_component/2`) and the remaining `server_components` lines,
+both deferred to a follow-up chunk.
+
 ### Profile (remainder)
 
 Most of the profile work is folded into the [web-layer canon

@@ -32,7 +32,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
       socket
       |> assign(
         open: false,
-        form: to_form(ServerForm.blank_changeset(), as: :server)
+        form: to_form(ServerForm.blank_changeset(), as: :server, id: "edit-server-form")
       )
       |> ok()
 
@@ -52,7 +52,8 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
     do:
       assign(socket,
         open: server,
-        form: to_form(ServerForm.update_changeset(server, %{}), as: :server)
+        form:
+          to_form(ServerForm.update_changeset(server, %{}), as: :server, id: "edit-server-form")
       )
 
   defp update_form(
@@ -92,7 +93,8 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
       socket
       |> assign(
         open: false,
-        form: to_form(ServerForm.update_changeset(server, %{}), as: :server)
+        form:
+          to_form(ServerForm.update_changeset(server, %{}), as: :server, id: "edit-server-form")
       )
       |> noreply()
 
@@ -114,6 +116,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
          form:
            to_form(%Changeset{changeset | errors: result_changeset.errors},
              as: :server,
+             id: "edit-server-form",
              action: :validate
            )
        )}
@@ -123,7 +126,8 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
          assign(socket,
            form:
              to_form(%Changeset{changeset | errors: changeset.errors ++ result_changeset.errors},
-               as: :server
+               as: :server,
+               id: "edit-server-form"
              )
          )}
     end
@@ -154,7 +158,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
       {:error, %Changeset{} = changeset} ->
         socket
         |> send_notification(Message.new(:error, gettext("The form is invalid.")))
-        |> assign(form: to_form(changeset, as: :server))
+        |> assign(form: to_form(changeset, as: :server, id: "edit-server-form"))
         |> noreply()
     end
   end

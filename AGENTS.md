@@ -130,7 +130,25 @@ instructions targeted towards AI agents.
        **FORBIDDEN** to keep it without **EXPLICIT** human approval — flag it
        and ask.
 
-    2. **Re-read every comment you added** against the comment rules above and
+    2. **For LiveView/page tests, audit the DOM assertions the same way.** The
+       whole-value rule applies to rendered output, not just return values. Each
+       render test must assert a **whole-page (or whole-component) projection by
+       `==`** that covers every meaningful region at once. Suspect, and to be
+       fixed or escalated like a partial assertion:
+       - a free-floating `something_shown?(html)` boolean (fold it into the
+         projection as a field that distinguishes its variants)
+       - `render(view) =~ value` for a value the page renders (a username, a
+         count, a fingerprint) or for which region is showing
+       - asserting only the region a test focuses on, leaving other regions
+         unpinned (a conditional-logic bug elsewhere must fail the test)
+       - checking a section's heading/title while ignoring the data shown under
+         it
+
+       Re-read the [DOM projection
+       rules](app/docs/testing.md#asserting-the-dom-a-meaningful-projection-not-exact-markup)
+       before deciding any of these is acceptable.
+
+    3. **Re-read every comment you added** against the comment rules above and
        deleted or rewritten any that reference a short-lived doc, duplicate the
        guidelines, or record historical rationale. This audit is mandatory and
        is the last step before reporting completion — these rules existed and

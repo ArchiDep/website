@@ -94,7 +94,7 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
       {:error, %Changeset{} = changeset} ->
         socket
         |> send_notification(Message.new(:error, gettext("The form is invalid.")))
-        |> assign(form: to_form(changeset, as: :server))
+        |> assign(form: to_form(changeset, as: :server, id: "new-server-form"))
         |> noreply()
     end
   end
@@ -106,6 +106,9 @@ defmodule ArchiDepWeb.Servers.NewServerDialogLive do
         _anything_else -> nil
       end
 
-    to_form(ServerForm.create_changeset(auth, %{username: default_username}), as: :server)
+    to_form(ServerForm.create_changeset(auth, %{username: default_username}),
+      as: :server,
+      id: "new-server-form"
+    )
   end
 end

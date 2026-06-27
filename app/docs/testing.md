@@ -93,6 +93,20 @@ These apply to every layer; the per-layer sections build on them.
   with `mix test … --repeat-until-failure <n>`, which re-seeds each run and
   stops at the first failure; a single green run can hide an ordering-dependent
   race.
+- **Avoid sharing data between tests.** Two tests that read the same literal
+  fixture data are coupled in a non-obvious way: change it for one and the other
+  may silently start passing for the wrong reason, or fail. Each test should own
+  its inputs. Prefer **inlining** a test's data at its call site (ideally using
+  _different_ values from neighbouring tests, so an accidental cross-wiring is
+  visible), or generating it with a **factory** that randomizes the irrelevant
+  fields and pins only what the test asserts. What is fine: a helper that
+  _builds_ a fixture (random with some pinned overrides) — that is reuse of a
+  generator, not of data; and a small, intuitive shared constant like `@now` /
+  `@past` used sparingly. What is not fine: a module-level `defp some_params`
+  whose exact contents a handful of tests both feed in _and_ assert against, or
+  a second helper holding the _expected_ result — both pull the tests' fates
+  together. If a value is used in exactly one test, define it in that test, not
+  at module scope.
 
 ## Business layer
 
@@ -1093,6 +1107,23 @@ projection honest:
   username is confirmed). `has_element?/2` and `refute has_element?/2` are the
   tools — an element merely existing is not enough; its absence on the negative
   branch is what proves the `:if` guard.
+- **Project the whole page state, not one region in isolation.** A page that
+  shows mutually-exclusive regions (a welcome banner _or_ a call to action _or_ a
+  list of cards, plus dialogs) must be asserted through a **single projection
+  that covers every region at once** — e.g. a map `%{welcome: …, call_to_action:
+…, servers: …}` asserted by equality. A test that only checks its own region
+  cannot catch a conditional-logic bug that makes another region render when it
+  should not (a call to action leaking onto a page that already has servers).
+  This rules out the lazy shortcut of a free-floating `something_shown?(html)`
+  boolean helper called in just one test: fold each such check into the page
+  projection as a field (`call_to_action: :student | :root | nil`, not
+  `call_to_action_shown?: true`), and assert the whole projection in **every**
+  render test of that page. A region's value must distinguish its meaningful
+  variants (the root call to action vs. the student one are different states, so
+  the projection must tell them apart), and a value the page is responsible for
+  displaying (the SSH key fingerprints, not just their section heading) must
+  appear _in_ the projection — checking that a title is present while ignoring
+  the data under it is the partial-assertion failure mode again.
 - **Asserting translated text: re-call `gettext` for simple messages, pin the
   literal for complex ones.** For a short message whose interesting part is an
   interpolated value, build the expected string by re-calling the same `gettext`
@@ -1120,8 +1151,13 @@ structural-minimal where we do not.
 - **Prefer LiveViewTest's own semantic helpers** where they suffice: `element/2`
   with `render_click/2`, `render_submit/2`, `render_change/2` to drive
   interactions; `has_element?/2` for presence/absence; `render(view) =~ text`
-  for a quick content check. These select by CSS selector and never make you
-  handle raw markup.
+  only for an incidental string the page does not own (a static label). These
+  select by CSS selector and never make you handle raw markup. A raw `render =~
+value` is **not** an acceptable assertion for a value the page _renders_ (a
+  username, a fingerprint, a count) nor for which region is showing — those go
+  through the page projection asserted by equality. `=~` over the whole HTML
+  string is the weakest possible check (it matches anywhere, including hidden or
+  unrelated markup) and silently passes when the value lands in the wrong place.
 - **Reach for the HTML helpers** in
   [`ArchiDepWeb.Support.HtmlTestHelpers`][html-test-helpers] when you need to
   extract _structured, multi-value_ content — a table into rows-of-cells — and

@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   import ArchiDepWeb.Servers.ServerComponents
   import ArchiDepWeb.Servers.ServerHelpComponent
   import ArchiDepWeb.Servers.ServerRetryHandlers
+  alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.Material
   alias ArchiDep.Course.Schemas.Class
@@ -14,7 +15,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
-  alias ArchiDep.Servers.ServerTracking.ServerTracker
+  alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
   alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias ArchiDepWeb.Course.ChangeUsernameDialogLive
@@ -73,7 +74,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
         :ok = PubSub.subscribe_server_owner_servers(auth.principal_id)
 
-        {:ok, pid} = ServerTracker.start_link(active_servers)
+        {:ok, pid} = ServerTrackerClient.start_link(active_servers)
         pid
       else
         nil
@@ -82,12 +83,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     socket
     |> assign(
       page_title: gettext("Dashboard"),
+      now: Clock.now(),
       student: student,
       ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
       ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints,
       servers: active_servers,
       inactive_servers: inactive_servers |> Enum.map(& &1.id) |> MapSet.new(),
-      server_state_map: ServerTracker.server_state_map(active_servers),
+      server_state_map: ServerTrackerClient.server_state_map(active_servers),
       server_tracker: tracker,
       groups: groups
     )
@@ -185,7 +187,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       do:
         socket
         |> assign(
-          server_state_map: ServerTracker.update_server_state_map(server_state_map, update)
+          server_state_map: ServerTrackerClient.update_server_state_map(server_state_map, update)
         )
         |> noreply()
 
@@ -205,9 +207,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     |> assign(
       servers: sort_servers([created_server | servers]),
       server_state_map:
-        ServerTracker.update_server_state_map(
+        ServerTrackerClient.update_server_state_map(
           server_state_map,
-          ServerTracker.track(tracker, created_server)
+          ServerTrackerClient.track(tracker, created_server)
         )
     )
     |> noreply()
@@ -251,9 +253,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       else
         [
           [updated_server | servers],
-          ServerTracker.update_server_state_map(
+          ServerTrackerClient.update_server_state_map(
             server_state_map,
-            ServerTracker.track(tracker, updated_server)
+            ServerTrackerClient.track(tracker, updated_server)
           )
         ]
       end
@@ -284,9 +286,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       |> assign(
         servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
         server_state_map:
-          ServerTracker.update_server_state_map(
+          ServerTrackerClient.update_server_state_map(
             server_state_map,
-            ServerTracker.untrack(tracker, server)
+            ServerTrackerClient.untrack(tracker, server)
           ),
         inactive_servers: MapSet.put(inactive_servers, server_id)
       )
@@ -314,9 +316,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     |> assign(
       servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
       server_state_map:
-        ServerTracker.update_server_state_map(
+        ServerTrackerClient.update_server_state_map(
           server_state_map,
-          ServerTracker.untrack(tracker, server)
+          ServerTrackerClient.untrack(tracker, server)
         ),
       inactive_servers: MapSet.delete(inactive_servers, server_id)
     )
