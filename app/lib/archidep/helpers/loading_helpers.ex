@@ -131,4 +131,7 @@ defmodule ArchiDep.Helpers.LoadingHelpers do
 
   @spec random_loading_message() :: String.t()
   def random_loading_message, do: Enum.random(@loading_messages)
+
+  @spec loading_messages() :: list(String.t())
+  def loading_messages, do: @loading_messages
 end

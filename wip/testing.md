@@ -1459,10 +1459,35 @@ edit-server forms simultaneously, and both built their form with `to_form(…, a
 ids that LiveView warns are undefined behaviour. Each dialog now passes a
 distinct `id:` to `to_form` (`"new-server-form"` / `"edit-server-form"`), so the
 inputs are unique. _Coverage ratchet:_ with the suite at 71.2%,
-`coveralls.json`'s `minimum_coverage` was bumped 68 → 70. _Remaining:_
-`server_help_component` (its problem-classification branches, testable in
-isolation via `render_component/2`) and the remaining `server_components` lines,
-both deferred to a follow-up chunk.
+`coveralls.json`'s `minimum_coverage` was bumped 68 → 70.
+
+_Done (`server_components` and `server_help_component`):_ both server view
+component modules are now unit-tested in isolation with `render_component/2`,
+each to 100% line coverage. `server_help_component_test.exs` drives every
+troubleshooting branch through a single whole-output projection (`%{inactive,
+timeout, refused, auth_failed, key_exchange, property_mismatch, open_ports,
+success}`) asserted by equality, so a guard that leaks the wrong help note fails
+a test; it pins the dynamic bits each note owns (the SSH port in the timeout
+note, which of the hardware/hostname/swap steps the property-mismatch note
+shows) and covers the negative guards (busy, unhandled problem, wrong connection
+state). `server_components_test.exs` projects each card to a whole map (`%{name,
+badge, color, busy?, body, problems, retry, edit?, details?}`) and exhausts the
+state machine: every `server_card_badge`/`server_card_class`/`server_card_body`
+branch across all eight connection states with and without problems, all
+connected jobs, the retry-connecting countdown (deterministic under a pinned
+clock) including the root attempt counter, the post-setup timeout-problem
+filter, and the edit/details/retry affordances. `admin_server_card` is covered
+the same way through a `%{owner, conn, short_status, body, busy?}` projection.
+Every `server_problem/1` clause is pinned by `%{severity, text, retry}` — both
+the root and non-root rendering, the ansible failure summary and its spinning
+retry action, the open-ports list, the key-exchange fingerprint listing (valid /
+none / invalid), and every `server_expected_property_mismatch` sentence — and
+`server_owner_name/1` covers its three resolution clauses. One source change,
+flagged for review: `LoadingHelpers.loading_messages/0` was added so the
+`gathering_facts` body (a `random_loading_message/0`) can be asserted by
+membership in its complete known set rather than a weak non-empty check.
+_Coverage ratchet:_ with the suite at 75.8%, `coveralls.json`'s
+`minimum_coverage` was bumped 70 → 74.
 
 ### Profile (remainder)
 
