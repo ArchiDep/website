@@ -2,13 +2,16 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   use ArchiDepWeb.Support.LiveCase, async: true
 
   import Hammox
+  alias ArchiDep.Accounts
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Servers
+  alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
+  alias ArchiDepWeb.Admin.Classes.StudentForm
   alias Ecto.Changeset
 
   setup :verify_on_exit!
@@ -716,6 +719,473 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     end
   end
 
+  describe "the students table" do
+    setup :register_and_log_in_root
+
+    test "render the students of the class", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+
+      registered_id = UUID.generate()
+
+      registered =
+        CourseFactory.build(:student,
+          id: registered_id,
+          class_id: class.id,
+          name: "Alice",
+          academic_class: "INF-1",
+          email: "alice@example.org",
+          username: "alice",
+          username_confirmed: true,
+          active: true,
+          user: CourseFactory.build(:user, student: nil, student_id: registered_id)
+        )
+
+      unregistered =
+        CourseFactory.build(:student,
+          class_id: class.id,
+          name: "Bob",
+          academic_class: nil,
+          email: "bob@example.org",
+          username: "bob",
+          username_confirmed: false,
+          active: false,
+          user: nil
+        )
+
+      stub_class_page_calls(auth,
+        class: class,
+        server_group: server_group,
+        students: [registered, unregistered]
+      )
+
+      {:ok, _view, html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert class_page(html, class) == %{
+               students: %{
+                 registered: "1/2 registered",
+                 empty_message: nil,
+                 rows: [
+                   %{
+                     name: "Alice",
+                     academic_class: "INF-1",
+                     email: "alice@example.org",
+                     username: "alice",
+                     active: :active,
+                     user_account: "alice"
+                   },
+                   %{
+                     name: "Bob",
+                     academic_class: "-",
+                     email: "bob@example.org",
+                     username: "bob (#{gettext("suggested")})",
+                     active: :inactive,
+                     user_account: gettext("Not registered yet")
+                   }
+                 ]
+               },
+               delete_blocked: false
+             }
+    end
+
+    test "render an empty state when the class has no students", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      stub_class_page_calls(auth, class: class, server_group: server_group, students: [])
+
+      {:ok, _view, html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert class_page(html, class) == %{
+               students: %{
+                 registered: nil,
+                 rows: [],
+                 empty_message: gettext("No students in this class")
+               },
+               delete_blocked: false
+             }
+    end
+  end
+
+  describe "the new student dialog" do
+    setup :register_and_log_in_root
+
+    test "validate the new student against the context", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      class_id = class.id
+
+      invalid =
+        %StudentForm{}
+        |> Changeset.cast(%{"name" => "Bad"}, [:name])
+        |> Changeset.add_error(:name, "is invalid")
+
+      valid = Changeset.cast(%StudentForm{}, %{"name" => "Good"}, [:name])
+
+      expect(Course.ContextMock, :validate_student, fn ^auth, ^class_id, %{name: "Bad"} ->
+        {:ok, invalid}
+      end)
+
+      expect(Course.ContextMock, :validate_student, fn ^auth, ^class_id, %{name: "Good"} ->
+        {:ok, valid}
+      end)
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert view
+             |> form("#new-student-form", student: %{name: "Bad"})
+             |> render_change()
+             |> form_errors("new-student-form") == ["is invalid"]
+
+      assert view
+             |> form("#new-student-form", student: %{name: "Good"})
+             |> render_change()
+             |> form_errors("new-student-form") == []
+    end
+
+    test "create a student from a minimal submission", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      class_id = class.id
+
+      created = CourseFactory.build(:student, name: "Carol")
+      test_pid = self()
+
+      expect(Course.ContextMock, :create_student, fn ^auth, ^class_id, data ->
+        send(test_pid, {:created_with, data})
+        {:ok, created}
+      end)
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view
+      |> form("#new-student-form",
+        student: %{
+          name: "Carol",
+          email: "carol@example.org",
+          username: "carol",
+          domain: "carol.archidep.ch",
+          active: "true",
+          servers_enabled: "false"
+        }
+      )
+      |> render_submit()
+
+      assert_receive {:created_with, data}
+
+      assert data == %{
+               name: "Carol",
+               email: "carol@example.org",
+               academic_class: nil,
+               username: "carol",
+               domain: "carol.archidep.ch",
+               active: true,
+               servers_enabled: false
+             }
+
+      assert_push_event(view, "execute-action", %{to: "#new-student-dialog", action: "close"})
+
+      assert_flash_notification(
+        view,
+        :success,
+        gettext("Created student {student}", student: "Carol")
+      )
+    end
+
+    test "create a student from a full submission", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      class_id = class.id
+
+      created = CourseFactory.build(:student, name: "Dave")
+      test_pid = self()
+
+      expect(Course.ContextMock, :create_student, fn ^auth, ^class_id, data ->
+        send(test_pid, {:created_with, data})
+        {:ok, created}
+      end)
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view
+      |> form("#new-student-form",
+        student: %{
+          name: "Dave",
+          email: "dave@example.org",
+          academic_class: "INF-2",
+          username: "dave",
+          domain: "dave.archidep.ch",
+          active: "true",
+          servers_enabled: "true"
+        }
+      )
+      |> render_submit()
+
+      assert_receive {:created_with, data}
+
+      assert data == %{
+               name: "Dave",
+               email: "dave@example.org",
+               academic_class: "INF-2",
+               username: "dave",
+               domain: "dave.archidep.ch",
+               active: true,
+               servers_enabled: true
+             }
+
+      assert_flash_notification(
+        view,
+        :success,
+        gettext("Created student {student}", student: "Dave")
+      )
+    end
+
+    test "render errors when the student cannot be created", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      class_id = class.id
+
+      {:error, errored} =
+        %StudentForm{}
+        |> Changeset.cast(%{"username" => "taken"}, [:username])
+        |> Changeset.add_error(:username, "has already been taken")
+        |> Changeset.apply_action(:insert)
+
+      expect(Course.ContextMock, :create_student, fn ^auth, ^class_id, _data ->
+        {:error, errored}
+      end)
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert view
+             |> form("#new-student-form", student: %{username: "taken"})
+             |> render_submit()
+             |> form_errors("new-student-form") == ["has already been taken"]
+
+      refute_push_event(view, "execute-action", %{action: "close"})
+    end
+  end
+
+  describe "student live updates" do
+    setup :register_and_log_in_root
+
+    test "reload the students when a student is updated over PubSub", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      alice = listed_student(class, "Alice", "alice@example.org")
+      bob = listed_student(class, "Bob", "bob@example.org")
+
+      {:ok, students} = Agent.start_link(fn -> [alice] end)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      stub(Course.ContextMock, :list_students, fn ^auth, _class -> Agent.get(students, & &1) end)
+
+      {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert class_page(html, class) == listed_class_page(class, "0/1 registered", ["Alice"])
+
+      Agent.update(students, fn _state -> [alice, bob] end)
+      :ok = Course.PubSub.publish_student_updated(%{alice | name: "Alice"})
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> length(assigns.students) == 2 end,
+        "students reloaded"
+      )
+
+      assert class_page(render(view), class) ==
+               listed_class_page(class, "0/2 registered", ["Alice", "Bob"])
+    end
+
+    test "reload the students when students are imported over PubSub", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      alice = listed_student(class, "Alice", "alice@example.org")
+
+      {:ok, students} = Agent.start_link(fn -> [] end)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      stub(Course.ContextMock, :list_students, fn ^auth, _class -> Agent.get(students, & &1) end)
+
+      {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert class_page(html, class) == empty_class_page(class)
+
+      Agent.update(students, fn _state -> [alice] end)
+      :ok = Course.PubSub.publish_students_imported(class, [alice])
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> length(assigns.students) == 1 end,
+        "students reloaded"
+      )
+
+      assert class_page(render(view), class) ==
+               listed_class_page(class, "0/1 registered", ["Alice"])
+    end
+
+    test "reload the students when a preregistered user is updated over PubSub", %{
+      conn: conn,
+      auth: auth
+    } do
+      {class, server_group} = build_class_and_group()
+      alice = listed_student(class, "Alice", "alice@example.org")
+
+      {:ok, students} = Agent.start_link(fn -> [] end)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+      stub(Course.ContextMock, :list_students, fn ^auth, _class -> Agent.get(students, & &1) end)
+
+      {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert class_page(html, class) == empty_class_page(class)
+
+      Agent.update(students, fn _state -> [alice] end)
+
+      :ok =
+        Accounts.PubSub.publish_preregistered_user_updated(
+          AccountsFactory.build(:preregistered_user, group_id: class.id)
+        )
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> length(assigns.students) == 1 end,
+        "students reloaded"
+      )
+
+      assert class_page(render(view), class) ==
+               listed_class_page(class, "0/1 registered", ["Alice"])
+    end
+
+    test "track a created server so the class can no longer be deleted", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+
+      stub_class_page_calls(auth, class: class, server_group: server_group, students: [])
+
+      stub(Servers.ContextMock, :watch_server_ids, fn ^auth, group ->
+        :ok = Servers.PubSub.subscribe_server_group_servers(group.id)
+        {:ok, MapSet.new(), &server_ids_reducer/2}
+      end)
+
+      {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert class_page(html, class) == empty_class_page(class)
+
+      server = ServersFactory.build(:server, group_id: server_group.id)
+      :ok = Servers.PubSub.publish_server_created(server)
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> assigns.server_ids |> elem(0) |> MapSet.size() == 1 end,
+        "server tracked"
+      )
+
+      assert class_page(render(view), class) == %{empty_class_page(class) | delete_blocked: true}
+    end
+  end
+
+  describe "the import students dialog" do
+    setup :register_and_log_in_root
+
+    test "render the parsed CSV with column detection and per-row state", %{
+      conn: conn,
+      auth: auth
+    } do
+      {class, server_group} = build_class_and_group()
+      write_import_csv(class, "Name,Email\nAlice,alice@example.org\nBob,bob@example.org\n")
+
+      existing = CourseFactory.build(:student, class_id: class.id, email: "alice@example.org")
+
+      stub_class_page_calls(auth,
+        class: class,
+        server_group: server_group,
+        students: [existing]
+      )
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      # A valid domain clears the only initial error, so the per-row state
+      # reflects the new/existing classification rather than "invalid".
+      html =
+        view
+        |> form("#import-students",
+          import_students: %{name_column: "Name", email_column: "Email", domain: "archidep.ch"}
+        )
+        |> render_change()
+
+      assert import_table(html) == %{
+               columns: ["Name", "Email"],
+               states: [gettext("existing"), gettext("new")]
+             }
+    end
+
+    test "validate rejects a name column that contains emails", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      write_import_csv(class, "Name,Email\nAlice,alice@example.org\nBob,bob@example.org\n")
+      stub_class_page_calls(auth, class: class, server_group: server_group, students: [])
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert view
+             |> form("#import-students",
+               import_students: %{
+                 name_column: "Email",
+                 email_column: "Email",
+                 domain: "archidep.ch"
+               }
+             )
+             |> render_change()
+             |> form_errors("import-students") == [
+               gettext("this column looks like it contains emails, not names")
+             ]
+    end
+
+    test "import the parsed students", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      write_import_csv(class, "Name,Email\nAlice,alice@example.org\nBob,bob@example.org\n")
+      stub_class_page_calls(auth, class: class, server_group: server_group, students: [])
+      class_id = class.id
+
+      imported = [
+        CourseFactory.build(:student, class_id: class.id),
+        CourseFactory.build(:student, class_id: class.id)
+      ]
+
+      test_pid = self()
+
+      expect(Course.ContextMock, :import_students, fn ^auth, ^class_id, data ->
+        send(test_pid, {:imported_with, data})
+        {:ok, imported}
+      end)
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view
+      |> form("#import-students",
+        import_students: %{
+          name_column: "Name",
+          email_column: "Email",
+          academic_class: "Sec 2026",
+          domain: "archidep.ch"
+        }
+      )
+      |> render_change()
+
+      view |> form("#import-students") |> render_submit()
+
+      assert_receive {:imported_with, data}
+
+      assert data == %{
+               academic_class: "Sec 2026",
+               domain: "archidep.ch",
+               students: [
+                 %{name: "Alice", email: "alice@example.org"},
+                 %{name: "Bob", email: "bob@example.org"}
+               ]
+             }
+
+      assert_push_event(view, "execute-action", %{to: "#import-students-dialog", action: "close"})
+
+      assert_flash_notification(
+        view,
+        :success,
+        gettext("{count, plural, =1 {1 student} other {# students}} imported", count: 2)
+      )
+    end
+  end
+
   test "accessing the class page redirects to the login page without authentication", %{
     conn: conn
   } do
@@ -806,4 +1276,148 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       flash
       |> Map.values()
       |> Enum.map(fn notification -> {notification.type, notification.message} end)
+
+  # Projects the whole page region this chunk owns: the students section (the
+  # registered count, every row, and the empty-state message) and whether the
+  # delete-class affordance is blocked by linked servers.
+  defp class_page(html, class) do
+    %{
+      students: %{
+        registered: students_registered(html),
+        rows: students_table(html),
+        empty_message: empty_students_message(html)
+      },
+      delete_blocked: delete_button_disabled?(html, class)
+    }
+  end
+
+  defp empty_class_page(_class),
+    do: %{
+      students: %{
+        registered: nil,
+        rows: [],
+        empty_message: gettext("No students in this class")
+      },
+      delete_blocked: false
+    }
+
+  defp listed_class_page(_class, registered, names),
+    do: %{
+      students: %{
+        registered: registered,
+        rows: Enum.map(names, &listed_row(&1, "#{String.downcase(&1)}@example.org")),
+        empty_message: nil
+      },
+      delete_blocked: false
+    }
+
+  # Projects each student row (keyed by its `student-<id>` row) to its
+  # meaningful cells; the active icon projects to `:active`/`:inactive`.
+  defp students_table(html) do
+    html
+    |> find_html_elements("tr[id^='student-']")
+    |> Enum.map(fn row ->
+      [name, academic_class, email, username, active, user_account] =
+        find_html_elements(row, "td")
+
+      %{
+        name: html_element_text(name),
+        academic_class: html_element_text(academic_class),
+        email: html_element_text(email),
+        username: html_element_text(username),
+        active: icon_state(active),
+        user_account: html_element_text(user_account)
+      }
+    end)
+  end
+
+  # A fully-pinned unregistered student paired with `listed_row/2`, so the
+  # reload tests can assert the whole rendered table by equality.
+  defp listed_student(class, name, email),
+    do:
+      CourseFactory.build(:student,
+        class_id: class.id,
+        name: name,
+        academic_class: "INF-1",
+        email: email,
+        username: String.downcase(name),
+        username_confirmed: true,
+        active: true,
+        user: nil
+      )
+
+  defp listed_row(name, email),
+    do: %{
+      name: name,
+      academic_class: "INF-1",
+      email: email,
+      username: String.downcase(name),
+      active: :active,
+      user_account: gettext("Not registered yet")
+    }
+
+  defp students_registered(html) do
+    case find_html_elements(html, "h3 small") do
+      [small] -> html_element_text(small)
+      [] -> nil
+    end
+  end
+
+  defp empty_students_message(html) do
+    case find_html_elements(html, "table tbody td[colspan]") do
+      [td] -> html_element_text(td)
+      [] -> nil
+    end
+  end
+
+  # Mirrors the contract of the real `watch_server_ids` reducer (it adds created
+  # server IDs and drops deleted ones), so the page's server PubSub handler can
+  # be driven through a real broadcast.
+  defp server_ids_reducer(ids, {:server_created, server}), do: MapSet.put(ids, server.id)
+  defp server_ids_reducer(ids, {:server_deleted, server}), do: MapSet.delete(ids, server.id)
+  defp server_ids_reducer(ids, {:server_updated, _server}), do: ids
+
+  # The import dialog parses the uploaded CSV from disk on mount, so writing the
+  # file at the path it reads drives the parsing/classification/import flow
+  # without the live upload machinery. The class-specific directory is removed
+  # after the test.
+  defp write_import_csv(class, content) do
+    path = import_csv_path(class)
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, content)
+
+    on_exit(fn ->
+      File.rm_rf!(Path.join([uploads_directory(), "students", "classes", class.id]))
+    end)
+
+    :ok
+  end
+
+  defp import_csv_path(class),
+    do: Path.join([uploads_directory(), "students", "classes", class.id, "import-students.csv"])
+
+  defp uploads_directory,
+    do:
+      :archidep
+      |> Application.fetch_env!(ArchiDepWeb.Endpoint)
+      |> Keyword.fetch!(:uploads_directory)
+
+  defp import_table(html),
+    do: %{columns: import_columns(html), states: import_states(html)}
+
+  defp import_columns(html),
+    do:
+      html
+      |> find_html_elements("#import-students-dialog table thead th")
+      |> Enum.map(&html_element_text/1)
+      |> Enum.drop(-1)
+
+  defp import_states(html),
+    do:
+      html
+      |> find_html_elements("#import-students-dialog tbody tr")
+      |> Enum.map(fn row ->
+        [badge] = find_html_elements(row, "td:last-child .badge")
+        html_element_text(badge)
+      end)
 end

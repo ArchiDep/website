@@ -130,7 +130,9 @@ defmodule ArchiDep.Servers.Schemas.Server do
   def default_hostname(_server), do: nil
 
   @spec find_active_server_for_group_member(UUID.t(), DateTime.t()) ::
-          {:ok, t()} | {:error, :server_not_found}
+          {:ok, t()}
+          | {:error, :server_not_found}
+          | {:error, {:multiple_servers_found, list(UUID.t())}}
   def find_active_server_for_group_member(group_member_id, now) do
     case Repo.all(
            from(s in __MODULE__,

@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.Schemas.Server
 
@@ -44,6 +45,26 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
         {:error, :server_not_found}
 
       {:error, {:access_denied, :servers, :fetch_server}} ->
+        {:error, :server_not_found}
+    end
+  end
+
+  @spec fetch_active_server_for_group_member(Authentication.t(), UUID.t()) ::
+          {:ok, Server.t()} | {:error, :server_not_found}
+  def fetch_active_server_for_group_member(auth, group_member_id) do
+    with :ok <-
+           authorize(auth, Policy, :servers, :fetch_active_server_for_group_member, nil),
+         {:ok, server} <-
+           Server.find_active_server_for_group_member(group_member_id, Clock.now()) do
+      {:ok, server}
+    else
+      {:error, {:access_denied, :servers, :fetch_active_server_for_group_member}} ->
+        {:error, :server_not_found}
+
+      {:error, :server_not_found} ->
+        {:error, :server_not_found}
+
+      {:error, {:multiple_servers_found, _ids}} ->
         {:error, :server_not_found}
     end
   end

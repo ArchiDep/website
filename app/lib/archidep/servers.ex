@@ -29,6 +29,7 @@ defmodule ArchiDep.Servers do
   delegate(&Behaviour.create_server/3)
   delegate(&Behaviour.list_my_servers/1)
   delegate(&Behaviour.fetch_server/2)
+  delegate(&Behaviour.fetch_active_server_for_group_member/2)
   delegate(&Behaviour.validate_existing_server/3)
   delegate(&Behaviour.update_server/3)
   delegate(&Behaviour.delete_server/2)

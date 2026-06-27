@@ -93,7 +93,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers web — controllers & retry handlers](#servers-web--controllers--retry-handlers)
   - [ ] [Admin — classes list/detail + class dialogs](#admin--classes-listdetail--class-dialogs)
   - [x] [Admin — class form components](#admin--class-form-components)
-  - [ ] [Admin — students list + student dialogs](#admin--students-list--student-dialogs)
+  - [x] [Admin — students list + student dialogs](#admin--students-list--student-dialogs)
   - [x] [Admin — student form components](#admin--student-form-components)
   - [x] [Admin — events views](#admin--events-views)
   - [ ] [Admin — ansible views](#admin--ansible-views)
@@ -1289,6 +1289,55 @@ the Page or In Isolation" canon it carries no logic and gets no isolated test.
 
 `student_live`, `new`/`edit`/`delete_student_dialog_live`,
 `import_students_dialog_live`. _Scope:_ 5 files.
+
+_Done:_ the chunk required first unblocking the seam that prevented these pages
+from being web-tested: `student_live` (and `classes_controller`) called the
+schema query `Server.find_active_server_for_group_member/2` **directly** and
+read wall-clock time. A mockable read facade
+`Servers.fetch_active_server_for_group_member/2` was introduced (behaviour
+callback + `ReadServers` impl authorizing root via the existing policy
+catch-all, threading `Clock.now()`, masking both `:server_not_found` and the
+`{:multiple_servers_found, _}` schema returns; wired in `context.ex` and
+delegated in `servers.ex`), covered by `read_servers_test.exs`. Dialyzer
+surfaced a latent spec bug while validating the new masking clause:
+`Server.find_active_server_for_group_member/2`'s typespec omitted its real
+`{:error, {:multiple_servers_found, _}}` return (the implementation has always
+produced it); the spec was corrected (flag for review). `student_live` now
+reaches the schema only through that mocked facade and reads the injected
+`Clock` (its six `DateTime.utc_now/0` calls removed). `classes_controller`
+shares this blocker and can adopt the same facade in the _Admin — classes
+(remainder)_ chunk — left out here to keep the chunk reviewable.
+
+`student_live_test.exs` covers the student detail page through both principals'
+shared admin route: the whole data-display projection (registered vs.
+unregistered, active server vs. none, the servers-enabled override note), the
+not-found redirect, the generate-login-link success/not-found paths, the edit
+dialog (validate wiring; full and clear-`academic_class` updates pinning the
+exact submitted data map; update-failure error render) and delete dialog through
+the page, and the live PubSub handlers (`:student_updated`, `:student_deleted`,
+`:class_updated`, `:class_deleted`, `:server_created`/`:server_updated`/
+`:server_deleted`), each asserting the whole page projection by `==`. The
+deferred `class_live` student table + new-student dialog + student/server PubSub
+handlers landed in `class_live_test.exs` (table rows + registered count + empty
+state; new-student validate/minimal/full/failure; the student/imported/
+preregistered-user reload handlers via an Agent-backed `list_students` stub; the
+server-tracking handler driven through a real group-topic broadcast affecting
+the delete-dialog block). `ImportStudentsDialogLive` is covered through the page
+by pre-writing the CSV it parses on mount (column detection, new/existing
+classification, a validate rejection, and the import action pinning the
+`Course.import_students` data map) — the live file-upload event itself
+(`consume_uploaded_students`) stays uncovered.
+
+_Reachable-subset / deferred coverage:_ `student_live`'s
+`:preregistered_user_updated` handler calls `Student.fetch_student/1` (the DB)
+directly rather than through the mocked context, so it is not web-testable
+without a further seam (flagged for review, like the `find_active_server` seam);
+the in-memory `%Server{}`-refresh branches of
+`maybe_refresh_server_group`/`maybe_refresh_server_group_member` (reached only
+when an active server with a matching group member is already loaded) and the
+facade's `{:multiple_servers_found, _}` masking are left as defensive paths.
+_Coverage ratchet:_ with the suite at 78.4%, `coveralls.json`'s
+`minimum_coverage` was bumped 74 → 76.
 
 ### Admin — student form components
 

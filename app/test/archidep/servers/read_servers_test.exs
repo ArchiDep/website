@@ -15,7 +15,9 @@ defmodule ArchiDep.Servers.ReadServersTest do
   setup_all do
     %{
       list_my_servers: protect({Context, :list_my_servers, 1}, Behaviour),
-      fetch_server: protect({Context, :fetch_server, 2}, Behaviour)
+      fetch_server: protect({Context, :fetch_server, 2}, Behaviour),
+      fetch_active_server_for_group_member:
+        protect({Context, :fetch_active_server_for_group_member, 2}, Behaviour)
     }
   end
 
@@ -97,6 +99,71 @@ defmodule ArchiDep.Servers.ReadServersTest do
       %{auth: other_auth} = ServersTestHelpers.register_group_member(@past)
 
       assert fetch_server.(other_auth, server.id) == {:error, :server_not_found}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "fetch_active_server_for_group_member/2" do
+    setup do
+      stub(ArchiDep.Clock.Mock, :now, fn -> @past end)
+      :ok
+    end
+
+    test "fetches the active server of a group member", %{
+      fetch_active_server_for_group_member: fetch_active_server_for_group_member
+    } do
+      %{owner: owner, student: student, class: class} =
+        ServersTestHelpers.register_group_member(@past)
+
+      server = ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+
+      root = Factory.build(:authentication, root: true)
+
+      assert fetch_active_server_for_group_member.(root, student.id) == {:ok, server}
+
+      assert_no_stored_events!()
+    end
+
+    test "returns not-found when the group member has no active server", %{
+      fetch_active_server_for_group_member: fetch_active_server_for_group_member
+    } do
+      root = Factory.build(:authentication, root: true)
+
+      assert fetch_active_server_for_group_member.(root, Ecto.UUID.generate()) ==
+               {:error, :server_not_found}
+
+      assert_no_stored_events!()
+    end
+
+    test "an inactive server is masked as not-found", %{
+      fetch_active_server_for_group_member: fetch_active_server_for_group_member
+    } do
+      %{owner: owner, student: student, class: class} =
+        ServersTestHelpers.register_group_member(@past)
+
+      ServersTestHelpers.insert_server(owner.id, class.id, active: false)
+
+      root = Factory.build(:authentication, root: true)
+
+      assert fetch_active_server_for_group_member.(root, student.id) ==
+               {:error, :server_not_found}
+
+      assert_no_stored_events!()
+    end
+
+    test "a non-root caller is masked as not-found", %{
+      fetch_active_server_for_group_member: fetch_active_server_for_group_member
+    } do
+      %{owner: owner, student: student, class: class} =
+        ServersTestHelpers.register_group_member(@past)
+
+      ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+
+      %{auth: other_auth} = ServersTestHelpers.register_group_member(@past)
+
+      assert fetch_active_server_for_group_member.(other_auth, student.id) ==
+               {:error, :server_not_found}
 
       assert_no_stored_events!()
     end

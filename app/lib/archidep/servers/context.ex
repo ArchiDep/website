@@ -20,7 +20,6 @@ defmodule ArchiDep.Servers.Context do
   # ====================
 
   implement(&Behaviour.list_server_group_members/2, UseCases.ReadServerGroups)
-
   implement(&Behaviour.fetch_authenticated_server_group_member/1, UseCases.ReadServerGroups)
   implement(&Behaviour.fetch_authenticated_server_owner/1, UseCases.ReadServerGroups)
 
@@ -31,6 +30,7 @@ defmodule ArchiDep.Servers.Context do
   implement(&Behaviour.create_server/3, UseCases.CreateServer)
   implement(&Behaviour.list_my_servers/1, UseCases.ReadServers)
   implement(&Behaviour.fetch_server/2, UseCases.ReadServers)
+  implement(&Behaviour.fetch_active_server_for_group_member/2, UseCases.ReadServers)
   implement(&Behaviour.validate_existing_server/3, UseCases.UpdateServer)
   implement(&Behaviour.update_server/3, UseCases.UpdateServer)
   implement(&Behaviour.delete_server/2, UseCases.DeleteServer)

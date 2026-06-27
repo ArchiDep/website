@@ -110,6 +110,14 @@ defmodule ArchiDep.Servers.Behaviour do
   )
 
   @doc """
+  Fetches the currently active server of a server group member, if any.
+  """
+  callback(
+    fetch_active_server_for_group_member(auth: Authentication.t(), group_member_id: UUID.t()) ::
+      {:ok, Server.t()} | {:error, :server_not_found}
+  )
+
+  @doc """
   Validates the data to update an existing server.
   """
   callback(
