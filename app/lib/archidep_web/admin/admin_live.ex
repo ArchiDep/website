@@ -2,24 +2,26 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   use ArchiDepWeb, :live_view
 
   import ArchiDepWeb.Helpers.LiveViewHelpers
+  alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
-  alias ArchiDep.Servers.ServerTracking.ServerTracker
+  alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
   alias ArchiDep.Servers.SSH
+  alias ArchiDep.TrackerClient
   alias ArchiDepWeb.Admin.AdminClassServersLive
   alias Ecto.UUID
   alias Phoenix.PubSub
-  alias Phoenix.Tracker
 
   @pubsub ArchiDep.PubSub
-  @tracker ArchiDep.Tracker
 
-  @spec real_time_states_for(list(Server.t()), %{optional(UUID.t()) => ServerRealTimeState.t()}) ::
-          %{optional(UUID.t()) => ServerRealTimeState.t()}
+  @spec real_time_states_for(list(Server.t()), %{
+          optional(UUID.t()) => ServerRealTimeState.t() | nil
+        }) ::
+          %{optional(UUID.t()) => ServerRealTimeState.t() | nil}
   def real_time_states_for(class_servers, server_state_map),
     do:
       class_servers
@@ -28,7 +30,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       end)
       |> Enum.into(%{})
 
-  @spec count_connected(%{optional(UUID.t()) => ServerRealTimeState.t()}) :: non_neg_integer()
+  @spec count_connected(%{optional(UUID.t()) => ServerRealTimeState.t() | nil}) ::
+          non_neg_integer()
   def count_connected(server_state_map),
     do:
       server_state_map
@@ -54,8 +57,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
           :ok = Servers.PubSub.subscribe_server_group_servers(class.id)
         end
 
-        @tracker
-        |> Tracker.list("ansible-queue")
+        "ansible-queue"
+        |> TrackerClient.list()
         |> Enum.reduce(%{demand: 0, pending: 0, ongoing: MapSet.new()}, fn
           {"queue:" <> _queue, %{demand: demand, pending: pending}}, acc ->
             acc
@@ -88,7 +91,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
     tracker =
       if connected?(socket) do
-        {:ok, pid} = ServerTracker.start_link(all_servers)
+        {:ok, pid} = ServerTrackerClient.start_link(all_servers)
         pid
       end
 
@@ -97,7 +100,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       active_classes: active_classes,
       page_title: gettext("Admin"),
       servers_by_class_id: servers_by_class_id,
-      server_state_map: ServerTracker.server_state_map(all_servers),
+      server_state_map: ServerTrackerClient.server_state_map(all_servers),
       server_tracker: tracker,
       ssh_public_key: SSH.ssh_public_key(),
       ansible: ansible
@@ -112,7 +115,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
           assigns: %{active_classes: active_classes, servers_by_class_id: servers_by_class_id}
         } = socket
       ) do
-    if Class.active?(created_class, DateTime.utc_now()) do
+    if Class.active?(created_class, Clock.now()) do
       socket
       |> assign(
         active_classes: active_classes |> add_class(created_class) |> sort_classes(),
@@ -131,7 +134,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
           assigns: %{active_classes: active_classes, servers_by_class_id: servers_by_class_id}
         } = socket
       ) do
-    if Class.active?(updated_class, DateTime.utc_now()) do
+    if Class.active?(updated_class, Clock.now()) do
       socket
       |> assign(
         active_classes:
@@ -195,9 +198,9 @@ defmodule ArchiDepWeb.Admin.AdminLive do
                 created_server.group_id,
                 sort_servers([created_server | servers])
               ),
-              ServerTracker.update_server_state_map(
+              ServerTrackerClient.update_server_state_map(
                 server_state_map,
-                ServerTracker.track(tracker, created_server)
+                ServerTrackerClient.track(tracker, created_server)
               )
             }
           end
@@ -249,9 +252,9 @@ defmodule ArchiDepWeb.Admin.AdminLive do
                 updated_server.group_id,
                 sort_servers([updated_server | servers])
               ),
-              ServerTracker.update_server_state_map(
+              ServerTrackerClient.update_server_state_map(
                 server_state_map,
-                ServerTracker.track(tracker, updated_server)
+                ServerTrackerClient.track(tracker, updated_server)
               )
             }
           end
@@ -291,9 +294,9 @@ defmodule ArchiDepWeb.Admin.AdminLive do
             )
         end,
       server_state_map:
-        ServerTracker.update_server_state_map(
+        ServerTrackerClient.update_server_state_map(
           server_state_map,
-          ServerTracker.untrack(tracker, deleted_server)
+          ServerTrackerClient.untrack(tracker, deleted_server)
         )
     )
     |> noreply()
@@ -307,7 +310,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       do:
         socket
         |> assign(
-          server_state_map: ServerTracker.update_server_state_map(server_state_map, update)
+          server_state_map: ServerTrackerClient.update_server_state_map(server_state_map, update)
         )
         |> noreply()
 

@@ -48,9 +48,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
 
   @impl ServerTrackerClientBehaviour
   @spec update_server_state_map(
-          %{UUID.t() => ServerRealTimeState.t()},
+          %{UUID.t() => ServerRealTimeState.t() | nil},
           server_state_update()
-        ) :: %{UUID.t() => ServerRealTimeState.t()}
+        ) :: %{UUID.t() => ServerRealTimeState.t() | nil}
   def update_server_state_map(map, {:server_state, id, new_server_state}),
     do: Map.put(map, id, new_server_state)
 

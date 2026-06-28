@@ -97,7 +97,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Admin — student form components](#admin--student-form-components)
   - [x] [Admin — events views](#admin--events-views)
   - [x] [Admin — ansible views](#admin--ansible-views)
-  - [ ] [Admin — top-level shell](#admin--top-level-shell)
+  - [x] [Admin — top-level shell](#admin--top-level-shell)
   - [x] [Dashboard](#dashboard)
   - [x] [Profile (remainder)](#profile-remainder)
 - **3. Channels**
@@ -1257,12 +1257,15 @@ shared support module was created — `classes_live_test.exs`'s value readers
 the new-class form, and the expected-properties tests capture submitted data
 through the mock rather than the DOM, so they need no readers. Revisit
 extraction when a third consumer (the `class_form_component` test) needs the
-value readers. _Remaining:_ `admin_class_servers_live` and `classes_controller`
-(a ConnCase request test — separate controller canon), plus `class_live`'s
-student/server table and its student/server PubSub handlers (with the **Admin —
-students** chunk). A `ClassForm` exhaustive changeset test
-(`class_form_test.exs`) is the natural sibling (the dialog tests pin only
-wiring).
+value readers. _Remaining:_ `classes_controller` (a ConnCase request test —
+separate controller canon, with its own wall-clock gap in the CSV export's
+`find_active_server_for_group_member` call), plus `class_live`'s student/server
+table and its student/server PubSub handlers (with the **Admin — students**
+chunk). A `ClassForm` exhaustive changeset test (`class_form_test.exs`) is the
+natural sibling (the dialog tests pin only wiring). `admin_class_servers_live`
+is covered through `admin_live` (see [Admin — top-level
+shell](#admin--top-level-shell)) — a pure presentational child `live_component`
+with no route of its own, per the components-through-the-page canon.
 
 ### Admin — class form components
 
@@ -1492,6 +1495,56 @@ time-driven scheduling not meaningfully unit-testable here.
 ### Admin — top-level shell
 
 `admin_live`. _Scope:_ 1 file (fold into an adjacent chunk if trivial).
+
+_Done:_ `admin_live_test.exs` covers the most coupled admin page so far — it
+reads two contexts (`Course.list_active_classes` + per-class
+`Servers.list_all_servers_in_group`), overlays the ansible-queue presence, and
+drives the per-server real-time tracker. Each test asserts a whole-page
+projection (`%{ssh_public_key, stats, classes}`): the three stat cards (ansible
+queue `pending/demand`, ansible jobs, connected count — each with its
+success/warning/secondary variant) and the class list, each class section
+projected to its servers as `{server_id, :connected | :not_connected}` (the
+server card's rendering is covered through the server pages, so only identity
+and connection state are pinned here). This **covers `admin_class_servers_live`
+through the page** (a pure presentational child `live_component` with no route
+of its own), per the components-through-the-page canon. Coverage of the mount,
+the class lifecycle handlers (`:class_created` active/inactive, `:class_updated`
+rename / become-inactive, `:class_deleted`), the server lifecycle handlers
+(`:server_created` + `track`, `:server_updated` move-in vs. in-place,
+`:server_deleted` + `untrack`), the `{:server_state, …}` update, and the
+ansible-queue `:join`/`:update`/`:leave` diffs.
+
+The chunk reused both seams established earlier rather than introducing new
+ones: the `TrackerClient` façade (from [Admin — ansible
+views](#admin--ansible-views)) for `Tracker.list("ansible-queue")`, and the
+`ServerTrackerClient` façade (from the server pages) for the `ServerTracker`
+GenServer calls
+(`start_link`/`server_state_map`/`track`/`untrack`/`update_server_state_map`).
+The recurring **clock gap** was fixed (flag for review): the
+`:class_created`/`:class_updated` handlers read `DateTime.utc_now/0` to evaluate
+`Class.active?/2` and now use `ArchiDep.Clock.now()`.
+
+One latent **type** bug was fixed and flagged: `update_server_state_map/2`
+legitimately stores `nil` for a server that has left or been untracked (its
+`server_state_update` value is `ServerRealTimeState.t() | nil`), but the
+`ServerTrackerClientBehaviour` callback (and the `ServerTracker` `@spec`) typed
+the state map's values as `ServerRealTimeState.t()` only — so the real shape
+failed the Hammox contract once the page went through the mocked client. The map
+value type is now `ServerRealTimeState.t() | nil` in the behaviour, the impl
+`@spec`, and `admin_live`'s `real_time_states_for/2` / `count_connected/1`
+specs.
+
+_Test-isolation:_ the page's class list is driven by the shared, non-sandboxed
+`"classes"` PubSub topic, so a concurrent class test can inject classes after a
+broadcast. Following the documented list-page convention (full page at mount;
+targeted assertions after a broadcast), the mount tests assert the whole class
+list while the post-broadcast tests assert the affected class section by its
+test-unique name plus the (pollution-free) stats; the file stays `async: true`.
+
+_Coverage ratchet:_ with the suite at 81.4%, `coveralls.json`'s
+`minimum_coverage` was bumped 78 → 80. _Reachable-subset:_ the few defensive
+branches not driven through the UI are left uncovered (`admin_live` is at
+92.7%).
 
 ### Dashboard
 

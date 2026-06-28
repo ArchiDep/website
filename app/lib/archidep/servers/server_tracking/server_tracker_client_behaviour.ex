@@ -23,9 +23,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour do
   @callback server_state_map(list(Server.t())) :: %{optional(UUID.t()) => ServerRealTimeState.t()}
 
   @callback update_server_state_map(
-              %{optional(UUID.t()) => ServerRealTimeState.t()},
+              %{optional(UUID.t()) => ServerRealTimeState.t() | nil},
               ServerTracker.server_state_update()
-            ) :: %{optional(UUID.t()) => ServerRealTimeState.t()}
+            ) :: %{optional(UUID.t()) => ServerRealTimeState.t() | nil}
 
   @callback get_current_server_state(Server.t() | UUID.t()) :: ServerRealTimeState.t() | nil
 end
