@@ -1933,10 +1933,22 @@ dead; (2) `translate_error/1` assumes ICU `{…}` placeholders, so a stray
 Ecto-default `%{…}` message would render a literal `%` — harmless given the app
 defines its validation messages with ICU placeholders.
 
-_Remaining (separate PRs under this box):_ `course_components.ex`
-(`student_username/1`, `expected_server_properties/1`); `layouts.ex` `app/1`
-(the application shell); and the `notifications/` Flashy wrappers. Box stays
-unchecked until those land.
+_Progress (part 2 — course):_ `course_components.ex` is covered by
+`course_components_test.exs`. `student_username/1` is projected to `%{username,
+suggested}` (the suggestion text or `nil`, covering the confirmed and
+unconfirmed branches). `expected_server_properties/1` is projected to the whole
+ordered list of rendered `<li>` lines, which exhaustively exercises its four
+private formatters through render: the CPU group's singular/plural ICU labels
+(`1 CPU` / `2 CPUs`, and likewise cores/vCPUs) and nil-member omission, the
+memory group's `… MB RAM` / `… MB Swap`, the OS group's system/architecture join
+plus the `{os_family} family` wrapper, the distribution group's three-part join,
+the all-unset "No restrictions" line, and the one-line-per-group ordering. The
+placeholders resolve through the app's ICU gettext (consistent with the
+`{number}` the schema tests assert literally — see part 1). No latent bug.
+
+_Remaining (separate PRs under this box):_ `layouts.ex` `app/1` (the application
+shell) and the `notifications/` Flashy wrappers. Box stays unchecked until those
+land.
 
 ### Canon — testing runtime processes
 
