@@ -7,7 +7,8 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.Schemas.Class
 
-  @spec fetch_class(Authentication.t(), UUID.t()) :: {:ok, Class.t()} | {:error, :class_not_found}
+  @spec fetch_class(Authentication.t() | nil, UUID.t()) ::
+          {:ok, Class.t()} | {:error, :class_not_found}
   def fetch_class(auth, id) do
     with :ok <- validate_uuid(id, :class_not_found),
          {:ok, class} <- Class.fetch_class(id),

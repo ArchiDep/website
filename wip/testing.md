@@ -91,7 +91,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Servers web — server detail & dialogs (remainder)](#servers-web--server-detail--dialogs-remainder)
   - [x] [Servers web — forms & components](#servers-web--forms--components)
   - [x] [Servers web — controllers & retry handlers](#servers-web--controllers--retry-handlers)
-  - [ ] [Admin — classes list/detail + class dialogs](#admin--classes-listdetail--class-dialogs)
+  - [x] [Admin — classes list/detail + class dialogs](#admin--classes-listdetail--class-dialogs)
   - [x] [Admin — class form components](#admin--class-form-components)
   - [x] [Admin — students list + student dialogs](#admin--students-list--student-dialogs)
   - [x] [Admin — student form components](#admin--student-form-components)
@@ -1257,15 +1257,47 @@ shared support module was created — `classes_live_test.exs`'s value readers
 the new-class form, and the expected-properties tests capture submitted data
 through the mock rather than the DOM, so they need no readers. Revisit
 extraction when a third consumer (the `class_form_component` test) needs the
-value readers. _Remaining:_ `classes_controller` (a ConnCase request test —
-separate controller canon, with its own wall-clock gap in the CSV export's
-`find_active_server_for_group_member` call), plus `class_live`'s student/server
-table and its student/server PubSub handlers (with the **Admin — students**
-chunk). A `ClassForm` exhaustive changeset test (`class_form_test.exs`) is the
-natural sibling (the dialog tests pin only wiring). `admin_class_servers_live`
-is covered through `admin_live` (see [Admin — top-level
-shell](#admin--top-level-shell)) — a pure presentational child `live_component`
-with no route of its own, per the components-through-the-page canon.
+value readers. `admin_class_servers_live` is covered through `admin_live` (see
+[Admin — top-level shell](#admin--top-level-shell)) — a pure presentational child
+`live_component` with no route of its own, per the components-through-the-page
+canon.
+
+_Done:_ the box's last file, `classes_controller`, landed in
+`classes_controller_test.exs` as the first **download-response** controller test
+(the only prior controller test asserts status-only JSON). Each request is
+asserted as one whole-response projection by `==` — `%{status, content_type,
+content_disposition, body}` — with the CSV `body` pinned as the exact string
+(comma-free fixture values, so no escaping; the `nil`-server row's empty ip/
+username cells and the `academic_class || ""` fallback are exercised) and the
+JSON inventory `body` decoded (`Jason.decode!`) and pinned by `==`; the `401`
+paths assert `response(conn, 401) == "Unauthorized"` with `verify_on_exit!`
+proving the downstream context/seam are never called. Per the admin-page canon
+(no web-layer root guard) the principals are root (success + empty-class) and
+anonymous (→ 401); the redundant "logged-in-but-unauthorized" case collapses
+into anonymous, since both manifest at the web layer only as `fetch_class`
+returning an error.
+
+The controller needed the same seam adoption + clock fix prior chunks applied
+(flag for review): `find_active_server_data_for/1` called the raw schema query
+`Server.find_active_server_for_group_member(id, DateTime.utc_now())` directly —
+a wall-clock gap, a seam bypass (no authorization), and unmockable. It now
+threads `auth` and calls the existing read façade
+`Servers.fetch_active_server_for_group_member/2` (which authorizes root and
+reads `Clock.now()`), exactly as `student_live` already does. Driving the
+anonymous path surfaced one latent **type** bug (flag for review): the
+`Course.fetch_class` behaviour callback typed `auth` as `Authentication.t()`,
+but the whole `nil`-auth path is intended (`authorize/5` guards
+`is_authentication(auth) or is_nil(auth)`, the policy catch-all denies `nil`,
+`fetch_class` masks the denial, and the controller returns 401) — Hammox
+rejected the legitimate `nil` call. The callback and the
+`ReadClasses.fetch_class` impl `@spec` now type `auth` as `Authentication.t() |
+nil` (the delegated `Course.fetch_class` spec follows automatically).
+`class_live` needed no further work: its template renders no server table (only
+the class's expected-server-properties, already tested, and a `servers_count`
+feeding the delete-dialog block, already tested via a `server_created`
+broadcast); its student table + student/server PubSub handlers landed with the
+Admin — students chunk; and `class_form_test.exs` covers the `ClassForm`
+sibling.
 
 ### Admin — class form components
 

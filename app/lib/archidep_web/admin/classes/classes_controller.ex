@@ -3,7 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
 
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Student
-  alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers
 
   @spec generate_class_csv(Conn.t(), map) :: Conn.t()
   def generate_class_csv(conn, %{"id" => id}) do
@@ -13,7 +13,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
       {:ok, class} ->
         students = Course.list_students(auth, class)
 
-        server_data = load_server_data_for(students)
+        server_data = load_server_data_for(auth, students)
 
         csv =
           students
@@ -55,13 +55,13 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
     end
   end
 
-  defp load_server_data_for(students) do
+  defp load_server_data_for(auth, students) do
     students
     |> Enum.sort_by(fn %Student{name: name, academic_class: academic_class} ->
       "#{academic_class} - #{name}"
     end)
     |> Enum.map(fn %Student{id: student_id} ->
-      Task.async(fn -> find_active_server_data_for(student_id) end)
+      Task.async(fn -> find_active_server_data_for(auth, student_id) end)
     end)
     |> Task.await_many()
     |> Enum.reduce(%{}, fn {student_id, ip_address, username}, acc ->
@@ -69,10 +69,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
     end)
   end
 
-  defp find_active_server_data_for(student_id) do
-    case Server.find_active_server_for_group_member(student_id, DateTime.utc_now()) do
+  defp find_active_server_data_for(auth, student_id) do
+    case Servers.fetch_active_server_for_group_member(auth, student_id) do
       {:ok, server} -> {student_id, server.ip_address, server.username}
-      _anything -> {student_id, nil, nil}
+      {:error, _any_reason} -> {student_id, nil, nil}
     end
   end
 

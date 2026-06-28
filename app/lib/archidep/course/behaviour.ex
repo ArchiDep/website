@@ -35,7 +35,7 @@ defmodule ArchiDep.Course.Behaviour do
   Fetches a class.
   """
   callback(
-    fetch_class(auth: Authentication.t(), class_id: UUID.t()) ::
+    fetch_class(auth: Authentication.t() | nil, class_id: UUID.t()) ::
       {:ok, Class.t()} | {:error, :class_not_found}
   )
 
