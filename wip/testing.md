@@ -101,7 +101,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Dashboard](#dashboard)
   - [x] [Profile (remainder)](#profile-remainder)
 - **3. Channels**
-  - [ ] 🧭 [Canon + tests — channels](#canon--tests--channels)
+  - [x] 🧭 [Canon + tests — channels](#canon--tests--channels)
 - **4. Plumbing — router, plugs, auth controller**
   - [x] 🧭 [Canon + tests — auth controller & plugs](#canon--tests--auth-controller--plugs)
 - **5. Helpers & components**
@@ -1725,6 +1725,44 @@ _Context:_ depends on the foundations [`ChannelCase`](#add-a-channelcase).
 🧭 Establish the `Phoenix.ChannelTest` pattern and cover `user_channel.ex` +
 `user_socket.ex` (connect/auth, join, `handle_in`/`handle_info`). Small enough to
 be canon and coverage in one reviewed chunk. _Scope:_ 2 files.
+
+_Done:_ both files are covered (`user_socket_test.exs`, `user_channel_test.exs`)
+and the canon is documented under [Channels](../app/docs/testing.md#channels).
+The key translation: channels are **web-layer citizens** (contexts
+Hammox-mocked, clock injected, `verify_on_exit!`) but with **real PubSub**, and
+— having no DOM and no `handle_in` — their observable contract is the **`join`
+reply plus the pushed events**, asserted wholly by `==`. The settled
+conventions: (1) the initial session data is the join _reply_, not a `"session"`
+push (the channel dedups against the last-sent data), so a fresh join replies
+with the session data, pushes `"cloudServerData"`, and `refute_push`es
+`"session"`; (2) `refute_push` is the channel analogue of the DOM
+presence/absence rule — it pins every dedup branch (a server event never
+repushes `"session"`; a no-op student update repushes neither); (3) identity
+filtering is enforced by the keyed subscription topic, so the
+`principal_id`-pinned `handle_info` heads are defensive and tests drive only
+deliverable messages (broadcast via the real `*.PubSub.publish_*` helpers); (4)
+connect/auth drives `connect/3` through the real handler with a signed token,
+mocking `validate_session_id`, with the token as the verifiable-exception.
+`ChannelCase` gained the `LiveCase`-style mock setup (default `Clock.Mock` stub,
+`verify_on_exit!`) and a `sign_user_socket_token/2` helper.
+
+_Latent bug fixed (flag for review):_ the recurring **clock gap** — `join`,
+`:server_created` and `:server_updated` read `DateTime.utc_now()` directly, so
+the `Server.active?/2` filtering of `active_servers` was unpinnable; all three
+now take `now` from `Clock.now()`, matching every prior chunk.
+
+_Coverage (`user_socket.ex` 100%, `user_channel.ex` 83%):_ the remaining
+`user_channel.ex` lines are the two server-list **refresh** mappers
+(`update_class_of_active_servers` / `update_student_of_active_servers`, fired by
+`:class_updated` / `:student_updated` on a non-empty `active_servers`). They are
+**deliberately deferred**: their effect is to refresh the `group` /
+`group_member` of an active server — fields the `cloudServerData` payload omits,
+so they are invisible to the pushed-events contract — and they call
+`ServerGroup.refresh!` / `ServerGroupMember.refresh!`, which the [DDD
+plan](./ddd.md#sequencing-with-the-testing-plan) reshapes; per the coordination
+note they ship with the `refresh!` work to avoid writing those tests twice. The
+cheaply-observable list mutations (drop-on-delete, replace-on-update) are
+covered.
 
 ### Canon + tests — auth controller & plugs
 

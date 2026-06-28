@@ -58,6 +58,9 @@ that silently rots.
   - [Testing components: through the page or in isolation](#testing-components-through-the-page-or-in-isolation)
   - [Pure helpers on a LiveView or component](#pure-helpers-on-a-liveview-or-component)
 - [Channels](#channels)
+  - [Connect and authentication: drive `connect/3` through the handler](#connect-and-authentication-drive-connect3-through-the-handler)
+  - [The pushed-events projection: the channel's whole-value contract](#the-pushed-events-projection-the-channels-whole-value-contract)
+  - [Mocking, subscriptions, principals, and time](#mocking-subscriptions-principals-and-time)
 - [Plumbing (router, plugs, auth)](#plumbing-router-plugs-auth)
 - [Helpers & components](#helpers--components)
 
@@ -1374,9 +1377,87 @@ their coverage exactly as the form-schema-vs-LiveView split above:
 
 ## Channels
 
-_To be documented when we write the channel tests. This layer uses
-`ChannelCase` (`Phoenix.ChannelTest`). Topics to cover: connect/auth, join, and
-`handle_in`/`handle_info`._
+The user socket and channel (`ArchiDepWeb.Channels.UserSocket` / `UserChannel`)
+are tested with [`ChannelCase`][channel-case] (`Phoenix.ChannelTest`). Like the
+LiveView and controller layers, channel tests are **web-layer citizens**: every
+context is its [`Hammox`][hammox] mock (`Accounts.ContextMock`,
+`Course.ContextMock`, `Servers.ContextMock`), the clock is injected, and
+`verify_on_exit!` enforces the expectations — but `Phoenix.PubSub` is the
+**real** server, because the channel's whole job is to react to broadcasts. The
+worked examples are [`user_socket_test.exs`][user-socket-test] (the transport)
+and [`user_channel_test.exs`][user-channel-test] (the channel).
+
+### Connect and authentication: drive `connect/3` through the handler
+
+The socket's `connect/3` is the authentication gate. Sign a token the way the
+controller does — `sign_user_socket_token/2` (in [`ChannelCase`][channel-case])
+wraps `Phoenix.Token.sign(@endpoint, "user socket", session_id)` — then drive
+`connect(UserSocket, %{"token" => token}, connect_info: …)` and assert the whole
+result by `==`: `{:ok, socket}` with `socket.assigns == %{auth: auth}` on
+success, or the exact `{:error, reason}` on each rejection branch (missing /
+non-string / unverifiable / expired token, and a verified token whose session is
+gone). Mock `Accounts.validate_session_id/2` and pin its argument — the decoded
+`session_id` and the `ClientMetadata` built from the `connect_info`. The token
+itself is the [documented token exception](#plumbing-router-plugs-auth): forge
+an expired one with `sign_user_socket_token(id, signed_at: <past>)` rather than
+asserting ciphertext. `id/1` and `handle_error/2` are pure and asserted directly
+(the socket id, and each error mapped to its HTTP status).
+
+### The pushed-events projection: the channel's whole-value contract
+
+The channel has no DOM and no `handle_in` — it is server-to-client push only, so
+its observable contract is the **`join` reply plus the pushed events**, and
+those get the same whole-value exactness the DOM projection gets in the web
+layer. There is nothing incidental to project away here: a pushed payload is a
+known map, so assert it **by `==`**, never `assert_push "session", _` for a
+payload the test cares about.
+
+- **The initial session data is the join _reply_, not a push.**
+  `UserChannel.join/3` returns `{:ok, ClientSessionData}` and
+  `send_updated_data/1` only _pushes_ `"session"` when the data **changes** from
+  what was last sent. So a fresh join replies with the session data and pushes
+  `"cloudServerData"`, but does **not** push `"session"`. Assert the reply
+  struct by `==`, `assert_push "cloudServerData", payload` by `==`, and
+  `refute_push "session", _`. Build each expected payload from the fixtures you
+  control (pin every field), the same independent-oracle discipline the web
+  layer uses for displayed values.
+- **`refute_push` proves the dedup branches.** Because both push helpers skip
+  when the projected payload is unchanged, a broadcast that does not change the
+  data must produce **no** push — assert that absence with `refute_push`. A
+  server event never changes the session data, so each server test asserts the
+  new `"cloudServerData"` and `refute_push "session", _`; a student update that
+  touches no displayed field refutes **both**. This is the channel analogue of
+  the presence/absence discipline in the [DOM
+  projection](#asserting-the-dom-a-meaningful-projection-not-exact-markup).
+- **Identity filtering is enforced by the keyed topic, so the `handle_info`
+  guards are defensive.** The channel subscribes only to its own keyed topics
+  (`server-owners:<principal_id>:servers`, `students:<student_id>`,
+  `classes:<class_id>`), so it only ever receives events whose owner/student/
+  class id matches — the `principal_id`-pinned `handle_info` heads can never see
+  a mismatch in practice. Tests therefore drive only **deliverable** messages
+  (broadcast through the context's `publish_*` helper on the topic the channel
+  subscribed to); do not hand-deliver an impossible mismatched message, which
+  would only exercise an unreachable `FunctionClauseError`.
+
+### Mocking, subscriptions, principals, and time
+
+- **Pin the join's context reads by count and argument.** `expect` the join's
+  `Servers.list_my_servers(^auth)` (once) and, for a student,
+  `Course.fetch_authenticated_student(^auth)` (once); for a root user set **no**
+  expectation on `fetch_authenticated_student`, so an erroneous call fails the
+  test (root short-circuits to `student: nil`).
+- **Prove a subscription behaviourally.** After joining, broadcast the matching
+  event with the real `Course.PubSub` / `Servers.PubSub` `publish_*` helper and
+  assert the resulting push — the channel analogue of [PubSub-driven
+  re-renders](#flash-notifications-and-pubsub-driven-updates). The topics are
+  id-keyed, so this is naturally selective and safe under `async: true`.
+- **Drive both principals.** Cover a root (`student: nil`) and a student (the
+  student sub-map), the same rule the web layer applies.
+- **Control time through the injected clock.** [`ChannelCase`][channel-case]
+  installs the default `ArchiDep.Clock.Mock` → `SystemClock` stub (mirroring
+  [`LiveCase`][live-case]); a test that asserts active-server filtering pins a
+  fixed `@now` with `stub(ArchiDep.Clock.Mock, :now, fn -> @now end)` and builds
+  its servers at fixed offsets, so `Server.active?/2` is deterministic.
 
 ## Plumbing (router, plugs, auth)
 
@@ -1457,6 +1538,9 @@ function components with the [LazyHTML][lazy-html]-based
 [mox]: https://hexdocs.pm/mox/Mox.html
 [live-case]: ../test/support/live_case.ex
 [conn-case]: ../test/support/conn_case.ex
+[channel-case]: ../test/support/channel_case.ex
+[user-socket-test]: ../test/archidep_web/channels/user_socket_test.exs
+[user-channel-test]: ../test/archidep_web/channels/user_channel_test.exs
 [auth-controller-test]: ../test/archidep_web/auth/auth_controller_test.exs
 [html-test-helpers]: ../test/support/html_test_helpers.ex
 [profile-live-test]: ../test/archidep_web/profile/profile_live_test.exs

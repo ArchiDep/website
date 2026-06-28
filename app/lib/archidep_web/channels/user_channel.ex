@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   use ArchiDepWeb, :channel
 
   import ArchiDepWeb.Helpers.AuthHelpers
+  alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
@@ -36,7 +37,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
     :ok = Servers.PubSub.subscribe_server_owner_servers(auth.principal_id)
 
-    now = DateTime.utc_now()
+    now = Clock.now()
     active_servers = auth |> Servers.list_my_servers() |> Enum.filter(&Server.active?(&1, now))
     current_client_session_data = ClientSessionData.new(auth, student)
 
@@ -139,7 +140,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
         socket
         |> assign(
           active_servers:
-            add_created_server_if_active(active_servers, created_server, DateTime.utc_now())
+            add_created_server_if_active(active_servers, created_server, Clock.now())
         )
         |> send_updated_data()
         |> noreply()
@@ -158,7 +159,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
         socket
         |> assign(
           active_servers:
-            add_or_remove_updated_server(active_servers, updated_server, DateTime.utc_now())
+            add_or_remove_updated_server(active_servers, updated_server, Clock.now())
         )
         |> send_updated_data()
         |> noreply()
