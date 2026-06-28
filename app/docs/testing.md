@@ -1544,6 +1544,24 @@ value; `==` for any richer return), one test per branch.
   `ArchiDep.Authentication.username/1`, covered by that module, so it gets no
   test — the same rule the [LiveView/component helpers
   section](#pure-helpers-on-a-liveview-or-component) states.
+- **A helper whose result is a side effect is pinned by that effect, not its
+  return value.** `LiveViewHelpers.set_process_label/2` (and its `/3` arities)
+  returns `:ok` and sets the OTP process label; the test reads it back with
+  `:proc_lib.get_label(self())` and asserts the exact label string, one test per
+  arity ([`live_view_helpers_test.exs`][live-view-helpers-test]). Each ExUnit
+  test runs in its own process, so the label mutation is isolated.
+- **A helper that builds a command struct, or takes a conn or socket, is still
+  asserted whole.** `DialogHelpers.open_dialog/1` returns a
+  `Phoenix.LiveView.JS` struct — assert the whole struct by `==`, since the
+  command sequence is the contract (as
+  [`server_components_test.exs`][server-components-test] does for `JS.push`). A
+  conn- or socket-taking helper is driven with a built conn (`ConnCase`) or a
+  minimal `%Phoenix.LiveView.Socket{}` and its whole returned value asserted by
+  `==`: `ConnHelpers.conn_metadata/1` against a `%ClientMetadata{}`
+  ([`conn_helpers_test.exs`][conn-helpers-test]), and
+  `DialogHelpers.validate_dialog_form/4`'s resulting `form` assign across its
+  apply / validate-ok / validate-error branches
+  ([`dialog_helpers_test.exs`][dialog-helpers-test]).
 
 ### Stateless function components
 
@@ -1625,5 +1643,9 @@ in isolation](#testing-components-through-the-page-or-in-isolation).)
 [auth-helpers-test]: ../test/archidep_web/helpers/auth_helpers_test.exs
 [core-components-test]: ../test/archidep_web/components/core_components_test.exs
 [date-format-helpers-test]: ../test/archidep_web/helpers/date_format_helpers_test.exs
+[live-view-helpers-test]: ../test/archidep_web/helpers/live_view_helpers_test.exs
+[conn-helpers-test]: ../test/archidep_web/helpers/conn_helpers_test.exs
+[dialog-helpers-test]: ../test/archidep_web/helpers/dialog_helpers_test.exs
+[server-components-test]: ../test/archidep_web/servers/server_components_test.exs
 [events-components-test]: ../test/archidep_web/admin/events/events_components_test.exs
 [lazy-html]: https://hexdocs.pm/lazy_html

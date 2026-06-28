@@ -106,7 +106,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] 🧭 [Canon + tests — auth controller & plugs](#canon--tests--auth-controller--plugs)
 - **5. Helpers & components**
   - [x] 🧭 [Canon — components & web helpers](#canon--components--web-helpers)
-  - [ ] [Web helpers (remainder)](#web-helpers-remainder)
+  - [x] [Web helpers (remainder)](#web-helpers-remainder)
   - [ ] [Shared components](#shared-components)
 - **6. Runtime processes — server tracking & Ansible pipeline (integration)**
   - [ ] 🧭 [Canon — testing runtime processes](#canon--testing-runtime-processes)
@@ -1862,6 +1862,44 @@ are trivial pure code with no clock, `with`/`else`, or policy to misfire.
 The untested helpers in `archidep_web/helpers` (auth, form, conn, socket,
 `live_view`, dialog, `user_agent`, student). Split into 2 chunks if needed.
 _Scope:_ ~8 files.
+
+_Done:_ the whole `archidep_web/helpers` directory is now covered, finished in
+one pass (`auth` and `date_format` predate this chunk). Seven new test files
+(`form_helpers_test.exs`, `socket_helpers_test.exs`,
+`user_agent_format_helpers_test.exs`, `student_helpers_test.exs`,
+`live_view_helpers_test.exs`, `dialog_helpers_test.exs`,
+`conn_helpers_test.exs`) applying the helper canon, all under plain
+`ExUnit.Case` except `conn_helpers_test.exs` (`ConnCase` for the built conn).
+Each branch is asserted by exact value: `tmp_boolify/2`'s three branches,
+`format_user_agent/1`'s recognized/unknown outcomes,
+`student_not_in_class_tooltip/1`'s three clauses (nested `Student → User →
+Student → Class` graphs built in memory via the course factory), and
+`live_socket_id/1`.
+
+Three assertion shapes the canon spike did not exercise were settled and added
+to the [Pure helper modules](../app/docs/testing.md#pure-helper-modules) canon —
+all applications of the whole-value rule, none of them new policy: (1) a
+**side-effecting** helper (`set_process_label/2,3`, all five arities) is pinned
+by its observable effect, `:proc_lib.get_label(self())`, asserted by exact
+string (OTP 28); (2) a **`JS`-command builder** (`open_dialog/1`,
+`close_dialog/1`) is asserted as the whole `Phoenix.LiveView.JS` struct by `==`,
+as the server component tests already do for `JS.push`; (3) a
+**conn/socket-taking** helper is driven with a built conn / minimal
+`%Phoenix.LiveView.Socket{}` and its whole returned value asserted by `==` —
+`conn_metadata/1` against a whole `%ClientMetadata{}`, and
+`validate_dialog_form/4`'s resulting assign as a whole `Phoenix.HTML.Form` by
+`==` across its apply / validate-ok / validate-error branches.
+
+_No latent bug fixed_ — these are trivial pure helpers. Two minor robustness
+observations for the reviewer, neither reachable from current callers (so
+flagged, not fixed): `validate_dialog_form/4`'s `with`/`else` only matches
+`{:error, %Changeset{}}`, so a validating function returning a non-changeset
+`{:error, term}` (which its `@spec` permits) would raise a `WithClauseError` —
+but `apply_action` always yields a changeset and every dialog caller returns
+one; and `format_user_agent/1`'s `@spec` says `term` while its only clause is
+guarded `is_binary`, so a non-binary argument raises `FunctionClauseError`
+rather than returning `"Unknown"` — every caller passes the request's user-agent
+string.
 
 ### Shared components
 
