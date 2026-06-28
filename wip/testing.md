@@ -105,7 +105,7 @@ This is the bird's-eye view: each item links to its full description under
 - **4. Plumbing — router, plugs, auth controller**
   - [x] 🧭 [Canon + tests — auth controller & plugs](#canon--tests--auth-controller--plugs)
 - **5. Helpers & components**
-  - [ ] 🧭 [Canon — components & web helpers](#canon--components--web-helpers)
+  - [x] 🧭 [Canon — components & web helpers](#canon--components--web-helpers)
   - [ ] [Web helpers (remainder)](#web-helpers-remainder)
   - [ ] [Shared components](#shared-components)
 - **6. Runtime processes — server tracking & Ansible pipeline (integration)**
@@ -1818,12 +1818,44 @@ pipeline). No clock gap surfaced — the auth layer delegates time to the mocked
 ### Canon — components & web helpers
 
 _Context:_ helpers and components are mostly pure functions and stateless
-components — fast to cover once a canon exists. Several helper tests already exist
-(`date_format_helpers_test.exs`, `data_helpers_test.exs`, …) and can serve as the
-starting point.
+components — fast to cover once a canon exists. Several helper tests already
+exist (`date_format_helpers_test.exs`, `data_helpers_test.exs`, …) and can serve
+as the starting point.
 
 🧭 Pick `core_components` + one web helper and establish how we render/assert
 function components (Floki) vs. how we unit-test helper functions. Get reviewed.
+
+_Done:_ two exemplars landed — `auth_helpers_test.exs` (the pure-helper unit
+test) and `core_components_test.exs` (stateless function components) — and the
+canon is documented in `docs/testing.md` under "Helpers & components". The
+settled conventions:
+
+1. **Pure helpers** are tested under plain `ExUnit.Case` with exact per-branch
+   assertions; `auth_helpers_test.exs` pins every clause of the six predicates
+   (each falsifying branch of `can_impersonate?/2` individually). The **doctest
+   stance** was settled: doctests are legitimate coverage for a simple,
+   self-evident pure function (the existing doctest-only
+   `date_format_helpers_test.exs` stays as-is), and branch-dense helpers get
+   explicit ExUnit tests. The delegation rule was applied — `username/1` is a
+   `defdelegate` and is not re-tested.
+2. **Function components** are rendered under `LiveCase` and asserted as a
+   semantic DOM projection by `==`. Newly settled (no prior test rendered a
+   _slotted_ component): render attr-only components with `render_component/2`
+   (as the existing component tests do) but slotted components through an `~H`
+   template with `rendered_to_string/1`, since the `inner_block` form of
+   `render_component/2` is unreadable. The projection discipline for these
+   styling-heavy core components: assert the displayed text / slot content and
+   **never** the spacing/layout classes (`no_data/1`, `data_display_element/1`),
+   pin a class only where it is the **semantic variant marker** (the `note-info`
+   / `note-warning` wrapper tokens, mirroring how `events_components_test.exs`
+   pins badge colours), and assert the `:global` `rest` passthrough contract.
+
+_Backlog correction (flag for review):_ this task and the [web-layer
+canon](#canon--web-layer-liveview-test-conventions) say "Floki", but the project
+standardized on **LazyHTML** (via the `HtmlTestHelpers` support module, the same
+engine Phoenix LiveView uses internally) — the canon text says LazyHTML. _No
+latent bug surfaced:_ unlike the business-layer spikes, these helpers/components
+are trivial pure code with no clock, `with`/`else`, or policy to misfire.
 
 ### Web helpers (remainder)
 

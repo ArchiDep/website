@@ -63,6 +63,8 @@ that silently rots.
   - [Mocking, subscriptions, principals, and time](#mocking-subscriptions-principals-and-time)
 - [Plumbing (router, plugs, auth)](#plumbing-router-plugs-auth)
 - [Helpers & components](#helpers--components)
+  - [Pure helper modules](#pure-helper-modules)
+  - [Stateless function components](#stateless-function-components)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -1511,10 +1513,85 @@ pushes. `assert_live_anonymous_user_redirected_to_login/2`
 
 ## Helpers & components
 
-_To be documented when we write the helper and component tests. Topics to cover:
-unit-testing pure helper functions (and doctests), and rendering/asserting
-function components with the [LazyHTML][lazy-html]-based
-[`HtmlTestHelpers`][html-test-helpers]._
+Alongside the LiveViews and controllers, the web layer has standalone **helper
+modules** (`lib/archidep_web/helpers/…`) and **stateless function components**
+(`lib/archidep_web/components/…`). Both are mostly pure — a helper transforms
+data, a function component renders attrs and slots to markup — so their tests
+are correspondingly light. The worked examples are
+[`auth_helpers_test.exs`][auth-helpers-test] and
+[`core_components_test.exs`][core-components-test].
+
+### Pure helper modules
+
+A helper that touches neither the database nor processes is tested under plain
+`ExUnit.Case, async: true` — no case template. Assert each clause and branch by
+its exact return value (`assert`/`refute` on a boolean predicate pins the whole
+value; `==` for any richer return), one test per branch.
+
+- **Doctests are a legitimate form of coverage for a simple, self-evident pure
+  function.** A doctest's `iex>` line and its expected output are a whole-value
+  assertion that doubles as documentation, so a formatting helper whose
+  behaviour is obvious from a couple of examples — e.g.
+  [`date_format_helpers_test.exs`][date-format-helpers-test], which is a single
+  `doctest` and nothing else — needs no separate ExUnit tests. Reach for
+  explicit ExUnit tests when the helper has **branches or boundaries** to cover
+  exhaustively (a predicate with several falsifying conditions, an off-by-one
+  threshold), where a doctest would be an unreadable wall of examples;
+  [`auth_helpers_test.exs`][auth-helpers-test] pins each branch of
+  `can_impersonate?/2` that way.
+- **A helper that merely delegates to an already-tested function is not
+  re-tested.** `AuthHelpers.username/1` is a `defdelegate` to
+  `ArchiDep.Authentication.username/1`, covered by that module, so it gets no
+  test — the same rule the [LiveView/component helpers
+  section](#pure-helpers-on-a-liveview-or-component) states.
+
+### Stateless function components
+
+A function component (`def x(assigns)` with `~H`) renders attrs and slots to
+markup with no process or state. Render it in isolation under
+[`LiveCase`][live-case] and assert a **semantic projection of the DOM by `==`**,
+exactly as the [DOM projection
+rule](#asserting-the-dom-a-meaningful-projection-not-exact-markup) governs page
+output — the markup envelope is incidental, the rendered information is not. (A
+component that is only ever embedded in, and observable through, a page is
+covered through that page instead; see [Testing components: through the page or
+in isolation](#testing-components-through-the-page-or-in-isolation).)
+
+- **Render attr-only components with `render_component/2`; render slotted
+  components through an `~H` template with `rendered_to_string/1`.** Passing
+  slot content to `render_component/2` (its `inner_block` form) is unreadable,
+  so write the component the way a caller would and render that:
+
+  ```elixir
+  # Attr-only — render_component/2 (as the existing component tests do)
+  render_component(&CoreComponents.no_data/1, text: "n/a")
+
+  # Slotted — rendered_to_string/1 with an ~H template
+  assigns = %{}
+
+  rendered_to_string(~H"""
+  <CoreComponents.warning_note>Disk almost full</CoreComponents.warning_note>
+  """)
+  ```
+
+- **Project to what the component is _for_, not how it is styled.** A component
+  whose attrs only toggle Tailwind classes (`no_data/1`'s muted styling,
+  `data_display_element/1`'s `small` font switch, the responsive grid on
+  `data_display/1`) has no behaviour in those classes — assert the **displayed
+  text / slot content** and do **not** pin spacing or layout classes.
+  Manufacturing class assertions to chase coverage is forbidden, the same trap
+  the DOM projection rule warns about.
+- **Pin a class only when it is the semantic marker that distinguishes
+  variants.** The `note-info` / `note-warning` class on the note components _is_
+  the behaviour — it is what makes a warning a warning — so the note projection
+  asserts its wrapper class tokens, the same way
+  [`events_components_test.exs`][events-components-test] pins a badge's colour
+  tokens. Exact where we own the value, structural-minimal where we do not.
+- **Assert the `:global` passthrough contract.** Every component here accepts
+  arbitrary HTML attributes via `attr :rest, :global` — pin that a
+  caller-supplied attribute reaches the element (`no_data/1` rendered with `id:
+…` carries it through), because that passthrough is a real behavioural
+  contract, not incidental markup.
 
 [contributing]: ../CONTRIBUTING.md#testing
 [data-case]: ../test/support/data_case.ex
@@ -1545,4 +1622,8 @@ function components with the [LazyHTML][lazy-html]-based
 [html-test-helpers]: ../test/support/html_test_helpers.ex
 [profile-live-test]: ../test/archidep_web/profile/profile_live_test.exs
 [current-sessions-live-test]: ../test/archidep_web/profile/current_sessions_live_test.exs
+[auth-helpers-test]: ../test/archidep_web/helpers/auth_helpers_test.exs
+[core-components-test]: ../test/archidep_web/components/core_components_test.exs
+[date-format-helpers-test]: ../test/archidep_web/helpers/date_format_helpers_test.exs
+[events-components-test]: ../test/archidep_web/admin/events/events_components_test.exs
 [lazy-html]: https://hexdocs.pm/lazy_html
