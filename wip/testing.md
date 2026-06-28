@@ -107,7 +107,7 @@ This is the bird's-eye view: each item links to its full description under
 - **5. Helpers & components**
   - [x] 🧭 [Canon — components & web helpers](#canon--components--web-helpers)
   - [x] [Web helpers (remainder)](#web-helpers-remainder)
-  - [ ] [Shared components](#shared-components)
+  - [x] [Shared components](#shared-components)
 - **6. Runtime processes — server tracking & Ansible pipeline (integration)**
   - [ ] 🧭 [Canon — testing runtime processes](#canon--testing-runtime-processes)
   - [ ] [Ansible pipeline — Runner & GenStage](#ansible-pipeline--runner--genstage)
@@ -1954,23 +1954,38 @@ pinned: the anonymous log-in link vs. the logged-in account dropdown
 (Profile/Log out), the extra Stop-impersonating action when impersonating, the
 root-only Admin icon, the root-and-admin-path-only admin submenu
 (Classes/Ansible/Events) and "Course" divider, and the active-nav highlighting
-for `/app`, `/admin`, and each admin subpath (the active state is folded into the
-projection as a boolean derived from the highlight class, not pinned as a styling
-value, mirroring the badge-colour precedent). No latent bug.
+for `/app`, `/admin`, and each admin subpath (the active state is folded into
+the projection as a boolean derived from the highlight class, not pinned as a
+styling value, mirroring the badge-colour precedent). No latent bug.
 
 _Scope note (flag for review):_ the sidebar **course-material menu**
 (`Material.course_sections/0` / `course_cheatsheets/0`) and the **footer**
-(`ArchiDep.Git` / `ArchiDep.Application.version`) render from compile-time course
-data and global build metadata, not from `app/1`'s own conditional logic, and
-`Material` is not injectable — so the projection covers the material menu by
+(`ArchiDep.Git` / `ArchiDep.Application.version`) render from compile-time
+course data and global build metadata, not from `app/1`'s own conditional logic,
+and `Material` is not injectable — so the projection covers the material menu by
 **presence only** (`material_menu?`) and omits the footer. The per-item material
 formatting (slides/exercise/graded icons, section open/closed) is therefore not
 unit-tested in isolation; it renders on every page. If that logic ever needs
 direct coverage, `Material` would first need to be made injectable.
 
-_Remaining (separate PR under this box):_ the `notifications/` Flashy wrappers
-(`message.ex`'s type→icon/colour and dismissible bar, `disconnected.ex`). Box
-stays unchecked until that lands.
+_Done (part 4 — notifications):_ the `notifications/` Flashy wrappers are
+covered (`notifications/message_test.exs`,
+`notifications/disconnected_test.exs`). `Message.render/1` is projected to
+`%{color, message, dismissible?}` for each of the four notification types (the
+`alert-info`/`success`/`warning`/`error` colour is the per-type semantic marker,
+as sorted class tokens) plus the non-dismissible case (no `#…-progress` bar).
+`Disconnected.render/1` is projected to `%{color, message}`. Notifications are
+built with `Message.new/2,3`.
+
+_Scope note (flag for review):_ `Message`'s `icon/1` selects a distinct Heroicon
+per type, but each renders as an opaque inline `<svg>` with the same `w-4 h-4`
+class and no identifying attribute, so it cannot be asserted without pinning SVG
+path markup (which the DOM-projection rule forbids). The per-type branch is
+instead covered through the parallel `color/1` marker (both switch on
+`@notification.type`); the icon itself is left unpinned.
+
+With all four families covered (core, form, course, layouts, notifications),
+this box is checked.
 
 ### Canon — testing runtime processes
 
