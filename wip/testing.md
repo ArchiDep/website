@@ -1906,6 +1906,38 @@ string.
 `core`, `form`, `course`, `server`, `layouts` components. _Scope:_ ~6 files,
 split by component family.
 
+_Progress (part 1 — core + form):_ `core_components.ex` is now fully covered —
+`core_components_test.exs` gained the two remaining note variants (`more_note`,
+`troubleshooting_note`, projected like the existing notes by variant marker /
+title / content) and `data_display/1` (its `<dl>` slot content plus the
+`:global` passthrough; the responsive/small classes are styling and are not
+pinned). New `form_components_test.exs` covers all of `form_components.ex`: the
+`field_help/1` and `error/1` slot wrappers, the pure `translate_error/1` and
+`process_value/1`, `errors_for/1` (the `used_input?` gate — errors render only
+once the field is in the form params **and** an action is set, asserted as the
+whole translated-message list including order), and the
+`concurrent_modification_warning/1` truth table (each branch projected to
+`%{previous, new_badge, text}` by `==`: not-shown, badge style, `:raw` style,
+hidden previous value, and the `:value_display` slot override).
+
+Settled a non-obvious fact while writing these: the app's Gettext is
+**CLDR/ICU-based, so message placeholders are `{count}` / `{number}`, not Ecto's
+default `%{…}`** — `translate_error/1` resolves the app's own ICU messages
+(matching the `{number}` the schema tests assert literally). No latent bug
+fixed; two minor observations for the reviewer: (1)
+`concurrent_modification_warning/1`'s "value has been modified" message uses
+`:if={@new_value != @old_value or @new_value != @processed_value}`, but the
+container only renders when `@new_value != @processed_value`, so the second
+operand is always true inside it and the `@new_value != @old_value` clause is
+dead; (2) `translate_error/1` assumes ICU `{…}` placeholders, so a stray
+Ecto-default `%{…}` message would render a literal `%` — harmless given the app
+defines its validation messages with ICU placeholders.
+
+_Remaining (separate PRs under this box):_ `course_components.ex`
+(`student_username/1`, `expected_server_properties/1`); `layouts.ex` `app/1`
+(the application shell); and the `notifications/` Flashy wrappers. Box stays
+unchecked until those land.
+
 ### Canon — testing runtime processes
 
 _Context:_ the server-tracking and Ansible-pipeline _process_ modules are the

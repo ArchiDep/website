@@ -67,6 +67,49 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
                content: "Save your work"
              }
     end
+
+    test "more_note renders the more variant, title and content" do
+      assigns = %{}
+
+      html =
+        rendered_to_string(~H"""
+        <CoreComponents.more_note>Read the docs</CoreComponents.more_note>
+        """)
+
+      assert note_projection(html) == %{
+               variant: ["note", "note-more"],
+               title: "📚 More information",
+               content: "Read the docs"
+             }
+    end
+
+    test "troubleshooting_note renders the troubleshooting variant, title and content" do
+      assigns = %{}
+
+      html =
+        rendered_to_string(~H"""
+        <CoreComponents.troubleshooting_note>Restart the service</CoreComponents.troubleshooting_note>
+        """)
+
+      assert note_projection(html) == %{
+               variant: ["note", "note-troubleshooting"],
+               title: "💥 Troubleshooting",
+               content: "Restart the service"
+             }
+    end
+  end
+
+  describe "data_display/1" do
+    test "renders its slot content in a definition list and passes global attributes through" do
+      assigns = %{}
+
+      html =
+        rendered_to_string(~H"""
+        <CoreComponents.data_display id="server-facts">Some data</CoreComponents.data_display>
+        """)
+
+      assert data_display_projection(html) == %{content: "Some data", id: "server-facts"}
+    end
   end
 
   defp note_projection(html) do
@@ -79,6 +122,12 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
       title: html_element_text(title),
       content: html_element_text(content)
     }
+  end
+
+  defp data_display_projection(html) do
+    [dl] = find_html_elements(html, "dl")
+
+    %{content: html_element_text(dl), id: html_element_attribute(dl, "id")}
   end
 
   defp data_display_element_projection(html) do
