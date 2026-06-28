@@ -1946,9 +1946,31 @@ the all-unset "No restrictions" line, and the one-line-per-group ordering. The
 placeholders resolve through the app's ICU gettext (consistent with the
 `{number}` the schema tests assert literally — see part 1). No latent bug.
 
-_Remaining (separate PRs under this box):_ `layouts.ex` `app/1` (the application
-shell) and the `notifications/` Flashy wrappers. Box stays unchecked until those
-land.
+_Progress (part 3 — layouts):_ `layouts.ex`'s `app/1` application shell is
+covered by `layouts_test.exs`, rendered in isolation across the auth/path matrix
+and asserted as one whole-shell projection by `==` per test — `%{auth_menu,
+top_nav, admin_submenu, course_divider?, material_menu?, content}`. The branches
+pinned: the anonymous log-in link vs. the logged-in account dropdown
+(Profile/Log out), the extra Stop-impersonating action when impersonating, the
+root-only Admin icon, the root-and-admin-path-only admin submenu
+(Classes/Ansible/Events) and "Course" divider, and the active-nav highlighting
+for `/app`, `/admin`, and each admin subpath (the active state is folded into the
+projection as a boolean derived from the highlight class, not pinned as a styling
+value, mirroring the badge-colour precedent). No latent bug.
+
+_Scope note (flag for review):_ the sidebar **course-material menu**
+(`Material.course_sections/0` / `course_cheatsheets/0`) and the **footer**
+(`ArchiDep.Git` / `ArchiDep.Application.version`) render from compile-time course
+data and global build metadata, not from `app/1`'s own conditional logic, and
+`Material` is not injectable — so the projection covers the material menu by
+**presence only** (`material_menu?`) and omits the footer. The per-item material
+formatting (slides/exercise/graded icons, section open/closed) is therefore not
+unit-tested in isolation; it renders on every page. If that logic ever needs
+direct coverage, `Material` would first need to be made injectable.
+
+_Remaining (separate PR under this box):_ the `notifications/` Flashy wrappers
+(`message.ex`'s type→icon/colour and dismissible bar, `disconnected.ex`). Box
+stays unchecked until that lands.
 
 ### Canon — testing runtime processes
 
