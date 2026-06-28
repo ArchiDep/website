@@ -3,14 +3,14 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
 
   import ArchiDepWeb.Admin.Ansible.AnsibleComponents
   import ArchiDepWeb.Helpers.LiveViewHelpers
+  alias ArchiDep.Clock
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
+  alias ArchiDep.TrackerClient
   alias Phoenix.PubSub
-  alias Phoenix.Tracker
   require Logger
 
   @pubsub ArchiDep.PubSub
-  @tracker ArchiDep.Tracker
 
   @impl LiveView
   def mount(_params, _session, socket) do
@@ -21,8 +21,8 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
         set_process_label(__MODULE__, auth)
         :ok = PubSub.subscribe(@pubsub, "tracker:ansible-queue")
 
-        @tracker
-        |> Tracker.list("ansible-queue")
+        "ansible-queue"
+        |> TrackerClient.list()
         |> Enum.reduce(%{}, fn
           {"playbook:" <> run_id, %{type: :playbook} = meta}, acc -> Map.put(acc, run_id, meta)
           {_key, _meta}, acc -> acc
@@ -34,7 +34,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
     socket
     |> assign(
       page_title: "#{gettext("Ansible")} · #{gettext("Admin")}",
-      now: DateTime.utc_now(),
+      now: Clock.now(),
       playbook_runs: Servers.fetch_ansible_playbook_runs(auth),
       tracked_playbooks: tracked_playbooks,
       next_tick: nil
@@ -49,8 +49,13 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
   @impl LiveView
   def handle_info(
         {action, "playbook:" <> run_id, %{type: :playbook, state: state, events: events} = meta},
-        %Socket{assigns: %{playbook_runs: playbook_runs, tracked_playbooks: tracked_playbooks}} =
-          socket
+        %Socket{
+          assigns: %{
+            auth: auth,
+            playbook_runs: playbook_runs,
+            tracked_playbooks: tracked_playbooks
+          }
+        } = socket
       )
       when action in [:join, :update] do
     new_tracked_playbooks =
@@ -77,7 +82,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
             other_run
         end)
       else
-        new_run = run_id |> AnsiblePlaybookRun.fetch_run() |> unpair_ok()
+        new_run = auth |> Servers.fetch_ansible_playbook_run(run_id) |> unpair_ok()
         add_new_playbook_run(playbook_runs, new_run)
       end
 
@@ -93,8 +98,13 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
   @impl LiveView
   def handle_info(
         {:leave, "playbook:" <> run_id, %{}},
-        %Socket{assigns: %{playbook_runs: playbook_runs, tracked_playbooks: tracked_playbooks}} =
-          socket
+        %Socket{
+          assigns: %{
+            auth: auth,
+            playbook_runs: playbook_runs,
+            tracked_playbooks: tracked_playbooks
+          }
+        } = socket
       ),
       do:
         socket
@@ -102,7 +112,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
           playbook_runs:
             Enum.map(playbook_runs, fn
               %AnsiblePlaybookRun{id: ^run_id} ->
-                run_id |> AnsiblePlaybookRun.fetch_run() |> unpair_ok()
+                auth |> Servers.fetch_ansible_playbook_run(run_id) |> unpair_ok()
 
               other_run ->
                 other_run
@@ -118,7 +128,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
   def handle_info(:tick, socket),
     do:
       socket
-      |> assign(now: DateTime.utc_now(), next_tick: nil)
+      |> assign(now: Clock.now(), next_tick: nil)
       |> tick()
       |> noreply()
 
@@ -172,7 +182,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
   defp tick_interval(%Socket{assigns: %{playbook_runs: [most_recent_run | _other_runs]}}) do
     last_run_minutes_ago =
       most_recent_run.created_at
-      |> DateTime.diff(DateTime.utc_now(), :second)
+      |> DateTime.diff(Clock.now(), :second)
       |> abs()
       |> div(60)
 

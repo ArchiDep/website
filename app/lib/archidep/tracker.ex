@@ -3,6 +3,8 @@ defmodule ArchiDep.Tracker do
   Presence tracking for the application.
   """
 
+  @behaviour ArchiDep.TrackerClientBehaviour
+
   use Phoenix.Tracker
 
   alias Phoenix.PubSub
@@ -17,6 +19,9 @@ defmodule ArchiDep.Tracker do
         name: __MODULE__,
         pubsub_server: Keyword.fetch!(opts, :pubsub_server)
       )
+
+  @impl ArchiDep.TrackerClientBehaviour
+  def list(topic), do: Tracker.list(__MODULE__, topic)
 
   @impl Tracker
   def init([]), do: {:ok, nil}

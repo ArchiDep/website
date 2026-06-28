@@ -89,16 +89,16 @@ This is the bird's-eye view: each item links to its full description under
 - **2. Web layer — LiveViews & controllers**
   - [x] 🧭 [Canon — web-layer LiveView test conventions](#canon--web-layer-liveview-test-conventions)
   - [x] [Servers web — server detail & dialogs (remainder)](#servers-web--server-detail--dialogs-remainder)
-  - [ ] [Servers web — forms & components](#servers-web--forms--components)
+  - [x] [Servers web — forms & components](#servers-web--forms--components)
   - [x] [Servers web — controllers & retry handlers](#servers-web--controllers--retry-handlers)
   - [ ] [Admin — classes list/detail + class dialogs](#admin--classes-listdetail--class-dialogs)
   - [x] [Admin — class form components](#admin--class-form-components)
   - [x] [Admin — students list + student dialogs](#admin--students-list--student-dialogs)
   - [x] [Admin — student form components](#admin--student-form-components)
   - [x] [Admin — events views](#admin--events-views)
-  - [ ] [Admin — ansible views](#admin--ansible-views)
+  - [x] [Admin — ansible views](#admin--ansible-views)
   - [ ] [Admin — top-level shell](#admin--top-level-shell)
-  - [ ] [Dashboard](#dashboard)
+  - [x] [Dashboard](#dashboard)
   - [x] [Profile (remainder)](#profile-remainder)
 - **3. Channels**
   - [ ] 🧭 [Canon + tests — channels](#canon--tests--channels)
@@ -1143,6 +1143,12 @@ seam-blocked servers-web pages, and `server_components` additionally has a direc
 deferred until the seam lands. _Coverage ratchet:_ with the suite at 61.9%,
 `coveralls.json`'s `minimum_coverage` was bumped 60 → 61.
 
+_Box closed:_ the three presentational components are now covered as the seam
+landed in later chunks — `server_components` and `server_help_component` have
+dedicated isolation tests (both at 100%, the `server_components` clock gap fixed)
+and `server_form_component` is page-covered through the dashboard / my-servers
+dialogs per the "components through the page" canon. See [Dashboard](#dashboard).
+
 ### Servers web — controllers & retry handlers
 
 `server_callbacks_controller` (ConnCase request tests), `server_retry_handlers`.
@@ -1428,6 +1434,61 @@ bumped 55 → 58.
 `ansible_live`, `ansible_playbook_run_live`, `ansible_components`. _Scope:_ 3
 files.
 
+_Done:_ all three covered. `ansible_components_test.exs` unit-tests the three
+presentational helpers in isolation with `render_component/2`
+(`ansible_playbook_run_state` per state, `ansible_playbook_run_stats` /
+`ansible_stat` per stat by a `{label, sorted-class-tokens}` whole-value
+projection, exhausting every state and stat-color branch).
+`ansible_playbook_run_live_test.exs` (the detail page) and
+`ansible_live_test.exs` (the list page) each assert a single whole-page
+projection by `==`: the detail page projects the data-display rows (the Playbook
+cell whole, including its nested tooltip text; the Server cell as `{name,
+link}`), the variables table (`{key, :visible|:hidden, value}`), and the async
+events table; the list page projects each run row (`{playbook, start, duration,
+state, events, tasks}`) and exercises the tracker-presence overlay plus the
+`:join` / `:update` / `:leave` diff handlers (including chronological insertion
+of a joining run) via real messages, asserting the converged page each time.
+
+This chunk required first introducing the **`TrackerClient` seam**:
+`ansible_live` read the ansible-queue presence list by calling the
+`ArchiDep.Tracker` `Phoenix.Tracker` GenServer directly
+(`Tracker.list("ansible-queue")`), which is not mockable. A thin
+`ArchiDep.TrackerClient` façade + `ArchiDep.TrackerClientBehaviour` (just
+`list/1`) now mirror `ServerTrackerClient` (`@implementation
+Application.compile_env!`, wired to `ArchiDep.Tracker` in `config/config.exs`
+and to `ArchiDep.TrackerClientMock` in `config/test.exs`, with the tracker
+declaring the behaviour); only `ansible_live` is migrated to the client this
+chunk (`admin_live`, which also calls `Tracker.list`, adopts it with its own
+chunk, as `server_live` did for `ServerTrackerClient`). The recurring **clock
+gap** was fixed (flag for review): both LiveViews read `DateTime.utc_now/0`
+directly and now use `ArchiDep.Clock.now()`. `ansible_live` also reached the
+schema query `AnsiblePlaybookRun.fetch_run/1` directly; it now uses the existing
+mocked `Servers.fetch_ansible_playbook_run/2` facade.
+
+Four latent bugs were found and fixed (flag for review): (1) the detail page's
+`mount/3` piped `fetch_ansible_playbook_run` straight through `unpair_ok`, so a
+not-found run (e.g. deleted between the list render and navigation) **crashed**
+instead of redirecting; it now redirects to `/admin/ansible` with an error
+flash, matching the event detail page. (2) The
+`fetch_ansible_playbook_events_for_run` callback (and the use-case `@spec`)
+declared `{:ok, list(AnsiblePlaybookRun.t())}` but the implementation returns
+`AnsiblePlaybookEvent.t()` — a copy-paste from the run callback; corrected,
+which Hammox now enforces. (3) `AnsiblePlaybookEvent`'s `run` association type
+used the bare module `NotLoaded` instead of `NotLoaded.t()`, so Hammox treated
+it as an atom literal and a real unloaded `run` (the production shape —
+`fetch_events_for_run` does not preload it) failed the contract; fixed to
+`NotLoaded.t()` like every other schema. (4) `AnsiblePlaybookEvent`'s `data`
+type was `%{String.t() => term()}` (a **required** key), so an event with empty
+`data` failed the contract — the same `required` → `optional` map-type fix made
+earlier on `Types.server_properties` / `ServerTrackerClientBehaviour`; now
+`%{optional(String.t()) => term()}`. (_The same bare-`NotLoaded` appears on
+`AnsiblePlaybookRun.server`, but that read always preloads the server, so it is
+left untouched and the test builds runs with a loaded server.)_ _Coverage
+ratchet:_ with the suite at 80.0%, `coveralls.json`'s `minimum_coverage` was
+bumped 76 → 78. _Reachable-subset:_ `ansible_live`'s tick/timer scheduling
+(`tick`/`reset_tick`/`tick_interval`) is left uncovered — deterministic
+time-driven scheduling not meaningfully unit-testable here.
+
 ### Admin — top-level shell
 
 `admin_live`. _Scope:_ 1 file (fold into an adjacent chunk if trivial).
@@ -1537,6 +1598,13 @@ flagged for review: `LoadingHelpers.loading_messages/0` was added so the
 membership in its complete known set rather than a weak non-empty check.
 _Coverage ratchet:_ with the suite at 75.8%, `coveralls.json`'s
 `minimum_coverage` was bumped 70 → 74.
+
+_Box closed:_ all three files are covered — `dashboard_live` and
+`my_servers_live` have dedicated tests and `components/what_is_your_name_live`
+is page-covered through `dashboard_live_test.exs` (its validate/configure events
+asserted there). The edit/delete server dialogs hosted on the dashboard are
+exercised through the page; the standalone delete dialog lives on `server_live`,
+out of this box's scope.
 
 ### Profile (remainder)
 

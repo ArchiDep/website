@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.Behaviour do
 
   use ArchiDep, :context_behaviour
 
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
@@ -200,8 +201,11 @@ defmodule ArchiDep.Servers.Behaviour do
       {:ok, AnsiblePlaybookRun.t()} | {:error, :ansible_playbook_run_not_found}
   )
 
+  @doc """
+  Fetches the events of an Ansible playbook run.
+  """
   callback(
     fetch_ansible_playbook_events_for_run(auth: Authentication.t(), run_id: UUID.t()) ::
-      {:ok, list(AnsiblePlaybookRun.t())} | {:error, :ansible_playbook_run_not_found}
+      {:ok, list(AnsiblePlaybookEvent.t())} | {:error, :ansible_playbook_run_not_found}
   )
 end

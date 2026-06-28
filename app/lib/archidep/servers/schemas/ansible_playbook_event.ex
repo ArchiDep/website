@@ -16,12 +16,12 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
-          run: AnsiblePlaybookRun.t() | NotLoaded,
+          run: AnsiblePlaybookRun.t() | NotLoaded.t(),
           run_id: UUID.t(),
           name: String.t(),
           action: String.t() | nil,
           changed: boolean(),
-          data: %{String.t() => term()},
+          data: %{optional(String.t()) => term()},
           task_name: String.t() | nil,
           task_id: String.t() | nil,
           task_started_at: DateTime.t() | nil,

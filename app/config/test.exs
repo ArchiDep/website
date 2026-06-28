@@ -51,6 +51,8 @@ config :archidep,
        ArchiDep.Servers.ServerTracking.ServerTrackerClient,
        ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
 
+config :archidep, ArchiDep.TrackerClient, ArchiDep.TrackerClientMock
+
 # Inject a mock clock so tests can pin the current time and assert exact
 # timestamps (see the testing guide in `docs/testing.md`).
 config :archidep, ArchiDep.Clock, ArchiDep.Clock.Mock

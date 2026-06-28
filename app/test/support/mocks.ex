@@ -74,3 +74,10 @@ Hammox.defmock(ArchiDep.Clock.Mock,
   Mock of the clock used to obtain the current time.
   """
 )
+
+Hammox.defmock(ArchiDep.TrackerClientMock,
+  for: ArchiDep.TrackerClientBehaviour,
+  moduledoc: """
+  Mock of the client API of the presence tracker.
+  """
+)

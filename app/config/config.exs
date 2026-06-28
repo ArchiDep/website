@@ -46,6 +46,8 @@ config :archidep,
        ArchiDep.Servers.ServerTracking.ServerTrackerClient,
        ArchiDep.Servers.ServerTracking.ServerTracker
 
+config :archidep, ArchiDep.TrackerClient, ArchiDep.Tracker
+
 config :archidep, ArchiDep.Repo, pool_size: 10, socket_options: []
 
 # Endpoint configuration

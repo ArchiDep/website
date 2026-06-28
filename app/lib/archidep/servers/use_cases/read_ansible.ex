@@ -30,7 +30,7 @@ defmodule ArchiDep.Servers.UseCases.ReadAnsible do
   end
 
   @spec fetch_ansible_playbook_events_for_run(Authentication.t(), UUID.t()) ::
-          {:ok, list(AnsiblePlaybookRun.t())} | {:error, :ansible_playbook_run_not_found}
+          {:ok, list(AnsiblePlaybookEvent.t())} | {:error, :ansible_playbook_run_not_found}
   def fetch_ansible_playbook_events_for_run(auth, run_id) do
     with :ok <- validate_uuid(run_id, :ansible_playbook_run_not_found),
          {:ok, run} <- AnsiblePlaybookRun.fetch_run(run_id),
