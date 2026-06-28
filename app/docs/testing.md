@@ -1417,11 +1417,16 @@ authenticated cases and a plain `conn` for the anonymous one;
 admin/authorization is delegated to the context, so at the web layer the
 meaningful principals are root and anonymous.
 
-_The auth plugs in `auth.ex` are exercised here through the controller (a
-`fetch_authentication` + `redirect_if_user_is_authenticated` round-trip is what
-makes an authenticated `GET /login` redirect). Their isolated edge cases (the
-remember-me-cookie→session path), the router pipelines, and `live_auth`'s
-on_mount hook are covered in a follow-up chunk._
+**Plugs and the on_mount hook are tested through a route or a real mount, not by
+calling them in isolation.** An authenticated `GET /login` redirecting is what
+exercises the `fetch_authentication` + `redirect_if_user_is_authenticated`
+round-trip; building a signed cookie with the `ConnCase` helpers
+(`put_user_token_in_remember_me_cookie/2`, `put_user_token_in_session/2`,
+`secret_key_base/0`) and hitting a route exercises the remember-me-cookie path;
+and mounting the lightest authenticated LiveView with `live/2` exercises
+`live_auth`'s on_mount, where `assert_push_event/3` pins the session data it
+pushes. `assert_live_anonymous_user_redirected_to_login/2`
+([`LiveCase`][live-case]) covers the anonymous-redirect branch across the suite.
 
 ## Helpers & components
 

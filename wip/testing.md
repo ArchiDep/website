@@ -103,7 +103,7 @@ This is the bird's-eye view: each item links to its full description under
 - **3. Channels**
   - [ ] 🧭 [Canon + tests — channels](#canon--tests--channels)
 - **4. Plumbing — router, plugs, auth controller**
-  - [ ] 🧭 [Canon + tests — auth controller & plugs](#canon--tests--auth-controller--plugs)
+  - [x] 🧭 [Canon + tests — auth controller & plugs](#canon--tests--auth-controller--plugs)
 - **5. Helpers & components**
   - [ ] 🧭 [Canon — components & web helpers](#canon--components--web-helpers)
   - [ ] [Web helpers (remainder)](#web-helpers-remainder)
@@ -1733,6 +1733,49 @@ be canon and coverage in one reviewed chunk. _Scope:_ 2 files.
 Establish the request-test canon (redirect/halt/assign assertions, authenticated
 vs. anonymous pipelines) and cover these in one or two reviewed chunks. _Scope:_
 auth controller, `live_auth.ex`, router pipelines.
+
+_Done in two chunks._ **Chunk 1 (auth controller):** `auth_controller_test.exs`
+covers every action as a full request test — `login` (render + authed redirect),
+`configure_switch_edu_id_login`, `log_in_with_link` (valid / remember-me-and-
+return-path / malformed / invalid), the Switch edu-ID `callback` (success /
+unauthorized / failure), `generate_csrf_token` and `generate_socket_token`
+(root, student, anonymous), `impersonate`, `stop_impersonating`, and `logout`.
+It settled the **ConnCase request-test canon** in
+[`docs/testing.md`](../app/docs/testing.md#plumbing-router-plugs-auth): a single
+whole-response projection asserted by `==` (redirect target + whole session
+minus the persisted flash + flash notifications + remember-me-cookie state), the
+conn-level flash-notification projection, CSRF bypass for mutation requests
+(`Plug.CSRFProtection`'s documented skip), non-deterministic tokens via
+`assert_secure_random_token`/`Phoenix.Token.verify`, and the convention for an
+action fronted by a third-party auth plug (invoke the action directly with the
+injected `ueberauth_auth`/`ueberauth_failure` assign; the pure IdP-redirect
+`request` action gets no test). Two latent bugs were fixed and flagged: the
+`log_in_with_link` `with` had no `else` clause for `Base.decode64/1`'s bare
+`:error`, so a malformed token crashed with `WithClauseError` instead of the
+intended invalid-link redirect (fixed with a normalizing `decode_link_token/1`);
+and the `callback` built the `emails` as a `MapSet` while the
+`switch_edu_id_login_data` type and every other caller use a `list` (benign at
+runtime via `Enum.map`, but a contract violation Hammox caught — now a
+deduplicated list). A high-fidelity end-to-end OIDC test against a fake IdP is
+recorded in [`docs/future-work.md`](../app/docs/future-work.md).
+
+**Chunk 2 (plugs, pipelines, live_auth):** `auth_test.exs` pins the
+security-relevant **remember-me cookie authentication** path (a valid signed
+cookie authenticates the request and copies its token into the session — only
+the invalid-cookie redirect was asserted before) and the `set_current_path`
+plug; `live_auth_test.exs` pins the on_mount **success** branch by mounting the
+lightest authenticated page and asserting the `"authenticated"` push_event as a
+whole `ClientSessionData` for a root (`student: nil`) and a student. The shared
+cookie/session helpers (`secret_key_base/0`, `put_user_token_in_session/2`,
+`put_user_token_in_remember_me_cookie/2`) moved from `LiveCase` to `ConnCase` so
+both case templates share them. `auth.ex`/`live_auth.ex` were already ~fully
+line-covered (every branch executed by Chunk 1 + the LiveView suite), so Chunk 2
+was assertion completeness, not new coverage. Deliberately left untested:
+`conn_metadata/1` (already pinned indirectly by Chunk 1's metadata matcher; a
+dedicated unit test belongs to the helpers chunk) and the framework pipeline
+plugs (`put_secure_browser_headers`/CSP, `Plug.SSL`, the dev-only `:dev`
+pipeline). No clock gap surfaced — the auth layer delegates time to the mocked
+`Accounts` context.
 
 ### Canon — components & web helpers
 
