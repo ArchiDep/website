@@ -20,7 +20,7 @@ defmodule ArchiDepWeb.Auth.AuthController do
 
   @spec log_in_with_link(Conn.t(), map) :: Conn.t()
   def log_in_with_link(conn, %{"token" => token}) do
-    with {:ok, decoded_token} <- Base.decode64(token),
+    with {:ok, decoded_token} <- decode_link_token(token),
          {:ok, auth} <-
            Accounts.log_in_or_register_with_link(
              decoded_token,
@@ -39,6 +39,13 @@ defmodule ArchiDepWeb.Auth.AuthController do
           )
         )
         |> redirect(to: "/login")
+    end
+  end
+
+  defp decode_link_token(token) do
+    case Base.decode64(token) do
+      {:ok, decoded_token} -> {:ok, decoded_token}
+      :error -> {:error, :invalid_link}
     end
   end
 
@@ -181,17 +188,9 @@ defmodule ArchiDepWeb.Auth.AuthController do
 
   defp collect_switch_edu_id_emails(user_info),
     do:
-      Enum.reduce(
-        [
-          switch_edu_id_main_email(user_info)
-          | switch_edu_id_affiliation_emails(user_info)
-        ],
-        MapSet.new(),
-        fn
-          email, acc when is_binary(email) -> MapSet.put(acc, email)
-          _invalid_email, acc -> acc
-        end
-      )
+      [switch_edu_id_main_email(user_info) | switch_edu_id_affiliation_emails(user_info)]
+      |> Enum.filter(&is_binary/1)
+      |> Enum.uniq()
 
   defp switch_edu_id_main_email(%{"email" => email}) when is_binary(email), do: email
   defp switch_edu_id_main_email(_userinfo), do: nil

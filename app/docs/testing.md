@@ -1380,9 +1380,48 @@ _To be documented when we write the channel tests. This layer uses
 
 ## Plumbing (router, plugs, auth)
 
-_To be documented when we write the plumbing tests. ConnCase request tests for
-the auth controller, `live_auth`, and the router pipelines. Topics to cover:
-redirect/halt/assign assertions and authenticated vs. anonymous pipelines._
+Controllers and request-level plumbing are tested with
+[`ConnCase`][conn-case] (`Phoenix.ConnTest`), driving real requests through the
+endpoint and router so the pipeline plugs run. As in the LiveView layer, every
+context is its [`Hammox`][hammox] mock, and the same exactness rules apply — the
+worked example is [`auth_controller_test.exs`][auth-controller-test].
+
+**Assert the whole observable response by `==`.** A request test pins every
+output the action controls, exactly, the way a LiveView test pins its whole-page
+projection:
+
+- the **status** and, for a redirect, its **target** — `redirected_to(conn) ==
+~p"/some/path"` (a redirect asserts both at once);
+- the **session** keys the action sets or clears — `get_session(conn, :key)`;
+- the **response cookies** it writes or deletes — `conn.resp_cookies[name]`,
+  projected to the deterministic fields (a signed cookie's value is opaque, so
+  assert its options and that the round-trip works where the value matters, not
+  the ciphertext);
+- the **flash notifications** — project the conn's flash to `[{type, message}]`,
+  dropping the random keys `Flashy` assigns, and assert by `==` (the same shape
+  the LiveView layer's `flash_notifications/1` produces);
+- the **rendered body** — for HTML, a projection built with the
+  [`HtmlTestHelpers`][html-test-helpers]; for JSON, `json_response/2` matched by
+  `==`.
+
+A non-deterministic security token in a response (a CSRF token, a signed socket
+token) is the documented exception: assert it with
+`assert_secure_random_token/1` (see [Generated
+identifiers](#generated-identifiers)), or, when the token is verifiable, decode
+it and assert the payload (e.g. `Phoenix.Token.verify/4` returning the expected
+id).
+
+**Drive both principals.** Use the shared auth fixtures
+(`register_and_log_in_root` / `:register_and_log_in_student`) for the
+authenticated cases and a plain `conn` for the anonymous one;
+admin/authorization is delegated to the context, so at the web layer the
+meaningful principals are root and anonymous.
+
+_The auth plugs in `auth.ex` are exercised here through the controller (a
+`fetch_authentication` + `redirect_if_user_is_authenticated` round-trip is what
+makes an authenticated `GET /login` redirect). Their isolated edge cases (the
+remember-me-cookie→session path), the router pipelines, and `live_auth`'s
+on_mount hook are covered in a follow-up chunk._
 
 ## Helpers & components
 
@@ -1413,6 +1452,7 @@ function components with the [LazyHTML][lazy-html]-based
 [mox]: https://hexdocs.pm/mox/Mox.html
 [live-case]: ../test/support/live_case.ex
 [conn-case]: ../test/support/conn_case.ex
+[auth-controller-test]: ../test/archidep_web/auth/auth_controller_test.exs
 [html-test-helpers]: ../test/support/html_test_helpers.ex
 [profile-live-test]: ../test/archidep_web/profile/profile_live_test.exs
 [current-sessions-live-test]: ../test/archidep_web/profile/current_sessions_live_test.exs

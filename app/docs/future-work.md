@@ -17,6 +17,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Break-glass recovery for root users when Switch edu-ID is unavailable](#break-glass-recovery-for-root-users-when-switch-edu-id-is-unavailable)
 - [Automated SSH exercise VM setup with Ansible](#automated-ssh-exercise-vm-setup-with-ansible)
 - [Dual search system](#dual-search-system)
+- [End-to-end Switch edu-ID login test against a fake identity provider](#end-to-end-switch-edu-id-login-test-against-a-fake-identity-provider)
 
 <!-- END doctoc -->
 
@@ -241,3 +242,40 @@ the static archival build.
   as it changes.
 - Whether result formats and highlighting can be unified across the two backends
   so the search UI does not need two code paths.
+
+## End-to-end Switch edu-ID login test against a fake identity provider
+
+**Problem:** The Switch edu-ID callback action (`AuthController.callback/2`) is
+fronted by the third-party `plug Ueberauth` (the `Ueberauth.Strategy.Oidcc`
+strategy), which performs the OpenID Connect token exchange, ID-token/nonce
+verification, and userinfo fetch before our action runs. Its controller tests
+therefore cover only _our_ logic — they invoke the action directly with the
+`ueberauth_auth` / `ueberauth_failure` assign the plug would have produced. The
+glue we do not own (the OIDC request phase that sets `state`/`nonce`, and the
+callback phase that validates them and the ID token) is exercised by no test.
+
+**Why it is not being done now:** A faithful test must stand up a fake OpenID
+Connect provider, because the configured issuer is the real
+`https://login.test.eduid.ch/` and a through-router request would trigger live
+discovery and token/userinfo HTTP calls. That is a sizeable, self-contained
+scaffolding effort disproportionate to the remaining auth-controller coverage,
+so the action-level tests ship first.
+
+**Proposed approach:** Add an integration test that drives the full flow against
+a fake IdP (e.g. `Bypass`) serving the discovery document, JWKS, token, and
+userinfo endpoints, with the test issuer pointed at the Bypass URL. Walk the
+real request phase (assert the redirect to the provider and the stored
+`state`/`nonce`), then the callback phase with a matching authorization code and
+a signed ID token, and assert the resulting login. This complements — does not
+replace — the action-level tests, which stay as the fast, logic-focused
+coverage.
+
+**Open questions to resolve when scheduling this**
+
+- Whether `ueberauth_oidcc` can be pointed at a Bypass issuer cleanly in the
+  test environment, including how its provider-configuration worker is started
+  and refreshed.
+- How to mint a signed ID token (and JWKS) the strategy will accept, with a
+  nonce matching the one stored during the request phase.
+- Whether this lives under `ConnCase` or needs a dedicated integration setup
+  (it is not async-safe if it mutates global issuer configuration).
