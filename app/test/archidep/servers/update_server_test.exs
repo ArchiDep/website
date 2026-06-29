@@ -7,6 +7,10 @@ defmodule ArchiDep.Servers.UpdateServerTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   alias ArchiDep.Clock
   alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.PubSub
@@ -188,7 +192,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
       data = ServersFactory.random_server_data(ip_address: "not-an-ip")
 
       previous_counts = count_rows(@affected_tables)
-      :ok = subscribe(server)
+      subscriptions = subscribe(server)
 
       assert {:error, changeset} = UpdateServer.update_server(auth, server, data)
       assert errors_on(changeset) == %{ip_address: ["is invalid"]}
@@ -196,7 +200,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
       ServersTestHelpers.assert_server_unchanged(server)
       assert_no_row_count_diff(previous_counts)
       assert_no_stored_events!()
-      refute_received {:server_updated, %Server{id: _}}
+      assert_no_broadcast(subscriptions)
     end
 
     test "renaming to another server's name in the group is rejected", %{} do
@@ -209,7 +213,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
       data = ServersFactory.random_server_data(name: "Taken", active: false)
 
       previous_counts = count_rows(@affected_tables)
-      :ok = subscribe(server)
+      subscriptions = subscribe(server)
 
       assert {:error, changeset} = UpdateServer.update_server(auth, server, data)
       assert errors_on(changeset) == %{name: ["has already been taken"]}
@@ -217,6 +221,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
       ServersTestHelpers.assert_server_unchanged(server)
       assert_no_row_count_diff(previous_counts)
       assert_no_stored_events!()
+      assert_no_broadcast(subscriptions)
     end
   end
 
@@ -234,7 +239,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
       data = ServersFactory.random_server_data(active: false, app_username: "ignored")
 
       previous_counts = count_rows(@affected_tables)
-      :ok = subscribe(server)
+      subscriptions = subscribe(server)
 
       assert {:ok, updated, %EventReference{} = ref} =
                UpdateServer.update_server(auth, server, data)
@@ -260,7 +265,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
       |> assert_persisted_server(server)
 
       assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-      assert_server_updated_broadcast(updated)
+      assert_server_updated_broadcast(subscriptions, updated)
     end
   end
 
@@ -357,7 +362,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
   # broadcasts.
   defp assert_root_update(auth, server, data) do
     previous_counts = count_rows(@affected_tables)
-    :ok = subscribe(server)
+    subscriptions = subscribe(server)
 
     assert {:ok, updated, %EventReference{} = ref} =
              UpdateServer.update_server(auth, server, data)
@@ -368,7 +373,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
     |> assert_persisted_server(server)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_server_updated_broadcast(updated)
+    assert_server_updated_broadcast(subscriptions, updated)
 
     updated
   end
@@ -505,16 +510,21 @@ defmodule ArchiDep.Servers.UpdateServerTest do
            }
   end
 
-  defp assert_server_updated_broadcast(%Server{id: id} = server) do
-    assert_receive {:server_updated, %Server{id: ^id} = on_server}
-    assert_receive {:server_updated, %Server{id: ^id} = on_group}
-    assert_receive {:server_updated, %Server{id: ^id} = on_owner}
+  # Asserts the server-updated broadcast reached each of the three topics
+  # exactly once and carried the full server. Each topic's collector yields its
+  # own list, so a double broadcast on one topic or a missing broadcast on
+  # another fails the corresponding whole-list equality.
+  defp assert_server_updated_broadcast(subscriptions, %Server{} = server) do
+    assert received_broadcasts(subscriptions.server) == [{:server_updated, server}]
+    assert received_broadcasts(subscriptions.group) == [{:server_updated, server}]
+    assert received_broadcasts(subscriptions.owner) == [{:server_updated, server}]
+  end
 
-    assert on_server == server
-    assert on_group == server
-    assert on_owner == server
-
-    refute_received {:server_updated, %Server{id: ^id}}
+  # Asserts a rejected call announced nothing on any of the three topics.
+  defp assert_no_broadcast(subscriptions) do
+    assert received_broadcasts(subscriptions.server) == []
+    assert received_broadcasts(subscriptions.group) == []
+    assert received_broadcasts(subscriptions.owner) == []
   end
 
   defp assert_owner_counts(owner_id, server_count: server_count, active_server_count: active) do
@@ -533,10 +543,15 @@ defmodule ArchiDep.Servers.UpdateServerTest do
     :ok
   end
 
+  # Subscribes each of the three topics a server-updated broadcast reaches in
+  # its own collector, so each topic's delivery can be asserted independently
+  # rather than funnelled into one indistinguishable mailbox.
   defp subscribe(%Server{} = server) do
-    :ok = PubSub.subscribe_server(server.id)
-    :ok = PubSub.subscribe_server_group_servers(server.group_id)
-    :ok = PubSub.subscribe_server_owner_servers(server.owner_id)
+    %{
+      server: collect_broadcasts(fn -> PubSub.subscribe_server(server.id) end),
+      group: collect_broadcasts(fn -> PubSub.subscribe_server_group_servers(server.group_id) end),
+      owner: collect_broadcasts(fn -> PubSub.subscribe_server_owner_servers(server.owner_id) end)
+    }
   end
 
   defp owner_name(%ServerOwner{group_member: %{name: name}}), do: name

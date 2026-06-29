@@ -2,6 +2,10 @@ defmodule ArchiDep.Servers.CreateServerTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   import ArchiDep.Support.TokenTestHelpers, only: [assert_secure_random_token: 1]
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Clock
@@ -55,7 +59,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       data = ServersFactory.random_server_data(active: true)
 
       previous_counts = count_rows(@affected_tables)
-      subscribe(group, owner)
+      subscriptions = subscribe(group, owner)
 
       assert {:ok, server} = create_server.(auth, group.id, data)
 
@@ -71,7 +75,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       })
 
       assert_owner_counts(owner.id, server_count: 1, active_server_count: 1)
-      assert_server_created_broadcast(server)
+      assert_server_created_broadcast(subscriptions, server)
     end
 
     test "creates a minimal inactive server, pinning the applied defaults", %{
@@ -94,7 +98,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       }
 
       previous_counts = count_rows(@affected_tables)
-      subscribe(group, owner)
+      subscriptions = subscribe(group, owner)
 
       assert {:ok, server} = create_server.(auth, group.id, data)
 
@@ -111,7 +115,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
 
       # An inactive server leaves the active-server count untouched.
       assert_owner_counts(owner.id, server_count: 1, active_server_count: 0)
-      assert_server_created_broadcast(server)
+      assert_server_created_broadcast(subscriptions, server)
     end
 
     test "creates a full server with every optional set", %{create_server: create_server} do
@@ -144,7 +148,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       }
 
       previous_counts = count_rows(@affected_tables)
-      subscribe(group, owner)
+      subscriptions = subscribe(group, owner)
 
       assert {:ok, server} = create_server.(auth, group.id, data)
 
@@ -160,7 +164,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       })
 
       assert_owner_counts(owner.id, server_count: 1, active_server_count: 1)
-      assert_server_created_broadcast(server)
+      assert_server_created_broadcast(subscriptions, server)
     end
   end
 
@@ -175,7 +179,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       data = ServersFactory.random_server_data(active: false, app_username: "ignored")
 
       previous_counts = count_rows(@affected_tables)
-      subscribe(group, owner)
+      subscriptions = subscribe(group, owner)
 
       assert {:ok, server} = create_server.(auth, group.id, data)
 
@@ -196,7 +200,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       })
 
       assert_owner_counts(owner.id, server_count: 1, active_server_count: 0)
-      assert_server_created_broadcast(server)
+      assert_server_created_broadcast(subscriptions, server)
     end
   end
 
@@ -206,11 +210,12 @@ defmodule ArchiDep.Servers.CreateServerTest do
       data = ServersFactory.random_server_data(ip_address: "not-an-ip")
 
       previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
 
       assert {:error, changeset} = create_server.(auth, group.id, data)
       assert errors_on(changeset) == %{ip_address: ["is invalid"]}
 
-      assert_no_side_effects(previous_counts)
+      assert_no_side_effects(new_servers, previous_counts)
     end
 
     test "rejects a server whose name is already taken in the group", %{
@@ -222,24 +227,26 @@ defmodule ArchiDep.Servers.CreateServerTest do
       data = ServersFactory.random_server_data(name: "Taken")
 
       previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
 
       assert {:error, changeset} = create_server.(auth, group.id, data)
       assert errors_on(changeset) == %{name: ["has already been taken"]}
 
       # The pre-existing server is untouched and nothing new was written.
       ServersTestHelpers.assert_server_unchanged(existing)
-      assert_no_side_effects(previous_counts)
+      assert_no_side_effects(new_servers, previous_counts)
     end
 
     test "an unknown group is reported as not-found", %{create_server: create_server} do
       {auth, _group} = root_group()
 
       previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
 
       assert create_server.(auth, Ecto.UUID.generate(), ServersFactory.random_server_data()) ==
                {:error, :server_group_not_found}
 
-      assert_no_side_effects(previous_counts)
+      assert_no_side_effects(new_servers, previous_counts)
     end
 
     # A denied non-root caller is masked as not-found so the group's existence
@@ -254,11 +261,12 @@ defmodule ArchiDep.Servers.CreateServerTest do
         )
 
       previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
 
       assert create_server.(auth, class.id, ServersFactory.random_server_data()) ==
                {:error, :server_group_not_found}
 
-      assert_no_side_effects(previous_counts)
+      assert_no_side_effects(new_servers, previous_counts)
     end
 
     test "a non-root caller with an unconfirmed username is masked as not-found", %{
@@ -268,11 +276,12 @@ defmodule ArchiDep.Servers.CreateServerTest do
         ServersTestHelpers.register_group_member(@past, student: [username_confirmed: false])
 
       previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
 
       assert create_server.(auth, class.id, ServersFactory.random_server_data()) ==
                {:error, :server_group_not_found}
 
-      assert_no_side_effects(previous_counts)
+      assert_no_side_effects(new_servers, previous_counts)
     end
 
     test "a group member at the active-server limit cannot create another active server", %{
@@ -284,13 +293,14 @@ defmodule ArchiDep.Servers.CreateServerTest do
       data = ServersFactory.random_server_data(active: true)
 
       previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
 
       assert {:error, changeset} = create_server.(auth, class.id, data)
       # The `{current}` placeholder is resolved by the translation layer at
       # render time, so it is asserted literally here.
       assert errors_on(changeset) == %{active: ["active server limit reached (max {current})"]}
 
-      assert_no_side_effects(previous_counts)
+      assert_no_side_effects(new_servers, previous_counts)
     end
   end
 
@@ -302,11 +312,12 @@ defmodule ArchiDep.Servers.CreateServerTest do
       data = ServersFactory.random_server_data()
 
       previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
 
       assert {:ok, %Changeset{} = changeset} = validate_server.(auth, group.id, data)
       assert errors_on(changeset) == %{}
 
-      assert_no_side_effects(previous_counts)
+      assert_no_side_effects(new_servers, previous_counts)
     end
 
     test "surfaces validation errors without writing anything", %{
@@ -316,11 +327,12 @@ defmodule ArchiDep.Servers.CreateServerTest do
       data = ServersFactory.random_server_data(ip_address: "not-an-ip")
 
       previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
 
       assert {:ok, %Changeset{} = changeset} = validate_server.(auth, group.id, data)
       assert errors_on(changeset) == %{ip_address: ["is invalid"]}
 
-      assert_no_side_effects(previous_counts)
+      assert_no_side_effects(new_servers, previous_counts)
     end
 
     test "a non-root caller without servers enabled is masked as not-found", %{
@@ -333,11 +345,12 @@ defmodule ArchiDep.Servers.CreateServerTest do
         )
 
       previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
 
       assert validate_server.(auth, class.id, ServersFactory.random_server_data()) ==
                {:error, :server_group_not_found}
 
-      assert_no_side_effects(previous_counts)
+      assert_no_side_effects(new_servers, previous_counts)
     end
   end
 
@@ -348,11 +361,20 @@ defmodule ArchiDep.Servers.CreateServerTest do
     {auth, server_group}
   end
 
+  # Subscribes each of the three topics a server-created broadcast reaches in its
+  # own collector, so each topic's delivery can be asserted independently rather
+  # than funnelled into one indistinguishable mailbox.
   defp subscribe(group, owner) do
-    :ok = PubSub.subscribe_server_created()
-    :ok = PubSub.subscribe_server_group_servers(group.id)
-    :ok = PubSub.subscribe_server_owner_servers(owner.id)
+    %{
+      new: collect_broadcasts(fn -> PubSub.subscribe_server_created() end),
+      group: collect_broadcasts(fn -> PubSub.subscribe_server_group_servers(group.id) end),
+      owner: collect_broadcasts(fn -> PubSub.subscribe_server_owner_servers(owner.id) end)
+    }
   end
+
+  # Subscribes the global new-servers topic alone, for error and validation
+  # paths that must announce nothing.
+  defp subscribe_new_servers, do: collect_broadcasts(fn -> PubSub.subscribe_server_created() end)
 
   # Asserts the returned server exactly: every field from the requested data,
   # the generated identity/secret bound from the result, the loaded owner and
@@ -483,21 +505,23 @@ defmodule ArchiDep.Servers.CreateServerTest do
     assert owner.active_server_count == active
   end
 
-  defp assert_server_created_broadcast(%Server{id: id} = server) do
-    assert_receive {:server_created, %Server{id: ^id} = on_new}
-    assert_receive {:server_created, %Server{id: ^id} = on_group}
-    assert_receive {:server_created, %Server{id: ^id} = on_owner}
-
-    assert on_new == server
-    assert on_group == server
-    assert on_owner == server
-
-    refute_received {:server_created, %Server{id: ^id}}
+  # Asserts the server-created broadcast reached each of the three topics exactly
+  # once and carried the full server. Each topic's collector yields its own list,
+  # so a double broadcast on one topic or a missing broadcast on another fails
+  # the corresponding whole-list equality.
+  defp assert_server_created_broadcast(subscriptions, %Server{} = server) do
+    assert received_broadcasts(subscriptions.new) == [{:server_created, server}]
+    assert received_broadcasts(subscriptions.group) == [{:server_created, server}]
+    assert received_broadcasts(subscriptions.owner) == [{:server_created, server}]
   end
 
-  defp assert_no_side_effects(previous_counts) do
+  # Asserts a rejected or validation-only call wrote nothing and announced
+  # nothing: no row-count change, no stored event, and the global new-servers
+  # topic stayed silent.
+  defp assert_no_side_effects(new_servers, previous_counts) do
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
+    assert received_broadcasts(new_servers) == []
   end
 
   defp set_owner_counts(owner_id, server_count: server_count, active_server_count: active) do

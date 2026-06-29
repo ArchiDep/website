@@ -2,6 +2,10 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
@@ -93,8 +97,6 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
   test "update every expected server property", %{
     update_expected_server_properties_for_class: update
   } do
-    :ok = PubSub.subscribe_classes()
-
     # Start from a class whose properties are blank so that setting every one
     # exercises the empty -> set direction.
     original =
@@ -104,7 +106,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
         now: @past
       })
 
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     auth = Factory.build(:authentication, root: true)
 
@@ -120,14 +122,12 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
       |> assert_persisted_class_and_properties(original, @full_properties)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_class_updated_broadcast(original, event)
+    assert_class_updated_broadcast(broadcasts, original, event)
   end
 
   test "clear every expected server property", %{
     update_expected_server_properties_for_class: update
   } do
-    :ok = PubSub.subscribe_classes()
-
     # Start from a class whose properties are fully populated so that resetting
     # every one exercises the set -> empty direction and pins that the update
     # overwrites previously-set values rather than retaining them.
@@ -138,7 +138,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
         now: @past
       })
 
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     auth = Factory.build(:authentication, root: true)
 
@@ -154,16 +154,14 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
       |> assert_persisted_class_and_properties(original, @blank_properties)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_class_updated_broadcast(original, event)
+    assert_class_updated_broadcast(broadcasts, original, event)
   end
 
   test "update expected server properties with random data", %{
     update_expected_server_properties_for_class: update
   } do
-    :ok = PubSub.subscribe_classes()
-
     original = CourseFactory.insert(:class, %{now: @past})
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     # Random fixtures: the factory generates otherwise-valid property values,
     # exercising field combinations no single pinned test would.
@@ -182,16 +180,14 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
       |> assert_persisted_class_and_properties(original, data)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_class_updated_broadcast(original, event)
+    assert_class_updated_broadcast(broadcasts, original, event)
   end
 
   test "expected server properties cannot be updated with invalid data", %{
     update_expected_server_properties_for_class: update
   } do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     # One representative invalid value (exhaustive per-field rules live in the
     # schema's own test). A too-large CPU count is still a `pos_integer`, so it
@@ -204,13 +200,13 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     assert {:error, changeset} = update.(auth, original.id, data)
     assert errors_on(changeset) == %{cpus: ["must be between 1 and {number}"]}
 
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   test "expected server properties for a class that does not exist cannot be updated", %{
     update_expected_server_properties_for_class: update
   } do
-    :ok = PubSub.subscribe_classes()
+    global = collect_broadcasts(fn -> PubSub.subscribe_classes() end)
 
     auth = Factory.build(:authentication, root: true)
 
@@ -220,15 +216,14 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
 
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
+    assert received_broadcasts(global) == []
   end
 
   test "a non-root user cannot update expected server properties", %{
     update_expected_server_properties_for_class: update
   } do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     auth = Factory.build(:authentication, root: false)
 
@@ -238,16 +233,14 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     # cannot leak the existence of a class the caller may not see.
     assert update.(auth, original.id, @full_properties) == {:error, :class_not_found}
 
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   test "validate valid expected server properties without changing anything", %{
     validate_expected_server_properties_for_class: validate
   } do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     auth = Factory.build(:authentication, root: true)
 
@@ -257,16 +250,14 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     assert errors_on(changeset) == %{}
 
     # Validation is side-effect free.
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   test "validate surfaces validation errors without changing anything", %{
     validate_expected_server_properties_for_class: validate
   } do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     # One representative invalid value proves validation actually runs — the
     # function returns the changeset either way, with the errors in it.
@@ -279,11 +270,13 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     assert errors_on(changeset) == %{cpus: ["must be between 1 and {number}"]}
 
     # Validation is side-effect free.
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   test "validating expected server properties for a class that does not exist returns an error",
        %{validate_expected_server_properties_for_class: validate} do
+    global = collect_broadcasts(fn -> PubSub.subscribe_classes() end)
+
     auth = Factory.build(:authentication, root: true)
 
     previous_counts = count_rows(@affected_tables)
@@ -292,15 +285,14 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
 
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
+    assert received_broadcasts(global) == []
   end
 
   test "a non-root user cannot validate expected server properties", %{
     validate_expected_server_properties_for_class: validate
   } do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     auth = Factory.build(:authentication, root: false)
 
@@ -311,7 +303,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     # ID.
     assert validate.(auth, original.id, @full_properties) == {:error, :class_not_found}
 
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   # Asserts the use case's return value exactly: the class's expected server
@@ -421,26 +413,32 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     event
   end
 
-  # Asserts the class-updated message reached both the class-specific and global
-  # topics, each carrying the updated class and the stored-event reference, and
-  # that nothing else was broadcast.
-  defp assert_class_updated_broadcast(%Class{} = original, %StoredEvent{} = event) do
-    expected_class = persisted_class(original.id)
-    expected_reference = StoredEvent.to_reference(event)
-
-    assert_receive {:class_updated, class_specific, reference_specific}
-    assert_receive {:class_updated, global, reference_global}
-
-    assert class_specific == expected_class
-    assert global == expected_class
-    assert reference_specific == expected_reference
-    assert reference_global == expected_reference
-
-    refute_received {:class_updated, _, _}
+  # Subscribes the two topics a class-updated broadcast reaches — the class's
+  # own topic and the global classes topic — each in its own collector, so each
+  # topic's delivery is asserted on its own.
+  defp subscribe_class_broadcasts(class_id) do
+    %{
+      specific: collect_broadcasts(fn -> PubSub.subscribe_class(class_id) end),
+      global: collect_broadcasts(fn -> PubSub.subscribe_classes() end)
+    }
   end
 
-  defp refute_class_updated_broadcast do
-    refute_received {:class_updated, _, _}
+  # Asserts the class-updated message reached both topics the use case publishes
+  # to — the class-specific one and the global one — each carrying the updated
+  # class and the stored-event reference, and nothing else.
+  defp assert_class_updated_broadcast(broadcasts, %Class{} = original, %StoredEvent{} = event) do
+    expected_class = persisted_class(original.id)
+    expected_reference = StoredEvent.to_reference(event)
+    expected_message = {:class_updated, expected_class, expected_reference}
+
+    assert received_broadcasts(broadcasts.specific) == [expected_message]
+    assert received_broadcasts(broadcasts.global) == [expected_message]
+  end
+
+  # Asserts neither class topic carried an update broadcast.
+  defp refute_class_updated_broadcast(broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == []
+    assert received_broadcasts(broadcasts.global) == []
   end
 
   defp persisted_class(id) do
@@ -455,10 +453,10 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
   # properties are unchanged, no rows were added or removed anywhere, and no
   # event or broadcast was emitted. `previous_counts` must be captured before
   # the call.
-  defp assert_update_had_no_effect(%Class{} = original, previous_counts) do
+  defp assert_update_had_no_effect(broadcasts, %Class{} = original, previous_counts) do
     assert persisted_class(original.id) == original
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_class_updated_broadcast()
+    refute_class_updated_broadcast(broadcasts)
   end
 end

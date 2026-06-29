@@ -459,28 +459,49 @@ clears comfortably while a hand-written constant does not.
 ### Asserting PubSub broadcasts
 
 PubSub broadcasts are part of the **public API** of each context — other parts
-of the system subscribe to them — so they are asserted like any other output.
-Subscribe to the relevant topic(s) before invoking the use case, then
-`assert_receive` the expected message after:
+of the system subscribe to them — so they are asserted like any other output, by
+**whole value**.
+
+A single use case often broadcasts the _same_ message to **several** topics (a
+global topic, a per-group topic, a per-owner topic). Subscribing the test
+process to all of them funnels every message into one mailbox, where they can no
+longer be attributed to the topic that delivered them: a double broadcast on one
+topic with none on another is indistinguishable from one broadcast each. So
+subscribe each topic in its **own collector** with
+[`ArchiDep.Support.PubSubTestHelpers`][pub-sub-test-helpers]:
+`collect_broadcasts/1` runs the real subscribe call in a dedicated process
+(mirroring production, where each consumer subscribes to exactly one topic), and
+`received_broadcasts/1` returns the exact list of messages that reached that one
+topic. Set up the collectors _before_ invoking the use case, then assert each
+topic's list by whole-list equality:
 
 ```elixir
-Phoenix.PubSub.subscribe(ArchiDep.PubSub, "accounts:preregistered-users:#{student.id}")
+broadcasts = %{
+  new: collect_broadcasts(fn -> PubSub.subscribe_server_created() end),
+  group: collect_broadcasts(fn -> PubSub.subscribe_server_group_servers(group.id) end),
+  owner: collect_broadcasts(fn -> PubSub.subscribe_server_owner_servers(owner.id) end)
+}
+
 # … invoke the use case …
-assert_receive {:preregistered_user_updated, broadcast}
+
+assert received_broadcasts(broadcasts.new) == [{:server_created, server}]
+assert received_broadcasts(broadcasts.group) == [{:server_created, server}]
+assert received_broadcasts(broadcasts.owner) == [{:server_created, server}]
 ```
 
-`assert_receive` is the right tool for the positive case: it returns the instant
-the message arrives and only blocks up to its timeout when the message is
-_absent_, so it costs nothing on the happy path. Assert on _every_ topic the use
-case is expected to publish to, and assert the **absence** of a broadcast on
-paths where none should occur (see
-[below](#asserting-the-absence-of-out-of-band-effects)).
+The whole-list `==` covers both halves of the contract at once — the exact
+payload _and_ that the topic received exactly that, no duplicate and nothing
+extra. Assert on _every_ topic the use case is expected to publish to.
 
-**Topics are isolated per test, so assert broadcast payloads by whole value.**
-Unlike the SQL sandbox, `Phoenix.PubSub` is process-global — a broadcast reaches
-every subscribed process, including other `async: true` tests. Two mechanisms
-keep this race-free, both transparent as long as you subscribe and broadcast
-through the context `PubSub` facade:
+`received_broadcasts/1` needs no timeout and never races: local PubSub delivery
+is synchronous (the default PG adapter `send`s to local subscribers inside
+`broadcast/3`), so by the time the use case returns every message is already in
+the collector's mailbox, and the drain is a synchronous round-trip behind them.
+
+**Topics are isolated per test.** Unlike the SQL sandbox, `Phoenix.PubSub` is
+process-global — a broadcast reaches every subscribed process, including other
+`async: true` tests. Two mechanisms keep this race-free, both transparent as
+long as you subscribe and broadcast through the context `PubSub` facade:
 
 - **Keyed topics** (`"classes:#{id}"`, `"servers:#{id}"`, …) carry a per-test
   UUID in the topic name, so a subscriber only ever sees its own resource.
@@ -491,29 +512,12 @@ through the context `PubSub` facade:
   shared topic. In production the suffix is empty and the topic keeps its global
   name.
 
-Because both are isolated, `refute_received` is reliable on either kind of
-topic, and a positive pattern need not pin the id. Still pin it when a single
-test exercises **several** resources and you must select one broadcast among
-them:
-
-```elixir
-assert_receive {:class_updated, %Class{id: ^id} = broadcast, _ref}
-assert broadcast == class
-refute_received {:class_updated, %Class{id: ^id}, _ref}
-```
-
-On a failure path where the use case broadcasts nothing,
-`assert_no_stored_events!/0` complements the refute: the use case broadcasts
-only after its transaction commits, so no stored event already proves no
+On a failure or no-op path, assert each subscribed topic stayed silent —
+`received_broadcasts(c) == []`. Where the path has no resource to subscribe to
+at all (an early not-found return, before any id exists),
+`assert_no_stored_events!/0` carries the proof instead: the use case broadcasts
+only after its transaction commits, so no stored event already implies no
 broadcast.
-
-> **Interim note (DDD refactoring).** Until the DDD refactoring lands, broadcast
-> payloads are still being reshaped, so for now PubSub assertions may stay
-> _partially black box_: assert that the expected message tag is received on the
-> expected topic, without pinning the full payload struct. Leave a "TODO DDD"
-> comment indicating that assertions must be completed. Once the DDD work
-> stabilizes the broadcast shapes, these become exact equality assertions on the
-> payload like everything else.
 
 ### Asserting telemetry events
 
@@ -544,22 +548,24 @@ use case returns an error (or deliberately does nothing), assert that it had
   (where the snapshot is mostly empty but still pins that the early return wrote
   nothing);
 - no events stored (`assert_no_stored_events!/0,1`);
-- no PubSub broadcast (subscribe beforehand, then refute — see below);
+- no PubSub broadcast — `received_broadcasts(c) == []` on every topic the path
+  subscribed to (see [above](#asserting-pubsub-broadcasts)); an early not-found
+  return with no topic to subscribe to relies on `assert_no_stored_events!/0`
+  instead, since a broadcast follows only a committed event;
 - no telemetry event emitted (attach a handler beforehand, then refute).
 
-**Prefer `refute_received` over `refute_receive` for these checks.**
+**For telemetry, prefer `refute_received` over `refute_receive`.**
 `refute_receive` blocks for its full timeout (100 ms by default) on _every_
 call, which taxes a large async suite; `refute_received` checks the mailbox
 instantly. Instant checking is not merely faster here, it is **correct**,
-because both effects are delivered _synchronously, before the use case returns_:
-
-- the default `Phoenix.PubSub` (PG) adapter `send`s to local subscribers inside
-  `broadcast/3`;
-- `:telemetry.execute/3` runs handlers synchronously in the calling process, and
-  our handler `send`s to the test process before returning.
-
-So once the (synchronous, in-process) use case has returned, the mailbox is
-settled — a message cannot arrive later — and `refute_received` cannot race.
+because the event is delivered _synchronously, before the use case returns_:
+`:telemetry.execute/3` runs handlers synchronously in the calling process, and
+our handler `send`s to the test process before returning. So once the
+(synchronous, in-process) use case has returned, the mailbox is settled — a
+message cannot arrive later — and `refute_received` cannot race. PubSub absence
+is checked in the same spirit but through the collector's
+`received_broadcasts(c) == []`, which exploits the same synchronous local
+delivery.
 
 Reserve `refute_receive` (with an explicit short timeout) for the genuinely
 **asynchronous** case, where delivery could happen _after_ the code under test
@@ -1620,6 +1626,7 @@ in isolation](#testing-components-through-the-page-or-in-isolation).)
 [data-case]: ../test/support/data_case.ex
 [telemetry]: ../test/support/telemetry_test_helpers.ex
 [pub-sub-scope]: ../lib/archidep/pub_sub/scope.ex
+[pub-sub-test-helpers]: ../test/support/pub_sub_test_helpers.ex
 [exemplar]: ../test/archidep/accounts/log_in_or_register_with_switch_edu_id_test.exs
 [create-class-test]: ../test/archidep/course/create_class_test.exs
 [update-class-test]: ../test/archidep/course/update_class_test.exs

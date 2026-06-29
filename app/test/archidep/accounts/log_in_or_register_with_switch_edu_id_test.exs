@@ -3,6 +3,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
   import Ecto.Query, only: [from: 2]
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   import ArchiDep.Support.TelemetryTestHelpers
   import ArchiDep.Support.TokenTestHelpers
   alias ArchiDep.Accounts.Behaviour
@@ -11,6 +15,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Accounts.Schemas.UserGroup
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Authentication
   alias ArchiDep.Clock
@@ -141,7 +146,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
         now: @now
       )
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     switch_edu_id_login_data =
       AccountsFactory.build(:switch_edu_id_login_data,
@@ -178,7 +183,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       StoredEvent => 1
     })
 
-    assert_preregistered_user_broadcast(student)
+    assert_new_student_broadcast(broadcasts, student, auth.principal_id)
   end
 
   test "an unknown user cannot register even if their Switch edu-ID account is valid", %{
@@ -257,8 +262,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
         now: @now
       )
 
-    subscribe_to_preregistered_user(student_one)
-    subscribe_to_preregistered_user(student_two)
+    broadcasts_one = subscribe_to_preregistered_user(student_one)
+    broadcasts_two = subscribe_to_preregistered_user(student_two)
 
     switch_edu_id_login_data =
       AccountsFactory.build(:switch_edu_id_login_data, emails: [email])
@@ -276,7 +281,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
     refute_login_telemetry()
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts_one)
+    refute_preregistered_user_broadcast(broadcasts_two)
   end
 
   test "log in an existing root user account with Switch edu-ID", %{
@@ -319,7 +325,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     {switch_edu_id, switch_edu_id_login_data} = insert_existing_switch_edu_id([student.email])
 
@@ -359,7 +365,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 1})
 
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts)
   end
 
   test "log in an existing student user account with Switch edu-ID when it has previous logged in with a link",
@@ -369,7 +375,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     switch_edu_id_login_data =
       AccountsFactory.build(:switch_edu_id_login_data,
@@ -415,7 +421,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     # so this login creates and links one, plus the session and event.
     assert_row_count_diff(previous_counts, %{SwitchEduId => 1, UserSession => 1, StoredEvent => 1})
 
-    assert_preregistered_user_broadcast(student)
+    assert_existing_account_broadcast(broadcasts, student, user_account)
   end
 
   test "log in an existing inactive student user account to a new student with Switch edu-ID", %{
@@ -424,7 +430,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     old_class = CourseFactory.insert(:class, active: false)
 
@@ -480,7 +486,13 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
 
     assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 1})
 
-    assert_preregistered_user_broadcast(student)
+    assert_relinked_student_broadcast(
+      broadcasts,
+      student,
+      user_account,
+      switch_edu_id,
+      old_student
+    )
   end
 
   test "an existing inactive user account cannot log in without a new preregistration", %{
@@ -489,7 +501,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     old_class = CourseFactory.insert(:class, active: false)
     old_student = CourseFactory.insert(:student, active: true, class: old_class, user: nil)
 
-    subscribe_to_preregistered_user(old_student)
+    broadcasts = subscribe_to_preregistered_user(old_student)
 
     {switch_edu_id, switch_edu_id_login_data} = insert_existing_switch_edu_id([old_student.email])
 
@@ -530,7 +542,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
     refute_login_telemetry()
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts)
   end
 
   defp assert_auth(auth, username, root) do
@@ -569,26 +581,174 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     refute_received {:telemetry_event, @login_telemetry_event, _data}
   end
 
+  # Subscribes the two topics a preregistered-user-updated broadcast reaches —
+  # the preregistered user's own topic and its user group's topic — each in its
+  # own collector, so each topic's delivery is asserted on its own rather than
+  # funnelled into one indistinguishable mailbox.
   defp subscribe_to_preregistered_user(%{id: id, class_id: class_id}) do
-    :ok = PubSub.subscribe_preregistered_user(id)
-    :ok = PubSub.subscribe_user_group_preregistered_users(class_id)
+    %{
+      specific: collect_broadcasts(fn -> PubSub.subscribe_preregistered_user(id) end),
+      group:
+        collect_broadcasts(fn -> PubSub.subscribe_user_group_preregistered_users(class_id) end)
+    }
   end
 
-  defp assert_preregistered_user_broadcast(%{id: id}) do
-    # The use case broadcasts the updated preregistered user on two topics (the
-    # preregistered user itself and its user group), so two messages are
-    # expected, and no more.
-    #
-    # TODO DDD: assert the full payload by equality once the DDD refactoring
-    # stabilizes the broadcast shape. For now this is intentionally partial
-    # (message tag + id only) — see docs/testing.md.
-    assert_receive {:preregistered_user_updated, %PreregisteredUser{id: ^id}}
-    assert_receive {:preregistered_user_updated, %PreregisteredUser{id: ^id}}
-    refute_received {:preregistered_user_updated, _payload}
+  # Registration branch: a brand-new user account is created and linked to the
+  # matched preregistered user. The broadcast carries that student with its
+  # group loaded, its version bumped by one and its `updated_at` stamped at
+  # `@now`; the freshly created account it links to (loaded) wraps the
+  # *original* student (version and timestamp unbumped, not yet linked to any
+  # account).
+  defp assert_new_student_broadcast(broadcasts, student, user_account_id) do
+    switch_edu_id_id = Repo.get!(UserAccount, user_account_id).switch_edu_id_id
+
+    original_student =
+      %{
+        loaded_preregistered_user(student, nil, student.version, student.updated_at)
+        | user_account: nil
+      }
+
+    user_account = %UserAccount{
+      __meta__: loaded(UserAccount, "user_accounts"),
+      id: user_account_id,
+      username: nil,
+      root: false,
+      active: true,
+      switch_edu_id: not_loaded(:switch_edu_id, UserAccount),
+      switch_edu_id_id: switch_edu_id_id,
+      preregistered_user: original_student,
+      preregistered_user_id: student.id,
+      version: 1,
+      created_at: @now,
+      updated_at: @now
+    }
+
+    payload =
+      %{
+        loaded_preregistered_user(student, user_account_id, student.version + 1, @now)
+        | user_account: user_account
+      }
+
+    assert_broadcast_on_both_topics(broadcasts, payload)
   end
 
-  defp refute_preregistered_user_broadcast do
-    refute_received {:preregistered_user_updated, _payload}
+  # Re-link branch where the account had only ever logged in with a link (no
+  # Switch edu-ID yet) and was already linked to this student: the student's own
+  # `user_account_id` already points at the account, so linking is a no-op and
+  # the student is broadcast unchanged (version and `updated_at` untouched),
+  # with its group and the account it is already linked to loaded as preloaded —
+  # the account still showing its pre-update snapshot (no Switch edu-ID linked
+  # yet).
+  defp assert_existing_account_broadcast(broadcasts, student, %UserAccount{} = user_account) do
+    loaded_account = %{
+      user_account
+      | switch_edu_id: not_loaded(:switch_edu_id, UserAccount),
+        switch_edu_id_id: nil,
+        preregistered_user: not_loaded(:preregistered_user, UserAccount)
+    }
+
+    payload =
+      %{
+        loaded_preregistered_user(student, user_account.id, student.version, student.updated_at)
+        | user_account: loaded_account
+      }
+
+    assert_broadcast_on_both_topics(broadcasts, payload)
+  end
+
+  # Re-link branch where an inactive account (linked to a student from a past,
+  # now-inactive class) is re-linked to a new active preregistration for the
+  # same email: the new student is broadcast with its version bumped by one and
+  # its `updated_at` stamped at `@now`, linked to the existing account loaded as
+  # preloaded — its Switch edu-ID identity loaded (used-at refreshed) and its
+  # previous student still loaded as its preregistered user.
+  defp assert_relinked_student_broadcast(
+         broadcasts,
+         student,
+         %UserAccount{} = user_account,
+         %SwitchEduId{} = switch_edu_id,
+         old_student
+       ) do
+    loaded_switch_edu_id = %SwitchEduId{
+      __meta__: loaded(SwitchEduId, "switch_edu_ids"),
+      id: switch_edu_id.id,
+      first_name: switch_edu_id.first_name,
+      last_name: switch_edu_id.last_name,
+      swiss_edu_person_unique_id: switch_edu_id.swiss_edu_person_unique_id,
+      version: switch_edu_id.version + 1,
+      created_at: switch_edu_id.created_at,
+      updated_at: switch_edu_id.updated_at,
+      used_at: @now
+    }
+
+    old_loaded_student =
+      %{
+        loaded_preregistered_user(
+          old_student,
+          user_account.id,
+          old_student.version,
+          old_student.updated_at
+        )
+        | user_account: not_loaded(:user_account, PreregisteredUser)
+      }
+
+    loaded_account = %{
+      user_account
+      | switch_edu_id: loaded_switch_edu_id,
+        switch_edu_id_id: switch_edu_id.id,
+        preregistered_user: old_loaded_student,
+        preregistered_user_id: old_student.id
+    }
+
+    payload =
+      %{
+        loaded_preregistered_user(student, user_account.id, student.version + 1, @now)
+        | user_account: loaded_account
+      }
+
+    assert_broadcast_on_both_topics(broadcasts, payload)
+  end
+
+  # The preregistered-user-shaped projection of a course student, with its class
+  # loaded as the user group and its account linkage, version and `updated_at`
+  # supplied by the caller (which vary per branch). The account association is
+  # left for the caller to fill in.
+  defp loaded_preregistered_user(student, user_account_id, version, updated_at) do
+    %PreregisteredUser{
+      __meta__: loaded(PreregisteredUser, "students"),
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      username: student.username,
+      username_confirmed: student.username_confirmed,
+      active: true,
+      group: %UserGroup{
+        __meta__: loaded(UserGroup, "classes"),
+        id: student.class.id,
+        name: student.class.name,
+        start_date: student.class.start_date,
+        end_date: student.class.end_date,
+        active: student.class.active
+      },
+      group_id: student.class_id,
+      user_account_id: user_account_id,
+      version: version,
+      updated_at: updated_at
+    }
+  end
+
+  # Asserts the preregistered-user-updated message reached both topics the use
+  # case publishes to — the preregistered user's own topic and its user group's
+  # topic — each carrying the same payload, and nothing else.
+  defp assert_broadcast_on_both_topics(broadcasts, payload) do
+    assert received_broadcasts(broadcasts.specific) == [{:preregistered_user_updated, payload}]
+    assert received_broadcasts(broadcasts.group) == [{:preregistered_user_updated, payload}]
+  end
+
+  # Asserts neither topic carried a preregistered-user-updated broadcast.
+  defp refute_preregistered_user_broadcast(broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == []
+    assert received_broadcasts(broadcasts.group) == []
   end
 
   # Inserts a Switch edu-ID identity and builds login data that matches it: the

@@ -2,6 +2,10 @@ defmodule ArchiDep.Course.UpdateClassTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
@@ -55,8 +59,6 @@ defmodule ArchiDep.Course.UpdateClassTest do
   # optional in both transition directions.
 
   test "update every field of a class", %{update_class: update_class} do
-    :ok = PubSub.subscribe_classes()
-
     # Start from a minimal class (every optional at its default) so that
     # updating every field to a non-default value exercises the empty -> set
     # direction for each optional, and so every field genuinely differs
@@ -75,7 +77,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
         now: @past
       })
 
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     # Built by hand with every field set to a non-default value, so the test
     # pins that all of them — including the SSH host-key fingerprints — are
@@ -106,12 +108,10 @@ defmodule ArchiDep.Course.UpdateClassTest do
       |> assert_persisted_class(original)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_class_updated_broadcast(class, event)
+    assert_class_updated_broadcast(broadcasts, class, event)
   end
 
   test "clear every optional field of a class", %{update_class: update_class} do
-    :ok = PubSub.subscribe_classes()
-
     # Start from a fully-populated class so that clearing every optional
     # exercises the full -> empty direction and pins that the update overwrites
     # previously set values rather than retaining them.
@@ -130,7 +130,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
         now: @past
       })
 
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     # Built by hand: only the required fields, every optional reset to the value
     # a class carries when left empty.
@@ -158,14 +158,12 @@ defmodule ArchiDep.Course.UpdateClassTest do
       |> assert_persisted_class(original)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_class_updated_broadcast(class, event)
+    assert_class_updated_broadcast(broadcasts, class, event)
   end
 
   test "update a class with random data", %{update_class: update_class} do
-    :ok = PubSub.subscribe_classes()
-
     original = CourseFactory.insert(:class, %{now: @past})
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     # Random fixtures: the factory generates a unique name and otherwise-valid
     # data, exercising field combinations no single pinned test would.
@@ -183,16 +181,14 @@ defmodule ArchiDep.Course.UpdateClassTest do
       |> assert_persisted_class(original)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_class_updated_broadcast(class, event)
+    assert_class_updated_broadcast(broadcasts, class, event)
   end
 
   test "a class can be updated while keeping its own name", %{update_class: update_class} do
-    :ok = PubSub.subscribe_classes()
-
     # The uniqueness check excludes the class being updated, so re-saving a
     # class with its own name succeeds.
     original = CourseFactory.insert(:class, %{name: "INFO-2024", now: @past})
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     data = CourseFactory.build(:class_data, name: "INFO-2024", now: @now)
     auth = Factory.build(:authentication, root: true)
@@ -208,14 +204,12 @@ defmodule ArchiDep.Course.UpdateClassTest do
       |> assert_persisted_class(original)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_class_updated_broadcast(class, event)
+    assert_class_updated_broadcast(broadcasts, class, event)
   end
 
   test "a non-root user cannot update a class", %{update_class: update_class} do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     data = CourseFactory.build(:class_data, now: @now)
     auth = Factory.build(:authentication, root: false)
@@ -224,11 +218,11 @@ defmodule ArchiDep.Course.UpdateClassTest do
 
     assert_raise UnauthorizedError, fn -> update_class.(auth, original.id, data) end
 
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   test "a class that does not exist cannot be updated", %{update_class: update_class} do
-    :ok = PubSub.subscribe_classes()
+    global = collect_broadcasts(fn -> PubSub.subscribe_classes() end)
 
     data = CourseFactory.build(:class_data, now: @now)
     root = Factory.build(:authentication, root: true)
@@ -243,14 +237,12 @@ defmodule ArchiDep.Course.UpdateClassTest do
     non_root = Factory.build(:authentication, root: false)
     assert update_class.(non_root, Ecto.UUID.generate(), data) == {:error, :class_not_found}
 
-    assert_no_class_persisted(previous_counts)
+    assert_no_class_persisted(global, previous_counts)
   end
 
   test "a class cannot be updated with invalid data", %{update_class: update_class} do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     data = CourseFactory.build(:class_data, name: "", now: @now)
     auth = Factory.build(:authentication, root: true)
@@ -260,15 +252,13 @@ defmodule ArchiDep.Course.UpdateClassTest do
     assert {:error, changeset} = update_class.(auth, original.id, data)
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   test "a class cannot be renamed to a name that is already taken", %{update_class: update_class} do
     other = CourseFactory.insert(:class, %{name: "INFO-2024", now: @past})
     original = CourseFactory.insert(:class, %{name: "ARCH-2024", now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     # The uniqueness check is case-insensitive.
     data = CourseFactory.build(:class_data, name: "info-2024", now: @now)
@@ -281,16 +271,14 @@ defmodule ArchiDep.Course.UpdateClassTest do
 
     # Neither class changed, no event was stored and no broadcast was emitted.
     assert_class_unchanged(other)
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   test "validate valid update data for an existing class without changing anything", %{
     validate_existing_class: validate_existing_class
   } do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     data =
       CourseFactory.build(:class_data,
@@ -307,16 +295,14 @@ defmodule ArchiDep.Course.UpdateClassTest do
     assert errors_on(changeset) == %{}
 
     # Validation is side-effect free.
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   test "validate surfaces validation errors for an existing class without changing anything", %{
     validate_existing_class: validate_existing_class
   } do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     # One representative invalid value proves validation actually runs — the
     # function returns the changeset either way, with the errors in it.
@@ -329,12 +315,14 @@ defmodule ArchiDep.Course.UpdateClassTest do
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
     # Validation is side-effect free.
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   test "validating update data for a class that does not exist returns an error", %{
     validate_existing_class: validate_existing_class
   } do
+    global = collect_broadcasts(fn -> PubSub.subscribe_classes() end)
+
     data = CourseFactory.build(:class_data, now: @now)
     auth = Factory.build(:authentication, root: true)
 
@@ -342,15 +330,14 @@ defmodule ArchiDep.Course.UpdateClassTest do
              {:error, :class_not_found}
 
     assert_no_stored_events!()
+    assert received_broadcasts(global) == []
   end
 
   test "a non-root user cannot validate update data for a class", %{
     validate_existing_class: validate_existing_class
   } do
     original = CourseFactory.insert(:class, %{now: @past})
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(original.id)
+    broadcasts = subscribe_class_broadcasts(original.id)
 
     data = CourseFactory.build(:class_data, now: @now)
     auth = Factory.build(:authentication, root: false)
@@ -359,7 +346,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
 
     assert_raise UnauthorizedError, fn -> validate_existing_class.(auth, original.id, data) end
 
-    assert_update_had_no_effect(original, previous_counts)
+    assert_update_had_no_effect(broadcasts, original, previous_counts)
   end
 
   # Asserts the use case's return value exactly: the original class with every
@@ -477,26 +464,31 @@ defmodule ArchiDep.Course.UpdateClassTest do
     )
   end
 
-  # Asserts the class-updated message reached both topics the use case publishes
-  # to — the class-specific one and the global one — each carrying the updated
-  # class and a reference to the stored event, and that nothing else was
-  # broadcast.
-  defp assert_class_updated_broadcast(%Class{} = class, %StoredEvent{} = event) do
-    expected_reference = StoredEvent.to_reference(event)
-
-    assert_receive {:class_updated, class_specific, reference_specific}
-    assert_receive {:class_updated, global, reference_global}
-
-    assert class_specific == class
-    assert global == class
-    assert reference_specific == expected_reference
-    assert reference_global == expected_reference
-
-    refute_received {:class_updated, _, _}
+  # Subscribes the two topics a class-updated broadcast reaches — the class's
+  # own topic and the global classes topic — each in its own collector, so each
+  # topic's delivery is asserted on its own rather than funnelled into one
+  # indistinguishable mailbox.
+  defp subscribe_class_broadcasts(class_id) do
+    %{
+      specific: collect_broadcasts(fn -> PubSub.subscribe_class(class_id) end),
+      global: collect_broadcasts(fn -> PubSub.subscribe_classes() end)
+    }
   end
 
-  defp refute_class_updated_broadcast do
-    refute_received {:class_updated, _, _}
+  # Asserts the class-updated message reached both topics the use case publishes
+  # to — the class-specific one and the global one — each carrying the updated
+  # class and a reference to the stored event, and nothing else.
+  defp assert_class_updated_broadcast(broadcasts, %Class{} = class, %StoredEvent{} = event) do
+    reference = StoredEvent.to_reference(event)
+
+    assert received_broadcasts(broadcasts.specific) == [{:class_updated, class, reference}]
+    assert received_broadcasts(broadcasts.global) == [{:class_updated, class, reference}]
+  end
+
+  # Asserts neither class topic carried an update broadcast.
+  defp refute_class_updated_broadcast(broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == []
+    assert received_broadcasts(broadcasts.global) == []
   end
 
   # Asserts a class row is exactly as it was. Used to check a class left
@@ -508,19 +500,19 @@ defmodule ArchiDep.Course.UpdateClassTest do
   # Asserts a rejected update left no trace: the class row is unchanged, no rows
   # were added or removed anywhere, and no event or broadcast was emitted.
   # `previous_counts` must be captured before the call.
-  defp assert_update_had_no_effect(%Class{} = original, previous_counts) do
+  defp assert_update_had_no_effect(broadcasts, %Class{} = original, previous_counts) do
     assert_class_unchanged(original)
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_class_updated_broadcast()
+    refute_class_updated_broadcast(broadcasts)
   end
 
   # Asserts the full set of effects that must NOT happen when no class exists to
-  # update: no class or properties rows added, no event, no broadcast.
-  defp assert_no_class_persisted(previous_counts) do
+  # update: no class or properties rows added, no event, and the global classes
+  # topic stayed silent.
+  defp assert_no_class_persisted(global, previous_counts) do
     assert_no_row_count_diff(previous_counts)
-    # No event stored already proves no broadcast (emitted only after the update
-    # commits); there is no class ID to scope a refute to.
     assert_no_stored_events!()
+    assert received_broadcasts(global) == []
   end
 end

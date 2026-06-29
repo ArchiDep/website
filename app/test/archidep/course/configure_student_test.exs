@@ -2,6 +2,10 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   import ArchiDep.Support.CourseTestHelpers
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
@@ -42,8 +46,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
     test "a student confirms their own username", %{configure_student: configure_student} do
       {student, _account, auth} = register_student(username_confirmed: false)
 
-      :ok = PubSub.subscribe_student(student.id)
-      :ok = PubSub.subscribe_class_students(student.class_id)
+      broadcasts = subscribe_student_broadcasts(student)
 
       data = %{username: "my-handle"}
 
@@ -57,7 +60,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       |> assert_persisted_student(student)
 
       assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-      assert_student_updated_broadcast(configured)
+      assert_student_updated_broadcast(broadcasts, configured)
     end
 
     test "a root user can configure any student's username", %{
@@ -66,8 +69,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       {student, _account, _auth} = register_student(username_confirmed: false)
       {root_auth, _root_account} = register_root()
 
-      :ok = PubSub.subscribe_student(student.id)
-      :ok = PubSub.subscribe_class_students(student.class_id)
+      broadcasts = subscribe_student_broadcasts(student)
 
       data = %{username: "by-root"}
 
@@ -81,7 +83,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       |> assert_persisted_student(student)
 
       assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-      assert_student_updated_broadcast(configured)
+      assert_student_updated_broadcast(broadcasts, configured)
     end
 
     # Impersonation fully swaps the principal: a root user impersonating a
@@ -101,8 +103,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
           impersonated_id: account.id
         )
 
-      :ok = PubSub.subscribe_student(student.id)
-      :ok = PubSub.subscribe_class_students(student.class_id)
+      broadcasts = subscribe_student_broadcasts(student)
 
       data = %{username: "as-the-student"}
 
@@ -116,7 +117,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       |> assert_persisted_student(student)
 
       assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-      assert_student_updated_broadcast(configured)
+      assert_student_updated_broadcast(broadcasts, configured)
     end
 
     test "a root user impersonating a student cannot configure another student", %{
@@ -134,15 +135,14 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
 
       baseline = persisted_student(target.id)
 
-      :ok = PubSub.subscribe_student(target.id)
-      :ok = PubSub.subscribe_class_students(target.class_id)
+      broadcasts = subscribe_student_broadcasts(target)
 
       previous_counts = count_rows(@affected_tables)
 
       assert configure_student.(impersonating_auth, target.id, %{username: "stolen"}) ==
                {:error, :student_not_found}
 
-      assert_configure_had_no_effect(baseline, previous_counts)
+      assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
     end
 
     # The masked-error branches below all collapse to `{:error,
@@ -156,15 +156,14 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
 
       baseline = persisted_student(target.id)
 
-      :ok = PubSub.subscribe_student(target.id)
-      :ok = PubSub.subscribe_class_students(target.class_id)
+      broadcasts = subscribe_student_broadcasts(target)
 
       previous_counts = count_rows(@affected_tables)
 
       assert configure_student.(other_auth, target.id, %{username: "stolen"}) ==
                {:error, :student_not_found}
 
-      assert_configure_had_no_effect(baseline, previous_counts)
+      assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
     end
 
     test "an authenticated user without an account cannot configure a student", %{
@@ -173,8 +172,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       {student, _account, _auth} = register_student(username_confirmed: false)
       baseline = persisted_student(student.id)
 
-      :ok = PubSub.subscribe_student(student.id)
-      :ok = PubSub.subscribe_class_students(student.class_id)
+      broadcasts = subscribe_student_broadcasts(student)
 
       # A principal that matches no `user_accounts` row is reported as not-found
       # rather than leaking that the student exists.
@@ -185,7 +183,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       assert configure_student.(stranger, student.id, %{username: "ghost"}) ==
                {:error, :student_not_found}
 
-      assert_configure_had_no_effect(baseline, previous_counts)
+      assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
     end
 
     test "configuring a student that does not exist returns not found", %{
@@ -206,8 +204,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       {student, _account, auth} = register_student(username_confirmed: false)
       baseline = persisted_student(student.id)
 
-      :ok = PubSub.subscribe_student(student.id)
-      :ok = PubSub.subscribe_class_students(student.class_id)
+      broadcasts = subscribe_student_broadcasts(student)
 
       previous_counts = count_rows(@affected_tables)
 
@@ -215,7 +212,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       assert {:error, changeset} = configure_student.(auth, student.id, %{username: "archidep"})
       assert errors_on(changeset) == %{username: ["this username is reserved and cannot be used"]}
 
-      assert_configure_had_no_effect(baseline, previous_counts)
+      assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
     end
 
     test "a student cannot confirm a username already taken in the class", %{
@@ -225,15 +222,14 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       CourseFactory.insert(:student, class: student.class, username: "taken")
       baseline = persisted_student(student.id)
 
-      :ok = PubSub.subscribe_student(student.id)
-      :ok = PubSub.subscribe_class_students(student.class_id)
+      broadcasts = subscribe_student_broadcasts(student)
 
       previous_counts = count_rows(@affected_tables)
 
       assert {:error, changeset} = configure_student.(auth, student.id, %{username: "taken"})
       assert errors_on(changeset) == %{username: ["has already been taken"]}
 
-      assert_configure_had_no_effect(baseline, previous_counts)
+      assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
     end
   end
 
@@ -244,8 +240,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       {student, _account, auth} = register_student(username_confirmed: false)
       baseline = persisted_student(student.id)
 
-      :ok = PubSub.subscribe_student(student.id)
-      :ok = PubSub.subscribe_class_students(student.class_id)
+      broadcasts = subscribe_student_broadcasts(student)
 
       previous_counts = count_rows(@affected_tables)
 
@@ -254,7 +249,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
 
       assert errors_on(changeset) == %{}
 
-      assert_configure_had_no_effect(baseline, previous_counts)
+      assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
     end
 
     test "validate surfaces username errors without changing anything", %{
@@ -263,8 +258,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
       {student, _account, auth} = register_student(username_confirmed: false)
       baseline = persisted_student(student.id)
 
-      :ok = PubSub.subscribe_student(student.id)
-      :ok = PubSub.subscribe_class_students(student.class_id)
+      broadcasts = subscribe_student_broadcasts(student)
 
       previous_counts = count_rows(@affected_tables)
 
@@ -273,7 +267,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
 
       assert errors_on(changeset) == %{username: ["this username is reserved and cannot be used"]}
 
-      assert_configure_had_no_effect(baseline, previous_counts)
+      assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
     end
 
     test "a student cannot validate the configuration of another student", %{
@@ -284,12 +278,14 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
 
       baseline = persisted_student(target.id)
 
+      broadcasts = subscribe_student_broadcasts(target)
+
       previous_counts = count_rows(@affected_tables)
 
       assert validate_student_config.(other_auth, target.id, %{username: "nope"}) ==
                {:error, :student_not_found}
 
-      assert_configure_had_no_effect(baseline, previous_counts)
+      assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
     end
   end
 
@@ -404,26 +400,34 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
     student
   end
 
-  defp assert_student_updated_broadcast(%Student{id: id} = student) do
-    # The use case publishes to both the student-specific and the class-students
-    # topics; pin the student ID since both are shared across async tests.
-    assert_receive {:student_updated, %Student{id: ^id} = student_specific}
-    assert_receive {:student_updated, %Student{id: ^id} = class_scoped}
-
-    assert student_specific == student
-    assert class_scoped == student
-
-    refute_received {:student_updated, %Student{id: ^id}}
+  # Subscribes the two topics a student-updated broadcast reaches — the
+  # student's own topic and the class-students topic — each in its own
+  # collector, so each topic's delivery is asserted on its own rather than
+  # funnelled into one indistinguishable mailbox.
+  defp subscribe_student_broadcasts(%Student{id: id, class_id: class_id}) do
+    %{
+      specific: collect_broadcasts(fn -> PubSub.subscribe_student(id) end),
+      class: collect_broadcasts(fn -> PubSub.subscribe_class_students(class_id) end)
+    }
   end
 
-  defp refute_student_updated_broadcast(id) do
-    refute_received {:student_updated, %Student{id: ^id}}
+  # Asserts the student-updated message reached both topics the use case
+  # publishes to — the student-specific one and the class-students one — each
+  # carrying the configured student, and nothing else.
+  defp assert_student_updated_broadcast(broadcasts, %Student{} = student) do
+    assert received_broadcasts(broadcasts.specific) == [{:student_updated, student}]
+    assert received_broadcasts(broadcasts.class) == [{:student_updated, student}]
   end
 
-  defp assert_configure_had_no_effect(%Student{} = baseline, previous_counts) do
+  defp refute_student_updated_broadcast(broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == []
+    assert received_broadcasts(broadcasts.class) == []
+  end
+
+  defp assert_configure_had_no_effect(%Student{} = baseline, broadcasts, previous_counts) do
     assert persisted_student(baseline.id) == baseline
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_student_updated_broadcast(baseline.id)
+    refute_student_updated_broadcast(broadcasts)
   end
 end

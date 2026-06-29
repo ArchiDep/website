@@ -2,6 +2,10 @@ defmodule ArchiDep.Course.CreateClassTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
@@ -50,7 +54,7 @@ defmodule ArchiDep.Course.CreateClassTest do
   # the defaults the use case applies for omitted optionals.
 
   test "create a class", %{create_class: create_class} do
-    :ok = PubSub.subscribe_classes()
+    broadcasts = subscribe_class_broadcasts()
 
     # Random fixtures: only what the test cannot do without is pinned (here,
     # nothing — the factory generates a unique name and otherwise-valid data).
@@ -72,11 +76,11 @@ defmodule ArchiDep.Course.CreateClassTest do
       StoredEvent => 1
     })
 
-    assert_class_created_broadcast(class)
+    assert_class_created_broadcast(broadcasts, class)
   end
 
   test "create a minimal class", %{create_class: create_class} do
-    :ok = PubSub.subscribe_classes()
+    broadcasts = subscribe_class_broadcasts()
 
     # Built by hand (rather than via the factory) so the minimal valid set is
     # explicit and does not drift: only the required fields, every optional left
@@ -110,11 +114,11 @@ defmodule ArchiDep.Course.CreateClassTest do
       StoredEvent => 1
     })
 
-    assert_class_created_broadcast(class)
+    assert_class_created_broadcast(broadcasts, class)
   end
 
   test "create a full class", %{create_class: create_class} do
-    :ok = PubSub.subscribe_classes()
+    broadcasts = subscribe_class_broadcasts()
 
     # Built by hand with every optional set to a non-default value, so the test
     # pins that all of them — including the SSH host-key fingerprints — are
@@ -149,11 +153,11 @@ defmodule ArchiDep.Course.CreateClassTest do
       StoredEvent => 1
     })
 
-    assert_class_created_broadcast(class)
+    assert_class_created_broadcast(broadcasts, class)
   end
 
   test "a non-root user cannot create a class", %{create_class: create_class} do
-    :ok = PubSub.subscribe_classes()
+    broadcasts = subscribe_class_broadcasts()
 
     data = CourseFactory.build(:class_data)
     auth = Factory.build(:authentication, root: false)
@@ -162,11 +166,11 @@ defmodule ArchiDep.Course.CreateClassTest do
 
     assert_raise UnauthorizedError, fn -> create_class.(auth, data) end
 
-    assert_no_class_persisted(previous_counts)
+    assert_no_class_persisted(broadcasts, previous_counts)
   end
 
   test "a class cannot be created with invalid data", %{create_class: create_class} do
-    :ok = PubSub.subscribe_classes()
+    broadcasts = subscribe_class_broadcasts()
 
     data = CourseFactory.build(:class_data, name: "")
     auth = Factory.build(:authentication, root: true)
@@ -176,13 +180,13 @@ defmodule ArchiDep.Course.CreateClassTest do
     assert {:error, changeset} = create_class.(auth, data)
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
-    assert_no_class_persisted(previous_counts)
+    assert_no_class_persisted(broadcasts, previous_counts)
   end
 
   test "a class cannot be created with a name that is already taken", %{
     create_class: create_class
   } do
-    :ok = PubSub.subscribe_classes()
+    broadcasts = subscribe_class_broadcasts()
 
     existing = CourseFactory.insert(:class, name: "INFO-2024", now: @now)
 
@@ -197,14 +201,11 @@ defmodule ArchiDep.Course.CreateClassTest do
 
     # The failed creation wrote nothing; the pre-existing class is untouched.
     assert persisted_class(existing.id) == existing
-    assert_no_row_count_diff(previous_counts)
-    # No event stored already proves no broadcast: the use case broadcasts only
-    # after the creation commits.
-    assert_no_stored_events!()
+    assert_no_class_persisted(broadcasts, previous_counts)
   end
 
   test "validate valid class data without creating anything", %{validate_class: validate_class} do
-    :ok = PubSub.subscribe_classes()
+    broadcasts = subscribe_class_broadcasts()
 
     data =
       CourseFactory.build(:class_data,
@@ -220,13 +221,13 @@ defmodule ArchiDep.Course.CreateClassTest do
     assert errors_on(changeset) == %{}
 
     # Validation is side-effect free.
-    assert_no_class_persisted(previous_counts)
+    assert_no_class_persisted(broadcasts, previous_counts)
   end
 
   test "validate surfaces validation errors without creating anything", %{
     validate_class: validate_class
   } do
-    :ok = PubSub.subscribe_classes()
+    broadcasts = subscribe_class_broadcasts()
 
     # One representative invalid value proves validation actually runs — the
     # function returns the changeset either way, with the errors in it.
@@ -239,16 +240,19 @@ defmodule ArchiDep.Course.CreateClassTest do
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
     # Validation is side-effect free.
-    assert_no_class_persisted(previous_counts)
+    assert_no_class_persisted(broadcasts, previous_counts)
   end
 
   test "a non-root user cannot validate class data", %{validate_class: validate_class} do
+    broadcasts = subscribe_class_broadcasts()
+
     data = CourseFactory.build(:class_data)
     auth = Factory.build(:authentication, root: false)
 
     assert_raise UnauthorizedError, fn -> validate_class.(auth, data) end
 
     assert_no_stored_events!()
+    assert received_broadcasts(broadcasts.global) == []
   end
 
   # Asserts the use case's return value exactly: the created class with every
@@ -380,16 +384,24 @@ defmodule ArchiDep.Course.CreateClassTest do
     )
   end
 
-  defp assert_class_created_broadcast(%Class{} = class) do
-    assert_receive {:class_created, broadcast_class}
-    assert broadcast_class == class
-    refute_received {:class_created, _}
+  # Subscribes the single topic a class-created broadcast reaches — the global
+  # classes topic — in its own collector, so its delivery is asserted on its
+  # own.
+  defp subscribe_class_broadcasts do
+    %{global: collect_broadcasts(fn -> PubSub.subscribe_classes() end)}
   end
 
-  # Asserts no class was created: no class or properties rows added, and no event
-  # (which also implies no broadcast, emitted only after the creation commits).
-  defp assert_no_class_persisted(previous_counts) do
+  # Asserts the class-created message reached the global classes topic exactly
+  # once, carrying the created class, and nothing else.
+  defp assert_class_created_broadcast(broadcasts, %Class{} = class) do
+    assert received_broadcasts(broadcasts.global) == [{:class_created, class}]
+  end
+
+  # Asserts no class was created: no class or properties rows added, no event,
+  # and the global classes topic stayed silent.
+  defp assert_no_class_persisted(broadcasts, previous_counts) do
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
+    assert received_broadcasts(broadcasts.global) == []
   end
 end

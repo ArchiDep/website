@@ -3,6 +3,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
   import Ecto.Query, only: [from: 2]
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   import ArchiDep.Support.TelemetryTestHelpers
   import ArchiDep.Support.TokenTestHelpers
   alias ArchiDep.Accounts.Behaviour
@@ -11,6 +15,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
   alias ArchiDep.Accounts.Schemas.LoginLink
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Accounts.Schemas.UserGroup
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Authentication
   alias ArchiDep.Clock
@@ -56,7 +61,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     login_link =
       AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
@@ -78,7 +83,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     # is consumed in place (no new link row).
     assert_row_count_diff(previous_counts, %{UserAccount => 1, UserSession => 1, StoredEvent => 1})
 
-    assert_preregistered_user_broadcast(student)
+    assert_preregistered_user_broadcast(broadcasts, student, auth.principal_id)
   end
 
   test "log in an existing student user account with a login link", %{
@@ -87,7 +92,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     user_account =
       AccountsFactory.insert(:user_account, student_user_account_attrs(student, active: true))
@@ -115,7 +120,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 1})
     # The existing account is reused as-is, so the preregistered user is not
     # touched and nothing is broadcast.
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts)
   end
 
   test "an unknown login link token cannot be used to log in", %{
@@ -137,7 +142,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     login_link =
       AccountsFactory.insert(
@@ -152,7 +157,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
     assert_no_login_side_effects(previous_counts)
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts)
     assert_login_link_untouched(login_link)
   end
 
@@ -162,7 +167,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     login_link =
       AccountsFactory.insert(
@@ -177,7 +182,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
     assert_no_login_side_effects(previous_counts)
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts)
     assert_login_link_untouched(login_link)
   end
 
@@ -187,7 +192,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     class = CourseFactory.insert(:class, active: false, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     login_link =
       AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
@@ -199,7 +204,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
 
     assert_no_login_side_effects(previous_counts)
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts)
     assert_login_link_untouched(login_link)
   end
 
@@ -209,7 +214,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     class = CourseFactory.insert(:class, active: false, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     user_account =
       AccountsFactory.insert(:user_account, student_user_account_attrs(student, active: true))
@@ -227,7 +232,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts)
     assert_login_link_untouched(login_link)
   end
 
@@ -237,7 +242,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     user_account =
       AccountsFactory.insert(:user_account, student_user_account_attrs(student, active: false))
@@ -255,7 +260,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts)
     assert_login_link_untouched(login_link)
   end
 
@@ -265,7 +270,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     class = CourseFactory.insert(:class, active: true, now: @now)
     student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
 
-    subscribe_to_preregistered_user(student)
+    broadcasts = subscribe_to_preregistered_user(student)
 
     # Security invariant: a login link is a bearer token in a URL and must never
     # grant the highest-privilege principal. A root account is standalone — its
@@ -295,7 +300,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
-    refute_preregistered_user_broadcast()
+    refute_preregistered_user_broadcast(broadcasts)
     assert_login_link_untouched(login_link)
   end
 
@@ -384,26 +389,98 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     refute_login_telemetry()
   end
 
+  # Subscribes the two topics a preregistered-user-updated broadcast reaches —
+  # the preregistered user's own topic and its user group's topic — each in its
+  # own collector, so each topic's delivery is asserted on its own rather than
+  # funnelled into one indistinguishable mailbox.
   defp subscribe_to_preregistered_user(%{id: id, class_id: class_id}) do
-    :ok = PubSub.subscribe_preregistered_user(id)
-    :ok = PubSub.subscribe_user_group_preregistered_users(class_id)
+    %{
+      specific: collect_broadcasts(fn -> PubSub.subscribe_preregistered_user(id) end),
+      group:
+        collect_broadcasts(fn -> PubSub.subscribe_user_group_preregistered_users(class_id) end)
+    }
   end
 
-  defp assert_preregistered_user_broadcast(%{id: id}) do
-    # The use case broadcasts the updated preregistered user on two topics (the
-    # preregistered user itself and its user group), so two messages are
-    # expected, and no more.
-    #
-    # TODO DDD: assert the full payload by equality once the DDD refactoring
-    # stabilizes the broadcast shape. For now this is intentionally partial
-    # (message tag + id only) — see docs/testing.md.
-    assert_receive {:preregistered_user_updated, %PreregisteredUser{id: ^id}}
-    assert_receive {:preregistered_user_updated, %PreregisteredUser{id: ^id}}
-    refute_received {:preregistered_user_updated, _payload}
+  # Asserts the preregistered-user-updated message reached both topics the use
+  # case publishes to — the preregistered user's own topic and its user group's
+  # topic — each carrying the linked preregistered user (its group and freshly
+  # created user account loaded, version bumped and stamped at the pinned
+  # instant), and nothing else.
+  defp assert_preregistered_user_broadcast(broadcasts, student, user_account_id) do
+    payload = broadcast_preregistered_user(student, user_account_id)
+
+    assert received_broadcasts(broadcasts.specific) == [{:preregistered_user_updated, payload}]
+    assert received_broadcasts(broadcasts.group) == [{:preregistered_user_updated, payload}]
   end
 
-  defp refute_preregistered_user_broadcast do
-    refute_received {:preregistered_user_updated, _payload}
+  # The linked preregistered user the use case broadcasts: the registered
+  # student with its group loaded, its newly created user account loaded, its
+  # version bumped by one and its `updated_at` stamped at `@now`. The newly
+  # created account loads back the *original* preregistered user (version and
+  # timestamp unbumped, no account linked yet), which the registration update
+  # wraps.
+  defp broadcast_preregistered_user(student, user_account_id) do
+    group = %UserGroup{
+      __meta__: loaded(UserGroup, "classes"),
+      id: student.class.id,
+      name: student.class.name,
+      start_date: student.class.start_date,
+      end_date: student.class.end_date,
+      active: student.class.active
+    }
+
+    original_preregistered_user = %PreregisteredUser{
+      __meta__: loaded(PreregisteredUser, "students"),
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      username: student.username,
+      username_confirmed: student.username_confirmed,
+      active: true,
+      group: group,
+      group_id: student.class_id,
+      user_account: nil,
+      user_account_id: nil,
+      version: student.version,
+      updated_at: student.updated_at
+    }
+
+    user_account = %UserAccount{
+      __meta__: loaded(UserAccount, "user_accounts"),
+      id: user_account_id,
+      username: nil,
+      root: false,
+      active: true,
+      switch_edu_id: not_loaded(:switch_edu_id, UserAccount),
+      switch_edu_id_id: nil,
+      preregistered_user: original_preregistered_user,
+      preregistered_user_id: student.id,
+      version: 1,
+      created_at: @now,
+      updated_at: @now
+    }
+
+    %PreregisteredUser{
+      __meta__: loaded(PreregisteredUser, "students"),
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      username: student.username,
+      username_confirmed: student.username_confirmed,
+      active: true,
+      group: group,
+      group_id: student.class_id,
+      user_account: user_account,
+      user_account_id: user_account_id,
+      version: student.version + 1,
+      updated_at: @now
+    }
+  end
+
+  # Asserts neither topic carried a preregistered-user-updated broadcast.
+  defp refute_preregistered_user_broadcast(broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == []
+    assert received_broadcasts(broadcasts.group) == []
   end
 
   defp link_student_to_user_account(%{id: student_id}, %UserAccount{id: user_account_id}) do

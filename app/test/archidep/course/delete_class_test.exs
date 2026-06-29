@@ -2,6 +2,10 @@ defmodule ArchiDep.Course.DeleteClassTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
@@ -49,10 +53,8 @@ defmodule ArchiDep.Course.DeleteClassTest do
   # single happy-path test (see `docs/testing.md`).
 
   test "delete a class", %{delete_class: delete_class} do
-    :ok = PubSub.subscribe_classes()
-
     class = CourseFactory.insert(:class, now: @past)
-    :ok = PubSub.subscribe_class(class.id)
+    broadcasts = subscribe_class_broadcasts(class.id)
 
     auth = Factory.build(:authentication, root: true)
 
@@ -63,7 +65,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
     class
     |> assert_class_deleted_event(auth)
     |> assert_class_gone()
-    |> assert_class_deleted_broadcast()
+    |> assert_class_deleted_broadcast(broadcasts)
 
     assert_row_count_diff(previous_counts, %{
       Class => -1,
@@ -91,8 +93,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
         last_known_properties: last_known_properties
       )
 
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(class.id)
+    broadcasts = subscribe_class_broadcasts(class.id)
 
     auth = Factory.build(:authentication, root: true)
 
@@ -105,11 +106,11 @@ defmodule ArchiDep.Course.DeleteClassTest do
     assert Repo.get!(Server, server.id).id == server.id
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_class_deleted_broadcast()
+    refute_class_deleted_broadcast(broadcasts)
   end
 
   test "a class that does not exist cannot be deleted", %{delete_class: delete_class} do
-    :ok = PubSub.subscribe_classes()
+    global = collect_broadcasts(fn -> PubSub.subscribe_classes() end)
 
     previous_counts = count_rows(@affected_tables)
 
@@ -123,13 +124,12 @@ defmodule ArchiDep.Course.DeleteClassTest do
 
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
+    assert received_broadcasts(global) == []
   end
 
   test "a non-root user cannot delete a class", %{delete_class: delete_class} do
     class = CourseFactory.insert(:class, now: @past)
-
-    :ok = PubSub.subscribe_classes()
-    :ok = PubSub.subscribe_class(class.id)
+    broadcasts = subscribe_class_broadcasts(class.id)
 
     auth = Factory.build(:authentication, root: false)
 
@@ -140,7 +140,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
     assert persisted_class(class.id) == class
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_class_deleted_broadcast()
+    refute_class_deleted_broadcast(broadcasts)
   end
 
   # Asserts the single `ClassDeleted` event: the deleted class's identity in its
@@ -180,22 +180,30 @@ defmodule ArchiDep.Course.DeleteClassTest do
     class
   end
 
-  # Asserts the class-deleted message reached both the class-specific and global
-  # topics, and that nothing else was broadcast.
-  defp assert_class_deleted_broadcast(%Class{} = class) do
-    assert_receive {:class_deleted, class_specific}
-    assert_receive {:class_deleted, global}
+  # Subscribes the two topics a class-deleted broadcast reaches — the class's
+  # own topic and the global classes topic — each in its own collector, so each
+  # topic's delivery is asserted on its own.
+  defp subscribe_class_broadcasts(class_id) do
+    %{
+      specific: collect_broadcasts(fn -> PubSub.subscribe_class(class_id) end),
+      global: collect_broadcasts(fn -> PubSub.subscribe_classes() end)
+    }
+  end
 
-    assert class_specific == class
-    assert global == class
-
-    refute_received {:class_deleted, _}
+  # Asserts the class-deleted message reached both topics the use case publishes
+  # to — the class-specific one and the global one — each carrying the deleted
+  # class, and nothing else.
+  defp assert_class_deleted_broadcast(%Class{} = class, broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == [{:class_deleted, class}]
+    assert received_broadcasts(broadcasts.global) == [{:class_deleted, class}]
 
     class
   end
 
-  defp refute_class_deleted_broadcast do
-    refute_received {:class_deleted, _}
+  # Asserts neither class topic carried a delete broadcast.
+  defp refute_class_deleted_broadcast(broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == []
+    assert received_broadcasts(broadcasts.global) == []
   end
 
   defp persisted_class(id) do

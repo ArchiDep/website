@@ -2,6 +2,10 @@ defmodule ArchiDep.Course.ImportStudentsTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
@@ -45,7 +49,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
 
   test "import several students into a class", %{import_students: import_students} do
     class = CourseFactory.insert(:class)
-    :ok = PubSub.subscribe_class_students(class.id)
+    class_students = subscribe_class_students(class)
 
     # Controlled emails so the generated usernames are deterministic (the
     # generation algorithm itself is exhaustively pinned in
@@ -80,12 +84,12 @@ defmodule ArchiDep.Course.ImportStudentsTest do
 
     assert_row_count_diff(previous_counts, %{Student => 2, StoredEvent => 3})
 
-    assert_students_imported_broadcast(class, students)
+    assert_students_imported_broadcast(class_students, class, students)
   end
 
   test "import a single student with no academic class", %{import_students: import_students} do
     class = CourseFactory.insert(:class)
-    :ok = PubSub.subscribe_class_students(class.id)
+    class_students = subscribe_class_students(class)
 
     # Minimal payload: the optional academic class left out (nil), a single
     # student.
@@ -108,7 +112,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
 
     assert_row_count_diff(previous_counts, %{Student => 1, StoredEvent => 2})
 
-    assert_students_imported_broadcast(class, students)
+    assert_students_imported_broadcast(class_students, class, students)
   end
 
   test "students already in the class are skipped", %{import_students: import_students} do
@@ -119,7 +123,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
     # includes it.
     CourseFactory.insert(:student, class: class, email: "existing@example.ch")
 
-    :ok = PubSub.subscribe_class_students(class.id)
+    class_students = subscribe_class_students(class)
 
     # The import re-includes the existing email plus a new student. The conflict
     # is silently skipped (`on_conflict: :nothing` on `[:class_id, :email]`) —
@@ -154,7 +158,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
 
     assert_row_count_diff(previous_counts, %{Student => 1, StoredEvent => 2})
 
-    assert_students_imported_broadcast(class, students)
+    assert_students_imported_broadcast(class_students, class, students)
   end
 
   test "importing only students that already exist is a no-op", %{
@@ -162,7 +166,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
   } do
     class = CourseFactory.insert(:class)
     CourseFactory.insert(:student, class: class, email: "existing@example.ch")
-    :ok = PubSub.subscribe_class_students(class.id)
+    class_students = subscribe_class_students(class)
 
     data = %{
       academic_class: "BIO-1",
@@ -181,13 +185,12 @@ defmodule ArchiDep.Course.ImportStudentsTest do
 
     # Nothing was inserted, so the use case skips the broadcast: no notification
     # is published.
-    class_id = class.id
-    refute_received {:students_imported, %Class{id: ^class_id}, _students}
+    assert received_broadcasts(class_students) == []
   end
 
   test "students cannot be imported with invalid data", %{import_students: import_students} do
     class = CourseFactory.insert(:class)
-    :ok = PubSub.subscribe_class_students(class.id)
+    class_students = subscribe_class_students(class)
 
     # One representative invalid value proves validation runs and rolls back;
     # the exhaustive validation coverage lives in the schema test.
@@ -209,7 +212,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
              ]
            }
 
-    assert_no_students_imported(previous_counts)
+    assert_no_students_imported(class_students, previous_counts)
   end
 
   test "students cannot be imported into a class that does not exist", %{
@@ -232,12 +235,13 @@ defmodule ArchiDep.Course.ImportStudentsTest do
     non_root = Factory.build(:authentication, root: false)
     assert import_students.(non_root, Ecto.UUID.generate(), data) == {:error, :class_not_found}
 
-    assert_no_students_imported(previous_counts)
+    assert_no_row_count_diff(previous_counts)
+    assert_no_stored_events!()
   end
 
   test "a non-root user cannot import students", %{import_students: import_students} do
     class = CourseFactory.insert(:class)
-    :ok = PubSub.subscribe_class_students(class.id)
+    class_students = subscribe_class_students(class)
 
     data = %{
       academic_class: "BIO-1",
@@ -254,7 +258,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
     # other course use cases.
     assert import_students.(auth, class.id, data) == {:error, :class_not_found}
 
-    assert_no_students_imported(previous_counts)
+    assert_no_students_imported(class_students, previous_counts)
   end
 
   # Asserts the use case's return value: the list of imported students, each
@@ -445,23 +449,25 @@ defmodule ArchiDep.Course.ImportStudentsTest do
            }
   end
 
-  defp assert_students_imported_broadcast(%Class{id: class_id} = class, students) do
-    # Pin the class id so the assertion matches only this test's broadcast — the
-    # class-students topic is shared across async tests and not sandboxed (see
-    # docs/testing.md).
-    assert_receive {:students_imported, %Class{id: ^class_id} = broadcast_class,
-                    broadcast_students}
+  # Subscribes the class-students topic — the single topic a students-imported
+  # broadcast reaches — in its own collector, so its delivery is asserted on its
+  # own rather than funnelled into one indistinguishable mailbox.
+  defp subscribe_class_students(%Class{id: class_id}),
+    do: collect_broadcasts(fn -> PubSub.subscribe_class_students(class_id) end)
 
-    assert broadcast_class == class
-    assert Enum.sort_by(broadcast_students, & &1.email) == Enum.sort_by(students, & &1.email)
-    refute_received {:students_imported, %Class{id: ^class_id}, _students}
+  # Asserts the students-imported message reached the class-students topic
+  # carrying the class and the exact list of imported students, and nothing
+  # else.
+  defp assert_students_imported_broadcast(class_students, %Class{} = class, students) do
+    assert received_broadcasts(class_students) == [{:students_imported, class, students}]
   end
 
-  # Asserts no student was imported: no row added anywhere and no event (which
-  # also implies no broadcast, emitted only after the import commits).
-  defp assert_no_students_imported(previous_counts) do
+  # Asserts no student was imported: no row added anywhere, no event, and the
+  # class-students topic stayed silent.
+  defp assert_no_students_imported(class_students, previous_counts) do
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
+    assert received_broadcasts(class_students) == []
   end
 
   defp student_by_email(students, email), do: Enum.find(students, &(&1.email == email))

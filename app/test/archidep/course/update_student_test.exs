@@ -2,6 +2,10 @@ defmodule ArchiDep.Course.UpdateStudentTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
@@ -69,8 +73,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
         now: @past
       })
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(class.id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     data = %{
       name: "After",
@@ -94,7 +97,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     |> assert_persisted_student(original)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_student_updated_broadcast(student)
+    assert_student_updated_broadcast(broadcasts, student)
   end
 
   test "clear the optional field of a student", %{update_student: update_student} do
@@ -120,8 +123,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
         now: @past
       })
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(class.id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     data = %{
       name: "After",
@@ -145,7 +147,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     |> assert_persisted_student(original)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_student_updated_broadcast(student)
+    assert_student_updated_broadcast(broadcasts, student)
   end
 
   test "update a student with random data", %{update_student: update_student} do
@@ -160,8 +162,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
         now: @past
       })
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(class.id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     data = CourseFactory.build(:student_data)
     auth = Factory.build(:authentication, root: true)
@@ -176,7 +177,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     |> assert_persisted_student(original)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_student_updated_broadcast(student)
+    assert_student_updated_broadcast(broadcasts, student)
   end
 
   test "a student can be updated while keeping its own email and username", %{
@@ -197,8 +198,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
         now: @past
       })
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(class.id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     data =
       CourseFactory.build(:student_data, email: "keep@example.archidep.ch", username: "keep")
@@ -215,15 +215,14 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     |> assert_persisted_student(original)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_student_updated_broadcast(student)
+    assert_student_updated_broadcast(broadcasts, student)
   end
 
   test "a non-root user cannot update a student", %{update_student: update_student} do
     original = CourseFactory.insert(:student, unlinked_student_attrs(now: @past))
     baseline = persisted_student(original.id)
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(original.class_id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     data = CourseFactory.build(:student_data)
     auth = Factory.build(:authentication, root: false)
@@ -232,7 +231,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
 
     assert_raise UnauthorizedError, fn -> update_student.(auth, original.id, data) end
 
-    assert_update_had_no_effect(baseline, previous_counts)
+    assert_update_had_no_effect(broadcasts, baseline, previous_counts)
   end
 
   test "a student that does not exist cannot be updated", %{update_student: update_student} do
@@ -249,6 +248,8 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     assert update_student.(non_root, Ecto.UUID.generate(), data) ==
              {:error, :student_not_found}
 
+    # No student exists to broadcast on, and no stored event also implies no
+    # broadcast (emitted only after the update commits).
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
   end
@@ -257,8 +258,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     original = CourseFactory.insert(:student, unlinked_student_attrs(now: @past))
     baseline = persisted_student(original.id)
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(original.class_id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     data = CourseFactory.build(:student_data, name: "")
     auth = Factory.build(:authentication, root: true)
@@ -268,7 +268,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     assert {:error, changeset} = update_student.(auth, original.id, data)
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
-    assert_update_had_no_effect(baseline, previous_counts)
+    assert_update_had_no_effect(broadcasts, baseline, previous_counts)
   end
 
   test "a student cannot take an email already used in the same class", %{
@@ -288,8 +288,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
 
     baseline = persisted_student(original.id)
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(class.id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     # The uniqueness check is case-insensitive.
     data = CourseFactory.build(:student_data, email: "TAKEN@example.archidep.ch")
@@ -300,7 +299,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     assert {:error, changeset} = update_student.(auth, original.id, data)
     assert errors_on(changeset) == %{email: ["has already been taken"]}
 
-    assert_update_had_no_effect(baseline, previous_counts)
+    assert_update_had_no_effect(broadcasts, baseline, previous_counts)
   end
 
   test "a student cannot take a username already used in the same class", %{
@@ -320,8 +319,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
 
     baseline = persisted_student(original.id)
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(class.id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     # The uniqueness check is case-insensitive.
     data = CourseFactory.build(:student_data, username: "TAKEN")
@@ -332,7 +330,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     assert {:error, changeset} = update_student.(auth, original.id, data)
     assert errors_on(changeset) == %{username: ["has already been taken"]}
 
-    assert_update_had_no_effect(baseline, previous_counts)
+    assert_update_had_no_effect(broadcasts, baseline, previous_counts)
   end
 
   test "validate valid update data for an existing student without changing anything", %{
@@ -341,8 +339,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     original = CourseFactory.insert(:student, unlinked_student_attrs(now: @past))
     baseline = persisted_student(original.id)
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(original.class_id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     data = CourseFactory.build(:student_data)
     auth = Factory.build(:authentication, root: true)
@@ -355,7 +352,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     assert errors_on(changeset) == %{}
 
     # Validation is side-effect free.
-    assert_update_had_no_effect(baseline, previous_counts)
+    assert_update_had_no_effect(broadcasts, baseline, previous_counts)
   end
 
   test "validate surfaces validation errors for an existing student without changing anything",
@@ -363,8 +360,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     original = CourseFactory.insert(:student, unlinked_student_attrs(now: @past))
     baseline = persisted_student(original.id)
 
-    :ok = PubSub.subscribe_student(original.id)
-    :ok = PubSub.subscribe_class_students(original.class_id)
+    broadcasts = subscribe_student_broadcasts(original)
 
     data = CourseFactory.build(:student_data, name: "")
     auth = Factory.build(:authentication, root: true)
@@ -377,7 +373,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     assert errors_on(changeset) == %{name: ["can't be blank"]}
 
     # Validation is side-effect free.
-    assert_update_had_no_effect(baseline, previous_counts)
+    assert_update_had_no_effect(broadcasts, baseline, previous_counts)
   end
 
   test "validating update data for a student that does not exist returns an error", %{
@@ -389,6 +385,8 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     assert validate_existing_student.(auth, Ecto.UUID.generate(), data) ==
              {:error, :student_not_found}
 
+    # No student exists to broadcast on, and no stored event also implies no
+    # broadcast (emitted only after a successful commit).
     assert_no_stored_events!()
   end
 
@@ -397,6 +395,8 @@ defmodule ArchiDep.Course.UpdateStudentTest do
   } do
     original = CourseFactory.insert(:student, unlinked_student_attrs(now: @past))
     baseline = persisted_student(original.id)
+
+    broadcasts = subscribe_student_broadcasts(original)
 
     data = CourseFactory.build(:student_data)
     auth = Factory.build(:authentication, root: false)
@@ -407,7 +407,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
       validate_existing_student.(auth, original.id, data)
     end
 
-    assert_update_had_no_effect(baseline, previous_counts)
+    assert_update_had_no_effect(broadcasts, baseline, previous_counts)
   end
 
   # Standard attributes for a student with no linked user account, so its
@@ -528,20 +528,29 @@ defmodule ArchiDep.Course.UpdateStudentTest do
            }
   end
 
-  defp assert_student_updated_broadcast(%Student{id: id} = student) do
-    # The use case publishes to both the student-specific and the class-students
-    # topics; pin the student ID since both are shared across async tests.
-    assert_receive {:student_updated, %Student{id: ^id} = student_specific}
-    assert_receive {:student_updated, %Student{id: ^id} = class_scoped}
-
-    assert student_specific == student
-    assert class_scoped == student
-
-    refute_received {:student_updated, %Student{id: ^id}}
+  # Subscribes the two topics a student-updated broadcast reaches — the
+  # student's own topic and the class-students topic — each in its own
+  # collector, so each topic's delivery is asserted on its own rather than
+  # funnelled into one indistinguishable mailbox.
+  defp subscribe_student_broadcasts(%Student{id: id, class_id: class_id}) do
+    %{
+      specific: collect_broadcasts(fn -> PubSub.subscribe_student(id) end),
+      class_students: collect_broadcasts(fn -> PubSub.subscribe_class_students(class_id) end)
+    }
   end
 
-  defp refute_student_updated_broadcast(id) do
-    refute_received {:student_updated, %Student{id: ^id}}
+  # Asserts the student-updated message reached both topics the use case
+  # publishes to — the student-specific one and the class-students one — each
+  # carrying the updated student exactly once, and nothing else.
+  defp assert_student_updated_broadcast(broadcasts, %Student{} = student) do
+    assert received_broadcasts(broadcasts.specific) == [{:student_updated, student}]
+    assert received_broadcasts(broadcasts.class_students) == [{:student_updated, student}]
+  end
+
+  # Asserts neither student topic carried an update broadcast.
+  defp refute_student_updated_broadcast(broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == []
+    assert received_broadcasts(broadcasts.class_students) == []
   end
 
   # Reads the student back the way the use case does, for capturing a baseline
@@ -553,10 +562,10 @@ defmodule ArchiDep.Course.UpdateStudentTest do
 
   # Asserts a rejected update left no trace: the student row is unchanged, no
   # rows were added or removed anywhere, and no event or broadcast was emitted.
-  defp assert_update_had_no_effect(%Student{} = baseline, previous_counts) do
+  defp assert_update_had_no_effect(broadcasts, %Student{} = baseline, previous_counts) do
     assert persisted_student(baseline.id) == baseline
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_student_updated_broadcast(baseline.id)
+    refute_student_updated_broadcast(broadcasts)
   end
 end

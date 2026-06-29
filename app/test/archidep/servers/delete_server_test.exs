@@ -7,6 +7,10 @@ defmodule ArchiDep.Servers.DeleteServerTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   alias ArchiDep.Clock
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
@@ -47,14 +51,14 @@ defmodule ArchiDep.Servers.DeleteServerTest do
       )
 
     previous_counts = count_rows(@affected_tables)
-    :ok = subscribe(server)
+    subscriptions = subscribe(server)
 
     assert DeleteServer.delete_server(auth, server) == :ok
 
     server
     |> assert_server_deleted_event(auth)
     |> assert_server_and_properties_gone()
-    |> assert_server_deleted_broadcast()
+    |> assert_server_deleted_broadcast(subscriptions)
 
     assert_row_count_diff(previous_counts, %{
       Server => -1,
@@ -78,14 +82,14 @@ defmodule ArchiDep.Servers.DeleteServerTest do
       )
 
     previous_counts = count_rows(@affected_tables)
-    :ok = subscribe(server)
+    subscriptions = subscribe(server)
 
     assert DeleteServer.delete_server(auth, server) == :ok
 
     server
     |> assert_server_deleted_event(auth)
     |> assert_server_and_properties_gone()
-    |> assert_server_deleted_broadcast()
+    |> assert_server_deleted_broadcast(subscriptions)
 
     assert_row_count_diff(previous_counts, %{
       Server => -1,
@@ -211,16 +215,16 @@ defmodule ArchiDep.Servers.DeleteServerTest do
     server
   end
 
-  defp assert_server_deleted_broadcast(%Server{id: id} = server) do
-    assert_receive {:server_deleted, %Server{id: ^id} = on_server}
-    assert_receive {:server_deleted, %Server{id: ^id} = on_group}
-    assert_receive {:server_deleted, %Server{id: ^id} = on_owner}
+  # Asserts the server-deleted broadcast reached each of the three topics
+  # exactly once and carried the full server. Each topic's collector yields its
+  # own list, so a double broadcast on one topic or a missing broadcast on
+  # another fails the corresponding whole-list equality.
+  defp assert_server_deleted_broadcast(%Server{} = server, subscriptions) do
+    assert received_broadcasts(subscriptions.server) == [{:server_deleted, server}]
+    assert received_broadcasts(subscriptions.group) == [{:server_deleted, server}]
+    assert received_broadcasts(subscriptions.owner) == [{:server_deleted, server}]
 
-    assert on_server == server
-    assert on_group == server
-    assert on_owner == server
-
-    refute_received {:server_deleted, %Server{id: ^id}}
+    server
   end
 
   defp assert_owner_counts(owner_id, server_count: server_count, active_server_count: active) do
@@ -239,10 +243,15 @@ defmodule ArchiDep.Servers.DeleteServerTest do
     :ok
   end
 
+  # Subscribes each of the three topics a server-deleted broadcast reaches in
+  # its own collector, so each topic's delivery can be asserted independently
+  # rather than funnelled into one indistinguishable mailbox.
   defp subscribe(%Server{} = server) do
-    :ok = PubSub.subscribe_server(server.id)
-    :ok = PubSub.subscribe_server_group_servers(server.group_id)
-    :ok = PubSub.subscribe_server_owner_servers(server.owner_id)
+    %{
+      server: collect_broadcasts(fn -> PubSub.subscribe_server(server.id) end),
+      group: collect_broadcasts(fn -> PubSub.subscribe_server_group_servers(server.group_id) end),
+      owner: collect_broadcasts(fn -> PubSub.subscribe_server_owner_servers(server.owner_id) end)
+    }
   end
 
   defp owner_name(%ServerOwner{group_member: %{name: name}}), do: name

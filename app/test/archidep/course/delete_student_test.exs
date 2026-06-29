@@ -2,6 +2,10 @@ defmodule ArchiDep.Course.DeleteStudentTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+
+  import ArchiDep.Support.PubSubTestHelpers,
+    only: [collect_broadcasts: 1, received_broadcasts: 1]
+
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
@@ -54,8 +58,7 @@ defmodule ArchiDep.Course.DeleteStudentTest do
     # struct loads associations differently).
     student = persisted_student(inserted.id)
 
-    :ok = PubSub.subscribe_student(student.id)
-    :ok = PubSub.subscribe_class_students(student.class_id)
+    broadcasts = subscribe_student_broadcasts(student)
 
     auth = Factory.build(:authentication, root: true)
 
@@ -66,7 +69,7 @@ defmodule ArchiDep.Course.DeleteStudentTest do
     student
     |> assert_student_deleted_event(auth)
     |> assert_student_gone()
-    |> assert_student_deleted_broadcast()
+    |> assert_student_deleted_broadcast(broadcasts)
 
     assert_row_count_diff(previous_counts, %{Student => -1, StoredEvent => 1})
   end
@@ -90,8 +93,7 @@ defmodule ArchiDep.Course.DeleteStudentTest do
     student =
       CourseFactory.insert(:student, %{user: nil, user_id: nil, now: @past})
 
-    :ok = PubSub.subscribe_student(student.id)
-    :ok = PubSub.subscribe_class_students(student.class_id)
+    broadcasts = subscribe_student_broadcasts(student)
 
     auth = Factory.build(:authentication, root: false)
 
@@ -102,7 +104,7 @@ defmodule ArchiDep.Course.DeleteStudentTest do
     assert persisted_student(student.id).id == student.id
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_student_deleted_broadcast(student.id)
+    refute_student_deleted_broadcast(broadcasts)
   end
 
   # Asserts the single `StudentDeleted` event: the deleted student's identity in
@@ -144,22 +146,30 @@ defmodule ArchiDep.Course.DeleteStudentTest do
     student
   end
 
-  defp assert_student_deleted_broadcast(%Student{id: id} = student) do
-    # The use case publishes to both the student-specific and the class-students
-    # topics; pin the student ID since both are shared across async tests.
-    assert_receive {:student_deleted, %Student{id: ^id} = student_specific}
-    assert_receive {:student_deleted, %Student{id: ^id} = class_scoped}
+  # Subscribes the two topics a student-deleted broadcast reaches — the
+  # student's own topic and the class-students topic — each in its own
+  # collector, so each topic's delivery is asserted on its own rather than
+  # funnelled into one indistinguishable mailbox.
+  defp subscribe_student_broadcasts(%Student{id: id, class_id: class_id}) do
+    %{
+      specific: collect_broadcasts(fn -> PubSub.subscribe_student(id) end),
+      class: collect_broadcasts(fn -> PubSub.subscribe_class_students(class_id) end)
+    }
+  end
 
-    assert student_specific == student
-    assert class_scoped == student
-
-    refute_received {:student_deleted, %Student{id: ^id}}
+  # Asserts the student-deleted message reached both topics the use case
+  # publishes to — the student-specific one and the class-students one — each
+  # carrying the deleted student, and nothing else.
+  defp assert_student_deleted_broadcast(%Student{} = student, broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == [{:student_deleted, student}]
+    assert received_broadcasts(broadcasts.class) == [{:student_deleted, student}]
 
     student
   end
 
-  defp refute_student_deleted_broadcast(id) do
-    refute_received {:student_deleted, %Student{id: ^id}}
+  defp refute_student_deleted_broadcast(broadcasts) do
+    assert received_broadcasts(broadcasts.specific) == []
+    assert received_broadcasts(broadcasts.class) == []
   end
 
   defp persisted_student(id) do
