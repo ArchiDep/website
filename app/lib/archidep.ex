@@ -67,6 +67,7 @@ defmodule ArchiDep do
     quote do
       import ArchiDep.Helpers.AuthHelpers
       alias ArchiDep.Authentication
+      alias ArchiDep.PubSub.Scope
       alias Ecto.UUID
       alias Phoenix.PubSub
     end

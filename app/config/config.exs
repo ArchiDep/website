@@ -32,6 +32,7 @@ config :archidep, ArchiDep.Servers, ArchiDep.Servers.Context
 
 config :archidep, ArchiDep.Clock, ArchiDep.Clock.SystemClock
 config :archidep, ArchiDep.Http, Req
+config :archidep, ArchiDep.PubSub.Scope, ArchiDep.PubSub.Scope.GlobalScope
 config :archidep, ArchiDep.Servers.Ansible, ArchiDep.Servers.Ansible.Context
 
 config :archidep,

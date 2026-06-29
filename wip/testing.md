@@ -2038,6 +2038,44 @@ tests), `ServerDynamicSupervisor`, and `ServerTracker` (live state over
 behaviours' real implementations where they carry logic. Test with
 `start_supervised!` and `Phoenix.PubSub` assertions. _Scope:_ ~4–6 modules.
 
+To make `ServersOrchestrator` **fully** unit-testable rather than relying on the
+inert `track_on_boot: false` path, a few changes work together (deliberately
+deferred, not blocking the rest of this phase):
+
+- **Inject the collaborators, not just the subscription.** Today
+  `handle_continue(:load_servers, …)` gates three things behind the compile-time
+  `@track_on_boot`: the `PubSub.subscribe_server_created/0` call, the
+  `Server.list_active_servers/1` read, and the per-server
+  `ServerDynamicSupervisor.start_server_supervisor/2` start. A no-op
+  subscription MFA alone only neutralizes the first; the read still hits the
+  database and the start still spins real supervised processes. Route the read
+  and the supervisor through client facades (behaviour + Hammox mock, like
+  `ServerManagerClient` / the `*Client` modules already in `config/test.exs`) so
+  a unit test can stub the active-server list and assert the exact
+  `start_server_supervisor/2` calls, then drive `handle_info({:server_created,
+…})` directly with `send/2`.
+- **Make "track on boot" a runtime input passed from `Servers.Supervisor`, not
+  `compile_env`.** That is what the injected subscription MFA is really getting
+  at — moving the decision out of a compile-time global so a test can start the
+  orchestrator with tracking on and mocked collaborators. Prefer an explicit
+  flag over a no-op MFA, since the flag must also gate the load + starts and
+  reads more honestly than a function that silently disables one of three steps.
+- **Parameterize the `{:global, __MODULE__}` name** so async tests can each
+  `start_supervised!` their own instance (also touches `ensure_started/1`'s use
+  of `@name`); align with the existing GenServer-proxy test pattern rather than
+  a new approach.
+- **Switch `DateTime.utc_now/0` to `Clock.now/0`** in `handle_continue` and
+  `handle_info` so the `Server.active?/2` time logic is pinnable for exact
+  assertions, consistent with the rest of the app.
+
+These compound with the per-test PubSub topic scope (`ArchiDep.PubSub.Scope`):
+the orchestrator stays inert in test today specifically so a non-sandboxed
+`server_created` broadcast cannot wake it to query the database outside a
+caller's transaction. With `"servers:new"` scoped per test, that concern
+dissolves — a test can let the orchestrator subscribe and then drive a real
+scoped broadcast and assert it reacts, fully async, leaving `track_on_boot` as a
+deployment concern rather than a test-inertness switch.
+
 ### Decide exclusions
 
 _Context:_ once the sweep is essentially done and we can see the _actual_

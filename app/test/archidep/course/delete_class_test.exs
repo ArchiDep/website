@@ -105,7 +105,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
     assert Repo.get!(Server, server.id).id == server.id
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_class_deleted_broadcast(class.id)
+    refute_class_deleted_broadcast()
   end
 
   test "a class that does not exist cannot be deleted", %{delete_class: delete_class} do
@@ -140,7 +140,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
     assert persisted_class(class.id) == class
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_class_deleted_broadcast(class.id)
+    refute_class_deleted_broadcast()
   end
 
   # Asserts the single `ClassDeleted` event: the deleted class's identity in its
@@ -182,23 +182,20 @@ defmodule ArchiDep.Course.DeleteClassTest do
 
   # Asserts the class-deleted message reached both the class-specific and global
   # topics, and that nothing else was broadcast.
-  defp assert_class_deleted_broadcast(%Class{id: id} = class) do
-    # Pin the class ID so the assertions match only this test's broadcasts — the
-    # global "classes" topic is shared across async tests and not sandboxed (see
-    # docs/testing.md).
-    assert_receive {:class_deleted, %Class{id: ^id} = class_specific}
-    assert_receive {:class_deleted, %Class{id: ^id} = global}
+  defp assert_class_deleted_broadcast(%Class{} = class) do
+    assert_receive {:class_deleted, class_specific}
+    assert_receive {:class_deleted, global}
 
     assert class_specific == class
     assert global == class
 
-    refute_received {:class_deleted, %Class{id: ^id}}
+    refute_received {:class_deleted, _}
 
     class
   end
 
-  defp refute_class_deleted_broadcast(id) do
-    refute_received {:class_deleted, %Class{id: ^id}}
+  defp refute_class_deleted_broadcast do
+    refute_received {:class_deleted, _}
   end
 
   defp persisted_class(id) do

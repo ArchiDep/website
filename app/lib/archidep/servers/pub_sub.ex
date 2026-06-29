@@ -32,7 +32,7 @@ defmodule ArchiDep.Servers.PubSub do
 
   @spec publish_server_created(Server.t()) :: :ok
   def publish_server_created(server) do
-    :ok = PubSub.broadcast(@pubsub, "servers:new", {:server_created, server})
+    :ok = PubSub.broadcast(@pubsub, Scope.global_topic("servers:new"), {:server_created, server})
 
     :ok =
       PubSub.broadcast(
@@ -51,7 +51,7 @@ defmodule ArchiDep.Servers.PubSub do
 
   @spec subscribe_server_created() :: :ok
   def subscribe_server_created do
-    :ok = PubSub.subscribe(@pubsub, "servers:new")
+    :ok = PubSub.subscribe(@pubsub, Scope.global_topic("servers:new"))
   end
 
   @spec publish_server_updated(Server.t()) :: :ok

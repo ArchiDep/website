@@ -139,13 +139,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
         "created class added"
       )
 
-      refreshed = render(view)
-
-      assert class_row(refreshed, created.id) ==
-               {"Newbie", "Until Thu, December 31, 2026", :active}
-
-      assert class_row(refreshed, existing.id) ==
+      assert classes_table(render(view)) == [
+               {"Newbie", "Until Thu, December 31, 2026", :active},
                {"Existing", "Until Tue, June 30, 2026", :active}
+             ]
     end
 
     test "remove a row when a class is deleted", %{conn: conn, auth: auth} do
@@ -182,8 +179,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
         "deleted class removed"
       )
 
-      refute has_element?(view, "#class-#{victim.id}")
-      assert class_row(render(view), keeper.id) == {"Keeper", "Until Tue, June 30, 2026", :active}
+      assert classes_table(render(view)) == [{"Keeper", "Until Tue, June 30, 2026", :active}]
     end
 
     test "re-render a row when a class is updated", %{conn: conn, auth: auth} do
@@ -211,7 +207,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
         "updated class re-rendered"
       )
 
-      assert class_row(render(view), class.id) == {"Renamed", "Until Tue, June 30, 2026", :active}
+      assert classes_table(render(view)) == [{"Renamed", "Until Tue, June 30, 2026", :active}]
     end
   end
 
@@ -457,13 +453,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
 
   defp classes_table(html),
     do: html |> find_html_elements(~s(tbody tr[id^="class-"])) |> Enum.map(&project_class_row/1)
-
-  defp class_row(html, id) do
-    case find_html_elements(html, ~s(tr[id="class-#{id}"])) do
-      [row] -> project_class_row(row)
-      [] -> nil
-    end
-  end
 
   defp project_class_row(row) do
     [name_td, _start_td, _end_td, active_td] = find_html_elements(row, "td")

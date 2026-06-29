@@ -198,9 +198,8 @@ defmodule ArchiDep.Course.CreateClassTest do
     # The failed creation wrote nothing; the pre-existing class is untouched.
     assert persisted_class(existing.id) == existing
     assert_no_row_count_diff(previous_counts)
-    # No event stored already proves no broadcast (the use case broadcasts only
-    # after the creation commits); the rejected creation has no class ID to scope
-    # a refute to.
+    # No event stored already proves no broadcast: the use case broadcasts only
+    # after the creation commits.
     assert_no_stored_events!()
   end
 
@@ -381,13 +380,10 @@ defmodule ArchiDep.Course.CreateClassTest do
     )
   end
 
-  defp assert_class_created_broadcast(%Class{id: id} = class) do
-    # Pin the class ID so the assertions match only this test's broadcasts — the
-    # global "classes" topic is shared across async tests and not sandboxed (see
-    # docs/testing.md).
-    assert_receive {:class_created, %Class{id: ^id} = broadcast_class}
+  defp assert_class_created_broadcast(%Class{} = class) do
+    assert_receive {:class_created, broadcast_class}
     assert broadcast_class == class
-    refute_received {:class_created, %Class{id: ^id}}
+    refute_received {:class_created, _}
   end
 
   # Asserts no class was created: no class or properties rows added, and no event

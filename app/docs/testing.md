@@ -476,31 +476,36 @@ case is expected to publish to, and assert the **absence** of a broadcast on
 paths where none should occur (see
 [below](#asserting-the-absence-of-out-of-band-effects)).
 
-**Pin the resource id in every broadcast pattern — PubSub is not sandboxed.**
-Unlike the SQL sandbox, `Phoenix.PubSub` is process-global: a broadcast to a
-**shared topic** (e.g. a context-wide `"classes"` topic that every list view
-subscribes to) is delivered to _all_ subscribed processes, including other
-`async: true` tests running concurrently. So a bare `assert_receive
-{:class_updated, class, _}` can bind another test's leaked broadcast, and a bare
-`refute_received {:class_updated, _, _}` can fail on one — both flaky, and both
-worsen as more tests publish the same message. Make the patterns **selective**
-by pinning the resource id the test owns (a unique UUID):
+**Topics are isolated per test, so assert broadcast payloads by whole value.**
+Unlike the SQL sandbox, `Phoenix.PubSub` is process-global — a broadcast reaches
+every subscribed process, including other `async: true` tests. Two mechanisms
+keep this race-free, both transparent as long as you subscribe and broadcast
+through the context `PubSub` facade:
+
+- **Keyed topics** (`"classes:#{id}"`, `"servers:#{id}"`, …) carry a per-test
+  UUID in the topic name, so a subscriber only ever sees its own resource.
+- **Global, non-keyed topics** (`"classes"`, `"servers:new"`) are suffixed per
+  test by [`ArchiDep.PubSub.Scope`][pub-sub-scope] (`global_topic/1`), which the
+  `DataCase` / `LiveCase` / `ChannelCase` setups stub with a unique value for
+  each test — so concurrent tests never observe each other's broadcasts on a
+  shared topic. In production the suffix is empty and the topic keeps its global
+  name.
+
+Because both are isolated, `refute_received` is reliable on either kind of
+topic, and a positive pattern need not pin the id. Still pin it when a single
+test exercises **several** resources and you must select one broadcast among
+them:
 
 ```elixir
 assert_receive {:class_updated, %Class{id: ^id} = broadcast, _ref}
-# …
+assert broadcast == class
 refute_received {:class_updated, %Class{id: ^id}, _ref}
 ```
 
-`assert_receive` then skips messages for other ids and waits for this test's own
-(which is delivered synchronously, so it is already in the mailbox), and
-`refute_received` ignores other ids entirely. This keeps the positive assertions
-on _both_ the resource-specific and shared topics exact while staying race-free.
-On a failure path where **no resource id exists** (a rejected create, an
-unknown-id not-found), there is nothing to pin and no reliable refute on a
-shared topic — rely on `assert_no_stored_events!/0` instead: the use case
-broadcasts only after its transaction commits, so no stored event already proves
-no broadcast.
+On a failure path where the use case broadcasts nothing,
+`assert_no_stored_events!/0` complements the refute: the use case broadcasts
+only after its transaction commits, so no stored event already proves no
+broadcast.
 
 > **Interim note (DDD refactoring).** Until the DDD refactoring lands, broadcast
 > payloads are still being reshaped, so for now PubSub assertions may stay
@@ -1321,15 +1326,15 @@ message}` tuples; assert the **whole list** by equality, message string and
   change. These topics are keyed by resource ID, so the assertion is naturally
   selective and safe under `async: true` (see the [business-layer PubSub
   note](#asserting-pubsub-broadcasts) on pinning the ID).
-- **A list view on a _global_ topic needs per-row assertions.** Some list
-  LiveViews subscribe to a shared, non-keyed topic (the admin classes list on
-  `"classes"`, not a per-resource topic). Such a topic receives broadcasts from
-  every concurrent test, so after driving a create/update/delete (via the
-  context's `publish_*` helper) do **not** assert the whole list — assert the
-  **affected row by id** (`#class-<id>` present/absent and its projected
-  content) and wait on that id in the socket assigns. The mount-time full-list
-  assertion stays exact: it renders the mocked `list_*` return captured before
-  any broadcast arrives.
+- **A list view on a _global_ topic is isolated per test, so assert the whole
+  list.** Some list LiveViews subscribe to a shared, non-keyed topic (the admin
+  classes list on `"classes"`, not a per-resource topic). That topic is scoped
+  per test by [`ArchiDep.PubSub.Scope`][pub-sub-scope] (see the [business-layer
+  note](#asserting-pubsub-broadcasts)), so a broadcast driven via the context's
+  `publish_*` helper reaches only this test's view. After driving a
+  create/update/delete, wait for the change in the socket assigns, then assert
+  the **whole list** projection by equality — the same whole-value discipline as
+  the mount-time full-list assertion.
 
 ### Testing components: through the page or in isolation
 
@@ -1614,6 +1619,7 @@ in isolation](#testing-components-through-the-page-or-in-isolation).)
 [contributing]: ../CONTRIBUTING.md#testing
 [data-case]: ../test/support/data_case.ex
 [telemetry]: ../test/support/telemetry_test_helpers.ex
+[pub-sub-scope]: ../lib/archidep/pub_sub/scope.ex
 [exemplar]: ../test/archidep/accounts/log_in_or_register_with_switch_edu_id_test.exs
 [create-class-test]: ../test/archidep/course/create_class_test.exs
 [update-class-test]: ../test/archidep/course/update_class_test.exs

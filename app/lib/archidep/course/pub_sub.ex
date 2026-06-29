@@ -13,23 +13,23 @@ defmodule ArchiDep.Course.PubSub do
 
   @spec publish_class_created(Class.t()) :: :ok
   def publish_class_created(class),
-    do: PubSub.broadcast(@pubsub, "classes", {:class_created, class})
+    do: PubSub.broadcast(@pubsub, Scope.global_topic("classes"), {:class_created, class})
 
   @spec subscribe_classes() :: :ok
   def subscribe_classes do
-    :ok = PubSub.subscribe(@pubsub, "classes")
+    :ok = PubSub.subscribe(@pubsub, Scope.global_topic("classes"))
   end
 
   @spec publish_class_updated(Class.t(), EventReference.t()) :: :ok
   def publish_class_updated(class, event) do
     :ok = PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_updated, class, event})
-    :ok = PubSub.broadcast(@pubsub, "classes", {:class_updated, class, event})
+    :ok = PubSub.broadcast(@pubsub, Scope.global_topic("classes"), {:class_updated, class, event})
   end
 
   @spec publish_class_deleted(Class.t()) :: :ok
   def publish_class_deleted(class) do
     :ok = PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_deleted, class})
-    :ok = PubSub.broadcast(@pubsub, "classes", {:class_deleted, class})
+    :ok = PubSub.broadcast(@pubsub, Scope.global_topic("classes"), {:class_deleted, class})
   end
 
   @spec subscribe_class(UUID.t()) :: :ok

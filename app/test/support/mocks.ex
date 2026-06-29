@@ -75,6 +75,13 @@ Hammox.defmock(ArchiDep.Clock.Mock,
   """
 )
 
+Hammox.defmock(ArchiDep.PubSub.Scope.Mock,
+  for: ArchiDep.PubSub.Scope.Behaviour,
+  moduledoc: """
+  Mock of the PubSub topic scope used to isolate global topics per test.
+  """
+)
+
 Hammox.defmock(ArchiDep.TrackerClientMock,
   for: ArchiDep.TrackerClientBehaviour,
   moduledoc: """

@@ -424,26 +424,23 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
   # Asserts the class-updated message reached both the class-specific and global
   # topics, each carrying the updated class and the stored-event reference, and
   # that nothing else was broadcast.
-  defp assert_class_updated_broadcast(%Class{id: id} = original, %StoredEvent{} = event) do
+  defp assert_class_updated_broadcast(%Class{} = original, %StoredEvent{} = event) do
     expected_class = persisted_class(original.id)
     expected_reference = StoredEvent.to_reference(event)
 
-    # Pin the class ID so the assertions match only this test's broadcasts — the
-    # global "classes" topic is shared across async tests and not sandboxed (see
-    # `docs/testing.md`).
-    assert_receive {:class_updated, %Class{id: ^id} = class_specific, reference_specific}
-    assert_receive {:class_updated, %Class{id: ^id} = global, reference_global}
+    assert_receive {:class_updated, class_specific, reference_specific}
+    assert_receive {:class_updated, global, reference_global}
 
     assert class_specific == expected_class
     assert global == expected_class
     assert reference_specific == expected_reference
     assert reference_global == expected_reference
 
-    refute_received {:class_updated, %Class{id: ^id}, _event}
+    refute_received {:class_updated, _, _}
   end
 
-  defp refute_class_updated_broadcast(id) do
-    refute_received {:class_updated, %Class{id: ^id}, _event}
+  defp refute_class_updated_broadcast do
+    refute_received {:class_updated, _, _}
   end
 
   defp persisted_class(id) do
@@ -462,6 +459,6 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
     assert persisted_class(original.id) == original
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_class_updated_broadcast(original.id)
+    refute_class_updated_broadcast()
   end
 end

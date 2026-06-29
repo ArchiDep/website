@@ -57,6 +57,11 @@ config :archidep, ArchiDep.TrackerClient, ArchiDep.TrackerClientMock
 # timestamps (see the testing guide in `docs/testing.md`).
 config :archidep, ArchiDep.Clock, ArchiDep.Clock.Mock
 
+# Inject a mock PubSub topic scope so each test can suffix global topics with a
+# unique value and observe only its own broadcasts (see the testing guide in
+# `docs/testing.md`).
+config :archidep, ArchiDep.PubSub.Scope, ArchiDep.PubSub.Scope.Mock
+
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 

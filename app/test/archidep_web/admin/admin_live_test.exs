@@ -127,15 +127,16 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "created server added"
       )
 
-      html = render(view)
-
-      assert class_section(html, "Alpha") ==
-               {"Servers for Alpha", [{web01.id, :connected}, {web02.id, :connected}]}
-
-      assert stats(html) == %{
-               ansible_queue: {"0/0", :success},
-               ansible_jobs: {"0", :success},
-               connected_servers: {"2", :success}
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"2", :success}
+               },
+               classes: [
+                 {"Servers for Alpha", [{web01.id, :connected}, {web02.id, :connected}]}
+               ]
              }
     end
 
@@ -165,15 +166,16 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "updated server moved into class"
       )
 
-      html = render(view)
-
-      assert class_section(html, "Alpha") ==
-               {"Servers for Alpha", [{web01.id, :connected}, {web02.id, :connected}]}
-
-      assert stats(html) == %{
-               ansible_queue: {"0/0", :success},
-               ansible_jobs: {"0", :success},
-               connected_servers: {"2", :success}
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"2", :success}
+               },
+               classes: [
+                 {"Servers for Alpha", [{web01.id, :connected}, {web02.id, :connected}]}
+               ]
              }
     end
 
@@ -202,14 +204,14 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "updated server replaced in place"
       )
 
-      html = render(view)
-
-      assert class_section(html, "Alpha") == {"Servers for Alpha", [{web01.id, :connected}]}
-
-      assert stats(html) == %{
-               ansible_queue: {"0/0", :success},
-               ansible_jobs: {"0", :success},
-               connected_servers: {"1", :success}
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"1", :success}
+               },
+               classes: [{"Servers for Alpha", [{web01.id, :connected}]}]
              }
     end
 
@@ -238,14 +240,14 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "deleted server removed"
       )
 
-      html = render(view)
-
-      assert class_section(html, "Alpha") == {"Servers for Alpha", [{web01.id, :connected}]}
-
-      assert stats(html) == %{
-               ansible_queue: {"0/0", :success},
-               ansible_jobs: {"0", :success},
-               connected_servers: {"1", :success}
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"1", :success}
+               },
+               classes: [{"Servers for Alpha", [{web01.id, :connected}]}]
              }
     end
 
@@ -279,14 +281,14 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "server state tracked"
       )
 
-      tracked = render(view)
-
-      assert class_section(tracked, "Alpha") == {"Servers for Alpha", [{web01.id, :connected}]}
-
-      assert stats(tracked) == %{
-               ansible_queue: {"0/0", :success},
-               ansible_jobs: {"0", :success},
-               connected_servers: {"1", :success}
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"1", :success}
+               },
+               classes: [{"Servers for Alpha", [{web01.id, :connected}]}]
              }
     end
 
@@ -342,13 +344,13 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
     end
 
     test "adds an active class created over PubSub", %{conn: conn, auth: auth} do
-      alpha = build_class(name: "Alpha")
+      alpha = build_class(name: "Alpha", end_date: ~D[2026-06-30])
       stub_admin_page(auth, [alpha], %{alpha.id => []})
       expect_connected_mount([], %{}, [])
 
       {:ok, view, _html} = live(conn, @path)
 
-      beta = build_class(name: "Beta")
+      beta = build_class(name: "Beta", end_date: ~D[2026-12-31])
       :ok = Course.PubSub.publish_class_created(beta)
 
       wait_for_socket_assigns!(
@@ -357,13 +359,21 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "active class added"
       )
 
-      html = render(view)
-      assert class_section(html, "Alpha") == {"Servers for Alpha", []}
-      assert class_section(html, "Beta") == {"Servers for Beta", []}
+      # Classes are ordered by end date descending, so the later-dated Beta sorts
+      # before Alpha.
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"0", :secondary}
+               },
+               classes: [{"Servers for Beta", []}, {"Servers for Alpha", []}]
+             }
     end
 
     test "ignores an inactive class created over PubSub", %{conn: conn, auth: auth} do
-      alpha = build_class(name: "Alpha")
+      alpha = build_class(name: "Alpha", end_date: ~D[2026-06-30])
       stub_admin_page(auth, [alpha], %{alpha.id => []})
       expect_connected_mount([], %{}, [])
 
@@ -375,7 +385,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       # The classes topic delivers in order, so a later active class is processed
       # after the ignored inactive one; waiting for it proves the inactive class
       # was seen and dropped.
-      gamma = build_class(name: "Gamma")
+      gamma = build_class(name: "Gamma", end_date: ~D[2026-12-31])
       :ok = Course.PubSub.publish_class_created(gamma)
 
       wait_for_socket_assigns!(
@@ -384,9 +394,18 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "later active class added"
       )
 
-      html = render(view)
-      assert class_section(html, "Gamma") == {"Servers for Gamma", []}
-      assert class_section(html, "Inactive") == nil
+      # The ignored inactive class is absent from the whole list; classes are
+      # ordered by end date descending, so the later-dated Gamma sorts before
+      # Alpha.
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"0", :secondary}
+               },
+               classes: [{"Servers for Gamma", []}, {"Servers for Alpha", []}]
+             }
     end
 
     test "renames a class in place when it is updated over PubSub", %{conn: conn, auth: auth} do
@@ -407,9 +426,16 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "class renamed"
       )
 
-      html = render(view)
-      assert class_section(html, "Renamed") == {"Servers for Renamed", []}
-      assert class_section(html, "Alpha") == nil
+      # The class is renamed in place; no stale "Alpha" section lingers.
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"0", :secondary}
+               },
+               classes: [{"Servers for Renamed", []}]
+             }
     end
 
     test "removes a class that becomes inactive on update over PubSub", %{conn: conn, auth: auth} do
@@ -431,9 +457,15 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "deactivated class removed"
       )
 
-      html = render(view)
-      assert class_section(html, "Alpha") == {"Servers for Alpha", []}
-      assert class_section(html, "Beta") == nil
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"0", :secondary}
+               },
+               classes: [{"Servers for Alpha", []}]
+             }
     end
 
     test "removes a deleted class over PubSub", %{conn: conn, auth: auth} do
@@ -452,9 +484,15 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "deleted class removed"
       )
 
-      html = render(view)
-      assert class_section(html, "Alpha") == {"Servers for Alpha", []}
-      assert class_section(html, "Beta") == nil
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"0", :secondary}
+               },
+               classes: [{"Servers for Alpha", []}]
+             }
     end
   end
 
@@ -569,14 +607,6 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       cards = section |> find_html_elements(".card") |> Enum.map(&card/1)
       {html_element_text(heading), cards}
     end)
-  end
-
-  # The class list is driven by the shared, non-sandboxed "classes" PubSub
-  # topic, so after a broadcast a concurrent test can inject other classes; a
-  # section is therefore looked up by its (test-unique) name rather than
-  # asserting the whole list. Returns `nil` when the named class is not shown.
-  defp class_section(html, name) do
-    Enum.find(class_sections(html), fn {heading, _cards} -> heading == "Servers for #{name}" end)
   end
 
   defp card(card), do: {card_server_id(card), card_state(card)}

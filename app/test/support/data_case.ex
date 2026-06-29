@@ -48,6 +48,12 @@ defmodule ArchiDep.Support.DataCase do
     # `stub`/`expect` pinning a fixed instant (see `docs/testing.md`).
     Hammox.stub(ArchiDep.Clock.Mock, :now, &SystemClock.now/0)
 
+    # Scope global PubSub topics to this test with a unique suffix so concurrent
+    # async tests never observe each other's broadcasts on shared topics (see
+    # `docs/testing.md`).
+    topic_suffix = ":test-#{System.unique_integer([:positive])}"
+    Hammox.stub(ArchiDep.PubSub.Scope.Mock, :suffix, fn -> topic_suffix end)
+
     :ok
   end
 

@@ -481,25 +481,22 @@ defmodule ArchiDep.Course.UpdateClassTest do
   # to — the class-specific one and the global one — each carrying the updated
   # class and a reference to the stored event, and that nothing else was
   # broadcast.
-  defp assert_class_updated_broadcast(%Class{id: id} = class, %StoredEvent{} = event) do
+  defp assert_class_updated_broadcast(%Class{} = class, %StoredEvent{} = event) do
     expected_reference = StoredEvent.to_reference(event)
 
-    # Pin the class ID so the assertions match only this test's broadcasts — the
-    # global "classes" topic is shared across async tests and not sandboxed (see
-    # docs/testing.md).
-    assert_receive {:class_updated, %Class{id: ^id} = class_specific, reference_specific}
-    assert_receive {:class_updated, %Class{id: ^id} = global, reference_global}
+    assert_receive {:class_updated, class_specific, reference_specific}
+    assert_receive {:class_updated, global, reference_global}
 
     assert class_specific == class
     assert global == class
     assert reference_specific == expected_reference
     assert reference_global == expected_reference
 
-    refute_received {:class_updated, %Class{id: ^id}, _event}
+    refute_received {:class_updated, _, _}
   end
 
-  defp refute_class_updated_broadcast(id) do
-    refute_received {:class_updated, %Class{id: ^id}, _event}
+  defp refute_class_updated_broadcast do
+    refute_received {:class_updated, _, _}
   end
 
   # Asserts a class row is exactly as it was. Used to check a class left
@@ -515,7 +512,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
     assert_class_unchanged(original)
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()
-    refute_class_updated_broadcast(original.id)
+    refute_class_updated_broadcast()
   end
 
   # Asserts the full set of effects that must NOT happen when no class exists to
