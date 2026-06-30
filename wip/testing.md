@@ -110,7 +110,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Shared components](#shared-components)
 - **6. Runtime processes — server tracking & Ansible pipeline (integration)**
   - [x] 🧭 [Canon — testing runtime processes](#canon--testing-runtime-processes)
-  - [ ] [Ansible pipeline — Runner & GenStage](#ansible-pipeline--runner--genstage)
+  - [x] [Ansible pipeline — Runner & GenStage](#ansible-pipeline--runner--genstage)
   - [ ] [Server tracking — SSH connection](#server-tracking--ssh-connection)
   - [ ] [Server tracking — orchestrator & Tracker](#server-tracking--orchestrator--tracker)
 - **7. Finalize coverage policy (do this last)**
@@ -2132,6 +2132,53 @@ Two decisions carried over from the canon spike:
   `Mox.set_mox_global` under `async: false` (this test is integration and serial
   regardless). Keep it to **one** happy path; all branches stay in the unit
   tests, or the smoke test becomes the "too much ceremony" trap.
+
+_Done:_ shipped as three reviewable slices.
+
+**Runner through the facade + unit tests.** `AnsiblePipelineRunner` was the only
+module calling `ServerManager` directly instead of the `ServerManagerClient`
+facade; the four pipeline callbacks (`online?`, `ansible_facts_gathered`,
+`ansible_playbook_event`, `ansible_playbook_completed`) were added to
+`ServerManagerClientBehaviour` + `ServerManagerClient` (the GenServer already
+declared the behaviour and defined them, so it is a free compile-time check) and
+the runner rerouted — a consistency fix, flagged for review. `process_event/1`
+is public, so `ansible_pipeline_runner_test.exs` calls it **directly in the test
+process** (no spawned-task gymnastics): the owner-scoped `Ansible.Mock` /
+`ServerManagerClientMock` and the sandbox stay test-owned. Covers gather-facts
+(online ok/error, offline no-op) and run-playbook (not-pending, online
+succeeded/failed with the mocked stream, offline→interrupted), asserting the
+collaborator calls (pinned args), the DB transition + stored event (whole-value,
+helpers adapted from `tracker_test.exs`), and telemetry — the deterministic
+`:telemetry.execute` interrupted event exactly, and the `:telemetry.span` stops
+by binding their unknowable `duration`/`monotonic_time`/`telemetry_span_context`
+from the received event and asserting the whole value (the generated-id
+pattern).
+
+**Queue boot-cleanup injection + Tracker presence.** The boot cleanup moved into
+an injected store (`AnsiblePipelineQueueStore` + behaviour) passed on
+`start_link` (real default, no-op fake in the queue test) — so the queue's
+`init` is DB-free and `ansible_pipeline_queue_test.exs` is now `async: true`.
+The real store's cleanup is covered directly in
+`ansible_pipeline_queue_store_test.exs` (pending/running runs time out with
+their finished events; terminal runs untouched; empty no-op), and the queue test
+reads back the `Phoenix.Tracker` presence (the deferred
+`track!`/`update_tracking!`) via `wait_for!`, asserting the published
+`%{demand:, pending:}` (the tracker's own `:phx_ref` bookkeeping is not queue
+data, so it is left out — the meaningful-projection rule). Two gotchas worth
+recording for the next chunks: the `Postgrex.INET` `/32` round-trip means a run
+must be reloaded as the assertion baseline, and `time_out`'s start/finish
+ordering validation requires the fixture's `started_at` to precede the pinned
+timeout instant.
+
+**Pipeline smoke test.** `ansible_pipeline_supervisor_test.exs` starts the whole
+`AnsiblePipelineSupervisor`, enqueues one gather-facts task, and asserts (via
+`assert_receive` on pinned-argument mocks) that `Ansible.gather_facts` ran and
+`ServerManagerClient.ansible_facts_gathered` was called — proving
+Queue→Consumer→Runner-task→Ansible+manager are wired. `async: false` +
+`Mox.set_mox_global` (the runner task is a separate pid) with shared-mode
+sandbox; one happy path only. Telemetry is not asserted here (it fires in the
+spawned task, which the helper's `self()` guard skips). Full suite green (1487
+tests), Credo clean, each new file stable over 30–50 repeats.
 
 ### Server tracking — SSH connection
 

@@ -10,15 +10,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   import ArchiDep.Helpers.GenStageHelpers
   import ArchiDep.Helpers.PipeHelpers, only: [pair: 2]
   import ArchiDep.Helpers.ProcessHelpers
-  import ArchiDep.Helpers.UseCaseHelpers
-  alias ArchiDep.Clock
   alias ArchiDep.Events.Store.EventReference
-  alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible.Pipeline
-  alias ArchiDep.Servers.Events.AnsiblePlaybookRunFinished
+  alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueStore
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
-  alias Ecto.Multi
   alias Ecto.UUID
   alias Phoenix.Tracker
   require Logger
@@ -268,8 +264,11 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   @spec name(Pipeline.t()) :: GenServer.name()
   def name(pipeline), do: {:global, {__MODULE__, pipeline}}
 
-  @spec start_link(Pipeline.t()) :: GenServer.on_start()
-  def start_link(pipeline), do: GenStage.start_link(__MODULE__, pipeline, name: name(pipeline))
+  @type start_option :: {:store, module()}
+
+  @spec start_link(Pipeline.t(), [start_option()]) :: GenServer.on_start()
+  def start_link(pipeline, opts \\ []),
+    do: GenStage.start_link(__MODULE__, {pipeline, opts}, name: name(pipeline))
 
   @spec gather_facts(
           Pipeline.t(),
@@ -307,11 +306,12 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   def health(pipeline), do: GenStage.call(name(pipeline), :health)
 
   @impl GenStage
-  def init(pipeline) do
+  def init({pipeline, opts}) do
     set_process_label(__MODULE__)
     Logger.info("Init Ansible pipeline queue")
 
-    mark_incomplete_playbook_runs_as_timed_out()
+    store = Keyword.get(opts, :store, AnsiblePipelineQueueStore)
+    :ok = store.mark_incomplete_runs_as_timed_out()
 
     pipeline
     |> State.init()
@@ -365,37 +365,6 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       |> State.consume_events(DateTime.utc_now())
       |> update_tracking!()
       |> noreply()
-
-  defp mark_incomplete_playbook_runs_as_timed_out do
-    incomplete_runs = AnsiblePlaybookRun.fetch_incomplete_runs()
-
-    if Enum.any?(incomplete_runs) do
-      Task.await_many(
-        Enum.map(
-          incomplete_runs,
-          &Task.async(fn -> mark_incomplete_playbook_run_as_timed_out(&1) end)
-        )
-      )
-
-      incomplete_runs_nb = length(incomplete_runs)
-      Logger.notice("Marked #{incomplete_runs_nb} incomplete playbook runs as timed out")
-    end
-  end
-
-  defp mark_incomplete_playbook_run_as_timed_out(run),
-    do:
-      Multi.new()
-      |> Multi.update(:run, AnsiblePlaybookRun.time_out(run, Clock.now()))
-      |> Multi.insert(:stored_event, &ansible_playbook_run_finished(&1.run))
-      |> Repo.transaction()
-
-  defp ansible_playbook_run_finished(run),
-    do:
-      run
-      |> AnsiblePlaybookRunFinished.new()
-      |> new_event(%{}, occurred_at: run.finished_at)
-      |> add_to_stream(run.server)
-      |> initiated_by(run.server)
 
   defp track!(state) do
     {:ok, _ref} =
