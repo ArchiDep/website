@@ -56,6 +56,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
 
   # Client API
 
+  @impl ServerManagerClientBehaviour
   @spec online?(Server.t()) :: boolean()
   def online?(server), do: GenServer.call(name(server), :online?)
 
@@ -63,14 +64,17 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   def connection_idle(server_id, connection_pid),
     do: GenServer.cast(name(server_id), {:connection_idle, connection_pid})
 
+  @impl ServerManagerClientBehaviour
   @spec ansible_facts_gathered(Server.t(), {:ok, Types.ansible_facts()} | {:error, term()}) :: :ok
   def ansible_facts_gathered(server, result),
     do: GenServer.call(name(server), {:ansible_facts_gathered, result})
 
+  @impl ServerManagerClientBehaviour
   @spec ansible_playbook_event(AnsiblePlaybookRun.t(), AnsiblePlaybookEvent.t()) :: :ok
   def ansible_playbook_event(run, event),
     do: GenServer.cast(name(run.server), {:ansible_playbook_event, run.id, event.task_name})
 
+  @impl ServerManagerClientBehaviour
   @spec ansible_playbook_completed(AnsiblePlaybookRun.t()) :: :ok
   def ansible_playbook_completed(run),
     do: GenServer.call(name(run.server), {:ansible_playbook_completed, run.id})

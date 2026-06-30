@@ -17,7 +17,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   alias ArchiDep.Servers.Events.AnsiblePlaybookRunRunning
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.ServerTracking.ServerManager
+  alias ArchiDep.Servers.ServerTracking.ServerManagerClient
   alias Ecto.Multi
   alias Ecto.UUID
   alias Phoenix.Tracker
@@ -40,7 +40,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   def process_event({:gather_facts, server_id, username}) do
     {:ok, server} = Server.fetch_server(server_id)
 
-    if ServerManager.online?(server) do
+    if ServerManagerClient.online?(server) do
       Logger.debug("Gathering facts for server #{server.id}...")
 
       :telemetry.span(
@@ -74,19 +74,19 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
       {:ok, facts} ->
         Logger.debug("Gathered facts for server #{server.id}")
 
-        ServerManager.ansible_facts_gathered(server, {:ok, facts})
+        ServerManagerClient.ansible_facts_gathered(server, {:ok, facts})
 
       {:error, reason} ->
         Logger.notice(
           "Failed to gather facts for server #{server.id} because: #{inspect(reason)}"
         )
 
-        ServerManager.ansible_facts_gathered(server, {:error, reason})
+        ServerManagerClient.ansible_facts_gathered(server, {:error, reason})
     end
   end
 
   defp process_pending_run(pending_run, cause) do
-    if ServerManager.online?(pending_run.server) do
+    if ServerManagerClient.online?(pending_run.server) do
       :telemetry.span(
         @event_base ++ [:playbook_run],
         start_event_metadata(pending_run),
@@ -131,21 +131,21 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
           %{meta | events: meta.events + 1, current_task: event.task_name}
         end)
 
-        :ok = ServerManager.ansible_playbook_event(running_run, event)
+        :ok = ServerManagerClient.ansible_playbook_event(running_run, event)
 
       {:succeeded, succeeded_run} ->
         update_playbook_tracking!(run_id, fn meta ->
           %{meta | state: :succeeded, current_task: nil}
         end)
 
-        :ok = ServerManager.ansible_playbook_completed(succeeded_run)
+        :ok = ServerManagerClient.ansible_playbook_completed(succeeded_run)
 
       {:failed, failed_run} ->
         update_playbook_tracking!(run_id, fn meta ->
           %{meta | state: :failed, current_task: nil}
         end)
 
-        :ok = ServerManager.ansible_playbook_completed(failed_run)
+        :ok = ServerManagerClient.ansible_playbook_completed(failed_run)
     end)
     |> Enum.at(-1)
   end

@@ -13,10 +13,23 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerClientBehaviour do
 
   alias ArchiDep.Authentication
   alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookEvent
+  alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Types
   alias Ecto.Changeset
   alias Ecto.UUID
+
+  @callback online?(Server.t()) :: boolean()
+
+  @callback ansible_facts_gathered(
+              Server.t(),
+              {:ok, Types.ansible_facts()} | {:error, term()}
+            ) :: :ok
+
+  @callback ansible_playbook_event(AnsiblePlaybookRun.t(), AnsiblePlaybookEvent.t()) :: :ok
+
+  @callback ansible_playbook_completed(AnsiblePlaybookRun.t()) :: :ok
 
   @callback retry_connecting(Server.t() | UUID.t()) :: :ok
 
