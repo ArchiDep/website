@@ -109,7 +109,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Web helpers (remainder)](#web-helpers-remainder)
   - [x] [Shared components](#shared-components)
 - **6. Runtime processes — server tracking & Ansible pipeline (integration)**
-  - [ ] 🧭 [Canon — testing runtime processes](#canon--testing-runtime-processes)
+  - [x] 🧭 [Canon — testing runtime processes](#canon--testing-runtime-processes)
   - [ ] [Ansible pipeline — Runner & GenStage](#ansible-pipeline--runner--genstage)
   - [ ] [Server tracking — SSH connection](#server-tracking--ssh-connection)
   - [ ] [Server tracking — orchestrator & Tracker](#server-tracking--orchestrator--tracker)
@@ -2011,6 +2011,66 @@ Get reviewed, refactor, agree. Output: a short "how we test runtime processes"
 note + the reviewed example. Only once signed off do the follow-up chunks below
 become mechanical.
 
+_Done:_ two reviewable exemplars landed and the canon is documented in
+`docs/testing.md` under [Runtime processes (GenServers,
+GenStage)](../app/docs/testing.md#runtime-processes-genservers-genstage). The
+durable techniques the section settles: (1) test the substantive logic as a
+**pure state machine** asserted by whole-value `==`, and the GenServer/GenStage
+itself only for `init`/dispatch wiring; (2) start the unit with
+`start_supervised!` under a **per-test-scoped name** derived from an init-time
+value (the pipeline modules' `{:global, {Module, pipeline}}`); (3) give a
+spawned process the test's **sandbox connection and mocks** — `Sandbox.allow`/
+`Hammox.allow` for lazy readers, shared-mode (`async: false`) when the process
+reads the DB in `init/1` (too early to allow), and the rule that a
+**boot-started singleton owned by no test must not call injected mocks** from
+its always-running paths; (4) **drive then read back, never `Process.sleep`** (a
+`call` after a `cast` flushes the mailbox; `assert_receive` on mock sends;
+`wait_for_state!` for convergence); (5) stand in for a collaborator with
+`GenServerProxy`/`NoOpGenServer`. One-off techniques stayed as test-file
+comments per the doc's own guidance.
+
+**Exemplar 1 — `Ansible.Runner` (subprocess boundary).** Settled the "mock vs.
+fake command" question in favour of a **mock**: introduced an `ArchiDep.Cmd`
+facade (behaviour + `Cmd.Mock`, resolved via `compile_env` to `ExCmd` in
+production), mirroring `ArchiDep.Http`/`ArchiDep.Clock`, and rewired `Runner` to
+it. `runner_test.exs` drives the facade with canned stream elements of the exact
+shape `ExCmd.stream/2` emits (binary chunks then `{:exit, term()}`), covering
+both `gather_facts` (the command sent, facts decode joining output split across
+chunks, the decodable-error/`msg`, invalid-JSON, unknown branches) and
+`run_playbook` (the command incl. variables, per-line event decoding, malformed-
+line dropping, exit/`:epipe` passthrough). A **mock** was the right call over a
+fake command precisely because it gives deterministic chunk boundaries — which
+surfaced a **latent bug** (flag for review): `run_playbook`'s `Stream.transform`
+accumulator decoded-and-dropped a chunk that contained no newline instead of
+buffering it, so any playbook event split across pipe reads with the first
+segment lacking a newline was silently lost. Fixed (`[first_part] -> {[], acc <>
+first_part}`) and pinned by a split-across-chunks regression test; a real
+subprocess could not have reproduced the split deterministically. (Aside: the
+`Runner.gather_facts` spec lists `{:error, :unreachable}`, which the current
+code never produces — left as-is, noted here for review.)
+
+**Exemplar 2 — `AnsiblePipelineQueue` (GenStage process).** Split into the pure
+half (`ansible_pipeline_queue_state_test.exs`: `State.init`/`store_demand`/
+`gather_facts`/`run_playbook`/`server_offline`/`consume_events`/`health`
+asserted as whole structs, the embedded `:queue` normalized to its FIFO list for
+equality) and the process half (`ansible_pipeline_queue_test.exs`:
+`start_supervised!` under a unique pipeline value, the DB-in-`init` read under
+shared-mode sandbox, and tasks driven through the client API then asserted as
+the exact events dispatched to a real `GenStage.stream` consumer — including the
+`server_offline` cast's drop, sequenced before consumption by a synchronous
+`health` call). The recurring **clock gap** appeared as predicted: `State`
+stamped `last_activity` with `DateTime.utc_now/0`. Resolved by **threading `now`
+into `State`** (so the pure tests pin it) while the live GenStage glue passes
+wall-clock — because the boot-started singleton pipeline is owned by no test and
+therefore cannot call the injected `Clock` (doing so crashes it on the first
+demand); this is exactly the boot-singleton rule now in the canon. Production
+behaviour is unchanged (the glue still uses wall-clock, just at the boundary).
+_Deliberately not asserted (deferred to the chunk above):_ the queue's
+`Phoenix.Tracker` presence (`track!`/`update_tracking!`) — it runs during these
+tests (a failing `track!` would crash `start_supervised!`) but the registered
+entry and its `%{demand:, pending:}` metadata are not read back; and the
+boot-cleanup path, which has no fixture here.
+
 ### Ansible pipeline — Runner & GenStage
 
 `Ansible.Runner` (subprocess invocation + JSON/JSONL stream parsing + exit-code
@@ -2019,7 +2079,59 @@ task-dropping-when-offline logic, `AnsiblePipelineConsumer`,
 `AnsiblePipelineRunner`, `AnsiblePipelineSupervisor`). Stub the
 `ansible-playbook` process at the `Runner` boundary so no real Ansible runs.
 _Scope:_ ~5 modules; split Runner vs. pipeline if the canon task does not
-already cover one.
+already cover one. The canon spike already covered `Ansible.Runner` and the
+`AnsiblePipelineQueue` producer; the remainder here is the `Consumer`, the
+`Runner` task, the `Supervisor`, the queue's **boot-cleanup** path
+(`mark_incomplete_playbook_runs_as_timed_out`, untested so far — it needs a
+persisted incomplete-run fixture), and the queue's **`Phoenix.Tracker`
+presence** (`track!`/`update_tracking!`): the spike's process tests start and
+drive the queue, so those run, but the registered `"ansible-queue"` /
+`"queue:#{pipeline}"` entry and its `%{demand:, pending:}` metadata are not
+asserted. Cover them here by reading the presence back (the
+`ServerTracker`/`Phoenix.Tracker` chunk shares this need); note that
+`Phoenix.Tracker` is eventually consistent, so the read-back needs
+`ProcessTestHelpers.wait_for!` rather than an immediate assertion.
+
+Two decisions carried over from the canon spike:
+
+- **Make the queue `async`-testable by removing the real DB call from `init`.**
+  The only reason `ansible_pipeline_queue_test.exs` is `async: false` is the DB
+  read in `init/1`; the queue otherwise never touches the DB. Two ways to lift
+  it, in order of preference:
+  - **Inject the DB collaborator** (preferred when a config mock cannot do the
+    job — which is the case here). Pass the module holding the boot-cleanup
+    operations on `start_link` (real impl by default, a plain fake in the test),
+    behind a behaviour. This keeps the **live** pipeline on the real DB while a
+    test injects a fake, so `init` does no real DB work, the producer tests run
+    `async: true`, **and** the cleanup becomes unit-testable through the queue
+    (fake returns incomplete runs, assert the timeouts dispatched). A
+    config-resolved Mox/Hammox mock cannot be used for this `init` call: it is
+    owner-scoped, and `init` runs before the test holds the pid (and the boot
+    singleton is owned by no test), so the mock has no owner — the same wall the
+    injected `Clock` hit. Hence a **plain** fake; recover the contract guarantee
+    by `@behaviour` on the real impl plus `Hammox.protect/2` of it in its own
+    test. See [Injecting collaborators into a
+    process](../app/docs/testing.md#runtime-processes-genservers-genstage).
+  - **Gate the cleanup behind a runtime flag** (the `track_on_boot` pattern, off
+    in tests) — lighter, but turns the cleanup off in tests, so it must then be
+    covered in isolation rather than through the queue.
+
+  Do this **here**, not as a standalone async flip: this chunk has to cover the
+  cleanup anyway. Not worth a production change just to parallelize three fast
+  tests on its own.
+
+- **Add exactly one end-to-end smoke test.** Every unit test mocks the stage
+  boundaries, so nothing yet proves the stages are wired: the `Consumer`'s
+  subscription to the producer, demand/back-pressure across the real link, and a
+  `Runner` task being spawned per event to invoke `Ansible` + the
+  `ServerManager` callbacks. One happy-path smoke test — start the full
+  `AnsiblePipelineSupervisor` with a test pipeline, enqueue one task, assert the
+  mocked `Ansible.gather_facts` runs and the mocked `ServerManager` gets the
+  result — catches wiring regressions the unit tests cannot. The `Runner` task
+  runs in a pid the test does not hold, so reach its mocks with
+  `Mox.set_mox_global` under `async: false` (this test is integration and serial
+  regardless). Keep it to **one** happy path; all branches stay in the unit
+  tests, or the smoke test becomes the "too much ceremony" trap.
 
 ### Server tracking — SSH connection
 

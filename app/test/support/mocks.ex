@@ -61,6 +61,13 @@ Hammox.defmock(ArchiDep.Servers.Ansible.Mock,
   """
 )
 
+Hammox.defmock(ArchiDep.Cmd.Mock,
+  for: ArchiDep.Cmd.Behaviour,
+  moduledoc: """
+  Mock of the module used to run external commands and stream their output.
+  """
+)
+
 Hammox.defmock(ArchiDep.Http.Mock,
   for: ArchiDep.Http.Behaviour,
   moduledoc: """

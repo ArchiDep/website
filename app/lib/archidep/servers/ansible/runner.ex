@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
   """
 
   import ArchiDep.Helpers.NetHelpers, only: [is_ip_address: 1, is_network_port: 1]
+  alias ArchiDep.Cmd
   alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.Types
   require Logger
@@ -47,7 +48,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
         "-m",
         "gather_facts"
       ]
-      |> ExCmd.stream(
+      |> Cmd.stream(
         env: [
           {"ANSIBLE_HOST_KEY_CHECKING", "false"},
           # Output in JSON format
@@ -154,7 +155,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
          ["-e", "#{key}=\"#{shell_escape(value)}\""]
        end) ++
        [playbook_path])
-    |> ExCmd.stream(
+    |> Cmd.stream(
       env: [
         {"ANSIBLE_HOST_KEY_CHECKING", "false"},
         # Output each event as a JSON object on a separate line
@@ -174,7 +175,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
               {[], acc}
 
             [first_part] ->
-              {to_ansible_playbook_events([acc <> first_part]), ""}
+              {[], acc <> first_part}
 
             [first_part | other_parts] ->
               {last_part, middle_parts} = List.pop_at(other_parts, -1)

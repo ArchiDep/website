@@ -37,6 +37,7 @@ config :archidep, ArchiDep.Events, ArchiDep.Events.ContextMock
 config :archidep, ArchiDep.Servers, ArchiDep.Servers.ContextMock
 
 config :archidep, ArchiDep.Servers.Ansible, ArchiDep.Servers.Ansible.Mock
+config :archidep, ArchiDep.Cmd, ArchiDep.Cmd.Mock
 config :archidep, ArchiDep.Http, ArchiDep.Http.Mock
 
 config :archidep,

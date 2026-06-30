@@ -85,18 +85,20 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     @spec gather_facts(
             t(),
             UUID.t(),
-            String.t()
+            String.t(),
+            DateTime.t()
           ) :: t()
     def gather_facts(
           %__MODULE__{} = state,
           server_id,
-          username
+          username,
+          now
         ) do
       {number_pending, pending_tasks_queue} = state.pending_tasks
 
       new_last_activity =
         if number_pending == 0 do
-          DateTime.utc_now()
+          now
         else
           state.last_activity
         end
@@ -121,19 +123,21 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
             t(),
             UUID.t(),
             UUID.t(),
-            EventReference.t()
+            EventReference.t(),
+            DateTime.t()
           ) :: t()
     def run_playbook(
           %__MODULE__{} = state,
           playbook_run_id,
           server_id,
-          cause
+          cause,
+          now
         ) do
       {number_pending, pending_tasks_queue} = state.pending_tasks
 
       new_last_activity =
         if number_pending == 0 do
-          DateTime.utc_now()
+          now
         else
           state.last_activity
         end
@@ -197,13 +201,13 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       }
     end
 
-    @spec consume_events(t()) :: {list({UUID.t(), EventReference.t()}), t()}
-    def consume_events(state) do
-      {events, new_state} = collect_events_to_consume({[], state})
+    @spec consume_events(t(), DateTime.t()) :: {list({UUID.t(), EventReference.t()}), t()}
+    def consume_events(state, now) do
+      {events, new_state} = collect_events_to_consume({[], state}, now)
       {Enum.reverse(events), new_state}
     end
 
-    defp collect_events_to_consume({events, %__MODULE__{stored_demand: 0} = state}) do
+    defp collect_events_to_consume({events, %__MODULE__{stored_demand: 0} = state}, _now) do
       {events, state}
     end
 
@@ -211,7 +215,8 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
            {events,
             %__MODULE__{
               pending_tasks: {0, _pending_tasks_queue}
-            } = state}
+            } = state},
+           _now
          ) do
       {events, %__MODULE__{state | last_activity: nil}}
     end
@@ -221,7 +226,8 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
             %__MODULE__{
               stored_demand: stored_demand,
               pending_tasks: {number_pending, pending_tasks_queue}
-            } = state}
+            } = state},
+           now
          ) do
       {{:value, task}, new_queue} = :queue.out(pending_tasks_queue)
 
@@ -240,8 +246,9 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
            state
            | stored_demand: stored_demand - 1,
              pending_tasks: {number_pending - 1, new_queue},
-             last_activity: DateTime.utc_now()
-         }}
+             last_activity: now
+         }},
+        now
       )
     end
 
@@ -317,7 +324,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     do:
       state
       |> State.store_demand(demand)
-      |> State.consume_events()
+      |> State.consume_events(DateTime.utc_now())
       |> update_tracking!()
       |> noreply()
 
@@ -326,22 +333,26 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
         {:gather_facts, server_id, username},
         _from,
         state
-      ),
-      do:
-        state
-        |> State.gather_facts(server_id, username)
-        |> State.consume_events()
-        |> update_tracking!()
-        |> reply(:ok)
+      ) do
+    now = DateTime.utc_now()
+
+    state
+    |> State.gather_facts(server_id, username, now)
+    |> State.consume_events(now)
+    |> update_tracking!()
+    |> reply(:ok)
+  end
 
   @impl GenStage
-  def handle_call({:run_playbook, playbook_run_id, server_id, cause}, _from, state),
-    do:
-      state
-      |> State.run_playbook(playbook_run_id, server_id, cause)
-      |> State.consume_events()
-      |> update_tracking!()
-      |> reply(:ok)
+  def handle_call({:run_playbook, playbook_run_id, server_id, cause}, _from, state) do
+    now = DateTime.utc_now()
+
+    state
+    |> State.run_playbook(playbook_run_id, server_id, cause, now)
+    |> State.consume_events(now)
+    |> update_tracking!()
+    |> reply(:ok)
+  end
 
   @impl GenStage
   def handle_call(:health, _from, state), do: {:reply, State.health(state), [], state}
@@ -351,7 +362,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     do:
       state
       |> State.server_offline(server_id)
-      |> State.consume_events()
+      |> State.consume_events(DateTime.utc_now())
       |> update_tracking!()
       |> noreply()
 
