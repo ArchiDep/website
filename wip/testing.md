@@ -111,7 +111,7 @@ This is the bird's-eye view: each item links to its full description under
 - **6. Runtime processes — server tracking & Ansible pipeline (integration)**
   - [x] 🧭 [Canon — testing runtime processes](#canon--testing-runtime-processes)
   - [x] [Ansible pipeline — Runner & GenStage](#ansible-pipeline--runner--genstage)
-  - [ ] [Server tracking — SSH connection](#server-tracking--ssh-connection)
+  - [x] [Server tracking — SSH connection](#server-tracking--ssh-connection)
   - [ ] [Server tracking — orchestrator & Tracker](#server-tracking--orchestrator--tracker)
 - **7. Finalize coverage policy (do this last)**
   - [ ] [Decide exclusions](#decide-exclusions)
@@ -2187,6 +2187,53 @@ and `ServerConnectionState` (the record-based state machine — testable as pure
 data even where the GenServer needs a stubbed SSH boundary). Plus
 `ServerProblems` (pure problem constructors/predicates), which can fold in here
 or into the orchestrator chunk. _Scope:_ ~3 modules.
+
+_Done:_ all three modules covered. The two pure modules are straightforward unit
+tests: `server_connection_state_test.exs` asserts, for each of the eight record
+variants, a **whole projection** of every predicate plus `connection_pid/1` by
+`==` (so a variant leaking `true` through the wrong predicate fails), and
+`server_problems_test.exs` pins each constructor's exact tuple and asserts each
+predicate builder by classifying a fixed sample set (the whole list of
+classifications by `==`), covering the branchy bits — the `:app_username` vs.
+`:username` authentication split, the `ssh_port || 22` default, and the
+`String.trim` in the missing-sudo and port-script-exit problems.
+
+`ServerConnection` (the `:ssh`-linked GenServer) needed a seam. Following the
+`Ansible.Runner` canon that introduced `ArchiDep.Cmd` for the ExCmd subprocess,
+a new **`ArchiDep.Servers.SSH.Client` facade** (behaviour + `SystemClient` real
+impl + `Client.Mock`, resolved via `compile_env`, mirroring
+`ArchiDep.Cmd`/`ArchiDep.Clock`) wraps the three boundary ops
+(`connect`/`close`/`run_command`); it lives under the existing
+`ArchiDep.Servers.SSH` namespace (the only context that speaks SSH) rather than
+top-level, so it does not collide with the bare `ArchiDep.Servers.SSH` module.
+`ServerConnection` is rewired to it while keeping the opts assembly, the
+error-string mapping and the `Process.link` (the crash-on-disconnect contract)
+in the process itself. The process test (`server_connection_test.exs`, `async:
+true`) uses a fresh `server_id` per test for unique global names, a
+`GenServerProxy` standing in for the sibling `ServerManager` to observe the
+boot-time `connection_idle` cast, the owner-scoped `Client.Mock` `allow`ed onto
+the process, and a supervised `NoOpGenServer` as the fake linked SSH connection
+ref — killed to prove the process crashes when the connection is lost. It covers
+connect success (the exact `:ssh` opts pinned), the authentication /
+key-exchange / passthrough error mapping (with the contract **warning logs**
+asserted via `with_log`), reconnect-closes-the-previous-connection,
+`run_command` when connected/idle, disconnect, terminate-closes, and crash
+propagation. The canon's one-off techniques (the `GenServerProxy` sibling
+stand-in, crash-via-`Process.link`) stay as test-file comments; the doc gained
+only a one-line note that the `:ssh`/`SSHEx` boundary is faced like
+`ArchiDep.Cmd`.
+
+_Latent bug found and fixed (flag for review):_ the `:disconnect` handler's
+`case Client.close(connection_ref)` had **no `{:error, reason}` clause**, unlike
+the reconnect and `terminate/2` close sites, so a close error on disconnect
+raised a `CaseClauseError`; aligned it with the other two sites (log the warning
+and continue) and pinned it with a regression test that asserts both the `:ok`
+return and the warning log. No clock gap here (this module uses no `DateTime`)
+and no `with`/`else` masking. _Deferred:_
+`ArchiDep.Servers.SSH.Client.SystemClient` (the thin real `:ssh`/`SSHEx`
+passthrough) can't run without a live server, so it is left uncovered like the
+other real facade impls (`ExCmd`/`Req`) — a candidate for `skip_files` in
+[Decide exclusions](#decide-exclusions).
 
 ### Server tracking — orchestrator & Tracker
 

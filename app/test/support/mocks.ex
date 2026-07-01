@@ -75,6 +75,13 @@ Hammox.defmock(ArchiDep.Http.Mock,
   """
 )
 
+Hammox.defmock(ArchiDep.Servers.SSH.Client.Mock,
+  for: ArchiDep.Servers.SSH.Client.Behaviour,
+  moduledoc: """
+  Mock of the module used to open SSH connections and run commands over them.
+  """
+)
+
 Hammox.defmock(ArchiDep.Clock.Mock,
   for: ArchiDep.Clock.Behaviour,
   moduledoc: """

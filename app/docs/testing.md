@@ -1675,21 +1675,24 @@ file.
 - **Inject a collaborator when a config-resolved mock cannot stand in.** The
   default for a boundary is still a behaviour resolved through
   `Application.compile_env!` and swapped to a Hammox mock in test (`Clock`,
-  `Http`, `Cmd`, the contexts). But that mock is **owner-scoped**, so it cannot
-  cover a call made in `init/1` (which runs before the test holds the pid) or by
-  a boot-started singleton (owned by no test) — the same wall the `Clock` hits.
-  When a process needs such a collaborator (e.g. the database work
-  `AnsiblePipelineQueue` does in `init`), **pass the collaborator module on
-  `start_link`** instead: the real implementation by default, a plain fake in
-  the test. The live process keeps the real one; the test's `init` does no real
-  work, so it can run `async: true` and can assert the behaviour _through_ the
-  process. Keep the contract honest with a **behaviour** — `@behaviour` on the
-  real impl is the compile-time check, and `Hammox.protect/2` of the real impl
-  in its own test is the runtime one. The injected double stays a **plain
-  module** (a Hammox mock would reintroduce the owner problem); verify its calls
-  by having it `send` to a pid passed in. Note the injection-site type can only
-  be `module()` — Elixir cannot type "a module implementing behaviour B", so the
-  behaviour, not the typespec, carries the contract.
+  `Http`, `Cmd`, `Servers.SSH.Client` — the Erlang `:ssh`/`SSHEx` boundary the
+  [`ServerConnection`][server-connection-test] process calls lazily, allowed
+  onto the process like the others — and the contexts). But that mock is
+  **owner-scoped**, so it cannot cover a call made in `init/1` (which runs
+  before the test holds the pid) or by a boot-started singleton (owned by no
+  test) — the same wall the `Clock` hits. When a process needs such a
+  collaborator (e.g. the database work `AnsiblePipelineQueue` does in `init`),
+  **pass the collaborator module on `start_link`** instead: the real
+  implementation by default, a plain fake in the test. The live process keeps
+  the real one; the test's `init` does no real work, so it can run `async: true`
+  and can assert the behaviour _through_ the process. Keep the contract honest
+  with a **behaviour** — `@behaviour` on the real impl is the compile-time
+  check, and `Hammox.protect/2` of the real impl in its own test is the runtime
+  one. The injected double stays a **plain module** (a Hammox mock would
+  reintroduce the owner problem); verify its calls by having it `send` to a pid
+  passed in. Note the injection-site type can only be `module()` — Elixir cannot
+  type "a module implementing behaviour B", so the behaviour, not the typespec,
+  carries the contract.
 - **Drive the process, then read it back — never `Process.sleep`.** Drive
   through the client API or `send/2`, and observe with a **synchronous call**: a
   `call` issued after a `cast` is handled in mailbox order, so it flushes the
@@ -1730,6 +1733,7 @@ file.
 [conn-case]: ../test/support/conn_case.ex
 [gen-server-proxy]: ../test/support/gen_server_proxy.ex
 [server-manager-test]: ../test/archidep/servers/server_tracking/server_manager_test.exs
+[server-connection-test]: ../test/archidep/servers/server_tracking/server_connection_test.exs
 [queue-state-test]: ../test/archidep/servers/ansible/pipeline/ansible_pipeline_queue_state_test.exs
 [queue-test]: ../test/archidep/servers/ansible/pipeline/ansible_pipeline_queue_test.exs
 [channel-case]: ../test/support/channel_case.ex

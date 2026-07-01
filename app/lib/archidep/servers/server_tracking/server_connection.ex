@@ -13,6 +13,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManager
   alias ArchiDep.Servers.SSH
+  alias ArchiDep.Servers.SSH.Client
   alias Ecto.UUID
   require Logger
 
@@ -77,7 +78,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
       ) do
     Process.unlink(connection_ref)
 
-    case :ssh.close(connection_ref) do
+    case Client.close(connection_ref) do
       :ok ->
         Logger.debug("Closed SSH connection to server #{server_id}")
 
@@ -96,7 +97,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
         {:connected, connection_ref, server_id}
       ) do
     result =
-      SSHEx.run(connection_ref, command,
+      Client.run_command(connection_ref, command,
         channel_timeout: div(timeout, 2),
         exec_timeout: div(timeout, 2),
         separate_streams: true
@@ -112,9 +113,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   def handle_call(:disconnect, _from, {:connected, connection_ref, server_id}) do
     Process.unlink(connection_ref)
 
-    case :ssh.close(connection_ref) do
+    case Client.close(connection_ref) do
       :ok ->
         Logger.debug("Closed SSH connection to server #{server_id}")
+
+      {:error, reason} ->
+        Logger.warning(
+          "Failed to close SSH connection to server #{server_id} because: #{inspect(reason)}"
+        )
     end
 
     {:reply, :ok, {:idle, server_id}}
@@ -122,7 +128,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
 
   @impl GenServer
   def terminate(_reason, {:connected, connection_ref, server_id}) do
-    case :ssh.close(connection_ref) do
+    case Client.close(connection_ref) do
       :ok ->
         Logger.debug("Closed SSH connection to server #{server_id}")
 
@@ -145,7 +151,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
     )
 
     result =
-      :ssh.connect(
+      Client.connect(
         host,
         port,
         auth_methods: ~c"publickey",

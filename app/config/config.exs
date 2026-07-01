@@ -35,6 +35,7 @@ config :archidep, ArchiDep.Cmd, ExCmd
 config :archidep, ArchiDep.Http, Req
 config :archidep, ArchiDep.PubSub.Scope, ArchiDep.PubSub.Scope.GlobalScope
 config :archidep, ArchiDep.Servers.Ansible, ArchiDep.Servers.Ansible.Context
+config :archidep, ArchiDep.Servers.SSH.Client, ArchiDep.Servers.SSH.Client.SystemClient
 
 config :archidep,
        ArchiDep.Servers.ServerTracking.ServerManagerClient,
