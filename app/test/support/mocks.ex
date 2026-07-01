@@ -54,6 +54,20 @@ Hammox.defmock(ArchiDep.Servers.ServerTracking.ServerTrackerClientMock,
   """
 )
 
+Hammox.defmock(ArchiDep.Servers.ServerTracking.ServersOrchestratorStoreMock,
+  for: ArchiDep.Servers.ServerTracking.ServersOrchestratorStoreBehaviour,
+  moduledoc: """
+  Mock of the store used by the servers orchestrator to read which servers to track.
+  """
+)
+
+Hammox.defmock(ArchiDep.Servers.ServerTracking.ServerSupervisorStarterMock,
+  for: ArchiDep.Servers.ServerTracking.ServerSupervisorStarterBehaviour,
+  moduledoc: """
+  Mock of the collaborator used by the servers orchestrator to start per-server supervisors.
+  """
+)
+
 Hammox.defmock(ArchiDep.Servers.Ansible.Mock,
   for: ArchiDep.Servers.Ansible.Behaviour,
   moduledoc: """

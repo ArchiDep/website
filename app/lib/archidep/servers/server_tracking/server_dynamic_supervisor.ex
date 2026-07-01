@@ -4,6 +4,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor do
   supervisors.
   """
 
+  @behaviour ArchiDep.Servers.ServerTracking.ServerSupervisorStarterBehaviour
+
   use DynamicSupervisor
 
   import ArchiDep.Helpers.ProcessHelpers
@@ -13,6 +15,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerDynamicSupervisor do
 
   @name {:global, __MODULE__}
 
+  @impl ArchiDep.Servers.ServerTracking.ServerSupervisorStarterBehaviour
   @spec start_server_supervisor(UUID.t(), Pipeline.t()) :: DynamicSupervisor.on_start_child()
   def start_server_supervisor(server_id, pipeline),
     do:

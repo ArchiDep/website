@@ -112,7 +112,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] 🧭 [Canon — testing runtime processes](#canon--testing-runtime-processes)
   - [x] [Ansible pipeline — Runner & GenStage](#ansible-pipeline--runner--genstage)
   - [x] [Server tracking — SSH connection](#server-tracking--ssh-connection)
-  - [ ] [Server tracking — orchestrator & Tracker](#server-tracking--orchestrator--tracker)
+  - [x] [Server tracking — orchestrator & Tracker](#server-tracking--orchestrator--tracker)
 - **7. Finalize coverage policy (do this last)**
   - [ ] [Decide exclusions](#decide-exclusions)
   - [ ] [Lock the global threshold](#lock-the-global-threshold)
@@ -2281,6 +2281,62 @@ caller's transaction. With `"servers:new"` scoped per test, that concern
 dissolves — a test can let the orchestrator subscribe and then drive a real
 scoped broadcast and assert it reacts, fully async, leaving `track_on_boot` as a
 deployment concern rather than a test-inertness switch.
+
+_Done:_ shipped as two reviewable slices — the orchestrator (with its refactor)
+and the tracker.
+
+**Orchestrator.** Rather than the shared-mode-sandbox route,
+`ServersOrchestrator` was made **pure dispatch** by pushing every effect behind
+two plain behaviour-backed collaborators injected via a single `collaborators`
+`start_link` factory (defaulting to the real impls), mirroring the
+`AnsiblePipelineQueue` + `AnsiblePipelineQueueStore` precedent: a **store**
+(`ServersOrchestratorStore`, new) that owns the DB reads _and_ the current time
+— `list_servers_to_track/0` (`Server.list_active_servers(DateTime.utc_now())`)
+and `fetch_server_to_track/1` (fetch + `Server.active?/2`, returning `{:ok,
+server}` only when active, `:not_tracked` otherwise) — and a **starter**
+(`ServerSupervisorStarterBehaviour`, implemented by the existing
+`ServerDynamicSupervisor`). The orchestrator now holds no `DateTime`/`Clock`/DB
+or supervision logic. `track_on_boot` moved from `compile_env` to a runtime
+`start_link` option that `Servers.Supervisor` passes from app env (so the
+app-started singleton stays inert in test exactly as before), and the `{:global,
+__MODULE__}` name is a `start_link` option so each test starts its own instance.
+`servers_orchestrator_test.exs` is `async: true` via the `server_manager_test`
+**factory-allows** idiom — the injected factory runs inside the orchestrator's
+`init` and `allow`s the owner-scoped mocks (and the `PubSub.Scope` stub) onto
+that process before `handle_continue`/`handle_info` use them — driving the
+`server_created` path through the real scoped `PubSub.publish_server_created/1`.
+`ServersOrchestratorStore`'s real DB logic is covered directly
+(`servers_orchestrator_store_test.exs`), and the two supervisors by whole-value
+`init/1` assertions (`ServerSupervisor.init/1` pins the flags and both child
+specs by `==` — the `ServerManager` state-module closure is bound, its result
+asserted, then reused to keep the spec comparison whole-value;
+`ServerDynamicSupervisor.init/1` pins the strategy). `start_server_supervisor/2`
+is a thin `DynamicSupervisor.start_child` wrapper left to production, like the
+other thin real facade impls.
+
+_Latent bug found and fixed (flag for review):_ `handle_info`'s `{:ok, server} =
+Server.fetch_server(created_server.id)` hard-match **crashed** the orchestrator
+when a just-created server had already been deleted; the store's
+`fetch_server_to_track/1` now returns `{:ok, server} | :not_tracked` and
+`handle_info` no-ops on `:not_tracked`. _Flagged, not fixed:_
+`ensure_started/1`'s result mapping (extracted to the tested
+`map_start_result/1`) still has no clause for the `{:error, :server_not_found}`
+its behaviour spec declares — behaviour was preserved, and this pre-existing gap
+is left for a separate decision.
+
+**Tracker (no production change).** `server_tracker_test.exs` (`async: true`,
+keyed by unique server ids on the shared `ArchiDep.Tracker`) covers `track/2` /
+`untrack/2` replies, the join/update/leave forwarding to the caller with the
+`version`-based more-recent dedup (driven deterministically by `send/2`, plus
+one end-to-end test through a real `Phoenix.Tracker.track` → `handle_diff`
+broadcast → forward), and the `get_current_server_state/1` /
+`server_state_map/1` read-back via the real tracker with `wait_for!` (eventual
+consistency). `ArchiDep.Tracker.handle_diff/2` is covered in `tracker_test.exs`,
+including the merge of a simultaneous leave+join of the same key into an
+`:update`. _Note:_ the pre-existing intermittent `admin_live_test.exs` /
+`server_manager_test.exs` `Phoenix.Tracker`/`:global` timing flakes are
+unaffected (both pass in isolation; they only flake under full-suite
+concurrency, on the base too).
 
 ### Decide exclusions
 
