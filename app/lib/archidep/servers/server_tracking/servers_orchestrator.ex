@@ -23,6 +23,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestrator do
   require Logger
 
   @name {:global, __MODULE__}
+  @track_on_boot Application.compile_env!(:archidep, [:servers, :track_on_boot])
 
   defmodule State do
     @moduledoc false
@@ -71,7 +72,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestrator do
       pipeline: pipeline,
       store: store,
       starter: starter,
-      track_on_boot: Keyword.get(opts, :track_on_boot, false)
+      track_on_boot: Keyword.get(opts, :track_on_boot, @track_on_boot)
     }
 
     {:ok, state, {:continue, :load_servers}}

@@ -2296,10 +2296,12 @@ and `fetch_server_to_track/1` (fetch + `Server.active?/2`, returning `{:ok,
 server}` only when active, `:not_tracked` otherwise) — and a **starter**
 (`ServerSupervisorStarterBehaviour`, implemented by the existing
 `ServerDynamicSupervisor`). The orchestrator now holds no `DateTime`/`Clock`/DB
-or supervision logic. `track_on_boot` moved from `compile_env` to a runtime
-`start_link` option that `Servers.Supervisor` passes from app env (so the
-app-started singleton stays inert in test exactly as before), and the `{:global,
-__MODULE__}` name is a `start_link` option so each test starts its own instance.
+or supervision logic. `track_on_boot` stays a compile-time default
+(`@track_on_boot`, still `false` in test so the app-started singleton stays
+inert), with an optional `start_link` override a test uses to turn tracking on
+for its own instance; the `{:global, __MODULE__}` name is likewise a `start_link`
+option so each test starts an isolated instance. `Servers.Supervisor` is
+unchanged.
 `servers_orchestrator_test.exs` is `async: true` via the `server_manager_test`
 **factory-allows** idiom — the injected factory runs inside the orchestrator's
 `init` and `allow`s the owner-scoped mocks (and the `PubSub.Scope` stub) onto
