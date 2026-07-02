@@ -113,7 +113,11 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Ansible pipeline — Runner & GenStage](#ansible-pipeline--runner--genstage)
   - [x] [Server tracking — SSH connection](#server-tracking--ssh-connection)
   - [x] [Server tracking — orchestrator & Tracker](#server-tracking--orchestrator--tracker)
-- **7. Finalize coverage policy (do this last)**
+- **7. External-tool compatibility smoke tests (SSH & Ansible)**
+  - [ ] 🧭 [Canon — pin external-tool versions & harness](#canon--pin-external-tool-versions--harness)
+  - [ ] [SSH round-trip against a real server](#ssh-round-trip-against-a-real-server)
+  - [ ] [Ansible format compatibility against a real target](#ansible-format-compatibility-against-a-real-target)
+- **8. Finalize coverage policy (do this last)**
   - [ ] [Decide exclusions](#decide-exclusions)
   - [ ] [Lock the global threshold](#lock-the-global-threshold)
   - [ ] [(Optional) Per-critical-path enforcement](#optional-per-critical-path-enforcement)
@@ -2340,6 +2344,130 @@ including the merge of a simultaneous leave+join of the same key into an
 unaffected (both pass in isolation; they only flake under full-suite
 concurrency, on the base too).
 
+### Canon — pin external-tool versions & harness
+
+_Context:_ every phase-6 test mocks the tool boundary — the `ArchiDep.Cmd`
+(ExCmd → `ansible`/`ansible-playbook`), `ArchiDep.Servers.SSH.Client`
+(`:ssh`/`SSHEx`) and `ArchiDep.Ansible` façades all stand in for the real thing.
+That is correct for unit coverage, but it means **nothing certifies that the
+real tools still speak the format the app parses.** The runner hard-codes a
+dependence on the `ansible.posix.json` / `ansible.posix.jsonl` stdout callbacks
+and a specific nested JSON shape
+(`plays[0].tasks[0].hosts.archidep.ansible_facts` in
+[`runner.ex`](../app/lib/archidep/servers/ansible/runner.ex)); the SSH path
+depends on the OTP `:ssh` handshake and `SSHEx.run/3` round-trip. A version bump
+of any of these can break production while every mock stays green. This phase
+adds a **handful of tagged, coverage-excluded compatibility smoke tests** — a
+canary for tool drift, not another coverage sweep.
+
+🧭 This spike settles the two things the follow-up chunks depend on: the **test
+harness** and the **version pin**. Do them together — the pin is what makes the
+tests _mean_ anything (a test that runs a different Ansible than production
+ships proves nothing about production).
+
+**Version pin — the compatibility strategy.** Today production installs Ansible
+**unpinned**: [`Dockerfile`](../Dockerfile) does `apk add --no-cache ansible` in
+the Alpine `app` stage, so the version — and the bundled `ansible.posix`
+collection that owns the callback output format — is whatever Alpine's repo
+serves at build time, drifting silently on every rebuild. Fix the contract at
+its source:
+
+- **Pin `ansible-core` and `ansible.posix` explicitly, in one source of truth**
+  (a `requirements.txt` + galaxy `requirements.yml`, or equivalent) consumed by
+  **both** the production image and the compatibility test. Pin `ansible.posix`
+  specifically — it owns the `json`/`jsonl` callbacks the parser depends on, and
+  its version floats independently of `ansible-core`. Pin at least major.minor;
+  the format is stable within a minor line and can shift across majors.
+- **Prefer pip + galaxy over `apk add ansible=<version>`.** Alpine's repo is a
+  rolling target — an exact `apk` version pin breaks on the next rebuild once
+  the repo advances. `pip install ansible-core==X.Y.*` + `ansible-galaxy
+collection install ansible.posix:==A.B.*` gives a reproducible pin independent
+  of Alpine's state. **Migration note:** `ansible-core` does **not** bundle
+  collections (the Alpine `ansible` meta-package did), so the galaxy install of
+  `ansible.posix` becomes mandatory, not incidental.
+- **Run the test against the pinned version, not "latest".** Have the test
+  invoke the _same_ ansible the production image bakes in — ideally by running
+  it from a shared image stage, or by installing from the same requirements file
+  in the CI job. Otherwise the test certifies a version we don't ship.
+- **Treat the pin as an upgrade gate.** A bump to the Ansible / `ansible.posix`
+  pin becomes a reviewed change that must pass this test — the format contract
+  fails in one obvious place in CI instead of silently in production. Let a
+  dependency bot _propose_ the bump; the smoke test gates it.
+
+**Harness.** Settle, on whichever of the two follow-up chunks is tractable
+first: (1) the tag (`@tag :external`) and how these tests are excluded from the
+default `mix test` run **and** from the coverage numerator/denominator (they run
+in a dedicated CI job with Docker + the pinned ansible, so they must not taint
+the coverage number or flake Docker-less local runs); (2) **pointing the façade
+at the real tool with `Mox.stub_with/2`**. The façades are compile-time bound to
+their mocks in the test env ([`cmd.ex`](../app/lib/archidep/cmd.ex)
+`defdelegate`s to `Application.compile_env!`), but a test reprograms the _mock_
+per-test to delegate to the real impl — `stub_with(ArchiDep.Cmd.Mock, ExCmd)`,
+`stub_with(ArchiDep.Servers.SSH.Client.Mock,
+ArchiDep.Servers.SSH.Client.SystemClient)`,
+`stub_with(ArchiDep.Servers.Ansible.Mock, ArchiDep.Servers.Ansible.Context)` —
+so every call through the façade hits the real subprocess / `:ssh`, with no
+`MIX_ENV` juggling or direct-module bypass, and the façade indirection itself is
+exercised. (`Mox.stub_with/2` is available directly even though the mocks are
+Hammox-defined; it maps each behaviour callback to the same-named function in
+the target module, so `ExCmd`'s `stream/2` works despite it not declaring the
+behaviour.) Two caveats carry over from the phase-6 canon: `stub_with` is
+owner-scoped like any Mox stub, so real work in a spawned GenServer/task
+(`ServerConnection`, the Runner task) still needs `allow`/global mode; and the
+real tool runs for real, so it must be present — `:external`/Docker-gated
+regardless. Output: a short "how we test external-tool compatibility" note + the
+reviewed first example. _Scope:_ `Dockerfile`, new requirements file(s),
+`mix.exs` (deps + test alias), CI workflow, one example test.
+
+### SSH round-trip against a real server
+
+Exercise the currently-uncovered real SSH boundary
+([`system_client.ex`](../app/lib/archidep/servers/ssh/client/system_client.ex),
+the `:ssh` + `SSHEx` passthrough that phase 6 slated for `skip_files`). Stand up
+a real SSH server and drive `SystemClient` — or `ServerConnection` end-to-end —
+against `127.0.0.1`, asserting a real handshake, a `run_command` round-trip, and
+the host-key / auth error behaviour the mocked unit tests can only simulate.
+
+Two server options, cheapest first:
+
+- **Erlang `:ssh.daemon/2,3` in-process** — no Docker, starts in `setup`, fast
+  enough this chunk could arguably run in the normal suite rather than the
+  `:external` job. Sufficient for the SSH _protocol_ round-trip (connect, exec a
+  command, close, lost-connection crash).
+- **The existing `ssh-server` container**
+  ([`app/test/docker/ssh-server/Dockerfile`](../app/test/docker/ssh-server/Dockerfile))
+  via testcontainers — heavier, but a real OpenSSH server against real `sshd`,
+  and it shares the target the Ansible chunk needs. Reuse the pinned
+  `archidep-test` key already in the image and `test/priv/ssh/id_ed25519`.
+
+Prefer `:ssh.daemon` for the pure client round-trip; keep the container for the
+Ansible chunk. _Scope:_ 1 test module (+ possibly a small daemon helper).
+
+### Ansible format compatibility against a real target
+
+The high-value chunk: prove the **real** `ansible`/`ansible-playbook` output
+still parses. Extend the existing `ssh-server` container with `python3` (Ansible
+gathers facts by running Python on the managed node; the current image has none)
+and keep it Ubuntu, matching the real student-VM fleet. Then, with the `Cmd`
+façade pointed at real ExCmd (`stub_with(ArchiDep.Cmd.Mock, ExCmd)`, per the
+canon chunk) so the real `ansible`/`ansible-playbook` runs:
+
+- run `Runner.gather_facts/3` against the container and assert `{:ok, facts}` —
+  pinning specifically the fact keys
+  [`ServerProperties.update_from_ansible_facts/2`](../app/lib/archidep/servers/schemas/server_properties.ex)
+  actually consumes (not the whole fact blob, which varies by OS / OTP / Ansible
+  version), so a callback-format change fails here;
+- run a minimal real `run_playbook/5` and assert the JSONL event shape decodes
+  into the `AnsiblePlaybookEvent` the pipeline consumes.
+
+Keep it to the happy path (one facts run, one trivial playbook) — the same "one
+smoke test, not a suite" discipline the pipeline wiring smoke test follows; all
+branch/error handling stays in the mocked phase-6 unit tests. Tagged
+`:external`, coverage-excluded, gated on Docker + the pinned ansible. Because
+its value is catching dependency drift, consider running it on dependency-bump /
+a schedule in addition to the integration job. _Scope:_ the extended container +
+1 test module.
+
 ### Decide exclusions
 
 _Context:_ once the sweep is essentially done and we can see the _actual_
@@ -2350,6 +2478,15 @@ genuinely untestable (e.g. `release.ex`, `sentry.ex`, `repo.ex`, `mailer.ex`,
 `cldr.ex`, `gettext.ex`, generated/boilerplate) should be added to `skip_files`,
 or whether we'd rather keep them in the denominator. Deliberately deferred to
 here, not assumed up front. _Files:_ `app/coveralls.json`.
+
+_Note on the real façade impls._ The thin real-tool passthroughs
+(`SystemClient`, `ExCmd`, `Req`) that phase 6 flagged as `skip_files` candidates
+are now _exercised_ by the [external-tool smoke
+tests](#canon--pin-external-tool-versions--harness) — but those tests are `@tag
+:external` and run outside the coverage job, so the files still show as
+uncovered in the coverage number. They remain `skip_files` candidates for the
+_coverage denominator_ even though a real test now drives them; the smoke tests
+are the compatibility signal, not a coverage contribution.
 
 ### Lock the global threshold
 
