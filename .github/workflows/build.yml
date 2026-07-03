@@ -142,6 +142,76 @@ jobs:
           git status --porcelain
           test -z "$(git status --porcelain)"
 
+  smoke-external:
+    runs-on: ubuntu-24.04
+    name: External-tool smoke tests
+    env:
+      ARCHIDEP_REPO_URL: ecto://archidep:archidep@127.0.0.1:5432/archidep
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID: id
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_SECRET: secret
+      ARCHIDEP_WEB_ENDPOINT_LIVE_VIEW_SIGNING_SALT: U1IE4sj1tN+RjK239nUCtj1kCPZwFW/nJSNlrx6DwSV9jut1q8yPPfxaZPc7aNnV
+      ARCHIDEP_WEB_ENDPOINT_SECRET_KEY_BASE: YdxkmjX6DMzwlOXvzoDpz+F3rPskbgjghvFn21sBeXlZt8sWRWm7nIRq7Mhg+tmF
+      ARCHIDEP_WEB_ENDPOINT_SESSION_SIGNING_SALT: gpWUEtqY2/8uMQq33419KZQmu1iAnZgKIaMEIQl9TIgmyknRYhFyXwEiuc2tJucb
+      ELIXIR_VERSION: 1.19.5
+      ERLANG_VERSION: 28.5.0.1
+      MIX_ENV: test
+    services:
+      postgres:
+        image: postgres:17.5-alpine
+        env:
+          POSTGRES_DB: archidep
+          POSTGRES_PASSWORD: archidep
+          POSTGRES_USER: archidep
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - '5432:5432'
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Cache app build
+        uses: actions/cache@v3
+        with:
+          path: |
+            app/deps
+            app/_build
+          key: ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-
+
+      - name: Install Erlang/OTP & Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.ERLANG_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Install dependencies
+        run: mix deps.get
+        working-directory: app
+
+      - name: Compile the app
+        run: mix compile
+        working-directory: app
+
+      - name: Migrate the database
+        run: mix ecto.migrate
+        working-directory: app
+
+      - name: Fix test private key permissions
+        run: chmod 600 test/priv/ssh/id_ed25519
+        working-directory: app
+
+      # Compatibility smoke tests (tagged `:external`) drive the real external
+      # tools instead of their mocks. They are excluded from the default run and
+      # from the coverage numbers, and run here in a dedicated job.
+      - name: Run external-tool compatibility smoke tests
+        run: mix test --only external
+        working-directory: app
+
   build-assets:
     runs-on: ubuntu-24.04
     name: Build course assets

@@ -2419,6 +2419,40 @@ regardless. Output: a short "how we test external-tool compatibility" note + the
 reviewed first example. _Scope:_ `Dockerfile`, new requirements file(s),
 `mix.exs` (deps + test alias), CI workflow, one example test.
 
+_Progress (harness half landed; box deliberately left unchecked):_ the
+**harness** was settled on the tractable-first [SSH
+round-trip](#ssh-round-trip-against-a-real-server), so this box stays open until
+the **version pin** lands with the [Ansible
+chunk](#ansible-format-compatibility-against-a-real-target) that consumes it
+(the pin is meaningless without a test running the pinned tool, and the SSH
+test's external tool is OTP `:ssh` + `SSHEx`, already pinned by the BEAM
+toolchain and `mix.lock`). What landed: (1) the `:external` tag is excluded from
+the default run and the coverage run via `ExUnit.start(exclude: [external:
+true])` in `test_helper.exs`, and opted into by a new dedicated `smoke-external`
+CI job (`mix test --only external`, no Docker — the SSH daemon is in-process);
+(2) the `Mox.stub_with(Mock, RealImpl)` seam that points a compile-time-bound
+façade at its real implementation (works on the Hammox mocks), driven from the
+test process to sidestep the owner-scoping caveat; (3) a reusable in-process
+`:ssh.daemon` support module (`ArchiDep.Support.SSHDaemon`, with options to
+reproduce failure modes) that authorizes the `test/priv/ssh` client fixture for
+publickey auth; (4) the first example test
+(`system_client_compatibility_test.exs`), which `stub_with`s the real
+`SystemClient` and asserts, through the `Client` façade, a real connect / `echo`
+round-trip / disconnect **plus** the authentication-failure and
+key-exchange-failure error tuples that `ServerConnection` maps — now owned by a
+new `ArchiDep.Servers.SSH.ConnectError` module (tuple constructors
+`authentication_failed/0` / `key_exchange_failed/0` for the mock to return, plus
+`classify/1` which production uses to map a reason to its atom), so production,
+the real-string canary, the mocked mapping test, and a direct `classify/1` unit
+test all share one definition; and (5) the "Testing external-tool compatibility"
+section in `docs/testing.md`. _Deferred to the Ansible chunk:_ the
+`ansible-core` / `ansible.posix` version pin (a `requirements.txt` and galaxy
+`requirements.yml`) and the `Dockerfile` migration from `apk add ansible` to pip
+and galaxy. _Flagged for review:_ no `coveralls.json` `skip_files` entry was
+added for the real-passthrough impls (e.g. `system_client.ex`) — they stay
+counted as uncovered (tiny, negligible effect on the aggregate); locking that
+exclusion is left to [Decide exclusions](#decide-exclusions).
+
 ### SSH round-trip against a real server
 
 Exercise the currently-uncovered real SSH boundary
@@ -2442,6 +2476,24 @@ Two server options, cheapest first:
 
 Prefer `:ssh.daemon` for the pure client round-trip; keep the container for the
 Ansible chunk. _Scope:_ 1 test module (+ possibly a small daemon helper).
+
+_Progress (landed as the canon's first example; box left unchecked):_ the
+`:ssh.daemon` option was taken — `ArchiDep.Support.SSHDaemon` starts an
+in-process daemon on an ephemeral loopback port, and
+`system_client_compatibility_test.exs` drives the real `Client` façade (via
+`Mox.stub_with` → `SystemClient`) through a connect / `echo` round-trip /
+disconnect. The **auth-error** behaviour this task lists is now covered too: the
+daemon reproduces an authentication failure (unauthorized key) and a
+key-exchange failure (disjoint algorithms), and the test pins the exact `:ssh`
+error strings that `ServerConnection` maps — the highest-value part, since those
+magic strings are what an OTP bump silently rewords (both were probed on OTP 28
+and match production). The new `ArchiDep.Servers.SSH.ConnectError` module owns
+the error strings: tuple constructors the mock returns, plus `classify/1` (used
+by production and unit-tested directly) that the mocked
+`server_connection_test.exs` exercises end to end. The box stays open only
+because the parent canon task is gated on the deferred Ansible version pin;
+**host-key** verification (unknown/changed host key with `silently_accept_hosts:
+false`) is the one remaining real-tool case not yet covered here.
 
 ### Ansible format compatibility against a real target
 

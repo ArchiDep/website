@@ -65,6 +65,8 @@ that silently rots.
 - [Helpers & components](#helpers--components)
   - [Pure helper modules](#pure-helper-modules)
   - [Stateless function components](#stateless-function-components)
+- [Runtime processes (GenServers, GenStage)](#runtime-processes-genservers-genstage)
+- [Testing external-tool compatibility](#testing-external-tool-compatibility)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -1707,6 +1709,78 @@ file.
   answer with `GenServer.reply/2` — and `NoOpGenServer` for a do-nothing process
   to monitor or link. The [`ServerManager`][server-manager-test] tests use both.
 
+## Testing external-tool compatibility
+
+Every test above mocks the external-tool boundary — the `Cmd` (`ExCmd` →
+`ansible`/`ansible-playbook`), `Servers.SSH.Client` (`:ssh`/`SSHEx`) and
+`Servers.Ansible` façades all resolve to a Hammox mock in the test env. That is
+correct for unit coverage, but it means **nothing certifies that the real tools
+still speak the format the app parses**: a version bump of OTP `:ssh`, `SSHEx`
+or Ansible can break production while every mock stays green. A small set of
+compatibility smoke tests closes that gap. They are a **canary for tool drift,
+not another coverage sweep** — keep each to one round-trip per contract and
+leave ordinary branch logic to the mocked unit tests. The contracts worth
+pinning against the real tool are the happy-path output _and_ any **exact tool
+output the app matches on** — e.g. the `:ssh` error strings `ServerConnection`
+maps to atoms, which an OTP bump can silently reword. Reproducing a failure (an
+unauthorized key, a disjoint key-exchange algorithm) is fair game when it
+certifies such a string; do not reproduce failures whose handling carries no
+external-format contract.
+
+- **Tag them `:external`, and exclude them from the default run.**
+  [`test_helper.exs`][test-helper] calls `ExUnit.start(exclude: [external:
+true])`, so a `@moduletag :external` test never runs under `mix test` or the
+  `mix coveralls.html` coverage run — it contributes nothing to the coverage
+  numerator, and the real tool it exercises can be absent locally. A dedicated
+  CI job opts in with `mix test --only external`. This keeps the real-tool
+  passthrough impls (e.g. [`SystemClient`][system-client]) out of the coverage
+  numbers rather than dragging them down as permanently "uncovered".
+- **Point the façade at the real tool with [`Mox.stub_with/2`][mox].** The
+  façades are compile-time bound to their mocks in the test env, so a test
+  reprograms the _mock_ to delegate to the real implementation —
+  `stub_with(Servers.SSH.Client.Mock, Servers.SSH.Client.SystemClient)` — and
+  every call through the façade then hits the real subprocess / `:ssh`,
+  exercising the façade indirection itself. `Mox.stub_with/2` works even though
+  the mocks are Hammox-defined: it maps each behaviour callback to the
+  same-named function in the target module.
+- **Mind the owner scope.** `stub_with` is owner-scoped like any Mox stub, so
+  real work done in a **spawned** GenServer/task (a `ServerConnection`, the
+  `Ansible.Runner` task) still needs `allow/3` or global mode — the same wall
+  the mocks hit in [runtime-process
+  tests](#runtime-processes-genservers-genstage). Driving the façade directly
+  from the test process (as the SSH example does) avoids it.
+- **Provide the tool; gate on it.** The real tool runs for real, so it must be
+  present — these tests are Docker/tool-gated regardless. The SSH round-trip
+  stands up an in-process Erlang `:ssh.daemon` ([`SSHDaemon`][ssh-daemon], no
+  Docker) and drives the real `Client` against it; the Ansible round-trip needs
+  a container with the pinned `ansible`.
+- **Own the pinned output in one module, shared with production.** When the
+  compatibility test pins an exact tool output that production also matches on,
+  give it a small module that owns the value so three places stay in lockstep:
+  the production match, the compatibility test that certifies the _real_ output,
+  and the mocked unit test that exercises the mapping. Expose both a
+  **constructor** (so the mock can return the exact value) and a **classifier**
+  (so production maps it), then unit-test the classifier against the
+  constructor's value — the mapping is proven without repeating the literal.
+  When the tool drifts, the compatibility test fails, you update the one module,
+  and everything else follows. [`ConnectError`][connect-error] does this for the
+  two `:ssh` connection-error strings: `authentication_failed/0` /
+  `key_exchange_failed/0` build the tuples and `classify/1` maps a reason to its
+  atom.
+
+The exemplar is
+[`SystemClientCompatibilityTest`][system-client-compatibility-test]: it
+`stub_with`s the real `SystemClient` and drives the real `Client` façade against
+an [`SSHDaemon`][ssh-daemon] — a happy-path connect / `echo` round-trip /
+disconnect against an authorized fixture key, plus an authentication failure
+(unauthorized key) and a key-exchange failure (disjoint algorithms), each
+asserting the whole error tuple equals `ConnectError.authentication_failed/0` /
+`key_exchange_failed/0` (pinning the real `:ssh` string). The mocked
+[`ServerConnection`][server-connection-test] tests return those same tuples to
+check the `classify/1` mapping fires end to end, and
+[`ConnectErrorTest`][connect-error-test] pins `classify/1` against each
+constructor's reason.
+
 [contributing]: ../CONTRIBUTING.md#testing
 [data-case]: ../test/support/data_case.ex
 [telemetry]: ../test/support/telemetry_test_helpers.ex
@@ -1734,6 +1808,12 @@ file.
 [gen-server-proxy]: ../test/support/gen_server_proxy.ex
 [server-manager-test]: ../test/archidep/servers/server_tracking/server_manager_test.exs
 [server-connection-test]: ../test/archidep/servers/server_tracking/server_connection_test.exs
+[test-helper]: ../test/test_helper.exs
+[system-client]: ../lib/archidep/servers/ssh/client/system_client.ex
+[ssh-daemon]: ../test/support/ssh_daemon.ex
+[system-client-compatibility-test]: ../test/archidep/servers/ssh/client/system_client_compatibility_test.exs
+[connect-error]: ../lib/archidep/servers/ssh/connect_error.ex
+[connect-error-test]: ../test/archidep/servers/ssh/connect_error_test.exs
 [queue-state-test]: ../test/archidep/servers/ansible/pipeline/ansible_pipeline_queue_state_test.exs
 [queue-test]: ../test/archidep/servers/ansible/pipeline/ansible_pipeline_queue_test.exs
 [channel-case]: ../test/support/channel_case.ex

@@ -1,6 +1,6 @@
 defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   @moduledoc """
-  SSH connection to a specifiec server, used for tracking state and running
+  SSH connection to a specific server, used for tracking state and running
   commands. This process is linked to the SSH connection process and will crash
   if the connection is lost. It will then be restarted by its supervisor and
   instructed to open a new connection by the sibling
@@ -14,6 +14,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   alias ArchiDep.Servers.ServerTracking.ServerManager
   alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.SSH.Client
+  alias ArchiDep.Servers.SSH.ConnectError
   alias Ecto.UUID
   require Logger
 
@@ -146,9 +147,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   end
 
   defp open_ssh_connection(host, port, username, options, server_id) do
-    Logger.debug(
-      "Opening SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port})"
-    )
+    target = "#{username}@#{:inet.ntoa(host)}:#{port}"
+    Logger.debug("Opening SSH connection to server #{server_id} (#{target})")
 
     result =
       Client.connect(
@@ -168,30 +168,34 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
       {:ok, connection_ref} ->
         Process.link(connection_ref)
 
-        Logger.debug(
-          "Successfully opened an SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port})"
-        )
+        Logger.debug("Successfully opened an SSH connection to server #{server_id} (#{target})")
 
         {:reply, :ok, {:connected, connection_ref, server_id}}
 
-      # Yes, Erlang's SSH library actually returns a string for this error.
-      {:error, ~c"Unable to connect using the available authentication methods"} ->
-        Logger.warning(
-          "Could not authenticate SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port})"
-        )
+      {:error, reason} ->
+        handle_connect_error(reason, server_id, target)
+    end
+  end
+
+  # Erlang's SSH library reports these failures as strings; `ConnectError` owns
+  # the strings and maps them to stable atoms.
+  defp handle_connect_error(reason, server_id, target) do
+    case ConnectError.classify(reason) do
+      :authentication_failed ->
+        Logger.warning("Could not authenticate SSH connection to server #{server_id} (#{target})")
 
         {:reply, {:error, :authentication_failed}, {:idle, server_id}}
 
-      {:error, ~c"Key exchange failed"} ->
+      :key_exchange_failed ->
         Logger.warning(
-          "Could not open SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port}) because the key exchange failed"
+          "Could not open SSH connection to server #{server_id} (#{target}) because the key exchange failed"
         )
 
         {:reply, {:error, :key_exchange_failed}, {:idle, server_id}}
 
-      {:error, reason} ->
+      :other ->
         Logger.debug(
-          "Could not open SSH connection to server #{server_id} (#{username}@#{:inet.ntoa(host)}:#{port}) because #{inspect(reason)}"
+          "Could not open SSH connection to server #{server_id} (#{target}) because #{inspect(reason)}"
         )
 
         {:reply, {:error, reason}, {:idle, server_id}}

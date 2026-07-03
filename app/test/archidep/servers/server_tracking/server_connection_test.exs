@@ -7,6 +7,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionTest do
   alias ArchiDep.Servers.ServerTracking.ServerManager
   alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.SSH.Client
+  alias ArchiDep.Servers.SSH.ConnectError
   alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.NoOpGenServer
   alias ArchiDep.Support.ServersFactory
@@ -93,7 +94,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionTest do
     allow(Client.Mock, test_pid, conn)
 
     expect(Client.Mock, :connect, fn _host, _port, _opts ->
-      {:error, ~c"Unable to connect using the available authentication methods"}
+      ConnectError.authentication_failed()
     end)
 
     {result, log} = with_log(fn -> ServerConnection.connect(server, {1, 2, 3, 4}, 22, "root") end)
@@ -113,7 +114,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionTest do
     allow(Client.Mock, test_pid, conn)
 
     expect(Client.Mock, :connect, fn _host, _port, _opts ->
-      {:error, ~c"Key exchange failed"}
+      ConnectError.key_exchange_failed()
     end)
 
     {result, log} = with_log(fn -> ServerConnection.connect(server, {1, 2, 3, 4}, 22, "root") end)
