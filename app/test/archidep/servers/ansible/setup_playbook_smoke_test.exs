@@ -1,10 +1,12 @@
 defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
   # Runs the real `priv/ansible/playbooks/setup.yml` — the playbook students'
   # servers are provisioned with — against a throwaway Ubuntu host that boots
-  # systemd, and asserts it does its work and converges. This is the drift
-  # canary for the playbook itself: an Ubuntu, ansible-core or collection change
-  # that breaks provisioning (a renamed module option, a systemd behaviour
-  # change, a broken download) fails here, where every mocked pipeline test
+  # systemd, and certifies the machinery it installs actually works on a real
+  # host: the playbook does its work and converges, the boot-time notify unit
+  # sends the server-up callback the app expects, and the downloaded port tester
+  # opens the ports the server manager probes. This is the drift canary for the
+  # playbook itself — an Ubuntu, ansible-core, collection or released-binary
+  # change that breaks provisioning fails here, where every mocked pipeline test
   # would miss it. Unlike `RunnerCompatibilityTest`, which pins the callback
   # output format with a trivial playbook, this drives the production playbook
   # end to end. See the "Testing external-tool compatibility" section in
@@ -27,6 +29,20 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
   # key carries that comment rather than the input's `archidep` — a rewrite the
   # state projection below certifies.
   @authorized_key_input "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE1Q2L2jlt2R71iHClMbx1uIIkKbBGMwGo5c1gFJVArH archidep"
+
+  # The ports `ArchiDep.Servers.ServerTracking.ServerManagerState` probes via
+  # `sudo test-ports`; the port-tester test opens exactly these.
+  @port_tester_ports [80, 443, 3000, 3001]
+
+  # A fake `curl` that records its argument vector, so the notify test can
+  # assert exactly what the unit's script asks curl to send without needing a
+  # reachable endpoint (the image ships no real curl anyway). curl's own output
+  # is never consumed, so there is no tool-output contract to exercise — only
+  # the request the script constructs, which the recorded argv captures.
+  @curl_shim """
+  #!/usr/bin/env bash
+  for arg in "$@"; do printf '%s\\n' "$arg"; done > /tmp/curl-invocation
+  """
 
   # One `bash` invocation projecting the whole post-setup state of the host into
   # `key=value` lines, so the test asserts every artifact the playbook is
@@ -57,7 +73,14 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
   setup :verify_on_exit!
 
   setup_all do
-    %{target: UbuntuServerContainer.start!()}
+    target = UbuntuServerContainer.start!()
+    # Provision once here so the per-test assertions below are independent of
+    # ExUnit's randomized order (they only need the host already set up). The
+    # `Cmd` façade mock must be stubbed in this process too, since `run_setup/1`
+    # runs the real ansible-playbook here (see the per-test `setup` for the
+    # `stub/3`-not-`stub_with/2` rationale).
+    stub(ArchiDep.Cmd.Mock, :stream, &ExCmd.stream/2)
+    %{target: target, setup_run: run_setup(target)}
   end
 
   setup do
@@ -71,14 +94,14 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
     :ok
   end
 
-  test "the real setup.yml provisions a production-like host and is idempotent",
-       %{target: target} do
-    # First run: a fresh host, so every task but fact-gathering reports changed.
-    first_run = run_setup(target)
+  test "the real setup.yml provisions a production-like host", %{
+    target: target,
+    setup_run: setup_run
+  } do
+    # A fresh host, so every task but fact-gathering reports changed.
+    assert List.last(setup_run) == {:exit, {:status, 0}}
 
-    assert List.last(first_run) == {:exit, {:status, 0}}
-
-    assert stats(first_run) == %{
+    assert stats(setup_run) == %{
              "changed" => 12,
              "failures" => 0,
              "ignored" => 0,
@@ -110,13 +133,16 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
              "test_ports_perms" => "755 root:root",
              "sudoers_perms" => "440"
            }
+  end
 
-    # Second run: nothing changes, proving every task is genuinely convergent.
-    second_run = run_setup(target)
+  test "the real setup.yml is idempotent", %{target: target} do
+    # A second run against the already-provisioned host changes nothing, proving
+    # every task is genuinely convergent.
+    rerun = run_setup(target)
 
-    assert List.last(second_run) == {:exit, {:status, 0}}
+    assert List.last(rerun) == {:exit, {:status, 0}}
 
-    assert stats(second_run) == %{
+    assert stats(rerun) == %{
              "changed" => 0,
              "failures" => 0,
              "ignored" => 0,
@@ -125,6 +151,41 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
              "skipped" => 0,
              "unreachable" => 0
            }
+  end
+
+  test "the boot-time notify unit sends the server-up callback the app expects", %{target: target} do
+    install_curl_shim(target)
+
+    # Drive the real oneshot unit through systemd (as it would fire at boot),
+    # not the script directly, so the unit's ExecStart wiring is exercised too.
+    UbuntuServerContainer.exec!(target, [
+      "systemctl",
+      "start",
+      "archidep-notify-server-up.service"
+    ])
+
+    assert captured_curl(target) == [
+             "-vv",
+             "-X",
+             "POST",
+             "-H",
+             "Content-Type: application/json",
+             "-H",
+             "Authorization: Bearer #{@server_token}",
+             "#{@api_base_url}/callbacks/servers/#{@server_id}/up"
+           ]
+  end
+
+  test "the port tester opens the ports the server manager probes", %{target: target} do
+    # The exact command `ServerManagerState` runs over SSH, as the app user.
+    UbuntuServerContainer.exec!(
+      target,
+      ["runuser", "-u", "archidep", "--", "sudo", "/usr/local/sbin/test-ports"] ++
+        Enum.map(@port_tester_ports, &Integer.to_string/1)
+    )
+
+    assert listening_ports(target, @port_tester_ports) ==
+             Map.new(@port_tester_ports, fn port -> {port, "listening"} end)
   end
 
   defp run_setup(target) do
@@ -155,6 +216,53 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
     |> Map.new(fn line ->
       [key, value] = String.split(line, "=", parts: 2)
       {key, value}
+    end)
+  end
+
+  defp install_curl_shim(target) do
+    encoded = Base.encode64(@curl_shim)
+
+    UbuntuServerContainer.exec!(target, [
+      "bash",
+      "-c",
+      "echo #{encoded} | base64 -d > /usr/bin/curl && chmod +x /usr/bin/curl"
+    ])
+  end
+
+  defp captured_curl(target) do
+    target
+    |> UbuntuServerContainer.exec!(["cat", "/tmp/curl-invocation"])
+    |> String.split("\n", trim: true)
+  end
+
+  # `test-ports` launches the port testers in the background, so poll until
+  # every requested port is listening (or give up), then return the whole map
+  # for a single equality assertion.
+  defp listening_ports(target, ports, attempts \\ 20) do
+    status = port_status(target, ports)
+
+    if attempts <= 1 or Enum.all?(status, fn {_port, state} -> state == "listening" end) do
+      status
+    else
+      Process.sleep(250)
+      listening_ports(target, ports, attempts - 1)
+    end
+  end
+
+  defp port_status(target, ports) do
+    checks =
+      Enum.map_join(ports, "\n", fn port ->
+        hex = port |> Integer.to_string(16) |> String.upcase() |> String.pad_leading(4, "0")
+
+        ~s(if grep -qiE " [0-9A-F]{8}:#{hex} [0-9A-F]{8}:0000 0A" /proc/net/tcp /proc/net/tcp6 2>/dev/null; then echo "#{port}=listening"; else echo "#{port}=down"; fi)
+      end)
+
+    target
+    |> UbuntuServerContainer.exec!(["bash", "-c", checks])
+    |> String.split("\n", trim: true)
+    |> Map.new(fn line ->
+      [port, state] = String.split(line, "=", parts: 2)
+      {String.to_integer(port), state}
     end)
   end
 end

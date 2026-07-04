@@ -2588,13 +2588,22 @@ is-active ssh` succeeding inside the container rather than the old sshd
 stdout-log line. On the cgroup-v2 hosts we target (GitHub `ubuntu-24.04`
 runners, Docker Desktop, colima) `--privileged` alone suffices — no host cgroup
 mount or `--cgroupns=host`. Building on this, `setup_playbook_smoke_test.exs`
-drives the **real production `setup.yml`** end to end against the container: it
-asserts a whole-host state projection by `==` (users, files with owner/mode, the
-rendered notify script's callback URL, and the enabled-but-stopped systemd
-unit), the exact playbook stats, and idempotence — a second run reports
-`changed: 0`, proving every task converges. This certifies the deliverable
-itself, complementing `runner_compatibility_test.exs`, which pins only the
-callback output format with a trivial playbook.
+provisions the container once in `setup_all` with the **real production
+`setup.yml`**, then asserts, in order-independent slices: a whole-host state
+projection by `==` (users, files with owner/mode, the rendered notify script's
+callback URL, and the enabled-but-stopped systemd unit); the exact playbook
+stats and idempotence (a second run reports `changed: 0`, proving every task
+converges); that the boot-time notify unit, started through systemd, issues the
+exact server-up callback the app expects (a recording `curl` shim captures the
+whole argv — method, `Authorization: Bearer` token and callback URL — since the
+request the script builds, not curl's unused output, is what matters); and that
+`sudo test-ports` opens the ports `ServerManagerState` probes, verified against
+`/proc/net/tcp`. This certifies the deliverable itself, complementing
+`runner_compatibility_test.exs`, which pins only the callback output format with
+a trivial playbook. To make the port tester run natively on both the x86-64
+student VMs / CI runners and ARM64 dev machines, `setup.yml`'s download now
+selects the per-architecture release archive (and checksum) by
+`ansible_facts.architecture`.
 
 ### Decide exclusions
 
