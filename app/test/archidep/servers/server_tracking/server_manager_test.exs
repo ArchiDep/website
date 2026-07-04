@@ -168,6 +168,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     # for it to finish initializing.
     initialize.([monitor(pid), send_message(:started)])
     assert_receive :started, 500
+    refute_received _anything_else
 
     # Simulate a crash of the monitored process.
     Process.exit(pid, :oops)
@@ -839,6 +840,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
       )
 
     assert_receive :started, 500
+    refute_received _anything_else
     assert Process.alive?(server_manager_pid)
 
     assert ServerManager.delete_server(server, auth) == :ok
@@ -1028,7 +1030,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
       end
 
     assert_receive :initialized, 500
-    refute_received _anything_else
+
+    # `init/1` and the initial actions run in the same `handle_continue`, so any
+    # message an action makes the manager send to the test process (a forwarded
+    # `:started`, a proxied queue call, a tracker `{:join, ...}`) is emitted
+    # immediately after `:initialized`, with no happens-before point in between.
+    # Snapshotting the mailbox here would race those. With no actions the
+    # manager emits only `:initialized`, so the snapshot is both meaningful and
+    # stable; with actions, the caller receives and refutes them itself once
+    # drained.
+    if actions == [], do: refute_received(_anything_else)
 
     server_manager_pid
   end
