@@ -7,3 +7,12 @@
 collections:
   - name: ansible.posix
     version: '>=2.2.0,<2.3.0'
+  # `community.general` provides the `community.general.sudoers` module the
+  # setup playbook uses to grant the application user passwordless sudo.
+  # `ansible-core` ships no collections beyond `ansible.builtin`, so it must be
+  # installed explicitly here rather than relying on the full `ansible` package
+  # a developer machine happens to have. Unlike `ansible.posix`, none of its
+  # output is parsed by the application, so a major-version cap is enough for
+  # reproducibility.
+  - name: community.general
+    version: '>=13.0.0,<14.0.0'
