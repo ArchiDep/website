@@ -1766,9 +1766,11 @@ Servers.SSH.Client.SystemClient)` — even though the mocks are Hammox-defined (
   nothing about production. Ansible is pinned in
   [`requirements.txt`][ansible-requirements] (`ansible-core`) and
   [`requirements.yml`][ansible-galaxy-requirements] (`ansible.posix`, which owns
-  the JSON/JSONL callbacks and floats independently of `ansible-core`); the CI
-  job installs from those files before running the smoke test. Treat a bump to
-  either as a reviewed change the smoke test gates.
+  the JSON/JSONL callbacks and floats independently of `ansible-core`). Both the
+  production image (the `Dockerfile`'s Alpine `app` stage) and the CI job
+  install from those same files — CI before running the smoke test — so the test
+  certifies the version production ships. Treat a bump to either as a reviewed
+  change the smoke test gates.
 - **Own the pinned output in one module, shared with production.** When the
   compatibility test pins an exact tool output that production also matches on,
   give it a small module that owns the value so three places stay in lockstep:
@@ -1790,8 +1792,12 @@ an [`SSHDaemon`][ssh-daemon] — a happy-path connect / `echo` round-trip /
 disconnect against an authorized fixture key, plus an authentication failure
 (unauthorized key) and a key-exchange failure (disjoint algorithms), each
 asserting the whole error tuple equals `ConnectError.authentication_failed/0` /
-`key_exchange_failed/0` (pinning the real `:ssh` string). The mocked
-[`ServerConnection`][server-connection-test] tests return those same tuples to
+`key_exchange_failed/0` (pinning the real `:ssh` string). A fourth case
+certifies the security-relevant behaviour rather than a string: with
+`silently_accept_hosts: false` (production's default), real `:ssh` rejects an
+unknown host key, and the reason classifies as `:other` — the app does not
+branch on that string, so it is deliberately not pinned. The mocked
+[`ServerConnection`][server-connection-test] tests return the auth/kex tuples to
 check the `classify/1` mapping fires end to end, and
 [`ConnectErrorTest`][connect-error-test] pins `classify/1` against each
 constructor's reason.
