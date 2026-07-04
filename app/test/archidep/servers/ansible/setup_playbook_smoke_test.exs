@@ -15,6 +15,7 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
 
   import Hammox
   alias ArchiDep.Servers.Ansible.Runner
+  alias ArchiDep.Servers.SSH
   alias ArchiDep.Support.UbuntuServerContainer
 
   @moduletag :external
@@ -87,7 +88,7 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
     # host was unreachable) rather than letting every slice test cascade off an
     # unprovisioned host.
     if List.last(setup_run) != {:exit, {:status, 0}} do
-      raise provisioning_error(setup_run)
+      raise provisioning_error(target, setup_run)
     end
 
     %{target: target, setup_run: setup_run}
@@ -205,17 +206,9 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
   # fails once the attempts are exhausted. Retrying is safe precisely because an
   # unreachable run changed nothing.
   defp run_setup(target, attempts \\ 3) do
-    vars = %{
-      "api_base_url" => @api_base_url,
-      "app_user_name" => "archidep",
-      "app_user_authorized_key" => @authorized_key_input,
-      "server_id" => @server_id,
-      "server_token" => @server_token
-    }
-
     result =
       @playbook
-      |> Runner.run_playbook(target.host, target.port, target.username, vars)
+      |> Runner.run_playbook(target.host, target.port, target.username, setup_vars())
       |> Enum.to_list()
 
     if attempts > 1 and List.last(result) == {:exit, {:status, 4}} do
@@ -226,6 +219,16 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
     end
   end
 
+  defp setup_vars do
+    %{
+      "api_base_url" => @api_base_url,
+      "app_user_name" => "archidep",
+      "app_user_authorized_key" => @authorized_key_input,
+      "server_id" => @server_id,
+      "server_token" => @server_token
+    }
+  end
+
   defp stats(elements) do
     Enum.find_value(elements, fn
       {:event, %{"stats" => %{"archidep" => host_stats}}} -> host_stats
@@ -233,7 +236,7 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
     end)
   end
 
-  defp provisioning_error(elements) do
+  defp provisioning_error(target, elements) do
     reason =
       Enum.find_value(elements, fn
         {:event,
@@ -244,8 +247,50 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
           nil
       end)
 
-    "setup.yml did not complete: #{inspect(List.last(elements))}" <>
-      if reason, do: " (#{reason})", else: ""
+    base =
+      "setup.yml did not complete: #{inspect(List.last(elements))}" <>
+        if reason, do: " (#{reason})", else: ""
+
+    base <> verbose_connection_diagnosis(target)
+  end
+
+  # Temporary CI diagnostic: the provision fails to reach the host on CI but not
+  # locally, and the parsed events carry no reason. Re-run the exact command with
+  # `-vvvv` and stderr captured so the failure log shows the actual SSH
+  # negotiation and error. Remove once the cause is understood.
+  defp verbose_connection_diagnosis(target) do
+    args =
+      [
+        "-i",
+        "archidep,",
+        "-e",
+        "ansible_host=#{:inet.ntoa(target.host)}",
+        "-e",
+        "ansible_port=#{target.port}",
+        "-e",
+        "ansible_ssh_private_key_file=#{SSH.ssh_private_key_file()}",
+        "-e",
+        "ansible_user=#{target.username}",
+        "-vvvv"
+      ] ++
+        Enum.flat_map(setup_vars(), fn {key, value} -> ["-e", "#{key}=#{value}"] end) ++
+        [@playbook]
+
+    {output, code} =
+      try do
+        System.cmd("ansible-playbook", args,
+          env: [{"ANSIBLE_HOST_KEY_CHECKING", "false"}],
+          stderr_to_stdout: true
+        )
+      rescue
+        error -> {"diagnostic command could not run: #{Exception.message(error)}", -1}
+      end
+
+    tail = output |> String.split("\n") |> Enum.take(-120) |> Enum.join("\n")
+
+    "\n\n--- diagnostic: ansible-playbook -vvvv " <>
+      "target=#{:inet.ntoa(target.host)}:#{target.port} user=#{target.username} " <>
+      "(exit #{code}) ---\n#{tail}"
   end
 
   defp host_state(target) do
