@@ -30,6 +30,7 @@ defmodule ArchiDep.Support.UbuntuServerContainer do
 
   alias Testcontainers.CommandWaitStrategy
   alias Testcontainers.Container
+  alias Testcontainers.PortWaitStrategy
   alias Testcontainers.PullPolicy
 
   @enforce_keys [:host, :port, :username, :container_id]
@@ -63,9 +64,17 @@ defmodule ArchiDep.Support.UbuntuServerContainer do
       |> Container.with_pull_policy(PullPolicy.never_pull())
       |> Container.with_privileged(true)
       |> Container.with_exposed_port(@ssh_port)
-      |> Container.with_waiting_strategy(
-        CommandWaitStrategy.new(["systemctl", "is-active", "ssh"], 30_000)
-      )
+      # `is-active ssh` (run via `docker exec`) only proves sshd is up *inside*
+      # the container. Also wait until the *published* SSH port accepts TCP
+      # connections from the host — the path Ansible/`Runner` actually take — so
+      # a caller that connects immediately after `start!/0` (e.g. a `setup_all`
+      # that provisions right away) does not race an SSH port that is not yet
+      # serving. The `PortWaitStrategy` ip argument is overridden with the
+      # resolved Docker host, so its value here is irrelevant.
+      |> Container.with_waiting_strategies([
+        CommandWaitStrategy.new(["systemctl", "is-active", "ssh"], 30_000),
+        PortWaitStrategy.new("127.0.0.1", @ssh_port, 30_000)
+      ])
 
     {:ok, container} = Testcontainers.start_container(config)
     ExUnit.Callbacks.on_exit(fn -> Testcontainers.stop_container(container.container_id) end)

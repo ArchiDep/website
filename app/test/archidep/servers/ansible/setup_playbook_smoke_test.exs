@@ -81,7 +81,16 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
     # runs the real ansible-playbook here (see the per-test `setup` for the
     # `stub/3`-not-`stub_with/2` rationale).
     stub(ArchiDep.Cmd.Mock, :stream, &ExCmd.stream/2)
-    %{target: target, setup_run: run_setup(target)}
+    setup_run = run_setup(target)
+
+    # Fail the whole module with one actionable error (the SSH reason when the
+    # host was unreachable) rather than letting every slice test cascade off an
+    # unprovisioned host.
+    if List.last(setup_run) != {:exit, {:status, 0}} do
+      raise provisioning_error(setup_run)
+    end
+
+    %{target: target, setup_run: setup_run}
   end
 
   setup do
@@ -99,9 +108,8 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
     target: target,
     setup_run: setup_run
   } do
-    # A fresh host, so every task but fact-gathering reports changed.
-    assert List.last(setup_run) == {:exit, {:status, 0}}
-
+    # A fresh host, so every task but fact-gathering reports changed (that the
+    # run succeeded at all is enforced by `setup_all`).
     assert stats(setup_run) == %{
              "changed" => 12,
              "failures" => 0,
@@ -190,7 +198,13 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
              Map.new(@port_tester_ports, fn port -> {port, "listening"} end)
   end
 
-  defp run_setup(target) do
+  # A freshly booted host can briefly refuse the first SSH connection before
+  # sshd is fully serving it; Ansible reports that as unreachable (exit status
+  # 4) having run no task. Retry a few times so a transient not-yet-ready
+  # connection does not fail the provision — a genuinely unreachable host still
+  # fails once the attempts are exhausted. Retrying is safe precisely because an
+  # unreachable run changed nothing.
+  defp run_setup(target, attempts \\ 3) do
     vars = %{
       "api_base_url" => @api_base_url,
       "app_user_name" => "archidep",
@@ -199,9 +213,17 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
       "server_token" => @server_token
     }
 
-    @playbook
-    |> Runner.run_playbook(target.host, target.port, target.username, vars)
-    |> Enum.to_list()
+    result =
+      @playbook
+      |> Runner.run_playbook(target.host, target.port, target.username, vars)
+      |> Enum.to_list()
+
+    if attempts > 1 and List.last(result) == {:exit, {:status, 4}} do
+      Process.sleep(2_000)
+      run_setup(target, attempts - 1)
+    else
+      result
+    end
   end
 
   defp stats(elements) do
@@ -209,6 +231,21 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
       {:event, %{"stats" => %{"archidep" => host_stats}}} -> host_stats
       _other -> nil
     end)
+  end
+
+  defp provisioning_error(elements) do
+    reason =
+      Enum.find_value(elements, fn
+        {:event,
+         %{"_event" => "v2_runner_on_unreachable", "hosts" => %{"archidep" => %{"msg" => msg}}}} ->
+          msg
+
+        _other ->
+          nil
+      end)
+
+    "setup.yml did not complete: #{inspect(List.last(elements))}" <>
+      if reason, do: " (#{reason})", else: ""
   end
 
   defp host_state(target) do
