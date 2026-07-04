@@ -54,19 +54,37 @@ defmodule ArchiDep.Servers.SSH.Client.SystemClientCompatibilityTest do
              ConnectError.key_exchange_failed()
   end
 
+  test "the real SSH client rejects an unverified host key unless hosts are silently accepted" do
+    # The daemon's host key is ephemeral and absent from the client's
+    # `user_dir`, so it is unknown. Production defaults to
+    # `silently_accept_hosts: false` (host keys are verified), and real `:ssh`
+    # must reject the unknown host — the security property `ServerConnection`
+    # relies on. The rejection reason is not one of the strings `ConnectError`
+    # classifies, so it maps to `:other` (the raw reason passes through,
+    # carrying no app-level format contract); pin that classification rather
+    # than the exact string.
+    daemon = SSHDaemon.start!()
+
+    assert {:error, reason} = connect(daemon, silently_accept_hosts: false)
+    assert ConnectError.classify(reason) == :other
+  end
+
   defp connect(daemon, extra_opts \\ []) do
     Client.connect(
       daemon.host,
       daemon.port,
-      [
-        auth_methods: ~c"publickey",
-        connect_timeout: 5_000,
-        save_accepted_host: false,
-        silently_accept_hosts: true,
-        user: to_charlist(daemon.username),
-        user_dir: to_charlist(SSH.ssh_dir()),
-        user_interaction: false
-      ] ++ extra_opts
+      Keyword.merge(
+        [
+          auth_methods: ~c"publickey",
+          connect_timeout: 5_000,
+          save_accepted_host: false,
+          silently_accept_hosts: true,
+          user: to_charlist(daemon.username),
+          user_dir: to_charlist(SSH.ssh_dir()),
+          user_interaction: false
+        ],
+        extra_opts
+      )
     )
   end
 end
