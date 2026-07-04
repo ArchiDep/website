@@ -1,8 +1,7 @@
 # Pinned Ansible controller for ArchiDep. This is the single source of truth for
-# the `ansible` / `ansible-playbook` version, consumed by the external-tool
-# compatibility smoke test (and, in a later change, the production image) so
-# both run the exact tool whose output the application parses. The
-# `ansible.posix` collection that owns the JSON/JSONL stdout callbacks is pinned
-# separately in requirements.yml, as its version floats independently of
-# ansible-core.
+# the `ansible` / `ansible-playbook` version, consumed by both the production
+# image and the external-tool compatibility smoke test so both run the exact
+# tool whose output the application parses. The `ansible.posix` collection that
+# owns the JSON/JSONL stdout callbacks is pinned separately in requirements.yml,
+# as its version floats independently of ansible-core.
 ansible-core==2.21.*

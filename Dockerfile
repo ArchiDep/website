@@ -250,13 +250,13 @@ ENV ARCHIDEP_UID=42000 \
     MIX_ENV=prod
 
 RUN apk add --no-cache \
-      ansible \
       ca-certificates \
       libstdc++ \
       musl-locales \
       ncurses \
       openssh-client \
       openssl \
+      python3 \
       shadow \
       tzdata \
     && \
@@ -292,6 +292,19 @@ RUN apk add --no-cache \
     mkdir -p /etc/archidep/ssh /home/archidep /var/lib/archidep/uploads && \
     chown -R archidep:archidep /archidep /home/archidep /etc/archidep /var/lib/archidep && \
     chmod 700 /archidep /etc/archidep /home/archidep /var/lib/archidep
+
+# Install the pinned Ansible from the single source of truth also consumed by
+# the external-tool compatibility test, rather than Alpine's rolling `ansible`
+# package, so the JSON/JSONL callback format the app parses cannot drift
+# silently on a rebuild. `ansible-core` installs from musllinux wheels (no build
+# toolchain), and `ansible.posix` (which owns the callbacks) goes to the
+# system-wide collections path so it resolves for the runtime `archidep` user.
+COPY ./requirements.txt ./requirements.yml ./
+RUN apk add --no-cache --virtual .ansible-build-deps py3-pip && \
+    pip install --no-cache-dir --break-system-packages -r requirements.txt && \
+    ansible-galaxy collection install -r requirements.yml -p /usr/share/ansible/collections && \
+    apk del --no-network .ansible-build-deps && \
+    rm -f requirements.txt requirements.yml
 
 COPY --chown=archidep:archidep --from=release /usr/src/app/_build/prod/rel/archidep ./
 COPY ./docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
