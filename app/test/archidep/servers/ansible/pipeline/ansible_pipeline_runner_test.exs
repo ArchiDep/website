@@ -1,6 +1,7 @@
 defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunnerTest do
   use ArchiDep.Support.DataCase, async: true
 
+  import ExUnit.CaptureLog
   import Hammox
   import ArchiDep.Support.TelemetryTestHelpers
   alias ArchiDep.Events.Store.StoredEvent
@@ -104,8 +105,12 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunnerTest do
 
       expect(ServerManagerClientMock, :online?, fn ^server -> false end)
 
-      assert AnsiblePipelineRunner.process_event({:gather_facts, server.id, "deploy"}) == :ok
+      log =
+        capture_log(fn ->
+          assert AnsiblePipelineRunner.process_event({:gather_facts, server.id, "deploy"}) == :ok
+        end)
 
+      assert log =~ "Cannot gather facts for server #{server.id} because it is offline"
       assert_no_row_count_diff(previous_counts)
       assert_no_stored_events!()
       refute_received {:telemetry_event, _event, _data}
@@ -118,7 +123,12 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunnerTest do
       cause = cause()
       previous_counts = count_rows(@affected_tables)
 
-      assert AnsiblePipelineRunner.process_event({:run_playbook, run.id, cause}) == :ok
+      log =
+        capture_log(fn ->
+          assert AnsiblePipelineRunner.process_event({:run_playbook, run.id, cause}) == :ok
+        end)
+
+      assert log =~ "No pending Ansible playbook run found with ID #{run.id}"
 
       # The all-zero diff (snapshotted after the cause event) proves the no-op
       # wrote nothing; an absolute `assert_no_stored_events!/0` would trip on

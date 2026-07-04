@@ -1,6 +1,7 @@
 defmodule ArchiDep.Servers.Ansible.RunnerTest do
   use ExUnit.Case, async: true
 
+  import ExUnit.CaptureLog
   import Hammox
   alias ArchiDep.Cmd
   alias ArchiDep.Servers.Ansible.Runner
@@ -120,15 +121,25 @@ defmodule ArchiDep.Servers.Ansible.RunnerTest do
         ["not json at all", {:exit, {:status, 0}}]
       end)
 
-      assert Runner.gather_facts(@host, @port, @user) == {:error, :invalid_json_output}
+      log =
+        capture_log(fn ->
+          assert Runner.gather_facts(@host, @port, @user) == {:error, :invalid_json_output}
+        end)
+
+      assert log =~ ~s(Failed to decode Ansible facts "not json at all" because:)
     end
 
     test "returns :invalid_json_output when a successful run emits an unexpected shape" do
-      expect(Cmd.Mock, :stream, fn _command, _opts ->
-        [JSON.encode!(%{"plays" => []}), {:exit, {:status, 0}}]
-      end)
+      json = JSON.encode!(%{"plays" => []})
 
-      assert Runner.gather_facts(@host, @port, @user) == {:error, :invalid_json_output}
+      expect(Cmd.Mock, :stream, fn _command, _opts -> [json, {:exit, {:status, 0}}] end)
+
+      log =
+        capture_log(fn ->
+          assert Runner.gather_facts(@host, @port, @user) == {:error, :invalid_json_output}
+        end)
+
+      assert log =~ "Failed to decode Ansible facts #{inspect(json)}"
     end
 
     test "returns :unknown when a failed run emits no output" do
@@ -140,7 +151,12 @@ defmodule ArchiDep.Servers.Ansible.RunnerTest do
     test "returns :unknown when a failed run emits undecodable output" do
       expect(Cmd.Mock, :stream, fn _command, _opts -> ["boom", {:exit, {:status, 2}}] end)
 
-      assert Runner.gather_facts(@host, @port, @user) == {:error, :unknown}
+      log =
+        capture_log(fn ->
+          assert Runner.gather_facts(@host, @port, @user) == {:error, :unknown}
+        end)
+
+      assert log =~ ~s(Ansible exited with {:status, 2} and output: "boom")
     end
   end
 
@@ -221,7 +237,12 @@ defmodule ArchiDep.Servers.Ansible.RunnerTest do
         ["garbage line\n", JSON.encode!(event) <> "\n", {:exit, {:status, 0}}]
       end)
 
-      assert run_playbook() == [{:event, event}, {:exit, {:status, 0}}]
+      log =
+        capture_log(fn ->
+          assert run_playbook() == [{:event, event}, {:exit, {:status, 0}}]
+        end)
+
+      assert log =~ ~s(Failed to decode Ansible playbook event "garbage line" because:)
     end
 
     test "passes a non-zero exit status through" do
