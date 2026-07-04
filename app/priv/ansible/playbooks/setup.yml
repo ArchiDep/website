@@ -5,17 +5,6 @@
     app_user_name: 'archidep'
     # app_user_authorized_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC3..."
     # server_id: b7e8c2d1-4a3a-4c9b-9f2e-1e6b7a5d2c3f
-    port_tester_version: '1.0.1'
-    # port-tester ships one release archive per architecture; select it by the
-    # managed node's architecture so the playbook provisions both the x86-64
-    # student VMs and ARM64 hosts.
-    port_tester_downloads:
-      x86_64:
-        slug: linux-x64
-        checksum: 'sha256:ac28ce4ab867348a17b708b7e385f35b08af26293b983a821b2720878cb299e1'
-      aarch64:
-        slug: linux-arm64
-        checksum: 'sha256:b4eba878a68865bca3af479eb7fa2030543a90855e7f00fa51b18506c6a27839'
   tasks:
     - name: Create the application user
       ansible.builtin.user:
@@ -102,22 +91,13 @@
         daemon_reload: true
       become: true
 
-    - name: Download the port tester
-      ansible.builtin.get_url:
-        url: >-
-          https://github.com/AlphaHydrae/port-tester/releases/download/v{{ port_tester_version }}/port-tester-{{ port_tester_version }}-{{ port_tester_downloads[ansible_facts.architecture].slug }}.tar.gz
-        dest: /home/archidep/port-tester-{{ port_tester_version }}.tar.gz
-        checksum: '{{ port_tester_downloads[ansible_facts.architecture].checksum }}'
-      become: true
-
-    - name: Unarchive the port tester
-      ansible.builtin.unarchive:
-        src: /home/archidep/port-tester-{{ port_tester_version }}.tar.gz
-        dest: /usr/local/bin
+    - name: Install the port listener
+      ansible.builtin.copy:
+        src: port-listener
+        dest: /usr/local/bin/port-listener
         owner: root
         group: root
-        mode: 0755
-        remote_src: yes
+        mode: '0755'
       become: true
 
     - name: Install the port testing script

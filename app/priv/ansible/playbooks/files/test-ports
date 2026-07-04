@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-killall port-tester &>/dev/null
+pkill -f /usr/local/bin/port-listener &>/dev/null
 
-for port in $@; do
-  port-tester --port "${port}" --exit-after 30 &>/dev/null &
+for port in "$@"; do
+  /usr/local/bin/port-listener "${port}" 30 &>/dev/null &
 done

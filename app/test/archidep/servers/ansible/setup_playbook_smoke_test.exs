@@ -3,14 +3,14 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
   # servers are provisioned with — against a throwaway Ubuntu host that boots
   # systemd, and certifies the machinery it installs actually works on a real
   # host: the playbook does its work and converges, the boot-time notify unit
-  # sends the server-up callback the app expects, and the downloaded port tester
-  # opens the ports the server manager probes. This is the drift canary for the
-  # playbook itself — an Ubuntu, ansible-core, collection or released-binary
-  # change that breaks provisioning fails here, where every mocked pipeline test
-  # would miss it. Unlike `RunnerCompatibilityTest`, which pins the callback
-  # output format with a trivial playbook, this drives the production playbook
-  # end to end. See the "Testing external-tool compatibility" section in
-  # `docs/testing.md`.
+  # sends the server-up callback the app expects, and the installed port
+  # listener opens ports that answer the HTTP probe the server manager runs and
+  # then exits on its own. This is the drift canary for the playbook itself — an
+  # Ubuntu, ansible-core, collection or Python change that breaks provisioning
+  # fails here, where every mocked pipeline test would miss it. Unlike
+  # `RunnerCompatibilityTest`, which pins the callback output format with a
+  # trivial playbook, this drives the production playbook end to end. See the
+  # "Testing external-tool compatibility" section in `docs/testing.md`.
   use ExUnit.Case, async: true
 
   import Hammox
@@ -31,8 +31,23 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
   @authorized_key_input "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE1Q2L2jlt2R71iHClMbx1uIIkKbBGMwGo5c1gFJVArH archidep"
 
   # The ports `ArchiDep.Servers.ServerTracking.ServerManagerState` probes via
-  # `sudo test-ports`; the port-tester test opens exactly these.
-  @port_tester_ports [80, 443, 3000, 3001]
+  # `sudo test-ports`; the port-listener test opens exactly these.
+  @port_listener_ports [80, 443, 3000, 3001]
+
+  # Mirrors `ServerManager.check_port_open/2`: GET each port over HTTP and
+  # report the status code (or `unreachable`), so the listener test certifies
+  # the same contract the app relies on — a port answers HTTP, not just accepts
+  # a socket — using the Python 3 the managed node already ships.
+  @http_probe_script """
+  import sys, urllib.request
+  for port in sys.argv[1:]:
+      try:
+          with urllib.request.urlopen("http://127.0.0.1:" + port, timeout=5) as response:
+              status = str(response.status)
+      except Exception:
+          status = "unreachable"
+      print("%s=%s" % (port, status))
+  """
 
   # A fake `curl` that records its argument vector, so the notify test can
   # assert exactly what the unit's script asks curl to send without needing a
@@ -65,7 +80,7 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
   echo "notify_unit_perms=$(stat -c '%a %U:%G' /etc/systemd/system/archidep-notify-server-up.service 2>/dev/null)"
   echo "notify_enabled=$(systemctl is-enabled archidep-notify-server-up.service 2>/dev/null || true)"
   echo "notify_active=$(systemctl is-active archidep-notify-server-up.service 2>/dev/null || true)"
-  echo "port_tester_perms=$(stat -c '%a %U:%G' /usr/local/bin/port-tester 2>/dev/null)"
+  echo "port_listener_perms=$(stat -c '%a %U:%G' /usr/local/bin/port-listener 2>/dev/null)"
   echo "test_ports_perms=$(stat -c '%a %U:%G' /usr/local/sbin/test-ports 2>/dev/null)"
   echo "sudoers_perms=$(stat -c '%a' /etc/sudoers.d/archidep 2>/dev/null)"
   echo "app_user_passwordless_sudo=$(runuser -u archidep -- sudo -n whoami 2>/dev/null || echo denied)"
@@ -111,10 +126,10 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
     # A fresh host, so every task but fact-gathering reports changed (that the
     # run succeeded at all is enforced by `setup_all`).
     assert stats(setup_run) == %{
-             "changed" => 12,
+             "changed" => 11,
              "failures" => 0,
              "ignored" => 0,
-             "ok" => 13,
+             "ok" => 12,
              "rescued" => 0,
              "skipped" => 0,
              "unreachable" => 0
@@ -138,7 +153,7 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
              "notify_unit_perms" => "644 root:root",
              "notify_enabled" => "enabled",
              "notify_active" => "inactive",
-             "port_tester_perms" => "755 root:root",
+             "port_listener_perms" => "755 root:root",
              "test_ports_perms" => "755 root:root",
              "sudoers_perms" => "440",
              "app_user_passwordless_sudo" => "root"
@@ -156,7 +171,7 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
              "changed" => 0,
              "failures" => 0,
              "ignored" => 0,
-             "ok" => 13,
+             "ok" => 12,
              "rescued" => 0,
              "skipped" => 0,
              "unreachable" => 0
@@ -186,16 +201,37 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
            ]
   end
 
-  test "the port tester opens the ports the server manager probes", %{target: target} do
+  test "the port listener answers the HTTP probe on the ports the server manager checks", %{
+    target: target
+  } do
     # The exact command `ServerManagerState` runs over SSH, as the app user.
     UbuntuServerContainer.exec!(
       target,
       ["runuser", "-u", "archidep", "--", "sudo", "/usr/local/sbin/test-ports"] ++
-        Enum.map(@port_tester_ports, &Integer.to_string/1)
+        Enum.map(@port_listener_ports, &Integer.to_string/1)
     )
 
-    assert listening_ports(target, @port_tester_ports) ==
-             Map.new(@port_tester_ports, fn port -> {port, "listening"} end)
+    assert http_status(target, @port_listener_ports) ==
+             Map.new(@port_listener_ports, fn port -> {port, "200"} end)
+  end
+
+  test "the port listener exits on its own after its timeout", %{target: target} do
+    # A port outside the set the provisioning test drives, launched directly
+    # with a short timeout so the self-exit is observable without waiting out
+    # the 30s `test-ports` uses.
+    port = 9999
+
+    UbuntuServerContainer.exec!(target, [
+      "bash",
+      "-c",
+      "/usr/local/bin/port-listener #{port} 5 &>/dev/null &"
+    ])
+
+    assert http_status(target, [port]) == %{port => "200"}
+
+    Process.sleep(6_000)
+
+    assert port_status(target, [port]) == %{port => "down"}
   end
 
   # A freshly booted host can briefly refuse the first SSH connection before
@@ -276,18 +312,30 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
     |> String.split("\n", trim: true)
   end
 
-  # `test-ports` launches the port testers in the background, so poll until
-  # every requested port is listening (or give up), then return the whole map
-  # for a single equality assertion.
-  defp listening_ports(target, ports, attempts \\ 20) do
-    status = port_status(target, ports)
+  # The listeners bind in the background, so poll the HTTP probe until every
+  # requested port answers (or give up), then return the whole map for a single
+  # equality assertion.
+  defp http_status(target, ports, attempts \\ 20) do
+    status = probe_http(target, ports)
 
-    if attempts <= 1 or Enum.all?(status, fn {_port, state} -> state == "listening" end) do
+    if attempts <= 1 or Enum.all?(status, fn {_port, code} -> code == "200" end) do
       status
     else
       Process.sleep(250)
-      listening_ports(target, ports, attempts - 1)
+      http_status(target, ports, attempts - 1)
     end
+  end
+
+  defp probe_http(target, ports) do
+    target
+    |> UbuntuServerContainer.exec!(
+      ["python3", "-c", @http_probe_script] ++ Enum.map(ports, &Integer.to_string/1)
+    )
+    |> String.split("\n", trim: true)
+    |> Map.new(fn line ->
+      [port, code] = String.split(line, "=", parts: 2)
+      {String.to_integer(port), code}
+    end)
   end
 
   defp port_status(target, ports) do

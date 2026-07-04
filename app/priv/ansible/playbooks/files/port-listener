@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""Open a listening TCP port that answers HTTP, then exit after a timeout.
+
+The application probes a provisioned server's ports with an HTTP GET to verify
+they are reachable through the host firewall and cloud security group, so each
+port must accept a connection and return a valid HTTP response (any status
+counts as open). This listener depends only on the Python 3 the managed node
+already runs Ansible with.
+
+Usage: port-listener PORT [TIMEOUT_SECONDS]
+
+The listener arms an internal alarm so it exits on its own after TIMEOUT_SECONDS
+(default 30) regardless of the shell that launched it, rather than relying on an
+external `timeout` command whose availability and delivered signal are not
+guaranteed across Linux distributions.
+"""
+
+import signal
+import socket
+import sys
+
+BODY = b"Hello, World!\n"
+RESPONSE = (
+    b"HTTP/1.1 200 OK\r\n"
+    b"Content-Type: text/plain\r\n"
+    b"Content-Length: " + str(len(BODY)).encode() + b"\r\n"
+    b"Connection: close\r\n"
+    b"\r\n" + BODY
+)
+
+
+def main():
+    port = int(sys.argv[1])
+    timeout = int(sys.argv[2]) if len(sys.argv) > 2 else 30
+
+    signal.signal(signal.SIGALRM, lambda *_: sys.exit(0))
+    signal.alarm(timeout)
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("0.0.0.0", port))
+    server.listen(16)
+
+    while True:
+        connection, _address = server.accept()
+        try:
+            connection.recv(1024)
+            connection.sendall(RESPONSE)
+        finally:
+            connection.close()
+
+
+if __name__ == "__main__":
+    main()
