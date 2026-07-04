@@ -117,6 +117,15 @@ jobs:
         run: mix coveralls.html --raise --repeat-until-failure 3
         working-directory: app
 
+      # Install the pinned Ansible the compatibility smoke test drives, from the
+      # same requirements files the production image will consume, so the test
+      # certifies the version we ship rather than whatever is latest.
+      - name: Install pinned Ansible for external-tool compatibility tests
+        run: |
+          python3 -m pip install --user --break-system-packages -r requirements.txt
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          PATH="$HOME/.local/bin:$PATH" ansible-galaxy collection install -r requirements.yml
+
       # Compatibility smoke tests (tagged `:external`) drive the real external
       # tools instead of their mocks. They are excluded from the default run and
       # from the coverage numbers, so they run as a separate step here — sharing

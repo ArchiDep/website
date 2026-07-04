@@ -1,0 +1,9 @@
+---
+# Pinned Ansible Galaxy collections for ArchiDep, installed with `ansible-galaxy
+# collection install -r requirements.yml`. `ansible.posix` owns the
+# `ansible.posix.json` and `ansible.posix.jsonl` stdout callbacks whose output
+# shape the application parses; it is pinned here rather than in
+# requirements.txt because its version is independent of ansible-core.
+collections:
+  - name: ansible.posix
+    version: '>=2.2.0,<2.3.0'

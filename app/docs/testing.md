@@ -1735,14 +1735,18 @@ true])`, so a `@moduletag :external` test never runs under `mix test` or the
   CI job opts in with `mix test --only external`. This keeps the real-tool
   passthrough impls (e.g. [`SystemClient`][system-client]) out of the coverage
   numbers rather than dragging them down as permanently "uncovered".
-- **Point the façade at the real tool with [`Mox.stub_with/2`][mox].** The
-  façades are compile-time bound to their mocks in the test env, so a test
-  reprograms the _mock_ to delegate to the real implementation —
-  `stub_with(Servers.SSH.Client.Mock, Servers.SSH.Client.SystemClient)` — and
-  every call through the façade then hits the real subprocess / `:ssh`,
-  exercising the façade indirection itself. `Mox.stub_with/2` works even though
-  the mocks are Hammox-defined: it maps each behaviour callback to the
-  same-named function in the target module.
+- **Point the façade at the real tool.** The façades are compile-time bound to
+  their mocks in the test env, so a test reprograms the _mock_ to delegate to
+  the real implementation, and every call through the façade then hits the real
+  subprocess / `:ssh`, exercising the façade indirection itself. Use
+  [`Mox.stub_with/2`][mox] when the real implementation module declares the
+  façade behaviour — `stub_with(Servers.SSH.Client.Mock,
+Servers.SSH.Client.SystemClient)` — even though the mocks are Hammox-defined (it
+  maps each behaviour callback to the same-named function in the target). When
+  the real tool is a **foreign module that does not declare the behaviour**
+  (e.g. `ExCmd` behind `Cmd`), `stub_with/2` raises "do not share any
+  behaviour"; stub the callback directly instead — `stub(Cmd.Mock, :stream,
+  &ExCmd.stream/2)`.
 - **Mind the owner scope.** `stub_with` is owner-scoped like any Mox stub, so
   real work done in a **spawned** GenServer/task (a `ServerConnection`, the
   `Ansible.Runner` task) still needs `allow/3` or global mode — the same wall
@@ -1752,8 +1756,19 @@ true])`, so a `@moduletag :external` test never runs under `mix test` or the
 - **Provide the tool; gate on it.** The real tool runs for real, so it must be
   present — these tests are Docker/tool-gated regardless. The SSH round-trip
   stands up an in-process Erlang `:ssh.daemon` ([`SSHDaemon`][ssh-daemon], no
-  Docker) and drives the real `Client` against it; the Ansible round-trip needs
-  a container with the pinned `ansible`.
+  Docker) and drives the real `Client` against it. The Ansible round-trip needs
+  a real Python host, so [`SSHServerContainer`][ssh-server-container] builds and
+  runs the [`ssh-server`][ssh-server-dockerfile] image (Ubuntu + `python3`,
+  matching the student-VM fleet, authorizing the `test/priv/ssh` fixture key)
+  via Testcontainers and returns its mapped address.
+- **Pin the tool version in one source of truth, and run the test against it.**
+  A compatibility test that runs a different tool than production ships proves
+  nothing about production. Ansible is pinned in
+  [`requirements.txt`][ansible-requirements] (`ansible-core`) and
+  [`requirements.yml`][ansible-galaxy-requirements] (`ansible.posix`, which owns
+  the JSON/JSONL callbacks and floats independently of `ansible-core`); the CI
+  job installs from those files before running the smoke test. Treat a bump to
+  either as a reviewed change the smoke test gates.
 - **Own the pinned output in one module, shared with production.** When the
   compatibility test pins an exact tool output that production also matches on,
   give it a small module that owns the value so three places stay in lockstep:
@@ -1780,6 +1795,20 @@ asserting the whole error tuple equals `ConnectError.authentication_failed/0` /
 check the `classify/1` mapping fires end to end, and
 [`ConnectErrorTest`][connect-error-test] pins `classify/1` against each
 constructor's reason.
+
+The Ansible analogue is [`RunnerCompatibilityTest`][runner-compatibility-test]:
+it `stub`s `Cmd.Mock` to real `ExCmd` and drives `Runner` directly against an
+[`SSHServerContainer`][ssh-server-container]. One round-trip per contract —
+`gather_facts/3` mapped through `ServerProperties.update_from_ansible_facts/2`,
+and `run_playbook/5` over a trivial [fixture playbook][ansible-compat-playbook]
+whose real JSONL decodes through `AnsiblePlaybookEvent.new/3`, then
+`AnsiblePlaybookRun.update_stats/2` applied to a persisted run with its exact
+counts asserted. Both round-trips bind the non-deterministic real values (host
+hardware, generated ids, real timestamps, the raw blobs), validate their shape,
+and fold them back into a **whole-value `==`** — a human-approved exception the
+test comments call out so it is not read as license for partial assertions. Keep
+the target generic and the playbook trivial: the canary certifies the callback
+format, not the app's business logic, which the mocked pipeline tests cover.
 
 [contributing]: ../CONTRIBUTING.md#testing
 [data-case]: ../test/support/data_case.ex
@@ -1814,6 +1843,12 @@ constructor's reason.
 [system-client-compatibility-test]: ../test/archidep/servers/ssh/client/system_client_compatibility_test.exs
 [connect-error]: ../lib/archidep/servers/ssh/connect_error.ex
 [connect-error-test]: ../test/archidep/servers/ssh/connect_error_test.exs
+[runner-compatibility-test]: ../test/archidep/servers/ansible/runner_compatibility_test.exs
+[ssh-server-container]: ../test/support/ssh_server_container.ex
+[ssh-server-dockerfile]: ../test/docker/ssh-server/Dockerfile
+[ansible-compat-playbook]: ../test/priv/ansible/compat.yml
+[ansible-requirements]: ../../requirements.txt
+[ansible-galaxy-requirements]: ../../requirements.yml
 [queue-state-test]: ../test/archidep/servers/ansible/pipeline/ansible_pipeline_queue_state_test.exs
 [queue-test]: ../test/archidep/servers/ansible/pipeline/ansible_pipeline_queue_test.exs
 [channel-case]: ../test/support/channel_case.ex

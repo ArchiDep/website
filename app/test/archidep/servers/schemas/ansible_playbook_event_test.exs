@@ -27,8 +27,10 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEventTest do
         "task" => %{
           "name" => "Install packages",
           "id" => "11111111-1111-1111-1111-111111111111",
-          "start" => "2024-03-15T10:00:00.000000Z",
-          "end" => "2024-03-15T10:05:00.000000Z"
+          "duration" => %{
+            "start" => "2024-03-15T10:00:00.000000Z",
+            "end" => "2024-03-15T10:05:00.000000Z"
+          }
         }
       }
 
@@ -144,7 +146,7 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEventTest do
 
     test "ignores task timestamps that are not valid datetimes" do
       run = ServersFactory.build(:ansible_playbook_run)
-      data = %{"task" => %{"start" => "nope", "end" => 0}}
+      data = %{"task" => %{"duration" => %{"start" => "nope", "end" => 0}}}
 
       changeset = AnsiblePlaybookEvent.new(data, run, @now)
 

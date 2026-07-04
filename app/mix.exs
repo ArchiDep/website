@@ -106,7 +106,8 @@ defmodule ArchiDep.MixProject do
       {:mix_test_watch, "~> 1.0", only: :test, runtime: false},
       {:nicene, "~> 0.7.0", only: [:dev, :test], runtime: false},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:sobelow, "~> 0.8", only: [:dev, :test], runtime: false}
+      {:sobelow, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:testcontainers, "~> 2.3", only: :test}
     ]
   end
 

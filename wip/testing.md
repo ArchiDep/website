@@ -115,8 +115,8 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Server tracking — orchestrator & Tracker](#server-tracking--orchestrator--tracker)
 - **7. External-tool compatibility smoke tests (SSH & Ansible)**
   - [ ] 🧭 [Canon — pin external-tool versions & harness](#canon--pin-external-tool-versions--harness)
-  - [ ] [SSH round-trip against a real server](#ssh-round-trip-against-a-real-server)
-  - [ ] [Ansible format compatibility against a real target](#ansible-format-compatibility-against-a-real-target)
+  - [x] [SSH round-trip against a real server](#ssh-round-trip-against-a-real-server)
+  - [x] [Ansible format compatibility against a real target](#ansible-format-compatibility-against-a-real-target)
 - **8. Finalize coverage policy (do this last)**
   - [ ] [Decide exclusions](#decide-exclusions)
   - [ ] [Lock the global threshold](#lock-the-global-threshold)
@@ -2445,13 +2445,24 @@ new `ArchiDep.Servers.SSH.ConnectError` module (tuple constructors
 `classify/1` which production uses to map a reason to its atom), so production,
 the real-string canary, the mocked mapping test, and a direct `classify/1` unit
 test all share one definition; and (5) the "Testing external-tool compatibility"
-section in `docs/testing.md`. _Deferred to the Ansible chunk:_ the
-`ansible-core` / `ansible.posix` version pin (a `requirements.txt` and galaxy
-`requirements.yml`) and the `Dockerfile` migration from `apk add ansible` to pip
-and galaxy. _Flagged for review:_ no `coveralls.json` `skip_files` entry was
-added for the real-passthrough impls (e.g. `system_client.ex`) — they stay
-counted as uncovered (tiny, negligible effect on the aggregate); locking that
-exclusion is left to [Decide exclusions](#decide-exclusions).
+section in `docs/testing.md`. _Flagged for review:_ no `coveralls.json`
+`skip_files` entry was added for the real-passthrough impls (e.g.
+`system_client.ex`) — they stay counted as uncovered (tiny, negligible effect on
+the aggregate); locking that exclusion is left to [Decide
+exclusions](#decide-exclusions).
+
+_Update (Ansible chunk landed; box deliberately still open):_ the version pin
+now exists as a single source of truth — `requirements.txt` (`ansible-core`) and
+galaxy `requirements.yml` (`ansible.posix`) — and the `build-app` CI job
+installs from them before the external step, so the smoke test runs the pinned
+tool. The `stub_with(ArchiDep.Cmd.Mock, ExCmd)` seam this note originally
+prescribed does **not** work on Mox 1.2.0 (ExCmd does not declare the `Cmd`
+behaviour, so `stub_with/2` raises); the seam is `stub(ArchiDep.Cmd.Mock,
+:stream, &ExCmd.stream/2)`, and `docs/testing.md` was corrected accordingly.
+**What keeps this box open:** the production `Dockerfile` still installs
+`ansible` unpinned via `apk add` — the `apk`→pip+galaxy migration was deferred
+(Alpine musl-wheel build risk) to a separate PR, so the pin is not yet consumed
+by production. Closing this box means landing that migration.
 
 ### SSH round-trip against a real server
 
@@ -2490,10 +2501,10 @@ magic strings are what an OTP bump silently rewords (both were probed on OTP 28
 and match production). The new `ArchiDep.Servers.SSH.ConnectError` module owns
 the error strings: tuple constructors the mock returns, plus `classify/1` (used
 by production and unit-tested directly) that the mocked
-`server_connection_test.exs` exercises end to end. The box stays open only
-because the parent canon task is gated on the deferred Ansible version pin;
-**host-key** verification (unknown/changed host key with `silently_accept_hosts:
-false`) is the one remaining real-tool case not yet covered here.
+`server_connection_test.exs` exercises end to end. Box checked: the round-trip
+plus the auth- and key-exchange-failure cases are implemented and passing. The
+one remaining real-tool case, deferred as a follow-up, is **host-key**
+verification (unknown/changed host key with `silently_accept_hosts: false`).
 
 ### Ansible format compatibility against a real target
 
@@ -2519,6 +2530,45 @@ branch/error handling stays in the mocked phase-6 unit tests. Tagged
 its value is catching dependency drift, consider running it on dependency-bump /
 a schedule in addition to the integration job. _Scope:_ the extended container +
 1 test module.
+
+_Done:_ `runner_compatibility_test.exs` covers both contracts. The `ssh-server`
+container gained `python3` and now authorizes the `test/priv/ssh` fixture key
+(it had a stale `archidep-test` key that no test matched, and `ubuntu:noble`'s
+new default UID-1000 user is removed so `jde` can keep that UID — a latent
+breakage surfaced the first time the image was actually built). A test-only
+`testcontainers` dependency runs the image;
+`ArchiDep.Support.SSHServerContainer` builds it, waits on the sshd listening log
+line, and returns the mapped address. The `Cmd` façade is pointed at real ExCmd
+with `stub(ArchiDep.Cmd.Mock, :stream, &ExCmd.stream/2)` — **not**
+`stub_with/2`, which raises "do not share any behaviour" because ExCmd does not
+declare the `Cmd` behaviour (the canon note and `docs/testing.md` were corrected
+to prescribe `stub/3` for such foreign modules). `Runner` is driven directly
+from the test process, so the owner-scope caveat does not apply. Both
+round-trips bind the non-deterministic values (host hardware, generated ids,
+real timestamps, the raw blobs), validate their shape, then assert the **whole**
+decoded value by `==` (a one-time approved exception, documented at the top of
+the test so it is not mistaken for license to write partial assertions
+elsewhere). The facts round-trip pins the deterministic Ubuntu-noble OS-identity
+fields exactly; the playbook round-trip persists an `AnsiblePlaybookRun`,
+applies `update_stats/2` from the real stats event, and asserts the exact
+resulting counts (our trivial playbook: `ok: 1`, the rest `0`).
+
+_Version pin (partial, per decision):_ `ansible-core` and `ansible.posix` are
+now pinned in `requirements.txt` / `requirements.yml` and installed by the
+`build-app` CI job before the external step, so the smoke test runs the pinned
+tool. **The production `Dockerfile` still installs `ansible` unpinned via `apk
+add`** — the `apk`→pip+galaxy migration is deferred to a separate PR to avoid
+the Alpine musl-wheel build risk, and that is what keeps the canon 🧭 box open
+(the pin is not yet consumed by production).
+
+_Latent bug found and fixed (flag for review):_ real `ansible.posix.jsonl` (2.x)
+emits per-task timing under `task.duration.{start,end}`, but
+`AnsiblePlaybookEvent.new/3` read `task.{start,end}`, so `task_started_at` /
+`task_ended_at` silently decoded to `nil` (the fields are stored on the audit
+event but not yet surfaced in any view). `new/3` now reads
+`task.duration.{start,end}`, and the phase-6 `ansible_playbook_event_test.exs`
+fixture was moved to the real shape. The smoke test's event assertion pins both
+timestamps as `DateTime`s, so a future callback-format change fails there.
 
 ### Decide exclusions
 

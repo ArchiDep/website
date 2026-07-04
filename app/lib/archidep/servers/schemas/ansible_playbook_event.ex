@@ -69,8 +69,8 @@ defmodule ArchiDep.Servers.Schemas.AnsiblePlaybookEvent do
       data: data,
       task_name: binary_or(data, ["task", "name"], nil),
       task_id: binary_or(data, ["task", "id"], nil),
-      task_started_at: utc_datetime_or_nil(data, ["task", "start"]),
-      task_ended_at: utc_datetime_or_nil(data, ["task", "end"]),
+      task_started_at: utc_datetime_or_nil(data, ["task", "duration", "start"]),
+      task_ended_at: utc_datetime_or_nil(data, ["task", "duration", "end"]),
       occurred_at: utc_datetime_or_nil(data, ["_timestamp"]) || now,
       created_at: now
     )

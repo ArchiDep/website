@@ -1,0 +1,13 @@
+---
+# Minimal playbook for the external-tool compatibility smoke test. It runs a
+# single trivial command over the real SSH transport so the test can certify
+# that ansible-playbook's `ansible.posix.jsonl` callback still emits the event
+# and stats shapes the pipeline parses. It deliberately does no real work
+# (unlike the production setup.yml) to stay fast and side-effect-free.
+- name: ArchiDep external-tool compatibility smoke test
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Run a trivial command on the managed node
+      ansible.builtin.command: echo archidep
+      changed_when: false
