@@ -68,6 +68,7 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
   echo "port_tester_perms=$(stat -c '%a %U:%G' /usr/local/bin/port-tester 2>/dev/null)"
   echo "test_ports_perms=$(stat -c '%a %U:%G' /usr/local/sbin/test-ports 2>/dev/null)"
   echo "sudoers_perms=$(stat -c '%a' /etc/sudoers.d/archidep 2>/dev/null)"
+  echo "app_user_passwordless_sudo=$(runuser -u archidep -- sudo -n whoami 2>/dev/null || echo denied)"
   """
 
   setup :verify_on_exit!
@@ -131,7 +132,8 @@ defmodule ArchiDep.Servers.Ansible.SetupPlaybookSmokeTest do
              "notify_active" => "inactive",
              "port_tester_perms" => "755 root:root",
              "test_ports_perms" => "755 root:root",
-             "sudoers_perms" => "440"
+             "sudoers_perms" => "440",
+             "app_user_passwordless_sudo" => "root"
            }
   end
 
