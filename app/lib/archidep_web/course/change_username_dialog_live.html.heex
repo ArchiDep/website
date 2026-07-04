@@ -10,7 +10,13 @@
         <h3 class="w-full text-lg font-bold">Change username</h3>
       </legend>
 
-      <.form for={@form} phx-change="validate" phx-submit="configure" phx-target={@myself}>
+      <.form
+        id="change-username-form"
+        for={@form}
+        phx-change="validate"
+        phx-submit="configure"
+        phx-target={@myself}
+      >
         <fieldset class="fieldset mt-2">
           <label class="fieldset-label required mt-2">
             {gettext("Your username")}

@@ -14,7 +14,13 @@
           </a>
         </div>
       </details>
-      <.form for={@form} phx-change="validate" phx-submit="configure" phx-target={@myself}>
+      <.form
+        id="what-is-your-name-form"
+        for={@form}
+        phx-change="validate"
+        phx-submit="configure"
+        phx-target={@myself}
+      >
         <p class="hide-on-change mt-4">
           {gettext(
             "It is said there are {sa}only two hard things in Computer Science:{ea} cache invalidation and naming things. Here's the name we have generated for you:",
