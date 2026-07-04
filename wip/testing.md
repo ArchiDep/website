@@ -117,8 +117,16 @@ This is the bird's-eye view: each item links to its full description under
   - [x] 🧭 [Canon — pin external-tool versions & harness](#canon--pin-external-tool-versions--harness)
   - [x] [SSH round-trip against a real server](#ssh-round-trip-against-a-real-server)
   - [x] [Ansible format compatibility against a real target](#ansible-format-compatibility-against-a-real-target)
-- **8. Finalize coverage policy (do this last)**
-  - [ ] [Decide exclusions](#decide-exclusions)
+- **8. Coverage backfill — remaining testable gaps**
+  - [ ] [Config layer](#config-layer)
+  - [ ] [Business use case branch coverage](#business-use-case-branch-coverage)
+  - [ ] [Event serialization variant branches](#event-serialization-variant-branches)
+  - [ ] [Schema query and count functions](#schema-query-and-count-functions)
+  - [ ] [Pure helpers and no-op handlers](#pure-helpers-and-no-op-handlers)
+  - [ ] [Health controller](#health-controller)
+  - [ ] [Web and form small units](#web-and-form-small-units)
+- **9. Finalize coverage policy (do this last)**
+  - [ ] [Review remaining uncovered code](#review-remaining-uncovered-code)
   - [ ] [Lock the global threshold](#lock-the-global-threshold)
   - [ ] [(Optional) Per-critical-path enforcement](#optional-per-critical-path-enforcement)
 
@@ -151,10 +159,10 @@ task). _Files:_ `test/support/channel_case.ex`.
 
 ### Coverage config & regression ratchet
 
-There is no `coveralls.json`. Add one — but **do not `skip_files` anything yet**.
-We want every file in the denominator while we sweep, and will revisit
-exclusions only at the end (see [Decide exclusions](#decide-exclusions)) once we
-can see real coverage. For now, set `minimum_coverage` to a ratchet: start it at
+There is no `coveralls.json`. Add one. **We never configure `skip_files`** —
+every file stays in the denominator, now and permanently (see [Review remaining
+uncovered code](#review-remaining-uncovered-code)). For now, set
+`minimum_coverage` to a ratchet: start it at
 the current project coverage (~65%) and bump it upward as chunks land so
 coverage can never regress in CI, without demanding 90% before the work is done.
 _Files:_ `app/coveralls.json`. _Note:_ ExCoveralls' `minimum_coverage` is a
@@ -2236,8 +2244,10 @@ return and the warning log. No clock gap here (this module uses no `DateTime`)
 and no `with`/`else` masking. _Deferred:_
 `ArchiDep.Servers.SSH.Client.SystemClient` (the thin real `:ssh`/`SSHEx`
 passthrough) can't run without a live server, so it is left uncovered like the
-other real facade impls (`ExCmd`/`Req`) — a candidate for `skip_files` in
-[Decide exclusions](#decide-exclusions).
+other real facade impls (`ExCmd`/`Req`); it stays in the denominator and is
+exercised only by the external smoke tests. Whether some of those can move into
+the normal suite is an open question in [Review remaining uncovered
+code](#review-remaining-uncovered-code).
 
 ### Server tracking — orchestrator & Tracker
 
@@ -2445,11 +2455,10 @@ new `ArchiDep.Servers.SSH.ConnectError` module (tuple constructors
 `classify/1` which production uses to map a reason to its atom), so production,
 the real-string canary, the mocked mapping test, and a direct `classify/1` unit
 test all share one definition; and (5) the "Testing external-tool compatibility"
-section in `docs/testing.md`. _Flagged for review:_ no `coveralls.json`
-`skip_files` entry was added for the real-passthrough impls (e.g.
-`system_client.ex`) — they stay counted as uncovered (tiny, negligible effect on
-the aggregate); locking that exclusion is left to [Decide
-exclusions](#decide-exclusions).
+section in `docs/testing.md`. _Note:_ the real-passthrough impls (e.g.
+`system_client.ex`) stay counted as uncovered (tiny, negligible effect on the
+aggregate) — they are never `skip_files`d; see [Review remaining uncovered
+code](#review-remaining-uncovered-code).
 
 _Update (Ansible chunk landed; box deliberately still open):_ the version pin
 now exists as a single source of truth — `requirements.txt` (`ansible-core`) and
@@ -2470,10 +2479,10 @@ bad bump instead of silently in production — box checked.
 
 Exercise the currently-uncovered real SSH boundary
 ([`system_client.ex`](../app/lib/archidep/servers/ssh/client/system_client.ex),
-the `:ssh` + `SSHEx` passthrough that phase 6 slated for `skip_files`). Stand up
-a real SSH server and drive `SystemClient` — or `ServerConnection` end-to-end —
-against `127.0.0.1`, asserting a real handshake, a `run_command` round-trip, and
-the host-key / auth error behaviour the mocked unit tests can only simulate.
+the `:ssh` + `SSHEx` passthrough left uncovered by phase 6). Stand up a real SSH
+server and drive `SystemClient` — or `ServerConnection` end-to-end — against
+`127.0.0.1`, asserting a real handshake, a `run_command` round-trip, and the
+host-key / auth error behaviour the mocked unit tests can only simulate.
 
 Two server options, cheapest first:
 
@@ -2605,25 +2614,137 @@ student VMs / CI runners and ARM64 dev machines, `setup.yml`'s download now
 selects the per-architecture release archive (and checksum) by
 `ansible_facts.architecture`.
 
-### Decide exclusions
+### Config layer
 
-_Context:_ once the sweep is essentially done and we can see the _actual_
-coverage map, lock the policy.
+_Scope:_ `config/config_value.ex`, `config/config_error.ex`, `config.ex`,
+`archidep_web/config.ex` — the largest untested cluster (~140 uncovered lines,
+no test files today). `ConfigValue` is a pure builder over a `%ConfigValue{}`
+struct (`from_env/4`, `default_to`, `validate`, `required_value`,
+`optional_value`, and the error-message formatting) — build a value, pipe it,
+assert the value or the raised `ConfigError` message. The two config-assembly
+modules already expose the seams to test them: every public function takes `env
+\\ System.get_env()` and `default_config \\ Application.fetch_env!(...)` as
+default arguments, so pass crafted maps / keyword lists and assert. The branch
+volume is in the value validators (IP address, port, endpoint URL, signing salt,
+secret key base, comma-separated lists) — cover each accept/reject path.
 
-Review what's left uncovered and decide — file by file — whether anything
-genuinely untestable (e.g. `release.ex`, `sentry.ex`, `repo.ex`, `mailer.ex`,
-`cldr.ex`, `gettext.ex`, generated/boilerplate) should be added to `skip_files`,
-or whether we'd rather keep them in the denominator. Deliberately deferred to
-here, not assumed up front. _Files:_ `app/coveralls.json`.
+### Business use case branch coverage
 
-_Note on the real façade impls._ The thin real-tool passthroughs
-(`SystemClient`, `ExCmd`, `Req`) that phase 6 flagged as `skip_files` candidates
-are now _exercised_ by the [external-tool smoke
-tests](#canon--pin-external-tool-versions--harness) — but those tests are `@tag
-:external` and run outside the coverage job, so the files still show as
-uncovered in the coverage number. They remain `skip_files` candidates for the
-_coverage denominator_ even though a real test now drives them; the smoke tests
-are the compatibility signal, not a coverage contribution.
+_Scope:_ the untested `servers/use_cases/read_ansible.ex` (whole module —
+`fetch_ansible_playbook_runs/1`, `fetch_ansible_playbook_run/2`,
+`fetch_ansible_playbook_events_for_run/2`, following the read-use-case canon),
+plus the uncovered masked authorization / not-found `else` branches in
+`create_server` (`:server_group_not_found`), the binary-id `update_server` path,
+`configure_student`, `read_students`, `read_servers`
+(`:multiple_servers_found`), `import_students`, and `delete_student`. Call each
+with an unauthorized principal or a bad/unknown UUID, per the masked-errors
+guidance in [Authorization and
+policy](../app/docs/testing.md#authorization-and-policy).
+
+**Policy clauses are a symptom, not the unit.** The uncovered `authorize`
+clauses in `servers/policy.ex` (5) and `accounts/policy.ex` (1) usually mean a
+**use-case path is untested**, not that the policy needs a direct unit test. For
+each uncovered clause, first trace which use case reaches it and add the missing
+use-case test (which is the more valuable coverage); add a direct `Policy` unit
+test only for a clause genuinely reachable only at the policy layer.
+
+### Event serialization variant branches
+
+_Scope:_ the single uncovered branch in each of ~13 event modules — the `nil ->`
+optional-association path or the other-variant clause (e.g. a
+`ServerGroupMember` name vs. an account name, or the Switch edu-ID sub-map).
+Affected: `server_disconnected`, `server_notified_up`, `server_reconnecting`,
+`server_retried_connecting`, `server_retried_ansible_playbook`,
+`ansible_playbook_run_finished`, `ansible_playbook_run_running`,
+`ansible_playbook_event_occurred`, `user_logged_out` (4 lines),
+`session_deleted`, `user_impersonated`, `user_registered_with_link`,
+`user_logged_in_with_link`. Each is a pure serialization branch — add a case
+with the association `nil` / the other variant and assert the whole serialized
+shape.
+
+### Schema query and count functions
+
+_Scope:_ the DB query/count functions covered by nothing today —
+`UserSession.count_active_sessions`, `UserAccount.count_active_users`,
+`Server.count_active_servers` + `find_active_server_for_group_member`,
+`Student`'s `find`/`list`/`count` active-registered functions, and the `fetch_*`
+reads on `ServerOwner` / `ServerGroup` / `ServerGroupMember` not exercised
+elsewhere. Insert rows under `DataCase`, call, assert the count/struct by
+whole-value equality. **Excludes** every `refresh!/2` struct-merge tail sharing
+these files — those ship with the [DDD
+plan](./ddd.md#sequencing-with-the-testing-plan).
+
+### Pure helpers and no-op handlers
+
+_Scope:_ small pure functions and trivial handlers reachable directly —
+`authentication.ex` (the `is_authentication` guard + `session_id/1`),
+`sentry.ex` `before_send/1`, the `event_stream/1` builders (`SwitchEduId`,
+`PreregisteredUser`), `playbooks_registry.playbook!/1` + `ansible.playbook!/1`
+(lookup + raise), `global_scope.suffix`, `tracker.list`, `ServerProperties`'
+`detect_mismatch` `0`/`"*"` clauses, `server_live.redirect_after_deleted`,
+`endpoint.log_level`, the `form_components` fallback, the pure slice of
+`release.ex` (`shell_escape`/`format_stream`/`format_maybe_empty_stream`),
+`file_helpers.hash_files_in_directory!` (temp-dir fixture), and the
+`handle_event("closed", …)` / `close/0` no-ops on the delete/close dialogs.
+
+### Health controller
+
+_Scope:_ `archidep_web/health/health_controller.ex` (27 uncovered, no test).
+Drive the health endpoint through `ConnCase` (DB available; the ansible-queue
+health branch needs the `Pipeline` running or a small seam) and assert the JSON
+response and status; cover the `worst_status`/`slow_status` pure helpers
+directly.
+
+### Web and form small units
+
+_Scope:_ the remaining testable web branches. `server_form_component`'s
+`process_boolean`/`process_integer`/`process_ip_address`/`display_ip_address`
+(pure — extract or drive via a component test); `student_import_list`'s
+username-collision `Stream.scan` dedup branches (a colliding-name fixture);
+`ansible/context` (`gather_facts`/`run_playbook` via a mocked `Runner`/`Tracker`
+seam); the `import_students_dialog_live` CSV parsing and email/name-column
+detection (**extract the detection + CSV-shape logic into pure functions and
+cover those**, leaving the upload plumbing to a `render_upload` test); and the
+scattered `{:error, %Changeset{}}` form-error-merge branches plus the "event for
+another resource → list unchanged" reducers across the dialogs and list
+LiveViews. **Excludes** the `refresh!`-driven reducers deferred to DDD.
+
+### Deliberately not in this group
+
+Kept in the denominator (never `skip_files`d) but not tested here, each for a
+stated reason:
+
+- **`monitoring/metrics.ex`** — the metrics are due for a rework; tests wait for
+  that separate task.
+- **`course/helpers/material_helpers.ex`** — slated for the
+  [`death-of-jekyll`](./death-of-jekyll.md) refactor; not worth testing as-is.
+- **`helpers/git_helpers.ex`** — to be refactored into more unit-testable code
+  first, then covered.
+- **`helpers/context_helpers.ex`** (the context DSL macros) — removed by the DDD
+  refactor.
+- **`release.ex` migrate/rollback/ssh_student, boot/declarative modules**
+  (`router.ex`, `endpoint.ex`, `application.ex`, `telemetry.ex`, `prom_ex.ex`,
+  `git.ex`, mix recompile hooks) — may get thin exercising tests later.
+- **Runtime-process error/`terminate` branches** — disproportionate ceremony to
+  force; happy paths already covered in phase 6.
+- **Every `refresh!/2`** — reshaped by the
+  [DDD plan](./ddd.md#sequencing-with-the-testing-plan).
+
+### Review remaining uncovered code
+
+_Context:_ once the backfill above lands and we can see the _actual_ coverage
+map, review what is still uncovered file by file. **We do not configure
+`skip_files` — every file stays in the coverage denominator.** For each
+remaining gap, decide only between: cover it now, cover it after the refactor
+that will reshape it (DDD, metrics rework, death-of-jekyll, git_helpers), or
+knowingly accept it uncovered. No file is ever hidden from the denominator to
+make the number look better.
+
+_Open question to settle here:_ some of the external SSH smoke tests run against
+an Erlang `:ssh` server rather than a real remote host — decide whether any of
+those can move into the normal (non-`@tag :external`) suite so the
+`SystemClient` boundary contributes real coverage instead of only running in the
+external job.
 
 ### Lock the global threshold
 
@@ -2718,10 +2839,8 @@ building new ones.
    support at all (no `Phoenix.ChannelTest` template). Small to add, but
    required if channels are in scope for 90%.
 
-3. **Configure coverage exclusions and a threshold (makes 90% meaningful).**
-   There's no `coveralls.json` today — no `skip_files`, no `minimum_coverage`. A
-   meaningful chunk of the denominator is essentially untestable infra
-   (`release.ex`, `sentry.ex`, `repo.ex`, `mailer.ex`, `cldr.ex`, `gettext.ex`,
-   generated/boilerplate). Add `skip_files` for those and set
-   `minimum_coverage: 90` so the metric reflects real, reachable code and CI can
-   enforce it.
+3. **Configure a coverage threshold (makes 90% meaningful).**
+   There's no `coveralls.json` today — no `minimum_coverage`. Add one and set
+   `minimum_coverage: 90` so CI can enforce it. **No `skip_files`:** every file
+   stays in the denominator; genuinely-untestable infra is either covered later,
+   refactored away, or knowingly accepted as uncovered — never hidden.
