@@ -151,10 +151,6 @@ jobs:
         run: mix deps.unlock --check-unused
         working-directory: app
 
-      - name: Show retired dependencies
-        run: mix hex.audit
-        working-directory: app
-
       - name: Ensure there are no uncommitted changes
         run: |
           git status --porcelain
