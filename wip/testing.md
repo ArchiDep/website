@@ -2481,8 +2481,8 @@ Two server options, cheapest first:
   enough this chunk could arguably run in the normal suite rather than the
   `:external` job. Sufficient for the SSH _protocol_ round-trip (connect, exec a
   command, close, lost-connection crash).
-- **The existing `ssh-server` container**
-  ([`app/test/docker/ssh-server/Dockerfile`](../app/test/docker/ssh-server/Dockerfile))
+- **The existing `ubuntu-server` container**
+  ([`app/test/docker/ubuntu-server/Dockerfile`](../app/test/docker/ubuntu-server/Dockerfile))
   via testcontainers — heavier, but a real OpenSSH server against real `sshd`,
   and it shares the target the Ansible chunk needs. Reuse the pinned
   `archidep-test` key already in the image and `test/priv/ssh/id_ed25519`.
@@ -2576,6 +2576,25 @@ event but not yet surfaced in any view). `new/3` now reads
 `task.duration.{start,end}`, and the phase-6 `ansible_playbook_event_test.exs`
 fixture was moved to the real shape. The smoke test's event assertion pins both
 timestamps as `DateTime`s, so a future callback-format change fails there.
+
+_Update (systemd target + setup.yml smoke test):_ the target now boots systemd
+(`CMD ["/sbin/init"]`, runs privileged) so the setup playbook's
+`ansible.builtin.systemd` tasks — daemon-reload and enabling a unit, which need
+a live systemd/dbus — run exactly as on the student VMs. The image and support
+module were renamed `ssh-server`/`SSHServerContainer` →
+`ubuntu-server`/`UbuntuServerContainer` accordingly. Because systemd routes unit
+logs to the journal (not container stdout), readiness now gates on `systemctl
+is-active ssh` succeeding inside the container rather than the old sshd
+stdout-log line. On the cgroup-v2 hosts we target (GitHub `ubuntu-24.04`
+runners, Docker Desktop, colima) `--privileged` alone suffices — no host cgroup
+mount or `--cgroupns=host`. Building on this, `setup_playbook_smoke_test.exs`
+drives the **real production `setup.yml`** end to end against the container: it
+asserts a whole-host state projection by `==` (users, files with owner/mode, the
+rendered notify script's callback URL, and the enabled-but-stopped systemd
+unit), the exact playbook stats, and idempotence — a second run reports
+`changed: 0`, proving every task converges. This certifies the deliverable
+itself, complementing `runner_compatibility_test.exs`, which pins only the
+callback output format with a trivial playbook.
 
 ### Decide exclusions
 

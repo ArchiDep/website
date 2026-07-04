@@ -1757,10 +1757,13 @@ Servers.SSH.Client.SystemClient)` — even though the mocks are Hammox-defined (
   present — these tests are Docker/tool-gated regardless. The SSH round-trip
   stands up an in-process Erlang `:ssh.daemon` ([`SSHDaemon`][ssh-daemon], no
   Docker) and drives the real `Client` against it. The Ansible round-trip needs
-  a real Python host, so [`SSHServerContainer`][ssh-server-container] builds and
-  runs the [`ssh-server`][ssh-server-dockerfile] image (Ubuntu + `python3`,
-  matching the student-VM fleet, authorizing the `test/priv/ssh` fixture key)
-  via Testcontainers and returns its mapped address.
+  a real host — and the setup playbook also drives `ansible.builtin.systemd`,
+  which needs a live systemd/dbus — so
+  [`UbuntuServerContainer`][ubuntu-server-container] builds and runs the
+  [`ubuntu-server`][ubuntu-server-dockerfile] image (Ubuntu noble booting
+  systemd with `python3`, matching the student-VM fleet, authorizing the
+  `test/priv/ssh` fixture key) as a privileged container via Testcontainers and
+  returns its mapped address.
 - **Pin the tool version in one source of truth, and run the test against it.**
   A compatibility test that runs a different tool than production ships proves
   nothing about production. Ansible is pinned in
@@ -1804,17 +1807,18 @@ constructor's reason.
 
 The Ansible analogue is [`RunnerCompatibilityTest`][runner-compatibility-test]:
 it `stub`s `Cmd.Mock` to real `ExCmd` and drives `Runner` directly against an
-[`SSHServerContainer`][ssh-server-container]. One round-trip per contract —
-`gather_facts/3` mapped through `ServerProperties.update_from_ansible_facts/2`,
-and `run_playbook/5` over a trivial [fixture playbook][ansible-compat-playbook]
-whose real JSONL decodes through `AnsiblePlaybookEvent.new/3`, then
-`AnsiblePlaybookRun.update_stats/2` applied to a persisted run with its exact
-counts asserted. Both round-trips bind the non-deterministic real values (host
-hardware, generated ids, real timestamps, the raw blobs), validate their shape,
-and fold them back into a **whole-value `==`** — a human-approved exception the
-test comments call out so it is not read as license for partial assertions. Keep
-the target generic and the playbook trivial: the canary certifies the callback
-format, not the app's business logic, which the mocked pipeline tests cover.
+[`UbuntuServerContainer`][ubuntu-server-container]. One round-trip per contract
+— `gather_facts/3` mapped through
+`ServerProperties.update_from_ansible_facts/2`, and `run_playbook/5` over a
+trivial [fixture playbook][ansible-compat-playbook] whose real JSONL decodes
+through `AnsiblePlaybookEvent.new/3`, then `AnsiblePlaybookRun.update_stats/2`
+applied to a persisted run with its exact counts asserted. Both round-trips bind
+the non-deterministic real values (host hardware, generated ids, real
+timestamps, the raw blobs), validate their shape, and fold them back into a
+**whole-value `==`** — a human-approved exception the test comments call out so
+it is not read as license for partial assertions. Keep the target generic and
+the playbook trivial: the canary certifies the callback format, not the app's
+business logic, which the mocked pipeline tests cover.
 
 [contributing]: ../CONTRIBUTING.md#testing
 [data-case]: ../test/support/data_case.ex
@@ -1850,8 +1854,8 @@ format, not the app's business logic, which the mocked pipeline tests cover.
 [connect-error]: ../lib/archidep/servers/ssh/connect_error.ex
 [connect-error-test]: ../test/archidep/servers/ssh/connect_error_test.exs
 [runner-compatibility-test]: ../test/archidep/servers/ansible/runner_compatibility_test.exs
-[ssh-server-container]: ../test/support/ssh_server_container.ex
-[ssh-server-dockerfile]: ../test/docker/ssh-server/Dockerfile
+[ubuntu-server-container]: ../test/support/ubuntu_server_container.ex
+[ubuntu-server-dockerfile]: ../test/docker/ubuntu-server/Dockerfile
 [ansible-compat-playbook]: ../test/priv/ansible/compat.yml
 [ansible-requirements]: ../../requirements.txt
 [ansible-galaxy-requirements]: ../../requirements.yml

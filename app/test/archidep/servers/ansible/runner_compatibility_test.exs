@@ -24,7 +24,7 @@ defmodule ArchiDep.Servers.Ansible.RunnerCompatibilityTest do
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Support.ServersFactory
   alias ArchiDep.Support.ServersTestHelpers
-  alias ArchiDep.Support.SSHServerContainer
+  alias ArchiDep.Support.UbuntuServerContainer
 
   @moduletag :external
 
@@ -33,7 +33,7 @@ defmodule ArchiDep.Servers.Ansible.RunnerCompatibilityTest do
   setup :verify_on_exit!
 
   setup_all do
-    %{target: SSHServerContainer.start!()}
+    %{target: UbuntuServerContainer.start!()}
   end
 
   setup do
