@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
   alias ArchiDep.Clock
   alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
+  alias ArchiDep.PubSub.Scope
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Events.AnsiblePlaybookRunFinished
@@ -152,18 +153,23 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineRunner do
 
   defp track_gather_facts!(server_id, meta) do
     {:ok, _ref} =
-      Tracker.track(@tracker, self(), "ansible-queue", "gather-facts:#{server_id}", meta)
+      Tracker.track(@tracker, self(), ansible_queue_topic(), "gather-facts:#{server_id}", meta)
   end
 
   defp track_playbook!(run_id, meta) do
     {:ok, _ref} =
-      Tracker.track(@tracker, self(), "ansible-queue", "playbook:#{run_id}", meta)
+      Tracker.track(@tracker, self(), ansible_queue_topic(), "playbook:#{run_id}", meta)
   end
 
   defp update_playbook_tracking!(run_id, update) do
     {:ok, _ref} =
-      Tracker.update(@tracker, self(), "ansible-queue", "playbook:#{run_id}", update)
+      Tracker.update(@tracker, self(), ansible_queue_topic(), "playbook:#{run_id}", update)
   end
+
+  # The tracker topic is global (shared by every subscriber), so it is scoped to
+  # isolate concurrent async tests (see `ArchiDep.PubSub.Scope`). In production
+  # the scope is a no-op and the topic keeps its shared name.
+  defp ansible_queue_topic, do: Scope.global_topic("ansible-queue")
 
   defp finished_run_from_result({:succeeded, run}), do: run
   defp finished_run_from_result({:failed, run}), do: run

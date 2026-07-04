@@ -29,7 +29,13 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       :pipeline,
       :pending_tasks,
       stored_demand: 0,
-      last_activity: nil
+      last_activity: nil,
+      # The global tracker topic this queue publishes its presence to, resolved
+      # and injected by the caller (per-test-scoped in tests, the shared name in
+      # production — see `ArchiDep.PubSub.Scope`). Carried here rather than read
+      # from process state so the tracking side effect has an explicit source;
+      # the state machine's own functions never read it.
+      tracker_topic: "ansible-queue"
     ]
 
     @type gather_facts_task :: %{
@@ -49,7 +55,8 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     @type t :: %__MODULE__{
             stored_demand: non_neg_integer(),
             pending_tasks: {non_neg_integer(), :queue.queue(pending_task())},
-            last_activity: DateTime.t() | nil
+            last_activity: DateTime.t() | nil,
+            tracker_topic: String.t()
           }
 
     @type health_data :: %{
@@ -58,13 +65,14 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
             last_activity: DateTime.t() | nil
           }
 
-    @spec init(Pipeline.t()) :: t()
-    def init(pipeline),
+    @spec init(Pipeline.t(), String.t()) :: t()
+    def init(pipeline, tracker_topic \\ "ansible-queue"),
       do: %__MODULE__{
         pipeline: pipeline,
         stored_demand: 0,
         pending_tasks: {0, :queue.new()},
-        last_activity: nil
+        last_activity: nil,
+        tracker_topic: tracker_topic
       }
 
     @spec store_demand(t(), pos_integer) :: t
@@ -313,8 +321,15 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
     store = Keyword.get(opts, :store, AnsiblePipelineQueueStore)
     :ok = store.mark_incomplete_runs_as_timed_out()
 
+    # The queue is a boot-time supervised singleton, so it cannot resolve the
+    # per-test scope itself (there is no per-test value at application boot).
+    # The caller resolves the global tracker topic (see `ArchiDep.PubSub.Scope`)
+    # and passes it in, defaulting to the shared production topic; it is fixed
+    # for this process's lifetime.
+    tracker_topic = Keyword.get(opts, :tracker_topic, "ansible-queue")
+
     pipeline
-    |> State.init()
+    |> State.init(tracker_topic)
     |> track!()
     |> pair(:producer)
   end
@@ -371,7 +386,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       Tracker.track(
         @tracker,
         self(),
-        "ansible-queue",
+        state.tracker_topic,
         "queue:#{state.pipeline}",
         tracking_metadata(state)
       )
@@ -384,7 +399,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
       Tracker.update(
         @tracker,
         self(),
-        "ansible-queue",
+        state.tracker_topic,
         "queue:#{state.pipeline}",
         tracking_metadata(state)
       )

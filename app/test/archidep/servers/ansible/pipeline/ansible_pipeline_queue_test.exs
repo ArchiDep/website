@@ -10,11 +10,14 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueTest do
   # `async: true`: the queue's only database work — marking incomplete runs as
   # timed out on boot — is behind the injected store, replaced here by a no-op
   # fake, so `init/1` touches neither the database nor any owner-scoped mock.
-  # The real store's behaviour is covered by
+  # The tracker topic it publishes to is scoped per test
+  # (`ArchiDep.PubSub.Scope`, stubbed by `DataCase`), so its presence diffs
+  # never reach another test. The real store's behaviour is covered by
   # `ansible_pipeline_queue_store_test.exs`.
   use ArchiDep.Support.DataCase, async: true
 
   import ArchiDep.Support.ProcessTestHelpers, only: [wait_for!: 2]
+  alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
   alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueTest.NoOpStore
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
@@ -32,9 +35,16 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueTest do
     # and from the other tests — without creating atoms at runtime.
     pipeline = test
 
+    # Resolve the per-test-scoped tracker topic here in the test process (where
+    # `DataCase` has stubbed the scope) and pass it in: the queue is a
+    # supervised singleton that cannot resolve the scope itself, and scoping
+    # keeps its presence diffs from leaking into a concurrently-mounting web
+    # test.
+    opts = [store: NoOpStore, tracker_topic: Scope.global_topic("ansible-queue")]
+
     start_supervised!(%{
       id: AnsiblePipelineQueue,
-      start: {AnsiblePipelineQueue, :start_link, [pipeline, [store: NoOpStore]]}
+      start: {AnsiblePipelineQueue, :start_link, [pipeline, opts]}
     })
 
     %{pipeline: pipeline}
@@ -108,9 +118,9 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueTest do
   end
 
   # `Phoenix.Tracker` is eventually consistent, so poll until the queue's
-  # presence reflects the expected counts. The `:phx_ref` bookkeeping the tracker
-  # adds is its own, not data the queue publishes, so only the published counts
-  # are asserted.
+  # presence reflects the expected counts. The `:phx_ref` bookkeeping the
+  # tracker adds is its own, not data the queue publishes, so only the published
+  # counts are asserted.
   defp assert_tracked_counts!(pipeline, counts),
     do:
       wait_for!(
@@ -120,7 +130,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueTest do
 
   defp tracked_counts(pipeline) do
     @tracker
-    |> Phoenix.Tracker.list("ansible-queue")
+    |> Phoenix.Tracker.list(Scope.global_topic("ansible-queue"))
     |> Enum.find_value(fn {key, meta} ->
       if key == "queue:#{pipeline}", do: Map.take(meta, [:demand, :pending])
     end)

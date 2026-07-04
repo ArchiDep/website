@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLiveTest do
   use ArchiDepWeb.Support.LiveCase, async: true
 
   import Hammox
+  alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
   alias ArchiDep.Support.ServersFactory
   alias ArchiDep.TrackerClientMock
@@ -256,8 +257,10 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLiveTest do
     do: stub(Servers.ContextMock, :fetch_ansible_playbook_runs, fn ^auth -> runs end)
 
   # The tracker presence list is read once, on the connected mount only.
-  defp stub_tracking(entries),
-    do: expect(TrackerClientMock, :list, 1, fn "ansible-queue" -> entries end)
+  defp stub_tracking(entries) do
+    ansible_queue_topic = Scope.global_topic("ansible-queue")
+    expect(TrackerClientMock, :list, 1, fn ^ansible_queue_topic -> entries end)
+  end
 
   defp run_rows(html) do
     html

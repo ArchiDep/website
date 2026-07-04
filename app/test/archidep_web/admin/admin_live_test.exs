@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
   import Hammox
   alias ArchiDep.Course
+  alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
@@ -547,7 +548,8 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   defp expect_connected_mount(all_servers, state_map, ansible_entries) do
     sorted = Enum.sort_by(all_servers, & &1.id)
 
-    expect(TrackerClientMock, :list, 1, fn "ansible-queue" -> ansible_entries end)
+    ansible_queue_topic = Scope.global_topic("ansible-queue")
+    expect(TrackerClientMock, :list, 1, fn ^ansible_queue_topic -> ansible_entries end)
 
     expect(ServerTrackerClientMock, :start_link, 1, fn servers ->
       assert Enum.sort_by(servers, & &1.id) == sorted

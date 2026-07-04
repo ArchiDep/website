@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
   import ArchiDepWeb.Admin.Ansible.AnsibleComponents
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Clock
+  alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias ArchiDep.TrackerClient
@@ -19,9 +20,10 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
     tracked_playbooks =
       if connected?(socket) do
         set_process_label(__MODULE__, auth)
-        :ok = PubSub.subscribe(@pubsub, "tracker:ansible-queue")
+        :ok = PubSub.subscribe(@pubsub, "tracker:" <> Scope.global_topic("ansible-queue"))
 
         "ansible-queue"
+        |> Scope.global_topic()
         |> TrackerClient.list()
         |> Enum.reduce(%{}, fn
           {"playbook:" <> run_id, %{type: :playbook} = meta}, acc -> Map.put(acc, run_id, meta)

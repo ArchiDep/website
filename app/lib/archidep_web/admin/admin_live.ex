@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -51,13 +52,14 @@ defmodule ArchiDepWeb.Admin.AdminLive do
         set_process_label(__MODULE__, auth)
 
         :ok = Course.PubSub.subscribe_classes()
-        :ok = PubSub.subscribe(@pubsub, "tracker:ansible-queue")
+        :ok = PubSub.subscribe(@pubsub, "tracker:" <> Scope.global_topic("ansible-queue"))
 
         for class <- active_classes do
           :ok = Servers.PubSub.subscribe_server_group_servers(class.id)
         end
 
         "ansible-queue"
+        |> Scope.global_topic()
         |> TrackerClient.list()
         |> Enum.reduce(%{demand: 0, pending: 0, ongoing: MapSet.new()}, fn
           {"queue:" <> _queue, %{demand: demand, pending: pending}}, acc ->
