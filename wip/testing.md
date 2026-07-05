@@ -124,7 +124,7 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Schema query and count functions](#schema-query-and-count-functions)
   - [x] [Pure helpers and no-op handlers](#pure-helpers-and-no-op-handlers)
   - [x] [Health controller](#health-controller)
-  - [ ] [Web and form small units](#web-and-form-small-units)
+  - [x] [Web and form small units](#web-and-form-small-units)
 - **9. Finalize coverage policy (do this last)**
   - [ ] [Review remaining uncovered code](#review-remaining-uncovered-code)
   - [ ] [Lock the global threshold](#lock-the-global-threshold)
@@ -2898,11 +2898,10 @@ scattered `{:error, %Changeset{}}` form-error-merge branches plus the "event for
 another resource → list unchanged" reducers across the dialogs and list
 LiveViews. **Excludes** the `refresh!`-driven reducers deferred to DDD.
 
-_Done (partial — mechanical subset):_ the no-extraction slice landed and the
-extraction/seam-requiring items are deferred to a follow-up (box left
-unchecked). Landed: the `student_import_list` username-collision `Stream.scan`
-**numbered suffix** branches — the previously-uncovered fallthrough once every
-derived candidate is taken, added deterministically for both the dotted-email
+_Done (mechanical subset):_ the no-extraction slice landed. Landed: the
+`student_import_list` username-collision `Stream.scan` **numbered suffix**
+branches — the previously-uncovered fallthrough once every derived candidate is
+taken, added deterministically for both the dotted-email
 (`jde`→`jdo`→`jde1`→`jde2`) and single-name (`ale`→`alc`→`ali`→`ale1`→`ale2`)
 paths (the earlier candidates and the random fallback were already covered). The
 rest of the mechanical subset was found **already covered** by earlier chunks,
@@ -2911,13 +2910,30 @@ so no redundant tests were added: `ansible/context.digest_ansible_variables/1`
 `DialogHelpers.validate_dialog_form/4` `{:error, %Changeset{}}` merge (in
 `dialog_helpers_test.exs`), and the "unrelated event → list unchanged" reducers
 (`classes_live` class-deleted keeps the other class; `my_servers_live` "ignores
-a created server I do not own"). **Deferred to a follow-up** (need extraction or
-a new mock seam, per the agreed scope): `server_form_component`'s private
+a created server I do not own").
+
+_Done (extraction/seam follow-up):_ the three deferred items landed, each with
+its production change flagged for review. (1) `server_form_component`'s private
 `process_boolean`/`process_integer`/`process_ip_address`/`display_ip_address`
-(make public or lift to a pure module); `import_students_dialog_live`'s inline &
-duplicated CSV parsing + email/name column detection (extract the detection +
-CSV-shape logic into pure functions); and `ansible/context`'s `gather_facts/2` /
-`run_playbook/3` (no `Runner`/`Tracker` behaviour seam exists yet). The
+were moved verbatim (made public) into `ArchiDepWeb.Helpers.FormHelpers` — the
+documented home for form param coercion — and unit-tested exhaustively in
+`form_helpers_test.exs` (`FormHelpers` now 100%). (2)
+`import_students_dialog_live`'s CSV-shape decode and email/name column-detection
+heuristic — the latter **duplicated verbatim in two places** — were extracted
+into a pure `ImportStudentsCsv` module (decode folded to a single `flat_map`
+pass, no dead branches) called from **one** site, covered exhaustively in
+`import_students_csv_test.exs` (100%); the live upload plumbing
+(`handle_event("upload")` → `consume_uploaded_students`) is covered by the
+repo's **first `render_upload` test** in `class_live_test.exs`. (3)
+`ansible/context`'s `gather_facts/2` and `run_playbook/3` are covered in
+`context_test.exs` behind a **single new `RunnerClient` Hammox seam** (behaviour
+and client and config and mock; `Runner` gains `@behaviour`/`@impl`):
+`gather_facts/2` mocks the runner and pins the extracted host/port/user
+(including the `ssh_port || 22` default); `run_playbook/3` mocks only the runner
+(the external shell-out) and lets the real `Tracker` run under `DataCase`,
+asserting the yielded stream elements, the persisted event/run rows and the
+`assert_row_count_diff` — **no `Tracker` seam was added** since `Tracker` is
+plain DB code, not a process/shell boundary (`context.ex` ~57%→96%). The
 `refresh!`-driven `{:class_updated}`/server reducers remain excluded per the DDD
 plan.
 

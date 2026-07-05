@@ -82,6 +82,13 @@ Hammox.defmock(ArchiDep.Servers.Ansible.Mock,
   """
 )
 
+Hammox.defmock(ArchiDep.Servers.Ansible.RunnerClientMock,
+  for: ArchiDep.Servers.Ansible.RunnerClientBehaviour,
+  moduledoc: """
+  Mock of the client API used to gather facts and run playbooks through Ansible.
+  """
+)
+
 Hammox.defmock(ArchiDep.Cmd.Mock,
   for: ArchiDep.Cmd.Behaviour,
   moduledoc: """

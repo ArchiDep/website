@@ -7,7 +7,7 @@ defmodule ArchiDep.Servers.Ansible.Context do
 
   alias ArchiDep.Servers.Ansible
   alias ArchiDep.Servers.Ansible.PlaybooksRegistry
-  alias ArchiDep.Servers.Ansible.Runner
+  alias ArchiDep.Servers.Ansible.RunnerClient
   alias ArchiDep.Servers.Ansible.Tracker
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   require Logger
@@ -16,7 +16,7 @@ defmodule ArchiDep.Servers.Ansible.Context do
   def gather_facts(server, ansible_user) do
     ansible_host = server.ip_address.address
     ansible_port = server.ssh_port || 22
-    Runner.gather_facts(ansible_host, ansible_port, ansible_user)
+    RunnerClient.gather_facts(ansible_host, ansible_port, ansible_user)
   end
 
   @impl Ansible.Behaviour
@@ -36,7 +36,7 @@ defmodule ArchiDep.Servers.Ansible.Context do
 
     playbook_run.playbook
     |> playbook_path()
-    |> Runner.run_playbook(
+    |> RunnerClient.run_playbook(
       ansible_host,
       ansible_port,
       ansible_user,

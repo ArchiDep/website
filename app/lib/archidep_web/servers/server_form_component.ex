@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
   import ArchiDepWeb.Components.FormComponents
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDepWeb.Helpers.FormHelpers
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
@@ -133,7 +134,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             current_value={@form[:active].value}
             old_value={@server.active}
             new_value={@changed_server.active}
-            process_value={&process_boolean/1}
+            process_value={&FormHelpers.process_boolean/1}
           >
             <:value_display :let={value}>
               <%= if value do %>
@@ -169,8 +170,8 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             current_value={@form[:ip_address].value}
             old_value={@server.ip_address.address}
             new_value={@changed_server.ip_address.address}
-            process_value={&process_ip_address/1}
-            display_value={&display_ip_address/1}
+            process_value={&FormHelpers.process_ip_address/1}
+            display_value={&FormHelpers.display_ip_address/1}
           />
           <.errors_for field={@form[:ip_address]} />
         <% end %>
@@ -252,7 +253,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
             current_value={@form[:ssh_port].value || 22}
             old_value={@server.ssh_port || 22}
             new_value={@changed_server.ssh_port || 22}
-            process_value={&process_integer/1}
+            process_value={&FormHelpers.process_integer/1}
           />
           <.errors_for field={@form[:ssh_port]} />
         <% end %>
@@ -734,29 +735,6 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
     </.form>
     """
   end
-
-  defp process_boolean(value) when is_boolean(value), do: {:ok, value}
-  defp process_boolean("true"), do: {:ok, true}
-  defp process_boolean("false"), do: {:ok, false}
-  defp process_boolean(_value), do: :error
-
-  defp process_integer(value) when is_integer(value), do: {:ok, value}
-
-  defp process_integer(value) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, ""} -> {:ok, int}
-      _anything_else -> :error
-    end
-  end
-
-  defp process_integer(_value), do: :error
-
-  defp process_ip_address(value) when is_binary(value),
-    do: value |> to_charlist() |> :inet.parse_address()
-
-  defp process_ip_address(_value), do: :error
-
-  defp display_ip_address(addr) when is_tuple(addr), do: addr |> :inet.ntoa() |> to_string()
 
   defp expected_placeholder(nil, _field, default), do: default
 

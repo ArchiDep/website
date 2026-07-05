@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDepWeb.Admin.Classes.ImportStudentsCsv
   alias ArchiDepWeb.Admin.Classes.ImportStudentsForm
   alias ArchiDepWeb.Endpoint
   alias Phoenix.HTML.Form
@@ -87,56 +88,12 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
 
     with true <- File.exists?(file),
          {:ok, %{columns: columns, students: students}} <- parse_students_csv(file) do
-      email_column_candidate =
-        columns
-        |> Enum.map(fn col ->
-          {col,
-           Enum.count(students, fn student ->
-             student |> Map.get(col, "") |> String.contains?("@")
-           end)}
-        end)
-        |> Enum.sort_by(fn {_col, count} -> -count end)
-        |> Enum.map(&elem(&1, 0))
-        |> Enum.at(0)
-
-      name_column_candidate =
-        Enum.at(columns, if(email_column_candidate == List.first(columns), do: 1, else: 0))
-
-      import_changeset =
-        ImportStudentsForm.changeset(
-          %{
-            name_column: name_column_candidate,
-            email_column: email_column_candidate
-          },
-          students
-        )
-
-      form =
-        to_form(
-          import_changeset,
-          action: :validate,
-          as: :import_students
-        )
-
       existing_students = Course.list_students(assigns.auth, assigns.class)
 
       socket
       |> assign(assigns)
-      |> assign(
-        state: :uploaded,
-        columns: columns,
-        students: students,
-        new_students:
-          if(import_changeset.valid?,
-            do:
-              students
-              |> Enum.filter(&(!student_exists?(form, &1, existing_students)))
-              |> length(),
-            else: 0
-          ),
-        form: form,
-        existing_students: existing_students
-      )
+      |> assign(uploaded_assigns(columns, students, existing_students))
+      |> assign(:existing_students, existing_students)
       |> ok()
     else
       _anything_else ->
@@ -238,51 +195,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
           assign(socket, :state, :invalid_upload)
 
         {:ok, %{columns: columns, students: students}} ->
-          email_column_candidate =
-            columns
-            |> Enum.map(fn col ->
-              {col,
-               Enum.count(students, fn student ->
-                 student |> Map.get(col, "") |> String.contains?("@")
-               end)}
-            end)
-            |> Enum.sort_by(fn {_col, count} -> -count end)
-            |> Enum.map(&elem(&1, 0))
-            |> Enum.at(0)
-
-          name_column_candidate =
-            Enum.at(columns, if(email_column_candidate == List.first(columns), do: 1, else: 0))
-
-          import_changeset =
-            ImportStudentsForm.changeset(
-              %{
-                name_column: name_column_candidate,
-                email_column: email_column_candidate
-              },
-              students
-            )
-
-          form =
-            to_form(
-              import_changeset,
-              action: :validate,
-              as: :import_students
-            )
-
-          assign(socket,
-            state: :uploaded,
-            students: students,
-            new_students:
-              if(import_changeset.valid?,
-                do:
-                  students
-                  |> Enum.filter(&(!student_exists?(form, &1, existing_students)))
-                  |> length(),
-                else: 0
-              ),
-            columns: columns,
-            form: form
-          )
+          assign(socket, uploaded_assigns(columns, students, existing_students))
       end
 
     noreply(new_socket)
@@ -348,6 +261,36 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     end
   end
 
+  defp uploaded_assigns(columns, students, existing_students) do
+    %{email_column: email_column, name_column: name_column} =
+      ImportStudentsCsv.detect_columns(columns, students)
+
+    import_changeset =
+      ImportStudentsForm.changeset(
+        %{name_column: name_column, email_column: email_column},
+        students
+      )
+
+    form = to_form(import_changeset, action: :validate, as: :import_students)
+
+    new_students =
+      if import_changeset.valid? do
+        students
+        |> Enum.filter(&(!student_exists?(form, &1, existing_students)))
+        |> length()
+      else
+        0
+      end
+
+    [
+      state: :uploaded,
+      columns: columns,
+      students: students,
+      new_students: new_students,
+      form: form
+    ]
+  end
+
   defp uploaded_students_file(%Class{id: class_id}),
     do: Path.join([uploads_directory(), "students", "classes", class_id, "import-students.csv"])
 
@@ -360,58 +303,17 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
       |> List.first()
 
   defp parse_students_csv(path, dest \\ nil) do
-    headers =
-      path
-      |> File.stream!()
-      |> CSV.decode(
-        field_transform: &String.trim/1,
-        headers: false
-      )
-      |> Enum.filter(fn
-        {:ok, _row} -> true
-        _anything_else -> false
-      end)
-      |> Enum.reduce([], fn
-        {:ok, row}, acc -> [row | acc]
-        _value, acc -> acc
-      end)
-      |> Enum.reverse()
-      |> Enum.take(1)
-      |> Enum.flat_map(&Function.identity/1)
-      |> Enum.filter(fn col -> col != "" end)
-
-    students =
-      path
-      |> File.stream!()
-      |> CSV.decode(
-        field_transform: &String.trim/1,
-        headers: true
-      )
-      |> Enum.filter(fn
-        {:ok, _row} -> true
-        _not_a_row -> false
-      end)
-      |> Enum.reduce([], fn
-        {:ok, row}, acc -> [Map.filter(row, fn {key, _val} -> key != "" end) | acc]
-        _not_a_row, acc -> acc
-      end)
-      |> Enum.reverse()
-      |> Enum.to_list()
-
-    cond do
-      length(headers) < 2 ->
-        {:error, :not_enough_columns}
-
-      students == [] ->
-        {:error, :no_valid_rows}
-
-      true ->
+    case path |> File.stream!() |> ImportStudentsCsv.decode_students_csv() do
+      {:ok, _decoded} = ok ->
         if dest do
           File.mkdir_p!(Path.dirname(dest))
           File.cp!(path, dest)
         end
 
-        {:ok, %{columns: headers, students: students}}
+        ok
+
+      {:error, _reason} = error ->
+        error
     end
   end
 

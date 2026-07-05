@@ -4,6 +4,8 @@ defmodule ArchiDep.Servers.Ansible.Runner do
   playbooks on remote servers using the Ansible command line interface.
   """
 
+  @behaviour ArchiDep.Servers.Ansible.RunnerClientBehaviour
+
   import ArchiDep.Helpers.NetHelpers, only: [is_ip_address: 1, is_network_port: 1]
   alias ArchiDep.Cmd
   alias ArchiDep.Servers.SSH
@@ -18,6 +20,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
   @type ansible_playbook_event_data :: %{String.t() => term()}
   @type ansible_playbook_run_element :: {:event, ansible_playbook_event_data()} | {:exit, term()}
 
+  @impl ArchiDep.Servers.Ansible.RunnerClientBehaviour
   @spec gather_facts(ansible_host(), ansible_port(), ansible_user()) ::
           {:ok, %{String.t() => term()}}
           | {:error, :unreachable}
@@ -127,6 +130,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
     {:error, :unknown}
   end
 
+  @impl ArchiDep.Servers.Ansible.RunnerClientBehaviour
   @spec run_playbook(
           String.t(),
           ansible_host(),

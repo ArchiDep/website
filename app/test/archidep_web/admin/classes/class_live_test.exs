@@ -1184,6 +1184,41 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
         gettext("{count, plural, =1 {1 student} other {# students}} imported", count: 2)
       )
     end
+
+    test "upload a CSV file through the live file upload", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+      # No file is written to disk: the dialog starts in its waiting-for-upload
+      # state, so the upload must go through the live file-upload machinery.
+      clean_up_import_csv(class)
+      stub_class_page_calls(auth, class: class, server_group: server_group, students: [])
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      upload =
+        file_input(view, "#upload-form", :students, [
+          %{
+            name: "students.csv",
+            type: "text/csv",
+            content: "Name,Email\nAlice,alice@example.org\nBob,bob@example.org\n"
+          }
+        ])
+
+      render_upload(upload, "students.csv")
+      html = view |> element("#upload-form") |> render_submit()
+
+      # The uploaded CSV is parsed, its columns auto-detected, and every row
+      # shown for confirmation. The domain is still blank (a required field), so
+      # the form is invalid and each row is classified as such.
+      assert uploaded_dialog(html) == %{
+               name_column: "Name",
+               email_column: "Email",
+               columns: ["Name", "Email"],
+               rows: [
+                 %{cells: ["Alice", "alice@example.org"], state: gettext("invalid")},
+                 %{cells: ["Bob", "bob@example.org"], state: gettext("invalid")}
+               ]
+             }
+    end
   end
 
   test "accessing the class page redirects to the login page without authentication", %{
@@ -1393,6 +1428,16 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     :ok
   end
 
+  # Removes any leftover import directory for the class before an upload test and
+  # again after it, so the dialog starts from its waiting-for-upload state and
+  # the file the live upload persists does not leak between tests.
+  defp clean_up_import_csv(class) do
+    dir = Path.join([uploads_directory(), "students", "classes", class.id])
+    File.rm_rf!(dir)
+    on_exit(fn -> File.rm_rf!(dir) end)
+    :ok
+  end
+
   defp import_csv_path(class),
     do: Path.join([uploads_directory(), "students", "classes", class.id, "import-students.csv"])
 
@@ -1419,5 +1464,40 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       |> Enum.map(fn row ->
         [badge] = find_html_elements(row, "td:last-child .badge")
         html_element_text(badge)
+      end)
+
+  # Projects the whole uploaded-state dialog: the two auto-detected column
+  # selections, the confirmation table's columns, and every parsed row (its
+  # cells and per-row state badge).
+  defp uploaded_dialog(html),
+    do: %{
+      name_column: selected_import_column(html, :name_column),
+      email_column: selected_import_column(html, :email_column),
+      columns: import_columns(html),
+      rows: import_rows(html)
+    }
+
+  defp selected_import_column(html, field) do
+    [option] =
+      find_html_elements(
+        html,
+        ~s(#import-students select[name="import_students[#{field}]"] option[selected])
+      )
+
+    html_element_text(option)
+  end
+
+  defp import_rows(html),
+    do:
+      html
+      |> find_html_elements("#import-students-dialog tbody tr")
+      |> Enum.map(fn row ->
+        {data_cells, [state_cell]} = row |> find_html_elements("td") |> Enum.split(-1)
+        [badge] = find_html_elements(state_cell, ".badge")
+
+        %{
+          cells: Enum.map(data_cells, &html_element_text/1),
+          state: html_element_text(badge)
+        }
       end)
 end
