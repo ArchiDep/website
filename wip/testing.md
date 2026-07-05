@@ -2831,9 +2831,24 @@ the codebase's `%Socket{}`-return style). **Production change flagged for
 review:** `release.ex`'s private `shell_escape/1`/`format_stream/1`/
 `format_maybe_empty_stream/1` were lifted verbatim into a new pure module
 `ArchiDep.Release.Shell` (behaviour-preserving) so the pure slice is
-unit-testable directly (`release/shell_test.exs`); `release.ex`'s command/boot
-functions stay uncovered as documented under [Deliberately not in this
-group](#deliberately-not-in-this-group).
+unit-testable directly (`release/shell_test.exs`); `release.ex`'s migrate/
+rollback/boot functions stay uncovered as documented under [Deliberately not in
+this group](#deliberately-not-in-this-group).
+
+_Follow-up — `release.ex ssh_student/3` covered:_ `release_test.exs` drives the
+whole function through `DataCase`. Its SSH command runs against the server's
+globally-registered `ServerConnection` process, so the test stands a
+`Support.GenServerProxy` in for that per-server global name and runs
+`ssh_student/3` in a `Task` (it blocks on the `run_command` GenServer call) while
+the test process intercepts the call, asserts the escaped command and timeout,
+and replies — covering the happy path (the `stdout`/`stderr` byte-count summary,
+with output captured via `ExUnit.CaptureIO.with_io/1`), the `run_command` error
+passthrough, and the `student_not_found` / `server_not_found` short-circuits.
+**Production change flagged for review (recurring clock gap):** `ssh_student/3`
+read `DateTime.utc_now/0` directly for its active-student/active-server window
+queries; it now takes the instant from `ArchiDep.Clock.now/0` (matching the canon
+every prior chunk applied), so the test pins `@now` via the `Clock.Mock` stub
+rather than depending on wall-clock time.
 
 ### Health controller
 
@@ -2919,9 +2934,10 @@ stated reason:
   first, then covered.
 - **`helpers/context_helpers.ex`** (the context DSL macros) — removed by the DDD
   refactor.
-- **`release.ex` migrate/rollback/ssh_student, boot/declarative modules**
-  (`router.ex`, `endpoint.ex`, `application.ex`, `telemetry.ex`, `prom_ex.ex`,
-  `git.ex`, mix recompile hooks) — may get thin exercising tests later.
+- **`release.ex` migrate/rollback, boot/declarative modules** (`router.ex`,
+  `endpoint.ex`, `application.ex`, `telemetry.ex`, `prom_ex.ex`, `git.ex`, mix
+  recompile hooks) — may get thin exercising tests later. (`ssh_student/3` is now
+  covered — see the note below.)
 - **Runtime-process error/`terminate` branches** — disproportionate ceremony to
   force; happy paths already covered in phase 6.
 - **Every `refresh!/2`** — reshaped by the

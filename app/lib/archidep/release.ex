@@ -3,6 +3,7 @@ defmodule ArchiDep.Release do
   Used for executing release tasks in production without Mix installed.
   """
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Release.Shell
   alias ArchiDep.Servers.Schemas.Server
@@ -28,7 +29,7 @@ defmodule ArchiDep.Release do
   end
 
   def ssh_student(student_name, command, opts) do
-    now = DateTime.utc_now()
+    now = Clock.now()
     timeout = Keyword.get(opts, :timeout, 30_000)
 
     with {:ok, student} <- Student.find_active_registered_student_by_name(student_name, now),
