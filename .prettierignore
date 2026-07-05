@@ -6,6 +6,7 @@
 /app/deps
 /app/priv/static
 /app/priv/uploads
+/app/tmp
 /course/**/*.html
 /course/Gemfile
 /course/.jekyll-cache
