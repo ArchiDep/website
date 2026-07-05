@@ -6,4 +6,5 @@ check:
 	pushd app && \
 	mix check && \
 	popd && \
-	npm run format
+	npm run format && \
+	npm run lint:md
