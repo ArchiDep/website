@@ -12,6 +12,7 @@ defmodule ArchiDep.Course.DeleteStudentTest do
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Course.UseCases.DeleteStudent
   alias ArchiDep.Errors.UnauthorizedError
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
@@ -84,6 +85,20 @@ defmodule ArchiDep.Course.DeleteStudentTest do
     # also gets :student_not_found rather than an authorization error.
     non_root = Factory.build(:authentication, root: false)
     assert delete_student.(non_root, Ecto.UUID.generate()) == {:error, :student_not_found}
+
+    assert_no_row_count_diff(previous_counts)
+    assert_no_stored_events!()
+  end
+
+  test "a malformed student ID is reported as not found" do
+    previous_counts = count_rows(@affected_tables)
+
+    # The `delete_student/2` typespec requires a UUID, so the `Hammox`-protected
+    # wrapper would reject a malformed string before the use case runs. This
+    # exercises the use case's own defensive `validate_uuid` guard, so it calls
+    # the implementation directly.
+    auth = Factory.build(:authentication, root: true)
+    assert DeleteStudent.delete_student(auth, "not-a-uuid") == {:error, :student_not_found}
 
     assert_no_row_count_diff(previous_counts)
     assert_no_stored_events!()

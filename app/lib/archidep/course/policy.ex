@@ -19,12 +19,12 @@ defmodule ArchiDep.Course.Policy do
       ),
       do: true
 
-  # Any user can fetch their authenticated student.
+  # A user can only fetch the student that is their own account's.
   def authorize(
         :course,
         :fetch_authenticated_student,
-        %Authentication{},
-        _params
+        %Authentication{principal_id: principal_id, root: false},
+        %Student{user_id: principal_id}
       ),
       do: true
 

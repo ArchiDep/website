@@ -134,11 +134,8 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
 
       assert {:ok, members} = list_server_group_members.(auth, class.id)
 
-      # `list_members_in_server_group/1` does not order, so compare as sets.
-      assert Enum.sort_by(members, & &1.id) ==
-               class.id
-               |> ServerGroupMember.list_members_in_server_group()
-               |> Enum.sort_by(& &1.id)
+      # The use case returns the ordered schema query verbatim.
+      assert members == ServerGroupMember.list_members_in_server_group(class.id)
 
       assert_no_stored_events!()
     end

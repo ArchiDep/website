@@ -107,6 +107,34 @@ defmodule ArchiDep.Accounts.SessionsTest do
       assert fetch_active_sessions.(authentication_for(account)) == []
       assert_no_stored_events!()
     end
+
+    test "returns the active sessions of a non-root user", %{
+      fetch_active_sessions: fetch_active_sessions
+    } do
+      {account, _student} = register_active_student(@now)
+
+      session =
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, created_at: DateTime.add(@now, -1, :hour))
+        )
+
+      # The query preloads the account with its (empty) Switch edu-ID and its
+      # preregistered user, which a student account has; reload from the
+      # database (the factory struct already holds the associations as
+      # unloaded-nil, which `preload` would not replace) and load them to match.
+      expected_account =
+        account |> Repo.reload!() |> Repo.preload([:preregistered_user, :switch_edu_id])
+
+      previous_counts = count_rows(@affected_tables)
+
+      assert fetch_active_sessions.(authentication_for(account)) == [
+               active_session(session, expected_account)
+             ]
+
+      assert_no_row_count_diff(previous_counts)
+      assert_no_stored_events!()
+    end
   end
 
   describe "validate_session_token/2" do

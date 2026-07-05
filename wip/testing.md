@@ -119,9 +119,9 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Ansible format compatibility against a real target](#ansible-format-compatibility-against-a-real-target)
 - **8. Coverage backfill — remaining testable gaps**
   - [x] [Config layer](#config-layer)
-  - [ ] [Business use case branch coverage](#business-use-case-branch-coverage)
+  - [x] [Business use case branch coverage](#business-use-case-branch-coverage)
   - [x] [Event serialization variant branches](#event-serialization-variant-branches)
-  - [ ] [Schema query and count functions](#schema-query-and-count-functions)
+  - [x] [Schema query and count functions](#schema-query-and-count-functions)
   - [ ] [Pure helpers and no-op handlers](#pure-helpers-and-no-op-handlers)
   - [ ] [Health controller](#health-controller)
   - [ ] [Web and form small units](#web-and-form-small-units)
@@ -2675,6 +2675,46 @@ each uncovered clause, first trace which use case reaches it and add the missing
 use-case test (which is the more valuable coverage); add a direct `Policy` unit
 test only for a clause genuinely reachable only at the policy layer.
 
+_Done:_ `read_ansible.ex` is now covered end to end by `read_ansible_test.exs`
+(the three reads driven through the `Hammox.protect`ed `Context`, mirroring
+`read_servers_test.exs`): the root list/fetch happy paths with the shallow and
+deep server preloads pinned, the non-root `authorize!` denial
+(`UnauthorizedError`), the unknown-id not-found, and the masked non-root
+access-denied. Both `servers/policy.ex` and `accounts/policy.ex` reached 100% by
+adding the missing **use-case** tests with non-root callers rather than direct
+policy units: a group-member `validate_server` / `validate_existing_server` /
+binary-id `update_server` (the last two closing the previously test-less
+`validate_existing_server/3`), non-root `retry_connecting` /
+`retry_checking_open_ports`, and a non-root `fetch_active_sessions` (whose
+student account needs its preregistered user preloaded on the expected value —
+`Repo.reload!` then `Repo.preload`, since the factory struct holds the
+association as unloaded-nil that `preload` would not replace). The remaining
+masked/not-found gaps were filled: `validate_server`'s unknown-group branch,
+`validate_student_config`'s `:student_not_found` / `:not_a_user`,
+`fetch_active_server_for_group_member`'s `:multiple_servers_found`, and
+`delete_student`'s malformed-UUID guard (called on the implementation module
+directly, since the `Hammox`-protected facade types the id as `UUID.t()` and
+would reject the string — the established convention, as in `delete_server` and
+`fetch_events`). The `import_students` and binary-id `update_server` else
+branches were already covered, so no work there. _Authorization tightened (flag
+for review):_ `fetch_authenticated_student/1`'s `authorize` was a rubber stamp —
+the `Course.Policy` `:fetch_authenticated_student` clause returned `true` for
+any `%Authentication{}`. It now matches the principal to the student
+(`%Authentication{principal_id: id, root: false}` with `%Student{user_id: id}`),
+so the policy states "a user can only fetch their own student" explicitly.
+Because the sole caller fetches the student by the principal's own id
+(`fetch_student_for_user_account_id/1` joins on `u.id == principal_id` and
+`s.user_id == u.id`), the match is guaranteed, so the use case handles only the
+`:student_not_found` → `:not_a_student` case and deliberately has **no**
+`{:access_denied, …}` else clause: were the match ever to fail, the `with` would
+raise a `WithClauseError` ("let it crash") rather than silently masking a
+changed invariant. The policy's positive path is covered by the existing
+happy-path use-case test. `read_ansible`'s own `validate_uuid` malformed branch
+is likewise unreachable through the typed facade and is left as a defensive
+guard (no direct call added, since a `fetch_events`-style direct test would be
+the only way and the branch is a deliberate belt-and-braces guard, not a masked
+path worth pinning).
+
 ### Event serialization variant branches
 
 _Scope:_ the single uncovered branch in each of ~13 event modules — the `nil ->`
@@ -2723,13 +2763,38 @@ as `student_factory` but from an independent sequence, so the two collided
 whenever the counters coincided — adding a student-inserting test flipped the
 parity and surfaced a spurious `username: ["has already been taken"]` in the
 pre-existing email-uniqueness test; `student_data_factory` now uses a distinct
-`"student-data-#{n}"` format. _Still to do:_ the deep-preload reads —
-`Server.find_active_server_for_group_member/2` (note: already takes `now`, so
-the overview's clock-gap step does not apply),
-`Student.find_active_registered_student_by_name/2`, and the `fetch_*` reads on
-`ServerOwner` / `ServerGroup` / `ServerGroupMember` — deferred as a focused
-follow-up since they need exact whole-struct equality over their preload trees;
-box stays unchecked until they land.
+`"student-data-#{n}"` format.
+
+_Done:_ the deep-preload reads landed, closing the box. Each asserts the whole
+returned struct/tuple by `==` with every preload pinned, and the not-found /
+multiple-match tuples by `==` (multiple-match id/name lists sorted, since the
+queries apply no `ORDER BY`). `Server.find_active_server_for_group_member/2`
+(server*test.exs) covers the active single match, the in-memory `active?/2`
+rejection (an inactive group passes the SQL `where` but fails the window), the
+empty case, and the multiple-servers case; expected values reuse
+`insert_server`'s fully-loaded read (its preload tree equals the function's).
+`Student.find_active_registered_student_by_name/2` (student_test.exs) covers the
+case-insensitive substring match plus one negative per active-window conjunct
+(inactive account / inactive student / inactive class / ended window / not-yet-
+started window) and the multiple-match case, via a local `register_student/1`
+that pins the class dates and exposes the account's active flag (which
+`register_active_student/2` does not). The three previously untested schemas got
+new files — `server_owner_test.exs` (`fetch_authenticated/1` for a group-member
+owner, a root owner whose group member is nil, and the raising miss;
+`fetch_server_owner/1` found/not-found), `server_group_test.exs`
+(`fetch_server_group/1` found/not-found), and `server_group_member_test.exs`
+(`list_members_in_server_group/1`, `fetch_server_group_member/1`,
+`fetch_server_group_member_for_user_account_id/1`) — each building the expected
+struct by re-reading the row and preloading its tree (the `listed_server_view/1`
+oracle pattern from `read_server_groups_test.exs`). No clock gap: every function
+in scope already takes the instant. The excluded `refresh!/2` tails and
+`ServerOwner`'s count-mutation changesets stay for the DDD plan. \_Follow-up:*
+`list_members_in_server_group/1` gained an `order_by: m.name` (matching the
+parallel `Student.list_students_in_class/1`), so both its schema test and the
+`list_server_group_members/2` use-case test in `read_server_groups_test.exs`
+assert the ordered list directly instead of sorting both sides — the query has a
+single caller with no web consumer yet, so the ordering changes no observable
+behaviour.
 
 ### Pure helpers and no-op handlers
 

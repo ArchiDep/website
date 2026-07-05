@@ -287,6 +287,40 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
 
       assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
     end
+
+    test "an authenticated user without an account cannot validate a student config", %{
+      validate_student_config: validate_student_config
+    } do
+      {student, _account, _auth} = register_student(username_confirmed: false)
+      baseline = persisted_student(student.id)
+
+      broadcasts = subscribe_student_broadcasts(student)
+
+      # A principal that matches no `user_accounts` row is reported as not-found
+      # rather than leaking that the student exists.
+      stranger = Factory.build(:authentication, root: false)
+
+      previous_counts = count_rows(@affected_tables)
+
+      assert validate_student_config.(stranger, student.id, %{username: "ghost"}) ==
+               {:error, :student_not_found}
+
+      assert_configure_had_no_effect(baseline, broadcasts, previous_counts)
+    end
+
+    test "validating a student that does not exist returns not found", %{
+      validate_student_config: validate_student_config
+    } do
+      {_student, _account, auth} = register_student()
+
+      previous_counts = count_rows(@affected_tables)
+
+      assert validate_student_config.(auth, Ecto.UUID.generate(), %{username: "nobody"}) ==
+               {:error, :student_not_found}
+
+      assert_no_row_count_diff(previous_counts)
+      assert_no_stored_events!()
+    end
   end
 
   # Asserts the return value exactly: the original student with only `username`

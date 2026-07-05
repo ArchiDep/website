@@ -352,6 +352,33 @@ defmodule ArchiDep.Servers.CreateServerTest do
 
       assert_no_side_effects(new_servers, previous_counts)
     end
+
+    test "an unknown group is reported as not-found", %{validate_server: validate_server} do
+      {auth, _group} = root_group()
+
+      previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
+
+      assert validate_server.(auth, Ecto.UUID.generate(), ServersFactory.random_server_data()) ==
+               {:error, :server_group_not_found}
+
+      assert_no_side_effects(new_servers, previous_counts)
+    end
+
+    test "a non-root group member with servers enabled gets a changeset", %{
+      validate_server: validate_server
+    } do
+      %{auth: auth, class: class} = ServersTestHelpers.register_group_member(@past)
+      data = ServersFactory.random_server_data()
+
+      previous_counts = count_rows(@affected_tables)
+      new_servers = subscribe_new_servers()
+
+      assert {:ok, %Changeset{} = changeset} = validate_server.(auth, class.id, data)
+      assert errors_on(changeset) == %{}
+
+      assert_no_side_effects(new_servers, previous_counts)
+    end
   end
 
   defp root_group do

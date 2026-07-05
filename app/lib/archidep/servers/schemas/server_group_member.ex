@@ -57,6 +57,7 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
           left_join: ogm in assoc(o, :group_member),
           left_join: ogmg in assoc(ogm, :group),
           where: g.id == ^group_id,
+          order_by: m.name,
           preload: [group: g, owner: {o, group_member: {ogm, group: ogmg}}]
         )
       )

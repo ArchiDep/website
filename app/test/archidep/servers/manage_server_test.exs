@@ -29,6 +29,17 @@ defmodule ArchiDep.Servers.ManageServerTest do
       assert_no_side_effects(previous_counts)
     end
 
+    test "a non-root owner retries connecting to their own server" do
+      {auth, server} = group_member_owner_and_server()
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServerManagerClientMock, :retry_connecting, fn ^server -> :ok end)
+
+      assert ManageServer.retry_connecting(auth, server.id) == :ok
+
+      assert_no_side_effects(previous_counts)
+    end
+
     test "rejects a malformed server ID" do
       {auth, _server} = root_owner_and_server()
       previous_counts = count_rows(@affected_tables)
@@ -132,6 +143,17 @@ defmodule ArchiDep.Servers.ManageServerTest do
       assert_no_side_effects(previous_counts)
     end
 
+    test "a non-root owner retries checking open ports on their own server" do
+      {auth, server} = group_member_owner_and_server()
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServerManagerClientMock, :retry_checking_open_ports, fn ^server -> :ok end)
+
+      assert ManageServer.retry_checking_open_ports(auth, server.id) == :ok
+
+      assert_no_side_effects(previous_counts)
+    end
+
     test "passes through a server-not-connected error" do
       {auth, server} = root_owner_and_server()
       previous_counts = count_rows(@affected_tables)
@@ -185,6 +207,12 @@ defmodule ArchiDep.Servers.ManageServerTest do
     {auth, account} = ServersTestHelpers.register_root(@past)
     group = CourseFactory.insert(:class, now: @past)
     server = ServersTestHelpers.insert_server(account.id, group.id, active: true)
+    {auth, server}
+  end
+
+  defp group_member_owner_and_server do
+    %{auth: auth, owner: owner, class: class} = ServersTestHelpers.register_group_member(@past)
+    server = ServersTestHelpers.insert_server(owner.id, class.id, active: true)
     {auth, server}
   end
 

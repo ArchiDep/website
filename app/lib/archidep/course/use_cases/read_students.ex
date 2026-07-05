@@ -23,9 +23,6 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
     else
       {:error, :student_not_found} ->
         {:error, :not_a_student}
-
-      {:error, {:access_denied, :course, :fetch_authenticated_student}} ->
-        {:error, :not_a_student}
     end
   end
 

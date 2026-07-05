@@ -674,6 +674,49 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     end
   end
 
+  describe "find_active_server_for_group_member/2" do
+    test "finds the active server owned by a group member" do
+      %{owner: owner, student: student, class: class} =
+        ServersTestHelpers.register_group_member(@now)
+
+      server = ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+
+      assert Server.find_active_server_for_group_member(student.id, @now) == {:ok, server}
+    end
+
+    test "does not find the server when the group member's group is inactive" do
+      %{owner: owner, student: student, class: class} =
+        ServersTestHelpers.register_group_member(@now, class: [active: false])
+
+      ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+
+      assert Server.find_active_server_for_group_member(student.id, @now) ==
+               {:error, :server_not_found}
+    end
+
+    test "returns an error when the group member owns no server" do
+      %{student: student} = ServersTestHelpers.register_group_member(@now)
+
+      assert Server.find_active_server_for_group_member(student.id, @now) ==
+               {:error, :server_not_found}
+    end
+
+    test "reports every server id when a group member owns more than one" do
+      %{owner: owner, student: student, class: class} =
+        ServersTestHelpers.register_group_member(@now)
+
+      server_a = ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+      server_b = ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+
+      assert {:error, {:multiple_servers_found, ids}} =
+               Server.find_active_server_for_group_member(student.id, @now)
+
+      # The query applies no ORDER BY, so the ids come back in an unspecified
+      # order; sorting both sides pins the whole set.
+      assert Enum.sort(ids) == Enum.sort([server_a.id, server_b.id])
+    end
+  end
+
   defp changeset(:new, overrides) do
     group = ServersFactory.build(:server_group)
     owner = ServersFactory.build(:server_owner, root: true)

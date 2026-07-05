@@ -167,5 +167,22 @@ defmodule ArchiDep.Servers.ReadServersTest do
 
       assert_no_stored_events!()
     end
+
+    test "a group member owning more than one active server is masked as not-found", %{
+      fetch_active_server_for_group_member: fetch_active_server_for_group_member
+    } do
+      %{owner: owner, student: student, class: class} =
+        ServersTestHelpers.register_group_member(@past)
+
+      ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+      ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+
+      root = Factory.build(:authentication, root: true)
+
+      assert fetch_active_server_for_group_member.(root, student.id) ==
+               {:error, :server_not_found}
+
+      assert_no_stored_events!()
+    end
   end
 end

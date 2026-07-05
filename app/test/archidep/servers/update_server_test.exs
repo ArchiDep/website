@@ -288,6 +288,24 @@ defmodule ArchiDep.Servers.UpdateServerTest do
       assert_no_tracking_side_effects(previous_counts)
     end
 
+    test "a non-root owner updates their own server through the tracking processes" do
+      %{auth: auth, owner: owner, class: class} = ServersTestHelpers.register_group_member(@past)
+      server = ServersTestHelpers.insert_server(owner.id, class.id, active: false)
+      data = ServersFactory.random_server_data(active: false)
+      ref = EventsFactory.build(:event_reference)
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServersOrchestratorClientMock, :ensure_started, fn ^server -> :ok end)
+
+      expect(ServerManagerClientMock, :update_server, fn ^server, ^auth, ^data ->
+        {:ok, server, ref}
+      end)
+
+      assert UpdateServer.update_server(auth, server.id, data) == {:ok, server, ref}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
     test "passes through a changeset error" do
       {auth, owner_id, group_id} = root_owner_and_group()
       server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
@@ -352,6 +370,60 @@ defmodule ArchiDep.Servers.UpdateServerTest do
       previous_counts = count_rows(@affected_tables)
 
       assert UpdateServer.update_server(other, server.id, data) == {:error, :server_not_found}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+  end
+
+  describe "validate_existing_server/3" do
+    test "returns a changeset for a root caller without writing anything" do
+      {auth, owner_id, group_id} = root_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
+      data = ServersFactory.random_server_data(active: false)
+      previous_counts = count_rows(@affected_tables)
+
+      assert {:ok, %Changeset{} = changeset} =
+               UpdateServer.validate_existing_server(auth, server.id, data)
+
+      assert errors_on(changeset) == %{}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "returns a changeset for the non-root owner without writing anything" do
+      %{auth: auth, owner: owner, class: class} = ServersTestHelpers.register_group_member(@past)
+      server = ServersTestHelpers.insert_server(owner.id, class.id, active: false)
+      data = ServersFactory.random_server_data(active: false)
+      previous_counts = count_rows(@affected_tables)
+
+      assert {:ok, %Changeset{} = changeset} =
+               UpdateServer.validate_existing_server(auth, server.id, data)
+
+      assert errors_on(changeset) == %{}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "masks a non-owner as a missing server" do
+      {_auth, owner_id, group_id} = root_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
+      data = ServersFactory.random_server_data(active: false)
+      other = Factory.build(:authentication, principal_id: UUID.generate(), root: false)
+      previous_counts = count_rows(@affected_tables)
+
+      assert UpdateServer.validate_existing_server(other, server.id, data) ==
+               {:error, :server_not_found}
+
+      assert_no_tracking_side_effects(previous_counts)
+    end
+
+    test "reports an unknown server as not-found" do
+      {auth, _owner_id, _group_id} = root_owner_and_group()
+      data = ServersFactory.random_server_data(active: false)
+      previous_counts = count_rows(@affected_tables)
+
+      assert UpdateServer.validate_existing_server(auth, UUID.generate(), data) ==
+               {:error, :server_not_found}
 
       assert_no_tracking_side_effects(previous_counts)
     end

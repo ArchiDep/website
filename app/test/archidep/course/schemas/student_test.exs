@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
 
   import ArchiDep.Support.CourseFactory
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.AccountsTestHelpers
   alias Ecto.Changeset
 
@@ -246,6 +247,114 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
       assert Student.count_registered_students() == 1
     end
   end
+
+  describe "find_active_registered_student_by_name/2" do
+    test "finds an active registered student by a case-insensitive substring of their name" do
+      student = register_student(student: [name: "Alice Cooper"])
+      register_student(student: [name: "Bob Dylan"])
+
+      assert Student.find_active_registered_student_by_name("alice coop", @now) ==
+               {:ok, registered_student_view(student.id)}
+    end
+
+    test "does not find a student whose account is inactive" do
+      register_student(student: [name: "Ada"], user: [active: false])
+
+      assert Student.find_active_registered_student_by_name("ada", @now) ==
+               {:error, :student_not_found}
+    end
+
+    test "does not find an inactive student" do
+      register_student(student: [name: "Ada", active: false])
+
+      assert Student.find_active_registered_student_by_name("ada", @now) ==
+               {:error, :student_not_found}
+    end
+
+    test "does not find a student in an inactive class" do
+      register_student(student: [name: "Ada"], class: [active: false])
+
+      assert Student.find_active_registered_student_by_name("ada", @now) ==
+               {:error, :student_not_found}
+    end
+
+    test "does not find a student whose class window has already ended" do
+      register_student(student: [name: "Ada"], class: [end_date: ~D[2023-12-01]])
+
+      assert Student.find_active_registered_student_by_name("ada", @now) ==
+               {:error, :student_not_found}
+    end
+
+    test "does not find a student whose class window has not started yet" do
+      register_student(student: [name: "Ada"], class: [start_date: ~D[2024-06-01]])
+
+      assert Student.find_active_registered_student_by_name("ada", @now) ==
+               {:error, :student_not_found}
+    end
+
+    test "reports every match by name when more than one student matches" do
+      register_student(student: [name: "John Smith"])
+      register_student(student: [name: "Jane Smith"])
+
+      assert {:error, {:multiple_students_found, names}} =
+               Student.find_active_registered_student_by_name("smith", @now)
+
+      # The query applies no ORDER BY, so the names come back in an unspecified
+      # order; sorting both sides pins the whole set.
+      assert Enum.sort(names) == Enum.sort(["John Smith", "Jane Smith"])
+    end
+  end
+
+  # Persists the whole chain the read requires: a class (its date window pinned
+  # so the boundary is deterministic and only the exclusion tests move it), an
+  # active student in it, and a linked user account (active unless overridden).
+  # `AccountsTestHelpers.register_active_student/2` does not expose the class
+  # dates or the account's active flag, which several exclusion cases need.
+  defp register_student(opts) do
+    class =
+      insert(
+        :class,
+        Keyword.merge(
+          [active: true, start_date: ~D[2023-06-01], end_date: ~D[2024-06-01], now: @now],
+          Keyword.get(opts, :class, [])
+        )
+      )
+
+    student =
+      insert(
+        :student,
+        Keyword.merge(
+          [class: class, active: true, user: nil, now: @now],
+          Keyword.get(opts, :student, [])
+        )
+      )
+
+    user =
+      AccountsFactory.insert(
+        :user_account,
+        Keyword.merge(
+          [
+            username: :generate,
+            root: false,
+            active: true,
+            switch_edu_id: nil,
+            preregistered_user_id: student.id,
+            now: @now
+          ],
+          Keyword.get(opts, :user, [])
+        )
+      )
+
+    {1, nil} =
+      Repo.update_all(from(s in Student, where: s.id == ^student.id), set: [user_id: user.id])
+
+    student
+  end
+
+  # The student read back exactly as `find_active_registered_student_by_name/2`
+  # returns it: the `students` row with its `class` and `user` preloaded.
+  defp registered_student_view(id),
+    do: Student |> Repo.get!(id) |> Repo.preload([:class, :user])
 
   defp student_changeset(:new, overrides) do
     class = insert(:class, now: @now)
