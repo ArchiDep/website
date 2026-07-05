@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Config do
   application values.
   """
 
+  alias ArchiDep.Config.ConfigError
   alias ArchiDep.Config.ConfigValue
   alias ArchiDepWeb.Endpoint
   require Logger
@@ -17,7 +18,15 @@ defmodule ArchiDepWeb.Config do
   def start! do
     endpoint_config = Application.fetch_env!(:archidep, Endpoint)
     uploads_directory = endpoint_config[:uploads_directory]
-    {:ok, ^uploads_directory} = validate_uploads_directory(uploads_directory)
+
+    case validate_uploads_directory(uploads_directory) do
+      {:ok, ^uploads_directory} ->
+        :ok
+
+      {:error, reason} ->
+        raise ConfigError,
+              "Endpoint uploads directory #{inspect(uploads_directory)} is invalid: #{reason}"
+    end
 
     ueberauth_oidcc_providers = Application.fetch_env!(:ueberauth_oidcc, :providers)
 
@@ -188,7 +197,7 @@ defmodule ArchiDepWeb.Config do
       )
       |> ConfigValue.env_var(env, "ARCHIDEP_WEB_ENDPOINT_UPLOADS_DIRECTORY")
       |> ConfigValue.default_to(default_config, :uploads_directory)
-      |> ConfigValue.validate(&validate_uploads_directory/1)
+      |> ConfigValue.validate_result(&validate_uploads_directory/1)
       |> ConfigValue.required_value()
 
   defp endpoint_url(env, default_config),
@@ -277,20 +286,20 @@ defmodule ArchiDepWeb.Config do
 
   defp validate_port(_value), do: false
 
-  defp validate_uploads_directory(path),
-    do: validate_writable_directory(path, :uploads_directory)
+  defp validate_uploads_directory(path), do: validate_writable_directory(path)
 
-  defp validate_writable_directory(path, error_key) do
+  defp validate_writable_directory(path) do
     case File.stat(path) do
       {:ok, stat} ->
         case {stat.type, stat.access} do
           {:directory, :read_write} -> {:ok, path}
-          {:directory, _any_other_permissions} -> {:error, {error_key, :not_writable, path}}
-          _not_a_directory -> {:error, {error_key, :not_a_directory, path}}
+          {:directory, _any_other_permissions} -> {:error, "the directory is not writable"}
+          _not_a_directory -> {:error, "the path is not a directory"}
         end
 
       {:error, reason} ->
-        {:error, {error_key, reason, path}}
+        {:error,
+         "the directory could not be read (#{List.to_string(:file.format_error(reason))})"}
     end
   end
 end

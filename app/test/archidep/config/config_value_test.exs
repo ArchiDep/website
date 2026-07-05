@@ -146,6 +146,37 @@ defmodule ArchiDep.Config.ConfigValueTest do
     end
   end
 
+  describe "validate_result/2" do
+    test "skips validation when the value is unset" do
+      value = ConfigValue.new("Some value")
+
+      assert ConfigValue.validate_result(value, fn _value -> {:error, "nope"} end) == value
+    end
+
+    test "returns the value unchanged when the validator accepts it" do
+      value =
+        ConfigValue.env_var(ConfigValue.new("Some value"), %{"SOME_VALUE" => "5"}, "SOME_VALUE")
+
+      assert ConfigValue.validate_result(value, fn "5" -> {:ok, "5"} end) == value
+    end
+
+    test "raises with the reason when the validator rejects the value" do
+      value =
+        "Some value"
+        |> ConfigValue.new()
+        |> ConfigValue.format("It must be big.")
+        |> ConfigValue.default_to([some_value: 5], :some_value)
+
+      assert_raise ConfigError,
+                   "Some value 5 is invalid: it is too small\n" <>
+                     "It must be big.\n" <>
+                     "This value was set in one of the \"config/*.exs\" files.",
+                   fn ->
+                     ConfigValue.validate_result(value, fn 5 -> {:error, "it is too small"} end)
+                   end
+    end
+  end
+
   describe "required_value/1" do
     test "returns the value when it is set" do
       value =

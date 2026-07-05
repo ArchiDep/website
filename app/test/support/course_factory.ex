@@ -323,7 +323,9 @@ defmodule ArchiDep.Support.CourseFactory do
       )
 
     {username, attrs!} =
-      Map.pop_lazy(attrs!, :username, fn -> sequence(:student_data_username, &"student-#{&1}") end)
+      Map.pop_lazy(attrs!, :username, fn ->
+        sequence(:student_data_username, &"student-data-#{&1}")
+      end)
 
     {domain, attrs!} = Map.pop_lazy(attrs!, :domain, &Faker.Internet.domain_name/0)
 

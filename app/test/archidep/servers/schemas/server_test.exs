@@ -658,6 +658,22 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     end
   end
 
+  describe "count_active_servers/1" do
+    test "counts active servers of active owners, ignoring inactive servers and servers of inactive owners" do
+      %{owner: active_owner, class: active_class} =
+        ServersTestHelpers.register_group_member(@now)
+
+      %{owner: inactive_owner, class: inactive_class} =
+        ServersTestHelpers.register_group_member(@now, student: [active: false])
+
+      ServersTestHelpers.insert_server(active_owner.id, active_class.id, active: true)
+      ServersTestHelpers.insert_server(active_owner.id, active_class.id, active: false)
+      ServersTestHelpers.insert_server(inactive_owner.id, inactive_class.id, active: true)
+
+      assert Server.count_active_servers(@now) == 1
+    end
+  end
+
   defp changeset(:new, overrides) do
     group = ServersFactory.build(:server_group)
     owner = ServersFactory.build(:server_owner, root: true)

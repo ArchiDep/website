@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
 
   import ArchiDep.Support.CourseFactory
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Support.AccountsTestHelpers
   alias Ecto.Changeset
 
   # These changeset validations do not depend on the creation timestamp; a fixed
@@ -234,6 +235,15 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
         )
 
       assert Changeset.get_change(changeset, :username_confirmed) == true
+    end
+  end
+
+  describe "count_registered_students/0" do
+    test "counts only students linked to a user account" do
+      AccountsTestHelpers.register_active_student(@now)
+      insert(:student, user: nil, now: @now)
+
+      assert Student.count_registered_students() == 1
     end
   end
 

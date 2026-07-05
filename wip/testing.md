@@ -118,9 +118,9 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [SSH round-trip against a real server](#ssh-round-trip-against-a-real-server)
   - [x] [Ansible format compatibility against a real target](#ansible-format-compatibility-against-a-real-target)
 - **8. Coverage backfill — remaining testable gaps**
-  - [ ] [Config layer](#config-layer)
+  - [x] [Config layer](#config-layer)
   - [ ] [Business use case branch coverage](#business-use-case-branch-coverage)
-  - [ ] [Event serialization variant branches](#event-serialization-variant-branches)
+  - [x] [Event serialization variant branches](#event-serialization-variant-branches)
   - [ ] [Schema query and count functions](#schema-query-and-count-functions)
   - [ ] [Pure helpers and no-op handlers](#pure-helpers-and-no-op-handlers)
   - [ ] [Health controller](#health-controller)
@@ -2628,6 +2628,33 @@ default arguments, so pass crafted maps / keyword lists and assert. The branch
 volume is in the value validators (IP address, port, endpoint URL, signing salt,
 secret key base, comma-separated lists) — cover each accept/reject path.
 
+_Done:_ `config_value` and `config_error` landed earlier; the two assembly
+modules are now covered by `config_test.exs` (`auth`/`sentry`/`servers`/`repo`)
+and `archidep_web/config_test.exs` (`endpoint`/`switch_edu_id_issuer`/
+`switch_edu_id_auth_credentials`), pure `async: true` tests that drive each
+public reader through env-var and default-config seams and assert the whole
+returned keyword list by `==` (or the exact `ConfigError` message on the reject
+paths), covering every parser and validator accept/reject branch (file
+validators via `@tag :tmp_dir` fixtures). **Deliberately left uncovered:**
+`start!/0` in both modules — it reads global `Application` env and validates a
+real key file / uploads directory, which is not `async`-safe to set up; noted
+rather than forced. **Bug found and fixed (flag for review):** the
+`ConfigValue.validate/2` calls for `ssh_private_key_file` (config.ex) and
+`uploads_directory` (web config.ex) were effectively no-ops — those validators
+returned `{:ok, _}`/`{:error, _}` tuples (both truthy) instead of booleans, so
+`servers/2`/`endpoint/2` never rejected a bad path (a missing, world-readable,
+or wrongly-named private key was accepted at read time and only tripped later in
+`start!/0` as an uninformative `MatchError`). Fixed by adding
+`ConfigValue.validate_result/2` — a validator variant taking `(term -> {:ok,
+term} | {:error, String.t()})` that raises a `ConfigError` embedding the
+specific reason — and converting both file/directory validators to human-
+readable reasons; the readers now reject an invalid path with a precise message
+(e.g. "…is invalid: the file must not be accessible by group or others"), and
+`start!/0` raises the same `ConfigError` instead of a `MatchError`. This is a
+**read-time behavior change** to config loading (a bad path now fails when
+`servers/2`/`endpoint/2` runs, not at boot), reviewed as its own change; the
+config tests assert the new rejection.
+
 ### Business use case branch coverage
 
 _Scope:_ the untested `servers/use_cases/read_ansible.ex` (whole module —
@@ -2662,6 +2689,15 @@ Affected: `server_disconnected`, `server_notified_up`, `server_reconnecting`,
 with the association `nil` / the other variant and assert the whole serialized
 shape.
 
+_Done:_ all 13 modules now have a dedicated `<name>_test.exs` under
+`test/archidep/{servers,accounts}/events/`, pure `async: true` tests that build
+the source struct(s) via the factories and assert the **whole** `new/*` result
+by `==` for every variant (owner group-member vs. root, association present vs.
+`nil`, and the `ServerDisconnected` reason nil/binary/inspect branch), binding
+generated ids from the built inputs and pinning the transformed fields (the
+`:inet.ntoa` host/ip strings, the `Atom.to_string` state) as literals so the
+transformation is not mirrored. All 13 now report 100% coverage.
+
 ### Schema query and count functions
 
 _Scope:_ the DB query/count functions covered by nothing today —
@@ -2673,6 +2709,27 @@ elsewhere. Insert rows under `DataCase`, call, assert the count/struct by
 whole-value equality. **Excludes** every `refresh!/2` struct-merge tail sharing
 these files — those ship with the [DDD
 plan](./ddd.md#sequencing-with-the-testing-plan).
+
+_Progress:_ the **aggregate/count** functions are covered (integer assertions
+under `DataCase`), each appended to its schema's existing test file:
+`UserAccount.count_active_users/1` and `UserSession.count_active_sessions/1`
+(active root + active-student fixtures via
+`AccountsTestHelpers.register_active_student`, plus inactive/expired negatives),
+`Student.count_registered_students/0`, and `Server.count_active_servers/1`
+(active server graph via `ServersTestHelpers.register_group_member` +
+`insert_server`). _Latent test-bug found and fixed (flag for review):_
+`student_data_factory` generated usernames with the same `"student-#{n}"` format
+as `student_factory` but from an independent sequence, so the two collided
+whenever the counters coincided — adding a student-inserting test flipped the
+parity and surfaced a spurious `username: ["has already been taken"]` in the
+pre-existing email-uniqueness test; `student_data_factory` now uses a distinct
+`"student-data-#{n}"` format. _Still to do:_ the deep-preload reads —
+`Server.find_active_server_for_group_member/2` (note: already takes `now`, so
+the overview's clock-gap step does not apply),
+`Student.find_active_registered_student_by_name/2`, and the `fetch_*` reads on
+`ServerOwner` / `ServerGroup` / `ServerGroupMember` — deferred as a focused
+follow-up since they need exact whole-struct equality over their preload trees;
+box stays unchecked until they land.
 
 ### Pure helpers and no-op handlers
 

@@ -3,6 +3,7 @@ defmodule ArchiDep.Accounts.Schemas.UserAccountTest do
 
   import ArchiDep.Support.AccountsFactory
   alias ArchiDep.Accounts.Schemas.UserAccount
+  alias ArchiDep.Support.AccountsTestHelpers
   alias ArchiDep.Support.CourseFactory
   alias Ecto.Changeset
 
@@ -254,6 +255,23 @@ defmodule ArchiDep.Accounts.Schemas.UserAccountTest do
       changeset = UserAccount.relink_to_preregistered_user(account, preregistered_user, @now)
 
       assert errors_on(changeset) == %{preregistered_user_id: ["has already been taken"]}
+    end
+  end
+
+  describe "count_active_users/1" do
+    test "counts active root accounts and active students, ignoring inactive root accounts and inactive students" do
+      insert(:user_account, root: true, active: true, preregistered_user: nil)
+      AccountsTestHelpers.register_active_student(@now)
+      insert(:user_account, root: true, active: false, preregistered_user: nil)
+      AccountsTestHelpers.register_active_student(@now, active: false)
+
+      assert UserAccount.count_active_users(@now) == 2
+    end
+
+    test "counts no users when the database holds only inactive accounts" do
+      insert(:user_account, root: true, active: false, preregistered_user: nil)
+
+      assert UserAccount.count_active_users(@now) == 0
     end
   end
 end

@@ -2,6 +2,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSessionTest do
   use ArchiDep.Support.DataCase, async: true
 
   import ArchiDep.Support.AccountsFactory
+  import ArchiDep.Support.AccountsTestHelpers
   import ArchiDep.Support.TokenTestHelpers
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Authentication
@@ -188,6 +189,29 @@ defmodule ArchiDep.Accounts.Schemas.UserSessionTest do
       changeset = UserSession.stop_impersonating(session)
 
       assert changeset.changes == %{}
+    end
+  end
+
+  describe "count_active_sessions/1" do
+    test "counts unexpired sessions on active accounts, ignoring expired sessions and sessions on inactive accounts" do
+      active_account = insert(:user_account, root: true, active: true, preregistered_user: nil)
+      inactive_account = insert(:user_account, root: true, active: false, preregistered_user: nil)
+
+      insert(:user_session, session_attrs(active_account, @now))
+
+      insert(
+        :user_session,
+        session_attrs(active_account, @now, created_at: DateTime.add(@now, -10, :day))
+      )
+
+      insert(
+        :user_session,
+        session_attrs(active_account, @now, created_at: DateTime.add(@now, -40, :day))
+      )
+
+      insert(:user_session, session_attrs(inactive_account, @now))
+
+      assert UserSession.count_active_sessions(@now) == 2
     end
   end
 

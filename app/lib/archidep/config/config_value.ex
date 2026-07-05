@@ -135,6 +135,31 @@ defmodule ArchiDep.Config.ConfigValue do
   end
 
   @doc """
+  Validate the value with a custom function that explains why the value is
+  invalid. The function must return `{:ok, term}` when the value is valid, or
+  `{:error, reason}` with a human-readable reason when it is not; the reason is
+  included in the raised error message. Unlike `validate/2`, this surfaces the
+  specific failure (e.g. a file's permissions) rather than a generic message.
+  """
+  @spec validate_result(t(), (term -> {:ok, term} | {:error, String.t()})) :: t()
+  def validate_result(%__MODULE__{value: nil} = config_value, validator)
+      when is_function(validator, 1),
+      do: config_value
+
+  def validate_result(config_value, validator)
+      when is_function(validator, 1) do
+    %__MODULE__{value: value} = config_value
+
+    case validator.(value) do
+      {:ok, _valid_value} ->
+        config_value
+
+      {:error, reason} when is_binary(reason) ->
+        raise ConfigError, format_error_message(config_value, reason)
+    end
+  end
+
+  @doc """
   Get the configuration value, raising an error if it is not set or set to an
   empty list.
   """
@@ -155,7 +180,7 @@ defmodule ArchiDep.Config.ConfigValue do
 
   defp no_op_parser(value), do: {:ok, value}
 
-  defp format_error_message(config_value) do
+  defp format_error_message(config_value, reason \\ nil) do
     %__MODULE__{
       original_value: original_value,
       source: source,
@@ -163,8 +188,14 @@ defmodule ArchiDep.Config.ConfigValue do
       format_description: format
     } = config_value
 
+    invalid =
+      case reason do
+        nil -> "#{desc} #{inspect(original_value)} is invalid."
+        reason -> "#{desc} #{inspect(original_value)} is invalid: #{reason}"
+      end
+
     [
-      "#{desc} #{inspect(original_value)} is invalid.",
+      invalid,
       format,
       "This value was set in #{describe_source(source)}."
     ]

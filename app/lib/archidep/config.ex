@@ -7,6 +7,7 @@ defmodule ArchiDep.Config do
   """
 
   import Bitwise
+  alias ArchiDep.Config.ConfigError
   alias ArchiDep.Config.ConfigValue
   alias ArchiDep.Repo
   require Logger
@@ -22,7 +23,15 @@ defmodule ArchiDep.Config do
 
     servers_config = Application.fetch_env!(:archidep, :servers)
     ssh_private_key_file = servers_config[:ssh_private_key_file]
-    {:ok, ^ssh_private_key_file} = validate_ssh_private_key_file(ssh_private_key_file)
+
+    case validate_ssh_private_key_file(ssh_private_key_file) do
+      {:ok, ^ssh_private_key_file} ->
+        :ok
+
+      {:error, reason} ->
+        raise ConfigError,
+              "SSH private key file #{inspect(ssh_private_key_file)} is invalid: #{reason}"
+    end
 
     repo_config = Application.fetch_env!(:archidep, Repo)
 
@@ -144,7 +153,7 @@ defmodule ArchiDep.Config do
       )
       |> ConfigValue.env_var(env, "ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE")
       |> ConfigValue.default_to(default_config, :ssh_private_key_file)
-      |> ConfigValue.validate(&validate_ssh_private_key_file/1)
+      |> ConfigValue.validate_result(&validate_ssh_private_key_file/1)
       |> ConfigValue.required_value()
 
   defp ssh_public_key(env, default_config),
@@ -282,21 +291,22 @@ defmodule ArchiDep.Config do
 
           {"id_" <> type, :regular, permission, _any_other_mode}
           when type in @supported_ssh_key_types and permission in [:read, :read_write] ->
-            {:error, {:ssh_private_key_file, :too_permissive, path}}
+            {:error, "the file must not be accessible by group or others"}
 
           {"id_" <> type, :regular, _any_other_permission, _mode}
           when type in @supported_ssh_key_types ->
-            {:error, {:ssh_private_key_file, :not_readable, path}}
+            {:error, "the file is not readable"}
 
           {_any_other_name, :regular, _any_permission, _mode} ->
-            {:error, {:ssh_private_key_file, :unsupported_type, path}}
+            {:error,
+             ~s(the file name is not a standard SSH private key name such as "id_ed25519")}
 
           _not_a_directory ->
-            {:error, {:ssh_private_key_file, :not_a_file, path}}
+            {:error, "the path is not a regular file"}
         end
 
       {:error, reason} ->
-        {:error, {:ssh_private_key_file, reason, path}}
+        {:error, "the file could not be read (#{List.to_string(:file.format_error(reason))})"}
     end
   end
 
