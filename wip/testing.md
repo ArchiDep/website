@@ -2769,7 +2769,7 @@ _Done:_ the deep-preload reads landed, closing the box. Each asserts the whole
 returned struct/tuple by `==` with every preload pinned, and the not-found /
 multiple-match tuples by `==` (multiple-match id/name lists sorted, since the
 queries apply no `ORDER BY`). `Server.find_active_server_for_group_member/2`
-(server*test.exs) covers the active single match, the in-memory `active?/2`
+(server_test.exs) covers the active single match, the in-memory `active?/2`
 rejection (an inactive group passes the SQL `where` but fails the window), the
 empty case, and the multiple-servers case; expected values reuse
 `insert_server`'s fully-loaded read (its preload tree equals the function's).
@@ -2788,7 +2788,7 @@ owner, a root owner whose group member is nil, and the raising miss;
 struct by re-reading the row and preloading its tree (the `listed_server_view/1`
 oracle pattern from `read_server_groups_test.exs`). No clock gap: every function
 in scope already takes the instant. The excluded `refresh!/2` tails and
-`ServerOwner`'s count-mutation changesets stay for the DDD plan. \_Follow-up:*
+`ServerOwner`'s count-mutation changesets stay for the DDD plan. Follow-up:
 `list_members_in_server_group/1` gained an `order_by: m.name` (matching the
 parallel `Student.list_students_in_class/1`), so both its schema test and the
 `list_server_group_members/2` use-case test in `read_server_groups_test.exs`
