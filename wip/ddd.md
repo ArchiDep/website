@@ -206,8 +206,9 @@ items stay short.
 ## Sequencing with the testing plan
 
 This plan is independent of [`death-of-jekyll.md`](./death-of-jekyll.md) but
-**interleaves with** the testing plan in [`testing.md`](./testing.md): some
-coverage work touches code these refactorings reshape. The goal is to harden the
+**interleaved with** the now-complete testing plan (its conventions live in
+[`app/docs/testing.md`](../app/docs/testing.md)): some coverage work touches code
+these refactorings reshape. The goal is to harden the
 test foundation first _without_ writing tests the DDD work will throw away.
 
 The refactorings split in two, and the split is what makes interleaving safe:
@@ -297,8 +298,9 @@ of whether the owning Ecto schema was updated.) Iterate over all eight schemas:
   `ArchiDep.Servers.Schemas.ServerProperties`
 
 Keep the list of `{schema, table}` pairs in one place in the test so adding a
-new read-view schema is a one-line addition. This aligns with the testing plan
-in [`testing.md`](./testing.md). The same boundary has an in-memory twin — see
+new read-view schema is a one-line addition. This aligns with the testing
+conventions in [`app/docs/testing.md`](../app/docs/testing.md). The same boundary
+has an in-memory twin — see
 [#5 Cross-context refresh! coupling](#5-cross-context-refresh-coupling), where
 read-views couple on the producer's _broadcast struct shape_ rather than its
 table.
@@ -482,8 +484,9 @@ assert the result reflects the _broadcast_ value. This proves the in-memory
 merge path ran rather than the catch-all re-fetch — otherwise the fallback
 silently returns the DB value and the test passes even though the coupling is
 broken. A renamed or forgotten field then fails _loudly_ in CI. Add unit tests
-for the `<=` no-op and gap-refetch clauses too. Aligns with
-[`testing.md`](./testing.md), which currently has zero coverage here.
+for the `<=` no-op and gap-refetch clauses too. Aligns with the [testing
+conventions](../app/docs/testing.md), which deferred `refresh!` coverage to land
+here.
 
 ### #5b Extract the version skeleton
 

@@ -124,14 +124,16 @@ exactly when administrative access is most needed (to investigate or mitigate
 the incident).
 
 **Why not login links?** The obvious shortcut is to let a login link
-authenticate a root account, but we have decided against it (see the security
-invariant tracked in [`wip/testing.md`](../../wip/testing.md)). A login link is
-a bearer token carried in a URL, so it leaks through browser history, proxy and
-server logs, and `Referer` headers; root is the highest-privilege principal in
-the system, so granting it through a channel with those properties is the wrong
-trade-off. Login links are the **student** fallback path and carry that path's
-looser assumptions. Break-glass recovery for root deserves its own mechanism
-with its own controls rather than being bolted onto the student feature.
+authenticate a root account, but we have decided against it (a login link must
+never authenticate a root account — enforced in
+[`log_in_or_register_with_link.ex`](../lib/archidep/accounts/use_cases/log_in_or_register_with_link.ex)
+and covered by its test). A login link is a bearer token carried in a URL, so it
+leaks through browser history, proxy and server logs, and `Referer` headers;
+root is the highest-privilege principal in the system, so granting it through a
+channel with those properties is the wrong trade-off. Login links are the
+**student** fallback path and carry that path's looser assumptions. Break-glass
+recovery for root deserves its own mechanism with its own controls rather than
+being bolted onto the student feature.
 
 **Proposed approach:** Root users generally also control the server the
 application runs on (shell access). We can use that fact as the proof of

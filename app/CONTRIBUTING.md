@@ -552,13 +552,13 @@ defines application-specific metrics as a [PromEx plugin][prom-ex-plugin]:
 
 ### Other Libraries & Tools
 
-- [Floki][floki] to parse and manipulate HTML documents in automated tests. See
-  controller and live view tests in the `test/archidep_web` directory for
-  examples.
+- [LazyHTML][lazy-html] to parse and manipulate HTML documents in automated
+  tests (the same engine Phoenix LiveView uses internally). See controller and
+  live view tests in the `test/archidep_web` directory for examples.
 
   The [`ArchiDepWeb.Support.HtmlTestHelpers`
   module](./test/support/html_test_helpers.ex) provides helper functions to
-  work with Floki in tests.
+  work with LazyHTML in tests.
 
 - [GenStage][gen-stage] to implement data processing pipelines. See the
   [`ArchiDep.Servers.Ansible.Pipeline`
@@ -662,8 +662,8 @@ The `test/support/` directory provides shared testing infrastructure:
   (manipulate dates/datetimes), `ArchiDep.Support.TelemetryTestHelpers` (assert
   on telemetry events), `ArchiDep.Support.CourseTestHelpers` (set up
   course-context fixtures that span contexts, such as a student linked to a user
-  account in both directions) and `ArchiDepWeb.Support.HtmlTestHelpers` (Floki
-  HTML helpers).
+  account in both directions) and `ArchiDepWeb.Support.HtmlTestHelpers`
+  (LazyHTML HTML helpers).
 - **Factories**: per-context [ExMachina][ex-machina] factories under
   `test/support/` (`ArchiDep.Support.AccountsFactory`, `CourseFactory`,
   `EventsFactory`, `ServersFactory`, …), plus the shared
@@ -805,13 +805,13 @@ agents.
 [ex-machina]: https://hexdocs.pm/ex_machina/readme.html
 [ex-unit]: https://hexdocs.pm/ex_unit/ExUnit.html
 [flashy]: https://hexdocs.pm/flashy/readme.html
-[floki]: https://hexdocs.pm/floki/Floki.html
 [gen-server]: https://hexdocs.pm/elixir/GenServer.html
 [gen-stage]: https://hexdocs.pm/gen_stage/GenStage.html
 [gettext]: https://hexdocs.pm/gettext/Gettext.html
 [hammox]: https://github.com/msz/hammox
 [heroicons]: https://heroicons.com
 [jekyll]: https://jekyllrb.com
+[lazy-html]: https://hexdocs.pm/lazy_html
 [live-dashboard]: https://hexdocs.pm/phoenix_live_dashboard
 [mix-format]: https://mix.hexdocs.pm/Mix.Tasks.Format.html
 [mox]: https://hexdocs.pm/mox/Mox.html

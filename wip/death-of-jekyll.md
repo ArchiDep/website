@@ -54,7 +54,8 @@ then the static build, then QA and cutover.
 
 **Cross-cutting:** every new module is **unit-tested as we go** (not retrofitted
 at the end) — see [Testing as we go](#testing-as-we-go). This plan follows the
-testing plan in [`testing.md`](./testing.md), which we will flesh out **first**.
+now-complete testing plan's conventions in
+[`app/docs/testing.md`](../app/docs/testing.md).
 We are also going **scorched earth**: the new system _replaces_ Jekyll outright;
 we do not maintain both pipelines side by side — see [Goals and
 constraints](#goals-and-constraints).
@@ -176,8 +177,8 @@ the backlog items stay short.
 - **Everything is unit-tested as we go.** Each new module (renderer, tag
   preprocessor, metadata, `Course.Material`) ships with tests in the same change,
   not as a later pass. This is the cross-cutting working agreement for the whole
-  plan and follows [`testing.md`](./testing.md). See [Testing as we
-  go](#testing-as-we-go).
+  plan and follows the [testing conventions](../app/docs/testing.md). See
+  [Testing as we go](#testing-as-we-go).
 - **Solutions are hidden until explicitly revealed.** Solution blocks must not
   appear until enabled as the course progresses, driven by frontmatter flags the
   same way `progress` is. This is a new feature built alongside the migration.
@@ -215,9 +216,9 @@ easy to test in isolation. Concretely:
   separate, coarser gate ([HTML fidelity gate](#html-fidelity-gate)); unit tests
   cover behaviour, the diff covers parity.
 
-Align all of this with the testing plan being defined in
-[`testing.md`](./testing.md) (which we tackle **before** this migration) and the
-app's existing conventions in [`app/CONTRIBUTING.md`](../app/CONTRIBUTING.md).
+Align all of this with the now-complete testing plan's conventions in
+[`app/docs/testing.md`](../app/docs/testing.md) and the app's existing
+conventions in [`app/CONTRIBUTING.md`](../app/CONTRIBUTING.md).
 
 ### Revisit the Solid (Liquid) library decision
 
