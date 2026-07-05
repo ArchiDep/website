@@ -4,6 +4,7 @@ defmodule ArchiDep.Release do
   """
 
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Release.Shell
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerConnection
 
@@ -22,7 +23,7 @@ defmodule ArchiDep.Release do
   def ssh_student(student_name, args, opts \\ [])
 
   def ssh_student(student_name, args, opts) when is_list(args) do
-    command = shell_escape(args)
+    command = Shell.shell_escape(args)
     ssh_student(student_name, command, opts)
   end
 
@@ -36,7 +37,7 @@ defmodule ArchiDep.Release do
            ServerConnection.run_command(server, command, timeout) do
       # credo:disable-for-next-line Credo.Check.Refactor.IoPuts
       IO.puts(
-        "EXIT CODE: #{exit_code}\n\nSTDOUT:#{format_stream(stdout)}\n\nSTDERR:#{format_stream(stderr)}"
+        "EXIT CODE: #{exit_code}\n\nSTDOUT:#{Shell.format_stream(stdout)}\n\nSTDERR:#{Shell.format_stream(stderr)}"
       )
 
       {:ok,
@@ -73,24 +74,4 @@ defmodule ArchiDep.Release do
   defp repos, do: Application.fetch_env!(@app, :ecto_repos)
 
   defp load_app, do: Application.load(@app)
-
-  defp format_stream(std), do: std |> String.trim() |> format_maybe_empty_stream()
-  defp format_maybe_empty_stream(""), do: " (empty)"
-  defp format_maybe_empty_stream(stream), do: "\n#{stream}"
-
-  defp shell_escape(args),
-    do:
-      Enum.map_join(args, " ", fn s ->
-        if String.match?(s, ~r/[^A-Za-z0-9_\/:=\-]/) do
-          s = "'" <> String.replace(s, "'", "'\\''") <> "'"
-
-          s
-          # unduplicate single-quote at the beginning
-          |> String.replace(~r/^('')+/, "")
-          # remove non-escaped single-quote if there are enclosed between 2 escaped
-          |> String.replace(~r/\\'''/, "\\'")
-        else
-          s
-        end
-      end)
 end

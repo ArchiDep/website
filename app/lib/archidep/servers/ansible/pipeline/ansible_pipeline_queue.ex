@@ -5,6 +5,8 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   from consumers. If a server goes offline, its pending tasks are dropped.
   """
 
+  @behaviour ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueClientBehaviour
+
   use GenStage
 
   import ArchiDep.Helpers.GenStageHelpers
@@ -310,6 +312,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue do
   def server_offline(pipeline, %Server{id: server_id}),
     do: GenStage.cast(name(pipeline), {:server_offline, server_id})
 
+  @impl ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueClientBehaviour
   @spec health(Pipeline.t()) :: State.health_data()
   def health(pipeline), do: GenStage.call(name(pipeline), :health)
 

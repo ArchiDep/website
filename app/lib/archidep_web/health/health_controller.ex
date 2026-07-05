@@ -5,8 +5,10 @@ defmodule ArchiDepWeb.Health.HealthController do
 
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Ansible.Pipeline
-  alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueue
+  alias ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueClient
   alias Plug.Conn
+
+  @type status :: :ok | :degraded | :error
 
   @slow 1_000_000
 
@@ -56,7 +58,7 @@ defmodule ArchiDepWeb.Health.HealthController do
   end
 
   defp check_ansible_queue_health do
-    health = AnsiblePipelineQueue.health(Pipeline)
+    health = AnsiblePipelineQueueClient.health(Pipeline)
 
     aq_status =
       case health do
@@ -84,12 +86,24 @@ defmodule ArchiDepWeb.Health.HealthController do
     end
   end
 
-  defp slow_status(:ok, time) when time >= @slow, do: :degraded
-  defp slow_status(status, _time), do: status
+  @doc """
+  Downgrades an `:ok` status to `:degraded` when the measured time (in
+  microseconds) reaches the slow threshold; every other status is returned
+  unchanged.
+  """
+  @spec slow_status(status(), non_neg_integer()) :: status()
+  def slow_status(:ok, time) when time >= @slow, do: :degraded
+  def slow_status(status, _time), do: status
 
-  defp worst_status(:error, _anything_else), do: :error
-  defp worst_status(_anything_else, :error), do: :error
-  defp worst_status(:degraded, :ok), do: :degraded
-  defp worst_status(:ok, :degraded), do: :degraded
-  defp worst_status(:ok, :ok), do: :ok
+  @doc """
+  Reduces two component statuses to the worse of the two: `:error` dominates,
+  then `:degraded`, otherwise `:ok`.
+  """
+  @spec worst_status(status(), status()) :: status()
+  def worst_status(:error, _anything_else), do: :error
+  def worst_status(_anything_else, :error), do: :error
+  def worst_status(:degraded, :degraded), do: :degraded
+  def worst_status(:degraded, :ok), do: :degraded
+  def worst_status(:ok, :degraded), do: :degraded
+  def worst_status(:ok, :ok), do: :ok
 end

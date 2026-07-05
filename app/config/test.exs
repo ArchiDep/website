@@ -53,6 +53,10 @@ config :archidep,
        ArchiDep.Servers.ServerTracking.ServerTrackerClient,
        ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
 
+config :archidep,
+       ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueClient,
+       ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueClientMock
+
 config :archidep, ArchiDep.TrackerClient, ArchiDep.TrackerClientMock
 
 # Inject a mock clock so tests can pin the current time and assert exact

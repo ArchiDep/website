@@ -602,6 +602,44 @@ defmodule ArchiDep.Servers.Schemas.ServerPropertiesTest do
                ]
       end
     end
+
+    test "an expected value of 0 is a wildcard for every integer property" do
+      expected =
+        build_server_properties(cpus: 0, cores: 0, vcpus: 0, memory: 0, swap: 0)
+
+      actual =
+        build_server_properties(cpus: 4, cores: 8, vcpus: 16, memory: 8192, swap: 4096)
+
+      assert ServerProperties.detect_mismatches(expected, actual) == []
+    end
+
+    test "an expected value of \"*\" is a wildcard for every string property" do
+      expected =
+        build_server_properties(
+          hostname: "*",
+          machine_id: "*",
+          system: "*",
+          architecture: "*",
+          os_family: "*",
+          distribution: "*",
+          distribution_release: "*",
+          distribution_version: "*"
+        )
+
+      actual =
+        build_server_properties(
+          hostname: "host",
+          machine_id: "machine-id",
+          system: "system",
+          architecture: "arch",
+          os_family: "family",
+          distribution: "distro",
+          distribution_release: "release",
+          distribution_version: "version"
+        )
+
+      assert ServerProperties.detect_mismatches(expected, actual) == []
+    end
   end
 
   defp changeset(:new, data), do: changeset(:new, %ServerProperties{}, data)

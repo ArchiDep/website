@@ -214,6 +214,44 @@ defmodule ArchiDep.Course.Schemas.StudentImportListTest do
                |> Enum.map(& &1.username)
     end
 
+    test "appends an incrementing numeric suffix once every dotted-email candidate is taken" do
+      class = build_class()
+
+      import_list =
+        validated(import_data(students: [%{name: "John Doe", email: "john.doe@example.ch"}]))
+
+      # `john.doe@…` derives the candidates `jde` then `jdo`; with both taken
+      # the generator appends an incrementing numeric suffix to the last
+      # candidate.
+      first_suffix = StudentImportList.to_insert_data(import_list, class, ["jde", "jdo"], @now)
+      assert Enum.map(first_suffix, & &1.username) == ["jde1"]
+
+      second_suffix =
+        StudentImportList.to_insert_data(import_list, class, ["jde", "jdo", "jde1"], @now)
+
+      assert Enum.map(second_suffix, & &1.username) == ["jde2"]
+    end
+
+    test "appends an incrementing numeric suffix once every single-name-email candidate is taken" do
+      class = build_class()
+
+      import_list =
+        validated(import_data(students: [%{name: "Alice", email: "alice@example.ch"}]))
+
+      # `alice@…` derives `ale`, `alc`, `ali`; with all three taken the
+      # generator appends an incrementing numeric suffix, incrementing it again
+      # while each successive candidate is also taken.
+      first_suffix =
+        StudentImportList.to_insert_data(import_list, class, ["ale", "alc", "ali"], @now)
+
+      assert Enum.map(first_suffix, & &1.username) == ["ale1"]
+
+      second_suffix =
+        StudentImportList.to_insert_data(import_list, class, ["ale", "alc", "ali", "ale1"], @now)
+
+      assert Enum.map(second_suffix, & &1.username) == ["ale2"]
+    end
+
     test "falls back to a random username when the email local part is unsuitable" do
       class = build_class()
 

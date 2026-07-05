@@ -67,4 +67,13 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUserTest do
       assert changeset.changes == %{}
     end
   end
+
+  describe "event_stream/1" do
+    test "builds the stream name from the preregistered user id" do
+      preregistered_user = build(:preregistered_user)
+
+      assert PreregisteredUser.event_stream(preregistered_user) ==
+               "accounts:preregistered-users:#{preregistered_user.id}"
+    end
+  end
 end

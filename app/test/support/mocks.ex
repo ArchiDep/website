@@ -47,6 +47,13 @@ Hammox.defmock(ArchiDep.Servers.ServerTracking.ServersOrchestratorClientMock,
   """
 )
 
+Hammox.defmock(ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueClientMock,
+  for: ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueClientBehaviour,
+  moduledoc: """
+  Mock of the client API used to query the health of the Ansible pipeline queue.
+  """
+)
+
 Hammox.defmock(ArchiDep.Servers.ServerTracking.ServerTrackerClientMock,
   for: ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour,
   moduledoc: """

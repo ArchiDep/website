@@ -116,4 +116,16 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduIdTest do
       assert changeset.filters == %{version: 2}
     end
   end
+
+  describe "event_stream/1" do
+    test "builds the stream name from a binary id" do
+      assert SwitchEduId.event_stream("sepui-42") == "accounts:switch-edu-id:sepui-42"
+    end
+
+    test "builds the stream name from an identity struct" do
+      identity = build(:switch_edu_id)
+
+      assert SwitchEduId.event_stream(identity) == "accounts:switch-edu-id:#{identity.id}"
+    end
+  end
 end

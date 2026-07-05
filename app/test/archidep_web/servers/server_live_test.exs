@@ -66,6 +66,26 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
                delete_dialog: false
              }
     end
+
+    test "navigate to the application dashboard when the server is deleted over PubSub", %{
+      conn: conn,
+      auth: auth,
+      student: student
+    } do
+      server = build_server()
+      stub_server_page(auth, server)
+      stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth -> {:ok, student} end)
+
+      {:ok, view, _html} = live(conn, "/servers/#{server.id}")
+
+      :ok = PubSub.publish_server_deleted(server)
+
+      flash = assert_redirect(view, "/app")
+
+      assert redirect_notifications(flash) == [
+               {:success, gettext("Deleted server {server}", server: "web-01")}
+             ]
+    end
   end
 
   describe "the edit server dialog" do

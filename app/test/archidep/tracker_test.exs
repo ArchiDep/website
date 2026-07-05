@@ -44,4 +44,10 @@ defmodule ArchiDep.TrackerTest do
     refute_received {:join, "server-1", _meta}
     refute_received {:leave, "server-1", _meta}
   end
+
+  describe "list/1" do
+    test "returns an empty list for a topic with no tracked presences", %{topic: topic} do
+      assert ArchiDep.Tracker.list(topic) == []
+    end
+  end
 end

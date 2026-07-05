@@ -122,8 +122,8 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Business use case branch coverage](#business-use-case-branch-coverage)
   - [x] [Event serialization variant branches](#event-serialization-variant-branches)
   - [x] [Schema query and count functions](#schema-query-and-count-functions)
-  - [ ] [Pure helpers and no-op handlers](#pure-helpers-and-no-op-handlers)
-  - [ ] [Health controller](#health-controller)
+  - [x] [Pure helpers and no-op handlers](#pure-helpers-and-no-op-handlers)
+  - [x] [Health controller](#health-controller)
   - [ ] [Web and form small units](#web-and-form-small-units)
 - **9. Finalize coverage policy (do this last)**
   - [ ] [Review remaining uncovered code](#review-remaining-uncovered-code)
@@ -2809,6 +2809,32 @@ _Scope:_ small pure functions and trivial handlers reachable directly —
 `file_helpers.hash_files_in_directory!` (temp-dir fixture), and the
 `handle_event("closed", …)` / `close/0` no-ops on the delete/close dialogs.
 
+_Done:_ new pure-function tests landed for `authentication` (`session_id/1` +
+the `is_authentication/1` guard exercised in guard position), `sentry`
+(`before_send/1`), the two `event_stream/1` builders (appended to the existing
+`switch_edu_id`/`preregistered_user` schema tests), both `playbook!/1` lookups
+(`playbooks_registry_test.exs`, `ansible_test.exs` — the
+raise/`FunctionClauseError` branches included), `global_scope.suffix/0`,
+`tracker.list/1` (empty-topic result asserted against the app's running
+tracker), `endpoint.log_level/1`, and `file_helpers.hash_files_in_directory!` (a
+`@tag :tmp_dir` fixture; the digest embeds absolute paths so it is asserted as a
+content-addressed digest — deterministic per tree, sensitive to content/file-set
+changes, ignoring non-regular entries — rather than a golden constant). The
+private `ServerProperties.detect_mismatch` `0`/`"*"` wildcard clauses are
+covered through the public `detect_mismatches/2`, and
+`server_live.redirect_after_deleted/1` through the LiveView flow (the `/admin`
+admin-UI case already existed; the `/app` owner case was added). The three
+delete-dialog modules (`delete_server`/`delete_class`/`delete_student`) got
+dedicated test files pinning `id/1`, `close/1` (the whole `JS` struct), and the
+`handle_event("closed", …)` no-op (asserted as `{:noreply, socket}` unchanged,
+the codebase's `%Socket{}`-return style). **Production change flagged for
+review:** `release.ex`'s private `shell_escape/1`/`format_stream/1`/
+`format_maybe_empty_stream/1` were lifted verbatim into a new pure module
+`ArchiDep.Release.Shell` (behaviour-preserving) so the pure slice is
+unit-testable directly (`release/shell_test.exs`); `release.ex`'s command/boot
+functions stay uncovered as documented under [Deliberately not in this
+group](#deliberately-not-in-this-group).
+
 ### Health controller
 
 _Scope:_ `archidep_web/health/health_controller.ex` (27 uncovered, no test).
@@ -2816,6 +2842,32 @@ Drive the health endpoint through `ConnCase` (DB available; the ansible-queue
 health branch needs the `Pipeline` running or a small seam) and assert the JSON
 response and status; cover the `worst_status`/`slow_status` pure helpers
 directly.
+
+_Done:_ `health_controller_test.exs` drives `GET /api/health` through `ConnCase`
+(`async: true`; the `db` branch is naturally `:ok` under the SQL sandbox) and
+asserts the whole decoded JSON body by `==` — a projection that normalizes only
+the non-deterministic `us` microsecond timings (asserted as non-negative
+integers) and pins every status and the `dt.aq.dt` health map. All four
+ansible-queue classifications are covered — `pending: 0` → 200 ok; pending with
+`last_activity: nil` → **500** error; recent activity → 200 ok; stale (>300s)
+activity → 200 degraded (`st: "degraded"`, still 200) — and the pure
+`worst_status/2` (every pair) and `slow_status/2` (threshold) helpers are
+covered directly. **Production changes flagged for review:** (1)
+`worst_status/2` and `slow_status/2` were made public (with `@spec`s) so they
+can be unit-tested directly; (2) a Hammox client seam was added mirroring
+`ServerManagerClient` — `AnsiblePipelineQueueClientBehaviour` +
+`AnsiblePipelineQueueClient` (resolved via `Application.compile_env!` in
+`config/config.exs`, mocked as `AnsiblePipelineQueueClientMock` in
+`config/test.exs`), the `AnsiblePipelineQueue` GenStage now declares the
+behaviour on its `health/1`, and the controller calls the client instead of the
+concrete module — so every branch is testable `async`. **Latent bug found and
+fixed (flag for review):** `worst_status/2` had no `(:degraded, :degraded)`
+clause, so a slow database (`:degraded`) together with a stale ansible queue
+(`:degraded`) crashed the health reduce with a `FunctionClauseError` instead of
+reporting `:degraded`; the missing clause was added and is covered. The one
+remaining uncovered line is `check_db_health/0`'s `_anything_else -> :error`
+fallback — unreachable under the SQL sandbox without breaking the connection,
+knowingly accepted as a defensive guard.
 
 ### Web and form small units
 
@@ -2830,6 +2882,29 @@ cover those**, leaving the upload plumbing to a `render_upload` test); and the
 scattered `{:error, %Changeset{}}` form-error-merge branches plus the "event for
 another resource → list unchanged" reducers across the dialogs and list
 LiveViews. **Excludes** the `refresh!`-driven reducers deferred to DDD.
+
+_Done (partial — mechanical subset):_ the no-extraction slice landed and the
+extraction/seam-requiring items are deferred to a follow-up (box left
+unchecked). Landed: the `student_import_list` username-collision `Stream.scan`
+**numbered suffix** branches — the previously-uncovered fallthrough once every
+derived candidate is taken, added deterministically for both the dotted-email
+(`jde`→`jdo`→`jde1`→`jde2`) and single-name (`ale`→`alc`→`ali`→`ale1`→`ale2`)
+paths (the earlier candidates and the random fallback were already covered). The
+rest of the mechanical subset was found **already covered** by earlier chunks,
+so no redundant tests were added: `ansible/context.digest_ansible_variables/1`
+(exhaustive canonicalization test already in `context_test.exs`), the
+`DialogHelpers.validate_dialog_form/4` `{:error, %Changeset{}}` merge (in
+`dialog_helpers_test.exs`), and the "unrelated event → list unchanged" reducers
+(`classes_live` class-deleted keeps the other class; `my_servers_live` "ignores
+a created server I do not own"). **Deferred to a follow-up** (need extraction or
+a new mock seam, per the agreed scope): `server_form_component`'s private
+`process_boolean`/`process_integer`/`process_ip_address`/`display_ip_address`
+(make public or lift to a pure module); `import_students_dialog_live`'s inline &
+duplicated CSV parsing + email/name column detection (extract the detection +
+CSV-shape logic into pure functions); and `ansible/context`'s `gather_facts/2` /
+`run_playbook/3` (no `Runner`/`Tracker` behaviour seam exists yet). The
+`refresh!`-driven `{:class_updated}`/server reducers remain excluded per the DDD
+plan.
 
 ### Deliberately not in this group
 
