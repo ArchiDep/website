@@ -101,16 +101,16 @@ jobs:
         run: mix ua_inspector.download --force
         working-directory: app
 
+      - name: Fix test private key permissions
+        run: chmod 600 test/priv/ssh/id_ed25519
+        working-directory: app
+
       - name: Migrate the database
         run: mix ecto.migrate
         working-directory: app
 
       - name: Build assets
         run: mix assets.deploy
-        working-directory: app
-
-      - name: Fix test private key permissions
-        run: chmod 600 test/priv/ssh/id_ed25519
         working-directory: app
 
       - name: Run automated tests & measure code coverage
