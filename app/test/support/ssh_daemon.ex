@@ -1,7 +1,7 @@
 defmodule ArchiDep.Support.SSHDaemon do
   @moduledoc """
   Starts an in-process Erlang `:ssh` daemon on an ephemeral loopback port for
-  the external-tool compatibility smoke tests (see the "Testing external-tool
+  the SSH client compatibility smoke test (see the "Testing external-tool
   compatibility" section in `docs/testing.md`).
 
   By default the daemon authorizes the `test/priv/ssh` client fixture for

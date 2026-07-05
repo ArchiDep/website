@@ -1,5 +1,13 @@
 # Phoenix application testing — plan to reach 90% coverage
 
+**Status: complete.** Every backlog task below is checked. A fresh full run
+measured **92.9%** line coverage (1786 tests + 61 doctests, 0 failures), the
+global floor is locked at **92%** in `app/coveralls.json`, the remaining
+uncovered code is reviewed and its deferrals recorded in
+[`app/docs/future-work.md`](../app/docs/future-work.md#remaining-uncovered-code-after-the-90-coverage-push),
+and we deliberately adopted **no** per-directory coverage rule. See [9. Finalize
+coverage policy](#lock-the-global-threshold) for the decisions.
+
 The testing foundation is strong, modern, and essentially complete: every layer
 already has a working, demonstrated pattern, contract-checked mocks, and
 per-context factories. The detailed assessment that backs this conclusion is
@@ -126,9 +134,9 @@ This is the bird's-eye view: each item links to its full description under
   - [x] [Health controller](#health-controller)
   - [x] [Web and form small units](#web-and-form-small-units)
 - **9. Finalize coverage policy (do this last)**
-  - [ ] [Review remaining uncovered code](#review-remaining-uncovered-code)
-  - [ ] [Lock the global threshold](#lock-the-global-threshold)
-  - [ ] [(Optional) Per-critical-path enforcement](#optional-per-critical-path-enforcement)
+  - [x] [Review remaining uncovered code](#review-remaining-uncovered-code)
+  - [x] [Lock the global threshold](#lock-the-global-threshold)
+  - [x] [(Optional) Per-critical-path enforcement](#optional-per-critical-path-enforcement)
 
 ---
 
@@ -2975,10 +2983,29 @@ those can move into the normal (non-`@tag :external`) suite so the
 `SystemClient` boundary contributes real coverage instead of only running in the
 external job.
 
+_Done:_ a fresh full run measured **92.9%** total line coverage (1786 tests + 61
+doctests, 0 failures), above the 90% target. The remaining uncovered code was
+reviewed file by file and every gap has an explicit decision — deferred to a
+scheduled refactor (metrics, git, death-of-jekyll, DDD), accepted as low-value
+plumbing/entrypoints, or coverable-later — recorded in
+[`app/docs/future-work.md`](../app/docs/future-work.md#remaining-uncovered-code-after-the-90-coverage-push).
+No file was moved out of the denominator. The **"external" definition was
+settled**: external means the system under test is a **process outside the
+Elixir/Erlang ecosystem**. By that rule the SSH client compatibility smoke test
+— which drives the in-process Erlang `:ssh`/`SSHEx` stack against an
+`:ssh.daemon` — is not external; its `@moduletag :external` was removed so it
+runs in the standard suite (0.1s, 4 tests), giving `SystemClient` real coverage.
+The two Ansible smoke tests drive a foreign tool against a live host and stay
+`:external`. Convention updated in `test_helper.exs` and the "Testing
+external-tool compatibility" section of `docs/testing.md`.
+
 ### Lock the global threshold
 
 Set `minimum_coverage` to the final target (90%, or higher if we comfortably
 exceed it).
+
+_Done:_ `app/coveralls.json` `minimum_coverage` is locked at **92** — the floor
+CI enforces on every run, chosen against the measured 92.9%.
 
 ### (Optional) Per-critical-path enforcement
 
@@ -2988,6 +3015,10 @@ other parts we deem critical) we'll add a small custom mix task that reads the
 exported per-file stats (`export: "cov"` is already configured), buckets files by
 path prefix, and fails CI on any bucket under its target. Decide which paths get
 a stricter floor. _Files:_ `app/mix.exs` (alias + task), new mix task module.
+
+_Done — decided against._ We deliberately do **not** add any per-directory or
+per-critical-path coverage rule. The single global 92% floor is the whole
+policy; the custom bucketing mix task is not built.
 
 ---
 

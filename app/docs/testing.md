@@ -1727,14 +1727,20 @@ unauthorized key, a disjoint key-exchange algorithm) is fair game when it
 certifies such a string; do not reproduce failures whose handling carries no
 external-format contract.
 
-- **Tag them `:external`, and exclude them from the default run.**
-  [`test_helper.exs`][test-helper] calls `ExUnit.start(exclude: [external:
-true])`, so a `@moduletag :external` test never runs under `mix test` or the
-  `mix coveralls.html` coverage run — it contributes nothing to the coverage
-  numerator, and the real tool it exercises can be absent locally. A dedicated
-  CI job opts in with `mix test --only external`. This keeps the real-tool
-  passthrough impls (e.g. [`SystemClient`][system-client]) out of the coverage
-  numbers rather than dragging them down as permanently "uncovered".
+- **Tag `:external` only what leaves the ecosystem.** "External" means the
+  system under test is a **process outside the Elixir/Erlang ecosystem** — the
+  real `ansible`/`ansible-playbook` tools against a live host. Those get a
+  `@moduletag :external`: [`test_helper.exs`][test-helper] calls
+  `ExUnit.start(exclude: [external: true])`, so they never run under `mix test`
+  or the `mix coveralls.html` coverage run — they contribute nothing to the
+  coverage numerator, and the foreign tool can be absent locally. A dedicated CI
+  job opts in with `mix test --only external`. A compatibility test that drives
+  an **in-ecosystem** stack instead — the Erlang `:ssh`/`SSHEx` client against
+  an in-process `:ssh.daemon` — is **not** tagged: it needs only ubiquitous OS
+  utilities (`ssh-keygen`, `sh`) and the `test/priv/ssh` fixture key, all
+  present everywhere, so it runs in the default suite like any other test and
+  gives its passthrough impl ([`SystemClient`][system-client]) real coverage
+  rather than leaving it permanently "uncovered".
 - **Point the façade at the real tool.** The façades are compile-time bound to
   their mocks in the test env, so a test reprograms the _mock_ to delegate to
   the real implementation, and every call through the façade then hits the real
@@ -1753,12 +1759,13 @@ Servers.SSH.Client.SystemClient)` — even though the mocks are Hammox-defined (
   the mocks hit in [runtime-process
   tests](#runtime-processes-genservers-genstage). Driving the façade directly
   from the test process (as the SSH example does) avoids it.
-- **Provide the tool; gate on it.** The real tool runs for real, so it must be
-  present — these tests are Docker/tool-gated regardless. The SSH round-trip
-  stands up an in-process Erlang `:ssh.daemon` ([`SSHDaemon`][ssh-daemon], no
-  Docker) and drives the real `Client` against it. The Ansible round-trip needs
-  a real host — and the setup playbook also drives `ansible.builtin.systemd`,
-  which needs a live systemd/dbus — so
+- **Provide the tool; gate on it.** A foreign tool runs for real, so it must be
+  present — the Ansible tests are Docker/tool-gated for that reason. The SSH
+  round-trip has no such gate: it stands up an in-process Erlang `:ssh.daemon`
+  ([`SSHDaemon`][ssh-daemon], no Docker) and drives the real `Client` against
+  it, so it runs unconditionally in the default suite. The Ansible round-trip
+  needs a real host — and the setup playbook also drives
+  `ansible.builtin.systemd`, which needs a live systemd/dbus — so
   [`UbuntuServerContainer`][ubuntu-server-container] builds and runs the
   [`ubuntu-server`][ubuntu-server-dockerfile] image (Ubuntu noble booting
   systemd with `python3`, matching the student-VM fleet, authorizing the

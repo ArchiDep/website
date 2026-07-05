@@ -5,6 +5,12 @@ defmodule ArchiDep.Servers.SSH.Client.SystemClientCompatibilityTest do
   # misses. The two error cases pin the exact `:ssh` failure tuples that
   # `ConnectError` owns and classifies. See the "Testing external-tool
   # compatibility" section in `docs/testing.md`.
+  #
+  # The system under test — the Erlang `:ssh`/`SSHEx` stack driven against an
+  # in-process `:ssh.daemon` — is within the Elixir/Erlang ecosystem, so this
+  # runs in the standard suite (unlike the Ansible smoke tests, which drive a
+  # foreign tool and stay `:external`), and it gives `SystemClient` real
+  # coverage.
   use ExUnit.Case, async: true
 
   import Hammox
@@ -13,8 +19,6 @@ defmodule ArchiDep.Servers.SSH.Client.SystemClientCompatibilityTest do
   alias ArchiDep.Servers.SSH.Client.SystemClient
   alias ArchiDep.Servers.SSH.ConnectError
   alias ArchiDep.Support.SSHDaemon
-
-  @moduletag :external
 
   setup :verify_on_exit!
 

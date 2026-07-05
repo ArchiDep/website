@@ -1,10 +1,13 @@
 {:ok, _apps} = Application.ensure_all_started(:ex_machina)
 
-# External-tool compatibility smoke tests (tagged `:external`) drive the real
-# `ansible`/`ssh` tools instead of their mocks, so they need those tools present
-# and must not taint the coverage numbers. They are excluded from the default
-# run and opted into with `mix test --only external` in a dedicated CI job. See
-# the "Testing external-tool compatibility" section in `docs/testing.md`.
+# Tests tagged `:external` drive a process outside the Elixir/Erlang ecosystem —
+# the real `ansible`/`ansible-playbook` tools against a live host — instead of
+# their mocks, so they need that tool present and must not taint the coverage
+# numbers. They are excluded from the default run and opted into with `mix test
+# --only external` in a dedicated CI job. The SSH compatibility smoke test
+# drives the in-process Erlang `:ssh` stack (within the ecosystem), so it is not
+# tagged and runs here. See the "Testing external-tool compatibility" section in
+# `docs/testing.md`.
 #
 # `assert_receive_timeout: 500` (up from the 100ms default): many
 # server-tracking tests wait on a message a spawned GenServer/task sends, and

@@ -18,6 +18,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Automated SSH exercise VM setup with Ansible](#automated-ssh-exercise-vm-setup-with-ansible)
 - [Dual search system](#dual-search-system)
 - [End-to-end Switch edu-ID login test against a fake identity provider](#end-to-end-switch-edu-id-login-test-against-a-fake-identity-provider)
+- [Remaining uncovered code after the 90% coverage push](#remaining-uncovered-code-after-the-90-coverage-push)
 
 <!-- END doctoc -->
 
@@ -279,3 +280,52 @@ coverage.
   nonce matching the one stored during the request phase.
 - Whether this lives under `ConnCase` or needs a dedicated integration setup
   (it is not async-safe if it mutates global issuer configuration).
+
+## Remaining uncovered code after the 90% coverage push
+
+**Problem:** The Phoenix-application testing plan reached its target — the suite
+sits comfortably above 90% line coverage and the global floor is locked at 92%
+in [`coveralls.json`][coveralls-config]. No file is hidden from the denominator
+(`skip_files` is never configured), so the code that is still uncovered is
+uncovered _on purpose_, and this section records those decisions so the gaps are
+not mistaken for oversights. They fall into three buckets.
+
+**Deferred to a scheduled refactor — cover it once it is reshaped.** Writing
+tests now would only throw them away when the code changes:
+
+- `Monitoring.Metrics` (and the thin `PromEx` / `Web.Telemetry` glue) — waits on
+  the metrics/observability rework.
+- `Git` and `Helpers.GitHelpers` — wait on the git-integration rework.
+- `Course.Helpers.MaterialHelpers` — waits on moving the static build out of
+  Jekyll (see [Track course progress in the database rather than in
+  frontmatter](#track-course-progress-in-the-database-rather-than-in-frontmatter)).
+- `Servers.Schemas.ServerOwner`'s count-mutation changesets and **every**
+  `refresh!/2` — the DDD plan reshapes these.
+
+**Accepted uncovered — thin plumbing and entrypoints, low test value.** Booting
+or delegating code with no branch logic of its own, exercised indirectly if at
+all: the `ArchiDep`/`Repo`/`Mailer`/`Sentry`/`Release`/`Endpoint` entrypoints,
+the `Mix.Tasks.Recompile` task, the boot-time config assembly (`Config`,
+`Web.Config`, `Config.Value`, `Config.Error`), the macro/helper glue
+(`Helpers.ContextHelpers`, `Helpers.UseCaseHelpers`), and the context facades
+(`Servers.Context`, `Servers.Ansible.Context`,
+`Servers.Ansible.PlaybooksRegistry`).
+
+**Coverable later — real gaps we chose not to chase to hit the target.** These
+have ordinary logic and could be covered with normal tests when convenient;
+they are not blocked on anything:
+
+- Admin LiveView branches: `Admin.Ansible.AnsibleLive`,
+  `Admin.Classes.StudentLive`, `Admin.Classes.ImportStudentsDialogLive`.
+- `Web.Channels.UserChannel` (partial), `Course.Schemas.User`,
+  `Servers.Schemas.ServerGroup` / `ServerGroupMember`.
+
+**Note:** the external-tool compatibility open question the testing plan raised
+— whether any SSH smoke test could contribute real coverage instead of only
+running in the external job — is **resolved, not deferred**: the SSH client
+compatibility test drives the in-process Erlang `:ssh` stack (within the
+ecosystem), so it was untagged and now runs in the standard suite, giving
+`Servers.SSH.Client.SystemClient` real coverage. Only the Ansible smoke tests,
+which drive a foreign tool against a live host, remain `:external`.
+
+[coveralls-config]: ../coveralls.json
