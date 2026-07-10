@@ -15,6 +15,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerOwnerCounters
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.ServersFactory
@@ -30,9 +31,10 @@ defmodule ArchiDep.Servers.CreateServerTest do
   @past ~U[2023-09-15 09:42:17.000000Z]
 
   # Every table this use case can affect: it inserts a server, its expected
-  # properties and the audit event, and updates the owner's server counts (an
-  # update, so the `user_accounts` row count must stay put).
-  @affected_tables [Server, ServerProperties, StoredEvent, UserAccount]
+  # properties and the audit event, and the owner's counters row (created on the
+  # owner's first server). `UserAccount` is watched to pin that touching the
+  # counters never creates or deletes an account.
+  @affected_tables [Server, ServerProperties, ServerOwnerCounters, StoredEvent, UserAccount]
 
   setup :verify_on_exit!
 
@@ -71,10 +73,17 @@ defmodule ArchiDep.Servers.CreateServerTest do
       assert_row_count_diff(previous_counts, %{
         Server => 1,
         ServerProperties => 1,
+        ServerOwnerCounters => 1,
         StoredEvent => 1
       })
 
-      assert_owner_counts(owner.id, server_count: 1, active_server_count: 1)
+      assert_owner_counters(owner.id,
+        server_count: 1,
+        server_count_lock: 1,
+        active_server_count: 1,
+        active_server_count_lock: 2
+      )
+
       assert_server_created_broadcast(subscriptions, server)
     end
 
@@ -110,11 +119,18 @@ defmodule ArchiDep.Servers.CreateServerTest do
       assert_row_count_diff(previous_counts, %{
         Server => 1,
         ServerProperties => 1,
+        ServerOwnerCounters => 1,
         StoredEvent => 1
       })
 
       # An inactive server leaves the active-server count untouched.
-      assert_owner_counts(owner.id, server_count: 1, active_server_count: 0)
+      assert_owner_counters(owner.id,
+        server_count: 1,
+        server_count_lock: 1,
+        active_server_count: 0,
+        active_server_count_lock: 1
+      )
+
       assert_server_created_broadcast(subscriptions, server)
     end
 
@@ -160,10 +176,17 @@ defmodule ArchiDep.Servers.CreateServerTest do
       assert_row_count_diff(previous_counts, %{
         Server => 1,
         ServerProperties => 1,
+        ServerOwnerCounters => 1,
         StoredEvent => 1
       })
 
-      assert_owner_counts(owner.id, server_count: 1, active_server_count: 1)
+      assert_owner_counters(owner.id,
+        server_count: 1,
+        server_count_lock: 1,
+        active_server_count: 1,
+        active_server_count_lock: 2
+      )
+
       assert_server_created_broadcast(subscriptions, server)
     end
   end
@@ -196,10 +219,17 @@ defmodule ArchiDep.Servers.CreateServerTest do
       assert_row_count_diff(previous_counts, %{
         Server => 1,
         ServerProperties => 1,
+        ServerOwnerCounters => 1,
         StoredEvent => 1
       })
 
-      assert_owner_counts(owner.id, server_count: 1, active_server_count: 0)
+      assert_owner_counters(owner.id,
+        server_count: 1,
+        server_count_lock: 1,
+        active_server_count: 0,
+        active_server_count_lock: 1
+      )
+
       assert_server_created_broadcast(subscriptions, server)
     end
   end
@@ -523,13 +553,20 @@ defmodule ArchiDep.Servers.CreateServerTest do
     inet
   end
 
-  # TODO DDD: the server-count columns on `user_accounts` are being reshaped by
-  # the DDD refactoring, so assert the observable count change rather than
-  # pinning the whole `ServerOwner` row.
-  defp assert_owner_counts(owner_id, server_count: server_count, active_server_count: active) do
-    {:ok, owner} = ServerOwner.fetch_server_owner(owner_id)
-    assert owner.server_count == server_count
-    assert owner.active_server_count == active
+  defp assert_owner_counters(owner_id,
+         server_count: server_count,
+         server_count_lock: server_count_lock,
+         active_server_count: active_server_count,
+         active_server_count_lock: active_server_count_lock
+       ) do
+    assert Repo.get!(ServerOwnerCounters, owner_id) == %ServerOwnerCounters{
+             __meta__: loaded(ServerOwnerCounters, "server_owner_counters"),
+             user_account_id: owner_id,
+             server_count: server_count,
+             server_count_lock: server_count_lock,
+             active_server_count: active_server_count,
+             active_server_count_lock: active_server_count_lock
+           }
   end
 
   # Asserts the server-created broadcast reached each of the three topics exactly
@@ -552,13 +589,17 @@ defmodule ArchiDep.Servers.CreateServerTest do
   end
 
   defp set_owner_counts(owner_id, server_count: server_count, active_server_count: active) do
-    # The server-count columns live on `user_accounts` but are mapped by the
-    # `ServerOwner` view-schema, not `UserAccount`.
-    {1, nil} =
-      Repo.update_all(
-        from(o in ServerOwner, where: o.id == ^owner_id),
-        set: [server_count: server_count, active_server_count: active]
-      )
+    Repo.insert!(
+      %ServerOwnerCounters{
+        user_account_id: owner_id,
+        server_count: server_count,
+        server_count_lock: 1,
+        active_server_count: active,
+        active_server_count_lock: 1
+      },
+      on_conflict: [set: [server_count: server_count, active_server_count: active]],
+      conflict_target: :user_account_id
+    )
 
     :ok
   end

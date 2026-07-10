@@ -390,11 +390,14 @@ of the same data for their specific purposes. For example:
   the database and is used for writes.
 - The [`ArchiDep.Servers` context](./lib/archidep/servers.ex) has a
   [`ArchiDep.Servers.Schemas.ServerOwner`
-  schema](./lib/archidep/servers/schemas/server_owner.ex) used to represent
-  the owner of a server, e.g. the entity that owns it in the context of
+  schema](./lib/archidep/servers/schemas/server_owner.ex) used to represent the
+  owner of a server, e.g. the entity that owns it in the context of
   server-related operations. This schema is also backed by the `user_accounts`
-  table in the database but is mostly used for reads or updates of a few
-  server-related fields.
+  table in the database but is a read-only view: the server tallies it exposes
+  live in the Servers-owned
+  [`server_owner_counters`](./lib/archidep/servers/schemas/server_owner_counters.ex)
+  table, keyed by `user_account_id`, so `user_accounts` is written only by the
+  Accounts context.
 
 The diagram below summarises which context owns (writes) which table and which
 tables are read across context boundaries through such read-view schemas:
@@ -415,6 +418,7 @@ flowchart LR
 
     subgraph servers["Servers"]
         sv[("servers")]
+        soc[("server_owner_counters")]
         apr[("ansible_playbook_runs")]
         ape[("ansible_playbook_events")]
     end
@@ -424,6 +428,7 @@ flowchart LR
 
     course -. read .-> ua
     servers -. read .-> ua
+    soc -. keyed by .-> ua
     accounts -. read .-> cl
     accounts -. read .-> st
     servers -. read .-> cl
@@ -443,7 +448,12 @@ Reading the diagram:
 - A **dashed `read` edge** is a read-view schema: `Course.User` and
   `Servers.ServerOwner` read `user_accounts`; `Accounts.UserGroup` /
   `Servers.ServerGroup` read `classes`; `Accounts.PreregisteredUser` /
-  `Servers.ServerGroupMember` read `students`.
+  `Servers.ServerGroupMember` read `students`. `user_accounts` is written only
+  by Accounts.
+- **`server_owner_counters`** is Servers-owned and keyed one-to-one by
+  `user_account_id`; it holds the per-owner server tallies (created on an
+  owner's first server), keeping those writes off the Accounts-owned
+  `user_accounts`.
 - **`server_properties`** is genuinely shared — Course writes the _expected_
   properties of a class while Servers writes the _actual_ properties detected on
   a server.

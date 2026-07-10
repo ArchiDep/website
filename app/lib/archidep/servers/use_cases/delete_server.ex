@@ -17,6 +17,7 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerOwnerCounters
   alias ArchiDep.Servers.ServerTracking.ServerManagerClient
   alias ArchiDep.Servers.ServerTracking.ServersOrchestratorClient
 
@@ -49,11 +50,11 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
          # Note: make sure to decrease the active server count before decreasing
          # the server count, or the database constraint checking the consistency
          # of the two will complain.
-         |> Multi.merge(&decrease_active_server_count(fresh_server_owner, &1.server))
+         |> Multi.merge(&decrease_active_server_count(fresh_server_owner.counters, &1.server))
          |> Multi.update(
            :server_limit,
-           &ServerOwner.update_server_count(
-             Map.get(&1, :active_server_limit, fresh_server_owner),
+           &ServerOwnerCounters.update_server_count(
+             Map.get(&1, :active_server_limit, fresh_server_owner.counters),
              -1
            )
          )
@@ -65,15 +66,15 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
     end
   end
 
-  defp decrease_active_server_count(owner, %Server{active: true}),
+  defp decrease_active_server_count(%ServerOwnerCounters{} = counters, %Server{active: true}),
     do:
       Multi.update(
         Multi.new(),
         :active_server_limit,
-        ServerOwner.update_active_server_count(owner, -1)
+        ServerOwnerCounters.update_active_server_count(counters, -1)
       )
 
-  defp decrease_active_server_count(_owner, _server), do: Multi.new()
+  defp decrease_active_server_count(_counters, _server), do: Multi.new()
 
   defp server_deleted(auth, server, now),
     do:

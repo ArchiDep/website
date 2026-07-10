@@ -15,6 +15,7 @@ defmodule ArchiDep.Support.ServersFactory do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerOwnerCounters
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
@@ -773,6 +774,30 @@ defmodule ArchiDep.Support.ServersFactory do
         end
       end)
 
+    {counters, attrs!} =
+      Map.pop(attrs!, :counters, not_loaded(:counters, ServerOwnerCounters))
+
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+
+    [] = Map.keys(attrs!)
+
+    %ServerOwner{
+      id: id,
+      root: root,
+      active: active,
+      group_member: group_member,
+      group_member_id: group_member_id,
+      counters: counters,
+      version: version,
+      created_at: created_at,
+      updated_at: updated_at
+    }
+  end
+
+  @spec server_owner_counters_factory(map()) :: ServerOwnerCounters.t()
+  def server_owner_counters_factory(attrs!) do
+    {user_account_id, attrs!} = Map.pop_lazy(attrs!, :user_account_id, &UUID.generate/0)
+
     {server_count, attrs!} =
       Map.pop_lazy(attrs!, :server_count, fn -> Faker.random_between(0, 5) end)
 
@@ -785,23 +810,14 @@ defmodule ArchiDep.Support.ServersFactory do
     {active_server_count_lock, attrs!} =
       Map.pop_lazy(attrs!, :active_server_count_lock, fn -> Faker.random_between(1, 1000) end)
 
-    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
-
     [] = Map.keys(attrs!)
 
-    %ServerOwner{
-      id: id,
-      root: root,
-      active: active,
-      group_member: group_member,
-      group_member_id: group_member_id,
+    %ServerOwnerCounters{
+      user_account_id: user_account_id,
       active_server_count: active_server_count,
       active_server_count_lock: active_server_count_lock,
       server_count: server_count,
-      server_count_lock: server_count_lock,
-      version: version,
-      created_at: created_at,
-      updated_at: updated_at
+      server_count_lock: server_count_lock
     }
   end
 

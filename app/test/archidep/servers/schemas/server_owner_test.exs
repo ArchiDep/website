@@ -44,10 +44,11 @@ defmodule ArchiDep.Servers.Schemas.ServerOwnerTest do
 
   # The owner read back exactly as `fetch_authenticated/1` and
   # `fetch_server_owner/1` return it: the `user_accounts` row with its group
-  # member (and that member's group and expected server properties) preloaded.
+  # member (and that member's group and expected server properties) and its
+  # server counters preloaded.
   defp server_owner_view(id),
     do:
       ServerOwner
       |> Repo.get!(id)
-      |> Repo.preload(group_member: [group: :expected_server_properties])
+      |> Repo.preload([:counters, group_member: [group: :expected_server_properties]])
 end

@@ -240,7 +240,11 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   describe "new_group_member_server/3 server limits" do
     test "a group member at the active-server limit cannot create another active server" do
       owner =
-        ServersFactory.build(:server_owner, root: false, active_server_count: 1, server_count: 1)
+        ServersFactory.build(:server_owner,
+          root: false,
+          counters:
+            ServersFactory.build(:server_owner_counters, active_server_count: 1, server_count: 1)
+        )
 
       data = ServersFactory.random_server_data(active: true)
 
@@ -252,7 +256,11 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
     test "a group member at the server limit cannot create another server" do
       owner =
-        ServersFactory.build(:server_owner, root: false, active_server_count: 0, server_count: 5)
+        ServersFactory.build(:server_owner,
+          root: false,
+          counters:
+            ServersFactory.build(:server_owner_counters, active_server_count: 0, server_count: 5)
+        )
 
       data = ServersFactory.random_server_data(active: false)
 
@@ -264,7 +272,11 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   describe "update_group_member_server/4 server limits" do
     test "a group member at the active-server limit cannot activate another server" do
       owner =
-        ServersFactory.build(:server_owner, root: false, active_server_count: 1, server_count: 1)
+        ServersFactory.build(:server_owner,
+          root: false,
+          counters:
+            ServersFactory.build(:server_owner_counters, active_server_count: 1, server_count: 1)
+        )
 
       server = ServersFactory.build(:server, active: false)
       data = ServersFactory.random_server_data(active: true)
@@ -724,8 +736,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   end
 
   defp changeset(:new_group_member, overrides) do
-    owner =
-      ServersFactory.build(:server_owner, root: false, active_server_count: 0, server_count: 0)
+    owner = ServersFactory.build(:server_owner, root: false, counters: nil)
 
     Server.new_group_member_server(server_data(overrides), owner, @now)
   end
@@ -736,8 +747,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   end
 
   defp changeset(:update_group_member, overrides) do
-    owner =
-      ServersFactory.build(:server_owner, root: false, active_server_count: 0, server_count: 0)
+    owner = ServersFactory.build(:server_owner, root: false, counters: nil)
 
     server = ServersFactory.build(:server)
     Server.update_group_member_server(server, server_data(overrides), owner, @now)

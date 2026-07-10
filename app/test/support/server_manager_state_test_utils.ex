@@ -14,6 +14,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerOwnerCounters
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
@@ -143,11 +144,8 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
     user_account =
       if root do
         user_account = AccountsFactory.insert(:user_account, active: true, root: true)
-        user_account_id = user_account.id
 
-        Repo.update_all(from(so in ServerOwner, where: so.id == ^user_account_id),
-          set: [server_count: 1, active_server_count: if(server_active, do: 1, else: 0)]
-        )
+        insert_owner_counters!(user_account.id, server_active)
 
         user_account
       else
@@ -167,11 +165,8 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
           )
 
         student_id = student.id
-        user_account_id = user_account.id
 
-        Repo.update_all(from(so in ServerOwner, where: so.id == ^user_account_id),
-          set: [server_count: 1, active_server_count: if(server_active, do: 1, else: 0)]
-        )
+        insert_owner_counters!(user_account.id, server_active)
 
         Repo.update_all(from(sgm in ServerGroupMember, where: sgm.id == ^student_id),
           set: [owner_id: user_account.id]
@@ -221,6 +216,16 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
 
     %Server{} = id |> Server.fetch_server() |> unpair_ok()
   end
+
+  defp insert_owner_counters!(user_account_id, server_active),
+    do:
+      Repo.insert!(%ServerOwnerCounters{
+        user_account_id: user_account_id,
+        server_count: 1,
+        server_count_lock: 1,
+        active_server_count: if(server_active, do: 1, else: 0),
+        active_server_count_lock: 1
+      })
 
   @spec real_time_state(Server.t(), Keyword.t()) :: ServerRealTimeState.t()
   def real_time_state(server, attrs! \\ []) do

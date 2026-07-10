@@ -23,6 +23,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerOwnerCounters
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.SSH.SSHKeyFingerprint
@@ -362,7 +363,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
         [
           active:
             {"active server limit reached (max {current})",
-             current: owner.active_server_count, limit: ServerOwner.active_server_limit()}
+             current: ServerOwner.active_server_count(owner),
+             limit: ServerOwnerCounters.active_server_limit()}
         ]
       else
         []
@@ -373,7 +375,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
         [
           active:
             {"server limit reached (max {current})",
-             current: owner.server_count, limit: ServerOwner.server_limit()}
+             current: ServerOwner.server_count(owner), limit: ServerOwnerCounters.server_limit()}
         ]
       else
         []
@@ -427,7 +429,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
         [
           active:
             {"active server limit reached (max {current})",
-             current: owner.active_server_count, limit: ServerOwner.active_server_limit()}
+             current: ServerOwner.active_server_count(owner),
+             limit: ServerOwnerCounters.active_server_limit()}
         ]
       else
         []

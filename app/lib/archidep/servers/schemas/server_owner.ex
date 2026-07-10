@@ -12,6 +12,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Errors.ServerOwnerNotFoundError
   alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.Schemas.ServerOwnerCounters
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
@@ -24,27 +25,18 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
           active: boolean(),
           group_member: ServerGroupMember.t() | nil | NotLoaded.t(),
           group_member_id: UUID.t() | nil,
-          active_server_count: non_neg_integer(),
-          active_server_count_lock: pos_integer(),
-          server_count: non_neg_integer(),
-          server_count_lock: pos_integer(),
+          counters: ServerOwnerCounters.t() | nil | NotLoaded.t(),
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
         }
-
-  @active_server_limit 1
-  @server_limit 5
 
   schema "user_accounts" do
     field(:username, :string)
     field(:root, :boolean)
     field(:active, :boolean)
     belongs_to(:group_member, ServerGroupMember, source: :student_id)
-    field(:active_server_count, :integer)
-    field(:active_server_count_lock, :integer)
-    field(:server_count, :integer)
-    field(:server_count_lock, :integer)
+    has_one(:counters, ServerOwnerCounters, foreign_key: :user_account_id, references: :id)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
@@ -60,12 +52,6 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
       do: ServerGroupMember.active?(group_member, now)
 
   def active?(%__MODULE__{}, _now), do: false
-
-  @spec active_server_limit() :: pos_integer()
-  def active_server_limit, do: @active_server_limit
-
-  @spec server_limit() :: pos_integer()
-  def server_limit, do: @server_limit
 
   @spec where_server_owner_active(Date.t()) :: Queryable.t()
   def where_server_owner_active(day),
@@ -85,8 +71,12 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
              left_join: gm in assoc(so, :group_member),
              left_join: gmg in assoc(gm, :group),
              left_join: gmgesp in assoc(gmg, :expected_server_properties),
+             left_join: c in assoc(so, :counters),
              where: so.id == ^auth.principal_id,
-             preload: [group_member: {gm, group: {gmg, expected_server_properties: gmgesp}}]
+             preload: [
+               group_member: {gm, group: {gmg, expected_server_properties: gmgesp}},
+               counters: c
+             ]
            )
          ) do
       nil ->
@@ -104,33 +94,44 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
         left_join: gm in assoc(o, :group_member),
         left_join: gmg in assoc(gm, :group),
         left_join: gmgesp in assoc(gmg, :expected_server_properties),
+        left_join: c in assoc(o, :counters),
         where: o.id == ^id,
-        preload: [group_member: {gm, group: {gmg, expected_server_properties: gmgesp}}]
+        preload: [
+          group_member: {gm, group: {gmg, expected_server_properties: gmgesp}},
+          counters: c
+        ]
       )
       |> Repo.one()
       |> truthy_or(:server_owner_not_found)
 
+  # An owner with no counters row has never registered a server, so its counts
+  # are zero. A `NotLoaded` association is a forgotten preload, not a zero
+  # count, so it is left to raise rather than silently reporting the limits as
+  # unmet.
+
+  @spec active_server_count(t()) :: non_neg_integer()
+  def active_server_count(%__MODULE__{
+        counters: %ServerOwnerCounters{active_server_count: count}
+      }),
+      do: count
+
+  def active_server_count(%__MODULE__{counters: nil}), do: 0
+
+  @spec server_count(t()) :: non_neg_integer()
+  def server_count(%__MODULE__{counters: %ServerOwnerCounters{server_count: count}}), do: count
+  def server_count(%__MODULE__{counters: nil}), do: 0
+
   @spec active_server_limit_reached?(t()) :: boolean()
-  def active_server_limit_reached?(%__MODULE__{active_server_count: count}),
-    do: count >= @active_server_limit
+  def active_server_limit_reached?(%__MODULE__{counters: %ServerOwnerCounters{} = counters}),
+    do: ServerOwnerCounters.active_server_limit_reached?(counters)
+
+  def active_server_limit_reached?(%__MODULE__{counters: nil}), do: false
 
   @spec server_limit_reached?(t()) :: boolean()
-  def server_limit_reached?(%__MODULE__{server_count: count}),
-    do: count >= @server_limit
+  def server_limit_reached?(%__MODULE__{counters: %ServerOwnerCounters{} = counters}),
+    do: ServerOwnerCounters.server_limit_reached?(counters)
 
-  @spec update_active_server_count(t(), -1 | 1) :: Changeset.t(t())
-  def update_active_server_count(owner, n) when n == -1 or n == 1,
-    do:
-      owner
-      |> cast(%{active_server_count: owner.active_server_count + n}, [:active_server_count])
-      |> optimistic_lock(:active_server_count_lock)
-
-  @spec update_server_count(t(), -1 | 1) :: Changeset.t(t())
-  def update_server_count(owner, n) when n == -1 or n == 1,
-    do:
-      owner
-      |> cast(%{server_count: owner.server_count + n}, [:server_count])
-      |> optimistic_lock(:server_count_lock)
+  def server_limit_reached?(%__MODULE__{counters: nil}), do: false
 
   @spec refresh!(t(), map()) :: t()
   def refresh!(

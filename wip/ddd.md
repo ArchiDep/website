@@ -86,13 +86,13 @@ The `user_accounts` table is co-owned today: Accounts owns identity/auth, but
 the server-count counters on it are written exclusively by Servers. We restore
 single ownership by moving those counters out.
 
-- [ ] **#2 Move the server counters into a Servers-owned table.** Migrate
+- [x] **#2 Move the server counters into a Servers-owned table.** Migrate
       `active_server_count`, `server_count`, and their `_lock` companions (plus
       the non-negative / lock-positive constraints) off `user_accounts` into a
       new Servers-owned table keyed by `user_account_id`, backfilling existing
       values — see [#2 Move the server counters into a Servers-owned
       table](#2-move-the-server-counters-into-a-servers-owned-table).
-- [ ] **#2b Update the ownership diagram.** Reflect the move in
+- [x] **#2b Update the ownership diagram.** Reflect the move in
       `app/CONTRIBUTING.md` so `user_accounts` is cleanly Accounts-owned again —
       see [#2b Update the ownership diagram](#2b-update-the-ownership-diagram).
 

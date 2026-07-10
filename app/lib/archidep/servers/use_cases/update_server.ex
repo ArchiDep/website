@@ -19,6 +19,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerOwnerCounters
   alias ArchiDep.Servers.ServerTracking.ServerManagerClient
   alias ArchiDep.Servers.ServerTracking.ServersOrchestratorClient
   alias ArchiDep.Servers.Types
@@ -70,7 +71,9 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
 
     case Multi.new()
          |> Multi.update(:server, update_server_changeset(auth, server, data, owner, now))
-         |> Multi.merge(&update_active_server_count(fresh_server_owner, server.active, &1.server))
+         |> Multi.merge(
+           &update_active_server_count(fresh_server_owner.counters, server.active, &1.server)
+         )
          |> Multi.insert(:stored_event, &server_updated(auth, &1.server))
          |> Repo.transaction() do
       {:ok, %{server: updated_server, stored_event: event}} ->
@@ -90,16 +93,18 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
     end
   end
 
-  defp update_active_server_count(owner, was_active, %Server{active: active})
+  defp update_active_server_count(%ServerOwnerCounters{} = counters, was_active, %Server{
+         active: active
+       })
        when active != was_active,
        do:
          Multi.update(
            Multi.new(),
            :server_limit,
-           ServerOwner.update_active_server_count(owner, if(active, do: 1, else: -1))
+           ServerOwnerCounters.update_active_server_count(counters, if(active, do: 1, else: -1))
          )
 
-  defp update_active_server_count(_owner, _was_active, _server), do: Multi.new()
+  defp update_active_server_count(_counters, _was_active, _server), do: Multi.new()
 
   defp server_updated(auth, server),
     do:

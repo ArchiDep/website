@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerOwnerCounters
   alias ArchiDep.Servers.Types
 
   @spec validate_server(Authentication.t(), UUID.t(), Types.server_data()) ::
@@ -42,7 +43,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
          :ok <- authorize(auth, Policy, :servers, :create_server, {data, group, owner}) do
       case Multi.new()
            |> Multi.insert(:server, new_server(auth, data, group, owner, Clock.now()))
-           |> Multi.update(:server_limit, ServerOwner.update_server_count(owner, 1))
+           |> increment_server_count(owner)
            |> Multi.merge(&increase_active_server_count(&1.server_limit, &1.server))
            |> Multi.insert(:stored_event, &server_created(auth, &1.server))
            |> Repo.transaction() do
@@ -70,15 +71,28 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
     end
   end
 
-  defp increase_active_server_count(owner, %Server{active: true}),
+  # The counters row exists for every owner who already has a server; a
+  # brand-new owner registering their first server has none yet, so create it.
+  defp increment_server_count(multi, %ServerOwner{counters: nil, id: id}),
+    do: Multi.insert(multi, :server_limit, ServerOwnerCounters.initial_changeset(id))
+
+  defp increment_server_count(multi, %ServerOwner{counters: %ServerOwnerCounters{} = counters}),
+    do:
+      Multi.update(
+        multi,
+        :server_limit,
+        ServerOwnerCounters.update_server_count(counters, 1)
+      )
+
+  defp increase_active_server_count(%ServerOwnerCounters{} = counters, %Server{active: true}),
     do:
       Multi.update(
         Multi.new(),
         :active_server_limit,
-        ServerOwner.update_active_server_count(owner, 1)
+        ServerOwnerCounters.update_active_server_count(counters, 1)
       )
 
-  defp increase_active_server_count(_owner, _server), do: Multi.new()
+  defp increase_active_server_count(_counters, _server), do: Multi.new()
 
   defp server_created(auth, server),
     do:
