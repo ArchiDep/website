@@ -2,6 +2,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
   @moduledoc """
   A group of servers that share common properties and can be
   activated/deactivated together.
+
+  This is a read-view of the `classes` table owned (written) by the Course
+  context.
   """
 
   use ArchiDep, :schema

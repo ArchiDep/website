@@ -2,6 +2,9 @@ defmodule ArchiDep.Course.Schemas.User do
   @moduledoc """
   A user of the application who can log in to access the course and track
   servers. A user may be a student enrolled in a class.
+
+  This is a read-view of the `user_accounts` table owned (written) by the
+  Accounts context.
   """
 
   use ArchiDep, :schema

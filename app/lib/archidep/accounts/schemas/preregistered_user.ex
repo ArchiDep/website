@@ -4,6 +4,9 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
   application. The actual user account is created automatically when the person
   logs in with the corresponding email, at which point the preregistered user is
   linked to the user account.
+
+  This is a read-view of the `students` table owned (written) by the Course
+  context.
   """
 
   use ArchiDep, :schema

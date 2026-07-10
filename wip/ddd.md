@@ -69,13 +69,13 @@ time.
 The highest-value work — the original assessment's "if only one thing." It makes
 the "read view" abstraction trustworthy rather than aspirational.
 
-- [ ] **#1 Read-view contract test.** One `DataCase` test that iterates over
+- [x] **#1 Read-view contract test.** One `DataCase` test that iterates over
       every read-view and shared-kernel schema and asserts each mapped source
       column still exists on the live physical table (DB introspection), so a
       migration in the owning context that renames or drops a column fails
       loudly in CI. Cover all eight schemas across both coupling directions —
       see [#1 Read-view contract test](#1-read-view-contract-test).
-- [ ] **#1b Provenance comments.** Add a one-line comment to each read-view
+- [x] **#1b Provenance comments.** Add a one-line comment to each read-view
       schema pointing at the owning context, so the coupling is discoverable
       from the dependent side — see [#1b Provenance
       comments](#1b-provenance-comments).

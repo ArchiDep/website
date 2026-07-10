@@ -3,6 +3,9 @@ defmodule ArchiDep.Accounts.Schemas.UserGroup do
   A user group represents a number of user accounts that can be
   activated/deactivated together and that may only be active for a given period
   of time.
+
+  This is a read-view of the `classes` table owned (written) by the Course
+  context.
   """
 
   use ArchiDep, :schema

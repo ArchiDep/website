@@ -1,6 +1,9 @@
 defmodule ArchiDep.Servers.Schemas.ServerOwner do
   @moduledoc """
   The owner who registered a server with the application.
+
+  This is a read-view of the `user_accounts` table owned (written) by the
+  Accounts context.
   """
 
   use ArchiDep, :schema

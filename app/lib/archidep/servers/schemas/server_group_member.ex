@@ -2,6 +2,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
   @moduledoc """
   A member of a server group, authorized to create a server for themselves
   within that group.
+
+  This is a read-view of the `students` table owned (written) by the Course
+  context.
   """
   use ArchiDep, :schema
 
