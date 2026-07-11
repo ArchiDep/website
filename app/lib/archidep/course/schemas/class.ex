@@ -173,29 +173,26 @@ defmodule ArchiDep.Course.Schemas.Class do
   end
 
   @spec refresh!(t(), map()) :: t()
-  def refresh!(
-        %__MODULE__{
-          id: id,
-          expected_server_properties: expected_server_properties,
-          version: current_version
-        } = class,
-        %{
-          id: id,
-          name: name,
-          start_date: start_date,
-          end_date: end_date,
-          active: active,
-          servers_enabled: servers_enabled,
-          teacher_ssh_public_keys: teacher_ssh_public_keys,
-          ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
-          ssh_exercise_vm_sha256_host_key_fingerprints:
-            ssh_exercise_vm_sha256_host_key_fingerprints,
-          expected_server_properties: new_expected_server_properties,
-          version: version,
-          updated_at: updated_at
-        }
-      )
-      when version == current_version + 1 do
+  def refresh!(class, incoming),
+    do: versioned_refresh(class, incoming, incoming.version, &fetch_class/1, &merge_refresh/2)
+
+  defp merge_refresh(
+         %__MODULE__{expected_server_properties: expected_server_properties} = class,
+         %{
+           name: name,
+           start_date: start_date,
+           end_date: end_date,
+           active: active,
+           servers_enabled: servers_enabled,
+           teacher_ssh_public_keys: teacher_ssh_public_keys,
+           ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
+           ssh_exercise_vm_sha256_host_key_fingerprints:
+             ssh_exercise_vm_sha256_host_key_fingerprints,
+           expected_server_properties: new_expected_server_properties,
+           version: version,
+           updated_at: updated_at
+         }
+       ) do
     %__MODULE__{
       class
       | name: name,
@@ -217,18 +214,7 @@ defmodule ArchiDep.Course.Schemas.Class do
     }
   end
 
-  def refresh!(%__MODULE__{id: id, version: current_version} = class, %{
-        id: id,
-        version: version
-      })
-      when version <= current_version do
-    class
-  end
-
-  def refresh!(%__MODULE__{id: id}, %{id: id}) do
-    {:ok, fresh_class} = fetch_class(id)
-    fresh_class
-  end
+  defp merge_refresh(_class, _incoming), do: :refetch
 
   @spec delete(t()) :: Changeset.t(t())
   def delete(class) do

@@ -168,31 +168,30 @@ defmodule ArchiDep.Course.Schemas.Student do
     do: Repo.aggregate(from(s in __MODULE__, where: not is_nil(s.user_id)), :count, :id)
 
   @spec refresh!(t(), map()) :: t()
-  def refresh!(
-        %__MODULE__{
-          id: id,
-          class: %Class{id: class_id, version: class_version},
-          user: %User{id: user_id, version: user_version},
-          version: current_version
-        } = student,
-        %__MODULE__{
-          id: id,
-          name: name,
-          email: email,
-          academic_class: academic_class,
-          username: username,
-          username_confirmed: username_confirmed,
-          domain: domain,
-          active: active,
-          servers_enabled: servers_enabled,
-          ssh_exercise_password: ssh_exercise_password,
-          class: %Class{id: class_id, version: class_version},
-          user: %User{id: user_id, version: user_version},
-          version: version,
-          updated_at: updated_at
-        }
-      )
-      when version == current_version + 1 do
+  def refresh!(student, incoming),
+    do: versioned_refresh(student, incoming, incoming.version, &fetch_student/1, &merge_refresh/2)
+
+  defp merge_refresh(
+         %__MODULE__{
+           class: %Class{id: class_id, version: class_version},
+           user: %User{id: user_id, version: user_version}
+         } = student,
+         %__MODULE__{
+           name: name,
+           email: email,
+           academic_class: academic_class,
+           username: username,
+           username_confirmed: username_confirmed,
+           domain: domain,
+           active: active,
+           servers_enabled: servers_enabled,
+           ssh_exercise_password: ssh_exercise_password,
+           class: %Class{id: class_id, version: class_version},
+           user: %User{id: user_id, version: user_version},
+           version: version,
+           updated_at: updated_at
+         }
+       ) do
     %__MODULE__{
       student
       | name: name,
@@ -209,27 +208,23 @@ defmodule ArchiDep.Course.Schemas.Student do
     }
   end
 
-  def refresh!(
-        %__MODULE__{
-          id: id,
-          class: %Class{id: class_id, version: class_version},
-          user: %User{id: user_id, version: user_version},
-          version: current_version
-        } = student,
-        %{
-          id: id,
-          name: name,
-          username: username,
-          domain: domain,
-          active: active,
-          servers_enabled: servers_enabled,
-          group: %{id: class_id, version: class_version},
-          owner: %{id: user_id, version: user_version},
-          version: version,
-          updated_at: updated_at
-        }
-      )
-      when version == current_version + 1 do
+  defp merge_refresh(
+         %__MODULE__{
+           class: %Class{id: class_id, version: class_version},
+           user: %User{id: user_id, version: user_version}
+         } = student,
+         %{
+           name: name,
+           username: username,
+           domain: domain,
+           active: active,
+           servers_enabled: servers_enabled,
+           group: %{id: class_id, version: class_version},
+           owner: %{id: user_id, version: user_version},
+           version: version,
+           updated_at: updated_at
+         }
+       ) do
     %__MODULE__{
       student
       | name: name,
@@ -242,18 +237,7 @@ defmodule ArchiDep.Course.Schemas.Student do
     }
   end
 
-  def refresh!(%__MODULE__{id: id, version: current_version} = student, %{
-        id: id,
-        version: version
-      })
-      when version <= current_version do
-    student
-  end
-
-  def refresh!(%__MODULE__{id: id}, %{id: id}) do
-    {:ok, fresh_student} = fetch_student(id)
-    fresh_student
-  end
+  defp merge_refresh(_student, _incoming), do: :refetch
 
   @spec new(Types.student_data(), Class.t(), DateTime.t()) :: Changeset.t(t())
   def new(data, class, now) do

@@ -470,36 +470,34 @@ defmodule ArchiDep.Servers.Schemas.Server do
   end
 
   @spec refresh!(t(), map()) :: t()
-  def refresh!(
-        %__MODULE__{
-          id: id,
-          version: current_version
-        } = server,
-        %{
-          id: id,
-          name: name,
-          ip_address: ip_address,
-          username: username,
-          app_username: app_username,
-          ssh_port: ssh_port,
-          ssh_host_key_fingerprints: ssh_host_key_fingerprints,
-          secret_key: secret_key,
-          active: active,
-          group: group,
-          group_id: group_id,
-          owner: owner,
-          owner_id: owner_id,
-          expected_properties: expected_properties,
-          expected_properties_id: expected_properties_id,
-          last_known_properties: last_known_properties,
-          last_known_properties_id: last_known_properties_id,
-          version: version,
-          set_up_at: set_up_at,
-          open_ports_checked_at: open_ports_checked_at,
-          updated_at: updated_at
-        }
-      )
-      when version == current_version + 1 do
+  def refresh!(server, incoming),
+    do: versioned_refresh(server, incoming, incoming.version, &fetch_server/1, &merge_refresh/2)
+
+  defp merge_refresh(
+         %__MODULE__{} = server,
+         %{
+           name: name,
+           ip_address: ip_address,
+           username: username,
+           app_username: app_username,
+           ssh_port: ssh_port,
+           ssh_host_key_fingerprints: ssh_host_key_fingerprints,
+           secret_key: secret_key,
+           active: active,
+           group: group,
+           group_id: group_id,
+           owner: owner,
+           owner_id: owner_id,
+           expected_properties: expected_properties,
+           expected_properties_id: expected_properties_id,
+           last_known_properties: last_known_properties,
+           last_known_properties_id: last_known_properties_id,
+           version: version,
+           set_up_at: set_up_at,
+           open_ports_checked_at: open_ports_checked_at,
+           updated_at: updated_at
+         }
+       ) do
     %__MODULE__{
       server
       | name: name,
@@ -525,18 +523,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     }
   end
 
-  def refresh!(%__MODULE__{id: id, version: current_version} = server, %{
-        id: id,
-        version: version
-      })
-      when version <= current_version do
-    server
-  end
-
-  def refresh!(%__MODULE__{id: id}, %{id: id}) do
-    {:ok, fresh_server} = fetch_server(id)
-    fresh_server
-  end
+  defp merge_refresh(_server, _incoming), do: :refetch
 
   @spec mark_as_set_up!(t(), EventReference.t(), DateTime.t()) :: t()
   def mark_as_set_up!(%__MODULE__{set_up_at: nil} = server, cause, now) do

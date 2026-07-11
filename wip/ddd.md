@@ -146,7 +146,7 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
       Highest priority: the loud guard and the safety net for #5b/#5c — see [#5a
       refresh! round-trip consistency
       tests](#5a-refresh-round-trip-consistency-tests).
-- [ ] **#5b Extract the version skeleton into a plain helper.** Pull the
+- [x] **#5b Extract the version skeleton into a plain helper.** Pull the
       identical `version <= current` no-op and gap-refetch fallback clauses out
       of the live schemas into a plain (non-macro) higher-order function,
       leaving only the per-schema field mapping — see [#5b Extract the version

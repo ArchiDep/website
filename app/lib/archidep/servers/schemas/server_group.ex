@@ -81,21 +81,31 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
       |> truthy_or(:server_group_not_found)
 
   @spec refresh!(t(), map()) :: t()
+  def refresh!(group, incoming),
+    do:
+      versioned_refresh(
+        group,
+        incoming,
+        incoming.version,
+        &fetch_server_group/1,
+        &merge_refresh/2
+      )
 
-  def refresh!(%__MODULE__{id: id, version: current_version} = group, %__MODULE__{
-        id: id,
-        name: name,
-        start_date: start_date,
-        end_date: end_date,
-        active: active,
-        servers_enabled: servers_enabled,
-        ssh_public_keys_to_install: ssh_public_keys_to_install,
-        expected_server_properties: expected_server_properties,
-        expected_server_properties_id: expected_server_properties_id,
-        version: version,
-        updated_at: updated_at
-      })
-      when version == current_version + 1 do
+  defp merge_refresh(
+         %__MODULE__{} = group,
+         %__MODULE__{
+           name: name,
+           start_date: start_date,
+           end_date: end_date,
+           active: active,
+           servers_enabled: servers_enabled,
+           ssh_public_keys_to_install: ssh_public_keys_to_install,
+           expected_server_properties: expected_server_properties,
+           expected_server_properties_id: expected_server_properties_id,
+           version: version,
+           updated_at: updated_at
+         }
+       ) do
     %__MODULE__{
       group
       | name: name,
@@ -111,26 +121,20 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
     }
   end
 
-  def refresh!(
-        %__MODULE__{
-          id: id,
-          expected_server_properties: expected_server_properties,
-          version: current_version
-        } = group,
-        %{
-          id: id,
-          name: name,
-          start_date: start_date,
-          end_date: end_date,
-          active: active,
-          servers_enabled: servers_enabled,
-          teacher_ssh_public_keys: ssh_public_keys_to_install,
-          expected_server_properties: new_expected_server_properties,
-          version: version,
-          updated_at: updated_at
-        }
-      )
-      when version == current_version + 1 do
+  defp merge_refresh(
+         %__MODULE__{expected_server_properties: expected_server_properties} = group,
+         %{
+           name: name,
+           start_date: start_date,
+           end_date: end_date,
+           active: active,
+           servers_enabled: servers_enabled,
+           teacher_ssh_public_keys: ssh_public_keys_to_install,
+           expected_server_properties: new_expected_server_properties,
+           version: version,
+           updated_at: updated_at
+         }
+       ) do
     %__MODULE__{
       group
       | name: name,
@@ -146,16 +150,5 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
     }
   end
 
-  def refresh!(%__MODULE__{id: id, version: current_version} = group, %{
-        id: id,
-        version: version
-      })
-      when version <= current_version do
-    group
-  end
-
-  def refresh!(%__MODULE__{id: id}, %{id: id}) do
-    {:ok, fresh_group} = fetch_server_group(id)
-    fresh_group
-  end
+  defp merge_refresh(_group, _incoming), do: :refetch
 end

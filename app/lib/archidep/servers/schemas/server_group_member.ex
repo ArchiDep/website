@@ -94,28 +94,34 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
       |> truthy_or(:server_group_member_not_found)
 
   @spec refresh!(t(), map()) :: t()
-  def refresh!(
-        %__MODULE__{
-          id: id,
-          group: %ServerGroup{id: group_id, version: group_version},
-          owner: %ServerOwner{id: owner_id, version: owner_version},
-          version: current_version
-        } = member,
-        %__MODULE__{
-          id: id,
-          name: name,
-          username: username,
-          username_confirmed: username_confirmed,
-          domain: domain,
-          active: active,
-          servers_enabled: servers_enabled,
-          group: %ServerGroup{id: group_id, version: group_version},
-          owner: %ServerOwner{id: owner_id, version: owner_version},
-          version: version,
-          updated_at: updated_at
-        }
+  def refresh!(member, incoming),
+    do:
+      versioned_refresh(
+        member,
+        incoming,
+        incoming.version,
+        &fetch_server_group_member/1,
+        &merge_refresh/2
       )
-      when version == current_version + 1 do
+
+  defp merge_refresh(
+         %__MODULE__{
+           group: %ServerGroup{id: group_id, version: group_version},
+           owner: %ServerOwner{id: owner_id, version: owner_version}
+         } = member,
+         %__MODULE__{
+           name: name,
+           username: username,
+           username_confirmed: username_confirmed,
+           domain: domain,
+           active: active,
+           servers_enabled: servers_enabled,
+           group: %ServerGroup{id: group_id, version: group_version},
+           owner: %ServerOwner{id: owner_id, version: owner_version},
+           version: version,
+           updated_at: updated_at
+         }
+       ) do
     %__MODULE__{
       member
       | name: name,
@@ -129,27 +135,22 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
     }
   end
 
-  @spec refresh!(t(), map()) :: t()
-  def refresh!(
-        %__MODULE__{
-          id: id,
-          group: %ServerGroup{id: group_id, version: group_version},
-          owner: %ServerOwner{id: owner_id, version: owner_version},
-          version: current_version
-        } = member,
-        %{
-          id: id,
-          name: name,
-          domain: domain,
-          active: active,
-          servers_enabled: servers_enabled,
-          class: %{id: group_id, version: group_version},
-          user: %{id: owner_id, version: owner_version},
-          version: version,
-          updated_at: updated_at
-        }
-      )
-      when version == current_version + 1 do
+  defp merge_refresh(
+         %__MODULE__{
+           group: %ServerGroup{id: group_id, version: group_version},
+           owner: %ServerOwner{id: owner_id, version: owner_version}
+         } = member,
+         %{
+           name: name,
+           domain: domain,
+           active: active,
+           servers_enabled: servers_enabled,
+           class: %{id: group_id, version: group_version},
+           user: %{id: owner_id, version: owner_version},
+           version: version,
+           updated_at: updated_at
+         }
+       ) do
     %__MODULE__{
       member
       | name: name,
@@ -161,16 +162,5 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
     }
   end
 
-  def refresh!(%__MODULE__{id: id, version: current_version} = student, %{
-        id: id,
-        version: version
-      })
-      when version <= current_version do
-    student
-  end
-
-  def refresh!(%__MODULE__{id: id}, %{id: id}) do
-    {:ok, fresh_server_group_member} = fetch_server_group_member(id)
-    fresh_server_group_member
-  end
+  defp merge_refresh(_member, _incoming), do: :refetch
 end

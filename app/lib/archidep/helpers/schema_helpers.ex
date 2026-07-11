@@ -43,6 +43,9 @@ defmodule ArchiDep.Helpers.SchemaHelpers do
   def trim_to_nil(nil), do: nil
   def trim_to_nil(value), do: value |> String.trim() |> non_empty_string_or_nil()
 
+  defp non_empty_string_or_nil(""), do: nil
+  defp non_empty_string_or_nil(value), do: value
+
   @doc """
   Returns the value truncated to the specified maximum length if it is a string,
   otherwise returns nil.
@@ -83,6 +86,53 @@ defmodule ArchiDep.Helpers.SchemaHelpers do
     end
   end
 
-  defp non_empty_string_or_nil(""), do: nil
-  defp non_empty_string_or_nil(value), do: value
+  @doc """
+  Reconcile a cached schema struct with an incoming update carrying the given
+  version.
+
+  * When the incoming version is exactly one ahead of the cached struct, the
+    `merge` function maps the incoming payload onto the cached struct; if it
+    returns `:refetch` (the incoming payload does not match), the struct is
+    reloaded with `fetch`.
+  * When the incoming version is at or below the cached version, the cached
+    struct is returned unchanged.
+  * Otherwise (a version gap), the struct is reloaded with `fetch`.
+
+  The version is taken from the `version` argument rather than read off the
+  incoming payload, so callers control its source.
+  """
+  @spec versioned_refresh(
+          struct(),
+          map(),
+          non_neg_integer(),
+          (UUID.t() -> {:ok, struct()} | {:error, atom()}),
+          (struct(), map() -> struct() | :refetch)
+        ) :: struct()
+  def versioned_refresh(
+        %{id: id, version: current} = cached,
+        %{id: id} = incoming,
+        version,
+        fetch,
+        merge
+      )
+      when is_function(fetch, 1) and is_function(merge, 2) do
+    cond do
+      version == current + 1 ->
+        case merge.(cached, incoming) do
+          :refetch -> refetch(fetch, id)
+          %{} = merged -> merged
+        end
+
+      version <= current ->
+        cached
+
+      true ->
+        refetch(fetch, id)
+    end
+  end
+
+  defp refetch(fetch, id) do
+    {:ok, fresh} = fetch.(id)
+    fresh
+  end
 end
