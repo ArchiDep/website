@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
   use ArchiDepWeb, :live_view
 
   import ArchiDepWeb.Helpers.DateFormatHelpers
+  import ArchiDepWeb.Helpers.ClassHelpers, only: [class_updated_id: 1]
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Course
   alias ArchiDep.Course.PubSub

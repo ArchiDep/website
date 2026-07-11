@@ -6,7 +6,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   use ArchiDepWeb, :channel
 
   import ArchiDepWeb.Helpers.AuthHelpers
-  import ArchiDepWeb.Helpers.LiveViewHelpers, only: [class_updated_id: 1]
+  import ArchiDepWeb.Helpers.ClassHelpers, only: [class_updated_id: 1]
   alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class

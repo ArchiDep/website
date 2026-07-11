@@ -99,8 +99,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
       )
 
   defp merge_refresh(
-         %__MODULE__{} = group,
+         %__MODULE__{id: id} = group,
          %ClassUpdated{
+           id: id,
            name: name,
            start_date: start_date,
            end_date: end_date,
@@ -125,8 +126,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
   end
 
   defp merge_refresh(
-         %__MODULE__{expected_server_properties: expected_server_properties} = group,
+         %__MODULE__{id: id, expected_server_properties: expected_server_properties} = group,
          %ClassExpectedServerPropertiesUpdated{
+           class: %{id: id},
            hostname: hostname,
            machine_id: machine_id,
            cpus: cpus,

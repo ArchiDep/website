@@ -5,10 +5,9 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
-  alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.SSHFactory
   alias Ecto.Changeset
-  alias Ecto.UUID
 
   # These changeset validations do not depend on the creation timestamp; a fixed
   # instant keeps the `Class.new/2` and `Class.update/3` calls deterministic.
@@ -290,7 +289,14 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
             teacher_ssh_public_keys: ["ssh-ed25519 AAAAsentinel comment"]
         })
 
-      assert Class.refresh!(cached, event, reference(cached.version + 1, @later)) == %{
+      assert Class.refresh!(
+               cached,
+               event,
+               EventsFactory.build(:event_reference,
+                 version: cached.version + 1,
+                 occurred_at: @later
+               )
+             ) == %{
                cached
                | name: "Renamed class",
                  start_date: ~D[2024-02-01],
@@ -313,7 +319,14 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
           cached
         )
 
-      assert Class.refresh!(cached, event, reference(cached.version + 1, @later)) == %{
+      assert Class.refresh!(
+               cached,
+               event,
+               EventsFactory.build(:event_reference,
+                 version: cached.version + 1,
+                 occurred_at: @later
+               )
+             ) == %{
                cached
                | expected_server_properties: %{
                    cached.expected_server_properties
@@ -330,7 +343,11 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
 
       event = ClassUpdated.new(%{cached | name: "Ignored"})
 
-      assert Class.refresh!(cached, event, reference(cached.version, @later)) == cached
+      assert Class.refresh!(
+               cached,
+               event,
+               EventsFactory.build(:event_reference, version: cached.version, occurred_at: @later)
+             ) == cached
     end
 
     test "re-fetches from the database when the incoming version skips ahead" do
@@ -348,18 +365,16 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
 
       event = ClassUpdated.new(%{cached | name: "Ignored"})
 
-      assert Class.refresh!(cached, event, reference(cached.version + 2, @later)) == fresh
+      assert Class.refresh!(
+               cached,
+               event,
+               EventsFactory.build(:event_reference,
+                 version: cached.version + 2,
+                 occurred_at: @later
+               )
+             ) == fresh
     end
   end
-
-  defp reference(version, occurred_at),
-    do: %EventReference{
-      id: UUID.generate(),
-      causation_id: UUID.generate(),
-      correlation_id: UUID.generate(),
-      version: version,
-      occurred_at: occurred_at
-    }
 
   defp changeset(:new, overrides),
     do: :class_data |> build(overrides) |> Class.new(@now)

@@ -1,6 +1,7 @@
 defmodule ArchiDepWeb.Admin.AdminLive do
   use ArchiDepWeb, :live_view
 
+  import ArchiDepWeb.Helpers.ClassHelpers, only: [class_updated_id: 1]
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Clock
   alias ArchiDep.Course
@@ -131,7 +132,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, event, _reference},
+        {:class_updated, event, reference},
         %Socket{
           assigns: %{
             auth: auth,
@@ -142,7 +143,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       ) do
     id = class_updated_id(event)
 
-    case Course.fetch_class(auth, id) do
+    case resolve_updated_class(active_classes, id, event, reference, auth) do
       {:ok, updated_class} ->
         if Class.active?(updated_class, Clock.now()) do
           socket
@@ -166,7 +167,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
           |> noreply()
         end
 
-      {:error, _reason} ->
+      :ignore ->
         noreply(socket)
     end
   end
@@ -369,6 +370,22 @@ defmodule ArchiDepWeb.Admin.AdminLive do
         socket
         |> assign(ansible: Map.put(ansible, :ongoing, MapSet.delete(ongoing, key)))
         |> noreply()
+
+  # A class already shown is reconciled in memory from the broadcast event; one
+  # that is not (an inactive class becoming active) is fetched, since the event
+  # alone cannot rebuild a full class to add to the list.
+  defp resolve_updated_class(active_classes, id, event, reference, auth) do
+    case Enum.find(active_classes, &(&1.id == id)) do
+      %Class{} = cached ->
+        {:ok, Class.refresh!(cached, event, reference)}
+
+      nil ->
+        case Course.fetch_class(auth, id) do
+          {:ok, class} -> {:ok, class}
+          {:error, _reason} -> :ignore
+        end
+    end
+  end
 
   defp add_class(classes, class) do
     if Enum.any?(classes, &(&1.id == class.id)) do

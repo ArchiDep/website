@@ -191,8 +191,9 @@ defmodule ArchiDep.Course.Schemas.Class do
       )
 
   defp merge_refresh(
-         %__MODULE__{} = class,
+         %__MODULE__{id: id} = class,
          %ClassUpdated{
+           id: id,
            name: name,
            start_date: start_date,
            end_date: end_date,
@@ -223,8 +224,9 @@ defmodule ArchiDep.Course.Schemas.Class do
   end
 
   defp merge_refresh(
-         %__MODULE__{expected_server_properties: expected_server_properties} = class,
+         %__MODULE__{id: id, expected_server_properties: expected_server_properties} = class,
          %ClassExpectedServerPropertiesUpdated{
+           class: %{id: id},
            hostname: hostname,
            machine_id: machine_id,
            cpus: cpus,

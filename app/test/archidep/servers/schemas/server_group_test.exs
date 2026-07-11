@@ -3,9 +3,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupTest do
 
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
-  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.EventsFactory
   alias Ecto.UUID
 
   @now ~U[2024-03-15 10:30:00.000000Z]
@@ -53,7 +53,14 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupTest do
             teacher_ssh_public_keys: ["ssh-ed25519 AAAAsentinel comment"]
         })
 
-      assert ServerGroup.refresh!(group, event, reference(group.version + 1, @later)) == %{
+      assert ServerGroup.refresh!(
+               group,
+               event,
+               EventsFactory.build(:event_reference,
+                 version: group.version + 1,
+                 occurred_at: @later
+               )
+             ) == %{
                group
                | name: "Renamed group",
                  start_date: ~D[2024-02-01],
@@ -89,7 +96,14 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupTest do
         distribution_version: props.distribution_version
       }
 
-      assert ServerGroup.refresh!(group, event, reference(group.version + 1, @later)) == %{
+      assert ServerGroup.refresh!(
+               group,
+               event,
+               EventsFactory.build(:event_reference,
+                 version: group.version + 1,
+                 occurred_at: @later
+               )
+             ) == %{
                group
                | expected_server_properties: %{props | hostname: "sentinel-host"},
                  version: group.version + 1,
@@ -103,7 +117,11 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupTest do
 
       event = ClassUpdated.new(%{class | name: "Ignored"})
 
-      assert ServerGroup.refresh!(group, event, reference(group.version, @later)) == group
+      assert ServerGroup.refresh!(
+               group,
+               event,
+               EventsFactory.build(:event_reference, version: group.version, occurred_at: @later)
+             ) == group
     end
 
     test "re-fetches from the database when the incoming version skips ahead" do
@@ -121,16 +139,14 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupTest do
 
       event = ClassUpdated.new(%{class | name: "Ignored"})
 
-      assert ServerGroup.refresh!(group, event, reference(group.version + 2, @later)) == fresh
+      assert ServerGroup.refresh!(
+               group,
+               event,
+               EventsFactory.build(:event_reference,
+                 version: group.version + 2,
+                 occurred_at: @later
+               )
+             ) == fresh
     end
   end
-
-  defp reference(version, occurred_at),
-    do: %EventReference{
-      id: UUID.generate(),
-      causation_id: UUID.generate(),
-      correlation_id: UUID.generate(),
-      version: version,
-      occurred_at: occurred_at
-    }
 end

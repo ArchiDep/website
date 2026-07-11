@@ -418,13 +418,12 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       {:ok, view, _html} = live(conn, @path)
 
       renamed = %{alpha | name: "Renamed", version: alpha.version + 1}
-      stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, renamed} end)
 
       :ok =
         Course.PubSub.publish_class_updated(
           renamed,
           ClassUpdated.new(renamed),
-          EventsFactory.build(:event_reference)
+          EventsFactory.build(:event_reference, version: renamed.version)
         )
 
       wait_for_socket_assigns!(
@@ -456,13 +455,12 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       {:ok, view, _html} = live(conn, @path)
 
       deactivated = %{beta | active: false, version: beta.version + 1}
-      stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, deactivated} end)
 
       :ok =
         Course.PubSub.publish_class_updated(
           deactivated,
           ClassUpdated.new(deactivated),
-          EventsFactory.build(:event_reference)
+          EventsFactory.build(:event_reference, version: deactivated.version)
         )
 
       wait_for_socket_assigns!(
@@ -479,6 +477,41 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
                  connected_servers: {"0", :secondary}
                },
                classes: [{"Servers for Alpha", []}]
+             }
+    end
+
+    test "adds a class that becomes active on update over PubSub", %{conn: conn, auth: auth} do
+      gamma = build_class(name: "Gamma")
+      stub_admin_page(auth, [], %{})
+      expect_connected_mount([], %{}, [])
+
+      {:ok, view, _html} = live(conn, @path)
+
+      # The class is not currently active, so it is not in the list and not
+      # cached; admin_live fetches the full class to add it.
+      stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, gamma} end)
+
+      :ok =
+        Course.PubSub.publish_class_updated(
+          gamma,
+          ClassUpdated.new(gamma),
+          EventsFactory.build(:event_reference, version: gamma.version)
+        )
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> Enum.any?(assigns.active_classes, &(&1.id == gamma.id)) end,
+        "class added"
+      )
+
+      assert page(render(view)) == %{
+               ssh_public_key: @ssh_public_key,
+               stats: %{
+                 ansible_queue: {"0/0", :success},
+                 ansible_jobs: {"0", :success},
+                 connected_servers: {"0", :secondary}
+               },
+               classes: [{"Servers for Gamma", []}]
              }
     end
 

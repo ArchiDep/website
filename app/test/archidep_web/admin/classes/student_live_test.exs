@@ -445,6 +445,45 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       assert student_page(render(view)) == alice_page(%{class: "Renamed Class"})
     end
 
+    test "looks up a newly available active server on a class update", %{conn: conn, auth: auth} do
+      student = build_alice([])
+
+      # No active server exists at mount; one appears by the time the class
+      # update arrives, so the update's server-group reconciliation looks it up.
+      {:ok, active_server_lookup} = Agent.start_link(fn -> {:error, :server_not_found} end)
+
+      stub(Course.ContextMock, :fetch_student_in_class, fn ^auth, _class_id, _id ->
+        {:ok, student}
+      end)
+
+      stub(Servers.ContextMock, :fetch_active_server_for_group_member, fn ^auth, _id ->
+        Agent.get(active_server_lookup, & &1)
+      end)
+
+      {:ok, view, html} = live(conn, path(student))
+      assert student_page(html) == alice_page()
+
+      server = build_active_server(student, name: "web-01")
+      :ok = Agent.update(active_server_lookup, fn _previous -> {:ok, server} end)
+
+      updated_class = %{student.class | version: student.class.version + 1}
+
+      :ok =
+        Course.PubSub.publish_class_updated(
+          updated_class,
+          ClassUpdated.new(updated_class),
+          EventsFactory.build(:event_reference, version: updated_class.version)
+        )
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> assigns.active_server != nil end,
+        "active server found"
+      )
+
+      assert student_page(render(view)) == alice_page(%{active_server: "web-01"})
+    end
+
     test "navigate away when the class is deleted over PubSub", %{conn: conn, auth: auth} do
       student = build_student(name: "Alice")
       stub_student_page(auth, student: student)

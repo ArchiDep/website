@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   import Hammox
   alias ArchiDep.Accounts
   alias ArchiDep.Course
+  alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
@@ -710,6 +711,56 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
              }
     end
 
+    test "reflects an expected-server-properties update broadcast over PubSub", %{
+      conn: conn,
+      auth: auth
+    } do
+      blank_properties =
+        CourseFactory.build(:expected_server_properties,
+          hostname: nil,
+          machine_id: nil,
+          cpus: nil,
+          cores: nil,
+          vcpus: nil,
+          memory: nil,
+          swap: nil,
+          system: nil,
+          architecture: nil,
+          os_family: nil,
+          distribution: nil,
+          distribution_release: nil,
+          distribution_version: nil
+        )
+
+      {class, server_group} =
+        build_class_and_group(name: "Crypto 101", expected_server_properties: blank_properties)
+
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+
+      {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert expected_properties_shown(html) == [
+               gettext("No restrictions placed on any property")
+             ]
+
+      event = ClassExpectedServerPropertiesUpdated.new(%{blank_properties | cpus: 2}, class)
+
+      :ok =
+        Course.PubSub.publish_class_updated(
+          class,
+          event,
+          EventsFactory.build(:event_reference, version: class.version + 1)
+        )
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> assigns.class.expected_server_properties.cpus == 2 end,
+        "expected properties updated"
+      )
+
+      assert expected_properties_shown(render(view)) == ["2 CPUs"]
+    end
+
     test "navigate away when the class is deleted over PubSub", %{conn: conn, auth: auth} do
       {class, server_group} = build_class_and_group(name: "Gone")
       stub_class_page_calls(auth, class: class, server_group: server_group)
@@ -1288,6 +1339,12 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       servers_enabled: icon_state(servers_dd),
       teacher_ssh_public_keys_count: html_element_text(keys_dd)
     }
+  end
+
+  defp expected_properties_shown(html) do
+    html
+    |> find_html_elements(".card.bg-base-300 ul li")
+    |> Enum.map(&html_element_text/1)
   end
 
   defp icon_state(element),
