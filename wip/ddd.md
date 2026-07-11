@@ -117,7 +117,7 @@ test.
 
 ### D. Documentation honesty
 
-- [ ] **#4 Rename "event sourcing" to "domain event log" / "audit log."** Reword
+- [x] **#4 Rename "event sourcing" to "domain event log" / "audit log."** Reword
       the Events-context prose; the implementation is good as-is and is
       untouched — see [#4 Rename "event sourcing" to "domain event
       log"](#4-rename-event-sourcing-to-domain-event-log).

@@ -379,7 +379,7 @@ for an overview of its area of responsibility):
   [Ansible][ansible]. Documented in detail in
   [`lib/archidep/servers/CONTRIBUTING.md`](./lib/archidep/servers/CONTRIBUTING.md).
 
-- [`Events` context](./lib/archidep/events.ex): the event-sourcing and audit
+- [`Events` context](./lib/archidep/events.ex): the domain event log and audit
   backbone — it stores the business events recorded by all the other contexts
   and exposes an admin-only read API over them. See [Events &
   Auditing](#events--auditing).
@@ -505,10 +505,13 @@ context](./lib/archidep/accounts/CONTRIBUTING.md#impersonation).
 
 ### Events & Auditing
 
-The [`Events` context](./lib/archidep/events.ex) implements **event sourcing**
-for auditing: every significant action across the application is persisted as an
-immutable business event, and the context exposes a read API over the resulting
-audit log.
+The [`Events` context](./lib/archidep/events.ex) maintains an append-only
+**domain event log** (an audit log) for auditing: every significant action
+across the application is persisted as an immutable business event, and the
+context exposes a read API over the resulting audit log. This is _not_ event
+sourcing — application state remains the source of truth in each context's own
+tables, and events are never replayed to reconstruct state; they are a durable,
+consistent record of what happened.
 
 - **Recording events.** Each context defines event modules under its `Events`
   submodule (e.g. `ArchiDep.Course.Events.ClassCreated`) with `use ArchiDep,

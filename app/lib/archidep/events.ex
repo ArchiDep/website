@@ -1,6 +1,7 @@
 defmodule ArchiDep.Events do
   @moduledoc """
-  Events context, which handles event sourcing and event storage.
+  Events context, which handles the domain event log (audit log) and event
+  storage.
   """
 
   @behaviour ArchiDep.Events.Behaviour
