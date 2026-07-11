@@ -170,10 +170,10 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
   - [ ] **#5c-ii Course `student_updated` (+ Accounts linkage).** Thread an
         `EventReference` through `publish_student_updated`; broadcast
         `StudentUpdated` / `StudentConfigured`; convert `Course.Student` (intra)
-        + `Servers.ServerGroupMember` (cross); add the curated Accounts linkage
-        event closing the `preregistered_user` always-refetch omission; delete
-        the dead `Course.User` / `ServerOwner` refreshers and the dead `Student`
-        / `ServerGroupMember` clauses.
+        and `Servers.ServerGroupMember` (cross); add the curated Accounts
+        linkage event closing the `preregistered_user` always-refetch omission;
+        delete the dead `Course.User` / `ServerOwner` refreshers and the dead
+        `Student` / `ServerGroupMember` clauses.
   - [ ] **#5c-iii Servers `server_updated` + tracker events.** Broadcast
         `ServerUpdated` and the three tracker events (`ServerFactsGathered` /
         `ServerSetUp` / `ServerOpenPortsChecked`); convert `Servers.Server`
