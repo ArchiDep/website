@@ -1,12 +1,17 @@
 defmodule ArchiDep.Servers.Schemas.ServerGroupMemberTest do
   use ArchiDep.Support.DataCase, async: true
 
+  alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.ServersTestHelpers
   alias Ecto.UUID
 
   @now ~U[2024-03-15 10:30:00.000000Z]
+
+  # A later instant for the broadcast payloads a refresh applies, distinct from
+  # the persisted fixtures' timestamps.
+  @later ~U[2024-06-01 12:00:00.000000Z]
 
   describe "list_members_in_server_group/1" do
     test "lists every member of the group by name, with its owner graph preloaded" do
@@ -71,4 +76,71 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMemberTest do
       ServerGroupMember
       |> Repo.get!(id)
       |> Repo.preload([:group, :owner])
+
+  describe "refresh!/2" do
+    test "merges an incoming student broadcast one version ahead into the cached member" do
+      %{student: student} = ServersTestHelpers.register_group_member(@now)
+      {:ok, member} = ServerGroupMember.fetch_server_group_member(student.id)
+      {:ok, updated_student} = Student.fetch_student(student.id)
+
+      # The broadcast carries the next version and diverges from the persisted
+      # row on every merged field, so the assertion can only pass if the
+      # in-memory merge ran: the catch-all fallback would re-fetch and return
+      # the persisted values instead. (The cross-context student clause does not
+      # propagate the username, so it is left unchanged here.)
+      updated = %{
+        updated_student
+        | name: "Renamed member",
+          domain: "renamed.archidep.ch",
+          active: not member.active,
+          servers_enabled: not member.servers_enabled,
+          version: member.version + 1,
+          updated_at: @later
+      }
+
+      assert ServerGroupMember.refresh!(member, updated) == %{
+               member
+               | name: "Renamed member",
+                 domain: "renamed.archidep.ch",
+                 active: updated.active,
+                 servers_enabled: updated.servers_enabled,
+                 version: member.version + 1,
+                 updated_at: @later
+             }
+    end
+
+    test "ignores a student broadcast at or below the cached version" do
+      %{student: student} = ServersTestHelpers.register_group_member(@now)
+      {:ok, member} = ServerGroupMember.fetch_server_group_member(student.id)
+      {:ok, updated_student} = Student.fetch_student(student.id)
+
+      stale = %{updated_student | name: "Ignored", version: member.version, updated_at: @later}
+
+      assert ServerGroupMember.refresh!(member, stale) == member
+    end
+
+    test "re-fetches from the database when the incoming version skips ahead" do
+      %{student: student} = ServersTestHelpers.register_group_member(@now)
+      {:ok, member} = ServerGroupMember.fetch_server_group_member(student.id)
+      {:ok, updated_student} = Student.fetch_student(student.id)
+
+      {1, nil} =
+        Repo.update_all(
+          from(m in ServerGroupMember, where: m.id == ^member.id),
+          set: [name: "Persisted rename", version: member.version + 2, updated_at: @later]
+        )
+
+      {:ok, fresh} = ServerGroupMember.fetch_server_group_member(member.id)
+      refute fresh == member
+
+      gapped = %{
+        updated_student
+        | name: "Ignored",
+          version: member.version + 2,
+          updated_at: @later
+      }
+
+      assert ServerGroupMember.refresh!(member, gapped) == fresh
+    end
+  end
 end

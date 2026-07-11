@@ -17,6 +17,10 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   # instant keeps the changeset calls deterministic.
   @now ~U[2024-03-15 10:30:00.000000Z]
 
+  # A later instant for the broadcast payloads a refresh applies, distinct from
+  # the persisted fixtures' timestamps.
+  @later ~U[2024-06-01 12:00:00.000000Z]
+
   # The tables the persistence functions can write to, watched by every
   # row-count diff in this file.
   @affected_tables [Server, ServerProperties, StoredEvent]
@@ -726,6 +730,64 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
       # The query applies no ORDER BY, so the ids come back in an unspecified
       # order; sorting both sides pins the whole set.
       assert Enum.sort(ids) == Enum.sort([server_a.id, server_b.id])
+    end
+  end
+
+  describe "refresh!/2" do
+    test "merges an incoming server broadcast one version ahead into the cached server" do
+      %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)
+      server = ServersTestHelpers.insert_server(owner.id, class.id)
+
+      # The broadcast carries the next version and diverges from the persisted
+      # row on every asserted field, so the assertion can only pass if the
+      # in-memory merge ran: the catch-all fallback would re-fetch and return
+      # the persisted values instead.
+      updated = %{
+        server
+        | name: "Renamed server",
+          username: "renameduser",
+          app_username: "renamedapp",
+          active: not server.active,
+          version: server.version + 1,
+          updated_at: @later
+      }
+
+      assert Server.refresh!(server, updated) == %{
+               server
+               | name: "Renamed server",
+                 username: "renameduser",
+                 app_username: "renamedapp",
+                 active: updated.active,
+                 version: server.version + 1,
+                 updated_at: @later
+             }
+    end
+
+    test "ignores a server broadcast at or below the cached version" do
+      %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)
+      server = ServersTestHelpers.insert_server(owner.id, class.id)
+
+      stale = %{server | name: "Ignored", version: server.version, updated_at: @later}
+
+      assert Server.refresh!(server, stale) == server
+    end
+
+    test "re-fetches from the database when the incoming version skips ahead" do
+      %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)
+      server = ServersTestHelpers.insert_server(owner.id, class.id)
+
+      {1, nil} =
+        Repo.update_all(
+          from(s in Server, where: s.id == ^server.id),
+          set: [name: "Persisted rename", version: server.version + 2, updated_at: @later]
+        )
+
+      {:ok, fresh} = Server.fetch_server(server.id)
+      refute fresh == server
+
+      gapped = %{server | name: "Ignored", version: server.version + 2, updated_at: @later}
+
+      assert Server.refresh!(server, gapped) == fresh
     end
   end
 

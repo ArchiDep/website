@@ -5,11 +5,16 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.AccountsTestHelpers
+  alias ArchiDep.Support.CourseTestHelpers
   alias Ecto.Changeset
 
   # These changeset validations do not depend on the creation timestamp; a fixed
   # instant keeps the changeset calls deterministic.
   @now ~U[2024-01-01 08:00:00.000000Z]
+
+  # A later instant for the broadcast payloads a refresh applies, distinct from
+  # the persisted fixtures' timestamps.
+  @later ~U[2024-06-01 12:00:00.000000Z]
 
   # A username must be valid as both a Unix user name and a DNS subdomain label,
   # so it may contain only unaccented letters, digits and hyphens and must start
@@ -302,6 +307,71 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
       # The query applies no ORDER BY, so the names come back in an unspecified
       # order; sorting both sides pins the whole set.
       assert Enum.sort(names) == Enum.sort(["John Smith", "Jane Smith"])
+    end
+  end
+
+  describe "refresh!/2" do
+    test "merges an incoming student broadcast one version ahead into the cached student" do
+      {cached, _user_account, _auth} = CourseTestHelpers.register_student()
+
+      # The broadcast carries the next version and diverges from the persisted
+      # row on every merged field, so the assertion can only pass if the
+      # in-memory merge ran: the catch-all fallback would re-fetch and return
+      # the persisted values instead.
+      updated = %{
+        cached
+        | name: "Renamed student",
+          email: "renamed@example.ch",
+          academic_class: "Renamed academic class",
+          username: "renamedusername",
+          username_confirmed: not cached.username_confirmed,
+          domain: "renamed.archidep.ch",
+          active: not cached.active,
+          servers_enabled: not cached.servers_enabled,
+          ssh_exercise_password: "renamed-password",
+          version: cached.version + 1,
+          updated_at: @later
+      }
+
+      assert Student.refresh!(cached, updated) == %{
+               cached
+               | name: "Renamed student",
+                 email: "renamed@example.ch",
+                 academic_class: "Renamed academic class",
+                 username: "renamedusername",
+                 username_confirmed: updated.username_confirmed,
+                 domain: "renamed.archidep.ch",
+                 active: updated.active,
+                 servers_enabled: updated.servers_enabled,
+                 ssh_exercise_password: "renamed-password",
+                 version: cached.version + 1,
+                 updated_at: @later
+             }
+    end
+
+    test "ignores a student broadcast at or below the cached version" do
+      {cached, _user_account, _auth} = CourseTestHelpers.register_student()
+
+      stale = %{cached | name: "Ignored", version: cached.version, updated_at: @later}
+
+      assert Student.refresh!(cached, stale) == cached
+    end
+
+    test "re-fetches from the database when the incoming version skips ahead" do
+      {cached, _user_account, _auth} = CourseTestHelpers.register_student()
+
+      {1, nil} =
+        Repo.update_all(
+          from(s in Student, where: s.id == ^cached.id),
+          set: [name: "Persisted rename", version: cached.version + 2, updated_at: @later]
+        )
+
+      {:ok, fresh} = Student.fetch_student(cached.id)
+      refute fresh == cached
+
+      gapped = %{cached | name: "Ignored", version: cached.version + 2, updated_at: @later}
+
+      assert Student.refresh!(cached, gapped) == fresh
     end
   end
 

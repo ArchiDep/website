@@ -7,6 +7,10 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupTest do
 
   @now ~U[2024-03-15 10:30:00.000000Z]
 
+  # A later instant for the broadcast payloads a refresh applies, distinct from
+  # the persisted fixtures' timestamps.
+  @later ~U[2024-06-01 12:00:00.000000Z]
+
   describe "fetch_server_group/1" do
     test "fetches a server group with its expected server properties by id" do
       class = CourseFactory.insert(:class, now: @now)
@@ -22,6 +26,68 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupTest do
     test "returns an error when no server group has the given id" do
       assert ServerGroup.fetch_server_group(UUID.generate()) ==
                {:error, :server_group_not_found}
+    end
+  end
+
+  describe "refresh!/2" do
+    test "merges an incoming class broadcast one version ahead into the cached group" do
+      class = CourseFactory.insert(:class, now: @now)
+      {:ok, group} = ServerGroup.fetch_server_group(class.id)
+
+      # The broadcast carries the next version and diverges from the persisted
+      # row on every merged field, so the assertion can only pass if the
+      # in-memory merge ran: the catch-all fallback would re-fetch and return
+      # the persisted values instead.
+      updated_class = %{
+        class
+        | name: "Renamed group",
+          start_date: ~D[2024-02-01],
+          end_date: ~D[2024-11-30],
+          active: not class.active,
+          servers_enabled: not class.servers_enabled,
+          teacher_ssh_public_keys: ["ssh-ed25519 AAAAsentinel comment"],
+          version: class.version + 1,
+          updated_at: @later
+      }
+
+      assert ServerGroup.refresh!(group, updated_class) == %{
+               group
+               | name: "Renamed group",
+                 start_date: ~D[2024-02-01],
+                 end_date: ~D[2024-11-30],
+                 active: updated_class.active,
+                 servers_enabled: updated_class.servers_enabled,
+                 ssh_public_keys_to_install: ["ssh-ed25519 AAAAsentinel comment"],
+                 version: group.version + 1,
+                 updated_at: @later
+             }
+    end
+
+    test "ignores a class broadcast at or below the cached version" do
+      class = CourseFactory.insert(:class, now: @now)
+      {:ok, group} = ServerGroup.fetch_server_group(class.id)
+
+      stale = %{class | name: "Ignored", version: class.version, updated_at: @later}
+
+      assert ServerGroup.refresh!(group, stale) == group
+    end
+
+    test "re-fetches from the database when the incoming version skips ahead" do
+      class = CourseFactory.insert(:class, now: @now)
+      {:ok, group} = ServerGroup.fetch_server_group(class.id)
+
+      {1, nil} =
+        Repo.update_all(
+          from(g in ServerGroup, where: g.id == ^group.id),
+          set: [name: "Persisted rename", version: group.version + 2, updated_at: @later]
+        )
+
+      {:ok, fresh} = ServerGroup.fetch_server_group(group.id)
+      refute fresh == group
+
+      gapped = %{class | name: "Ignored", version: group.version + 2, updated_at: @later}
+
+      assert ServerGroup.refresh!(group, gapped) == fresh
     end
   end
 end

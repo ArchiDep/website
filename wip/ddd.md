@@ -137,7 +137,7 @@ _silently_. Seven schemas hand-roll the skeleton; a runtime audit found only
 **dead** refreshers, and **zero** tests. See [#5 Cross-context refresh!
 coupling](#5-cross-context-refresh-coupling) for the full analysis.
 
-- [ ] **#5a `refresh!` round-trip consistency tests (loud-failure guard).** A
+- [x] **#5a `refresh!` round-trip consistency tests (loud-failure guard).** A
       `DataCase` test per _live_ merge (the five that actually fire today; not
       the dead refreshers #5c deletes) that bumps the producer to N+1 and
       asserts `Consumer.refresh!(old, incoming)` equals a fresh DB fetch — with
