@@ -99,7 +99,6 @@ components, can be found in the `theme` directory (see [`CONTRIBUTING.md` in the
       build metadata, business-event client metadata, the HTTP client wrapper,
       shared error types, and release tasks.
     - `helpers/`: Shared helper modules used across contexts (e.g.
-      [`ContextHelpers`](./lib/archidep/helpers/context_helpers.ex),
       `ChangesetHelpers`, `SchemaHelpers`, `UseCaseHelpers`, `GenStageHelpers`).
   - `lib/archidep_web`: The Phoenix web interface, including controllers, views,
     APIs, templates, live views, and channels.
@@ -207,10 +206,17 @@ implementation, formatting and testing.
     functions in the related context's schemas rather than in use cases.
   - Try to perform the necessary joins and load related data in the initial
     query rather than loading related data later.
-  - Use the custom macros in
-    [`ArchiDep.Helpers.ContextHelpers`](./lib/archidep/helpers/context_helpers.ex)
-    to avoid boilerplate code in contexts. Use the existing contexts as
-    examples.
+  - Keep the context trio (behaviour, public API, implementation) consistent by
+    hand. The behaviour module carries each function's `@doc` and `@callback`;
+    the public API module duplicates the same `@doc`, adds a matching `@spec`,
+    and `defdelegate`s to the configured implementation; the implementation
+    module marks each function `@doc false` and `@impl` and `defdelegate`s to
+    the relevant use case module. Use the existing contexts as examples. A
+    drift-guard test
+    ([`context_behaviour_contract_test.exs`](./test/archidep/context_behaviour_contract_test.exs))
+    fails in CI if a boundary's docs or specs drift from the behaviour, so keep
+    the duplicated `@doc` byte-for-byte identical and the `@spec` equivalent to
+    the `@callback`.
 
 - **Documentation**
   - Document all non-test modules with `@moduledoc`. Try to be as descriptive as

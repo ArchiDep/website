@@ -3,49 +3,110 @@ defmodule ArchiDep.Servers.Context do
 
   @behaviour ArchiDep.Servers.Behaviour
 
-  use ArchiDep, :context_impl
-
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.UseCases
 
   # Server groups
   # =============
 
-  implement(&Behaviour.list_server_groups/1, UseCases.ReadServerGroups)
-  implement(&Behaviour.fetch_server_group/2, UseCases.ReadServerGroups)
-  implement(&Behaviour.watch_server_ids/2, UseCases.ReadServerGroups)
-  implement(&Behaviour.list_all_servers_in_group/2, UseCases.ReadServerGroups)
+  @doc false
+  @impl Behaviour
+  defdelegate list_server_groups(auth), to: UseCases.ReadServerGroups
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_server_group(auth, server_group_id), to: UseCases.ReadServerGroups
+
+  @doc false
+  @impl Behaviour
+  defdelegate watch_server_ids(auth, server_group), to: UseCases.ReadServerGroups
+
+  @doc false
+  @impl Behaviour
+  defdelegate list_all_servers_in_group(auth, server_group_id), to: UseCases.ReadServerGroups
 
   # Server group members
   # ====================
 
-  implement(&Behaviour.list_server_group_members/2, UseCases.ReadServerGroups)
-  implement(&Behaviour.fetch_authenticated_server_group_member/1, UseCases.ReadServerGroups)
-  implement(&Behaviour.fetch_authenticated_server_owner/1, UseCases.ReadServerGroups)
+  @doc false
+  @impl Behaviour
+  defdelegate list_server_group_members(auth, server_group_id), to: UseCases.ReadServerGroups
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_authenticated_server_group_member(auth), to: UseCases.ReadServerGroups
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_authenticated_server_owner(auth), to: UseCases.ReadServerGroups
 
   # Servers
   # =======
 
-  implement(&Behaviour.validate_server/3, UseCases.CreateServer)
-  implement(&Behaviour.create_server/3, UseCases.CreateServer)
-  implement(&Behaviour.list_my_servers/1, UseCases.ReadServers)
-  implement(&Behaviour.fetch_server/2, UseCases.ReadServers)
-  implement(&Behaviour.fetch_active_server_for_group_member/2, UseCases.ReadServers)
-  implement(&Behaviour.validate_existing_server/3, UseCases.UpdateServer)
-  implement(&Behaviour.update_server/3, UseCases.UpdateServer)
-  implement(&Behaviour.delete_server/2, UseCases.DeleteServer)
+  @doc false
+  @impl Behaviour
+  defdelegate validate_server(auth, group_id, data), to: UseCases.CreateServer
+
+  @doc false
+  @impl Behaviour
+  defdelegate create_server(auth, group_id, data), to: UseCases.CreateServer
+
+  @doc false
+  @impl Behaviour
+  defdelegate list_my_servers(auth), to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_server(auth, server_id), to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_active_server_for_group_member(auth, group_member_id),
+    to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
+  defdelegate validate_existing_server(auth, server_id, data), to: UseCases.UpdateServer
+
+  @doc false
+  @impl Behaviour
+  defdelegate update_server(auth, server_id, data), to: UseCases.UpdateServer
+
+  @doc false
+  @impl Behaviour
+  defdelegate delete_server(auth, server_id), to: UseCases.DeleteServer
 
   # Connected servers
   # =================
 
-  implement(&Behaviour.retry_connecting/2, UseCases.ManageServer)
-  implement(&Behaviour.retry_ansible_playbook/3, UseCases.ManageServer)
-  implement(&Behaviour.retry_checking_open_ports/2, UseCases.ManageServer)
-  implement(&Behaviour.notify_server_up/2, UseCases.ServerCallbacks)
+  @doc false
+  @impl Behaviour
+  defdelegate retry_connecting(auth, server_id), to: UseCases.ManageServer
+
+  @doc false
+  @impl Behaviour
+  defdelegate retry_ansible_playbook(auth, server_id, playbook), to: UseCases.ManageServer
+
+  @doc false
+  @impl Behaviour
+  defdelegate retry_checking_open_ports(auth, server_id), to: UseCases.ManageServer
+
+  @doc false
+  @impl Behaviour
+  defdelegate notify_server_up(server_id, token), to: UseCases.ServerCallbacks
 
   # Ansible
   # =======
-  implement(&Behaviour.fetch_ansible_playbook_runs/1, UseCases.ReadAnsible)
-  implement(&Behaviour.fetch_ansible_playbook_run/2, UseCases.ReadAnsible)
-  implement(&Behaviour.fetch_ansible_playbook_events_for_run/2, UseCases.ReadAnsible)
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_ansible_playbook_runs(auth), to: UseCases.ReadAnsible
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_ansible_playbook_run(auth, run_id), to: UseCases.ReadAnsible
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_ansible_playbook_events_for_run(auth, run_id), to: UseCases.ReadAnsible
 end

@@ -3,11 +3,14 @@ defmodule ArchiDep.Events.Context do
 
   @behaviour ArchiDep.Events.Behaviour
 
-  use ArchiDep, :context_impl
-
   alias ArchiDep.Events.Behaviour
   alias ArchiDep.Events.UseCases
 
-  implement(&Behaviour.fetch_events/2, UseCases.FetchEvents)
-  implement(&Behaviour.fetch_event/2, UseCases.FetchEvents)
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_events(auth, opts), to: UseCases.FetchEvents
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_event(auth, id), to: UseCases.FetchEvents
 end

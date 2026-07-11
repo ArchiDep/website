@@ -104,14 +104,14 @@ metaprogramming that hides code from Dialyzer, ExDoc and "go to definition." We
 replace the macros with plain Elixir and restore the anti-drift guarantee with a
 test.
 
-- [ ] **#3 Hand-write the behaviour/boundary/impl trio.** Replace the macros
+- [x] **#3 Hand-write the behaviour/boundary/impl trio.** Replace the macros
       with plain `@doc`/`@callback`/`@spec`/`defdelegate` across all four
       contexts — see [#3 Hand-write the behaviour/boundary/impl
       trio](#3-hand-write-the-behaviourboundaryimpl-trio).
-- [ ] **#3b Drift-guard test.** One generic ExUnit test over every triple
+- [x] **#3b Drift-guard test.** One generic ExUnit test over every triple
       (`{boundary, behaviour, impl}`) asserting docs and specs do not drift —
       see [#3b Drift-guard test](#3b-drift-guard-test).
-- [ ] **#3c Delete the machinery.** Remove `context_helpers.ex` and its imports
+- [x] **#3c Delete the machinery.** Remove `context_helpers.ex` and its imports
       from `app/lib/archidep.ex` — see [#3c Delete the
       machinery](#3c-delete-the-machinery).
 

@@ -3,29 +3,52 @@ defmodule ArchiDep.Accounts.Context do
 
   @behaviour ArchiDep.Accounts.Behaviour
 
-  use ArchiDep, :context_impl
-
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.UseCases
 
-  implement(
-    &Behaviour.log_in_or_register_with_switch_edu_id/2,
-    UseCases.LogInOrRegisterWithSwitchEduId
-  )
+  @doc false
+  @impl Behaviour
+  defdelegate log_in_or_register_with_switch_edu_id(data, meta),
+    to: UseCases.LogInOrRegisterWithSwitchEduId
 
-  implement(
-    &Behaviour.log_in_or_register_with_link/2,
-    UseCases.LogInOrRegisterWithLink
-  )
+  @doc false
+  @impl Behaviour
+  defdelegate log_in_or_register_with_link(token, meta), to: UseCases.LogInOrRegisterWithLink
 
-  implement(&Behaviour.validate_session_token/2, UseCases.Sessions)
-  implement(&Behaviour.validate_session_id/2, UseCases.Sessions)
-  implement(&Behaviour.fetch_active_sessions/1, UseCases.Sessions)
-  implement(&Behaviour.impersonate/2, UseCases.Impersonate)
-  implement(&Behaviour.stop_impersonating/1, UseCases.Impersonate)
-  implement(&Behaviour.delete_session/2, UseCases.DeleteSession)
-  implement(&Behaviour.log_out/1, UseCases.LogOut)
+  @doc false
+  @impl Behaviour
+  defdelegate validate_session_token(token, meta), to: UseCases.Sessions
 
-  implement(&Behaviour.user_account/1, UseCases.Sessions)
-  implement(&Behaviour.create_login_link_for_preregistered_user/2, UseCases.CreateLoginLinks)
+  @doc false
+  @impl Behaviour
+  defdelegate validate_session_id(id, meta), to: UseCases.Sessions
+
+  @doc false
+  @impl Behaviour
+  defdelegate fetch_active_sessions(auth), to: UseCases.Sessions
+
+  @doc false
+  @impl Behaviour
+  defdelegate impersonate(auth, user_id), to: UseCases.Impersonate
+
+  @doc false
+  @impl Behaviour
+  defdelegate stop_impersonating(auth), to: UseCases.Impersonate
+
+  @doc false
+  @impl Behaviour
+  defdelegate delete_session(auth, id), to: UseCases.DeleteSession
+
+  @doc false
+  @impl Behaviour
+  defdelegate user_account(auth), to: UseCases.Sessions
+
+  @doc false
+  @impl Behaviour
+  defdelegate log_out(auth), to: UseCases.LogOut
+
+  @doc false
+  @impl Behaviour
+  defdelegate create_login_link_for_preregistered_user(auth, preregistered_user_id),
+    to: UseCases.CreateLoginLinks
 end

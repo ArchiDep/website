@@ -9,19 +9,12 @@ defmodule ArchiDep.Events.Behaviour do
   @doc """
   Returns the latest stored events.
   """
-  callback(
-    fetch_events(
-      auth: Authentication.t(),
-      opts: list(Types.fetch_events_option())
-    ) ::
-      list(StoredEvent.t(map))
-  )
+  @callback fetch_events(Authentication.t(), list(Types.fetch_events_option())) ::
+              list(StoredEvent.t(map))
 
   @doc """
   Returns a specific stored event.
   """
-  callback(
-    fetch_event(auth: Authentication.t(), id: UUID.t()) ::
-      {:ok, StoredEvent.t(map)} | {:error, :event_not_found}
-  )
+  @callback fetch_event(Authentication.t(), UUID.t()) ::
+              {:ok, StoredEvent.t(map)} | {:error, :event_not_found}
 end

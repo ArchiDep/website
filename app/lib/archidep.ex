@@ -15,7 +15,6 @@ defmodule ArchiDep do
   @spec context :: Macro.t()
   def context do
     quote do
-      import ArchiDep.Helpers.ContextHelpers, only: [delegate: 1]
       alias ArchiDep.Authentication
       alias Ecto.Changeset
       alias Ecto.UUID
@@ -25,20 +24,10 @@ defmodule ArchiDep do
   @spec context_behaviour :: Macro.t()
   def context_behaviour do
     quote do
-      use ArchiDep.Helpers.ContextHelpers, :behaviour
-
-      import ArchiDep.Helpers.ContextHelpers, only: [callback: 1]
       alias ArchiDep.Authentication
       alias ArchiDep.Events.Store.EventReference
       alias Ecto.Changeset
       alias Ecto.UUID
-    end
-  end
-
-  @spec context_impl :: Macro.t()
-  def context_impl do
-    quote do
-      import ArchiDep.Helpers.ContextHelpers, only: [implement: 2]
     end
   end
 
