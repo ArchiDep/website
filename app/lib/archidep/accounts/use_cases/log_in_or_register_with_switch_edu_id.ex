@@ -7,6 +7,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
   use ArchiDep, :use_case
 
   import Ecto.Changeset
+  alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
   alias ArchiDep.Accounts.Events.UserLoggedInWithSwitchEduId
   alias ArchiDep.Accounts.Events.UserRegisteredWithSwitchEduId
   alias ArchiDep.Accounts.PubSub
@@ -34,9 +35,16 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
          user_account: user_account,
          user_session: %UserSession{} = session,
          linked_preregistered_user: preregistered_user
-       }} ->
+       } = changes} ->
         if preregistered_user != nil do
-          :ok = PubSub.publish_preregistered_user_updated(preregistered_user)
+          linkage_event = changes.linkage_event
+
+          :ok =
+            PubSub.publish_preregistered_user_updated(
+              preregistered_user,
+              linkage_event.data,
+              StoredEvent.to_reference(linkage_event)
+            )
         end
 
         enriched_session = %UserSession{
@@ -166,6 +174,26 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
             user_logged_in_with_switch_edu_id(switch_edu_id, session, client_metadata)
         end
     end)
+    # Record the linkage of the preregistered user to its user account whenever
+    # a link was established, so the read views tracking that student can
+    # reconcile the new account in memory.
+    |> Multi.merge(fn
+      %{linked_preregistered_user: %PreregisteredUser{} = preregistered_user} = changes ->
+        user_account = changes.linked_user_account || changes.user_account
+
+        Multi.insert(
+          Multi.new(),
+          :linkage_event,
+          preregistered_user_linked_to_user_account(
+            preregistered_user,
+            user_account,
+            changes.stored_event
+          )
+        )
+
+      %{linked_preregistered_user: nil} ->
+        Multi.new()
+    end)
     |> transaction()
   end
 
@@ -288,6 +316,14 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
          |> new_event(%{}, occurred_at: session.user_account.created_at)
          |> add_to_stream(session.user_account)
          |> initiated_by(session.user_account)
+
+  defp preregistered_user_linked_to_user_account(preregistered_user, user_account, cause),
+    do:
+      preregistered_user
+      |> PreregisteredUserLinkedToUserAccount.new(user_account)
+      |> new_event(%{}, occurred_at: preregistered_user.updated_at, caused_by: cause)
+      |> add_to_stream(preregistered_user)
+      |> initiated_by(user_account)
 
   defp user_logged_in_with_switch_edu_id(
          switch_edu_id,

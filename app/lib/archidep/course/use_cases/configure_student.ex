@@ -49,8 +49,14 @@ defmodule ArchiDep.Course.UseCases.ConfigureStudent do
          {:ok, student} <- Student.fetch_student(id),
          :ok <-
            authorize(auth, Policy, :course, :configure_student, {user, student}),
-         {:ok, updated_student} <- transaction(auth, student, data, Clock.now()) do
-      :ok = PubSub.publish_student_updated(updated_student)
+         {:ok, updated_student, event} <- transaction(auth, student, data, Clock.now()) do
+      :ok =
+        PubSub.publish_student_updated(
+          updated_student,
+          event.data,
+          StoredEvent.to_reference(event)
+        )
+
       {:ok, updated_student}
     else
       {:error, :student_not_found} ->
@@ -72,8 +78,8 @@ defmodule ArchiDep.Course.UseCases.ConfigureStudent do
          |> Multi.update(:student, Student.configure_changeset(student, data, now))
          |> Multi.insert(:stored_event, &student_configured(auth, &1.student))
          |> Repo.transaction() do
-      {:ok, %{student: updated_student}} ->
-        {:ok, updated_student}
+      {:ok, %{student: updated_student, stored_event: event}} ->
+        {:ok, updated_student, event}
 
       {:error, :student, changeset, _changes} ->
         {:error, changeset}

@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
   alias ArchiDep.Accounts
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Servers
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
@@ -392,7 +393,13 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       assert student_page(html) == alice_page()
 
       updated = %{student | name: "Renamed", version: student.version + 1}
-      :ok = Course.PubSub.publish_student_updated(updated)
+
+      :ok =
+        Course.PubSub.publish_student_updated(
+          updated,
+          StudentUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
 
       wait_for_socket_assigns!(
         view,

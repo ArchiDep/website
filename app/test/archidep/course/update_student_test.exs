@@ -9,10 +9,12 @@ defmodule ArchiDep.Course.UpdateStudentTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
   alias ArchiDep.Errors.UnauthorizedError
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.Factory
@@ -543,8 +545,23 @@ defmodule ArchiDep.Course.UpdateStudentTest do
   # publishes to — the student-specific one and the class-students one — each
   # carrying the updated student exactly once, and nothing else.
   defp assert_student_updated_broadcast(broadcasts, %Student{} = student) do
-    assert received_broadcasts(broadcasts.specific) == [{:student_updated, student}]
-    assert received_broadcasts(broadcasts.class_students) == [{:student_updated, student}]
+    # The broadcast carries the domain event and its reference. Every reference
+    # field is known up front — the version and `occurred_at` from the update
+    # itself, and (this being a root event) the causation/correlation IDs equal
+    # its own ID — so only that ID is read back from the stored event.
+    [%StoredEvent{id: id}] = fetch_new_stored_events()
+
+    reference = %EventReference{
+      id: id,
+      causation_id: id,
+      correlation_id: id,
+      version: student.version,
+      occurred_at: @now
+    }
+
+    message = {:student_updated, StudentUpdated.new(student), reference}
+    assert received_broadcasts(broadcasts.specific) == [message]
+    assert received_broadcasts(broadcasts.class_students) == [message]
   end
 
   # Asserts neither student topic carried an update broadcast.

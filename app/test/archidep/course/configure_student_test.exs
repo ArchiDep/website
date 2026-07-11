@@ -10,7 +10,9 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.StudentConfigured
   alias ArchiDep.Course.PubSub
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
   alias ArchiDep.Events.Store.StoredEvent
@@ -447,10 +449,25 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
 
   # Asserts the student-updated message reached both topics the use case
   # publishes to — the student-specific one and the class-students one — each
-  # carrying the configured student, and nothing else.
+  # carrying the configured-student event and its reference, and nothing else.
+  # Every reference field is known up front — the version and `occurred_at` from
+  # the configuration itself, and (this being a root event) the
+  # causation/correlation IDs equal its own ID — so only that ID is read back
+  # from the stored event.
   defp assert_student_updated_broadcast(broadcasts, %Student{} = student) do
-    assert received_broadcasts(broadcasts.specific) == [{:student_updated, student}]
-    assert received_broadcasts(broadcasts.class) == [{:student_updated, student}]
+    [%StoredEvent{id: id}] = fetch_new_stored_events()
+
+    reference = %EventReference{
+      id: id,
+      causation_id: id,
+      correlation_id: id,
+      version: student.version,
+      occurred_at: @now
+    }
+
+    message = {:student_updated, StudentConfigured.new(student), reference}
+    assert received_broadcasts(broadcasts.specific) == [message]
+    assert received_broadcasts(broadcasts.class) == [message]
   end
 
   defp refute_student_updated_broadcast(broadcasts) do

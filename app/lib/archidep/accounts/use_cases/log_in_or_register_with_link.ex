@@ -6,6 +6,7 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
   alias ArchiDep.Accounts.Events.UserLoggedInWithLink
   alias ArchiDep.Accounts.Events.UserRegisteredWithLink
   alias ArchiDep.Accounts.PubSub
@@ -32,9 +33,16 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
          user_account: user_account,
          user_session: %UserSession{} = session,
          linked_preregistered_user: preregistered_user
-       }} ->
+       } = changes} ->
         if preregistered_user != nil do
-          :ok = PubSub.publish_preregistered_user_updated(preregistered_user)
+          linkage_event = changes.linkage_event
+
+          :ok =
+            PubSub.publish_preregistered_user_updated(
+              preregistered_user,
+              linkage_event.data,
+              StoredEvent.to_reference(linkage_event)
+            )
         end
 
         enriched_session = %UserSession{
@@ -142,6 +150,14 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
         :stored_event,
         &user_registered_with_link(link, &1.user_session, preregistered_user)
       )
+      |> Multi.insert(
+        :linkage_event,
+        &preregistered_user_linked_to_user_account(
+          &1.linked_preregistered_user,
+          &1.user_account,
+          &1.stored_event
+        )
+      )
     else
       Multi.run(Multi.new(), :invalid_link, fn _repo, _changes -> {:error, :invalid_link} end)
     end
@@ -173,6 +189,14 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
          |> new_event(%{}, occurred_at: session.user_account.created_at)
          |> add_to_stream(session.user_account)
          |> initiated_by(session.user_account)
+
+  defp preregistered_user_linked_to_user_account(preregistered_user, user_account, cause),
+    do:
+      preregistered_user
+      |> PreregisteredUserLinkedToUserAccount.new(user_account)
+      |> new_event(%{}, occurred_at: preregistered_user.updated_at, caused_by: cause)
+      |> add_to_stream(preregistered_user)
+      |> initiated_by(user_account)
 
   defp user_logged_in_with_link(
          login_link,

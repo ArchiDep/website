@@ -132,42 +132,4 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
     do: ServerOwnerCounters.server_limit_reached?(counters)
 
   def server_limit_reached?(%__MODULE__{counters: nil}), do: false
-
-  @spec refresh!(t(), map()) :: t()
-  def refresh!(
-        %__MODULE__{
-          id: id,
-          group_member: %ServerGroupMember{id: group_member_id} = group_member,
-          version: current_version
-        } = owner,
-        %{
-          id: id,
-          student: %{id: group_member_id} = student,
-          version: version,
-          updated_at: updated_at
-        }
-      )
-      when version == current_version + 1 do
-    %__MODULE__{
-      owner
-      | group_member: ServerGroupMember.refresh!(group_member, student),
-        version: version,
-        updated_at: updated_at
-    }
-  end
-
-  @spec refresh!(t(), map()) :: t()
-  def refresh!(%__MODULE__{id: id, version: current_version} = user, %{
-        id: id,
-        version: version
-      })
-      when version <= current_version do
-    user
-  end
-
-  @spec refresh!(t(), map()) :: t()
-  def refresh!(%__MODULE__{id: id}, %{id: id}) do
-    {:ok, fresh_server_owner} = fetch_server_owner(id)
-    fresh_server_owner
-  end
 end

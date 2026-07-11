@@ -4,8 +4,11 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   import Hammox
   alias ArchiDep.Accounts
   alias ArchiDep.Course
+  alias ArchiDep.Course.Events.StudentConfigured
+  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.EventsFactory
   alias Ecto.Changeset
 
   @path "/profile"
@@ -646,7 +649,13 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
              ]
 
       updated = %{student | username: "renamed", version: student.version + 1}
-      :ok = Course.PubSub.publish_student_updated(updated)
+
+      :ok =
+        Course.PubSub.publish_student_updated(
+          updated,
+          StudentUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
 
       wait_for_socket_assigns!(view, &(&1.student.username == "renamed"), "student renamed")
 
@@ -696,7 +705,13 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
              ]
 
       updated = %{student | username_confirmed: true, version: student.version + 1}
-      :ok = Course.PubSub.publish_student_updated(updated)
+
+      :ok =
+        Course.PubSub.publish_student_updated(
+          updated,
+          StudentConfigured.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
 
       wait_for_socket_assigns!(view, & &1.student.username_confirmed, "username confirmed")
 

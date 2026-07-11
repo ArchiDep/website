@@ -11,15 +11,16 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
   import ArchiDep.Support.TokenTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
+  alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
   alias ArchiDep.Accounts.PubSub
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
-  alias ArchiDep.Accounts.Schemas.UserGroup
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Authentication
   alias ArchiDep.Clock
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Support.AccountsFactory
@@ -180,10 +181,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       SwitchEduId => 1,
       UserAccount => 1,
       UserSession => 1,
-      StoredEvent => 1
+      StoredEvent => 2
     })
 
-    assert_new_student_broadcast(broadcasts, student, auth.principal_id)
+    assert_preregistered_user_linked_broadcast(broadcasts, student, auth.principal_id)
   end
 
   test "an unknown user cannot register even if their Switch edu-ID account is valid", %{
@@ -418,10 +419,11 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     )
 
     # The account had no Switch edu-ID yet (it had only logged in with a link),
-    # so this login creates and links one, plus the session and event.
-    assert_row_count_diff(previous_counts, %{SwitchEduId => 1, UserSession => 1, StoredEvent => 1})
+    # so this login creates and links one, plus the session, the login event and
+    # the preregistered-user linkage event.
+    assert_row_count_diff(previous_counts, %{SwitchEduId => 1, UserSession => 1, StoredEvent => 2})
 
-    assert_existing_account_broadcast(broadcasts, student, user_account)
+    assert_preregistered_user_linked_broadcast(broadcasts, student, user_account.id)
   end
 
   test "log in an existing inactive student user account to a new student with Switch edu-ID", %{
@@ -484,15 +486,9 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
       student
     )
 
-    assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 1})
+    assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 2})
 
-    assert_relinked_student_broadcast(
-      broadcasts,
-      student,
-      user_account,
-      switch_edu_id,
-      old_student
-    )
+    assert_preregistered_user_linked_broadcast(broadcasts, student, user_account.id)
   end
 
   test "an existing inactive user account cannot log in without a new preregistration", %{
@@ -593,156 +589,65 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     }
   end
 
-  # Registration branch: a brand-new user account is created and linked to the
-  # matched preregistered user. The broadcast carries that student with its
-  # group loaded, its version bumped by one and its `updated_at` stamped at
-  # `@now`; the freshly created account it links to (loaded) wraps the
-  # *original* student (version and timestamp unbumped, not yet linked to any
-  # account).
-  defp assert_new_student_broadcast(broadcasts, student, user_account_id) do
-    switch_edu_id_id = Repo.get!(UserAccount, user_account_id).switch_edu_id_id
-
-    original_student =
-      %{
-        loaded_preregistered_user(student, nil, student.version, student.updated_at)
-        | user_account: nil
-      }
-
-    user_account = %UserAccount{
-      __meta__: loaded(UserAccount, "user_accounts"),
-      id: user_account_id,
-      username: nil,
-      root: false,
-      active: true,
-      switch_edu_id: not_loaded(:switch_edu_id, UserAccount),
-      switch_edu_id_id: switch_edu_id_id,
-      preregistered_user: original_student,
-      preregistered_user_id: student.id,
-      version: 1,
-      created_at: @now,
-      updated_at: @now
-    }
-
-    payload =
-      %{
-        loaded_preregistered_user(student, user_account_id, student.version + 1, @now)
-        | user_account: user_account
-      }
-
-    assert_broadcast_on_both_topics(broadcasts, payload)
-  end
-
-  # Re-link branch where the account had only ever logged in with a link (no
-  # Switch edu-ID yet) and was already linked to this student: the student's own
-  # `user_account_id` already points at the account, so linking is a no-op and
-  # the student is broadcast unchanged (version and `updated_at` untouched),
-  # with its group and the account it is already linked to loaded as preloaded —
-  # the account still showing its pre-update snapshot (no Switch edu-ID linked
-  # yet).
-  defp assert_existing_account_broadcast(broadcasts, student, %UserAccount{} = user_account) do
-    loaded_account = %{
-      user_account
-      | switch_edu_id: not_loaded(:switch_edu_id, UserAccount),
-        switch_edu_id_id: nil,
-        preregistered_user: not_loaded(:preregistered_user, UserAccount)
-    }
-
-    payload =
-      %{
-        loaded_preregistered_user(student, user_account.id, student.version, student.updated_at)
-        | user_account: loaded_account
-      }
-
-    assert_broadcast_on_both_topics(broadcasts, payload)
-  end
-
-  # Re-link branch where an inactive account (linked to a student from a past,
-  # now-inactive class) is re-linked to a new active preregistration for the
-  # same email: the new student is broadcast with its version bumped by one and
-  # its `updated_at` stamped at `@now`, linked to the existing account loaded as
-  # preloaded — its Switch edu-ID identity loaded (used-at refreshed) and its
-  # previous student still loaded as its preregistered user.
-  defp assert_relinked_student_broadcast(
-         broadcasts,
-         student,
-         %UserAccount{} = user_account,
-         %SwitchEduId{} = switch_edu_id,
-         old_student
-       ) do
-    loaded_switch_edu_id = %SwitchEduId{
-      __meta__: loaded(SwitchEduId, "switch_edu_ids"),
-      id: switch_edu_id.id,
-      first_name: switch_edu_id.first_name,
-      last_name: switch_edu_id.last_name,
-      swiss_edu_person_unique_id: switch_edu_id.swiss_edu_person_unique_id,
-      version: switch_edu_id.version + 1,
-      created_at: switch_edu_id.created_at,
-      updated_at: switch_edu_id.updated_at,
-      used_at: @now
-    }
-
-    old_loaded_student =
-      %{
-        loaded_preregistered_user(
-          old_student,
-          user_account.id,
-          old_student.version,
-          old_student.updated_at
-        )
-        | user_account: not_loaded(:user_account, PreregisteredUser)
-      }
-
-    loaded_account = %{
-      user_account
-      | switch_edu_id: loaded_switch_edu_id,
-        switch_edu_id_id: switch_edu_id.id,
-        preregistered_user: old_loaded_student,
-        preregistered_user_id: old_student.id
-    }
-
-    payload =
-      %{
-        loaded_preregistered_user(student, user_account.id, student.version + 1, @now)
-        | user_account: loaded_account
-      }
-
-    assert_broadcast_on_both_topics(broadcasts, payload)
-  end
-
-  # The preregistered-user-shaped projection of a course student, with its class
-  # loaded as the user group and its account linkage, version and `updated_at`
-  # supplied by the caller (which vary per branch). The account association is
-  # left for the caller to fill in.
-  defp loaded_preregistered_user(student, user_account_id, version, updated_at) do
-    %PreregisteredUser{
-      __meta__: loaded(PreregisteredUser, "students"),
-      id: student.id,
-      name: student.name,
-      email: student.email,
-      username: student.username,
-      username_confirmed: student.username_confirmed,
-      active: true,
-      group: %UserGroup{
-        __meta__: loaded(UserGroup, "classes"),
-        id: student.class.id,
-        name: student.class.name,
-        start_date: student.class.start_date,
-        end_date: student.class.end_date,
-        active: student.class.active
-      },
-      group_id: student.class_id,
-      user_account_id: user_account_id,
-      version: version,
-      updated_at: updated_at
-    }
-  end
-
   # Asserts the preregistered-user-updated message reached both topics the use
   # case publishes to — the preregistered user's own topic and its user group's
-  # topic — each carrying the same payload, and nothing else.
-  defp assert_broadcast_on_both_topics(broadcasts, payload) do
-    assert received_broadcasts(broadcasts.specific) == [{:preregistered_user_updated, payload}]
-    assert received_broadcasts(broadcasts.group) == [{:preregistered_user_updated, payload}]
+  # topic — each carrying the linkage event and its reference, and nothing else.
+  # The reference's causation/correlation come from the login or registration
+  # event that caused the linkage; its version and `occurred_at` mirror the
+  # linked student row (whose exact version/timestamp the various re-link
+  # branches leave to the fixtures). Only the two event IDs are opaque, so they
+  # alone are read from the events table. The curated account fields the event
+  # projects are read from the (final) account row.
+  defp assert_preregistered_user_linked_broadcast(broadcasts, student, user_account_id) do
+    account = Repo.get!(UserAccount, user_account_id)
+    %Student{version: version, updated_at: occurred_at} = Repo.get!(Student, student.id)
+
+    cause_id =
+      Repo.one!(
+        from(e in StoredEvent,
+          where: e.stream == ^"accounts:user-accounts:#{user_account_id}",
+          select: e.id
+        )
+      )
+
+    linkage_id =
+      Repo.one!(
+        from(e in StoredEvent,
+          where: e.stream == ^"accounts:preregistered-users:#{student.id}",
+          select: e.id
+        )
+      )
+
+    message =
+      {:preregistered_user_updated,
+       %PreregisteredUserLinkedToUserAccount{
+         preregistered_user_id: student.id,
+         user_account: %{
+           id: account.id,
+           username: account.username,
+           active: account.active,
+           version: account.version
+         }
+       },
+       %EventReference{
+         id: linkage_id,
+         causation_id: cause_id,
+         correlation_id: cause_id,
+         version: version,
+         occurred_at: occurred_at
+       }}
+
+    assert received_broadcasts(broadcasts.specific) == [message]
+    assert received_broadcasts(broadcasts.group) == [message]
+  end
+
+  # Locates the newly stored event of the given type. A student login stores
+  # both an authentication event and a preregistered-user linkage event on
+  # separate streams; each test pins the exact total via
+  # `assert_row_count_diff`.
+  defp fetch_new_stored_event!(type) do
+    assert event = Enum.find(fetch_new_stored_events(), &(&1.type == type))
+    event
   end
 
   # Asserts neither topic carried a preregistered-user-updated broadcast.
@@ -792,12 +697,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
          switch_edu_id_login_data,
          student \\ nil
        ) do
-    assert [
-             %StoredEvent{
-               id: event_id,
-               data: %{"switch_edu_id" => %{"id" => switch_edu_id_id}}
-             } = registered_event
-           ] = fetch_new_stored_events()
+    %StoredEvent{
+      id: event_id,
+      data: %{"switch_edu_id" => %{"id" => switch_edu_id_id}}
+    } =
+      registered_event =
+      fetch_new_stored_event!("archidep/accounts/user-registered-with-switch-edu-id")
 
     assert registered_event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),
@@ -854,12 +759,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
          updated,
          student \\ nil
        ) do
-    assert [
-             %StoredEvent{
-               id: event_id,
-               data: %{"switch_edu_id" => %{"id" => switch_edu_id_id}}
-             } = logged_in_event
-           ] = fetch_new_stored_events()
+    %StoredEvent{
+      id: event_id,
+      data: %{"switch_edu_id" => %{"id" => switch_edu_id_id}}
+    } =
+      logged_in_event =
+      fetch_new_stored_event!("archidep/accounts/user-logged-in-with-switch-edu-id")
 
     assert logged_in_event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),

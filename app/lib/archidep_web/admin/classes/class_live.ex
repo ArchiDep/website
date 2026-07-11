@@ -106,7 +106,16 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
           assigns: %{class: %Class{id: id}}
         } = socket
       )
-      when student_event in [:student_created, :student_updated, :student_deleted],
+      when student_event in [:student_created, :student_deleted],
+      do: socket |> load_students() |> noreply()
+
+  @impl LiveView
+  def handle_info(
+        {:student_updated, %{class: %{id: id}}, _reference},
+        %Socket{
+          assigns: %{class: %Class{id: id}}
+        } = socket
+      ),
       do: socket |> load_students() |> noreply()
 
   @impl LiveView
@@ -120,10 +129,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl LiveView
   def handle_info(
-        {:preregistered_user_updated, %{group_id: id}},
-        %Socket{
-          assigns: %{class: %Class{id: id}}
-        } = socket
+        {:preregistered_user_updated, _event, _reference},
+        socket
       ),
       do: socket |> load_students() |> noreply()
 

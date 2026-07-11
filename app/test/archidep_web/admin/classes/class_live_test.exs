@@ -4,8 +4,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   import Hammox
   alias ArchiDep.Accounts
   alias ArchiDep.Course
+  alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Servers
@@ -1038,7 +1040,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       assert class_page(html, class) == listed_class_page(class, "0/1 registered", ["Alice"])
 
       Agent.update(students, fn _state -> [alice, bob] end)
-      :ok = Course.PubSub.publish_student_updated(%{alice | name: "Alice"})
+      updated = %{alice | name: "Alice", class: class}
+
+      :ok =
+        Course.PubSub.publish_student_updated(
+          updated,
+          StudentUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -1092,9 +1101,16 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
       Agent.update(students, fn _state -> [alice] end)
 
+      preregistered_user = AccountsFactory.build(:preregistered_user, group_id: class.id)
+
       :ok =
         Accounts.PubSub.publish_preregistered_user_updated(
-          AccountsFactory.build(:preregistered_user, group_id: class.id)
+          preregistered_user,
+          PreregisteredUserLinkedToUserAccount.new(
+            preregistered_user,
+            AccountsFactory.build(:user_account)
+          ),
+          EventsFactory.build(:event_reference)
         )
 
       wait_for_socket_assigns!(

@@ -33,8 +33,14 @@ defmodule ArchiDep.Course.UseCases.UpdateStudent do
            |> Multi.update(:student, Student.update(student, data, now))
            |> Multi.insert(:stored_event, &student_updated(auth, &1.student))
            |> Repo.transaction() do
-        {:ok, %{student: student}} ->
-          :ok = PubSub.publish_student_updated(student)
+        {:ok, %{student: student, stored_event: event}} ->
+          :ok =
+            PubSub.publish_student_updated(
+              student,
+              event.data,
+              StoredEvent.to_reference(event)
+            )
+
           {:ok, student}
 
         {:error, :student, changeset, _changes} ->

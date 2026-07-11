@@ -167,7 +167,7 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
         `refresh!/3` plus every `class_updated` consumer (six web modules +
         `ServerManagerState.group_updated`); delete the dead `ServerGroup` intra
         clause.
-  - [ ] **#5c-ii Course `student_updated` (+ Accounts linkage).** Thread an
+  - [x] **#5c-ii Course `student_updated` (+ Accounts linkage).** Thread an
         `EventReference` through `publish_student_updated`; broadcast
         `StudentUpdated` / `StudentConfigured`; convert `Course.Student` (intra)
         and `Servers.ServerGroupMember` (cross); add the curated Accounts

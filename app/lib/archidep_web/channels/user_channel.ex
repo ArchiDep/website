@@ -94,7 +94,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
   @impl Channel
   def handle_info(
-        {:student_updated, %Student{id: id} = updated_student},
+        {:student_updated, %{id: id} = event, reference},
         %Socket{
           assigns: %{
             active_servers: active_servers,
@@ -105,8 +105,8 @@ defmodule ArchiDepWeb.Channels.UserChannel do
       do:
         socket
         |> assign(
-          active_servers: update_student_of_active_servers(active_servers, updated_student),
-          student: Student.refresh!(student, updated_student)
+          active_servers: update_student_of_active_servers(active_servers, event, reference),
+          student: Student.refresh!(student, event, reference)
         )
         |> send_updated_data()
         |> noreply()
@@ -198,7 +198,8 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
   defp update_student_of_active_servers(
          active_servers,
-         %Student{id: student_id} = updated_student
+         %{id: student_id} = event,
+         reference
        ),
        do:
          Enum.map(active_servers, fn
@@ -209,7 +210,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
                server
                | owner: %ServerOwner{
                    server.owner
-                   | group_member: ServerGroupMember.refresh!(group_member, updated_student)
+                   | group_member: ServerGroupMember.refresh!(group_member, event, reference)
                  }
              }
 

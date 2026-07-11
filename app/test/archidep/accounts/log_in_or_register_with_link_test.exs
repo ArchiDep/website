@@ -11,15 +11,16 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
   import ArchiDep.Support.TokenTestHelpers
   alias ArchiDep.Accounts.Behaviour
   alias ArchiDep.Accounts.Context
+  alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
   alias ArchiDep.Accounts.PubSub
   alias ArchiDep.Accounts.Schemas.LoginLink
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
-  alias ArchiDep.Accounts.Schemas.UserGroup
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Authentication
   alias ArchiDep.Clock
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Support.AccountsFactory
@@ -79,9 +80,10 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     |> assert_persisted_session_for_new_user(auth, student)
 
     assert_login_link_used(login_link)
-    # Registration creates the user account, its session and the event; the link
-    # is consumed in place (no new link row).
-    assert_row_count_diff(previous_counts, %{UserAccount => 1, UserSession => 1, StoredEvent => 1})
+    # Registration creates the user account, its session, the registration event
+    # and the preregistered-user linkage event; the link is consumed in place
+    # (no new link row).
+    assert_row_count_diff(previous_counts, %{UserAccount => 1, UserSession => 1, StoredEvent => 2})
 
     assert_preregistered_user_broadcast(broadcasts, student, auth.principal_id)
   end
@@ -403,78 +405,43 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
   # Asserts the preregistered-user-updated message reached both topics the use
   # case publishes to — the preregistered user's own topic and its user group's
-  # topic — each carrying the linked preregistered user (its group and freshly
-  # created user account loaded, version bumped and stamped at the pinned
-  # instant), and nothing else.
+  # topic — each carrying the linkage event and its reference, and nothing else.
+  # Every reference field is known up front — the version and `occurred_at` from
+  # the linkage, and the causation/correlation IDs from the registration event
+  # that caused it — so only the two event IDs are read back from the database.
   defp assert_preregistered_user_broadcast(broadcasts, student, user_account_id) do
-    payload = broadcast_preregistered_user(student, user_account_id)
+    registration_id =
+      Repo.one!(
+        from(e in StoredEvent,
+          where: e.stream == ^"accounts:user-accounts:#{user_account_id}",
+          select: e.id
+        )
+      )
 
-    assert received_broadcasts(broadcasts.specific) == [{:preregistered_user_updated, payload}]
-    assert received_broadcasts(broadcasts.group) == [{:preregistered_user_updated, payload}]
-  end
+    linkage_id =
+      Repo.one!(
+        from(e in StoredEvent,
+          where: e.stream == ^"accounts:preregistered-users:#{student.id}",
+          select: e.id
+        )
+      )
 
-  # The linked preregistered user the use case broadcasts: the registered
-  # student with its group loaded, its newly created user account loaded, its
-  # version bumped by one and its `updated_at` stamped at `@now`. The newly
-  # created account loads back the *original* preregistered user (version and
-  # timestamp unbumped, no account linked yet), which the registration update
-  # wraps.
-  defp broadcast_preregistered_user(student, user_account_id) do
-    group = %UserGroup{
-      __meta__: loaded(UserGroup, "classes"),
-      id: student.class.id,
-      name: student.class.name,
-      start_date: student.class.start_date,
-      end_date: student.class.end_date,
-      active: student.class.active
-    }
+    message =
+      {:preregistered_user_updated,
+       %PreregisteredUserLinkedToUserAccount{
+         preregistered_user_id: student.id,
+         user_account: %{id: user_account_id, username: nil, active: true, version: 1}
+       },
+       %EventReference{
+         id: linkage_id,
+         causation_id: registration_id,
+         correlation_id: registration_id,
+         version: student.version + 1,
+         occurred_at: @now
+       }}
 
-    original_preregistered_user = %PreregisteredUser{
-      __meta__: loaded(PreregisteredUser, "students"),
-      id: student.id,
-      name: student.name,
-      email: student.email,
-      username: student.username,
-      username_confirmed: student.username_confirmed,
-      active: true,
-      group: group,
-      group_id: student.class_id,
-      user_account: nil,
-      user_account_id: nil,
-      version: student.version,
-      updated_at: student.updated_at
-    }
-
-    user_account = %UserAccount{
-      __meta__: loaded(UserAccount, "user_accounts"),
-      id: user_account_id,
-      username: nil,
-      root: false,
-      active: true,
-      switch_edu_id: not_loaded(:switch_edu_id, UserAccount),
-      switch_edu_id_id: nil,
-      preregistered_user: original_preregistered_user,
-      preregistered_user_id: student.id,
-      version: 1,
-      created_at: @now,
-      updated_at: @now
-    }
-
-    %PreregisteredUser{
-      __meta__: loaded(PreregisteredUser, "students"),
-      id: student.id,
-      name: student.name,
-      email: student.email,
-      username: student.username,
-      username_confirmed: student.username_confirmed,
-      active: true,
-      group: group,
-      group_id: student.class_id,
-      user_account: user_account,
-      user_account_id: user_account_id,
-      version: student.version + 1,
-      updated_at: @now
-    }
+    assert received_broadcasts(broadcasts.specific) == [message]
+    assert received_broadcasts(broadcasts.group) == [message]
   end
 
   # Asserts neither topic carried a preregistered-user-updated broadcast.
@@ -498,11 +465,12 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
          login_link,
          student
        ) do
-    assert [%StoredEvent{id: event_id} = registered_event] = fetch_new_stored_events()
+    assert [%StoredEvent{} = linkage_event, %StoredEvent{} = registered_event] =
+             Enum.sort_by(fetch_new_stored_events(), & &1.type)
 
     assert registered_event == %StoredEvent{
              __meta__: loaded(StoredEvent, "events"),
-             id: event_id,
+             id: registered_event.id,
              stream: "accounts:user-accounts:#{user_account_id}",
              version: 1,
              type: "archidep/accounts/user-registered-with-link",
@@ -514,8 +482,31 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
                }),
              meta: %{},
              initiator: "accounts:user-accounts:#{user_account_id}",
-             causation_id: event_id,
-             correlation_id: event_id,
+             causation_id: registered_event.id,
+             correlation_id: registered_event.id,
+             occurred_at: @now,
+             entity: nil
+           }
+
+    assert linkage_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: linkage_event.id,
+             stream: "accounts:preregistered-users:#{student.id}",
+             version: student.version + 1,
+             type: "archidep/accounts/preregistered-user-linked-to-user-account",
+             data: %{
+               "preregistered_user_id" => student.id,
+               "user_account" => %{
+                 "id" => user_account_id,
+                 "username" => nil,
+                 "active" => true,
+                 "version" => 1
+               }
+             },
+             meta: %{},
+             initiator: "accounts:user-accounts:#{user_account_id}",
+             causation_id: registered_event.id,
+             correlation_id: registered_event.id,
              occurred_at: @now,
              entity: nil
            }

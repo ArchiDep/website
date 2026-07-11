@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
 
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Servers
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -179,11 +180,17 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
         student
         | version: 2,
           username: "jane",
-          username_confirmed: false,
           domain: "jane.ch"
       }
 
-      Course.PubSub.publish_student_updated(updated)
+      Course.PubSub.publish_student_updated(
+        updated,
+        StudentUpdated.new(updated),
+        EventsFactory.build(:event_reference,
+          version: updated.version,
+          occurred_at: updated.updated_at
+        )
+      )
 
       assert_push "session", session
       assert session == Map.from_struct(session_data(auth, student_payload(updated)))
@@ -214,7 +221,15 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
       assert initial == %{student: student_payload(student), server: nil, serversEnabled: false}
 
       updated = %{student | version: 2, academic_class: "B2"}
-      Course.PubSub.publish_student_updated(updated)
+
+      Course.PubSub.publish_student_updated(
+        updated,
+        StudentUpdated.new(updated),
+        EventsFactory.build(:event_reference,
+          version: updated.version,
+          occurred_at: updated.updated_at
+        )
+      )
 
       refute_push "session", _
       refute_push "cloudServerData", _

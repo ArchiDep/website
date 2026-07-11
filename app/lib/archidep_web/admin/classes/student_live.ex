@@ -86,7 +86,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
   @impl LiveView
   def handle_info(
-        {:student_updated, %Student{id: id} = updated_student},
+        {:student_updated, %{id: id} = event, reference},
         %Socket{
           assigns: %{
             auth: auth,
@@ -94,17 +94,19 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
             active_server: active_server
           }
         } = socket
-      ),
-      do:
-        socket
-        |> assign(
-          student: Student.refresh!(student, updated_student),
-          active_server:
-            active_server
-            |> maybe_refresh_server_group_member(auth, updated_student)
-            |> maybe_drop_active_server()
-        )
-        |> noreply()
+      ) do
+    refreshed_student = Student.refresh!(student, event, reference)
+
+    socket
+    |> assign(
+      student: refreshed_student,
+      active_server:
+        active_server
+        |> maybe_refresh_server_group_member(auth, event, reference, refreshed_student)
+        |> maybe_drop_active_server()
+    )
+    |> noreply()
+  end
 
   @impl LiveView
   def handle_info(
@@ -168,12 +170,12 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
   @impl LiveView
   def handle_info(
-        {:preregistered_user_updated, %{id: id} = update},
+        {:preregistered_user_updated, %{preregistered_user_id: id} = event, reference},
         %Socket{
           assigns: %{student: %Student{id: id} = student}
         } = socket
       ) do
-    refreshed = Student.refresh!(student, update)
+    refreshed = Student.refresh!(student, event, reference)
 
     if refreshed.user_id != nil and refreshed.user_id != student.user_id do
       :ok = Servers.PubSub.subscribe_server_owner_servers(refreshed.user_id)
@@ -276,9 +278,9 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
        ),
        do: %Server{server | group: ServerGroup.refresh!(server.group, event, reference)}
 
-  defp maybe_refresh_server_group_member(nil, auth, updated_student) do
-    if Student.active?(updated_student, Clock.now()) do
-      find_active_server(auth, updated_student)
+  defp maybe_refresh_server_group_member(nil, auth, _event, _reference, refreshed_student) do
+    if Student.active?(refreshed_student, Clock.now()) do
+      find_active_server(auth, refreshed_student)
     else
       nil
     end
@@ -287,13 +289,15 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   defp maybe_refresh_server_group_member(
          %Server{owner: %ServerOwner{group_member: %ServerGroupMember{id: id} = member}} = server,
          _auth,
-         %Student{id: id} = updated_student
+         %{id: id} = event,
+         reference,
+         _refreshed_student
        ),
        do: %Server{
          server
          | owner: %ServerOwner{
              server.owner
-             | group_member: ServerGroupMember.refresh!(member, updated_student)
+             | group_member: ServerGroupMember.refresh!(member, event, reference)
            }
        }
 end

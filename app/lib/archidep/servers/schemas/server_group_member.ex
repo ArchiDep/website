@@ -8,6 +8,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
   """
   use ArchiDep, :schema
 
+  alias ArchiDep.Course.Events.StudentConfigured
+  alias ArchiDep.Course.Events.StudentUpdated
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerOwner
 
@@ -93,40 +96,34 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
       |> Repo.one()
       |> truthy_or(:server_group_member_not_found)
 
-  @spec refresh!(t(), map()) :: t()
-  def refresh!(member, incoming),
+  @spec refresh!(t(), StudentUpdated.t() | StudentConfigured.t(), EventReference.t()) :: t()
+  def refresh!(member, event, %EventReference{version: version, occurred_at: occurred_at}),
     do:
       versioned_refresh(
         member,
-        incoming,
-        incoming.version,
+        event,
+        version,
         &fetch_server_group_member/1,
-        &merge_refresh/2
+        &merge_refresh(&1, &2, version, occurred_at)
       )
 
   defp merge_refresh(
-         %__MODULE__{
-           group: %ServerGroup{id: group_id, version: group_version},
-           owner: %ServerOwner{id: owner_id, version: owner_version}
-         } = member,
-         %__MODULE__{
+         %__MODULE__{id: id} = member,
+         %StudentUpdated{
+           id: id,
            name: name,
            username: username,
-           username_confirmed: username_confirmed,
            domain: domain,
            active: active,
-           servers_enabled: servers_enabled,
-           group: %ServerGroup{id: group_id, version: group_version},
-           owner: %ServerOwner{id: owner_id, version: owner_version},
-           version: version,
-           updated_at: updated_at
-         }
+           servers_enabled: servers_enabled
+         },
+         version,
+         updated_at
        ) do
     %__MODULE__{
       member
       | name: name,
         username: username,
-        username_confirmed: username_confirmed,
         domain: domain,
         active: active,
         servers_enabled: servers_enabled,
@@ -136,31 +133,19 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMember do
   end
 
   defp merge_refresh(
-         %__MODULE__{
-           group: %ServerGroup{id: group_id, version: group_version},
-           owner: %ServerOwner{id: owner_id, version: owner_version}
-         } = member,
-         %{
-           name: name,
-           domain: domain,
-           active: active,
-           servers_enabled: servers_enabled,
-           class: %{id: group_id, version: group_version},
-           user: %{id: owner_id, version: owner_version},
-           version: version,
-           updated_at: updated_at
-         }
+         %__MODULE__{id: id} = member,
+         %StudentConfigured{id: id, username: username},
+         version,
+         updated_at
        ) do
     %__MODULE__{
       member
-      | name: name,
-        domain: domain,
-        active: active,
-        servers_enabled: servers_enabled,
+      | username: username,
+        username_confirmed: true,
         version: version,
         updated_at: updated_at
     }
   end
 
-  defp merge_refresh(_member, _incoming), do: :refetch
+  defp merge_refresh(_member, _incoming, _version, _updated_at), do: :refetch
 end

@@ -1,9 +1,11 @@
 defmodule ArchiDep.Servers.Schemas.ServerGroupMemberTest do
   use ArchiDep.Support.DataCase, async: true
 
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Events.StudentConfigured
+  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersTestHelpers
   alias Ecto.UUID
 
@@ -77,52 +79,102 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMemberTest do
       |> Repo.get!(id)
       |> Repo.preload([:group, :owner])
 
-  describe "refresh!/2" do
-    test "merges an incoming student broadcast one version ahead into the cached member" do
+  describe "refresh!/3" do
+    test "merges a student-updated event one version ahead into the cached member" do
       %{student: student} = ServersTestHelpers.register_group_member(@now)
       {:ok, member} = ServerGroupMember.fetch_server_group_member(student.id)
-      {:ok, updated_student} = Student.fetch_student(student.id)
 
-      # The broadcast carries the next version and diverges from the persisted
-      # row on every merged field, so the assertion can only pass if the
-      # in-memory merge ran: the catch-all fallback would re-fetch and return
-      # the persisted values instead. (The cross-context student clause does not
-      # propagate the username, so it is left unchanged here.)
-      updated = %{
-        updated_student
-        | name: "Renamed member",
-          domain: "renamed.archidep.ch",
-          active: not member.active,
-          servers_enabled: not member.servers_enabled,
-          version: member.version + 1,
-          updated_at: @later
+      # The event carries the next version and diverges from the persisted row
+      # on every merged field, so the assertion can only pass if the in-memory
+      # merge ran: the catch-all fallback would re-fetch and return the
+      # persisted values instead.
+      event = %StudentUpdated{
+        id: member.id,
+        name: "Renamed member",
+        email: "renamed@example.ch",
+        academic_class: "Renamed academic class",
+        username: "renamedusername",
+        domain: "renamed.archidep.ch",
+        active: not member.active,
+        servers_enabled: not member.servers_enabled,
+        class: %{id: member.group_id, name: member.group.name}
       }
 
-      assert ServerGroupMember.refresh!(member, updated) == %{
-               member
-               | name: "Renamed member",
-                 domain: "renamed.archidep.ch",
-                 active: updated.active,
-                 servers_enabled: updated.servers_enabled,
+      assert ServerGroupMember.refresh!(
+               member,
+               event,
+               EventsFactory.build(:event_reference,
                  version: member.version + 1,
-                 updated_at: @later
-             }
+                 occurred_at: @later
+               )
+             ) ==
+               %{
+                 member
+                 | name: "Renamed member",
+                   username: "renamedusername",
+                   domain: "renamed.archidep.ch",
+                   active: event.active,
+                   servers_enabled: event.servers_enabled,
+                   version: member.version + 1,
+                   updated_at: @later
+               }
     end
 
-    test "ignores a student broadcast at or below the cached version" do
+    test "merges a student-configured event one version ahead into the cached member" do
       %{student: student} = ServersTestHelpers.register_group_member(@now)
       {:ok, member} = ServerGroupMember.fetch_server_group_member(student.id)
-      {:ok, updated_student} = Student.fetch_student(student.id)
 
-      stale = %{updated_student | name: "Ignored", version: member.version, updated_at: @later}
+      event = %StudentConfigured{
+        id: member.id,
+        name: member.name,
+        email: "member@example.ch",
+        username: "confirmedusername",
+        class: %{id: member.group_id, name: member.group.name}
+      }
 
-      assert ServerGroupMember.refresh!(member, stale) == member
+      assert ServerGroupMember.refresh!(
+               member,
+               event,
+               EventsFactory.build(:event_reference,
+                 version: member.version + 1,
+                 occurred_at: @later
+               )
+             ) ==
+               %{
+                 member
+                 | username: "confirmedusername",
+                   username_confirmed: true,
+                   version: member.version + 1,
+                   updated_at: @later
+               }
+    end
+
+    test "ignores a student event at or below the cached version" do
+      %{student: student} = ServersTestHelpers.register_group_member(@now)
+      {:ok, member} = ServerGroupMember.fetch_server_group_member(student.id)
+
+      event = %StudentUpdated{
+        id: member.id,
+        name: "Ignored",
+        email: "ignored@example.ch",
+        academic_class: nil,
+        username: member.username,
+        domain: member.domain,
+        active: member.active,
+        servers_enabled: member.servers_enabled,
+        class: %{id: member.group_id, name: member.group.name}
+      }
+
+      assert ServerGroupMember.refresh!(
+               member,
+               event,
+               EventsFactory.build(:event_reference, version: member.version, occurred_at: @later)
+             ) == member
     end
 
     test "re-fetches from the database when the incoming version skips ahead" do
       %{student: student} = ServersTestHelpers.register_group_member(@now)
       {:ok, member} = ServerGroupMember.fetch_server_group_member(student.id)
-      {:ok, updated_student} = Student.fetch_student(student.id)
 
       {1, nil} =
         Repo.update_all(
@@ -133,14 +185,27 @@ defmodule ArchiDep.Servers.Schemas.ServerGroupMemberTest do
       {:ok, fresh} = ServerGroupMember.fetch_server_group_member(member.id)
       refute fresh == member
 
-      gapped = %{
-        updated_student
-        | name: "Ignored",
-          version: member.version + 2,
-          updated_at: @later
+      event = %StudentUpdated{
+        id: member.id,
+        name: "Ignored",
+        email: "ignored@example.ch",
+        academic_class: nil,
+        username: member.username,
+        domain: member.domain,
+        active: member.active,
+        servers_enabled: member.servers_enabled,
+        class: %{id: member.group_id, name: member.group.name}
       }
 
-      assert ServerGroupMember.refresh!(member, gapped) == fresh
+      assert ServerGroupMember.refresh!(
+               member,
+               event,
+               EventsFactory.build(:event_reference,
+                 version: member.version + 2,
+                 occurred_at: @later
+               )
+             ) ==
+               fresh
     end
   end
 end

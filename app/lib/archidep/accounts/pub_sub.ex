@@ -3,7 +3,9 @@ defmodule ArchiDep.Accounts.PubSub do
   Publication and subscription of events related to user account management.
   """
 
+  alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
+  alias ArchiDep.Events.Store.EventReference
   alias Ecto.UUID
   alias Phoenix.PubSub
 
@@ -19,20 +21,26 @@ defmodule ArchiDep.Accounts.PubSub do
     :ok = PubSub.subscribe(@pubsub, "accounts:preregistered-users:#{preregistered_user_id}")
   end
 
-  @spec publish_preregistered_user_updated(PreregisteredUser.t()) :: :ok
-  def publish_preregistered_user_updated(preregistered_user) do
+  @spec publish_preregistered_user_updated(
+          PreregisteredUser.t(),
+          PreregisteredUserLinkedToUserAccount.t(),
+          EventReference.t()
+        ) :: :ok
+  def publish_preregistered_user_updated(preregistered_user, event, reference) do
+    message = {:preregistered_user_updated, event, reference}
+
     :ok =
       PubSub.broadcast(
         @pubsub,
         "accounts:preregistered-users:#{preregistered_user.id}",
-        {:preregistered_user_updated, preregistered_user}
+        message
       )
 
     :ok =
       PubSub.broadcast(
         @pubsub,
         "accounts:user-groups:#{preregistered_user.group_id}:preregistered-users",
-        {:preregistered_user_updated, preregistered_user}
+        message
       )
   end
 end

@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
   import Hammox
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
   alias ArchiDep.Servers.PubSub
@@ -675,12 +676,14 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
+      updated = %{student | username: "zoe", version: student.version + 1}
+
       :ok =
-        Course.PubSub.publish_student_updated(%{
-          student
-          | username: "zoe",
-            version: student.version + 1
-        })
+        Course.PubSub.publish_student_updated(
+          updated,
+          StudentUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
 
       wait_for_socket_assigns!(
         view,

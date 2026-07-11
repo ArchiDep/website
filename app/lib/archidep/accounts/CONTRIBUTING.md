@@ -73,9 +73,9 @@ The context follows the standard [bounded context anatomy][bounded-contexts]:
 - **Use cases** — [`use_cases/`](./use_cases), see [Use Cases](#use-cases).
 - **Policy** — [`policy.ex`](./policy.ex), see [Authorization](#authorization).
 - **Events** — [`events/`](./events), see [Business Events](#business-events).
-- **PubSub** — [`pub_sub.ex`](./pub_sub.ex) broadcasts
-  `{:preregistered_user_updated, preregistered_user}` on per-user and
-  per-user-group topics so live views can react to preregistration changes.
+- **PubSub** — [`pub_sub.ex`](./pub_sub.ex) broadcasts preregistered-user
+  linkage on the `accounts:preregistered-users:{id}` and
+  `accounts:user-groups:{id}:preregistered-users` topics.
 
 ---
 
@@ -302,8 +302,9 @@ exposed by [`accounts.ex`](../accounts.ex):
 Following the application's [event-logging convention][bounded-contexts], every
 significant action is persisted (in the same `Ecto.Multi` as the action) as a
 business event under [`events/`](./events). Account events are written to the
-user's `accounts:user-accounts:{id}` stream; the login-link-created event is
-written to the preregistered user's stream.
+user's `accounts:user-accounts:{id}` stream; the login-link-created and
+preregistered-user-linked events are written to the preregistered user's
+`accounts:preregistered-users:{id}` stream.
 
 - [`UserRegisteredWithSwitchEduId`](./events/user_registered_with_switch_edu_id.ex)
   / [`UserLoggedInWithSwitchEduId`](./events/user_logged_in_with_switch_edu_id.ex)
@@ -314,6 +315,7 @@ written to the preregistered user's stream.
 - [`UserImpersonated`](./events/user_impersonated.ex) /
   [`UserStoppedImpersonating`](./events/user_stopped_impersonating.ex)
 - [`PreregisteredUserLoginLinkCreated`](./events/preregistered_user_login_link_created.ex)
+- [`PreregisteredUserLinkedToUserAccount`](./events/preregistered_user_linked_to_user_account.ex)
 
 ---
 
