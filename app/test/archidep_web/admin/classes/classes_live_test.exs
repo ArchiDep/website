@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
 
   import Hammox
   alias ArchiDep.Course
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -197,7 +198,13 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
       assert classes_table(html) == [{"Original", "Until Tue, June 30, 2026", :active}]
 
       updated = %{class | name: "Renamed", version: class.version + 1}
-      :ok = Course.PubSub.publish_class_updated(updated, EventsFactory.build(:event_reference))
+
+      :ok =
+        Course.PubSub.publish_class_updated(
+          updated,
+          ClassUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
 
       wait_for_socket_assigns!(
         view,

@@ -1140,7 +1140,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
     %EventReference{
       id: event_id,
       causation_id: registered_event.causation_id,
-      correlation_id: registered_event.correlation_id
+      correlation_id: registered_event.correlation_id,
+      version: registered_event.version,
+      occurred_at: registered_event.occurred_at
     }
   end
 end

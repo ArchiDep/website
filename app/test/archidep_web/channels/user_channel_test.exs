@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
   use ArchiDepWeb.Support.ChannelCase, async: true
 
   alias ArchiDep.Course
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Servers
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -98,7 +99,12 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
       assert initial == %{student: student_payload(student), server: nil, serversEnabled: false}
 
       updated_class = %{class | version: 2, servers_enabled: true}
-      Course.PubSub.publish_class_updated(updated_class, EventsFactory.build(:event_reference))
+
+      Course.PubSub.publish_class_updated(
+        updated_class,
+        ClassUpdated.new(updated_class),
+        EventsFactory.build(:event_reference, version: updated_class.version)
+      )
 
       assert_push "cloudServerData", cloud
       assert cloud == %{student: student_payload(student), server: nil, serversEnabled: true}

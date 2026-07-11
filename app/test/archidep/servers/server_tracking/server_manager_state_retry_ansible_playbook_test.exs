@@ -448,12 +448,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
       %EventReference{
         id: retried_event_id,
         causation_id: retried_event.causation_id,
-        correlation_id: retried_event.correlation_id
+        correlation_id: retried_event.correlation_id,
+        version: retried_event.version,
+        occurred_at: retried_event.occurred_at
       },
       %EventReference{
         id: run_started_event_id,
         causation_id: run_started_event.causation_id,
-        correlation_id: run_started_event.correlation_id
+        correlation_id: run_started_event.correlation_id,
+        version: run_started_event.version,
+        occurred_at: run_started_event.occurred_at
       }
     }
   end

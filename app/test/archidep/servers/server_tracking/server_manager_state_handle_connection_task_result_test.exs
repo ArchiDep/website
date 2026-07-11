@@ -1454,7 +1454,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     %EventReference{
       id: event_id,
       causation_id: connected_event.causation_id,
-      correlation_id: connected_event.correlation_id
+      correlation_id: connected_event.correlation_id,
+      version: connected_event.version,
+      occurred_at: connected_event.occurred_at
     }
   end
 end

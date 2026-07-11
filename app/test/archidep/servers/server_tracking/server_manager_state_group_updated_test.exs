@@ -4,6 +4,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Support.ServerManagerStateTestUtils
   import Hammox
+  alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Servers.Schemas.Server
@@ -106,9 +108,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    event = EventsFactory.build(:event_reference)
+    class_event = ClassUpdated.new(updated_class)
 
-    %ServerManagerState{} = result = group_updated.(initial_state, updated_class, event)
+    event =
+      EventsFactory.build(:event_reference,
+        version: updated_class.version,
+        occurred_at: updated_class.updated_at
+      )
+
+    %ServerManagerState{} = result = group_updated.(initial_state, class_event, event)
 
     assert_no_stored_events!()
 
@@ -140,7 +148,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
   end
 
   test "ignore outdated server group updates", %{group_updated: group_updated} do
-    %Class{} = class = CourseFactory.build(:class, active: true, servers_enabled: true)
+    %Class{} =
+      class = CourseFactory.build(:class, active: true, servers_enabled: true, version: 20)
 
     group = %ServerGroup{
       id: class.id,
@@ -197,9 +206,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version - Faker.random_between(1, 10)
     }
 
-    event = EventsFactory.build(:event_reference)
+    class_event = ClassUpdated.new(updated_class)
 
-    assert group_updated.(initial_state, updated_class, event) == initial_state
+    event =
+      EventsFactory.build(:event_reference,
+        version: updated_class.version,
+        occurred_at: updated_class.updated_at
+      )
+
+    assert group_updated.(initial_state, class_event, event) == initial_state
 
     assert_no_stored_events!()
   end
@@ -314,9 +329,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    event = EventsFactory.build(:event_reference)
+    class_event =
+      ClassExpectedServerPropertiesUpdated.new(
+        updated_class.expected_server_properties,
+        updated_class
+      )
 
-    %ServerManagerState{} = result = group_updated.(initial_state, updated_class, event)
+    event =
+      EventsFactory.build(:event_reference,
+        version: updated_class.version,
+        occurred_at: updated_class.updated_at
+      )
+
+    %ServerManagerState{} = result = group_updated.(initial_state, class_event, event)
 
     assert_no_stored_events!()
 
@@ -465,9 +490,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    event = EventsFactory.build(:event_reference)
+    class_event =
+      ClassExpectedServerPropertiesUpdated.new(
+        updated_class.expected_server_properties,
+        updated_class
+      )
 
-    %ServerManagerState{} = result = group_updated.(initial_state, updated_class, event)
+    event =
+      EventsFactory.build(:event_reference,
+        version: updated_class.version,
+        occurred_at: updated_class.updated_at
+      )
+
+    %ServerManagerState{} = result = group_updated.(initial_state, class_event, event)
 
     assert_no_stored_events!()
 
@@ -584,9 +619,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    event = EventsFactory.build(:event_reference)
+    class_event = ClassUpdated.new(updated_class)
 
-    %ServerManagerState{} = result = group_updated.(initial_state, updated_class, event)
+    event =
+      EventsFactory.build(:event_reference,
+        version: updated_class.version,
+        occurred_at: updated_class.updated_at
+      )
+
+    %ServerManagerState{} = result = group_updated.(initial_state, class_event, event)
 
     assert_no_stored_events!()
 
@@ -716,12 +757,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateGroupUpdatedTest do
         version: class.version + 1
     }
 
-    event = EventsFactory.build(:event_reference)
+    class_event = ClassUpdated.new(updated_class)
+
+    event =
+      EventsFactory.build(:event_reference,
+        version: updated_class.version,
+        occurred_at: updated_class.updated_at
+      )
 
     %ServerManagerState{} =
       result =
       assert_server_connection_disconnected!(server, fn ->
-        group_updated.(initial_state, updated_class, event)
+        group_updated.(initial_state, class_event, event)
       end)
 
     assert_no_stored_events!()

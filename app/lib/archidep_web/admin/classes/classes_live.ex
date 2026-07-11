@@ -45,24 +45,26 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, %{id: id} = updated, _event},
+        {:class_updated, event, reference},
         %Socket{assigns: %{classes: classes}} = socket
-      ),
-      do:
-        socket
-        |> assign(
-          :classes,
-          classes
-          |> Enum.map(fn
-            %Class{id: ^id} = c ->
-              Class.refresh!(c, updated)
+      ) do
+    id = class_updated_id(event)
 
-            c ->
-              c
-          end)
-          |> sort_classes()
-        )
-        |> noreply()
+    socket
+    |> assign(
+      :classes,
+      classes
+      |> Enum.map(fn
+        %Class{id: ^id} = c ->
+          Class.refresh!(c, event, reference)
+
+        c ->
+          c
+      end)
+      |> sort_classes()
+    )
+    |> noreply()
+  end
 
   @impl LiveView
   def handle_info(

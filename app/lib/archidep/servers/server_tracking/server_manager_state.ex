@@ -1118,18 +1118,18 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         %__MODULE__{
           server: %Server{
             id: server_id,
-            group: %ServerGroup{id: group_id, version: current_version} = current_group
+            group: %ServerGroup{version: current_version} = current_group
           }
         } = state,
-        %{id: group_id, version: version} = group,
-        event
+        event,
+        %EventReference{version: version} = reference
       ) do
     Logger.info(
       # coveralls-ignore-next-line
       "Server manager for server #{server_id} received group update from version #{current_version} to version #{version}"
     )
 
-    new_group = ServerGroup.refresh!(current_group, group)
+    new_group = ServerGroup.refresh!(current_group, event, reference)
 
     if new_group == current_group do
       state
@@ -1139,7 +1139,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       state
       |> set_updated_server(new_server, false)
       |> detect_server_properties_mismatches()
-      |> auto_activate_or_deactivate(event)
+      |> auto_activate_or_deactivate(reference)
     end
   end
 

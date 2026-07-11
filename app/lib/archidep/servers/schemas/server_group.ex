@@ -9,6 +9,9 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
 
   use ArchiDep, :schema
 
+  alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
+  alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerProperties
 
@@ -80,31 +83,33 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
       |> Repo.one()
       |> truthy_or(:server_group_not_found)
 
-  @spec refresh!(t(), map()) :: t()
-  def refresh!(group, incoming),
+  @spec refresh!(
+          t(),
+          ClassUpdated.t() | ClassExpectedServerPropertiesUpdated.t(),
+          EventReference.t()
+        ) :: t()
+  def refresh!(group, event, %EventReference{version: version, occurred_at: occurred_at}),
     do:
       versioned_refresh(
         group,
-        incoming,
-        incoming.version,
+        event,
+        version,
         &fetch_server_group/1,
-        &merge_refresh/2
+        &merge_refresh(&1, &2, version, occurred_at)
       )
 
   defp merge_refresh(
          %__MODULE__{} = group,
-         %__MODULE__{
+         %ClassUpdated{
            name: name,
            start_date: start_date,
            end_date: end_date,
            active: active,
            servers_enabled: servers_enabled,
-           ssh_public_keys_to_install: ssh_public_keys_to_install,
-           expected_server_properties: expected_server_properties,
-           expected_server_properties_id: expected_server_properties_id,
-           version: version,
-           updated_at: updated_at
-         }
+           teacher_ssh_public_keys: ssh_public_keys_to_install
+         },
+         version,
+         updated_at
        ) do
     %__MODULE__{
       group
@@ -114,8 +119,6 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
         active: active,
         servers_enabled: servers_enabled,
         ssh_public_keys_to_install: ssh_public_keys_to_install,
-        expected_server_properties: expected_server_properties,
-        expected_server_properties_id: expected_server_properties_id,
         version: version,
         updated_at: updated_at
     }
@@ -123,32 +126,47 @@ defmodule ArchiDep.Servers.Schemas.ServerGroup do
 
   defp merge_refresh(
          %__MODULE__{expected_server_properties: expected_server_properties} = group,
-         %{
-           name: name,
-           start_date: start_date,
-           end_date: end_date,
-           active: active,
-           servers_enabled: servers_enabled,
-           teacher_ssh_public_keys: ssh_public_keys_to_install,
-           expected_server_properties: new_expected_server_properties,
-           version: version,
-           updated_at: updated_at
-         }
+         %ClassExpectedServerPropertiesUpdated{
+           hostname: hostname,
+           machine_id: machine_id,
+           cpus: cpus,
+           cores: cores,
+           vcpus: vcpus,
+           memory: memory,
+           swap: swap,
+           system: system,
+           architecture: architecture,
+           os_family: os_family,
+           distribution: distribution,
+           distribution_release: distribution_release,
+           distribution_version: distribution_version
+         },
+         version,
+         updated_at
        ) do
     %__MODULE__{
       group
-      | name: name,
-        start_date: start_date,
-        end_date: end_date,
-        active: active,
-        servers_enabled: servers_enabled,
-        ssh_public_keys_to_install: ssh_public_keys_to_install,
-        expected_server_properties:
-          ServerProperties.refresh(expected_server_properties, new_expected_server_properties),
+      | expected_server_properties:
+          ServerProperties.refresh(expected_server_properties, %{
+            id: expected_server_properties.id,
+            hostname: hostname,
+            machine_id: machine_id,
+            cpus: cpus,
+            cores: cores,
+            vcpus: vcpus,
+            memory: memory,
+            swap: swap,
+            system: system,
+            architecture: architecture,
+            os_family: os_family,
+            distribution: distribution,
+            distribution_release: distribution_release,
+            distribution_version: distribution_version
+          }),
         version: version,
         updated_at: updated_at
     }
   end
 
-  defp merge_refresh(_group, _incoming), do: :refetch
+  defp merge_refresh(_group, _incoming, _version, _updated_at), do: :refetch
 end

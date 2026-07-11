@@ -99,7 +99,9 @@ defmodule ArchiDep.Helpers.SchemaHelpers do
   * Otherwise (a version gap), the struct is reloaded with `fetch`.
 
   The version is taken from the `version` argument rather than read off the
-  incoming payload, so callers control its source.
+  incoming payload, so callers control its source. The incoming payload need not
+  carry the entity id (it may be a domain event whose id is nested); identity is
+  guaranteed by the entity-specific broadcast topic and the `merge` clause.
   """
   @spec versioned_refresh(
           struct(),
@@ -110,7 +112,7 @@ defmodule ArchiDep.Helpers.SchemaHelpers do
         ) :: struct()
   def versioned_refresh(
         %{id: id, version: current} = cached,
-        %{id: id} = incoming,
+        incoming,
         version,
         fetch,
         merge

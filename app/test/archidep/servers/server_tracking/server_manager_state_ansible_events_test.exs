@@ -966,12 +966,16 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
       %EventReference{
         id: setup_event_id,
         causation_id: setup_event.causation_id,
-        correlation_id: setup_event.correlation_id
+        correlation_id: setup_event.correlation_id,
+        version: setup_event.version,
+        occurred_at: setup_event.occurred_at
       },
       %EventReference{
         id: reconnecting_event_id,
         causation_id: reconnecting_event.causation_id,
-        correlation_id: reconnecting_event.correlation_id
+        correlation_id: reconnecting_event.correlation_id,
+        version: reconnecting_event.version,
+        occurred_at: reconnecting_event.occurred_at
       }
     }
   end

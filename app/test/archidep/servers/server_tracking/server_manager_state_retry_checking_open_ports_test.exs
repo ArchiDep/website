@@ -303,7 +303,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
     %EventReference{
       id: event_id,
       causation_id: retried_event.causation_id,
-      correlation_id: retried_event.correlation_id
+      correlation_id: retried_event.correlation_id,
+      version: retried_event.version,
+      occurred_at: retried_event.occurred_at
     }
   end
 end

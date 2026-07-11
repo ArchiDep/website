@@ -2,9 +2,20 @@ defmodule ArchiDepWeb.Helpers.LiveViewHelpers do
   @moduledoc false
 
   alias ArchiDep.Authentication
+  alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers.Schemas.Server
+  alias Ecto.UUID
+
+  @doc """
+  Returns the ID of the class carried by a `:class_updated` broadcast payload,
+  which may be either of the two class-update domain events.
+  """
+  @spec class_updated_id(ClassUpdated.t() | ClassExpectedServerPropertiesUpdated.t()) :: UUID.t()
+  def class_updated_id(%ClassUpdated{id: id}), do: id
+  def class_updated_id(%ClassExpectedServerPropertiesUpdated{class: %{id: id}}), do: id
 
   @spec set_process_label(atom(), Authentication.t()) :: :ok
   def set_process_label(

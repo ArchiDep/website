@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   use ArchiDepWeb, :channel
 
   import ArchiDepWeb.Helpers.AuthHelpers
+  import ArchiDepWeb.Helpers.LiveViewHelpers, only: [class_updated_id: 1]
   alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
@@ -58,19 +59,19 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
   @impl Channel
   def handle_info(
-        {:class_updated, %Class{id: id} = updated_class, _event},
+        {:class_updated, event, reference},
         %Socket{
           assigns: %{
             active_servers: active_servers,
-            student: %Student{class: %Class{id: id} = current_class} = student
+            student: %Student{class: %Class{} = current_class} = student
           }
         } = socket
       ),
       do:
         socket
         |> assign(
-          active_servers: update_class_of_active_servers(active_servers, updated_class),
-          student: %Student{student | class: Class.refresh!(current_class, updated_class)}
+          active_servers: update_class_of_active_servers(active_servers, event, reference),
+          student: %Student{student | class: Class.refresh!(current_class, event, reference)}
         )
         |> send_updated_data()
         |> noreply()
@@ -180,15 +181,17 @@ defmodule ArchiDepWeb.Channels.UserChannel do
         |> send_updated_data()
         |> noreply()
 
-  defp update_class_of_active_servers(active_servers, %Class{id: class_id} = updated_class),
-    do:
-      Enum.map(active_servers, fn
-        %Server{group: %ServerGroup{id: ^class_id} = group} = server ->
-          %Server{server | group: ServerGroup.refresh!(group, updated_class)}
+  defp update_class_of_active_servers(active_servers, event, reference) do
+    class_id = class_updated_id(event)
 
-        server ->
-          server
-      end)
+    Enum.map(active_servers, fn
+      %Server{group: %ServerGroup{id: ^class_id} = group} = server ->
+        %Server{server | group: ServerGroup.refresh!(group, event, reference)}
+
+      server ->
+        server
+    end)
+  end
 
   defp remove_active_servers_of_class(active_servers, %Class{id: class_id}),
     do: Enum.reject(active_servers, &(&1.group_id == class_id))

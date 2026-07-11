@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
   import Hammox
   alias ArchiDep.Course
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -417,7 +418,14 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       {:ok, view, _html} = live(conn, @path)
 
       renamed = %{alpha | name: "Renamed", version: alpha.version + 1}
-      :ok = Course.PubSub.publish_class_updated(renamed, EventsFactory.build(:event_reference))
+      stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, renamed} end)
+
+      :ok =
+        Course.PubSub.publish_class_updated(
+          renamed,
+          ClassUpdated.new(renamed),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -448,9 +456,14 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       {:ok, view, _html} = live(conn, @path)
 
       deactivated = %{beta | active: false, version: beta.version + 1}
+      stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, deactivated} end)
 
       :ok =
-        Course.PubSub.publish_class_updated(deactivated, EventsFactory.build(:event_reference))
+        Course.PubSub.publish_class_updated(
+          deactivated,
+          ClassUpdated.new(deactivated),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,

@@ -9,6 +9,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
@@ -424,12 +425,20 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
   end
 
   # Asserts the class-updated message reached both topics the use case publishes
-  # to — the class-specific one and the global one — each carrying the updated
-  # class and the stored-event reference, and nothing else.
+  # to — the class-specific one and the global one — each carrying the
+  # `ClassExpectedServerPropertiesUpdated` domain event and the stored-event
+  # reference, and nothing else.
   defp assert_class_updated_broadcast(broadcasts, %Class{} = original, %StoredEvent{} = event) do
     expected_class = persisted_class(original.id)
     expected_reference = StoredEvent.to_reference(event)
-    expected_message = {:class_updated, expected_class, expected_reference}
+
+    expected_event =
+      ClassExpectedServerPropertiesUpdated.new(
+        expected_class.expected_server_properties,
+        expected_class
+      )
+
+    expected_message = {:class_updated, expected_event, expected_reference}
 
     assert received_broadcasts(broadcasts.specific) == [expected_message]
     assert received_broadcasts(broadcasts.global) == [expected_message]

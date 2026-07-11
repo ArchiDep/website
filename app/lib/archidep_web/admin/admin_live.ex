@@ -131,31 +131,43 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, %{id: id} = updated_class, _event},
+        {:class_updated, event, _reference},
         %Socket{
-          assigns: %{active_classes: active_classes, servers_by_class_id: servers_by_class_id}
+          assigns: %{
+            auth: auth,
+            active_classes: active_classes,
+            servers_by_class_id: servers_by_class_id
+          }
         } = socket
       ) do
-    if Class.active?(updated_class, Clock.now()) do
-      socket
-      |> assign(
-        active_classes:
-          sort_classes(
-            if(Enum.any?(active_classes, &(&1.id == id)),
-              do: update_class(active_classes, updated_class),
-              else: add_class(active_classes, updated_class)
-            )
-          ),
-        servers_by_class_id: Map.put_new(servers_by_class_id, updated_class.id, [])
-      )
-      |> noreply()
-    else
-      socket
-      |> assign(
-        active_classes: active_classes |> remove_class(updated_class) |> sort_classes(),
-        servers_by_class_id: Map.delete(servers_by_class_id, updated_class.id)
-      )
-      |> noreply()
+    id = class_updated_id(event)
+
+    case Course.fetch_class(auth, id) do
+      {:ok, updated_class} ->
+        if Class.active?(updated_class, Clock.now()) do
+          socket
+          |> assign(
+            active_classes:
+              sort_classes(
+                if(Enum.any?(active_classes, &(&1.id == id)),
+                  do: update_class(active_classes, updated_class),
+                  else: add_class(active_classes, updated_class)
+                )
+              ),
+            servers_by_class_id: Map.put_new(servers_by_class_id, updated_class.id, [])
+          )
+          |> noreply()
+        else
+          socket
+          |> assign(
+            active_classes: active_classes |> remove_class(updated_class) |> sort_classes(),
+            servers_by_class_id: Map.delete(servers_by_class_id, updated_class.id)
+          )
+          |> noreply()
+        end
+
+      {:error, _reason} ->
+        noreply(socket)
     end
   end
 
@@ -369,8 +381,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   defp update_class(classes, %Class{id: id} = class) do
     Enum.map(classes, fn
-      %Class{id: ^id} = c ->
-        Class.refresh!(c, class)
+      %Class{id: ^id} ->
+        class
 
       c ->
         c

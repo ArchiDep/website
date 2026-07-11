@@ -151,13 +151,34 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
       of the live schemas into a plain (non-macro) higher-order function,
       leaving only the per-schema field mapping — see [#5b Extract the version
       skeleton](#5b-extract-the-version-skeleton).
-- [ ] **#5c Publish domain events as every `refresh!` payload.** Make each
-      producing context broadcast its curated domain event (with `version` /
-      `occurred_at` on the `EventReference` envelope) as the payload of every
-      `refresh!`-feeding broadcast — intra- and cross-context alike — so
-      consumers match a named, producer-owned shape and no topic is a latent
-      cross-context trap — see [#5c Broadcast the domain events as the published
-      payload](#5c-broadcast-the-domain-events-as-the-published-payload).
+- **#5c Publish domain events as every `refresh!` payload.** Make each producing
+  context broadcast its curated domain event (with `version` / `occurred_at` on
+  the `EventReference` envelope) as the payload of every `refresh!`-feeding
+  broadcast — intra- and cross-context alike — so consumers match a named,
+  producer-owned shape and no topic is a latent cross-context trap. Split into
+  three reviewable increments (the shared envelope change lands with the first)
+  — see [#5c Broadcast the domain events as the published
+  payload](#5c-broadcast-the-domain-events-as-the-published-payload).
+  - [x] **#5c-i Envelope + Course `class_updated`.** Enrich `EventReference` /
+        `to_reference` with `version` + `occurred_at`; generalize
+        `versioned_refresh` to not require a top-level id on the payload;
+        broadcast `ClassUpdated` / `ClassExpectedServerPropertiesUpdated` from
+        `publish_class_updated`; convert `Course.Class` and `Servers.ServerGroup`
+        `refresh!/3` plus every `class_updated` consumer (six web modules +
+        `ServerManagerState.group_updated`); delete the dead `ServerGroup` intra
+        clause.
+  - [ ] **#5c-ii Course `student_updated` (+ Accounts linkage).** Thread an
+        `EventReference` through `publish_student_updated`; broadcast
+        `StudentUpdated` / `StudentConfigured`; convert `Course.Student` (intra)
+        + `Servers.ServerGroupMember` (cross); add the curated Accounts linkage
+        event closing the `preregistered_user` always-refetch omission; delete
+        the dead `Course.User` / `ServerOwner` refreshers and the dead `Student`
+        / `ServerGroupMember` clauses.
+  - [ ] **#5c-iii Servers `server_updated` + tracker events.** Broadcast
+        `ServerUpdated` and the three tracker events (`ServerFactsGathered` /
+        `ServerSetUp` / `ServerOpenPortsChecked`); convert `Servers.Server`
+        `refresh!`; resolve the `last_known_properties` gap (re-derive, or enrich
+        `ServerFactsGathered` behind **#6**).
 - [ ] **#5d Consolidate subscribe + reconcile behind the context (exemplar).**
       Give each live read-model a `Context.subscribe_<entity>/1` and
       `Context.refresh_<entity>/2` (`{:ok, entity} | :ignore`, owning the

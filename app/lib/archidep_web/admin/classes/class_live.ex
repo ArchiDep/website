@@ -68,19 +68,19 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, %Class{id: id} = updated_class, _event},
+        {:class_updated, event, reference},
         %Socket{
           assigns: %{
-            class: %Class{id: id, version: current_version} = class,
-            server_group: %ServerGroup{id: id, version: current_version} = server_group
+            class: %Class{} = class,
+            server_group: %ServerGroup{} = server_group
           }
         } = socket
       ),
       do:
         socket
         |> assign(
-          class: Class.refresh!(class, updated_class),
-          server_group: ServerGroup.refresh!(server_group, updated_class)
+          class: Class.refresh!(class, event, reference),
+          server_group: ServerGroup.refresh!(server_group, event, reference)
         )
         |> noreply()
 

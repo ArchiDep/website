@@ -7,12 +7,14 @@ defmodule ArchiDep.Events.Store.EventReference do
 
   alias Ecto.UUID
 
-  @enforce_keys [:id, :causation_id, :correlation_id]
-  defstruct [:id, :causation_id, :correlation_id]
+  @enforce_keys [:id, :causation_id, :correlation_id, :version, :occurred_at]
+  defstruct [:id, :causation_id, :correlation_id, :version, :occurred_at]
 
   @type t :: %__MODULE__{
           id: UUID.t(),
           causation_id: UUID.t(),
-          correlation_id: UUID.t()
+          correlation_id: UUID.t(),
+          version: pos_integer(),
+          occurred_at: DateTime.t()
         }
 end

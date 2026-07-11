@@ -148,13 +148,15 @@ defmodule ArchiDep.Events.Store.StoredEventTest do
   end
 
   describe "to_reference/1" do
-    test "build an event reference carrying the causation chain IDs" do
+    test "build an event reference carrying the causation chain IDs, version and timestamp" do
       event = EventsFactory.build(:stored_event)
 
       assert StoredEvent.to_reference(event) == %EventReference{
                id: event.id,
                causation_id: event.causation_id,
-               correlation_id: event.correlation_id
+               correlation_id: event.correlation_id,
+               version: event.version,
+               occurred_at: event.occurred_at
              }
     end
   end

@@ -153,16 +153,16 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, %Class{id: id} = updated_class, _event},
+        {:class_updated, event, reference},
         %Socket{
           assigns: %{
-            student: %Student{class: %Class{id: id} = class} = student
+            student: %Student{class: %Class{} = class} = student
           }
         } = socket
       ),
       do:
         socket
-        |> assign(student: %Student{student | class: Class.refresh!(class, updated_class)})
+        |> assign(student: %Student{student | class: Class.refresh!(class, event, reference)})
         |> noreply()
 
   @impl LiveView

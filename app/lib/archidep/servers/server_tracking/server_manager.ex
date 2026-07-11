@@ -279,12 +279,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
         |> noreply()
 
   def handle_info(
-        {:class_updated, class, event},
+        {:class_updated, event, reference},
         {state_module, state}
       ),
       do:
         state
-        |> state_module.group_updated(class, event)
+        |> state_module.group_updated(event, reference)
         |> execute_actions()
         |> pair(state_module)
         |> noreply()

@@ -126,25 +126,27 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, %Class{id: class_id} = updated_class, _event},
+        {:class_updated, event, reference},
         %Socket{
           assigns: %{
             auth: auth,
-            student: %Student{class: %Class{id: class_id} = class} = student,
+            student: %Student{class: %Class{} = class} = student,
             active_server: active_server
           }
         } = socket
-      ),
-      do:
-        socket
-        |> assign(
-          student: %Student{student | class: Class.refresh!(class, updated_class)},
-          active_server:
-            active_server
-            |> maybe_refresh_server_group(auth, updated_class, student)
-            |> maybe_drop_active_server()
-        )
-        |> noreply()
+      ) do
+    refreshed_class = Class.refresh!(class, event, reference)
+
+    socket
+    |> assign(
+      student: %Student{student | class: refreshed_class},
+      active_server:
+        active_server
+        |> maybe_refresh_server_group(auth, event, reference, refreshed_class, student)
+        |> maybe_drop_active_server()
+    )
+    |> noreply()
+  end
 
   @impl LiveView
   def handle_info(
@@ -249,16 +251,30 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   defp maybe_drop_active_server(server),
     do: if(Server.active?(server, Clock.now()), do: server, else: nil)
 
-  defp maybe_refresh_server_group(nil, auth, updated_class, student) do
-    if Class.active?(updated_class, Clock.now()) do
+  defp maybe_refresh_server_group(
+         nil,
+         auth,
+         _event,
+         _reference,
+         %Class{} = refreshed_class,
+         student
+       ) do
+    if Class.active?(refreshed_class, Clock.now()) do
       find_active_server(auth, student)
     else
       nil
     end
   end
 
-  defp maybe_refresh_server_group(%Server{} = server, _auth, updated_class, _student),
-    do: %Server{server | group: ServerGroup.refresh!(server.group, updated_class)}
+  defp maybe_refresh_server_group(
+         %Server{} = server,
+         _auth,
+         event,
+         reference,
+         _refreshed_class,
+         _student
+       ),
+       do: %Server{server | group: ServerGroup.refresh!(server.group, event, reference)}
 
   defp maybe_refresh_server_group_member(nil, auth, updated_student) do
     if Student.active?(updated_student, Clock.now()) do

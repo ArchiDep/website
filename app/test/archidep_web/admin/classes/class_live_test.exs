@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   import Hammox
   alias ArchiDep.Accounts
   alias ArchiDep.Course
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Servers
@@ -686,7 +687,13 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
              }
 
       updated = %{class | name: "Renamed", active: false, version: class.version + 1}
-      :ok = Course.PubSub.publish_class_updated(updated, EventsFactory.build(:event_reference))
+
+      :ok =
+        Course.PubSub.publish_class_updated(
+          updated,
+          ClassUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
 
       wait_for_socket_assigns!(
         view,

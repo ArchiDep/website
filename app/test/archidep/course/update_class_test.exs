@@ -9,6 +9,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
@@ -476,13 +477,15 @@ defmodule ArchiDep.Course.UpdateClassTest do
   end
 
   # Asserts the class-updated message reached both topics the use case publishes
-  # to — the class-specific one and the global one — each carrying the updated
-  # class and a reference to the stored event, and nothing else.
+  # to — the class-specific one and the global one — each carrying the
+  # `ClassUpdated` domain event and the stored-event reference, and nothing
+  # else.
   defp assert_class_updated_broadcast(broadcasts, %Class{} = class, %StoredEvent{} = event) do
     reference = StoredEvent.to_reference(event)
+    expected_message = {:class_updated, ClassUpdated.new(class), reference}
 
-    assert received_broadcasts(broadcasts.specific) == [{:class_updated, class, reference}]
-    assert received_broadcasts(broadcasts.global) == [{:class_updated, class, reference}]
+    assert received_broadcasts(broadcasts.specific) == [expected_message]
+    assert received_broadcasts(broadcasts.global) == [expected_message]
   end
 
   # Asserts neither class topic carried an update broadcast.

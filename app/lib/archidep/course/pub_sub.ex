@@ -5,6 +5,8 @@ defmodule ArchiDep.Course.PubSub do
 
   use ArchiDep, :pub_sub
 
+  alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Events.Store.EventReference
@@ -20,10 +22,15 @@ defmodule ArchiDep.Course.PubSub do
     :ok = PubSub.subscribe(@pubsub, Scope.global_topic("classes"))
   end
 
-  @spec publish_class_updated(Class.t(), EventReference.t()) :: :ok
-  def publish_class_updated(class, event) do
-    :ok = PubSub.broadcast(@pubsub, "classes:#{class.id}", {:class_updated, class, event})
-    :ok = PubSub.broadcast(@pubsub, Scope.global_topic("classes"), {:class_updated, class, event})
+  @spec publish_class_updated(
+          Class.t(),
+          ClassUpdated.t() | ClassExpectedServerPropertiesUpdated.t(),
+          EventReference.t()
+        ) :: :ok
+  def publish_class_updated(class, event, reference) do
+    message = {:class_updated, event, reference}
+    :ok = PubSub.broadcast(@pubsub, "classes:#{class.id}", message)
+    :ok = PubSub.broadcast(@pubsub, Scope.global_topic("classes"), message)
   end
 
   @spec publish_class_deleted(Class.t()) :: :ok

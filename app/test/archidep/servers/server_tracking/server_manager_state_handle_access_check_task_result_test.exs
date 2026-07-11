@@ -710,7 +710,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
     %EventReference{
       id: event_id,
       causation_id: event.causation_id,
-      correlation_id: event.correlation_id
+      correlation_id: event.correlation_id,
+      version: event.version,
+      occurred_at: event.occurred_at
     }
   end
 end

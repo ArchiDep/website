@@ -123,11 +123,15 @@ defmodule ArchiDep.Events.Store.StoredEvent do
   def to_reference(%__MODULE__{
         id: id,
         causation_id: causation_id,
-        correlation_id: correlation_id
+        correlation_id: correlation_id,
+        version: version,
+        occurred_at: occurred_at
       }),
       do: %EventReference{
         id: id,
         causation_id: causation_id,
-        correlation_id: correlation_id
+        correlation_id: correlation_id,
+        version: version,
+        occurred_at: occurred_at
       }
 end

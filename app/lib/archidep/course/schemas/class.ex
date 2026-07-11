@@ -7,8 +7,11 @@ defmodule ArchiDep.Course.Schemas.Class do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
+  alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Types
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.SSH
 
   @primary_key {:id, :binary_id, []}
@@ -172,13 +175,24 @@ defmodule ArchiDep.Course.Schemas.Class do
     |> validate_required([:expected_server_properties])
   end
 
-  @spec refresh!(t(), map()) :: t()
-  def refresh!(class, incoming),
-    do: versioned_refresh(class, incoming, incoming.version, &fetch_class/1, &merge_refresh/2)
+  @spec refresh!(
+          t(),
+          ClassUpdated.t() | ClassExpectedServerPropertiesUpdated.t(),
+          EventReference.t()
+        ) :: t()
+  def refresh!(class, event, %EventReference{version: version, occurred_at: occurred_at}),
+    do:
+      versioned_refresh(
+        class,
+        event,
+        version,
+        &fetch_class/1,
+        &merge_refresh(&1, &2, version, occurred_at)
+      )
 
   defp merge_refresh(
-         %__MODULE__{expected_server_properties: expected_server_properties} = class,
-         %{
+         %__MODULE__{} = class,
+         %ClassUpdated{
            name: name,
            start_date: start_date,
            end_date: end_date,
@@ -187,11 +201,10 @@ defmodule ArchiDep.Course.Schemas.Class do
            teacher_ssh_public_keys: teacher_ssh_public_keys,
            ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
            ssh_exercise_vm_sha256_host_key_fingerprints:
-             ssh_exercise_vm_sha256_host_key_fingerprints,
-           expected_server_properties: new_expected_server_properties,
-           version: version,
-           updated_at: updated_at
-         }
+             ssh_exercise_vm_sha256_host_key_fingerprints
+         },
+         version,
+         updated_at
        ) do
     %__MODULE__{
       class
@@ -204,17 +217,56 @@ defmodule ArchiDep.Course.Schemas.Class do
         ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
         ssh_exercise_vm_sha256_host_key_fingerprints:
           ssh_exercise_vm_sha256_host_key_fingerprints,
-        expected_server_properties:
-          ExpectedServerProperties.refresh(
-            expected_server_properties,
-            new_expected_server_properties
-          ),
         version: version,
         updated_at: updated_at
     }
   end
 
-  defp merge_refresh(_class, _incoming), do: :refetch
+  defp merge_refresh(
+         %__MODULE__{expected_server_properties: expected_server_properties} = class,
+         %ClassExpectedServerPropertiesUpdated{
+           hostname: hostname,
+           machine_id: machine_id,
+           cpus: cpus,
+           cores: cores,
+           vcpus: vcpus,
+           memory: memory,
+           swap: swap,
+           system: system,
+           architecture: architecture,
+           os_family: os_family,
+           distribution: distribution,
+           distribution_release: distribution_release,
+           distribution_version: distribution_version
+         },
+         version,
+         updated_at
+       ) do
+    %__MODULE__{
+      class
+      | expected_server_properties:
+          ExpectedServerProperties.refresh(expected_server_properties, %{
+            id: expected_server_properties.id,
+            hostname: hostname,
+            machine_id: machine_id,
+            cpus: cpus,
+            cores: cores,
+            vcpus: vcpus,
+            memory: memory,
+            swap: swap,
+            system: system,
+            architecture: architecture,
+            os_family: os_family,
+            distribution: distribution,
+            distribution_release: distribution_release,
+            distribution_version: distribution_version
+          }),
+        version: version,
+        updated_at: updated_at
+    }
+  end
+
+  defp merge_refresh(_class, _incoming, _version, _updated_at), do: :refetch
 
   @spec delete(t()) :: Changeset.t(t())
   def delete(class) do
