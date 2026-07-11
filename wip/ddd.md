@@ -23,6 +23,7 @@ already has can drift or break silently.
   - [C. Remove the context metaprogramming](#c-remove-the-context-metaprogramming)
   - [D. Documentation honesty](#d-documentation-honesty)
   - [E. Cross-context `refresh!` coupling](#e-cross-context-refresh-coupling)
+  - [F. Event schema versioning](#f-event-schema-versioning)
 - [Decisions settled](#decisions-settled)
 - [Sequencing with the testing plan](#sequencing-with-the-testing-plan)
 - [Task details](#task-details)
@@ -38,6 +39,10 @@ already has can drift or break silently.
   - [#5a `refresh!` round-trip consistency tests](#5a-refresh-round-trip-consistency-tests)
   - [#5b Extract the version skeleton](#5b-extract-the-version-skeleton)
   - [#5c Broadcast the domain events as the published payload](#5c-broadcast-the-domain-events-as-the-published-payload)
+  - [#5d Consolidate subscribe + reconcile behind the context](#5d-consolidate-subscribe--reconcile-behind-the-context)
+  - [#5e Sweep the remaining consumers](#5e-sweep-the-remaining-consumers)
+  - [#6 Record a `schema_version` per stored event](#6-record-a-schema_version-per-stored-event)
+  - [#6b Event-shape drift guard](#6b-event-shape-drift-guard)
 - [What not to change](#what-not-to-change)
 - [Assessment (background)](#assessment-background)
   - [Does it follow DDD?](#does-it-follow-ddd)
@@ -126,29 +131,76 @@ test.
 
 The dynamic, in-memory twin of #1. Read-view schemas keep cached structs current
 by hand-rolling a `refresh!/2` that pattern-matches the _producer context's raw
-struct_, broadcast over PubSub — so the boundary can break or go stale
-_silently_. Nine schemas hand-roll the same skeleton with no shared abstraction
-and no tests. See [#5 Cross-context refresh!
+aggregate struct_, broadcast over PubSub — so the boundary can break or go stale
+_silently_. Seven schemas hand-roll the skeleton; a runtime audit found only
+**two** live cross-context in-memory merges (both Course → Servers), several
+**dead** refreshers, and **zero** tests. See [#5 Cross-context refresh!
 coupling](#5-cross-context-refresh-coupling) for the full analysis.
 
 - [ ] **#5a `refresh!` round-trip consistency tests (loud-failure guard).** A
-      `DataCase` test per consumer that bumps the producer to N+1 and asserts
-      `Consumer.refresh!(old, producer_struct)` equals a fresh DB fetch — with
-      the DB row and the broadcast struct deliberately diverged so the test
+      `DataCase` test per _live_ merge (the five that actually fire today; not
+      the dead refreshers #5c deletes) that bumps the producer to N+1 and
+      asserts `Consumer.refresh!(old, incoming)` equals a fresh DB fetch — with
+      the DB row and the broadcast payload deliberately diverged so the test
       proves the in-memory merge path ran, not the masking re-fetch fallback.
       Highest priority: the loud guard and the safety net for #5b/#5c — see [#5a
       refresh! round-trip consistency
       tests](#5a-refresh-round-trip-consistency-tests).
 - [ ] **#5b Extract the version skeleton into a plain helper.** Pull the
       identical `version <= current` no-op and gap-refetch fallback clauses out
-      of all nine schemas into a plain (non-macro) higher-order function,
+      of the live schemas into a plain (non-macro) higher-order function,
       leaving only the per-schema field mapping — see [#5b Extract the version
       skeleton](#5b-extract-the-version-skeleton).
-- [ ] **#5c Broadcast the domain events as the published payload.** Broadcast
-      the existing `*Updated` domain events as the cross-context contract
-      instead of the raw aggregate, so consumers match a named, producer-owned
-      shape — see [#5c Broadcast the domain events as the published
+- [ ] **#5c Publish domain events as every `refresh!` payload.** Make each
+      producing context broadcast its curated domain event (with `version` /
+      `occurred_at` on the `EventReference` envelope) as the payload of every
+      `refresh!`-feeding broadcast — intra- and cross-context alike — so
+      consumers match a named, producer-owned shape and no topic is a latent
+      cross-context trap — see [#5c Broadcast the domain events as the published
       payload](#5c-broadcast-the-domain-events-as-the-published-payload).
+- [ ] **#5d Consolidate subscribe + reconcile behind the context (exemplar).**
+      Give each live read-model a `Context.subscribe_<entity>/1` and
+      `Context.refresh_<entity>/2` (`{:ok, entity} | :ignore`, owning the
+      event→`refresh!` dispatch), plus a plain `ArchiDepWeb.LiveRefresh` helper
+      built on `attach_hook(:handle_info)`, so consumers delegate opaque
+      messages and name no events. In-process only — no per-entity process. Land
+      the helper + one converted exemplar here; the remaining consumers follow
+      in a mechanical sweep (#5e). After #5c — see [#5d Consolidate subscribe +
+      reconcile behind the
+      context](#5d-consolidate-subscribe--reconcile-behind-the-context).
+- [ ] **#5e Sweep the remaining consumers.** Convert the rest of the web
+      consumers to the #5d pattern (`subscribe_<entity>` + `LiveRefresh.attach`,
+      dropping their per-event `handle_info` clauses) — mechanical once #5d sets
+      the exemplar — see [#5e Sweep the remaining
+      consumers](#5e-sweep-the-remaining-consumers).
+
+### F. Event schema versioning
+
+The audit log is append-only, so every change to an event's payload shape leaves
+older rows in the old shape forever. Track the shape explicitly with a per-row
+`schema_version`, so a future reader differentiates versions by a declared tag,
+never by sniffing which keys are present (the #1/#5 smell — and lossy: an absent
+field can't be told from a recorded-null one). Prerequisite for #5c's
+`ServerFactsGathered` enrichment.
+
+- [ ] **#6 Record a `schema_version` per stored event.** Add a `schema_version`
+      column (default 1, backfilled) and resolve each event's version (default
+      to 1) at write time in `add_to_stream/2` — **without** touching the 35
+      existing `Event` impls (a per-event `event_version/0` read reflectively,
+      or a central type→version registry; **not** `@fallback_to_any`, which
+      doesn't fill a missing function on existing impls). Bump on **every**
+      shape change, additive included. No upcasting yet — record the version,
+      defer transforming old payloads until a reader needs it — see [#6 Record a
+      schema_version per stored
+      event](#6-record-a-schema_version-per-stored-event).
+- [ ] **#6b Event-shape drift guard.** One generic test (à la #3b) that pins a
+      per-type version→shape history and fails if an event's current shape
+      diverges from its latest pinned version, forcing a conscious
+      `event_version` bump on any change. The shape signature must be
+      **recursive** — many events carry nested sub-maps (`ServerUpdated`'s
+      `owner` / `expected_properties`, `StudentUpdated`'s `class`, …), so a
+      top-level key check is insufficient — see [#6b Event-shape drift
+      guard](#6b-event-shape-drift-guard).
 
 ---
 
@@ -185,21 +237,75 @@ items stay short.
   safe), then **#5b** the plain-function skeleton extraction, then **#5c** the
   published-payload anti-corruption layer. The #5b helper is a plain function,
   **never a macro** — consistent with the #3 de-macro decision.
-- **#5c published payload.** **Reuse the existing domain events** as the
-  cross-context contract rather than declaring a new shape — they are already
-  named, implement the `Event` protocol, and (being persisted as immutable JSON)
-  are forced to stay backward-compatible, exactly the stability a published
-  contract needs. Handle the field gaps by three buckets: carry `version` /
-  `updated_at` on the broadcast envelope (not in the event data); **prune**
-  secrets / volatile operational fields (`secret_key`, `last_known_properties`,
-  …) rather than persisting them in the audit log; and **enrich** only
-  genuinely-shared fields (e.g. add `expected_server_properties` to
-  `ClassUpdated`). Keep events curated, not full-row snapshots, so #4 ("event
-  log, not event sourcing") stays honest — using events as cache-refresh
-  notifications is not event sourcing. **Open, to decide at implementation
-  time:** whether to convert only the cross-context refreshers or all of them
-  (intra-context refresh crosses no boundary, so broadcasting the aggregate
-  there is defensible).
+- **#5c published payload.** **Reuse the existing domain events** as the contract
+  rather than declaring new shapes where one exists — they are already named,
+  implement the `Event` protocol, and (being persisted as immutable JSON) are
+  forced to stay backward-compatible, exactly the stability a published contract
+  needs. The runtime audit resolves the field gaps and the earlier open question:
+  - **Uniform rule, no intra-context exception.** Convert **every**
+    `refresh!`-feeding broadcast (intra- and cross-context) to carry the event.
+    Leaving intra-context broadcasts on the raw schema is a latent trap: the day
+    another context subscribes to that topic it silently couples on ORM
+    internals — the exact smell #1/#5 exist to prevent. A single invariant
+    ("`refresh!` matches a domain event, never a `%Schema{}`") is memorable and
+    mechanically testable.
+  - **`version` + `occurred_at` ride the envelope**, not the event data. Both
+    already live on `StoredEvent`; enrich `EventReference` (which today drops
+    them in `to_reference/1`) to carry them. Every event's `occurred_at` is
+    already pinned to the aggregate's domain timestamp (`set_up_at`,
+    `updated_at`, `created_at`), so the merge derives the read-view's
+    `updated_at` and every operational timestamp (`set_up_at`,
+    `open_ports_checked_at`) from `occurred_at` with no skew.
+  - **No enrichment of `ClassUpdated` needed** (supersedes the earlier note):
+    `expected_server_properties` already flows through the existing
+    `ClassExpectedServerPropertiesUpdated` event, which `ServerGroup.refresh!`
+    matches for the props and `ClassUpdated` for the rest.
+  - **`secret_key` stays pruned** — never in an event; `refresh!` leaves the
+    cached value untouched (verify no broadcast path mutates it).
+  - **`last_known_properties`** is the one real field gap: either **enrich**
+    `ServerFactsGathered` to carry the derived `ServerProperties` (recommended —
+    the structured observation is a better audit record than raw `facts`), or
+    **re-derive** it in `refresh!` from the event's `facts`.
+
+  Keep events curated, not full-row snapshots, so #4 ("event log, not event
+  sourcing") stays honest — using events as cache-refresh notifications is not
+  event sourcing.
+
+- **#5d in-process, not a process.** The subscribe/reconcile responsibility
+  moves into the owning context via **plain in-process helpers**
+  (`subscribe_<entity>` / `refresh_<entity>` + an `attach_hook(:handle_info)`
+  delegator), **not** a per-entity tracking process. A dedicated process (à la
+  `ServerManager`) was considered and rejected: unlike a server, a read-model
+  has no authoritative server-side state the web can't compute, no fan-out of
+  one computation to many viewers, and no lifecycle beyond "someone is viewing
+  it" — and a LiveView is already a stateful process, so a second one only adds
+  a process per viewer, a message hop, and ~15–18 modules of ceremony for no
+  gain. `ServerManager` earns its process because it manages a real external
+  resource (SSH/Ansible); the cross-context `refresh!` is a rider on it, not the
+  reason it exists.
+- **#5d value and scope.** This is **consolidation**, not integrity: #5c already
+  removes the silent-break risk (a rename is a visible event change), so #5d's
+  win is de-duplicating the subscribe+dispatch across the ~7 web consumers and
+  giving the "what feeds this read-model" knowledge one home in the owning
+  context. Sequenced **after #5c** (the dispatch matches named events, so
+  building it on raw structs would be throwaway). Split the work: **#5d lands
+  the helper + one exemplar consumer**; **#5e** sweeps the rest mechanically —
+  keeping each a PR readable end-to-end.
+- **#6 event schema versioning.** Track event payload shape with a first-class
+  `schema_version` **column** (not `meta`, not the type/stream string), resolved
+  at write time (default 1) without touching the 35 existing `Event` impls — a
+  per-event `event_version/0` or a central registry, **not** `@fallback_to_any`
+  (verified: it doesn't fill a missing function on existing impls) — and
+  **bumped on every shape change, additive included** — so a stored row's shape
+  is identified by a declared tag, never inferred from which keys are present
+  (the #1/#5 smell; and key-presence is lossy — it can't tell "not recorded in
+  v1" from "recorded null in v2"). A drift-guard test (#6b) forces the bump.
+  **Upcasting** (transforming old payloads to the current shape) is **deferred**
+  until a reader needs it — recording the version is cheap and honest,
+  transforming is YAGNI. Rejected: version in the stream string (breaks the
+  aggregate sequence and the hard-coded stream-prefix entity resolution), in the
+  type string (fragments type grouping and badge matching; the type is a stable
+  logical identity), or inside `data` (pollutes the domain payload).
 
 ---
 
@@ -434,31 +540,57 @@ Each aggregate and read-view schema hand-rolls a `refresh!/2` that keeps a
 cached struct current in response to a PubSub broadcast, with the same
 three-clause skeleton:
 
-1. **`version == current + 1`** → merge the incoming struct's fields into the
+1. **`version == current + 1`** → merge the incoming payload's fields into the
    cached struct _in memory_ (recursing into nested associations);
 2. **`version <= current`** → no-op (stale/duplicate broadcast);
 3. **catch-all `(%{id}, %{id})`** → re-fetch the whole struct from the DB via
    `fetch_*`.
 
 It is, in effect, a hand-rolled per-schema _incremental projection_: apply
-version N+1 to in-memory state, fall back to a full read on a gap. Three
-problems, all in the DDD-boundary theme:
+version N+1 to in-memory state, fall back to a full read on a gap. Seven schemas
+carry it, but a runtime audit (call sites, not just definitions) found the live
+surface is much smaller than the definitions suggest:
 
-- **Shape coupling — the in-memory twin of #1.** Every context broadcasts its
+- **Two live cross-context merges**, both Course → Servers, both already backed
+  by a domain event:
+  - `Class → ServerGroup` — `publish_class_updated` (already carries an
+    `EventReference`); events `ClassUpdated` +
+    `ClassExpectedServerPropertiesUpdated`.
+  - `Student → ServerGroupMember` — `publish_student_updated` (no event ref
+    today); events `StudentUpdated` (+ `StudentConfigured`, which shares the
+    `:student_updated` message).
+- **Three live intra-context merges**: `Class ← Class`, `Student ← Student`
+  (Course), and `Server ← Server` (Servers, fed by four events: `ServerUpdated`
+  for admin edits, plus `ServerFactsGathered` / `ServerSetUp` /
+  `ServerOpenPortsChecked` from the real-time tracker — all already persisted).
+- **One live cross-context edge that does _not_ merge**:
+  `preregistered_user → Course.Student` (Accounts → Course). No `+1` clause
+  matches a `%PreregisteredUser{}`, so it always falls through to the DB
+  re-fetch. The only change on that broadcast is the account linkage
+  (`user_id`), so an in-memory merge is feasible — this is an omission, closed
+  in #5c via a curated Accounts linkage event.
+- **Dead refreshers** (no runtime caller): `Course.Schemas.User.refresh!`,
+  `Servers.Schemas.ServerOwner.refresh!`, `Student.refresh!`'s
+  `ServerGroupMember`-producer clause (nothing broadcasts a `ServerGroupMember`),
+  and the unreachable intra `%__MODULE__{}` clauses on the two Servers
+  read-views. #5c deletes these instead of converting them.
+
+Three problems, all in the DDD-boundary theme:
+
+- **Shape coupling — the in-memory twin of #1.** Each context broadcasts its
   **raw internal aggregate** (`{:class_updated, %Class{}, _}`); the consuming
-  read-view then pattern-matches the _producer's field names_
-  (`Servers.ServerGroup.refresh!` matches `Class`'s `teacher_ssh_public_keys`;
-  `Course.User.refresh!` matches Accounts' `preregistered_user` and Servers'
-  `group_member`). Undocumented, bidirectional, with no compile-time guard — the
-  same smell as #1 but at the broadcast-struct layer.
-- **Silent failure.** When a producer renames a field, the `+1` clause simply
-  stops matching and execution falls through to the catch-all DB re-fetch.
-  Correctness is preserved (the DB has the new data), so nothing crashes and no
-  test fails — the in-memory optimization just dies silently and every update
-  degrades to a cross-context DB read. Likewise, forgetting a field in the `+1`
-  merge body serves _stale_ data in the UI until a version-gap re-fetch happens
-  to fire. Both fail invisibly.
-- **Boilerplate, no abstraction, no tests.** Nine schemas re-implement the
+  read-view pattern-matches the _producer's field names_
+  (`Servers.ServerGroup.refresh!` matches `Class`'s `teacher_ssh_public_keys`).
+  Undocumented, with no compile-time guard — the same smell as #1 but at the
+  broadcast-struct layer.
+- **Silent failure.** When a producer renames a field, the `+1` clause stops
+  matching and execution falls through to the catch-all DB re-fetch. Correctness
+  is preserved, so nothing crashes and no test fails — the optimization dies
+  silently and every update degrades to a cross-context DB read. Forgetting a
+  field in the `+1` body serves _stale_ UI data until a version-gap re-fetch
+  fires. Both fail invisibly. (The `preregistered_user` edge is already in this
+  degraded state permanently.)
+- **Boilerplate, no abstraction, no tests.** The live schemas re-implement the
   skeleton and re-list every field, with no shared helper and zero `refresh!`
   test coverage.
 
@@ -468,74 +600,254 @@ counterpart to #1's "make the boundary fail loudly in CI."
 ### #5a `refresh!` round-trip consistency tests
 
 The loud-failure guard, and the safety net that makes #5b and #5c safe to do.
-For each read-view consumer that refreshes from a producer struct (`Course.User`
-← `PreregisteredUser` / `ServerGroupMember`; `Servers.ServerOwner` ← `Student`;
-`Servers.ServerGroup` ← `Class`; `Servers.ServerGroupMember` ← `Student`) — plus
-the same-type refreshers (`Server`, `Class`, `Student`, `ServerGroup`) — add a
-`DataCase` test that:
+Cover the **five live merges** the runtime audit in
+[#5](#5-cross-context-refresh-coupling) found — not the dead refreshers #5c
+deletes:
+
+- cross-context: `Servers.ServerGroup` ← `Class`, `Servers.ServerGroupMember` ←
+  `Student`;
+- intra-context: `Course.Class`, `Course.Student`, `Servers.Server`.
+
+For each, add a `DataCase` test that:
 
 - inserts producer + consumer, bumps the producer to version N+1, then
-- asserts `Consumer.refresh!(old_consumer, producer_struct)` equals a fresh DB
-  fetch of the consumer.
+- asserts `Consumer.refresh!(old_consumer, incoming)` equals a fresh DB fetch of
+  the consumer.
 
-Crucially, **make the DB row and the broadcast struct diverge** (e.g. write one
-value to the DB but hand `refresh!` a struct carrying a different value), then
+Crucially, **make the DB row and the broadcast payload diverge** (e.g. write one
+value to the DB but hand `refresh!` a payload carrying a different value), then
 assert the result reflects the _broadcast_ value. This proves the in-memory
 merge path ran rather than the catch-all re-fetch — otherwise the fallback
 silently returns the DB value and the test passes even though the coupling is
 broken. A renamed or forgotten field then fails _loudly_ in CI. Add unit tests
-for the `<=` no-op and gap-refetch clauses too. Aligns with the [testing
-conventions](../app/docs/testing.md), which deferred `refresh!` coverage to land
-here.
+for the `<=` no-op and gap-refetch clauses too.
+
+These tests are written against **today's** raw-struct payloads; #5c adjusts
+their inputs to the event payloads and _adds_ the new
+`preregistered_user`-linkage merge test (that merge does not exist until #5c
+creates it). Aligns with the [testing conventions](../app/docs/testing.md),
+which deferred `refresh!` coverage to land here.
 
 ### #5b Extract the version skeleton
 
 The `version <= current` no-op clause and the catch-all re-fetch fallback are
-identical across all nine schemas. Pull them into a **plain higher-order
-function** (current struct + incoming-with-version + a `fetch` function + a
-field-mapper function), leaving only the per-schema field mapping at each call
-site. It must be a plain function, **not a macro** — consistent with the #3
-decision to remove metaprogramming. This is a DRY/readability win; the actual
-silent-staleness guard is #5a, which must land first.
+identical across the live schemas. Pull them into a **plain higher-order
+function** (current struct + incoming payload + the envelope version + a `fetch`
+function + a field-mapper function), leaving only the per-schema field mapping
+at each call site. It must be a plain function, **not a macro** — consistent
+with the #3 decision to remove metaprogramming. This is a DRY/readability win;
+the actual silent-staleness guard is #5a, which must land first. #5c then moves
+the version source to the `EventReference` envelope, so keep the helper reading
+the version from its caller rather than off the incoming struct.
 
 ### #5c Broadcast the domain events as the published payload
 
-The anti-corruption fix. Instead of broadcasting the raw internal aggregate, the
-producing context broadcasts its existing `*Updated` **domain event** (e.g.
-`ArchiDep.Course.Events.ClassUpdated`) as the cross-context contract, so a
-consumer's `refresh!` matches a declared, named, producer-owned shape rather
-than the producer's ORM internals. **Reuse the events**, do not declare a new
-shape: they already implement the `Event` protocol
-(`app/lib/archidep/events/store/event.ex`), are named in ubiquitous language,
-and — because they are persisted as immutable JSON — are already forced to stay
-backward-compatible, which is exactly the stability a published contract needs.
+The anti-corruption fix. Instead of broadcasting the raw internal aggregate,
+each producing context broadcasts its curated **domain event** (e.g.
+`ArchiDep.Course.Events.ClassUpdated`) as the payload of every
+`refresh!`-feeding broadcast, so a consumer's `refresh!` matches a declared,
+named, producer-owned shape rather than the producer's ORM internals. **Reuse
+the events**, do not declare a new shape where one exists: they already
+implement the `Event` protocol (`app/lib/archidep/events/store/event.ex`), are
+named in ubiquitous language, and — because they are persisted as immutable JSON
+— are already forced to stay backward-compatible, which is exactly the stability
+a published contract needs.
 
-The events are _curated_ snapshots, so they omit some fields `refresh!` merges
-today; reconcile the gaps by three buckets:
+**The rule: every `refresh!`-feeding broadcast carries the producing context's
+domain event, never the raw schema — intra- and cross-context alike.** Leaving
+the intra-context broadcasts on the raw schema is a latent trap: the day another
+context subscribes to that topic, it silently couples on ORM internals — the
+exact smell #1/#5 exist to prevent. A single invariant ("`refresh!` matches a
+domain event, not a `%Schema{}`") is memorable and mechanically testable.
 
-- **`version` / `updated_at` → carry on the broadcast envelope**, not inside the
-  event data. `version` already lives on the `StoredEvent` wrapper
-  (`app/lib/archidep/events/store/stored_event.ex`), and the PubSub message
-  already passes the event reference alongside the payload; `refresh!`'s version
-  arithmetic reads it from the envelope.
-- **secrets / volatile operational fields → prune, never enrich.** `secret_key`,
-  `last_known_properties`, `set_up_at`, etc. must not be added to the immutable
-  audit log just to feed `refresh!`. Each is in an _intra-context_ refresh
-  anyway, so it is not part of the boundary problem — and a cross-context
-  read-view that needed a secret would itself be a red flag.
-- **genuinely-shared fields → enrich the event legitimately**, e.g. add
-  `expected_server_properties` to `ClassUpdated`, which `ServerGroup` needs and
-  which is real shared-kernel data.
+Per producer:
+
+- **Course `class_updated`** → broadcast `ClassUpdated` /
+  `ClassExpectedServerPropertiesUpdated` (whichever the use case emitted).
+  Consumers `Course.Class.refresh!` (intra) and `Servers.ServerGroup.refresh!`
+  (cross) each gain a clause per event type. No enrichment of `ClassUpdated`
+  needed — the properties flow through the dedicated event.
+- **Course `student_updated`** → broadcast `StudentUpdated` /
+  `StudentConfigured`. Consumers `Course.Student.refresh!` (intra) and
+  `Servers.ServerGroupMember.refresh!` (cross) gain a clause per event type. Add
+  the missing `EventReference` to `publish_student_updated`.
+- **Servers `server_updated`** → broadcast `ServerUpdated` (admin edit) and the
+  three tracker events `ServerFactsGathered` / `ServerSetUp` /
+  `ServerOpenPortsChecked` (all already persisted). `Server.refresh!` matches
+  all four. The operational timestamps (`set_up_at`, `open_ports_checked_at`)
+  come from the envelope's `occurred_at`, which is already pinned to them at
+  emit; the one real field gap is `last_known_properties` — **enrich**
+  `ServerFactsGathered` to carry the derived `ServerProperties` (recommended;
+  the structured observation is a better audit record than raw `facts`), or
+  **re-derive** it in `refresh!` from the event's `facts`. The enrich path
+  changes `ServerFactsGathered`'s stored shape (→ `schema_version` 2), so it
+  depends on **#6** landing first.
+- **Accounts `preregistered_user_updated`** → introduce a small curated linkage
+  event (student id + user-account id + username + active) and a
+  `Course.Student.refresh!` clause that merges `user_id` / `user` in memory,
+  closing the omission where the edge currently always re-fetches.
+
+**Envelope.** Enrich `EventReference` (which today drops them in
+`to_reference/1`) to carry `version` and `occurred_at`, both already on
+`StoredEvent`. `refresh!`'s version arithmetic and the read-view's `updated_at`
+read from the envelope. Every event's `occurred_at` is already pinned to the
+aggregate's domain timestamp, so this introduces no skew (see [Decisions
+settled](#decisions-settled)).
+
+**Prune `secret_key`** — never in an event; `refresh!` leaves the cached value
+untouched. Verify no broadcast path mutates it (it appears creation-only); if
+one does, that path needs its own curated event.
 
 Largest change; sequenced last, behind the #5a safety net. Touches the
-`pub_sub.ex` modules (`course`, `accounts`, `servers`), the relevant
-`*/events/*_updated.ex` structs, and every consumer `refresh!`. This is
-consistent with #4: using events as _notification payloads to refresh a cache_
-is not event sourcing (state stays in the DB; nothing is rebuilt from the
-stream) — provided the events stay curated and are **not** bloated into full-row
-state snapshots. Whether to convert only the cross-context refreshers or all of
-them (intra-context refresh crosses no boundary) is left to decide when the work
-starts.
+`pub_sub.ex` modules (`course`, `accounts`, `servers`), `EventReference`, the
+relevant `*/events/*.ex` structs, and every live consumer `refresh!`; also
+**delete the dead refreshers** listed in
+[#5](#5-cross-context-refresh-coupling). This is consistent with #4: using
+events as _notification payloads to refresh a cache_ is not event sourcing
+(state stays in the DB; nothing is rebuilt from the stream) — provided the
+events stay curated and are **not** bloated into full-row state snapshots.
+
+**Open implementation points:** (1) `last_known_properties` — enrich
+`ServerFactsGathered` vs re-derive in `refresh!` (the enrich path requires **#6**
+first); (2) confirm `secret_key` is never broadcast-mutated.
+
+### #5d Consolidate subscribe + reconcile behind the context
+
+After #5c the broadcast payloads are named events, but the _consumer_ side of the
+coupling is still in the web layer: every LiveView/channel that keeps a read-model
+live enumerates the relevant message shapes in its `handle_info` clauses and
+repeats the cross-context subscription set. Seven web modules (`admin_live`,
+`classes_live`, `class_live`, `student_live`, `dashboard_live`, `profile_live`,
+`user_channel`) duplicate this, and each encodes that, e.g., a `Course.Student` is
+kept live by an Accounts event — knowledge that belongs in the Course context, not
+spread across the web layer.
+
+Move it behind two context functions per live read-model:
+
+- `Context.subscribe_<entity>(entity) :: :ok` — subscribes the **calling** process
+  to every topic relevant to that entity (its own context's topics plus any
+  cross-context ones), so the web layer never names them.
+- `Context.refresh_<entity>(entity, message) :: {:ok, entity} | :ignore` — owns
+  the message-shape → `refresh!` dispatch (matching the named events from #5c),
+  returning the reconciled struct or `:ignore` for an unrelated message.
+
+The web side becomes a single generic delegator — a plain (non-macro)
+`ArchiDepWeb.LiveRefresh` helper built on `Phoenix.LiveView.attach_hook/4` at the
+`:handle_info` stage:
+
+```elixir
+def attach(socket, key, refresher) do
+  attach_hook(socket, {:refresh, key}, :handle_info, fn msg, socket ->
+    case refresher.(socket.assigns[key], msg) do
+      {:ok, updated} -> {:halt, assign(socket, key, updated)}
+      :ignore -> {:cont, socket}
+    end
+  end)
+end
+```
+
+The hook runs before the LiveView's own `handle_info` clauses and only `:halt`s on
+messages the context claims (`:cont` passes everything else through, so unrelated
+handlers and multiple tracked entities compose cleanly — no catch-all). The
+LiveView calls `Context.subscribe_<entity>` on connected mount and
+`LiveRefresh.attach(socket, :entity, &Context.refresh_<entity>/2)`; it names no
+events.
+
+**Collections.** Some consumers refresh an element of a list, not a single
+assign (`classes_live` refreshes the matching class in a list; `student_live`
+tracks student + class + server*group + active_server at once). Add a
+`track_collection` variant that finds the matching id and applies the same
+single-entity `refresh*<entity>/2`, so the context functions stay single-entity.
+
+**In-process only** — no per-entity tracking process; see [Decisions
+settled](#decisions-settled) for why the `ServerManager`-style process was rejected
+here.
+
+**Split.** #5d lands the `LiveRefresh` helper, the `subscribe_` / `refresh_`
+functions for **one** read-model, and that one consumer converted end-to-end (with
+its LiveView test asserting a broadcast still drives the re-render). #5e then
+converts the remaining consumers mechanically against the established pattern.
+
+### #5e Sweep the remaining consumers
+
+Convert the rest of the web consumers to the #5d pattern — replacing their
+per-event `handle_info` clauses and inline subscriptions with
+`Context.subscribe_<entity>` + `LiveRefresh.attach`. Purely mechanical once #5d
+sets the exemplar; kept separate so each PR stays readable end-to-end.
+
+### #6 Record a `schema_version` per stored event
+
+The Events store keeps immutable domain events; because nothing rewrites history,
+every change to an event's payload shape leaves older rows in their original shape
+indefinitely. Today the only way to tell which shape a stored row has is to
+inspect which keys are present — the same infer-shape-from-structure smell #1/#5
+remove elsewhere, and a lossy one (an absent `last_known_properties` can't be told
+apart from a recorded-but-null one). Record the shape explicitly.
+
+- **Column.** Add `schema_version` (integer, `not null`, default `1`) to the
+  `events` table; backfill existing rows to `1` (they are the v1 shape). A
+  first-class, indexable column — chosen over stuffing it in `meta` — so it is
+  queryable for future backfills/analytics and clearly separate from the
+  existing per-stream `version` (the optimistic-lock sequence, a different
+  concept).
+- **Declaration.** Resolve the version (default 1) at write time in
+  `add_to_stream/2` and stamp the column — per-type value, stored per-row,
+  immutable once written. **Do not put it on the `Event` protocol via
+  `@fallback_to_any`:** verified against the code, that only covers types with
+  _no_ impl at all, not a missing function on the 35 existing `defimpl Event`
+  blocks — adding `event_version/1` to the protocol would force a one-liner into
+  all 35 (compile warnings otherwise). Two churn-free options instead:
+  - **(B) per-event override + reflective default** — only a bumped event
+    defines `def event_version, do: 2` (co-located with the struct);
+    `add_to_stream/2` falls back to 1 via `function_exported?/3`.
+  - **(D) central `type → version` registry** in `lib/`, read at write time —
+    and reused as #6b's pinned catalog, so a version bump and its shape record
+    live in one place and cannot diverge (the drift guard also asserts the
+    registry lists every `Event` impl).
+
+  Lean **(B)** for lowest churn / co-location; **(D)** if unifying #6 stamping
+  with #6b's shape history into one enforced catalog is worth the central list.
+
+- **Policy: bump on every shape change, additive included.** The version is the
+  sole discriminator of shape; consumers branch on it, never on key presence.
+  This is orthogonal to the additive-only convention (which keeps old rows
+  _readable_); the version keeps them _identifiable_.
+- **No upcasting yet.** Record the version now; defer transforming old payloads
+  to the current shape until a reader actually needs it (there is none today —
+  the admin event pages dump `data` generically). When the first breaking change
+  lands, add a per-`{type}` upcaster chain keyed on `schema_version`, applied on
+  read in `fetch_events` before display.
+
+Prerequisite for the `ServerFactsGathered` enrichment in #5c (that enrichment is
+the first `schema_version` bump, 1 → 2), so #6 lands before it.
+
+### #6b Event-shape drift guard
+
+A `schema_version` is only trustworthy if it is actually bumped whenever the shape
+changes, and nothing in the compiler enforces that. Reconstruct the guarantee with
+a test, exactly as #3b does for the behaviour/boundary/impl trio: enumerate every
+`Event`-implementing module and pin a checked-in per-type **version → shape**
+history. Assert each event's current shape equals its latest pinned version's
+shape; changing a struct's shape then fails the test until a new version entry is
+added, mechanically forcing an `event_version` bump. The pinned history doubles as
+a reviewed catalog of every event's shape over time.
+
+The shape signature must be **structural and recursive**, not a top-level
+`Map.keys` comparison: many events carry nested sub-maps — `ServerUpdated` embeds
+`group`, `owner` and a 13-key `expected_properties`; `StudentUpdated` embeds
+`class`; `ServerFactsGathered` embeds `group` / `owner` — and a change _inside_ a
+sub-map (e.g. a new key on `owner`) must fail the guard too. Derive the signature
+from the declared `@type t` typespec (the authoritative source of the nested map
+shapes, using the same `Code.Typespec` technique #3b already relies on), recursing
+into nested `%{…}` map types and list-of-map element types.
+
+**Open implementation points:** (1) signature source — the `@type t` typespec (no
+fixtures, but must walk nested map types) vs. a canonically constructed +
+`Jason`-encoded sample (matches the true stored JSON, but needs a sample builder
+per event); (2) fields typed as a shared/opaque type (e.g. `facts ::
+Types.ansible_facts()`) — decide whether the guard pins them by the type reference
+(a change _inside_ that shared type is then caught at its own definition) or
+expands them inline.
 
 ---
 

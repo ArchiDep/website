@@ -469,6 +469,26 @@ Reading the diagram:
   event's affected entity back across the Accounts, Course and Servers contexts
   (read-only).
 
+The read-view coupling above is _static_ (a schema reads another context's
+table). It has a _dynamic_ counterpart: cached structs held in memory — read
+views and aggregates alike — are kept current by a `refresh!/2` function on the
+schema that reacts to the owning context's PubSub broadcasts (the
+version-guarded merge that keeps, say, a `Servers.ServerGroup` in step with the
+`Course.Class` it mirrors). The convention for those broadcasts:
+
+- **A broadcast that a `refresh!` consumes carries the producing context's
+  domain event, not its raw schema struct** — with the event's `version` and
+  `occurred_at` on the `EventReference` envelope. Consumers pattern-match a
+  named, producer-owned contract (e.g. `Course.Events.ClassUpdated`) rather than
+  the producer's ORM internals, so a field rename in the producer becomes a
+  visible change to a published event, and no topic is a latent cross-context
+  trap should a new context subscribe to it. This holds intra- and cross-context
+  alike.
+
+This convention is being standardized across the contexts; a few update
+broadcasts still carry the raw schema struct and are being migrated to their
+events.
+
 ### Authentication
 
 Teachers and students register and log in using their existing [Switch
