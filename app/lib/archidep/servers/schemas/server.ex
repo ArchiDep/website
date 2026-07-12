@@ -70,7 +70,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     field(:app_username, :string)
     field(:ssh_port, :integer)
     field(:ssh_host_key_fingerprints, :string)
-    field(:secret_key, :binary)
+    field(:secret_key, :binary, redact: true)
     field(:active, :boolean)
     belongs_to(:group, ServerGroup, source: :class_id)
     belongs_to(:owner, ServerOwner, source: :user_account_id)
