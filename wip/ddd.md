@@ -211,23 +211,22 @@ field can't be told from a recorded-null one). Prerequisite for #5c's
 `ServerFactsGathered` enrichment.
 
 - [x] **#6 Record a `schema_version` per stored event.** Add a `schema_version`
-      column (backfilled to 1, **no** DB default so a forgotten stamp fails loudly)
-      and resolve each event's version (default to 1) at write time in
-      `add_to_stream/2` — **without** touching the 35
-      existing `Event` impls (a per-event `event_version/0` read reflectively,
-      or a central type→version registry; **not** `@fallback_to_any`, which
-      doesn't fill a missing function on existing impls). Bump on **every**
-      shape change, additive included. No upcasting yet — record the version,
-      defer transforming old payloads until a reader needs it — see [#6 Record a
-      schema_version per stored
-      event](#6-record-a-schema_version-per-stored-event).
-- [ ] **#6b Event-shape drift guard.** One generic test (à la #3b) that pins a
-      per-type version→shape history and fails if an event's current shape
-      diverges from its latest pinned version, forcing a conscious
-      `event_version` bump on any change. The shape signature must be
-      **recursive** — many events carry nested sub-maps (`ServerUpdated`'s
-      `owner` / `expected_properties`, `StudentUpdated`'s `class`, …), so a
-      top-level key check is insufficient — see [#6b Event-shape drift
+      column (backfilled to 1, **no** DB default so a forgotten stamp fails
+      loudly) and resolve each event's version (default to 1) at write time in
+      `add_to_stream/2` — **without** touching the 35 existing `Event` impls (a
+      per-event `event_version/0` read reflectively, or a central type→version
+      registry; **not** `@fallback_to_any`, which doesn't fill a missing
+      function on existing impls). Bump on **every** shape change, additive
+      included. No upcasting yet — record the version, defer transforming old
+      payloads until a reader needs it — see [#6 Record a schema_version per
+      stored event](#6-record-a-schema_version-per-stored-event).
+- [x] **#6b Event-shape drift guard.** One generic test (à la #3b) that pins a
+      per-type `{schema_version, shape}` catalog and fails if an event's current
+      shape diverges from its pinned entry, forcing a conscious `event_version`
+      bump on any change. The shape signature must be **recursive** — many
+      events carry nested sub-maps (`ServerUpdated`'s `owner` /
+      `expected_properties`, `StudentUpdated`'s `class`, …), so a top-level key
+      check is insufficient — see [#6b Event-shape drift
       guard](#6b-event-shape-drift-guard).
 
 ### G. Curated read views
@@ -885,31 +884,40 @@ the first `schema_version` bump, 1 → 2), so #6 lands before it.
 
 ### #6b Event-shape drift guard
 
-A `schema_version` is only trustworthy if it is actually bumped whenever the shape
-changes, and nothing in the compiler enforces that. Reconstruct the guarantee with
-a test, exactly as #3b does for the behaviour/boundary/impl trio: enumerate every
-`Event`-implementing module and pin a checked-in per-type **version → shape**
-history. Assert each event's current shape equals its latest pinned version's
-shape; changing a struct's shape then fails the test until a new version entry is
-added, mechanically forcing an `event_version` bump. The pinned history doubles as
-a reviewed catalog of every event's shape over time.
+A `schema_version` is only trustworthy if it is actually bumped whenever the
+shape changes, and nothing in the compiler enforces that. Reconstruct the
+guarantee with a test, exactly as #3b does for the behaviour/boundary/impl trio:
+enumerate every `Event`-implementing module (via the consolidated protocol's
+`__protocol__(:impls)`) and pin a checked-in per-type `{schema_version, shape}`
+catalog. Build the same map at runtime — `%{module => {event_version, shape}}`
+for the live impl set — and compare it whole (`==`) to the catalog. A shape
+change at the same version, a version bump without a matching catalog edit, or
+an added/removed event all fail the single assertion, mechanically forcing the
+developer to touch the catalog; the small, reviewable diff (shape changed but
+version unchanged vs. both changed) is what enforces the _bump_, since no test
+can distinguish a legitimate re-bless from a shape edit without a version
+change. The catalog doubles as a reviewed record of every event's current shape.
+Lives in
+[`test/archidep/events/store/event_schema_version_drift_test.exs`](../app/test/archidep/events/store/event_schema_version_drift_test.exs).
 
-The shape signature must be **structural and recursive**, not a top-level
-`Map.keys` comparison: many events carry nested sub-maps — `ServerUpdated` embeds
-`group`, `owner` and a 13-key `expected_properties`; `StudentUpdated` embeds
-`class`; `ServerFactsGathered` embeds `group` / `owner` — and a change _inside_ a
-sub-map (e.g. a new key on `owner`) must fail the guard too. Derive the signature
-from the declared `@type t` typespec (the authoritative source of the nested map
-shapes, using the same `Code.Typespec` technique #3b already relies on), recursing
-into nested `%{…}` map types and list-of-map element types.
+The shape signature is **structural and recursive**, not a top-level `Map.keys`
+comparison: many events carry nested sub-maps — `ServerUpdated` embeds `group`,
+`owner` and a 13-key `expected_properties`; `StudentUpdated` embeds `class`;
+`ServerFactsGathered` embeds `group` / `owner` — and a change _inside_ a sub-map
+(e.g. a new key on `owner`) fails the guard too. It is derived from the declared
+`@type t` typespec via `Code.Typespec` (the same technique #3b relies on),
+rendered to a canonical string with fields sorted and nested maps, unions, lists
+and typed-key maps (`%{String.t() => term()}`) expanded recursively.
 
-**Open implementation points:** (1) signature source — the `@type t` typespec (no
-fixtures, but must walk nested map types) vs. a canonically constructed +
-`Jason`-encoded sample (matches the true stored JSON, but needs a sample builder
-per event); (2) fields typed as a shared/opaque type (e.g. `facts ::
-Types.ansible_facts()`) — decide whether the guard pins them by the type reference
-(a change _inside_ that shared type is then caught at its own definition) or
-expands them inline.
+**Decisions on the two open points:** (1) signature source — the `@type t`
+typespec (no per-event sample builder), not a `Jason`-encoded canonical sample.
+(2) shared types — same-module type aliases are **inlined** (the sole one,
+`UserImpersonated.account/0`, so a change to it fails at `UserImpersonated`);
+references to types defined in _another_ module (e.g.
+`ArchiDep.Servers.Types.ansible_variables/0`, or the cross-event
+`UserImpersonated.account/0` reference in `UserStoppedImpersonating`) are pinned
+**by reference**, so a change to such a type is caught where it is defined
+rather than at every referrer.
 
 ### #7 Curated read views + broadcast-shape uniformity
 
