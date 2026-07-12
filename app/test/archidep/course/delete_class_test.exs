@@ -154,6 +154,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
              id: event_id,
              stream: "course:classes:#{id}",
              version: version,
+             schema_version: 1,
              type: "archidep/course/class-deleted",
              data: %{
                "id" => id,

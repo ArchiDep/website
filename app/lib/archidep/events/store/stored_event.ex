@@ -20,6 +20,7 @@ defmodule ArchiDep.Events.Store.StoredEvent do
           id: UUID.t(),
           stream: String.t(),
           version: pos_integer(),
+          schema_version: pos_integer(),
           type: String.t(),
           data: data,
           meta: map,
@@ -38,6 +39,7 @@ defmodule ArchiDep.Events.Store.StoredEvent do
   schema "events" do
     field(:stream, :string)
     field(:version, :integer)
+    field(:schema_version, :integer)
     field(:type, :string)
     field(:data, :map)
     field(:meta, :map)
@@ -97,6 +99,17 @@ defmodule ArchiDep.Events.Store.StoredEvent do
       |> validate_number(:version, greater_than_or_equal_to: 1)
 
   @doc """
+  Sets the schema version of a business event's payload.
+  """
+  @spec schema_version(__MODULE__.changeset(map), pos_integer) :: __MODULE__.changeset(map)
+  def schema_version(changeset, schema_version) when is_integer(schema_version),
+    do:
+      changeset
+      |> cast(%{schema_version: schema_version}, [:schema_version])
+      |> validate_required([:schema_version])
+      |> validate_number(:schema_version, greater_than_or_equal_to: 1)
+
+  @doc """
   Sets the initiator of a business event.
   """
   @spec initiated_by(__MODULE__.changeset(map), String.t()) :: __MODULE__.changeset(map)
@@ -109,6 +122,7 @@ defmodule ArchiDep.Events.Store.StoredEvent do
       id: event.id,
       stream: event.stream,
       version: event.version,
+      schema_version: event.schema_version,
       type: event.type,
       data: event.data,
       meta: event.meta,

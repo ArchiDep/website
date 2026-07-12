@@ -5,6 +5,11 @@ defmodule ArchiDep.Servers.PubSub do
 
   use ArchiDep, :pub_sub
 
+  alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Servers.Events.ServerFactsGathered
+  alias ArchiDep.Servers.Events.ServerOpenPortsChecked
+  alias ArchiDep.Servers.Events.ServerSetUp
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.Schemas.Server
 
   @pubsub ArchiDep.PubSub
@@ -54,23 +59,18 @@ defmodule ArchiDep.Servers.PubSub do
     :ok = PubSub.subscribe(@pubsub, Scope.global_topic("servers:new"))
   end
 
-  @spec publish_server_updated(Server.t()) :: :ok
-  def publish_server_updated(server) do
-    :ok = PubSub.broadcast(@pubsub, "servers:#{server.id}", {:server_updated, server})
-
-    :ok =
-      PubSub.broadcast(
-        @pubsub,
-        "server-groups:#{server.group_id}:servers",
-        {:server_updated, server}
-      )
-
-    :ok =
-      PubSub.broadcast(
-        @pubsub,
-        "server-owners:#{server.owner_id}:servers",
-        {:server_updated, server}
-      )
+  @spec publish_server_updated(
+          ServerUpdated.t()
+          | ServerFactsGathered.t()
+          | ServerSetUp.t()
+          | ServerOpenPortsChecked.t(),
+          EventReference.t()
+        ) :: :ok
+  def publish_server_updated(event, reference) do
+    message = {:server_updated, event, reference}
+    :ok = PubSub.broadcast(@pubsub, "servers:#{event.id}", message)
+    :ok = PubSub.broadcast(@pubsub, "server-groups:#{event.group.id}:servers", message)
+    :ok = PubSub.broadcast(@pubsub, "server-owners:#{event.owner.id}:servers", message)
   end
 
   @spec publish_server_deleted(Server.t()) :: :ok

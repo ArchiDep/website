@@ -473,6 +473,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
              id: registered_event.id,
              stream: "accounts:user-accounts:#{user_account_id}",
              version: 1,
+             schema_version: 1,
              type: "archidep/accounts/user-registered-with-link",
              data:
                event_data(login_link, client_metadata, session_id, student, %{
@@ -493,6 +494,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
              id: linkage_event.id,
              stream: "accounts:preregistered-users:#{student.id}",
              version: student.version + 1,
+             schema_version: 1,
              type: "archidep/accounts/preregistered-user-linked-to-user-account",
              data: %{
                "preregistered_user_id" => student.id,
@@ -528,6 +530,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
              id: event_id,
              stream: "accounts:user-accounts:#{user_account_id}",
              version: user_account.version,
+             schema_version: 1,
              type: "archidep/accounts/user-logged-in-with-link",
              data:
                event_data(login_link, client_metadata, session_id, student, %{

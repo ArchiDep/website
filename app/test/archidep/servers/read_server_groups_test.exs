@@ -5,11 +5,13 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
   alias ArchiDep.Errors.UnauthorizedError
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.Context
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
   alias ArchiDep.Support.ServersFactory
   alias ArchiDep.Support.ServersTestHelpers
@@ -263,7 +265,11 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
       assert reducer.(server_ids, {:server_created, new_server}) ==
                MapSet.put(server_ids, new_server.id)
 
-      assert reducer.(server_ids, {:server_updated, server_a}) == server_ids
+      assert reducer.(
+               server_ids,
+               {:server_updated, ServerUpdated.new(server_a),
+                EventsFactory.build(:event_reference)}
+             ) == server_ids
 
       assert reducer.(server_ids, {:server_deleted, server_a}) ==
                MapSet.delete(server_ids, server_a.id)

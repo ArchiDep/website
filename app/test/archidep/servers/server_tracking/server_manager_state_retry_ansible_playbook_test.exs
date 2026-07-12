@@ -364,6 +364,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
              id: retried_event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version,
+             schema_version: 1,
              type: "archidep/servers/server-retried-ansible-playbook",
              data: %{
                "id" => server.id,
@@ -403,6 +404,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryAnsiblePlaybook
              id: run_started_event_id,
              stream: "servers:servers:#{run.server_id}",
              version: run.server.version,
+             schema_version: 1,
              type: "archidep/servers/ansible-playbook-run-started",
              data: %{
                "id" => run.id,

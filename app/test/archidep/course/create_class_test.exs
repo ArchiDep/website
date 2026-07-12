@@ -293,6 +293,7 @@ defmodule ArchiDep.Course.CreateClassTest do
              id: event_id,
              stream: "course:classes:#{id}",
              version: 1,
+             schema_version: 1,
              type: "archidep/course/class-created",
              data: %{
                "id" => id,

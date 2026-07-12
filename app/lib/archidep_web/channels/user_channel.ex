@@ -148,22 +148,40 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
   @impl Channel
   def handle_info(
-        {:server_updated, %Server{owner_id: principal_id} = updated_server},
+        {:server_updated, event, reference},
         %Socket{
           assigns: %{
-            auth: %Authentication{principal_id: principal_id},
+            auth: auth,
             active_servers: active_servers
           }
         } = socket
-      ),
-      do:
-        socket
-        |> assign(
-          active_servers:
-            add_or_remove_updated_server(active_servers, updated_server, Clock.now())
-        )
-        |> send_updated_data()
-        |> noreply()
+      ) do
+    server_id = event.id
+
+    updated_active_servers =
+      case Enum.find(active_servers, &(&1.id == server_id)) do
+        %Server{} = cached ->
+          add_or_remove_updated_server(
+            active_servers,
+            Server.refresh!(cached, event, reference),
+            Clock.now()
+          )
+
+        nil ->
+          case Servers.fetch_server(auth, server_id) do
+            {:ok, server} ->
+              add_or_remove_updated_server(active_servers, server, Clock.now())
+
+            {:error, _reason} ->
+              Enum.reject(active_servers, &(&1.id == server_id))
+          end
+      end
+
+    socket
+    |> assign(active_servers: updated_active_servers)
+    |> send_updated_data()
+    |> noreply()
+  end
 
   @impl Channel
   def handle_info(

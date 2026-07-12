@@ -13,6 +13,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
 
   alias ArchiDep.Clock
   alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
@@ -279,7 +280,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
       |> assert_persisted_server(server)
 
       assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-      assert_server_updated_broadcast(subscriptions, updated)
+      assert_server_updated_broadcast(subscriptions, updated, ref)
     end
   end
 
@@ -459,7 +460,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
     |> assert_persisted_server(server)
 
     assert_row_count_diff(previous_counts, %{StoredEvent => 1})
-    assert_server_updated_broadcast(subscriptions, updated)
+    assert_server_updated_broadcast(subscriptions, updated, ref)
 
     updated
   end
@@ -528,6 +529,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
              id: event_id,
              stream: "servers:servers:#{id}",
              version: server.version,
+             schema_version: 1,
              type: "archidep/servers/server-updated",
              data: %{
                "id" => id,
@@ -597,13 +599,15 @@ defmodule ArchiDep.Servers.UpdateServerTest do
   end
 
   # Asserts the server-updated broadcast reached each of the three topics
-  # exactly once and carried the full server. Each topic's collector yields its
-  # own list, so a double broadcast on one topic or a missing broadcast on
-  # another fails the corresponding whole-list equality.
-  defp assert_server_updated_broadcast(subscriptions, %Server{} = server) do
-    assert received_broadcasts(subscriptions.server) == [{:server_updated, server}]
-    assert received_broadcasts(subscriptions.group) == [{:server_updated, server}]
-    assert received_broadcasts(subscriptions.owner) == [{:server_updated, server}]
+  # exactly once and carried the server-updated event and its reference. Each
+  # topic's collector yields its own list, so a double broadcast on one topic or
+  # a missing broadcast on another fails the corresponding whole-list equality.
+  defp assert_server_updated_broadcast(subscriptions, %Server{} = server, %EventReference{} = ref) do
+    event = ServerUpdated.new(server)
+
+    assert received_broadcasts(subscriptions.server) == [{:server_updated, event, ref}]
+    assert received_broadcasts(subscriptions.group) == [{:server_updated, event, ref}]
+    assert received_broadcasts(subscriptions.owner) == [{:server_updated, event, ref}]
   end
 
   # Asserts a rejected call announced nothing on any of the three topics.

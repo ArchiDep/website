@@ -135,6 +135,7 @@ defmodule ArchiDep.Course.DeleteStudentTest do
              id: event_id,
              stream: "course:students:#{student.id}",
              version: student.version,
+             schema_version: 1,
              type: "archidep/course/student-deleted",
              data: %{
                "id" => student.id,

@@ -101,23 +101,33 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
 
   @impl LiveView
   def handle_info(
-        {:server_updated, %Server{id: server_id} = server},
+        {:server_updated, event, reference},
         %{assigns: %{servers: servers}} = socket
       ) do
-    socket
-    |> assign(
-      servers:
-        servers
-        |> Enum.map(fn
-          %Server{id: ^server_id} ->
-            server
+    server_id = event.id
 
-          other_server ->
-            other_server
-        end)
-        |> sort_servers()
-    )
-    |> noreply()
+    case Enum.find(servers, &(&1.id == server_id)) do
+      nil ->
+        noreply(socket)
+
+      cached_server ->
+        server = Server.refresh!(cached_server, event, reference)
+
+        socket
+        |> assign(
+          servers:
+            servers
+            |> Enum.map(fn
+              %Server{id: ^server_id} ->
+                server
+
+              other_server ->
+                other_server
+            end)
+            |> sort_servers()
+        )
+        |> noreply()
+    end
   end
 
   @impl LiveView

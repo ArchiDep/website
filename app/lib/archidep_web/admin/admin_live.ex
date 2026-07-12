@@ -231,56 +231,16 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @impl LiveView
   def handle_info(
-        {:server_updated, updated_server},
-        %{
-          assigns: %{
-            servers_by_class_id: servers_by_class_id,
-            server_state_map: server_state_map,
-            server_tracker: tracker
-          }
-        } = socket
+        {:server_updated, event, reference},
+        %{assigns: %{auth: auth, servers_by_class_id: servers_by_class_id}} = socket
       ) do
-    server_id = updated_server.id
+    case find_cached_server(servers_by_class_id, event.id) do
+      %Server{} = cached ->
+        apply_server_updated(socket, Server.refresh!(cached, event, reference))
 
-    {new_servers_by_class_id, new_server_state_map} =
-      case Map.get(servers_by_class_id, updated_server.group_id) do
-        nil ->
-          {servers_by_class_id, server_state_map}
-
-        servers ->
-          if Enum.any?(servers, &(&1.id == updated_server.id)) do
-            {
-              Map.put(
-                servers_by_class_id,
-                updated_server.group_id,
-                Enum.map(servers, fn
-                  %Server{id: ^server_id} -> updated_server
-                  other_server -> other_server
-                end)
-              ),
-              server_state_map
-            }
-          else
-            {
-              Map.put(
-                servers_by_class_id,
-                updated_server.group_id,
-                sort_servers([updated_server | servers])
-              ),
-              ServerTrackerClient.update_server_state_map(
-                server_state_map,
-                ServerTrackerClient.track(tracker, updated_server)
-              )
-            }
-          end
-      end
-
-    socket
-    |> assign(
-      servers_by_class_id: new_servers_by_class_id,
-      server_state_map: new_server_state_map
-    )
-    |> noreply()
+      nil ->
+        resolve_and_apply_server_updated(socket, auth, event.id)
+    end
   end
 
   @impl LiveView
@@ -413,6 +373,70 @@ defmodule ArchiDepWeb.Admin.AdminLive do
     else
       classes
     end
+  end
+
+  defp find_cached_server(servers_by_class_id, server_id),
+    do:
+      servers_by_class_id
+      |> Map.values()
+      |> Enum.find_value(fn servers -> Enum.find(servers, &(&1.id == server_id)) end)
+
+  defp resolve_and_apply_server_updated(socket, auth, server_id) do
+    case Servers.fetch_server(auth, server_id) do
+      {:ok, updated_server} -> apply_server_updated(socket, updated_server)
+      {:error, _reason} -> noreply(socket)
+    end
+  end
+
+  defp apply_server_updated(
+         %{
+           assigns: %{
+             servers_by_class_id: servers_by_class_id,
+             server_state_map: server_state_map,
+             server_tracker: tracker
+           }
+         } = socket,
+         %Server{id: server_id} = updated_server
+       ) do
+    {new_servers_by_class_id, new_server_state_map} =
+      case Map.get(servers_by_class_id, updated_server.group_id) do
+        nil ->
+          {servers_by_class_id, server_state_map}
+
+        servers ->
+          if Enum.any?(servers, &(&1.id == server_id)) do
+            {
+              Map.put(
+                servers_by_class_id,
+                updated_server.group_id,
+                Enum.map(servers, fn
+                  %Server{id: ^server_id} -> updated_server
+                  other_server -> other_server
+                end)
+              ),
+              server_state_map
+            }
+          else
+            {
+              Map.put(
+                servers_by_class_id,
+                updated_server.group_id,
+                sort_servers([updated_server | servers])
+              ),
+              ServerTrackerClient.update_server_state_map(
+                server_state_map,
+                ServerTrackerClient.track(tracker, updated_server)
+              )
+            }
+          end
+      end
+
+    socket
+    |> assign(
+      servers_by_class_id: new_servers_by_class_id,
+      server_state_map: new_server_state_map
+    )
+    |> noreply()
   end
 
   defp sort_classes(classes),

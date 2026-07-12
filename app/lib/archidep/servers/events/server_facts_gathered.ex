@@ -7,7 +7,7 @@ defmodule ArchiDep.Servers.Events.ServerFactsGathered do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
-  alias ArchiDep.Servers.Types
+  alias ArchiDep.Servers.Schemas.ServerProperties
   alias Ecto.UUID
 
   @derive Jason.Encoder
@@ -19,7 +19,7 @@ defmodule ArchiDep.Servers.Events.ServerFactsGathered do
     :username,
     :ssh_username,
     :ssh_port,
-    :facts,
+    :last_known_properties,
     :group,
     :owner
   ]
@@ -30,7 +30,7 @@ defmodule ArchiDep.Servers.Events.ServerFactsGathered do
     :username,
     :ssh_username,
     :ssh_port,
-    :facts,
+    :last_known_properties,
     :group,
     :owner
   ]
@@ -42,7 +42,22 @@ defmodule ArchiDep.Servers.Events.ServerFactsGathered do
           username: String.t(),
           ssh_username: String.t(),
           ssh_port: 1..65_535 | nil,
-          facts: Types.ansible_facts(),
+          last_known_properties: %{
+            id: UUID.t(),
+            hostname: String.t() | nil,
+            machine_id: String.t() | nil,
+            cpus: non_neg_integer() | nil,
+            cores: non_neg_integer() | nil,
+            vcpus: non_neg_integer() | nil,
+            memory: non_neg_integer() | nil,
+            swap: non_neg_integer() | nil,
+            system: String.t() | nil,
+            architecture: String.t() | nil,
+            os_family: String.t() | nil,
+            distribution: String.t() | nil,
+            distribution_release: String.t() | nil,
+            distribution_version: String.t() | nil
+          },
           group: %{
             id: UUID.t(),
             name: String.t()
@@ -55,8 +70,11 @@ defmodule ArchiDep.Servers.Events.ServerFactsGathered do
           }
         }
 
-  @spec new(Server.t(), Types.ansible_facts()) :: t()
-  def new(server, facts) do
+  @spec event_version() :: pos_integer()
+  def event_version, do: 2
+
+  @spec new(Server.t()) :: t()
+  def new(server) do
     %Server{
       id: id,
       name: name,
@@ -65,7 +83,23 @@ defmodule ArchiDep.Servers.Events.ServerFactsGathered do
       app_username: app_username,
       ssh_port: ssh_port,
       group: group,
-      owner: owner
+      owner: owner,
+      last_known_properties: %ServerProperties{
+        id: properties_id,
+        hostname: hostname,
+        machine_id: machine_id,
+        cpus: cpus,
+        cores: cores,
+        vcpus: vcpus,
+        memory: memory,
+        swap: swap,
+        system: system,
+        architecture: architecture,
+        os_family: os_family,
+        distribution: distribution,
+        distribution_release: distribution_release,
+        distribution_version: distribution_version
+      }
     } = server
 
     %ServerGroup{
@@ -93,7 +127,22 @@ defmodule ArchiDep.Servers.Events.ServerFactsGathered do
       username: username,
       ssh_username: app_username,
       ssh_port: ssh_port,
-      facts: facts,
+      last_known_properties: %{
+        id: properties_id,
+        hostname: hostname,
+        machine_id: machine_id,
+        cpus: cpus,
+        cores: cores,
+        vcpus: vcpus,
+        memory: memory,
+        swap: swap,
+        system: system,
+        architecture: architecture,
+        os_family: os_family,
+        distribution: distribution,
+        distribution_release: distribution_release,
+        distribution_version: distribution_version
+      },
       group: %{
         id: group_id,
         name: group_name

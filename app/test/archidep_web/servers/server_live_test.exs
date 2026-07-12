@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
   import Hammox
   alias ArchiDep.Course
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -336,7 +337,12 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
       assert server_page(html, server) == expected_admin_page()
 
       updated = %{server | name: "web-renamed", version: server.version + 1}
-      :ok = PubSub.publish_server_updated(updated)
+
+      :ok =
+        PubSub.publish_server_updated(
+          ServerUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
 
       wait_for_socket_assigns!(
         view,

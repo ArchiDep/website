@@ -43,6 +43,8 @@ defmodule ArchiDep.Support.EventsFactory do
 
     {version, attrs!} = Map.pop_lazy(attrs!, :version, fn -> Faker.random_between(1, 100) end)
 
+    {schema_version, attrs!} = Map.pop_lazy(attrs!, :schema_version, fn -> 1 end)
+
     {type, attrs!} =
       Map.pop_lazy(attrs!, :type, fn ->
         "archidep/#{context()}/#{Enum.join(Faker.Lorem.words(), "-")}"
@@ -85,6 +87,7 @@ defmodule ArchiDep.Support.EventsFactory do
       id: id,
       stream: stream,
       version: version,
+      schema_version: schema_version,
       type: type,
       data: data,
       meta: meta,

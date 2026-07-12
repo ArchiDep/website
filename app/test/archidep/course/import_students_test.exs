@@ -336,6 +336,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
              # The import event is added to the class stream at the class's
              # current version (the import does not mutate the class).
              version: class.version,
+             schema_version: 1,
              type: "archidep/course/students-imported-in-class",
              data: %{
                "class_id" => class.id,
@@ -367,6 +368,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
              id: created_event.id,
              stream: "course:students:#{id}",
              version: 1,
+             schema_version: 1,
              type: "archidep/course/student-created",
              data: %{
                "id" => id,

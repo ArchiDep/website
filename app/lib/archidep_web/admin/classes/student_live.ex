@@ -202,19 +202,23 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
   @impl LiveView
   def handle_info(
-        {:server_updated, updated_server},
-        %Socket{assigns: %{active_server: active_server}} = socket
+        {:server_updated, event, reference},
+        %Socket{assigns: %{auth: auth, active_server: active_server}} = socket
       ) do
-    if Server.active?(updated_server, Clock.now()) and
+    updated_server =
+      if active_server != nil and active_server.id == event.id do
+        Server.refresh!(active_server, event, reference)
+      else
+        case Servers.fetch_server(auth, event.id) do
+          {:ok, server} -> server
+          {:error, _reason} -> nil
+        end
+      end
+
+    if updated_server != nil and Server.active?(updated_server, Clock.now()) and
          (active_server == nil or active_server.id == updated_server.id) do
       socket
-      |> assign(
-        active_server:
-          if(active_server,
-            do: Server.refresh!(active_server, updated_server),
-            else: updated_server
-          )
-      )
+      |> assign(active_server: updated_server)
       |> noreply()
     else
       socket

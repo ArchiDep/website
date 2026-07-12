@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
   alias ArchiDep.Support.CourseFactory
@@ -154,13 +155,20 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       {:ok, view, _html} = live(conn, @path)
 
       web02 = build_server(alpha, created_at: ~U[2026-06-20 11:00:00Z])
+      web02_id = web02.id
       web02_state = connected_state(web02)
+
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^web02_id -> {:ok, web02} end)
 
       expect(ServerTrackerClientMock, :track, 1, fn _tracker, ^web02 ->
         {:server_state, web02.id, web02_state}
       end)
 
-      :ok = Servers.PubSub.publish_server_updated(web02)
+      :ok =
+        Servers.PubSub.publish_server_updated(
+          ServerUpdated.new(web02),
+          EventsFactory.build(:event_reference, version: web02.version)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -196,7 +204,12 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       # (the card shows identity and connection state), so the section is
       # unchanged and the server is not re-tracked.
       renamed = %{web01 | username: "renamed", version: web01.version + 1}
-      :ok = Servers.PubSub.publish_server_updated(renamed)
+
+      :ok =
+        Servers.PubSub.publish_server_updated(
+          ServerUpdated.new(renamed),
+          EventsFactory.build(:event_reference, version: renamed.version)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -557,7 +570,15 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       )
 
   defp build_server(class, overrides),
-    do: ServersFactory.build(:server, Enum.into(overrides, %{group_id: class.id}))
+    do:
+      ServersFactory.build(
+        :server,
+        Enum.into(overrides, %{
+          group_id: class.id,
+          group: ServersFactory.build(:server_group, id: class.id, name: class.name),
+          owner: ServersFactory.build(:server_owner)
+        })
+      )
 
   defp connected_state(server),
     do: real_time_state(server, ServersFactory.random_connected_state())

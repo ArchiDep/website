@@ -77,7 +77,7 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
          |> Multi.insert(:stored_event, &server_updated(auth, &1.server))
          |> Repo.transaction() do
       {:ok, %{server: updated_server, stored_event: event}} ->
-        :ok = PubSub.publish_server_updated(updated_server)
+        :ok = PubSub.publish_server_updated(event.data, StoredEvent.to_reference(event))
         {:ok, updated_server, StoredEvent.to_reference(event)}
 
       {:error, :server, changeset, _changes} ->

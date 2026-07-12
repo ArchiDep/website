@@ -226,8 +226,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:server_updated,
-         %Server{id: server_id, owner_id: owner_id, active: true} = updated_server},
+        {:server_updated, event, reference},
         %{
           assigns: %{
             auth: %Authentication{principal_id: owner_id},
@@ -238,65 +237,35 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           }
         } = socket
       ) do
-    [updated_servers, updated_server_state_map] =
-      if Enum.any?(servers, &(&1.id == server_id)) do
-        [
-          Enum.map(servers, fn
-            %Server{id: ^server_id} ->
-              updated_server
+    server_id = event.id
 
-            other_server ->
-              other_server
-          end),
-          server_state_map
-        ]
-      else
-        [
-          [updated_server | servers],
-          ServerTrackerClient.update_server_state_map(
-            server_state_map,
-            ServerTrackerClient.track(tracker, updated_server)
-          )
-        ]
+    updated_server =
+      case Enum.find(servers, &(&1.id == server_id)) do
+        %Server{} = cached -> Server.refresh!(cached, event, reference)
+        nil -> resolve_fetched_server(socket.assigns.auth, server_id)
       end
 
-    socket
-    |> assign(
-      servers: sort_servers(updated_servers),
-      server_state_map: updated_server_state_map,
-      inactive_servers: MapSet.delete(inactive_servers, server_id)
-    )
-    |> noreply()
-  end
+    cond do
+      updated_server != nil and updated_server.owner_id == owner_id and updated_server.active ->
+        track_active_server(socket, updated_server, server_id)
 
-  @impl LiveView
-  def handle_info(
-        {:server_updated, %Server{id: server_id} = server},
-        %{
-          assigns: %{
-            servers: servers,
-            server_state_map: server_state_map,
-            server_tracker: tracker,
-            inactive_servers: inactive_servers
-          }
-        } = socket
-      ) do
-    if Enum.any?(servers, &(&1.id == server_id)) do
-      socket
-      |> assign(
-        servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
-        server_state_map:
-          ServerTrackerClient.update_server_state_map(
-            server_state_map,
-            ServerTrackerClient.untrack(tracker, server)
-          ),
-        inactive_servers: MapSet.put(inactive_servers, server_id)
-      )
-      |> noreply()
-    else
-      socket
-      |> assign(inactive_servers: MapSet.put(inactive_servers, server_id))
-      |> noreply()
+      Enum.any?(servers, &(&1.id == server_id)) ->
+        socket
+        |> assign(
+          servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
+          server_state_map:
+            ServerTrackerClient.update_server_state_map(
+              server_state_map,
+              ServerTrackerClient.untrack(tracker, updated_server)
+            ),
+          inactive_servers: MapSet.put(inactive_servers, server_id)
+        )
+        |> noreply()
+
+      true ->
+        socket
+        |> assign(inactive_servers: MapSet.put(inactive_servers, server_id))
+        |> noreply()
     end
   end
 
@@ -320,6 +289,53 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           server_state_map,
           ServerTrackerClient.untrack(tracker, server)
         ),
+      inactive_servers: MapSet.delete(inactive_servers, server_id)
+    )
+    |> noreply()
+  end
+
+  defp resolve_fetched_server(auth, server_id) do
+    case Servers.fetch_server(auth, server_id) do
+      {:ok, server} -> server
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp track_active_server(
+         %{
+           assigns: %{
+             servers: servers,
+             server_state_map: server_state_map,
+             server_tracker: tracker,
+             inactive_servers: inactive_servers
+           }
+         } = socket,
+         updated_server,
+         server_id
+       ) do
+    [updated_servers, updated_server_state_map] =
+      if Enum.any?(servers, &(&1.id == server_id)) do
+        [
+          Enum.map(servers, fn
+            %Server{id: ^server_id} -> updated_server
+            other_server -> other_server
+          end),
+          server_state_map
+        ]
+      else
+        [
+          [updated_server | servers],
+          ServerTrackerClient.update_server_state_map(
+            server_state_map,
+            ServerTrackerClient.track(tracker, updated_server)
+          )
+        ]
+      end
+
+    socket
+    |> assign(
+      servers: sort_servers(updated_servers),
+      server_state_map: updated_server_state_map,
       inactive_servers: MapSet.delete(inactive_servers, server_id)
     )
     |> noreply()

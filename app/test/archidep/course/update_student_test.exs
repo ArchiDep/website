@@ -457,6 +457,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
              id: event_id,
              stream: "course:students:#{id}",
              version: version,
+             schema_version: 1,
              type: "archidep/course/student-updated",
              data: %{
                "id" => id,

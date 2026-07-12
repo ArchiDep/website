@@ -822,13 +822,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          } =
            state,
          :ok
-       ),
-       do:
-         state
-         |> change_connection_state(connected_state(state.connection_state, retry_event: nil))
-         |> set_updated_server(maybe_mark_open_ports_checked(server, retry_cause || cause))
-         |> add_action(update_tracking_action())
-         |> drop_port_checking_problems()
+       ) do
+    {updated_server, event} = maybe_mark_open_ports_checked(server, retry_cause || cause)
+
+    state
+    |> change_connection_state(connected_state(state.connection_state, retry_event: nil))
+    |> set_updated_server(updated_server, event)
+    |> add_action(update_tracking_action())
+    |> drop_port_checking_problems()
+  end
 
   defp handle_open_ports_check_result(
          %__MODULE__{connection_state: connected_state()} = state,
@@ -844,7 +846,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp maybe_mark_open_ports_checked(%Server{open_ports_checked_at: nil} = server, cause),
     do: Server.mark_open_ports_checked!(server, @ports_to_check, cause, DateTime.utc_now())
 
-  defp maybe_mark_open_ports_checked(server, _cause), do: server
+  defp maybe_mark_open_ports_checked(server, _cause), do: {server, nil}
 
   @impl ServerManagerBehaviour
 
@@ -858,7 +860,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       ) do
     Logger.debug("Gathered facts from server #{state.server.id}")
 
-    updated_server =
+    {updated_server, event} =
       Server.update_last_known_properties!(
         state.server,
         facts,
@@ -873,7 +875,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
 
     state
     |> clear_current_ansible_task()
-    |> set_updated_server(updated_server)
+    |> set_updated_server(updated_server, event)
     |> add_action(update_tracking_action())
     |> detect_server_properties_mismatches()
     |> test_ports_or_rerun_setup(last_setup_runs, setup_playbook)
@@ -955,7 +957,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
          } = state,
          %AnsiblePlaybookRun{id: run_id, playbook: "setup", state: :succeeded}
        ) do
-    updated_server = Server.mark_as_set_up!(server, cause, DateTime.utc_now())
+    {updated_server, set_up_event} = Server.mark_as_set_up!(server, cause, DateTime.utc_now())
 
     reconnecting_event =
       updated_server
@@ -971,7 +973,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         causation_event: StoredEvent.to_reference(reconnecting_event)
       )
     )
-    |> set_updated_server(updated_server)
+    |> set_updated_server(updated_server, set_up_event)
     |> connect_with_app_username()
     |> then(&add_action(&1, connect_action(&1)))
     |> stop_measuring_load_average()
@@ -1137,7 +1139,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       new_server = %Server{state.server | group: new_group}
 
       state
-      |> set_updated_server(new_server, false)
+      |> set_updated_server(new_server)
       |> detect_server_properties_mismatches()
       |> auto_activate_or_deactivate(reference)
     end
@@ -1215,7 +1217,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     case UpdateServer.update_server(auth, state.server, data) do
       {:ok, updated_server, event} ->
         state
-        |> set_updated_server(updated_server, false)
+        |> set_updated_server(updated_server)
         |> update_user_to_connect_as()
         |> detect_server_properties_mismatches()
         |> auto_activate_or_deactivate(event)
@@ -1718,11 +1720,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   defp change_connection_state(%__MODULE__{} = state, connection_state),
     do: %__MODULE__{state | connection_state: connection_state}
 
-  defp set_updated_server(%__MODULE__{server: server} = state, server), do: state
+  defp set_updated_server(state, updated_server, event \\ nil)
 
-  defp set_updated_server(%__MODULE__{} = state, updated_server, publish \\ true) do
-    if publish do
-      :ok = PubSub.publish_server_updated(updated_server)
+  defp set_updated_server(%__MODULE__{server: server} = state, server, _event), do: state
+
+  defp set_updated_server(%__MODULE__{} = state, updated_server, event) do
+    if event != nil do
+      :ok = PubSub.publish_server_updated(event.data, StoredEvent.to_reference(event))
     end
 
     %__MODULE__{state | server: updated_server}

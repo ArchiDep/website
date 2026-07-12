@@ -4,10 +4,12 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
   import Hammox
   alias ArchiDep.Course
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias Ecto.Changeset
 
@@ -135,18 +137,26 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
     end
 
     test "reflects a server name update", %{conn: conn, auth: auth} do
-      server = ServersFactory.build(:server, name: "web-01", active: true)
+      server =
+        ServersFactory.build(:server,
+          name: "web-01",
+          active: true,
+          owner: build_owner(),
+          group: ServersFactory.build(:server_group)
+        )
+
       stub_page(auth, [server])
       server_id = server.id
 
       {:ok, view, _html} = live(conn, "/app/my-servers")
 
+      renamed = %{server | name: "web-renamed", version: server.version + 1}
+
       :ok =
-        PubSub.publish_server_updated(%{
-          server
-          | name: "web-renamed",
-            version: server.version + 1
-        })
+        PubSub.publish_server_updated(
+          ServerUpdated.new(renamed),
+          EventsFactory.build(:event_reference, version: renamed.version)
+        )
 
       wait_for_socket_assigns!(
         view,

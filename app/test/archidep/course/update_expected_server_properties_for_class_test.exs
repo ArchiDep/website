@@ -348,6 +348,7 @@ defmodule ArchiDep.Course.UpdateExpectedServerPropertiesForClassTest do
              id: event_id,
              stream: "course:classes:#{id}",
              version: version + 1,
+             schema_version: 1,
              type: "archidep/course/class-expected-server-properties-updated",
              data: %{
                "class" => %{"id" => id, "name" => name},

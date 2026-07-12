@@ -196,6 +196,7 @@ defmodule ArchiDep.Servers.DeleteServerTest do
              id: event_id,
              stream: "servers:servers:#{id}",
              version: version,
+             schema_version: 1,
              type: "archidep/servers/server-deleted",
              data: %{
                "id" => id,

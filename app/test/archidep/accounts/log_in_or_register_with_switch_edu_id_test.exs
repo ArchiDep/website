@@ -709,6 +709,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
              id: event_id,
              stream: "accounts:user-accounts:#{user_account_id}",
              version: 1,
+             schema_version: 1,
              type: "archidep/accounts/user-registered-with-switch-edu-id",
              data: %{
                "switch_edu_id" => %{
@@ -776,6 +777,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
                else
                  user_account.version
                end,
+             schema_version: 1,
              type: "archidep/accounts/user-logged-in-with-switch-edu-id",
              data: %{
                "switch_edu_id" => %{

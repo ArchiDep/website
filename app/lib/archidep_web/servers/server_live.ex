@@ -86,8 +86,14 @@ defmodule ArchiDepWeb.Servers.ServerLive do
         |> noreply()
 
   @impl LiveView
-  def handle_info({:server_updated, server}, socket),
-    do: socket |> assign(server: server) |> noreply()
+  def handle_info(
+        {:server_updated, %{id: id} = event, reference},
+        %Socket{assigns: %{server: %Server{id: id} = server}} = socket
+      ),
+      do:
+        socket
+        |> assign(server: Server.refresh!(server, event, reference))
+        |> noreply()
 
   @impl LiveView
   def handle_info(

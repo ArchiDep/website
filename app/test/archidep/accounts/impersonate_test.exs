@@ -253,6 +253,7 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
              id: event_id,
              stream: "accounts:user-accounts:#{impersonator.id}",
              version: impersonator.version,
+             schema_version: 1,
              type: type,
              data: %{
                "session_id" => session.id,

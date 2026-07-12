@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -520,12 +521,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
+      renamed = %{server | name: "web-renamed", version: server.version + 1}
+
       :ok =
-        PubSub.publish_server_updated(%{
-          server
-          | name: "web-renamed",
-            version: server.version + 1
-        })
+        PubSub.publish_server_updated(
+          ServerUpdated.new(renamed),
+          EventsFactory.build(:event_reference, version: renamed.version)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -548,16 +550,29 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
     test "adds a server that becomes active", %{conn: conn, auth: auth} do
       active = build_dashboard_server(auth, name: "web-01")
-      inactive = build_dashboard_server(auth, name: "web-02", active: false)
+
+      inactive =
+        build_dashboard_server(auth,
+          name: "web-02",
+          active: false,
+          owner: build_owner(id: auth.principal_id)
+        )
+
       stub_page(auth, student: build_creating_student(), servers: [active, inactive])
       stub_tracker_updates()
 
       activated = %{inactive | active: true, version: inactive.version + 1}
       activated_id = activated.id
 
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^activated_id -> {:ok, activated} end)
+
       {:ok, view, _html} = live(conn, @path)
 
-      :ok = PubSub.publish_server_updated(activated)
+      :ok =
+        PubSub.publish_server_updated(
+          ServerUpdated.new(activated),
+          EventsFactory.build(:event_reference, version: activated.version)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -586,7 +601,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
-      :ok = PubSub.publish_server_updated(%{db | active: false, version: db.version + 1})
+      deactivated = %{db | active: false, version: db.version + 1}
+
+      :ok =
+        PubSub.publish_server_updated(
+          ServerUpdated.new(deactivated),
+          EventsFactory.build(:event_reference, version: deactivated.version)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -883,7 +904,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       ServersFactory.build(
         :server,
         Keyword.merge(
-          [active: true, owner_id: auth.principal_id, owner: build_owner(), set_up_at: nil],
+          [
+            active: true,
+            owner_id: auth.principal_id,
+            owner: build_owner(),
+            group: ServersFactory.build(:server_group),
+            set_up_at: nil
+          ],
           opts
         )
       )
@@ -891,7 +918,11 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
   defp build_owner(opts \\ []) do
     root = Keyword.get(opts, :root, false)
     group_member = if root, do: nil, else: ServersFactory.build(:server_group_member)
-    ServersFactory.build(:server_owner, root: root, group_member: group_member)
+
+    ServersFactory.build(
+      :server_owner,
+      Keyword.merge([root: root, group_member: group_member], opts)
+    )
   end
 
   defp real_time_state(server, opts),

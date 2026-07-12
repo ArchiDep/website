@@ -1417,6 +1417,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
              id: event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version,
+             schema_version: 1,
              type: "archidep/servers/server-connected",
              data: %{
                "id" => server.id,

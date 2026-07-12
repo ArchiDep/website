@@ -666,6 +666,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleAccessCheckTas
              id: event_id,
              stream: "servers:servers:#{run.server_id}",
              version: run.server.version,
+             schema_version: 1,
              type: "archidep/servers/ansible-playbook-run-started",
              data: %{
                "id" => run.id,

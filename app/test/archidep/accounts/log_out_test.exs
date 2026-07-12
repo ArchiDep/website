@@ -130,6 +130,7 @@ defmodule ArchiDep.Accounts.LogOutTest do
              id: event_id,
              stream: "accounts:user-accounts:#{account.id}",
              version: account.version,
+             schema_version: 1,
              type: "archidep/accounts/user-logged-out",
              data: %{
                "user_account" => %{"id" => account.id, "username" => account.username},

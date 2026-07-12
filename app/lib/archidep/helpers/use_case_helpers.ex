@@ -69,13 +69,20 @@ defmodule ArchiDep.Helpers.UseCaseHelpers do
       when is_struct(changeset, Changeset) and is_integer(version) and version >= 1 do
     data = Changeset.get_field(changeset, :data)
 
-    StoredEvent.stream(
-      changeset,
+    changeset
+    |> StoredEvent.stream(
       Event.event_stream(data),
       version,
       data |> Event.event_type() |> Atom.to_string()
     )
+    |> StoredEvent.schema_version(event_schema_version(data))
   end
+
+  # The payload schema version of an event defaults to 1; an event whose shape
+  # has changed defines `event_version/0` on its module to declare the new
+  # version.
+  defp event_schema_version(%module{}),
+    do: if(function_exported?(module, :event_version, 0), do: module.event_version(), else: 1)
 
   @doc """
   Marks a business event as initiated by the specified entity.

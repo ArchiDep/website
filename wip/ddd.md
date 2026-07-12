@@ -24,6 +24,7 @@ already has can drift or break silently.
   - [D. Documentation honesty](#d-documentation-honesty)
   - [E. Cross-context `refresh!` coupling](#e-cross-context-refresh-coupling)
   - [F. Event schema versioning](#f-event-schema-versioning)
+  - [G. Curated read views](#g-curated-read-views)
 - [Decisions settled](#decisions-settled)
 - [Sequencing with the testing plan](#sequencing-with-the-testing-plan)
 - [Task details](#task-details)
@@ -43,6 +44,8 @@ already has can drift or break silently.
   - [#5e Sweep the remaining consumers](#5e-sweep-the-remaining-consumers)
   - [#6 Record a `schema_version` per stored event](#6-record-a-schema_version-per-stored-event)
   - [#6b Event-shape drift guard](#6b-event-shape-drift-guard)
+  - [#7 Curated read views + broadcast-shape uniformity](#7-curated-read-views--broadcast-shape-uniformity)
+  - [#7b Sweep the remaining read models](#7b-sweep-the-remaining-read-models)
 - [What not to change](#what-not-to-change)
 - [Assessment (background)](#assessment-background)
   - [Does it follow DDD?](#does-it-follow-ddd)
@@ -174,11 +177,14 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
         linkage event closing the `preregistered_user` always-refetch omission;
         delete the dead `Course.User` / `ServerOwner` refreshers and the dead
         `Student` / `ServerGroupMember` clauses.
-  - [ ] **#5c-iii Servers `server_updated` + tracker events.** Broadcast
+  - [x] **#5c-iii Servers `server_updated` + tracker events.** Broadcast
         `ServerUpdated` and the three tracker events (`ServerFactsGathered` /
         `ServerSetUp` / `ServerOpenPortsChecked`); convert `Servers.Server`
-        `refresh!`; resolve the `last_known_properties` gap (re-derive, or enrich
-        `ServerFactsGathered` behind **#6**).
+        `refresh!`; resolve the `last_known_properties` gap by **replacing** the
+        raw `facts` blob on `ServerFactsGathered` with the derived
+        `ServerProperties` (schema version 2, behind **#6**). Consumers converted
+        with the full event-driven approach (Option A): cached read-models call
+        `refresh!`, and the two that add a newly-appearing server fetch it.
 - [ ] **#5d Consolidate subscribe + reconcile behind the context (exemplar).**
       Give each live read-model a `Context.subscribe_<entity>/1` and
       `Context.refresh_<entity>/2` (`{:ok, entity} | :ignore`, owning the
@@ -204,9 +210,10 @@ never by sniffing which keys are present (the #1/#5 smell — and lossy: an abse
 field can't be told from a recorded-null one). Prerequisite for #5c's
 `ServerFactsGathered` enrichment.
 
-- [ ] **#6 Record a `schema_version` per stored event.** Add a `schema_version`
-      column (default 1, backfilled) and resolve each event's version (default
-      to 1) at write time in `add_to_stream/2` — **without** touching the 35
+- [x] **#6 Record a `schema_version` per stored event.** Add a `schema_version`
+      column (backfilled to 1, **no** DB default so a forgotten stamp fails loudly)
+      and resolve each event's version (default to 1) at write time in
+      `add_to_stream/2` — **without** touching the 35
       existing `Event` impls (a per-event `event_version/0` read reflectively,
       or a central type→version registry; **not** `@fallback_to_any`, which
       doesn't fill a missing function on existing impls). Bump on **every**
@@ -222,6 +229,40 @@ field can't be told from a recorded-null one). Prerequisite for #5c's
       `owner` / `expected_properties`, `StudentUpdated`'s `class`, …), so a
       top-level key check is insufficient — see [#6b Event-shape drift
       guard](#6b-event-shape-drift-guard).
+
+### G. Curated read views
+
+Group E fixed the _producer_ side of the read-view coupling: `refresh!`-feeding
+broadcasts now carry curated **events**, not raw aggregates. But the _consumer_
+still merges each event into the **producer's aggregate schema** held in socket
+assigns — so the web layer keeps a `%Server{}` complete with `secret_key`, a
+field it never reads (its only readers are server-side: `Token.sign` in
+`server_manager_state`, `Token.verify` in `server_callbacks`). A per-server
+token sitting in every dashboard/admin LiveView and the user channel is one
+stray `inspect` / crash dump / state serialization from disclosure. Two coupled
+fixes: give the web layer a curated projection (`ServerView`) that omits it, and
+finish E's broadcast-shape story — create/delete are the last raw-aggregate
+holdouts (`{:server_created, %Server{}}` / `{:server_deleted, %Server{}}`).
+
+- [ ] **#7 `ServerView` read model + broadcast-shape uniformity (Servers
+      exemplar).** Hold a curated `ServerView` (no `secret_key`; the nested
+      `group` / `group_member` the UI reaches through flattened into display
+      fields) in the web layer instead of `%Server{}`, and **relocate — not
+      duplicate — `refresh!` onto it**: all five `Server.refresh!` callers are
+      web-layer with no server-side caller, so `Server.refresh!` is deleted.
+      Normalize the create/delete broadcasts to `{event, reference}`
+      (`:server_deleted` needs only the id; `:server_created` consumers fetch a
+      `ServerView` on first sighting, reusing the fetch-on-appearance path
+      #5c-iii added). Do the read-model and broadcast-shape halves in one pass —
+      they meet at the consumers, so splitting them touches each twice — see [#7
+      Curated read views + broadcast-shape
+      uniformity](#7-curated-read-views--broadcast-shape-uniformity).
+- [ ] **#7b Sweep the remaining read models.** Apply the #7 pattern to the other
+      purely-web-consumed schemas (`StudentView`, `ClassView`, …). **Only where
+      a schema has no server-side `refresh!` caller** — `ServerGroup` is
+      excluded (the tracking manager holds the real aggregate and merges
+      `group_updated` into it) — see [#7b Sweep the remaining read
+      models](#7b-sweep-the-remaining-read-models).
 
 ---
 
@@ -869,6 +910,87 @@ per event); (2) fields typed as a shared/opaque type (e.g. `facts ::
 Types.ansible_facts()`) — decide whether the guard pins them by the type reference
 (a change _inside_ that shared type is then caught at its own definition) or
 expands them inline.
+
+### #7 Curated read views + broadcast-shape uniformity
+
+Group E fixed the producer side of the read-view coupling (broadcasts carry
+curated events, not raw aggregates); this closes the consumer side and removes a
+sensitive field from web-process memory. Today each consumer merges the event
+into the producer's aggregate schema kept in socket assigns, so a `%Server{}` —
+`secret_key` included — lives in every dashboard/admin LiveView and the user
+channel. The web layer never reads `secret_key`; its only readers are
+server-side (`Token.sign` in `server_manager_state.ex`, `Token.verify` in
+`server_callbacks.ex`). A per-server token in long-lived web state is one stray
+`inspect`, crash dump, or LiveView state serialization from disclosure.
+
+**`refresh!` is a read-model operation, currently misplaced on the aggregate.**
+It means "apply a curated event to my in-memory read projection," and it lives
+on `Server` only because the schema doubles as the read model today. Introduce a
+curated `ServerView` and `refresh!` moves onto it, leaving the schema a pure
+persistence concern. For `Server` this is a **relocation, not a duplicate**: all
+five `Server.refresh!` call sites are web-layer (`admin_live`,
+`my_servers_live`, `student_live`, `dashboard_live`, `user_channel`) with no
+server-side caller, so `Server.refresh!` is deleted rather than kept in
+parallel.
+
+**The move is not uniform — `ServerGroup` is the counter-example.** Two of the
+five `refresh!` definitions still have a server-side caller:
+`ServerGroup.refresh!` is invoked from `server_manager_state.ex` (the tracking
+manager holds the real `%ServerGroup{}` — it needs the authoritative aggregate,
+`secret_key` and all — and merges `group_updated` into it). That process must
+not hold a view. Rule: a schema's `refresh!` moves onto its view **only when the
+schema is purely web-consumed**; a schema also held server-side keeps `refresh!`
+on the aggregate.
+
+**Flattening pulls the nested-refresh orchestration into the view.** Consumers
+today hand-roll nested merges — `student_live` builds `%Server{server | group:
+ServerGroup.refresh!(server.group, …)}`, `user_channel` does the same for
+`group` and `group_member`. A `ServerView` that flattens those into display
+fields must have its `refresh!` respond to every event that changes them: not
+only the four server events but the `group_updated` / member events behind a
+displayed group or owner field. So `ServerView.refresh!` fans **in** events from
+several source aggregates — a larger merge surface than `Server.refresh!`, which
+handles only server events and delegates the rest. This is why #7 is a bigger
+increment than #5c-iii, not a mechanical rename.
+
+**Two halves, done together.**
+
+- **Broadcast-shape uniformity.** Stop putting `%Schema{}` on PubSub for
+  create/delete too. `:server_deleted` needs only the id (`untrack` and
+  list-reject read `server.id` only). `:server_created` has no prior state to
+  merge, so consumers **fetch a `ServerView` on first sighting** — the same
+  fetch-on-appearance path #5c-iii added for updates arriving before a create.
+- **Curated read model.** The web layer holds `ServerView`, never `%Server{}`;
+  make it the only server type the web layer sees so typespec/compiler pressure
+  keeps the projection from drifting from the schema.
+
+The two meet at the consumers, so splitting them touches each consumer twice —
+do them in one pass per context.
+
+**Sequencing.** Interacts with #5d/#5e: #5d's `Context.refresh_server/2` should
+return a `ServerView`, so land #7 (or its Servers slice) with or before the
+Servers exemplar in #5d — otherwise #5d builds the consolidated refresher
+against the aggregate and #7 rewrites it. #7b then sweeps the other
+purely-web-consumed schemas.
+
+**Status: proposed, not yet scheduled.** The payoff is a real defense-in-depth
+gain (a sensitive token leaves long-lived web memory) plus the honest read/write
+split, weighed against a sizeable typing sweep — every server-rendering
+component and template retyped to `ServerView` — and the fan-in `refresh!`
+above. Schedule it if the secret-in-memory exposure is judged material; the
+cheap half (`:server_deleted` → id-only) can land on its own if only tidiness is
+wanted.
+
+### #7b Sweep the remaining read models
+
+Once #7 sets the `ServerView` pattern, apply it to the other purely-web-consumed
+schemas (`StudentView`, `ClassView`, …), moving each `refresh!` off the
+aggregate and onto its view. Gate strictly on the #7 rule: convert a schema
+**only when it has no server-side `refresh!` caller**. `ServerGroup` is excluded
+— the tracking manager (`server_manager_state.ex`) merges `group_updated` into a
+real `%ServerGroup{}` — so its `refresh!` stays on the aggregate and no
+`ServerGroupView` is introduced for it. Mechanical once #7 is in place; kept
+separate so each PR stays reviewable.
 
 ---
 

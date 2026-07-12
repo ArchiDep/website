@@ -109,7 +109,9 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
   end
 
   @spec watch_server_ids(Authentication.t(), ServerGroup.t()) ::
-          {:ok, MapSet.t(UUID.t()), (MapSet.t(UUID.t()), {atom(), term()} -> list(UUID.t()))}
+          {:ok, MapSet.t(UUID.t()),
+           (MapSet.t(UUID.t()), {atom(), term()} | {atom(), term(), term()} ->
+              MapSet.t(UUID.t()))}
           | {:error, :unauthorized}
   def watch_server_ids(auth, group) do
     case authorize(auth, Policy, :servers, :watch_server_ids, group) do
@@ -119,8 +121,11 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
         server_ids = group.id |> Server.list_server_ids_in_group() |> MapSet.new()
 
         reducer = fn
-          ids, {event, %Server{id: id}} when event in [:server_created, :server_updated] ->
+          ids, {:server_created, %Server{id: id}} ->
             MapSet.put(ids, id)
+
+          ids, {:server_updated, event, _reference} ->
+            MapSet.put(ids, event.id)
 
           ids, {:server_deleted, %Server{id: id}} ->
             MapSet.delete(ids, id)

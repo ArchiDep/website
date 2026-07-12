@@ -282,6 +282,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionCrashedTes
              id: event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version,
+             schema_version: 1,
              type: "archidep/servers/server-disconnected",
              data: %{
                "id" => server.id,

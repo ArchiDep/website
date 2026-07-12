@@ -1,6 +1,10 @@
 defmodule ArchiDep.Servers.Schemas.ServerTest do
   use ArchiDep.Support.DataCase, async: true
 
+  alias ArchiDep.Servers.Events.ServerFactsGathered
+  alias ArchiDep.Servers.Events.ServerOpenPortsChecked
+  alias ArchiDep.Servers.Events.ServerSetUp
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
@@ -298,15 +302,19 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
       previous_counts = count_rows(@affected_tables)
 
-      updated = Server.mark_as_set_up!(server, cause, @now)
+      {updated, event} = Server.mark_as_set_up!(server, cause, @now)
 
       # The set-up transition stamps `set_up_at` and bumps the version, but
       # deliberately leaves `updated_at` untouched.
       assert updated == %{server | set_up_at: @now, version: server.version + 1}
 
-      updated
-      |> assert_server_set_up_event(cause)
-      |> assert_persisted_server(server, set_up_at: @now, updated_at: server.updated_at)
+      persisted_event = assert_server_set_up_event(updated, cause)
+      assert_returned_stored_event(event, persisted_event, ServerSetUp.new(updated))
+
+      assert_persisted_server(persisted_event, server,
+        set_up_at: @now,
+        updated_at: server.updated_at
+      )
 
       assert_row_count_diff(previous_counts, %{StoredEvent => 1})
     end
@@ -321,7 +329,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
       previous_counts = count_rows(@affected_tables)
 
-      updated = Server.mark_open_ports_checked!(server, ports, cause, @now)
+      {updated, event} = Server.mark_open_ports_checked!(server, ports, cause, @now)
 
       assert updated ==
                %{
@@ -331,9 +339,18 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
                    version: server.version + 1
                }
 
-      updated
-      |> assert_server_open_ports_checked_event(cause, ports)
-      |> assert_persisted_server(server, open_ports_checked_at: @now, updated_at: @now)
+      persisted_event = assert_server_open_ports_checked_event(updated, cause, ports)
+
+      assert_returned_stored_event(
+        event,
+        persisted_event,
+        ServerOpenPortsChecked.new(updated, ports)
+      )
+
+      assert_persisted_server(persisted_event, server,
+        open_ports_checked_at: @now,
+        updated_at: @now
+      )
 
       assert_row_count_diff(previous_counts, %{StoredEvent => 1})
     end
@@ -362,7 +379,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
       previous_counts = count_rows(@affected_tables)
 
-      updated = Server.update_last_known_properties!(server, facts, cause, @now)
+      {updated, event} = Server.update_last_known_properties!(server, facts, cause, @now)
 
       assert %Server{last_known_properties: %ServerProperties{id: properties_id}} = updated
 
@@ -392,9 +409,10 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
                  version: server.version + 1
              }
 
-      updated
-      |> assert_server_facts_gathered_event(cause, facts)
-      |> assert_persisted_server(server,
+      persisted_event = assert_server_facts_gathered_event(updated, cause)
+      assert_returned_stored_event(event, persisted_event, ServerFactsGathered.new(updated))
+
+      assert_persisted_server(persisted_event, server,
         last_known_properties_id: properties_id,
         updated_at: @now
       )
@@ -428,7 +446,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
       previous_counts = count_rows(@affected_tables)
 
-      updated = Server.update_last_known_properties!(server, facts, cause, @now)
+      {updated, event} = Server.update_last_known_properties!(server, facts, cause, @now)
 
       assert %Server{last_known_properties: %ServerProperties{id: properties_id}} = updated
 
@@ -458,9 +476,10 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
                  version: server.version + 1
              }
 
-      updated
-      |> assert_server_facts_gathered_event(cause, facts)
-      |> assert_persisted_server(server,
+      persisted_event = assert_server_facts_gathered_event(updated, cause)
+      assert_returned_stored_event(event, persisted_event, ServerFactsGathered.new(updated))
+
+      assert_persisted_server(persisted_event, server,
         last_known_properties_id: properties_id,
         updated_at: @now
       )
@@ -475,7 +494,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
       previous_counts = count_rows(@affected_tables)
 
-      assert Server.update_last_known_properties!(server, %{}, cause, @now) == server
+      assert Server.update_last_known_properties!(server, %{}, cause, @now) == {server, nil}
 
       assert_no_row_count_diff(previous_counts)
       assert_no_stored_events!([cause])
@@ -733,43 +752,140 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     end
   end
 
-  describe "refresh!/2" do
-    test "merges an incoming server broadcast one version ahead into the cached server" do
+  describe "refresh!/3" do
+    test "merges a ServerUpdated event one version ahead into the cached server" do
       %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)
       server = ServersTestHelpers.insert_server(owner.id, class.id)
 
-      # The broadcast carries the next version and diverges from the persisted
-      # row on every asserted field, so the assertion can only pass if the
-      # in-memory merge ran: the catch-all fallback would re-fetch and return
-      # the persisted values instead.
-      updated = %{
-        server
-        | name: "Renamed server",
-          username: "renameduser",
-          app_username: "renamedapp",
-          active: not server.active,
-          version: server.version + 1,
-          updated_at: @later
+      new_ip_address = %Postgrex.INET{address: {203, 0, 113, 42}, netmask: nil}
+
+      new_expected_properties = %{
+        server.expected_properties
+        | hostname: "renamed.example.com",
+          cpus: 99
       }
 
-      assert Server.refresh!(server, updated) == %{
+      modified = %{
+        server
+        | name: "Renamed server",
+          ip_address: new_ip_address,
+          username: "renameduser",
+          app_username: "renamedapp",
+          ssh_port: 2222,
+          ssh_host_key_fingerprints: "renamed fingerprints",
+          active: not server.active,
+          expected_properties: new_expected_properties
+      }
+
+      event = ServerUpdated.new(modified)
+
+      # The event carries the next version and diverges from the persisted row
+      # on every asserted field, so the assertion can only pass if the in-memory
+      # merge ran: the catch-all fallback would re-fetch and return the
+      # persisted values instead.
+      reference =
+        EventsFactory.build(:event_reference, version: server.version + 1, occurred_at: @later)
+
+      assert Server.refresh!(server, event, reference) == %{
                server
                | name: "Renamed server",
+                 ip_address: new_ip_address,
                  username: "renameduser",
                  app_username: "renamedapp",
-                 active: updated.active,
+                 ssh_port: 2222,
+                 ssh_host_key_fingerprints: "renamed fingerprints",
+                 active: modified.active,
+                 expected_properties: new_expected_properties,
                  version: server.version + 1,
                  updated_at: @later
              }
     end
 
-    test "ignores a server broadcast at or below the cached version" do
+    test "merges a ServerFactsGathered event's last known properties into the cached server" do
+      %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)
+      server = ServersTestHelpers.insert_server(owner.id, class.id, last_known_properties: nil)
+
+      # The cached server carries no last-known properties yet, so the merge
+      # must build them from the event (with the properties ID the event
+      # carries), diverging from the persisted `nil` to prove the merge ran.
+      gathered_properties = %ServerProperties{
+        id: Ecto.UUID.generate(),
+        hostname: "gathered.example.com",
+        machine_id: "gathered-machine",
+        cpus: 4,
+        cores: 8,
+        vcpus: 16,
+        memory: 2048,
+        swap: 1024,
+        system: "Linux",
+        architecture: "x86_64",
+        os_family: "Debian",
+        distribution: "Ubuntu",
+        distribution_release: "jammy",
+        distribution_version: "22.04"
+      }
+
+      event = ServerFactsGathered.new(%{server | last_known_properties: gathered_properties})
+
+      reference =
+        EventsFactory.build(:event_reference, version: server.version + 1, occurred_at: @later)
+
+      assert Server.refresh!(server, event, reference) == %{
+               server
+               | last_known_properties: gathered_properties,
+                 last_known_properties_id: gathered_properties.id,
+                 version: server.version + 1,
+                 updated_at: @later
+             }
+    end
+
+    test "stamps set_up_at from a ServerSetUp event's timestamp" do
+      %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)
+      server = ServersTestHelpers.insert_server(owner.id, class.id, set_up_at: @now)
+
+      event = ServerSetUp.new(server)
+
+      reference =
+        EventsFactory.build(:event_reference, version: server.version + 1, occurred_at: @later)
+
+      # The set-up transition stamps `set_up_at` from the event and bumps the
+      # version, but deliberately leaves `updated_at` untouched.
+      assert Server.refresh!(server, event, reference) == %{
+               server
+               | set_up_at: @later,
+                 version: server.version + 1
+             }
+    end
+
+    test "stamps open_ports_checked_at from a ServerOpenPortsChecked event's timestamp" do
+      %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)
+
+      server =
+        ServersTestHelpers.insert_server(owner.id, class.id, open_ports_checked_at: @now)
+
+      event = ServerOpenPortsChecked.new(server, [22, 80, 443])
+
+      reference =
+        EventsFactory.build(:event_reference, version: server.version + 1, occurred_at: @later)
+
+      assert Server.refresh!(server, event, reference) == %{
+               server
+               | open_ports_checked_at: @later,
+                 updated_at: @later,
+                 version: server.version + 1
+             }
+    end
+
+    test "ignores an event at or below the cached version" do
       %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)
       server = ServersTestHelpers.insert_server(owner.id, class.id)
 
-      stale = %{server | name: "Ignored", version: server.version, updated_at: @later}
+      event = ServerUpdated.new(%{server | name: "Ignored"})
 
-      assert Server.refresh!(server, stale) == server
+      reference =
+        EventsFactory.build(:event_reference, version: server.version, occurred_at: @later)
+
+      assert Server.refresh!(server, event, reference) == server
     end
 
     test "re-fetches from the database when the incoming version skips ahead" do
@@ -785,9 +901,12 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
       {:ok, fresh} = Server.fetch_server(server.id)
       refute fresh == server
 
-      gapped = %{server | name: "Ignored", version: server.version + 2, updated_at: @later}
+      event = ServerUpdated.new(%{server | name: "Ignored"})
 
-      assert Server.refresh!(server, gapped) == fresh
+      reference =
+        EventsFactory.build(:event_reference, version: server.version + 2, occurred_at: @later)
+
+      assert Server.refresh!(server, event, reference) == fresh
     end
   end
 
@@ -869,16 +988,49 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
         Map.put(server_snapshot_data(server), "ports", ports)
       )
 
-  defp assert_server_facts_gathered_event(%Server{} = server, cause, facts),
+  defp assert_server_facts_gathered_event(%Server{} = server, cause),
     do:
       assert_server_event(
         server,
         cause,
         "archidep/servers/server-facts-gathered",
-        Map.put(server_snapshot_data(server), "facts", facts)
+        Map.put(
+          server_snapshot_data(server),
+          "last_known_properties",
+          last_known_properties_data(server)
+        ),
+        2
       )
 
-  defp assert_server_event(%Server{id: id} = server, cause, type, data) do
+  # The event returned by a mutation still carries its domain-event struct as
+  # `data`, whereas the persisted copy is JSON-decoded to a map; the two are
+  # equal only once `data` is asserted separately from the rest of the envelope.
+  defp assert_returned_stored_event(%StoredEvent{} = returned, %StoredEvent{} = persisted, data) do
+    assert returned.data == data
+    assert %StoredEvent{returned | data: nil} == %StoredEvent{persisted | data: nil}
+  end
+
+  defp last_known_properties_data(%Server{
+         last_known_properties: %ServerProperties{} = properties
+       }),
+       do: %{
+         "id" => properties.id,
+         "hostname" => properties.hostname,
+         "machine_id" => properties.machine_id,
+         "cpus" => properties.cpus,
+         "cores" => properties.cores,
+         "vcpus" => properties.vcpus,
+         "memory" => properties.memory,
+         "swap" => properties.swap,
+         "system" => properties.system,
+         "architecture" => properties.architecture,
+         "os_family" => properties.os_family,
+         "distribution" => properties.distribution,
+         "distribution_release" => properties.distribution_release,
+         "distribution_version" => properties.distribution_version
+       }
+
+  defp assert_server_event(%Server{id: id} = server, cause, type, data, schema_version \\ 1) do
     assert [%StoredEvent{id: event_id} = event] = fetch_new_stored_events([cause])
 
     assert event == %StoredEvent{
@@ -886,6 +1038,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
              id: event_id,
              stream: "servers:servers:#{id}",
              version: server.version,
+             schema_version: schema_version,
              type: type,
              data: data,
              meta: %{},

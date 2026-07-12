@@ -88,6 +88,7 @@ defmodule ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueStoreTest do
                id: event_id,
                stream: "servers:servers:#{server.id}",
                version: server.version,
+               schema_version: 1,
                type: "archidep/servers/ansible-playbook-run-finished",
                data: %{
                  "id" => run.id,

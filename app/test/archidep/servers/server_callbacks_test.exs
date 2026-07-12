@@ -129,6 +129,7 @@ defmodule ArchiDep.Servers.ServerCallbacksTest do
              id: event_id,
              stream: "servers:servers:#{id}",
              version: version,
+             schema_version: 1,
              type: "archidep/servers/server-notified-up",
              data: %{
                "id" => id,

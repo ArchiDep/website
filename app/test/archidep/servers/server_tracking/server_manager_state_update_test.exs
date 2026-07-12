@@ -1088,6 +1088,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
              id: event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version + 1,
+             schema_version: 1,
              type: "archidep/servers/server-updated",
              data: %{
                "id" => server.id,

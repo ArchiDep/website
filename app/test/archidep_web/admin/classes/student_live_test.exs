@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -535,12 +536,19 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       stub_student_page(auth, student: student)
 
       updated = build_active_server(student, name: "web-01")
+      updated_id = updated.id
+
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^updated_id -> {:ok, updated} end)
 
       {:ok, view, html} = live(conn, path(student))
 
       assert student_page(html) == alice_page()
 
-      :ok = Servers.PubSub.publish_server_updated(updated)
+      :ok =
+        Servers.PubSub.publish_server_updated(
+          ServerUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -660,7 +668,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
   # Builds a server that is unconditionally active at any instant (a root,
   # active, group-member-less owner and a date-window-less active group), so the
   # `Server.active?` checks in the page's PubSub handlers are deterministic. The
-  # owner is the student's linked user account so the broadcast reaches the page.
+  # owner is the student's linked user account so the broadcast reaches the
+  # page.
   defp build_active_server(student, opts) do
     ServersFactory.build(
       :server,
@@ -670,7 +679,13 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
           owner_id: student.user_id,
           group:
             ServersFactory.build(:server_group, active: true, start_date: nil, end_date: nil),
-          owner: ServersFactory.build(:server_owner, root: true, active: true, group_member: nil)
+          owner:
+            ServersFactory.build(:server_owner,
+              id: student.user_id,
+              root: true,
+              active: true,
+              group_member: nil
+            )
         ],
         opts
       )

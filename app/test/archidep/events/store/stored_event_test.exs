@@ -112,6 +112,31 @@ defmodule ArchiDep.Events.Store.StoredEventTest do
     end
   end
 
+  describe "schema_version/2" do
+    test "set the schema version" do
+      data = %{"class" => "created"}
+
+      event =
+        data
+        |> StoredEvent.new(%{}, occurred_at: @now)
+        |> StoredEvent.schema_version(2)
+        |> Changeset.apply_changes()
+
+      assert %StoredEvent{id: id} = event
+
+      assert event == expected_event(id, data: data, schema_version: 2)
+    end
+
+    test "the schema version must be greater than or equal to 1" do
+      changeset =
+        %{"class" => "created"}
+        |> StoredEvent.new(%{}, occurred_at: @now)
+        |> StoredEvent.schema_version(0)
+
+      assert errors_on(changeset) == %{schema_version: ["must be greater than or equal to 1"]}
+    end
+  end
+
   describe "initiated_by/2" do
     test "set the initiator" do
       data = %{"logged" => "in"}
@@ -136,6 +161,7 @@ defmodule ArchiDep.Events.Store.StoredEventTest do
                id: event.id,
                stream: event.stream,
                version: event.version,
+               schema_version: event.schema_version,
                type: event.type,
                data: event.data,
                meta: event.meta,
@@ -185,6 +211,7 @@ defmodule ArchiDep.Events.Store.StoredEventTest do
       id: id,
       stream: nil,
       version: nil,
+      schema_version: nil,
       type: nil,
       data: %{},
       meta: %{},

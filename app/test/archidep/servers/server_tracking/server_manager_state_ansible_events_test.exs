@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
   import ArchiDep.Support.ServerManagerStateTestUtils
   import ExUnit.CaptureLog
   import Hammox
+  alias ArchiDep.Servers.Events.ServerSetUp
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
@@ -179,7 +180,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         playbook_run.id
       )
 
-    {_setup_event, reconnecting_event} =
+    {setup_event_ref, reconnecting_event} =
       assert_server_set_up_and_reconnection_events!(server, now, fake_connection_event)
 
     assert %{
@@ -210,9 +211,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                actions: actions
            }
 
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
+    set_up_event = ServerSetUp.new(updated_server)
+
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
 
     connect_result = assert_connect_fn!(connect_fn, result, server.app_username)
 
@@ -276,7 +279,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         playbook_run.id
       )
 
-    {_setup_event, reconnecting_event} =
+    {setup_event_ref, reconnecting_event} =
       assert_server_set_up_and_reconnection_events!(server, now, fake_cause, [
         fake_connection_event
       ])
@@ -310,9 +313,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                problems: []
            }
 
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
+    set_up_event = ServerSetUp.new(updated_server)
+
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
 
     connect_result = assert_connect_fn!(connect_fn, result, server.app_username)
 
@@ -375,7 +380,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         playbook_run.id
       )
 
-    {_setup_event, reconnecting_event} =
+    {setup_event_ref, reconnecting_event} =
       assert_server_set_up_and_reconnection_events!(server, now, fake_connection_event)
 
     assert %{
@@ -408,9 +413,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                tasks: %{}
            }
 
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
+    set_up_event = ServerSetUp.new(updated_server)
+
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
 
     connect_result = assert_connect_fn!(connect_fn, result, server.app_username)
 
@@ -472,7 +479,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         playbook_run.id
       )
 
-    {_setup_event, reconnecting_event} =
+    {setup_event_ref, reconnecting_event} =
       assert_server_set_up_and_reconnection_events!(server, now, fake_connection_event)
 
     assert %{
@@ -505,9 +512,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
                load_average_timer: nil
            }
 
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
+    set_up_event = ServerSetUp.new(updated_server)
+
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
+    assert_receive {:server_updated, ^set_up_event, ^setup_event_ref}
 
     connect_result = assert_connect_fn!(connect_fn, result, server.app_username)
 
@@ -893,6 +902,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
              id: setup_event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version + 1,
+             schema_version: 1,
              type: "archidep/servers/server-set-up",
              data: %{
                "id" => server.id,
@@ -930,6 +940,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
              id: reconnecting_event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version + 1,
+             schema_version: 1,
              type: "archidep/servers/server-reconnecting",
              data: %{
                "id" => server.id,

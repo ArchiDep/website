@@ -266,6 +266,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryCheckingOpenPor
              id: event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version,
+             schema_version: 1,
              type: "archidep/servers/server-retried-checking-open-ports",
              data: %{
                "id" => server.id,

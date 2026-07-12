@@ -347,6 +347,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
              id: event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version,
+             schema_version: 1,
              type: "archidep/servers/server-retried-connecting",
              data: %{
                "id" => server.id,

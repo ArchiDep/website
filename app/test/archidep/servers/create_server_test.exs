@@ -482,6 +482,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
              id: event_id,
              stream: "servers:servers:#{id}",
              version: 1,
+             schema_version: 1,
              type: "archidep/servers/server-created",
              data: %{
                "id" => id,

@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
   import ArchiDep.Support.ServerManagerStateTestUtils
   import ExUnit.CaptureLog
   import Hammox
+  alias ArchiDep.Servers.Events.ServerOpenPortsChecked
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
@@ -441,12 +442,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     [ports_checked_event] = fetch_new_stored_events([fake_connection_event])
 
-    assert_server_open_ports_checked_event!(
-      ports_checked_event,
-      updated_server,
-      now,
-      fake_connection_event
-    )
+    open_ports_checked_ref =
+      assert_server_open_ports_checked_event!(
+        ports_checked_event,
+        updated_server,
+        now,
+        fake_connection_event
+      )
 
     assert result == %ServerManagerState{
              initial_state
@@ -462,9 +464,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     assert_in_delta DateTime.diff(now, open_ports_checked_at, :second), 0, 1
 
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
+    open_ports_checked_event = ServerOpenPortsChecked.new(updated_server, [80, 443, 3000, 3001])
+
+    assert_receive {:server_updated, ^open_ports_checked_event, ^open_ports_checked_ref}
+    assert_receive {:server_updated, ^open_ports_checked_event, ^open_ports_checked_ref}
+    assert_receive {:server_updated, ^open_ports_checked_event, ^open_ports_checked_ref}
 
     assert update_tracking_fn.(result) ==
              {real_time_state(server,
@@ -521,12 +525,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     [ports_checked_event] = fetch_new_stored_events([fake_connection_event, fake_retry_event])
 
-    assert_server_open_ports_checked_event!(
-      ports_checked_event,
-      updated_server,
-      now,
-      fake_retry_event
-    )
+    open_ports_checked_ref =
+      assert_server_open_ports_checked_event!(
+        ports_checked_event,
+        updated_server,
+        now,
+        fake_retry_event
+      )
 
     assert result == %ServerManagerState{
              initial_state
@@ -544,9 +549,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     assert_in_delta DateTime.diff(now, open_ports_checked_at, :second), 0, 1
 
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
+    open_ports_checked_event = ServerOpenPortsChecked.new(updated_server, [80, 443, 3000, 3001])
+
+    assert_receive {:server_updated, ^open_ports_checked_event, ^open_ports_checked_ref}
+    assert_receive {:server_updated, ^open_ports_checked_event, ^open_ports_checked_ref}
+    assert_receive {:server_updated, ^open_ports_checked_event, ^open_ports_checked_ref}
 
     assert update_tracking_fn.(result) ==
              {real_time_state(server,
@@ -665,12 +672,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     [ports_checked_event] = fetch_new_stored_events([fake_connection_event])
 
-    assert_server_open_ports_checked_event!(
-      ports_checked_event,
-      updated_server,
-      now,
-      fake_connection_event
-    )
+    open_ports_checked_ref =
+      assert_server_open_ports_checked_event!(
+        ports_checked_event,
+        updated_server,
+        now,
+        fake_connection_event
+      )
 
     assert result == %ServerManagerState{
              initial_state
@@ -687,9 +695,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
 
     assert_in_delta DateTime.diff(now, open_ports_checked_at, :second), 0, 1
 
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
-    assert_receive {:server_updated, ^updated_server}
+    open_ports_checked_event = ServerOpenPortsChecked.new(updated_server, [80, 443, 3000, 3001])
+
+    assert_receive {:server_updated, ^open_ports_checked_event, ^open_ports_checked_ref}
+    assert_receive {:server_updated, ^open_ports_checked_event, ^open_ports_checked_ref}
+    assert_receive {:server_updated, ^open_ports_checked_event, ^open_ports_checked_ref}
 
     assert update_tracking_fn.(result) ==
              {real_time_state(server,
@@ -830,6 +840,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandlePortCheckingTa
              id: event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version,
+             schema_version: 1,
              type: "archidep/servers/server-open-ports-checked",
              data: %{
                "id" => server.id,

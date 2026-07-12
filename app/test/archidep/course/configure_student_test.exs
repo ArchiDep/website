@@ -12,9 +12,9 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
   alias ArchiDep.Course.Context
   alias ArchiDep.Course.Events.StudentConfigured
   alias ArchiDep.Course.PubSub
-  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Support.CourseFactory
@@ -367,6 +367,7 @@ defmodule ArchiDep.Course.ConfigureStudentTest do
              id: event_id,
              stream: "course:students:#{id}",
              version: version,
+             schema_version: 1,
              type: "archidep/course/student-configured",
              data: %{
                "id" => id,

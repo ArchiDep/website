@@ -325,6 +325,7 @@ defmodule ArchiDep.Servers.Ansible.TrackerTest do
                id: event_id,
                stream: "servers:servers:#{server.id}",
                version: server.version,
+               schema_version: 1,
                type: "archidep/servers/ansible-playbook-run-started",
                data: %{
                  "id" => run.id,
@@ -361,6 +362,7 @@ defmodule ArchiDep.Servers.Ansible.TrackerTest do
                id: event_id,
                stream: "servers:servers:#{server.id}",
                version: server.version,
+               schema_version: 1,
                type: "archidep/servers/ansible-playbook-event-occurred",
                data: %{
                  "id" => event.id,
@@ -396,6 +398,7 @@ defmodule ArchiDep.Servers.Ansible.TrackerTest do
                id: event_id,
                stream: "servers:servers:#{server.id}",
                version: server.version,
+               schema_version: 1,
                type: "archidep/servers/ansible-playbook-run-finished",
                data: %{
                  "id" => run.id,

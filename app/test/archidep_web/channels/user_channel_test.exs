@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
@@ -301,7 +302,12 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
       assert_push "cloudServerData", initial
       assert initial == %{student: nil, server: server_payload(server), serversEnabled: false}
 
-      Servers.PubSub.publish_server_updated(%{server | active: false})
+      deactivated = %{server | active: false, version: server.version + 1}
+
+      Servers.PubSub.publish_server_updated(
+        ServerUpdated.new(deactivated),
+        EventsFactory.build(:event_reference, version: deactivated.version)
+      )
 
       assert_push "cloudServerData", cloud
       assert cloud == %{student: nil, server: nil, serversEnabled: false}
@@ -316,8 +322,12 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
       assert_push "cloudServerData", initial
       assert initial == %{student: nil, server: server_payload(server), serversEnabled: false}
 
-      updated = %{server | name: "web-02"}
-      Servers.PubSub.publish_server_updated(updated)
+      updated = %{server | name: "web-02", version: server.version + 1}
+
+      Servers.PubSub.publish_server_updated(
+        ServerUpdated.new(updated),
+        EventsFactory.build(:event_reference, version: updated.version)
+      )
 
       assert_push "cloudServerData", cloud
       assert cloud == %{student: nil, server: server_payload(updated), serversEnabled: false}

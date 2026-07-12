@@ -3,8 +3,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
   import Hammox
   alias ArchiDep.Accounts
-  alias ArchiDep.Course
   alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
+  alias ArchiDep.Course
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated

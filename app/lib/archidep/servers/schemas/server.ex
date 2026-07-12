@@ -17,9 +17,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
   import ArchiDep.Servers.Schemas.ServerOwner, only: [where_server_owner_active: 1]
   alias ArchiDep.Events.Store.EventInitiator
   alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Servers.Events.ServerFactsGathered
   alias ArchiDep.Servers.Events.ServerOpenPortsChecked
   alias ArchiDep.Servers.Events.ServerSetUp
+  alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
@@ -438,7 +440,8 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end)
   end
 
-  @spec update_last_known_properties!(t(), map(), EventReference.t(), DateTime.t()) :: t()
+  @spec update_last_known_properties!(t(), map(), EventReference.t(), DateTime.t()) ::
+          {t(), StoredEvent.t(map) | nil}
   def update_last_known_properties!(server, ansible_facts, cause, now) do
     new_properties =
       ServerProperties.update_from_ansible_facts(
@@ -447,7 +450,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       )
 
     if new_properties.changes == %{} do
-      server
+      {server, nil}
     else
       case Multi.new()
            |> Multi.update(
@@ -461,81 +464,180 @@ defmodule ArchiDep.Servers.Schemas.Server do
            )
            |> Multi.insert(
              :stored_event,
-             &server_facts_gathered(&1.server, ansible_facts, now, cause)
+             &server_facts_gathered(&1.server, now, cause)
            )
            |> Repo.transaction() do
-        {:ok, %{server: updated_server}} -> updated_server
+        {:ok, %{server: updated_server, stored_event: event}} -> {updated_server, event}
       end
     end
   end
 
-  @spec refresh!(t(), map()) :: t()
-  def refresh!(server, incoming),
-    do: versioned_refresh(server, incoming, incoming.version, &fetch_server/1, &merge_refresh/2)
+  @spec refresh!(
+          t(),
+          ServerUpdated.t()
+          | ServerFactsGathered.t()
+          | ServerSetUp.t()
+          | ServerOpenPortsChecked.t(),
+          EventReference.t()
+        ) :: t()
+  def refresh!(server, event, %EventReference{version: version, occurred_at: occurred_at}),
+    do:
+      versioned_refresh(
+        server,
+        event,
+        version,
+        &fetch_server/1,
+        &merge_refresh(&1, &2, version, occurred_at)
+      )
 
   defp merge_refresh(
-         %__MODULE__{} = server,
-         %{
+         %__MODULE__{id: id, expected_properties: expected_properties} = server,
+         %ServerUpdated{
+           id: id,
            name: name,
            ip_address: ip_address,
            username: username,
            app_username: app_username,
            ssh_port: ssh_port,
            ssh_host_key_fingerprints: ssh_host_key_fingerprints,
-           secret_key: secret_key,
            active: active,
-           group: group,
-           group_id: group_id,
-           owner: owner,
-           owner_id: owner_id,
-           expected_properties: expected_properties,
-           expected_properties_id: expected_properties_id,
-           last_known_properties: last_known_properties,
-           last_known_properties_id: last_known_properties_id,
-           version: version,
-           set_up_at: set_up_at,
-           open_ports_checked_at: open_ports_checked_at,
-           updated_at: updated_at
-         }
+           expected_properties: %{
+             hostname: hostname,
+             machine_id: machine_id,
+             cpus: cpus,
+             cores: cores,
+             vcpus: vcpus,
+             memory: memory,
+             swap: swap,
+             system: system,
+             architecture: architecture,
+             os_family: os_family,
+             distribution: distribution,
+             distribution_release: distribution_release,
+             distribution_version: distribution_version
+           }
+         },
+         version,
+         updated_at
        ) do
     %__MODULE__{
       server
       | name: name,
-        ip_address: ip_address,
+        ip_address: parse_ip_address(ip_address),
         username: username,
         app_username: app_username,
         ssh_port: ssh_port,
         ssh_host_key_fingerprints: ssh_host_key_fingerprints,
-        secret_key: secret_key,
         active: active,
-        group: group,
-        group_id: group_id,
-        owner: owner,
-        owner_id: owner_id,
-        expected_properties: expected_properties,
-        expected_properties_id: expected_properties_id,
-        last_known_properties: last_known_properties,
-        last_known_properties_id: last_known_properties_id,
+        expected_properties:
+          ServerProperties.refresh(expected_properties, %{
+            id: expected_properties.id,
+            hostname: hostname,
+            machine_id: machine_id,
+            cpus: cpus,
+            cores: cores,
+            vcpus: vcpus,
+            memory: memory,
+            swap: swap,
+            system: system,
+            architecture: architecture,
+            os_family: os_family,
+            distribution: distribution,
+            distribution_release: distribution_release,
+            distribution_version: distribution_version
+          }),
         version: version,
-        set_up_at: set_up_at,
-        open_ports_checked_at: open_ports_checked_at,
         updated_at: updated_at
     }
   end
 
-  defp merge_refresh(_server, _incoming), do: :refetch
+  defp merge_refresh(
+         %__MODULE__{id: id, last_known_properties: last_known_properties} = server,
+         %ServerFactsGathered{
+           id: id,
+           last_known_properties: %{
+             id: properties_id,
+             hostname: hostname,
+             machine_id: machine_id,
+             cpus: cpus,
+             cores: cores,
+             vcpus: vcpus,
+             memory: memory,
+             swap: swap,
+             system: system,
+             architecture: architecture,
+             os_family: os_family,
+             distribution: distribution,
+             distribution_release: distribution_release,
+             distribution_version: distribution_version
+           }
+         },
+         version,
+         updated_at
+       ) do
+    %__MODULE__{
+      server
+      | last_known_properties:
+          ServerProperties.refresh(
+            last_known_properties || ServerProperties.blank(properties_id),
+            %{
+              id: properties_id,
+              hostname: hostname,
+              machine_id: machine_id,
+              cpus: cpus,
+              cores: cores,
+              vcpus: vcpus,
+              memory: memory,
+              swap: swap,
+              system: system,
+              architecture: architecture,
+              os_family: os_family,
+              distribution: distribution,
+              distribution_release: distribution_release,
+              distribution_version: distribution_version
+            }
+          ),
+        last_known_properties_id: properties_id,
+        version: version,
+        updated_at: updated_at
+    }
+  end
 
-  @spec mark_as_set_up!(t(), EventReference.t(), DateTime.t()) :: t()
+  defp merge_refresh(%__MODULE__{id: id} = server, %ServerSetUp{id: id}, version, set_up_at),
+    do: %__MODULE__{server | set_up_at: set_up_at, version: version}
+
+  defp merge_refresh(
+         %__MODULE__{id: id} = server,
+         %ServerOpenPortsChecked{id: id},
+         version,
+         occurred_at
+       ),
+       do: %__MODULE__{
+         server
+         | open_ports_checked_at: occurred_at,
+           version: version,
+           updated_at: occurred_at
+       }
+
+  defp merge_refresh(_server, _incoming, _version, _occurred_at), do: :refetch
+
+  defp parse_ip_address(ip_address) do
+    {:ok, address} = ip_address |> to_charlist() |> :inet.parse_address()
+    %Postgrex.INET{address: address}
+  end
+
+  @spec mark_as_set_up!(t(), EventReference.t(), DateTime.t()) :: {t(), StoredEvent.t(map)}
   def mark_as_set_up!(%__MODULE__{set_up_at: nil} = server, cause, now) do
     case Multi.new()
          |> Multi.update(:server, server |> change(set_up_at: now) |> optimistic_lock(:version))
          |> Multi.insert(:stored_event, &server_set_up(&1.server, cause))
          |> Repo.transaction() do
-      {:ok, %{server: server}} -> server
+      {:ok, %{server: server, stored_event: event}} -> {server, event}
     end
   end
 
-  @spec mark_open_ports_checked!(t(), list(1..65_535), EventReference.t(), DateTime.t()) :: t()
+  @spec mark_open_ports_checked!(t(), list(1..65_535), EventReference.t(), DateTime.t()) ::
+          {t(), StoredEvent.t(map)}
   def mark_open_ports_checked!(
         %__MODULE__{open_ports_checked_at: nil} = server,
         ports,
@@ -551,7 +653,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
          )
          |> Multi.insert(:stored_event, &server_open_ports_checked(&1.server, ports, now, cause))
          |> Repo.transaction() do
-      {:ok, %{server: server}} -> server
+      {:ok, %{server: server, stored_event: event}} -> {server, event}
     end
   end
 
@@ -669,10 +771,10 @@ defmodule ArchiDep.Servers.Schemas.Server do
         end
       end)
 
-  defp server_facts_gathered(server, facts, now, cause),
+  defp server_facts_gathered(server, now, cause),
     do:
       server
-      |> ServerFactsGathered.new(facts)
+      |> ServerFactsGathered.new()
       |> new_event(%{}, caused_by: cause, occurred_at: now)
       |> add_to_stream(server)
       |> initiated_by(server)

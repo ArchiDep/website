@@ -231,6 +231,7 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
              id: event_id,
              stream: "accounts:preregistered-users:#{student.id}",
              version: student.version,
+             schema_version: 1,
              type: "archidep/accounts/preregistered-user-login-link-created",
              data: %{
                "id" => link_id,
