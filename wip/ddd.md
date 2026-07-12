@@ -249,12 +249,16 @@ holdouts (`{:server_created, %Server{}}` / `{:server_deleted, %Server{}}`).
       fields) in the web layer instead of `%Server{}`, and **relocate — not
       duplicate — `refresh!` onto it**: all five `Server.refresh!` callers are
       web-layer with no server-side caller, so `Server.refresh!` is deleted.
-      Normalize the create/delete broadcasts to `{event, reference}`
-      (`:server_deleted` needs only the id; `:server_created` consumers fetch a
-      `ServerView` on first sighting, reusing the fetch-on-appearance path
-      #5c-iii added). Do the read-model and broadcast-shape halves in one pass —
-      they meet at the consumers, so splitting them touches each twice — see [#7
-      Curated read views + broadcast-shape
+      Normalize the create/delete broadcasts to `{event, reference}` carrying
+      the curated `ServerCreated` / `ServerDeleted` event (both already built
+      and persisted by the create/delete use cases) — never a bare id, which
+      would be a third envelope shape defeating the single-shape invariant;
+      `:server_deleted` consumers read only the id from the event today, and
+      `:server_created` consumers fetch a `ServerView` on first sighting,
+      reusing the fetch-on-appearance path #5c-iii added). Do the read-model and
+      broadcast-shape halves in one pass — they meet at the consumers, so
+      splitting them touches each twice — see [#7 Curated read views +
+      broadcast-shape
       uniformity](#7-curated-read-views--broadcast-shape-uniformity).
 - [ ] **#7b Sweep the remaining read models.** Apply the #7 pattern to the other
       purely-web-consumed schemas (`StudentView`, `ClassView`, …). **Only where
@@ -964,10 +968,16 @@ increment than #5c-iii, not a mechanical rename.
 **Two halves, done together.**
 
 - **Broadcast-shape uniformity.** Stop putting `%Schema{}` on PubSub for
-  create/delete too. `:server_deleted` needs only the id (`untrack` and
-  list-reject read `server.id` only). `:server_created` has no prior state to
-  merge, so consumers **fetch a `ServerView` on first sighting** — the same
-  fetch-on-appearance path #5c-iii added for updates arriving before a create.
+  create/delete too — broadcast the curated `ServerCreated` / `ServerDeleted`
+  event (both already built and persisted by the create/delete use cases) as
+  `{event, reference}`, uniform with `:server_updated`. Not a bare id for
+  delete: a third envelope shape defeats the single-shape invariant the whole
+  group exists to hold, and the day a consumer wants the deleted server's name
+  (a flash, say) a bare id forces a broadcast-shape change. Consumers read only
+  `event.id` from `:server_deleted` today (`untrack` and list-reject need
+  nothing more). `:server_created` has no prior state to merge, so consumers
+  **fetch a `ServerView` on first sighting** — the same fetch-on-appearance path
+  #5c-iii added for updates arriving before a create.
 - **Curated read model.** The web layer holds `ServerView`, never `%Server{}`;
   make it the only server type the web layer sees so typespec/compiler pressure
   keeps the projection from drifting from the schema.
@@ -986,8 +996,9 @@ gain (a sensitive token leaves long-lived web memory) plus the honest read/write
 split, weighed against a sizeable typing sweep — every server-rendering
 component and template retyped to `ServerView` — and the fan-in `refresh!`
 above. Schedule it if the secret-in-memory exposure is judged material; the
-cheap half (`:server_deleted` → id-only) can land on its own if only tidiness is
-wanted.
+cheap half (normalizing the create/delete broadcasts to the curated
+`ServerCreated` / `ServerDeleted` event) can land on its own if only broadcast
+tidiness is wanted.
 
 ### #7b Sweep the remaining read models
 
