@@ -20,13 +20,13 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
 
   describe "server_help/1" do
     test "tells the student to activate a mistakenly inactive server" do
-      server = ServersFactory.build(:server, set_up_at: nil, active: false)
+      server = ServersFactory.build(:server_view, set_up_at: nil, active: false)
 
       assert server_help(server, nil) == %{@nothing | inactive: true}
     end
 
     test "shows connection-timeout help with the configured SSH port while connecting" do
-      server = ServersFactory.build(:server, set_up_at: nil, active: true, ssh_port: 2222)
+      server = ServersFactory.build(:server_view, set_up_at: nil, active: true, ssh_port: 2222)
 
       state =
         real_time_state(ServersFactory.random_connecting_state(),
@@ -37,7 +37,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     end
 
     test "shows connection-timeout help with the default SSH port while reconnecting" do
-      server = ServersFactory.build(:server, set_up_at: nil, active: true, ssh_port: nil)
+      server = ServersFactory.build(:server_view, set_up_at: nil, active: true, ssh_port: nil)
 
       state =
         real_time_state(ServersFactory.random_retry_connecting_state(),
@@ -48,7 +48,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     end
 
     test "shows connection-refused help while connecting" do
-      server = ServersFactory.build(:server, set_up_at: nil, active: true)
+      server = ServersFactory.build(:server_view, set_up_at: nil, active: true)
 
       state =
         real_time_state(ServersFactory.random_connecting_state(),
@@ -59,7 +59,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     end
 
     test "shows authentication-failure help when the connection failed" do
-      server = ServersFactory.build(:server, set_up_at: nil, active: true)
+      server = ServersFactory.build(:server_view, set_up_at: nil, active: true)
 
       state =
         real_time_state(ServersFactory.random_connection_failed_state(),
@@ -70,7 +70,8 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     end
 
     test "shows key-exchange help even for an already set-up server" do
-      server = ServersFactory.build(:server, set_up_at: ~U[2026-06-01 08:00:00Z], active: true)
+      server =
+        ServersFactory.build(:server_view, set_up_at: ~U[2026-06-01 08:00:00Z], active: true)
 
       state =
         real_time_state(ServersFactory.random_connection_failed_state(),
@@ -96,7 +97,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     end
 
     test "points at every relevant step for combined mismatches" do
-      server = ServersFactory.build(:server, set_up_at: nil, active: true)
+      server = ServersFactory.build(:server_view, set_up_at: nil, active: true)
 
       state =
         real_time_state(ServersFactory.random_connected_state(),
@@ -114,7 +115,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     end
 
     test "shows open-ports help when connected" do
-      server = ServersFactory.build(:server, set_up_at: nil, active: true)
+      server = ServersFactory.build(:server_view, set_up_at: nil, active: true)
 
       state =
         real_time_state(ServersFactory.random_connected_state(),
@@ -125,14 +126,17 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     end
 
     test "congratulates the student once the server is set up and connected" do
-      server = ServersFactory.build(:server, set_up_at: ~U[2026-06-01 08:00:00Z], active: true)
+      server =
+        ServersFactory.build(:server_view, set_up_at: ~U[2026-06-01 08:00:00Z], active: true)
+
       state = real_time_state(ServersFactory.random_connected_state())
 
       assert server_help(server, state) == %{@nothing | success: true}
     end
 
     test "withholds congratulations while the server is busy" do
-      server = ServersFactory.build(:server, set_up_at: ~U[2026-06-01 08:00:00Z], active: true)
+      server =
+        ServersFactory.build(:server_view, set_up_at: ~U[2026-06-01 08:00:00Z], active: true)
 
       state =
         real_time_state(ServersFactory.random_connected_state(), current_job: :checking_access)
@@ -141,7 +145,8 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     end
 
     test "withholds congratulations while an unhandled problem remains" do
-      server = ServersFactory.build(:server, set_up_at: ~U[2026-06-01 08:00:00Z], active: true)
+      server =
+        ServersFactory.build(:server_view, set_up_at: ~U[2026-06-01 08:00:00Z], active: true)
 
       state =
         real_time_state(ServersFactory.random_connected_state(),
@@ -152,14 +157,14 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     end
 
     test "shows nothing while connecting without a recognised problem" do
-      server = ServersFactory.build(:server, set_up_at: nil, active: true)
+      server = ServersFactory.build(:server_view, set_up_at: nil, active: true)
       state = real_time_state(ServersFactory.random_connecting_state())
 
       assert server_help(server, state) == @nothing
     end
 
     test "withholds connection-timeout help once the connection succeeds" do
-      server = ServersFactory.build(:server, set_up_at: nil, active: true)
+      server = ServersFactory.build(:server_view, set_up_at: nil, active: true)
 
       state =
         real_time_state(ServersFactory.random_connected_state(),
@@ -171,7 +176,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
   end
 
   defp mismatch_help(property) do
-    server = ServersFactory.build(:server, set_up_at: nil, active: true)
+    server = ServersFactory.build(:server_view, set_up_at: nil, active: true)
 
     state =
       real_time_state(ServersFactory.random_connected_state(),

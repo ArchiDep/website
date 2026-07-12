@@ -96,7 +96,7 @@
           ]}
         >
           <Heroicons.server solid class="size-5" />
-          {@active_server.name || Server.default_hostname(@active_server)}
+          {@active_server.name || ServerView.default_hostname(@active_server)}
         </a>
       <% else %>
         <.no_data text={gettext("None registered")} />

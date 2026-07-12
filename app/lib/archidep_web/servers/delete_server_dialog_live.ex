@@ -3,15 +3,15 @@ defmodule ArchiDepWeb.Servers.DeleteServerDialogLive do
 
   import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Servers
-  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerView
 
   @base_id "delete-server-dialog"
 
-  @spec id(Server.t()) :: String.t()
+  @spec id(ServerView.t()) :: String.t()
   def id(server), do: "#{@base_id}-#{server.id}"
 
-  @spec close(Server.t()) :: js
+  @spec close(ServerView.t()) :: js
   def close(server), do: server |> id() |> close_dialog()
 
   @impl LiveComponent

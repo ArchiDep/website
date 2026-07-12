@@ -12,6 +12,7 @@ defmodule ArchiDep.Servers.DeleteServerTest do
     only: [collect_broadcasts: 1, received_broadcasts: 1]
 
   alias ArchiDep.Clock
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerOwner
@@ -235,9 +236,12 @@ defmodule ArchiDep.Servers.DeleteServerTest do
   # own list, so a double broadcast on one topic or a missing broadcast on
   # another fails the corresponding whole-list equality.
   defp assert_server_deleted_broadcast(%Server{} = server, subscriptions) do
-    assert received_broadcasts(subscriptions.server) == [{:server_deleted, server}]
-    assert received_broadcasts(subscriptions.group) == [{:server_deleted, server}]
-    assert received_broadcasts(subscriptions.owner) == [{:server_deleted, server}]
+    [stored_event] = fetch_new_stored_events()
+    message = {:server_deleted, ServerDeleted.new(server), StoredEvent.to_reference(stored_event)}
+
+    assert received_broadcasts(subscriptions.server) == [message]
+    assert received_broadcasts(subscriptions.group) == [message]
+    assert received_broadcasts(subscriptions.owner) == [message]
 
     server
   end

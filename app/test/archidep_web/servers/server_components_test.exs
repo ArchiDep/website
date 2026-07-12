@@ -5,8 +5,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
   import Hammox
   import Phoenix.LiveViewTest, only: [render_component: 2]
   alias ArchiDep.Helpers.LoadingHelpers
-  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.Factory
   alias ArchiDep.Support.ServersFactory
   alias ArchiDepWeb.Servers.ServerComponents
@@ -25,15 +25,15 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
 
   describe "server_name/1" do
     test "shows the server's name when it has one" do
-      server = ServersFactory.build(:server, name: "web-01")
+      server = ServersFactory.build(:server_view, name: "web-01")
 
       assert rendered_server_name(server) == "web-01"
     end
 
     test "falls back to the SSH connection description when unnamed" do
-      server = ServersFactory.build(:server, name: nil)
+      server = ServersFactory.build(:server_view, name: nil)
 
-      assert rendered_server_name(server) == Server.ssh_connection_description(server)
+      assert rendered_server_name(server) == ServerView.ssh_connection_description(server)
     end
   end
 
@@ -502,24 +502,21 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
     test "prefers the group member's username" do
       member = ServersFactory.build(:server_group_member, username: "alice")
       owner = ServersFactory.build(:server_owner, root: false, group_member: member)
-      server = ServersFactory.build(:server, owner: owner)
+      server = ServersFactory.build(:server_view, owner: owner)
 
       assert ServerComponents.server_owner_name(server) == "alice"
     end
 
     test "falls back to the owner's own username" do
-      owner = %{
-        ServersFactory.build(:server_owner, root: true, group_member: nil)
-        | username: "bob"
-      }
-
-      server = ServersFactory.build(:server, owner: owner)
+      owner = ServersFactory.build(:server_owner, root: true, group_member: nil, username: "bob")
+      server = ServersFactory.build(:server_view, owner: owner)
 
       assert ServerComponents.server_owner_name(server) == "bob"
     end
 
     test "falls back to the server's connection username" do
-      server = ServersFactory.build(:server, owner: nil, username: "carol")
+      owner = ServersFactory.build(:server_owner, root: true, group_member: nil, username: nil)
+      server = ServersFactory.build(:server_view, owner: owner, username: "carol")
 
       assert ServerComponents.server_owner_name(server) == "carol"
     end
@@ -933,7 +930,7 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
   defp server(opts \\ []),
     do:
       ServersFactory.build(
-        :server,
+        :server_view,
         Keyword.merge([name: "web-01", active: true, set_up_at: nil], opts)
       )
 
@@ -942,7 +939,7 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
     owner = ServersFactory.build(:server_owner, root: false, group_member: member)
 
     ServersFactory.build(
-      :server,
+      :server_view,
       Keyword.merge(
         [
           owner: owner,

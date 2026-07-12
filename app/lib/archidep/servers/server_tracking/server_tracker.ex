@@ -13,6 +13,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour
+  alias ArchiDep.Servers.ServerView
   alias Ecto.UUID
   alias Phoenix.PubSub
   alias Phoenix.Tracker
@@ -21,29 +22,32 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   @pubsub ArchiDep.PubSub
   @tracker ArchiDep.Tracker
 
+  @typedoc "Anything the tracker can read a server ID from."
+  @type trackable :: Server.t() | ServerView.t()
+
   @type server_state_update :: {:server_state, UUID.t(), ServerRealTimeState.t() | nil}
 
   @impl ServerTrackerClientBehaviour
-  @spec start_link(list(Server.t())) :: GenServer.on_start()
+  @spec start_link(list(trackable())) :: GenServer.on_start()
   def start_link(servers) when is_list(servers),
     do: GenServer.start_link(__MODULE__, {self(), Enum.map(servers, & &1.id)})
 
-  @spec start_link(Server.t()) :: GenServer.on_start()
+  @spec start_link(trackable()) :: GenServer.on_start()
   def start_link(server),
     do: GenServer.start_link(__MODULE__, {self(), [server.id]})
 
   # Client API
 
   @impl ServerTrackerClientBehaviour
-  @spec track(pid(), Server.t()) :: server_state_update()
+  @spec track(pid(), trackable()) :: server_state_update()
   def track(tracker, server), do: GenServer.call(tracker, {:track, server.id})
 
   @impl ServerTrackerClientBehaviour
-  @spec untrack(pid(), Server.t()) :: server_state_update()
+  @spec untrack(pid(), trackable()) :: server_state_update()
   def untrack(tracker, server), do: GenServer.call(tracker, {:untrack, server.id})
 
   @impl ServerTrackerClientBehaviour
-  @spec server_state_map(list(Server.t())) :: %{UUID.t() => ServerRealTimeState.t()}
+  @spec server_state_map(list(trackable())) :: %{UUID.t() => ServerRealTimeState.t()}
   def server_state_map(servers), do: servers |> Enum.map(& &1.id) |> get_current_server_states()
 
   @impl ServerTrackerClientBehaviour

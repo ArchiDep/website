@@ -60,8 +60,8 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
          )
          |> Multi.insert(:stored_event, &server_deleted(auth, &1.server, now))
          |> Repo.transaction() do
-      {:ok, _changes} ->
-        :ok = PubSub.publish_server_deleted(server)
+      {:ok, %{stored_event: event}} ->
+        :ok = PubSub.publish_server_deleted(event.data, StoredEvent.to_reference(event))
         :ok
     end
   end

@@ -4,11 +4,13 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
   import Hammox
   alias ArchiDep.Course
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias Ecto.Changeset
@@ -79,7 +81,11 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
 
       {:ok, view, _html} = live(conn, "/servers/#{server.id}")
 
-      :ok = PubSub.publish_server_deleted(server)
+      :ok =
+        PubSub.publish_server_deleted(
+          ServerDeleted.new(server),
+          EventsFactory.build(:event_reference)
+        )
 
       flash = assert_redirect(view, "/app")
 
@@ -390,7 +396,11 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
 
       {:ok, view, _html} = live(conn, "/admin/servers/#{server.id}")
 
-      :ok = PubSub.publish_server_deleted(server)
+      :ok =
+        PubSub.publish_server_deleted(
+          ServerDeleted.new(server),
+          EventsFactory.build(:event_reference)
+        )
 
       flash = assert_redirect(view, "/admin")
 
@@ -500,9 +510,11 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
   # asserts. The tracker returns no real-time state, which renders the page in
   # its initial (no-connection) shape.
   defp stub_server_page(auth, server) do
-    stub(Servers.ContextMock, :fetch_server, fn ^auth, _id -> {:ok, server} end)
-    stub(ServerTrackerClientMock, :start_link, fn ^server -> {:ok, self()} end)
-    stub(ServerTrackerClientMock, :get_current_server_state, fn ^server -> nil end)
+    view = ServerView.from(server)
+    server_id = server.id
+    stub(Servers.ContextMock, :fetch_server, fn ^auth, _id -> {:ok, view} end)
+    stub(ServerTrackerClientMock, :start_link, fn ^view -> {:ok, self()} end)
+    stub(ServerTrackerClientMock, :get_current_server_state, fn ^server_id -> nil end)
     :ok
   end
 

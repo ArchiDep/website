@@ -158,7 +158,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
 
   describe "update_changeset/2" do
     test "updates every castable field, retaining the seeded group" do
-      server = build(:server, server_attrs())
+      server = build(:server_view, server_attrs())
 
       params = %{
         "name" => "Updated",
@@ -188,7 +188,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
     end
 
     test "clears every optional field when given blank input" do
-      server = build(:server, server_attrs())
+      server = build(:server_view, server_attrs())
 
       params = %{
         "name" => "",
@@ -219,7 +219,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
 
     test "rejects blank required fields" do
       changeset =
-        ServerForm.update_changeset(build(:server, server_attrs()), %{
+        ServerForm.update_changeset(build(:server_view, server_attrs()), %{
           "ip_address" => "",
           "username" => "",
           "ssh_host_key_fingerprints" => ""
@@ -285,11 +285,11 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
   defp changeset(:create, params),
     do: ServerForm.create_changeset(Factory.build(:authentication, root: false), params)
 
-  defp changeset(:update, params), do: ServerForm.update_changeset(build(:server), params)
+  defp changeset(:update, params), do: ServerForm.update_changeset(build(:server_view), params)
 
-  # Options for the `build(:server, …)` fixture the update tests share: a known
-  # group, a fixed IP address, and expected properties whose mapped fields match
-  # `seeded_expected_properties_form/0`.
+  # Options for the `build(:server_view, …)` fixture the update tests share: a
+  # known group, a fixed IP address, and expected properties whose mapped fields
+  # match `seeded_expected_properties_form/0`.
   defp server_attrs,
     do: [
       group_id: "11111111-1111-1111-1111-111111111111",

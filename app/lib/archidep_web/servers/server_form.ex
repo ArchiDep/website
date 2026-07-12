@@ -10,7 +10,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
   import ArchiDepWeb.Helpers.AuthHelpers
   import Ecto.Changeset
   alias ArchiDep.Authentication
-  alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.Types
   alias ArchiDepWeb.Servers.ServerPropertiesForm
   alias Ecto.Changeset
@@ -70,8 +70,9 @@ defmodule ArchiDepWeb.Servers.ServerForm do
         end)
       )
 
-  @spec update_changeset(Server.t(), map) :: Changeset.t(Types.server_data())
-  def update_changeset(server, params \\ %{}) when is_struct(server, Server) and is_map(params) do
+  @spec update_changeset(ServerView.t(), map) :: Changeset.t(Types.server_data())
+  def update_changeset(server, params \\ %{})
+      when is_struct(server, ServerView) and is_map(params) do
     %Changeset{} =
       %__MODULE__{
         name: server.name,

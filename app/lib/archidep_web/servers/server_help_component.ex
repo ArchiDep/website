@@ -11,11 +11,11 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
   import ArchiDep.Servers.ServerTracking.ServerProblems
   alias ArchiDep.Authentication
   alias ArchiDep.Course.Material
-  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerView
 
   attr :auth, Authentication, doc: "the authentication context", required: true
-  attr :server, Server, doc: "the server for which help is provided", required: true
+  attr :server, ServerView, doc: "the server for which help is provided", required: true
   attr :state, ServerRealTimeState, doc: "the current state of the server", default: nil
 
   @spec server_help(map()) :: Rendered.t()

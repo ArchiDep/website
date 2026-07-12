@@ -5,11 +5,14 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
   alias ArchiDep.Errors.UnauthorizedError
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.Context
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
@@ -206,9 +209,8 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
 
       auth = Factory.build(:authentication, root: true)
 
-      # `list_all_servers_in_group` preloads only `group` and `owner` (neither's
-      # own associations), a shallower shape than `Server.fetch_server`; the
-      # explicit expected order pins the `[name, username, ip_address]` sort.
+      # `list_all_servers_in_group` returns curated `ServerView`s; the explicit
+      # expected order pins the `[name, username, ip_address]` sort.
       assert list_all_servers_in_group.(auth, class.id) ==
                {:ok, Enum.map([alpha, beta, unnamed_a], &listed_server_view(&1.id))}
 
@@ -255,14 +257,24 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
 
       # The use case subscribed the calling process to the group's servers
       # topic, so a published creation in this group reaches it.
-      new_server = ServersFactory.build(:server, group_id: class.id)
-      :ok = PubSub.publish_server_created(new_server)
+      new_server =
+        ServersFactory.build(:server,
+          group: group,
+          group_id: class.id,
+          owner:
+            ServersFactory.build(:server_owner,
+              group_member: ServersFactory.build(:server_group_member)
+            )
+        )
 
-      assert_receive {:server_created, %Server{} = broadcast}
-      assert broadcast == new_server
+      created_event = ServerCreated.new(new_server)
+      created_reference = EventsFactory.build(:event_reference)
+      :ok = PubSub.publish_server_created(created_event, created_reference)
+
+      assert_receive {:server_created, ^created_event, ^created_reference}
 
       # The reducer folds broadcast events into the watched id set.
-      assert reducer.(server_ids, {:server_created, new_server}) ==
+      assert reducer.(server_ids, {:server_created, created_event, created_reference}) ==
                MapSet.put(server_ids, new_server.id)
 
       assert reducer.(
@@ -271,7 +283,11 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
                 EventsFactory.build(:event_reference)}
              ) == server_ids
 
-      assert reducer.(server_ids, {:server_deleted, server_a}) ==
+      assert reducer.(
+               server_ids,
+               {:server_deleted, ServerDeleted.new(server_a),
+                EventsFactory.build(:event_reference)}
+             ) ==
                MapSet.delete(server_ids, server_a.id)
 
       assert_no_stored_events!()
@@ -312,15 +328,11 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
     }
   end
 
-  # A server with only `group` and `owner` preloaded, matching what
-  # `list_all_servers_in_group` returns (independent of the use case).
+  # The curated `ServerView` `list_all_servers_in_group` returns for a server,
+  # projected from the same full-graph load `Server.fetch_server` performs
+  # (independent of the use case).
   defp listed_server_view(id) do
-    Repo.one!(
-      from s in Server,
-        join: g in assoc(s, :group),
-        join: o in assoc(s, :owner),
-        where: s.id == ^id,
-        preload: [group: g, owner: o]
-    )
+    {:ok, server} = Server.fetch_server(id)
+    ServerView.from(server)
   end
 end

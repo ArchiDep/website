@@ -6,7 +6,7 @@ defmodule ArchiDepWeb.ClientCloudServerData do
 
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
-  alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.ServerView
 
   @derive Jason.Encoder
   @enforce_keys [:student, :server, :serversEnabled]
@@ -31,7 +31,7 @@ defmodule ArchiDepWeb.ClientCloudServerData do
           serversEnabled: boolean()
         }
 
-  @spec new(Student.t(), {Server.t(), String.t()} | nil) :: t()
+  @spec new(Student.t(), {ServerView.t(), String.t()} | nil) :: t()
   def new(student, server),
     do: %__MODULE__{
       student: dump_student(student),
@@ -42,7 +42,7 @@ defmodule ArchiDepWeb.ClientCloudServerData do
   defp dump_server(nil), do: nil
 
   defp dump_server(
-         {%Server{
+         {%ServerView{
             name: name,
             username: server_username,
             ip_address: ip_address

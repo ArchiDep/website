@@ -5,7 +5,10 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
@@ -57,7 +60,7 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
     test "pushes the single active server in the cloud server data" do
       auth = root_auth()
       server = active_server(auth.principal_id, name: "web-01", username: "ops")
-      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [server] end)
+      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [ServerView.from(server)] end)
 
       {:ok, reply, _socket} = join_channel(auth)
 
@@ -70,7 +73,8 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
     test "filters out inactive servers from the cloud server data" do
       auth = root_auth()
       inactive = Map.put(active_server(auth.principal_id), :active, false)
-      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [inactive] end)
+
+      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [ServerView.from(inactive)] end)
 
       {:ok, _reply, _socket} = join_channel(auth)
 
@@ -287,7 +291,16 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
       assert initial == %{student: nil, server: nil, serversEnabled: false}
 
       server = active_server(auth.principal_id, name: "web-01", username: "ops")
-      Servers.PubSub.publish_server_created(server)
+      server_id = server.id
+
+      expect(Servers.ContextMock, :fetch_server, 1, fn ^auth, ^server_id ->
+        {:ok, ServerView.from(server)}
+      end)
+
+      Servers.PubSub.publish_server_created(
+        ServerCreated.new(server),
+        EventsFactory.build(:event_reference)
+      )
 
       assert_push "cloudServerData", cloud
       assert cloud == %{student: nil, server: server_payload(server), serversEnabled: false}
@@ -297,7 +310,7 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
     test "removes a server that an update makes inactive from the cloud server data" do
       auth = root_auth()
       server = active_server(auth.principal_id, name: "web-01", username: "ops")
-      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [server] end)
+      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [ServerView.from(server)] end)
       {:ok, _reply, _socket} = join_channel(auth)
       assert_push "cloudServerData", initial
       assert initial == %{student: nil, server: server_payload(server), serversEnabled: false}
@@ -317,7 +330,7 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
     test "replaces a server that stays active in the cloud server data" do
       auth = root_auth()
       server = active_server(auth.principal_id, name: "web-01", username: "ops")
-      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [server] end)
+      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [ServerView.from(server)] end)
       {:ok, _reply, _socket} = join_channel(auth)
       assert_push "cloudServerData", initial
       assert initial == %{student: nil, server: server_payload(server), serversEnabled: false}
@@ -337,12 +350,15 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
     test "removes a deleted server from the cloud server data" do
       auth = root_auth()
       server = active_server(auth.principal_id, name: "web-01", username: "ops")
-      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [server] end)
+      expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> [ServerView.from(server)] end)
       {:ok, _reply, _socket} = join_channel(auth)
       assert_push "cloudServerData", initial
       assert initial == %{student: nil, server: server_payload(server), serversEnabled: false}
 
-      Servers.PubSub.publish_server_deleted(server)
+      Servers.PubSub.publish_server_deleted(
+        ServerDeleted.new(server),
+        EventsFactory.build(:event_reference)
+      )
 
       assert_push "cloudServerData", cloud
       assert cloud == %{student: nil, server: nil, serversEnabled: false}
@@ -361,7 +377,10 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
 
   defp expect_student_join(auth, student, servers) do
     expect(Course.ContextMock, :fetch_authenticated_student, 1, fn ^auth -> {:ok, student} end)
-    expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth -> servers end)
+
+    expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth ->
+      Enum.map(servers, &ServerView.from/1)
+    end)
   end
 
   defp student_in(class, attrs) do

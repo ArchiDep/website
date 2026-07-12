@@ -35,7 +35,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
         )
 
       server =
-        ServersFactory.build(:server,
+        ServersFactory.build(:server_view,
           username: "user42",
           ip_address: %Postgrex.INET{address: {10, 0, 0, 42}, netmask: 32}
         )

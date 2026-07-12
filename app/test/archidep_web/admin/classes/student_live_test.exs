@@ -8,7 +8,10 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -465,7 +468,10 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       end)
 
       stub(Servers.ContextMock, :fetch_active_server_for_group_member, fn ^auth, _id ->
-        Agent.get(active_server_lookup, & &1)
+        case Agent.get(active_server_lookup, & &1) do
+          {:ok, server} -> {:ok, ServerView.from(server)}
+          other -> other
+        end
       end)
 
       {:ok, view, html} = live(conn, path(student))
@@ -512,12 +518,21 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       stub_student_page(auth, student: student)
 
       created = build_active_server(student, name: "web-01")
+      created_id = created.id
+
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^created_id ->
+        {:ok, ServerView.from(created)}
+      end)
 
       {:ok, view, html} = live(conn, path(student))
 
       assert student_page(html) == alice_page()
 
-      :ok = Servers.PubSub.publish_server_created(created)
+      :ok =
+        Servers.PubSub.publish_server_created(
+          ServerCreated.new(created),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -538,7 +553,9 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       updated = build_active_server(student, name: "web-01")
       updated_id = updated.id
 
-      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^updated_id -> {:ok, updated} end)
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^updated_id ->
+        {:ok, ServerView.from(updated)}
+      end)
 
       {:ok, view, html} = live(conn, path(student))
 
@@ -568,7 +585,11 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
 
       assert student_page(html) == alice_page(%{active_server: "web-01"})
 
-      :ok = Servers.PubSub.publish_server_deleted(active_server)
+      :ok =
+        Servers.PubSub.publish_server_deleted(
+          ServerDeleted.new(active_server),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -697,7 +718,12 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
   # test `expect`s only the mutation it asserts.
   defp stub_student_page(auth, opts) do
     student = Keyword.fetch!(opts, :student)
-    active_server_result = Keyword.get(opts, :active_server_result, {:error, :server_not_found})
+
+    active_server_result =
+      case Keyword.get(opts, :active_server_result, {:error, :server_not_found}) do
+        {:ok, server} -> {:ok, ServerView.from(server)}
+        other -> other
+      end
 
     stub(Course.ContextMock, :fetch_student_in_class, fn ^auth, _class_id, _id ->
       {:ok, student}

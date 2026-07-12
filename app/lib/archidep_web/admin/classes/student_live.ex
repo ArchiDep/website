@@ -10,10 +10,10 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
-  alias ArchiDep.Servers.Schemas.Server
-  alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.ServerView
   alias ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive
   alias ArchiDepWeb.Admin.Classes.EditStudentDialogLive
 
@@ -186,10 +186,17 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
   @impl LiveView
   def handle_info(
-        {:server_created, created_server},
-        %Socket{assigns: %{active_server: active_server}} = socket
+        {:server_created, %{id: server_id}, _reference},
+        %Socket{assigns: %{auth: auth, active_server: active_server}} = socket
       ) do
-    if Server.active?(created_server, Clock.now()) and active_server == nil do
+    created_server =
+      case Servers.fetch_server(auth, server_id) do
+        {:ok, server} -> server
+        {:error, _reason} -> nil
+      end
+
+    if created_server != nil and ServerView.active?(created_server, Clock.now()) and
+         active_server == nil do
       socket
       |> assign(active_server: created_server)
       |> noreply()
@@ -207,7 +214,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
       ) do
     updated_server =
       if active_server != nil and active_server.id == event.id do
-        Server.refresh!(active_server, event, reference)
+        ServerView.refresh!(active_server, event, reference)
       else
         case Servers.fetch_server(auth, event.id) do
           {:ok, server} -> server
@@ -215,7 +222,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
         end
       end
 
-    if updated_server != nil and Server.active?(updated_server, Clock.now()) and
+    if updated_server != nil and ServerView.active?(updated_server, Clock.now()) and
          (active_server == nil or active_server.id == updated_server.id) do
       socket
       |> assign(active_server: updated_server)
@@ -229,8 +236,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
   @impl LiveView
   def handle_info(
-        {:server_deleted, %Server{id: server_id}},
-        %Socket{assigns: %{active_server: %Server{id: server_id}}} = socket
+        {:server_deleted, %ServerDeleted{id: server_id}, _reference},
+        %Socket{assigns: %{active_server: %ServerView{id: server_id}}} = socket
       ) do
     socket
     |> assign(active_server: nil)
@@ -238,10 +245,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   end
 
   @impl LiveView
-  def handle_info(
-        {:server_deleted, _deleted_server},
-        %Socket{assigns: %{active_server: nil}} = socket
-      ) do
+  def handle_info({:server_deleted, %ServerDeleted{}, _reference}, socket) do
     noreply(socket)
   end
 
@@ -255,7 +259,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   defp maybe_drop_active_server(nil), do: nil
 
   defp maybe_drop_active_server(server),
-    do: if(Server.active?(server, Clock.now()), do: server, else: nil)
+    do: if(ServerView.active?(server, Clock.now()), do: server, else: nil)
 
   defp maybe_refresh_server_group(
          nil,
@@ -273,14 +277,14 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   end
 
   defp maybe_refresh_server_group(
-         %Server{} = server,
+         %ServerView{} = server,
          _auth,
          event,
          reference,
          _refreshed_class,
          _student
        ),
-       do: %Server{server | group: ServerGroup.refresh!(server.group, event, reference)}
+       do: ServerView.refresh!(server, event, reference)
 
   defp maybe_refresh_server_group_member(nil, auth, _event, _reference, refreshed_student) do
     if Student.active?(refreshed_student, Clock.now()) do
@@ -291,17 +295,11 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   end
 
   defp maybe_refresh_server_group_member(
-         %Server{owner: %ServerOwner{group_member: %ServerGroupMember{id: id} = member}} = server,
+         %ServerView{owner: %ServerOwner{group_member: %ServerGroupMember{id: id}}} = server,
          _auth,
          %{id: id} = event,
          reference,
          _refreshed_student
        ),
-       do: %Server{
-         server
-         | owner: %ServerOwner{
-             server.owner
-             | group_member: ServerGroupMember.refresh!(member, event, reference)
-           }
-       }
+       do: ServerView.refresh!(server, event, reference)
 end

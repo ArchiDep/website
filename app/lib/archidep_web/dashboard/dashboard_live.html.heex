@@ -280,7 +280,7 @@
           </.data_display_element>
           <.data_display_element title={gettext("Setup")}>
             <span
-              :if={Server.set_up?(server)}
+              :if={ServerView.set_up?(server)}
               class="badge badge-sm badge-success tooltip"
               data-tip={
                 gettext("You have successfully set up your server and can use it for exercises.")
@@ -289,7 +289,7 @@
               {gettext("Completed")}
             </span>
             <span
-              :if={not Server.set_up?(server)}
+              :if={not ServerView.set_up?(server)}
               class="badge badge-sm badge-warning tooltip"
               data-tip={
                 gettext(
@@ -332,7 +332,7 @@
               JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})
             }
             edit_enabled={
-              not Server.set_up?(server) and
+              not ServerView.set_up?(server) and
                 ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
                   :server_authentication_failed,
                   :server_connection_timed_out,
@@ -360,7 +360,7 @@
 
         <.live_component
           :if={
-            not Server.set_up?(server) and
+            not ServerView.set_up?(server) and
               ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
                 :server_authentication_failed,
                 :server_connection_timed_out,

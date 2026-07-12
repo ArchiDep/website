@@ -7,11 +7,14 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
@@ -466,9 +469,17 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       created = build_dashboard_server(auth, name: "web-02", active: true)
       created_id = created.id
 
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^created_id ->
+        {:ok, ServerView.from(created)}
+      end)
+
       {:ok, view, _html} = live(conn, @path)
 
-      :ok = PubSub.publish_server_created(created)
+      :ok =
+        PubSub.publish_server_created(
+          ServerCreated.new(created),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -496,7 +507,11 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
-      :ok = PubSub.publish_server_created(inactive)
+      :ok =
+        PubSub.publish_server_created(
+          ServerCreated.new(inactive),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -564,7 +579,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       activated = %{inactive | active: true, version: inactive.version + 1}
       activated_id = activated.id
 
-      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^activated_id -> {:ok, activated} end)
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^activated_id ->
+        {:ok, ServerView.from(activated)}
+      end)
 
       {:ok, view, _html} = live(conn, @path)
 
@@ -599,9 +616,16 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       stub_tracker_updates()
       db_id = db.id
 
-      {:ok, view, _html} = live(conn, @path)
-
       deactivated = %{db | active: false, version: db.version + 1}
+
+      # The update reaches both the per-server and owner topics; once the first
+      # delivery drops the now-inactive server, a later delivery re-reads it and
+      # finds it inactive, so it is never re-added.
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^db_id ->
+        {:ok, ServerView.from(deactivated)}
+      end)
+
+      {:ok, view, _html} = live(conn, @path)
 
       :ok =
         PubSub.publish_server_updated(
@@ -633,7 +657,11 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
-      :ok = PubSub.publish_server_deleted(db)
+      :ok =
+        PubSub.publish_server_deleted(
+          ServerDeleted.new(db),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -660,7 +688,11 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
-      :ok = PubSub.publish_server_deleted(server)
+      :ok =
+        PubSub.publish_server_deleted(
+          ServerDeleted.new(server),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -825,7 +857,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
         :ok
     end
 
-    stub(Servers.ContextMock, :list_my_servers, fn ^auth -> servers end)
+    stub(Servers.ContextMock, :list_my_servers, fn ^auth ->
+      Enum.map(servers, &ServerView.from/1)
+    end)
 
     stub(Servers.ContextMock, :fetch_authenticated_server_owner, fn ^auth ->
       Keyword.get_lazy(opts, :owner, fn -> build_owner() end)
@@ -907,7 +941,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
           [
             active: true,
             owner_id: auth.principal_id,
-            owner: build_owner(),
+            owner: build_owner(id: auth.principal_id),
             group: ServersFactory.build(:server_group),
             set_up_at: nil
           ],

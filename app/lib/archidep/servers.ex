@@ -16,6 +16,7 @@ defmodule ArchiDep.Servers do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.Types
 
   @implementation Application.compile_env!(:archidep, __MODULE__)
@@ -40,10 +41,10 @@ defmodule ArchiDep.Servers do
   of server IDs and a function that can be used to update the set based on
   incoming messages.
 
-  The subscriber will receive messages that are two-element tuples with the
-  first element being `:server_created`, `:server_updated`, or
-  `:server_deleted`, and the second element being the server that was created,
-  updated or deleted.
+  The subscriber will receive messages that are three-element tuples of the form
+  `{event_name, event, reference}`, where `event_name` is `:server_created`,
+  `:server_updated`, or `:server_deleted`, `event` is the corresponding curated
+  domain event, and `reference` is its `EventReference`.
   """
   @spec watch_server_ids(Authentication.t(), ServerGroup.t()) ::
           {:ok, MapSet.t(UUID.t()), (MapSet.t(UUID.t()), {atom(), term()} -> MapSet.t(UUID.t()))}
@@ -54,7 +55,7 @@ defmodule ArchiDep.Servers do
   Lists all servers in a server group.
   """
   @spec list_all_servers_in_group(Authentication.t(), UUID.t()) ::
-          {:ok, list(Server.t())} | {:error, :server_group_not_found}
+          {:ok, list(ServerView.t())} | {:error, :server_group_not_found}
   defdelegate list_all_servers_in_group(auth, server_group_id), to: @implementation
 
   # Server group members
@@ -101,21 +102,21 @@ defmodule ArchiDep.Servers do
   @doc """
   Lists all servers owned by the authenticated user.
   """
-  @spec list_my_servers(Authentication.t()) :: list(Server.t())
+  @spec list_my_servers(Authentication.t()) :: list(ServerView.t())
   defdelegate list_my_servers(auth), to: @implementation
 
   @doc """
   Fetches a server.
   """
   @spec fetch_server(Authentication.t(), UUID.t()) ::
-          {:ok, Server.t()} | {:error, :server_not_found}
+          {:ok, ServerView.t()} | {:error, :server_not_found}
   defdelegate fetch_server(auth, server_id), to: @implementation
 
   @doc """
   Fetches the currently active server of a server group member, if any.
   """
   @spec fetch_active_server_for_group_member(Authentication.t(), UUID.t()) ::
-          {:ok, Server.t()} | {:error, :server_not_found}
+          {:ok, ServerView.t()} | {:error, :server_not_found}
   defdelegate fetch_active_server_for_group_member(auth, group_member_id), to: @implementation
 
   @doc """

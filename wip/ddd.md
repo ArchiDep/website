@@ -243,19 +243,20 @@ fixes: give the web layer a curated projection (`ServerView`) that omits it, and
 finish E's broadcast-shape story — create/delete are the last raw-aggregate
 holdouts (`{:server_created, %Server{}}` / `{:server_deleted, %Server{}}`).
 
-- [ ] **#7 `ServerView` read model + broadcast-shape uniformity (Servers
+- [x] **#7 `ServerView` read model + broadcast-shape uniformity (Servers
       exemplar).** Hold a curated `ServerView` (no `secret_key`; the nested
-      `group` / `group_member` the UI reaches through flattened into display
-      fields) in the web layer instead of `%Server{}`, and **relocate — not
-      duplicate — `refresh!` onto it**: all five `Server.refresh!` callers are
-      web-layer with no server-side caller, so `Server.refresh!` is deleted.
-      Normalize the create/delete broadcasts to `{event, reference}` carrying
-      the curated `ServerCreated` / `ServerDeleted` event (both already built
-      and persisted by the create/delete use cases) — never a bare id, which
-      would be a third envelope shape defeating the single-shape invariant;
-      `:server_deleted` consumers read only the id from the event today, and
-      `:server_created` consumers fetch a `ServerView` on first sighting,
-      reusing the fetch-on-appearance path #5c-iii added). Do the read-model and
+      `group` / `owner` **reuse** the existing curated read-views rather than
+      flattening — see the detail section) in the web layer instead of
+      `%Server{}`, and **relocate — not duplicate — `refresh!` onto it**: all
+      five `Server.refresh!` callers are web-layer with no server-side caller,
+      so `Server.refresh!` is deleted. Normalize the create/delete broadcasts to
+      `{event, reference}` carrying the curated `ServerCreated` /
+      `ServerDeleted` event (both already built and persisted by the
+      create/delete use cases) — never a bare id, which would be a third
+      envelope shape defeating the single-shape invariant; `:server_deleted`
+      consumers read only the id from the event today, and `:server_created`
+      consumers fetch a `ServerView` on first sighting, reusing the
+      fetch-on-appearance path #5c-iii added). Do the read-model and
       broadcast-shape halves in one pass — they meet at the consumers, so
       splitting them touches each twice — see [#7 Curated read views +
       broadcast-shape
@@ -954,16 +955,45 @@ not hold a view. Rule: a schema's `refresh!` moves onto its view **only when the
 schema is purely web-consumed**; a schema also held server-side keeps `refresh!`
 on the aggregate.
 
-**Flattening pulls the nested-refresh orchestration into the view.** Consumers
-today hand-roll nested merges — `student_live` builds `%Server{server | group:
-ServerGroup.refresh!(server.group, …)}`, `user_channel` does the same for
-`group` and `group_member`. A `ServerView` that flattens those into display
-fields must have its `refresh!` respond to every event that changes them: not
-only the four server events but the `group_updated` / member events behind a
-displayed group or owner field. So `ServerView.refresh!` fans **in** events from
-several source aggregates — a larger merge surface than `Server.refresh!`, which
-handles only server events and delegates the rest. This is why #7 is a bigger
+**`ServerView` reuses the nested read-views; it does not flatten them.**
+Faithful flattening is impossible: `Server.active?/2` — which `student_live` and
+`user_channel` call to decide list membership — reads
+`group.{active,start_date,end_date}`, `owner.{root,active}` and
+`owner.group_member.{active,group_id}` and is time-dependent (`Clock.now()`), so
+those associations carry business-logic inputs, not just display strings (a
+precomputed `active?` boolean would go stale at date boundaries). And #7b keeps
+`ServerGroup` as an aggregate read-view (a server-side caller holds the real
+`%ServerGroup{}`), so the group cannot be replaced by a display map.
+`ServerView` therefore embeds the existing `ServerGroup` / `ServerOwner` (with
+its `ServerGroupMember`) read-views unchanged, and its `refresh!` fans **in**
+events from several source aggregates: a server event updates the server-level
+fields; a class event delegates to `ServerGroup.refresh!`; a student event
+delegates to `ServerGroupMember.refresh!`. A larger merge surface than
+`Server.refresh!`, which handled only server events — this is why #7 is a bigger
 increment than #5c-iii, not a mechanical rename.
+
+**Implementation status (complete).** `ArchiDep.Servers.ServerView` exists with
+`from/1`, `refresh!/3` (dispatching over server / class / student events),
+`active?/2` and the display helpers; the four web-only context reads
+(`fetch_server`, `list_my_servers`, `list_all_servers_in_group`,
+`fetch_active_server_for_group_member`) return `ServerView` (server-side
+projection drops `secret_key`); `admin`'s `list_all_servers_in_group` now
+full-preloads the graph so the view is uniformly complete; create/delete
+broadcasts carry `ServerCreated` / `ServerDeleted` as `{event, reference}`;
+every consumer, the shared server components, the edit/delete dialogs and
+`ServerForm` hold `ServerView`; the tracker client accepts a `trackable`
+(`Server.t() | ServerView.t()`); and `Server.refresh!` is deleted.
+`ServerFactsGathered` and `ServerOpenPortsChecked` are version-only bumps on the
+view (their fields are not rendered). The app compiles with
+`--warnings-as-errors`, passes `mix credo --strict` and `mix dialyzer`, and the
+full test suite is green. The relocated `refresh!` round-trip tests live in
+`test/archidep/servers/server_view_test.exs`; the web component / LiveView /
+channel test fixtures were migrated to `%ServerView{}` (via a
+`ServersFactory.build_server_view/1` helper that projects a built `:server`) and
+the use-case broadcast assertions to `{event, reference}`. The migration also
+surfaced three consumers of the create/delete broadcasts that needed the new
+tuple shape — `class_live`'s `handle_info`, the `ServersOrchestrator`, and the
+`watch_server_ids` reducer.
 
 **Two halves, done together.**
 

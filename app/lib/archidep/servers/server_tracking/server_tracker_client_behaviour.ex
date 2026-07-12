@@ -12,20 +12,26 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
+  alias ArchiDep.Servers.ServerView
   alias Ecto.UUID
 
-  @callback start_link(Server.t() | list(Server.t())) :: GenServer.on_start()
+  @typedoc "Anything the tracker can read a server ID from."
+  @type trackable :: Server.t() | ServerView.t()
 
-  @callback track(pid(), Server.t()) :: ServerTracker.server_state_update()
+  @callback start_link(trackable() | list(trackable())) :: GenServer.on_start()
 
-  @callback untrack(pid(), Server.t()) :: ServerTracker.server_state_update()
+  @callback track(pid(), trackable()) :: ServerTracker.server_state_update()
 
-  @callback server_state_map(list(Server.t())) :: %{optional(UUID.t()) => ServerRealTimeState.t()}
+  @callback untrack(pid(), trackable()) :: ServerTracker.server_state_update()
+
+  @callback server_state_map(list(trackable())) :: %{
+              optional(UUID.t()) => ServerRealTimeState.t()
+            }
 
   @callback update_server_state_map(
               %{optional(UUID.t()) => ServerRealTimeState.t() | nil},
               ServerTracker.server_state_update()
             ) :: %{optional(UUID.t()) => ServerRealTimeState.t() | nil}
 
-  @callback get_current_server_state(Server.t() | UUID.t()) :: ServerRealTimeState.t() | nil
+  @callback get_current_server_state(trackable() | UUID.t()) :: ServerRealTimeState.t() | nil
 end

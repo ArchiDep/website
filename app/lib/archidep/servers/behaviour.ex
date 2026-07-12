@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.Behaviour do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.Types
 
   # Server groups
@@ -30,10 +31,10 @@ defmodule ArchiDep.Servers.Behaviour do
   of server IDs and a function that can be used to update the set based on
   incoming messages.
 
-  The subscriber will receive messages that are two-element tuples with the
-  first element being `:server_created`, `:server_updated`, or
-  `:server_deleted`, and the second element being the server that was created,
-  updated or deleted.
+  The subscriber will receive messages that are three-element tuples of the form
+  `{event_name, event, reference}`, where `event_name` is `:server_created`,
+  `:server_updated`, or `:server_deleted`, `event` is the corresponding curated
+  domain event, and `reference` is its `EventReference`.
   """
   @callback watch_server_ids(Authentication.t(), ServerGroup.t()) ::
               {:ok, MapSet.t(UUID.t()),
@@ -81,25 +82,25 @@ defmodule ArchiDep.Servers.Behaviour do
   @doc """
   Lists all servers owned by the authenticated user.
   """
-  @callback list_my_servers(Authentication.t()) :: list(Server.t())
+  @callback list_my_servers(Authentication.t()) :: list(ServerView.t())
 
   @doc """
   Lists all servers in a server group.
   """
   @callback list_all_servers_in_group(Authentication.t(), UUID.t()) ::
-              {:ok, list(Server.t())} | {:error, :server_group_not_found}
+              {:ok, list(ServerView.t())} | {:error, :server_group_not_found}
 
   @doc """
   Fetches a server.
   """
   @callback fetch_server(Authentication.t(), UUID.t()) ::
-              {:ok, Server.t()} | {:error, :server_not_found}
+              {:ok, ServerView.t()} | {:error, :server_not_found}
 
   @doc """
   Fetches the currently active server of a server group member, if any.
   """
   @callback fetch_active_server_for_group_member(Authentication.t(), UUID.t()) ::
-              {:ok, Server.t()} | {:error, :server_not_found}
+              {:ok, ServerView.t()} | {:error, :server_not_found}
 
   @doc """
   Validates the data to update an existing server.

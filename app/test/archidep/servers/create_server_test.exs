@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
   alias ArchiDep.Clock
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.Context
+  alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
@@ -570,14 +571,18 @@ defmodule ArchiDep.Servers.CreateServerTest do
            }
   end
 
-  # Asserts the server-created broadcast reached each of the three topics exactly
-  # once and carried the full server. Each topic's collector yields its own list,
-  # so a double broadcast on one topic or a missing broadcast on another fails
-  # the corresponding whole-list equality.
+  # Asserts the server-created broadcast reached each of the three topics
+  # exactly once and carried the curated `ServerCreated` event with its
+  # reference. Each topic's collector yields its own list, so a double broadcast
+  # on one topic or a missing broadcast on another fails the corresponding
+  # whole-list equality.
   defp assert_server_created_broadcast(subscriptions, %Server{} = server) do
-    assert received_broadcasts(subscriptions.new) == [{:server_created, server}]
-    assert received_broadcasts(subscriptions.group) == [{:server_created, server}]
-    assert received_broadcasts(subscriptions.owner) == [{:server_created, server}]
+    [stored_event] = fetch_new_stored_events()
+    message = {:server_created, ServerCreated.new(server), StoredEvent.to_reference(stored_event)}
+
+    assert received_broadcasts(subscriptions.new) == [message]
+    assert received_broadcasts(subscriptions.group) == [message]
+    assert received_broadcasts(subscriptions.owner) == [message]
   end
 
   # Asserts a rejected or validation-only call wrote nothing and announced

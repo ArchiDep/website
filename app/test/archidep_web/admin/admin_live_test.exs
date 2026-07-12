@@ -6,9 +6,12 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
@@ -116,13 +119,21 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       {:ok, view, _html} = live(conn, @path)
 
       web02 = build_server(alpha, created_at: ~U[2026-06-20 11:00:00Z])
+      web02_id = web02.id
+      web02_view = ServerView.from(web02)
       web02_state = connected_state(web02)
 
-      expect(ServerTrackerClientMock, :track, 1, fn _tracker, ^web02 ->
-        {:server_state, web02.id, web02_state}
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^web02_id -> {:ok, web02_view} end)
+
+      expect(ServerTrackerClientMock, :track, 1, fn _tracker, ^web02_view ->
+        {:server_state, web02_id, web02_state}
       end)
 
-      :ok = Servers.PubSub.publish_server_created(web02)
+      :ok =
+        Servers.PubSub.publish_server_created(
+          ServerCreated.new(web02),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -156,12 +167,13 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       web02 = build_server(alpha, created_at: ~U[2026-06-20 11:00:00Z])
       web02_id = web02.id
+      web02_view = ServerView.from(web02)
       web02_state = connected_state(web02)
 
-      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^web02_id -> {:ok, web02} end)
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^web02_id -> {:ok, web02_view} end)
 
-      expect(ServerTrackerClientMock, :track, 1, fn _tracker, ^web02 ->
-        {:server_state, web02.id, web02_state}
+      expect(ServerTrackerClientMock, :track, 1, fn _tracker, ^web02_view ->
+        {:server_state, web02_id, web02_state}
       end)
 
       :ok =
@@ -241,11 +253,17 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
-      expect(ServerTrackerClientMock, :untrack, 1, fn _tracker, ^web02 ->
+      web02_view = ServerView.from(web02)
+
+      expect(ServerTrackerClientMock, :untrack, 1, fn _tracker, ^web02_view ->
         {:server_state, web02.id, nil}
       end)
 
-      :ok = Servers.PubSub.publish_server_deleted(web02)
+      :ok =
+        Servers.PubSub.publish_server_deleted(
+          ServerDeleted.new(web02),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -601,7 +619,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
     stub(Course.ContextMock, :list_active_classes, fn ^auth -> classes end)
 
     stub(Servers.ContextMock, :list_all_servers_in_group, fn ^auth, group_id ->
-      {:ok, Map.get(servers_by_class_id, group_id, [])}
+      {:ok, servers_by_class_id |> Map.get(group_id, []) |> Enum.map(&ServerView.from/1)}
     end)
 
     :ok
@@ -613,7 +631,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   # reach the client in `Map.values/1` order (non-deterministic), so the
   # argument is pinned as a set by sorting on the id.
   defp expect_connected_mount(all_servers, state_map, ansible_entries) do
-    sorted = Enum.sort_by(all_servers, & &1.id)
+    sorted = all_servers |> Enum.map(&ServerView.from/1) |> Enum.sort_by(& &1.id)
 
     ansible_queue_topic = Scope.global_topic("ansible-queue")
     expect(TrackerClientMock, :list, 1, fn ^ansible_queue_topic -> ansible_entries end)

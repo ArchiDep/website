@@ -12,10 +12,12 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
-  alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.ServerView
   alias ArchiDepWeb.ClientCloudServerData
   alias ArchiDepWeb.ClientSessionData
   alias Phoenix.Channel
@@ -39,7 +41,10 @@ defmodule ArchiDepWeb.Channels.UserChannel do
     :ok = Servers.PubSub.subscribe_server_owner_servers(auth.principal_id)
 
     now = Clock.now()
-    active_servers = auth |> Servers.list_my_servers() |> Enum.filter(&Server.active?(&1, now))
+
+    active_servers =
+      auth |> Servers.list_my_servers() |> Enum.filter(&ServerView.active?(&1, now))
+
     current_client_session_data = ClientSessionData.new(auth, student)
 
     send(self(), :after_join)
@@ -129,22 +134,28 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
   @impl Channel
   def handle_info(
-        {:server_created, %Server{owner_id: principal_id} = created_server},
+        {:server_created, %ServerCreated{owner: %{id: principal_id}} = event, _reference},
         %Socket{
           assigns: %{
-            auth: %Authentication{principal_id: principal_id},
+            auth: %Authentication{principal_id: principal_id} = auth,
             active_servers: active_servers
           }
         } = socket
-      ),
-      do:
-        socket
-        |> assign(
-          active_servers:
-            add_created_server_if_active(active_servers, created_server, Clock.now())
-        )
-        |> send_updated_data()
-        |> noreply()
+      ) do
+    updated_active_servers =
+      case Servers.fetch_server(auth, event.id) do
+        {:ok, created_server} ->
+          add_created_server_if_active(active_servers, created_server, Clock.now())
+
+        {:error, _reason} ->
+          active_servers
+      end
+
+    socket
+    |> assign(active_servers: updated_active_servers)
+    |> send_updated_data()
+    |> noreply()
+  end
 
   @impl Channel
   def handle_info(
@@ -160,10 +171,10 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
     updated_active_servers =
       case Enum.find(active_servers, &(&1.id == server_id)) do
-        %Server{} = cached ->
+        %ServerView{} = cached ->
           add_or_remove_updated_server(
             active_servers,
-            Server.refresh!(cached, event, reference),
+            ServerView.refresh!(cached, event, reference),
             Clock.now()
           )
 
@@ -185,7 +196,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
 
   @impl Channel
   def handle_info(
-        {:server_deleted, %Server{owner_id: principal_id} = deleted_server},
+        {:server_deleted, %ServerDeleted{owner: %{id: principal_id}} = event, _reference},
         %Socket{
           assigns: %{
             auth: %Authentication{principal_id: principal_id},
@@ -195,7 +206,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
       ),
       do:
         socket
-        |> assign(active_servers: delete_server(active_servers, deleted_server))
+        |> assign(active_servers: delete_server(active_servers, event))
         |> send_updated_data()
         |> noreply()
 
@@ -203,8 +214,8 @@ defmodule ArchiDepWeb.Channels.UserChannel do
     class_id = class_updated_id(event)
 
     Enum.map(active_servers, fn
-      %Server{group: %ServerGroup{id: ^class_id} = group} = server ->
-        %Server{server | group: ServerGroup.refresh!(group, event, reference)}
+      %ServerView{group: %ServerGroup{id: ^class_id} = group} = server ->
+        %ServerView{server | group: ServerGroup.refresh!(group, event, reference)}
 
       server ->
         server
@@ -221,10 +232,10 @@ defmodule ArchiDepWeb.Channels.UserChannel do
        ),
        do:
          Enum.map(active_servers, fn
-           %Server{
+           %ServerView{
              owner: %ServerOwner{group_member: %ServerGroupMember{id: ^student_id} = group_member}
            } = server ->
-             %Server{
+             %ServerView{
                server
                | owner: %ServerOwner{
                    server.owner
@@ -239,7 +250,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   defp remove_active_servers_of_student(active_servers, %Student{id: student_id}),
     do:
       Enum.reject(active_servers, fn
-        %Server{
+        %ServerView{
           owner: %ServerOwner{group_member: %ServerGroupMember{id: ^student_id}}
         } ->
           true
@@ -305,7 +316,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
          add_created_server(
            active_servers,
            created_server,
-           Server.active?(created_server, now)
+           ServerView.active?(created_server, now)
          )
 
   defp add_created_server(active_servers, created_server, true),
@@ -319,29 +330,32 @@ defmodule ArchiDepWeb.Channels.UserChannel do
          add_or_remove_updated_server(
            active_servers,
            updated_server,
-           Server.active?(updated_server, now)
+           ServerView.active?(updated_server, now)
          )
 
-  defp add_or_remove_updated_server(active_servers, %Server{id: server_id}, false),
+  defp add_or_remove_updated_server(active_servers, %ServerView{id: server_id}, false),
     do: Enum.reject(active_servers, &(&1.id == server_id))
 
   defp add_or_remove_updated_server(active_servers, updated_server, true),
     do: add_active_server(active_servers, updated_server)
 
-  defp delete_server(active_servers, %Server{id: server_id}),
+  defp delete_server(active_servers, %ServerDeleted{id: server_id}),
     do: Enum.reject(active_servers, &(&1.id == server_id))
 
-  defp add_active_server(active_servers, %Server{id: server_id, active: true} = active_server),
-    do:
-      active_servers
-      |> Enum.reduce({[], false}, fn
-        %Server{id: ^server_id}, {acc, _found} -> {[active_server | acc], true}
-        server, {acc, found} -> {[server | acc], found}
-      end)
-      |> then(fn
-        {updated_servers, true} -> updated_servers
-        {_updated_servers, false} -> [active_server | active_servers]
-      end)
+  defp add_active_server(
+         active_servers,
+         %ServerView{id: server_id, active: true} = active_server
+       ),
+       do:
+         active_servers
+         |> Enum.reduce({[], false}, fn
+           %ServerView{id: ^server_id}, {acc, _found} -> {[active_server | acc], true}
+           server, {acc, found} -> {[server | acc], found}
+         end)
+         |> then(fn
+           {updated_servers, true} -> updated_servers
+           {_updated_servers, false} -> [active_server | active_servers]
+         end)
 
   defp add_active_server(active_servers, _inactive_server), do: active_servers
 end

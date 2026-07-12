@@ -4,11 +4,14 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
   import Hammox
   alias ArchiDep.Course
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias Ecto.Changeset
@@ -17,8 +20,8 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
     setup :register_and_log_in_student
 
     test "renders a card for each of my servers", %{conn: conn, auth: auth} do
-      web = ServersFactory.build(:server, name: "web-01", active: true)
-      db = ServersFactory.build(:server, name: "db-01", active: true)
+      web = ServersFactory.build(:server_view, name: "web-01", active: true)
+      db = ServersFactory.build(:server_view, name: "db-01", active: true)
       stub_page(auth, [web, db])
 
       {:ok, _view, html} = live(conn, "/app/my-servers")
@@ -39,7 +42,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
     end
 
     test "retrying a connection delegates to the context", %{conn: conn, auth: auth} do
-      server = ServersFactory.build(:server, name: "web-01", active: true)
+      server = ServersFactory.build(:server_view, name: "web-01", active: true)
       stub_page(auth, [server])
       server_id = server.id
 
@@ -57,7 +60,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
     setup :register_and_log_in_student
 
     test "reflects a server's real-time state update", %{conn: conn, auth: auth} do
-      server = ServersFactory.build(:server, name: "web-01", active: true)
+      server = ServersFactory.build(:server_view, name: "web-01", active: true)
       stub_page(auth, [server])
       server_id = server.id
 
@@ -85,12 +88,18 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
     end
 
     test "adds a newly created server I own", %{conn: conn, auth: auth} do
-      existing = ServersFactory.build(:server, name: "web-01", active: true)
+      existing = ServersFactory.build(:server_view, name: "web-01", active: true)
       stub_page(auth, [existing])
 
-      created =
-        ServersFactory.build(:server, name: "web-02", active: true, owner_id: auth.principal_id)
+      created_server =
+        ServersFactory.build(:server,
+          name: "web-02",
+          active: true,
+          owner: build_owner(id: auth.principal_id),
+          group: ServersFactory.build(:server_group)
+        )
 
+      created = ServerView.from(created_server)
       created_id = created.id
 
       created_state =
@@ -98,6 +107,9 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
 
       update = {:server_state, created_id, created_state}
 
+      # The created broadcast carries only the event, so the page fetches the
+      # curated view on first sighting before tracking it.
+      expect(Servers.ContextMock, :fetch_server, fn ^auth, ^created_id -> {:ok, created} end)
       expect(ServerTrackerClientMock, :track, fn _tracker, ^created -> update end)
 
       expect(ServerTrackerClientMock, :update_server_state_map, fn %{}, ^update ->
@@ -106,7 +118,11 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
 
       {:ok, view, _html} = live(conn, "/app/my-servers")
 
-      :ok = PubSub.publish_server_created(created)
+      :ok =
+        PubSub.publish_server_created(
+          ServerCreated.new(created_server),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -121,15 +137,24 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
     end
 
     test "ignores a created server I do not own", %{conn: conn, auth: auth} do
-      existing = ServersFactory.build(:server, name: "web-01", active: true)
+      existing = ServersFactory.build(:server_view, name: "web-01", active: true)
       stub_page(auth, [existing])
 
       unrelated =
-        ServersFactory.build(:server, name: "other-01", active: true, owner_id: UUID.generate())
+        ServersFactory.build(:server,
+          name: "other-01",
+          active: true,
+          owner: build_owner(id: UUID.generate()),
+          group: ServersFactory.build(:server_group)
+        )
 
       {:ok, view, _html} = live(conn, "/app/my-servers")
 
-      :ok = PubSub.publish_server_created(unrelated)
+      :ok =
+        PubSub.publish_server_created(
+          ServerCreated.new(unrelated),
+          EventsFactory.build(:event_reference)
+        )
 
       assert server_cards(render(view)) == %{
                "/servers/#{existing.id}" => %{name: "web-01", badge: "Not connected"}
@@ -137,7 +162,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
     end
 
     test "reflects a server name update", %{conn: conn, auth: auth} do
-      server =
+      server_struct =
         ServersFactory.build(:server,
           name: "web-01",
           active: true,
@@ -145,12 +170,13 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
           group: ServersFactory.build(:server_group)
         )
 
+      server = ServerView.from(server_struct)
       stub_page(auth, [server])
       server_id = server.id
 
       {:ok, view, _html} = live(conn, "/app/my-servers")
 
-      renamed = %{server | name: "web-renamed", version: server.version + 1}
+      renamed = %{server_struct | name: "web-renamed", version: server_struct.version + 1}
 
       :ok =
         PubSub.publish_server_updated(
@@ -172,8 +198,17 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
     end
 
     test "removes a deleted server", %{conn: conn, auth: auth} do
-      web = ServersFactory.build(:server, name: "web-01", active: true)
-      db = ServersFactory.build(:server, name: "db-01", active: true)
+      web = ServersFactory.build(:server_view, name: "web-01", active: true)
+
+      db_struct =
+        ServersFactory.build(:server,
+          name: "db-01",
+          active: true,
+          owner: build_owner(),
+          group: ServersFactory.build(:server_group)
+        )
+
+      db = ServerView.from(db_struct)
       stub_page(auth, [web, db])
       db_id = db.id
 
@@ -188,7 +223,11 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
 
       {:ok, view, _html} = live(conn, "/app/my-servers")
 
-      :ok = PubSub.publish_server_deleted(db)
+      :ok =
+        PubSub.publish_server_deleted(
+          ServerDeleted.new(db_struct),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -313,7 +352,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
       auth: auth
     } do
       group = ServersFactory.build(:server_group, name: "Crypto 101")
-      server = ServersFactory.build(:server, name: "web-01", active: true)
+      server = ServersFactory.build(:server_view, name: "web-01", active: true)
       stub_page(auth, [server], build_owner(root: true), groups: [group])
 
       {:ok, _view, html} = live(conn, "/app/my-servers")
@@ -364,7 +403,10 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
     group_member =
       if root, do: nil, else: ServersFactory.build(:server_group_member)
 
-    ServersFactory.build(:server_owner, root: root, group_member: group_member)
+    ServersFactory.build(
+      :server_owner,
+      Keyword.merge([root: root, group_member: group_member], opts)
+    )
   end
 
   defp real_time_state(server, opts),

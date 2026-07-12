@@ -6,24 +6,25 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerView
   alias ArchiDepWeb.Servers.ServerForm
 
   @base_id "edit-server-dialog"
   @base_change_detection_fields ~w(name ip_address username ssh_port ssh_host_key_fingerprints active)a
   @root_change_detection_fields ~w(app_username expected_properties)a
 
-  @spec id(Server.t()) :: String.t()
-  def id(%Server{id: id}), do: "#{@base_id}-#{id}"
+  @spec id(ServerView.t()) :: String.t()
+  def id(%ServerView{id: id}), do: "#{@base_id}-#{id}"
 
-  @spec open(Server.t()) :: js
+  @spec open(ServerView.t()) :: js
   def open(server), do: server |> id() |> open_dialog()
 
-  @spec close(Server.t()) :: js
+  @spec close(ServerView.t()) :: js
   def close(server), do: server |> id() |> close_dialog()
 
-  @spec changed_server(Server.t() | false, Server.t()) :: Server.t() | nil
+  @spec changed_server(ServerView.t() | false, ServerView.t()) :: ServerView.t() | nil
   def changed_server(false, _new_server), do: nil
-  def changed_server(%Server{version: version}, %Server{version: version}), do: nil
+  def changed_server(%ServerView{version: version}, %ServerView{version: version}), do: nil
   def changed_server(_server, new_server), do: new_server
 
   @impl LiveComponent
@@ -57,7 +58,9 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
       )
 
   defp update_form(
-         %Socket{assigns: %{open: %Server{version: version}, server: %Server{version: version}}} =
+         %Socket{
+           assigns: %{open: %ServerView{version: version}, server: %ServerView{version: version}}
+         } =
            socket
        ),
        do: socket
@@ -73,7 +76,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
         @base_change_detection_fields
       end
 
-    if Server.changed?(previous_server, new_server, change_detection_fields) do
+    if ServerView.changed?(previous_server, new_server, change_detection_fields) do
       socket
     else
       assign(socket, open: new_server)

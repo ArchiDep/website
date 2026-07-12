@@ -12,11 +12,12 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias Phoenix.LiveView.JS
 
-  attr(:server, Server, doc: "the server whose name to display")
+  attr(:server, ServerView, doc: "the server whose name to display")
 
   @spec server_name(map()) :: Rendered.t()
   def server_name(assigns) do
@@ -25,14 +26,14 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       {@server.name}
     <% else %>
       <span class="font-mono">
-        {Server.ssh_connection_description(@server)}
+        {ServerView.ssh_connection_description(@server)}
       </span>
     <% end %>
     """
   end
 
   attr(:auth, Authentication, doc: "the authentication context")
-  attr(:server, Server, doc: "the server to display")
+  attr(:server, ServerView, doc: "the server to display")
   attr(:state, ServerRealTimeState, doc: "the current state of the server", default: nil)
   attr(:class, :string, doc: "extra CSS classes to apply to the card", default: nil)
   attr(:details_link, :string, doc: "the link to the server's details page", default: nil)
@@ -156,7 +157,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   end
 
   attr(:auth, Authentication, doc: "the authentication context")
-  attr(:server, Server, doc: "the server to display")
+  attr(:server, ServerView, doc: "the server to display")
   attr(:state, ServerRealTimeState, doc: "the current state of the server", default: nil)
   attr(:class, :string, doc: "extra CSS classes to apply to the card", default: nil)
   attr(:details_link, :string, doc: "the link to the server's details page", default: nil)
@@ -202,7 +203,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
             <Heroicons.server solid class="size-4" />
             <span class="tooltip">
               <div class="tooltip-content font-mono">
-                {Server.ssh_connection_description(@server)}
+                {ServerView.ssh_connection_description(@server)}
               </div>
               {server_owner_name(@server)}
             </span>
@@ -267,7 +268,9 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   defp server_card_class(disconnected_state(), []), do: "bg-info text-info-content"
   defp server_card_class(disconnected_state(), _problems), do: "bg-warning text-warning-content"
 
-  defp server_card_badge(%Server{active: false}, _state), do: {"badge-info", gettext("Inactive")}
+  defp server_card_badge(%ServerView{active: false}, _state),
+    do: {"badge-info", gettext("Inactive")}
+
   defp server_card_badge(_server, nil), do: {"badge-info", gettext("Not connected")}
 
   defp server_card_badge(_server, not_connected_state()),
@@ -367,8 +370,8 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   defp server_card_body(disconnected_state(), _current_job, _auth, _server),
     do: gettext("The connection to the server was lost.")
 
-  defp server_card_short_status(_connection_state, _current_job, _auth, %Server{active: false}),
-    do: gettext("inactive")
+  defp server_card_short_status(_connection_state, _current_job, _auth, %ServerView{active: false}),
+       do: gettext("inactive")
 
   defp server_card_short_status(nil, _current_job, _auth, _server),
     do: gettext("n/a")
@@ -1047,16 +1050,19 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
-  @spec server_owner_name(Server.t()) :: String.t()
+  # Accepts either a curated `ServerView` (server lists) or a raw `Server`
+  # aggregate (e.g. the server an Ansible playbook run references), reading only
+  # the owner/username fields both share.
+  @spec server_owner_name(ServerView.t() | Server.t()) :: String.t()
   def server_owner_name(server) do
     case server do
-      %Server{owner: %ServerOwner{group_member: %ServerGroupMember{username: username}}} ->
+      %{owner: %ServerOwner{group_member: %ServerGroupMember{username: username}}} ->
         username
 
-      %Server{owner: %ServerOwner{username: username}} when is_binary(username) ->
+      %{owner: %ServerOwner{username: username}} when is_binary(username) ->
         username
 
-      %Server{username: username} ->
+      %{username: username} ->
         username
     end
   end

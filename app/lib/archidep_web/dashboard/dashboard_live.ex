@@ -12,10 +12,12 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.PubSub
-  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias ArchiDepWeb.Course.ChangeUsernameDialogLive
@@ -193,34 +195,41 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:server_created, %Server{owner_id: owner_id, active: true} = created_server},
+        {:server_created, %ServerCreated{owner: %{id: owner_id}, active: true} = event,
+         _reference},
         %{
           assigns: %{
-            auth: %Authentication{principal_id: owner_id},
+            auth: %Authentication{principal_id: owner_id} = auth,
             servers: servers,
             server_state_map: server_state_map,
             server_tracker: tracker
           }
         } = socket
       ) do
-    socket
-    |> assign(
-      servers: sort_servers([created_server | servers]),
-      server_state_map:
-        ServerTrackerClient.update_server_state_map(
-          server_state_map,
-          ServerTrackerClient.track(tracker, created_server)
+    case Servers.fetch_server(auth, event.id) do
+      {:ok, created_server} ->
+        socket
+        |> assign(
+          servers: sort_servers([created_server | servers]),
+          server_state_map:
+            ServerTrackerClient.update_server_state_map(
+              server_state_map,
+              ServerTrackerClient.track(tracker, created_server)
+            )
         )
-    )
-    |> noreply()
+        |> noreply()
+
+      {:error, _reason} ->
+        noreply(socket)
+    end
   end
 
   def handle_info(
-        {:server_created, inactive_server},
+        {:server_created, %ServerCreated{} = event, _reference},
         %Socket{assigns: %{inactive_servers: inactive_servers}} = socket
       ) do
     socket
-    |> assign(inactive_servers: MapSet.put(inactive_servers, inactive_server.id))
+    |> assign(inactive_servers: MapSet.put(inactive_servers, event.id))
     |> noreply()
   end
 
@@ -241,7 +250,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
     updated_server =
       case Enum.find(servers, &(&1.id == server_id)) do
-        %Server{} = cached -> Server.refresh!(cached, event, reference)
+        %ServerView{} = cached -> ServerView.refresh!(cached, event, reference)
         nil -> resolve_fetched_server(socket.assigns.auth, server_id)
       end
 
@@ -271,7 +280,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:server_deleted, %Server{id: server_id} = server},
+        {:server_deleted, %ServerDeleted{id: server_id}, _reference},
         %{
           assigns: %{
             servers: servers,
@@ -284,14 +293,23 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     socket
     |> assign(
       servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
-      server_state_map:
-        ServerTrackerClient.update_server_state_map(
-          server_state_map,
-          ServerTrackerClient.untrack(tracker, server)
-        ),
+      server_state_map: untrack_server(tracker, server_state_map, servers, server_id),
       inactive_servers: MapSet.delete(inactive_servers, server_id)
     )
     |> noreply()
+  end
+
+  defp untrack_server(tracker, server_state_map, servers, server_id) do
+    case Enum.find(servers, &(&1.id == server_id)) do
+      nil ->
+        server_state_map
+
+      server ->
+        ServerTrackerClient.update_server_state_map(
+          server_state_map,
+          ServerTrackerClient.untrack(tracker, server)
+        )
+    end
   end
 
   defp resolve_fetched_server(auth, server_id) do
@@ -317,7 +335,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       if Enum.any?(servers, &(&1.id == server_id)) do
         [
           Enum.map(servers, fn
-            %Server{id: ^server_id} -> updated_server
+            %ServerView{id: ^server_id} -> updated_server
             other_server -> other_server
           end),
           server_state_map

@@ -47,8 +47,8 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
            |> Multi.merge(&increase_active_server_count(&1.server_limit, &1.server))
            |> Multi.insert(:stored_event, &server_created(auth, &1.server))
            |> Repo.transaction() do
-        {:ok, %{server: server}} ->
-          :ok = PubSub.publish_server_created(server)
+        {:ok, %{server: server, stored_event: event}} ->
+          :ok = PubSub.publish_server_created(event.data, StoredEvent.to_reference(event))
           {:ok, server}
 
         {:error, :server, changeset, _changes} ->

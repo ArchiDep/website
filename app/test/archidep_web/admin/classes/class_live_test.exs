@@ -11,6 +11,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -1137,8 +1138,21 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
       assert class_page(html, class) == empty_class_page(class)
 
-      server = ServersFactory.build(:server, group_id: server_group.id)
-      :ok = Servers.PubSub.publish_server_created(server)
+      server =
+        ServersFactory.build(:server,
+          group: server_group,
+          group_id: server_group.id,
+          owner:
+            ServersFactory.build(:server_owner,
+              group_member: ServersFactory.build(:server_group_member)
+            )
+        )
+
+      :ok =
+        Servers.PubSub.publish_server_created(
+          ServerCreated.new(server),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -1488,9 +1502,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   # Mirrors the contract of the real `watch_server_ids` reducer (it adds created
   # server IDs and drops deleted ones), so the page's server PubSub handler can
   # be driven through a real broadcast.
-  defp server_ids_reducer(ids, {:server_created, server}), do: MapSet.put(ids, server.id)
-  defp server_ids_reducer(ids, {:server_deleted, server}), do: MapSet.delete(ids, server.id)
-  defp server_ids_reducer(ids, {:server_updated, _server}), do: ids
+  defp server_ids_reducer(ids, {:server_created, event, _ref}), do: MapSet.put(ids, event.id)
+  defp server_ids_reducer(ids, {:server_deleted, event, _ref}), do: MapSet.delete(ids, event.id)
+  defp server_ids_reducer(ids, {:server_updated, _event, _ref}), do: ids
 
   # The import dialog parses the uploaded CSV from disk on mount, so writing the
   # file at the path it reads drives the parsing/classification/import flow

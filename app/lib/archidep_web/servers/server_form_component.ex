@@ -6,8 +6,8 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
   use ArchiDepWeb, :component
 
   import ArchiDepWeb.Components.FormComponents
-  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
+  alias ArchiDep.Servers.ServerView
   alias ArchiDepWeb.Helpers.FormHelpers
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
@@ -16,12 +16,12 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
   attr(:auth, Authentication, doc: "the authentication context")
   attr(:form, Form, doc: "the form to render")
 
-  attr(:server, Server,
+  attr(:server, ServerView,
     default: nil,
     doc: "the previous state of the server being edited, if any"
   )
 
-  attr(:changed_server, Server,
+  attr(:changed_server, ServerView,
     default: nil,
     doc: "the new state of the server being edited, if any"
   )

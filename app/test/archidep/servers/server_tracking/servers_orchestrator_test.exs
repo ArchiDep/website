@@ -3,10 +3,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestratorTest do
 
   import Hammox
   alias ArchiDep.Servers.Ansible.Pipeline
+  alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.ServerTracking.ServersOrchestrator
   alias ArchiDep.Servers.ServerTracking.ServersOrchestratorStoreMock
   alias ArchiDep.Servers.ServerTracking.ServerSupervisorStarterMock
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.NoOpGenServer
   alias ArchiDep.Support.ServersFactory
 
@@ -70,7 +72,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestratorTest do
     collaborators: collaborators
   } do
     test_pid = self()
-    server = ServersFactory.build(:server)
+    server = build_created_server()
     server_id = server.id
 
     expect(ServersOrchestratorStoreMock, :list_servers_to_track, fn -> [] end)
@@ -87,7 +89,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestratorTest do
       {:ok, self()}
     end)
 
-    :ok = PubSub.publish_server_created(server)
+    :ok =
+      PubSub.publish_server_created(
+        ServerCreated.new(server),
+        EventsFactory.build(:event_reference)
+      )
 
     assert_receive {:started, ^server_id}
   end
@@ -97,7 +103,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestratorTest do
     collaborators: collaborators
   } do
     test_pid = self()
-    server = ServersFactory.build(:server)
+    server = build_created_server()
     server_id = server.id
 
     expect(ServersOrchestratorStoreMock, :list_servers_to_track, fn -> [] end)
@@ -110,7 +116,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestratorTest do
       :not_tracked
     end)
 
-    :ok = PubSub.publish_server_created(server)
+    :ok =
+      PubSub.publish_server_created(
+        ServerCreated.new(server),
+        EventsFactory.build(:event_reference)
+      )
 
     # The fetch runs first in `handle_info`; once it has, a `:not_tracked` result
     # means no supervisor is ever started.
@@ -153,4 +163,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestratorTest do
           {ServersOrchestrator, :start_link,
            [@pipeline, [name: name, collaborators: collaborators] ++ opts]}
       })
+
+  defp build_created_server do
+    ServersFactory.build(:server,
+      owner:
+        ServersFactory.build(:server_owner,
+          group_member: ServersFactory.build(:server_group_member)
+        ),
+      group: ServersFactory.build(:server_group)
+    )
+  end
 end

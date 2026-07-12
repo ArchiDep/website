@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.ServerView
 
   @spec list_server_groups(Authentication.t()) ::
           list(ServerGroup.t())
@@ -84,21 +85,31 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
   def fetch_authenticated_server_owner(auth), do: ServerOwner.fetch_authenticated(auth)
 
   @spec list_all_servers_in_group(Authentication.t(), UUID.t()) ::
-          {:ok, list(Server.t())} | {:error, :server_group_not_found}
+          {:ok, list(ServerView.t())} | {:error, :server_group_not_found}
   def list_all_servers_in_group(auth, server_group_id) do
     with {:ok, group} <- ServerGroup.fetch_server_group(server_group_id),
          :ok <- authorize(auth, Policy, :servers, :list_all_servers_in_group, group) do
-      {
-        :ok,
+      servers =
         Repo.all(
           from s in Server,
-            join: g in assoc(s, :group),
             join: o in assoc(s, :owner),
+            left_join: ogm in assoc(o, :group_member),
+            left_join: ogmg in assoc(ogm, :group),
+            join: g in assoc(s, :group),
+            join: gesp in assoc(g, :expected_server_properties),
+            join: ep in assoc(s, :expected_properties),
+            left_join: lkp in assoc(s, :last_known_properties),
             where: s.group_id == ^server_group_id,
             order_by: [s.name, s.username, s.ip_address],
-            preload: [group: g, owner: o]
+            preload: [
+              group: {g, expected_server_properties: gesp},
+              expected_properties: ep,
+              last_known_properties: lkp,
+              owner: {o, group_member: {ogm, group: ogmg}}
+            ]
         )
-      }
+
+      {:ok, Enum.map(servers, &ServerView.from/1)}
     else
       {:error, :server_group_not_found} ->
         {:error, :server_group_not_found}
@@ -121,14 +132,14 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
         server_ids = group.id |> Server.list_server_ids_in_group() |> MapSet.new()
 
         reducer = fn
-          ids, {:server_created, %Server{id: id}} ->
-            MapSet.put(ids, id)
+          ids, {:server_created, event, _reference} ->
+            MapSet.put(ids, event.id)
 
           ids, {:server_updated, event, _reference} ->
             MapSet.put(ids, event.id)
 
-          ids, {:server_deleted, %Server{id: id}} ->
-            MapSet.delete(ids, id)
+          ids, {:server_deleted, event, _reference} ->
+            MapSet.delete(ids, event.id)
         end
 
         {:ok, server_ids, reducer}

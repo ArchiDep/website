@@ -28,7 +28,7 @@ defmodule ArchiDepWeb.Helpers.LiveViewHelpersTest do
 
     test "labels the process with a server context" do
       auth = Factory.build(:authentication, principal_id: @auth_principal_id)
-      server = ServersFactory.build(:server, id: "33333000-0000-0000-0000-000000000000")
+      server = ServersFactory.build(:server_view, id: "33333000-0000-0000-0000-000000000000")
 
       assert LiveViewHelpers.set_process_label(__MODULE__, auth, server) == :ok
       assert :proc_lib.get_label(self()) == "#{__MODULE__}|u:11111@sr:33333"

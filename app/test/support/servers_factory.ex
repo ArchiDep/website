@@ -19,6 +19,7 @@ defmodule ArchiDep.Support.ServersFactory do
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.Types
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.NetFactory
@@ -603,7 +604,7 @@ defmodule ArchiDep.Support.ServersFactory do
         attrs!,
         :name,
         optionally(fn ->
-          sequence(:class_name, &"Server #{&1}")
+          sequence(:server_name, &"Server #{&1}")
         end)
       )
 
@@ -699,6 +700,86 @@ defmodule ArchiDep.Support.ServersFactory do
     }
   end
 
+  # The web read model of a server: the same fields as `:server` minus
+  # `secret_key` and the ones no page renders. Its `group` and `owner`
+  # associations default to loaded read-views (a view always carries them), with
+  # the owner randomly root-like or group-member-like as in the `:server_owner`
+  # factory; the `_id` foreign keys follow the associations.
+  @spec server_view_factory(map()) :: ServerView.t()
+  def server_view_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+
+    {name, attrs!} =
+      Map.pop_lazy(attrs!, :name, optionally(fn -> sequence(:server_name, &"Server #{&1}") end))
+
+    {ip_address, attrs!} = Map.pop_lazy(attrs!, :ip_address, &NetFactory.postgrex_inet/0)
+
+    {username, attrs!} =
+      Map.pop_lazy(attrs!, :username, fn -> sequence(:server_username, &"user#{&1}") end)
+
+    {app_username, attrs!} =
+      Map.pop_lazy(attrs!, :app_username, fn ->
+        sequence(:server_app_username, &"appuser#{&1}")
+      end)
+
+    {ssh_port, attrs!} =
+      case Map.pop_lazy(attrs!, :ssh_port, optionally(&NetFactory.port/0)) do
+        {nil, attrs} -> {nil, attrs}
+        {true, attrs} -> {NetFactory.port(), attrs}
+        {port, attrs} when is_integer(port) and port > 0 and port < 65_536 -> {port, attrs}
+      end
+
+    {ssh_host_key_fingerprints, attrs!} =
+      Map.pop_lazy(attrs!, :ssh_host_key_fingerprints, fn ->
+        1
+        |> Range.new(Faker.random_between(1, 3))
+        |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)
+      end)
+
+    {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
+    {group_id, attrs!} = Map.pop_lazy(attrs!, :group_id, &UUID.generate/0)
+    {group, attrs!} = Map.pop_lazy(attrs!, :group, fn -> build(:server_group, id: group_id) end)
+    {owner_id, attrs!} = Map.pop_lazy(attrs!, :owner_id, &UUID.generate/0)
+    {owner, attrs!} = Map.pop_lazy(attrs!, :owner, fn -> build(:server_owner, id: owner_id) end)
+
+    {expected_properties, attrs!} =
+      Map.pop_lazy(attrs!, :expected_properties, fn -> build(:server_properties, id: id) end)
+
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!)
+
+    {set_up_at, attrs!} =
+      case Map.pop_lazy(
+             attrs!,
+             :set_up_at,
+             optionally(fn -> Faker.DateTime.between(created_at, updated_at) end)
+           ) do
+        {nil, attrs} -> {nil, attrs}
+        {true, attrs} -> {Faker.DateTime.between(created_at, updated_at), attrs}
+        {%DateTime{} = dt, attrs} -> {dt, attrs}
+      end
+
+    [] = Map.keys(attrs!)
+
+    %ServerView{
+      id: id,
+      name: name,
+      ip_address: ip_address,
+      username: username,
+      app_username: app_username,
+      ssh_port: ssh_port,
+      ssh_host_key_fingerprints: ssh_host_key_fingerprints,
+      active: active,
+      group: group,
+      group_id: group.id,
+      owner: owner,
+      owner_id: owner.id,
+      expected_properties: expected_properties,
+      version: version,
+      created_at: created_at,
+      set_up_at: set_up_at
+    }
+  end
+
   defp pop_server_open_ports_checked_at(attrs, created_at, updated_at) do
     case Map.pop(
            attrs,
@@ -753,6 +834,7 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec server_owner_factory(map()) :: ServerOwner.t()
   def server_owner_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
+    {username, attrs!} = Map.pop(attrs!, :username, nil)
     {root, attrs!} = Map.pop_lazy(attrs!, :root, &bool/0)
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
 
@@ -783,6 +865,7 @@ defmodule ArchiDep.Support.ServersFactory do
 
     %ServerOwner{
       id: id,
+      username: username,
       root: root,
       active: active,
       group_member: group_member,

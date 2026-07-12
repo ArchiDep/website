@@ -8,10 +8,12 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
-  alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.SSH
   alias ArchiDep.TrackerClient
   alias ArchiDepWeb.Admin.AdminClassServersLive
@@ -20,7 +22,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @pubsub ArchiDep.PubSub
 
-  @spec real_time_states_for(list(Server.t()), %{
+  @spec real_time_states_for(list(ServerView.t()), %{
           optional(UUID.t()) => ServerRealTimeState.t() | nil
         }) ::
           %{optional(UUID.t()) => ServerRealTimeState.t() | nil}
@@ -189,9 +191,10 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @impl LiveView
   def handle_info(
-        {:server_created, created_server},
+        {:server_created, %ServerCreated{group: %{id: group_id}} = event, _reference},
         %{
           assigns: %{
+            auth: auth,
             servers_by_class_id: servers_by_class_id,
             server_state_map: server_state_map,
             server_tracker: tracker
@@ -199,27 +202,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
         } = socket
       ) do
     {new_servers_by_class_id, new_server_state_map} =
-      case Map.get(servers_by_class_id, created_server.group_id) do
-        nil ->
-          {servers_by_class_id, server_state_map}
-
-        servers ->
-          if Enum.any?(servers, &(&1.id == created_server.id)) do
-            {servers_by_class_id, server_state_map}
-          else
-            {
-              Map.put(
-                servers_by_class_id,
-                created_server.group_id,
-                sort_servers([created_server | servers])
-              ),
-              ServerTrackerClient.update_server_state_map(
-                server_state_map,
-                ServerTrackerClient.track(tracker, created_server)
-              )
-            }
-          end
-      end
+      add_created_server(auth, tracker, servers_by_class_id, server_state_map, group_id, event.id)
 
     socket
     |> assign(
@@ -235,8 +218,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
         %{assigns: %{auth: auth, servers_by_class_id: servers_by_class_id}} = socket
       ) do
     case find_cached_server(servers_by_class_id, event.id) do
-      %Server{} = cached ->
-        apply_server_updated(socket, Server.refresh!(cached, event, reference))
+      %ServerView{} = cached ->
+        apply_server_updated(socket, ServerView.refresh!(cached, event, reference))
 
       nil ->
         resolve_and_apply_server_updated(socket, auth, event.id)
@@ -245,7 +228,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @impl LiveView
   def handle_info(
-        {:server_deleted, deleted_server},
+        {:server_deleted, %ServerDeleted{group: %{id: group_id}, id: server_id}, _reference},
         %{
           assigns: %{
             servers_by_class_id: servers_by_class_id,
@@ -254,25 +237,33 @@ defmodule ArchiDepWeb.Admin.AdminLive do
           }
         } = socket
       ) do
+    new_server_state_map =
+      case find_cached_server(servers_by_class_id, server_id) do
+        nil ->
+          server_state_map
+
+        server ->
+          ServerTrackerClient.update_server_state_map(
+            server_state_map,
+            ServerTrackerClient.untrack(tracker, server)
+          )
+      end
+
     socket
     |> assign(
       servers_by_class_id:
-        case Map.get(servers_by_class_id, deleted_server.group_id) do
+        case Map.get(servers_by_class_id, group_id) do
           nil ->
             servers_by_class_id
 
           servers ->
             Map.put(
               servers_by_class_id,
-              deleted_server.group_id,
-              Enum.reject(servers, &(&1.id == deleted_server.id))
+              group_id,
+              Enum.reject(servers, &(&1.id == server_id))
             )
         end,
-      server_state_map:
-        ServerTrackerClient.update_server_state_map(
-          server_state_map,
-          ServerTrackerClient.untrack(tracker, deleted_server)
-        )
+      server_state_map: new_server_state_map
     )
     |> noreply()
   end
@@ -375,6 +366,40 @@ defmodule ArchiDepWeb.Admin.AdminLive do
     end
   end
 
+  defp add_created_server(
+         auth,
+         tracker,
+         servers_by_class_id,
+         server_state_map,
+         group_id,
+         server_id
+       ) do
+    servers = Map.get(servers_by_class_id, group_id)
+
+    cond do
+      servers == nil ->
+        {servers_by_class_id, server_state_map}
+
+      Enum.any?(servers, &(&1.id == server_id)) ->
+        {servers_by_class_id, server_state_map}
+
+      true ->
+        case Servers.fetch_server(auth, server_id) do
+          {:ok, created_server} ->
+            {
+              Map.put(servers_by_class_id, group_id, sort_servers([created_server | servers])),
+              ServerTrackerClient.update_server_state_map(
+                server_state_map,
+                ServerTrackerClient.track(tracker, created_server)
+              )
+            }
+
+          {:error, _reason} ->
+            {servers_by_class_id, server_state_map}
+        end
+    end
+  end
+
   defp find_cached_server(servers_by_class_id, server_id),
     do:
       servers_by_class_id
@@ -396,7 +421,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
              server_tracker: tracker
            }
          } = socket,
-         %Server{id: server_id} = updated_server
+         %ServerView{id: server_id} = updated_server
        ) do
     {new_servers_by_class_id, new_server_state_map} =
       case Map.get(servers_by_class_id, updated_server.group_id) do
@@ -410,7 +435,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
                 servers_by_class_id,
                 updated_server.group_id,
                 Enum.map(servers, fn
-                  %Server{id: ^server_id} -> updated_server
+                  %ServerView{id: ^server_id} -> updated_server
                   other_server -> other_server
                 end)
               ),

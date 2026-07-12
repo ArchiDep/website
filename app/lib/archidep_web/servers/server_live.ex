@@ -6,10 +6,11 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   import ArchiDepWeb.Servers.ServerHelpComponent
   import ArchiDepWeb.Servers.ServerRetryHandlers
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.PubSub
-  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
+  alias ArchiDep.Servers.ServerView
   alias ArchiDepWeb.Servers.DeleteServerDialogLive
   alias ArchiDepWeb.Servers.EditServerDialogLive
 
@@ -28,9 +29,9 @@ defmodule ArchiDepWeb.Servers.ServerLive do
 
         socket
         |> assign(
-          page_title: Server.name_or_default(server),
+          page_title: ServerView.name_or_default(server),
           server: server,
-          state: ServerTrackerClient.get_current_server_state(server)
+          state: ServerTrackerClient.get_current_server_state(server.id)
         )
         |> ok()
 
@@ -55,7 +56,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   def handle_event(
         "retry_connecting",
         %{"server_id" => server_id},
-        %Socket{assigns: %{server: %Server{id: server_id}}} = socket
+        %Socket{assigns: %{server: %ServerView{id: server_id}}} = socket
       ),
       do: handle_retry_connecting_event(socket, server_id)
 
@@ -63,7 +64,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   def handle_event(
         "retry_operation",
         %{"server_id" => server_id, "operation" => "ansible-playbook", "playbook" => playbook},
-        %Socket{assigns: %{server: %Server{id: server_id}}} = socket
+        %Socket{assigns: %{server: %ServerView{id: server_id}}} = socket
       ),
       do: handle_retry_ansible_playbook_event(socket, server_id, playbook)
 
@@ -71,14 +72,14 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   def handle_event(
         "retry_operation",
         %{"server_id" => server_id, "operation" => "check-open-ports"},
-        %Socket{assigns: %{server: %Server{id: server_id}}} = socket
+        %Socket{assigns: %{server: %ServerView{id: server_id}}} = socket
       ),
       do: handle_retry_checking_open_ports_event(socket, server_id)
 
   @impl LiveView
   def handle_info(
         {:server_state, server_id, new_server_state},
-        %Socket{assigns: %{server: %Server{id: server_id}}} = socket
+        %Socket{assigns: %{server: %ServerView{id: server_id}}} = socket
       ),
       do:
         socket
@@ -88,24 +89,26 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   @impl LiveView
   def handle_info(
         {:server_updated, %{id: id} = event, reference},
-        %Socket{assigns: %{server: %Server{id: id} = server}} = socket
+        %Socket{assigns: %{server: %ServerView{id: id} = server}} = socket
       ),
       do:
         socket
-        |> assign(server: Server.refresh!(server, event, reference))
+        |> assign(server: ServerView.refresh!(server, event, reference))
         |> noreply()
 
   @impl LiveView
   def handle_info(
-        {:server_deleted, %Server{id: server_id} = deleted_server},
-        %{assigns: %{server: %Server{id: server_id}}} = socket
+        {:server_deleted, %ServerDeleted{id: server_id} = deleted_server, _reference},
+        %{assigns: %{server: %ServerView{id: server_id}}} = socket
       ),
       do:
         socket
         |> put_notification(
           Message.new(
             :success,
-            gettext("Deleted server {server}", server: Server.name_or_default(deleted_server))
+            gettext("Deleted server {server}",
+              server: deleted_server.name || deleted_server.ip_address
+            )
           )
         )
         |> push_navigate(to: redirect_after_deleted(socket))

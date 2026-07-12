@@ -6,11 +6,12 @@ defmodule ArchiDep.Servers.PubSub do
   use ArchiDep, :pub_sub
 
   alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerFactsGathered
   alias ArchiDep.Servers.Events.ServerOpenPortsChecked
   alias ArchiDep.Servers.Events.ServerSetUp
   alias ArchiDep.Servers.Events.ServerUpdated
-  alias ArchiDep.Servers.Schemas.Server
 
   @pubsub ArchiDep.PubSub
 
@@ -35,23 +36,12 @@ defmodule ArchiDep.Servers.PubSub do
 
   # Servers
 
-  @spec publish_server_created(Server.t()) :: :ok
-  def publish_server_created(server) do
-    :ok = PubSub.broadcast(@pubsub, Scope.global_topic("servers:new"), {:server_created, server})
-
-    :ok =
-      PubSub.broadcast(
-        @pubsub,
-        "server-groups:#{server.group_id}:servers",
-        {:server_created, server}
-      )
-
-    :ok =
-      PubSub.broadcast(
-        @pubsub,
-        "server-owners:#{server.owner_id}:servers",
-        {:server_created, server}
-      )
+  @spec publish_server_created(ServerCreated.t(), EventReference.t()) :: :ok
+  def publish_server_created(event, reference) do
+    message = {:server_created, event, reference}
+    :ok = PubSub.broadcast(@pubsub, Scope.global_topic("servers:new"), message)
+    :ok = PubSub.broadcast(@pubsub, "server-groups:#{event.group.id}:servers", message)
+    :ok = PubSub.broadcast(@pubsub, "server-owners:#{event.owner.id}:servers", message)
   end
 
   @spec subscribe_server_created() :: :ok
@@ -73,23 +63,12 @@ defmodule ArchiDep.Servers.PubSub do
     :ok = PubSub.broadcast(@pubsub, "server-owners:#{event.owner.id}:servers", message)
   end
 
-  @spec publish_server_deleted(Server.t()) :: :ok
-  def publish_server_deleted(server) do
-    :ok = PubSub.broadcast(@pubsub, "servers:#{server.id}", {:server_deleted, server})
-
-    :ok =
-      PubSub.broadcast(
-        @pubsub,
-        "server-groups:#{server.group_id}:servers",
-        {:server_deleted, server}
-      )
-
-    :ok =
-      PubSub.broadcast(
-        @pubsub,
-        "server-owners:#{server.owner_id}:servers",
-        {:server_deleted, server}
-      )
+  @spec publish_server_deleted(ServerDeleted.t(), EventReference.t()) :: :ok
+  def publish_server_deleted(event, reference) do
+    message = {:server_deleted, event, reference}
+    :ok = PubSub.broadcast(@pubsub, "servers:#{event.id}", message)
+    :ok = PubSub.broadcast(@pubsub, "server-groups:#{event.group.id}:servers", message)
+    :ok = PubSub.broadcast(@pubsub, "server-owners:#{event.owner.id}:servers", message)
   end
 
   @spec subscribe_server(UUID.t()) :: :ok

@@ -136,22 +136,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl LiveView
   def handle_info(
-        {server_event, _server} = event,
+        {server_event, _event, _reference} = message,
         %Socket{assigns: %{server_ids: {server_ids, reducer}}} = socket
       )
-      when server_event in [:server_created, :server_deleted] do
-    new_server_ids = reducer.(server_ids, event)
-
-    socket
-    |> assign(:server_ids, {new_server_ids, reducer})
-    |> noreply()
-  end
-
-  @impl LiveView
-  def handle_info(
-        {:server_updated, _event, _reference} = message,
-        %Socket{assigns: %{server_ids: {server_ids, reducer}}} = socket
-      ) do
+      when server_event in [:server_created, :server_updated, :server_deleted] do
     new_server_ids = reducer.(server_ids, message)
 
     socket

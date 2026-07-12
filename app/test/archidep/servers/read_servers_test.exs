@@ -4,6 +4,7 @@ defmodule ArchiDep.Servers.ReadServersTest do
   import Hammox
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.Context
+  alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.Factory
   alias ArchiDep.Support.ServersTestHelpers
 
@@ -46,7 +47,8 @@ defmodule ArchiDep.Servers.ReadServersTest do
       %{owner: other_owner, class: other_class} = ServersTestHelpers.register_group_member(@past)
       _other = ServersTestHelpers.insert_server(other_owner.id, other_class.id, name: "aaa")
 
-      assert list_my_servers.(auth) == [alpha, beta, unnamed_a, unnamed_b]
+      assert list_my_servers.(auth) ==
+               Enum.map([alpha, beta, unnamed_a, unnamed_b], &ServerView.from/1)
 
       assert_no_stored_events!()
     end
@@ -67,7 +69,7 @@ defmodule ArchiDep.Servers.ReadServersTest do
       %{auth: auth, owner: owner, class: class} = ServersTestHelpers.register_group_member(@past)
       server = ServersTestHelpers.insert_server(owner.id, class.id)
 
-      assert fetch_server.(auth, server.id) == {:ok, server}
+      assert fetch_server.(auth, server.id) == {:ok, ServerView.from(server)}
 
       assert_no_stored_events!()
     end
@@ -78,7 +80,7 @@ defmodule ArchiDep.Servers.ReadServersTest do
 
       root = Factory.build(:authentication, root: true)
 
-      assert fetch_server.(root, server.id) == {:ok, server}
+      assert fetch_server.(root, server.id) == {:ok, ServerView.from(server)}
 
       assert_no_stored_events!()
     end
@@ -120,7 +122,8 @@ defmodule ArchiDep.Servers.ReadServersTest do
 
       root = Factory.build(:authentication, root: true)
 
-      assert fetch_active_server_for_group_member.(root, student.id) == {:ok, server}
+      assert fetch_active_server_for_group_member.(root, student.id) ==
+               {:ok, ServerView.from(server)}
 
       assert_no_stored_events!()
     end

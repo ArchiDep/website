@@ -107,8 +107,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestrator do
   end
 
   @impl GenServer
-  def handle_info({:server_created, created_server}, %State{} = state) do
-    case state.store.fetch_server_to_track(created_server.id) do
+  def handle_info({:server_created, event, _reference}, %State{} = state) do
+    case state.store.fetch_server_to_track(event.id) do
       {:ok, server} ->
         {:ok, _pid} = state.starter.start_server_supervisor(server.id, state.pipeline)
 
