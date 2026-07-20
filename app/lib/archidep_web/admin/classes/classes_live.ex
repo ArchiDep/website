@@ -2,86 +2,39 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
   use ArchiDepWeb, :live_view
 
   import ArchiDepWeb.Helpers.DateFormatHelpers
-  import ArchiDepWeb.Helpers.ClassHelpers, only: [class_updated_id: 1]
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Course
-  alias ArchiDep.Course.PubSub
-  alias ArchiDep.Course.Schemas.Class
   alias ArchiDepWeb.Admin.Classes.NewClassDialogLive
+  alias ArchiDepWeb.LiveRefresh
 
   @impl LiveView
   def mount(_params, _session, socket) do
     auth = socket.assigns.auth
 
-    if connected?(socket) do
-      set_process_label(__MODULE__, auth)
-    end
-
     classes = Course.list_classes(auth)
-
-    if connected?(socket) do
-      :ok = PubSub.subscribe_classes()
-    end
 
     socket
     |> assign(
       page_title: "#{gettext("Classes")} · #{gettext("Admin")}",
       classes: classes
     )
+    |> track_classes(auth)
     |> ok()
   end
 
   @impl LiveView
   def handle_params(_params, _url, socket), do: noreply(socket)
 
-  @impl LiveView
-  def handle_info(
-        {:class_created, created_class},
-        %Socket{assigns: %{classes: classes}} = socket
-      ),
-      do:
-        socket
-        |> assign(:classes, sort_classes([created_class | classes]))
-        |> noreply()
-
-  @impl LiveView
-  def handle_info(
-        {:class_updated, event, reference},
-        %Socket{assigns: %{classes: classes}} = socket
-      ) do
-    id = class_updated_id(event)
-
-    socket
-    |> assign(
-      :classes,
-      classes
-      |> Enum.map(fn
-        %Class{id: ^id} = c ->
-          Class.refresh!(c, event, reference)
-
-        c ->
-          c
-      end)
-      |> sort_classes()
-    )
-    |> noreply()
+  # On connected mount, keep the classes list current through the Course
+  # boundary. The refresher owns create, update, delete and ordering, so this
+  # page names no topics or events.
+  defp track_classes(socket, auth) do
+    if connected?(socket) do
+      set_process_label(__MODULE__, auth)
+      :ok = Course.subscribe_classes()
+      LiveRefresh.attach(socket, :classes, &Course.refresh_classes/2)
+    else
+      socket
+    end
   end
-
-  @impl LiveView
-  def handle_info(
-        {:class_deleted, deleted_class},
-        %Socket{assigns: %{classes: classes}} = socket
-      ),
-      do:
-        socket
-        |> assign(
-          :classes,
-          classes
-          |> Enum.reject(fn c -> c.id == deleted_class.id end)
-          |> sort_classes()
-        )
-        |> noreply()
-
-  defp sort_classes(classes),
-    do: Enum.sort_by(classes, &{!&1.active, &1.end_date, &1.created_at, &1.name}, :desc)
 end

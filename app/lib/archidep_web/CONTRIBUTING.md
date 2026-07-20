@@ -147,27 +147,38 @@ contexts][bounded-contexts]' PubSub broadcasts (a renamed class, a server
 changing state). A live view does **not** name topics or events itself; it
 delegates both halves to the owning context:
 
-- on connected mount it calls `Context.subscribe_<entity>/1`, which subscribes
-  the calling process to every topic (own-context and cross-context) that keeps
-  that entity live;
-- it attaches [`LiveRefresh`](./live_refresh.ex):
-  `LiveRefresh.attach(socket, :key, &Context.refresh_<entity>/2)` for a single
-  assign, or `attach_collection/3` for one element of a list assign.
+- on connected mount it calls the context's `subscribe_*` function, which
+  subscribes the calling process to every topic (own-context and cross-context)
+  that keeps that read-model live;
+- it attaches [`LiveRefresh`](./live_refresh.ex) with a context refresher that
+  owns the message → refresh decision. Pick the variant by what the assign is:
+  - `LiveRefresh.attach(socket, :key, &Context.refresh_<entity>/2)` when the
+    refresher owns the **whole assign** — a single value, or a full list whose
+    refresher handles create, update, delete _and_ ordering (its refresher takes
+    the current value/list and returns the new one);
+  - `attach_collection/3` only when a list's **membership is fixed** and just
+    element updates matter — it hands a per-element refresher each element and
+    replaces the one that claims the message in place. It cannot express a
+    create (there is no element to hand the refresher), so a full-CRUD list uses
+    `attach/3` with a whole-list refresher instead.
 
-`Context.refresh_<entity>/2` owns the message → refresh decision, returning
-`{:ok, updated}` for a message it claims or `:ignore` for anything else. The
-`:handle_info` hook swaps the assign and halts on a claimed message and lets
-everything else fall through to the live view's own `handle_info/2` clauses, so
-create/delete and unrelated handlers compose without a catch-all. This keeps the
-"what feeds this read-model" knowledge in the owning context instead of spread
-across every consumer. The profile page
-([`profile_live.ex`](./profile/profile_live.ex), backed by
-`Course.subscribe_student/1` + `Course.refresh_student/2`) is the exemplar. The
-server detail page ([`server_live.ex`](./servers/server_live.ex), backed by
-`Servers.subscribe_server/1` + `Servers.refresh_server/2`) shows the hook
-coexisting with a page's own `handle_info/2` clauses: it halts `:server_updated`
-while the tracker's `:server_state` messages and the `:server_deleted` notice
-fall through to the page.
+A refresher returns `{:ok, updated}` for a message it claims or `:ignore` for
+anything else. The `:handle_info` hook swaps the assign and halts on a claimed
+message, and lets everything else fall through to the live view's own
+`handle_info/2` clauses. This keeps the "what feeds this read-model" knowledge in
+the owning context instead of spread across every consumer. Exemplars:
+
+- [`profile_live.ex`](./profile/profile_live.ex) — single value, backed by
+  `Course.subscribe_student/1` + `Course.refresh_student/2`.
+- [`server_live.ex`](./servers/server_live.ex) — single value, backed by
+  `Servers.subscribe_server/1` + `Servers.refresh_server/2`; shows the hook
+  coexisting with a page's own `handle_info/2` clauses (it halts `:server_updated`
+  while the tracker's `:server_state` messages and the `:server_deleted` notice
+  fall through to the page).
+- [`classes_live.ex`](./admin/classes/classes_live.ex) — whole list, backed by
+  `Course.subscribe_classes/0` + `Course.refresh_classes/2`; the refresher owns
+  create, update, delete and ordering, so the page names nothing and needs no
+  `handle_info/2` at all.
 
 ---
 

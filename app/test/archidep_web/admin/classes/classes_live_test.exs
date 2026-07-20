@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.UseCases.ReadClasses
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias Ecto.Changeset
@@ -454,6 +455,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
     classes = Keyword.fetch!(opts, :classes)
 
     expect(Course.ContextMock, :list_classes, mounts, fn ^auth -> classes end)
+    # The page keeps the classes list current through the Course boundary; route
+    # those calls to the real read-model plumbing so a real broadcast still
+    # drives the re-render.
+    stub(Course.ContextMock, :subscribe_classes, &ReadClasses.subscribe_classes/0)
+    stub(Course.ContextMock, :refresh_classes, &ReadClasses.refresh_classes/2)
 
     :ok
   end

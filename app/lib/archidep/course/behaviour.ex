@@ -30,6 +30,20 @@ defmodule ArchiDep.Course.Behaviour do
   @callback list_active_classes(Authentication.t()) :: list(Class.t())
 
   @doc """
+  Subscribes the calling process to every topic that keeps the list of classes
+  live.
+  """
+  @callback subscribe_classes() :: :ok
+
+  @doc """
+  Reconciles the list of classes from a PubSub message broadcast on one of the
+  topics of `subscribe_classes/0`, returning the updated list or `:ignore` for a
+  message that does not concern it.
+  """
+  @callback refresh_classes(list(Class.t()), term()) ::
+              {:ok, list(Class.t())} | :ignore
+
+  @doc """
   Fetches a class.
   """
   @callback fetch_class(Authentication.t() | nil, UUID.t()) ::

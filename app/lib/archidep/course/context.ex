@@ -26,6 +26,14 @@ defmodule ArchiDep.Course.Context do
 
   @doc false
   @impl Behaviour
+  defdelegate subscribe_classes(), to: UseCases.ReadClasses
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_classes(classes, message), to: UseCases.ReadClasses
+
+  @doc false
+  @impl Behaviour
   defdelegate fetch_class(auth, class_id), to: UseCases.ReadClasses
 
   @doc false

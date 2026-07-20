@@ -3,8 +3,8 @@ defmodule ArchiDepWeb.LiveRefresh do
   Keeps a cached read-model current from PubSub without coupling the use point
   to specific events.
 
-  A live view subscribes through `Context.subscribe_<entity>/1` and attaches a
-  hook that forwards each `:handle_info` message to
+  A live view subscribes through the context's `subscribe_*` function and
+  attaches a hook that forwards each `:handle_info` message to
   `Context.refresh_<entity>/2`, which owns the mapping from a broadcast message
   to the read-model update. The contexts' real-time messages stay the shared
   contract; this helper spares each consumer from re-implementing the "match the

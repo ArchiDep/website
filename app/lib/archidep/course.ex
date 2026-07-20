@@ -42,6 +42,22 @@ defmodule ArchiDep.Course do
   defdelegate list_active_classes(auth), to: @implementation
 
   @doc """
+  Subscribes the calling process to every topic that keeps the list of classes
+  live.
+  """
+  @spec subscribe_classes() :: :ok
+  defdelegate subscribe_classes(), to: @implementation
+
+  @doc """
+  Reconciles the list of classes from a PubSub message broadcast on one of the
+  topics of `subscribe_classes/0`, returning the updated list or `:ignore` for a
+  message that does not concern it.
+  """
+  @spec refresh_classes(list(Class.t()), term()) ::
+          {:ok, list(Class.t())} | :ignore
+  defdelegate refresh_classes(classes, message), to: @implementation
+
+  @doc """
   Fetches a class.
   """
   @spec fetch_class(Authentication.t() | nil, UUID.t()) ::
