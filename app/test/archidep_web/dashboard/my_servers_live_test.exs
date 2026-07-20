@@ -12,6 +12,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Servers.UseCases.ReadServers
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias Ecto.Changeset
@@ -166,7 +167,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
         ServersFactory.build(:server,
           name: "web-01",
           active: true,
-          owner: build_owner(),
+          owner: build_owner(id: auth.principal_id),
           group: ServersFactory.build(:server_group)
         )
 
@@ -204,7 +205,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
         ServersFactory.build(:server,
           name: "db-01",
           active: true,
-          owner: build_owner(),
+          owner: build_owner(id: auth.principal_id),
           group: ServersFactory.build(:server_group)
         )
 
@@ -388,6 +389,12 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
 
     stub(ServerTrackerClientMock, :start_link, fn _servers -> {:ok, self()} end)
     stub(ServerTrackerClientMock, :server_state_map, fn _servers -> %{} end)
+
+    # The page keeps its server list current through the Servers boundary; route
+    # those calls to the real read-model plumbing so a real broadcast still
+    # drives the re-render.
+    stub(Servers.ContextMock, :subscribe_my_servers, &ReadServers.subscribe_my_servers/1)
+    stub(Servers.ContextMock, :refresh_my_servers, &ReadServers.refresh_my_servers/2)
 
     case Keyword.fetch(opts, :groups) do
       {:ok, groups} -> stub(Servers.ContextMock, :list_server_groups, fn ^auth -> groups end)

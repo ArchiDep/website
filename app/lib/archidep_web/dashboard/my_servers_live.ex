@@ -7,9 +7,8 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.Events.ServerDeleted
-  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
-  alias ArchiDep.Servers.ServerView
+  alias ArchiDepWeb.LiveRefresh
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
   @impl LiveView
@@ -28,14 +27,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
     tracker =
       if connected?(socket) do
         set_process_label(__MODULE__, auth)
-
-        for server <- servers do
-          # TODO: add watch_my_servers in context
-          :ok = PubSub.subscribe_server(server.id)
-        end
-
-        :ok = PubSub.subscribe_server_created()
-
+        :ok = Servers.subscribe_my_servers(auth)
         {:ok, pid} = ServerTrackerClient.start_link(servers)
         pid
       else
@@ -49,6 +41,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
       server_tracker: tracker,
       groups: groups
     )
+    |> attach_my_servers_refresh()
     |> ok()
   end
 
@@ -83,10 +76,6 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
           }
         } = socket
       ) do
-    # Subscribe before fetching so an update broadcast in the window between
-    # reading the server and starting to listen is queued rather than lost.
-    :ok = PubSub.subscribe_server(event.id)
-
     case Servers.fetch_server(auth, event.id) do
       {:ok, created_server} ->
         socket
@@ -101,43 +90,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
         |> noreply()
 
       {:error, _reason} ->
-        :ok = PubSub.unsubscribe_server(event.id)
         noreply(socket)
-    end
-  end
-
-  def handle_info({:server_created, _event, _reference}, socket) do
-    noreply(socket)
-  end
-
-  @impl LiveView
-  def handle_info(
-        {:server_updated, event, reference},
-        %{assigns: %{servers: servers}} = socket
-      ) do
-    server_id = event.id
-
-    case Enum.find(servers, &(&1.id == server_id)) do
-      nil ->
-        noreply(socket)
-
-      cached_server ->
-        server = ServerView.refresh!(cached_server, event, reference)
-
-        socket
-        |> assign(
-          servers:
-            servers
-            |> Enum.map(fn
-              %ServerView{id: ^server_id} ->
-                server
-
-              other_server ->
-                other_server
-            end)
-            |> sort_servers()
-        )
-        |> noreply()
     end
   end
 
@@ -152,14 +105,24 @@ defmodule ArchiDepWeb.Dashboard.MyServersLive do
           }
         } = socket
       ) do
-    :ok = PubSub.unsubscribe_server(server_id)
-
     socket
     |> assign(
       servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
       server_state_map: untrack_server(tracker, server_state_map, servers, server_id)
     )
     |> noreply()
+  end
+
+  # On connected mount, keep the server list current through the Servers
+  # boundary. The refresher reflects server-field updates and re-sorts the list;
+  # creation and deletion fall through to this module's own handlers, which also
+  # start and stop tracking each server's real-time state.
+  defp attach_my_servers_refresh(socket) do
+    if connected?(socket) do
+      LiveRefresh.attach(socket, :servers, &Servers.refresh_my_servers/2)
+    else
+      socket
+    end
   end
 
   defp untrack_server(tracker, server_state_map, servers, server_id) do

@@ -179,6 +179,21 @@ the owning context instead of spread across every consumer. Exemplars:
   `Course.subscribe_classes/0` + `Course.refresh_classes/2`; the refresher owns
   create, update, delete and ordering, so the page names nothing and needs no
   `handle_info/2` at all.
+- [`my_servers_live.ex`](./dashboard/my_servers_live.ex) — whole list, backed by
+  `Servers.subscribe_my_servers/1` + `Servers.refresh_my_servers/2`; the
+  refresher reconciles server-field updates (and re-sorts), while creation and
+  deletion fall through to the page because they also start/stop the server
+  tracker — a process-local side effect that cannot live in a context refresher.
+
+**Choosing the topic.** The `subscribe_*` function picks the _coarsest_ topic
+whose audience is "everyone who would care about any of these events", and
+subscribes to it once on mount — never per entity as rows come and go. An
+admin-wide list uses the global per-type topic (`classes`); a user's own servers
+use the owner-scoped topic (`server-owners:<id>:servers`, which carries every
+create/update/delete for that owner). Per-entity topics are only worth their
+dynamic subscribe/unsubscribe bookkeeping when a page shows _one_ entity out of
+very many; at this project's scale, PubSub fan-out is never the bottleneck, so
+prefer the coarser topic and the simpler, static subscription.
 
 ---
 

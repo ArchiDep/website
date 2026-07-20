@@ -55,7 +55,12 @@ defmodule ArchiDepWeb.LiveRefreshTest do
       {:ok, view, _html} = live_isolated(conn, LiveRefreshHost)
 
       send(view.pid, {:set, :b, 99})
-      wait_for_socket_assigns!(view, &(&1.list == [{:a, 1}, {:b, 99}, {:c, 3}]), "element swapped")
+
+      wait_for_socket_assigns!(
+        view,
+        &(&1.list == [{:a, 1}, {:b, 99}, {:c, 3}]),
+        "element swapped"
+      )
 
       assert state(view) == {0, [{:a, 1}, {:b, 99}, {:c, 3}], nil}
     end

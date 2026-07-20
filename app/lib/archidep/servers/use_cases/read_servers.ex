@@ -89,4 +89,31 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
       do: {:ok, ServerView.refresh!(server, event, reference)}
 
   def refresh_server(_server, _message), do: :ignore
+
+  # Subscribing to the principal's own server topic grants no access beyond what
+  # `list_my_servers/1` already authorized, so this read-model plumbing takes no
+  # authentication check.
+  @spec subscribe_my_servers(Authentication.t()) :: :ok
+  def subscribe_my_servers(auth), do: PubSub.subscribe_server_owner_servers(auth.principal_id)
+
+  @spec refresh_my_servers(list(ServerView.t()), term()) ::
+          {:ok, list(ServerView.t())} | :ignore
+  def refresh_my_servers(
+        servers,
+        {:server_updated, %{id: id} = event, %EventReference{} = reference}
+      )
+      when is_list(servers),
+      do:
+        {:ok,
+         servers
+         |> Enum.map(fn
+           %ServerView{id: ^id} = server -> ServerView.refresh!(server, event, reference)
+           server -> server
+         end)
+         |> sort_my_servers()}
+
+  def refresh_my_servers(_servers, _message), do: :ignore
+
+  defp sort_my_servers(servers),
+    do: Enum.sort_by(servers, &{&1.name, &1.username, :inet.ntoa(&1.ip_address.address)})
 end

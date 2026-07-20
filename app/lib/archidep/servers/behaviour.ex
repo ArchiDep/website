@@ -85,6 +85,22 @@ defmodule ArchiDep.Servers.Behaviour do
   @callback list_my_servers(Authentication.t()) :: list(ServerView.t())
 
   @doc """
+  Subscribes the calling process to the topic that keeps the authenticated
+  principal's own servers live (their creation, update and deletion).
+  """
+  @callback subscribe_my_servers(Authentication.t()) :: :ok
+
+  @doc """
+  Reconciles the authenticated principal's server list from a PubSub message
+  broadcast on the topic of `subscribe_my_servers/1`, returning the list with
+  the referenced server refreshed, or `:ignore` for a message it does not
+  reconcile (such as a creation or deletion, which the caller applies alongside
+  its server tracker).
+  """
+  @callback refresh_my_servers(list(ServerView.t()), term()) ::
+              {:ok, list(ServerView.t())} | :ignore
+
+  @doc """
   Lists all servers in a server group.
   """
   @callback list_all_servers_in_group(Authentication.t(), UUID.t()) ::

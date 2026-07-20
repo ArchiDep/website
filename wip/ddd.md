@@ -196,10 +196,12 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
       reconcile behind the
       context](#5d-consolidate-subscribe--reconcile-behind-the-context).
 - [ ] **#5e Sweep the remaining consumers.** Convert the rest of the web
-      consumers to the #5d pattern (`subscribe_<entity>` + `LiveRefresh.attach`,
-      dropping their per-event `handle_info` clauses) — mechanical once #5d sets
-      the exemplar — see [#5e Sweep the remaining
-      consumers](#5e-sweep-the-remaining-consumers).
+      consumers to the #5d pattern (a context `subscribe_*` +
+      `LiveRefresh.attach`, dropping their per-event `handle_info` clauses).
+      `server_live`, `classes_live` and `my_servers_live` are done; a design
+      decision on the server-tracker coupling
+      (`dashboard_live`/`my_servers_live`) is still open — see [#5e Sweep the
+      remaining consumers](#5e-sweep-the-remaining-consumers).
 
 ### F. Event schema versioning
 
@@ -837,9 +839,66 @@ converts the remaining consumers mechanically against the established pattern.
 ### #5e Sweep the remaining consumers
 
 Convert the rest of the web consumers to the #5d pattern — replacing their
-per-event `handle_info` clauses and inline subscriptions with
-`Context.subscribe_<entity>` + `LiveRefresh.attach`. Purely mechanical once #5d
-sets the exemplar; kept separate so each PR stays readable end-to-end.
+per-event `handle_info` clauses and inline subscriptions with a context
+`subscribe_*` function + `LiveRefresh.attach`. Mechanical for the clean cases;
+kept separate so each PR stays readable end-to-end.
+
+**Progress.** Converted: `profile_live` (#5d exemplar, single value),
+`server_live` (single value; keeps its tracker `:server_state` and its
+`:server_deleted` navigation handlers), `classes_live` (whole list via
+`attach/3` — `Course.refresh_classes/2` owns create/update/delete/ordering, so
+the page has no `handle_info`), and `my_servers_live` (whole list via
+`Servers.subscribe_my_servers/1` + `Servers.refresh_my_servers/2`, moved onto
+the owner-scoped topic). Remaining: `dashboard_live`, `admin_live`, admin
+`student_live`, `class_live`, `ansible_live`, and the `user_channel` (a
+`Phoenix.Channel`, so no `attach_hook`).
+
+**Topic granularity (decided).** Subscribe once, on mount, to the _coarsest_
+topic whose audience is "everyone who cares about any of these events" — the
+global per-type topic for admin-wide lists (`classes`), the owner-scoped topic
+(`server-owners:<id>:servers`, which carries every create/update/delete for that
+owner) for a user's own servers — rather than per-entity topics
+subscribed/unsubscribed dynamically as rows come and go. PubSub fan-out is not
+the bottleneck at this scale, and the dynamic per-entity bookkeeping is what made
+these consumers hard to refactor. Documented in the web layer's "Live
+Read-Models → Choosing the topic" note.
+
+**Open question — the server-tracker coupling (decide before finishing
+`my_servers`/`dashboard`).** `my_servers_live` and `dashboard_live` still name
+`:server_created` / `:server_deleted` / `:server_state` in `handle_info`,
+because those events drive the `ServerTrackerClient` lifecycle (track/untrack a
+server's real-time-state monitoring) and its state-map output — a process-local
+side effect that cannot live in a pure context refresher. Note first that a
+plain chain of separate `attach_hook`s does **not** compose for this: a `:halt`
+stops the whole chain (later hooks _and_ the LiveView), so two hooks that both
+need `:server_created` contend for it. Options considered:
+
+- **(A) Multi-reactor hook.** Generalize `LiveRefresh` so one `:handle_info`
+  hook runs a list of reactors (each `(socket, msg) -> {:ok, socket} |
+:ignore`), applies all, and halts if any claimed. Composes a pure list
+  refresher with an impure tracker reactor in a single hook. Works, but keeps the
+  two concerns (list + tracking) tangled inside one hook, and the create case has
+  to share the fetched `ServerView` between reactors.
+- **(B) Separate the concerns (recommended).** The coupling exists only because
+  the LiveView does two jobs that react to the same events. Give
+  `ServerTrackerClient` ownership of _what to track_: it subscribes to the owner
+  topic and tracks/untracks autonomously; `refresh_my_servers/2` takes over the
+  full list lifecycle (create/update/delete, fetching the view on create); the
+  tracker's `:server_state` output becomes its own `LiveRefresh` reactor on the
+  `:server_state_map` assign. Then no message is shared, so two independent
+  `LiveRefresh.attach` hooks compose with no new primitive, and the page names no
+  events and needs no `handle_info`. Caveat: clean for `my_servers` (tracks _all_
+  the owner's servers); harder for `dashboard_live`, whose tracked set is _active
+  servers only_ and changes as a server flips active/inactive on
+  `:server_updated` — that selection policy is genuinely event-driven, so a
+  self-managing tracker there needs to be told the filter, or that page keeps a
+  thin tracker reactor.
+
+`ServerTrackerClient` is shared by `server_live`, `my_servers_live`, and
+`dashboard_live`, so (B) touches all three. Sub-decision still open: prototype on
+`my_servers` first (optional "watch this owner" tracker mode, other pages
+unchanged) vs. design the tracker change across all three before coding.
+**Status: leaning (B); to be confirmed before the next consumer conversion.**
 
 ### #6 Record a `schema_version` per stored event
 

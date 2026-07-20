@@ -4,6 +4,8 @@ defmodule ArchiDep.Servers.ReadServersTest do
   import Hammox
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.Context
+  alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
@@ -25,7 +27,9 @@ defmodule ArchiDep.Servers.ReadServersTest do
       fetch_active_server_for_group_member:
         protect({Context, :fetch_active_server_for_group_member, 2}, Behaviour),
       subscribe_server: protect({Context, :subscribe_server, 1}, Behaviour),
-      refresh_server: protect({Context, :refresh_server, 2}, Behaviour)
+      refresh_server: protect({Context, :refresh_server, 2}, Behaviour),
+      subscribe_my_servers: protect({Context, :subscribe_my_servers, 1}, Behaviour),
+      refresh_my_servers: protect({Context, :refresh_my_servers, 2}, Behaviour)
     }
   end
 
@@ -311,6 +315,135 @@ defmodule ArchiDep.Servers.ReadServersTest do
       reference = EventsFactory.build(:event_reference, version: server.version + 1)
 
       assert refresh_server.(nil, {:server_updated, event, reference}) == :ignore
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "subscribe_my_servers/1" do
+    test "delivers creation, update and deletion of the principal's own servers", %{
+      subscribe_my_servers: subscribe_my_servers
+    } do
+      group = ServersFactory.build(:server_group)
+      owner = ServersFactory.build(:server_owner)
+      auth = Factory.build(:authentication, principal_id: owner.id)
+
+      %Server{} =
+        server =
+        ServersFactory.build(:server,
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        )
+
+      assert subscribe_my_servers.(auth) == :ok
+
+      created = ServerCreated.new(server)
+      created_reference = EventsFactory.build(:event_reference)
+      :ok = PubSub.publish_server_created(created, created_reference)
+      assert_receive {:server_created, ^created, ^created_reference}
+
+      updated = ServerUpdated.new(%Server{server | version: server.version + 1})
+      updated_reference = EventsFactory.build(:event_reference, version: server.version + 1)
+      :ok = PubSub.publish_server_updated(updated, updated_reference)
+      assert_receive {:server_updated, ^updated, ^updated_reference}
+
+      deleted = ServerDeleted.new(server)
+      deleted_reference = EventsFactory.build(:event_reference)
+      :ok = PubSub.publish_server_deleted(deleted, deleted_reference)
+      assert_receive {:server_deleted, ^deleted, ^deleted_reference}
+
+      assert_no_stored_events!()
+    end
+
+    test "delivers nothing for another owner's servers", %{
+      subscribe_my_servers: subscribe_my_servers
+    } do
+      owner = ServersFactory.build(:server_owner)
+      auth = Factory.build(:authentication, principal_id: owner.id)
+
+      assert subscribe_my_servers.(auth) == :ok
+
+      other_group = ServersFactory.build(:server_group)
+      other_owner = ServersFactory.build(:server_owner)
+
+      %Server{} =
+        other_server =
+        ServersFactory.build(:server,
+          group: other_group,
+          group_id: other_group.id,
+          owner: other_owner,
+          owner_id: other_owner.id
+        )
+
+      event = ServerUpdated.new(%Server{other_server | version: other_server.version + 1})
+      reference = EventsFactory.build(:event_reference, version: other_server.version + 1)
+      :ok = PubSub.publish_server_updated(event, reference)
+
+      refute_receive {:server_updated, _event, _reference}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "refresh_my_servers/2" do
+    test "reconciles only the matching server and re-sorts the list", %{
+      refresh_my_servers: refresh_my_servers
+    } do
+      group = ServersFactory.build(:server_group)
+      owner = ServersFactory.build(:server_owner)
+
+      %Server{} =
+        target_server =
+        ServersFactory.build(:server,
+          name: "zzz-server",
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        )
+
+      %ServerView{} = target = ServerView.from(target_server)
+      %ServerView{} = other = ServersFactory.build(:server_view, name: "aaa-server")
+
+      event = ServerUpdated.new(%Server{target_server | version: target_server.version + 1})
+      reference = EventsFactory.build(:event_reference, version: target_server.version + 1)
+
+      # `other` sorts ahead of the refreshed target by name and must pass through
+      # unchanged.
+      assert refresh_my_servers.([target, other], {:server_updated, event, reference}) ==
+               {:ok, [other, ServerView.refresh!(target, event, reference)]}
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores creation, deletion and unrelated messages", %{
+      refresh_my_servers: refresh_my_servers
+    } do
+      %ServerView{} = view = ServersFactory.build(:server_view)
+
+      group = ServersFactory.build(:server_group)
+      owner = ServersFactory.build(:server_owner)
+
+      %Server{} =
+        server =
+        ServersFactory.build(:server,
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        )
+
+      reference = EventsFactory.build(:event_reference)
+
+      assert refresh_my_servers.([view], {:server_created, ServerCreated.new(server), reference}) ==
+               :ignore
+
+      assert refresh_my_servers.([view], {:server_deleted, ServerDeleted.new(server), reference}) ==
+               :ignore
+
+      assert refresh_my_servers.([view], :unrelated) == :ignore
 
       assert_no_stored_events!()
     end

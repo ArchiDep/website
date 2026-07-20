@@ -106,6 +106,24 @@ defmodule ArchiDep.Servers do
   defdelegate list_my_servers(auth), to: @implementation
 
   @doc """
+  Subscribes the calling process to the topic that keeps the authenticated
+  principal's own servers live (their creation, update and deletion).
+  """
+  @spec subscribe_my_servers(Authentication.t()) :: :ok
+  defdelegate subscribe_my_servers(auth), to: @implementation
+
+  @doc """
+  Reconciles the authenticated principal's server list from a PubSub message
+  broadcast on the topic of `subscribe_my_servers/1`, returning the list with
+  the referenced server refreshed, or `:ignore` for a message it does not
+  reconcile (such as a creation or deletion, which the caller applies alongside
+  its server tracker).
+  """
+  @spec refresh_my_servers(list(ServerView.t()), term()) ::
+          {:ok, list(ServerView.t())} | :ignore
+  defdelegate refresh_my_servers(servers, message), to: @implementation
+
+  @doc """
   Fetches a server.
   """
   @spec fetch_server(Authentication.t(), UUID.t()) ::

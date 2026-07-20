@@ -57,6 +57,14 @@ defmodule ArchiDep.Servers.Context do
 
   @doc false
   @impl Behaviour
+  defdelegate subscribe_my_servers(auth), to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_my_servers(servers, message), to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
   defdelegate fetch_server(auth, server_id), to: UseCases.ReadServers
 
   @doc false
