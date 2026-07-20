@@ -4,8 +4,10 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   use ArchiDep, :use_case
 
   alias ArchiDep.Course.Policy
+  alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Events.Store.EventReference
 
   @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
   def list_students(auth, class) do
@@ -42,4 +44,19 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
         {:error, :student_not_found}
     end
   end
+
+  # Subscribing to the topic of a student the caller already holds grants no new
+  # access, so this read-model plumbing takes no authentication and skips the
+  # authorization the command use cases perform.
+  @spec subscribe_student(Student.t()) :: :ok
+  def subscribe_student(%Student{id: id}), do: PubSub.subscribe_student(id)
+
+  @spec refresh_student(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  def refresh_student(
+        %Student{id: id} = student,
+        {:student_updated, %{id: id} = event, %EventReference{} = reference}
+      ),
+      do: {:ok, Student.refresh!(student, event, reference)}
+
+  def refresh_student(_student, _message), do: :ignore
 end

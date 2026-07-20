@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.StudentConfigured
   alias ArchiDep.Course.Events.StudentUpdated
+  alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -751,6 +752,12 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
         expect(Course.ContextMock, :fetch_authenticated_student, 2 * mounts, fn ^auth ->
           {:ok, student}
         end)
+
+        # The live view keeps the student read-model current through the Course
+        # boundary; route those calls to the real read-model plumbing so a real
+        # broadcast still drives the re-render.
+        stub(Course.ContextMock, :subscribe_student, &ReadStudents.subscribe_student/1)
+        stub(Course.ContextMock, :refresh_student, &ReadStudents.refresh_student/2)
 
       :error ->
         :ok

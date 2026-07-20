@@ -19,6 +19,7 @@ document first.
 - [The Web Kernel](#the-web-kernel)
 - [Routing, Endpoint & Pipelines](#routing-endpoint--pipelines)
 - [Real-Time Integration](#real-time-integration)
+- [Live Read-Models](#live-read-models)
 - [User-Facing Pages](#user-facing-pages)
 - [Admin Console](#admin-console)
 - [Servers UI](#servers-ui)
@@ -136,6 +137,32 @@ docs](../../../course/CONTRIBUTING.md#client-side-architecture).
 This is what keeps the course site's header, login state and **cloud server
 widget** live without it calling any REST API. The same `ClientSessionData` is
 also pushed by [`LiveAuth`](./live_auth.ex) when a live view mounts.
+
+---
+
+## Live Read-Models
+
+Many pages keep a cached read-model current from the [bounded
+contexts][bounded-contexts]' PubSub broadcasts (a renamed class, a server
+changing state). A live view does **not** name topics or events itself; it
+delegates both halves to the owning context:
+
+- on connected mount it calls `Context.subscribe_<entity>/1`, which subscribes
+  the calling process to every topic (own-context and cross-context) that keeps
+  that entity live;
+- it attaches [`LiveRefresh`](./live_refresh.ex):
+  `LiveRefresh.attach(socket, :key, &Context.refresh_<entity>/2)` for a single
+  assign, or `attach_collection/3` for one element of a list assign.
+
+`Context.refresh_<entity>/2` owns the message → refresh decision, returning
+`{:ok, updated}` for a message it claims or `:ignore` for anything else. The
+`:handle_info` hook swaps the assign and halts on a claimed message and lets
+everything else fall through to the live view's own `handle_info/2` clauses, so
+create/delete and unrelated handlers compose without a catch-all. This keeps the
+"what feeds this read-model" knowledge in the owning context instead of spread
+across every consumer. The profile page
+([`profile_live.ex`](./profile/profile_live.ex), backed by
+`Course.subscribe_student/1` + `Course.refresh_student/2`) is the exemplar.
 
 ---
 

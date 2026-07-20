@@ -33,6 +33,7 @@ defmodule ArchiDepWeb.LiveAuthTest do
     stub(Accounts.ContextMock, :user_account, fn ^auth -> user_account end)
     stub(Accounts.ContextMock, :fetch_active_sessions, fn ^auth -> [] end)
     stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth -> {:ok, student} end)
+    stub(Course.ContextMock, :subscribe_student, fn ^student -> :ok end)
 
     {:ok, view, _html} = live(conn, @path)
 

@@ -95,4 +95,12 @@ defmodule ArchiDep.Course.Context do
   @doc false
   @impl Behaviour
   defdelegate delete_student(auth, student_id), to: UseCases.DeleteStudent
+
+  @doc false
+  @impl Behaviour
+  defdelegate subscribe_student(student), to: UseCases.ReadStudents
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_student(student, message), to: UseCases.ReadStudents
 end

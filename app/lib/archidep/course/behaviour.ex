@@ -146,4 +146,17 @@ defmodule ArchiDep.Course.Behaviour do
   """
   @callback delete_student(Authentication.t(), UUID.t()) ::
               :ok | {:error, :student_not_found}
+
+  @doc """
+  Subscribes the calling process to every topic that keeps the given student's
+  read-model live.
+  """
+  @callback subscribe_student(Student.t()) :: :ok
+
+  @doc """
+  Reconciles a student read-model from a PubSub message broadcast on one of the
+  topics of `subscribe_student/1`, returning the updated student or `:ignore`
+  for a message that does not concern it.
+  """
+  @callback refresh_student(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
 end

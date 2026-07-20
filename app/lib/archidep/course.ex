@@ -179,4 +179,19 @@ defmodule ArchiDep.Course do
   @spec delete_student(Authentication.t(), UUID.t()) ::
           :ok | {:error, :student_not_found}
   defdelegate delete_student(auth, student_id), to: @implementation
+
+  @doc """
+  Subscribes the calling process to every topic that keeps the given student's
+  read-model live.
+  """
+  @spec subscribe_student(Student.t()) :: :ok
+  defdelegate subscribe_student(student), to: @implementation
+
+  @doc """
+  Reconciles a student read-model from a PubSub message broadcast on one of the
+  topics of `subscribe_student/1`, returning the updated student or `:ignore`
+  for a message that does not concern it.
+  """
+  @spec refresh_student(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  defdelegate refresh_student(student, message), to: @implementation
 end

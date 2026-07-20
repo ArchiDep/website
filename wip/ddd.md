@@ -185,7 +185,7 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
         `ServerProperties` (schema version 2, behind **#6**). Consumers converted
         with the full event-driven approach (Option A): cached read-models call
         `refresh!`, and the two that add a newly-appearing server fetch it.
-- [ ] **#5d Consolidate subscribe + reconcile behind the context (exemplar).**
+- [x] **#5d Consolidate subscribe + reconcile behind the context (exemplar).**
       Give each live read-model a `Context.subscribe_<entity>/1` and
       `Context.refresh_<entity>/2` (`{:ok, entity} | :ignore`, owning the
       event→`refresh!` dispatch), plus a plain `ArchiDepWeb.LiveRefresh` helper

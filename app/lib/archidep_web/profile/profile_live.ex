@@ -5,8 +5,8 @@ defmodule ArchiDepWeb.Profile.ProfileLive do
   alias ArchiDep.Accounts
   alias ArchiDep.Accounts.Schemas.Identity.SwitchEduId
   alias ArchiDep.Course
-  alias ArchiDep.Course.Schemas.Student
   alias ArchiDepWeb.Course.ChangeUsernameDialogLive
+  alias ArchiDepWeb.LiveRefresh
   alias ArchiDepWeb.Profile.CurrentSessionsLive
 
   @impl LiveView
@@ -22,16 +22,9 @@ defmodule ArchiDepWeb.Profile.ProfileLive do
         Course.fetch_authenticated_student(auth)
       end
 
-    if connected?(socket) do
-      set_process_label(__MODULE__, auth)
-
-      if student != nil do
-        :ok = Course.PubSub.subscribe_student(student.id)
-      end
-    end
-
     socket
     |> assign(page_title: gettext("Profile"), user_account: user_account, student: student)
+    |> track_student(auth, student)
     |> ok()
   end
 
@@ -40,17 +33,21 @@ defmodule ArchiDepWeb.Profile.ProfileLive do
     {:noreply, socket}
   end
 
-  @impl LiveView
-  def handle_info(
-        {:student_updated, %{id: id} = event, reference},
-        %Socket{
-          assigns: %{
-            student: %Student{id: id} = student
-          }
-        } = socket
-      ),
-      do:
+  # On connected mount, subscribe to the student's read-model and keep the
+  # `:student` assign current through the Course boundary. A root user has no
+  # student and nothing to track.
+  defp track_student(socket, auth, student) do
+    if connected?(socket) do
+      set_process_label(__MODULE__, auth)
+
+      if student != nil do
+        :ok = Course.subscribe_student(student)
+        LiveRefresh.attach(socket, :student, &Course.refresh_student/2)
+      else
         socket
-        |> assign(student: Student.refresh!(student, event, reference))
-        |> noreply()
+      end
+    else
+      socket
+    end
+  end
 end

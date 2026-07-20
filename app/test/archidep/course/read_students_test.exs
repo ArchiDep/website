@@ -6,6 +6,9 @@ defmodule ArchiDep.Course.ReadStudentsTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.StudentConfigured
+  alias ArchiDep.Course.Events.StudentUpdated
+  alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
@@ -13,6 +16,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
   alias ArchiDep.Repo
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
 
   # Pinned instant returned by the injected clock for the duration of each test.
@@ -29,7 +33,9 @@ defmodule ArchiDep.Course.ReadStudentsTest do
     %{
       list_students: protect({Context, :list_students, 2}, Behaviour),
       fetch_authenticated_student: protect({Context, :fetch_authenticated_student, 1}, Behaviour),
-      fetch_student_in_class: protect({Context, :fetch_student_in_class, 3}, Behaviour)
+      fetch_student_in_class: protect({Context, :fetch_student_in_class, 3}, Behaviour),
+      subscribe_student: protect({Context, :subscribe_student, 1}, Behaviour),
+      refresh_student: protect({Context, :refresh_student, 2}, Behaviour)
     }
   end
 
@@ -138,7 +144,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       fetch_student_in_class: fetch_student_in_class
     } do
       other_class = CourseFactory.insert(:class)
-      student = CourseFactory.insert(:student, user: nil)
+      %Student{} = student = CourseFactory.insert(:student, user: nil)
       auth = Factory.build(:authentication, root: true)
 
       assert fetch_student_in_class.(auth, other_class.id, student.id) ==
@@ -170,6 +176,94 @@ defmodule ArchiDep.Course.ReadStudentsTest do
 
       assert fetch_student_in_class.(auth, class.id, student.id) ==
                {:error, :student_not_found}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "subscribe_student/1" do
+    test "subscribes the calling process to the student's topic", %{
+      subscribe_student: subscribe_student
+    } do
+      %Student{} = student = CourseFactory.build(:student, user: nil)
+
+      assert subscribe_student.(student) == :ok
+
+      updated = %Student{student | name: "Renamed", version: student.version + 1}
+      event = StudentUpdated.new(updated)
+      reference = EventsFactory.build(:event_reference, version: updated.version)
+      :ok = PubSub.publish_student_updated(updated, event, reference)
+
+      assert_receive {:student_updated, ^event, ^reference}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "refresh_student/2" do
+    test "reconciles the student from a student-updated message", %{
+      refresh_student: refresh_student
+    } do
+      %Student{} = student = CourseFactory.build(:student, user: nil)
+
+      updated = %Student{student | name: "Renamed", version: student.version + 1}
+      event = StudentUpdated.new(updated)
+      reference = EventsFactory.build(:event_reference, version: updated.version)
+
+      assert refresh_student.(student, {:student_updated, event, reference}) ==
+               {:ok, Student.refresh!(student, event, reference)}
+
+      assert_no_stored_events!()
+    end
+
+    test "reconciles the student from a student-configured message", %{
+      refresh_student: refresh_student
+    } do
+      %Student{} = student = CourseFactory.build(:student, user: nil)
+
+      configured = %Student{student | username_confirmed: true, version: student.version + 1}
+      event = StudentConfigured.new(configured)
+      reference = EventsFactory.build(:event_reference, version: configured.version)
+
+      assert refresh_student.(student, {:student_updated, event, reference}) ==
+               {:ok, Student.refresh!(student, event, reference)}
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores a student-updated message for another student", %{
+      refresh_student: refresh_student
+    } do
+      %Student{} = student = CourseFactory.build(:student, user: nil)
+      %Student{} = other = CourseFactory.build(:student, user: nil)
+
+      event = StudentUpdated.new(%Student{other | version: other.version + 1})
+      reference = EventsFactory.build(:event_reference, version: other.version + 1)
+
+      assert refresh_student.(student, {:student_updated, event, reference}) == :ignore
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores a message shape it does not handle", %{refresh_student: refresh_student} do
+      %Student{} = student = CourseFactory.build(:student, user: nil)
+
+      assert refresh_student.(student, {:student_deleted, student}) == :ignore
+      assert refresh_student.(student, :unrelated) == :ignore
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores any message when there is no student to reconcile", %{
+      refresh_student: refresh_student
+    } do
+      %Student{} = student = CourseFactory.build(:student, user: nil)
+
+      updated = %Student{student | name: "Renamed", version: student.version + 1}
+      event = StudentUpdated.new(updated)
+      reference = EventsFactory.build(:event_reference, version: updated.version)
+
+      assert refresh_student.(nil, {:student_updated, event, reference}) == :ignore
 
       assert_no_stored_events!()
     end
