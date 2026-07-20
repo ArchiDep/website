@@ -11,6 +11,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Servers.UseCases.ReadServers
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias Ecto.Changeset
@@ -515,6 +516,11 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
     stub(Servers.ContextMock, :fetch_server, fn ^auth, _id -> {:ok, view} end)
     stub(ServerTrackerClientMock, :start_link, fn ^view -> {:ok, self()} end)
     stub(ServerTrackerClientMock, :get_current_server_state, fn ^server_id -> nil end)
+    # The live view keeps the server read-model current through the Servers
+    # boundary; route those calls to the real read-model plumbing so a real
+    # broadcast still drives the re-render.
+    stub(Servers.ContextMock, :subscribe_server, &ReadServers.subscribe_server/1)
+    stub(Servers.ContextMock, :refresh_server, &ReadServers.refresh_server/2)
     :ok
   end
 

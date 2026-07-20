@@ -103,6 +103,20 @@ defmodule ArchiDep.Servers.Behaviour do
               {:ok, ServerView.t()} | {:error, :server_not_found}
 
   @doc """
+  Subscribes the calling process to every topic that keeps the given server's
+  read-model live.
+  """
+  @callback subscribe_server(ServerView.t()) :: :ok
+
+  @doc """
+  Reconciles a server read-model from a PubSub message broadcast on one of the
+  topics of `subscribe_server/1`, returning the updated server or `:ignore` for
+  a message that does not concern it.
+  """
+  @callback refresh_server(ServerView.t() | nil, term()) ::
+              {:ok, ServerView.t()} | :ignore
+
+  @doc """
   Validates the data to update an existing server.
   """
   @callback validate_existing_server(Authentication.t(), UUID.t(), Types.server_data()) ::

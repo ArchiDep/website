@@ -4,8 +4,13 @@ defmodule ArchiDep.Servers.ReadServersTest do
   import Hammox
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.Context
+  alias ArchiDep.Servers.Events.ServerUpdated
+  alias ArchiDep.Servers.PubSub
+  alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
+  alias ArchiDep.Support.ServersFactory
   alias ArchiDep.Support.ServersTestHelpers
 
   # A fixed past instant for the persisted owner/group fixtures.
@@ -18,7 +23,9 @@ defmodule ArchiDep.Servers.ReadServersTest do
       list_my_servers: protect({Context, :list_my_servers, 1}, Behaviour),
       fetch_server: protect({Context, :fetch_server, 2}, Behaviour),
       fetch_active_server_for_group_member:
-        protect({Context, :fetch_active_server_for_group_member, 2}, Behaviour)
+        protect({Context, :fetch_active_server_for_group_member, 2}, Behaviour),
+      subscribe_server: protect({Context, :subscribe_server, 1}, Behaviour),
+      refresh_server: protect({Context, :refresh_server, 2}, Behaviour)
     }
   end
 
@@ -184,6 +191,126 @@ defmodule ArchiDep.Servers.ReadServersTest do
 
       assert fetch_active_server_for_group_member.(root, student.id) ==
                {:error, :server_not_found}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "subscribe_server/1" do
+    test "subscribes the calling process to the server's topic", %{
+      subscribe_server: subscribe_server
+    } do
+      group = ServersFactory.build(:server_group)
+      owner = ServersFactory.build(:server_owner)
+
+      %Server{} =
+        server =
+        ServersFactory.build(:server,
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        )
+
+      %ServerView{} = view = ServerView.from(server)
+
+      assert subscribe_server.(view) == :ok
+
+      updated = %Server{server | name: "renamed", version: server.version + 1}
+      event = ServerUpdated.new(updated)
+      reference = EventsFactory.build(:event_reference, version: updated.version)
+      :ok = PubSub.publish_server_updated(event, reference)
+
+      assert_receive {:server_updated, ^event, ^reference}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "refresh_server/2" do
+    test "reconciles the server from a server-updated message", %{
+      refresh_server: refresh_server
+    } do
+      group = ServersFactory.build(:server_group)
+      owner = ServersFactory.build(:server_owner)
+
+      %Server{} =
+        server =
+        ServersFactory.build(:server,
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        )
+
+      %ServerView{} = view = ServerView.from(server)
+
+      updated = %Server{server | name: "renamed", version: server.version + 1}
+      event = ServerUpdated.new(updated)
+      reference = EventsFactory.build(:event_reference, version: updated.version)
+
+      assert refresh_server.(view, {:server_updated, event, reference}) ==
+               {:ok, ServerView.refresh!(view, event, reference)}
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores a server-updated message for another server", %{
+      refresh_server: refresh_server
+    } do
+      %ServerView{} = view = ServersFactory.build(:server_view)
+
+      group = ServersFactory.build(:server_group)
+      owner = ServersFactory.build(:server_owner)
+
+      %Server{} =
+        other =
+        ServersFactory.build(:server,
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        )
+
+      event = ServerUpdated.new(%Server{other | version: other.version + 1})
+      reference = EventsFactory.build(:event_reference, version: other.version + 1)
+
+      assert refresh_server.(view, {:server_updated, event, reference}) == :ignore
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores the tracker and deletion messages it lets fall through", %{
+      refresh_server: refresh_server
+    } do
+      %ServerView{} = view = ServersFactory.build(:server_view)
+
+      assert refresh_server.(view, {:server_state, view.id, :busy}) == :ignore
+      assert refresh_server.(view, {:server_deleted, view, :reference}) == :ignore
+      assert refresh_server.(view, :unrelated) == :ignore
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores any message when there is no server to reconcile", %{
+      refresh_server: refresh_server
+    } do
+      group = ServersFactory.build(:server_group)
+      owner = ServersFactory.build(:server_owner)
+
+      %Server{} =
+        server =
+        ServersFactory.build(:server,
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        )
+
+      event = ServerUpdated.new(%Server{server | version: server.version + 1})
+      reference = EventsFactory.build(:event_reference, version: server.version + 1)
+
+      assert refresh_server.(nil, {:server_updated, event, reference}) == :ignore
 
       assert_no_stored_events!()
     end

@@ -162,7 +162,12 @@ create/delete and unrelated handlers compose without a catch-all. This keeps the
 "what feeds this read-model" knowledge in the owning context instead of spread
 across every consumer. The profile page
 ([`profile_live.ex`](./profile/profile_live.ex), backed by
-`Course.subscribe_student/1` + `Course.refresh_student/2`) is the exemplar.
+`Course.subscribe_student/1` + `Course.refresh_student/2`) is the exemplar. The
+server detail page ([`server_live.ex`](./servers/server_live.ex), backed by
+`Servers.subscribe_server/1` + `Servers.refresh_server/2`) shows the hook
+coexisting with a page's own `handle_info/2` clauses: it halts `:server_updated`
+while the tracker's `:server_state` messages and the `:server_deleted` notice
+fall through to the page.
 
 ---
 

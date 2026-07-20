@@ -66,6 +66,14 @@ defmodule ArchiDep.Servers.Context do
 
   @doc false
   @impl Behaviour
+  defdelegate subscribe_server(server), to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_server(server, message), to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
   defdelegate validate_existing_server(auth, server_id, data), to: UseCases.UpdateServer
 
   @doc false

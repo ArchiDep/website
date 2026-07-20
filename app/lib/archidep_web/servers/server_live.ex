@@ -7,10 +7,10 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   import ArchiDepWeb.Servers.ServerRetryHandlers
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerDeleted
-  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
   alias ArchiDep.Servers.ServerView
+  alias ArchiDepWeb.LiveRefresh
   alias ArchiDepWeb.Servers.DeleteServerDialogLive
   alias ArchiDepWeb.Servers.EditServerDialogLive
 
@@ -22,8 +22,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
       {:ok, server} ->
         if connected?(socket) do
           set_process_label(__MODULE__, auth, server)
-          # TODO: add watch_server in context
-          :ok = PubSub.subscribe_server(server.id)
+          :ok = Servers.subscribe_server(server)
           {:ok, _pid} = ServerTrackerClient.start_link(server)
         end
 
@@ -33,6 +32,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
           server: server,
           state: ServerTrackerClient.get_current_server_state(server.id)
         )
+        |> attach_server_refresh()
         |> ok()
 
       {:error, :server_not_found} ->
@@ -88,16 +88,6 @@ defmodule ArchiDepWeb.Servers.ServerLive do
 
   @impl LiveView
   def handle_info(
-        {:server_updated, %{id: id} = event, reference},
-        %Socket{assigns: %{server: %ServerView{id: id} = server}} = socket
-      ),
-      do:
-        socket
-        |> assign(server: ServerView.refresh!(server, event, reference))
-        |> noreply()
-
-  @impl LiveView
-  def handle_info(
         {:server_deleted, %ServerDeleted{id: server_id} = deleted_server, _reference},
         %{assigns: %{server: %ServerView{id: server_id}}} = socket
       ),
@@ -116,4 +106,16 @@ defmodule ArchiDepWeb.Servers.ServerLive do
 
   defp redirect_after_deleted(%Socket{assigns: %{admin_ui: true}}), do: ~p"/admin"
   defp redirect_after_deleted(_socket), do: ~p"/app"
+
+  # On connected mount the `:server` read-model is kept current through the
+  # Servers boundary. The hook halts `:server_updated` broadcasts and lets the
+  # tracker's `:server_state` messages and the `:server_deleted` notice fall
+  # through to this module's own `handle_info/2` clauses.
+  defp attach_server_refresh(socket) do
+    if connected?(socket) do
+      LiveRefresh.attach(socket, :server, &Servers.refresh_server/2)
+    else
+      socket
+    end
+  end
 end

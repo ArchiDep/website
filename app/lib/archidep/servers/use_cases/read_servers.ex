@@ -4,7 +4,9 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
   use ArchiDep, :use_case
 
   alias ArchiDep.Clock
+  alias ArchiDep.Events.Store.EventReference
   alias ArchiDep.Servers.Policy
+  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.ServerView
 
@@ -72,4 +74,19 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
         {:error, :server_not_found}
     end
   end
+
+  # Subscribing to the topic of a server the caller already holds grants no new
+  # access, so this read-model plumbing takes no authentication and skips the
+  # authorization the command use cases perform.
+  @spec subscribe_server(ServerView.t()) :: :ok
+  def subscribe_server(%ServerView{id: id}), do: PubSub.subscribe_server(id)
+
+  @spec refresh_server(ServerView.t() | nil, term()) :: {:ok, ServerView.t()} | :ignore
+  def refresh_server(
+        %ServerView{id: id} = server,
+        {:server_updated, %{id: id} = event, %EventReference{} = reference}
+      ),
+      do: {:ok, ServerView.refresh!(server, event, reference)}
+
+  def refresh_server(_server, _message), do: :ignore
 end

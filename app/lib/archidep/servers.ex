@@ -120,6 +120,22 @@ defmodule ArchiDep.Servers do
   defdelegate fetch_active_server_for_group_member(auth, group_member_id), to: @implementation
 
   @doc """
+  Subscribes the calling process to every topic that keeps the given server's
+  read-model live.
+  """
+  @spec subscribe_server(ServerView.t()) :: :ok
+  defdelegate subscribe_server(server), to: @implementation
+
+  @doc """
+  Reconciles a server read-model from a PubSub message broadcast on one of the
+  topics of `subscribe_server/1`, returning the updated server or `:ignore` for
+  a message that does not concern it.
+  """
+  @spec refresh_server(ServerView.t() | nil, term()) ::
+          {:ok, ServerView.t()} | :ignore
+  defdelegate refresh_server(server, message), to: @implementation
+
+  @doc """
   Validates the data to update an existing server.
   """
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.server_data()) ::
