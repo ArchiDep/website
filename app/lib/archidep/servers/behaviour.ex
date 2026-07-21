@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.Behaviour do
   alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
+  alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.Types
 
@@ -93,12 +94,21 @@ defmodule ArchiDep.Servers.Behaviour do
   @doc """
   Reconciles the authenticated principal's server list from a PubSub message
   broadcast on the topic of `subscribe_my_servers/1`, returning the list with
-  the referenced server refreshed, or `:ignore` for a message it does not
-  reconcile (such as a creation or deletion, which the caller applies alongside
-  its server tracker).
+  the referenced server created, refreshed or deleted, or `:ignore` for a
+  message it does not reconcile.
   """
-  @callback refresh_my_servers(list(ServerView.t()), term()) ::
+  @callback refresh_my_servers(Authentication.t(), list(ServerView.t()), term()) ::
               {:ok, list(ServerView.t())} | :ignore
+
+  @doc """
+  Reconciles a map of server real-time states from a message pushed by the
+  server tracker, returning the updated map, or `:ignore` for a message that
+  does not concern it.
+  """
+  @callback refresh_server_state_map(
+              %{optional(UUID.t()) => ServerRealTimeState.t() | nil},
+              term()
+            ) :: {:ok, %{optional(UUID.t()) => ServerRealTimeState.t() | nil}} | :ignore
 
   @doc """
   Lists all servers in a server group.

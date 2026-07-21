@@ -14,6 +14,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerClient do
   @implementation Application.compile_env!(:archidep, __MODULE__)
 
   defdelegate start_link(servers), to: @implementation
+  defdelegate start_link(auth, servers, scope), to: @implementation
   defdelegate track(tracker, server), to: @implementation
   defdelegate untrack(tracker, server), to: @implementation
   defdelegate server_state_map(servers), to: @implementation

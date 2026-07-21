@@ -10,6 +10,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
 
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Helpers.ProcessHelpers
+  alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour
@@ -25,16 +26,32 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   @typedoc "Anything the tracker can read a server ID from."
   @type trackable :: Server.t() | ServerView.t()
 
+  @typedoc """
+  Which of an owner's servers a self-managing tracker watches: all of them, or
+  only the active ones.
+  """
+  @type scope :: :all | :active
+
   @type server_state_update :: {:server_state, UUID.t(), ServerRealTimeState.t() | nil}
 
   @impl ServerTrackerClientBehaviour
   @spec start_link(list(trackable())) :: GenServer.on_start()
   def start_link(servers) when is_list(servers),
-    do: GenServer.start_link(__MODULE__, {self(), Enum.map(servers, & &1.id)})
+    do: GenServer.start_link(__MODULE__, {self(), Enum.map(servers, & &1.id), nil, nil})
 
   @spec start_link(trackable()) :: GenServer.on_start()
   def start_link(server),
-    do: GenServer.start_link(__MODULE__, {self(), [server.id]})
+    do: GenServer.start_link(__MODULE__, {self(), [server.id], nil, nil})
+
+  @impl ServerTrackerClientBehaviour
+  @spec start_link(Authentication.t(), list(trackable()), scope()) :: GenServer.on_start()
+  def start_link(%Authentication{principal_id: owner_id}, servers, scope)
+      when is_list(servers) and scope in [:all, :active],
+      do:
+        GenServer.start_link(
+          __MODULE__,
+          {self(), servers |> in_scope(scope) |> Enum.map(& &1.id), scope, owner_id}
+        )
 
   # Client API
 
@@ -80,46 +97,53 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   # Server callbacks
 
   @impl GenServer
-  def init({from, server_ids}) do
+  def init({from, server_ids, scope, owner_id}) do
     Logger.debug("Init server tracker for server(s): #{inspect(server_ids)}")
 
-    {:ok, {from, server_ids}, {:continue, :init}}
+    {:ok, {from, server_ids, scope, owner_id}, {:continue, :init}}
   end
 
   @impl GenServer
-  def handle_continue(:init, {from, server_ids}) do
+  def handle_continue(:init, {from, server_ids, scope, owner_id}) do
     set_process_label(__MODULE__)
 
     :ok = PubSub.subscribe(@pubsub, "tracker:servers")
 
+    # In owner-scope mode the tracker maintains its own tracked set: it listens
+    # to the owner's server lifecycle and tracks/untracks servers autonomously,
+    # so the web layer never orchestrates tracking or names those topics.
+    if owner_id != nil do
+      :ok = ArchiDep.Servers.PubSub.subscribe_server_owner_servers(owner_id)
+    end
+
     server_ids
     |> get_current_server_states()
-    |> pair(from)
+    |> with_scope(from, scope)
     |> noreply()
   end
 
   @impl GenServer
-  def handle_call({:track, server_id}, {from, _tag}, {from, server_states}) do
+  def handle_call({:track, server_id}, {from, _tag}, {from, server_states, scope}) do
     current_state = get_current_server_state(server_id)
 
     server_states
     |> Map.put(server_id, current_state)
-    |> pair(from)
+    |> with_scope(from, scope)
     |> reply_with({:server_state, server_id, current_state})
   end
 
   @impl GenServer
-  def handle_call({:untrack, server_id}, {from, _tag}, {from, server_states}) do
+  def handle_call({:untrack, server_id}, {from, _tag}, {from, server_states, scope}) do
     server_states
     |> Map.delete(server_id)
-    |> pair(from)
+    |> with_scope(from, scope)
     |> reply_with({:server_state, server_id, nil})
   end
 
   @impl GenServer
   def handle_info(
         {action, server_id, %{state: %ServerRealTimeState{} = server_state}},
-        {from, server_states} = state
+        {from, server_states, scope} = state
       )
       when action in [:join, :update] do
     if Map.has_key?(server_states, server_id) do
@@ -134,7 +158,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
         end
 
       new_server_states
-      |> pair(from)
+      |> with_scope(from, scope)
       |> noreply()
     else
       noreply(state)
@@ -144,19 +168,59 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   @impl GenServer
   def handle_info(
         {:leave, server_id, %{state: %ServerRealTimeState{}}},
-        {from, server_states} = state
+        {from, server_states, scope} = state
       ) do
     if Map.has_key?(server_states, server_id) and Map.get(server_states, server_id) != nil do
       send(from, {:server_state, server_id, nil})
 
       server_states
       |> Map.put(server_id, nil)
-      |> pair(from)
+      |> with_scope(from, scope)
       |> noreply()
     else
       noreply(state)
     end
   end
+
+  @impl GenServer
+  def handle_info({:server_created, %{id: server_id} = event, _reference}, state),
+    do: state |> reconcile_tracked(server_id, in_scope?(state, event)) |> noreply()
+
+  @impl GenServer
+  def handle_info({:server_updated, %{id: server_id} = event, _reference}, state),
+    do: state |> reconcile_tracked(server_id, in_scope?(state, event)) |> noreply()
+
+  @impl GenServer
+  def handle_info({:server_deleted, %{id: server_id}, _reference}, state),
+    do: state |> reconcile_tracked(server_id, false) |> noreply()
+
+  # Bring the tracked set in line with whether a server should be watched:
+  # start tracking a newly-relevant server, stop tracking one that dropped out
+  # of scope or was deleted, and leave an unchanged membership untouched.
+  defp reconcile_tracked({from, server_states, scope}, server_id, should_track) do
+    case {should_track, Map.has_key?(server_states, server_id)} do
+      {true, false} ->
+        current_state = get_current_server_state(server_id)
+        send(from, {:server_state, server_id, current_state})
+        {from, Map.put(server_states, server_id, current_state), scope}
+
+      {false, true} ->
+        send(from, {:server_state, server_id, nil})
+        {from, Map.delete(server_states, server_id), scope}
+
+      _unchanged ->
+        {from, server_states, scope}
+    end
+  end
+
+  defp in_scope?({_from, _server_states, :all}, _event), do: true
+  defp in_scope?({_from, _server_states, :active}, %{active: active}), do: active
+  defp in_scope?({_from, _server_states, nil}, _event), do: false
+
+  defp in_scope(servers, :all), do: servers
+  defp in_scope(servers, :active), do: Enum.filter(servers, & &1.active)
+
+  defp with_scope(server_states, from, scope), do: {from, server_states, scope}
 
   defp more_recent_server_state?(nil, %ServerRealTimeState{}), do: true
 

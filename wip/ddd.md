@@ -848,10 +848,13 @@ kept separate so each PR stays readable end-to-end.
 `:server_deleted` navigation handlers), `classes_live` (whole list via
 `attach/3` — `Course.refresh_classes/2` owns create/update/delete/ordering, so
 the page has no `handle_info`), and `my_servers_live` (whole list via
-`Servers.subscribe_my_servers/1` + `Servers.refresh_my_servers/2`, moved onto
-the owner-scoped topic). Remaining: `dashboard_live`, `admin_live`, admin
-`student_live`, `class_live`, `ansible_live`, and the `user_channel` (a
-`Phoenix.Channel`, so no `attach_hook`).
+`Servers.subscribe_my_servers/1` + `Servers.refresh_my_servers/3`, now owning
+create/update/delete, plus a second `LiveRefresh` hook on `:server_state_map`
+fed by `Servers.refresh_server_state_map/2` — the page has no `handle_info` and
+names no events or topics; see the tracker decision below). Remaining:
+`dashboard_live`, `admin_live`, admin `student_live`, `class_live`,
+`ansible_live`, and the `user_channel` (a `Phoenix.Channel`, so no
+`attach_hook`).
 
 **Topic granularity (decided).** Subscribe once, on mount, to the _coarsest_
 topic whose audience is "everyone who cares about any of these events" — the
@@ -895,10 +898,23 @@ need `:server_created` contend for it. Options considered:
   thin tracker reactor.
 
 `ServerTrackerClient` is shared by `server_live`, `my_servers_live`, and
-`dashboard_live`, so (B) touches all three. Sub-decision still open: prototype on
-`my_servers` first (optional "watch this owner" tracker mode, other pages
-unchanged) vs. design the tracker change across all three before coding.
-**Status: leaning (B); to be confirmed before the next consumer conversion.**
+`dashboard_live`, so (B) touches all three.
+
+**Status: (B) decided and prototyped on `my_servers` first.** The tracker gained
+a self-managing owner-scope mode: `ServerTrackerClient.start_link(auth, servers,
+scope)` where `scope` is `:all` (my servers) or `:active` (dashboard). In that
+mode the tracker subscribes to the owner topic itself and tracks/untracks
+autonomously on `:server_created` / `:server_updated` / `:server_deleted`,
+reading membership off the event's `active` field (both `ServerCreated` and
+`ServerUpdated` carry it — no DB fetch). The web layer expresses only the scope
+intent, never a topic. `my_servers_live` is fully converted: two `LiveRefresh`
+hooks (`:servers` via `refresh_my_servers/3`, `:server_state_map` via
+`refresh_server_state_map/2`), no `handle_info`, no event or topic names. The
+tracker's dumb fixed-set mode (`start_link/1`) is unchanged and still used by
+`server_live`. `dashboard_live` follows next with `scope: :active`; it will hold
+the full my-servers list and derive the active/inactive split in the template
+(the `.active` boolean, preserving today's behaviour) rather than keeping a
+separate inactive-id `MapSet`.
 
 ### #6 Record a `schema_version` per stored event
 

@@ -61,7 +61,11 @@ defmodule ArchiDep.Servers.Context do
 
   @doc false
   @impl Behaviour
-  defdelegate refresh_my_servers(servers, message), to: UseCases.ReadServers
+  defdelegate refresh_my_servers(auth, servers, message), to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_server_state_map(server_state_map, message), to: UseCases.ReadServers
 
   @doc false
   @impl Behaviour

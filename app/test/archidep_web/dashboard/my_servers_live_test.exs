@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerTracking.ServerTracker
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
   alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.UseCases.ReadServers
@@ -67,12 +68,6 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
 
       state = real_time_state(server, connection_state: ServersFactory.random_connected_state())
 
-      expect(ServerTrackerClientMock, :update_server_state_map, fn %{},
-                                                                   {:server_state, ^server_id,
-                                                                    ^state} ->
-        %{server_id => state}
-      end)
-
       {:ok, view, _html} = live(conn, "/app/my-servers")
 
       send(view.pid, {:server_state, server.id, state})
@@ -103,19 +98,10 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
       created = ServerView.from(created_server)
       created_id = created.id
 
-      created_state =
-        real_time_state(created, connection_state: ServersFactory.random_connected_state())
-
-      update = {:server_state, created_id, created_state}
-
       # The created broadcast carries only the event, so the page fetches the
-      # curated view on first sighting before tracking it.
+      # curated view on first sighting. Watching the new server's real-time
+      # state is the tracker's own concern, not the page's.
       expect(Servers.ContextMock, :fetch_server, fn ^auth, ^created_id -> {:ok, created} end)
-      expect(ServerTrackerClientMock, :track, fn _tracker, ^created -> update end)
-
-      expect(ServerTrackerClientMock, :update_server_state_map, fn %{}, ^update ->
-        %{created_id => created_state}
-      end)
 
       {:ok, view, _html} = live(conn, "/app/my-servers")
 
@@ -133,7 +119,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
 
       assert server_cards(render(view)) == %{
                "/servers/#{existing.id}" => %{name: "web-01", badge: "Not connected"},
-               "/servers/#{created.id}" => %{name: "web-02", badge: "Connected"}
+               "/servers/#{created.id}" => %{name: "web-02", badge: "Not connected"}
              }
     end
 
@@ -212,15 +198,6 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
       db = ServerView.from(db_struct)
       stub_page(auth, [web, db])
       db_id = db.id
-
-      expect(ServerTrackerClientMock, :untrack, fn _tracker, ^db ->
-        {:server_state, db_id, nil}
-      end)
-
-      expect(ServerTrackerClientMock, :update_server_state_map, fn %{},
-                                                                   {:server_state, ^db_id, nil} ->
-        %{}
-      end)
 
       {:ok, view, _html} = live(conn, "/app/my-servers")
 
@@ -387,14 +364,17 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
       owner || build_owner()
     end)
 
-    stub(ServerTrackerClientMock, :start_link, fn _servers -> {:ok, self()} end)
+    stub(ServerTrackerClientMock, :start_link, fn _auth, _servers, _scope -> {:ok, self()} end)
     stub(ServerTrackerClientMock, :server_state_map, fn _servers -> %{} end)
+    stub(ServerTrackerClientMock, :update_server_state_map, &ServerTracker.update_server_state_map/2)
 
-    # The page keeps its server list current through the Servers boundary; route
-    # those calls to the real read-model plumbing so a real broadcast still
-    # drives the re-render.
+    # The page keeps its server list and real-time state map current through the
+    # Servers boundary; route those calls to the real read-model plumbing so a
+    # real broadcast (list) or a real tracker push (state) still drives the
+    # re-render.
     stub(Servers.ContextMock, :subscribe_my_servers, &ReadServers.subscribe_my_servers/1)
-    stub(Servers.ContextMock, :refresh_my_servers, &ReadServers.refresh_my_servers/2)
+    stub(Servers.ContextMock, :refresh_my_servers, &ReadServers.refresh_my_servers/3)
+    stub(Servers.ContextMock, :refresh_server_state_map, &ReadServers.refresh_server_state_map/2)
 
     case Keyword.fetch(opts, :groups) do
       {:ok, groups} -> stub(Servers.ContextMock, :list_server_groups, fn ^auth -> groups end)

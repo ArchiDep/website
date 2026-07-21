@@ -6,6 +6,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
+  alias ArchiDep.Support.Factory
   alias Ecto.UUID
   alias Phoenix.Tracker
 
@@ -120,6 +121,80 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
       track_in_tracker(server_id, state)
 
       assert_receive {:server_state, ^server_id, ^state}, 1_000
+    end
+  end
+
+  describe "self-managing owner scope" do
+    test "tracks every one of the owner's servers under the :all scope" do
+      {:ok, tracker} = ServerTracker.start_link(Factory.build(:authentication), [], :all)
+      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+
+      created_id = UUID.generate()
+      send(tracker, {:server_created, %{id: created_id, active: false}, :reference})
+
+      assert_receive {:server_state, ^created_id, nil}
+    end
+
+    test "stops tracking a deleted server under the :all scope" do
+      {:ok, tracker} = ServerTracker.start_link(Factory.build(:authentication), [], :all)
+      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+
+      server_id = UUID.generate()
+      send(tracker, {:server_created, %{id: server_id, active: true}, :reference})
+      assert_receive {:server_state, ^server_id, nil}
+
+      # Now that it is tracked, a presence change is forwarded.
+      state = server_state(1)
+      send(tracker, {:join, server_id, %{state: state}})
+      assert_receive {:server_state, ^server_id, ^state}
+
+      send(tracker, {:server_deleted, %{id: server_id}, :reference})
+      assert_receive {:server_state, ^server_id, nil}
+
+      # Now that it is untracked, a presence change is no longer forwarded.
+      send(tracker, {:join, server_id, %{state: server_state(2)}})
+      _flushed = :sys.get_state(tracker)
+
+      refute_received {:server_state, ^server_id, _state}
+    end
+
+    test "tracks a created active server but ignores an inactive one under the :active scope" do
+      {:ok, tracker} = ServerTracker.start_link(Factory.build(:authentication), [], :active)
+      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+
+      active_id = UUID.generate()
+      send(tracker, {:server_created, %{id: active_id, active: true}, :reference})
+      assert_receive {:server_state, ^active_id, nil}
+
+      inactive_id = UUID.generate()
+      send(tracker, {:server_created, %{id: inactive_id, active: false}, :reference})
+      _flushed = :sys.get_state(tracker)
+
+      refute_received {:server_state, ^inactive_id, _state}
+    end
+
+    test "starts and stops tracking as a server flips active under the :active scope" do
+      {:ok, tracker} = ServerTracker.start_link(Factory.build(:authentication), [], :active)
+      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+
+      server_id = UUID.generate()
+
+      send(tracker, {:server_updated, %{id: server_id, active: true}, :reference})
+      assert_receive {:server_state, ^server_id, nil}
+
+      # Now that it is tracked, a presence change is forwarded.
+      state = server_state(1)
+      send(tracker, {:join, server_id, %{state: state}})
+      assert_receive {:server_state, ^server_id, ^state}
+
+      send(tracker, {:server_updated, %{id: server_id, active: false}, :reference})
+      assert_receive {:server_state, ^server_id, nil}
+
+      # Now that it is untracked, a presence change is no longer forwarded.
+      send(tracker, {:join, server_id, %{state: server_state(2)}})
+      _flushed = :sys.get_state(tracker)
+
+      refute_received {:server_state, ^server_id, _state}
     end
   end
 

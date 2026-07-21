@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour do
   isolation.
   """
 
+  alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
@@ -19,6 +20,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour do
   @type trackable :: Server.t() | ServerView.t()
 
   @callback start_link(trackable() | list(trackable())) :: GenServer.on_start()
+
+  @callback start_link(Authentication.t(), list(trackable()), ServerTracker.scope()) ::
+              GenServer.on_start()
 
   @callback track(pid(), trackable()) :: ServerTracker.server_state_update()
 

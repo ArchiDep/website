@@ -4,11 +4,15 @@ defmodule ArchiDep.Servers.ReadServersTest do
   import Hammox
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.Context
+  alias ArchiDep.Servers.ContextMock
   alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerTracking.ServerTracker
+  alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
   alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
@@ -29,7 +33,8 @@ defmodule ArchiDep.Servers.ReadServersTest do
       subscribe_server: protect({Context, :subscribe_server, 1}, Behaviour),
       refresh_server: protect({Context, :refresh_server, 2}, Behaviour),
       subscribe_my_servers: protect({Context, :subscribe_my_servers, 1}, Behaviour),
-      refresh_my_servers: protect({Context, :refresh_my_servers, 2}, Behaviour)
+      refresh_my_servers: protect({Context, :refresh_my_servers, 3}, Behaviour),
+      refresh_server_state_map: protect({Context, :refresh_server_state_map, 2}, Behaviour)
     }
   end
 
@@ -387,10 +392,11 @@ defmodule ArchiDep.Servers.ReadServersTest do
     end
   end
 
-  describe "refresh_my_servers/2" do
+  describe "refresh_my_servers/3" do
     test "reconciles only the matching server and re-sorts the list", %{
       refresh_my_servers: refresh_my_servers
     } do
+      auth = Factory.build(:authentication)
       group = ServersFactory.build(:server_group)
       owner = ServersFactory.build(:server_owner)
 
@@ -410,24 +416,61 @@ defmodule ArchiDep.Servers.ReadServersTest do
       event = ServerUpdated.new(%Server{target_server | version: target_server.version + 1})
       reference = EventsFactory.build(:event_reference, version: target_server.version + 1)
 
-      # `other` sorts ahead of the refreshed target by name and must pass through
-      # unchanged.
-      assert refresh_my_servers.([target, other], {:server_updated, event, reference}) ==
+      # `other` sorts ahead of the refreshed target by name and must pass
+      # through unchanged.
+      assert refresh_my_servers.(auth, [target, other], {:server_updated, event, reference}) ==
                {:ok, [other, ServerView.refresh!(target, event, reference)]}
 
       assert_no_stored_events!()
     end
 
-    test "ignores creation, deletion and unrelated messages", %{
+    test "fetches a newly created server and inserts it in sorted order", %{
       refresh_my_servers: refresh_my_servers
     } do
-      %ServerView{} = view = ServersFactory.build(:server_view)
+      auth = Factory.build(:authentication)
+      %ServerView{} = existing = ServersFactory.build(:server_view, name: "zzz-server")
 
       group = ServersFactory.build(:server_group)
       owner = ServersFactory.build(:server_owner)
 
       %Server{} =
-        server =
+        created_server =
+        ServersFactory.build(:server,
+          name: "aaa-server",
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        )
+
+      %ServerView{} = created = ServerView.from(created_server)
+      created_id = created.id
+      reference = EventsFactory.build(:event_reference)
+
+      # The created broadcast carries only the curated event, so the read-model
+      # fetches the full view through the context boundary on first sighting.
+      expect(ContextMock, :fetch_server, fn ^auth, ^created_id -> {:ok, created} end)
+
+      assert refresh_my_servers.(
+               auth,
+               [existing],
+               {:server_created, ServerCreated.new(created_server), reference}
+             ) == {:ok, [created, existing]}
+
+      assert_no_stored_events!()
+    end
+
+    test "keeps the list unchanged when the created server can no longer be fetched", %{
+      refresh_my_servers: refresh_my_servers
+    } do
+      auth = Factory.build(:authentication)
+      %ServerView{} = existing = ServersFactory.build(:server_view, name: "web-01")
+
+      group = ServersFactory.build(:server_group)
+      owner = ServersFactory.build(:server_owner)
+
+      %Server{} =
+        created_server =
         ServersFactory.build(:server,
           group: group,
           group_id: group.id,
@@ -435,15 +478,99 @@ defmodule ArchiDep.Servers.ReadServersTest do
           owner_id: owner.id
         )
 
+      created_id = created_server.id
       reference = EventsFactory.build(:event_reference)
 
-      assert refresh_my_servers.([view], {:server_created, ServerCreated.new(server), reference}) ==
-               :ignore
+      expect(ContextMock, :fetch_server, fn ^auth, ^created_id ->
+        {:error, :server_not_found}
+      end)
 
-      assert refresh_my_servers.([view], {:server_deleted, ServerDeleted.new(server), reference}) ==
-               :ignore
+      assert refresh_my_servers.(
+               auth,
+               [existing],
+               {:server_created, ServerCreated.new(created_server), reference}
+             ) == {:ok, [existing]}
 
-      assert refresh_my_servers.([view], :unrelated) == :ignore
+      assert_no_stored_events!()
+    end
+
+    test "removes a deleted server from the list", %{refresh_my_servers: refresh_my_servers} do
+      auth = Factory.build(:authentication)
+      %ServerView{} = kept = ServersFactory.build(:server_view, name: "web-01")
+
+      group = ServersFactory.build(:server_group)
+      owner = ServersFactory.build(:server_owner)
+
+      %Server{} =
+        removed_server =
+        ServersFactory.build(:server,
+          group: group,
+          group_id: group.id,
+          owner: owner,
+          owner_id: owner.id
+        )
+
+      %ServerView{} = removed = ServerView.from(removed_server)
+      reference = EventsFactory.build(:event_reference)
+
+      assert refresh_my_servers.(
+               auth,
+               [kept, removed],
+               {:server_deleted, ServerDeleted.new(removed_server), reference}
+             ) == {:ok, [kept]}
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores unrelated messages", %{refresh_my_servers: refresh_my_servers} do
+      auth = Factory.build(:authentication)
+      %ServerView{} = view = ServersFactory.build(:server_view)
+
+      assert refresh_my_servers.(auth, [view], :unrelated) == :ignore
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "refresh_server_state_map/2" do
+    setup do
+      # The map fold lives in the tracker client; route it to the real
+      # implementation so the reconciler is exercised end to end.
+      stub(
+        ServerTrackerClientMock,
+        :update_server_state_map,
+        &ServerTracker.update_server_state_map/2
+      )
+
+      :ok
+    end
+
+    test "folds a real-time state update into the map, preserving other entries", %{
+      refresh_server_state_map: refresh_server_state_map
+    } do
+      kept_id = Ecto.UUID.generate()
+      updated_id = Ecto.UUID.generate()
+
+      state = %ServerRealTimeState{
+        connection_state: ServersFactory.random_not_connected_state(),
+        name: "web-01",
+        conn_params: {{1, 2, 3, 4}, 22, "root"},
+        username: "root",
+        app_username: "app"
+      }
+
+      assert refresh_server_state_map.(
+               %{kept_id => nil},
+               {:server_state, updated_id, state}
+             ) == {:ok, %{kept_id => nil, updated_id => state}}
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores messages that are not real-time state updates", %{
+      refresh_server_state_map: refresh_server_state_map
+    } do
+      assert refresh_server_state_map.(%{}, :unrelated) == :ignore
 
       assert_no_stored_events!()
     end

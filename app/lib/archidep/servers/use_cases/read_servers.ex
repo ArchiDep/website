@@ -8,6 +8,8 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
+  alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
   alias ArchiDep.Servers.ServerView
 
   @spec list_my_servers(Authentication.t()) :: list(ServerView.t())
@@ -96,9 +98,27 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
   @spec subscribe_my_servers(Authentication.t()) :: :ok
   def subscribe_my_servers(auth), do: PubSub.subscribe_server_owner_servers(auth.principal_id)
 
-  @spec refresh_my_servers(list(ServerView.t()), term()) ::
+  @spec refresh_my_servers(Authentication.t(), list(ServerView.t()), term()) ::
           {:ok, list(ServerView.t())} | :ignore
   def refresh_my_servers(
+        auth,
+        servers,
+        {:server_created, %{id: id}, %EventReference{}}
+      )
+      when is_list(servers) do
+    # The created broadcast carries only the curated event, so fetch the full
+    # read-view on first sighting. This goes through the public context boundary
+    # rather than the local read so the consuming LiveView sees it as an
+    # ordinary context read (authorized, and mockable) like every other server
+    # fetch.
+    case ArchiDep.Servers.fetch_server(auth, id) do
+      {:ok, %ServerView{} = created_server} -> {:ok, sort_my_servers([created_server | servers])}
+      {:error, :server_not_found} -> {:ok, servers}
+    end
+  end
+
+  def refresh_my_servers(
+        _auth,
         servers,
         {:server_updated, %{id: id} = event, %EventReference{} = reference}
       )
@@ -112,7 +132,24 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
          end)
          |> sort_my_servers()}
 
-  def refresh_my_servers(_servers, _message), do: :ignore
+  def refresh_my_servers(
+        _auth,
+        servers,
+        {:server_deleted, %{id: id}, %EventReference{}}
+      )
+      when is_list(servers),
+      do: {:ok, Enum.reject(servers, &(&1.id == id))}
+
+  def refresh_my_servers(_auth, _servers, _message), do: :ignore
+
+  @spec refresh_server_state_map(
+          %{optional(UUID.t()) => ServerRealTimeState.t() | nil},
+          term()
+        ) :: {:ok, %{optional(UUID.t()) => ServerRealTimeState.t() | nil}} | :ignore
+  def refresh_server_state_map(map, {:server_state, _id, _state} = update) when is_map(map),
+    do: {:ok, ServerTrackerClient.update_server_state_map(map, update)}
+
+  def refresh_server_state_map(_map, _message), do: :ignore
 
   defp sort_my_servers(servers),
     do: Enum.sort_by(servers, &{&1.name, &1.username, :inet.ntoa(&1.ip_address.address)})
