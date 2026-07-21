@@ -200,9 +200,11 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
       `LiveRefresh.attach`, dropping their per-event `handle_info` clauses).
       `server_live`, `classes_live`, `my_servers_live` and `dashboard_live` are
       done; the server-tracker coupling is resolved (Option B — a self-managing
-      owner-scope tracker). Remaining: `admin_live`, admin `student_live`,
-      `class_live`, `ansible_live`, and the `user_channel` — see [#5e Sweep the
-      remaining consumers](#5e-sweep-the-remaining-consumers).
+      tracker, now with owner **and** group scopes). `admin_live` reuses the
+      tracker (per-class group-scoped trackers + `refresh_server_state_map`) but
+      keeps its grouped list + class handlers by design. Remaining: admin
+      `student_live`, `class_live`, `ansible_live`, and the `user_channel` — see
+      [#5e Sweep the remaining consumers](#5e-sweep-the-remaining-consumers).
 
 ### F. Event schema versioning
 
@@ -855,9 +857,17 @@ fed by `Servers.refresh_server_state_map/2` — the page has no `handle_info` an
 names no events or topics; see the tracker decision below), and `dashboard_live`
 (same two hooks with `scope: :active`; it holds the full owned-server list and
 derives the active cards / inactive-link in the template, so it too has no
-`handle_info` beyond the student/class Course handlers). Remaining:
-`admin_live`, admin `student_live`, `class_live`, `ansible_live`, and the
-`user_channel` (a `Phoenix.Channel`, so no `attach_hook`).
+`handle_info` beyond the student/class Course handlers). `admin_live` reuses the
+tracker without a restructure: it starts one self-managing **group-scoped**
+tracker per active class (a group is the owner-analog — one topic, tracks its
+servers) and folds their pushes with `refresh_server_state_map/2`, so it no
+longer orchestrates track/untrack or holds a `:server_state` handler. It still
+owns the grouped `servers_by_class_id` list and the class handlers — its
+multi-group, class-coupled, aggregate-count shape doesn't fit the flat owner
+refresher, and `AdminClassServersLive` is a `live_component` (no process), so it
+can't own a tracker itself. Remaining: admin `student_live`, `class_live`,
+`ansible_live`, and the `user_channel` (a `Phoenix.Channel`, so no
+`attach_hook`).
 
 **Topic granularity (decided).** Subscribe once, on mount, to the _coarsest_
 topic whose audience is "everyone who cares about any of these events" — the
@@ -903,21 +913,26 @@ need `:server_created` contend for it. Options considered:
 `ServerTrackerClient` is shared by `server_live`, `my_servers_live`, and
 `dashboard_live`, so (B) touches all three.
 
-**Status: (B) done for both `my_servers` and `dashboard`.** The tracker gained a
-self-managing owner-scope mode: `ServerTrackerClient.start_link(auth, servers,
-scope)` where `scope` is `:all` (my servers) or `:active` (dashboard). In that
-mode the tracker subscribes to the owner topic itself and tracks/untracks
-autonomously on `:server_created` / `:server_updated` / `:server_deleted`,
-reading membership off the event's `active` field (both `ServerCreated` and
-`ServerUpdated` carry it — no DB fetch). The web layer expresses only the scope
-intent, never a topic. Both pages are fully converted to two `LiveRefresh` hooks
-(`:servers` via `refresh_my_servers/3`, `:server_state_map` via
-`refresh_server_state_map/2`) with no server `handle_info` and no event or topic
-names. `dashboard_live` holds the full owned-server list (`scope: :active`) and
-derives the active cards / inactive-link in the template off the `.active`
-boolean (preserving today's behaviour), rather than keeping a separate
-inactive-id `MapSet`. The tracker's dumb fixed-set mode (`start_link/1`) is
-unchanged and still used by `server_live`.
+**Status: (B) done for `my_servers`, `dashboard` and (partially) `admin`.** The
+tracker gained a self-managing mode: `ServerTrackerClient.start_link(auth,
+servers, scope)` where `scope` is `:all` (my servers), `:active` (dashboard) or
+`{:group, group_id}` (admin, one per class). In that mode the tracker subscribes
+to the relevant topic itself (owner or group) and tracks/untracks autonomously
+on `:server_created` / `:server_updated` / `:server_deleted`, reading membership
+off the event's `active` field (both `ServerCreated` and `ServerUpdated` carry
+it — no DB fetch); the group scope tracks every server of the group. The web
+layer expresses only the scope intent, never a topic. `my_servers` and
+`dashboard` are fully converted to two `LiveRefresh` hooks (`:servers` via
+`refresh_my_servers/3`, `:server_state_map` via `refresh_server_state_map/2`)
+with no server `handle_info` and no event or topic names. `dashboard_live` holds
+the full owned-server list (`scope: :active`) and derives the active cards /
+inactive-link in the template off the `.active` boolean (preserving today's
+behaviour), rather than keeping a separate inactive-id `MapSet`. `admin_live`
+starts one `{:group, class.id}` tracker per active class (adding/stopping them as
+classes activate/deactivate) and folds their pushes with
+`refresh_server_state_map/2`; it keeps its grouped list + class handlers (see the
+progress note). The tracker's dumb fixed-set mode (`start_link/1`) is unchanged
+and still used by `server_live`.
 
 ### #6 Record a `schema_version` per stored event
 

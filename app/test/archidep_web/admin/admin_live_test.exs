@@ -12,6 +12,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Servers.UseCases.ReadServers
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
@@ -32,9 +33,10 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
     setup do
       Hammox.stub(ArchiDep.Clock.Mock, :now, fn -> @now end)
 
-      # `update_server_state_map/2` is a pure helper routed through the tracker
-      # client; it is replicated here so the page's data flow stays intact while
-      # the meaningful boundary calls (`track`/`untrack`) are asserted per test.
+      # `update_server_state_map/2` is a pure helper the page's state-map
+      # refresher routes through the tracker client; it is replicated here so
+      # the aggregate map (and the connected-server count it feeds) stays
+      # intact.
       stub(ServerTrackerClientMock, :update_server_state_map, fn map,
                                                                  {:server_state, id, state} ->
         Map.put(map, id, state)
@@ -107,7 +109,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
              }
     end
 
-    test "adds a server to its class and tracks it when a server is created", %{
+    test "adds a server to its class when it is created", %{
       conn: conn,
       auth: auth
     } do
@@ -121,13 +123,8 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       web02 = build_server(alpha, created_at: ~U[2026-06-20 11:00:00Z])
       web02_id = web02.id
       web02_view = ServerView.from(web02)
-      web02_state = connected_state(web02)
 
       stub(Servers.ContextMock, :fetch_server, fn ^auth, ^web02_id -> {:ok, web02_view} end)
-
-      expect(ServerTrackerClientMock, :track, 1, fn _tracker, ^web02_view ->
-        {:server_state, web02_id, web02_state}
-      end)
 
       :ok =
         Servers.PubSub.publish_server_created(
@@ -141,20 +138,23 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "created server added"
       )
 
+      # The created server appears immediately; watching its real-time state is
+      # the group tracker's own concern, so it renders disconnected until the
+      # tracker pushes a state.
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
-                 connected_servers: {"2", :success}
+                 connected_servers: {"1", :success}
                },
                classes: [
-                 {"Servers for Alpha", [{web01.id, :connected}, {web02.id, :connected}]}
+                 {"Servers for Alpha", [{web01.id, :connected}, {web02.id, :not_connected}]}
                ]
              }
     end
 
-    test "moves a server into its newly assigned class and tracks it when updated", %{
+    test "moves a server into its newly assigned class when updated", %{
       conn: conn,
       auth: auth
     } do
@@ -168,13 +168,8 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       web02 = build_server(alpha, created_at: ~U[2026-06-20 11:00:00Z])
       web02_id = web02.id
       web02_view = ServerView.from(web02)
-      web02_state = connected_state(web02)
 
       stub(Servers.ContextMock, :fetch_server, fn ^auth, ^web02_id -> {:ok, web02_view} end)
-
-      expect(ServerTrackerClientMock, :track, 1, fn _tracker, ^web02_view ->
-        {:server_state, web02_id, web02_state}
-      end)
 
       :ok =
         Servers.PubSub.publish_server_updated(
@@ -188,20 +183,22 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
         "updated server moved into class"
       )
 
+      # The server is placed into its class immediately; its real-time state is
+      # the group tracker's concern, so it renders disconnected for now.
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
-                 connected_servers: {"2", :success}
+                 connected_servers: {"1", :success}
                },
                classes: [
-                 {"Servers for Alpha", [{web01.id, :connected}, {web02.id, :connected}]}
+                 {"Servers for Alpha", [{web01.id, :connected}, {web02.id, :not_connected}]}
                ]
              }
     end
 
-    test "keeps an already-shown server in place without re-tracking it when updated", %{
+    test "keeps an already-shown server in place when it is updated", %{
       conn: conn,
       auth: auth
     } do
@@ -214,7 +211,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       # An in-place update changes only fields the list page does not surface
       # (the card shows identity and connection state), so the section is
-      # unchanged and the server is not re-tracked.
+      # unchanged.
       renamed = %{web01 | username: "renamed", version: web01.version + 1}
 
       :ok =
@@ -242,7 +239,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
              }
     end
 
-    test "removes a server and untracks it when it is deleted", %{conn: conn, auth: auth} do
+    test "removes a server when it is deleted", %{conn: conn, auth: auth} do
       alpha = build_class(name: "Alpha")
       web01 = build_server(alpha, created_at: ~U[2026-06-20 10:00:00Z])
       web02 = build_server(alpha, created_at: ~U[2026-06-20 11:00:00Z])
@@ -253,22 +250,22 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
-      web02_view = ServerView.from(web02)
-
-      expect(ServerTrackerClientMock, :untrack, 1, fn _tracker, ^web02_view ->
-        {:server_state, web02.id, nil}
-      end)
-
       :ok =
         Servers.PubSub.publish_server_deleted(
           ServerDeleted.new(web02),
           EventsFactory.build(:event_reference)
         )
 
+      # The group tracker untracks the deleted server and pushes its absent
+      # state; simulate that push so the connected count drops alongside the
+      # list removal the page performs.
+      send(view.pid, {:server_state, web02.id, nil})
+
       wait_for_socket_assigns!(
         view,
         fn assigns ->
-          not Enum.any?(assigns.servers_by_class_id[alpha.id], &(&1.id == web02.id))
+          not Enum.any?(assigns.servers_by_class_id[alpha.id], &(&1.id == web02.id)) and
+            assigns.server_state_map[web02.id] == nil
         end,
         "deleted server removed"
       )
@@ -614,7 +611,9 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
     }
 
   # The page reads the classes and their servers on both the disconnected and
-  # connected mounts.
+  # connected mounts, and keeps its aggregate state map current through the
+  # Servers boundary; route that call to the real read-model plumbing so a real
+  # tracker push still drives the connected-server count.
   defp stub_admin_page(auth, classes, servers_by_class_id) do
     stub(Course.ContextMock, :list_active_classes, fn ^auth -> classes end)
 
@@ -622,23 +621,26 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       {:ok, servers_by_class_id |> Map.get(group_id, []) |> Enum.map(&ServerView.from/1)}
     end)
 
+    stub(Servers.ContextMock, :refresh_server_state_map, &ReadServers.refresh_server_state_map/2)
+
     :ok
   end
 
-  # The ansible-queue presence list and the tracker `start_link` happen once, on
-  # the connected mount only. The initial server-state map is read on every
-  # mount (outside the connection guard), so it is stubbed. The tracked servers
-  # reach the client in `Map.values/1` order (non-deterministic), so the
-  # argument is pinned as a set by sorting on the id.
+  # The ansible-queue presence list happens once, on the connected mount only.
+  # The initial server-state map is read on every mount (outside the connection
+  # guard), so it is stubbed; the tracked servers reach the client in
+  # `Map.values/1` order (non-deterministic), so the argument is pinned as a set
+  # by sorting on the id. One self-managing group tracker is started per class;
+  # each returns a real, stoppable process so the page can stop it when a class
+  # is unwatched.
   defp expect_connected_mount(all_servers, state_map, ansible_entries) do
     sorted = all_servers |> Enum.map(&ServerView.from/1) |> Enum.sort_by(& &1.id)
 
     ansible_queue_topic = Scope.global_topic("ansible-queue")
     expect(TrackerClientMock, :list, 1, fn ^ansible_queue_topic -> ansible_entries end)
 
-    expect(ServerTrackerClientMock, :start_link, 1, fn servers ->
-      assert Enum.sort_by(servers, & &1.id) == sorted
-      {:ok, self()}
+    stub(ServerTrackerClientMock, :start_link, fn _auth, _servers, {:group, _group_id} ->
+      Agent.start_link(fn -> nil end)
     end)
 
     stub(ServerTrackerClientMock, :server_state_map, fn servers ->

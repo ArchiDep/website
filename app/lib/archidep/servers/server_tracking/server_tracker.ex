@@ -27,10 +27,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   @type trackable :: Server.t() | ServerView.t()
 
   @typedoc """
-  Which of an owner's servers a self-managing tracker watches: all of them, or
-  only the active ones.
+  Which servers a self-managing tracker watches on its own: all of an owner's
+  servers, only an owner's active servers, or every server of a group.
   """
-  @type scope :: :all | :active
+  @type scope :: :all | :active | {:group, UUID.t()}
 
   @type server_state_update :: {:server_state, UUID.t(), ServerRealTimeState.t() | nil}
 
@@ -50,8 +50,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
       do:
         GenServer.start_link(
           __MODULE__,
-          {self(), servers |> in_scope(scope) |> Enum.map(& &1.id), scope, owner_id}
+          {self(), servers |> in_scope(scope) |> Enum.map(& &1.id), scope, {:owner, owner_id}}
         )
+
+  def start_link(%Authentication{}, servers, {:group, group_id}) when is_list(servers),
+    do:
+      GenServer.start_link(
+        __MODULE__,
+        {self(), Enum.map(servers, & &1.id), :all, {:group, group_id}}
+      )
 
   # Client API
 
@@ -97,24 +104,23 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   # Server callbacks
 
   @impl GenServer
-  def init({from, server_ids, scope, owner_id}) do
+  def init({from, server_ids, scope, subscription}) do
     Logger.debug("Init server tracker for server(s): #{inspect(server_ids)}")
 
-    {:ok, {from, server_ids, scope, owner_id}, {:continue, :init}}
+    {:ok, {from, server_ids, scope, subscription}, {:continue, :init}}
   end
 
   @impl GenServer
-  def handle_continue(:init, {from, server_ids, scope, owner_id}) do
+  def handle_continue(:init, {from, server_ids, scope, subscription}) do
     set_process_label(__MODULE__)
 
     :ok = PubSub.subscribe(@pubsub, "tracker:servers")
 
-    # In owner-scope mode the tracker maintains its own tracked set: it listens
-    # to the owner's server lifecycle and tracks/untracks servers autonomously,
-    # so the web layer never orchestrates tracking or names those topics.
-    if owner_id != nil do
-      :ok = ArchiDep.Servers.PubSub.subscribe_server_owner_servers(owner_id)
-    end
+    # In a self-managing mode the tracker maintains its own tracked set: it
+    # listens to the relevant server lifecycle (an owner's or a group's) and
+    # tracks/untracks servers autonomously, so the web layer never orchestrates
+    # tracking or names those topics.
+    subscribe_to_lifecycle(subscription)
 
     server_ids
     |> get_current_server_states()
@@ -212,6 +218,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
         {from, server_states, scope}
     end
   end
+
+  defp subscribe_to_lifecycle(nil), do: :ok
+
+  defp subscribe_to_lifecycle({:owner, owner_id}),
+    do: :ok = ArchiDep.Servers.PubSub.subscribe_server_owner_servers(owner_id)
+
+  defp subscribe_to_lifecycle({:group, group_id}),
+    do: :ok = ArchiDep.Servers.PubSub.subscribe_server_group_servers(group_id)
 
   defp in_scope?({_from, _server_states, :all}, _event), do: true
   defp in_scope?({_from, _server_states, :active}, %{active: active}), do: active

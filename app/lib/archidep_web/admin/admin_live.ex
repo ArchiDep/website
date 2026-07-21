@@ -17,6 +17,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   alias ArchiDep.Servers.SSH
   alias ArchiDep.TrackerClient
   alias ArchiDepWeb.Admin.AdminClassServersLive
+  alias ArchiDepWeb.LiveRefresh
   alias Ecto.UUID
   alias Phoenix.PubSub
 
@@ -94,10 +95,17 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
     all_servers = servers_by_class_id |> Map.values() |> List.flatten()
 
-    tracker =
+    # One self-managing tracker per class watches that group's servers on its
+    # own (it subscribes to the group topic and tracks/untracks autonomously),
+    # so the page does not orchestrate tracking; it only keeps the grouped list
+    # and the aggregate state map fed by the trackers.
+    server_trackers =
       if connected?(socket) do
-        {:ok, pid} = ServerTrackerClient.start_link(all_servers)
-        pid
+        Map.new(active_classes, fn class ->
+          {class.id, start_group_tracker(auth, servers_by_class_id, class.id)}
+        end)
+      else
+        %{}
       end
 
     socket
@@ -106,10 +114,11 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       page_title: gettext("Admin"),
       servers_by_class_id: servers_by_class_id,
       server_state_map: ServerTrackerClient.server_state_map(all_servers),
-      server_tracker: tracker,
+      server_trackers: server_trackers,
       ssh_public_key: SSH.ssh_public_key(),
       ansible: ansible
     )
+    |> attach_server_state_refresh()
     |> ok()
   end
 
@@ -117,14 +126,23 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   def handle_info(
         {:class_created, created_class},
         %Socket{
-          assigns: %{active_classes: active_classes, servers_by_class_id: servers_by_class_id}
+          assigns: %{
+            auth: auth,
+            active_classes: active_classes,
+            servers_by_class_id: servers_by_class_id,
+            server_trackers: server_trackers
+          }
         } = socket
       ) do
     if Class.active?(created_class, Clock.now()) do
+      new_servers_by_class_id = Map.put_new(servers_by_class_id, created_class.id, [])
+
       socket
       |> assign(
         active_classes: active_classes |> add_class(created_class) |> sort_classes(),
-        servers_by_class_id: Map.put_new(servers_by_class_id, created_class.id, [])
+        servers_by_class_id: new_servers_by_class_id,
+        server_trackers:
+          watch_group(auth, new_servers_by_class_id, server_trackers, created_class.id)
       )
       |> noreply()
     else
@@ -139,7 +157,9 @@ defmodule ArchiDepWeb.Admin.AdminLive do
           assigns: %{
             auth: auth,
             active_classes: active_classes,
-            servers_by_class_id: servers_by_class_id
+            servers_by_class_id: servers_by_class_id,
+            server_state_map: server_state_map,
+            server_trackers: server_trackers
           }
         } = socket
       ) do
@@ -148,6 +168,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
     case resolve_updated_class(active_classes, id, event, reference, auth) do
       {:ok, updated_class} ->
         if Class.active?(updated_class, Clock.now()) do
+          new_servers_by_class_id = Map.put_new(servers_by_class_id, updated_class.id, [])
+
           socket
           |> assign(
             active_classes:
@@ -157,14 +179,19 @@ defmodule ArchiDepWeb.Admin.AdminLive do
                   else: add_class(active_classes, updated_class)
                 )
               ),
-            servers_by_class_id: Map.put_new(servers_by_class_id, updated_class.id, [])
+            servers_by_class_id: new_servers_by_class_id,
+            server_trackers:
+              watch_group(auth, new_servers_by_class_id, server_trackers, updated_class.id)
           )
           |> noreply()
         else
           socket
           |> assign(
             active_classes: active_classes |> remove_class(updated_class) |> sort_classes(),
-            servers_by_class_id: Map.delete(servers_by_class_id, updated_class.id)
+            servers_by_class_id: Map.delete(servers_by_class_id, updated_class.id),
+            server_trackers: unwatch_group(server_trackers, updated_class.id),
+            server_state_map:
+              drop_group_states(server_state_map, servers_by_class_id, updated_class.id)
           )
           |> noreply()
         end
@@ -178,36 +205,33 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   def handle_info(
         {:class_deleted, deleted_class},
         %Socket{
-          assigns: %{active_classes: active_classes, servers_by_class_id: servers_by_class_id}
+          assigns: %{
+            active_classes: active_classes,
+            servers_by_class_id: servers_by_class_id,
+            server_state_map: server_state_map,
+            server_trackers: server_trackers
+          }
         } = socket
       ),
       do:
         socket
         |> assign(
           active_classes: remove_class(active_classes, deleted_class),
-          servers_by_class_id: Map.delete(servers_by_class_id, deleted_class.id)
+          servers_by_class_id: Map.delete(servers_by_class_id, deleted_class.id),
+          server_trackers: unwatch_group(server_trackers, deleted_class.id),
+          server_state_map:
+            drop_group_states(server_state_map, servers_by_class_id, deleted_class.id)
         )
         |> noreply()
 
   @impl LiveView
   def handle_info(
         {:server_created, %ServerCreated{group: %{id: group_id}} = event, _reference},
-        %{
-          assigns: %{
-            auth: auth,
-            servers_by_class_id: servers_by_class_id,
-            server_state_map: server_state_map,
-            server_tracker: tracker
-          }
-        } = socket
+        %{assigns: %{auth: auth, servers_by_class_id: servers_by_class_id}} = socket
       ) do
-    {new_servers_by_class_id, new_server_state_map} =
-      add_created_server(auth, tracker, servers_by_class_id, server_state_map, group_id, event.id)
-
     socket
     |> assign(
-      servers_by_class_id: new_servers_by_class_id,
-      server_state_map: new_server_state_map
+      servers_by_class_id: add_created_server(auth, servers_by_class_id, group_id, event.id)
     )
     |> noreply()
   end
@@ -229,26 +253,10 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   @impl LiveView
   def handle_info(
         {:server_deleted, %ServerDeleted{group: %{id: group_id}, id: server_id}, _reference},
-        %{
-          assigns: %{
-            servers_by_class_id: servers_by_class_id,
-            server_state_map: server_state_map,
-            server_tracker: tracker
-          }
-        } = socket
+        %{assigns: %{servers_by_class_id: servers_by_class_id}} = socket
       ) do
-    new_server_state_map =
-      case find_cached_server(servers_by_class_id, server_id) do
-        nil ->
-          server_state_map
-
-        server ->
-          ServerTrackerClient.update_server_state_map(
-            server_state_map,
-            ServerTrackerClient.untrack(tracker, server)
-          )
-      end
-
+    # The group's own tracker untracks the deleted server on its own and pushes
+    # the resulting absent state, so the page only drops it from the list here.
     socket
     |> assign(
       servers_by_class_id:
@@ -262,23 +270,10 @@ defmodule ArchiDepWeb.Admin.AdminLive do
               group_id,
               Enum.reject(servers, &(&1.id == server_id))
             )
-        end,
-      server_state_map: new_server_state_map
+        end
     )
     |> noreply()
   end
-
-  @impl LiveView
-  def handle_info(
-        {:server_state, _server_id, _new_server_state} = update,
-        %{assigns: %{server_state_map: server_state_map}} = socket
-      ),
-      do:
-        socket
-        |> assign(
-          server_state_map: ServerTrackerClient.update_server_state_map(server_state_map, update)
-        )
-        |> noreply()
 
   @impl LiveView
 
@@ -366,36 +361,23 @@ defmodule ArchiDepWeb.Admin.AdminLive do
     end
   end
 
-  defp add_created_server(
-         auth,
-         tracker,
-         servers_by_class_id,
-         server_state_map,
-         group_id,
-         server_id
-       ) do
+  defp add_created_server(auth, servers_by_class_id, group_id, server_id) do
     servers = Map.get(servers_by_class_id, group_id)
 
     cond do
       servers == nil ->
-        {servers_by_class_id, server_state_map}
+        servers_by_class_id
 
       Enum.any?(servers, &(&1.id == server_id)) ->
-        {servers_by_class_id, server_state_map}
+        servers_by_class_id
 
       true ->
         case Servers.fetch_server(auth, server_id) do
           {:ok, created_server} ->
-            {
-              Map.put(servers_by_class_id, group_id, sort_servers([created_server | servers])),
-              ServerTrackerClient.update_server_state_map(
-                server_state_map,
-                ServerTrackerClient.track(tracker, created_server)
-              )
-            }
+            Map.put(servers_by_class_id, group_id, sort_servers([created_server | servers]))
 
           {:error, _reason} ->
-            {servers_by_class_id, server_state_map}
+            servers_by_class_id
         end
     end
   end
@@ -414,54 +396,84 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   end
 
   defp apply_server_updated(
-         %{
-           assigns: %{
-             servers_by_class_id: servers_by_class_id,
-             server_state_map: server_state_map,
-             server_tracker: tracker
-           }
-         } = socket,
-         %ServerView{id: server_id} = updated_server
+         %{assigns: %{servers_by_class_id: servers_by_class_id}} = socket,
+         %ServerView{} = updated_server
        ) do
-    {new_servers_by_class_id, new_server_state_map} =
+    new_servers_by_class_id =
       case Map.get(servers_by_class_id, updated_server.group_id) do
         nil ->
-          {servers_by_class_id, server_state_map}
+          servers_by_class_id
 
         servers ->
-          if Enum.any?(servers, &(&1.id == server_id)) do
-            {
-              Map.put(
-                servers_by_class_id,
-                updated_server.group_id,
-                Enum.map(servers, fn
-                  %ServerView{id: ^server_id} -> updated_server
-                  other_server -> other_server
-                end)
-              ),
-              server_state_map
-            }
-          else
-            {
-              Map.put(
-                servers_by_class_id,
-                updated_server.group_id,
-                sort_servers([updated_server | servers])
-              ),
-              ServerTrackerClient.update_server_state_map(
-                server_state_map,
-                ServerTrackerClient.track(tracker, updated_server)
-              )
-            }
-          end
+          Map.put(
+            servers_by_class_id,
+            updated_server.group_id,
+            place_server(servers, updated_server)
+          )
       end
 
     socket
-    |> assign(
-      servers_by_class_id: new_servers_by_class_id,
-      server_state_map: new_server_state_map
-    )
+    |> assign(servers_by_class_id: new_servers_by_class_id)
     |> noreply()
+  end
+
+  # Replace the matching server in the group's list, or add it (sorted) when it
+  # is appearing there for the first time (e.g. a server reassigned to it).
+  defp place_server(servers, %ServerView{id: server_id} = updated_server) do
+    if Enum.any?(servers, &(&1.id == server_id)) do
+      Enum.map(servers, fn
+        %ServerView{id: ^server_id} -> updated_server
+        other_server -> other_server
+      end)
+    else
+      sort_servers([updated_server | servers])
+    end
+  end
+
+  defp start_group_tracker(auth, servers_by_class_id, class_id) do
+    {:ok, pid} =
+      ServerTrackerClient.start_link(
+        auth,
+        Map.get(servers_by_class_id, class_id, []),
+        {:group, class_id}
+      )
+
+    pid
+  end
+
+  defp watch_group(auth, servers_by_class_id, server_trackers, class_id) do
+    if Map.has_key?(server_trackers, class_id) do
+      server_trackers
+    else
+      Map.put(server_trackers, class_id, start_group_tracker(auth, servers_by_class_id, class_id))
+    end
+  end
+
+  defp unwatch_group(server_trackers, class_id) do
+    case Map.pop(server_trackers, class_id) do
+      {nil, server_trackers} ->
+        server_trackers
+
+      {tracker, remaining} ->
+        if Process.alive?(tracker), do: GenServer.stop(tracker)
+        remaining
+    end
+  end
+
+  # A stopped group tracker no longer refreshes its servers' real-time state, so
+  # drop those now-orphaned entries from the aggregate map that feeds the
+  # connected-server count.
+  defp drop_group_states(server_state_map, servers_by_class_id, class_id) do
+    ids = servers_by_class_id |> Map.get(class_id, []) |> Enum.map(& &1.id)
+    Map.drop(server_state_map, ids)
+  end
+
+  defp attach_server_state_refresh(socket) do
+    if connected?(socket) do
+      LiveRefresh.attach(socket, :server_state_map, &Servers.refresh_server_state_map/2)
+    else
+      socket
+    end
   end
 
   defp sort_classes(classes),

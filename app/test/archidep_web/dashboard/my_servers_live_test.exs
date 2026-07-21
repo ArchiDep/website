@@ -366,7 +366,12 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
 
     stub(ServerTrackerClientMock, :start_link, fn _auth, _servers, _scope -> {:ok, self()} end)
     stub(ServerTrackerClientMock, :server_state_map, fn _servers -> %{} end)
-    stub(ServerTrackerClientMock, :update_server_state_map, &ServerTracker.update_server_state_map/2)
+
+    stub(
+      ServerTrackerClientMock,
+      :update_server_state_map,
+      &ServerTracker.update_server_state_map/2
+    )
 
     # The page keeps its server list and real-time state map current through the
     # Servers boundary; route those calls to the real read-model plumbing so a

@@ -196,6 +196,32 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
 
       refute_received {:server_state, ^server_id, _state}
     end
+
+    test "tracks every server of the group, active or not, under a {:group, _} scope" do
+      {:ok, tracker} =
+        ServerTracker.start_link(Factory.build(:authentication), [], {:group, UUID.generate()})
+
+      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+
+      # An inactive server is watched under a group scope (unlike the :active
+      # owner scope), so its presence change is forwarded.
+      server_id = UUID.generate()
+      send(tracker, {:server_created, %{id: server_id, active: false}, :reference})
+      assert_receive {:server_state, ^server_id, nil}
+
+      state = server_state(1)
+      send(tracker, {:join, server_id, %{state: state}})
+      assert_receive {:server_state, ^server_id, ^state}
+
+      send(tracker, {:server_deleted, %{id: server_id}, :reference})
+      assert_receive {:server_state, ^server_id, nil}
+
+      # Now that it is untracked, a presence change is no longer forwarded.
+      send(tracker, {:join, server_id, %{state: server_state(2)}})
+      _flushed = :sys.get_state(tracker)
+
+      refute_received {:server_state, ^server_id, _state}
+    end
   end
 
   defp server_state(version),
