@@ -117,7 +117,7 @@
       (root?(@auth) or
          (@student != nil and Student.can_create_servers?(@student, @now) and
             @student.username_confirmed)) and
-        Enum.empty?(@servers)
+        Enum.empty?(active_servers(@servers))
     }
     class="hero rounded-lg mt-4 bg-base-300"
   >
@@ -181,7 +181,7 @@
         </div>
         <div class="join">
           <.link
-            :if={Enum.any?(@inactive_servers)}
+            :if={any_inactive_servers?(@servers)}
             navigate={~p"/app/my-servers"}
             class="join-item btn btn-secondary"
           >
@@ -191,7 +191,7 @@
             </span>
           </.link>
           <button
-            :if={@student != nil and Enum.empty?(@servers)}
+            :if={@student != nil and Enum.empty?(active_servers(@servers))}
             type="button"
             class="btn btn-neutral"
             phx-click={
@@ -239,7 +239,7 @@
     :if={
       @student != nil and Student.can_create_servers?(@student, @now) and
         @student.username_confirmed and
-        Enum.empty?(@servers)
+        Enum.empty?(active_servers(@servers))
     }
     module={ChangeUsernameDialogLive}
     id={ChangeUsernameDialogLive.id()}
@@ -249,7 +249,7 @@
 
   <div class="flex flex-col items-center gap-8">
     <div
-      :for={server <- @servers}
+      :for={server <- active_servers(@servers)}
       :key={server.id}
       class="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-2 gap-4"
     >

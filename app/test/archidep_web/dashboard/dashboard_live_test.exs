@@ -13,8 +13,10 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
+  alias ArchiDep.Servers.ServerTracking.ServerTracker
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Servers.UseCases.ReadServers
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
@@ -419,13 +421,12 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
     end
   end
 
-  # The page subscribes to each server both on its per-server topic and on the
-  # owner's servers topic, so a broadcast about an owned server can reach the
-  # view more than once. These tests publish real broadcasts (the production
-  # path) and stub the tracker so the redundant deliveries are tolerated; the
-  # assertions pin the resulting page, which converges regardless of the
-  # delivery count. Real-time state updates arrive directly from the tracker
-  # process, so they are sent.
+  # The page holds the full owned-server list and renders only the active ones;
+  # an active/inactive flip therefore shows or hides a card without adding or
+  # removing it. These tests publish real broadcasts (the production path) on
+  # the owner's servers topic and pin the resulting page. Real-time state
+  # updates arrive directly from the self-managing tracker process, so they are
+  # sent.
   describe "live updates" do
     setup :register_and_log_in_student
 
@@ -435,12 +436,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       server_id = server.id
 
       state = real_time_state(server, connection_state: ServersFactory.random_connected_state())
-
-      expect(ServerTrackerClientMock, :update_server_state_map, fn %{},
-                                                                   {:server_state, ^server_id,
-                                                                    ^state} ->
-        %{server_id => state}
-      end)
 
       {:ok, view, _html} = live(conn, @path)
 
@@ -464,7 +459,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
     test "adds a newly created active server I own", %{conn: conn, auth: auth} do
       existing = build_dashboard_server(auth, name: "web-01")
       stub_page(auth, student: build_creating_student(), servers: [existing])
-      stub_tracker_updates()
 
       created = build_dashboard_server(auth, name: "web-02", active: true)
       created_id = created.id
@@ -499,11 +493,16 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
              }
     end
 
-    test "tracks a created inactive server without adding a card", %{conn: conn, auth: auth} do
+    test "keeps a created inactive server off the dashboard", %{conn: conn, auth: auth} do
       existing = build_dashboard_server(auth, name: "web-01")
       stub_page(auth, student: build_creating_student(), servers: [existing])
 
       inactive = build_dashboard_server(auth, name: "web-02", active: false)
+      inactive_id = inactive.id
+
+      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^inactive_id ->
+        {:ok, ServerView.from(inactive)}
+      end)
 
       {:ok, view, _html} = live(conn, @path)
 
@@ -515,10 +514,12 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       wait_for_socket_assigns!(
         view,
-        fn assigns -> MapSet.member?(assigns.inactive_servers, inactive.id) end,
-        "inactive server tracked"
+        fn assigns -> Enum.any?(assigns.servers, &(&1.id == inactive_id)) end,
+        "inactive server in list"
       )
 
+      # The inactive server joins the owned-server list but the dashboard renders
+      # only active servers, so no card appears for it.
       assert dashboard(render(view)) == %{
                welcome: nil,
                name_prompt?: false,
@@ -531,7 +532,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
     test "reflects an updated server name", %{conn: conn, auth: auth} do
       server = build_dashboard_server(auth, name: "web-01")
       stub_page(auth, student: build_creating_student(), servers: [server])
-      stub_tracker_updates()
       server_id = server.id
 
       {:ok, view, _html} = live(conn, @path)
@@ -574,14 +574,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
         )
 
       stub_page(auth, student: build_creating_student(), servers: [active, inactive])
-      stub_tracker_updates()
 
       activated = %{inactive | active: true, version: inactive.version + 1}
       activated_id = activated.id
-
-      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^activated_id ->
-        {:ok, ServerView.from(activated)}
-      end)
 
       {:ok, view, _html} = live(conn, @path)
 
@@ -593,7 +588,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       wait_for_socket_assigns!(
         view,
-        fn assigns -> Enum.any?(assigns.servers, &(&1.id == activated_id)) end,
+        fn assigns -> Enum.any?(assigns.servers, &(&1.id == activated_id and &1.active)) end,
         "server activated"
       )
 
@@ -613,17 +608,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       web = build_dashboard_server(auth, name: "web-01")
       db = build_dashboard_server(auth, name: "db-01")
       stub_page(auth, student: build_creating_student(), servers: [web, db])
-      stub_tracker_updates()
       db_id = db.id
 
       deactivated = %{db | active: false, version: db.version + 1}
-
-      # The update reaches both the per-server and owner topics; once the first
-      # delivery drops the now-inactive server, a later delivery re-reads it and
-      # finds it inactive, so it is never re-added.
-      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^db_id ->
-        {:ok, ServerView.from(deactivated)}
-      end)
 
       {:ok, view, _html} = live(conn, @path)
 
@@ -635,7 +622,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       wait_for_socket_assigns!(
         view,
-        fn assigns -> not Enum.any?(assigns.servers, &(&1.id == db_id)) end,
+        fn assigns -> Enum.any?(assigns.servers, &(&1.id == db_id and not &1.active)) end,
         "server deactivated"
       )
 
@@ -652,7 +639,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       web = build_dashboard_server(auth, name: "web-01")
       db = build_dashboard_server(auth, name: "db-01")
       stub_page(auth, student: build_creating_student(), servers: [web, db])
-      stub_tracker_updates()
       db_id = db.id
 
       {:ok, view, _html} = live(conn, @path)
@@ -684,7 +670,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
     } do
       server = build_dashboard_server(auth, name: "web-01")
       stub_page(auth, student: build_creating_student(), servers: [server])
-      stub_tracker_updates()
 
       {:ok, view, _html} = live(conn, @path)
 
@@ -865,8 +850,22 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       Keyword.get_lazy(opts, :owner, fn -> build_owner() end)
     end)
 
-    stub(ServerTrackerClientMock, :start_link, fn _servers -> {:ok, self()} end)
+    stub(ServerTrackerClientMock, :start_link, fn _auth, _servers, _scope -> {:ok, self()} end)
     stub(ServerTrackerClientMock, :server_state_map, fn _servers -> server_state_map end)
+
+    stub(
+      ServerTrackerClientMock,
+      :update_server_state_map,
+      &ServerTracker.update_server_state_map/2
+    )
+
+    # The page keeps its server list and real-time state map current through the
+    # Servers boundary; route those calls to the real read-model plumbing so a
+    # real broadcast (list) or a real tracker push (state) still drives the
+    # re-render.
+    stub(Servers.ContextMock, :subscribe_my_servers, &ReadServers.subscribe_my_servers/1)
+    stub(Servers.ContextMock, :refresh_my_servers, &ReadServers.refresh_my_servers/3)
+    stub(Servers.ContextMock, :refresh_server_state_map, &ReadServers.refresh_server_state_map/2)
 
     case Keyword.fetch(opts, :groups) do
       {:ok, groups} -> stub(Servers.ContextMock, :list_server_groups, fn ^auth -> groups end)
@@ -874,23 +873,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
     end
 
     :ok
-  end
-
-  # Lets the tracker tolerate the redundant deliveries an owned server's
-  # create/update/delete broadcast produces, keeping every state empty so cards
-  # render in their "not connected" shape.
-  defp stub_tracker_updates do
-    stub(ServerTrackerClientMock, :track, fn _tracker, server ->
-      {:server_state, server.id, nil}
-    end)
-
-    stub(ServerTrackerClientMock, :untrack, fn _tracker, server ->
-      {:server_state, server.id, nil}
-    end)
-
-    stub(ServerTrackerClientMock, :update_server_state_map, fn map, {:server_state, id, nil} ->
-      Map.delete(map, id)
-    end)
   end
 
   defp build_student(class, opts),

@@ -12,9 +12,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
-  alias ArchiDep.Servers.Events.ServerCreated
-  alias ArchiDep.Servers.Events.ServerDeleted
-  alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
   alias ArchiDep.Servers.ServerView
@@ -22,6 +19,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Servers.SSH.SSHKeyFingerprint
   alias ArchiDepWeb.Course.ChangeUsernameDialogLive
   alias ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive
+  alias ArchiDepWeb.LiveRefresh
   alias ArchiDepWeb.Servers.EditServerDialogLive
   alias ArchiDepWeb.Servers.NewServerDialogLive
 
@@ -57,30 +55,17 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         _anything -> []
       end
 
-    active_servers = Enum.filter(servers, & &1.active)
-    inactive_servers = Enum.reject(servers, & &1.active)
+    if connected?(socket) do
+      set_process_label(__MODULE__, auth)
 
-    tracker =
-      if connected?(socket) do
-        set_process_label(__MODULE__, auth)
-
-        if student != nil do
-          :ok = Course.PubSub.subscribe_student(student.id)
-          :ok = Course.PubSub.subscribe_class(student.class_id)
-        end
-
-        for server <- active_servers do
-          # TODO: add watch_my_servers in context
-          :ok = PubSub.subscribe_server(server.id)
-        end
-
-        :ok = PubSub.subscribe_server_owner_servers(auth.principal_id)
-
-        {:ok, pid} = ServerTrackerClient.start_link(active_servers)
-        pid
-      else
-        nil
+      if student != nil do
+        :ok = Course.PubSub.subscribe_student(student.id)
+        :ok = Course.PubSub.subscribe_class(student.class_id)
       end
+
+      :ok = Servers.subscribe_my_servers(auth)
+      {:ok, _tracker} = ServerTrackerClient.start_link(auth, servers, :active)
+    end
 
     socket
     |> assign(
@@ -89,12 +74,11 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       student: student,
       ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
       ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints,
-      servers: active_servers,
-      inactive_servers: inactive_servers |> Enum.map(& &1.id) |> MapSet.new(),
-      server_state_map: ServerTrackerClient.server_state_map(active_servers),
-      server_tracker: tracker,
+      servers: servers,
+      server_state_map: ServerTrackerClient.server_state_map(servers),
       groups: groups
     )
+    |> attach_server_refreshers()
     |> ok()
   end
 
@@ -181,182 +165,22 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         |> assign(student: nil)
         |> noreply()
 
-  @impl LiveView
-  def handle_info(
-        {:server_state, _server_id, _new_server_state} = update,
-        %{assigns: %{server_state_map: server_state_map}} = socket
-      ),
-      do:
-        socket
-        |> assign(
-          server_state_map: ServerTrackerClient.update_server_state_map(server_state_map, update)
-        )
-        |> noreply()
+  # On connected mount, keep both server read-models current through the Servers
+  # boundary: the list refresher owns creation, update, deletion and ordering,
+  # and the state-map refresher folds the real-time states the self-managing
+  # tracker pushes. The tracker watches this owner's active servers on its own,
+  # so the page names no server topics or events. Student and class updates keep
+  # their own handlers above.
+  defp attach_server_refreshers(socket) do
+    if connected?(socket) do
+      auth = socket.assigns.auth
 
-  @impl LiveView
-  def handle_info(
-        {:server_created, %ServerCreated{owner: %{id: owner_id}, active: true} = event,
-         _reference},
-        %{
-          assigns: %{
-            auth: %Authentication{principal_id: owner_id} = auth,
-            servers: servers,
-            server_state_map: server_state_map,
-            server_tracker: tracker
-          }
-        } = socket
-      ) do
-    case Servers.fetch_server(auth, event.id) do
-      {:ok, created_server} ->
-        socket
-        |> assign(
-          servers: sort_servers([created_server | servers]),
-          server_state_map:
-            ServerTrackerClient.update_server_state_map(
-              server_state_map,
-              ServerTrackerClient.track(tracker, created_server)
-            )
-        )
-        |> noreply()
-
-      {:error, _reason} ->
-        noreply(socket)
+      socket
+      |> LiveRefresh.attach(:servers, &Servers.refresh_my_servers(auth, &1, &2))
+      |> LiveRefresh.attach(:server_state_map, &Servers.refresh_server_state_map/2)
+    else
+      socket
     end
-  end
-
-  def handle_info(
-        {:server_created, %ServerCreated{} = event, _reference},
-        %Socket{assigns: %{inactive_servers: inactive_servers}} = socket
-      ) do
-    socket
-    |> assign(inactive_servers: MapSet.put(inactive_servers, event.id))
-    |> noreply()
-  end
-
-  @impl LiveView
-  def handle_info(
-        {:server_updated, event, reference},
-        %{
-          assigns: %{
-            auth: %Authentication{principal_id: owner_id},
-            servers: servers,
-            server_state_map: server_state_map,
-            server_tracker: tracker,
-            inactive_servers: inactive_servers
-          }
-        } = socket
-      ) do
-    server_id = event.id
-
-    updated_server =
-      case Enum.find(servers, &(&1.id == server_id)) do
-        %ServerView{} = cached -> ServerView.refresh!(cached, event, reference)
-        nil -> resolve_fetched_server(socket.assigns.auth, server_id)
-      end
-
-    cond do
-      updated_server != nil and updated_server.owner_id == owner_id and updated_server.active ->
-        track_active_server(socket, updated_server, server_id)
-
-      Enum.any?(servers, &(&1.id == server_id)) ->
-        socket
-        |> assign(
-          servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
-          server_state_map:
-            ServerTrackerClient.update_server_state_map(
-              server_state_map,
-              ServerTrackerClient.untrack(tracker, updated_server)
-            ),
-          inactive_servers: MapSet.put(inactive_servers, server_id)
-        )
-        |> noreply()
-
-      true ->
-        socket
-        |> assign(inactive_servers: MapSet.put(inactive_servers, server_id))
-        |> noreply()
-    end
-  end
-
-  @impl LiveView
-  def handle_info(
-        {:server_deleted, %ServerDeleted{id: server_id}, _reference},
-        %{
-          assigns: %{
-            servers: servers,
-            server_state_map: server_state_map,
-            server_tracker: tracker,
-            inactive_servers: inactive_servers
-          }
-        } = socket
-      ) do
-    socket
-    |> assign(
-      servers: Enum.reject(servers, fn current_server -> current_server.id == server_id end),
-      server_state_map: untrack_server(tracker, server_state_map, servers, server_id),
-      inactive_servers: MapSet.delete(inactive_servers, server_id)
-    )
-    |> noreply()
-  end
-
-  defp untrack_server(tracker, server_state_map, servers, server_id) do
-    case Enum.find(servers, &(&1.id == server_id)) do
-      nil ->
-        server_state_map
-
-      server ->
-        ServerTrackerClient.update_server_state_map(
-          server_state_map,
-          ServerTrackerClient.untrack(tracker, server)
-        )
-    end
-  end
-
-  defp resolve_fetched_server(auth, server_id) do
-    case Servers.fetch_server(auth, server_id) do
-      {:ok, server} -> server
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp track_active_server(
-         %{
-           assigns: %{
-             servers: servers,
-             server_state_map: server_state_map,
-             server_tracker: tracker,
-             inactive_servers: inactive_servers
-           }
-         } = socket,
-         updated_server,
-         server_id
-       ) do
-    [updated_servers, updated_server_state_map] =
-      if Enum.any?(servers, &(&1.id == server_id)) do
-        [
-          Enum.map(servers, fn
-            %ServerView{id: ^server_id} -> updated_server
-            other_server -> other_server
-          end),
-          server_state_map
-        ]
-      else
-        [
-          [updated_server | servers],
-          ServerTrackerClient.update_server_state_map(
-            server_state_map,
-            ServerTrackerClient.track(tracker, updated_server)
-          )
-        ]
-      end
-
-    socket
-    |> assign(
-      servers: sort_servers(updated_servers),
-      server_state_map: updated_server_state_map,
-      inactive_servers: MapSet.delete(inactive_servers, server_id)
-    )
-    |> noreply()
   end
 
   defp fetch_student(auth) do
@@ -370,6 +194,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     student
   end
 
-  defp sort_servers(servers),
-    do: Enum.sort_by(servers, &{&1.name, &1.username, :inet.ntoa(&1.ip_address.address)})
+  defp active_servers(servers), do: Enum.filter(servers, & &1.active)
+
+  defp any_inactive_servers?(servers), do: Enum.any?(servers, &(not &1.active))
 end
