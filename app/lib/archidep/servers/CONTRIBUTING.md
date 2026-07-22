@@ -228,9 +228,10 @@ exceptions are marked **root-only**.
   `fetch_server/2` (own servers).
 - [`ReadServerGroups`](./use_cases/read_server_groups.ex) —
   `list_server_groups/1`, `fetch_server_group/2`, `list_server_group_members/2`,
-  `list_all_servers_in_group/2`, `watch_server_ids/2` (**root-only**), and
-  `fetch_authenticated_server_group_member/1` (any authenticated user, to load
-  their own membership).
+  `list_all_servers_in_group/2`, `subscribe_server_group_servers/2` +
+  `refresh_server_ids/2` (**root-only**, the live-read-model pair for a group's
+  set of server IDs), and `fetch_authenticated_server_group_member/1` (any
+  authenticated user, to load their own membership).
 - [`ReadAnsible`](./use_cases/read_ansible.ex) —
   `fetch_ansible_playbook_runs/1`, `fetch_ansible_playbook_run/2`,
   `fetch_ansible_playbook_events_for_run/2` (**root-only**).

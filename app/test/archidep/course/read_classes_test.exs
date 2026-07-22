@@ -34,7 +34,9 @@ defmodule ArchiDep.Course.ReadClassesTest do
       list_active_classes: protect({Context, :list_active_classes, 1}, Behaviour),
       fetch_class: protect({Context, :fetch_class, 2}, Behaviour),
       subscribe_classes: protect({Context, :subscribe_classes, 0}, Behaviour),
-      refresh_classes: protect({Context, :refresh_classes, 2}, Behaviour)
+      refresh_classes: protect({Context, :refresh_classes, 2}, Behaviour),
+      subscribe_class: protect({Context, :subscribe_class, 1}, Behaviour),
+      refresh_class: protect({Context, :refresh_class, 2}, Behaviour)
     }
   end
 
@@ -313,6 +315,74 @@ defmodule ArchiDep.Course.ReadClassesTest do
 
       assert refresh_classes.([class], {:students_imported, class}) == :ignore
       assert refresh_classes.([class], :unrelated) == :ignore
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "subscribe_class/1" do
+    test "subscribes the calling process to the class's topic", %{subscribe_class: subscribe_class} do
+      %Class{} = class = CourseFactory.insert(:class, now: @now)
+
+      assert subscribe_class.(class) == :ok
+
+      updated = %Class{class | name: "Renamed", version: class.version + 1}
+      event = ClassUpdated.new(updated)
+      reference = EventsFactory.build(:event_reference, version: updated.version)
+      :ok = PubSub.publish_class_updated(updated, event, reference)
+
+      assert_receive {:class_updated, ^event, ^reference}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "refresh_class/2" do
+    test "reconciles the class from a class-updated message", %{refresh_class: refresh_class} do
+      %Class{} = class = CourseFactory.build(:class)
+
+      updated = %Class{class | name: "Renamed", version: class.version + 1}
+      event = ClassUpdated.new(updated)
+      reference = EventsFactory.build(:event_reference, version: updated.version)
+
+      assert refresh_class.(class, {:class_updated, event, reference}) ==
+               {:ok, Class.refresh!(class, event, reference)}
+
+      assert_no_stored_events!()
+    end
+
+    test "reconciles the class from an expected-server-properties message", %{
+      refresh_class: refresh_class
+    } do
+      %Class{} = class = CourseFactory.build(:class)
+
+      updated = %Class{class | version: class.version + 1}
+      event = ClassExpectedServerPropertiesUpdated.new(class.expected_server_properties, updated)
+      reference = EventsFactory.build(:event_reference, version: updated.version)
+
+      assert refresh_class.(class, {:class_updated, event, reference}) ==
+               {:ok, Class.refresh!(class, event, reference)}
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores a class-updated message for another class", %{refresh_class: refresh_class} do
+      %Class{} = class = CourseFactory.build(:class)
+      %Class{} = other = CourseFactory.build(:class)
+
+      event = ClassUpdated.new(%Class{other | version: other.version + 1})
+      reference = EventsFactory.build(:event_reference, version: other.version + 1)
+
+      assert refresh_class.(class, {:class_updated, event, reference}) == :ignore
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores a message it does not handle", %{refresh_class: refresh_class} do
+      %Class{} = class = CourseFactory.build(:class)
+
+      assert refresh_class.(class, {:class_deleted, class}) == :ignore
+      assert refresh_class.(class, :unrelated) == :ignore
 
       assert_no_stored_events!()
     end

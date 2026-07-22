@@ -65,6 +65,21 @@ defmodule ArchiDep.Course do
   defdelegate fetch_class(auth, class_id), to: @implementation
 
   @doc """
+  Subscribes the calling process to every topic that keeps the given class's
+  read-model live.
+  """
+  @spec subscribe_class(Class.t()) :: :ok
+  defdelegate subscribe_class(class), to: @implementation
+
+  @doc """
+  Reconciles a class read-model from a PubSub message broadcast on one of the
+  topics of `subscribe_class/1`, returning the updated class or `:ignore` for a
+  message that does not concern it.
+  """
+  @spec refresh_class(Class.t() | nil, term()) :: {:ok, Class.t()} | :ignore
+  defdelegate refresh_class(class, message), to: @implementation
+
+  @doc """
   Validates the data to update an existing class.
   """
   @spec validate_existing_class(Authentication.t(), UUID.t(), Types.class_data()) ::
@@ -141,6 +156,22 @@ defmodule ArchiDep.Course do
   """
   @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
   defdelegate list_students(auth, class), to: @implementation
+
+  @doc """
+  Subscribes the calling process to every topic that keeps the list of students
+  in the given class live.
+  """
+  @spec subscribe_class_students(Class.t()) :: :ok
+  defdelegate subscribe_class_students(class), to: @implementation
+
+  @doc """
+  Reconciles the list of students in a class from a PubSub message broadcast on
+  one of the topics of `subscribe_class_students/1`, returning the refreshed
+  list or `:ignore` for a message that does not concern it.
+  """
+  @spec refresh_class_students(Authentication.t(), Class.t(), list(Student.t()), term()) ::
+          {:ok, list(Student.t())} | :ignore
+  defdelegate refresh_class_students(auth, class, students, message), to: @implementation
 
   @doc """
   Fetches the student who is currently authenticated.

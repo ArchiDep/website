@@ -33,7 +33,9 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
       fetch_authenticated_server_group_member:
         protect({Context, :fetch_authenticated_server_group_member, 1}, Behaviour),
       list_all_servers_in_group: protect({Context, :list_all_servers_in_group, 2}, Behaviour),
-      watch_server_ids: protect({Context, :watch_server_ids, 2}, Behaviour)
+      subscribe_server_group_servers:
+        protect({Context, :subscribe_server_group_servers, 2}, Behaviour),
+      refresh_server_ids: protect({Context, :refresh_server_ids, 2}, Behaviour)
     }
   end
 
@@ -240,9 +242,9 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
     end
   end
 
-  describe "watch_server_ids/2" do
+  describe "subscribe_server_group_servers/2" do
     test "returns the current server ids and subscribes to the group's servers", %{
-      watch_server_ids: watch_server_ids
+      subscribe_server_group_servers: subscribe_server_group_servers
     } do
       %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@past)
       server_a = ServersTestHelpers.insert_server(owner.id, class.id)
@@ -251,9 +253,8 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
       {:ok, group} = ServerGroup.fetch_server_group(class.id)
       auth = Factory.build(:authentication, root: true)
 
-      assert {:ok, server_ids, reducer} = watch_server_ids.(auth, group)
-      assert server_ids == MapSet.new([server_a.id, server_b.id])
-      assert is_function(reducer, 2)
+      assert subscribe_server_group_servers.(auth, group) ==
+               {:ok, MapSet.new([server_a.id, server_b.id])}
 
       # The use case subscribed the calling process to the group's servers
       # topic, so a published creation in this group reaches it.
@@ -273,34 +274,56 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
 
       assert_receive {:server_created, ^created_event, ^created_reference}
 
-      # The reducer folds broadcast events into the watched id set.
-      assert reducer.(server_ids, {:server_created, created_event, created_reference}) ==
-               MapSet.put(server_ids, new_server.id)
-
-      assert reducer.(
-               server_ids,
-               {:server_updated, ServerUpdated.new(server_a),
-                EventsFactory.build(:event_reference)}
-             ) == server_ids
-
-      assert reducer.(
-               server_ids,
-               {:server_deleted, ServerDeleted.new(server_a),
-                EventsFactory.build(:event_reference)}
-             ) ==
-               MapSet.delete(server_ids, server_a.id)
-
       assert_no_stored_events!()
     end
 
     test "a non-root user cannot watch a group's server ids", %{
-      watch_server_ids: watch_server_ids
+      subscribe_server_group_servers: subscribe_server_group_servers
     } do
       class = CourseFactory.insert(:class, now: @past)
       {:ok, group} = ServerGroup.fetch_server_group(class.id)
       auth = Factory.build(:authentication, root: false)
 
-      assert watch_server_ids.(auth, group) == {:error, :unauthorized}
+      assert subscribe_server_group_servers.(auth, group) == {:error, :unauthorized}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "refresh_server_ids/2" do
+    test "adds a created or updated server's id and drops a deleted one", %{
+      refresh_server_ids: refresh_server_ids
+    } do
+      %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@past)
+      server = ServersTestHelpers.insert_server(owner.id, class.id)
+      {:ok, group} = ServerGroup.fetch_server_group(class.id)
+      ids = MapSet.new([server.id])
+
+      new_server =
+        ServersFactory.build(:server,
+          group: group,
+          group_id: class.id,
+          owner:
+            ServersFactory.build(:server_owner,
+              group_member: ServersFactory.build(:server_group_member)
+            )
+        )
+
+      created = {:server_created, ServerCreated.new(new_server), EventsFactory.build(:event_reference)}
+      updated = {:server_updated, ServerUpdated.new(server), EventsFactory.build(:event_reference)}
+      deleted = {:server_deleted, ServerDeleted.new(server), EventsFactory.build(:event_reference)}
+
+      assert refresh_server_ids.(ids, created) == {:ok, MapSet.put(ids, new_server.id)}
+      assert refresh_server_ids.(ids, updated) == {:ok, ids}
+      assert refresh_server_ids.(ids, deleted) == {:ok, MapSet.delete(ids, server.id)}
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores a message it does not handle", %{refresh_server_ids: refresh_server_ids} do
+      ids = MapSet.new([Ecto.UUID.generate()])
+
+      assert refresh_server_ids.(ids, :unrelated) == :ignore
 
       assert_no_stored_events!()
     end

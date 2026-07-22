@@ -161,6 +161,12 @@ delegates both halves to the owning context:
     replaces the one that claims the message in place. It cannot express a
     create (there is no element to hand the refresher), so a full-CRUD list uses
     `attach/3` with a whole-list refresher instead.
+  - `attach_all/2` when **one message feeds more than one single-value assign**
+    — it takes a list of `{key, refresher}` pairs, runs each against its own
+    assign, and halts when at least one claims the message. A chain of
+    `attach/3` hooks cannot express this: the first hook to claim a message
+    halts the rest, so two assigns that both react to the same broadcast would
+    starve one of them.
 
 A refresher returns `{:ok, updated}` for a message it claims or `:ignore` for
 anything else. The `:handle_info` hook swaps the assign and halts on a claimed
@@ -184,6 +190,13 @@ the owning context instead of spread across every consumer. Exemplars:
   refresher reconciles server-field updates (and re-sorts), while creation and
   deletion fall through to the page because they also start/stop the server
   tracker — a process-local side effect that cannot live in a context refresher.
+- [`class_live.ex`](./admin/classes/class_live.ex) — several independent
+  read-models on one page, each its own `attach/3`: the class
+  (`Course.refresh_class/2`), the student list
+  (`Course.refresh_class_students/4`, a whole-list refresher whose closure
+  captures `auth`/`class`) and the set of its server IDs
+  (`Servers.refresh_server_ids/2`). The only surviving `handle_info/2` clause is
+  `:class_deleted`, which navigates away.
 
 **Choosing the topic.** The `subscribe_*` function picks the _coarsest_ topic
 whose audience is "everyone who would care about any of these events", and
@@ -194,6 +207,12 @@ create/update/delete for that owner). Per-entity topics are only worth their
 dynamic subscribe/unsubscribe bookkeeping when a page shows _one_ entity out of
 very many; at this project's scale, PubSub fan-out is never the bottleneck, so
 prefer the coarser topic and the simpler, static subscription.
+
+A `subscribe_*` function may cover **cross-context** topics too, so the page
+still names none: `Course.subscribe_class_students/1` subscribes to the Course
+students topic _and_ the Accounts preregistered-users topic (a linked account
+changes a student's displayed identity), and `Course.refresh_class_students/4`
+claims the events from both.
 
 ---
 

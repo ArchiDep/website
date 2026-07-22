@@ -19,7 +19,11 @@ defmodule ArchiDep.Servers.Context do
 
   @doc false
   @impl Behaviour
-  defdelegate watch_server_ids(auth, server_group), to: UseCases.ReadServerGroups
+  defdelegate subscribe_server_group_servers(auth, server_group), to: UseCases.ReadServerGroups
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_server_ids(server_ids, message), to: UseCases.ReadServerGroups
 
   @doc false
   @impl Behaviour

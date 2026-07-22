@@ -18,6 +18,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Automated SSH exercise VM setup with Ansible](#automated-ssh-exercise-vm-setup-with-ansible)
 - [Dual search system](#dual-search-system)
 - [End-to-end Switch edu-ID login test against a fake identity provider](#end-to-end-switch-edu-id-login-test-against-a-fake-identity-provider)
+- [Fine-grained student-list refresh instead of a full reload per event](#fine-grained-student-list-refresh-instead-of-a-full-reload-per-event)
 - [Remaining uncovered code after the 90% coverage push](#remaining-uncovered-code-after-the-90-coverage-push)
 
 <!-- END doctoc -->
@@ -282,6 +283,61 @@ coverage.
   nonce matching the one stored during the request phase.
 - Whether this lives under `ConnCase` or needs a dedicated integration setup
   (it is not async-safe if it mutates global issuer configuration).
+
+## Fine-grained student-list refresh instead of a full reload per event
+
+**Problem:** The live student list on the admin class page keeps itself current
+with `Course.refresh_class_students/4`, which reloads **every** student of the
+class from the database on **every** relevant broadcast — a student created,
+updated, configured, deleted or imported, or a linked account changing
+(`:preregistered_user_updated`). This is a deliberately coarse projection: one
+cross-context DB read per event regardless of how small the change is. It is the
+one live read-model in the web layer that does not follow the same
+incremental-merge pattern the others already use — `Course.refresh_classes/2`
+merges a single class into the cached list in memory (prepend on create,
+`Class.refresh!` the matching element on update, reject on delete, re-sort), and
+`Course.refresh_student/2` merges a single student with `Student.refresh!`. The
+admin student **detail** page (`student_live`) reloads related data on its
+events in a similarly coarse way.
+
+**Why it is not being done now:** The full reload is correct and simple, and the
+list is small (one class's students), so the extra DB read per event is cheap in
+practice. Doing it incrementally is more code and depends on the broadcast
+events carrying enough to rebuild a row without a fetch — which is not obviously
+true for every case today (a freshly created student's full display shape, the
+shape of the `:students_imported` payload, and the student a
+`:preregistered_user_updated` event refers to all need checking). It is worth
+recording as the natural completion of the read-model pattern, not worth the
+complexity yet.
+
+**Proposed approach:** Give `refresh_class_students` the same per-message-type
+shape as `refresh_classes`, reusing the existing `Student.refresh!/3`:
+
+- `:student_created` → insert the new student into the list and re-sort (the
+  list is name-ordered), if the event carries enough to render a row;
+- `:student_updated` / `:student_configured` → `Student.refresh!` the matching
+  element in place;
+- `:student_deleted` → reject by id;
+- `:students_imported` → merge the imported students into the list;
+- `:preregistered_user_updated` → find the student whose linked account changed
+  and refresh its identity fields (`user`, `active`, username) in memory, the
+  same in-memory linkage merge `Course.Student.refresh!` already performs.
+
+Because membership changes (create / delete / import), the whole-list
+`LiveRefresh.attach/3` refresher is the right fit rather than
+`attach_collection/3` (which cannot express an insertion). Apply the same
+treatment to the coarse reloads in `student_live` where an event maps cleanly to
+a single-entity merge.
+
+**Open questions to resolve when scheduling this**
+
+- Whether each broadcast event carries enough to build or merge a row without a
+  DB fetch — in particular the created-student and imported-students payloads,
+  and resolving a `:preregistered_user_updated` event to the student it affects.
+- Whether the win justifies the extra code given how small a class roster is; the
+  coarse reload may simply be the right trade-off to keep.
+- How ordering is preserved on insert (a shared sort helper, as `refresh_classes`
+  uses).
 
 ## Remaining uncovered code after the 90% coverage push
 

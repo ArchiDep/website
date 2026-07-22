@@ -198,13 +198,14 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
 - [ ] **#5e Sweep the remaining consumers.** Convert the rest of the web
       consumers to the #5d pattern (a context `subscribe_*` +
       `LiveRefresh.attach`, dropping their per-event `handle_info` clauses).
-      `server_live`, `classes_live`, `my_servers_live` and `dashboard_live` are
-      done; the server-tracker coupling is resolved (Option B — a self-managing
-      tracker, now with owner **and** group scopes). `admin_live` reuses the
-      tracker (per-class group-scoped trackers + `refresh_server_state_map`) but
-      keeps its grouped list + class handlers by design. Remaining: admin
-      `student_live`, `class_live`, `ansible_live`, and the `user_channel` — see
-      [#5e Sweep the remaining consumers](#5e-sweep-the-remaining-consumers).
+      `server_live`, `classes_live`, `my_servers_live`, `dashboard_live` and
+      admin `class_live` are done; the server-tracker coupling is resolved
+      (Option B — a self-managing tracker, now with owner **and** group scopes).
+      `admin_live` reuses the tracker (per-class group-scoped trackers +
+      `refresh_server_state_map`) but keeps its grouped list + class handlers by
+      design. Remaining: admin `student_live`, `ansible_live`, and the
+      `user_channel` — see [#5e Sweep the remaining
+      consumers](#5e-sweep-the-remaining-consumers).
 
 ### F. Event schema versioning
 
@@ -865,9 +866,18 @@ longer orchestrates track/untrack or holds a `:server_state` handler. It still
 owns the grouped `servers_by_class_id` list and the class handlers — its
 multi-group, class-coupled, aggregate-count shape doesn't fit the flat owner
 refresher, and `AdminClassServersLive` is a `live_component` (no process), so it
-can't own a tracker itself. Remaining: admin `student_live`, `class_live`,
-`ansible_live`, and the `user_channel` (a `Phoenix.Channel`, so no
-`attach_hook`).
+can't own a tracker itself. Admin `class_live` is converted: its `class`
+(`Course.refresh_class/2`), student list (`Course.refresh_class_students/4`) and
+set of server IDs (`Servers.refresh_server_ids/2`, replacing the old
+`watch_server_ids/2` reducer) each get their own `LiveRefresh.attach/3`, leaving
+only a `:class_deleted` navigation handler. `Course.subscribe_class_students/1`
+subscribes to the Accounts preregistered-users topic as well, so the page names
+no topics or events. A generic `LiveRefresh.attach_all/2` primitive (several
+single-value assigns fed by one message — a chain of `attach/3` would starve
+one, since the first to claim halts the rest) was added as groundwork for
+`student_live`, which merges one event into several assigns. Remaining: admin
+`student_live`, `ansible_live`, and the `user_channel` (a `Phoenix.Channel`, so
+no `attach_hook`).
 
 **Topic granularity (decided).** Subscribe once, on mount, to the _coarsest_
 topic whose audience is "everyone who cares about any of these events" — the

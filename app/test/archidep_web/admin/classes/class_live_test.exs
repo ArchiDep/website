@@ -10,8 +10,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
+  alias ArchiDep.Course.UseCases.ReadClasses
+  alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
+  alias ArchiDep.Servers.UseCases.ReadServerGroups
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -1129,11 +1132,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
       stub_class_page_calls(auth, class: class, server_group: server_group, students: [])
 
-      stub(Servers.ContextMock, :watch_server_ids, fn ^auth, group ->
-        :ok = Servers.PubSub.subscribe_server_group_servers(group.id)
-        {:ok, MapSet.new(), &server_ids_reducer/2}
-      end)
-
       {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
 
       assert class_page(html, class) == empty_class_page(class)
@@ -1156,7 +1154,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
       wait_for_socket_assigns!(
         view,
-        fn assigns -> assigns.server_ids |> elem(0) |> MapSet.size() == 1 end,
+        fn assigns -> MapSet.size(assigns.server_ids) == 1 end,
         "server tracked"
       )
 
@@ -1347,12 +1345,28 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
     stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, class} end)
     stub(Servers.ContextMock, :fetch_server_group, fn ^auth, _id -> {:ok, server_group} end)
+    stub(Course.ContextMock, :list_students, fn ^auth, _class -> students end)
 
-    stub(Servers.ContextMock, :watch_server_ids, fn ^auth, _group ->
-      {:ok, MapSet.new(server_ids), fn ids, _event -> ids end}
+    # The read-model subscriptions delegate to the real use cases so a real
+    # broadcast reaches the view; the reconcilers do too, except the student
+    # list (whose reader is mocked here) and the server-id set (seeded from
+    # `opts` and kept live by real broadcasts).
+    stub(Course.ContextMock, :subscribe_class, &ReadClasses.subscribe_class/1)
+    stub(Course.ContextMock, :refresh_class, &ReadClasses.refresh_class/2)
+    stub(Course.ContextMock, :subscribe_class_students, &ReadStudents.subscribe_class_students/1)
+
+    stub(Course.ContextMock, :refresh_class_students, fn ^auth, class, _students, message ->
+      if class_students_message?(message, class.id),
+        do: {:ok, Course.list_students(auth, class)},
+        else: :ignore
     end)
 
-    stub(Course.ContextMock, :list_students, fn ^auth, _class -> students end)
+    stub(Servers.ContextMock, :refresh_server_ids, &ReadServerGroups.refresh_server_ids/2)
+
+    stub(Servers.ContextMock, :subscribe_server_group_servers, fn ^auth, group ->
+      :ok = Servers.PubSub.subscribe_server_group_servers(group.id)
+      {:ok, MapSet.new(server_ids)}
+    end)
 
     :ok
   end
@@ -1499,12 +1513,17 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     end
   end
 
-  # Mirrors the contract of the real `watch_server_ids` reducer (it adds created
-  # server IDs and drops deleted ones), so the page's server PubSub handler can
-  # be driven through a real broadcast.
-  defp server_ids_reducer(ids, {:server_created, event, _ref}), do: MapSet.put(ids, event.id)
-  defp server_ids_reducer(ids, {:server_deleted, event, _ref}), do: MapSet.delete(ids, event.id)
-  defp server_ids_reducer(ids, {:server_updated, _event, _ref}), do: ids
+  # Mirrors the messages the real `refresh_class_students/4` claims, so the
+  # page's student-list refresh can be driven through real broadcasts while the
+  # list itself is served from the mocked reader.
+  defp class_students_message?({event, %{class_id: id}}, id)
+       when event in [:student_created, :student_deleted],
+       do: true
+
+  defp class_students_message?({:student_updated, %{class: %{id: id}}, _ref}, id), do: true
+  defp class_students_message?({:students_imported, %{id: id}, _students}, id), do: true
+  defp class_students_message?({:preregistered_user_updated, _event, _ref}, _id), do: true
+  defp class_students_message?(_message, _id), do: false
 
   # The import dialog parses the uploaded CSV from disk on mount, so writing the
   # file at the path it reads drives the parsing/classification/import flow

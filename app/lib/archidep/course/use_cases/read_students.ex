@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Accounts
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
@@ -14,6 +15,45 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
     authorize!(auth, Policy, :course, :list_students, class)
     Student.list_students_in_class(class.id)
   end
+
+  # Subscribing to the topics of a class the caller already holds grants no new
+  # access, so this read-model plumbing takes no authentication and skips the
+  # authorization the command use cases perform. The list of students in a class
+  # is kept live by the Course students topic and by the Accounts
+  # preregistered-users topic (a linked account changing affects a student's
+  # displayed identity); the class id and its user group id are the same.
+  @spec subscribe_class_students(Class.t()) :: :ok
+  def subscribe_class_students(%Class{id: id}) do
+    :ok = PubSub.subscribe_class_students(id)
+    :ok = Accounts.PubSub.subscribe_user_group_preregistered_users(id)
+  end
+
+  @spec refresh_class_students(Authentication.t(), Class.t(), list(Student.t()), term()) ::
+          {:ok, list(Student.t())} | :ignore
+  def refresh_class_students(auth, %Class{id: id} = class, students, message)
+      when is_list(students) do
+    if concerns_class_students?(message, id) do
+      {:ok, list_students(auth, class)}
+    else
+      :ignore
+    end
+  end
+
+  defp concerns_class_students?({student_event, %Student{class_id: id}}, id)
+       when student_event in [:student_created, :student_deleted],
+       do: true
+
+  defp concerns_class_students?({:student_updated, %{class: %{id: id}}, %EventReference{}}, id),
+    do: true
+
+  defp concerns_class_students?({:students_imported, %Class{id: id}, students}, id)
+       when is_list(students),
+       do: true
+
+  defp concerns_class_students?({:preregistered_user_updated, _event, %EventReference{}}, _id),
+    do: true
+
+  defp concerns_class_students?(_message, _id), do: false
 
   @spec fetch_authenticated_student(Authentication.t()) ::
           {:ok, Student.t()} | {:error, :not_a_student}

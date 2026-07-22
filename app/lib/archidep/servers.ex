@@ -38,19 +38,22 @@ defmodule ArchiDep.Servers do
   defdelegate fetch_server_group(auth, server_group_id), to: @implementation
 
   @doc """
-  Watches the server IDs in a server group. Returns a tuple of the current set
-  of server IDs and a function that can be used to update the set based on
-  incoming messages.
-
-  The subscriber will receive messages that are three-element tuples of the form
-  `{event_name, event, reference}`, where `event_name` is `:server_created`,
-  `:server_updated`, or `:server_deleted`, `event` is the corresponding curated
-  domain event, and `reference` is its `EventReference`.
+  Subscribes the calling process to every topic that keeps the set of server IDs
+  in the given server group live, returning the current set. Reconcile the set
+  from each incoming message with `refresh_server_ids/2`.
   """
-  @spec watch_server_ids(Authentication.t(), ServerGroup.t()) ::
-          {:ok, MapSet.t(UUID.t()), (MapSet.t(UUID.t()), {atom(), term()} -> MapSet.t(UUID.t()))}
-          | {:error, :unauthorized}
-  defdelegate watch_server_ids(auth, server_group), to: @implementation
+  @spec subscribe_server_group_servers(Authentication.t(), ServerGroup.t()) ::
+          {:ok, MapSet.t(UUID.t())} | {:error, :unauthorized}
+  defdelegate subscribe_server_group_servers(auth, server_group), to: @implementation
+
+  @doc """
+  Reconciles the set of server IDs in a server group from a PubSub message
+  broadcast on one of the topics of `subscribe_server_group_servers/2`,
+  returning the updated set or `:ignore` for a message that does not concern it.
+  """
+  @spec refresh_server_ids(MapSet.t(UUID.t()), term()) ::
+          {:ok, MapSet.t(UUID.t())} | :ignore
+  defdelegate refresh_server_ids(server_ids, message), to: @implementation
 
   @doc """
   Lists all servers in a server group.

@@ -65,6 +65,23 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
 
   def refresh_classes(_classes, _message), do: :ignore
 
+  # Subscribing to the topic of a class the caller already holds grants no new
+  # access, so this read-model plumbing takes no authentication and skips the
+  # authorization the command use cases perform.
+  @spec subscribe_class(Class.t()) :: :ok
+  def subscribe_class(%Class{id: id}), do: PubSub.subscribe_class(id)
+
+  @spec refresh_class(Class.t() | nil, term()) :: {:ok, Class.t()} | :ignore
+  def refresh_class(%Class{id: id} = class, {:class_updated, event, reference}) do
+    if class_updated_id(event) == id do
+      {:ok, Class.refresh!(class, event, reference)}
+    else
+      :ignore
+    end
+  end
+
+  def refresh_class(_class, _message), do: :ignore
+
   defp class_updated_id(%ClassUpdated{id: id}), do: id
   defp class_updated_id(%ClassExpectedServerPropertiesUpdated{class: %{id: id}}), do: id
 

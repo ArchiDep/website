@@ -38,6 +38,14 @@ defmodule ArchiDep.Course.Context do
 
   @doc false
   @impl Behaviour
+  defdelegate subscribe_class(class), to: UseCases.ReadClasses
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_class(class, message), to: UseCases.ReadClasses
+
+  @doc false
+  @impl Behaviour
   defdelegate validate_existing_class(auth, class_id, data), to: UseCases.UpdateClass
 
   @doc false
@@ -75,6 +83,14 @@ defmodule ArchiDep.Course.Context do
   @doc false
   @impl Behaviour
   defdelegate list_students(auth, class), to: UseCases.ReadStudents
+
+  @doc false
+  @impl Behaviour
+  defdelegate subscribe_class_students(class), to: UseCases.ReadStudents
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_class_students(auth, class, students, message), to: UseCases.ReadStudents
 
   @doc false
   @impl Behaviour

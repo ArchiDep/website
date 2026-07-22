@@ -119,33 +119,27 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
     end
   end
 
-  @spec watch_server_ids(Authentication.t(), ServerGroup.t()) ::
-          {:ok, MapSet.t(UUID.t()),
-           (MapSet.t(UUID.t()), {atom(), term()} | {atom(), term(), term()} ->
-              MapSet.t(UUID.t()))}
-          | {:error, :unauthorized}
-  def watch_server_ids(auth, group) do
+  @spec subscribe_server_group_servers(Authentication.t(), ServerGroup.t()) ::
+          {:ok, MapSet.t(UUID.t())} | {:error, :unauthorized}
+  def subscribe_server_group_servers(auth, group) do
     case authorize(auth, Policy, :servers, :watch_server_ids, group) do
       :ok ->
         :ok = PubSub.subscribe_server_group_servers(group.id)
-
-        server_ids = group.id |> Server.list_server_ids_in_group() |> MapSet.new()
-
-        reducer = fn
-          ids, {:server_created, event, _reference} ->
-            MapSet.put(ids, event.id)
-
-          ids, {:server_updated, event, _reference} ->
-            MapSet.put(ids, event.id)
-
-          ids, {:server_deleted, event, _reference} ->
-            MapSet.delete(ids, event.id)
-        end
-
-        {:ok, server_ids, reducer}
+        {:ok, group.id |> Server.list_server_ids_in_group() |> MapSet.new()}
 
       {:error, {:access_denied, :servers, :watch_server_ids}} ->
         {:error, :unauthorized}
     end
   end
+
+  @spec refresh_server_ids(MapSet.t(UUID.t()), term()) :: {:ok, MapSet.t(UUID.t())} | :ignore
+  def refresh_server_ids(server_ids, {server_event, event, _reference})
+      when server_event in [:server_created, :server_updated] and is_struct(server_ids, MapSet),
+      do: {:ok, MapSet.put(server_ids, event.id)}
+
+  def refresh_server_ids(server_ids, {:server_deleted, event, _reference})
+      when is_struct(server_ids, MapSet),
+      do: {:ok, MapSet.delete(server_ids, event.id)}
+
+  def refresh_server_ids(_server_ids, _message), do: :ignore
 end

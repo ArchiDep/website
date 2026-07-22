@@ -43,6 +43,37 @@ defmodule ArchiDepWeb.LiveRefresh do
   end
 
   @doc """
+  Tracks several single-value assigns that may react to the same message. The
+  hook applies each `{key, refresher}` pair to its own assign and swaps the ones
+  that answer `{:ok, updated}`; the message is halted when at least one pair
+  claims it, and passes through untouched when none does. Use this instead of
+  chaining `attach/3` when one broadcast feeds more than one read-model — a
+  chain of `attach/3` hooks cannot express that, because the first hook to claim
+  the message halts the rest.
+  """
+  @spec attach_all(Socket.t(), [{atom(), refresher(term())}]) :: Socket.t()
+  def attach_all(socket, refreshers) do
+    attach_hook(socket, {:refresh, keys(refreshers)}, :handle_info, fn msg, socket ->
+      case reconcile_all(refreshers, msg, socket, false) do
+        {:claimed, socket} -> {:halt, socket}
+        :unclaimed -> {:cont, socket}
+      end
+    end)
+  end
+
+  defp keys(refreshers), do: Enum.map(refreshers, &elem(&1, 0))
+
+  defp reconcile_all([], _msg, socket, claimed?),
+    do: if(claimed?, do: {:claimed, socket}, else: :unclaimed)
+
+  defp reconcile_all([{key, refresher} | rest], msg, socket, claimed?) do
+    case refresher.(socket.assigns[key], msg) do
+      {:ok, updated} -> reconcile_all(rest, msg, assign(socket, key, updated), true)
+      :ignore -> reconcile_all(rest, msg, socket, claimed?)
+    end
+  end
+
+  @doc """
   Tracks one element of the list assign named `key`. The hook applies the
   single-entity `refresher` to each element until one answers `{:ok, updated}`;
   that element is replaced in place (order preserved) and the message is halted.

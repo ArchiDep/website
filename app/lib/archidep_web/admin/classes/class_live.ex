@@ -5,18 +5,16 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   import ArchiDepWeb.Helpers.DateFormatHelpers
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
-  alias ArchiDep.Accounts
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
-  alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
-  alias ArchiDep.Servers.Schemas.ServerGroup
   alias ArchiDepWeb.Admin.Classes.DeleteClassDialogLive
   alias ArchiDepWeb.Admin.Classes.EditClassDialogLive
   alias ArchiDepWeb.Admin.Classes.EditClassExpectedServerPropertiesDialogLive
   alias ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive
   alias ArchiDepWeb.Admin.Classes.NewStudentDialogLive
+  alias ArchiDepWeb.LiveRefresh
 
   @impl LiveView
   def mount(%{"id" => id}, _session, socket) do
@@ -30,27 +28,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
     with {:ok, class} <- class_result,
          {:ok, server_group} <- server_group_result do
-      {server_ids, server_ids_reducer} =
-        if connected?(socket) do
-          set_process_label(__MODULE__, auth, class)
-          :ok = Course.PubSub.subscribe_class(id)
-          :ok = Course.PubSub.subscribe_class_students(id)
-          :ok = Accounts.PubSub.subscribe_user_group_preregistered_users(id)
-          {:ok, server_ids, server_ids_reducer} = Servers.watch_server_ids(auth, server_group)
-          {server_ids, server_ids_reducer}
-        else
-          {MapSet.new(), fn ids, _event -> ids end}
-        end
-
       socket
       |> assign(
         page_title: "#{class.name} · #{gettext("Admin")}",
         class: class,
-        server_group: server_group,
-        server_ids: {server_ids, server_ids_reducer},
-        students: []
+        server_ids: MapSet.new(),
+        students: Course.list_students(auth, class)
       )
-      |> load_students()
+      |> track(auth, class, server_group)
       |> ok()
     else
       {:error, not_found} when not_found in [:class_not_found, :server_group_not_found] ->
@@ -68,24 +53,6 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, event, reference},
-        %Socket{
-          assigns: %{
-            class: %Class{} = class,
-            server_group: %ServerGroup{} = server_group
-          }
-        } = socket
-      ),
-      do:
-        socket
-        |> assign(
-          class: Class.refresh!(class, event, reference),
-          server_group: ServerGroup.refresh!(server_group, event, reference)
-        )
-        |> noreply()
-
-  @impl LiveView
-  def handle_info(
         {:class_deleted, %Class{id: id}},
         %Socket{
           assigns: %{class: %Class{id: id} = class}
@@ -99,54 +66,24 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
         |> push_navigate(to: ~p"/admin/classes")
         |> noreply()
 
-  @impl LiveView
-  def handle_info(
-        {student_event, %Student{class_id: id}},
-        %Socket{
-          assigns: %{class: %Class{id: id}}
-        } = socket
-      )
-      when student_event in [:student_created, :student_deleted],
-      do: socket |> load_students() |> noreply()
+  # On connected mount, keep the class, its student list and the set of its
+  # server IDs current through the Course and Servers boundaries; the page names
+  # no topics or events. The server group is fetched only to authorize and scope
+  # the server-id subscription; it is not rendered, so it is not tracked.
+  defp track(socket, auth, class, server_group) do
+    if connected?(socket) do
+      set_process_label(__MODULE__, auth, class)
+      :ok = Course.subscribe_class(class)
+      :ok = Course.subscribe_class_students(class)
+      {:ok, server_ids} = Servers.subscribe_server_group_servers(auth, server_group)
 
-  @impl LiveView
-  def handle_info(
-        {:student_updated, %{class: %{id: id}}, _reference},
-        %Socket{
-          assigns: %{class: %Class{id: id}}
-        } = socket
-      ),
-      do: socket |> load_students() |> noreply()
-
-  @impl LiveView
-  def handle_info(
-        {:students_imported, %Class{id: id}, _students},
-        %Socket{
-          assigns: %{class: %Class{id: id}}
-        } = socket
-      ),
-      do: socket |> load_students() |> noreply()
-
-  @impl LiveView
-  def handle_info(
-        {:preregistered_user_updated, _event, _reference},
-        socket
-      ),
-      do: socket |> load_students() |> noreply()
-
-  @impl LiveView
-  def handle_info(
-        {server_event, _event, _reference} = message,
-        %Socket{assigns: %{server_ids: {server_ids, reducer}}} = socket
-      )
-      when server_event in [:server_created, :server_updated, :server_deleted] do
-    new_server_ids = reducer.(server_ids, message)
-
-    socket
-    |> assign(:server_ids, {new_server_ids, reducer})
-    |> noreply()
+      socket
+      |> LiveRefresh.attach(:class, &Course.refresh_class/2)
+      |> LiveRefresh.attach(:students, &Course.refresh_class_students(auth, class, &1, &2))
+      |> LiveRefresh.attach(:server_ids, &Servers.refresh_server_ids/2)
+      |> assign(:server_ids, server_ids)
+    else
+      socket
+    end
   end
-
-  defp load_students(%Socket{assigns: %{auth: auth, class: class}} = socket),
-    do: assign(socket, students: Course.list_students(auth, class))
 end

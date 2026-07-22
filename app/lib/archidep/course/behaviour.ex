@@ -50,6 +50,19 @@ defmodule ArchiDep.Course.Behaviour do
               {:ok, Class.t()} | {:error, :class_not_found}
 
   @doc """
+  Subscribes the calling process to every topic that keeps the given class's
+  read-model live.
+  """
+  @callback subscribe_class(Class.t()) :: :ok
+
+  @doc """
+  Reconciles a class read-model from a PubSub message broadcast on one of the
+  topics of `subscribe_class/1`, returning the updated class or `:ignore` for a
+  message that does not concern it.
+  """
+  @callback refresh_class(Class.t() | nil, term()) :: {:ok, Class.t()} | :ignore
+
+  @doc """
   Validates the data to update an existing class.
   """
   @callback validate_existing_class(Authentication.t(), UUID.t(), Types.class_data()) ::
@@ -113,6 +126,20 @@ defmodule ArchiDep.Course.Behaviour do
   Lists all students in the specified class.
   """
   @callback list_students(Authentication.t(), Class.t()) :: list(Student.t())
+
+  @doc """
+  Subscribes the calling process to every topic that keeps the list of students
+  in the given class live.
+  """
+  @callback subscribe_class_students(Class.t()) :: :ok
+
+  @doc """
+  Reconciles the list of students in a class from a PubSub message broadcast on
+  one of the topics of `subscribe_class_students/1`, returning the refreshed
+  list or `:ignore` for a message that does not concern it.
+  """
+  @callback refresh_class_students(Authentication.t(), Class.t(), list(Student.t()), term()) ::
+              {:ok, list(Student.t())} | :ignore
 
   @doc """
   Fetches the student who is currently authenticated.
