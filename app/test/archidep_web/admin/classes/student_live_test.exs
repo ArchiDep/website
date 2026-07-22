@@ -7,11 +7,13 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
+  alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Servers.UseCases.ReadServers
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
@@ -456,11 +458,16 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       assert student_page(render(view)) == alice_page(%{class: "Renamed Class"})
     end
 
-    test "looks up a newly available active server on a class update", %{conn: conn, auth: auth} do
+    test "one class update refreshes both the student and its active server", %{
+      conn: conn,
+      auth: auth
+    } do
+      # A single `:class_updated` event must reach both refreshers on the page's
+      # `attach_all` hook: the student's nested class is renamed, and the active
+      # server (absent at mount, available by the time the update arrives) is
+      # looked up — proving neither read-model starves the other.
       student = build_alice([])
 
-      # No active server exists at mount; one appears by the time the class
-      # update arrives, so the update's server-group reconciliation looks it up.
       {:ok, active_server_lookup} = Agent.start_link(fn -> {:error, :server_not_found} end)
 
       stub(Course.ContextMock, :fetch_student_in_class, fn ^auth, _class_id, _id ->
@@ -474,13 +481,15 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
         end
       end)
 
+      stub_student_read_models()
+
       {:ok, view, html} = live(conn, path(student))
       assert student_page(html) == alice_page()
 
       server = build_active_server(student, name: "web-01")
       :ok = Agent.update(active_server_lookup, fn _previous -> {:ok, server} end)
 
-      updated_class = %{student.class | version: student.class.version + 1}
+      updated_class = %{student.class | name: "Renamed Class", version: student.class.version + 1}
 
       :ok =
         Course.PubSub.publish_class_updated(
@@ -491,11 +500,14 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
 
       wait_for_socket_assigns!(
         view,
-        fn assigns -> assigns.active_server != nil end,
-        "active server found"
+        fn assigns ->
+          assigns.student.class.name == "Renamed Class" and assigns.active_server != nil
+        end,
+        "class renamed and active server found"
       )
 
-      assert student_page(render(view)) == alice_page(%{active_server: "web-01"})
+      assert student_page(render(view)) ==
+               alice_page(%{class: "Renamed Class", active_server: "web-01"})
     end
 
     test "navigate away when the class is deleted over PubSub", %{conn: conn, auth: auth} do
@@ -515,18 +527,25 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
 
     test "show the active server when one is created over PubSub", %{conn: conn, auth: auth} do
       student = build_alice([])
+      created = build_active_server(student, name: "web-01")
+
+      # No active server at mount; the created server becomes the member's
+      # active one, so the refresher's authoritative re-fetch returns it.
+      {:ok, active_lookup} = Agent.start_link(fn -> {:error, :server_not_found} end)
       stub_student_page(auth, student: student)
 
-      created = build_active_server(student, name: "web-01")
-      created_id = created.id
-
-      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^created_id ->
-        {:ok, ServerView.from(created)}
+      stub(Servers.ContextMock, :fetch_active_server_for_group_member, fn ^auth, _id ->
+        case Agent.get(active_lookup, & &1) do
+          {:ok, server} -> {:ok, ServerView.from(server)}
+          other -> other
+        end
       end)
 
       {:ok, view, html} = live(conn, path(student))
 
       assert student_page(html) == alice_page()
+
+      :ok = Agent.update(active_lookup, fn _previous -> {:ok, created} end)
 
       :ok =
         Servers.PubSub.publish_server_created(
@@ -548,18 +567,25 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       auth: auth
     } do
       student = build_alice([])
+      updated = build_active_server(student, name: "web-01")
+
+      # No active server at mount; the server becomes active by the time its
+      # update arrives, so the refresher's re-fetch surfaces it.
+      {:ok, active_lookup} = Agent.start_link(fn -> {:error, :server_not_found} end)
       stub_student_page(auth, student: student)
 
-      updated = build_active_server(student, name: "web-01")
-      updated_id = updated.id
-
-      stub(Servers.ContextMock, :fetch_server, fn ^auth, ^updated_id ->
-        {:ok, ServerView.from(updated)}
+      stub(Servers.ContextMock, :fetch_active_server_for_group_member, fn ^auth, _id ->
+        case Agent.get(active_lookup, & &1) do
+          {:ok, server} -> {:ok, ServerView.from(server)}
+          other -> other
+        end
       end)
 
       {:ok, view, html} = live(conn, path(student))
 
       assert student_page(html) == alice_page()
+
+      :ok = Agent.update(active_lookup, fn _previous -> {:ok, updated} end)
 
       :ok =
         Servers.PubSub.publish_server_updated(
@@ -688,9 +714,9 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
 
   # Builds a server that is unconditionally active at any instant (a root,
   # active, group-member-less owner and a date-window-less active group), so the
-  # `Server.active?` checks in the page's PubSub handlers are deterministic. The
-  # owner is the student's linked user account so the broadcast reaches the
-  # page.
+  # `ServerView.active?` checks in the active-server refresher are
+  # deterministic. The owner is the student's linked user account so the
+  # broadcast reaches the page.
   defp build_active_server(student, opts) do
     ServersFactory.build(
       :server,
@@ -732,6 +758,30 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
     stub(Servers.ContextMock, :fetch_active_server_for_group_member, fn ^auth, _id ->
       active_server_result
     end)
+
+    stub_student_read_models()
+
+    :ok
+  end
+
+  # The read-model subscriptions and reconcilers delegate to the real use cases,
+  # so a real broadcast drives the view and the reconcilers exercise the real
+  # merge logic (their fetches go through the mocked context boundary).
+  defp stub_student_read_models do
+    stub(Course.ContextMock, :subscribe_student_detail, &ReadStudents.subscribe_student_detail/1)
+    stub(Course.ContextMock, :refresh_student_detail, &ReadStudents.refresh_student_detail/2)
+
+    stub(
+      Servers.ContextMock,
+      :subscribe_active_server_for_member,
+      &ReadServers.subscribe_active_server_for_member/1
+    )
+
+    stub(
+      Servers.ContextMock,
+      :refresh_active_server_for_member,
+      &ReadServers.refresh_active_server_for_member/4
+    )
 
     :ok
   end

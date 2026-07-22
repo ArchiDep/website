@@ -4,6 +4,8 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   use ArchiDep, :use_case
 
   alias ArchiDep.Accounts
+  alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
@@ -99,4 +101,40 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
       do: {:ok, Student.refresh!(student, event, reference)}
 
   def refresh_student(_student, _message), do: :ignore
+
+  # Subscribing to the topics of a student the caller already holds grants no
+  # new access, so this read-model plumbing takes no authentication. The admin
+  # student detail page keeps the student, its nested class and its account
+  # linkage live, so it rides the student topic, the class topic and the
+  # Accounts preregistration topic (both keyed by ids fixed for the page's
+  # lifetime).
+  @spec subscribe_student_detail(Student.t()) :: :ok
+  def subscribe_student_detail(%Student{id: id, class_id: class_id}) do
+    :ok = PubSub.subscribe_student(id)
+    :ok = PubSub.subscribe_class(class_id)
+    :ok = Accounts.PubSub.subscribe_preregistered_user(id)
+  end
+
+  @spec refresh_student_detail(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  def refresh_student_detail(
+        %Student{id: id} = student,
+        {:student_updated, %{id: id} = event, %EventReference{} = reference}
+      ),
+      do: {:ok, Student.refresh!(student, event, reference)}
+
+  def refresh_student_detail(
+        %Student{class_id: class_id, class: %Class{} = class} = student,
+        {:class_updated, event, %EventReference{} = reference}
+      ) do
+    if class_updated_id(event) == class_id do
+      {:ok, %Student{student | class: Class.refresh!(class, event, reference)}}
+    else
+      :ignore
+    end
+  end
+
+  def refresh_student_detail(_student, _message), do: :ignore
+
+  defp class_updated_id(%ClassUpdated{id: id}), do: id
+  defp class_updated_id(%ClassExpectedServerPropertiesUpdated{class: %{id: id}}), do: id
 end

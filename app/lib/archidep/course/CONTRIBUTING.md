@@ -255,7 +255,11 @@ exceptions are noted.
 - [`DeleteStudent`](./use_cases/delete_student.ex) — `delete_student/2`.
 - [`ReadStudents`](./use_cases/read_students.ex) — `list_students/2`,
   `fetch_student_in_class/3` (root), and `fetch_authenticated_student/1`
-  (any authenticated user, to load their own record).
+  (any authenticated user, to load their own record); plus the live-read-model
+  helpers `subscribe_student/1` + `refresh_student/2` (a single student),
+  `subscribe_class_students/1` + `refresh_class_students/4` (a class's student
+  list), and `subscribe_student_detail/1` + `refresh_student_detail/2` (a
+  student with its nested class, for the admin student detail page).
 
 ---
 

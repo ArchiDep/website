@@ -198,13 +198,13 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
 - [ ] **#5e Sweep the remaining consumers.** Convert the rest of the web
       consumers to the #5d pattern (a context `subscribe_*` +
       `LiveRefresh.attach`, dropping their per-event `handle_info` clauses).
-      `server_live`, `classes_live`, `my_servers_live`, `dashboard_live` and
-      admin `class_live` are done; the server-tracker coupling is resolved
-      (Option B — a self-managing tracker, now with owner **and** group scopes).
-      `admin_live` reuses the tracker (per-class group-scoped trackers +
-      `refresh_server_state_map`) but keeps its grouped list + class handlers by
-      design. Remaining: admin `student_live`, `ansible_live`, and the
-      `user_channel` — see [#5e Sweep the remaining
+      `server_live`, `classes_live`, `my_servers_live`, `dashboard_live`, admin
+      `class_live` and admin `student_live` are done; the server-tracker coupling
+      is resolved (Option B — a self-managing tracker, now with owner **and**
+      group scopes). `admin_live` reuses the tracker (per-class group-scoped
+      trackers + `refresh_server_state_map`) but keeps its grouped list + class
+      handlers by design. Remaining: `ansible_live` and the `user_channel` — see
+      [#5e Sweep the remaining
       consumers](#5e-sweep-the-remaining-consumers).
 
 ### F. Event schema versioning
@@ -874,10 +874,18 @@ only a `:class_deleted` navigation handler. `Course.subscribe_class_students/1`
 subscribes to the Accounts preregistered-users topic as well, so the page names
 no topics or events. A generic `LiveRefresh.attach_all/2` primitive (several
 single-value assigns fed by one message — a chain of `attach/3` would starve
-one, since the first to claim halts the rest) was added as groundwork for
-`student_live`, which merges one event into several assigns. Remaining: admin
-`student_live`, `ansible_live`, and the `user_channel` (a `Phoenix.Channel`, so
-no `attach_hook`).
+one, since the first to claim halts the rest) landed as groundwork alongside
+`class_live`. Admin `student_live` is now converted and is its first user: one
+`:student_updated` or `:class_updated` event feeds both the student (with its
+nested class, `Course.refresh_student_detail/2`) and its derived active server
+(`Servers.refresh_active_server_for_member/4`) through one `attach_all/2` hook.
+The active server rides the student's server-owner topic (only that student's
+server events, not the whole class), so the one process-local concern that
+stays a thin `handle_info` clause is the dynamic subscription on account
+linkage; the two delete events keep their navigation clauses. The conversion
+also dropped a stale top-level `class` assign (a breadcrumb that never
+refreshed) in favour of the live `student.class`. Remaining: `ansible_live` and
+the `user_channel` (a `Phoenix.Channel`, so no `attach_hook`).
 
 **Topic granularity (decided).** Subscribe once, on mount, to the _coarsest_
 topic whose audience is "everyone who cares about any of these events" — the

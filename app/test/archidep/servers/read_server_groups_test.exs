@@ -309,9 +309,14 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
             )
         )
 
-      created = {:server_created, ServerCreated.new(new_server), EventsFactory.build(:event_reference)}
-      updated = {:server_updated, ServerUpdated.new(server), EventsFactory.build(:event_reference)}
-      deleted = {:server_deleted, ServerDeleted.new(server), EventsFactory.build(:event_reference)}
+      created =
+        {:server_created, ServerCreated.new(new_server), EventsFactory.build(:event_reference)}
+
+      updated =
+        {:server_updated, ServerUpdated.new(server), EventsFactory.build(:event_reference)}
+
+      deleted =
+        {:server_deleted, ServerDeleted.new(server), EventsFactory.build(:event_reference)}
 
       assert refresh_server_ids.(ids, created) == {:ok, MapSet.put(ids, new_server.id)}
       assert refresh_server_ids.(ids, updated) == {:ok, ids}

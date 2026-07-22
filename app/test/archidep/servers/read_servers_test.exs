@@ -2,6 +2,7 @@ defmodule ArchiDep.Servers.ReadServersTest do
   use ArchiDep.Support.DataCase, async: true
 
   import Hammox
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.Context
   alias ArchiDep.Servers.ContextMock
@@ -14,6 +15,7 @@ defmodule ArchiDep.Servers.ReadServersTest do
   alias ArchiDep.Servers.ServerTracking.ServerTracker
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientMock
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
   alias ArchiDep.Support.ServersFactory
@@ -34,7 +36,11 @@ defmodule ArchiDep.Servers.ReadServersTest do
       refresh_server: protect({Context, :refresh_server, 2}, Behaviour),
       subscribe_my_servers: protect({Context, :subscribe_my_servers, 1}, Behaviour),
       refresh_my_servers: protect({Context, :refresh_my_servers, 3}, Behaviour),
-      refresh_server_state_map: protect({Context, :refresh_server_state_map, 2}, Behaviour)
+      refresh_server_state_map: protect({Context, :refresh_server_state_map, 2}, Behaviour),
+      subscribe_active_server_for_member:
+        protect({Context, :subscribe_active_server_for_member, 1}, Behaviour),
+      refresh_active_server_for_member:
+        protect({Context, :refresh_active_server_for_member, 4}, Behaviour)
     }
   end
 
@@ -574,5 +580,187 @@ defmodule ArchiDep.Servers.ReadServersTest do
 
       assert_no_stored_events!()
     end
+  end
+
+  describe "subscribe_active_server_for_member/1" do
+    test "delivers a linked member's server events", %{
+      subscribe_active_server_for_member: subscribe_active_server_for_member
+    } do
+      owner = ServersFactory.build(:server_owner)
+
+      assert subscribe_active_server_for_member.(owner.id) == :ok
+
+      server =
+        ServersFactory.build(:server,
+          owner: owner,
+          owner_id: owner.id,
+          group: ServersFactory.build(:server_group)
+        )
+
+      created_event = ServerCreated.new(server)
+      created_reference = EventsFactory.build(:event_reference)
+      :ok = PubSub.publish_server_created(created_event, created_reference)
+
+      assert_receive {:server_created, ^created_event, ^created_reference}
+
+      assert_no_stored_events!()
+    end
+
+    test "is a no-op for an unlinked member", %{
+      subscribe_active_server_for_member: subscribe_active_server_for_member
+    } do
+      assert subscribe_active_server_for_member.(nil) == :ok
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "refresh_active_server_for_member/4" do
+    setup do
+      stub(ArchiDep.Clock.Mock, :now, fn -> @past end)
+      :ok
+    end
+
+    test "merges a server update into the tracked server in memory", %{
+      refresh_active_server_for_member: refresh_active_server_for_member
+    } do
+      auth = Factory.build(:authentication)
+      {%Server{} = server, view} = active_server()
+
+      event = ServerUpdated.new(%Server{server | name: "renamed", version: server.version + 1})
+      reference = EventsFactory.build(:event_reference, version: server.version + 1)
+
+      # No `fetch_active_server_for_group_member` is stubbed, so a passing
+      # assertion proves the in-memory merge ran rather than a re-fetch (which
+      # would raise an unexpected-call error).
+      assert refresh_active_server_for_member.(
+               auth,
+               Ecto.UUID.generate(),
+               view,
+               {:server_updated, event, reference}
+             ) == {:ok, ServerView.refresh!(view, event, reference)}
+
+      assert_no_stored_events!()
+    end
+
+    test "drops the tracked server when an update makes it inactive", %{
+      refresh_active_server_for_member: refresh_active_server_for_member
+    } do
+      auth = Factory.build(:authentication)
+      {%Server{} = server, view} = active_server()
+
+      event = ServerUpdated.new(%Server{server | active: false, version: server.version + 1})
+      reference = EventsFactory.build(:event_reference, version: server.version + 1)
+
+      assert refresh_active_server_for_member.(
+               auth,
+               Ecto.UUID.generate(),
+               view,
+               {:server_updated, event, reference}
+             ) == {:ok, nil}
+
+      assert_no_stored_events!()
+    end
+
+    test "fetches the member's active server on a create or first-seen update", %{
+      refresh_active_server_for_member: refresh_active_server_for_member
+    } do
+      auth = Factory.build(:authentication)
+      {server, fetched} = active_server()
+      member_id = Ecto.UUID.generate()
+
+      stub(ContextMock, :fetch_active_server_for_group_member, fn ^auth, ^member_id ->
+        {:ok, fetched}
+      end)
+
+      created =
+        {:server_created, ServerCreated.new(server), EventsFactory.build(:event_reference)}
+
+      updated =
+        {:server_updated, ServerUpdated.new(server), EventsFactory.build(:event_reference)}
+
+      assert refresh_active_server_for_member.(auth, member_id, nil, created) == {:ok, fetched}
+      assert refresh_active_server_for_member.(auth, member_id, nil, updated) == {:ok, fetched}
+
+      assert_no_stored_events!()
+    end
+
+    test "re-fetches on a class update when nothing is tracked", %{
+      refresh_active_server_for_member: refresh_active_server_for_member
+    } do
+      auth = Factory.build(:authentication)
+      {_server, fetched} = active_server()
+      member_id = Ecto.UUID.generate()
+
+      stub(ContextMock, :fetch_active_server_for_group_member, fn ^auth, ^member_id ->
+        {:ok, fetched}
+      end)
+
+      event = ClassUpdated.new(CourseFactory.build(:class))
+      reference = EventsFactory.build(:event_reference)
+
+      assert refresh_active_server_for_member.(
+               auth,
+               member_id,
+               nil,
+               {:class_updated, event, reference}
+             ) == {:ok, fetched}
+
+      assert_no_stored_events!()
+    end
+
+    test "drops the tracked server when it is deleted and ignores other deletions", %{
+      refresh_active_server_for_member: refresh_active_server_for_member
+    } do
+      auth = Factory.build(:authentication)
+      {server, view} = active_server()
+      {other_server, _other_view} = active_server()
+
+      deleted =
+        {:server_deleted, ServerDeleted.new(server), EventsFactory.build(:event_reference)}
+
+      other =
+        {:server_deleted, ServerDeleted.new(other_server), EventsFactory.build(:event_reference)}
+
+      assert refresh_active_server_for_member.(auth, Ecto.UUID.generate(), view, deleted) ==
+               {:ok, nil}
+
+      assert refresh_active_server_for_member.(auth, Ecto.UUID.generate(), view, other) == :ignore
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores messages it does not handle", %{
+      refresh_active_server_for_member: refresh_active_server_for_member
+    } do
+      auth = Factory.build(:authentication)
+      {_server, view} = active_server()
+
+      assert refresh_active_server_for_member.(auth, Ecto.UUID.generate(), view, :unrelated) ==
+               :ignore
+
+      assert refresh_active_server_for_member.(
+               auth,
+               Ecto.UUID.generate(),
+               view,
+               {:preregistered_user_updated, %{}, EventsFactory.build(:event_reference)}
+             ) == :ignore
+
+      assert_no_stored_events!()
+    end
+  end
+
+  # A server that is unconditionally active at any instant (a root, active,
+  # group-member-less owner and a window-less active group) paired with its
+  # view, so the refresher's `ServerView.active?` checks are deterministic.
+  defp active_server do
+    server =
+      ServersFactory.build(:server,
+        active: true,
+        group: ServersFactory.build(:server_group, active: true, start_date: nil, end_date: nil),
+        owner: ServersFactory.build(:server_owner, root: true, active: true, group_member: nil)
+      )
+
+    {server, ServerView.from(server)}
   end
 end

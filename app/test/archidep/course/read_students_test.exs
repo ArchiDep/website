@@ -8,6 +8,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentConfigured
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.PubSub
@@ -39,7 +40,9 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       subscribe_student: protect({Context, :subscribe_student, 1}, Behaviour),
       refresh_student: protect({Context, :refresh_student, 2}, Behaviour),
       subscribe_class_students: protect({Context, :subscribe_class_students, 1}, Behaviour),
-      refresh_class_students: protect({Context, :refresh_class_students, 4}, Behaviour)
+      refresh_class_students: protect({Context, :refresh_class_students, 4}, Behaviour),
+      subscribe_student_detail: protect({Context, :subscribe_student_detail, 1}, Behaviour),
+      refresh_student_detail: protect({Context, :refresh_student_detail, 2}, Behaviour)
     }
   end
 
@@ -326,7 +329,10 @@ defmodule ArchiDep.Course.ReadStudentsTest do
 
       created = {:student_created, %Student{alice | class_id: class.id}}
       deleted = {:student_deleted, %Student{alice | class_id: class.id}}
-      updated = {:student_updated, %{class: %{id: class.id}}, EventsFactory.build(:event_reference)}
+
+      updated =
+        {:student_updated, %{class: %{id: class.id}}, EventsFactory.build(:event_reference)}
+
       imported = {:students_imported, class, [alice]}
 
       preregistration =
@@ -354,10 +360,16 @@ defmodule ArchiDep.Course.ReadStudentsTest do
 
       other_student = CourseFactory.build(:student, class_id: other.id, user: nil)
 
-      assert refresh_class_students.(auth, class, [], {:student_created, other_student}) == :ignore
+      assert refresh_class_students.(auth, class, [], {:student_created, other_student}) ==
+               :ignore
 
-      assert refresh_class_students.(auth, class, [], {:student_updated, %{class: %{id: other.id}},
-                EventsFactory.build(:event_reference)}) == :ignore
+      assert refresh_class_students.(
+               auth,
+               class,
+               [],
+               {:student_updated, %{class: %{id: other.id}},
+                EventsFactory.build(:event_reference)}
+             ) == :ignore
 
       assert_no_stored_events!()
     end
@@ -369,6 +381,121 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       auth = Factory.build(:authentication, root: true)
 
       assert refresh_class_students.(auth, class, [], :unrelated) == :ignore
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "subscribe_student_detail/1" do
+    test "subscribes the calling process to the student, class and preregistration topics", %{
+      subscribe_student_detail: subscribe_student_detail
+    } do
+      %Class{} = class = CourseFactory.insert(:class)
+      %Student{} = student = CourseFactory.insert(:student, class: class, user: nil)
+
+      assert subscribe_student_detail.(student) == :ok
+
+      # Student topic.
+      student_updated = %Student{student | name: "Renamed", version: student.version + 1}
+      student_event = StudentUpdated.new(student_updated)
+      student_reference = EventsFactory.build(:event_reference, version: student_updated.version)
+      :ok = PubSub.publish_student_updated(student_updated, student_event, student_reference)
+      assert_receive {:student_updated, ^student_event, ^student_reference}
+
+      # Class topic.
+      class_updated = %Class{class | name: "Renamed", version: class.version + 1}
+      class_event = ClassUpdated.new(class_updated)
+      class_reference = EventsFactory.build(:event_reference, version: class_updated.version)
+      :ok = PubSub.publish_class_updated(class_updated, class_event, class_reference)
+      assert_receive {:class_updated, ^class_event, ^class_reference}
+
+      # Accounts preregistration topic (keyed by the student id).
+      preregistered_user =
+        AccountsFactory.build(:preregistered_user, id: student.id, group_id: class.id)
+
+      linkage_event =
+        PreregisteredUserLinkedToUserAccount.new(
+          preregistered_user,
+          AccountsFactory.build(:user_account)
+        )
+
+      linkage_reference = EventsFactory.build(:event_reference)
+
+      :ok =
+        Accounts.PubSub.publish_preregistered_user_updated(
+          preregistered_user,
+          linkage_event,
+          linkage_reference
+        )
+
+      assert_receive {:preregistered_user_updated, ^linkage_event, ^linkage_reference}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "refresh_student_detail/2" do
+    test "reconciles the student from a student-updated message", %{
+      refresh_student_detail: refresh_student_detail
+    } do
+      %Student{} = student = CourseFactory.build(:student, user: nil)
+
+      updated = %Student{student | name: "Renamed", version: student.version + 1}
+      event = StudentUpdated.new(updated)
+      reference = EventsFactory.build(:event_reference, version: updated.version)
+
+      assert refresh_student_detail.(student, {:student_updated, event, reference}) ==
+               {:ok, Student.refresh!(student, event, reference)}
+
+      assert_no_stored_events!()
+    end
+
+    test "reconciles the nested class from a class-updated message", %{
+      refresh_student_detail: refresh_student_detail
+    } do
+      %Class{} = class = CourseFactory.build(:class)
+      %Student{class: ^class} = student = CourseFactory.build(:student, class: class, user: nil)
+
+      updated_class = %Class{class | name: "Renamed", version: class.version + 1}
+      event = ClassUpdated.new(updated_class)
+      reference = EventsFactory.build(:event_reference, version: updated_class.version)
+
+      assert refresh_student_detail.(student, {:class_updated, event, reference}) ==
+               {:ok, %Student{student | class: Class.refresh!(class, event, reference)}}
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores a class-updated message for another class", %{
+      refresh_student_detail: refresh_student_detail
+    } do
+      %Class{} = class = CourseFactory.build(:class)
+      %Class{} = other = CourseFactory.build(:class)
+      %Student{} = student = CourseFactory.build(:student, class: class, user: nil)
+
+      event = ClassUpdated.new(%Class{other | version: other.version + 1})
+      reference = EventsFactory.build(:event_reference, version: other.version + 1)
+
+      assert refresh_student_detail.(student, {:class_updated, event, reference}) == :ignore
+
+      assert_no_stored_events!()
+    end
+
+    test "ignores messages it does not claim, including preregistration updates", %{
+      refresh_student_detail: refresh_student_detail
+    } do
+      %Student{} = student = CourseFactory.build(:student, user: nil)
+
+      preregistration =
+        {:preregistered_user_updated,
+         PreregisteredUserLinkedToUserAccount.new(
+           AccountsFactory.build(:preregistered_user, id: student.id),
+           AccountsFactory.build(:user_account)
+         ), EventsFactory.build(:event_reference)}
+
+      assert refresh_student_detail.(student, preregistration) == :ignore
+      assert refresh_student_detail.(student, {:student_deleted, student}) == :ignore
+      assert refresh_student_detail.(student, :unrelated) == :ignore
 
       assert_no_stored_events!()
     end

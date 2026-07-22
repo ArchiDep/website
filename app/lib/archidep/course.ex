@@ -241,4 +241,20 @@ defmodule ArchiDep.Course do
   """
   @spec refresh_student(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
   defdelegate refresh_student(student, message), to: @implementation
+
+  @doc """
+  Subscribes the calling process to every topic that keeps a student detail
+  read-model — the student, its nested class and its account linkage — live.
+  """
+  @spec subscribe_student_detail(Student.t()) :: :ok
+  defdelegate subscribe_student_detail(student), to: @implementation
+
+  @doc """
+  Reconciles a student detail read-model (the student and its nested class) from
+  a PubSub message broadcast on one of the topics of
+  `subscribe_student_detail/1`, returning the updated student or `:ignore` for a
+  message that does not concern it.
+  """
+  @spec refresh_student_detail(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  defdelegate refresh_student_detail(student, message), to: @implementation
 end

@@ -90,6 +90,15 @@ defmodule ArchiDep.Servers.Context do
 
   @doc false
   @impl Behaviour
+  defdelegate subscribe_active_server_for_member(owner_id), to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_active_server_for_member(auth, member_id, current, message),
+    to: UseCases.ReadServers
+
+  @doc false
+  @impl Behaviour
   defdelegate validate_existing_server(auth, server_id, data), to: UseCases.UpdateServer
 
   @doc false

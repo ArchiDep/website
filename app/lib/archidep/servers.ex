@@ -168,6 +168,28 @@ defmodule ArchiDep.Servers do
   defdelegate refresh_server(server, message), to: @implementation
 
   @doc """
+  Subscribes the calling process to the server events of a group member's
+  account (given its user-account id, or `nil` for an unlinked member), which
+  keep that member's active server live.
+  """
+  @spec subscribe_active_server_for_member(UUID.t() | nil) :: :ok
+  defdelegate subscribe_active_server_for_member(owner_id), to: @implementation
+
+  @doc """
+  Reconciles a group member's active-server read-model (a single `ServerView` or
+  `nil`, identified by the member id) from a PubSub message, returning the
+  updated value or `:ignore` for a message that does not concern it.
+  """
+  @spec refresh_active_server_for_member(
+          Authentication.t(),
+          UUID.t(),
+          ServerView.t() | nil,
+          term()
+        ) :: {:ok, ServerView.t() | nil} | :ignore
+  defdelegate refresh_active_server_for_member(auth, member_id, current, message),
+    to: @implementation
+
+  @doc """
   Validates the data to update an existing server.
   """
   @spec validate_existing_server(Authentication.t(), UUID.t(), Types.server_data()) ::

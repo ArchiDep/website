@@ -197,6 +197,15 @@ the owning context instead of spread across every consumer. Exemplars:
   captures `auth`/`class`) and the set of its server IDs
   (`Servers.refresh_server_ids/2`). The only surviving `handle_info/2` clause is
   `:class_deleted`, which navigates away.
+- [`student_live.ex`](./admin/classes/student_live.ex) — the `attach_all/2`
+  exemplar: one `:student_updated` or `:class_updated` event feeds **both** the
+  student (with its nested class, `Course.refresh_student_detail/2`) and its
+  derived active server (`Servers.refresh_active_server_for_member/4`), so the
+  two share a single hook rather than contending. It keeps three thin
+  `handle_info/2` clauses — `:preregistered_user_updated` (which owns the
+  process-local subscription to the student's server-owner topic once an account
+  is linked) and the two delete navigations — that `attach_all/2` lets fall
+  through.
 
 **Choosing the topic.** The `subscribe_*` function picks the _coarsest_ topic
 whose audience is "everyone who would care about any of these events", and

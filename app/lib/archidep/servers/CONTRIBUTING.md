@@ -225,7 +225,12 @@ exceptions are marked **root-only**.
 **Reads**
 
 - [`ReadServers`](./use_cases/read_servers.ex) — `list_my_servers/1`,
-  `fetch_server/2` (own servers).
+  `fetch_server/2` (own servers), `fetch_active_server_for_group_member/2`, and
+  the live-read-model pairs `subscribe_server/1` + `refresh_server/2` (one
+  server), `subscribe_my_servers/1` + `refresh_my_servers/3` (the owner's list),
+  and `subscribe_active_server_for_member/1` +
+  `refresh_active_server_for_member/4` (a group member's single active server,
+  for the admin student detail page).
 - [`ReadServerGroups`](./use_cases/read_server_groups.ex) —
   `list_server_groups/1`, `fetch_server_group/2`, `list_server_group_members/2`,
   `list_all_servers_in_group/2`, `subscribe_server_group_servers/2` +

@@ -127,4 +127,12 @@ defmodule ArchiDep.Course.Context do
   @doc false
   @impl Behaviour
   defdelegate refresh_student(student, message), to: UseCases.ReadStudents
+
+  @doc false
+  @impl Behaviour
+  defdelegate subscribe_student_detail(student), to: UseCases.ReadStudents
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_student_detail(student, message), to: UseCases.ReadStudents
 end

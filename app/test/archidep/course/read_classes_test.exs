@@ -321,7 +321,9 @@ defmodule ArchiDep.Course.ReadClassesTest do
   end
 
   describe "subscribe_class/1" do
-    test "subscribes the calling process to the class's topic", %{subscribe_class: subscribe_class} do
+    test "subscribes the calling process to the class's topic", %{
+      subscribe_class: subscribe_class
+    } do
       %Class{} = class = CourseFactory.insert(:class, now: @now)
 
       assert subscribe_class.(class) == :ok

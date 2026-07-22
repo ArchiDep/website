@@ -92,6 +92,82 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
 
   def refresh_server(_server, _message), do: :ignore
 
+  # Subscribing to a member's server-owner topic grants no access beyond what
+  # the initial active-server fetch already authorized, so this read-model
+  # plumbing takes no authentication. The topic is keyed by the member's user
+  # account, so an unlinked member (no account) owns no server and there is
+  # nothing to subscribe to; the consumer re-calls this once an account is
+  # linked.
+  @spec subscribe_active_server_for_member(UUID.t() | nil) :: :ok
+  def subscribe_active_server_for_member(nil), do: :ok
+
+  def subscribe_active_server_for_member(owner_id),
+    do: PubSub.subscribe_server_owner_servers(owner_id)
+
+  @spec refresh_active_server_for_member(
+          Authentication.t(),
+          UUID.t(),
+          ServerView.t() | nil,
+          term()
+        ) :: {:ok, ServerView.t() | nil} | :ignore
+  def refresh_active_server_for_member(
+        _auth,
+        _member_id,
+        %ServerView{id: id} = current,
+        {:server_updated, %{id: id} = event, %EventReference{} = reference}
+      ),
+      do: {:ok, keep_if_active(ServerView.refresh!(current, event, reference))}
+
+  def refresh_active_server_for_member(
+        auth,
+        member_id,
+        _current,
+        {server_event, %{}, %EventReference{}}
+      )
+      when server_event in [:server_created, :server_updated],
+      do: {:ok, fetch_active_server_or_nil(auth, member_id)}
+
+  def refresh_active_server_for_member(
+        _auth,
+        _member_id,
+        %ServerView{id: id},
+        {:server_deleted, %{id: id}, %EventReference{}}
+      ),
+      do: {:ok, nil}
+
+  def refresh_active_server_for_member(
+        _auth,
+        _member_id,
+        %ServerView{} = current,
+        {member_event, event, %EventReference{} = reference}
+      )
+      when member_event in [:student_updated, :class_updated],
+      do: {:ok, keep_if_active(ServerView.refresh!(current, event, reference))}
+
+  def refresh_active_server_for_member(
+        auth,
+        member_id,
+        nil,
+        {member_event, _event, %EventReference{}}
+      )
+      when member_event in [:student_updated, :class_updated],
+      do: {:ok, fetch_active_server_or_nil(auth, member_id)}
+
+  def refresh_active_server_for_member(_auth, _member_id, _current, _message), do: :ignore
+
+  defp keep_if_active(%ServerView{} = server),
+    do: if(ServerView.active?(server, Clock.now()), do: server, else: nil)
+
+  # Fetch through the public context boundary (authorized, and mockable) rather
+  # than the local read, so the consuming LiveView sees an ordinary context read
+  # — the same choice `refresh_my_servers/3` makes on first sighting.
+  defp fetch_active_server_or_nil(auth, member_id) do
+    case ArchiDep.Servers.fetch_active_server_for_group_member(auth, member_id) do
+      {:ok, %ServerView{} = server} -> server
+      {:error, :server_not_found} -> nil
+    end
+  end
+
   # Subscribing to the principal's own server topic grants no access beyond what
   # `list_my_servers/1` already authorized, so this read-model plumbing takes no
   # authentication check.

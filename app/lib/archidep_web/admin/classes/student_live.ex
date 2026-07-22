@@ -5,17 +5,14 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   import ArchiDepWeb.Helpers.LiveViewHelpers
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
   alias ArchiDep.Accounts
-  alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Servers
-  alias ArchiDep.Servers.Events.ServerDeleted
-  alias ArchiDep.Servers.Schemas.ServerGroupMember
-  alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.ServerView
   alias ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive
   alias ArchiDepWeb.Admin.Classes.EditStudentDialogLive
+  alias ArchiDepWeb.LiveRefresh
 
   @impl LiveView
   def mount(%{"class_id" => class_id, "id" => id}, _session, socket) do
@@ -23,21 +20,14 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
     case Course.fetch_student_in_class(auth, class_id, id) do
       {:ok, student} ->
-        active_server = find_active_server(auth, student)
-
-        if connected?(socket) do
-          set_process_label(__MODULE__, auth, student)
-          subscribe(student)
-        end
-
         socket
         |> assign(
           page_title: "#{student.name} · #{student.class.name} · #{gettext("Admin")}",
-          class: student.class,
           student: student,
-          active_server: active_server,
+          active_server: find_active_server(auth, student),
           login_link: nil
         )
+        |> track(auth, student)
         |> ok()
 
       {:error, :student_not_found} ->
@@ -48,13 +38,23 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
     end
   end
 
-  defp subscribe(student) do
-    :ok = Accounts.PubSub.subscribe_preregistered_user(student.id)
-    :ok = Course.PubSub.subscribe_student(student.id)
-    :ok = Course.PubSub.subscribe_class(student.class_id)
+  # On connected mount, keep the student (with its nested class) and its active
+  # server current through the Course and Servers boundaries. A single
+  # `:student_updated` or `:class_updated` event feeds both, so the two share
+  # one `attach_all` hook. The active server rides this student's server-owner
+  # topic (see the linkage handler for the unlinked-then-linked case).
+  defp track(socket, auth, student) do
+    if connected?(socket) do
+      set_process_label(__MODULE__, auth, student)
+      :ok = Course.subscribe_student_detail(student)
+      :ok = Servers.subscribe_active_server_for_member(student.user_id)
 
-    if student.user_id do
-      :ok = Servers.PubSub.subscribe_server_owner_servers(student.user_id)
+      LiveRefresh.attach_all(socket, [
+        {:student, &Course.refresh_student_detail/2},
+        {:active_server, &Servers.refresh_active_server_for_member(auth, student.id, &1, &2)}
+      ])
+    else
+      socket
     end
   end
 
@@ -84,28 +84,24 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
     end
   end
 
+  # The student's account being (un)linked refreshes the student and, when an
+  # account first appears, starts this process listening for that student's
+  # server events — a process-local subscription that cannot live in a pure
+  # refresher, so `refresh_student_detail` leaves this message to fall through.
   @impl LiveView
   def handle_info(
-        {:student_updated, %{id: id} = event, reference},
+        {:preregistered_user_updated, %{preregistered_user_id: id} = event, reference},
         %Socket{
-          assigns: %{
-            auth: auth,
-            student: %Student{id: id} = student,
-            active_server: active_server
-          }
+          assigns: %{student: %Student{id: id} = student}
         } = socket
       ) do
-    refreshed_student = Student.refresh!(student, event, reference)
+    refreshed = Student.refresh!(student, event, reference)
 
-    socket
-    |> assign(
-      student: refreshed_student,
-      active_server:
-        active_server
-        |> maybe_refresh_server_group_member(auth, event, reference, refreshed_student)
-        |> maybe_drop_active_server()
-    )
-    |> noreply()
+    if refreshed.user_id != nil and refreshed.user_id != student.user_id do
+      :ok = Servers.subscribe_active_server_for_member(refreshed.user_id)
+    end
+
+    socket |> assign(student: refreshed) |> noreply()
   end
 
   @impl LiveView
@@ -128,30 +124,6 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
   @impl LiveView
   def handle_info(
-        {:class_updated, event, reference},
-        %Socket{
-          assigns: %{
-            auth: auth,
-            student: %Student{class: %Class{} = class} = student,
-            active_server: active_server
-          }
-        } = socket
-      ) do
-    refreshed_class = Class.refresh!(class, event, reference)
-
-    socket
-    |> assign(
-      student: %Student{student | class: refreshed_class},
-      active_server:
-        active_server
-        |> maybe_refresh_server_group(auth, event, reference, refreshed_class, student)
-        |> maybe_drop_active_server()
-    )
-    |> noreply()
-  end
-
-  @impl LiveView
-  def handle_info(
         {:class_deleted, %Class{id: class_id}},
         %Socket{
           assigns: %{student: %Student{class: %Class{id: class_id, name: class_name}}}
@@ -168,138 +140,10 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
         |> push_navigate(to: ~p"/admin/classes")
         |> noreply()
 
-  @impl LiveView
-  def handle_info(
-        {:preregistered_user_updated, %{preregistered_user_id: id} = event, reference},
-        %Socket{
-          assigns: %{student: %Student{id: id} = student}
-        } = socket
-      ) do
-    refreshed = Student.refresh!(student, event, reference)
-
-    if refreshed.user_id != nil and refreshed.user_id != student.user_id do
-      :ok = Servers.PubSub.subscribe_server_owner_servers(refreshed.user_id)
-    end
-
-    socket |> assign(student: refreshed) |> noreply()
-  end
-
-  @impl LiveView
-  def handle_info(
-        {:server_created, %{id: server_id}, _reference},
-        %Socket{assigns: %{auth: auth, active_server: active_server}} = socket
-      ) do
-    created_server =
-      case Servers.fetch_server(auth, server_id) do
-        {:ok, server} -> server
-        {:error, _reason} -> nil
-      end
-
-    if created_server != nil and ServerView.active?(created_server, Clock.now()) and
-         active_server == nil do
-      socket
-      |> assign(active_server: created_server)
-      |> noreply()
-    else
-      socket
-      |> assign(active_server: nil)
-      |> noreply()
-    end
-  end
-
-  @impl LiveView
-  def handle_info(
-        {:server_updated, event, reference},
-        %Socket{assigns: %{auth: auth, active_server: active_server}} = socket
-      ) do
-    updated_server =
-      if active_server != nil and active_server.id == event.id do
-        ServerView.refresh!(active_server, event, reference)
-      else
-        case Servers.fetch_server(auth, event.id) do
-          {:ok, server} -> server
-          {:error, _reason} -> nil
-        end
-      end
-
-    if updated_server != nil and ServerView.active?(updated_server, Clock.now()) and
-         (active_server == nil or active_server.id == updated_server.id) do
-      socket
-      |> assign(active_server: updated_server)
-      |> noreply()
-    else
-      socket
-      |> assign(active_server: nil)
-      |> noreply()
-    end
-  end
-
-  @impl LiveView
-  def handle_info(
-        {:server_deleted, %ServerDeleted{id: server_id}, _reference},
-        %Socket{assigns: %{active_server: %ServerView{id: server_id}}} = socket
-      ) do
-    socket
-    |> assign(active_server: nil)
-    |> noreply()
-  end
-
-  @impl LiveView
-  def handle_info({:server_deleted, %ServerDeleted{}, _reference}, socket) do
-    noreply(socket)
-  end
-
   defp find_active_server(auth, student) do
     case Servers.fetch_active_server_for_group_member(auth, student.id) do
       {:ok, server} -> server
       {:error, _any_reason} -> nil
     end
   end
-
-  defp maybe_drop_active_server(nil), do: nil
-
-  defp maybe_drop_active_server(server),
-    do: if(ServerView.active?(server, Clock.now()), do: server, else: nil)
-
-  defp maybe_refresh_server_group(
-         nil,
-         auth,
-         _event,
-         _reference,
-         %Class{} = refreshed_class,
-         student
-       ) do
-    if Class.active?(refreshed_class, Clock.now()) do
-      find_active_server(auth, student)
-    else
-      nil
-    end
-  end
-
-  defp maybe_refresh_server_group(
-         %ServerView{} = server,
-         _auth,
-         event,
-         reference,
-         _refreshed_class,
-         _student
-       ),
-       do: ServerView.refresh!(server, event, reference)
-
-  defp maybe_refresh_server_group_member(nil, auth, _event, _reference, refreshed_student) do
-    if Student.active?(refreshed_student, Clock.now()) do
-      find_active_server(auth, refreshed_student)
-    else
-      nil
-    end
-  end
-
-  defp maybe_refresh_server_group_member(
-         %ServerView{owner: %ServerOwner{group_member: %ServerGroupMember{id: id}}} = server,
-         _auth,
-         %{id: id} = event,
-         reference,
-         _refreshed_student
-       ),
-       do: ServerView.refresh!(server, event, reference)
 end

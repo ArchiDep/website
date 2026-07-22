@@ -14,9 +14,9 @@
         </.link>
       </li>
       <li>
-        <.link class="flex items-center gap-1" navigate={~p"/admin/classes/#{@class.id}"}>
+        <.link class="flex items-center gap-1" navigate={~p"/admin/classes/#{@student.class.id}"}>
           <Heroicons.academic_cap solid class="size-4" />
-          <span>{@class.name}</span>
+          <span>{@student.class.name}</span>
         </.link>
       </li>
     </ul>

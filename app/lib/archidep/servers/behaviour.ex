@@ -144,6 +144,25 @@ defmodule ArchiDep.Servers.Behaviour do
               {:ok, ServerView.t()} | :ignore
 
   @doc """
+  Subscribes the calling process to the server events of a group member's
+  account (given its user-account id, or `nil` for an unlinked member), which
+  keep that member's active server live.
+  """
+  @callback subscribe_active_server_for_member(UUID.t() | nil) :: :ok
+
+  @doc """
+  Reconciles a group member's active-server read-model (a single `ServerView` or
+  `nil`, identified by the member id) from a PubSub message, returning the
+  updated value or `:ignore` for a message that does not concern it.
+  """
+  @callback refresh_active_server_for_member(
+              Authentication.t(),
+              UUID.t(),
+              ServerView.t() | nil,
+              term()
+            ) :: {:ok, ServerView.t() | nil} | :ignore
+
+  @doc """
   Validates the data to update an existing server.
   """
   @callback validate_existing_server(Authentication.t(), UUID.t(), Types.server_data()) ::

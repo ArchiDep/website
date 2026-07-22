@@ -200,4 +200,18 @@ defmodule ArchiDep.Course.Behaviour do
   for a message that does not concern it.
   """
   @callback refresh_student(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+
+  @doc """
+  Subscribes the calling process to every topic that keeps a student detail
+  read-model — the student, its nested class and its account linkage — live.
+  """
+  @callback subscribe_student_detail(Student.t()) :: :ok
+
+  @doc """
+  Reconciles a student detail read-model (the student and its nested class) from
+  a PubSub message broadcast on one of the topics of
+  `subscribe_student_detail/1`, returning the updated student or `:ignore` for a
+  message that does not concern it.
+  """
+  @callback refresh_student_detail(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
 end
