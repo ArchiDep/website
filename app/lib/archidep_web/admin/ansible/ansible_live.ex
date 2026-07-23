@@ -4,14 +4,8 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
   import ArchiDepWeb.Admin.Ansible.AnsibleComponents
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Clock
-  alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
-  alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
-  alias ArchiDep.TrackerClient
-  alias Phoenix.PubSub
   require Logger
-
-  @pubsub ArchiDep.PubSub
 
   @impl LiveView
   def mount(_params, _session, socket) do
@@ -20,15 +14,8 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
     tracked_playbooks =
       if connected?(socket) do
         set_process_label(__MODULE__, auth)
-        :ok = PubSub.subscribe(@pubsub, "tracker:" <> Scope.global_topic("ansible-queue"))
-
-        "ansible-queue"
-        |> Scope.global_topic()
-        |> TrackerClient.list()
-        |> Enum.reduce(%{}, fn
-          {"playbook:" <> run_id, %{type: :playbook} = meta}, acc -> Map.put(acc, run_id, meta)
-          {_key, _meta}, acc -> acc
-        end)
+        :ok = Servers.subscribe_ansible_playbook_runs()
+        Servers.tracked_ansible_playbook_runs()
       else
         %{}
       end
@@ -50,7 +37,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
 
   @impl LiveView
   def handle_info(
-        {action, "playbook:" <> run_id, %{type: :playbook, state: state, events: events} = meta},
+        {_action, _key, %{}} = message,
         %Socket{
           assigns: %{
             auth: auth,
@@ -58,73 +45,21 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
             tracked_playbooks: tracked_playbooks
           }
         } = socket
-      )
-      when action in [:join, :update] do
-    new_tracked_playbooks =
-      Map.update(tracked_playbooks, run_id, meta, fn %{state: old_state, events: old_events} =
-                                                       old_meta ->
-        if events > old_events or
-             ansible_playbook_run_state_order(state) >
-               ansible_playbook_run_state_order(old_state) do
-          meta
-        else
-          old_meta
-        end
-      end)
-
-    new_meta = Map.get(new_tracked_playbooks, run_id)
-
-    new_playbook_runs =
-      if Enum.any?(playbook_runs, &(&1.id === run_id)) do
-        Enum.map(playbook_runs, fn
-          %AnsiblePlaybookRun{id: ^run_id} = run ->
-            %AnsiblePlaybookRun{run | state: new_meta.state, number_of_events: new_meta.events}
-
-          other_run ->
-            other_run
-        end)
-      else
-        new_run = auth |> Servers.fetch_ansible_playbook_run(run_id) |> unpair_ok()
-        add_new_playbook_run(playbook_runs, new_run)
-      end
-
-    socket
-    |> assign(
-      playbook_runs: new_playbook_runs,
-      tracked_playbooks: new_tracked_playbooks
-    )
-    |> tick()
-    |> noreply()
-  end
-
-  @impl LiveView
-  def handle_info(
-        {:leave, "playbook:" <> run_id, %{}},
-        %Socket{
-          assigns: %{
-            auth: auth,
-            playbook_runs: playbook_runs,
-            tracked_playbooks: tracked_playbooks
-          }
-        } = socket
-      ),
-      do:
+      ) do
+    case Servers.refresh_ansible_playbook_runs(auth, playbook_runs, tracked_playbooks, message) do
+      {:ok, new_playbook_runs, new_tracked_playbooks} ->
         socket
         |> assign(
-          playbook_runs:
-            Enum.map(playbook_runs, fn
-              %AnsiblePlaybookRun{id: ^run_id} ->
-                auth |> Servers.fetch_ansible_playbook_run(run_id) |> unpair_ok()
-
-              other_run ->
-                other_run
-            end),
-          tracked_playbooks: Map.delete(tracked_playbooks, run_id)
+          playbook_runs: new_playbook_runs,
+          tracked_playbooks: new_tracked_playbooks
         )
+        |> tick()
         |> noreply()
 
-  @impl LiveView
-  def handle_info({_action, _key, %{}}, socket), do: noreply(socket)
+      :ignore ->
+        noreply(socket)
+    end
+  end
 
   @impl LiveView
   def handle_info(:tick, socket),
@@ -196,33 +131,4 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLive do
       _otherwise -> 60
     end
   end
-
-  defp ansible_playbook_run_state_order(:pending), do: 1
-  defp ansible_playbook_run_state_order(:running), do: 2
-  defp ansible_playbook_run_state_order(_final_state), do: 3
-
-  defp add_new_playbook_run([], new_run), do: [new_run]
-
-  defp add_new_playbook_run(
-         [%AnsiblePlaybookRun{created_at: most_recent_run_created_at} | _other_runs] =
-           current_runs,
-         %AnsiblePlaybookRun{created_at: new_run_created_at} = new_run
-       )
-       when new_run_created_at > most_recent_run_created_at,
-       do: [new_run | current_runs]
-
-  defp add_new_playbook_run(playbook_runs, new_run),
-    do:
-      playbook_runs
-      |> Enum.reduce({new_run, []}, fn
-        %AnsiblePlaybookRun{created_at: created_at} = existing_run,
-        {%AnsiblePlaybookRun{created_at: new_run_created_at} = run_to_add, acc}
-        when new_run_created_at > created_at ->
-          {nil, [existing_run | [run_to_add | acc]]}
-
-        existing_run, {run_to_add, acc} ->
-          {run_to_add, [existing_run | acc]}
-      end)
-      |> elem(1)
-      |> Enum.reverse()
 end

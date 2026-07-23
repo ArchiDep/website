@@ -142,4 +142,17 @@ defmodule ArchiDep.Servers.Context do
   @doc false
   @impl Behaviour
   defdelegate fetch_ansible_playbook_events_for_run(auth, run_id), to: UseCases.ReadAnsible
+
+  @doc false
+  @impl Behaviour
+  defdelegate subscribe_ansible_playbook_runs(), to: UseCases.ReadAnsible
+
+  @doc false
+  @impl Behaviour
+  defdelegate tracked_ansible_playbook_runs(), to: UseCases.ReadAnsible
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_ansible_playbook_runs(auth, playbook_runs, tracked_playbooks, message),
+    to: UseCases.ReadAnsible
 end

@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLiveTest do
   import Hammox
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
+  alias ArchiDep.Servers.UseCases.ReadAnsible
   alias ArchiDep.Support.ServersFactory
   alias ArchiDep.TrackerClientMock
 
@@ -17,6 +18,28 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsibleLiveTest do
 
     setup do
       Hammox.stub(ArchiDep.Clock.Mock, :now, fn -> @now end)
+
+      # The page keeps its run list and the running playbooks' progress current
+      # through the Servers boundary; route those reads to the real read-model
+      # plumbing so a real tracker message still drives the re-render.
+      stub(
+        Servers.ContextMock,
+        :subscribe_ansible_playbook_runs,
+        &ReadAnsible.subscribe_ansible_playbook_runs/0
+      )
+
+      stub(
+        Servers.ContextMock,
+        :tracked_ansible_playbook_runs,
+        &ReadAnsible.tracked_ansible_playbook_runs/0
+      )
+
+      stub(
+        Servers.ContextMock,
+        :refresh_ansible_playbook_runs,
+        &ReadAnsible.refresh_ansible_playbook_runs/4
+      )
+
       :ok
     end
 

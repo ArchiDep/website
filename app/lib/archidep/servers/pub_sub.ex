@@ -80,4 +80,11 @@ defmodule ArchiDep.Servers.PubSub do
   def unsubscribe_server(server_id) do
     :ok = PubSub.unsubscribe(@pubsub, "servers:#{server_id}")
   end
+
+  # Ansible pipeline
+
+  @spec subscribe_ansible_playbook_runs() :: :ok
+  def subscribe_ansible_playbook_runs do
+    :ok = PubSub.subscribe(@pubsub, "tracker:" <> Scope.global_topic("ansible-queue"))
+  end
 end

@@ -236,4 +236,32 @@ defmodule ArchiDep.Servers.Behaviour do
   """
   @callback fetch_ansible_playbook_events_for_run(Authentication.t(), UUID.t()) ::
               {:ok, list(AnsiblePlaybookEvent.t())} | {:error, :ansible_playbook_run_not_found}
+
+  @doc """
+  Subscribes the calling process to the `ArchiDep.Tracker` presence topic that
+  keeps the Ansible playbook run list live with the running playbooks'
+  real-time progress.
+  """
+  @callback subscribe_ansible_playbook_runs() :: :ok
+
+  @doc """
+  Returns the real-time progress of the currently running Ansible playbooks,
+  keyed by playbook run id, as reported by the `ArchiDep.Tracker` presence topic
+  of `subscribe_ansible_playbook_runs/0`.
+  """
+  @callback tracked_ansible_playbook_runs() :: %{optional(String.t()) => map()}
+
+  @doc """
+  Reconciles the Ansible playbook run list and the running playbooks' real-time
+  progress from a message broadcast on the topic of
+  `subscribe_ansible_playbook_runs/0`, returning the updated list and progress
+  map, or `:ignore` for a message that does not concern them.
+  """
+  @callback refresh_ansible_playbook_runs(
+              Authentication.t(),
+              list(AnsiblePlaybookRun.t()),
+              %{optional(String.t()) => map()},
+              term()
+            ) ::
+              {:ok, list(AnsiblePlaybookRun.t()), %{optional(String.t()) => map()}} | :ignore
 end

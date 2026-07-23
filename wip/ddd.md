@@ -199,13 +199,15 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
       consumers to the #5d pattern (a context `subscribe_*` +
       `LiveRefresh.attach`, dropping their per-event `handle_info` clauses).
       `server_live`, `classes_live`, `my_servers_live`, `dashboard_live`, admin
-      `class_live` and admin `student_live` are done; the server-tracker coupling
-      is resolved (Option B — a self-managing tracker, now with owner **and**
-      group scopes). `admin_live` reuses the tracker (per-class group-scoped
-      trackers + `refresh_server_state_map`) but keeps its grouped list + class
-      handlers by design. Remaining: `ansible_live` and the `user_channel` — see
-      [#5e Sweep the remaining
-      consumers](#5e-sweep-the-remaining-consumers).
+      `class_live` and admin `student_live` are done; the server-tracker
+      coupling is resolved (Option B — a self-managing tracker, now with owner
+      **and** group scopes). `admin_live` reuses the tracker (per-class
+      group-scoped trackers + `refresh_server_state_map`) but keeps its grouped
+      list + class handlers by design. `ansible_live` is done — the odd one out
+      (fed by the `ArchiDep.Tracker` presence topic, not #5c domain events), so
+      it gets a context-owned tracker refresher instead of `LiveRefresh.attach`
+      (see the progress note). Remaining: `user_channel` — see [#5e Sweep the
+      remaining consumers](#5e-sweep-the-remaining-consumers).
 
 ### F. Event schema versioning
 
@@ -880,12 +882,34 @@ one, since the first to claim halts the rest) landed as groundwork alongside
 nested class, `Course.refresh_student_detail/2`) and its derived active server
 (`Servers.refresh_active_server_for_member/4`) through one `attach_all/2` hook.
 The active server rides the student's server-owner topic (only that student's
-server events, not the whole class), so the one process-local concern that
-stays a thin `handle_info` clause is the dynamic subscription on account
-linkage; the two delete events keep their navigation clauses. The conversion
-also dropped a stale top-level `class` assign (a breadcrumb that never
-refreshed) in favour of the live `student.class`. Remaining: `ansible_live` and
-the `user_channel` (a `Phoenix.Channel`, so no `attach_hook`).
+server events, not the whole class), so the one process-local concern that stays
+a thin `handle_info` clause is the dynamic subscription on account linkage; the
+two delete events keep their navigation clauses. The conversion also dropped a
+stale top-level `class` assign (a breadcrumb that never refreshed) in favour of
+the live `student.class`. `ansible_live` is converted, but it is the **odd one
+out** and does not use `LiveRefresh.attach`: its live feed is the
+`ArchiDep.Tracker` **presence topic** for the ansible pipeline queue
+(`tracker:…ansible-queue`), not a #5c domain-event broadcast — the persisted
+`AnsiblePlaybookRun*` events are audit-only, never broadcast — so it belongs to
+the `server_state_map` family (a real-time monitoring feed), not the
+`refresh_my_servers` family. Its two assigns are also coupled through one
+message (the tracked-progress overlay feeds the DB-backed run list, which
+re-fetches on a first-seen or finished run), which the independent-assign
+`attach_*` primitives don't model. It nonetheless gets the #5d **spirit** — the
+context owns subscribe + reconcile: `Servers.subscribe_ansible_playbook_runs/0`
+owns the topic, `Servers.tracked_ansible_playbook_runs/0` owns the initial
+`"playbook:"` key parse + `%{type: :playbook}` filter, and
+`Servers.refresh_ansible_playbook_runs/4` owns the meta merge, the staleness
+ordering, and the boundary re-fetch; the page keeps a single thin `handle_info`
+that delegates opaque tracker messages and names no topic, key format or meta
+shape. (This also removes the topic string that was duplicated into
+`admin_live`, though `admin_live`'s own ansible projection — the pending/ongoing
+counts — is a different shape and keeps its handlers.) Two deliberate, safer
+behaviour changes came with the move: a run that can no longer be fetched on
+join/leave now leaves the list unchanged rather than crashing the LiveView
+(`unpair_ok`), matching the `refresh_my_servers` convention; and a `:leave` now
+also reschedules the render tick, as join/update already did. Remaining:
+`user_channel` (a `Phoenix.Channel`, so no `attach_hook`).
 
 **Topic granularity (decided).** Subscribe once, on mount, to the _coarsest_
 topic whose audience is "everyone who cares about any of these events" — the
