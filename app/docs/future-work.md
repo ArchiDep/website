@@ -13,7 +13,6 @@ This is a living document. Add a level-2 heading per planned task and re-run
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Store SSH public keys rather than their fingerprints](#store-ssh-public-keys-rather-than-their-fingerprints)
-- [Track course progress in the database rather than in frontmatter](#track-course-progress-in-the-database-rather-than-in-frontmatter)
 - [Break-glass recovery for root users when Switch edu-ID is unavailable](#break-glass-recovery-for-root-users-when-switch-edu-id-is-unavailable)
 - [Automated SSH exercise VM setup with Ansible](#automated-ssh-exercise-vm-setup-with-ansible)
 - [Dual search system](#dual-search-system)
@@ -69,56 +68,6 @@ fingerprints from them wherever a fingerprint is currently displayed or matched.
   `known_hosts` lines) and how strict the parser should be.
 - Whether to drop the fingerprint columns entirely or retain them as a
   derived/denormalised cache for queries and display.
-
-## Track course progress in the database rather than in frontmatter
-
-**Problem:** Course progress — which chapters have been taught (`done`), are
-currently being worked on (`due`), or are coming up (`next`) — is tracked in
-YAML frontmatter in the Jekyll `_progress` collection. A Jekyll plugin reads
-those files, assigns each chapter a progress state, and bakes the result into
-`archidep.json`, which the Phoenix application loads at _compile time_. Updating
-progress therefore means editing a Markdown file, rebuilding the static site,
-and redeploying the application — there is no way to update it through the UI,
-which is awkward for something that changes on every teaching session.
-
-**Proposed approach:** Make the database the source of truth, edited through the
-admin console, and have the application drive the static build itself when
-progress changes. This depends on the planned move of the static build into
-Elixir — a Mix task that renders the whole site, replacing Jekyll (see [Death of
-Jekyll — Static build step](../../wip/death-of-jekyll.md#static-build-step)).
-Once the application owns the renderer, a progress change can trigger a rebuild
-in-process rather than requiring a manual edit-and-redeploy cycle.
-
-- Add a progress model to the course context, edited through the admin console,
-  so progress can be updated through the UI without touching frontmatter.
-- When the recorded progress changes, enqueue a rebuild of the static content (a
-  queue, so rapid successive edits coalesce and rebuilds run one at a time)
-  rather than rebuilding synchronously on every save.
-- For the dashboard-free standalone/archival build (the GitHub Pages backup and
-  the per-year archive, see [Death of Jekyll — Standalone / archival
-  mode](../../wip/death-of-jekyll.md#standalone--archival-mode)), which has no
-  backend, expose the current progress from the application as a small public,
-  read-only API endpoint. The archival build reads its progress from a
-  configurable _source_: the live endpoint during the school year, or a frozen
-  value (the course considered complete, or a snapshot captured at archival
-  time) for the final immutable archive of a year.
-
-**Open questions to resolve when scheduling this**
-
-- The exact shape of the progress source for the archival build: a single config
-  knob that is either a URL (live) or a frozen/all-complete value, versus
-  separate modes. A single source captured once at archival time keeps the
-  per-year archive immutable.
-- The granularity of the stored model: per-session `done`/`due`/`next` arrays
-  (as today) versus a per-chapter status, and how the per-chapter state is
-  computed.
-- How to handle the compile-time-to-runtime transition for the material helpers
-  that currently load `archidep.json` as module attributes — progress becomes
-  dynamic even though the rest of the material is built.
-- What the rebuild queue looks like (debouncing, failure handling, whether a
-  rebuild blocks serving the previous build) and how it interacts with the
-  Elixir static build task once that exists.
-- Whether frontmatter is removed entirely once progress lives in the database.
 
 ## Break-glass recovery for root users when Switch edu-ID is unavailable
 
@@ -517,8 +466,8 @@ tests now would only throw them away when the code changes:
   the metrics/observability rework.
 - `Git` and `Helpers.GitHelpers` — wait on the git-integration rework.
 - `Course.Helpers.MaterialHelpers` — waits on moving the static build out of
-  Jekyll (see [Track course progress in the database rather than in
-  frontmatter](#track-course-progress-in-the-database-rather-than-in-frontmatter)).
+  Jekyll (see [Death of
+  Jekyll](../../wip/death-of-jekyll.md#progress-structure-vs-status)).
 
 **Accepted uncovered — thin plumbing and entrypoints, low test value.** Booting
 or delegating code with no branch logic of its own, exercised indirectly if at

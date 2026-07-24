@@ -26,7 +26,9 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Metadata generation](#metadata-generation)
   - [A richer Course.Material model](#a-richer-coursematerial-model)
   - [Heading references that compile-fail](#heading-references-that-compile-fail)
+  - [Progress: structure vs status](#progress-structure-vs-status)
   - [Static build step](#static-build-step)
+  - [Development and production serving](#development-and-production-serving)
   - [Standalone / archival mode](#standalone--archival-mode)
   - [Optional URL prefix](#optional-url-prefix)
   - [Decouple PDF generation from production](#decouple-pdf-generation-from-production)
@@ -71,9 +73,14 @@ constraints](#goals-and-constraints).
       drop the compile-time round-trip; keep `archidep.json` as a build-output
       artifact for `npm run pdf`** — see [Drop the archidep.json
       round-trip?](#drop-the-archidepjson-round-trip).
-- [ ] Confirm the static-build-step architecture and defer the runtime mode —
-      see [Static build step](#static-build-step) and [An architectural fork worth
-      deciding early](#an-architectural-fork-worth-deciding-early).
+- [x] Confirm the static-build-step architecture and defer the runtime mode.
+      **Decided: one parameterized static build serves both production and
+      archival** (differing only by flags), served by Phoenix in development and
+      by a separate static server in production; the runtime rendering mode
+      stays deferred — see [Static build step](#static-build-step), [Development
+      and production serving](#development-and-production-serving) and [An
+      architectural fork worth deciding
+      early](#an-architectural-fork-worth-deciding-early).
 
 **Rendering core**
 
@@ -110,11 +117,24 @@ constraints](#goals-and-constraints).
 - [ ] Make headings first-class so dynamic references compile-fail instead of
       using brittle anchor strings — see [Heading references that
       compile-fail](#heading-references-that-compile-fail).
+- [ ] Split progress into compiled _structure_ and a runtime _status source_ (a
+      swappable source read by both the baked static build and the
+      server-rendered app-shell sidebar), keeping status out of the compiled
+      model — see [Progress: structure vs
+      status](#progress-structure-vs-status).
+- [ ] Make `progress.json` the single progress source (replacing the `_progress`
+      collection) and expose current progress at a public, read-only API route
+      for the backup build — see [Progress: structure vs
+      status](#progress-structure-vs-status).
 
 **Static build, archival and per-year versions**
 
 - [ ] Implement the static build step writing to the same `priv/static` layout
       Jekyll produces — see [Static build step](#static-build-step).
+- [ ] Serve the build via Phoenix `Plug.Static` in development and via a
+      separate static server (reverse-proxy routed) in production, publishing
+      in-process rebuilds atomically to a shared volume — see [Development and
+      production serving](#development-and-production-serving).
 - [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
       Pages backup) — see [Standalone / archival mode](#standalone--archival-mode).
 - [ ] Support an optional URL prefix (e.g. `/2025-2026/`) for per-year archived
@@ -135,6 +155,12 @@ constraints](#goals-and-constraints).
 - [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stage —
       see [Cutover](#cutover).
 
+**Deferred (scheduled after cutover)**
+
+- [ ] Move the progress _status source_ from `progress.json` to a database model
+      edited through the admin console, driving an in-process rebuild — see
+      [Progress: structure vs status](#progress-structure-vs-status).
+
 ---
 
 ## Goals and constraints
@@ -154,6 +180,24 @@ the backlog items stay short.
   module, but we will not build a runtime mode any time soon. See [An
   architectural fork worth deciding
   early](#an-architectural-fork-worth-deciding-early).
+- **One parameterized static build serves both production and archival, served
+  two ways.** Production and archival are the same build under different flags,
+  not two renderers. In **development** the Phoenix application serves the build
+  output directly (`Plug.Static`) so a developer runs one process; in
+  **production** a **separate static server** serves it, with the reverse proxy
+  routing course URLs to that server and the dynamic app URLs (`/app`, `/admin`,
+  the websocket) to Phoenix — the split the proxy already performs. See
+  [Development and production serving](#development-and-production-serving).
+- **Course progress splits into compiled _structure_ and a runtime _status
+  source_.** `Course.Material` keeps only the structure (sections, documents,
+  headings) at compile time; the progress _status_
+  (`done`/`due`/`next`/`future`) is read at build/render time from a swappable
+  source — a single `progress.json` file now, the database later. It is
+  **baked** into
+  the static build (jank-free, no client-side injection) while the
+  server-rendered app-shell sidebar reads it live. The seam is built during the
+  migration; moving the source to the database is deferred. See [Progress:
+  structure vs status](#progress-structure-vs-status).
 - **Per-year versioning under a URL prefix** is a goal: each year we want to
   save that year's content under a prefix such as `/2025-2026/`, keeping every
   version of the course. Generated PDFs for the year should be archived
@@ -331,10 +375,10 @@ Consequences to handle when implementing:
 - **Confirmed consumers.** `pdf.ts` is the only non-app reader (verified across
   `course/src`, the app, and `package.json`); nothing reads the file at app
   runtime.
-- **Forward-looking.** The [track-progress-in-the-database future-work
-  item](../app/docs/future-work.md) would make progress dynamic; dropping the
-  round-trip removes a serialization layer that transition would otherwise have
-  to unwind, so the two do not conflict.
+- **Forward-looking.** Moving progress to a runtime source ([Progress: structure
+  vs status](#progress-structure-vs-status)) would make progress dynamic;
+  dropping the round-trip removes a serialization layer that transition would
+  otherwise have to unwind, so the two do not conflict.
 
 The result is the intended **one source of truth** (the Markdown), not a
 Markdown→JSON→module chain — while still emitting the JSON the PDF tooling
@@ -379,17 +423,18 @@ hand-parsed.
 
 New feature to build alongside the migration: **`{% solution %}` blocks are
 hidden by default and revealed progressively** as the course advances, driven by
-frontmatter flags the same way `progress` already is (see [Metadata
+the same progress source (see [Progress: structure vs
+status](#progress-structure-vs-status) and [Metadata
 generation](#metadata-generation)). Today every solution is always rendered; we
 want to gate them.
 
 Design decisions to settle:
 
-- **Where the flag lives.** Likely a per-document (or per-section) frontmatter
-  flag — e.g. `solutions: true` — toggled as the year progresses, mirroring how
-  progress docs drive `done`/`due`/`next`/`future`. Decide whether it is a plain
-  boolean, a date, or derived from the same progress signal so we flip one
-  thing, not two.
+- **Reveal derives from the progress source, not a second flag.** A chapter's
+  solutions are revealed once its status crosses a threshold, so we flip one
+  thing (progress), not two. The remaining decision is only the **threshold** —
+  at `done`, or `done`/`due` — see [Progress: structure vs
+  status](#progress-structure-vs-status).
 - **Hidden must mean omitted, not just CSS-collapsed.** Because both the static
   HTML and the reveal.js slide source are inspectable, a hidden solution should
   be **left out of the rendered output entirely**, so students cannot read it in
@@ -499,6 +544,99 @@ single biggest robustness win of the migration and pairs with [TOC and heading
 anchors](#toc-and-heading-anchors) (which produces the stable IDs) and [A richer
 Course.Material model](#a-richer-coursematerial-model).
 
+### Progress: structure vs status
+
+Course progress has two separable parts that today's Jekyll pipeline conflates
+by baking both into `archidep.json` at build time:
+
+- **Structure** — which sections, documents and headings exist, and their order.
+  This is inherently build-time and stays in the **compiled** `Course.Material`
+  (see [A richer Course.Material model](#a-richer-coursematerial-model)); we
+  _want_ compile-time failures when a reference goes stale.
+- **Status** — each chapter's `done`/`due`/`next`/`future` state, which changes
+  on every teaching session. This is **not** compiled into `Course.Material`; it
+  is read at build/render time from a swappable **progress source**.
+
+Two surfaces consume the status, from the one source:
+
+- The **static build** reads it at build time and **bakes** the progress classes
+  (`course-section-…`/`course-item-…`) into the static course pages. Changing
+  status therefore requires a rebuild — deliberately, the same way [progressive
+  solution reveal](#progressive-solution-reveal) is a build-time decision.
+- The **server-rendered app-shell sidebar** (`layouts.ex`) reads it at render
+  time, so it reflects the source live with no rebuild.
+
+Progress is **never applied client-side**: baking (static pages) and
+server-render (app shell) both avoid the flash-of-no-progress a JavaScript
+overlay would cause on every page load. This is the key difference from the `me`
+websocket channel, which carries genuinely per-user, live data — progress is
+global, slowly-changing state that does not need per-request injection.
+
+Solution content, by contrast, lives **only** in the static course build (there
+is no live-rendered surface that shows it), which is why [progressive solution
+reveal](#progressive-solution-reveal) is build-time in _all_ cases: the two are
+consistent, not in tension. Because the status is now a single source,
+**solution reveal derives from it** — a chapter's solutions are revealed once
+its status crosses a threshold — rather than being a second flag to flip. This
+resolves the "one flag or two" open decision in [Progressive solution
+reveal](#progressive-solution-reveal); the exact threshold (at `done`, or
+`done`/`due`) stays a small policy decision.
+
+**One canonical progress shape.** Today the status lives in a dedicated
+`_progress` Jekyll collection (~14 files) that a plugin aggregates. We replace
+that collection with a **single `progress.json` file** as the source, kept
+indefinitely. One file is trivial to read (versus aggregating a collection), and
+— more importantly — the same shape is reused everywhere: it is the file-backed
+**source** now, the exact shape the database **exports** later (the database
+replaces the _source_, not the _shape_), the **API** response body, and the
+**frozen archival snapshot**. Keep `progress.json` a build _input_, distinct
+from `archidep.json`, which stays a build _output_ ([Drop the archidep.json
+round-trip?](#drop-the-archidepjson-round-trip)).
+
+**Public progress API.** Expose the current progress at a public, read-only
+route (e.g. `GET /api/progress`) serving that shape from the source. Its
+consumer is the standalone/GitHub-Pages backup build (see [Standalone / archival
+mode](#standalone--archival-mode)), whose progress source is **configurable**:
+point it at the live API URL during the school year — rebuilt regularly
+(manually or automatically) so the backup tracks the course as it advances — or
+at a frozen snapshot for the final publish. The **final archive of a year
+reveals everything**: all-complete progress plus `reveal_all_solutions`
+([Progressive solution reveal](#progressive-solution-reveal)), captured once so
+the per-year archive is immutable.
+
+**Built now (the seam):** introduce the progress-source abstraction with the
+`progress.json` implementation, add the public API route, wire both build and
+app-shell consumers to it, and keep status out of the compiled module. This
+keeps `Course.Material` a compiled module of _structure_ while _status_ is a
+runtime read — resolving the compile-time-to-runtime question the old
+frontmatter design raised (structure stays compiled, status is read from the
+source).
+
+**Deferred (scheduled after cutover):** swap the source implementation from
+`progress.json` to a **database model** edited through the admin console, so
+progress is updated through the UI rather than by editing a file, and a progress
+change **enqueues an in-process rebuild** of the static build (a queue, so rapid
+edits coalesce and rebuilds run one at a time) that publishes atomically to the
+shared volume (see [Development and production
+serving](#development-and-production-serving)). Because the seam already exists,
+this swap touches one module — not the renderer, `Course.Material`, the API, or
+either consumer.
+
+**Open questions to resolve when scheduling the database source:**
+
+- The **granularity** of the stored model: per-session `done`/`due`/`next`
+  arrays (as today) versus a per-chapter status, and how the per-chapter state
+  is computed.
+- The shape of the archival build's progress source: a single knob that is
+  either a URL (live) or a frozen/all-complete value, versus separate modes. A
+  single snapshot captured once at archival time keeps the per-year archive
+  immutable.
+- What the rebuild queue looks like (debouncing, failure handling, whether a
+  rebuild blocks serving the previous build) and how it interacts with the
+  static build task.
+- Whether `progress.json` is retained as an export/interchange format once the
+  database is the source, or dropped.
+
 ### Static build step
 
 Implement an Elixir build task (e.g. a Mix task) that runs the shared core over
@@ -508,8 +646,41 @@ both outputs can be generated for the diff; that flag is temporary scaffolding
 removed at [Cutover](#cutover), not a permanent production toggle (scorched
 earth — see [Goals and constraints](#goals-and-constraints)). This preserves
 trivial static serving (`Plug.Static`), PDF generation, and the archival story.
-The runtime serving mode stays explicitly out of scope (see [An architectural
-fork worth deciding early](#an-architectural-fork-worth-deciding-early)).
+Production and archival are the same build under different flags; how the build
+is served differs between development and production — see [Development and
+production serving](#development-and-production-serving). The runtime serving
+mode stays explicitly out of scope (see [An architectural fork worth deciding
+early](#an-architectural-fork-worth-deciding-early)).
+
+### Development and production serving
+
+The single parameterized static build (production and archival differ only by
+flags — see [Static build step](#static-build-step) and [Standalone / archival
+mode](#standalone--archival-mode)) is served two ways:
+
+- **Development:** the Phoenix application serves the build output directly via
+  `Plug.Static`, so a developer runs one process.
+- **Production:** a **separate static server** serves the build output; the
+  reverse proxy routes course URLs to it and the dynamic app URLs (`/app`,
+  `/admin`, the websocket) to Phoenix — the routing split the proxy already
+  performs. Production course pages therefore never reach Phoenix at request
+  time, which is exactly why progress is **baked** rather than injected (see
+  [Progress: structure vs status](#progress-structure-vs-status)).
+
+**Publish path (shared volume).** When the application drives an in-process
+rebuild (the deferred database-progress feature, and any content rebuild), it
+writes the output to a **volume shared** with the static server. To avoid
+serving a half-written build, a rebuild must be **atomic**: render into a
+temporary directory on the same volume, then swap it into place (rename, or flip
+a `current` symlink) so the static server only ever sees a complete build. The
+per-year prefix archives ([Optional URL prefix](#optional-url-prefix)) compose
+naturally — each year is an immutable directory under the same volume.
+
+**Asset routing.** Digested asset URLs are emitted at build time (via
+`phx.digest` + verified routes — see [Asset URLs](#asset-urls)) as plain strings
+in the static HTML; the reverse proxy must route `/assets/…` consistently so
+both the static course pages and the dynamic app resolve the same digested
+files.
 
 ### Standalone / archival mode
 
