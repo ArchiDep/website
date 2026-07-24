@@ -4,6 +4,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
   import Hammox
   alias ArchiDep.Course
   alias ArchiDep.Course.ClassView
+  alias ArchiDep.Course.Events.ClassCreated
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.UseCases.ReadClasses
@@ -134,7 +136,19 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
           end_date: ~D[2026-12-31]
         )
 
-      :ok = Course.PubSub.publish_class_created(created)
+      # The created broadcast carries only the curated event; the list refresher
+      # fetches the full view through the context boundary on first sighting.
+      created_id = created.id
+
+      stub(Course.ContextMock, :fetch_class, fn ^auth, ^created_id ->
+        {:ok, ClassView.from(created)}
+      end)
+
+      :ok =
+        Course.PubSub.publish_class_created(
+          ClassCreated.new(created),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -174,7 +188,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
                {"Keeper", "Until Tue, June 30, 2026", :active}
              ]
 
-      :ok = Course.PubSub.publish_class_deleted(victim)
+      :ok =
+        Course.PubSub.publish_class_deleted(
+          ClassDeleted.new(victim),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -463,7 +481,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
     # those calls to the real read-model plumbing so a real broadcast still
     # drives the re-render.
     stub(Course.ContextMock, :subscribe_classes, &ReadClasses.subscribe_classes/0)
-    stub(Course.ContextMock, :refresh_classes, &ReadClasses.refresh_classes/2)
+    stub(Course.ContextMock, :refresh_classes, &ReadClasses.refresh_classes/3)
 
     :ok
   end

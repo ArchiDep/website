@@ -7,9 +7,9 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentsImportedInClass
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
-  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Events.Store.EventReference
@@ -46,15 +46,17 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
     end
   end
 
-  defp concerns_class_students?({student_event, %Student{class_id: id}}, id)
+  defp concerns_class_students?({student_event, %{class: %{id: id}}, %EventReference{}}, id)
        when student_event in [:student_created, :student_deleted],
        do: true
 
   defp concerns_class_students?({:student_updated, %{class: %{id: id}}, %EventReference{}}, id),
     do: true
 
-  defp concerns_class_students?({:students_imported, %Class{id: id}, students}, id)
-       when is_list(students),
+  defp concerns_class_students?(
+         {:students_imported, %StudentsImportedInClass{class_id: id}, %EventReference{}},
+         id
+       ),
        do: true
 
   defp concerns_class_students?({:preregistered_user_updated, _event, %EventReference{}}, _id),

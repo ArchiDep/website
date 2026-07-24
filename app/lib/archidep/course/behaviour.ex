@@ -42,7 +42,7 @@ defmodule ArchiDep.Course.Behaviour do
   topics of `subscribe_classes/0`, returning the updated list or `:ignore` for a
   message that does not concern it.
   """
-  @callback refresh_classes(list(ClassView.t()), term()) ::
+  @callback refresh_classes(Authentication.t() | nil, list(ClassView.t()), term()) ::
               {:ok, list(ClassView.t())} | :ignore
 
   @doc """

@@ -6,8 +6,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
   alias ArchiDep.Course
   alias ArchiDep.Course.ClassView
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentsImportedInClass
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
@@ -775,7 +777,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
       {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
 
-      :ok = Course.PubSub.publish_class_deleted(class)
+      :ok =
+        Course.PubSub.publish_class_deleted(
+          ClassDeleted.new(class),
+          EventsFactory.build(:event_reference)
+        )
 
       flash = assert_redirect(view, "/admin/classes")
 
@@ -1084,7 +1090,12 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       assert class_page(html, class) == empty_class_page(class)
 
       Agent.update(students, fn _state -> [alice] end)
-      :ok = Course.PubSub.publish_students_imported(class, [alice])
+
+      :ok =
+        Course.PubSub.publish_students_imported(
+          StudentsImportedInClass.new(class, nil, "example.com", 1),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -1530,12 +1541,12 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   # Mirrors the messages the real `refresh_class_students/4` claims, so the
   # page's student-list refresh can be driven through real broadcasts while the
   # list itself is served from the mocked reader.
-  defp class_students_message?({event, %{class_id: id}}, id)
+  defp class_students_message?({event, %{class: %{id: id}}, _ref}, id)
        when event in [:student_created, :student_deleted],
        do: true
 
   defp class_students_message?({:student_updated, %{class: %{id: id}}, _ref}, id), do: true
-  defp class_students_message?({:students_imported, %{id: id}, _students}, id), do: true
+  defp class_students_message?({:students_imported, %{class_id: id}, _ref}, id), do: true
   defp class_students_message?({:preregistered_user_updated, _event, _ref}, _id), do: true
   defp class_students_message?(_message, _id), do: false
 

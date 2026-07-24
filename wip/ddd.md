@@ -1218,6 +1218,20 @@ CSV/inventory controller) holds it; `Class.refresh!` is deleted. `ServerGroup`
 stays excluded. With this slice, **Group G — and the whole backlog — is
 complete.**
 
+**Follow-up: Course broadcast-shape uniformity.** Group G left an asymmetry: #7
+normalized _Servers'_ whole lifecycle (create/update/delete) to the single
+`{:name, event, reference}` envelope, but Course's create/delete/import
+broadcasts still shipped raw aggregates (`{:class_created, %Class{}}`,
+`{:student_deleted, %Student{}}`, `{:students_imported, %Class{}, students}`).
+Those five now carry their already-persisted curated events (`ClassCreated`,
+`ClassDeleted`, `StudentCreated`, `StudentDeleted`, `StudentsImportedInClass`)
+plus the `EventReference` envelope, so every Course topic is single-shape and no
+subscriber can couple on ORM internals. The `:class_created` consumers
+(`refresh_classes`, now `/3` with `auth`, and `admin_live`) adopted the same
+fetch-on-appearance path #7 gave the Servers create consumers; delete/import
+consumers read only the id (delete) or re-list (import), so they needed no
+fetch.
+
 ---
 
 ## What not to change

@@ -2,7 +2,9 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
   use ArchiDepWeb.Support.ChannelCase, async: true
 
   alias ArchiDep.Course
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentDeleted
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.UseCases.ReadStudents
@@ -130,7 +132,10 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
       assert_push "cloudServerData", initial
       assert initial == %{student: student_payload(student), server: nil, serversEnabled: true}
 
-      Course.PubSub.publish_class_deleted(class)
+      Course.PubSub.publish_class_deleted(
+        ClassDeleted.new(class),
+        EventsFactory.build(:event_reference)
+      )
 
       assert_push "session", session
       assert session == Map.from_struct(session_data(auth, nil))
@@ -156,7 +161,10 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
                serversEnabled: true
              }
 
-      Course.PubSub.publish_class_deleted(class)
+      Course.PubSub.publish_class_deleted(
+        ClassDeleted.new(class),
+        EventsFactory.build(:event_reference)
+      )
 
       assert_push "cloudServerData", cloud
       assert cloud == %{student: nil, server: nil, serversEnabled: false}
@@ -253,7 +261,10 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
       assert_push "cloudServerData", initial
       assert initial == %{student: student_payload(student), server: nil, serversEnabled: true}
 
-      Course.PubSub.publish_student_deleted(student)
+      Course.PubSub.publish_student_deleted(
+        StudentDeleted.new(student),
+        EventsFactory.build(:event_reference)
+      )
 
       assert_push "session", session
       assert session == Map.from_struct(session_data(auth, nil))
@@ -279,7 +290,10 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
                serversEnabled: true
              }
 
-      Course.PubSub.publish_student_deleted(student)
+      Course.PubSub.publish_student_deleted(
+        StudentDeleted.new(student),
+        EventsFactory.build(:event_reference)
+      )
 
       assert_push "cloudServerData", cloud
       assert cloud == %{student: nil, server: nil, serversEnabled: false}

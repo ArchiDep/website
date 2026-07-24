@@ -9,6 +9,7 @@ defmodule ArchiDep.Course.DeleteStudentTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.StudentDeleted
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
@@ -67,10 +68,11 @@ defmodule ArchiDep.Course.DeleteStudentTest do
 
     assert delete_student.(auth, student.id) == :ok
 
+    event = assert_student_deleted_event(student, auth)
+
     student
-    |> assert_student_deleted_event(auth)
     |> assert_student_gone()
-    |> assert_student_deleted_broadcast(broadcasts)
+    |> assert_student_deleted_broadcast(broadcasts, event)
 
     assert_row_count_diff(previous_counts, %{Student => -1, StoredEvent => 1})
   end
@@ -154,7 +156,7 @@ defmodule ArchiDep.Course.DeleteStudentTest do
              entity: nil
            }
 
-    student
+    deleted_event
   end
 
   defp assert_student_gone(%Student{id: id} = student) do
@@ -175,10 +177,14 @@ defmodule ArchiDep.Course.DeleteStudentTest do
 
   # Asserts the student-deleted message reached both topics the use case
   # publishes to — the student-specific one and the class-students one — each
-  # carrying the deleted student, and nothing else.
-  defp assert_student_deleted_broadcast(%Student{} = student, broadcasts) do
-    assert received_broadcasts(broadcasts.specific) == [{:student_deleted, student}]
-    assert received_broadcasts(broadcasts.class) == [{:student_deleted, student}]
+  # carrying the `StudentDeleted` domain event and the stored-event reference,
+  # and nothing else.
+  defp assert_student_deleted_broadcast(%Student{} = student, broadcasts, %StoredEvent{} = event) do
+    expected_message =
+      {:student_deleted, StudentDeleted.new(student), StoredEvent.to_reference(event)}
+
+    assert received_broadcasts(broadcasts.specific) == [expected_message]
+    assert received_broadcasts(broadcasts.class) == [expected_message]
 
     student
   end

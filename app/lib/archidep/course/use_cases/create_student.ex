@@ -39,8 +39,8 @@ defmodule ArchiDep.Course.UseCases.CreateStudent do
            |> Multi.insert(:student, Student.new(data, class, now))
            |> Multi.insert(:stored_event, &student_created(auth, &1.student))
            |> transaction() do
-        {:ok, %{student: student}} ->
-          :ok = PubSub.publish_student_created(student)
+        {:ok, %{student: student, stored_event: event}} ->
+          :ok = PubSub.publish_student_created(event.data, StoredEvent.to_reference(event))
           {:ok, student}
 
         {:error, :student, changeset, _changes} ->

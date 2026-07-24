@@ -30,7 +30,7 @@ defmodule ArchiDep.Course.Context do
 
   @doc false
   @impl Behaviour
-  defdelegate refresh_classes(classes, message), to: UseCases.ReadClasses
+  defdelegate refresh_classes(auth, classes, message), to: UseCases.ReadClasses
 
   @doc false
   @impl Behaviour

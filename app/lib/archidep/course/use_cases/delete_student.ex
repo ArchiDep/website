@@ -23,8 +23,8 @@ defmodule ArchiDep.Course.UseCases.DeleteStudent do
            |> Multi.delete(:student, student)
            |> Multi.insert(:stored_event, &student_deleted(auth, &1.student, now))
            |> Repo.transaction() do
-        {:ok, _changes} ->
-          :ok = PubSub.publish_student_deleted(student)
+        {:ok, %{stored_event: event}} ->
+          :ok = PubSub.publish_student_deleted(event.data, StoredEvent.to_reference(event))
           :ok
 
         {:error, :student, changeset, _changes} ->

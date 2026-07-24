@@ -9,6 +9,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
@@ -62,10 +63,11 @@ defmodule ArchiDep.Course.DeleteClassTest do
 
     assert delete_class.(auth, class.id) == :ok
 
+    event = assert_class_deleted_event(class, auth)
+
     class
-    |> assert_class_deleted_event(auth)
     |> assert_class_gone()
-    |> assert_class_deleted_broadcast(broadcasts)
+    |> assert_class_deleted_broadcast(broadcasts, event)
 
     assert_row_count_diff(previous_counts, %{
       Class => -1,
@@ -146,7 +148,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
   # Asserts the single `ClassDeleted` event: the deleted class's identity in its
   # stream, at the class's current version (a delete does not bump it), stamped
   # at the pinned instant.
-  defp assert_class_deleted_event(%Class{id: id, name: name, version: version} = class, auth) do
+  defp assert_class_deleted_event(%Class{id: id, name: name, version: version}, auth) do
     assert [%StoredEvent{id: event_id} = deleted_event] = fetch_new_stored_events()
 
     assert deleted_event == %StoredEvent{
@@ -168,7 +170,7 @@ defmodule ArchiDep.Course.DeleteClassTest do
              entity: nil
            }
 
-    class
+    deleted_event
   end
 
   # Asserts this specific class and its owned expected-server-properties row no
@@ -192,11 +194,13 @@ defmodule ArchiDep.Course.DeleteClassTest do
   end
 
   # Asserts the class-deleted message reached both topics the use case publishes
-  # to — the class-specific one and the global one — each carrying the deleted
-  # class, and nothing else.
-  defp assert_class_deleted_broadcast(%Class{} = class, broadcasts) do
-    assert received_broadcasts(broadcasts.specific) == [{:class_deleted, class}]
-    assert received_broadcasts(broadcasts.global) == [{:class_deleted, class}]
+  # to — the class-specific one and the global one — each carrying the
+  # `ClassDeleted` domain event and the stored-event reference, and nothing
+  # else.
+  defp assert_class_deleted_broadcast(%Class{} = class, broadcasts, %StoredEvent{} = event) do
+    expected_message = {:class_deleted, ClassDeleted.new(class), StoredEvent.to_reference(event)}
+    assert received_broadcasts(broadcasts.specific) == [expected_message]
+    assert received_broadcasts(broadcasts.global) == [expected_message]
 
     class
   end

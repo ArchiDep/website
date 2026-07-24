@@ -26,8 +26,8 @@ defmodule ArchiDep.Course.UseCases.DeleteClass do
            |> Multi.delete(:expected_server_properties, class.expected_server_properties)
            |> Multi.insert(:stored_event, &class_deleted(auth, &1.class, now))
            |> Repo.transaction() do
-        {:ok, _changes} ->
-          :ok = PubSub.publish_class_deleted(class)
+        {:ok, %{stored_event: event}} ->
+          :ok = PubSub.publish_class_deleted(event.data, StoredEvent.to_reference(event))
           :ok
 
         {:error, :class, changeset, _changes} ->

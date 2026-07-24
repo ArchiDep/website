@@ -5,11 +5,14 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
 
   alias ArchiDep.Clock
   alias ArchiDep.Course.ClassView
+  alias ArchiDep.Course.Events.ClassCreated
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Policy
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Events.Store.EventReference
 
   @spec fetch_class(Authentication.t() | nil, UUID.t()) ::
           {:ok, ClassView.t()} | {:error, :class_not_found}
@@ -43,17 +46,28 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
     |> Enum.map(&ClassView.from/1)
   end
 
-  # Subscribing to the classes topic grants no access beyond what `list_classes/1`
-  # already authorized, so this read-model plumbing takes no authentication and
-  # skips the authorization the command use cases perform.
+  # Subscribing to the classes topic grants no access beyond what
+  # `list_classes/1` already authorized, so subscribing takes no authentication
+  # and skips the authorization the command use cases perform.
   @spec subscribe_classes() :: :ok
   def subscribe_classes, do: PubSub.subscribe_classes()
 
-  @spec refresh_classes(list(ClassView.t()), term()) :: {:ok, list(ClassView.t())} | :ignore
-  def refresh_classes(classes, {:class_created, %Class{} = created}) when is_list(classes),
-    do: {:ok, sort_classes([ClassView.from(created) | classes])}
+  @spec refresh_classes(Authentication.t() | nil, list(ClassView.t()), term()) ::
+          {:ok, list(ClassView.t())} | :ignore
+  def refresh_classes(auth, classes, {:class_created, %ClassCreated{id: id}, %EventReference{}})
+      when is_list(classes) do
+    # The created broadcast carries only the curated event, so fetch the full
+    # read-view on first sighting. This goes through the public context boundary
+    # rather than the local read so the consuming LiveView sees it as an
+    # ordinary context read (authorized, and mockable) like every other class
+    # fetch.
+    case ArchiDep.Course.fetch_class(auth, id) do
+      {:ok, %ClassView{} = created} -> {:ok, sort_classes([created | classes])}
+      {:error, :class_not_found} -> {:ok, classes}
+    end
+  end
 
-  def refresh_classes(classes, {:class_updated, event, reference}) when is_list(classes) do
+  def refresh_classes(_auth, classes, {:class_updated, event, reference}) when is_list(classes) do
     id = class_updated_id(event)
 
     {:ok,
@@ -65,10 +79,11 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
      |> sort_classes()}
   end
 
-  def refresh_classes(classes, {:class_deleted, %Class{id: id}}) when is_list(classes),
-    do: {:ok, classes |> Enum.reject(&(&1.id == id)) |> sort_classes()}
+  def refresh_classes(_auth, classes, {:class_deleted, %ClassDeleted{id: id}, %EventReference{}})
+      when is_list(classes),
+      do: {:ok, classes |> Enum.reject(&(&1.id == id)) |> sort_classes()}
 
-  def refresh_classes(_classes, _message), do: :ignore
+  def refresh_classes(_auth, _classes, _message), do: :ignore
 
   # Subscribing to the topic of a class the caller already holds grants no new
   # access, so this read-model plumbing takes no authentication and skips the

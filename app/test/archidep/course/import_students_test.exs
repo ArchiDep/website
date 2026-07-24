@@ -9,6 +9,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.StudentsImportedInClass
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
@@ -84,7 +85,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
 
     assert_row_count_diff(previous_counts, %{Student => 2, StoredEvent => 3})
 
-    assert_students_imported_broadcast(class_students, class, students)
+    assert_students_imported_broadcast(class_students, class, data, students)
   end
 
   test "import a single student with no academic class", %{import_students: import_students} do
@@ -112,7 +113,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
 
     assert_row_count_diff(previous_counts, %{Student => 1, StoredEvent => 2})
 
-    assert_students_imported_broadcast(class_students, class, students)
+    assert_students_imported_broadcast(class_students, class, data, students)
   end
 
   test "students already in the class are skipped", %{import_students: import_students} do
@@ -158,7 +159,7 @@ defmodule ArchiDep.Course.ImportStudentsTest do
 
     assert_row_count_diff(previous_counts, %{Student => 1, StoredEvent => 2})
 
-    assert_students_imported_broadcast(class_students, class, students)
+    assert_students_imported_broadcast(class_students, class, data, students)
   end
 
   test "importing only students that already exist is a no-op", %{
@@ -458,10 +459,22 @@ defmodule ArchiDep.Course.ImportStudentsTest do
     do: collect_broadcasts(fn -> PubSub.subscribe_class_students(class_id) end)
 
   # Asserts the students-imported message reached the class-students topic
-  # carrying the class and the exact list of imported students, and nothing
-  # else.
-  defp assert_students_imported_broadcast(class_students, %Class{} = class, students) do
-    assert received_broadcasts(class_students) == [{:students_imported, class, students}]
+  # carrying the `StudentsImportedInClass` domain event and the stored-event
+  # reference, and nothing else.
+  defp assert_students_imported_broadcast(class_students, %Class{} = class, data, students) do
+    assert [%StoredEvent{} = import_event] =
+             Enum.filter(
+               fetch_new_stored_events(),
+               &(&1.type == "archidep/course/students-imported-in-class")
+             )
+
+    expected_event =
+      StudentsImportedInClass.new(class, data.academic_class, data.domain, length(students))
+
+    expected_message =
+      {:students_imported, expected_event, StoredEvent.to_reference(import_event)}
+
+    assert received_broadcasts(class_students) == [expected_message]
   end
 
   # Asserts no student was imported: no row added anywhere, no event, and the

@@ -9,6 +9,7 @@ defmodule ArchiDep.Course.CreateClassTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.ClassCreated
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
@@ -65,10 +66,12 @@ defmodule ArchiDep.Course.CreateClassTest do
 
     assert {:ok, class} = create_class.(auth, data)
 
-    class
-    |> assert_created_class(data)
-    |> assert_class_created_event(auth, data)
-    |> assert_persisted_class()
+    event =
+      class
+      |> assert_created_class(data)
+      |> assert_class_created_event(auth, data)
+
+    assert_persisted_class(event)
 
     assert_row_count_diff(previous_counts, %{
       Class => 1,
@@ -76,7 +79,7 @@ defmodule ArchiDep.Course.CreateClassTest do
       StoredEvent => 1
     })
 
-    assert_class_created_broadcast(broadcasts, class)
+    assert_class_created_broadcast(broadcasts, class, event)
   end
 
   test "create a minimal class", %{create_class: create_class} do
@@ -103,10 +106,12 @@ defmodule ArchiDep.Course.CreateClassTest do
 
     assert {:ok, class} = create_class.(auth, data)
 
-    class
-    |> assert_created_class(data)
-    |> assert_class_created_event(auth, data)
-    |> assert_persisted_class()
+    event =
+      class
+      |> assert_created_class(data)
+      |> assert_class_created_event(auth, data)
+
+    assert_persisted_class(event)
 
     assert_row_count_diff(previous_counts, %{
       Class => 1,
@@ -114,7 +119,7 @@ defmodule ArchiDep.Course.CreateClassTest do
       StoredEvent => 1
     })
 
-    assert_class_created_broadcast(broadcasts, class)
+    assert_class_created_broadcast(broadcasts, class, event)
   end
 
   test "create a full class", %{create_class: create_class} do
@@ -142,10 +147,12 @@ defmodule ArchiDep.Course.CreateClassTest do
 
     assert {:ok, class} = create_class.(auth, data)
 
-    class
-    |> assert_created_class(data)
-    |> assert_class_created_event(auth, data)
-    |> assert_persisted_class()
+    event =
+      class
+      |> assert_created_class(data)
+      |> assert_class_created_event(auth, data)
+
+    assert_persisted_class(event)
 
     assert_row_count_diff(previous_counts, %{
       Class => 1,
@@ -153,7 +160,7 @@ defmodule ArchiDep.Course.CreateClassTest do
       StoredEvent => 1
     })
 
-    assert_class_created_broadcast(broadcasts, class)
+    assert_class_created_broadcast(broadcasts, class, event)
   end
 
   test "a non-root user cannot create a class", %{create_class: create_class} do
@@ -393,9 +400,11 @@ defmodule ArchiDep.Course.CreateClassTest do
   end
 
   # Asserts the class-created message reached the global classes topic exactly
-  # once, carrying the created class, and nothing else.
-  defp assert_class_created_broadcast(broadcasts, %Class{} = class) do
-    assert received_broadcasts(broadcasts.global) == [{:class_created, class}]
+  # once, carrying the `ClassCreated` domain event and the stored-event
+  # reference, and nothing else.
+  defp assert_class_created_broadcast(broadcasts, %Class{} = class, %StoredEvent{} = event) do
+    expected_message = {:class_created, ClassCreated.new(class), StoredEvent.to_reference(event)}
+    assert received_broadcasts(broadcasts.global) == [expected_message]
   end
 
   # Asserts no class was created: no class or properties rows added, no event,

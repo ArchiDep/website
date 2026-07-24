@@ -4,6 +4,8 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   import Hammox
   alias ArchiDep.Course
   alias ArchiDep.Course.ClassView
+  alias ArchiDep.Course.Events.ClassCreated
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
@@ -382,7 +384,17 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       {:ok, view, _html} = live(conn, @path)
 
       beta = build_class(name: "Beta", end_date: ~D[2026-12-31])
-      :ok = Course.PubSub.publish_class_created(beta)
+      beta_id = beta.id
+
+      # The created broadcast carries only the curated event; the handler
+      # fetches the full view through the context boundary on first sighting.
+      stub(Course.ContextMock, :fetch_class, fn ^auth, ^beta_id -> {:ok, ClassView.from(beta)} end)
+
+      :ok =
+        Course.PubSub.publish_class_created(
+          ClassCreated.new(beta),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -411,13 +423,29 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       {:ok, view, _html} = live(conn, @path)
 
       inactive = build_class(name: "Inactive", active: false)
-      :ok = Course.PubSub.publish_class_created(inactive)
+      gamma = build_class(name: "Gamma", end_date: ~D[2026-12-31])
+
+      # The created broadcast carries only the curated event; the handler fetches
+      # the full view through the context boundary on first sighting, for the
+      # inactive class too (which it then drops).
+      stub(Course.ContextMock, :fetch_class, fn ^auth, id ->
+        {:ok, [inactive, gamma] |> Enum.find(&(&1.id == id)) |> ClassView.from()}
+      end)
+
+      :ok =
+        Course.PubSub.publish_class_created(
+          ClassCreated.new(inactive),
+          EventsFactory.build(:event_reference)
+        )
 
       # The classes topic delivers in order, so a later active class is processed
       # after the ignored inactive one; waiting for it proves the inactive class
       # was seen and dropped.
-      gamma = build_class(name: "Gamma", end_date: ~D[2026-12-31])
-      :ok = Course.PubSub.publish_class_created(gamma)
+      :ok =
+        Course.PubSub.publish_class_created(
+          ClassCreated.new(gamma),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,
@@ -552,7 +580,11 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
-      :ok = Course.PubSub.publish_class_deleted(beta)
+      :ok =
+        Course.PubSub.publish_class_deleted(
+          ClassDeleted.new(beta),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(
         view,

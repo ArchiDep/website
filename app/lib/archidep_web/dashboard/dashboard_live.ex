@@ -9,9 +9,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.ClassView
+  alias ArchiDep.Course.Events.ClassDeleted
+  alias ArchiDep.Course.Events.StudentDeleted
   alias ArchiDep.Course.Material
-  alias ArchiDep.Course.Schemas.Class
-  alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
@@ -120,7 +120,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:student_deleted, %Student{id: student_id}},
+        {:student_deleted, %StudentDeleted{id: student_id}, _reference},
         %Socket{
           assigns: %{
             student: %StudentView{id: student_id}
@@ -134,7 +134,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:class_deleted, %Class{id: id}},
+        {:class_deleted, %ClassDeleted{id: id}, _reference},
         %Socket{
           assigns: %{
             student: %StudentView{class_id: id}

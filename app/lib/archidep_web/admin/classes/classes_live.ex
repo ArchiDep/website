@@ -32,7 +32,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLive do
     if connected?(socket) do
       set_process_label(__MODULE__, auth)
       :ok = Course.subscribe_classes()
-      LiveRefresh.attach(socket, :classes, &Course.refresh_classes/2)
+      LiveRefresh.attach(socket, :classes, &Course.refresh_classes(auth, &1, &2))
     else
       socket
     end

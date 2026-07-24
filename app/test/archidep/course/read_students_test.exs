@@ -11,6 +11,9 @@ defmodule ArchiDep.Course.ReadStudentsTest do
   alias ArchiDep.Course.Context
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentConfigured
+  alias ArchiDep.Course.Events.StudentCreated
+  alias ArchiDep.Course.Events.StudentDeleted
+  alias ArchiDep.Course.Events.StudentsImportedInClass
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
@@ -293,10 +296,11 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       assert subscribe_class_students.(ClassView.from(class)) == :ok
 
       # The class-students topic carries student lifecycle broadcasts.
-      %Student{} = student = CourseFactory.build(:student, class_id: class.id, user: nil)
-      :ok = PubSub.publish_students_imported(class, [student])
+      imported_event = StudentsImportedInClass.new(class, nil, "example.com", 1)
+      imported_reference = EventsFactory.build(:event_reference)
+      :ok = PubSub.publish_students_imported(imported_event, imported_reference)
 
-      assert_receive {:students_imported, ^class, [^student]}
+      assert_receive {:students_imported, ^imported_event, ^imported_reference}
 
       # The Accounts preregistration topic (keyed by the same id) also reaches
       # the process, since a linked account changes a student's displayed
@@ -336,13 +340,22 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       expected = {:ok, list_students.(auth, class_view)}
       assert expected != {:ok, []}
 
-      created = {:student_created, %Student{alice | class_id: class.id}}
-      deleted = {:student_deleted, %Student{alice | class_id: class.id}}
+      alice_with_class = %Student{alice | class: class, class_id: class.id}
+
+      created =
+        {:student_created, StudentCreated.new(alice_with_class),
+         EventsFactory.build(:event_reference)}
+
+      deleted =
+        {:student_deleted, StudentDeleted.new(alice_with_class),
+         EventsFactory.build(:event_reference)}
 
       updated =
         {:student_updated, %{class: %{id: class.id}}, EventsFactory.build(:event_reference)}
 
-      imported = {:students_imported, class, [alice]}
+      imported =
+        {:students_imported, StudentsImportedInClass.new(class, nil, "example.com", 1),
+         EventsFactory.build(:event_reference)}
 
       preregistration =
         {:preregistered_user_updated,
@@ -368,10 +381,15 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       auth = Factory.build(:authentication, root: true)
 
       class_view = ClassView.from(class)
-      other_student = CourseFactory.build(:student, class_id: other.id, user: nil)
+      other_student = CourseFactory.build(:student, class: other, class_id: other.id, user: nil)
 
-      assert refresh_class_students.(auth, class_view, [], {:student_created, other_student}) ==
-               :ignore
+      assert refresh_class_students.(
+               auth,
+               class_view,
+               [],
+               {:student_created, StudentCreated.new(other_student),
+                EventsFactory.build(:event_reference)}
+             ) == :ignore
 
       assert refresh_class_students.(
                auth,

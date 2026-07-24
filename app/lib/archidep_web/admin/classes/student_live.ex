@@ -7,8 +7,8 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   alias ArchiDep.Accounts
   alias ArchiDep.Course
   alias ArchiDep.Course.ClassView
-  alias ArchiDep.Course.Schemas.Class
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Events.ClassDeleted
+  alias ArchiDep.Course.Events.StudentDeleted
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
   alias ArchiDep.Servers.ServerView
@@ -108,7 +108,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
 
   @impl LiveView
   def handle_info(
-        {:student_deleted, %Student{id: student_id} = deleted_student},
+        {:student_deleted, %StudentDeleted{id: student_id} = deleted_student, _reference},
         %Socket{
           assigns: %{student: %StudentView{id: student_id}}
         } = socket
@@ -121,12 +121,12 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
             gettext("Deleted student {student}", student: deleted_student.name)
           )
         )
-        |> push_navigate(to: ~p"/admin/classes/#{deleted_student.class_id}")
+        |> push_navigate(to: ~p"/admin/classes/#{deleted_student.class.id}")
         |> noreply()
 
   @impl LiveView
   def handle_info(
-        {:class_deleted, %Class{id: class_id}},
+        {:class_deleted, %ClassDeleted{id: class_id}, _reference},
         %Socket{
           assigns: %{student: %StudentView{class: %ClassView{id: class_id, name: class_name}}}
         } = socket

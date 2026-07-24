@@ -5,7 +5,9 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
   import Hammox
   alias ArchiDep.Accounts
   alias ArchiDep.Course
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentDeleted
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.UseCases.ReadStudents
@@ -424,7 +426,11 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
 
       {:ok, view, _html} = live(conn, path(student))
 
-      :ok = Course.PubSub.publish_student_deleted(student)
+      :ok =
+        Course.PubSub.publish_student_deleted(
+          StudentDeleted.new(student),
+          EventsFactory.build(:event_reference)
+        )
 
       flash = assert_redirect(view, "/admin/classes/#{student.class_id}")
 
@@ -517,7 +523,11 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
 
       {:ok, view, _html} = live(conn, path(student))
 
-      :ok = Course.PubSub.publish_class_deleted(student.class)
+      :ok =
+        Course.PubSub.publish_class_deleted(
+          ClassDeleted.new(student.class),
+          EventsFactory.build(:event_reference)
+        )
 
       flash = assert_redirect(view, "/admin/classes")
 

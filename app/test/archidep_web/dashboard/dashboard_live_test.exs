@@ -3,7 +3,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
   import Hammox
   alias ArchiDep.Course
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentDeleted
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.StudentView
@@ -779,7 +781,11 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
-      :ok = Course.PubSub.publish_class_deleted(student.class)
+      :ok =
+        Course.PubSub.publish_class_deleted(
+          ClassDeleted.new(student.class),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(view, fn assigns -> assigns.student == nil end, "student dropped")
 
@@ -792,7 +798,11 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
       {:ok, view, _html} = live(conn, @path)
 
-      :ok = Course.PubSub.publish_student_deleted(student)
+      :ok =
+        Course.PubSub.publish_student_deleted(
+          StudentDeleted.new(student),
+          EventsFactory.build(:event_reference)
+        )
 
       wait_for_socket_assigns!(view, fn assigns -> assigns.student == nil end, "student dropped")
 

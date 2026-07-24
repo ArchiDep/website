@@ -6,7 +6,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.ClassView
-  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Events.ClassCreated
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
@@ -125,7 +126,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @impl LiveView
   def handle_info(
-        {:class_created, %Class{} = created_class},
+        {:class_created, %ClassCreated{id: class_id}, _reference},
         %Socket{
           assigns: %{
             auth: auth,
@@ -135,9 +136,11 @@ defmodule ArchiDepWeb.Admin.AdminLive do
           }
         } = socket
       ) do
-    created_view = ClassView.from(created_class)
-
-    if ClassView.active?(created_view, Clock.now()) do
+    # The created broadcast carries only the curated event, so fetch the full
+    # read-view on first sighting through the authorized Course boundary, as the
+    # server-created handler does for servers.
+    with {:ok, %ClassView{} = created_view} <- Course.fetch_class(auth, class_id),
+         true <- ClassView.active?(created_view, Clock.now()) do
       new_servers_by_class_id = Map.put_new(servers_by_class_id, created_view.id, [])
 
       socket
@@ -149,7 +152,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       )
       |> noreply()
     else
-      noreply(socket)
+      _not_added -> noreply(socket)
     end
   end
 
@@ -206,7 +209,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @impl LiveView
   def handle_info(
-        {:class_deleted, %Class{} = deleted_class},
+        {:class_deleted, %ClassDeleted{} = deleted_class, _reference},
         %Socket{
           assigns: %{
             active_classes: active_classes,

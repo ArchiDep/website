@@ -61,8 +61,8 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
       {:ok, %{new_students: []}} ->
         {:ok, []}
 
-      {:ok, %{new_students: new_students}} ->
-        :ok = PubSub.publish_students_imported(class, new_students)
+      {:ok, %{new_students: new_students, students_imported_event: event}} ->
+        :ok = PubSub.publish_students_imported(event.data, StoredEvent.to_reference(event))
         {:ok, new_students}
 
       {:error, :students, %Changeset{} = changeset, _changes} ->

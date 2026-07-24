@@ -55,9 +55,9 @@ defmodule ArchiDep.Course do
   topics of `subscribe_classes/0`, returning the updated list or `:ignore` for a
   message that does not concern it.
   """
-  @spec refresh_classes(list(ClassView.t()), term()) ::
+  @spec refresh_classes(Authentication.t() | nil, list(ClassView.t()), term()) ::
           {:ok, list(ClassView.t())} | :ignore
-  defdelegate refresh_classes(classes, message), to: @implementation
+  defdelegate refresh_classes(auth, classes, message), to: @implementation
 
   @doc """
   Fetches a class.

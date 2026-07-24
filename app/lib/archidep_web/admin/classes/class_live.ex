@@ -7,7 +7,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   import ArchiDepWeb.Helpers.StudentHelpers, only: [student_not_in_class_tooltip: 1]
   alias ArchiDep.Course
   alias ArchiDep.Course.ClassView
-  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Servers
   alias ArchiDepWeb.Admin.Classes.DeleteClassDialogLive
@@ -54,7 +54,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
 
   @impl LiveView
   def handle_info(
-        {:class_deleted, %Class{id: id}},
+        {:class_deleted, %ClassDeleted{id: id}, _reference},
         %Socket{
           assigns: %{class: %ClassView{id: id} = class}
         } = socket

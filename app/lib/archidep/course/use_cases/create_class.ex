@@ -27,8 +27,8 @@ defmodule ArchiDep.Course.UseCases.CreateClass do
          |> Multi.insert(:class, Class.new(data, now))
          |> Multi.insert(:stored_event, &class_created(auth, &1.class))
          |> Repo.transaction() do
-      {:ok, %{class: class}} ->
-        :ok = PubSub.publish_class_created(class)
+      {:ok, %{class: class, stored_event: event}} ->
+        :ok = PubSub.publish_class_created(event.data, StoredEvent.to_reference(event))
         {:ok, class}
 
       {:error, :class, changeset, _changes} ->

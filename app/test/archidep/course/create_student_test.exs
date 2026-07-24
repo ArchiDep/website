@@ -9,6 +9,7 @@ defmodule ArchiDep.Course.CreateStudentTest do
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.Context
+  alias ArchiDep.Course.Events.StudentCreated
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
@@ -60,14 +61,16 @@ defmodule ArchiDep.Course.CreateStudentTest do
 
     assert {:ok, student} = create_student.(auth, class.id, data)
 
-    student
-    |> assert_created_student(data, class)
-    |> assert_student_created_event(auth, data, class)
-    |> assert_persisted_student(student.ssh_exercise_password)
+    event =
+      student
+      |> assert_created_student(data, class)
+      |> assert_student_created_event(auth, data, class)
+
+    assert_persisted_student(event, student.ssh_exercise_password)
 
     assert_row_count_diff(previous_counts, %{Student => 1, StoredEvent => 1})
 
-    assert_student_created_broadcast(broadcasts, student)
+    assert_student_created_broadcast(broadcasts, student, event)
   end
 
   test "create a minimal student in a class", %{create_student: create_student} do
@@ -92,14 +95,16 @@ defmodule ArchiDep.Course.CreateStudentTest do
 
     assert {:ok, student} = create_student.(auth, class.id, data)
 
-    student
-    |> assert_created_student(data, class)
-    |> assert_student_created_event(auth, data, class)
-    |> assert_persisted_student(student.ssh_exercise_password)
+    event =
+      student
+      |> assert_created_student(data, class)
+      |> assert_student_created_event(auth, data, class)
+
+    assert_persisted_student(event, student.ssh_exercise_password)
 
     assert_row_count_diff(previous_counts, %{Student => 1, StoredEvent => 1})
 
-    assert_student_created_broadcast(broadcasts, student)
+    assert_student_created_broadcast(broadcasts, student, event)
   end
 
   test "create a full student in a class", %{create_student: create_student} do
@@ -124,14 +129,16 @@ defmodule ArchiDep.Course.CreateStudentTest do
 
     assert {:ok, student} = create_student.(auth, class.id, data)
 
-    student
-    |> assert_created_student(data, class)
-    |> assert_student_created_event(auth, data, class)
-    |> assert_persisted_student(student.ssh_exercise_password)
+    event =
+      student
+      |> assert_created_student(data, class)
+      |> assert_student_created_event(auth, data, class)
+
+    assert_persisted_student(event, student.ssh_exercise_password)
 
     assert_row_count_diff(previous_counts, %{Student => 1, StoredEvent => 1})
 
-    assert_student_created_broadcast(broadcasts, student)
+    assert_student_created_broadcast(broadcasts, student, event)
   end
 
   test "a non-root user cannot create a student", %{create_student: create_student} do
@@ -411,9 +418,13 @@ defmodule ArchiDep.Course.CreateStudentTest do
   end
 
   # Asserts the student-created message reached the class-students topic exactly
-  # once, carrying the created student, and nothing else.
-  defp assert_student_created_broadcast(broadcasts, %Student{} = student) do
-    assert received_broadcasts(broadcasts.class_students) == [{:student_created, student}]
+  # once, carrying the `StudentCreated` domain event and the stored-event
+  # reference, and nothing else.
+  defp assert_student_created_broadcast(broadcasts, %Student{} = student, %StoredEvent{} = event) do
+    expected_message =
+      {:student_created, StudentCreated.new(student), StoredEvent.to_reference(event)}
+
+    assert received_broadcasts(broadcasts.class_students) == [expected_message]
   end
 
   # Asserts the class-students topic carried no student-created broadcast.

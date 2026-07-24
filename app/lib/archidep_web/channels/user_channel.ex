@@ -8,8 +8,8 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   import ArchiDepWeb.Helpers.AuthHelpers
   alias ArchiDep.Clock
   alias ArchiDep.Course
-  alias ArchiDep.Course.Schemas.Class
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.Events.ClassDeleted
+  alias ArchiDep.Course.Events.StudentDeleted
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
   alias ArchiDep.Servers.ServerView
@@ -57,14 +57,14 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   # claim a deletion (it is terminal, not a merge), so it falls through to here.
   @impl Channel
   def handle_info(
-        {:class_deleted, %Class{id: class_id}},
+        {:class_deleted, %ClassDeleted{id: class_id}, _reference},
         %Socket{assigns: %{student: %StudentView{class_id: class_id}}} = socket
       ),
       do: socket |> assign(student: nil, servers: []) |> send_updated_data() |> noreply()
 
   @impl Channel
   def handle_info(
-        {:student_deleted, %Student{id: student_id}},
+        {:student_deleted, %StudentDeleted{id: student_id}, _reference},
         %Socket{assigns: %{student: %StudentView{id: student_id}}} = socket
       ),
       do: socket |> assign(student: nil, servers: []) |> send_updated_data() |> noreply()
