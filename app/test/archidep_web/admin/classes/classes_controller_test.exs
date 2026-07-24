@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
 
   import Hammox
   alias ArchiDep.Course
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Servers
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.ServersFactory
@@ -42,13 +43,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
 
       with_server_id = with_server.id
       without_server_id = without_server.id
+      class_view = ClassView.from(class)
 
       expect(Course.ContextMock, :fetch_class, 1, fn ^auth, class_id ->
         ^class_id = class.id
-        {:ok, class}
+        {:ok, class_view}
       end)
 
-      expect(Course.ContextMock, :list_students, 1, fn ^auth, ^class ->
+      expect(Course.ContextMock, :list_students, 1, fn ^auth, ^class_view ->
         [with_server, without_server]
       end)
 
@@ -80,13 +82,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
       auth: auth
     } do
       class = CourseFactory.build(:class, name: "Empty Class")
+      class_view = ClassView.from(class)
 
       expect(Course.ContextMock, :fetch_class, 1, fn ^auth, class_id ->
         ^class_id = class.id
-        {:ok, class}
+        {:ok, class_view}
       end)
 
-      expect(Course.ContextMock, :list_students, 1, fn ^auth, ^class -> [] end)
+      expect(Course.ContextMock, :list_students, 1, fn ^auth, ^class_view -> [] end)
 
       conn = get(conn, ~p"/admin/classes/#{class.id}/csv")
 
@@ -122,12 +125,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
           ssh_exercise_password: "bob-secret"
         )
 
+      class_view = ClassView.from(class)
+
       expect(Course.ContextMock, :fetch_class, 1, fn ^auth, class_id ->
         ^class_id = class.id
-        {:ok, class}
+        {:ok, class_view}
       end)
 
-      expect(Course.ContextMock, :list_students, 1, fn ^auth, ^class -> [first, second] end)
+      expect(Course.ContextMock, :list_students, 1, fn ^auth, ^class_view -> [first, second] end)
 
       conn = get(conn, ~p"/admin/classes/#{class.id}/ssh-exercise-vm-inventory")
 
@@ -149,13 +154,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
       auth: auth
     } do
       class = CourseFactory.build(:class, name: "Empty Class")
+      class_view = ClassView.from(class)
 
       expect(Course.ContextMock, :fetch_class, 1, fn ^auth, class_id ->
         ^class_id = class.id
-        {:ok, class}
+        {:ok, class_view}
       end)
 
-      expect(Course.ContextMock, :list_students, 1, fn ^auth, ^class -> [] end)
+      expect(Course.ContextMock, :list_students, 1, fn ^auth, ^class_view -> [] end)
 
       conn = get(conn, ~p"/admin/classes/#{class.id}/ssh-exercise-vm-inventory")
 

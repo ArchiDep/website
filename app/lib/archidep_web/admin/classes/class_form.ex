@@ -9,7 +9,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
 
   import ArchiDepWeb.Helpers.FormHelpers, only: [tmp_boolify: 2]
   import Ecto.Changeset
-  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Types
   alias ArchiDepWeb.Admin.Classes.ClassFormSshPublicKey
   alias Ecto.Changeset
@@ -60,8 +60,9 @@ defmodule ArchiDepWeb.Admin.Classes.ClassForm do
       |> validate_required([:name, :active, :servers_enabled])
   end
 
-  @spec update_changeset(Class.t(), map()) :: Changeset.t(Types.class_data())
-  def update_changeset(class, params \\ %{}) when is_struct(class, Class) and is_map(params) do
+  @spec update_changeset(ClassView.t(), map()) :: Changeset.t(Types.class_data())
+  def update_changeset(class, params \\ %{})
+      when is_struct(class, ClassView) and is_map(params) do
     fixed_params = params |> tmp_boolify("active") |> tmp_boolify("servers_enabled")
 
     %Changeset{} =

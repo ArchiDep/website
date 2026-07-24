@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
   import Hammox
   alias ArchiDep.Course
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
@@ -517,7 +518,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       # The class is not currently active, so it is not in the list and not
       # cached; admin_live fetches the full class to add it.
-      stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, gamma} end)
+      stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, ClassView.from(gamma)} end)
 
       :ok =
         Course.PubSub.publish_class_updated(
@@ -615,7 +616,9 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   # Servers boundary; route that call to the real read-model plumbing so a real
   # tracker push still drives the connected-server count.
   defp stub_admin_page(auth, classes, servers_by_class_id) do
-    stub(Course.ContextMock, :list_active_classes, fn ^auth -> classes end)
+    stub(Course.ContextMock, :list_active_classes, fn ^auth ->
+      Enum.map(classes, &ClassView.from/1)
+    end)
 
     stub(Servers.ContextMock, :list_all_servers_in_group, fn ^auth, group_id ->
       {:ok, servers_by_class_id |> Map.get(group_id, []) |> Enum.map(&ServerView.from/1)}

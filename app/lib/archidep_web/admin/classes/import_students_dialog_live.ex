@@ -5,7 +5,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   import ArchiDepWeb.Helpers.DialogHelpers
   import ArchiDepWeb.Components.FormComponents
   alias ArchiDep.Course
-  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.StudentView
   alias ArchiDepWeb.Admin.Classes.ImportStudentsCsv
   alias ArchiDepWeb.Admin.Classes.ImportStudentsForm
@@ -208,7 +208,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
         %Socket{
           assigns: %{
             auth: auth,
-            class: %Class{id: class_id},
+            class: %ClassView{id: class_id},
             state: :uploaded,
             form: form,
             students: students
@@ -291,7 +291,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     ]
   end
 
-  defp uploaded_students_file(%Class{id: class_id}),
+  defp uploaded_students_file(%ClassView{id: class_id}),
     do: Path.join([uploads_directory(), "students", "classes", class_id, "import-students.csv"])
 
   defp consume_uploaded_students(socket),

@@ -4,7 +4,7 @@ defmodule ArchiDepWeb.ClientCloudServerData do
   user's active server.
   """
 
-  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers.ServerView
 
@@ -72,7 +72,7 @@ defmodule ArchiDepWeb.ClientCloudServerData do
 
   defp servers_enabled?(%StudentView{
          servers_enabled: student_servers_enabled,
-         class: %Class{servers_enabled: class_servers_enabled}
+         class: %ClassView{servers_enabled: class_servers_enabled}
        }),
        do: class_servers_enabled or student_servers_enabled
 end

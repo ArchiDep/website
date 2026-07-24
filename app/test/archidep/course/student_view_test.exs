@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.StudentViewTest do
 
   import ArchiDep.Support.CourseFactory
   alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentConfigured
   alias ArchiDep.Course.Events.StudentUpdated
@@ -139,9 +140,12 @@ defmodule ArchiDep.Course.StudentViewTest do
     test "refreshes the nested class from a class event" do
       {student, _user_account, _auth} = CourseTestHelpers.register_student()
       view = StudentView.from(student)
-      %Class{} = class = view.class
+      %ClassView{} = class = view.class
 
-      event = ClassUpdated.new(%Class{class | name: "Renamed", version: class.version + 1})
+      {:ok, %Class{} = class_aggregate} = Class.fetch_class(class.id)
+
+      event =
+        ClassUpdated.new(%Class{class_aggregate | name: "Renamed", version: class.version + 1})
 
       reference =
         EventsFactory.build(:event_reference,
@@ -150,7 +154,7 @@ defmodule ArchiDep.Course.StudentViewTest do
         )
 
       assert StudentView.refresh!(view, event, reference) ==
-               %{view | class: Class.refresh!(class, event, reference)}
+               %{view | class: ClassView.refresh!(class, event, reference)}
     end
 
     test "ignores a student event at or below the cached version" do

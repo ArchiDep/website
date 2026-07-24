@@ -20,7 +20,7 @@ defmodule ArchiDepWeb.Helpers.LiveViewHelpersTest do
   describe "set_process_label/3" do
     test "labels the process with a class context" do
       auth = Factory.build(:authentication, principal_id: @auth_principal_id)
-      class = CourseFactory.build(:class, id: "22222000-0000-0000-0000-000000000000")
+      class = CourseFactory.build(:class_view, id: "22222000-0000-0000-0000-000000000000")
 
       assert LiveViewHelpers.set_process_label(__MODULE__, auth, class) == :ok
       assert :proc_lib.get_label(self()) == "#{__MODULE__}|u:11111@cl:22222"

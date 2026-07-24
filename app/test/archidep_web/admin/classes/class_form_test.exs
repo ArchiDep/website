@@ -99,7 +99,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
   describe "update_changeset/2" do
     test "updates every field, coercing the boolean form strings" do
       class =
-        build(:class,
+        build(:class_view,
           name: "Original",
           start_date: ~D[2024-01-01],
           end_date: ~D[2024-06-30],
@@ -139,7 +139,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
 
     test "clears every optional field when given blank input" do
       class =
-        build(:class,
+        build(:class_view,
           name: "Original",
           start_date: ~D[2024-01-01],
           end_date: ~D[2024-06-30],
@@ -266,5 +266,5 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
   end
 
   defp changeset(:create, params), do: ClassForm.create_changeset(params)
-  defp changeset(:update, params), do: ClassForm.update_changeset(build(:class), params)
+  defp changeset(:update, params), do: ClassForm.update_changeset(build(:class_view), params)
 end

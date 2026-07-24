@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   alias ArchiDep.Accounts
   alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
   alias ArchiDep.Course
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
@@ -76,7 +77,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     } do
       {class, _server_group} = build_class_and_group()
 
-      stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, class} end)
+      stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, ClassView.from(class)} end)
 
       stub(Servers.ContextMock, :fetch_server_group, fn ^auth, _id ->
         {:error, :server_group_not_found}
@@ -1353,7 +1354,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     students = Keyword.get(opts, :students, [])
     server_ids = Keyword.get(opts, :server_ids, [])
 
-    stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, class} end)
+    stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, ClassView.from(class)} end)
     stub(Servers.ContextMock, :fetch_server_group, fn ^auth, _id -> {:ok, server_group} end)
 
     stub(Course.ContextMock, :list_students, fn ^auth, _class ->

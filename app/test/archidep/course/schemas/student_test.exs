@@ -6,7 +6,6 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.AccountsTestHelpers
   alias Ecto.Changeset
-  alias Ecto.UUID
 
   # These changeset validations do not depend on the creation timestamp; a fixed
   # instant keeps the changeset calls deterministic.

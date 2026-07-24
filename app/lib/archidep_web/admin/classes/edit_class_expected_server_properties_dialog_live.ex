@@ -4,15 +4,15 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassExpectedServerPropertiesDialogLive 
   import ArchiDepWeb.Helpers.DialogHelpers
   import ArchiDepWeb.Components.FormComponents
   alias ArchiDep.Course
-  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.ClassView
   alias ArchiDepWeb.Servers.ServerPropertiesForm
 
   @base_id "edit-class-expected-server-properties-dialog"
 
-  @spec id(Class.t()) :: String.t()
-  def id(%Class{id: id}), do: "#{@base_id}-#{id}"
+  @spec id(ClassView.t()) :: String.t()
+  def id(%ClassView{id: id}), do: "#{@base_id}-#{id}"
 
-  @spec close(Class.t()) :: js
+  @spec close(ClassView.t()) :: js
   def close(class), do: class |> id() |> close_dialog()
 
   @impl LiveComponent

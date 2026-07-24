@@ -2,10 +2,10 @@ defmodule ArchiDepWeb.Admin.AdminClassServersLive do
   use ArchiDepWeb, :live_component
 
   import ArchiDepWeb.Servers.ServerComponents
-  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.ClassView
   alias Phoenix.LiveView.JS
 
-  @spec id(Class.t()) :: String.t()
+  @spec id(ClassView.t()) :: String.t()
   def id(class), do: "admin-class-#{class.id}-servers"
 
   @impl LiveComponent

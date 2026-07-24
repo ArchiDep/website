@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
 
   import Hammox
   alias ArchiDep.Course
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.UseCases.ReadClasses
@@ -454,7 +455,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
     mounts = Keyword.get(opts, :mounts, 2)
     classes = Keyword.fetch!(opts, :classes)
 
-    expect(Course.ContextMock, :list_classes, mounts, fn ^auth -> classes end)
+    expect(Course.ContextMock, :list_classes, mounts, fn ^auth ->
+      Enum.map(classes, &ClassView.from/1)
+    end)
+
     # The page keeps the classes list current through the Course boundary; route
     # those calls to the real read-model plumbing so a real broadcast still
     # drives the re-render.

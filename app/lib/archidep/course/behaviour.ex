@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.Behaviour do
 
   use ArchiDep, :context_behaviour
 
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
@@ -23,12 +24,12 @@ defmodule ArchiDep.Course.Behaviour do
   @doc """
   Lists all classes.
   """
-  @callback list_classes(Authentication.t()) :: list(Class.t())
+  @callback list_classes(Authentication.t()) :: list(ClassView.t())
 
   @doc """
   Lists currently active classes.
   """
-  @callback list_active_classes(Authentication.t()) :: list(Class.t())
+  @callback list_active_classes(Authentication.t()) :: list(ClassView.t())
 
   @doc """
   Subscribes the calling process to every topic that keeps the list of classes
@@ -41,27 +42,27 @@ defmodule ArchiDep.Course.Behaviour do
   topics of `subscribe_classes/0`, returning the updated list or `:ignore` for a
   message that does not concern it.
   """
-  @callback refresh_classes(list(Class.t()), term()) ::
-              {:ok, list(Class.t())} | :ignore
+  @callback refresh_classes(list(ClassView.t()), term()) ::
+              {:ok, list(ClassView.t())} | :ignore
 
   @doc """
   Fetches a class.
   """
   @callback fetch_class(Authentication.t() | nil, UUID.t()) ::
-              {:ok, Class.t()} | {:error, :class_not_found}
+              {:ok, ClassView.t()} | {:error, :class_not_found}
 
   @doc """
   Subscribes the calling process to every topic that keeps the given class's
   read-model live.
   """
-  @callback subscribe_class(Class.t()) :: :ok
+  @callback subscribe_class(ClassView.t()) :: :ok
 
   @doc """
   Reconciles a class read-model from a PubSub message broadcast on one of the
   topics of `subscribe_class/1`, returning the updated class or `:ignore` for a
   message that does not concern it.
   """
-  @callback refresh_class(Class.t() | nil, term()) :: {:ok, Class.t()} | :ignore
+  @callback refresh_class(ClassView.t() | nil, term()) :: {:ok, ClassView.t()} | :ignore
 
   @doc """
   Validates the data to update an existing class.
@@ -126,20 +127,25 @@ defmodule ArchiDep.Course.Behaviour do
   @doc """
   Lists all students in the specified class.
   """
-  @callback list_students(Authentication.t(), Class.t()) :: list(StudentView.t())
+  @callback list_students(Authentication.t(), ClassView.t()) :: list(StudentView.t())
 
   @doc """
   Subscribes the calling process to every topic that keeps the list of students
   in the given class live.
   """
-  @callback subscribe_class_students(Class.t()) :: :ok
+  @callback subscribe_class_students(ClassView.t()) :: :ok
 
   @doc """
   Reconciles the list of students in a class from a PubSub message broadcast on
   one of the topics of `subscribe_class_students/1`, returning the refreshed
   list or `:ignore` for a message that does not concern it.
   """
-  @callback refresh_class_students(Authentication.t(), Class.t(), list(StudentView.t()), term()) ::
+  @callback refresh_class_students(
+              Authentication.t(),
+              ClassView.t(),
+              list(StudentView.t()),
+              term()
+            ) ::
               {:ok, list(StudentView.t())} | :ignore
 
   @doc """

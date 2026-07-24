@@ -5,6 +5,7 @@ defmodule ArchiDep.Support.CourseFactory do
 
   use ArchiDep.Support, :factory
 
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
@@ -314,6 +315,13 @@ defmodule ArchiDep.Support.CourseFactory do
   # and `user` read-views loaded. Accepts the same overrides as `:student`.
   @spec student_view_factory(map()) :: StudentView.t()
   def student_view_factory(attrs!), do: :student |> build(attrs!) |> StudentView.from()
+
+  # The web read model of a class: the `:class` aggregate projected through
+  # `ClassView.from/1`, so it carries the same fields with the nested
+  # `expected_server_properties` read-view loaded. Accepts the same overrides as
+  # `:class`.
+  @spec class_view_factory(map()) :: ClassView.t()
+  def class_view_factory(attrs!), do: :class |> build(attrs!) |> ClassView.from()
 
   @spec student_data_factory(map()) :: Types.student_data()
   def student_data_factory(attrs!) do

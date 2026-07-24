@@ -4,6 +4,7 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   use ArchiDep, :use_case
 
   alias ArchiDep.Accounts
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Policy
@@ -13,7 +14,7 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Events.Store.EventReference
 
-  @spec list_students(Authentication.t(), Class.t()) :: list(StudentView.t())
+  @spec list_students(Authentication.t(), ClassView.t()) :: list(StudentView.t())
   def list_students(auth, class) do
     authorize!(auth, Policy, :course, :list_students, class)
 
@@ -28,15 +29,15 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   # is kept live by the Course students topic and by the Accounts
   # preregistered-users topic (a linked account changing affects a student's
   # displayed identity); the class id and its user group id are the same.
-  @spec subscribe_class_students(Class.t()) :: :ok
-  def subscribe_class_students(%Class{id: id}) do
+  @spec subscribe_class_students(ClassView.t()) :: :ok
+  def subscribe_class_students(%ClassView{id: id}) do
     :ok = PubSub.subscribe_class_students(id)
     :ok = Accounts.PubSub.subscribe_user_group_preregistered_users(id)
   end
 
-  @spec refresh_class_students(Authentication.t(), Class.t(), list(StudentView.t()), term()) ::
+  @spec refresh_class_students(Authentication.t(), ClassView.t(), list(StudentView.t()), term()) ::
           {:ok, list(StudentView.t())} | :ignore
-  def refresh_class_students(auth, %Class{id: id} = class, students, message)
+  def refresh_class_students(auth, %ClassView{id: id} = class, students, message)
       when is_list(students) do
     if concerns_class_students?(message, id) do
       {:ok, list_students(auth, class)}
@@ -128,7 +129,7 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
       do: {:ok, StudentView.refresh!(student, event, reference)}
 
   def refresh_student_detail(
-        %StudentView{class_id: class_id, class: %Class{}} = student,
+        %StudentView{class_id: class_id, class: %ClassView{}} = student,
         {:class_updated, event, %EventReference{} = reference}
       ) do
     if class_updated_id(event) == class_id do

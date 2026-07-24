@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   import ArchiDepWeb.Servers.ServerRetryHandlers
   alias ArchiDep.Clock
   alias ArchiDep.Course
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Material
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
@@ -39,7 +40,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       ])
 
     ssh_exercise_vm_md5_host_key_fingerprints =
-      with %StudentView{class: %Class{ssh_exercise_vm_md5_host_key_fingerprints: fingerprints}}
+      with %StudentView{
+             class: %ClassView{ssh_exercise_vm_md5_host_key_fingerprints: fingerprints}
+           }
            when is_binary(fingerprints) <- student,
            {:ok, valid, _invalid} <- SSH.parse_ssh_host_key_fingerprints(fingerprints) do
         valid
@@ -48,7 +51,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       end
 
     ssh_exercise_vm_sha256_host_key_fingerprints =
-      with %StudentView{class: %Class{ssh_exercise_vm_sha256_host_key_fingerprints: fingerprints}}
+      with %StudentView{
+             class: %ClassView{ssh_exercise_vm_sha256_host_key_fingerprints: fingerprints}
+           }
            when is_binary(fingerprints) <- student,
            {:ok, valid, _invalid} <- SSH.parse_ssh_host_key_fingerprints(fingerprints) do
         valid

@@ -103,10 +103,17 @@ The context's schemas and the database tables they back:
   context](../accounts/CONTRIBUTING.md) owns the write side of this table.
 - [`StudentView`](./student_view.ex) (no table): The curated read model of a
   `Student` for the web layer — the aggregate projected into a plain struct,
-  reusing the nested `class` / `user` read-views. It owns `refresh!/3` (applying
-  a curated domain event to the in-memory projection, delegating class events to
-  `Class.refresh!`) and the web-only `active?/2` / `can_create_servers?/2`
-  predicates, leaving the `Student` schema a persistence concern.
+  reusing the nested `class` (a `ClassView`) / `user` read-views. It owns
+  `refresh!/3` (applying a curated domain event to the in-memory projection,
+  delegating class events to `ClassView.refresh!`) and the web-only `active?/2`
+  / `can_create_servers?/2` predicates, leaving the `Student` schema a
+  persistence concern.
+- [`ClassView`](./class_view.ex) (no table): The curated read model of a `Class`
+  for the web layer — the aggregate projected into a plain struct, reusing the
+  nested `expected_server_properties` read-view. It owns `refresh!/3` (applying
+  a curated domain event to the in-memory projection) and the web-only
+  `active?/2` / `allows_server_creation?/2` predicates, leaving the `Class`
+  schema a persistence concern.
 
 `Class` and `Student` are the **write side** of the `classes` and `students`
 tables that the [Accounts context](../accounts/CONTRIBUTING.md#domain-model)

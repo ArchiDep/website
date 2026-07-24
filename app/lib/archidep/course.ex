@@ -7,6 +7,7 @@ defmodule ArchiDep.Course do
 
   use ArchiDep, :context
 
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
@@ -33,13 +34,13 @@ defmodule ArchiDep.Course do
   @doc """
   Lists all classes.
   """
-  @spec list_classes(Authentication.t()) :: list(Class.t())
+  @spec list_classes(Authentication.t()) :: list(ClassView.t())
   defdelegate list_classes(auth), to: @implementation
 
   @doc """
   Lists currently active classes.
   """
-  @spec list_active_classes(Authentication.t()) :: list(Class.t())
+  @spec list_active_classes(Authentication.t()) :: list(ClassView.t())
   defdelegate list_active_classes(auth), to: @implementation
 
   @doc """
@@ -54,22 +55,22 @@ defmodule ArchiDep.Course do
   topics of `subscribe_classes/0`, returning the updated list or `:ignore` for a
   message that does not concern it.
   """
-  @spec refresh_classes(list(Class.t()), term()) ::
-          {:ok, list(Class.t())} | :ignore
+  @spec refresh_classes(list(ClassView.t()), term()) ::
+          {:ok, list(ClassView.t())} | :ignore
   defdelegate refresh_classes(classes, message), to: @implementation
 
   @doc """
   Fetches a class.
   """
   @spec fetch_class(Authentication.t() | nil, UUID.t()) ::
-          {:ok, Class.t()} | {:error, :class_not_found}
+          {:ok, ClassView.t()} | {:error, :class_not_found}
   defdelegate fetch_class(auth, class_id), to: @implementation
 
   @doc """
   Subscribes the calling process to every topic that keeps the given class's
   read-model live.
   """
-  @spec subscribe_class(Class.t()) :: :ok
+  @spec subscribe_class(ClassView.t()) :: :ok
   defdelegate subscribe_class(class), to: @implementation
 
   @doc """
@@ -77,7 +78,7 @@ defmodule ArchiDep.Course do
   topics of `subscribe_class/1`, returning the updated class or `:ignore` for a
   message that does not concern it.
   """
-  @spec refresh_class(Class.t() | nil, term()) :: {:ok, Class.t()} | :ignore
+  @spec refresh_class(ClassView.t() | nil, term()) :: {:ok, ClassView.t()} | :ignore
   defdelegate refresh_class(class, message), to: @implementation
 
   @doc """
@@ -155,14 +156,14 @@ defmodule ArchiDep.Course do
   @doc """
   Lists all students in the specified class.
   """
-  @spec list_students(Authentication.t(), Class.t()) :: list(StudentView.t())
+  @spec list_students(Authentication.t(), ClassView.t()) :: list(StudentView.t())
   defdelegate list_students(auth, class), to: @implementation
 
   @doc """
   Subscribes the calling process to every topic that keeps the list of students
   in the given class live.
   """
-  @spec subscribe_class_students(Class.t()) :: :ok
+  @spec subscribe_class_students(ClassView.t()) :: :ok
   defdelegate subscribe_class_students(class), to: @implementation
 
   @doc """
@@ -170,7 +171,7 @@ defmodule ArchiDep.Course do
   one of the topics of `subscribe_class_students/1`, returning the refreshed
   list or `:ignore` for a message that does not concern it.
   """
-  @spec refresh_class_students(Authentication.t(), Class.t(), list(StudentView.t()), term()) ::
+  @spec refresh_class_students(Authentication.t(), ClassView.t(), list(StudentView.t()), term()) ::
           {:ok, list(StudentView.t())} | :ignore
   defdelegate refresh_class_students(auth, class, students, message), to: @implementation
 

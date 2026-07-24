@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Clock
   alias ArchiDep.Course
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
@@ -124,7 +125,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @impl LiveView
   def handle_info(
-        {:class_created, created_class},
+        {:class_created, %Class{} = created_class},
         %Socket{
           assigns: %{
             auth: auth,
@@ -134,15 +135,17 @@ defmodule ArchiDepWeb.Admin.AdminLive do
           }
         } = socket
       ) do
-    if Class.active?(created_class, Clock.now()) do
-      new_servers_by_class_id = Map.put_new(servers_by_class_id, created_class.id, [])
+    created_view = ClassView.from(created_class)
+
+    if ClassView.active?(created_view, Clock.now()) do
+      new_servers_by_class_id = Map.put_new(servers_by_class_id, created_view.id, [])
 
       socket
       |> assign(
-        active_classes: active_classes |> add_class(created_class) |> sort_classes(),
+        active_classes: active_classes |> add_class(created_view) |> sort_classes(),
         servers_by_class_id: new_servers_by_class_id,
         server_trackers:
-          watch_group(auth, new_servers_by_class_id, server_trackers, created_class.id)
+          watch_group(auth, new_servers_by_class_id, server_trackers, created_view.id)
       )
       |> noreply()
     else
@@ -167,7 +170,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
     case resolve_updated_class(active_classes, id, event, reference, auth) do
       {:ok, updated_class} ->
-        if Class.active?(updated_class, Clock.now()) do
+        if ClassView.active?(updated_class, Clock.now()) do
           new_servers_by_class_id = Map.put_new(servers_by_class_id, updated_class.id, [])
 
           socket
@@ -203,7 +206,7 @@ defmodule ArchiDepWeb.Admin.AdminLive do
 
   @impl LiveView
   def handle_info(
-        {:class_deleted, deleted_class},
+        {:class_deleted, %Class{} = deleted_class},
         %Socket{
           assigns: %{
             active_classes: active_classes,
@@ -322,8 +325,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   # alone cannot rebuild a full class to add to the list.
   defp resolve_updated_class(active_classes, id, event, reference, auth) do
     case Enum.find(active_classes, &(&1.id == id)) do
-      %Class{} = cached ->
-        {:ok, Class.refresh!(cached, event, reference)}
+      %ClassView{} = cached ->
+        {:ok, ClassView.refresh!(cached, event, reference)}
 
       nil ->
         case Course.fetch_class(auth, id) do
@@ -342,9 +345,9 @@ defmodule ArchiDepWeb.Admin.AdminLive do
     end
   end
 
-  defp update_class(classes, %Class{id: id} = class) do
+  defp update_class(classes, %ClassView{id: id} = class) do
     Enum.map(classes, fn
-      %Class{id: ^id} ->
+      %ClassView{id: ^id} ->
         class
 
       c ->

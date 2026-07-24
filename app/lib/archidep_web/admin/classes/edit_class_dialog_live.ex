@@ -4,15 +4,15 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
   import ArchiDepWeb.Admin.Classes.ClassFormComponent
   import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Course
-  alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.ClassView
   alias ArchiDepWeb.Admin.Classes.ClassForm
 
   @base_id "edit-class-dialog"
 
-  @spec id(Class.t()) :: String.t()
-  def id(%Class{id: id}), do: "#{@base_id}-#{id}"
+  @spec id(ClassView.t()) :: String.t()
+  def id(%ClassView{id: id}), do: "#{@base_id}-#{id}"
 
-  @spec close(Class.t()) :: js
+  @spec close(ClassView.t()) :: js
   def close(class), do: class |> id() |> close_dialog()
 
   @impl LiveComponent
@@ -82,12 +82,15 @@ defmodule ArchiDepWeb.Admin.Classes.EditClassDialogLive do
     with {:ok, form_data} <- Changeset.apply_action(changeset, :validate),
          {:ok, updated_class} <-
            Course.update_class(auth, class.id, ClassForm.to_class_data(form_data)) do
+      # The dialog closes immediately below; the class read-model (with its new
+      # values) flows back in through the parent's PubSub refresh, so the form
+      # is reset from the current view rather than the write-side aggregate.
       socket
       |> send_notification(
         Message.new(:success, gettext("Updated class {class}", class: updated_class.name))
       )
       |> push_event("execute-action", %{to: "##{id(class)}", action: "close"})
-      |> assign(form: to_form(ClassForm.update_changeset(updated_class, %{}), as: :class))
+      |> assign(form: to_form(ClassForm.update_changeset(class, %{}), as: :class))
       |> noreply()
     else
       {:error, %Changeset{} = result_changeset} ->

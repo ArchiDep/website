@@ -13,11 +13,11 @@ defmodule ArchiDep.Course.StudentView do
 
   import ArchiDep.Helpers.SchemaHelpers
   alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentConfigured
   alias ArchiDep.Course.Events.StudentUpdated
-  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
   alias ArchiDep.Events.Store.EventReference
@@ -73,7 +73,7 @@ defmodule ArchiDep.Course.StudentView do
           active: boolean(),
           servers_enabled: boolean(),
           ssh_exercise_password: String.t(),
-          class: Class.t(),
+          class: ClassView.t(),
           class_id: UUID.t(),
           user: User.t() | nil,
           user_id: UUID.t() | nil,
@@ -102,7 +102,7 @@ defmodule ArchiDep.Course.StudentView do
       active: student.active,
       servers_enabled: student.servers_enabled,
       ssh_exercise_password: student.ssh_exercise_password,
-      class: student.class,
+      class: ClassView.from(student.class),
       class_id: student.class_id,
       user: student.user,
       user_id: student.user_id,
@@ -112,8 +112,8 @@ defmodule ArchiDep.Course.StudentView do
     }
 
   @spec active?(t(), DateTime.t()) :: boolean()
-  def active?(%__MODULE__{active: active, class: %Class{} = class}, now),
-    do: active and Class.active?(class, now)
+  def active?(%__MODULE__{active: active, class: %ClassView{} = class}, now),
+    do: active and ClassView.active?(class, now)
 
   @spec can_create_servers?(t()) :: boolean
   @spec can_create_servers?(t(), DateTime.t()) :: boolean
@@ -123,7 +123,7 @@ defmodule ArchiDep.Course.StudentView do
       ),
       do:
         active?(student, now) and
-          (servers_enabled or Class.allows_server_creation?(class, now))
+          (servers_enabled or ClassView.allows_server_creation?(class, now))
 
   @spec refresh!(
           t(),
@@ -150,12 +150,12 @@ defmodule ArchiDep.Course.StudentView do
         )
 
   def refresh!(
-        %__MODULE__{class: %Class{} = class} = view,
+        %__MODULE__{class: %ClassView{} = class} = view,
         %event_module{} = event,
         %EventReference{} = reference
       )
       when event_module in @class_events,
-      do: %__MODULE__{view | class: Class.refresh!(class, event, reference)}
+      do: %__MODULE__{view | class: ClassView.refresh!(class, event, reference)}
 
   defp fetch(id) do
     case Student.fetch_student(id) do

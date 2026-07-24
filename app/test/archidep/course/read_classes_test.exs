@@ -4,6 +4,7 @@ defmodule ArchiDep.Course.ReadClassesTest do
   import Hammox
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Context
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
@@ -90,14 +91,18 @@ defmodule ArchiDep.Course.ReadClassesTest do
 
       auth = Factory.build(:authentication, root: true)
 
-      assert list_classes.(auth) == [
-               nil_end,
-               late_end,
-               mid_end_newer,
-               mid_end_older_a,
-               mid_end_older_b,
-               inactive
-             ]
+      assert list_classes.(auth) ==
+               Enum.map(
+                 [
+                   nil_end,
+                   late_end,
+                   mid_end_newer,
+                   mid_end_older_a,
+                   mid_end_older_b,
+                   inactive
+                 ],
+                 &ClassView.from/1
+               )
 
       assert_no_stored_events!()
     end
@@ -177,7 +182,8 @@ defmodule ArchiDep.Course.ReadClassesTest do
 
       auth = Factory.build(:authentication, root: true)
 
-      assert list_active_classes.(auth) == [both_nil, wide, starts_today, ends_today]
+      assert list_active_classes.(auth) ==
+               Enum.map([both_nil, wide, starts_today, ends_today], &ClassView.from/1)
 
       assert_no_stored_events!()
     end
@@ -198,7 +204,7 @@ defmodule ArchiDep.Course.ReadClassesTest do
       class = CourseFactory.insert(:class)
       auth = Factory.build(:authentication, root: true)
 
-      assert fetch_class.(auth, class.id) == {:ok, class}
+      assert fetch_class.(auth, class.id) == {:ok, ClassView.from(class)}
 
       assert_no_stored_events!()
     end
@@ -244,12 +250,16 @@ defmodule ArchiDep.Course.ReadClassesTest do
   describe "refresh_classes/2" do
     test "adds a created class and re-sorts the list", %{refresh_classes: refresh_classes} do
       existing =
-        CourseFactory.build(:class, active: true, start_date: nil, end_date: ~D[2026-06-30])
+        CourseFactory.build(:class_view, active: true, start_date: nil, end_date: ~D[2026-06-30])
 
-      created =
+      %Class{} =
+        created =
         CourseFactory.build(:class, active: true, start_date: nil, end_date: ~D[2026-12-31])
 
-      assert refresh_classes.([existing], {:class_created, created}) == {:ok, [created, existing]}
+      # The created class arrives as the raw aggregate on the broadcast and is
+      # projected into a `ClassView` before it joins the cached list.
+      assert refresh_classes.([existing], {:class_created, created}) ==
+               {:ok, [ClassView.from(created), existing]}
 
       assert_no_stored_events!()
     end
@@ -258,21 +268,22 @@ defmodule ArchiDep.Course.ReadClassesTest do
       refresh_classes: refresh_classes
     } do
       %Class{} =
-        target =
+        target_class =
         CourseFactory.build(:class, active: true, start_date: nil, end_date: ~D[2026-06-30])
 
-      %Class{} =
-        other =
-        CourseFactory.build(:class, active: true, start_date: nil, end_date: ~D[2026-12-31])
+      target = ClassView.from(target_class)
 
-      updated = %Class{target | name: "Renamed", version: target.version + 1}
+      other =
+        CourseFactory.build(:class_view, active: true, start_date: nil, end_date: ~D[2026-12-31])
+
+      updated = %Class{target_class | name: "Renamed", version: target_class.version + 1}
       event = ClassUpdated.new(updated)
       reference = EventsFactory.build(:event_reference, version: updated.version)
 
       # `other` keeps its later end date, so it sorts ahead of the refreshed
       # target and must pass through unchanged.
       assert refresh_classes.([target, other], {:class_updated, event, reference}) ==
-               {:ok, [other, Class.refresh!(target, event, reference)]}
+               {:ok, [other, ClassView.refresh!(target, event, reference)]}
 
       assert_no_stored_events!()
     end
@@ -281,37 +292,46 @@ defmodule ArchiDep.Course.ReadClassesTest do
       refresh_classes: refresh_classes
     } do
       %Class{} =
-        target =
+        target_class =
         CourseFactory.build(:class, active: true, start_date: nil, end_date: ~D[2026-06-30])
 
-      %Class{} =
-        other =
-        CourseFactory.build(:class, active: true, start_date: nil, end_date: ~D[2026-12-31])
+      target = ClassView.from(target_class)
 
-      updated = %Class{target | version: target.version + 1}
-      event = ClassExpectedServerPropertiesUpdated.new(target.expected_server_properties, updated)
+      other =
+        CourseFactory.build(:class_view, active: true, start_date: nil, end_date: ~D[2026-12-31])
+
+      updated = %Class{target_class | version: target_class.version + 1}
+
+      event =
+        ClassExpectedServerPropertiesUpdated.new(target_class.expected_server_properties, updated)
+
       reference = EventsFactory.build(:event_reference, version: updated.version)
 
       assert refresh_classes.([target, other], {:class_updated, event, reference}) ==
-               {:ok, [other, Class.refresh!(target, event, reference)]}
+               {:ok, [other, ClassView.refresh!(target, event, reference)]}
 
       assert_no_stored_events!()
     end
 
     test "removes a deleted class and re-sorts the list", %{refresh_classes: refresh_classes} do
       keeper =
-        CourseFactory.build(:class, active: true, start_date: nil, end_date: ~D[2026-06-30])
+        CourseFactory.build(:class_view, active: true, start_date: nil, end_date: ~D[2026-06-30])
 
-      victim =
+      %Class{} =
+        victim_class =
         CourseFactory.build(:class, active: true, start_date: nil, end_date: ~D[2026-12-31])
 
-      assert refresh_classes.([victim, keeper], {:class_deleted, victim}) == {:ok, [keeper]}
+      victim = ClassView.from(victim_class)
+
+      # The deleted class arrives as the raw aggregate on the broadcast; the
+      # cached list holds its `ClassView`.
+      assert refresh_classes.([victim, keeper], {:class_deleted, victim_class}) == {:ok, [keeper]}
 
       assert_no_stored_events!()
     end
 
     test "ignores a message it does not handle", %{refresh_classes: refresh_classes} do
-      %Class{} = class = CourseFactory.build(:class)
+      class = CourseFactory.build(:class_view)
 
       assert refresh_classes.([class], {:students_imported, class}) == :ignore
       assert refresh_classes.([class], :unrelated) == :ignore
@@ -324,11 +344,12 @@ defmodule ArchiDep.Course.ReadClassesTest do
     test "subscribes the calling process to the class's topic", %{
       subscribe_class: subscribe_class
     } do
-      %Class{} = class = CourseFactory.insert(:class, now: @now)
+      %Class{} = class_aggregate = CourseFactory.insert(:class, now: @now)
+      class = ClassView.from(class_aggregate)
 
       assert subscribe_class.(class) == :ok
 
-      updated = %Class{class | name: "Renamed", version: class.version + 1}
+      updated = %Class{class_aggregate | name: "Renamed", version: class_aggregate.version + 1}
       event = ClassUpdated.new(updated)
       reference = EventsFactory.build(:event_reference, version: updated.version)
       :ok = PubSub.publish_class_updated(updated, event, reference)
@@ -341,14 +362,15 @@ defmodule ArchiDep.Course.ReadClassesTest do
 
   describe "refresh_class/2" do
     test "reconciles the class from a class-updated message", %{refresh_class: refresh_class} do
-      %Class{} = class = CourseFactory.build(:class)
+      %Class{} = class_aggregate = CourseFactory.build(:class)
+      class = ClassView.from(class_aggregate)
 
-      updated = %Class{class | name: "Renamed", version: class.version + 1}
+      updated = %Class{class_aggregate | name: "Renamed", version: class_aggregate.version + 1}
       event = ClassUpdated.new(updated)
       reference = EventsFactory.build(:event_reference, version: updated.version)
 
       assert refresh_class.(class, {:class_updated, event, reference}) ==
-               {:ok, Class.refresh!(class, event, reference)}
+               {:ok, ClassView.refresh!(class, event, reference)}
 
       assert_no_stored_events!()
     end
@@ -356,20 +378,27 @@ defmodule ArchiDep.Course.ReadClassesTest do
     test "reconciles the class from an expected-server-properties message", %{
       refresh_class: refresh_class
     } do
-      %Class{} = class = CourseFactory.build(:class)
+      %Class{} = class_aggregate = CourseFactory.build(:class)
+      class = ClassView.from(class_aggregate)
 
-      updated = %Class{class | version: class.version + 1}
-      event = ClassExpectedServerPropertiesUpdated.new(class.expected_server_properties, updated)
+      updated = %Class{class_aggregate | version: class_aggregate.version + 1}
+
+      event =
+        ClassExpectedServerPropertiesUpdated.new(
+          class_aggregate.expected_server_properties,
+          updated
+        )
+
       reference = EventsFactory.build(:event_reference, version: updated.version)
 
       assert refresh_class.(class, {:class_updated, event, reference}) ==
-               {:ok, Class.refresh!(class, event, reference)}
+               {:ok, ClassView.refresh!(class, event, reference)}
 
       assert_no_stored_events!()
     end
 
     test "ignores a class-updated message for another class", %{refresh_class: refresh_class} do
-      %Class{} = class = CourseFactory.build(:class)
+      class = CourseFactory.build(:class_view)
       %Class{} = other = CourseFactory.build(:class)
 
       event = ClassUpdated.new(%Class{other | version: other.version + 1})
@@ -381,7 +410,7 @@ defmodule ArchiDep.Course.ReadClassesTest do
     end
 
     test "ignores a message it does not handle", %{refresh_class: refresh_class} do
-      %Class{} = class = CourseFactory.build(:class)
+      class = CourseFactory.build(:class_view)
 
       assert refresh_class.(class, {:class_deleted, class}) == :ignore
       assert refresh_class.(class, :unrelated) == :ignore

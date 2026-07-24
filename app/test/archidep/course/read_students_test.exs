@@ -7,6 +7,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
   alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
   alias ArchiDep.Clock
   alias ArchiDep.Course.Behaviour
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Context
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentConfigured
@@ -73,7 +74,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
         | expected_server_properties: not_loaded(:expected_server_properties, Class)
       }
 
-      assert list_students.(auth, class) == [
+      assert list_students.(auth, ClassView.from(class)) == [
                StudentView.from(%Student{alice | class: listed_class}),
                StudentView.from(%Student{bob | class: listed_class}),
                StudentView.from(%Student{charlie | class: listed_class})
@@ -86,7 +87,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       class = CourseFactory.insert(:class)
       auth = Factory.build(:authentication, root: true)
 
-      assert list_students.(auth, class) == []
+      assert list_students.(auth, ClassView.from(class)) == []
 
       assert_no_stored_events!()
     end
@@ -95,7 +96,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       class = CourseFactory.insert(:class)
       auth = Factory.build(:authentication, root: false)
 
-      assert_raise UnauthorizedError, fn -> list_students.(auth, class) end
+      assert_raise UnauthorizedError, fn -> list_students.(auth, ClassView.from(class)) end
 
       assert_no_stored_events!()
     end
@@ -289,7 +290,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
     } do
       %Class{} = class = CourseFactory.insert(:class)
 
-      assert subscribe_class_students.(class) == :ok
+      assert subscribe_class_students.(ClassView.from(class)) == :ok
 
       # The class-students topic carries student lifecycle broadcasts.
       %Student{} = student = CourseFactory.build(:student, class_id: class.id, user: nil)
@@ -325,13 +326,14 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       list_students: list_students
     } do
       %Class{} = class = CourseFactory.insert(:class)
+      class_view = ClassView.from(class)
       %Student{} = alice = CourseFactory.insert(:student, class: class, name: "Alice", user: nil)
       auth = Factory.build(:authentication, root: true)
 
       # The current list is deliberately stale (empty) so a passing assertion
       # proves the message triggered a fresh DB read rather than echoing the
       # given list.
-      expected = {:ok, list_students.(auth, class)}
+      expected = {:ok, list_students.(auth, class_view)}
       assert expected != {:ok, []}
 
       created = {:student_created, %Student{alice | class_id: class.id}}
@@ -349,11 +351,11 @@ defmodule ArchiDep.Course.ReadStudentsTest do
            AccountsFactory.build(:user_account)
          ), EventsFactory.build(:event_reference)}
 
-      assert refresh_class_students.(auth, class, [], created) == expected
-      assert refresh_class_students.(auth, class, [], deleted) == expected
-      assert refresh_class_students.(auth, class, [], updated) == expected
-      assert refresh_class_students.(auth, class, [], imported) == expected
-      assert refresh_class_students.(auth, class, [], preregistration) == expected
+      assert refresh_class_students.(auth, class_view, [], created) == expected
+      assert refresh_class_students.(auth, class_view, [], deleted) == expected
+      assert refresh_class_students.(auth, class_view, [], updated) == expected
+      assert refresh_class_students.(auth, class_view, [], imported) == expected
+      assert refresh_class_students.(auth, class_view, [], preregistration) == expected
 
       assert_no_stored_events!()
     end
@@ -365,14 +367,15 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       %Class{} = other = CourseFactory.insert(:class)
       auth = Factory.build(:authentication, root: true)
 
+      class_view = ClassView.from(class)
       other_student = CourseFactory.build(:student, class_id: other.id, user: nil)
 
-      assert refresh_class_students.(auth, class, [], {:student_created, other_student}) ==
+      assert refresh_class_students.(auth, class_view, [], {:student_created, other_student}) ==
                :ignore
 
       assert refresh_class_students.(
                auth,
-               class,
+               class_view,
                [],
                {:student_updated, %{class: %{id: other.id}},
                 EventsFactory.build(:event_reference)}
@@ -387,7 +390,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       %Class{} = class = CourseFactory.insert(:class)
       auth = Factory.build(:authentication, root: true)
 
-      assert refresh_class_students.(auth, class, [], :unrelated) == :ignore
+      assert refresh_class_students.(auth, ClassView.from(class), [], :unrelated) == :ignore
 
       assert_no_stored_events!()
     end

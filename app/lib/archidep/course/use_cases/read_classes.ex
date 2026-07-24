@@ -4,6 +4,7 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
   use ArchiDep, :use_case
 
   alias ArchiDep.Clock
+  alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Policy
@@ -11,12 +12,12 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
   alias ArchiDep.Course.Schemas.Class
 
   @spec fetch_class(Authentication.t() | nil, UUID.t()) ::
-          {:ok, Class.t()} | {:error, :class_not_found}
+          {:ok, ClassView.t()} | {:error, :class_not_found}
   def fetch_class(auth, id) do
     with :ok <- validate_uuid(id, :class_not_found),
          {:ok, class} <- Class.fetch_class(id),
          :ok <- authorize(auth, Policy, :course, :fetch_class, class) do
-      {:ok, class}
+      {:ok, ClassView.from(class)}
     else
       {:error, :class_not_found} ->
         {:error, :class_not_found}
@@ -26,16 +27,20 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
     end
   end
 
-  @spec list_classes(Authentication.t()) :: list(Class.t())
+  @spec list_classes(Authentication.t()) :: list(ClassView.t())
   def list_classes(auth) do
     authorize!(auth, Policy, :course, :list_classes, nil)
-    Class.list_classes()
+    Enum.map(Class.list_classes(), &ClassView.from/1)
   end
 
-  @spec list_active_classes(Authentication.t()) :: list(Class.t())
+  @spec list_active_classes(Authentication.t()) :: list(ClassView.t())
   def list_active_classes(auth) do
     authorize!(auth, Policy, :course, :list_active_classes, nil)
-    Class.list_active_classes(DateTime.to_date(Clock.now()))
+
+    Clock.now()
+    |> DateTime.to_date()
+    |> Class.list_active_classes()
+    |> Enum.map(&ClassView.from/1)
   end
 
   # Subscribing to the classes topic grants no access beyond what `list_classes/1`
@@ -44,9 +49,9 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
   @spec subscribe_classes() :: :ok
   def subscribe_classes, do: PubSub.subscribe_classes()
 
-  @spec refresh_classes(list(Class.t()), term()) :: {:ok, list(Class.t())} | :ignore
+  @spec refresh_classes(list(ClassView.t()), term()) :: {:ok, list(ClassView.t())} | :ignore
   def refresh_classes(classes, {:class_created, %Class{} = created}) when is_list(classes),
-    do: {:ok, sort_classes([created | classes])}
+    do: {:ok, sort_classes([ClassView.from(created) | classes])}
 
   def refresh_classes(classes, {:class_updated, event, reference}) when is_list(classes) do
     id = class_updated_id(event)
@@ -54,7 +59,7 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
     {:ok,
      classes
      |> Enum.map(fn
-       %Class{id: ^id} = class -> Class.refresh!(class, event, reference)
+       %ClassView{id: ^id} = class -> ClassView.refresh!(class, event, reference)
        class -> class
      end)
      |> sort_classes()}
@@ -68,13 +73,13 @@ defmodule ArchiDep.Course.UseCases.ReadClasses do
   # Subscribing to the topic of a class the caller already holds grants no new
   # access, so this read-model plumbing takes no authentication and skips the
   # authorization the command use cases perform.
-  @spec subscribe_class(Class.t()) :: :ok
-  def subscribe_class(%Class{id: id}), do: PubSub.subscribe_class(id)
+  @spec subscribe_class(ClassView.t()) :: :ok
+  def subscribe_class(%ClassView{id: id}), do: PubSub.subscribe_class(id)
 
-  @spec refresh_class(Class.t() | nil, term()) :: {:ok, Class.t()} | :ignore
-  def refresh_class(%Class{id: id} = class, {:class_updated, event, reference}) do
+  @spec refresh_class(ClassView.t() | nil, term()) :: {:ok, ClassView.t()} | :ignore
+  def refresh_class(%ClassView{id: id} = class, {:class_updated, event, reference}) do
     if class_updated_id(event) == id do
-      {:ok, Class.refresh!(class, event, reference)}
+      {:ok, ClassView.refresh!(class, event, reference)}
     else
       :ignore
     end
