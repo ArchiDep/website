@@ -150,9 +150,11 @@ problems, …) is held in the in-memory
 [`ServerRealTimeState`](./schemas/server_real_time_state.ex) by the
 [server-tracking](#server-tracking) processes, not in the database.
 
-**Quotas.** Counts are tracked on [`ServerOwner`](./schemas/server_owner.ex)
-(`server_count`, `active_server_count`, with optimistic locks) and enforced on
-creation: at most **5 servers** per owner and **1 active** at a time.
+**Quotas.** Counts are tracked in
+[`server_owner_counters`](./schemas/server_owner_counters.ex) (`server_count`,
+`active_server_count`, with optimistic locks), read through
+[`ServerOwner`](./schemas/server_owner.ex), and enforced on creation: at most
+**5 servers** per owner and **1 active** at a time.
 
 ---
 

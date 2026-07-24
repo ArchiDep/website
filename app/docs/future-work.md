@@ -19,6 +19,10 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Dual search system](#dual-search-system)
 - [End-to-end Switch edu-ID login test against a fake identity provider](#end-to-end-switch-edu-id-login-test-against-a-fake-identity-provider)
 - [Fine-grained student-list refresh instead of a full reload per event](#fine-grained-student-list-refresh-instead-of-a-full-reload-per-event)
+- [Define and enforce the Servers context public API](#define-and-enforce-the-servers-context-public-api)
+- [Derive audit-log entities from event data instead of re-reading source tables](#derive-audit-log-entities-from-event-data-instead-of-re-reading-source-tables)
+- [Keep the server `secret_key` out of the Ansible admin web state](#keep-the-server-secret_key-out-of-the-ansible-admin-web-state)
+- [Publish SSH host-key parsing across the context boundary](#publish-ssh-host-key-parsing-across-the-context-boundary)
 - [Remaining uncovered code after the 90% coverage push](#remaining-uncovered-code-after-the-90-coverage-push)
 
 <!-- END doctoc -->
@@ -339,6 +343,164 @@ a single-entity merge.
 - How ordering is preserved on insert (a shared sort helper, as `refresh_classes`
   uses).
 
+## Define and enforce the Servers context public API
+
+**Problem:** The web layer, and in one case the Course context, reach past the
+`ArchiDep.Servers` public module (its `defdelegate` surface) into Servers
+_internal_ submodules: `ServerTracking.ServerTrackerClient`
+(start/subscribe/read tracker state), `ServerTracking.ServerConnectionState` /
+`ServerProblems` / `ServerRealTimeState` (rendered by components),
+`Ansible.Pipeline` (health), and `Servers.SSH` (host-key parsing — see [Publish
+SSH host-key parsing across the context
+boundary](#publish-ssh-host-key-parsing-across-the-context-boundary)). Unlike
+the read-view/broadcast coupling the DDD plan hardened, these are compile-time
+dependencies, so a rename breaks the build rather than failing silently — a
+lower-severity smell, but the boundary is still not the single legible surface
+the other contexts present.
+
+**Why it is not being done now:** No silent-failure risk, so it is boundary
+tidiness rather than correctness. Some of these are also genuinely _read_/view
+value types the web is entitled to render (the same way it holds `ServerView`),
+so a blanket "wrap everything" would add ceremony without payoff.
+
+**Proposed approach:** When this is picked up, first **decide what actually
+belongs in the Servers public API** versus what is a legitimately-shared read
+type versus what should stay internal. Likely outcomes:
+
+- Imperative entry points (starting/subscribing a tracker, pipeline health)
+  become `ArchiDep.Servers` delegates so the web expresses intent, not
+  internals.
+- View/value types the web renders (`ServerRealTimeState`, connection state,
+  problems) are either published as part of the context's read surface or left
+  as-is if they are already effectively read models.
+- `Servers.SSH` is resolved by the SSH shared-kernel item above.
+
+**Open questions to resolve when scheduling this**
+
+- The dividing line between "public API", "shared read type", and "internal" for
+  Servers — this is the crux and needs deciding before the mechanical wrapping.
+- Whether the tracker's process-driving calls fit a behaviour/Hammox contract
+  the way the data API does, or stay a direct (but documented) dependency.
+
+## Derive audit-log entities from event data instead of re-reading source tables
+
+**Problem:** [`FetchEvents`](../lib/archidep/events/use_cases/fetch_events.ex)
+resolves each stored event's virtual `entity` field at read time by querying
+**six** other contexts' tables and traversing their associations (`assoc(ua,
+:switch_edu_id)`, `assoc(pu, :group)`, …), dispatched off the stream-type
+prefix. This couples the Events context to those contexts' ORM internals and
+association graphs, and it re-reads the entity's **current** state, so an event
+whose entity was since deleted resolves to `nil` and loses its subject.
+
+**Why the obvious fix is wrong:** Denormalising a separate `{type, id, label}`
+descriptor into the event at write time would duplicate identifying data the
+event's `data` payload already carries.
+
+**Proposed approach:** Have each context **decode its own events into a
+`{entity_type, id, label}` descriptor from the event's stored `data`**, with no
+DB read. The event payload is immutable, so this is self-contained (it works
+even after the entity is deleted), places the knowledge in the context that owns
+the event, and removes the cross-context reads entirely. This also shows the
+entity's state **as recorded at event time**, which is what an audit log should
+show — though that is a visible change from today's current-state resolution.
+
+- Expose the decoder either on the `Event` protocol (every event already
+  implements it) or as a per-context resolver dispatched off the stream prefix
+  (as `FetchEvents` already dispatches).
+- Branch on the event's `schema_version` for older payload shapes — this is the
+  first concrete use of the upcasting hook the schema-version work deliberately
+  deferred.
+
+**Open questions to resolve when scheduling this**
+
+- Whether the decoder lives on the `Event` protocol (colocated, but a new
+  callback across all impls) or as a per-context function.
+- What label an event carries when its `data` holds only an id (e.g. some delete
+  events) — best-available id/label versus a DB fallback for those cases only.
+- Confirming the admin events UI is content to show event-time state rather than
+  current state, and updating it where it renders the resolved struct.
+- The already-green resolver behaviour is guarded by the entity-enrichment tests
+  in
+  [`fetch_events_test.exs`](../test/archidep/events/fetch_events_test.exs); keep
+  that guard meaningful as the resolution moves to decoding.
+
+## Keep the server `secret_key` out of the Ansible admin web state
+
+**Problem:** The DDD boundary-hardening plan introduced
+[`Servers.ServerView`](../lib/archidep/servers/server_view.ex) specifically to
+keep the per-server `secret_key` out of long-lived web-process memory — the web
+layer never reads it (its only readers are server-side, `Token.sign` in
+`server_manager_state.ex` and `Token.verify` in `server_callbacks.ex`). That
+goal is only **partially** met: the Ansible admin pages still hold a full
+`%Server{}` — with `secret_key` resident, since `redact: true` only hides the
+field from `inspect`, not from the in-memory binary — in long-lived assigns.
+[`AnsiblePlaybookRun`](../lib/archidep/servers/schemas/ansible_playbook_run.ex)
+has a `belongs_to(:server, Server)` that the fetch queries fully preload;
+[`ansible_playbook_run_live`](../lib/archidep_web/admin/ansible/ansible_playbook_run_live.ex)
+assigns `playbook_run` and
+[`ansible_live`](../lib/archidep_web/admin/ansible/ansible_live.ex) assigns
+`playbook_runs`, both long-lived. The admin events view
+([`events_components.ex`](../lib/archidep_web/admin/events/events_components.ex))
+also pattern-matches a raw `%Server{}` out of `StoredEvent.entity`.
+
+**Why it is not being done now:** The read-view sweep scoped the server lists
+and the `StudentView` / `ClassView` projections; the Ansible read models were
+out of scope. Nothing in the web layer reads `.secret_key`, so there is no
+active credential leak today — this is defense-in-depth (one stray `inspect`,
+crash dump, or LiveView state serialization from disclosure), not a live bug, so
+it was deferred.
+
+**Proposed approach:** Apply the same read-view pattern to the Ansible read
+models — a curated `AnsiblePlaybookRunView` (or projecting its nested server
+through the existing `ServerView`) so the raw aggregate, and its `secret_key`,
+never reach web-process memory. We will probably introduce a view here.
+
+**Open questions to resolve when scheduling this**
+
+- Whether a dedicated `AnsiblePlaybookRunView` is warranted or the run should
+  simply carry a nested `ServerView`.
+- How the generic admin events viewer — which renders whatever entity a
+  `StoredEvent` references — avoids surfacing the raw `%Server{}` (project or
+  redact at that layer too).
+
+## Publish SSH host-key parsing across the context boundary
+
+**Problem:** [`Course.Schemas.Class`](../lib/archidep/course/schemas/class.ex)
+calls `ArchiDep.Servers.SSH.parse_ssh_host_key_fingerprints/2` directly inside
+changeset validation. This is a **Course write-model depending on a Servers
+internal submodule** — not a read-view, not a domain event, and not a documented
+shared kernel — the cleanest true cross-context code dependency left in the
+codebase. The web layer also reaches into `Servers.SSH` (fingerprint parsing,
+`ssh_public_key`), so `SSH` is a de-facto shared utility that is declared shared
+nowhere.
+
+**Why it is not being done now:** It works and is correct; this is boundary
+hygiene rather than a functional gap, so it is recorded rather than rushed.
+
+**Proposed approach:** Two options —
+
+- **Recognize SSH parsing as a shared kernel** and move it to a neutral,
+  context-agnostic location. It is pure, stateless string/crypto parsing with
+  more than one consumer (Course + web + Servers), so a shared kernel is honest.
+  Preferred.
+- **Publish it through a context boundary** (an `ArchiDep.Servers` delegate).
+  Cheaper, but keeps a Course→Servers runtime dependency for what is really a
+  stateless utility.
+
+This pairs with a broader observation: the web layer reaches into several
+Servers internal submodules (`ServerTracking.*`, `Ansible.Pipeline`, `SSH`)
+rather than the `ArchiDep.Servers` public API. If a Servers facade is scheduled,
+fold SSH into it.
+
+**Open questions to resolve when scheduling this**
+
+- Where a shared SSH kernel would live and what it is named.
+- Whether it is worth pairing with a public Servers facade for the tracking and
+  pipeline surfaces the web layer currently reaches into directly.
+- How it interacts with [Store SSH public keys rather than their
+  fingerprints](#store-ssh-public-keys-rather-than-their-fingerprints), which
+  would change what is parsed and stored.
+
 ## Remaining uncovered code after the 90% coverage push
 
 **Problem:** The Phoenix-application testing plan reached its target — the suite
@@ -357,15 +519,13 @@ tests now would only throw them away when the code changes:
 - `Course.Helpers.MaterialHelpers` — waits on moving the static build out of
   Jekyll (see [Track course progress in the database rather than in
   frontmatter](#track-course-progress-in-the-database-rather-than-in-frontmatter)).
-- `Servers.Schemas.ServerOwner`'s count-mutation changesets and **every**
-  `refresh!/2` — the DDD plan reshapes these.
 
 **Accepted uncovered — thin plumbing and entrypoints, low test value.** Booting
 or delegating code with no branch logic of its own, exercised indirectly if at
 all: the `ArchiDep`/`Repo`/`Mailer`/`Sentry`/`Release`/`Endpoint` entrypoints,
 the `Mix.Tasks.Recompile` task, the boot-time config assembly (`Config`,
 `Web.Config`, `Config.Value`, `Config.Error`), the macro/helper glue
-(`Helpers.ContextHelpers`, `Helpers.UseCaseHelpers`), and the context facades
+(`Helpers.UseCaseHelpers`), and the context facades
 (`Servers.Context`, `Servers.Ansible.Context`,
 `Servers.Ansible.PlaybooksRegistry`).
 

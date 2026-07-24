@@ -42,7 +42,6 @@ defmodule ArchiDep do
   @spec policy :: Macro.t()
   def policy do
     quote do
-      alias ArchiDep.Accounts.Schemas.UserAccount
       alias ArchiDep.Authentication
       alias ArchiDep.Policy
       alias Ecto.Changeset
@@ -93,8 +92,6 @@ defmodule ArchiDep do
       import ArchiDep.Repo, only: [transaction: 1]
       import Ecto.Multi, only: [delete: 3, insert: 3, put: 3, run: 3, update: 3]
       import Ecto.Query, only: [from: 2]
-      alias ArchiDep.Accounts.Schemas.UserAccount
-      alias ArchiDep.Authentication
       alias ArchiDep.Authentication
       alias ArchiDep.Events.Store.EventReference
       alias ArchiDep.Events.Store.StoredEvent

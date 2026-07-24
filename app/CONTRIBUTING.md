@@ -471,7 +471,7 @@ Reading the diagram:
 
 The read-view coupling above is _static_ (a schema reads another context's
 table). It has a _dynamic_ counterpart: cached structs held in memory — read
-views and aggregates alike — are kept current by a `refresh!/2` function on the
+views and aggregates alike — are kept current by a `refresh!/3` function on the
 schema that reacts to the owning context's PubSub broadcasts (the
 version-guarded merge that keeps, say, a `Servers.ServerGroup` in step with the
 `Course.Class` it mirrors). The convention for those broadcasts:
@@ -485,9 +485,8 @@ version-guarded merge that keeps, say, a `Servers.ServerGroup` in step with the
   trap should a new context subscribe to it. This holds intra- and cross-context
   alike.
 
-This convention is being standardized across the contexts; a few update
-broadcasts still carry the raw schema struct and are being migrated to their
-events.
+This convention holds for every `refresh!`-feeding broadcast across all
+contexts: no such broadcast carries a raw schema struct.
 
 ### Authentication
 

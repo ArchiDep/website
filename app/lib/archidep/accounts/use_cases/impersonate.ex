@@ -9,6 +9,7 @@ defmodule ArchiDep.Accounts.UseCases.Impersonate do
   alias ArchiDep.Accounts.Events.UserImpersonated
   alias ArchiDep.Accounts.Events.UserStoppedImpersonating
   alias ArchiDep.Accounts.Policy
+  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
   alias ArchiDep.Clock
 

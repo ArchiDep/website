@@ -5,6 +5,7 @@ defmodule ArchiDep.Accounts.Policy do
 
   use ArchiDep, :policy
 
+  alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Accounts.Schemas.UserSession
 
   @impl Policy

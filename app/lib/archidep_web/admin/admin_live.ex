@@ -1,13 +1,14 @@
 defmodule ArchiDepWeb.Admin.AdminLive do
   use ArchiDepWeb, :live_view
 
-  import ArchiDepWeb.Helpers.ClassHelpers, only: [class_updated_id: 1]
   import ArchiDepWeb.Helpers.LiveViewHelpers
   alias ArchiDep.Clock
   alias ArchiDep.Course
   alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassCreated
   alias ArchiDep.Course.Events.ClassDeleted
+  alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
+  alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
@@ -322,6 +323,11 @@ defmodule ArchiDepWeb.Admin.AdminLive do
         socket
         |> assign(ansible: Map.put(ansible, :ongoing, MapSet.delete(ongoing, key)))
         |> noreply()
+
+  # The `:class_updated` broadcast carries either of the two class-update domain
+  # events; both identify the class whose row must be reconciled.
+  defp class_updated_id(%ClassUpdated{id: id}), do: id
+  defp class_updated_id(%ClassExpectedServerPropertiesUpdated{class: %{id: id}}), do: id
 
   # A class already shown is reconciled in memory from the broadcast event; one
   # that is not (an inactive class becoming active) is fetched, since the event
