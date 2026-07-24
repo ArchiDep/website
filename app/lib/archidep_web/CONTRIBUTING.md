@@ -178,7 +178,19 @@ A refresher returns `{:ok, updated}` for a message it claims or `:ignore` for
 anything else. The `:handle_info` hook swaps the assign and halts on a claimed
 message, and lets everything else fall through to the live view's own
 `handle_info/2` clauses. This keeps the "what feeds this read-model" knowledge in
-the owning context instead of spread across every consumer. Exemplars:
+the owning context instead of spread across every consumer.
+
+A schema gets a curated **view** — a plain read-model struct with `refresh!/3`
+relocated onto it — only when it is **purely web-consumed**
+([`ServerView`](../archidep/servers/server_view.ex),
+[`StudentView`](../archidep/course/student_view.ex),
+[`ClassView`](../archidep/course/class_view.ex)). A schema that a server-side
+process also holds keeps `refresh!` on the aggregate and gets no view:
+[`Servers.ServerGroup`](../archidep/servers/schemas/server_group.ex) is the
+counter-example — the server-tracking manager holds the real `%ServerGroup{}`
+and merges `group_updated` into it, so it must not be replaced by a view.
+
+Exemplars:
 
 - [`profile_live.ex`](./profile/profile_live.ex) — single value, backed by
   `Course.subscribe_student/1` + `Course.refresh_student/2`. The student

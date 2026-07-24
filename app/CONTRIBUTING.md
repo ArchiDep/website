@@ -469,6 +469,13 @@ Reading the diagram:
   event's affected entity back across the Accounts, Course and Servers contexts
   (read-only).
 
+A contract test
+([`schema_table_contract_test.exs`](./test/archidep/schema_table_contract_test.exs))
+asserts that every column a read-view (or shared-kernel) schema maps still
+exists on its physical table, so a migration that renames or drops a column in
+the owning context fails in CI rather than at runtime. It discovers schemas
+automatically, so a new read-view is covered without touching the test.
+
 The read-view coupling above is _static_ (a schema reads another context's
 table). It has a _dynamic_ counterpart: cached structs held in memory — read
 views and aggregates alike — are kept current by a `refresh!/3` function on the
@@ -553,6 +560,16 @@ consistent record of what happened.
   `correlation_id` so related events form chains: pass a prior event (or an
   [`EventReference`](./lib/archidep/events/store/event_reference.ex)) as the
   `:caused_by` option to link them.
+- **Event schema versioning.** Each stored event records a `schema_version`
+  column, resolved at write time from the event module's `event_version/0`
+  (default `1`). Because the log is immutable, a stored row's payload shape can
+  only be identified by this tag — never by sniffing which keys are present — so
+  **bump `event_version` on every payload-shape change, additive included**. A
+  drift-guard test
+  ([`event_schema_version_drift_test.exs`](./test/archidep/events/store/event_schema_version_drift_test.exs))
+  pins each event's `{schema_version, shape}` and fails in CI when a shape
+  changes without a matching bump. Transforming (upcasting) old payloads to the
+  current shape is deferred until a reader needs it.
 - **Reading the audit log.** The context's public API
   ([`events.ex`](./lib/archidep/events.ex)) exposes `fetch_events/2` (keyset
   pagination via `:older_than`/`:newer_than` cursors and a `:limit`) and
