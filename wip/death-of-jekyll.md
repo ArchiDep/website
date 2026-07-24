@@ -15,6 +15,7 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Testing as we go](#testing-as-we-go)
   - [Revisit the Solid (Liquid) library decision](#revisit-the-solid-liquid-library-decision)
   - [Drop the archidep.json round-trip?](#drop-the-archidepjson-round-trip)
+  - [URL and link emission seam](#url-and-link-emission-seam)
   - [Shared Markdown rendering core](#shared-markdown-rendering-core)
   - [Custom block tags](#custom-block-tags)
   - [Progressive solution reveal](#progressive-solution-reveal)
@@ -84,12 +85,16 @@ constraints](#goals-and-constraints).
 
 **Rendering core**
 
-- [ ] Build a shared Markdown-parsing/rendering core (MDEx + AST helpers)
-      reusable by both the static build and the Phoenix app — see [Shared Markdown
-      rendering core](#shared-markdown-rendering-core).
+- [ ] Design the URL/link emission seam once, up front: a single
+      resolver-strategy the web-decoupled renderer calls, parameterized for
+      digesting, an optional path prefix, and an optional absolute base URL —
+      see [URL and link emission seam](#url-and-link-emission-seam).
+- [ ] Build a shared Markdown-parsing/rendering core (Solid + MDEx + AST
+      helpers) reusable by both the static build and the Phoenix app — see
+      [Shared Markdown rendering core](#shared-markdown-rendering-core).
 - [ ] Port the six custom block tags
-      (`note`/`callout`/`cols`/`solution`/`mermaid`/`markdown`) as an Elixir
-      preprocessor — see [Custom block tags](#custom-block-tags).
+      (`note`/`callout`/`cols`/`solution`/`mermaid`/`markdown`) as `Solid`
+      custom tags — see [Custom block tags](#custom-block-tags).
 - [ ] Reproduce reference-link resolution into extracted tag blocks and slides —
       see [Reference-link resolution](#reference-link-resolution).
 - [ ] Generate heading IDs and the "On this page" TOC from the AST — see [TOC
@@ -103,8 +108,8 @@ constraints](#goals-and-constraints).
 
 **New features (built alongside the migration)**
 
-- [ ] Hide solution blocks by default and reveal them via frontmatter flags as
-      the course progresses — see [Progressive solution
+- [ ] Hide solution blocks by default and reveal them from the progress source
+      as the course progresses — see [Progressive solution
       reveal](#progressive-solution-reveal).
 
 **Metadata and the `Course.Material` model**
@@ -222,25 +227,32 @@ pdf` should render against a local build while the PDFs' internal links still
   into content links at build time (assets stay relative and local). See
   [Decouple PDF generation from
   production](#decouple-pdf-generation-from-production).
-- **The `Solid`-is-not-appropriate conclusion must be re-examined** with a
-  proper analysis before we commit to a custom preprocessor. See [Revisit the
-  Solid (Liquid) library decision](#revisit-the-solid-liquid-library-decision).
+- **`Solid` is adopted, not a hand-rolled preprocessor.** The earlier
+  `Solid`-is-not-appropriate conclusion was an assumption; a proper analysis
+  against the actual content and the `Solid` source reversed it. The custom
+  block tags and inline Liquid become `Solid` custom tags/filters. See [Revisit
+  the Solid (Liquid) library
+  decision](#revisit-the-solid-liquid-library-decision).
 - **Clean replacement, not coexistence (scorched earth).** We will not run the
   Jekyll and Elixir pipelines side by side, nor keep a permanent production
-  feature-flag fallback. The only safety net is a **frozen snapshot** of the
-  current Jekyll HTML output, captured once as the regression baseline; once the
-  new renderer matches it we **delete the entire Jekyll/Ruby toolchain**. Any
+  feature-flag fallback. The safety net is the **already-deployed Jekyll build**
+  (the previous year's archive at `https://archidep.github.io/website/`, which
+  stays up independently) as the visual reference; once the new renderer reaches
+  **functional and visual parity** with it — nothing broken, looks good, **not**
+  byte-identical — we **delete the entire Jekyll/Ruby toolchain**. Any
   build-time flag is temporary scaffolding for the migration, removed at
   [Cutover](#cutover). See [HTML fidelity gate](#html-fidelity-gate).
-- **Everything is unit-tested as we go.** Each new module (renderer, tag
-  preprocessor, metadata, `Course.Material`) ships with tests in the same change,
+- **Everything is unit-tested as we go.** Each new module (renderer, `Solid`
+  custom tags, metadata, `Course.Material`) ships with tests in the same change,
   not as a later pass. This is the cross-cutting working agreement for the whole
   plan and follows the [testing conventions](../app/docs/testing.md). See
   [Testing as we go](#testing-as-we-go).
 - **Solutions are hidden until explicitly revealed.** Solution blocks must not
-  appear until enabled as the course progresses, driven by frontmatter flags the
-  same way `progress` is. This is a new feature built alongside the migration.
-  See [Progressive solution reveal](#progressive-solution-reveal).
+  appear until enabled as the course progresses, revealed from the same progress
+  source that drives `progress` (not a separate flag) once a chapter's status
+  crosses a threshold. This is a new feature built alongside the migration. See
+  [Progressive solution reveal](#progressive-solution-reveal) and [Progress:
+  structure vs status](#progress-structure-vs-status).
 
 ---
 
@@ -258,10 +270,11 @@ plain, web-decoupled Elixir core ([Shared Markdown rendering
 core](#shared-markdown-rendering-core)) — pure functions over Markdown/AST are
 easy to test in isolation. Concretely:
 
-- **Tag preprocessor** — table tests per tag (`note`/`callout`/`cols`/`solution`/
-  `mermaid`/`markdown`): given input Markdown, assert the emitted HTML, including
-  edge cases (nested Markdown, `cols`' `<!-- col -->` splitting, `callout`
-  unique-ID generation, reference links inside blocks).
+- **`Solid` custom tags** — table tests per tag
+  (`note`/`callout`/`cols`/`solution`/ `mermaid`/`markdown`): given input
+  Markdown, assert the emitted HTML, including edge cases (nested Markdown,
+  `cols`' `<!-- col -->` splitting, `callout` unique-ID generation, reference
+  links inside blocks).
 - **Metadata generation** — deterministic filename→`num`/`section`/`course_type`/
   `progress` mapping and progress aggregation are pure and should be exhaustively
   unit-tested.
@@ -270,9 +283,10 @@ easy to test in isolation. Concretely:
   ultimate test, but cover lookups too).
 - **Solution visibility** — assert hidden-by-default and reveal-on-flag behaviour
   ([Progressive solution reveal](#progressive-solution-reveal)).
-- **Fidelity** — the page-by-page HTML diff against the frozen baseline is a
-  separate, coarser gate ([HTML fidelity gate](#html-fidelity-gate)); unit tests
-  cover behaviour, the diff covers parity.
+- **Fidelity** — the page-by-page functional-and-visual check against the
+  already-deployed site is a separate, coarser gate ([HTML fidelity
+  gate](#html-fidelity-gate)); unit tests cover behaviour, the gate covers
+  "nothing broken, looks good" (not byte parity).
 
 Align all of this with the now-complete testing plan's conventions in
 [`app/docs/testing.md`](../app/docs/testing.md) and the app's existing
@@ -282,10 +296,9 @@ conventions in [`app/CONTRIBUTING.md`](../app/CONTRIBUTING.md).
 
 **Decision: adopt [`Solid`](https://hex.pm/packages/solid)** (the pure-Elixir
 Liquid implementation, v1.3.2), not a hand-rolled preprocessor. This reverses
-the earlier dismissal in [The honest hard parts /
-risks](#the-honest-hard-parts--risks) (point 2), which was an assumption. The
-evidence that flips it, measured against the actual content and the actual
-`Solid` source:
+the plan's original assumption that `Solid` was not appropriate. The evidence
+that flips it, measured against the actual content and the actual `Solid`
+source:
 
 - **Block-tag bodies are pure Markdown.** Extracting every
   `note`/`callout`/`cols`/`solution`/`markdown` body and scanning it turns up
@@ -301,12 +314,12 @@ evidence that flips it, measured against the actual content and the actual
 highlight %}` ×2 — inline output tags and filters. A hand-rolled scanner would
   have to reimplement attribute parsing, quoting, whitespace control (`{%-
 -%}`), and filter arguments for these; `Solid` provides them.
-- **Highest fidelity to today's Jekyll behaviour.** `Solid` keeps the same
+- **Closest to today's Jekyll behaviour.** `Solid` keeps the same
   whole-document-Liquid-then-Markdown model, whitespace control, and attribute
-  conventions, which de-risks the [HTML fidelity gate](#html-fidelity-gate) —
-  the plan's dominant cost. A hand-rolled preprocessor that is _more_ permissive
-  about stray delimiters is a behaviour change during the very gate we must
-  pass.
+  conventions, which minimizes gratuitous divergence and eases the [HTML
+  fidelity gate](#html-fidelity-gate). We are **not** chasing byte-identical
+  output (see that gate), but a hand-rolled preprocessor that is _more_
+  permissive about stray delimiters is an avoidable behaviour change.
 - **Less custom code, on a maintained/tested base.** The implementation is ~6
   thin block-tag structs (a shared raw-body helper, à la `RawTag`, whose
   `render` calls MDEx on the captured body) + 2–3 inline tags + one
@@ -331,8 +344,10 @@ balance.)
 (~half a day, confirmatory only):
 
 1. `cols` on `Solid`: raw-body block tag → split captured body on
-   `<!-- col -->` → MDEx each segment → wrap in the grid divs; assert
-   byte-identical output to the current Ruby tag on a real block.
+   `<!-- col -->` → MDEx each segment → wrap in the grid divs; assert the output
+   is **structurally equivalent** to the current Ruby tag on a real block (same
+   grid divs and content — not byte-identical; see [HTML fidelity
+   gate](#html-fidelity-gate)).
 2. One inline path: `{% link _course/…/exercise.md %}` → URL via a custom tag,
    and `{{ x | relative_file_url }}` → asset URL via a custom filter.
 3. A fenced code block through MDEx to check raw-HTML-island handling (a
@@ -385,10 +400,44 @@ Markdown→JSON→module chain — while still emitting the JSON the PDF tooling
 needs. Note `search.json`/`lunr.json` are a separate concern — see [Search
 index](#search-index).
 
+### URL and link emission seam
+
+Design this **before** the shared core, because four later tasks all thread
+through the same point and will otherwise each hardcode a different assumption:
+[Asset URLs](#asset-urls) (digested paths), [Optional URL
+prefix](#optional-url-prefix) (per-year `/2025-2026/` prefix), [Decouple PDF
+generation from production](#decouple-pdf-generation-from-production) (absolute
+production URLs on content links, relative on assets) and [Standalone / archival
+mode](#standalone--archival-mode) (URLs that resolve with no running app).
+
+There is a real tension to resolve here: the renderer must stay
+**web-decoupled** so the static/archival build can run it standalone (see
+[Shared Markdown rendering core](#shared-markdown-rendering-core)), yet asset
+URLs are meant to go through Phoenix's `phx.digest` + **verified routes**, which
+are a compile-time macro bound to the router — i.e. Phoenix coupling. Resolve it
+by having the renderer emit **logical paths** and delegate to an **injected
+URL-resolver strategy**, with three orthogonal knobs the caller sets:
+
+- **Digesting** — map a logical asset path to its digested filename (the app
+  build supplies a resolver backed by `phx.digest`; the standalone build
+  supplies one that reads the digest manifest directly, no endpoint needed).
+- **Path prefix** — an optional base path (default empty) prepended to internal
+  links, asset URLs and heading anchors, for [per-year
+  versions](#optional-url-prefix).
+- **Absolute base URL** — an optional canonical origin baked onto **content**
+  links (not assets) for [PDF
+  generation](#decouple-pdf-generation-from-production).
+
+Each consumer is then a configuration of the one seam, not its own rewrite. Unit
+tests cover the resolver in isolation (the four knob combinations) so the
+consuming tasks inherit correct URLs by construction.
+
 ### Shared Markdown rendering core
 
 Build `ArchiDep.Course.Renderer` (or similar) as a **plain, dependency-light
-module** wrapping MDEx: parse Markdown → AST, run AST passes (tags, anchors,
+module** wrapping `Solid` + MDEx: run the source through `Solid` (expanding the
+custom block and inline tags — see [Custom block tags](#custom-block-tags)),
+parse the result to a Markdown AST via MDEx, run AST passes (heading anchors,
 target-blank, emoji), render HTML. It must be callable from:
 
 - the **static build step** (writes files to `priv/static`), and
@@ -444,7 +493,7 @@ Design decisions to settle:
   **all** solutions — the gating only applies to the live, in-progress build.
   Provide a build option (e.g. `reveal_all_solutions`) the archival build sets.
 - **Tests.** Cover hidden-by-default, reveal-on-flag, and archival reveal-all in
-  the tag preprocessor unit tests ([Testing as we go](#testing-as-we-go)).
+  the `Solid` custom tag unit tests ([Testing as we go](#testing-as-we-go)).
 
 This pairs with [Custom block tags](#custom-block-tags) (the `solution` tag is
 where the gate is enforced) and [A richer Course.Material
@@ -779,16 +828,24 @@ round-trip?](#drop-the-archidepjson-round-trip) decision.
 
 ### HTML fidelity gate
 
-The gating QA step. Because we are going scorched earth (no parallel Jekyll
-build to diff against later), **first capture a frozen snapshot** of the current
-Jekyll HTML output — commit it to a throwaway branch or an ignored directory —
-and treat that as the immutable regression baseline. Then render all 59 course
-docs + 4 cheatsheets with the new core and **diff page-by-page against the
-frozen baseline** until parity is acceptable. Expect small kramdown-vs-comrak
-differences (whitespace, slugging, edge cases). Automate the diff and keep a
-visual-regression pass. [Cutover](#cutover) — the actual deletion of Jekyll —
-does not happen until this passes. This is where the bulk of the [2–4 week
-effort](#verdict-and-suggested-path) goes.
+The gating QA step — but the bar is **functional and visual parity, not
+byte-identical HTML**. What must hold across all 59 course docs + 4 cheatsheets
+(and the slides): nothing is broken — links resolve, tags render, code
+highlights, TOC/anchors work, navigation and progress classes are correct — and
+each page **looks good**. We explicitly **do not** require pixel- or
+byte-for-byte reproduction of the Jekyll output; small kramdown-vs-comrak
+differences (whitespace, slugging, minor markup) are acceptable as long as the
+page reads correctly and looks right.
+
+We do **not** need to commit a frozen HTML snapshot: the previous year's Jekyll
+build is **already deployed** at `https://archidep.github.io/website/` and stays
+up independently of anything we do to the toolchain, so it (together with the
+current running site) is the visual reference to compare against. A page-by-page
+HTML diff is still a **useful tool** for surfacing unexpected changes — run one
+to catch regressions you would otherwise miss — but it is a spotlight, not a
+pass/fail byte gate; the acceptance decision is "nothing broken, looks good."
+[Cutover](#cutover) — the actual deletion of Jekyll — does not happen until this
+passes.
 
 ### Cutover
 
@@ -799,8 +856,9 @@ layer** — the Liquid sidebar/header (`course/_includes/sidebar.html`,
 `_layouts`, `_includes`, `_config*.yml`, the `Gemfile`/Bundler setup, and the
 Ruby/Jekyll Docker stage and its cross-language hacks. No dual pipeline or
 fallback flag is left behind. Keep PDF generation and the search scripts running
-against the new output. The frozen baseline snapshot from the [HTML fidelity
-gate](#html-fidelity-gate) can be discarded once cutover is confirmed.
+against the new output. The deployed archive used as the visual reference during
+the [HTML fidelity gate](#html-fidelity-gate) stays up as the previous-year
+archive regardless — there is nothing to discard after cutover.
 
 ---
 
@@ -886,10 +944,12 @@ pain.
    syntax highlighting, AST access). Across 28k lines the output _will_ differ
    in small ways (whitespace, anchor-ID slugging, edge cases). The good news
    from the audit: no attribute lists, ~no footnotes, no definition lists — so
-   you are firmly in CommonMark/GFM territory, low-risk. But you will want a
-   **diff/visual-regression pass** comparing old vs new HTML page-by-page before
-   cutover. Budget real time here. See [HTML fidelity
-   gate](#html-fidelity-gate).
+   you are firmly in CommonMark/GFM territory, low-risk. And the bar is
+   **functional + visual parity, not byte-identical output** ([HTML fidelity
+   gate](#html-fidelity-gate)), so those small differences are acceptable as
+   long as pages read correctly and look good. Still run a **visual-regression /
+   spot HTML-diff pass** page-by-page before cutover to catch anything actually
+   broken.
 
 2. **The custom block tags.** Do not migrate the _content_ syntax. Implement the
    tags as **`Solid` custom tags** (decided — see [Revisit the Solid (Liquid)
@@ -960,11 +1020,12 @@ asset-digest plumbing that is currently the most brittle part.
 
 Recommended incremental, low-risk migration:
 
-1. Build a `ArchiDep.Course.Renderer` (MDEx + a tag preprocessor +
+1. Build a `ArchiDep.Course.Renderer` (`Solid` + MDEx + custom tags +
    reference-link + TOC helpers) **behind a flag**, writing to the _same_
    `priv/static` layout Jekyll produces.
-2. Render all 59+4 docs and **diff the HTML against the current Jekyll output**
-   until acceptable parity is reached. This is the gate.
+2. Render all 59+4 docs and check them **functionally and visually against the
+   current/deployed Jekyll site** — nothing broken, looks good — using an HTML
+   diff as a tool, not a byte gate. This is the gate.
 3. Port the metadata generator (`archidep.rb`'s filename→`num`/`section`/
    `progress` logic and the progress-doc aggregation) — straightforward,
    deterministic Elixir.
@@ -974,8 +1035,10 @@ Recommended incremental, low-risk migration:
    Ruby stage.
 
 **Effort estimate:** the renderer + tags + metadata is the small part (days).
-The dominant cost is **content regression QA across ~28k lines** plus
-slides/search/standalone parity — realistically a **2–4 week focused effort**,
-front-loaded on the HTML-fidelity diff. The risk is almost entirely "subtle
-rendering regressions in actively-used teaching material," which the diff-gate
-is designed to contain — not architectural risk.
+The larger cost is **content regression QA across ~28k lines** plus
+slides/search/standalone parity — but because the bar is functional + visual
+parity rather than byte-identical output ([HTML fidelity
+gate](#html-fidelity-gate)), this is lighter than a strict page-by-page byte
+reconciliation would be. The risk is almost entirely "subtle rendering
+regressions in actively-used teaching material," which the functional/visual
+gate is designed to contain — not architectural risk.
