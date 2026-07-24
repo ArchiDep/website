@@ -62,9 +62,10 @@ constraints](#goals-and-constraints).
 
 **Decisions to settle first**
 
-- [ ] Re-do the analysis that the `Solid` (Liquid) library is not appropriate,
-      before committing to a custom preprocessor — see [Revisit the Solid (Liquid)
-      library decision](#revisit-the-solid-liquid-library-decision).
+- [x] Re-do the analysis of whether the `Solid` (Liquid) library is appropriate.
+      **Decided: adopt `Solid`** rather than a hand-rolled preprocessor — see
+      [Revisit the Solid (Liquid) library
+      decision](#revisit-the-solid-liquid-library-decision).
 - [ ] Decide whether the intermediate `archidep.json` can be dropped in favour
       of a shared in-process core — see [Drop the archidep.json
       round-trip?](#drop-the-archidepjson-round-trip).
@@ -222,23 +223,64 @@ conventions in [`app/CONTRIBUTING.md`](../app/CONTRIBUTING.md).
 
 ### Revisit the Solid (Liquid) library decision
 
-Before committing to a hand-rolled preprocessor, do a **proper evaluation of
-[`Solid`](https://hex.pm/packages/solid)** (the pure-Elixir Liquid
-implementation) — the dismissal in [The honest hard parts / risks](#the-honest-hard-parts--risks)
-(point 2) is an assumption, not a measured conclusion. Evaluate concretely:
+**Decision: adopt [`Solid`](https://hex.pm/packages/solid)** (the pure-Elixir
+Liquid implementation, v1.3.2), not a hand-rolled preprocessor. This reverses
+the earlier dismissal in [The honest hard parts /
+risks](#the-honest-hard-parts--risks) (point 2), which was an assumption. The
+evidence that flips it, measured against the actual content and the actual
+`Solid` source:
 
-- Whether `Solid` supports **custom block tags** with raw inner content (the
-  `note`/`callout`/`cols`/`solution`/`mermaid`/`markdown` constructs), and how
-  much glue that takes versus a regex/parser preprocessor.
-- Whether reusing real Liquid lets us keep
-  `course/collections/_json/archidep.json.liquid` and similar templates
-  **unchanged**, lowering migration risk.
-- Maintenance/perf trade-offs of pulling in a templating engine vs. a ~6-tag
-  preprocessor we fully control.
+- **Block-tag bodies are pure Markdown.** Extracting every
+  `note`/`callout`/`cols`/`solution`/`markdown` body and scanning it turns up
+  **no** nested tags, `{% include %}`, `{% link %}`, or filters inside them —
+  only `:emoji:` shortcodes, which are an emoji-layer concern, not Liquid. So a
+  body never needs Liquid re-parsing; it needs **raw capture → MDEx**, which is
+  exactly what `Solid`'s built-in `RawTag` already does. The "custom block tags
+  with Markdown-inside are fiddly" objection assumed nested Liquid in bodies and
+  does not hold.
+- **The genuinely fiddly part is the _inline_ Liquid, and that is Liquid's home
+  turf.** Content uses `{% link path %}` **×94**, `{% include icons/x.html %}`
+  **×44**, `{{ x | relative_file_url }}` **×22**, `{{ page.title }}` ×3, `{%
+highlight %}` ×2 — inline output tags and filters. A hand-rolled scanner would
+  have to reimplement attribute parsing, quoting, whitespace control (`{%-
+-%}`), and filter arguments for these; `Solid` provides them.
+- **Highest fidelity to today's Jekyll behaviour.** `Solid` keeps the same
+  whole-document-Liquid-then-Markdown model, whitespace control, and attribute
+  conventions, which de-risks the [HTML fidelity gate](#html-fidelity-gate) —
+  the plan's dominant cost. A hand-rolled preprocessor that is _more_ permissive
+  about stray delimiters is a behaviour change during the very gate we must
+  pass.
+- **Less custom code, on a maintained/tested base.** The implementation is ~6
+  thin block-tag structs (a shared raw-body helper, à la `RawTag`, whose
+  `render` calls MDEx on the captured body) + 2–3 inline tags + one
+  `relative_file_url` filter — against a library tested for parity with the Ruby
+  gem, rather than a bespoke tokenizer we own and debug.
+- **The control-flow Liquid (`{% for %}`/`{% unless %}`) lives _only_ in
+  `archidep.json.liquid`**, which we are dropping regardless (see [Drop the
+  archidep.json round-trip?](#drop-the-archidepjson-round-trip)); prose has
+  none. So this decision is independent of that file's fate.
 
-Deliverable: a short written recommendation (Solid vs. custom preprocessor) with
-a spike for the trickiest tag (`cols`, which splits on `<!-- col -->`). Only
-after this do we lock [Custom block tags](#custom-block-tags).
+**The one real cost of `Solid`:** strict whole-document parsing is greedy about
+delimiters — a future `{{`/`{%` in a code sample (Ansible/Jinja, GitHub Actions
+`${{ }}`, Go/Vue templates) becomes a build error unless wrapped in `{% raw %}`.
+This is **already true under Jekyll** and is a non-issue today (zero stray
+delimiters, zero `{% raw %}` in the content), so it is latent, not active; `{%
+raw %}` mitigates it if it ever bites. Not enough to outweigh the above. (A
+hand-rolled, delimiter-agnostic preprocessor is the only thing that avoids this
+leash entirely — the sole strong argument for that path, and it does not win on
+balance.)
+
+**Remaining spike before locking [Custom block tags](#custom-block-tags)**
+(~half a day, confirmatory only):
+
+1. `cols` on `Solid`: raw-body block tag → split captured body on
+   `<!-- col -->` → MDEx each segment → wrap in the grid divs; assert
+   byte-identical output to the current Ruby tag on a real block.
+2. One inline path: `{% link _course/…/exercise.md %}` → URL via a custom tag,
+   and `{{ x | relative_file_url }}` → asset URL via a custom filter.
+3. A fenced code block through MDEx to check raw-HTML-island handling (a
+   MDEx-vs-kramdown _fidelity_ check, identical under either implementation
+   choice).
 
 ### Drop the archidep.json round-trip?
 
@@ -277,14 +319,24 @@ standalone. This module is the single seam the rest of the backlog hangs off.
 ### Custom block tags
 
 Port the six tag files in `course/_plugins/tags/` (`note`, `callout`, `cols`,
-`solution`, `mermaid`, `markdown`) as an AST/preprocess step that renders inner
-Markdown with the shared core and emits the **same HTML** the Ruby tags emit
-today — **zero content edits**. Counts to cover: `note` ×317, `callout` ×95,
-`cols` ×24, `solution` ×23, `mermaid` ×1, plus the `markdown` wrapper. Mind
-`callout`'s unique-ID generation for "more" callouts and `cols`'s `<!-- col -->`
-splitting. The `solution` tag gains new gating behaviour — see [Progressive
-solution reveal](#progressive-solution-reveal). Gate the implementation choice on [Revisit the Solid (Liquid) library
-decision](#revisit-the-solid-liquid-library-decision).
+`solution`, `mermaid`, `markdown`) as **`Solid` custom tags** (implementation
+choice settled — see [Revisit the Solid (Liquid) library
+decision](#revisit-the-solid-liquid-library-decision)) that render inner
+Markdown with the shared core and emit the **same HTML** the Ruby tags emit
+today — **zero content edits**. Each block tag captures its raw body (bodies are
+pure Markdown) and feeds it to MDEx, à la `Solid`'s built-in `RawTag`. Counts to
+cover: `note` ×317, `callout` ×95, `cols` ×24, `solution` ×23, `mermaid` ×1,
+plus the `markdown` wrapper. Mind `callout`'s unique-ID generation for "more"
+callouts and `cols`'s `<!-- col -->` splitting. The `solution` tag gains new
+gating behaviour — see [Progressive solution
+reveal](#progressive-solution-reveal).
+
+Alongside the six block tags, the same `Solid` setup must cover the **inline
+Liquid** the content relies on: `{% link path %}` (×94, collection-doc path →
+URL), `{% include icons/x.html %}` (×44, SVG inlining), the `relative_file_url`
+filter (×22) and `{{ page.title }}` (×3), and `{% highlight %}` (×2, or convert
+to fenced code). These are registered as `Solid` custom tags/filters rather than
+hand-parsed.
 
 ### Progressive solution reveal
 
@@ -495,21 +547,28 @@ The content is ~28,400 lines of Markdown across **59 course files + 4
 cheatsheets + 14 progress files**, organized into 8 sections. The
 Jekyll-specific surface inside that content is remarkably thin:
 
-| Construct                                                                      | Uses in content        | Nature                      |
-| ------------------------------------------------------------------------------ | ---------------------- | --------------------------- |
-| Custom block tags (`note`/`callout`/`cols`/`solution`/`mermaid`)               | 317 / 95 / 24 / 23 / 1 | Own ~50–120-line Ruby files |
-| `{% include icons/… %}`                                                        | 44 (all icons)         | SVG inlining                |
-| `{{ … \| relative_file_url }}`                                                 | 22                     | Per-page asset URLs         |
-| `{% highlight %}`                                                              | 2                      | Could be plain fenced code  |
-| **General Liquid logic** (`if`/`for`/`assign`/`capture`/`case`) **in content** | **0**                  | —                           |
-| kramdown attribute lists `{:.foo}`                                             | 0                      | —                           |
-| Footnotes / definition lists                                                   | 1 / 0                  | negligible                  |
+| Construct                                                                      | Uses in content        | Nature                         |
+| ------------------------------------------------------------------------------ | ---------------------- | ------------------------------ |
+| Custom block tags (`note`/`callout`/`cols`/`solution`/`mermaid`)               | 317 / 95 / 24 / 23 / 1 | Own ~50–120-line Ruby files    |
+| `{% link path %}` (Jekyll core tag, path → URL)                                | 94                     | Inline cross-doc links         |
+| `{% include icons/… %}`                                                        | 44 (all icons)         | SVG inlining                   |
+| `{{ … \| relative_file_url }}`                                                 | 22                     | Per-page asset URLs            |
+| `{% highlight %}`                                                              | 2                      | Could be plain fenced code     |
+| **General Liquid logic** (`if`/`for`/`assign`/`capture`/`case`) **in content** | **0**                  | Only in `archidep.json.liquid` |
+| kramdown attribute lists `{:.foo}`                                             | 0                      | —                              |
+| Footnotes / definition lists                                                   | 1 / 0                  | negligible                     |
 
 Code fences are all standard languages (`bash` ×756, `yml`, `nginx`,
 `Dockerfile`, `php`, …). **The content is essentially CommonMark + GFM plus six
-well-defined custom block constructs.** There is no general-purpose templating
-logic embedded in the prose — that all lives in layouts/includes, which are the
-part you would rewrite as HEEx anyway.
+well-defined custom block constructs and a handful of inline Liquid tags/filters
+(`{% link %}`, `{% include icons %}`, `relative_file_url`).** There is no
+general-purpose control-flow templating (`if`/`for`/`assign`) embedded in the
+prose — the only such logic lives in `archidep.json.liquid` (being dropped) and
+in layouts/includes, which are the part you would rewrite as HEEx anyway.
+Measured against the actual `Solid` source, the block-tag bodies are **pure
+Markdown** (no nested Liquid), so they reduce to raw-capture-then-MDEx; see
+[Revisit the Solid (Liquid) library
+decision](#revisit-the-solid-liquid-library-decision).
 
 ---
 
@@ -569,15 +628,14 @@ pain.
    cutover. Budget real time here. See [HTML fidelity
    gate](#html-fidelity-gate).
 
-2. **The custom block tags.** Do not migrate the _content_ syntax. The pragmatic
-   path is an Elixir preprocessor that recognizes `{% note … %}…{% endnote %}`
-   (and the five siblings), renders the inner Markdown with MDEx, and emits the
-   same HTML the Ruby tags emit today. That is a direct port of ~6 short files
-   and **zero content edits**. (A pure-Elixir Liquid lib, `Solid`, exists, but
-   custom block tags with Markdown-inside are fiddly — a targeted preprocessor
-   is simpler and faster.) The "Solid is not appropriate" call is itself a task
-   to re-verify — see [Revisit the Solid (Liquid) library
-   decision](#revisit-the-solid-liquid-library-decision) and [Custom block
+2. **The custom block tags.** Do not migrate the _content_ syntax. Implement the
+   tags as **`Solid` custom tags** (decided — see [Revisit the Solid (Liquid)
+   library decision](#revisit-the-solid-liquid-library-decision)): each block
+   tag captures its raw body (block bodies are pure Markdown), renders it with
+   MDEx, and emits the same HTML the Ruby tags emit today — **zero content
+   edits**. `Solid` also carries the inline companions (`{% link %}`,
+   `{% include icons %}`, the `relative_file_url` filter) that a hand-rolled
+   scanner would otherwise have to reimplement. See [Custom block
    tags](#custom-block-tags).
 
 3. **Reference-link resolution.** The Ruby `utils.rb` copies bottom-of-doc
