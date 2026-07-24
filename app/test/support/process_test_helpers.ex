@@ -6,6 +6,27 @@ defmodule ArchiDep.Support.ProcessTestHelpers do
   @wait 5
 
   @doc """
+  Stop a process the test linked to itself (via `start_link`) as part of
+  `on_exit` cleanup, waiting until it is actually down whatever the reason.
+
+  `ExUnit.Runner` ends a test by exiting the test process with `:shutdown`,
+  which propagates through the link and tears the process down concurrently with
+  the `on_exit` callbacks (which run in a separate process). A plain
+  `GenServer.stop/1` expects a `:normal` exit, so it crashes whenever it instead
+  races that `:shutdown` or finds the process already gone; monitoring and
+  waiting for `:DOWN` is race-free.
+  """
+  @spec stop_linked!(pid) :: :ok
+  def stop_linked!(pid) when is_pid(pid) do
+    ref = Process.monitor(pid)
+    Process.exit(pid, :shutdown)
+
+    receive do
+      {:DOWN, ^ref, :process, ^pid, _reason} -> :ok
+    end
+  end
+
+  @doc """
   Wait for a process's state to fulfill the specified condition.
 
   ## Examples

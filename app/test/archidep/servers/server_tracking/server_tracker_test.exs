@@ -2,7 +2,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
   use ExUnit.Case, async: true
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
-  import ArchiDep.Support.ProcessTestHelpers, only: [wait_for!: 2]
+  import ArchiDep.Support.ProcessTestHelpers, only: [stop_linked!: 1, wait_for!: 2]
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
@@ -22,7 +22,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
     # so the tracker is started in (and forwards to) the test process; it is
     # linked here, so it is stopped explicitly rather than leaked.
     {:ok, tracker} = ServerTracker.start_link([server])
-    on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+    on_exit(fn -> stop_linked!(tracker) end)
 
     %{server: server, tracker: tracker}
   end
@@ -127,7 +127,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
   describe "self-managing owner scope" do
     test "tracks every one of the owner's servers under the :all scope" do
       {:ok, tracker} = ServerTracker.start_link(Factory.build(:authentication), [], :all)
-      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+      on_exit(fn -> stop_linked!(tracker) end)
 
       created_id = UUID.generate()
       send(tracker, {:server_created, %{id: created_id, active: false}, :reference})
@@ -137,7 +137,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
 
     test "stops tracking a deleted server under the :all scope" do
       {:ok, tracker} = ServerTracker.start_link(Factory.build(:authentication), [], :all)
-      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+      on_exit(fn -> stop_linked!(tracker) end)
 
       server_id = UUID.generate()
       send(tracker, {:server_created, %{id: server_id, active: true}, :reference})
@@ -160,7 +160,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
 
     test "tracks a created active server but ignores an inactive one under the :active scope" do
       {:ok, tracker} = ServerTracker.start_link(Factory.build(:authentication), [], :active)
-      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+      on_exit(fn -> stop_linked!(tracker) end)
 
       active_id = UUID.generate()
       send(tracker, {:server_created, %{id: active_id, active: true}, :reference})
@@ -175,7 +175,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
 
     test "starts and stops tracking as a server flips active under the :active scope" do
       {:ok, tracker} = ServerTracker.start_link(Factory.build(:authentication), [], :active)
-      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+      on_exit(fn -> stop_linked!(tracker) end)
 
       server_id = UUID.generate()
 
@@ -201,7 +201,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
       {:ok, tracker} =
         ServerTracker.start_link(Factory.build(:authentication), [], {:group, UUID.generate()})
 
-      on_exit(fn -> if Process.alive?(tracker), do: GenServer.stop(tracker) end)
+      on_exit(fn -> stop_linked!(tracker) end)
 
       # An inactive server is watched under a group scope (unlike the :active
       # owner scope), so its presence change is forwarded.
