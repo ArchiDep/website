@@ -181,7 +181,10 @@ message, and lets everything else fall through to the live view's own
 the owning context instead of spread across every consumer. Exemplars:
 
 - [`profile_live.ex`](./profile/profile_live.ex) — single value, backed by
-  `Course.subscribe_student/1` + `Course.refresh_student/2`.
+  `Course.subscribe_student/1` + `Course.refresh_student/2`. The student
+  read-models the Course boundary hands the web layer are curated
+  [`StudentView`](../archidep/course/student_view.ex) structs (never the
+  `Student` aggregate), the same read/write split as `ServerView`.
 - [`server_live.ex`](./servers/server_live.ex) — single value, backed by
   `Servers.subscribe_server/1` + `Servers.refresh_server/2`; shows the hook
   coexisting with a page's own `handle_info/2` clauses (it halts `:server_updated`

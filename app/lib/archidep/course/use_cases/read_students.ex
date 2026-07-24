@@ -10,12 +10,16 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   alias ArchiDep.Course.PubSub
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Events.Store.EventReference
 
-  @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
+  @spec list_students(Authentication.t(), Class.t()) :: list(StudentView.t())
   def list_students(auth, class) do
     authorize!(auth, Policy, :course, :list_students, class)
-    Student.list_students_in_class(class.id)
+
+    class.id
+    |> Student.list_students_in_class()
+    |> Enum.map(&StudentView.from/1)
   end
 
   # Subscribing to the topics of a class the caller already holds grants no new
@@ -30,8 +34,8 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
     :ok = Accounts.PubSub.subscribe_user_group_preregistered_users(id)
   end
 
-  @spec refresh_class_students(Authentication.t(), Class.t(), list(Student.t()), term()) ::
-          {:ok, list(Student.t())} | :ignore
+  @spec refresh_class_students(Authentication.t(), Class.t(), list(StudentView.t()), term()) ::
+          {:ok, list(StudentView.t())} | :ignore
   def refresh_class_students(auth, %Class{id: id} = class, students, message)
       when is_list(students) do
     if concerns_class_students?(message, id) do
@@ -58,12 +62,12 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   defp concerns_class_students?(_message, _id), do: false
 
   @spec fetch_authenticated_student(Authentication.t()) ::
-          {:ok, Student.t()} | {:error, :not_a_student}
+          {:ok, StudentView.t()} | {:error, :not_a_student}
   def fetch_authenticated_student(auth) do
     with {:ok, student} <-
            auth |> Authentication.principal_id() |> Student.fetch_student_for_user_account_id(),
          :ok <- authorize(auth, Policy, :course, :fetch_authenticated_student, student) do
-      {:ok, student}
+      {:ok, StudentView.from(student)}
     else
       {:error, :student_not_found} ->
         {:error, :not_a_student}
@@ -71,13 +75,13 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   end
 
   @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
-          {:ok, Student.t()} | {:error, :student_not_found}
+          {:ok, StudentView.t()} | {:error, :student_not_found}
   def fetch_student_in_class(auth, class_id, id) do
     with :ok <- validate_uuid(class_id, :student_not_found),
          :ok <- validate_uuid(id, :student_not_found),
          {:ok, student} <- Student.fetch_student_in_class(class_id, id),
          :ok <- authorize(auth, Policy, :course, :fetch_student_in_class, student) do
-      {:ok, student}
+      {:ok, StudentView.from(student)}
     else
       {:error, :student_not_found} ->
         {:error, :student_not_found}
@@ -90,15 +94,15 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   # Subscribing to the topic of a student the caller already holds grants no new
   # access, so this read-model plumbing takes no authentication and skips the
   # authorization the command use cases perform.
-  @spec subscribe_student(Student.t()) :: :ok
-  def subscribe_student(%Student{id: id}), do: PubSub.subscribe_student(id)
+  @spec subscribe_student(StudentView.t()) :: :ok
+  def subscribe_student(%StudentView{id: id}), do: PubSub.subscribe_student(id)
 
-  @spec refresh_student(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  @spec refresh_student(StudentView.t() | nil, term()) :: {:ok, StudentView.t()} | :ignore
   def refresh_student(
-        %Student{id: id} = student,
+        %StudentView{id: id} = student,
         {:student_updated, %{id: id} = event, %EventReference{} = reference}
       ),
-      do: {:ok, Student.refresh!(student, event, reference)}
+      do: {:ok, StudentView.refresh!(student, event, reference)}
 
   def refresh_student(_student, _message), do: :ignore
 
@@ -108,26 +112,27 @@ defmodule ArchiDep.Course.UseCases.ReadStudents do
   # linkage live, so it rides the student topic, the class topic and the
   # Accounts preregistration topic (both keyed by ids fixed for the page's
   # lifetime).
-  @spec subscribe_student_detail(Student.t()) :: :ok
-  def subscribe_student_detail(%Student{id: id, class_id: class_id}) do
+  @spec subscribe_student_detail(StudentView.t()) :: :ok
+  def subscribe_student_detail(%StudentView{id: id, class_id: class_id}) do
     :ok = PubSub.subscribe_student(id)
     :ok = PubSub.subscribe_class(class_id)
     :ok = Accounts.PubSub.subscribe_preregistered_user(id)
   end
 
-  @spec refresh_student_detail(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  @spec refresh_student_detail(StudentView.t() | nil, term()) ::
+          {:ok, StudentView.t()} | :ignore
   def refresh_student_detail(
-        %Student{id: id} = student,
+        %StudentView{id: id} = student,
         {:student_updated, %{id: id} = event, %EventReference{} = reference}
       ),
-      do: {:ok, Student.refresh!(student, event, reference)}
+      do: {:ok, StudentView.refresh!(student, event, reference)}
 
   def refresh_student_detail(
-        %Student{class_id: class_id, class: %Class{} = class} = student,
+        %StudentView{class_id: class_id, class: %Class{}} = student,
         {:class_updated, event, %EventReference{} = reference}
       ) do
     if class_updated_id(event) == class_id do
-      {:ok, %Student{student | class: Class.refresh!(class, event, reference)}}
+      {:ok, StudentView.refresh!(student, event, reference)}
     else
       :ignore
     end

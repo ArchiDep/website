@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
   alias ArchiDep.Servers.ServerView
   alias ArchiDepWeb.ClientCloudServerData
@@ -57,14 +58,14 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   @impl Channel
   def handle_info(
         {:class_deleted, %Class{id: class_id}},
-        %Socket{assigns: %{student: %Student{class_id: class_id}}} = socket
+        %Socket{assigns: %{student: %StudentView{class_id: class_id}}} = socket
       ),
       do: socket |> assign(student: nil, servers: []) |> send_updated_data() |> noreply()
 
   @impl Channel
   def handle_info(
         {:student_deleted, %Student{id: student_id}},
-        %Socket{assigns: %{student: %Student{id: student_id}}} = socket
+        %Socket{assigns: %{student: %StudentView{id: student_id}}} = socket
       ),
       do: socket |> assign(student: nil, servers: []) |> send_updated_data() |> noreply()
 

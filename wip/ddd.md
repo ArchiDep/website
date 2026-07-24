@@ -1198,6 +1198,17 @@ real `%ServerGroup{}` — so its `refresh!` stays on the aggregate and no
 `ServerGroupView` is introduced for it. Mechanical once #7 is in place; kept
 separate so each PR stays reviewable.
 
+**Progress.** `StudentView` is done (first slice): `ArchiDep.Course.StudentView`
+projects the `Student` aggregate into a plain struct embedding the existing
+`class` / `user` read-views, and owns `refresh!/3` (fanning in student events
+and delegating class events to the retained aggregate `Class.refresh!`) plus the
+web-only `active?/2` / `can_create_servers?/2`; the three Course reads
+(`list_students`, `fetch_authenticated_student`, `fetch_student_in_class`)
+return it, every web consumer holds it, and `Student.refresh!` is deleted.
+`ClassView` is the remaining slice — it will move `Class.refresh!` onto a view
+and fold `StudentView`'s embedded `Class` into it; `ServerGroup` stays excluded.
+The checkbox stays unchecked until that slice lands.
+
 ---
 
 ## What not to change

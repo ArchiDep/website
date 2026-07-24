@@ -15,6 +15,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Errors.UnauthorizedError
   alias ArchiDep.Repo
   alias ArchiDep.Support.AccountsFactory
@@ -73,9 +74,9 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       }
 
       assert list_students.(auth, class) == [
-               %Student{alice | class: listed_class},
-               %Student{bob | class: listed_class},
-               %Student{charlie | class: listed_class}
+               StudentView.from(%Student{alice | class: listed_class}),
+               StudentView.from(%Student{bob | class: listed_class}),
+               StudentView.from(%Student{charlie | class: listed_class})
              ]
 
       assert_no_stored_events!()
@@ -106,7 +107,8 @@ defmodule ArchiDep.Course.ReadStudentsTest do
     } do
       {student, account, auth} = register_student()
 
-      assert fetch_authenticated_student.(auth) == {:ok, authenticated_student(student, account)}
+      assert fetch_authenticated_student.(auth) ==
+               {:ok, StudentView.from(authenticated_student(student, account))}
 
       assert_no_stored_events!()
     end
@@ -142,7 +144,8 @@ defmodule ArchiDep.Course.ReadStudentsTest do
 
       # The query preloads the class with its expected server properties and the
       # (absent) user, matching the unlinked factory student exactly.
-      assert fetch_student_in_class.(auth, class.id, student.id) == {:ok, student}
+      assert fetch_student_in_class.(auth, class.id, student.id) ==
+               {:ok, StudentView.from(student)}
 
       assert_no_stored_events!()
     end
@@ -194,7 +197,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
     } do
       %Student{} = student = CourseFactory.build(:student, user: nil)
 
-      assert subscribe_student.(student) == :ok
+      assert subscribe_student.(StudentView.from(student)) == :ok
 
       updated = %Student{student | name: "Renamed", version: student.version + 1}
       event = StudentUpdated.new(updated)
@@ -212,13 +215,14 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       refresh_student: refresh_student
     } do
       %Student{} = student = CourseFactory.build(:student, user: nil)
+      view = StudentView.from(student)
 
       updated = %Student{student | name: "Renamed", version: student.version + 1}
       event = StudentUpdated.new(updated)
       reference = EventsFactory.build(:event_reference, version: updated.version)
 
-      assert refresh_student.(student, {:student_updated, event, reference}) ==
-               {:ok, Student.refresh!(student, event, reference)}
+      assert refresh_student.(view, {:student_updated, event, reference}) ==
+               {:ok, StudentView.refresh!(view, event, reference)}
 
       assert_no_stored_events!()
     end
@@ -227,13 +231,14 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       refresh_student: refresh_student
     } do
       %Student{} = student = CourseFactory.build(:student, user: nil)
+      view = StudentView.from(student)
 
       configured = %Student{student | username_confirmed: true, version: student.version + 1}
       event = StudentConfigured.new(configured)
       reference = EventsFactory.build(:event_reference, version: configured.version)
 
-      assert refresh_student.(student, {:student_updated, event, reference}) ==
-               {:ok, Student.refresh!(student, event, reference)}
+      assert refresh_student.(view, {:student_updated, event, reference}) ==
+               {:ok, StudentView.refresh!(view, event, reference)}
 
       assert_no_stored_events!()
     end
@@ -247,16 +252,18 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       event = StudentUpdated.new(%Student{other | version: other.version + 1})
       reference = EventsFactory.build(:event_reference, version: other.version + 1)
 
-      assert refresh_student.(student, {:student_updated, event, reference}) == :ignore
+      assert refresh_student.(StudentView.from(student), {:student_updated, event, reference}) ==
+               :ignore
 
       assert_no_stored_events!()
     end
 
     test "ignores a message shape it does not handle", %{refresh_student: refresh_student} do
       %Student{} = student = CourseFactory.build(:student, user: nil)
+      view = StudentView.from(student)
 
-      assert refresh_student.(student, {:student_deleted, student}) == :ignore
-      assert refresh_student.(student, :unrelated) == :ignore
+      assert refresh_student.(view, {:student_deleted, student}) == :ignore
+      assert refresh_student.(view, :unrelated) == :ignore
 
       assert_no_stored_events!()
     end
@@ -393,7 +400,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       %Class{} = class = CourseFactory.insert(:class)
       %Student{} = student = CourseFactory.insert(:student, class: class, user: nil)
 
-      assert subscribe_student_detail.(student) == :ok
+      assert subscribe_student_detail.(StudentView.from(student)) == :ok
 
       # Student topic.
       student_updated = %Student{student | name: "Renamed", version: student.version + 1}
@@ -439,13 +446,14 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       refresh_student_detail: refresh_student_detail
     } do
       %Student{} = student = CourseFactory.build(:student, user: nil)
+      view = StudentView.from(student)
 
       updated = %Student{student | name: "Renamed", version: student.version + 1}
       event = StudentUpdated.new(updated)
       reference = EventsFactory.build(:event_reference, version: updated.version)
 
-      assert refresh_student_detail.(student, {:student_updated, event, reference}) ==
-               {:ok, Student.refresh!(student, event, reference)}
+      assert refresh_student_detail.(view, {:student_updated, event, reference}) ==
+               {:ok, StudentView.refresh!(view, event, reference)}
 
       assert_no_stored_events!()
     end
@@ -455,13 +463,14 @@ defmodule ArchiDep.Course.ReadStudentsTest do
     } do
       %Class{} = class = CourseFactory.build(:class)
       %Student{class: ^class} = student = CourseFactory.build(:student, class: class, user: nil)
+      view = StudentView.from(student)
 
       updated_class = %Class{class | name: "Renamed", version: class.version + 1}
       event = ClassUpdated.new(updated_class)
       reference = EventsFactory.build(:event_reference, version: updated_class.version)
 
-      assert refresh_student_detail.(student, {:class_updated, event, reference}) ==
-               {:ok, %Student{student | class: Class.refresh!(class, event, reference)}}
+      assert refresh_student_detail.(view, {:class_updated, event, reference}) ==
+               {:ok, StudentView.refresh!(view, event, reference)}
 
       assert_no_stored_events!()
     end
@@ -476,7 +485,11 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       event = ClassUpdated.new(%Class{other | version: other.version + 1})
       reference = EventsFactory.build(:event_reference, version: other.version + 1)
 
-      assert refresh_student_detail.(student, {:class_updated, event, reference}) == :ignore
+      assert refresh_student_detail.(
+               StudentView.from(student),
+               {:class_updated, event, reference}
+             ) ==
+               :ignore
 
       assert_no_stored_events!()
     end
@@ -485,6 +498,7 @@ defmodule ArchiDep.Course.ReadStudentsTest do
       refresh_student_detail: refresh_student_detail
     } do
       %Student{} = student = CourseFactory.build(:student, user: nil)
+      view = StudentView.from(student)
 
       preregistration =
         {:preregistered_user_updated,
@@ -493,9 +507,9 @@ defmodule ArchiDep.Course.ReadStudentsTest do
            AccountsFactory.build(:user_account)
          ), EventsFactory.build(:event_reference)}
 
-      assert refresh_student_detail.(student, preregistration) == :ignore
-      assert refresh_student_detail.(student, {:student_deleted, student}) == :ignore
-      assert refresh_student_detail.(student, :unrelated) == :ignore
+      assert refresh_student_detail.(view, preregistration) == :ignore
+      assert refresh_student_detail.(view, {:student_deleted, student}) == :ignore
+      assert refresh_student_detail.(view, :unrelated) == :ignore
 
       assert_no_stored_events!()
     end

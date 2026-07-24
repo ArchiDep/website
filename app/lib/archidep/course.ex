@@ -10,6 +10,7 @@ defmodule ArchiDep.Course do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.Types
 
   @implementation Application.compile_env!(:archidep, __MODULE__)
@@ -154,7 +155,7 @@ defmodule ArchiDep.Course do
   @doc """
   Lists all students in the specified class.
   """
-  @spec list_students(Authentication.t(), Class.t()) :: list(Student.t())
+  @spec list_students(Authentication.t(), Class.t()) :: list(StudentView.t())
   defdelegate list_students(auth, class), to: @implementation
 
   @doc """
@@ -169,15 +170,15 @@ defmodule ArchiDep.Course do
   one of the topics of `subscribe_class_students/1`, returning the refreshed
   list or `:ignore` for a message that does not concern it.
   """
-  @spec refresh_class_students(Authentication.t(), Class.t(), list(Student.t()), term()) ::
-          {:ok, list(Student.t())} | :ignore
+  @spec refresh_class_students(Authentication.t(), Class.t(), list(StudentView.t()), term()) ::
+          {:ok, list(StudentView.t())} | :ignore
   defdelegate refresh_class_students(auth, class, students, message), to: @implementation
 
   @doc """
   Fetches the student who is currently authenticated.
   """
   @spec fetch_authenticated_student(Authentication.t()) ::
-          {:ok, Student.t()} | {:error, :not_a_student}
+          {:ok, StudentView.t()} | {:error, :not_a_student}
   defdelegate fetch_authenticated_student(auth), to: @implementation
 
   @doc """
@@ -185,7 +186,7 @@ defmodule ArchiDep.Course do
   class, it will not be found.
   """
   @spec fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
-          {:ok, Student.t()} | {:error, :student_not_found}
+          {:ok, StudentView.t()} | {:error, :student_not_found}
   defdelegate fetch_student_in_class(auth, class_id, student_id), to: @implementation
 
   @doc """
@@ -231,7 +232,7 @@ defmodule ArchiDep.Course do
   Subscribes the calling process to every topic that keeps the given student's
   read-model live.
   """
-  @spec subscribe_student(Student.t()) :: :ok
+  @spec subscribe_student(StudentView.t()) :: :ok
   defdelegate subscribe_student(student), to: @implementation
 
   @doc """
@@ -239,14 +240,14 @@ defmodule ArchiDep.Course do
   topics of `subscribe_student/1`, returning the updated student or `:ignore`
   for a message that does not concern it.
   """
-  @spec refresh_student(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  @spec refresh_student(StudentView.t() | nil, term()) :: {:ok, StudentView.t()} | :ignore
   defdelegate refresh_student(student, message), to: @implementation
 
   @doc """
   Subscribes the calling process to every topic that keeps a student detail
   read-model — the student, its nested class and its account linkage — live.
   """
-  @spec subscribe_student_detail(Student.t()) :: :ok
+  @spec subscribe_student_detail(StudentView.t()) :: :ok
   defdelegate subscribe_student_detail(student), to: @implementation
 
   @doc """
@@ -255,6 +256,7 @@ defmodule ArchiDep.Course do
   `subscribe_student_detail/1`, returning the updated student or `:ignore` for a
   message that does not concern it.
   """
-  @spec refresh_student_detail(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  @spec refresh_student_detail(StudentView.t() | nil, term()) ::
+          {:ok, StudentView.t()} | :ignore
   defdelegate refresh_student_detail(student, message), to: @implementation
 end

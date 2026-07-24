@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
   alias ArchiDep.Servers.ServerView
   alias ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive
@@ -92,10 +93,10 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   def handle_info(
         {:preregistered_user_updated, %{preregistered_user_id: id} = event, reference},
         %Socket{
-          assigns: %{student: %Student{id: id} = student}
+          assigns: %{student: %StudentView{id: id} = student}
         } = socket
       ) do
-    refreshed = Student.refresh!(student, event, reference)
+    refreshed = StudentView.refresh!(student, event, reference)
 
     if refreshed.user_id != nil and refreshed.user_id != student.user_id do
       :ok = Servers.subscribe_active_server_for_member(refreshed.user_id)
@@ -108,7 +109,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   def handle_info(
         {:student_deleted, %Student{id: student_id} = deleted_student},
         %Socket{
-          assigns: %{student: %Student{id: student_id}}
+          assigns: %{student: %StudentView{id: student_id}}
         } = socket
       ),
       do:
@@ -126,7 +127,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLive do
   def handle_info(
         {:class_deleted, %Class{id: class_id}},
         %Socket{
-          assigns: %{student: %Student{class: %Class{id: class_id, name: class_name}}}
+          assigns: %{student: %StudentView{class: %Class{id: class_id, name: class_name}}}
         } = socket
       ),
       do:

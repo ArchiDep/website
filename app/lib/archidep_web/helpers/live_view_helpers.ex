@@ -3,7 +3,7 @@ defmodule ArchiDepWeb.Helpers.LiveViewHelpers do
 
   alias ArchiDep.Authentication
   alias ArchiDep.Course.Schemas.Class
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers.ServerView
 
   @spec set_process_label(atom(), Authentication.t()) :: :ok
@@ -32,11 +32,11 @@ defmodule ArchiDepWeb.Helpers.LiveViewHelpers do
       when is_atom(module),
       do: set_process_label(module, auth, "sr:#{String.slice(server_id, 0, 5)}")
 
-  @spec set_process_label(atom(), Authentication.t(), Student.t()) :: :ok
+  @spec set_process_label(atom(), Authentication.t(), StudentView.t()) :: :ok
   def set_process_label(
         module,
         auth,
-        %Student{id: server_id}
+        %StudentView{id: server_id}
       )
       when is_atom(module),
       do: set_process_label(module, auth, "st:#{String.slice(server_id, 0, 5)}")

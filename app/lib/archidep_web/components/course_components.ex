@@ -4,9 +4,9 @@ defmodule ArchiDepWeb.Components.CourseComponents do
   use ArchiDepWeb, :component
 
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
 
-  attr :student, Student,
+  attr :student, StudentView,
     required: true,
     doc: "the student whose username to display"
 

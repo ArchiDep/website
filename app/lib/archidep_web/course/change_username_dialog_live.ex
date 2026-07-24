@@ -61,10 +61,12 @@ defmodule ArchiDepWeb.Course.ChangeUsernameDialogLive do
          data = ChangeUsernameForm.to_data(form_data),
          {:ok, configured_student} <-
            Course.configure_student(auth, student.id, data) do
+      # The dialog closes immediately below; the student read-model (with its
+      # new username) flows back in through the parent's PubSub refresh, so the
+      # form is reset from the current view rather than the write-side
+      # aggregate.
       socket
-      |> assign(
-        form: to_form(ChangeUsernameForm.changeset(configured_student), as: :student_config)
-      )
+      |> assign(form: to_form(ChangeUsernameForm.changeset(student), as: :student_config))
       |> send_notification(
         Message.new(
           :success,

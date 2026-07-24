@@ -8,13 +8,9 @@ defmodule ArchiDep.Course.Schemas.Student do
   use ArchiDep, :schema
 
   import ArchiDep.Helpers.ChangesetHelpers
-  alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
-  alias ArchiDep.Course.Events.StudentConfigured
-  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.User
   alias ArchiDep.Course.Types
-  alias ArchiDep.Events.Store.EventReference
 
   @primary_key {:id, :binary_id, []}
   @foreign_key_type :binary_id
@@ -56,20 +52,6 @@ defmodule ArchiDep.Course.Schemas.Student do
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
   end
-
-  @spec active?(t(), DateTime.t()) :: boolean()
-  def active?(%__MODULE__{active: active, class: %Class{} = class}, now),
-    do: active and Class.active?(class, now)
-
-  @spec can_create_servers?(t()) :: boolean
-  @spec can_create_servers?(t(), DateTime.t()) :: boolean
-  def can_create_servers?(
-        %__MODULE__{servers_enabled: servers_enabled, class: class} = member,
-        now \\ DateTime.utc_now()
-      ),
-      do:
-        active?(member, now) and
-          (servers_enabled or Class.allows_server_creation?(class, now))
 
   @spec find_active_registered_student_by_name(
           String.t(),
@@ -170,98 +152,6 @@ defmodule ArchiDep.Course.Schemas.Student do
   @spec count_registered_students() :: non_neg_integer
   def count_registered_students,
     do: Repo.aggregate(from(s in __MODULE__, where: not is_nil(s.user_id)), :count, :id)
-
-  @spec refresh!(
-          t(),
-          StudentUpdated.t() | StudentConfigured.t() | PreregisteredUserLinkedToUserAccount.t(),
-          EventReference.t()
-        ) :: t()
-  def refresh!(student, event, %EventReference{version: version, occurred_at: occurred_at}),
-    do:
-      versioned_refresh(
-        student,
-        event,
-        version,
-        &fetch_student/1,
-        &merge_refresh(&1, &2, version, occurred_at)
-      )
-
-  defp merge_refresh(
-         %__MODULE__{id: id} = student,
-         %StudentUpdated{
-           id: id,
-           name: name,
-           email: email,
-           academic_class: academic_class,
-           username: username,
-           domain: domain,
-           active: active,
-           servers_enabled: servers_enabled
-         },
-         version,
-         updated_at
-       ) do
-    %__MODULE__{
-      student
-      | name: name,
-        email: email,
-        academic_class: academic_class,
-        username: username,
-        domain: domain,
-        active: active,
-        servers_enabled: servers_enabled,
-        version: version,
-        updated_at: updated_at
-    }
-  end
-
-  defp merge_refresh(
-         %__MODULE__{id: id} = student,
-         %StudentConfigured{id: id, username: username},
-         version,
-         updated_at
-       ) do
-    %__MODULE__{
-      student
-      | username: username,
-        username_confirmed: true,
-        version: version,
-        updated_at: updated_at
-    }
-  end
-
-  defp merge_refresh(
-         %__MODULE__{id: id} = student,
-         %PreregisteredUserLinkedToUserAccount{
-           preregistered_user_id: id,
-           user_account: %{
-             id: user_account_id,
-             username: username,
-             active: active,
-             version: user_version
-           }
-         },
-         version,
-         updated_at
-       ) do
-    %__MODULE__{
-      student
-      | user_id: user_account_id,
-        user: %User{
-          id: user_account_id,
-          username: username,
-          active: active,
-          student_id: id,
-          version: user_version,
-          created_at: updated_at,
-          updated_at: updated_at
-        },
-        version: version,
-        updated_at: updated_at
-    }
-  end
-
-  defp merge_refresh(_student, _incoming, _version, _updated_at), do: :refetch
 
   @spec new(Types.student_data(), Class.t(), DateTime.t()) :: Changeset.t(t())
   def new(data, class, now) do

@@ -21,13 +21,13 @@ defmodule ArchiDepWeb.Components.CourseComponentsTest do
 
   describe "student_username/1" do
     test "renders the username of a confirmed student without a suggestion" do
-      student = CourseFactory.build(:student, username: "alice", username_confirmed: true)
+      student = CourseFactory.build(:student_view, username: "alice", username_confirmed: true)
 
       assert student_username_projection(student) == %{username: "alice", suggested: nil}
     end
 
     test "marks the username of an unconfirmed student as suggested" do
-      student = CourseFactory.build(:student, username: "bob", username_confirmed: false)
+      student = CourseFactory.build(:student_view, username: "bob", username_confirmed: false)
 
       assert student_username_projection(student) == %{username: "bob", suggested: "(suggested)"}
     end

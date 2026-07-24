@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
 
   import Hammox
   alias ArchiDep.Course
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
@@ -47,7 +48,10 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
     test "render only the owner-visible details", %{conn: conn, auth: auth, student: student} do
       server = build_server()
       stub_server_page(auth, server)
-      stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth -> {:ok, student} end)
+
+      stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth ->
+        {:ok, StudentView.from(student)}
+      end)
 
       {:ok, _view, html} = live(conn, "/servers/#{server.id}")
 
@@ -78,7 +82,10 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
     } do
       server = build_server()
       stub_server_page(auth, server)
-      stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth -> {:ok, student} end)
+
+      stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth ->
+        {:ok, StudentView.from(student)}
+      end)
 
       {:ok, view, _html} = live(conn, "/servers/#{server.id}")
 

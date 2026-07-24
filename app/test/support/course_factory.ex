@@ -9,6 +9,7 @@ defmodule ArchiDep.Support.CourseFactory do
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.Types
   alias ArchiDep.Support.SSHFactory
 
@@ -307,6 +308,12 @@ defmodule ArchiDep.Support.CourseFactory do
       updated_at: updated_at
     }
   end
+
+  # The web read model of a student: the `:student` aggregate projected through
+  # `StudentView.from/1`, so it carries the same fields with the nested `class`
+  # and `user` read-views loaded. Accepts the same overrides as `:student`.
+  @spec student_view_factory(map()) :: StudentView.t()
+  def student_view_factory(attrs!), do: :student |> build(attrs!) |> StudentView.from()
 
   @spec student_data_factory(map()) :: Types.student_data()
   def student_data_factory(attrs!) do

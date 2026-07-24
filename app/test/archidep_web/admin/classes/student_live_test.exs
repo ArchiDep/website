@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
@@ -471,7 +472,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       {:ok, active_server_lookup} = Agent.start_link(fn -> {:error, :server_not_found} end)
 
       stub(Course.ContextMock, :fetch_student_in_class, fn ^auth, _class_id, _id ->
-        {:ok, student}
+        {:ok, StudentView.from(student)}
       end)
 
       stub(Servers.ContextMock, :fetch_active_server_for_group_member, fn ^auth, _id ->
@@ -752,7 +753,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       end
 
     stub(Course.ContextMock, :fetch_student_in_class, fn ^auth, _class_id, _id ->
-      {:ok, student}
+      {:ok, StudentView.from(student)}
     end)
 
     stub(Servers.ContextMock, :fetch_active_server_for_group_member, fn ^auth, _id ->

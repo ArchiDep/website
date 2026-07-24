@@ -11,6 +11,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Course.Material
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
@@ -38,7 +39,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       ])
 
     ssh_exercise_vm_md5_host_key_fingerprints =
-      with %Student{class: %Class{ssh_exercise_vm_md5_host_key_fingerprints: fingerprints}}
+      with %StudentView{class: %Class{ssh_exercise_vm_md5_host_key_fingerprints: fingerprints}}
            when is_binary(fingerprints) <- student,
            {:ok, valid, _invalid} <- SSH.parse_ssh_host_key_fingerprints(fingerprints) do
         valid
@@ -47,7 +48,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       end
 
     ssh_exercise_vm_sha256_host_key_fingerprints =
-      with %Student{class: %Class{ssh_exercise_vm_sha256_host_key_fingerprints: fingerprints}}
+      with %StudentView{class: %Class{ssh_exercise_vm_sha256_host_key_fingerprints: fingerprints}}
            when is_binary(fingerprints) <- student,
            {:ok, valid, _invalid} <- SSH.parse_ssh_host_key_fingerprints(fingerprints) do
         valid
@@ -117,7 +118,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         {:student_deleted, %Student{id: student_id}},
         %Socket{
           assigns: %{
-            student: %Student{id: student_id}
+            student: %StudentView{id: student_id}
           }
         } = socket
       ),
@@ -131,7 +132,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         {:class_deleted, %Class{id: id}},
         %Socket{
           assigns: %{
-            student: %Student{class_id: id}
+            student: %StudentView{class_id: id}
           }
         } = socket
       ),

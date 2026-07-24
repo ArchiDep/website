@@ -2,25 +2,15 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
   use ArchiDep.Support.DataCase, async: true
 
   import ArchiDep.Support.CourseFactory
-  alias ArchiDep.Accounts.Events.PreregisteredUserLinkedToUserAccount
-  alias ArchiDep.Course.Events.StudentConfigured
-  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Student
-  alias ArchiDep.Course.Schemas.User
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.AccountsTestHelpers
-  alias ArchiDep.Support.CourseTestHelpers
-  alias ArchiDep.Support.EventsFactory
   alias Ecto.Changeset
   alias Ecto.UUID
 
   # These changeset validations do not depend on the creation timestamp; a fixed
   # instant keeps the changeset calls deterministic.
   @now ~U[2024-01-01 08:00:00.000000Z]
-
-  # A later instant for the broadcast payloads a refresh applies, distinct from
-  # the persisted fixtures' timestamps.
-  @later ~U[2024-06-01 12:00:00.000000Z]
 
   # A username must be valid as both a Unix user name and a DNS subdomain label,
   # so it may contain only unaccented letters, digits and hyphens and must start
@@ -313,176 +303,6 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
       # The query applies no ORDER BY, so the names come back in an unspecified
       # order; sorting both sides pins the whole set.
       assert Enum.sort(names) == Enum.sort(["John Smith", "Jane Smith"])
-    end
-  end
-
-  describe "refresh!/3" do
-    test "merges a student-updated event one version ahead into the cached student" do
-      {cached, _user_account, _auth} = CourseTestHelpers.register_student()
-
-      # The event carries the next version and diverges from the persisted row
-      # on every merged field, so the assertion can only pass if the in-memory
-      # merge ran: the catch-all fallback would re-fetch and return the
-      # persisted values instead.
-      event = %StudentUpdated{
-        id: cached.id,
-        name: "Renamed student",
-        email: "renamed@example.ch",
-        academic_class: "Renamed academic class",
-        username: "renamedusername",
-        domain: "renamed.archidep.ch",
-        active: not cached.active,
-        servers_enabled: not cached.servers_enabled,
-        class: %{id: cached.class_id, name: cached.class.name}
-      }
-
-      assert Student.refresh!(
-               cached,
-               event,
-               EventsFactory.build(:event_reference,
-                 version: cached.version + 1,
-                 occurred_at: @later
-               )
-             ) == %{
-               cached
-               | name: "Renamed student",
-                 email: "renamed@example.ch",
-                 academic_class: "Renamed academic class",
-                 username: "renamedusername",
-                 domain: "renamed.archidep.ch",
-                 active: event.active,
-                 servers_enabled: event.servers_enabled,
-                 version: cached.version + 1,
-                 updated_at: @later
-             }
-    end
-
-    test "merges a student-configured event one version ahead into the cached student" do
-      {cached, _user_account, _auth} = CourseTestHelpers.register_student()
-
-      event = %StudentConfigured{
-        id: cached.id,
-        name: cached.name,
-        email: cached.email,
-        username: "confirmedusername",
-        class: %{id: cached.class_id, name: cached.class.name}
-      }
-
-      assert Student.refresh!(
-               cached,
-               event,
-               EventsFactory.build(:event_reference,
-                 version: cached.version + 1,
-                 occurred_at: @later
-               )
-             ) == %{
-               cached
-               | username: "confirmedusername",
-                 username_confirmed: true,
-                 version: cached.version + 1,
-                 updated_at: @later
-             }
-    end
-
-    test "merges a preregistered-user-linked event into an as-yet unregistered student" do
-      class = insert(:class, now: @now)
-      student = insert(:student, class: class, user: nil, now: @now)
-      {:ok, cached} = Student.fetch_student(student.id)
-      assert cached.user == nil
-
-      # The persisted row is still unlinked, so a catch-all re-fetch would
-      # return a student with no user; only the in-memory merge yields the
-      # linked account.
-      user_account_id = UUID.generate()
-
-      event = %PreregisteredUserLinkedToUserAccount{
-        preregistered_user_id: cached.id,
-        user_account: %{
-          id: user_account_id,
-          username: "linkeduser",
-          active: true,
-          version: 1
-        }
-      }
-
-      assert Student.refresh!(
-               cached,
-               event,
-               EventsFactory.build(:event_reference,
-                 version: cached.version + 1,
-                 occurred_at: @later
-               )
-             ) == %{
-               cached
-               | user_id: user_account_id,
-                 user: %User{
-                   id: user_account_id,
-                   username: "linkeduser",
-                   active: true,
-                   student_id: cached.id,
-                   version: 1,
-                   created_at: @later,
-                   updated_at: @later
-                 },
-                 version: cached.version + 1,
-                 updated_at: @later
-             }
-    end
-
-    test "ignores a student event at or below the cached version" do
-      {cached, _user_account, _auth} = CourseTestHelpers.register_student()
-
-      event = %StudentUpdated{
-        id: cached.id,
-        name: "Ignored",
-        email: cached.email,
-        academic_class: cached.academic_class,
-        username: cached.username,
-        domain: cached.domain,
-        active: cached.active,
-        servers_enabled: cached.servers_enabled,
-        class: %{id: cached.class_id, name: cached.class.name}
-      }
-
-      assert Student.refresh!(
-               cached,
-               event,
-               EventsFactory.build(:event_reference, version: cached.version, occurred_at: @later)
-             ) == cached
-    end
-
-    test "re-fetches from the database when the incoming version skips ahead" do
-      {cached, _user_account, _auth} = CourseTestHelpers.register_student()
-
-      {1, nil} =
-        Repo.update_all(
-          from(s in Student, where: s.id == ^cached.id),
-          set: [name: "Persisted rename", version: cached.version + 2, updated_at: @later]
-        )
-
-      {:ok, fresh} = Student.fetch_student(cached.id)
-      refute fresh == cached
-
-      event = %StudentUpdated{
-        id: cached.id,
-        name: "Ignored",
-        email: cached.email,
-        academic_class: cached.academic_class,
-        username: cached.username,
-        domain: cached.domain,
-        active: cached.active,
-        servers_enabled: cached.servers_enabled,
-        class: %{id: cached.class_id, name: cached.class.name}
-      }
-
-      assert Student.refresh!(
-               cached,
-               event,
-               EventsFactory.build(:event_reference,
-                 version: cached.version + 2,
-                 occurred_at: @later
-               )
-             ) == fresh
     end
   end
 

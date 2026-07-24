@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
@@ -837,7 +838,9 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
     case Keyword.fetch(opts, :student) do
       {:ok, student} ->
-        stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth -> {:ok, student} end)
+        stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth ->
+          {:ok, StudentView.from(student)}
+        end)
 
       :error ->
         :ok

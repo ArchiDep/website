@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.UseCases.ReadClasses
   alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Servers
@@ -1037,7 +1038,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
       {:ok, students} = Agent.start_link(fn -> [alice] end)
       stub_class_page_calls(auth, class: class, server_group: server_group)
-      stub(Course.ContextMock, :list_students, fn ^auth, _class -> Agent.get(students, & &1) end)
+
+      stub(Course.ContextMock, :list_students, fn ^auth, _class ->
+        Enum.map(Agent.get(students, & &1), &StudentView.from/1)
+      end)
 
       {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
 
@@ -1069,7 +1073,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
       {:ok, students} = Agent.start_link(fn -> [] end)
       stub_class_page_calls(auth, class: class, server_group: server_group)
-      stub(Course.ContextMock, :list_students, fn ^auth, _class -> Agent.get(students, & &1) end)
+
+      stub(Course.ContextMock, :list_students, fn ^auth, _class ->
+        Enum.map(Agent.get(students, & &1), &StudentView.from/1)
+      end)
 
       {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
 
@@ -1097,7 +1104,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
       {:ok, students} = Agent.start_link(fn -> [] end)
       stub_class_page_calls(auth, class: class, server_group: server_group)
-      stub(Course.ContextMock, :list_students, fn ^auth, _class -> Agent.get(students, & &1) end)
+
+      stub(Course.ContextMock, :list_students, fn ^auth, _class ->
+        Enum.map(Agent.get(students, & &1), &StudentView.from/1)
+      end)
 
       {:ok, view, html} = live(conn, "/admin/classes/#{class.id}")
 
@@ -1345,7 +1355,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
 
     stub(Course.ContextMock, :fetch_class, fn ^auth, _id -> {:ok, class} end)
     stub(Servers.ContextMock, :fetch_server_group, fn ^auth, _id -> {:ok, server_group} end)
-    stub(Course.ContextMock, :list_students, fn ^auth, _class -> students end)
+
+    stub(Course.ContextMock, :list_students, fn ^auth, _class ->
+      Enum.map(students, &StudentView.from/1)
+    end)
 
     # The read-model subscriptions delegate to the real use cases so a real
     # broadcast reaches the view; the reconcilers do too, except the student

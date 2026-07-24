@@ -101,6 +101,12 @@ The context's schemas and the database tables they back:
 - [`User`](./schemas/user.ex) (`user_accounts`): A read-view of the account that
   links a login to its `Student`. The [Accounts
   context](../accounts/CONTRIBUTING.md) owns the write side of this table.
+- [`StudentView`](./student_view.ex) (no table): The curated read model of a
+  `Student` for the web layer — the aggregate projected into a plain struct,
+  reusing the nested `class` / `user` read-views. It owns `refresh!/3` (applying
+  a curated domain event to the in-memory projection, delegating class events to
+  `Class.refresh!`) and the web-only `active?/2` / `can_create_servers?/2`
+  predicates, leaving the `Student` schema a persistence concern.
 
 `Class` and `Student` are the **write side** of the `classes` and `students`
 tables that the [Accounts context](../accounts/CONTRIBUTING.md#domain-model)
@@ -254,9 +260,10 @@ exceptions are noted.
   Confirmation](#username-confirmation)).
 - [`DeleteStudent`](./use_cases/delete_student.ex) — `delete_student/2`.
 - [`ReadStudents`](./use_cases/read_students.ex) — `list_students/2`,
-  `fetch_student_in_class/3` (root), and `fetch_authenticated_student/1`
-  (any authenticated user, to load their own record); plus the live-read-model
-  helpers `subscribe_student/1` + `refresh_student/2` (a single student),
+  `fetch_student_in_class/3` (root), and `fetch_authenticated_student/1` (any
+  authenticated user, to load their own record), all returning a curated
+  [`StudentView`](./student_view.ex); plus the live-read-model helpers
+  `subscribe_student/1` + `refresh_student/2` (a single student),
   `subscribe_class_students/1` + `refresh_class_students/4` (a class's student
   list), and `subscribe_student_detail/1` + `refresh_student_detail/2` (a
   student with its nested class, for the admin student detail page).

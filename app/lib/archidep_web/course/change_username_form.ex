@@ -9,7 +9,7 @@ defmodule ArchiDepWeb.Course.ChangeUsernameForm do
 
   import ArchiDep.Helpers.ChangesetHelpers, only: [validate_not_nil: 2]
   import Ecto.Changeset
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.Types
   alias Ecto.Changeset
 
@@ -24,7 +24,7 @@ defmodule ArchiDepWeb.Course.ChangeUsernameForm do
     field(:username, :string, default: "")
   end
 
-  @spec changeset(Student.t(), map()) :: Changeset.t(t())
+  @spec changeset(StudentView.t(), map()) :: Changeset.t(t())
   def changeset(student, params \\ %{}) when is_map(params),
     do:
       %__MODULE__{}

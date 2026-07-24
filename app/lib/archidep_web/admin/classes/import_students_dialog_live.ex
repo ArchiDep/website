@@ -6,7 +6,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
   import ArchiDepWeb.Components.FormComponents
   alias ArchiDep.Course
   alias ArchiDep.Course.Schemas.Class
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDepWeb.Admin.Classes.ImportStudentsCsv
   alias ArchiDepWeb.Admin.Classes.ImportStudentsForm
   alias ArchiDepWeb.Endpoint
@@ -40,7 +40,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     end
   end
 
-  @spec state(Form.t(), map(), list(Student.t())) :: Rendered.t()
+  @spec state(Form.t(), map(), list(StudentView.t())) :: Rendered.t()
   def state(form, student, existing_students) do
     assigns = %{}
 
@@ -61,7 +61,7 @@ defmodule ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive do
     end
   end
 
-  @spec student_exists?(Form.t(), map(), list(Student.t())) :: boolean()
+  @spec student_exists?(Form.t(), map(), list(StudentView.t())) :: boolean()
 
   def student_exists?(%Form{errors: []} = form, student, existing_students) do
     email_column = form[:email_column].value

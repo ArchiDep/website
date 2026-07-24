@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
@@ -379,7 +380,9 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
   end
 
   defp expect_student_join(auth, student, servers) do
-    expect(Course.ContextMock, :fetch_authenticated_student, 1, fn ^auth -> {:ok, student} end)
+    expect(Course.ContextMock, :fetch_authenticated_student, 1, fn ^auth ->
+      {:ok, StudentView.from(student)}
+    end)
 
     expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth ->
       Enum.map(servers, &ServerView.from/1)

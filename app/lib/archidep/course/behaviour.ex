@@ -6,6 +6,7 @@ defmodule ArchiDep.Course.Behaviour do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.Types
 
   @doc """
@@ -125,7 +126,7 @@ defmodule ArchiDep.Course.Behaviour do
   @doc """
   Lists all students in the specified class.
   """
-  @callback list_students(Authentication.t(), Class.t()) :: list(Student.t())
+  @callback list_students(Authentication.t(), Class.t()) :: list(StudentView.t())
 
   @doc """
   Subscribes the calling process to every topic that keeps the list of students
@@ -138,21 +139,21 @@ defmodule ArchiDep.Course.Behaviour do
   one of the topics of `subscribe_class_students/1`, returning the refreshed
   list or `:ignore` for a message that does not concern it.
   """
-  @callback refresh_class_students(Authentication.t(), Class.t(), list(Student.t()), term()) ::
-              {:ok, list(Student.t())} | :ignore
+  @callback refresh_class_students(Authentication.t(), Class.t(), list(StudentView.t()), term()) ::
+              {:ok, list(StudentView.t())} | :ignore
 
   @doc """
   Fetches the student who is currently authenticated.
   """
   @callback fetch_authenticated_student(Authentication.t()) ::
-              {:ok, Student.t()} | {:error, :not_a_student}
+              {:ok, StudentView.t()} | {:error, :not_a_student}
 
   @doc """
   Fetches a student in the given class. If the student exists but is in another
   class, it will not be found.
   """
   @callback fetch_student_in_class(Authentication.t(), UUID.t(), UUID.t()) ::
-              {:ok, Student.t()} | {:error, :student_not_found}
+              {:ok, StudentView.t()} | {:error, :student_not_found}
 
   @doc """
   Validates the data to update an existing student.
@@ -192,20 +193,20 @@ defmodule ArchiDep.Course.Behaviour do
   Subscribes the calling process to every topic that keeps the given student's
   read-model live.
   """
-  @callback subscribe_student(Student.t()) :: :ok
+  @callback subscribe_student(StudentView.t()) :: :ok
 
   @doc """
   Reconciles a student read-model from a PubSub message broadcast on one of the
   topics of `subscribe_student/1`, returning the updated student or `:ignore`
   for a message that does not concern it.
   """
-  @callback refresh_student(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  @callback refresh_student(StudentView.t() | nil, term()) :: {:ok, StudentView.t()} | :ignore
 
   @doc """
   Subscribes the calling process to every topic that keeps a student detail
   read-model — the student, its nested class and its account linkage — live.
   """
-  @callback subscribe_student_detail(Student.t()) :: :ok
+  @callback subscribe_student_detail(StudentView.t()) :: :ok
 
   @doc """
   Reconciles a student detail read-model (the student and its nested class) from
@@ -213,5 +214,6 @@ defmodule ArchiDep.Course.Behaviour do
   `subscribe_student_detail/1`, returning the updated student or `:ignore` for a
   message that does not concern it.
   """
-  @callback refresh_student_detail(Student.t() | nil, term()) :: {:ok, Student.t()} | :ignore
+  @callback refresh_student_detail(StudentView.t() | nil, term()) ::
+              {:ok, StudentView.t()} | :ignore
 end

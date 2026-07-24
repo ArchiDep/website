@@ -9,7 +9,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
 
   import ArchiDep.Helpers.ChangesetHelpers, only: [validate_not_nil: 2]
   import Ecto.Changeset
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.Types
   alias Ecto.Changeset
 
@@ -49,7 +49,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentForm do
     |> validate_not_nil([:name, :email, :username, :domain, :active, :servers_enabled])
   end
 
-  @spec update_changeset(Student.t(), map()) :: Changeset.t(t())
+  @spec update_changeset(StudentView.t(), map()) :: Changeset.t(t())
   def update_changeset(student, params \\ %{}) when is_map(params) do
     %__MODULE__{
       name: student.name,

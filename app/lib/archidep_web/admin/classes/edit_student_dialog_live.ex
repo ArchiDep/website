@@ -4,15 +4,15 @@ defmodule ArchiDepWeb.Admin.Classes.EditStudentDialogLive do
   import ArchiDepWeb.Admin.Classes.StudentFormComponent
   import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Course
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDepWeb.Admin.Classes.StudentForm
 
   @base_id "edit-student-dialog"
 
-  @spec id(Student.t()) :: String.t()
-  def id(%Student{id: id}), do: "#{@base_id}-#{id}"
+  @spec id(StudentView.t()) :: String.t()
+  def id(%StudentView{id: id}), do: "#{@base_id}-#{id}"
 
-  @spec close(Student.t()) :: js
+  @spec close(StudentView.t()) :: js
   def close(student), do: student |> id() |> close_dialog()
 
   @impl LiveComponent

@@ -4,7 +4,7 @@ defmodule ArchiDepWeb.ClientSessionData do
   """
 
   alias ArchiDep.Authentication
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias Ecto.UUID
 
   @derive Jason.Encoder
@@ -26,7 +26,7 @@ defmodule ArchiDepWeb.ClientSessionData do
             | nil
         }
 
-  @spec new(Authentication.t(), Student.t() | nil) :: t()
+  @spec new(Authentication.t(), StudentView.t() | nil) :: t()
   def new(
         %Authentication{
           username: username,
@@ -48,7 +48,7 @@ defmodule ArchiDepWeb.ClientSessionData do
 
   defp dump_student(nil), do: nil
 
-  defp dump_student(%Student{
+  defp dump_student(%StudentView{
          username: username,
          username_confirmed: username_confirmed,
          domain: domain

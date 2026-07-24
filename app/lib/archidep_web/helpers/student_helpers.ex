@@ -6,18 +6,19 @@ defmodule ArchiDepWeb.Helpers.StudentHelpers do
   alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
+  alias ArchiDep.Course.StudentView
 
-  @spec student_not_in_class_tooltip(Student.t()) :: String.t() | nil
+  @spec student_not_in_class_tooltip(StudentView.t()) :: String.t() | nil
 
-  def student_not_in_class_tooltip(%Student{
+  def student_not_in_class_tooltip(%StudentView{
         id: student_id,
         user: %User{student: %Student{id: new_student_id, class: %Class{name: new_class_name}}}
       })
       when student_id != new_student_id,
       do: gettext("Student now in class {class}", class: new_class_name)
 
-  def student_not_in_class_tooltip(%Student{user: %User{student_id: nil}}),
+  def student_not_in_class_tooltip(%StudentView{user: %User{student_id: nil}}),
     do: gettext("Student no longer in this class")
 
-  def student_not_in_class_tooltip(%Student{}), do: nil
+  def student_not_in_class_tooltip(%StudentView{}), do: nil
 end

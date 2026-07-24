@@ -2,7 +2,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
   use ArchiDepWeb, :controller
 
   alias ArchiDep.Course
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
 
   @spec generate_class_csv(Conn.t(), map) :: Conn.t()
@@ -57,10 +57,10 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
 
   defp load_server_data_for(auth, students) do
     students
-    |> Enum.sort_by(fn %Student{name: name, academic_class: academic_class} ->
+    |> Enum.sort_by(fn %StudentView{name: name, academic_class: academic_class} ->
       "#{academic_class} - #{name}"
     end)
-    |> Enum.map(fn %Student{id: student_id} ->
+    |> Enum.map(fn %StudentView{id: student_id} ->
       Task.async(fn -> find_active_server_data_for(auth, student_id) end)
     end)
     |> Task.await_many()

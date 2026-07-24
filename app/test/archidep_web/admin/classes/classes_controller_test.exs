@@ -17,7 +17,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
       class = CourseFactory.build(:class, name: "Demo Class")
 
       with_server =
-        CourseFactory.build(:student,
+        CourseFactory.build(:student_view,
           class: class,
           name: "Alice Cidre",
           academic_class: "CS-1",
@@ -26,7 +26,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
         )
 
       without_server =
-        CourseFactory.build(:student,
+        CourseFactory.build(:student_view,
           class: class,
           name: "Bob Dupont",
           academic_class: nil,
@@ -109,14 +109,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
       class = CourseFactory.build(:class, name: "Demo Class")
 
       first =
-        CourseFactory.build(:student,
+        CourseFactory.build(:student_view,
           class: class,
           username: "alice",
           ssh_exercise_password: "alice-secret"
         )
 
       second =
-        CourseFactory.build(:student,
+        CourseFactory.build(:student_view,
           class: class,
           username: "bob",
           ssh_exercise_password: "bob-secret"

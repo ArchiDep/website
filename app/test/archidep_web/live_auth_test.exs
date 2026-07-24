@@ -4,6 +4,7 @@ defmodule ArchiDepWeb.LiveAuthTest do
   import Hammox
   alias ArchiDep.Accounts
   alias ArchiDep.Course
+  alias ArchiDep.Course.StudentView
   alias ArchiDepWeb.ClientSessionData
 
   @path "/profile"
@@ -30,14 +31,16 @@ defmodule ArchiDepWeb.LiveAuthTest do
     %{conn: conn, auth: auth, user_account: user_account, student: student} =
       register_and_log_in_student(context)
 
+    student_view = StudentView.from(student)
+
     stub(Accounts.ContextMock, :user_account, fn ^auth -> user_account end)
     stub(Accounts.ContextMock, :fetch_active_sessions, fn ^auth -> [] end)
-    stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth -> {:ok, student} end)
-    stub(Course.ContextMock, :subscribe_student, fn ^student -> :ok end)
+    stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth -> {:ok, student_view} end)
+    stub(Course.ContextMock, :subscribe_student, fn ^student_view -> :ok end)
 
     {:ok, view, _html} = live(conn, @path)
 
-    expected = ClientSessionData.new(auth, student)
+    expected = ClientSessionData.new(auth, student_view)
     assert_push_event(view, "authenticated", ^expected)
   end
 end

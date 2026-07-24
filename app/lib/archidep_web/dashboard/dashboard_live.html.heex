@@ -1,6 +1,6 @@
 <Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
   <div
-    :if={@student != nil and not Student.can_create_servers?(@student, @now)}
+    :if={@student != nil and not StudentView.can_create_servers?(@student, @now)}
     class="hero my-4 rounded-lg bg-base-200"
   >
     <div class="hero-content p-10 text-center">
@@ -103,7 +103,7 @@
 
   <.live_component
     :if={
-      @student != nil and Student.can_create_servers?(@student, @now) and
+      @student != nil and StudentView.can_create_servers?(@student, @now) and
         not @student.username_confirmed
     }
     module={WhatIsYourNameLive}
@@ -115,7 +115,7 @@
   <div
     :if={
       (root?(@auth) or
-         (@student != nil and Student.can_create_servers?(@student, @now) and
+         (@student != nil and StudentView.can_create_servers?(@student, @now) and
             @student.username_confirmed)) and
         Enum.empty?(active_servers(@servers))
     }
@@ -237,7 +237,7 @@
 
   <.live_component
     :if={
-      @student != nil and Student.can_create_servers?(@student, @now) and
+      @student != nil and StudentView.can_create_servers?(@student, @now) and
         @student.username_confirmed and
         Enum.empty?(active_servers(@servers))
     }

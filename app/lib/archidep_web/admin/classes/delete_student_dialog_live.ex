@@ -3,14 +3,14 @@ defmodule ArchiDepWeb.Admin.Classes.DeleteStudentDialogLive do
 
   import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Course
-  alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.StudentView
 
   @base_id "delete-student-dialog"
 
-  @spec id(Student.t()) :: String.t()
+  @spec id(StudentView.t()) :: String.t()
   def id(student), do: "#{@base_id}-#{student.id}"
 
-  @spec close(Student.t()) :: js
+  @spec close(StudentView.t()) :: js
   def close(student), do: student |> id() |> close_dialog()
 
   @impl LiveComponent

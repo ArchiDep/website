@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.StudentConfigured
   alias ArchiDep.Course.Events.StudentUpdated
+  alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
@@ -358,7 +359,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     } do
       student = %{student | username_confirmed: true, username: "current-name"}
       id = student.id
-      configured_student = %{student | username: "new-name"}
+      configured_student = %{student | username: "new-name", version: student.version + 1}
 
       expect_profile_page_calls(auth,
         user_account: user_account,
@@ -387,6 +388,18 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
       notification = gettext("Username changed to {name}", name: "new-name")
 
       assert_flash_notification(view, :success, notification)
+
+      # `configure_student/3` broadcasts a `StudentConfigured` event; the page's
+      # `refresh_student` picks it up and the dialog form reflects the new
+      # username on the next render.
+      :ok =
+        Course.PubSub.publish_student_updated(
+          configured_student,
+          StudentConfigured.new(configured_student),
+          EventsFactory.build(:event_reference, version: configured_student.version)
+        )
+
+      wait_for_socket_assigns!(view, &(&1.student.username == "new-name"), "username changed")
 
       assert has_element?(view, ~s(##{@change_username_dialog_id} input[value="new-name"]))
     end
@@ -750,7 +763,7 @@ defmodule ArchiDepWeb.Profile.ProfileLiveTest do
     case Keyword.fetch(opts, :student) do
       {:ok, student} ->
         expect(Course.ContextMock, :fetch_authenticated_student, 2 * mounts, fn ^auth ->
-          {:ok, student}
+          {:ok, StudentView.from(student)}
         end)
 
         # The live view keeps the student read-model current through the Course
