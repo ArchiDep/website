@@ -59,8 +59,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       set_process_label(__MODULE__, auth)
 
       if student != nil do
-        :ok = Course.PubSub.subscribe_student(student.id)
-        :ok = Course.PubSub.subscribe_class(student.class_id)
+        :ok = Course.subscribe_student_detail(student)
       end
 
       :ok = Servers.subscribe_my_servers(auth)
@@ -78,7 +77,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       server_state_map: ServerTrackerClient.server_state_map(servers),
       groups: groups
     )
-    |> attach_server_refreshers()
+    |> attach_refreshers()
     |> ok()
   end
 
@@ -115,16 +114,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
   @impl LiveView
   def handle_info(
-        {:student_updated, %{id: student_id} = event, reference},
-        %Socket{assigns: %{student: %Student{id: student_id} = student}} = socket
-      ),
-      do:
-        socket
-        |> assign(student: Student.refresh!(student, event, reference))
-        |> noreply()
-
-  @impl LiveView
-  def handle_info(
         {:student_deleted, %Student{id: student_id}},
         %Socket{
           assigns: %{
@@ -135,20 +124,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       do:
         socket
         |> assign(student: nil, server_group_member: nil)
-        |> noreply()
-
-  @impl LiveView
-  def handle_info(
-        {:class_updated, event, reference},
-        %Socket{
-          assigns: %{
-            student: %Student{class: %Class{} = class} = student
-          }
-        } = socket
-      ),
-      do:
-        socket
-        |> assign(student: %Student{student | class: Class.refresh!(class, event, reference)})
         |> noreply()
 
   @impl LiveView
@@ -165,18 +140,23 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         |> assign(student: nil)
         |> noreply()
 
-  # On connected mount, keep both server read-models current through the Servers
-  # boundary: the list refresher owns creation, update, deletion and ordering,
-  # and the state-map refresher folds the real-time states the self-managing
-  # tracker pushes. The tracker watches this owner's active servers on its own,
-  # so the page names no server topics or events. Student and class updates keep
+  # On connected mount, keep the student, its server list and the tracker state
+  # map current through the Course and Servers boundaries. A `:class_updated` or
+  # `:student_updated` refreshes both the student (its nested class) and every
+  # server that embeds the changed class or student, so those two share one
+  # `attach_all` hook; a server create/update/delete refreshes the list, and the
+  # tracker (watching this owner's active servers on its own) feeds the state
+  # map. The page names no topics or events; only the two delete notices keep
   # their own handlers above.
-  defp attach_server_refreshers(socket) do
+  defp attach_refreshers(socket) do
     if connected?(socket) do
       auth = socket.assigns.auth
 
       socket
-      |> LiveRefresh.attach(:servers, &Servers.refresh_my_servers(auth, &1, &2))
+      |> LiveRefresh.attach_all([
+        {:student, &Course.refresh_student_detail/2},
+        {:servers, &Servers.refresh_my_servers(auth, &1, &2)}
+      ])
       |> LiveRefresh.attach(:server_state_map, &Servers.refresh_server_state_map/2)
     else
       socket

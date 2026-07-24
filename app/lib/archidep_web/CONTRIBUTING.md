@@ -121,11 +121,17 @@ docs](../../../course/CONTRIBUTING.md#client-side-architecture).
   resolves the session via
   [`Accounts.validate_session_id/2`](../archidep/accounts/CONTRIBUTING.md), then
   assigns `auth`.
-- **[`UserChannel`](./channels/user_channel.ex)** (the `"me"` topic) subscribes
-  to the [Course](../archidep/course/CONTRIBUTING.md) and
-  [Servers](../archidep/servers/CONTRIBUTING.md) PubSub topics for the current
-  student and their servers, and pushes two messages to the browser whenever
-  anything changes:
+- **[`UserChannel`](./channels/user_channel.ex)** (the `"me"` topic) keeps the
+  current student (with its nested class) and the owner's server list live and
+  pushes two messages to the browser whenever anything changes. It is a [live
+  read-model](#live-read-models) consumer — the only one that is **not** a live
+  view — so it delegates to the same context functions
+  (`Course.subscribe_student_detail/1` + `Course.refresh_student_detail/2`,
+  `Servers.subscribe_my_servers/1` + `Servers.refresh_my_servers/3`) but,
+  because a `Phoenix.Channel` has no `attach_hook/4`, dispatches them from a
+  single thin `handle_info/2` clause instead of
+  [`LiveRefresh`](./live_refresh.ex); it names no topics or events. The two
+  pushes are:
   - **`session`** — a [`ClientSessionData`](./client_session_data.ex) struct
     (username, root/impersonating flags, session expiry, and the student's
     username/domain), and
@@ -186,10 +192,18 @@ the owning context instead of spread across every consumer. Exemplars:
   create, update, delete and ordering, so the page names nothing and needs no
   `handle_info/2` at all.
 - [`my_servers_live.ex`](./dashboard/my_servers_live.ex) — whole list, backed by
-  `Servers.subscribe_my_servers/1` + `Servers.refresh_my_servers/2`; the
-  refresher reconciles server-field updates (and re-sorts), while creation and
-  deletion fall through to the page because they also start/stop the server
-  tracker — a process-local side effect that cannot live in a context refresher.
+  `Servers.subscribe_my_servers/1` + `Servers.refresh_my_servers/3`; the
+  refresher owns creation, update, deletion and ordering, and the self-managing
+  tracker watches each server on its own, so the page needs no `handle_info/2`.
+- [`dashboard_live.ex`](./dashboard/dashboard_live.ex) — a student **and** a
+  server list on one page. `Servers.refresh_my_servers/3` also refreshes each
+  server's nested `group` / `owner.group_member` read-view on a `:class_updated`
+  / `:student_updated`, so that one broadcast feeds both the `:student`
+  (`Course.refresh_student_detail/2`) and the `:servers` list; the two therefore
+  share one `attach_all/2` (a chain of `attach/3` would starve one, since the
+  first to claim halts the rest). A second `attach/3` folds the tracker's
+  `:server_state` pushes into `:server_state_map`, and only the two delete
+  notices keep their own `handle_info/2`.
 - [`class_live.ex`](./admin/classes/class_live.ex) — several independent
   read-models on one page, each its own `attach/3`: the class
   (`Course.refresh_class/2`), the student list
@@ -206,6 +220,14 @@ the owning context instead of spread across every consumer. Exemplars:
   process-local subscription to the student's server-owner topic once an account
   is linked) and the two delete navigations — that `attach_all/2` lets fall
   through.
+
+**Outside a live view.** `LiveRefresh` is built on
+`Phoenix.LiveView.attach_hook/4`, which a `Phoenix.Channel` does not have. A
+channel consumer therefore calls the same `subscribe_*` / `refresh_*` functions
+but dispatches them from a plain `handle_info/2`: for each broadcast it hands
+the message to the relevant refresher and swaps the assign on `{:ok, updated}`,
+leaving `:ignore` untouched — the same contract, applied by hand.
+[`UserChannel`](./channels/user_channel.ex) is the one example.
 
 **Choosing the topic.** The `subscribe_*` function picks the _coarsest_ topic
 whose audience is "everyone who would care about any of these events", and

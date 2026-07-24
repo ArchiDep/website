@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.ReadServersTest do
 
   import Hammox
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Servers.Behaviour
   alias ArchiDep.Servers.Context
   alias ArchiDep.Servers.ContextMock
@@ -524,6 +525,70 @@ defmodule ArchiDep.Servers.ReadServersTest do
                [kept, removed],
                {:server_deleted, ServerDeleted.new(removed_server), reference}
              ) == {:ok, [kept]}
+
+      assert_no_stored_events!()
+    end
+
+    test "refreshes each server's nested group on a class update", %{
+      refresh_my_servers: refresh_my_servers
+    } do
+      auth = Factory.build(:authentication)
+      class = CourseFactory.build(:class, version: 1)
+      group = ServersFactory.build(:server_group, id: class.id, version: 1)
+      owner = ServersFactory.build(:server_owner)
+
+      %ServerView{} =
+        view =
+        ServerView.from(
+          ServersFactory.build(:server,
+            group: group,
+            group_id: group.id,
+            owner: owner,
+            owner_id: owner.id
+          )
+        )
+
+      updated_class = %{class | version: 2, name: "Renamed class"}
+      event = ClassUpdated.new(updated_class)
+      reference = EventsFactory.build(:event_reference, version: 2)
+
+      # No stub for the group re-fetch, so a passing assertion proves the
+      # in-memory merge ran across the list rather than a re-fetch.
+      assert refresh_my_servers.(auth, [view], {:class_updated, event, reference}) ==
+               {:ok, [ServerView.refresh!(view, event, reference)]}
+
+      assert_no_stored_events!()
+    end
+
+    test "refreshes each server's nested group member on a student update", %{
+      refresh_my_servers: refresh_my_servers
+    } do
+      auth = Factory.build(:authentication)
+      student = CourseFactory.build(:student, version: 1)
+      member = ServersFactory.build(:server_group_member, id: student.id, version: 1)
+
+      owner =
+        ServersFactory.build(:server_owner, group_member: member, group_member_id: member.id)
+
+      group = ServersFactory.build(:server_group)
+
+      %ServerView{} =
+        view =
+        ServerView.from(
+          ServersFactory.build(:server,
+            group: group,
+            group_id: group.id,
+            owner: owner,
+            owner_id: owner.id
+          )
+        )
+
+      updated_student = %{student | version: 2, username: "renamed"}
+      event = StudentUpdated.new(updated_student)
+      reference = EventsFactory.build(:event_reference, version: 2)
+
+      assert refresh_my_servers.(auth, [view], {:student_updated, event, reference}) ==
+               {:ok, [ServerView.refresh!(view, event, reference)]}
 
       assert_no_stored_events!()
     end

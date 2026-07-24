@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
   alias ArchiDep.Course.Schemas.Student
+  alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.Events.ServerDeleted
@@ -866,6 +867,12 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
     stub(Servers.ContextMock, :subscribe_my_servers, &ReadServers.subscribe_my_servers/1)
     stub(Servers.ContextMock, :refresh_my_servers, &ReadServers.refresh_my_servers/3)
     stub(Servers.ContextMock, :refresh_server_state_map, &ReadServers.refresh_server_state_map/2)
+
+    # The page keeps the student (with its nested class) live through the Course
+    # boundary the same way; route those calls to the real read-model plumbing
+    # so a real broadcast still drives the re-render.
+    stub(Course.ContextMock, :subscribe_student_detail, &ReadStudents.subscribe_student_detail/1)
+    stub(Course.ContextMock, :refresh_student_detail, &ReadStudents.refresh_student_detail/2)
 
     case Keyword.fetch(opts, :groups) do
       {:ok, groups} -> stub(Servers.ContextMock, :list_server_groups, fn ^auth -> groups end)

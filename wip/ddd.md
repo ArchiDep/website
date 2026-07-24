@@ -195,7 +195,7 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
       in a mechanical sweep (#5e). After #5c — see [#5d Consolidate subscribe +
       reconcile behind the
       context](#5d-consolidate-subscribe--reconcile-behind-the-context).
-- [ ] **#5e Sweep the remaining consumers.** Convert the rest of the web
+- [x] **#5e Sweep the remaining consumers.** Convert the rest of the web
       consumers to the #5d pattern (a context `subscribe_*` +
       `LiveRefresh.attach`, dropping their per-event `handle_info` clauses).
       `server_live`, `classes_live`, `my_servers_live`, `dashboard_live`, admin
@@ -206,8 +206,11 @@ coupling](#5-cross-context-refresh-coupling) for the full analysis.
       list + class handlers by design. `ansible_live` is done — the odd one out
       (fed by the `ArchiDep.Tracker` presence topic, not #5c domain events), so
       it gets a context-owned tracker refresher instead of `LiveRefresh.attach`
-      (see the progress note). Remaining: `user_channel` — see [#5e Sweep the
-      remaining consumers](#5e-sweep-the-remaining-consumers).
+      (see the progress note). `user_channel` is done — the **second** odd one
+      out (a `Phoenix.Channel`, no `attach_hook`), delegating the same
+      `subscribe_*` / `refresh_*` functions from a thin `handle_info`. With it,
+      **Group E is complete** (only #7b remains open in the whole backlog) — see
+      [#5e Sweep the remaining consumers](#5e-sweep-the-remaining-consumers).
 
 ### F. Event schema versioning
 
@@ -908,8 +911,27 @@ counts — is a different shape and keeps its handlers.) Two deliberate, safer
 behaviour changes came with the move: a run that can no longer be fetched on
 join/leave now leaves the list unchanged rather than crashing the LiveView
 (`unpair_ok`), matching the `refresh_my_servers` convention; and a `:leave` now
-also reschedules the render tick, as join/update already did. Remaining:
-`user_channel` (a `Phoenix.Channel`, so no `attach_hook`).
+also reschedules the render tick, as join/update already did.
+
+`user_channel` is converted and is the **last** consumer, closing Group E. It is
+the second odd one out: a `Phoenix.Channel` has no `attach_hook`, so it cannot
+use `LiveRefresh`. It becomes the non-live-view twin of `dashboard_live` — it
+holds the authenticated student (with its nested class) and the owner's full
+server list, delegating to `Course.subscribe_student_detail/1` +
+`Course.refresh_student_detail/2` and `Servers.subscribe_my_servers/1` +
+`Servers.refresh_my_servers/3`, and derives the single active server for the
+browser widget. A channel runs both refreshers from one thin `handle_info`
+(there is no halt-stops-the-chain constraint), so no multi-reactor primitive is
+needed; only the two delete notices keep their own guarded clauses (they drop
+the student and its servers). The conversion required **extending
+`refresh_my_servers/3`** to also claim `:class_updated` / `:student_updated`
+(mapping `ServerView.refresh!` over the list, so a student's servers' nested
+`group` / `owner.group_member` stay current for the `active?` check that decides
+the widget). Because that broadcast is now claimed by the `:servers` refresher,
+`dashboard_live`'s own `:class_updated` / `:student_updated` handlers were
+folded into the same `attach_all/2` hook (feeding `:student` and `:servers`
+together) so the servers hook no longer starves the student refresh — the one
+cross-page change the extension forced.
 
 **Topic granularity (decided).** Subscribe once, on mount, to the _coarsest_
 topic whose audience is "everyone who cares about any of these events" — the

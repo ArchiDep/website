@@ -4,11 +4,13 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
   alias ArchiDep.Course
   alias ArchiDep.Course.Events.ClassUpdated
   alias ArchiDep.Course.Events.StudentUpdated
+  alias ArchiDep.Course.UseCases.ReadStudents
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
   alias ArchiDep.Servers.Events.ServerDeleted
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Servers.UseCases.ReadServers
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.Factory
@@ -27,6 +29,7 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
 
   setup do
     stub(ArchiDep.Clock.Mock, :now, fn -> @now end)
+    stub_read_models()
     :ok
   end
 
@@ -381,6 +384,18 @@ defmodule ArchiDepWeb.Channels.UserChannelTest do
     expect(Servers.ContextMock, :list_my_servers, 1, fn ^auth ->
       Enum.map(servers, &ServerView.from/1)
     end)
+  end
+
+  # The channel keeps the student (with its nested class) and the owner's server
+  # list live through the Course and Servers boundaries; route the subscriptions
+  # and reconcilers to the real use cases so a real broadcast drives the channel
+  # and exercises the real merge logic (fetches go through the mocked boundary).
+  defp stub_read_models do
+    stub(Course.ContextMock, :subscribe_student_detail, &ReadStudents.subscribe_student_detail/1)
+    stub(Course.ContextMock, :refresh_student_detail, &ReadStudents.refresh_student_detail/2)
+    stub(Servers.ContextMock, :subscribe_my_servers, &ReadServers.subscribe_my_servers/1)
+    stub(Servers.ContextMock, :refresh_my_servers, &ReadServers.refresh_my_servers/3)
+    :ok
   end
 
   defp student_in(class, attrs) do

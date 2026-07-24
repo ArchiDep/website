@@ -216,6 +216,22 @@ defmodule ArchiDep.Servers.UseCases.ReadServers do
       when is_list(servers),
       do: {:ok, Enum.reject(servers, &(&1.id == id))}
 
+  # A class or student update refreshes the nested `group` /
+  # `owner.group_member` read-views every affected server embeds, so a consumer
+  # holding a live server list stays consistent when the owning class or student
+  # changes.
+  def refresh_my_servers(
+        _auth,
+        servers,
+        {event_name, event, %EventReference{} = reference}
+      )
+      when is_list(servers) and event_name in [:class_updated, :student_updated],
+      do:
+        {:ok,
+         servers
+         |> Enum.map(&ServerView.refresh!(&1, event, reference))
+         |> sort_my_servers()}
+
   def refresh_my_servers(_auth, _servers, _message), do: :ignore
 
   @spec refresh_server_state_map(
