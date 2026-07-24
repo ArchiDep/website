@@ -29,6 +29,7 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Static build step](#static-build-step)
   - [Standalone / archival mode](#standalone--archival-mode)
   - [Optional URL prefix](#optional-url-prefix)
+  - [Decouple PDF generation from production](#decouple-pdf-generation-from-production)
   - [Per-year PDF archive](#per-year-pdf-archive)
   - [Search index](#search-index)
   - [HTML fidelity gate](#html-fidelity-gate)
@@ -66,8 +67,9 @@ constraints](#goals-and-constraints).
       **Decided: adopt `Solid`** rather than a hand-rolled preprocessor — see
       [Revisit the Solid (Liquid) library
       decision](#revisit-the-solid-liquid-library-decision).
-- [ ] Decide whether the intermediate `archidep.json` can be dropped in favour
-      of a shared in-process core — see [Drop the archidep.json
+- [x] Decide whether the intermediate `archidep.json` can be dropped. **Decided:
+      drop the compile-time round-trip; keep `archidep.json` as a build-output
+      artifact for `npm run pdf`** — see [Drop the archidep.json
       round-trip?](#drop-the-archidepjson-round-trip).
 - [ ] Confirm the static-build-step architecture and defer the runtime mode —
       see [Static build step](#static-build-step) and [An architectural fork worth
@@ -119,6 +121,10 @@ constraints](#goals-and-constraints).
       versions — see [Optional URL prefix](#optional-url-prefix).
 - [ ] Decide where per-year generated PDFs are kept alongside the archived site
       — see [Per-year PDF archive](#per-year-pdf-archive).
+- [ ] Decouple PDF generation from the production website: bake absolute
+      production URLs into content links at build time and serve the build
+      locally — see [Decouple PDF generation from
+      production](#decouple-pdf-generation-from-production).
 
 **Search, QA and cutover**
 
@@ -159,12 +165,19 @@ the backlog items stay short.
   a specific **heading**, replacing today's brittle anchor strings. See [A
   richer Course.Material model](#a-richer-coursematerial-model) and [Heading
   references that compile-fail](#heading-references-that-compile-fail).
-- **The intermediate `archidep.json` is a candidate for removal.** It was
-  introduced only so the Elixir app had something to compile against without
-  reading raw Jekyll files. Once both the app and the static build share one
-  Elixir Markdown core, the round-trip may be unnecessary. To be decided, not
-  assumed — see [Drop the archidep.json
-  round-trip?](#drop-the-archidepjson-round-trip).
+- **The intermediate `archidep.json` round-trip is dropped; the file is kept as
+  an output artifact.** It was introduced only so the Elixir app had something
+  to compile against without reading raw Jekyll files. With one shared Elixir
+  Markdown core, `Course.Material` compiles directly from the Markdown sources,
+  so the JSON is no longer a compile-time _input_ — but it is still emitted as a
+  build _output_ for the `npm run pdf` script, which cannot reach into Elixir.
+  See [Drop the archidep.json round-trip?](#drop-the-archidepjson-round-trip).
+- **PDF generation must be independent of the production website.** `npm run
+pdf` should render against a local build while the PDFs' internal links still
+  point to production URLs, achieved by baking a configurable canonical base URL
+  into content links at build time (assets stay relative and local). See
+  [Decouple PDF generation from
+  production](#decouple-pdf-generation-from-production).
 - **The `Solid`-is-not-appropriate conclusion must be re-examined** with a
   proper analysis before we commit to a custom preprocessor. See [Revisit the
   Solid (Liquid) library decision](#revisit-the-solid-liquid-library-decision).
@@ -284,25 +297,49 @@ balance.)
 
 ### Drop the archidep.json round-trip?
 
-`archidep.json` exists only so the Elixir app could compile a model of the
-course without reading raw Jekyll files
+**Decided: drop the compile-time round-trip, but keep `archidep.json` as a
+build-_output_ artifact.** `archidep.json` exists only so the Elixir app could
+compile a model of the course without reading raw Jekyll files
 (`app/lib/archidep/course/helpers/material_helpers.ex` reads it at compile time,
 tracking its SHA to trigger recompiles). Once the **same Elixir core** parses
-the Markdown for both the static build and the app ([Shared Markdown rendering
-core](#shared-markdown-rendering-core)), the intermediate file may be redundant:
-`Course.Material` could compile its model directly from the Markdown sources.
+the Markdown and the metadata generator ([Metadata
+generation](#metadata-generation)) computes the derived structure in-process,
+`Course.Material` compiles its model **directly from the Markdown sources** —
+there is no reason to write JSON and read it back.
 
-Decide between:
+The file itself is **not** deleted, because it has a second, independent
+consumer the app cannot reach: the `npm run pdf` script
+(`course/src/scripts/pdf.ts`), a Node program that reads `archidep.json` to
+enumerate the pages to print and to name the output PDFs. So the file's role
+flips:
 
-- **Drop it** — `Course.Material` derives sections/cheatsheets/headings from the
-  parsed Markdown at compile time; no JSON written for the app's benefit.
-- **Keep it as an output artifact** — still emit `archidep.json` if anything
-  external (PDF generation, tooling, the archived static site) consumes it, but
-  stop treating it as the app's compile-time _input_.
+- **As the app's compile-time _input_** — dropped. `Course.Material` derives
+  sections/cheatsheets/headings from the parsed Markdown at compile time; no
+  JSON is read to build the module.
+- **As a build _output_ artifact** — kept. The Elixir static build serializes
+  its already-built `Course.Material` model to `archidep.json` so `pdf.ts` keeps
+  working unchanged. The shape stays as it is today to avoid churn in `pdf.ts`;
+  it can be slimmed later since it is now ours to define.
 
-Whichever we pick, the goal is **one source of truth** (the Markdown), not a
-Markdown→JSON→module chain. Note `search.json`/`lunr.json` are a separate
-concern — see [Search index](#search-index).
+Consequences to handle when implementing:
+
+- **Replace the recompile trigger.** The `__mix_recompile__?/0` SHA over
+  `archidep.json` must be replaced by registering the course docs and
+  `_progress` files as `@external_resource`s (or digesting the metadata
+  generator's inputs), so a content or progress edit still forces recompilation
+  — now tracking the true source instead of a generated proxy.
+- **Confirmed consumers.** `pdf.ts` is the only non-app reader (verified across
+  `course/src`, the app, and `package.json`); nothing reads the file at app
+  runtime.
+- **Forward-looking.** The [track-progress-in-the-database future-work
+  item](../app/docs/future-work.md) would make progress dynamic; dropping the
+  round-trip removes a serialization layer that transition would otherwise have
+  to unwind, so the two do not conflict.
+
+The result is the intended **one source of truth** (the Markdown), not a
+Markdown→JSON→module chain — while still emitting the JSON the PDF tooling
+needs. Note `search.json`/`lunr.json` are a separate concern — see [Search
+index](#search-index).
 
 ### Shared Markdown rendering core
 
@@ -495,6 +532,61 @@ while all versions coexist. Requirements:
 - Keep it simple: a single configurable base path threaded through the renderer
   and metadata. If it turns out to be disproportionately complex, descope to a
   manual post-build rewrite — but a build-time prefix is the preferred outcome.
+
+### Decouple PDF generation from production
+
+**Goal: `npm run pdf` should run against a local build, not the deployed
+production website, while the links inside the PDFs still point to production
+URLs.** Today `pdf.ts` is pointed at `https://archidep.ch` because that is the
+only way to get production URLs into the exported PDFs — a constraint that ties
+an expensive, human-run step to the live site.
+
+The dependency is narrow. Internal links are generated with `relative_url` and
+`baseurl` is empty, so anchor hrefs are **root-relative** (`/course/…`). When
+Puppeteer prints a page, Chrome resolves those hrefs against the URL it loaded
+(`page.goto`), so the serving origin becomes the link target — serve from
+localhost and you get localhost links. Nothing in the PDF _content_ needs
+production: the pages render client-side (reveal.js, mermaid, the git-memoir
+diagrams via the `git-memoir-*` query params) from static assets, and the
+dashboard websocket is irrelevant to an anonymous export (and absent in
+standalone mode).
+
+**Design principle — split what is currently conflated:** assets load from
+wherever Puppeteer fetches (**local, relative**); content cross-links are
+**absolute production URLs baked at build time**. Once links are absolute and
+assets relative, the PDF is identical regardless of serving origin, so we serve
+locally and never touch production.
+
+Do **not** solve this with a `<base href>` element — it also redirects
+root-relative _asset_ URLs to the base origin, reintroducing the very dependency
+we are removing and breaking local asset loading.
+
+The clean end state (with the Elixir renderer): generalize the [optional URL
+prefix](#optional-url-prefix) knob into a **configurable canonical base URL**
+threaded through the renderer. The static build emits absolute production URLs
+on content links and relative URLs on assets; serve that build locally (a
+throwaway `Plug.Static`, or the app in a preview mode) and point Puppeteer at
+it. PDF generation then depends on a **build artifact**, not a running site —
+reproducible in CI, working offline, and able to regenerate a past year's PDFs
+from that year's frozen archive. It composes with the
+`archidep.json`-as-output-artifact decision ([Drop the archidep.json
+round-trip?](#drop-the-archidepjson-round-trip)): `pdf.ts` reads the emitted
+manifest for _what_ to print, and the canonical base URL controls _what the
+links say_.
+
+An interim option that works before the renderer lands — serve the current
+Jekyll `priv/static` build locally and rewrite root-relative anchor hrefs to the
+production origin in a `page.evaluate` just before `page.pdf()` — is available
+if decoupling is wanted sooner, but the canonical-base-URL build is the intended
+outcome.
+
+**Verify before relying on local serving:** this assumes no course page bakes a
+runtime-fetched value into visible content at page load (which would differ
+between the production app and a plain static server). None is known to exist —
+the pages appear to render entirely client-side from static assets, with the
+dashboard websocket carrying only session/cloud-server data irrelevant to an
+anonymous export — but confirm it when implementing this task; if one does turn
+up, that content would need a static fallback in the export build.
 
 ### Per-year PDF archive
 
