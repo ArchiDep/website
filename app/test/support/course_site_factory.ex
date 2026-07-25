@@ -9,6 +9,9 @@ defmodule ArchiDep.Support.CourseSiteFactory do
 
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.PageRef
+  alias ArchiDep.CourseSite.Renderer.RenderContext
+  alias ArchiDep.CourseSite.Renderer.RenderOptions
+  alias ArchiDep.CourseSite.Renderer.Source
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
@@ -67,6 +70,65 @@ defmodule ArchiDep.Support.CourseSiteFactory do
       assets: assets,
       page_assets: page_assets,
       pdfs: pdfs
+    )
+  end
+
+  @spec source_factory(map()) :: Source.t()
+  def source_factory(attrs!) do
+    {text, attrs!} = Map.pop_lazy(attrs!, :text, fn -> "Body of #{slug()}.\n" end)
+
+    [] = Map.keys(attrs!)
+
+    {:ok, source} = Source.parse(text)
+    source
+  end
+
+  @spec render_options_factory(map()) :: RenderOptions.t()
+  def render_options_factory(attrs!) do
+    {reveal_all_solutions, attrs!} = Map.pop(attrs!, :reveal_all_solutions, false)
+    {strict_variables, attrs!} = Map.pop(attrs!, :strict_variables, true)
+    {tags, attrs!} = Map.pop(attrs!, :tags)
+    {ast_passes, attrs!} = Map.pop(attrs!, :ast_passes, [])
+    {html_passes, attrs!} = Map.pop(attrs!, :html_passes, [])
+
+    [] = Map.keys(attrs!)
+
+    opts = [
+      reveal_all_solutions: reveal_all_solutions,
+      strict_variables: strict_variables,
+      ast_passes: ast_passes,
+      html_passes: html_passes
+    ]
+
+    RenderOptions.new(if tags, do: [{:tags, tags} | opts], else: opts)
+  end
+
+  @spec render_context_factory(map()) :: RenderContext.t()
+  def render_context_factory(attrs!) do
+    {source, attrs!} = Map.pop_lazy(attrs!, :source, fn -> build(:source) end)
+
+    {source_path, attrs!} =
+      Map.pop_lazy(attrs!, :source_path, fn -> "_course/101-#{slug()}/subject.md" end)
+
+    {urls, attrs!} = Map.pop_lazy(attrs!, :urls, fn -> build(:url_context) end)
+
+    {page, attrs!} =
+      Map.pop_lazy(attrs!, :page, fn -> {:document, build(:document_ref, type: :subject)} end)
+
+    {page_variables, attrs!} = Map.pop(attrs!, :page_variables, %{})
+    {includes, attrs!} = Map.pop(attrs!, :includes, %{})
+    {options, attrs!} = Map.pop_lazy(attrs!, :options, fn -> build(:render_options) end)
+
+    [] = Map.keys(attrs!)
+
+    RenderContext.new(
+      source: source,
+      source_path: source_path,
+      urls: urls,
+      page: page,
+      page_variables: page_variables,
+      includes: includes,
+      options: options
     )
   end
 

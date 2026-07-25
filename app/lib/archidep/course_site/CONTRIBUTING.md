@@ -18,6 +18,13 @@ and tooling that also apply here. Read that document first.
   - [Assets co-located with a page](#assets-co-located-with-a-page)
   - [Generated PDFs](#generated-pdfs)
   - [Errors](#errors)
+- [Rendering](#rendering)
+  - [Every tag body is its own Markdown document](#every-tag-body-is-its-own-markdown-document)
+  - [Passes: over the document, or over the page](#passes-over-the-document-or-over-the-page)
+  - [The opening of a page](#the-opening-of-a-page)
+  - [Slides are not converted](#slides-are-not-converted)
+  - [Reporting rather than raising](#reporting-rather-than-raising)
+  - [Known differences from what Jekyll produces](#known-differences-from-what-jekyll-produces)
 - [Testing](#testing)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -158,6 +165,124 @@ the first. Use the bang where a failure is a programmer error, such as the
 application's own navigation. Both render their message with `format_error/1`,
 so there is one wording for the same problem wherever it surfaces.
 
+## Rendering
+
+[`Renderer`](./renderer.ex) turns one source file into what the site serves for
+it. A document goes through **two stages**, the same two Jekyll uses: the Liquid
+of the whole document is expanded first
+([`Renderer.Liquid`](./renderer/liquid.ex)), and what comes out is then
+converted from Markdown ([`Renderer.Markdown`](./renderer/markdown.ex)). The
+order is what lets a tag produce Markdown and have it converted like the rest of
+the page.
+
+A build hands the renderer a [`RenderContext`](./renderer/render_context.ex) —
+one document, which page of which build it is — and gets back a page or a list
+of what is wrong with it. Nothing reads a file: the partials a document may
+include are parsed by `Renderer.compile_includes/1` and passed in, so a render
+is a function of its inputs like the rest of the subsystem.
+
+### Every tag body is its own Markdown document
+
+A block tag converts its own body, rather than emitting Markdown for the page's
+conversion to pick up later. That is not a stylistic choice: a tag wraps its
+body in HTML, and CommonMark treats the content of a raw HTML block as opaque,
+so a single conversion of the whole page would leave the inside of every note
+and callout unconverted. Jekyll converts tag bodies separately for the same
+reason.
+
+Two consequences for anyone writing a tag:
+
+- **Read the body with the right helper.** A body of prose is parsed as Liquid
+  ([`NestedBody`](./renderer/liquid/nested_body.ex)) because the course's notes
+  and callouts contain `{% link %}` tags; a body of code is captured verbatim
+  ([`RawBody`](./renderer/liquid/raw_body.ex)) so that a `{{` in a shell sample
+  is a sample. A tag whose markup contains a path reads it with
+  [`RawMarkup`](./renderer/liquid/raw_markup.ex), since Liquid's lexer rejects
+  an unquoted slash.
+- **Emit no blank line.** A blank line ends an HTML block in CommonMark, so a
+  blank line inside a tag's wrapper would have the rest of that wrapper parsed
+  as Markdown. The output of `Renderer.Markdown` never contains one; only
+  hand-written wrappers can.
+
+### Passes: over the document, or over the page
+
+Two seams rewrite what the renderer produces, and which one a rewrite belongs to
+is decided by what it needs to see:
+
+- An [`AstPass`](./renderer/ast_pass.ex) runs over **every** Markdown document
+  the build converts, a page and a tag body alike. Rewriting the URL of an image
+  belongs here.
+- An [`HtmlPass`](./renderer/html_pass.ex) runs **once**, over the finished HTML
+  of a page. Anything that has to see inside a tag's output belongs here, since
+  a tag's body is one opaque node by the time the page's document exists.
+
+Emoji shortcodes are the sharp case: heading identifiers are slugged from the
+heading's text as it is rendered, and the course links to headings such as
+`#exclamation-create-your-server`. Replacing the shortcode before rendering
+would move every one of those anchors, so it can only be an `HtmlPass`.
+
+### The opening of a page
+
+A page comes back in two pieces, because the site shows its opening above the
+table of contents and the rest below. [`Excerpt`](./renderer/excerpt.ex) splits
+the parsed document at the `excerpt_separator` the front matter declares, or
+after the first block when it declares none.
+
+Splitting the document rather than the text is what makes this safe: reference
+links are already resolved when the document is parsed, so both pieces keep
+working, and a separator written inside a code block is a code block rather than
+a place to cut. Jekyll instead renders the opening twice and deletes one copy
+from the other by string match, which fails silently whenever anything in the
+opening renders differently the second time.
+
+One deliberate divergence: five documents declare a separator and never write
+it. Jekyll makes the whole page the opening; here the page is cut after its
+first block, as if it had declared nothing.
+
+### Slides are not converted
+
+A deck is converted in the browser: reveal.js splits it into slides and converts
+each one. So `Renderer.render_slides/1` stops after the Liquid stage and hands
+back Markdown.
+
+That is also why a deck's link reference definitions are **substituted into it**
+rather than appended to it, as they are for a page: the definitions sit at the
+bottom of the file, and every slide but the last would be converted without
+them.
+
+### Reporting rather than raising
+
+A document that refers to a chapter that does not exist, an image that is not
+there or a partial that was never given to the build produces a page **and** a
+list of [`RenderError`](./renderer/render_error.ex)s. Only a document that does
+not parse produces nothing.
+
+So a tag renders what it can and calls
+[`Registers.report/2`](./renderer/liquid/registers.ex); a pass returns its
+errors alongside its result; a filter returns `{:error, exception, fallback}`,
+which is the contract `Solid` expects and the reason a render error is an
+exception. An error naming a URL delegates its wording to `Urls.format_error/1`,
+per [Errors](#errors) above.
+
+`Registers` is also the only thing that knows the key the rendering context
+lives under in `Solid`'s registers. Anything a tag needs to produce besides HTML
+— identifiers to check for duplicates, say — belongs there too rather than as a
+new field of `RenderContext`, which is built once per document and never
+updated.
+
+### Known differences from what Jekyll produces
+
+The bar is a page that reads correctly and looks right, not identical markup.
+Two differences are known and expected rather than regressions:
+
+- A heading carries an anchor element (`<h2 id="…">Text<a class="anchor"></a>`)
+  that kramdown does not emit. The identifier itself is the same — verified
+  against every heading of every course document.
+- Code blocks are not highlighted yet. MDEx highlights through
+  [`lumis`](https://hex.pm/packages/lumis), which emits different markup from
+  the `rouge` classes the theme is written against; enabling it is part of the
+  theme's own migration.
+
 ## Testing
 
 Everything here is pure, so tests are plain `ExUnit.Case, async: true` with
@@ -171,9 +296,15 @@ Two specifics for this subsystem:
   hand from the emission table rather than from the code's output.
 - The claims that later work depends on are pinned as [property-based
   tests][properties]: that an asset next to a page is unaffected by how the
-  build is published, that a global asset is never absolutized, and that the
-  identity round-trips hold. Generators live in
+  build is published, that a global asset is never absolutized, that the
+  identity round-trips hold, and that rendering a parsed document is rendering
+  the Markdown — the premise the pass seams rest on. Generators live in
   [`CourseSiteFactory`](../../../test/support/course_site_factory.ex).
+- The renderer is driven by the tags and passes in
+  [`CourseSiteRendererTestTags`](../../../test/support/course_site_renderer_test_tags.ex)
+  rather than by the course's real ones, so that a test of the pipeline does not
+  depend on what any particular tag happens to emit. They are also the worked
+  example of the tag contract described above.
 
 [app-contributing]: ../../../CONTRIBUTING.md
 [bounded-contexts]: ../../../CONTRIBUTING.md#bounded-contexts

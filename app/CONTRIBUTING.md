@@ -634,6 +634,17 @@ defines application-specific metrics as a [PromEx plugin][prom-ex-plugin]:
 - [Heroicons][heroicons] for SVG icons in the web interface, via the
   [`heroicons` Hex package][heroicons-hex].
 
+- [Solid][solid] (a pure-Elixir implementation of the [Liquid][liquid] template
+  language) and [MDEx][mdex] (Markdown, with access to the parsed document) to
+  render the [course material site](./lib/archidep/course_site/CONTRIBUTING.md).
+  The course's content is written for Liquid and Markdown, so these are what let
+  it be rendered without editing it. [YamlElixir][yaml-elixir] reads the front
+  matter of each document.
+
+  [Lumis][lumis] is the syntax highlighter MDEx delegates to. It is not enabled
+  yet — the theme's stylesheets are still written against the markup the
+  previous toolchain produced.
+
 - [Sentry][sentry] and its [Elixir integration][sentry-elixir] to report errors
   and exceptions in development and production. You will find the related
   configuration in the `config` directory, as well as the [`ArchiDep.Sentry`

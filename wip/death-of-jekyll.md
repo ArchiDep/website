@@ -118,9 +118,12 @@ constraints](#goals-and-constraints).
       [`app/lib/archidep/course_site/CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md)),
       with six spec corrections recorded below — see [URL and link emission
       seam](#url-and-link-emission-seam).
-- [ ] Build a shared Markdown-parsing/rendering core (Solid + MDEx + AST
-      helpers) reusable by both the static build and the Phoenix app — see
-      [Shared Markdown rendering core](#shared-markdown-rendering-core).
+- [x] Build a shared Markdown-parsing/rendering core (Solid + MDEx + AST
+      helpers) reusable by both the static build and the Phoenix app. **Done:
+      `ArchiDep.CourseSite.Renderer`** and its submodules, including the inline
+      Liquid (`{% link %}`, `{% include %}`, `relative_file_url`), with five
+      spec corrections recorded below — see [Shared Markdown rendering
+      core](#shared-markdown-rendering-core).
 - [ ] Port the six custom block tags
       (`note`/`callout`/`cols`/`solution`/`mermaid`/`markdown`) as `Solid`
       custom tags — see [Custom block tags](#custom-block-tags).
@@ -1080,11 +1083,73 @@ Two smaller findings from the implementation, neither affecting the design:
 
 ### Shared Markdown rendering core
 
-Build `ArchiDep.Course.Renderer` (or similar) as a **plain, dependency-light
-module** wrapping `Solid` + MDEx: run the source through `Solid` (expanding the
-custom block and inline tags — see [Custom block tags](#custom-block-tags)),
-parse the result to a Markdown AST via MDEx, run AST passes (heading anchors,
-target-blank, emoji), render HTML. It must be callable from:
+**Implemented** as `ArchiDep.CourseSite.Renderer` (plus `Source`,
+`RenderContext`, `RenderOptions`, `RenderError`, `Markdown`, `Excerpt`, `Page`,
+`Slides`, the `AstPass`/`HtmlPass` behaviours and the `Liquid.*` submodules), in
+the same namespace as the [URL seam](#url-and-link-emission-seam) rather than in
+the `Course` context — the renderer belongs with the seam it drives, outside the
+bounded contexts, and it is documented in
+[`app/lib/archidep/course_site/CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md).
+It ships with the inline Liquid (`{% link %}`, `{% include %}`,
+`relative_file_url`), so the URL seam has its first consumer; the six block tags
+are the [next task](#custom-block-tags), which plugs into the tag table.
+
+Five corrections to this section, found while implementing it:
+
+- **Two pass seams, not one.** This section listed heading anchors, target-blank
+  and emoji as AST passes. Only rewrites that must see a _Markdown document_ can
+  be: a block tag converts its own body during the Liquid stage, so by the time
+  the page's document exists that body is one opaque HTML node — and **184 links
+  in 28 files** live inside block-tag bodies, plus every emoji shortcode a tag
+  emits in its own wrapper. `target-blank` and `jemoji` are therefore
+  `HtmlPass`es over the finished page. This also makes the ordering constraint
+  in [Smaller Jekyll plugins](#smaller-jekyll-plugins) structural rather than a
+  rule to remember: heading identifiers are produced while rendering, emoji run
+  after.
+- **The excerpt is split on the parsed document.** `<!-- more -->` survives
+  parsing as a top-level HTML block, so the page is cut there rather than in the
+  source text — which means a separator inside a code block cannot mis-split the
+  page, and both halves keep their reference links, since those are resolved at
+  parse time. This replaces Jekyll's `remove_first` string match. A document
+  that declares no separator is cut after its first block, which is Jekyll's
+  default; the **five documents that declare one and never write it** are cut
+  the same way rather than becoming all-excerpt as they are today.
+- **Slides substitute their link references rather than appending them.** This
+  plan's [Reference-link resolution](#reference-link-resolution) section says
+  the definitions are appended to slides; they cannot be. reveal.js splits a
+  deck into sections and converts each one on its own, so definitions at the
+  bottom would only ever serve the last slide. Jekyll does the substitution for
+  slides in its generator (`archidep.rb`, not the `pre_render` hook), and the
+  port does the same. Appending remains right for a page, where one Markdown
+  document is parsed as a whole.
+- **The spike's attribute parser rejects most real tags**, and the whole-corpus
+  parse did not catch it because the stub tags never tokenized their markup.
+  `Solid`'s lexer emits a `:comma` token, which `{% callout type: more, id:
+what-is-npm %}` (×24 and counting) hits, and a quoted value arrives as a
+  four-element token that the spike's value clause does not match. Both are
+  fixed and pinned with a table test over the real markup the content writes.
+- **A render error is an exception, and locations are shifted once.** `Solid`
+  requires a custom filter's failure to be `{:error, exception, fallback}` and
+  calls `Exception.message/1` on it, so the error type implements `Exception`.
+  Note also that `Solid.render/3` only reports `{:error, …}` for _its own_
+  undefined-variable and undefined-filter errors, so a renderer error arrives on
+  the `{:ok, …}` branch: the core treats a non-empty error list as a failure
+  whichever branch it came on. Errors carry the line of the file, not of the
+  body, which the front matter's length is added back to at the end.
+
+Two things also worth recording for the [fidelity gate](#html-fidelity-gate):
+MDEx adds an empty anchor element inside every heading (the identifiers
+themselves are unchanged), and code blocks are unhighlighted until the [`lumis`
+swap](#spike-results) lands. `lumis` is nonetheless already a dependency, so
+that MDEx's own type specifications resolve.
+
+The original design, for the record:
+
+Build the renderer as a **plain, dependency-light module** wrapping `Solid` +
+MDEx: run the source through `Solid` (expanding the custom block and inline tags
+— see [Custom block tags](#custom-block-tags)), parse the result to a Markdown
+AST via MDEx, run AST passes (heading anchors, target-blank, emoji), render
+HTML. It must be callable from:
 
 - the **static build step** (writes files to `priv/static`), and
 - (potentially, later) a **runtime mode** — kept possible but not built now.
@@ -1192,6 +1257,15 @@ run of `[ref]: url` lines at the end of the document — but the substitution is
 not. This is what `tmp/spike` does, and it reproduces the reference link in the
 `101-command-line` `cols` block exactly.
 
+**Done, with the two paths differing** (`ArchiDep.CourseSite.Renderer.Source`):
+appending works for a **page**, which is one Markdown document, so a tag body
+and both halves of the page all resolve their references. It does **not** work
+for **slides**, which never reach a Markdown renderer and are split into
+sections by reveal.js in the browser — appended definitions would serve only the
+last slide. Slides therefore keep the Ruby substitution (`][ref]` → `](url)`),
+which is what Jekyll's generator already does to `item.content` before the
+`pre_render` hook builds `raw_markdown`.
+
 ### TOC and heading anchors
 
 Generate heading IDs and the "On this page" navigation from the MDEx AST,
@@ -1214,12 +1288,18 @@ Replace the remaining plugins:
   `:books:`). Port the shortcode→emoji map. **Ordering constraint:** heading IDs
   are slugged from the _shortcode_ text, not the emoji — `### :exclamation:
 Create your server` is `#exclamation-create-your-server`, and the app links to
-  it — so emoji substitution must run **after** heading IDs are generated.
-- **`jekyll-target-blank`** — trivial AST pass adding `target="_blank"` to
-  external links. It must run on the **logical** references, before the [URL and
-  link emission seam](#url-and-link-emission-seam) absolutizes content links:
-  once a PDF build has rewritten internal links to `https://archidep.ch/…` they
-  are indistinguishable from external ones by inspection.
+  it — so emoji substitution must run **after** heading IDs are generated, which
+  makes it an HTML pass rather than an AST one (see [Shared Markdown rendering
+  core](#shared-markdown-rendering-core)).
+- **`jekyll-target-blank`** — a trivial pass adding `target="_blank"` to
+  external links, over the **finished HTML** rather than the Markdown document:
+  184 links in 28 files sit inside block-tag bodies, which are already HTML by
+  the time the page's document exists (see [Shared Markdown rendering
+  core](#shared-markdown-rendering-core)). It must run on the **logical**
+  references, before the [URL and link emission
+  seam](#url-and-link-emission-seam) absolutizes content links: once a PDF build
+  has rewritten internal links to `https://archidep.ch/…` they are
+  indistinguishable from external ones by inspection.
 - **`jekyll-seo-tag`** — move into the HEEx `<head>` (and the static layout's
   head for standalone mode).
 - **`jekyll-feed`** — drop, or reimplement if the RSS feed is still wanted.
