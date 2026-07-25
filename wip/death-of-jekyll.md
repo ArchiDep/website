@@ -102,12 +102,13 @@ constraints](#goals-and-constraints).
       document-relative, the search assets are named with a build id, and the
       home page is emitted at both the base path and the version prefix during
       the year — see [URL and link emission seam](#url-and-link-emission-seam).
-- [ ] Run the confirmatory `Solid` + MDEx spike before locking the tag design:
-      `cols` as a raw-body block tag, one inline tag + one filter, a fenced code
-      block through MDEx, and an AST round-trip that leaves **raw HTML nodes
-      intact** (the slides and several subjects embed `<img>`/`<div>` directly)
-      — see [Revisit the Solid (Liquid) library
-      decision](#revisit-the-solid-liquid-library-decision).
+- [x] Run the confirmatory `Solid` + MDEx spike before locking the tag design.
+      **Done: the decision stands**, with three corrections — prose block bodies
+      need nested Liquid parsing rather than raw capture (8 bodies embed
+      `{% link %}`), `{% link %}`/`{% include %}` must take raw markup because
+      `Solid`'s lexer rejects unquoted paths, and syntax highlighting is the one
+      non-drop-in part (rouge → `lumis` classes, touching the theme) — see
+      [Spike results](#spike-results).
 - [ ] Implement the URL/link emission seam as a standalone module with unit
       tests, ahead of its consumers — see [URL and link emission
       seam](#url-and-link-emission-seam).
@@ -119,6 +120,14 @@ constraints](#goals-and-constraints).
       custom tags — see [Custom block tags](#custom-block-tags).
 - [ ] Reproduce reference-link resolution into extracted tag blocks and slides —
       see [Reference-link resolution](#reference-link-resolution).
+- [ ] Move syntax highlighting from rouge to `lumis` (MDEx's highlighter):
+      replace `theme/src/highlight-{light,dark}.css` with the matching `lumis`
+      theme stylesheets and update the `.highlighter-rouge` / `pre.highlight`
+      selectors in `theme/src/course.css` — see [Spike results](#spike-results).
+- [ ] Fix the two `{% note: %}` tag-name typos in
+      `514-certbot-deployment/exercise.md` and `704-render-deployment/exercise.md`,
+      which Ruby Liquid tolerates but `Solid` rejects — see [Spike
+      results](#spike-results).
 - [ ] Generate heading IDs and the "On this page" TOC from the AST — see [TOC
       and heading anchors](#toc-and-heading-anchors).
 - [ ] Replace the smaller Jekyll plugins (`jemoji`, `target-blank`, `seo-tag`,
@@ -341,14 +350,17 @@ the plan's original assumption that `Solid` was not appropriate. The evidence
 that flips it, measured against the actual content and the actual `Solid`
 source:
 
-- **Block-tag bodies are pure Markdown.** Extracting every
-  `note`/`callout`/`cols`/`solution`/`markdown` body and scanning it turns up
-  **no** nested tags, `{% include %}`, `{% link %}`, or filters inside them —
-  only `:emoji:` shortcodes, which are an emoji-layer concern, not Liquid. So a
-  body never needs Liquid re-parsing; it needs **raw capture → MDEx**, which is
-  exactly what `Solid`'s built-in `RawTag` already does. The "custom block tags
-  with Markdown-inside are fiddly" objection assumed nested Liquid in bodies and
-  does not hold.
+- **Block-tag bodies are Markdown, and a handful also contain a `{% link %}`.**
+  Parsing every block-tag body in the corpus turns up **8 bodies containing a
+  nested `{% link %}`** (11 tags in all, in `note` and `callout` bodies); no
+  body contains any other nested tag, `{% include %}`, or filter. So a prose
+  body cannot be captured raw — it is parsed as a **nested parse tree**,
+  rendered, and only then handed to MDEx (see [Custom block
+  tags](#custom-block-tags) for the corrected shape). `Solid` supports this
+  directly via `Solid.Parser.parse_until/3`, which is how its own `if`/`for`
+  tags read their bodies, so the cost is one shared helper rather than raw
+  capture. The "custom block tags with Markdown-inside are fiddly" objection
+  still does not hold, but for a different reason than originally stated.
 - **The genuinely fiddly part is the _inline_ Liquid, and that is Liquid's home
   turf.** Content uses `{% link path %}` **×94**, `{% include icons/x.html %}`
   **×44**, `{{ x | relative_file_url }}` **×22**, `{{ page.title }}` ×3, `{%
@@ -362,10 +374,11 @@ highlight %}` ×2 — inline output tags and filters. A hand-rolled scanner woul
   output (see that gate), but a hand-rolled preprocessor that is _more_
   permissive about stray delimiters is an avoidable behaviour change.
 - **Less custom code, on a maintained/tested base.** The implementation is ~6
-  thin block-tag structs (a shared raw-body helper, à la `RawTag`, whose
-  `render` calls MDEx on the captured body) + 2–3 inline tags + one
-  `relative_file_url` filter — against a library tested for parity with the Ruby
-  gem, rather than a bespoke tokenizer we own and debug.
+  thin block-tag structs (two shared body helpers — a nested-body one for prose
+  bodies and a raw-capture one, à la `RawTag`, for code and diagram bodies) +
+  2–3 inline tags + one `relative_file_url` filter — against a library tested
+  for parity with the Ruby gem, rather than a bespoke tokenizer we own and
+  debug.
 - **The control-flow Liquid (`{% for %}`/`{% unless %}`) lives _only_ in
   `archidep.json.liquid`**, which we are dropping regardless (see [Drop the
   archidep.json round-trip?](#drop-the-archidepjson-round-trip)); prose has
@@ -381,19 +394,79 @@ hand-rolled, delimiter-agnostic preprocessor is the only thing that avoids this
 leash entirely — the sole strong argument for that path, and it does not win on
 balance.)
 
-**Remaining spike before locking [Custom block tags](#custom-block-tags)**
-(~half a day, confirmatory only):
+#### Spike results
 
-1. `cols` on `Solid`: raw-body block tag → split captured body on
-   `<!-- col -->` → MDEx each segment → wrap in the grid divs; assert the output
-   is **structurally equivalent** to the current Ruby tag on a real block (same
-   grid divs and content — not byte-identical; see [HTML fidelity
-   gate](#html-fidelity-gate)).
-2. One inline path: `{% link _course/…/exercise.md %}` → URL via a custom tag,
-   and `{{ x | relative_file_url }}` → asset URL via a custom filter.
-3. A fenced code block through MDEx to check raw-HTML-island handling (a
-   MDEx-vs-kramdown _fidelity_ check, identical under either implementation
-   choice).
+The confirmatory spike is **done**; the decision to adopt `Solid` + MDEx
+**stands**. Throwaway code and assertions live in `tmp/spike` (`mix test`,
+`mix run parse_all.exs`); it renders the real Markdown under
+`course/collections` and compares against the HTML Jekyll currently produces
+under `app/priv/static`. What it established, step by step:
+
+1. **`cols` on `Solid` works and matches.** A block tag reading its body,
+   splitting on `<!-- col -->`, running MDEx per segment and wrapping the
+   results in the grid divs reproduces both real blocks tested (the `columns: 3`
+   block with an explicit `<!-- col md:col-span-2 -->` and an image, and a
+   default two-column block with an implicit first column and a reference link)
+   **structurally equivalently** to the Jekyll output. The `key: value`
+   attribute form (`{% cols columns: 3 %}`, `{% note type: more %}`) tokenizes
+   with `Solid`'s lexer as-is — no custom attribute parsing needed.
+2. **The inline path works, with one API constraint.** `{% link %}` resolves
+   through an injected resolver, including the multi-line form used in
+   `803-docker-isolation` and a trailing `#anchor`. **But `Solid`'s lexer
+   rejects unquoted paths containing `/`** (`Unexpected character '/'`), so `{%
+link %}` and `{% include %}` must consume their markup **verbatim** up to
+   `%}` — as Jekyll's own tags do — rather than via
+   `Solid.Lexer.tokenize_tag_end/1`. Separately, **custom filters receive only
+   `(name, args)`, with no render context**, so `relative_file_url` cannot reach
+   the current page through `Solid`: per-document state must be closed over in a
+   filter function built per render. Both fit the [URL and link emission
+   seam](#url-and-link-emission-seam) design; neither is a blocker.
+3. **Raw HTML islands survive MDEx intact** — with `render: [unsafe: true]`,
+   which is required (the default replaces them with
+   `<!-- raw HTML omitted -->`). Islands are preserved **byte-for-byte** as
+   `MDEx.HtmlBlock`/`MDEx.HtmlInline` nodes, single quotes and self-closing
+   slashes included, and a parse → render round-trip is identical to a direct
+   render, so AST rewriting (digesting image URLs, heading IDs) is safe.
+
+The spike also **parsed the whole corpus**: 117 of 121 content, layout and
+include files parse with `Solid`. The 4 failures are all actionable, and none is
+a stray `{{`/`{%` in a code sample — the risk flagged above remains latent:
+
+- `{% seo %}` and `{% feed_meta %}` in `_layouts/slides.html` and
+  `_includes/head.html` are plugin tags already covered by [Smaller Jekyll
+  plugins](#smaller-jekyll-plugins).
+- `{% note: type: tip %}` in `514-certbot-deployment/exercise.md` and
+  `{% note: type: more %}` in `704-render-deployment/exercise.md` are **content
+  typos** (a stray colon after the tag name). Ruby Liquid tolerates them —
+  both render as proper notes today — while `Solid` reads the tag name as
+  `note:` and fails. Fix the two sources; no code change is warranted.
+
+Two divergences worth recording for the [HTML fidelity gate](#html-fidelity-gate):
+
+- **Syntax highlighting is the one part that is not a drop-in.** kramdown/rouge
+  emits `<div class="language-bash highlighter-rouge"><div class="highlight">
+  <pre class="highlight"><code>` with Pygments-style token classes, which is
+  exactly what `theme/src/highlight-light.css`, `theme/src/highlight-dark.css`
+  and the `.highlighter-rouge` / `pre.highlight` selectors in
+  `theme/src/course.css` are written against. MDEx 0.13 highlights through
+  [`lumis`](https://hex.pm/packages/lumis) (an optional dependency selected via
+  `config :mdex_native, syntax_highlighter: :lumis`), which emits
+  `<pre class="lumis">` with `l-*` token classes. `lumis` ships prebuilt
+  per-theme stylesheets, including solarized light and dark variants, so the
+  migration is to swap the two highlight stylesheets and update the structural
+  selectors — a known, bounded task rather than an unknown. Inline code also
+  loses its `language-plaintext highlighter-rouge` classes.
+- **A lone raw `<img>` line becomes an HTML block, not a paragraph.** kramdown
+  wraps it in `<p>`; CommonMark does not. This affects the `<img class='w80'/>`
+  lines in `507-dns/subject.md` and similar.
+
+Finally, the spike turned up a **live bug in `course/_plugins/tags/cols.rb`**:
+`col_class = m and m[1] ? m[1].strip : ""` binds `col_class` to the `MatchData`
+(Ruby's `and` binds looser than `=`), so every column div is emitted as
+`class="<!-- col … -->"` and the intended classes — `md:col-span-2` and friends
+— have **never** applied. The Elixir port emits the captured class, which is a
+deliberate behaviour _fix_; expect those columns to change appearance and check
+them during the fidelity gate.
 
 ### Drop the archidep.json round-trip?
 
@@ -901,6 +974,21 @@ target-blank, emoji), render HTML. It must be callable from:
 Keep it free of Phoenix/web coupling so the static/archival build can run it
 standalone. This module is the single seam the rest of the backlog hangs off.
 
+Three MDEx options are **required**, not stylistic, and the spike verified each
+against real content (see [Spike results](#spike-results)):
+
+- `render: [unsafe: true]` — otherwise every raw HTML island in the content is
+  replaced by `<!-- raw HTML omitted -->`. The input is our own Markdown, so
+  this is safe.
+- `parse: [smart: true]` — kramdown applies smart punctuation today (`it’s`,
+  not `it's`); without this every apostrophe and quote in the corpus changes.
+- `extension: [header_id_prefix: ""]` — generates the heading IDs the TOC,
+  content anchors and the app all depend on (see [TOC and heading
+  anchors](#toc-and-heading-anchors)).
+
+A parse → render round-trip is byte-identical to a direct render, so inserting
+AST passes between them is safe.
+
 ### Custom block tags
 
 Port the six tag files in `course/_plugins/tags/` (`note`, `callout`, `cols`,
@@ -908,20 +996,35 @@ Port the six tag files in `course/_plugins/tags/` (`note`, `callout`, `cols`,
 choice settled — see [Revisit the Solid (Liquid) library
 decision](#revisit-the-solid-liquid-library-decision)) that render inner
 Markdown with the shared core and emit the **same HTML** the Ruby tags emit
-today — **zero content edits**. Each block tag captures its raw body (bodies are
-pure Markdown) and feeds it to MDEx, à la `Solid`'s built-in `RawTag`. Counts to
-cover: `note` ×317, `callout` ×95, `cols` ×24, `solution` ×23, `mermaid` ×1,
-plus the `markdown` wrapper. Mind `callout`'s unique-ID generation for "more"
-callouts and `cols`'s `<!-- col -->` splitting. The `solution` tag gains new
-gating behaviour — see [Progressive solution
-reveal](#progressive-solution-reveal).
+today — **zero content edits** beyond the two `{% note: %}` typos the spike
+found (see [Spike results](#spike-results)). Bodies come in two flavours,
+confirmed by the spike:
+
+- **Prose bodies** (`note`, `callout`, `cols`, `solution`, `markdown`) are
+  parsed as a **nested Liquid parse tree** via `Solid.Parser.parse_until/3`,
+  rendered, and then fed to MDEx — 8 `note`/`callout` bodies embed a
+  `{% link %}` that Jekyll resolves today, so raw capture would leak the tag
+  into the page as literal text.
+- **Code and diagram bodies** (`mermaid`, `highlight`) are captured **raw**, à
+  la `Solid`'s built-in `RawTag`, so a `{{` inside a sample cannot become a
+  parse error.
+
+Counts to cover: `note` ×317, `callout` ×95, `cols` ×24, `solution` ×23,
+`mermaid` ×1, plus the `markdown` wrapper (which the content does not currently
+use). Mind `callout`'s unique-ID generation for "more" callouts and `cols`'s
+`<!-- col -->` splitting. The `solution` tag gains new gating behaviour — see
+[Progressive solution reveal](#progressive-solution-reveal).
 
 Alongside the six block tags, the same `Solid` setup must cover the **inline
 Liquid** the content relies on: `{% link path %}` (×94, collection-doc path →
 URL), `{% include icons/x.html %}` (×44, SVG inlining), the `relative_file_url`
 filter (×22) and `{{ page.title }}` (×3), and `{% highlight %}` (×2, or convert
-to fenced code). These are registered as `Solid` custom tags/filters rather than
-hand-parsed.
+to fenced code — both uses pass `mark_lines="4"`, which maps onto `lumis`'
+`highlight_lines` option). These are registered as `Solid` custom tags/filters
+rather than hand-parsed — with the two API constraints the spike surfaced: `{% link %}` and
+`{% include %}` consume their markup verbatim up to `%}` (their unquoted paths
+contain `/`, which `Solid`'s lexer rejects), and `relative_file_url` is built as
+a per-document closure because `Solid` custom filters get no render context.
 
 ### Progressive solution reveal
 
@@ -963,21 +1066,37 @@ must be injected into each **extracted tag block** and into **slides** so
 reference-style links survive extraction. Small but load-bearing — links inside
 notes/callouts/slides break silently without it.
 
+The spike found a simpler mechanism than the Ruby one: rather than rewriting
+`][ref]` to `](url)` with a regex, **append the collected definitions to the
+extracted body** before handing it to MDEx and let CommonMark resolve them
+natively. Extraction of the definitions is still ours — they are the trailing
+run of `[ref]: url` lines at the end of the document — but the substitution is
+not. This is what `tmp/spike` does, and it reproduces the reference link in the
+`101-command-line` `cols` block exactly.
+
 ### TOC and heading anchors
 
 Generate heading IDs and the "On this page" navigation from the MDEx AST,
-replacing `jekyll-toc` + the `toc_only` filter. Match Jekyll/kramdown's slugging
-rules as closely as practical (the [HTML fidelity gate](#html-fidelity-gate)
-will surface divergences). The generated, _stable_ IDs are also what [Heading
-references that compile-fail](#heading-references-that-compile-fail) will key
-off.
+replacing `jekyll-toc` + the `toc_only` filter. The generated, _stable_ IDs are
+also what [Heading references that
+compile-fail](#heading-references-that-compile-fail) will key off.
+
+**Slugging needs no custom work.** The spike compared MDEx's
+`header_id_prefix: ""` slugs against the IDs Jekyll actually emitted, for every
+heading of every non-slide course document: **685 of 685 match**, including the
+awkward cases — emoji shortcodes (`### :exclamation: Create your server` →
+`exclamation-create-your-server`), dotted words (`Gandi.net` → `gandinet`) and
+inline code in headings. So this item is only the TOC, not a slugger.
 
 ### Smaller Jekyll plugins
 
 Replace the remaining plugins:
 
 - **`jemoji`** — `:shortcode:` → emoji; needed in titles _and_ tag output (e.g.
-  `:books:`). Port the shortcode→emoji map.
+  `:books:`). Port the shortcode→emoji map. **Ordering constraint:** heading IDs
+  are slugged from the _shortcode_ text, not the emoji — `### :exclamation: Create
+  your server` is `#exclamation-create-your-server`, and the app links to it —
+  so emoji substitution must run **after** heading IDs are generated.
 - **`jekyll-target-blank`** — trivial AST pass adding `target="_blank"` to
   external links. It must run on the **logical** references, before the [URL and
   link emission seam](#url-and-link-emission-seam) absolutizes content links:
@@ -1059,6 +1178,10 @@ via a function/constant. A missing heading then fails compilation. This is the
 single biggest robustness win of the migration and pairs with [TOC and heading
 anchors](#toc-and-heading-anchors) (which produces the stable IDs) and [A richer
 Course.Material model](#a-richer-coursematerial-model).
+
+All 10 distinct fragments the app hardcodes today are reproduced verbatim by the
+MDEx slugger, so this task is a pure robustness change: **no anchor has to move,
+and no redirect is needed** to keep existing links working.
 
 ### Progress: structure vs status
 
@@ -1323,7 +1446,11 @@ The gating QA step — but the bar is **functional and visual parity, not
 byte-identical HTML**. What must hold across all 59 course docs + 4 cheatsheets
 (and the slides): nothing is broken — links resolve, tags render, code
 highlights, TOC/anchors work, navigation and progress classes are correct — and
-each page **looks good**. We explicitly **do not** require pixel- or
+each page **looks good**. Three divergences are **known and expected**, so look
+for them deliberately rather than treating them as regressions: code blocks
+restyled from rouge to `lumis`, lone raw `<img>` lines no longer wrapped in
+`<p>`, and the `cols` column classes finally applying (see [Spike
+results](#spike-results)). We explicitly **do not** require pixel- or
 byte-for-byte reproduction of the Jekyll output; small kramdown-vs-comrak
 differences (whitespace, slugging, minor markup) are acceptable as long as the
 page reads correctly and looks right.
