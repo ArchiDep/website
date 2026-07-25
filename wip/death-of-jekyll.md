@@ -193,12 +193,17 @@ constraints](#goals-and-constraints).
       year end, driven by a single three-valued `mode`
       (`:live`/`:backup`/`:archive`) — see [Archived years: a banner and one
       dynamic resolver](#archived-years-a-banner-and-one-dynamic-resolver).
-- [ ] Build the `/latest/:year/*path` resolver in the app, with a per-year
-      archive manifest and a compile-checked mapping (kept as **data**, so a
-      client-side resolver can replace it once the app is retired) from archived
-      document identities to current ones; legacy unprefixed URLs go through the
-      same route, which makes it a [cutover](#cutover) blocker — see [Archived
-      years: a banner and one dynamic
+- [ ] Build the `/latest?to=…` resolver in the app, with a per-year archive
+      manifest and a compile-checked mapping (kept as **data**, so a client-side
+      resolver can replace it once the app is retired) from archived document
+      identities to current ones — see [Archived years: a banner and one dynamic
+      resolver](#archived-years-a-banner-and-one-dynamic-resolver).
+- [ ] Redirect the unprefixed legacy paths **into the 2025 archive**, not to the
+      resolver — `301` from `/course/*` and `/cheatsheets/*` to the same path
+      under `/2025/`, in the reverse proxy, with a catch-all route covering
+      development. A [cutover](#cutover) blocker, since moving the content under
+      a prefix breaks every existing bookmark the moment it happens — see
+      [Archived years: a banner and one dynamic
       resolver](#archived-years-a-banner-and-one-dynamic-resolver).
 - [ ] Decide whether to re-render the 2025–2026 content from its git tag as the
       first `/2025/` archive, seeding the resolver and doubling as fidelity-gate
@@ -551,7 +556,7 @@ index](#search-index).
 Design this **before** the shared core, because four later tasks all thread
 through the same point and will otherwise each hardcode a different assumption:
 [Asset URLs](#asset-urls) (digested paths), [Optional URL
-prefix](#optional-url-prefix) (per-year `/2025-2026/` prefix), [Decouple PDF
+prefix](#optional-url-prefix) (per-year `/2025/` prefix), [Decouple PDF
 generation from production](#decouple-pdf-generation-from-production) (absolute
 production URLs on content links, relative on assets) and [Standalone / archival
 mode](#standalone--archival-mode) (URLs that resolve with no running app).
@@ -840,16 +845,39 @@ only the app's resolution to change — so **archives never need rebuilding** fo
 their links to stay right. (Re-render a past year only to change the banner
 wording or pick up a renderer fix.)
 
-**Route:** `GET /latest/:year/*path`, where `path` is the archived page's path
-inside its version prefix. The banner link is then mechanically the page's own
-URL with the version prefix swapped for `/latest/<year>/` — no separate identity
-encoding to invent, because the path already _is_ the identity (it is the shape
-this seam emits). Choose the route name deliberately: it gets baked into every
-archive forever.
+**Route:** `GET /latest?to=<path>`, where `to` is the archived page's **own URL
+path, version prefix included** — so the banner link is mechanically
+`"/latest?to=" <> the page's own path`, with no separate identity encoding to
+invent, because the path already _is_ the identity (it is the shape this seam
+emits). Choose this shape deliberately: it gets baked into every archive
+forever.
+
+**Why a query parameter rather than `/latest/:year/*path`.** The deciding
+criterion is the end state below — the day the app goes down, this URL must keep
+working from a static host with the least ceremony. `?to=` needs one file at
+`/latest/index.html` plus the mapping JSON, on any host, answering 200.
+Path-based would need `/latest/2025/course/104-ssh/` to fall through to a
+custom-404 page that reads `location.pathname` — a GitHub-Pages-specific trick
+that answers HTTP 404 and breaks on any host without that fallback. The query
+form is also strictly simpler today: the year prefix is already part of the
+archived page's path, so a separate `:year` segment splits one identity into two
+parameters for no gain, and the banner rule stops having to assume the prefix is
+exactly the year.
+
+Two rules this shape brings with it, both to be stated rather than left
+implicit:
+
+- **`to` is an open-redirect shape and is treated as one.** Its value is only
+  ever _matched against the archive manifests_; it is never used as a redirect
+  target. Anything unknown, off-site or unparseable goes to the "no equivalent"
+  page below — never to a redirect.
+- **Encoding is normalised on parse.** Slashes are legal unencoded in a query
+  string, so `?to=/2025/course/104-ssh/` and its percent-encoded form must
+  resolve identically.
 
 **Resolution order:**
 
-1. Parse `path` back into `{num, slug, type}`.
+1. Parse `to` back into a year plus `{num, slug, type}`.
 2. Match on `{slug, type}` against the current `Course.Material` — pure
    renumbering, the common case, resolves automatically and needs no rule.
 3. Otherwise consult an explicit **override table** for that year.
@@ -883,11 +911,11 @@ deployment holds every year, its current-year directory _is_ the backup copy,
 and at year end that directory is **rebuilt** as the final archive. So this is a
 lifecycle with one knob, not two independent booleans:
 
-| `mode`     | Where                      | Banner                                                           |
-| ---------- | -------------------------- | ---------------------------------------------------------------- |
-| `:live`    | archidep.ch, current year  | none                                                             |
-| `:backup`  | GitHub Pages, current year | "this is the backup copy" → same path on the live site           |
-| `:archive` | **both hosts**, past year  | "this is the archived 2025–2026 edition" → `/latest/:year/*path` |
+| `mode`     | Where                      | Banner                                                    |
+| ---------- | -------------------------- | --------------------------------------------------------- |
+| `:live`    | archidep.ch, current year  | none                                                      |
+| `:backup`  | GitHub Pages, current year | "this is the backup copy" → same path on the live site    |
+| `:archive` | **both hosts**, past year  | "this is the archived 2025–2026 edition" → `/latest?to=…` |
 
 The `:backup` link needs no resolver and no manifest — the backup tracks the
 current build, so the correspondence is the identity and the link is just
@@ -917,16 +945,17 @@ good, the dynamic app goes down permanently and GitHub Pages becomes the only
 surviving copy.**
 
 That end state has one consequence worth spending nothing on now but designing
-_around_: every archive banner points at `/latest/…` on archidep.ch, so those
+_around_: every archive banner points at `/latest?to=…` on archidep.ch, so those
 links die with the app — and with the domain. Two ways across that bridge when
 it comes: a **final rebuild of every year** with a terminal configuration
 (archives are rebuildable, so this is a rebuild, not a migration), or a
 **client-side resolver** shipped with the Pages deployment. Both are much easier
 if the resolver's mapping is **data rather than hand-written function clauses**
 — keep the archive manifests and the override table as a map the build can also
-emit into the static output, and a JavaScript resolver becomes a drop-in.
-Compile-time checking works identically either way, so this constraint costs
-nothing today.
+emit into the static output, and a JavaScript resolver becomes a drop-in: a
+static `/latest/index.html` reading `to` from `location.search` against that
+map, which is exactly why the route takes a query parameter. Compile-time
+checking works identically either way, so this constraint costs nothing today.
 
 **Seeding the first archive.** The ideal is to **re-render the 2025–2026 content
 from its git tag with the new renderer** at cutover, producing a proper `/2025/`
@@ -949,21 +978,56 @@ Two fallbacks if it does not, and neither blocks anything:
   whether or not that year is ever re-rendered, and the compile-checked override
   table starts working immediately.
 
-**Legacy unprefixed URLs** (`/course/104-ssh/`, from before versioning) use the
-same machinery, treating "no year" as the last unprefixed edition:
-`/course/*` and `/cheatsheets/*` → **301** to `/latest/<legacy-year>/…` (that
-mapping genuinely never changes, so it is safe to cache permanently) → **302**
-to the current page. The reverse proxy handles the first hop in production and a
-catch-all route covers development; because the files no longer exist at the old
-paths, `Plug.Static` falls through to the router on its own.
+**Legacy unprefixed URLs** (`/course/104-ssh/`, from before versioning) are
+**the 2025–2026 archive's own URLs**, and therefore fall under the same rule as
+every other archive URL: they land on the archive, which offers the banner. They
+do **not** go through the resolver.
+
+`/course/*` → **301** `/2025/course/*` and `/cheatsheets/*` → **301**
+`/2025/cheatsheets/*`, then the archived page's banner does the rest. The
+mapping is a pure path rewrite with nothing year-dependent in it, so the 301 is
+honest and permanently cacheable. The reverse proxy handles it in production and
+a catch-all route covers development; because the files no longer exist at the
+old paths, `Plug.Static` falls through to the router on its own.
+
+The course has only existed since 2025, so **there is exactly one unprefixed
+edition and there will never be another** — this is a fixed pair of rules, not a
+mechanism that grows a case per year.
+
+**Rejected: `/course/*` → the current page** (via the resolver, as an earlier
+draft had it). The reading behind it is not unreasonable — `/course/104-ssh/`
+never meant "the 2025 edition", it meant "the SSH chapter of whatever is
+current", since for its whole life it tracked the live course. It loses anyway:
+
+- It would make the largest population of inbound links to the archive — every
+  external link and bookmark predating versioning — the one case that _does_
+  redirect away from itself, turning the rule into a decoration.
+- It can dead-end where the archive would not: an identity declared `:gone`
+  yields the "no equivalent" page, for a document that exists and reads fine at
+  `/2025/course/104-ssh/`.
+- It welds every legacy URL to the dynamic app, which this design otherwise
+  works to avoid. A path rewrite keeps serving from the reverse proxy — or any
+  static host — after the app is gone.
+- Its one real advantage, preserving accumulated search standing, is largely
+  illusory: the chain ends in a `302` + `no-store`, which is precisely how one
+  tells a crawler _not_ to transfer standing to the target. Direct 301s to
+  concrete current URLs would preserve it, but that is the baked-at-build-time
+  staleness the resolver exists to eliminate, plus proxy-rule churn every year.
+
+The cost of the decision, stated plainly: someone arriving from an old bookmark
+lands on old content and must click once. That is the same bargain already made
+for everyone who arrives at `/2025/…` directly, and they did ask for that URL.
 
 Details worth recording:
 
-- **Fragments survive, best-effort.** A browser applies the original URL's
-  fragment to a redirect target that specifies none, so
-  `/latest/2025/course/104-ssh/#tunnels` lands on the current SSH subject at
-  `#tunnels` when that heading still exists, and harmlessly at the top when it
-  does not.
+- **Fragments survive, best-effort, through every hop.** A browser applies the
+  original URL's fragment to a redirect target that specifies none, so
+  `/course/104-ssh/#tunnels` lands at `#tunnels` on the archived page, and
+  `/latest?to=/2025/course/104-ssh/#tunnels` lands at `#tunnels` on the current
+  SSH subject — in both cases when that heading still exists, and harmlessly at
+  the top when it does not. This is not an argument for either route shape: the
+  fragment sits outside the query string in both, so it behaves identically. It
+  must **not** be folded into the `to` value in an attempt to "carry" it.
 - **Banners are gated on `mode`, never on the presence of a prefix** — the
   `:live` build is also served under a prefix and must show neither.
 - When the app is down, an archived banner link dead-ends — acceptable, the
@@ -1101,12 +1165,12 @@ Two smaller findings from the implementation, neither affecting the design:
 
 - **A chapter URL cannot tell a subject from an exercise**, because a chapter
   never has both. So the inverse direction (`parse_output_path/1`, needed by the
-  `/latest/:year/*path` resolver) returns a deliberately weaker **identity**
-  rather than fabricating a type: `{:chapter, num, slug}`, `{:chapter_slides,
-num, slug}` or `{:cheatsheet, slug}`. That identity is what the archive
-  resolver matches on anyway. This was recorded here as an observation about the
-  corpus; it is in fact a rule the content must obey and the build must enforce
-  — see [Chapter document invariants](#chapter-document-invariants).
+  `/latest?to=…` resolver) returns a deliberately weaker **identity** rather
+  than fabricating a type: `{:chapter, num, slug}`, `{:chapter_slides, num,
+slug}` or `{:cheatsheet, slug}`. That identity is what the archive resolver
+  matches on anyway. This was recorded here as an observation about the corpus;
+  it is in fact a rule the content must obey and the build must enforce — see
+  [Chapter document invariants](#chapter-document-invariants).
 - **No cosmetic `./` divergence after all.** An earlier note here predicted that
   `./images/x.png` would normalize to `images/x.png`; because only the last path
   segment is replaced, the author's prefix survives untouched, so there is
@@ -1408,8 +1472,8 @@ listed, not the first, so a bad restructuring is fixed in one pass.
 **Consequences for the URL seam, which already assumes rule 1.**
 `PageRef.identity/1` deliberately collapses a subject and an exercise into one
 `{:chapter, num, slug}` identity, and that is sound only under the invariant —
-otherwise the `/latest/:year/*path` resolver would be matching an identity that
-names two documents. Nothing in the implemented seam changes; what changes is
+otherwise the `/latest?to=…` resolver would be matching an identity that names
+two documents. Nothing in the implemented seam changes; what changes is
 that the assumption is now stated and checked at its source.
 
 One sharp edge the invariant creates, and an argument for the [post-build link
@@ -1634,9 +1698,10 @@ seam](#url-and-link-emission-seam), which settles the details:
 - Each year's build carries **its own copy of the global assets** under the
   prefix, so a frozen archive cannot be broken by a later year's asset build.
 - Archived years are **not** redirected away from; they carry a banner pointing
-  at a dynamic resolver in the app, which also handles the unprefixed legacy
-  paths (`/course/…`, `/cheatsheets/…`) so existing bookmarks and external links
-  keep working — see [Archived years: a banner and one dynamic
+  at a dynamic resolver in the app (`/latest?to=…`). The unprefixed legacy paths
+  (`/course/…`, `/cheatsheets/…`) are that same rule applied to the one
+  unprefixed edition: they 301 into `/2025/…` and get the banner, rather than
+  being resolved away — see [Archived years: a banner and one dynamic
   resolver](#archived-years-a-banner-and-one-dynamic-resolver).
 
 ### Decouple PDF generation from production
@@ -1717,7 +1782,7 @@ The per-year PDFs (slides, cheatsheets) generated by `npm run pdf` should be
 **kept alongside the archived static site** for that year (e.g. under the year's
 prefix, or a parallel archive location). Not strictly part of the rendering
 refactor, but a stated goal: decide the storage location/convention so that an
-archived `/2025-2026/` site and its PDFs travel together.
+archived `/2025/` site and its PDFs travel together.
 
 The convention has to be one **CI** can write to, since that is where generation
 and publication end up once [the export no longer needs the production
