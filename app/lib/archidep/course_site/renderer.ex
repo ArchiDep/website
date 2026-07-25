@@ -45,13 +45,13 @@ defmodule ArchiDep.CourseSite.Renderer do
   def render_page(%RenderContext{} = context) do
     with {:ok, markdown, liquid_errors} <- Liquid.render(context),
          {:ok, document} <- parse(markdown, context) do
-      {excerpt, body} = Excerpt.split(document, excerpt_separator(context))
+      {excerpt, body, separator_errors} = split(document, context)
       {html, body_errors} = html(body, context)
       {excerpt_html, excerpt_errors} = excerpt_html(excerpt, context)
 
       result(
         %Page{html: html, excerpt_html: excerpt_html},
-        liquid_errors ++ body_errors ++ excerpt_errors,
+        liquid_errors ++ separator_errors ++ body_errors ++ excerpt_errors,
         context
       )
     else
@@ -115,6 +115,22 @@ defmodule ArchiDep.CourseSite.Renderer do
     {rendered, errors} = Markdown.render(document, context)
     {passed, pass_errors} = run_html_passes(rendered, context)
     {passed, errors ++ pass_errors}
+  end
+
+  # A page that declares a separator it never writes is cut where a page that
+  # declares none is cut, so that the rest of its problems are reported in the
+  # same pass as the omission.
+  defp split(document, context) do
+    separator = excerpt_separator(context)
+
+    case Excerpt.split(document, separator) do
+      {:ok, excerpt, body} ->
+        {excerpt, body, []}
+
+      {:missing_separator, excerpt, body} ->
+        {excerpt, body,
+         [RenderError.new({:missing_excerpt_separator, separator}, context.source_path)]}
+    end
   end
 
   defp excerpt_html(nil, _context), do: {nil, []}

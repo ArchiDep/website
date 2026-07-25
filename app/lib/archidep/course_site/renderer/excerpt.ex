@@ -12,45 +12,60 @@ defmodule ArchiDep.CourseSite.Renderer.Excerpt do
 
   A document says where to cut with an `excerpt_separator` in its front matter,
   which every document that sets one writes as `<!-- more -->`. A document that
-  does not — or that declares one and never writes it — is cut after its first
-  block, which is what Jekyll does by default. That last case is a deliberate
-  divergence: Jekyll treats a missing marker as "the whole page is the opening",
-  which is visibly not what the author meant.
+  sets none is cut after its first block, which is what Jekyll does by default.
+
+  Declaring a separator and never writing it is neither of those: it is an
+  omission, reported as `:missing_separator` for the renderer to turn into an
+  error. The document is still cut after its first block so that the rest of its
+  problems are found in the same pass. Jekyll instead makes the whole page the
+  opening, which is visibly not what the author meant.
   """
 
   @doc """
   Split a parsed document into its opening and the rest of it.
 
-  Returns `{nil, document}` when there is nothing to cut, which is the case for
-  a document of a single block.
+  The opening is `nil` when there is nothing to cut, which is the case for a
+  document of a single block.
 
       iex> {:ok, document} = MDEx.parse_document("Opening.\\n\\n<!-- more -->\\n\\nRest.\\n")
-      iex> {excerpt, body} = Excerpt.split(document, "<!-- more -->")
+      iex> {:ok, excerpt, body} = Excerpt.split(document, "<!-- more -->")
       iex> {Enum.count(excerpt.nodes), Enum.count(body.nodes)}
       {1, 1}
+
+      iex> {:ok, document} = MDEx.parse_document("Opening.\\n\\nRest.\\n")
+      iex> {result, _excerpt, _body} = Excerpt.split(document, "<!-- more -->")
+      iex> result
+      :missing_separator
   """
   @spec split(MDEx.Document.t(), String.t() | nil) ::
-          {MDEx.Document.t() | nil, MDEx.Document.t()}
+          {:ok | :missing_separator, MDEx.Document.t() | nil, MDEx.Document.t()}
   def split(%MDEx.Document{nodes: nodes} = document, separator) do
-    case split_nodes(nodes, separator) do
-      {[], body} ->
-        {nil, %MDEx.Document{document | nodes: body}}
-
-      {excerpt, body} ->
-        {%MDEx.Document{document | nodes: excerpt}, %MDEx.Document{document | nodes: body}}
-    end
+    {result, excerpt, body} = split_nodes(nodes, separator)
+    {result, opening(document, excerpt), %MDEx.Document{document | nodes: body}}
   end
+
+  defp opening(_document, []), do: nil
+  defp opening(%MDEx.Document{} = document, nodes), do: %MDEx.Document{document | nodes: nodes}
 
   defp split_nodes(nodes, separator) when is_binary(separator) do
     case Enum.split_while(nodes, &(not separator?(&1, separator))) do
-      {_nodes, []} -> split_nodes(nodes, nil)
-      {excerpt, [_separator | body]} -> {excerpt, body}
+      {_nodes, []} ->
+        {excerpt, body} = default_split(nodes)
+        {:missing_separator, excerpt, body}
+
+      {excerpt, [_separator | body]} ->
+        {:ok, excerpt, body}
     end
   end
 
-  defp split_nodes([], nil), do: {[], []}
-  defp split_nodes([only], nil), do: {[], [only]}
-  defp split_nodes([first | rest], nil), do: {[first], rest}
+  defp split_nodes(nodes, nil) do
+    {excerpt, body} = default_split(nodes)
+    {:ok, excerpt, body}
+  end
+
+  defp default_split([]), do: {[], []}
+  defp default_split([only]), do: {[], [only]}
+  defp default_split([first | rest]), do: {[first], rest}
 
   defp separator?(%MDEx.HtmlBlock{literal: literal}, separator),
     do: String.trim(literal) == String.trim(separator)

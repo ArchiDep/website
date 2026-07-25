@@ -82,6 +82,25 @@ defmodule ArchiDep.CourseSite.RendererTest do
                 }}
     end
 
+    test "reports a page that declares an excerpt separator it never writes" do
+      assert render_page("""
+             ---
+             excerpt_separator: <!-- more -->
+             ---
+
+             An opening paragraph.
+
+             The rest of the page.
+             """) ==
+               {:error,
+                [
+                  RenderError.new(
+                    {:missing_excerpt_separator, "<!-- more -->"},
+                    "_course/701-paas/subject.md"
+                  )
+                ]}
+    end
+
     test "reports a problem at the line of the file it is on, front matter included" do
       assert render_page("""
              ---

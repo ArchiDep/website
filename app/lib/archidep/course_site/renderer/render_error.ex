@@ -33,6 +33,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderError do
           | {:markdown, String.t()}
           | {:url, Urls.error()}
           | {:invalid_document, String.t()}
+          | {:missing_excerpt_separator, String.t()}
           | {:unknown_include, String.t()}
           | {:invalid_tag, tag :: String.t(), String.t()}
 
@@ -93,6 +94,11 @@ defmodule ArchiDep.CourseSite.Renderer.RenderError do
 
   defp describe({:invalid_document, path}),
     do: "#{inspect(path)} is not the path of a course document"
+
+  defp describe({:missing_excerpt_separator, separator}),
+    do:
+      "The front matter declares the excerpt separator #{inspect(separator)}, " <>
+        "which the document never writes"
 
   defp describe({:unknown_include, path}), do: "There is no include named #{inspect(path)}"
   defp describe({:invalid_tag, tag, message}), do: "Invalid {% #{tag} %} tag (#{message})"

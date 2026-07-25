@@ -257,7 +257,9 @@ The following front matter keys are meant to be set by authors:
 - `sidebar_title`: An alternate, usually shorter, title to display in the
   sidebar (used by some cheatsheets).
 - `excerpt_separator: <!-- more -->`: Marks the boundary of the excerpt shown at
-  the top of a document.
+  the top of a document. Write the separator itself in the body, where the
+  excerpt is meant to end: a document that declares one and never writes it
+  takes its whole body to be the excerpt.
 - `standalone: false`: Excludes the document from the search index in
   [standalone builds](#configuration--deployment-modes) (e.g. content that only
   makes sense alongside the dashboard).

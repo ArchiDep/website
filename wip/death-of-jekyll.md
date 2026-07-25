@@ -1143,8 +1143,14 @@ Five corrections to this section, found while implementing it:
   page, and both halves keep their reference links, since those are resolved at
   parse time. This replaces Jekyll's `remove_first` string match. A document
   that declares no separator is cut after its first block, which is Jekyll's
-  default; the **five documents that declare one and never write it** are cut
-  the same way rather than becoming all-excerpt as they are today.
+  default. Declaring a separator and never writing it is a **render error**: the
+  page is cut after its first block so the rest of its problems are still
+  reported, but the omission fails the build rather than silently becoming
+  all-excerpt as it is today. The **five documents that do this** — the subjects
+  of chapters 411, 505 and 601, and the decks of chapters 801 and 804 — have to
+  be fixed by writing the separator or dropping the front matter key. (Only the
+  three subjects are checked: a deck is never split, so a separator in a deck's
+  front matter is inert either way.)
 - **Slides substitute their link references rather than appending them.** This
   plan's [Reference-link resolution](#reference-link-resolution) section says
   the definitions are appended to slides; they cannot be. reveal.js splits a

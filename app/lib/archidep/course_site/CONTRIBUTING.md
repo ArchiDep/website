@@ -249,9 +249,13 @@ a place to cut. Jekyll instead renders the opening twice and deletes one copy
 from the other by string match, which fails silently whenever anything in the
 opening renders differently the second time.
 
-One deliberate divergence: five documents declare a separator and never write
-it. Jekyll makes the whole page the opening; here the page is cut after its
-first block, as if it had declared nothing.
+Declaring a separator the document never writes is an **error**, not a third way
+of cutting a page: the author asked for a boundary and left it out. The page is
+still cut after its first block so that the rest of its problems are reported in
+the same pass, per [Reporting rather than
+raising](#reporting-rather-than-raising). Jekyll instead makes the whole page
+the opening, which is why the documents doing this today read as if their
+opening were the entire page.
 
 ### Slides are not converted
 
