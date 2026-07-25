@@ -187,7 +187,10 @@ materials.
   points. They can be standalone (shown in the sidebar) or introduce a subject
   (embedded at the beginning of a subject).
 - Exercises are practical tasks or problems for students to solve, often related
-  to a subject. They can be graded or not.
+  to a subject. They can be graded or not. An exercise is always a chapter of
+  its own: a chapter is either a subject or an exercise, never both, and an
+  exercise never has slides (see [File Naming
+  Conventions](#file-naming-conventions)).
 - Cheatsheets are quick reference guides summarizing key concepts, commands,
   or procedures. They are meant to be used as a handy resource during study or
   practice.
@@ -211,6 +214,12 @@ structures.
     section.
   - The main file in each subdirectory should be named `subject.md`, `slides.md`
     or `exercise.md` depending on the type of document.
+  - A subdirectory must **never** contain both a `subject.md` and an
+    `exercise.md` file: a chapter is one or the other. The two are published at
+    the same URL, so a chapter holding both is an error rather than a chapter
+    with two pages.
+  - An exercise must **never** have slides. Only a subject may have accompanying
+    slides, or the slides may stand alone in a chapter of their own.
   - A subject can also have accompanying slides. In this case, place a `slides`
     subdirectory next to the `subject.md` file, and put the `slides.md` file
     inside it.

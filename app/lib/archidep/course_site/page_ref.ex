@@ -9,10 +9,11 @@ defmodule ArchiDep.CourseSite.PageRef do
   adds.
 
   A page URL identifies a page less precisely than a reference does: a chapter's
-  subject and its exercise share one URL. `identity/1` is that weaker identity,
-  and it is what `parse_output_path/1` recovers from a path — enough to match an
-  archived page against the current edition of the course, which is the reason
-  the inverse direction exists.
+  subject and its exercise are emitted at one and the same URL, which is
+  coherent only because a chapter never holds both. `identity/1` is that weaker
+  identity, and it is what `parse_output_path/1` recovers from a path — enough
+  to match an archived page against the current edition of the course, which is
+  the reason the inverse direction exists.
   """
 
   alias ArchiDep.CourseSite.DocumentRef

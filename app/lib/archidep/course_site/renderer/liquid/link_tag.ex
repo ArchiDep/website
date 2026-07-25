@@ -8,9 +8,11 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.LinkTag do
   chapter link resolve differently in the site being taught, in a frozen archive
   and in a PDF, without the content knowing any of it.
 
-  A path that names no document of the course is reported rather than rendered
-  as a broken link, which is the whole reason the content refers to a source
-  file instead of writing a URL.
+  A path that is not the path of a course document is reported rather than
+  rendered as a broken link, which is the whole reason the content refers to a
+  source file instead of writing a URL. Whether the file it names actually
+  exists is not something this tag can know: it is checked against the
+  enumerated content directory by the build.
   """
 
   @behaviour Solid.Tag
