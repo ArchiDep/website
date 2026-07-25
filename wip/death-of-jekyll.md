@@ -16,6 +16,15 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Revisit the Solid (Liquid) library decision](#revisit-the-solid-liquid-library-decision)
   - [Drop the archidep.json round-trip?](#drop-the-archidepjson-round-trip)
   - [URL and link emission seam](#url-and-link-emission-seam)
+    - [Typed logical references, not path strings](#typed-logical-references-not-path-strings)
+    - [Configuration knobs](#configuration-knobs)
+    - [Emission policy per reference kind](#emission-policy-per-reference-kind)
+    - [Page-adjacent assets are digested](#page-adjacent-assets-are-digested)
+    - [The home page exception](#the-home-page-exception)
+    - [Archived years: a banner and one dynamic resolver](#archived-years-a-banner-and-one-dynamic-resolver)
+    - [Search assets carry a build id](#search-assets-carry-a-build-id)
+    - [Consumers as configurations](#consumers-as-configurations)
+    - [Two corrections to the rest of the plan](#two-corrections-to-the-rest-of-the-plan)
   - [Shared Markdown rendering core](#shared-markdown-rendering-core)
   - [Custom block tags](#custom-block-tags)
   - [Progressive solution reveal](#progressive-solution-reveal)
@@ -85,10 +94,23 @@ constraints](#goals-and-constraints).
 
 **Rendering core**
 
-- [ ] Design the URL/link emission seam once, up front: a single
-      resolver-strategy the web-decoupled renderer calls, parameterized for
-      digesting, an optional path prefix, and an optional absolute base URL —
-      see [URL and link emission seam](#url-and-link-emission-seam).
+- [x] Design the URL/link emission seam once, up front. **Decided: the renderer
+      emits typed logical references to one injected resolver**, configured by
+      `mode` / `base_path` / `version` / `home_at_base?` / `absolute_base_url`
+      / `live_site_url` plus the
+      asset manifests; page-adjacent assets are digested but stay
+      document-relative, the search assets are named with a build id, and the
+      home page is emitted at both the base path and the version prefix during
+      the year — see [URL and link emission seam](#url-and-link-emission-seam).
+- [ ] Run the confirmatory `Solid` + MDEx spike before locking the tag design:
+      `cols` as a raw-body block tag, one inline tag + one filter, a fenced code
+      block through MDEx, and an AST round-trip that leaves **raw HTML nodes
+      intact** (the slides and several subjects embed `<img>`/`<div>` directly)
+      — see [Revisit the Solid (Liquid) library
+      decision](#revisit-the-solid-liquid-library-decision).
+- [ ] Implement the URL/link emission seam as a standalone module with unit
+      tests, ahead of its consumers — see [URL and link emission
+      seam](#url-and-link-emission-seam).
 - [ ] Build a shared Markdown-parsing/rendering core (Solid + MDEx + AST
       helpers) reusable by both the static build and the Phoenix app — see
       [Shared Markdown rendering core](#shared-markdown-rendering-core).
@@ -142,8 +164,23 @@ constraints](#goals-and-constraints).
       production serving](#development-and-production-serving).
 - [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
       Pages backup) — see [Standalone / archival mode](#standalone--archival-mode).
-- [ ] Support an optional URL prefix (e.g. `/2025-2026/`) for per-year archived
+- [ ] Support an optional URL prefix (e.g. `/2026/`) for per-year archived
       versions — see [Optional URL prefix](#optional-url-prefix).
+- [ ] Emit the two "not the current thing" banners from the first build, not at
+      year end, driven by a single three-valued `mode`
+      (`:live`/`:backup`/`:archive`) — see [Archived years: a banner and one
+      dynamic resolver](#archived-years-a-banner-and-one-dynamic-resolver).
+- [ ] Build the `/latest/:year/*path` resolver in the app, with a per-year
+      archive manifest and a compile-checked mapping (kept as **data**, so a
+      client-side resolver can replace it once the app is retired) from archived
+      document identities to current ones; legacy unprefixed URLs go through the
+      same route, which makes it a [cutover](#cutover) blocker — see [Archived
+      years: a banner and one dynamic
+      resolver](#archived-years-a-banner-and-one-dynamic-resolver).
+- [ ] Decide whether to re-render the 2025–2026 content from its git tag as the
+      first `/2025/` archive, seeding the resolver and doubling as fidelity-gate
+      input — see [Archived years: a banner and one dynamic
+      resolver](#archived-years-a-banner-and-one-dynamic-resolver).
 - [ ] Decide where per-year generated PDFs are kept alongside the archived site
       — see [Per-year PDF archive](#per-year-pdf-archive).
 - [ ] Decouple PDF generation from the production website: bake absolute
@@ -204,10 +241,14 @@ the backlog items stay short.
   migration; moving the source to the database is deferred. See [Progress:
   structure vs status](#progress-structure-vs-status).
 - **Per-year versioning under a URL prefix** is a goal: each year we want to
-  save that year's content under a prefix such as `/2025-2026/`, keeping every
-  version of the course. Generated PDFs for the year should be archived
-  alongside. See [Optional URL prefix](#optional-url-prefix) and [Per-year PDF
-  archive](#per-year-pdf-archive).
+  save that year's content under a prefix such as `/2026/` (the **starting
+  year** of the academic year), keeping every version of the course. The prefix
+  is technically optional but is used in **every** build, archival or not — with
+  one exception, the home page, which lives at the site root during the year and
+  moves under the prefix in the archive. Generated PDFs for the year should be
+  archived alongside. See [URL and link emission
+  seam](#url-and-link-emission-seam), [Optional URL prefix](#optional-url-prefix)
+  and [Per-year PDF archive](#per-year-pdf-archive).
 - **`ArchiDep.Course.Material` must remain a compiled module.** Dynamic parts of
   the Phoenix app reference it, and we _want_ compilation to fail when a
   reference becomes invalid. We additionally want it richer — able to reference
@@ -223,7 +264,7 @@ the backlog items stay short.
   See [Drop the archidep.json round-trip?](#drop-the-archidepjson-round-trip).
 - **PDF generation must be independent of the production website.** `npm run
 pdf` should render against a local build while the PDFs' internal links still
-  point to production URLs, achieved by baking a configurable canonical base URL
+  point to production URLs, achieved by baking a configurable absolute base URL
   into content links at build time (assets stay relative and local). See
   [Decouple PDF generation from
   production](#decouple-pdf-generation-from-production).
@@ -415,22 +456,436 @@ There is a real tension to resolve here: the renderer must stay
 [Shared Markdown rendering core](#shared-markdown-rendering-core)), yet asset
 URLs are meant to go through Phoenix's `phx.digest` + **verified routes**, which
 are a compile-time macro bound to the router — i.e. Phoenix coupling. Resolve it
-by having the renderer emit **logical paths** and delegate to an **injected
-URL-resolver strategy**, with three orthogonal knobs the caller sets:
+by having the renderer emit **logical references** and delegate to an
+**injected URL resolver**, configured by the caller.
 
-- **Digesting** — map a logical asset path to its digested filename (the app
-  build supplies a resolver backed by `phx.digest`; the standalone build
-  supplies one that reads the digest manifest directly, no endpoint needed).
-- **Path prefix** — an optional base path (default empty) prepended to internal
-  links, asset URLs and heading anchors, for [per-year
-  versions](#optional-url-prefix).
-- **Absolute base URL** — an optional canonical origin baked onto **content**
-  links (not assets) for [PDF
-  generation](#decouple-pdf-generation-from-production).
+#### Typed logical references, not path strings
+
+The single most important decision: the renderer never concatenates a prefix
+onto a path. It hands the resolver a **typed reference** and receives a string
+back. A closed set of reference kinds, each with its own emission policy:
+
+| Reference                     | Meaning                                       |
+| ----------------------------- | --------------------------------------------- |
+| `{:home}`                     | the course home page                          |
+| `{:document, ref}`            | a course document (`{% link %}`, sidebar)     |
+| `{:heading, ref, id}`         | a heading inside a document                   |
+| `{:cheatsheet, slug}`         | a cheatsheet                                  |
+| `{:page_asset, doc, path}`    | an image/PDF co-located with a document       |
+| `{:asset, "/assets/…"}`       | a global build asset (bundles, fonts)         |
+| `{:site_file, "search.json"}` | a prefixed build output fetched at runtime    |
+| `{:root_file, "favicon.ico"}` | a root-anchored file, never prefixed          |
+| `{:pdf, doc}`                 | a generated PDF, published alongside the site |
+| `{:external, url}`            | passthrough                                   |
+
+Why typed rather than "prepend a base path to a string": three of the four
+consumers below need a **different** answer per kind (the home page ignores the
+version prefix in one mode, page assets ignore it in _all_ modes, `favicon.ico`
+must never be prefixed, only content links take the absolute base URL). A string
+prefix cannot express that without every call site knowing the policy — which is
+exactly the duplication this task exists to prevent. Typed references also make
+a dangling `{% link %}` or a mistyped image path a **build error** instead of a
+silent 404, and they let [`Course.Material`](#a-richer-coursematerial-model)
+store references rather than URLs, so the compiled model does not bake in a
+year.
+
+#### Configuration knobs
+
+```elixir
+%UrlContext{
+  mode: :live,                       # :live | :backup | :archive
+  base_path: "",                     # deployment mount point ("" | "/website")
+  version: "2026",                   # year segment, or nil for unversioned
+  home_at_base?: true,               # home also lives at base_path
+  absolute_base_url: nil,            # baked onto content links, PDF builds only
+  live_site_url: "https://archidep.ch",  # off-site target: banner, rel=canonical
+  assets: %AssetManifest{},          # logical asset path -> digested path
+  page_assets: %PageAssetManifest{}  # source file -> digested output filename
+}
+```
+
+`content_prefix` is derived as `base_path <> "/" <> version`. The **year is the
+starting year** of the academic year, so the 2026–2027 edition is `/2026/`
+(display strings such as `archidep_years` stay two-year; only the URL is
+shortened).
+
+`base_path` and `version` are kept **separate** rather than pre-concatenated
+because the home-page exception needs the deployment mount point on its own:
+during the year the home page sits at `base_path`, which is `/` on
+`archidep.ch` but `/website/` on the GitHub Pages backup.
+
+Resolution also takes the **current document** (`from:`), needed to express page
+assets relative to the page and to leave same-document fragments bare.
+
+#### Emission policy per reference kind
+
+| Kind                       | Version prefix | Digested | Absolute base URL | Form          |
+| -------------------------- | -------------- | -------- | ----------------- | ------------- |
+| `:home`                    | see below      | no       | yes               | root-relative |
+| `:document`, `:cheatsheet` | yes            | no       | yes               | root-relative |
+| `:heading`                 | yes¹           | no       | yes¹              | root-relative |
+| `:page_asset`              | n/a            | **yes**  | no                | doc-relative  |
+| `:asset`                   | yes            | yes      | no                | root-relative |
+| `:site_file`               | yes            | id²      | no                | root-relative |
+| `:pdf`                     | yes            | no       | no                | root-relative |
+| `:root_file`               | **no**         | no       | no                | root-relative |
+
+¹ A fragment in the **current** document stays bare (`#foo`) — no prefix, no
+origin — so in-page and in-PDF navigation stays internal. Only cross-document
+heading references get the full treatment. (The plan previously said heading
+anchors must be prefix-aware; only the cross-document ones are.)
+
+² Not a content digest but a **build id**, because the search index cannot be
+content-addressed without a cycle — see [Search assets carry a build
+id](#search-assets-carry-a-build-id).
+
+Two rules fall out and are worth stating explicitly, because they are what makes
+PDF generation origin-independent (see [Decouple PDF generation from
+production](#decouple-pdf-generation-from-production)): **content links may be
+absolutized, assets never are**, and **page assets are document-relative, so no
+knob touches them at all**.
+
+#### Page-adjacent assets are digested
+
+**Decision: yes — authors keep writing `![CLI](images/cli.jpg)` next to the
+page, and the build digests the file.** This is new (today these assets carry no
+digest) and it costs less than it looks:
+
+- **Authoring is unchanged.** Content keeps un-digested, co-located, relative
+  paths. The rewrite happens on the MDEx AST (`image`/`link` nodes) and, for raw
+  HTML nodes and slides, on the HTML fragment.
+- **Emitted URLs stay document-relative** — only the filename changes
+  (`images/cli-<md5>.jpg`). Consequence: page assets are automatically immune to
+  the version prefix, to the GitHub Pages `/website` mount, and to being served
+  from a throwaway local server for PDF export. This is a strictly better
+  outcome than root-relative digested URLs and removes a whole class of
+  knob-interaction bugs.
+- **Output layout mirrors the source tree** under the chapter directory, exactly
+  as Jekyll does today, so `../images/x.jpg` from `401-cloud-computing/slides.md`
+  keeps resolving to the chapter's `images/` directory.
+- **Missing files become build errors.** Digesting requires reading the file, so
+  `![](images/typo.png)` — today a silent 404 — fails the build.
+
+Traps to handle when implementing:
+
+- **Source-relative in, output-relative out.**
+  `_course/401-cloud-computing/slides.md` is one directory _shallower_ in the
+  source tree than its output (`/course/401-cloud-computing/slides/`). The
+  reference resolves against the document's **source** directory but must be
+  emitted relative to its **output** directory. Doing this by hand at each call
+  site is how you get the classic off-by-one-`..` bug; the resolver owns it.
+- **Raw HTML must be rewritten too.** `401-cloud-computing/slides.md` uses
+  `<img src='../images/…'>` directly, and slides are never Markdown-rendered
+  (see [Slides](#slides)) — a pure AST pass would miss them and, because the
+  un-digested filename no longer exists, they would 404 rather than degrade.
+  Cover `img[src]`, `a[href]`, `source[srcset]` and `url()` in inline styles.
+- **Add a post-build link check** over the emitted HTML: every relative URL must
+  exist in the output tree. It is a few lines with Floki and it closes the loop
+  the digest opens.
+- **`relative_file_url` is currently a no-op.** In the `pre_render` hook that
+  builds `raw_markdown`, `page` is a Liquid drop, not a `Document`, so the
+  filter's `respond_to?(:permalink)` guard fails and it returns its argument
+  unchanged — the 22 uses emit plain relative paths. Keep the filter name (zero
+  content edits) but reimplement it as a real `{:page_asset, …}` lookup.
+- **Immutable caching needs a server rule.** A separately-digested tree is not
+  in `cache_manifest.json`, so `Plug.Static` will ETag it rather than mark it
+  immutable. Because _every_ page asset is digested, the production static
+  server can match on extension under the course tree
+  (`/20\d\d/course/.*\.(png|jpe?g|webp|gif|svg|pdf)$`) to serve them immutable.
+
+#### The home page exception
+
+**Yes, this works, and it is not a Phoenix routing problem.** Course pages —
+including the home page — are **static files**; the Phoenix router never sees
+them. `~p` verified routes cover only the dynamic app (`/app`, `/admin`,
+`/profile`, `/auth`, `/api`) plus the app's own assets, and none of those are
+versioned. So "home at `/` during the year, `/2026/` in the archive" is a
+question of _where the build writes a file_, not of compile-time routes.
+
+**Decision: in live mode emit the home page at both `base_path` and
+`content_prefix`;** the archival build emits only the prefixed one. Resolving
+`{:home}` returns `base_path` when `home_at_base?` is set and `content_prefix`
+otherwise, so every link in every page agrees with whichever copy is canonical,
+and `<link rel="canonical">` on the non-canonical copy points at it. Emitting
+both means `/2026/` never 404s for someone who trims the URL, and it makes a
+copy-based archive as correct as a re-rendered one. (The archival build is a
+**re-render** anyway — frozen progress plus `reveal_all_solutions` — so the
+exception costs one flag, not a special pipeline.)
+
+Three real Phoenix-side consequences remain, none of them blocking:
+
+- **`ArchiDepWeb.static_paths/0`** whitelists first path segments
+  (`~w(assets cheatsheets course …)`); it must gain the year segment.
+  `Plug.Static`'s `only` is a compile-time plug option, so the year comes from
+  `Application.compile_env/2` like `:serve_static` already does. Changing year
+  means a recompile — acceptable for a yearly event that changes the content
+  anyway.
+- **The app shell links into the course** (`layouts.ex` renders the sidebar from
+  `Material`). Those URLs must carry the current year's prefix. Keep
+  `Course.Material` storing **references** and resolve them in the web layer
+  through this same seam with runtime config — that preserves the compile-time
+  reference checking the plan wants while keeping URL policy out of the compiled
+  module.
+- **Legacy URLs.** Moving `/course/…` to `/2026/course/…` invalidates every
+  existing bookmark and external link. Handled by the same resolver the archive
+  banners use — see [Archived years: a banner and one dynamic
+  resolver](#archived-years-a-banner-and-one-dynamic-resolver).
+
+#### Archived years: a banner and one dynamic resolver
+
+**Decision: an archive never redirects away from itself.** A past year keeps
+serving its own content at its own URLs; each archived page carries a **banner**
+("this is the archived 2025–2026 edition — go to the current version of this
+page"), and that link points at a **dynamic route in the app** that resolves the
+archived page's identity to the current edition.
+
+The reason it must be dynamic rather than a URL baked at archival time: the
+correspondence between an archived page and the current one **changes during the
+year** as the course is reworked, so no target known at archival time stays
+correct. Routing through the app makes the banner URL stable forever and leaves
+only the app's resolution to change — so **archives never need rebuilding** for
+their links to stay right. (Re-render a past year only to change the banner
+wording or pick up a renderer fix.)
+
+**Route:** `GET /latest/:year/*path`, where `path` is the archived page's path
+inside its version prefix. The banner link is then mechanically the page's own
+URL with the version prefix swapped for `/latest/<year>/` — no separate identity
+encoding to invent, because the path already _is_ the identity (it is the shape
+this seam emits). Choose the route name deliberately: it gets baked into every
+archive forever.
+
+**Resolution order:**
+
+1. Parse `path` back into `{num, slug, type}`.
+2. Match on `{slug, type}` against the current `Course.Material` — pure
+   renumbering, the common case, resolves automatically and needs no rule.
+3. Otherwise consult an explicit **override table** for that year.
+4. Otherwise render a small "this page has no equivalent in the current edition"
+   page in the app shell (linking to the current home _and_ back to the
+   archive), rather than silently dumping the visitor on the home page.
+
+**The compile-time guarantee — the point of the whole idea:**
+
+- Each archival build emits `course/archives/<year>.json` (the year plus every
+  document identity), committed to the repository and read as an
+  `@external_resource` so a content change forces recompilation.
+- At compile time every archived identity must resolve: by automatic
+  `{slug, type}` match, by an override entry, **or by an explicit declaration
+  that it is gone**. Anything unresolved is a **compile error**.
+- The fallback must be **opt-in per identity, never implicit**. If "no match →
+  home" happened automatically, a single rename would silently degrade every
+  archived year's links and nobody would notice; the mechanism would quietly
+  decay into "everything points at the home page". Requiring an explicit
+  `:gone` declaration is exactly what keeps the table honest — and it makes the
+  yearly cost the **diff** (a handful of renames and removals), not sixty
+  hand-written rules per year.
+
+**Cache semantics: 302, not 301.** The target is year-dependent, so a
+permanently-cached redirect would be wrong next year; send `Cache-Control:
+no-store` with it.
+
+**One `mode`, three mutually exclusive values — both banners ship from the
+start.** A build is never both a backup copy and an archive: the GitHub Pages
+deployment holds every year, its current-year directory _is_ the backup copy,
+and at year end that directory is **rebuilt** as the final archive. So this is a
+lifecycle with one knob, not two independent booleans:
+
+| `mode`     | Where                      | Banner                                                           |
+| ---------- | -------------------------- | ---------------------------------------------------------------- |
+| `:live`    | archidep.ch, current year  | none                                                             |
+| `:backup`  | GitHub Pages, current year | "this is the backup copy" → same path on the live site           |
+| `:archive` | **both hosts**, past year  | "this is the archived 2025–2026 edition" → `/latest/:year/*path` |
+
+The `:backup` link needs no resolver and no manifest — the backup tracks the
+current build, so the correspondence is the identity and the link is just
+`live_site_url` applied to the page's own URL. That same URL is the natural
+`<link rel="canonical">` for a backup page: same year, same content, different
+host is genuinely duplicate content, and pointing at the live site keeps the
+GitHub Pages copy from competing with it in search results. (This is the one
+place `rel="canonical"` is the right tool; it is **not** right between an
+archive and the current edition.) Only `:archive` needs the
+resolver, because only there is the corresponding current page unknowable at
+build time. Both banners are [cutover](#cutover) work, not year-end work: the
+backup copy exists from day one.
+
+The `:backup` → `:archive` transition is a **rebuild**, never a flag flipped on
+an existing output — which is what keeps a single frozen `mode` in every emitted
+page and avoids any "both at once" state.
+
+**Hosting: both hosts carry every year.** archidep.ch serves the live current
+year _and_ the past years under their prefixes; the GitHub Pages deployment
+mirrors all of them plus the current-year backup copy. So a given year has two
+`:archive` builds differing only in `base_path` — the seam already handles that,
+but the reverse-proxy rules and `static_paths/0` must account for every year
+segment on archidep.ch.
+
+The Pages mirror is not redundancy for its own sake: **when the course ends for
+good, the dynamic app goes down permanently and GitHub Pages becomes the only
+surviving copy.**
+
+That end state has one consequence worth spending nothing on now but designing
+_around_: every archive banner points at `/latest/…` on archidep.ch, so those
+links die with the app — and with the domain. Two ways across that bridge when
+it comes: a **final rebuild of every year** with a terminal configuration
+(archives are rebuildable, so this is a rebuild, not a migration), or a
+**client-side resolver** shipped with the Pages deployment. Both are much easier
+if the resolver's mapping is **data rather than hand-written function clauses**
+— keep the archive manifests and the override table as a map the build can also
+emit into the static output, and a JavaScript resolver becomes a drop-in.
+Compile-time checking works identically either way, so this constraint costs
+nothing today.
+
+**Seeding the first archive.** The ideal is to **re-render the 2025–2026 content
+from its git tag with the new renderer** at cutover, producing a proper `/2025/`
+archive: the mechanism goes live a year earlier, and it doubles as the strongest
+possible input for the [HTML fidelity gate](#html-fidelity-gate) — the same
+content, renderable side by side against the deployed Jekyll output. It depends
+on that year's material staying untouched until the refactoring lands, which may
+not survive the run-up to the course.
+
+Two fallbacks if it does not, and neither blocks anything:
+
+- **Post-process the deployed 2025 HTML** — a one-off pass inserting the banner
+  and the `noindex` meta into the frozen output. Viable precisely because the
+  files are frozen and it is done once; it does not need Jekyll, which is being
+  deleted at [cutover](#cutover).
+- **Seed the resolver from the old build regardless.** The 2025 deployment
+  already contains `archidep.json`, which carries `num`, `course_slug`,
+  `course_type` and `url` for every document — exactly the identity the resolver
+  needs. So `course/archives/2025.json` can be derived from the old build
+  whether or not that year is ever re-rendered, and the compile-checked override
+  table starts working immediately.
+
+**Legacy unprefixed URLs** (`/course/104-ssh/`, from before versioning) use the
+same machinery, treating "no year" as the last unprefixed edition:
+`/course/*` and `/cheatsheets/*` → **301** to `/latest/<legacy-year>/…` (that
+mapping genuinely never changes, so it is safe to cache permanently) → **302**
+to the current page. The reverse proxy handles the first hop in production and a
+catch-all route covers development; because the files no longer exist at the old
+paths, `Plug.Static` falls through to the router on its own.
+
+Details worth recording:
+
+- **Fragments survive, best-effort.** A browser applies the original URL's
+  fragment to a redirect target that specifies none, so
+  `/latest/2025/course/104-ssh/#tunnels` lands on the current SSH subject at
+  `#tunnels` when that heading still exists, and harmlessly at the top when it
+  does not.
+- **Banners are gated on `mode`, never on the presence of a prefix** — the
+  `:live` build is also served under a prefix and must show neither.
+- When the app is down, an archived banner link dead-ends — acceptable, the
+  archive still reads. The **backup** banner is the case that matters here and
+  it does not dead-end: it is a plain link to the live site, which is exactly
+  what a visitor on the backup copy is looking for.
+- The **already-deployed Jekyll archive** predates this and cannot get a banner
+  without re-rendering it with the new renderer; treat it as frozen.
+- **Archived years are `noindex, follow`** (decided) so search engines send
+  visitors to the current edition rather than to a five-year-old page.
+  `noindex` keeps the archive out of results; `follow` is what actively points
+  crawlers _at_ the current edition, by letting them traverse the banner link.
+  `noindex, nofollow` would keep the archive out of results just as well but
+  would sever that path. A `rel="canonical"` from the archive to the current
+  page is **not** the right tool: canonical means "same content at another URL",
+  which stops being true as soon as a chapter is reworked, and it would have to
+  be a concrete URL baked at build time — reintroducing exactly the staleness
+  the resolver exists to avoid.
+- Crawl budget is not a concern at this size, so `follow` costs nothing.
+
+#### Search assets carry a build id
+
+**A content digest is impossible, but the files still need versioned names.**
+
+The impossibility is a genuine cycle: `search.json` is built _from_ the rendered
+HTML (the way `archidep.rb` does it with Nokogiri today — see [Search
+index](#search-index)), and its URL has to appear _in_ that HTML's `<head>`
+(today `data-base-path`, which the client joins with `/lunr.json`). Digesting
+the content would make the HTML depend on a file derived from the HTML.
+
+The version prefix does **not** rescue this. Only the final frozen archive is
+immutable; the two builds that matter day to day are rewritten in place under
+the _current_ year's prefix:
+
+- the **production build**, rebuilt on every progress change — which changes
+  revealed solutions and therefore the indexed text ([Progressive solution
+  reveal](#progressive-solution-reveal)); and
+- the **GitHub Pages backup**, rebuilt regularly through the year so it tracks
+  the course ([Progress: structure vs status](#progress-structure-vs-status)),
+  where we do not control cache headers at all.
+
+**Decision: name them `search-<build_id>.json` / `lunr-<build_id>.json`,** where
+`build_id` hashes the build _inputs_ (content, progress, config, renderer
+version). Inputs are known before rendering, so there is no cycle.
+
+What that buys, honestly, differs by host:
+
+- **On our own static server** — consistency plus genuinely long-lived
+  immutable caching.
+- **On GitHub Pages** — consistency only. Pages serves everything with a fixed
+  ~10-minute `max-age` and no way to configure it, so a versioned name does not
+  extend the cache lifetime there. It does guarantee that a freshly-built page
+  never fetches the previous build's index, which is the failure that actually
+  hurts: results pointing at anchors that moved, and new pages missing from
+  search.
+
+Implementation notes:
+
+- `idx.ts` keeps writing a fixed `lunr.json`; the build copies it to the
+  versioned name. No change to the Node scripts.
+- Emit **full URLs** into `<head>` (`data-search-data-url`,
+  `data-search-index-url`) through `{:site_file, …}`, and drop `search.ts`'s
+  `${basePath}/lunr.json` string-joining — that call site is precisely the kind
+  this seam exists to remove. Keep `data-base-path` only if something else still
+  needs it.
+- `archidep.json` gets no build id (read from disk by `pdf.ts`, never fetched by
+  a browser), and neither does `version.json` (nothing fetches it).
+
+**Alternative considered:** a small, stable pointer file naming content-digested
+index files — true content-addressing, so an unchanged index survives a rebuild
+in cache, at the cost of one extra request before the first search. Rejected
+because revealed solutions and ordinary content edits change the index on most
+rebuilds anyway, so the indirection buys little.
+
+#### Consumers as configurations
+
+| Build                 | `mode`     | `base_path`  | `version` | `home_at_base?` | `absolute_base_url`     |
+| --------------------- | ---------- | ------------ | --------- | --------------- | ----------------------- |
+| Development / live    | `:live`    | `""`         | `"2026"`  | `true`          | `nil`                   |
+| GitHub Pages backup   | `:backup`  | `"/website"` | `"2026"`  | `true`          | `nil`                   |
+| Archive, archidep.ch  | `:archive` | `""`         | `"2025"`  | `false`         | `nil`                   |
+| Archive, GitHub Pages | `:archive` | `"/website"` | `"2025"`  | `false`         | `nil`                   |
+| PDF export            | `:live`    | `""`         | `"2026"`  | `true`          | `"https://archidep.ch"` |
+
+`absolute_base_url` is `nil` everywhere except the PDF build — in particular the
+**backup copy must keep its content links local**. Absolutizing them to
+archidep.ch would point every link at the very site whose downtime the backup
+exists to survive. The backup reaches the live site only through
+`live_site_url`, and only in two places: the banner link and `<link
+rel="canonical">`.
+
+The PDF row is the proof the split works: content links come out absolute, page
+assets stay document-relative and global assets stay root-relative, so the build
+can be served from `localhost` and still print production links — no
+`<base href>`, no running site.
+
+#### Two corrections to the rest of the plan
+
+- **Global assets are copied per version, not shared.** For an archive to stay
+  correct forever, each year's build must carry its own `/<year>/assets/…`
+  (copied from the app's digested output at build time). A shared root
+  `/assets/` would break frozen archives as soon as a later year's asset build
+  removes the digested files they reference — and it would leave `/assets`
+  ambiguous between Phoenix and the static server at the reverse proxy.
+- **The build-ordering constraint does not fully go away.** [Asset
+  URLs](#asset-urls) claims `phx.digest` removes the ordering constraint; what
+  it removes is the _cross-language_ dual-manifest dance. Rendering still has to
+  run after the asset bundles are digested, because the HTML embeds their names.
+  The order is: bundle → digest → collect/digest page assets → render → build
+  the search index.
 
 Each consumer is then a configuration of the one seam, not its own rewrite. Unit
-tests cover the resolver in isolation (the four knob combinations) so the
-consuming tasks inherit correct URLs by construction.
+tests cover the resolver in isolation (every reference kind × the knob
+combinations above, plus the source-relative/output-relative page-asset cases)
+so the consuming tasks inherit correct URLs by construction.
 
 ### Shared Markdown rendering core
 
@@ -524,7 +979,10 @@ Replace the remaining plugins:
 - **`jemoji`** — `:shortcode:` → emoji; needed in titles _and_ tag output (e.g.
   `:books:`). Port the shortcode→emoji map.
 - **`jekyll-target-blank`** — trivial AST pass adding `target="_blank"` to
-  external links.
+  external links. It must run on the **logical** references, before the [URL and
+  link emission seam](#url-and-link-emission-seam) absolutizes content links:
+  once a PDF build has rewritten internal links to `https://archidep.ch/…` they
+  are indistinguishable from external ones by inspection.
 - **`jekyll-seo-tag`** — move into the HEEx `<head>` (and the static layout's
   head for standalone mode).
 - **`jekyll-feed`** — drop, or reimplement if the RSS feed is still wanted.
@@ -543,11 +1001,20 @@ Slides.pdf`) and the reveal.js asset wiring.
 Drop `relative_asset_url.rb`'s dual-manifest dance (webpack `manifest.json` +
 Phoenix `cache_manifest.json`). Phoenix's `phx.digest` + verified routes resolve
 digested asset paths natively; the renderer should emit asset URLs through that
-mechanism. This also removes the build-ordering constraint that currently forces
-Jekyll to run after the digest stage (see [What gets simpler, and what is
-load-bearing](#what-gets-simpler-and-what-is-load-bearing)). Note:
-standalone/archival output must still rewrite asset URLs to work without the app
-— see [Standalone / archival mode](#standalone--archival-mode) and, for
+mechanism — behind the [URL and link emission
+seam](#url-and-link-emission-seam), as an injected manifest rather than a
+compile-time `~p` macro, so the renderer stays web-decoupled. This removes the
+_cross-language_ manifest dance that currently forces Jekyll to run after the
+digest stage (see [What gets simpler, and what is
+load-bearing](#what-gets-simpler-and-what-is-load-bearing)) — but **not** the
+underlying ordering: rendering still runs after the asset bundles are digested,
+because the HTML embeds their digested names.
+
+Two things the seam adds on top of today's behaviour: **page-adjacent assets
+(the images next to each course page) are digested too**, which they are not
+today, and each versioned build carries its own copy of the global assets under
+its prefix. Standalone/archival output must still resolve asset URLs without the
+app — see [Standalone / archival mode](#standalone--archival-mode) and, for
 versioned builds, [Optional URL prefix](#optional-url-prefix).
 
 ### Metadata generation
@@ -744,14 +1211,25 @@ resolve without the running app (see [Asset URLs](#asset-urls)).
 ### Optional URL prefix
 
 Support rendering the whole static site under an **optional path prefix** (e.g.
-`/2025-2026/`) so each year's content can be archived as an immutable version
-while all versions coexist. Requirements:
+`/2026/`, the starting year of the academic year) so each year's content can be
+archived as an immutable version while all versions coexist. The prefix is
+optional in the code but used in every real build; the mechanism is the
+`version` knob of the [URL and link emission
+seam](#url-and-link-emission-seam), which settles the details:
 
-- All internal links, asset URLs, and heading anchors must be prefix-aware
-  (build-time configuration, default empty prefix = current behaviour).
-- Keep it simple: a single configurable base path threaded through the renderer
-  and metadata. If it turns out to be disproportionately complex, descope to a
-  manual post-build rewrite — but a build-time prefix is the preferred outcome.
+- Internal links, global asset URLs, generated PDFs and cross-document heading
+  references are prefixed; page-adjacent assets stay document-relative and
+  fragments within the current document stay bare; `favicon.ico`/`robots.txt`
+  stay root-anchored.
+- The **home page is the one exception**: emitted at both the base path and the
+  prefix during the year, at the prefix only in the archive.
+- Each year's build carries **its own copy of the global assets** under the
+  prefix, so a frozen archive cannot be broken by a later year's asset build.
+- Archived years are **not** redirected away from; they carry a banner pointing
+  at a dynamic resolver in the app, which also handles the unprefixed legacy
+  paths (`/course/…`, `/cheatsheets/…`) so existing bookmarks and external links
+  keep working — see [Archived years: a banner and one dynamic
+  resolver](#archived-years-a-banner-and-one-dynamic-resolver).
 
 ### Decouple PDF generation from production
 
@@ -781,9 +1259,12 @@ Do **not** solve this with a `<base href>` element — it also redirects
 root-relative _asset_ URLs to the base origin, reintroducing the very dependency
 we are removing and breaking local asset loading.
 
-The clean end state (with the Elixir renderer): generalize the [optional URL
-prefix](#optional-url-prefix) knob into a **configurable canonical base URL**
-threaded through the renderer. The static build emits absolute production URLs
+The clean end state (with the Elixir renderer): a **configurable absolute base
+URL** alongside the [optional URL prefix](#optional-url-prefix), both knobs of
+the [URL and link emission seam](#url-and-link-emission-seam) — kept separate
+because the base URL applies only to content links, while the prefix also
+applies to global assets. It is set for the **PDF build only**; every other
+build leaves it `nil`. The static build emits absolute production URLs
 on content links and relative URLs on assets; serve that build locally (a
 throwaway `Plug.Static`, or the app in a preview mode) and point Puppeteer at
 it. PDF generation then depends on a **build artifact**, not a running site —
@@ -791,8 +1272,8 @@ reproducible in CI, working offline, and able to regenerate a past year's PDFs
 from that year's frozen archive. It composes with the
 `archidep.json`-as-output-artifact decision ([Drop the archidep.json
 round-trip?](#drop-the-archidepjson-round-trip)): `pdf.ts` reads the emitted
-manifest for _what_ to print, and the canonical base URL controls _what the
-links say_.
+manifest for _what_ to print, and the absolute base URL controls _what the links
+say_.
 
 An interim option that works before the renderer lands — serve the current
 Jekyll `priv/static` build locally and rewrite root-relative anchor hrefs to the
@@ -825,6 +1306,16 @@ reuse `npm run idx` (`course/src/scripts/idx.ts`) to produce `lunr.json`. This
 decouples the search work from the renderer migration and can be revisited
 later. Independent of the [Drop the archidep.json
 round-trip?](#drop-the-archidepjson-round-trip) decision.
+
+Both files are emitted under the version prefix and named with a **build id**
+(`lunr-<build_id>.json`) rather than a content digest — `search.json` is derived
+from the rendered HTML whose `<head>` has to name it, so content-addressing
+would be circular, while the frequently-rebuilt production and backup copies
+still need a versioned name to stay consistent with the pages they index. See
+[Search assets carry a build id](#search-assets-carry-a-build-id). The URLs the
+index stores (`id`, `url`) come from the [URL and link emission
+seam](#url-and-link-emission-seam) like every other content link, so they are
+prefix- and origin-correct by construction.
 
 ### HTML fidelity gate
 
