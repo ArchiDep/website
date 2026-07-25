@@ -25,6 +25,7 @@ that silently rots.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [General conventions](#general-conventions)
+  - [Property-based tests](#property-based-tests)
 - [Business layer](#business-layer)
   - [What a business-layer test must assert](#what-a-business-layer-test-must-assert)
   - [Test setup and structure](#test-setup-and-structure)
@@ -114,6 +115,38 @@ These apply to every layer; the per-layer sections build on them.
   a second helper holding the _expected_ result — both pull the tests' fates
   together. If a value is used in exactly one test, define it in that test, not
   at module scope.
+
+### Property-based tests
+
+[`stream_data`][stream-data] is available for **invariants that hold across all
+inputs**, which is the one thing an example cannot state. A property
+**supplements** example-based tests, it never replaces them: the examples pin
+the concrete values the code must produce, the property pins the rule they all
+obey. Reach for one when a claim is naturally universally quantified — a
+round-trip, an idempotent operation, or a result that must not depend on some
+input.
+
+**A property's assertion is still a whole-value equality.** The forms that earn
+their keep are exactly those expressible as `==`:
+
+- **Round-trip** — `parse(format(x)) == {:ok, x}`.
+- **Idempotence** — `f(f(x)) == f(x)`.
+- **Independence** — two computations that must agree: the same call under two
+  generated configurations, or with one field neutralized, asserted equal to
+  each other. This is how you pin "input _y_ does not affect the result" without
+  reaching for a substring check.
+- **A known invariant of the output**, expressed by comparing the output to
+  itself under the operation it must already satisfy, e.g. asserting that an
+  emitted path is unchanged by normalizing it.
+
+What a property must **not** become is a licence to weaken assertions: a
+`String.contains?`/`=~` check on a generated result is a [partial
+assertion](#exact-assertions-on-return-values) like any other, and usually a
+sign the invariant should be restated as one of the equalities above. Generate
+the inputs with a factory generator (`test/support/*_factory.ex`) rather than
+inline literals, so the property does not smuggle in shared data, and
+pattern-match the generated value in the `check all` clause (`check all
+%Struct{} = x <- gen()`) when the body updates that struct.
 
 ## Business layer
 
@@ -1846,6 +1879,7 @@ business logic, which the mocked pipeline tests cover.
 [ex-unit-doctests]: https://hexdocs.pm/ex_unit/ExUnit.DocTest.html
 [gen-server]: https://hexdocs.pm/elixir/GenServer.html
 [ex-machina]: https://hexdocs.pm/ex_machina/readme.html
+[stream-data]: https://hexdocs.pm/stream_data/StreamData.html
 [faker]: https://hexdocs.pm/faker/readme.html
 [hammox]: https://github.com/msz/hammox
 [mox]: https://hexdocs.pm/mox/Mox.html

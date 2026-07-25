@@ -35,6 +35,10 @@ exhaustive index.
   - Course context — classes and students, student import, expected server
     properties:
     [`app/lib/archidep/course/CONTRIBUTING.md`](./app/lib/archidep/course/CONTRIBUTING.md)
+  - Course material site renderer — the pure, non-context subsystem that renders
+    the course material, and the URL/link emission seam every emitted URL goes
+    through:
+    [`app/lib/archidep/course_site/CONTRIBUTING.md`](./app/lib/archidep/course_site/CONTRIBUTING.md)
   - Servers context — cloud servers, server groups, server tracking, Ansible
     pipeline:
     [`app/lib/archidep/servers/CONTRIBUTING.md`](./app/lib/archidep/servers/CONTRIBUTING.md)

@@ -14,12 +14,14 @@ actually uses is small and clean, and the codebase is already half-way there.
 - [Task details](#task-details)
   - [Testing as we go](#testing-as-we-go)
   - [Revisit the Solid (Liquid) library decision](#revisit-the-solid-liquid-library-decision)
+    - [Spike results](#spike-results)
   - [Drop the archidep.json round-trip?](#drop-the-archidepjson-round-trip)
   - [URL and link emission seam](#url-and-link-emission-seam)
     - [Typed logical references, not path strings](#typed-logical-references-not-path-strings)
     - [Configuration knobs](#configuration-knobs)
     - [Emission policy per reference kind](#emission-policy-per-reference-kind)
     - [Page-adjacent assets are digested](#page-adjacent-assets-are-digested)
+    - [Generated PDFs may live anywhere](#generated-pdfs-may-live-anywhere)
     - [The home page exception](#the-home-page-exception)
     - [Archived years: a banner and one dynamic resolver](#archived-years-a-banner-and-one-dynamic-resolver)
     - [Search assets carry a build id](#search-assets-carry-a-build-id)
@@ -109,8 +111,12 @@ constraints](#goals-and-constraints).
       `Solid`'s lexer rejects unquoted paths, and syntax highlighting is the one
       non-drop-in part (rouge → `lumis` classes, touching the theme) — see
       [Spike results](#spike-results).
-- [ ] Implement the URL/link emission seam as a standalone module with unit
-      tests, ahead of its consumers — see [URL and link emission
+- [x] Implement the URL/link emission seam as a standalone module with unit
+      tests, ahead of its consumers. **Done: `ArchiDep.CourseSite.Urls`** and
+      its identity/manifest modules, in a new top-level `ArchiDep.CourseSite.*`
+      namespace outside the bounded contexts (documented in
+      [`app/lib/archidep/course_site/CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md)),
+      with six spec corrections recorded below — see [URL and link emission
       seam](#url-and-link-emission-seam).
 - [ ] Build a shared Markdown-parsing/rendering core (Solid + MDEx + AST
       helpers) reusable by both the static build and the Phoenix app — see
@@ -538,18 +544,30 @@ The single most important decision: the renderer never concatenates a prefix
 onto a path. It hands the resolver a **typed reference** and receives a string
 back. A closed set of reference kinds, each with its own emission policy:
 
-| Reference                     | Meaning                                       |
-| ----------------------------- | --------------------------------------------- |
-| `{:home}`                     | the course home page                          |
-| `{:document, ref}`            | a course document (`{% link %}`, sidebar)     |
-| `{:heading, ref, id}`         | a heading inside a document                   |
-| `{:cheatsheet, slug}`         | a cheatsheet                                  |
-| `{:page_asset, doc, path}`    | an image/PDF co-located with a document       |
-| `{:asset, "/assets/…"}`       | a global build asset (bundles, fonts)         |
-| `{:site_file, "search.json"}` | a prefixed build output fetched at runtime    |
-| `{:root_file, "favicon.ico"}` | a root-anchored file, never prefixed          |
-| `{:pdf, doc}`                 | a generated PDF, published alongside the site |
-| `{:external, url}`            | passthrough                                   |
+| Reference                       | Meaning                                               |
+| ------------------------------- | ----------------------------------------------------- |
+| `{:home}`                       | the course home page                                  |
+| `{:document, ref}`              | a course document (`{% link %}`, sidebar)             |
+| `{:heading, ref, id}`           | a heading inside a document                           |
+| `{:cheatsheet, slug}`           | a cheatsheet                                          |
+| `{:page_asset, doc, path}`      | an image/PDF co-located with a document               |
+| `{:asset, "/assets/…"}`         | a global build asset (bundles, fonts)                 |
+| `{:site_file, "archidep.json"}` | a prefixed build output                               |
+| `{:build_file, "lunr.json"}`    | ditto, named after the build that produced it         |
+| `{:root_file, "favicon.ico"}`   | a file anchored at the mount point                    |
+| `{:pdf, page}`                  | a generated PDF, published anywhere                   |
+| `{:live_site, page}`            | this page on the live site (backup banner, canonical) |
+| `{:current_edition, page}`      | whatever superseded this page (archive banner)        |
+| `{:external, url}`              | passthrough                                           |
+
+Three kinds were added to this table during implementation. `{:site_file, …}`
+was **split** in two, because the search index must carry the build id while
+`archidep.json` and `version.json` must not, and nothing in the original design
+distinguished them. `{:live_site, page}` and `{:current_edition, page}` were
+added because `mode` and `live_site_url` were otherwise **dead struct fields**:
+the design described both banners and `rel=canonical` as URL construction but
+gave the layout no way to ask for them, which is exactly the
+string-concatenation this seam exists to remove.
 
 Why typed rather than "prepend a base path to a string": three of the four
 consumers below need a **different** answer per kind (the home page ignores the
@@ -569,13 +587,25 @@ year.
   mode: :live,                       # :live | :backup | :archive
   base_path: "",                     # deployment mount point ("" | "/website")
   version: "2026",                   # year segment, or nil for unversioned
-  home_at_base?: true,               # home also lives at base_path
+  build_id: "abc123",                # hashes the build inputs; names the search assets
   absolute_base_url: nil,            # baked onto content links, PDF builds only
   live_site_url: "https://archidep.ch",  # off-site target: banner, rel=canonical
   assets: %AssetManifest{},          # logical asset path -> digested path
-  page_assets: %PageAssetManifest{}  # source file -> digested output filename
+  page_assets: %PageAssetManifest{}, # output path -> digested filename
+  pdfs: %PdfManifest{}               # where the PDFs are published, and their names
 }
 ```
+
+Three corrections to this struct, applied during implementation:
+
+- **`build_id` was missing** although the `search-<build_id>.json` decision
+  below depends on it.
+- **`home_at_base?` is gone**, because it is `mode != :archive` in every row of
+  the [consumers table](#consumers-as-configurations) — it was a fourth
+  representable state with no meaning. It is now derived
+  (`UrlContext.home_at_base?/1`), so a build cannot claim to be both.
+- **`pdfs` was missing**, and it is not just a name map — see [Generated
+  PDFs](#generated-pdfs-may-live-anywhere).
 
 `content_prefix` is derived as `base_path <> "/" <> version`. The **year is the
 starting year** of the academic year, so the 2026–2027 edition is `/2026/`
@@ -592,16 +622,18 @@ assets relative to the page and to leave same-document fragments bare.
 
 #### Emission policy per reference kind
 
-| Kind                       | Version prefix | Digested | Absolute base URL | Form          |
-| -------------------------- | -------------- | -------- | ----------------- | ------------- |
-| `:home`                    | see below      | no       | yes               | root-relative |
-| `:document`, `:cheatsheet` | yes            | no       | yes               | root-relative |
-| `:heading`                 | yes¹           | no       | yes¹              | root-relative |
-| `:page_asset`              | n/a            | **yes**  | no                | doc-relative  |
-| `:asset`                   | yes            | yes      | no                | root-relative |
-| `:site_file`               | yes            | id²      | no                | root-relative |
-| `:pdf`                     | yes            | no       | no                | root-relative |
-| `:root_file`               | **no**         | no       | no                | root-relative |
+| Kind                             | Version prefix | Digested | Absolute base URL | Form                  |
+| -------------------------------- | -------------- | -------- | ----------------- | --------------------- |
+| `:home`                          | see below      | no       | yes               | root-relative         |
+| `:document`, `:cheatsheet`       | yes            | no       | yes               | root-relative         |
+| `:heading`                       | yes¹           | no       | yes¹              | root-relative         |
+| `:page_asset`                    | n/a            | **yes**  | no                | doc-relative          |
+| `:asset`                         | yes            | yes      | no                | root-relative         |
+| `:site_file`                     | yes            | no       | no                | root-relative         |
+| `:build_file`                    | yes            | id²      | no                | root-relative         |
+| `:pdf`                           | yes³           | no       | no                | root-relative³        |
+| `:root_file`                     | **no**         | no       | no                | mount-point-relative⁴ |
+| `:live_site`, `:current_edition` | n/a            | no       | n/a               | absolute              |
 
 ¹ A fragment in the **current** document stays bare (`#foo`) — no prefix, no
 origin — so in-page and in-PDF navigation stays internal. Only cross-document
@@ -611,6 +643,14 @@ anchors must be prefix-aware; only the cross-document ones are.)
 ² Not a content digest but a **build id**, because the search index cannot be
 content-addressed without a cycle — see [Search assets carry a build
 id](#search-assets-carry-a-build-id).
+
+³ Unless the PDFs are published externally, in which case the URL is absolute
+and neither prefix applies — see [Generated
+PDFs](#generated-pdfs-may-live-anywhere).
+
+⁴ "Never prefixed" means never **version**-prefixed: `favicon.ico` is emitted
+under `base_path`, so it still resolves on the GitHub Pages mount (which is what
+`relative_url` does today).
 
 Two rules fall out and are worth stating explicitly, because they are what makes
 PDF generation origin-independent (see [Decouple PDF generation from
@@ -628,25 +668,37 @@ digest) and it costs less than it looks:
   paths. The rewrite happens on the MDEx AST (`image`/`link` nodes) and, for raw
   HTML nodes and slides, on the HTML fragment.
 - **Emitted URLs stay document-relative** — only the filename changes
-  (`images/cli-<md5>.jpg`). Consequence: page assets are automatically immune to
-  the version prefix, to the GitHub Pages `/website` mount, and to being served
-  from a throwaway local server for PDF export. This is a strictly better
-  outcome than root-relative digested URLs and removes a whole class of
-  knob-interaction bugs.
+  (`images/cli-<md5>.jpg`), and the author's own path shape is preserved
+  verbatim, `../` and `./` included. Consequence: page assets are automatically
+  immune to the version prefix, to the GitHub Pages `/website` mount, and to
+  being served from a throwaway local server for PDF export. This is a strictly
+  better outcome than root-relative digested URLs and removes a whole class of
+  knob-interaction bugs, and it is pinned as a property test (the same reference
+  under two unrelated build configurations must emit the same string).
 - **Output layout mirrors the source tree** under the chapter directory, exactly
-  as Jekyll does today, so `../images/x.jpg` from `401-cloud-computing/slides.md`
-  keeps resolving to the chapter's `images/` directory.
+  as Jekyll does today, so `../images/x.jpg` from
+  `401-cloud-computing/slides.md` keeps resolving to the chapter's `images/`
+  directory.
 - **Missing files become build errors.** Digesting requires reading the file, so
   `![](images/typo.png)` — today a silent 404 — fails the build.
 
 Traps to handle when implementing:
 
-- **Source-relative in, output-relative out.**
-  `_course/401-cloud-computing/slides.md` is one directory _shallower_ in the
-  source tree than its output (`/course/401-cloud-computing/slides/`). The
-  reference resolves against the document's **source** directory but must be
-  emitted relative to its **output** directory. Doing this by hand at each call
-  site is how you get the classic off-by-one-`..` bug; the resolver owns it.
+- **Output-relative in _and_ out** (corrected during implementation; this
+  paragraph previously said source-relative in, and following it would have
+  _caused_ the off-by-one-`..` bug it warns about).
+  `_course/401-cloud-computing/slides.md` writes
+  `<img src='../images/client-server.jpg'>` and is one directory _shallower_ in
+  the source tree than its output (`/course/401-cloud-computing/slides/`).
+  Source-relative, that reference is `_course/images/…`, which does not exist;
+  output-relative it is `/course/401-cloud-computing/images/…`, which does — and
+  Jekyll agrees, since `relative_asset_url.rb` resolves against
+  `page.permalink`. So the reference resolves against the document's **output**
+  directory, which also makes resolution layout-blind: the two slides layouts
+  differ only in the source tree, so one code path covers both. The manifest is
+  therefore keyed by **output path** (not source file) and the resolver never
+  reads the source tree at all — the build step, which copies and digests the
+  files, owns output→source.
 - **Raw HTML must be rewritten too.** `401-cloud-computing/slides.md` uses
   `<img src='../images/…'>` directly, and slides are never Markdown-rendered
   (see [Slides](#slides)) — a pure AST pass would miss them and, because the
@@ -665,6 +717,41 @@ Traps to handle when implementing:
   immutable. Because _every_ page asset is digested, the production static
   server can match on extension under the course tree
   (`/20\d\d/course/.*\.(png|jpe?g|webp|gif|svg|pdf)$`) to serve them immutable.
+
+#### Generated PDFs may live anywhere
+
+**Decision: the seam supports both site-hosted and arbitrary external PDF
+hosting, because external hosting is where this is going.** Today's PDFs are
+generated by `npm run pdf` and **uploaded to the server by hand** (they are not
+part of the build at all — `pdf/` is in `_config.yml`'s `exclude`). The intended
+end state is publishing them somewhere the server does not have to store them: a
+GitHub release, an S3 bucket.
+
+`PdfManifest` therefore carries two levels:
+
+- **A base** — `:site` (under the build's own prefix, at `/<year>/pdf/…`) or
+  `{:external, base_url}`. This is the deployment fact, so moving the PDFs from
+  the server to a bucket is a one-line configuration change and **no resolver
+  change at all**.
+- **A per-entry `{:url, …}` override** — because some hosts rename what they are
+  given (GitHub release assets turn spaces into periods), which makes the URL
+  impossible to derive from the local filename. A publish step that knows the
+  real asset URLs records them and they pass through verbatim, with no second
+  manifest and no per-host special case.
+
+Two consequences worth stating:
+
+- **PDF URLs are absolute iff published externally**, independently of
+  `absolute_base_url`, which governs _content_ links only.
+- **`:pdf` is the one kind whose absence is not a build error.** During the year
+  a chapter's slides may simply not be exported yet, so an unresolved PDF is a
+  signal for the layout to **omit the download link** — today's layout renders
+  it unconditionally, which is how a link to a missing PDF becomes possible in
+  the first place. A missing _page asset_, by contrast, always fails the build.
+
+If the PDFs do stay site-hosted, note that the version prefix moves their
+location: the manual upload target becomes `/<year>/pdf/`. See [Per-year PDF
+archive](#per-year-pdf-archive).
 
 #### The home page exception
 
@@ -905,7 +992,8 @@ Implementation notes:
 - `idx.ts` keeps writing a fixed `lunr.json`; the build copies it to the
   versioned name. No change to the Node scripts.
 - Emit **full URLs** into `<head>` (`data-search-data-url`,
-  `data-search-index-url`) through `{:site_file, …}`, and drop `search.ts`'s
+  `data-search-index-url`) through `{:build_file, …}` (the build-id-carrying
+  counterpart of `{:site_file, …}`), and drop `search.ts`'s
   `${basePath}/lunr.json` string-joining — that call site is precisely the kind
   this seam exists to remove. Keep `data-base-path` only if something else still
   needs it.
@@ -920,13 +1008,13 @@ rebuilds anyway, so the indirection buys little.
 
 #### Consumers as configurations
 
-| Build                 | `mode`     | `base_path`  | `version` | `home_at_base?` | `absolute_base_url`     |
-| --------------------- | ---------- | ------------ | --------- | --------------- | ----------------------- |
-| Development / live    | `:live`    | `""`         | `"2026"`  | `true`          | `nil`                   |
-| GitHub Pages backup   | `:backup`  | `"/website"` | `"2026"`  | `true`          | `nil`                   |
-| Archive, archidep.ch  | `:archive` | `""`         | `"2025"`  | `false`         | `nil`                   |
-| Archive, GitHub Pages | `:archive` | `"/website"` | `"2025"`  | `false`         | `nil`                   |
-| PDF export            | `:live`    | `""`         | `"2026"`  | `true`          | `"https://archidep.ch"` |
+| Build                 | `mode`     | `base_path`  | `version` | `absolute_base_url`     |
+| --------------------- | ---------- | ------------ | --------- | ----------------------- |
+| Development / live    | `:live`    | `""`         | `"2026"`  | `nil`                   |
+| GitHub Pages backup   | `:backup`  | `"/website"` | `"2026"`  | `nil`                   |
+| Archive, archidep.ch  | `:archive` | `""`         | `"2025"`  | `nil`                   |
+| Archive, GitHub Pages | `:archive` | `"/website"` | `"2025"`  | `nil`                   |
+| PDF export            | `:live`    | `""`         | `"2026"`  | `"https://archidep.ch"` |
 
 `absolute_base_url` is `nil` everywhere except the PDF build — in particular the
 **backup copy must keep its content links local**. Absolutizing them to
@@ -955,10 +1043,40 @@ can be served from `localhost` and still print production links — no
   The order is: bundle → digest → collect/digest page assets → render → build
   the search index.
 
-Each consumer is then a configuration of the one seam, not its own rewrite. Unit
-tests cover the resolver in isolation (every reference kind × the knob
-combinations above, plus the source-relative/output-relative page-asset cases)
-so the consuming tasks inherit correct URLs by construction.
+Each consumer is then a configuration of the one seam, not its own rewrite.
+
+**Implemented** as `ArchiDep.CourseSite.Urls` (plus `DocumentRef`, `PageRef`,
+`UrlContext`, the three manifests, `UrlPath` and `UrlError`) in a new top-level
+`ArchiDep.CourseSite.*` namespace, deliberately outside the bounded contexts:
+the subsystem owns no state, answers no requests, and must run standalone, so a
+stray `Repo` call in it should read as obviously wrong.
+`ArchiDep.Course.Material` stays in the Course context for now — the [richer
+model task](#a-richer-coursematerial-model) decides whether it moves — and will
+store these references rather than URLs. See
+[`app/lib/archidep/course_site/CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md).
+
+Tests cover the resolver in isolation: one block per reference kind, plus a
+block asserting **every kind at once under each of the five configurations
+above** (the only place knob interactions are pinned, with expectations written
+by hand from the emission table). The claims the consuming tasks actually rely
+on are pinned as property tests over generated contexts — page assets unaffected
+by how the build is published, global assets never absolutized, same-page
+headings always bare, and the identity round-trips — so those tasks inherit
+correct URLs by construction.
+
+Two smaller findings from the implementation, neither affecting the design:
+
+- **A chapter URL cannot tell a subject from an exercise**, since no chapter has
+  both (19 subjects + 26 exercises across 50 chapters). So the inverse direction
+  (`parse_output_path/1`, needed by the `/latest/:year/*path` resolver) returns
+  a deliberately weaker **identity** — `{:chapter, num, slug}` /
+  `{:chapter_slides, num, slug}` / `{:cheatsheet, slug}` — rather than
+  fabricating a type. That identity is what the archive resolver matches on
+  anyway.
+- **No cosmetic `./` divergence after all.** An earlier note here predicted that
+  `./images/x.png` would normalize to `images/x.png`; because only the last path
+  segment is replaced, the author's prefix survives untouched, so there is
+  nothing for the fidelity gate to look at.
 
 ### Shared Markdown rendering core
 
@@ -1094,9 +1212,9 @@ Replace the remaining plugins:
 
 - **`jemoji`** — `:shortcode:` → emoji; needed in titles _and_ tag output (e.g.
   `:books:`). Port the shortcode→emoji map. **Ordering constraint:** heading IDs
-  are slugged from the _shortcode_ text, not the emoji — `### :exclamation: Create
-  your server` is `#exclamation-create-your-server`, and the app links to it —
-  so emoji substitution must run **after** heading IDs are generated.
+  are slugged from the _shortcode_ text, not the emoji — `### :exclamation:
+Create your server` is `#exclamation-create-your-server`, and the app links to
+  it — so emoji substitution must run **after** heading IDs are generated.
 - **`jekyll-target-blank`** — trivial AST pass adding `target="_blank"` to
   external links. It must run on the **logical** references, before the [URL and
   link emission seam](#url-and-link-emission-seam) absolutizes content links:

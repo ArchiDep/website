@@ -100,6 +100,10 @@ components, can be found in the `theme` directory (see [`CONTRIBUTING.md` in the
       shared error types, and release tasks.
     - `helpers/`: Shared helper modules used across contexts (e.g.
       `ChangesetHelpers`, `SchemaHelpers`, `UseCaseHelpers`, `GenStageHelpers`).
+    - `course_site/`: The renderer of the [course material
+      site](../course/CONTRIBUTING.md) — a pure, database-free subsystem that is
+      deliberately **not** a bounded context, documented in
+      [`lib/archidep/course_site/CONTRIBUTING.md`](./lib/archidep/course_site/CONTRIBUTING.md).
   - `lib/archidep_web`: The Phoenix web interface, including controllers, views,
     APIs, templates, live views, and channels.
 - **Supporting Files**

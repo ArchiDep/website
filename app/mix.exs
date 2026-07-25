@@ -107,6 +107,7 @@ defmodule ArchiDep.MixProject do
       {:nicene, "~> 0.7.0", only: [:dev, :test], runtime: false},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:sobelow, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:stream_data, "~> 1.2", only: [:dev, :test]},
       {:testcontainers, "~> 2.3", only: :test}
     ]
   end
