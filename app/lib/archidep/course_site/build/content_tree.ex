@@ -27,6 +27,48 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   (`.DS_Store`, an AppleDouble file, a directory marker) rather than anybody's
   content. A Markdown file the content layout does not recognise is an error
   instead, since publishing it raw would serve Markdown as text.
+
+  ## What a chapter may hold
+
+  Two rules govern the documents of a chapter, and this is where they are
+  enforced:
+
+  1. **A chapter has a subject or an exercise, never both.**
+  2. **An exercise never has slides.**
+
+  They are checked here because a chapter is only visible to whatever lists its
+  files: the renderer is handed one document at a time and never sees its
+  siblings, so it is structurally incapable of noticing either violation.
+
+  The first rule is load-bearing rather than tidy. A chapter's subject and its
+  exercise are published at the *same* URL, which is coherent only because at
+  most one of them exists; `ArchiDep.CourseSite.PageRef.identity/1` collapses
+  them into one identity for the same reason. Were both present, two pages would
+  be written to one directory and their files would resolve against a directory
+  belonging to both. Neither failure is loud, which is why the input is refused
+  instead of one of the two being picked.
+
+  The second rule has no such consequence. It is enforced because it is true of
+  the course, and because leaving it unenforced invites a slides page under a
+  chapter that nothing listing the material expects to find one under.
+
+  ## One number, one document of each type
+
+  Two more ways a chapter directory can be ambiguous, neither of them a
+  statement about what a chapter may hold:
+
+  - **A document written twice.** A chapter writing its deck in both source
+    layouts (`slides.md` and `slides/slides.md`) writes one document twice, and
+    since the documents are keyed by their identity the second would replace the
+    first — publishing one of the two files and silently ignoring the other.
+  - **A number used twice.** Two chapter directories differing only after the
+    number are two pages as far as their URLs are concerned, but one chapter to
+    everything that lists the material: a chapter's progress is recorded against
+    its number alone.
+
+  Both are refused here for the same reason the rules above are: what makes them
+  visible is having the whole content directory in hand, and what makes them
+  worth refusing is that neither fails loudly.
   """
 
   alias ArchiDep.CourseSite.DocumentRef
@@ -45,6 +87,10 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
           {:unknown_source, String.t()}
           | {:unsafe_name, String.t(), String.t()}
           | {:duplicate_output_path, String.t(), [String.t()]}
+          | {:duplicate_document, String.t(), DocumentRef.doc_type(), [String.t()]}
+          | {:duplicate_chapter_number, pos_integer(), [String.t()]}
+          | {:subject_and_exercise, String.t(), [String.t()]}
+          | {:exercise_with_slides, String.t(), [String.t()]}
 
   @roots ["_course", "_cheatsheets"]
 
@@ -70,21 +116,22 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   Sort the source paths of the content directory into what a build makes of
   them.
 
-  Paths are relative to the content directory and separated by slashes, the
-  same way `ArchiDep.CourseSite.DocumentRef.parse_source_path/1` reads them.
-  Every offending path is reported rather than the first, since a build that
-  stops at one makes a content directory take as many runs to fix as it has
-  mistakes.
+  Paths are relative to the content directory and separated by slashes, the same
+  way `ArchiDep.CourseSite.DocumentRef.parse_source_path/1` reads them. Every
+  offending path is reported rather than the first, since a build that stops at
+  one makes a content directory take as many runs to fix as it has mistakes —
+  and so is every ambiguous chapter, which is a fact about a directory rather
+  than about any one path.
   """
   @spec plan([String.t()]) :: {:ok, t()} | {:error, nonempty_list(error())}
   def plan(source_paths) when is_list(source_paths) do
     classified = Enum.map(source_paths, &{&1, classify(&1)})
 
     errors =
-      Enum.flat_map(classified, fn
-        {_source_path, {:error, error}} -> [error]
-        {_source_path, {:ok, _entry}} -> []
-      end) ++ collisions(classified)
+      unplaceable(classified) ++
+        collisions(classified) ++
+        duplicate_documents(classified) ++
+        duplicate_chapter_numbers(classified) ++ chapter_invariants(classified)
 
     case errors do
       [] -> {:ok, tree(classified)}
@@ -106,6 +153,21 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   def format_error({:duplicate_output_path, output_path, source_paths}),
     do:
       "Output path #{inspect(output_path)} is written by #{Enum.map_join(source_paths, " and ", &inspect/1)}"
+
+  def format_error({:duplicate_document, chapter, type, source_paths}),
+    do:
+      "Chapter #{inspect(chapter)} has more than one #{type} document, written by #{Enum.map_join(source_paths, " and ", &inspect/1)}"
+
+  def format_error({:duplicate_chapter_number, num, chapters}),
+    do: "Chapter number #{num} is used by #{Enum.map_join(chapters, " and ", &inspect/1)}"
+
+  def format_error({:subject_and_exercise, chapter, source_paths}),
+    do:
+      "Chapter #{inspect(chapter)} has both a subject and an exercise, written by #{Enum.map_join(source_paths, " and ", &inspect/1)}"
+
+  def format_error({:exercise_with_slides, chapter, source_paths}),
+    do:
+      "Chapter #{inspect(chapter)} is an exercise and has slides, written by #{Enum.map_join(source_paths, " and ", &inspect/1)}"
 
   defp tree(classified) do
     tree =
@@ -192,6 +254,13 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
     end
   end
 
+  defp unplaceable(classified) do
+    Enum.flat_map(classified, fn
+      {_source_path, {:error, error}} -> [error]
+      {_source_path, {:ok, _entry}} -> []
+    end)
+  end
+
   # `page_assets` is a map, and building a map from a list is exactly where two
   # files writing one path stop being two files. Nothing in the content
   # directory does this today; noticing when something starts to costs a group.
@@ -208,4 +277,66 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
       {:duplicate_output_path, output_path, Enum.sort(sources)}
     end)
   end
+
+  # The same hazard as two files publishing one path, one level up: `documents`
+  # is keyed by identity, and the two slides layouts are one identity.
+  defp duplicate_documents(classified) do
+    classified
+    |> documents()
+    |> Enum.group_by(fn {ref, _source_path} -> {DocumentRef.dir(ref), ref.type} end)
+    |> Enum.filter(fn {_document, written} -> length(written) > 1 end)
+    |> Enum.sort()
+    |> Enum.map(fn {{chapter, type}, written} ->
+      {:duplicate_document, chapter, type, written |> Enum.map(&elem(&1, 1)) |> Enum.sort()}
+    end)
+  end
+
+  # A chapter directory is only visible through the documents it holds, which is
+  # enough: a directory holding none of them publishes files nobody links to
+  # rather than a chapter anything can be recorded against.
+  defp duplicate_chapter_numbers(classified) do
+    classified
+    |> documents()
+    |> Enum.group_by(fn {ref, _source_path} -> ref.num end, fn {ref, _source_path} ->
+      DocumentRef.dir(ref)
+    end)
+    |> Enum.map(fn {num, chapters} -> {num, chapters |> Enum.uniq() |> Enum.sort()} end)
+    |> Enum.filter(fn {_num, chapters} -> length(chapters) > 1 end)
+    |> Enum.sort()
+    |> Enum.map(fn {num, chapters} -> {:duplicate_chapter_number, num, chapters} end)
+  end
+
+  # The two rules are checked independently, so a chapter breaking both is told
+  # about both: the second is not a consequence of the first, and an author
+  # fixing one file at a time would otherwise be sent back for a second run.
+  defp chapter_invariants(classified) do
+    classified
+    |> documents()
+    |> Enum.group_by(fn {ref, _source_path} -> DocumentRef.dir(ref) end, fn {ref, source_path} ->
+      {ref.type, source_path}
+    end)
+    |> Enum.sort()
+    |> Enum.flat_map(fn {chapter, written} ->
+      by_type = Map.new(written)
+
+      subject_and_exercise(chapter, by_type) ++ exercise_with_slides(chapter, by_type)
+    end)
+  end
+
+  defp documents(classified) do
+    Enum.flat_map(classified, fn
+      {source_path, {:ok, {:document, ref}}} -> [{ref, source_path}]
+      {_source_path, _other} -> []
+    end)
+  end
+
+  defp subject_and_exercise(chapter, %{subject: subject, exercise: exercise}),
+    do: [{:subject_and_exercise, chapter, Enum.sort([subject, exercise])}]
+
+  defp subject_and_exercise(_chapter, _documents), do: []
+
+  defp exercise_with_slides(chapter, %{exercise: exercise, slides: slides}),
+    do: [{:exercise_with_slides, chapter, Enum.sort([exercise, slides])}]
+
+  defp exercise_with_slides(_chapter, _documents), do: []
 end

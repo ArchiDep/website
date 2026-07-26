@@ -94,7 +94,11 @@ co-located assets would collide in the `PageAssetManifest`, which is keyed by
 output path. The renderer cannot check this — it is handed one document and
 never sees a chapter's other files — so the check belongs to whatever enumerates
 the content directory, and it must reject the input rather than choose between
-the two.
+the two. [`ContentTree`](./build/content_tree.ex) is that enumeration and where
+both rules are enforced, along with the two other ways a chapter can turn out
+not to be one chapter: a document written twice — the two slides layouts are one
+identity — and a number used by two directories, which are two pages by URL but
+one chapter to anything that records progress against a number.
 
 ## URL and link emission
 
@@ -230,12 +234,12 @@ rather than merely intended. So what is left in `Build` is fetching bytes and
 putting them somewhere, and each rule of a build lives in a pure module beside
 it, documented there rather than here:
 
-| Module                                            | What it decides                                                       |
-| ------------------------------------------------- | --------------------------------------------------------------------- |
-| [`ContentTree`](./build/content_tree.ex)          | what each file of the content directory is, and where it is published |
-| [`PageAssetDigest`](./build/page_asset_digest.ex) | what a published file is called                                       |
-| [`AssetDigest`](./build/asset_digest.ex)          | where the global assets went, per `phx.digest`                        |
-| [`LinkCheck`](./build/link_check.ex)              | which of a finished build's links lead nowhere                        |
+| Module                                            | What it decides                                                                                |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [`ContentTree`](./build/content_tree.ex)          | what each file of the content directory is, where it is published, and what a chapter may hold |
+| [`PageAssetDigest`](./build/page_asset_digest.ex) | what a published file is called                                                                |
+| [`AssetDigest`](./build/asset_digest.ex)          | where the global assets went, per `phx.digest`                                                 |
+| [`LinkCheck`](./build/link_check.ex)              | which of a finished build's links lead nowhere                                                 |
 
 Three things about the shape of it are worth knowing before reading any of them.
 

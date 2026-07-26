@@ -201,10 +201,14 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 
 **Metadata and the `Course.Material` model**
 
-- [ ] Enforce the two chapter document invariants — a chapter has a subject or
+- [x] Enforce the two chapter document invariants — a chapter has a subject or
       an exercise but never both, and an exercise never has slides — as a hard
-      build failure listing every offending chapter, in
-      `ArchiDep.CourseSite.Build.ContentTree` — see [Chapter document
+      build failure listing every offending chapter. **Done:
+      `ContentTree.plan/1` reads both rules per chapter directory**, refusing
+      the content tree the same way it refuses a file it cannot place, and
+      closing two adjacent silent holes with them — a document written twice and
+      a chapter number used twice; the real corpus obeys all of it over its 50
+      chapters — see [Chapter document
       invariants](#chapter-document-invariants).
 - [ ] Port the filename→metadata logic to deterministic Elixir — the
       _structure_ only, the status aggregation belonging to the progress source
@@ -2003,6 +2007,25 @@ because that chapter is an exercise — resolves to the exercise's URL and emits
 working link to the wrong-named document rather than an error. Checking a link
 target against the enumerated set of documents belongs with the same enumeration
 step as the invariants themselves.
+
+**Corrections while implementing:**
+
+- **The two rules are checked independently.** A chapter holding a subject, an
+  exercise and a deck breaks both, and is told about both: the second violation
+  is not a consequence of the first, so collapsing them would send an author
+  back for a second run — the same reason every offending _path_ is reported
+  rather than the first.
+- **Two silent holes sat next to these rules, and are closed with them.** A
+  chapter writing its deck in **both** source layouts (`slides.md` and
+  `slides/slides.md`) produces one document twice, and since the documents are
+  keyed by identity, one silently replaced the other. And two chapter
+  directories sharing a **number** are two chapters as far as their URLs are
+  concerned but one as far as progress is, which is recorded against the number
+  alone. Neither is a statement about what a chapter may hold — they are
+  duplicate-identity problems — but they are visible exactly where the rules
+  are, for the same reason: having the whole content directory in hand. Refusing
+  them costs two more errors and spares [metadata
+  generation](#metadata-generation) a chapter that is two chapters.
 
 ### Metadata generation
 

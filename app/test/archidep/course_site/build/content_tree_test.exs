@@ -167,6 +167,154 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                 ]}
     end
 
+    test "refuses a chapter writing its deck in both source layouts" do
+      assert ContentTree.plan([
+               "_course/104-ssh/subject.md",
+               "_course/104-ssh/slides.md",
+               "_course/104-ssh/slides/slides.md"
+             ]) ==
+               {:error,
+                [
+                  {:duplicate_document, "104-ssh", :slides,
+                   ["_course/104-ssh/slides.md", "_course/104-ssh/slides/slides.md"]}
+                ]}
+    end
+
+    test "refuses two chapter directories sharing a number" do
+      assert ContentTree.plan([
+               "_course/401-cloud-computing/subject.md",
+               "_course/401-flying-cows/exercise.md"
+             ]) ==
+               {:error,
+                [
+                  {:duplicate_chapter_number, 401, ["401-cloud-computing", "401-flying-cows"]}
+                ]}
+    end
+
+    test "reads the documents of one chapter as one chapter" do
+      assert ContentTree.plan([
+               "_course/104-ssh/subject.md",
+               "_course/104-ssh/slides.md"
+             ]) ==
+               {:ok,
+                %ContentTree{
+                  documents: %{
+                    DocumentRef.new(104, "ssh", :subject) => "_course/104-ssh/subject.md",
+                    DocumentRef.new(104, "ssh", :slides) => "_course/104-ssh/slides.md"
+                  },
+                  cheatsheets: %{},
+                  page_assets: %{},
+                  ignored: []
+                }}
+    end
+
+    test "refuses a chapter that has both a subject and an exercise" do
+      assert ContentTree.plan([
+               "_course/402-run-virtual-server/subject.md",
+               "_course/402-run-virtual-server/exercise.md",
+               "_course/402-run-virtual-server/images/vm.png"
+             ]) ==
+               {:error,
+                [
+                  {:subject_and_exercise, "402-run-virtual-server",
+                   [
+                     "_course/402-run-virtual-server/exercise.md",
+                     "_course/402-run-virtual-server/subject.md"
+                   ]}
+                ]}
+    end
+
+    test "refuses a chapter that is an exercise and has slides" do
+      assert ContentTree.plan([
+               "_course/205-php-todolist/exercise.md",
+               "_course/205-php-todolist/slides.md"
+             ]) ==
+               {:error,
+                [
+                  {:exercise_with_slides, "205-php-todolist",
+                   [
+                     "_course/205-php-todolist/exercise.md",
+                     "_course/205-php-todolist/slides.md"
+                   ]}
+                ]}
+    end
+
+    test "refuses a chapter that is an exercise and has slides in a directory of their own" do
+      assert ContentTree.plan([
+               "_course/205-php-todolist/exercise.md",
+               "_course/205-php-todolist/slides/slides.md"
+             ]) ==
+               {:error,
+                [
+                  {:exercise_with_slides, "205-php-todolist",
+                   [
+                     "_course/205-php-todolist/exercise.md",
+                     "_course/205-php-todolist/slides/slides.md"
+                   ]}
+                ]}
+    end
+
+    test "tells a chapter breaking both rules about both" do
+      assert ContentTree.plan([
+               "_course/205-php-todolist/subject.md",
+               "_course/205-php-todolist/exercise.md",
+               "_course/205-php-todolist/slides.md"
+             ]) ==
+               {:error,
+                [
+                  {:subject_and_exercise, "205-php-todolist",
+                   [
+                     "_course/205-php-todolist/exercise.md",
+                     "_course/205-php-todolist/subject.md"
+                   ]},
+                  {:exercise_with_slides, "205-php-todolist",
+                   [
+                     "_course/205-php-todolist/exercise.md",
+                     "_course/205-php-todolist/slides.md"
+                   ]}
+                ]}
+    end
+
+    test "accepts a chapter that is a subject with slides, and one that is slides alone" do
+      assert ContentTree.plan([
+               "_course/401-cloud-computing/subject.md",
+               "_course/401-cloud-computing/slides.md",
+               "_course/403-sysadmin/slides.md",
+               "_course/205-php-todolist/exercise.md"
+             ]) ==
+               {:ok,
+                %ContentTree{
+                  documents: %{
+                    DocumentRef.new(401, "cloud-computing", :subject) =>
+                      "_course/401-cloud-computing/subject.md",
+                    DocumentRef.new(401, "cloud-computing", :slides) =>
+                      "_course/401-cloud-computing/slides.md",
+                    DocumentRef.new(403, "sysadmin", :slides) => "_course/403-sysadmin/slides.md",
+                    DocumentRef.new(205, "php-todolist", :exercise) =>
+                      "_course/205-php-todolist/exercise.md"
+                  },
+                  cheatsheets: %{},
+                  page_assets: %{},
+                  ignored: []
+                }}
+    end
+
+    test "reads the rules per chapter rather than across the course" do
+      assert ContentTree.plan([
+               "_course/401-cloud-computing/subject.md",
+               "_course/205-php-todolist/exercise.md",
+               "_course/205-php-todolist/slides.md"
+             ]) ==
+               {:error,
+                [
+                  {:exercise_with_slides, "205-php-todolist",
+                   [
+                     "_course/205-php-todolist/exercise.md",
+                     "_course/205-php-todolist/slides.md"
+                   ]}
+                ]}
+    end
+
     test "reports every offending file rather than the first" do
       assert ContentTree.plan([
                "_course/301-security/notes.md",
@@ -177,6 +325,28 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                 [
                   {:unknown_source, "_course/301-security/notes.md"},
                   {:unsafe_name, "_course/301-security/images/a b.png", "a b.png"}
+                ]}
+    end
+
+    test "reports every offending chapter rather than the first" do
+      assert ContentTree.plan([
+               "_course/205-php-todolist/exercise.md",
+               "_course/205-php-todolist/slides.md",
+               "_course/402-run-virtual-server/subject.md",
+               "_course/402-run-virtual-server/exercise.md"
+             ]) ==
+               {:error,
+                [
+                  {:exercise_with_slides, "205-php-todolist",
+                   [
+                     "_course/205-php-todolist/exercise.md",
+                     "_course/205-php-todolist/slides.md"
+                   ]},
+                  {:subject_and_exercise, "402-run-virtual-server",
+                   [
+                     "_course/402-run-virtual-server/exercise.md",
+                     "_course/402-run-virtual-server/subject.md"
+                   ]}
                 ]}
     end
   end
@@ -200,6 +370,40 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                 ["_course/603-floodit/images/x.png", "_course/603-floodit/images/x.PNG"]}
              ) ==
                ~s{Output path "/course/603-floodit/images/x.png" is written by "_course/603-floodit/images/x.png" and "_course/603-floodit/images/x.PNG"}
+    end
+
+    test "describes a document written twice" do
+      assert ContentTree.format_error(
+               {:duplicate_document, "104-ssh", :slides,
+                ["_course/104-ssh/slides.md", "_course/104-ssh/slides/slides.md"]}
+             ) ==
+               ~s{Chapter "104-ssh" has more than one slides document, written by "_course/104-ssh/slides.md" and "_course/104-ssh/slides/slides.md"}
+    end
+
+    test "describes a chapter number used twice" do
+      assert ContentTree.format_error(
+               {:duplicate_chapter_number, 401, ["401-cloud-computing", "401-flying-cows"]}
+             ) ==
+               ~s{Chapter number 401 is used by "401-cloud-computing" and "401-flying-cows"}
+    end
+
+    test "describes a chapter that has both a subject and an exercise" do
+      assert ContentTree.format_error(
+               {:subject_and_exercise, "402-run-virtual-server",
+                [
+                  "_course/402-run-virtual-server/exercise.md",
+                  "_course/402-run-virtual-server/subject.md"
+                ]}
+             ) ==
+               ~s{Chapter "402-run-virtual-server" has both a subject and an exercise, written by "_course/402-run-virtual-server/exercise.md" and "_course/402-run-virtual-server/subject.md"}
+    end
+
+    test "describes a chapter that is an exercise and has slides" do
+      assert ContentTree.format_error(
+               {:exercise_with_slides, "205-php-todolist",
+                ["_course/205-php-todolist/exercise.md", "_course/205-php-todolist/slides.md"]}
+             ) ==
+               ~s{Chapter "205-php-todolist" is an exercise and has slides, written by "_course/205-php-todolist/exercise.md" and "_course/205-php-todolist/slides.md"}
     end
   end
 
