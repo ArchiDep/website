@@ -16,8 +16,6 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.IncludeTag do
   @behaviour Solid.Tag
 
   alias ArchiDep.CourseSite.Renderer.Liquid.RawMarkup
-  alias ArchiDep.CourseSite.Renderer.Liquid.Registers
-  alias ArchiDep.CourseSite.Renderer.RenderError
 
   @enforce_keys [:loc, :path, :variables]
   defstruct [:loc, :path, :variables]
@@ -55,40 +53,10 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.IncludeTag do
   end
 
   defimpl Solid.Renderable do
+    alias ArchiDep.CourseSite.Renderer.Liquid.Partial
+
     @spec render(term(), Solid.Context.t(), keyword()) :: {iodata(), Solid.Context.t()}
-    def render(tag, context, options) do
-      render_context = Registers.fetch!(context)
-
-      case Map.fetch(render_context.includes, tag.path) do
-        {:ok, template} ->
-          render_include(template, tag, context, options)
-
-        :error ->
-          {"",
-           Registers.report(
-             context,
-             RenderError.new(
-               {:unknown_include, tag.path},
-               render_context.source_path,
-               tag.loc
-             )
-           )}
-      end
-    end
-
-    # The partial sees the document's variables plus its own; whatever it does
-    # to them stays inside it, the way a Jekyll include does.
-    defp render_include(template, tag, context, options) do
-      variables = context.vars
-
-      {rendered, context} =
-        Solid.render(
-          template.parsed_template,
-          %{context | vars: Map.put(variables, "include", tag.variables)},
-          options
-        )
-
-      {rendered, %{context | vars: variables}}
-    end
+    def render(tag, context, options),
+      do: Partial.render(tag.path, tag.variables, context, options, tag.loc)
   end
 end

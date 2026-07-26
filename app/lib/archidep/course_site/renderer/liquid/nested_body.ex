@@ -13,6 +13,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.NestedBody do
   code.
   """
 
+  alias ArchiDep.CourseSite.Renderer.Liquid.Registers
+  alias ArchiDep.CourseSite.Renderer.Markdown
   alias Solid.ParserContext
 
   @doc """
@@ -36,5 +38,17 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.NestedBody do
   def render(body, %Solid.Context{} = context, options) do
     {rendered, context} = Solid.render(body, context, options)
     {IO.iodata_to_binary(rendered), context}
+  end
+
+  @doc """
+  Render a parsed body and convert it, which is what a tag wrapping prose in
+  HTML wants: its body is a Markdown document of its own.
+  """
+  @spec to_html(Solid.Parser.parse_tree(), Solid.Context.t(), keyword()) ::
+          {String.t(), Solid.Context.t()}
+  def to_html(body, %Solid.Context{} = context, options) do
+    {markdown, context} = render(body, context, options)
+    {html, errors} = Markdown.to_html(markdown, Registers.fetch!(context))
+    {html, Registers.report(context, errors)}
   end
 end

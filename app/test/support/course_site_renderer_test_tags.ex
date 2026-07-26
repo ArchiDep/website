@@ -15,7 +15,6 @@ defmodule ArchiDep.Support.CourseSiteRendererTestTags do
   alias ArchiDep.CourseSite.Renderer.Liquid.RawBody
   alias ArchiDep.CourseSite.Renderer.Liquid.Registers
   alias ArchiDep.CourseSite.Renderer.Liquid.Tags
-  alias ArchiDep.CourseSite.Renderer.Markdown
   alias ArchiDep.CourseSite.Renderer.RenderError
 
   defmodule ProseTag do
@@ -44,12 +43,10 @@ defmodule ArchiDep.Support.CourseSiteRendererTestTags do
     defimpl Solid.Renderable do
       @spec render(term(), Solid.Context.t(), keyword()) :: {iodata(), Solid.Context.t()}
       def render(tag, context, options) do
-        {markdown, context} = NestedBody.render(tag.body, context, options)
-        {html, errors} = Markdown.to_html(markdown, Registers.fetch!(context))
+        {html, context} = NestedBody.to_html(tag.body, context, options)
         kind = Map.get(tag.attributes, "kind", "plain")
 
-        {~s(<div class="prose-#{kind}">) <> html <> "</div>",
-         Enum.reduce(errors, context, &Registers.report(&2, &1))}
+        {~s(<div class="prose-#{kind}">) <> html <> "</div>", context}
       end
     end
   end

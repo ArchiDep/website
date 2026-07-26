@@ -20,6 +20,8 @@ and tooling that also apply here. Read that document first.
   - [Errors](#errors)
 - [Rendering](#rendering)
   - [Every tag body is its own Markdown document](#every-tag-body-is-its-own-markdown-document)
+  - [The tags the course writes](#the-tags-the-course-writes)
+  - [Naming what a page renders](#naming-what-a-page-renders)
   - [Passes: over the document, or over the page](#passes-over-the-document-or-over-the-page)
   - [The opening of a page](#the-opening-of-a-page)
   - [Slides are not converted](#slides-are-not-converted)
@@ -218,6 +220,62 @@ Two consequences for anyone writing a tag:
   as Markdown. The output of `Renderer.Markdown` never contains one; only
   hand-written wrappers can.
 
+### The tags the course writes
+
+Six block tags wrap prose in the HTML the theme styles:
+
+- [`note`](./renderer/liquid/note_tag.ex) (an aside)
+- [`callout`](./renderer/liquid/callout_tag.ex) (something not to skip)
+- [`cols`](./renderer/liquid/cols_tag.ex) (a row of columns)
+- [`solution`](./renderer/liquid/solution_tag.ex) (a collapsed answer)
+- [`markdown`](./renderer/liquid/markdown_tag.ex) (a piece converted where the
+  page would not convert it)
+- [`mermaid`](./renderer/liquid/mermaid_tag.ex) (a diagram).
+
+They are registered in [`Tags`](./renderer/liquid/tags.ex) alongside the two
+inline ones, `link` and `include`.
+
+Three rules run across all of them:
+
+- **What a tag's markup means is worked out when it is parsed; what it could not
+  mean is reported when it renders.** Markup that is not a `key: value` list at
+  all is a parse error, since there is nothing to render. A value the tag cannot
+  use is not: an aside of an unknown kind is shown as a plain note, a row of
+  thirteen columns as a row of two, and the value the author wrote is reported.
+- **A tag emits no whitespace of its own**, for the reason [every tag
+  body](#every-tag-body-is-its-own-markdown-document) is its own document: a
+  blank line ends an HTML block. The one exception is `mermaid`, whose body may
+  contain blank lines and is therefore emitted inside a `pre` element, which
+  CommonMark reads to its closing tag rather than to the next blank line.
+- **The emoji a tag shows is the shortcode the content itself writes**, left for
+  the sweep of the finished page to turn into an image — see
+  [Passes](#passes-over-the-document-or-over-the-page).
+
+An icon is not written out as an SVG either: a tag renders the same `icons/…`
+partial the content includes by hand, through
+[`TagIcon`](./renderer/liquid/tag_icon.ex).
+
+### Naming what a page renders
+
+A folded `callout` — the `more` kind, which a page keeps folded until the reader
+asks — is the one thing a tag names: the fold is a checkbox and its labels, and
+they find each other by an identifier. Two of them under one name would pair the
+wrong label with the wrong input, so a tag asks
+[`Registers`](./renderer/liquid/registers.ex) what is already taken before
+settling on one. A name that is missing, malformed or taken is replaced by a
+positional one and reported, so that the page still folds while the build fails
+over the name.
+
+The identifier the author writes only has to be meaningful within a chapter: the
+page is prefixed to it. What that prefix is comes from the
+[`PageRef`](./page_ref.ex), which is why it is a name and not the empty string
+it used to be for a cheatsheet.
+
+Whatever else such a callout renders is **derived from that identifier**, never
+drawn: the label that folds it back up congratulates the reader in one of eight
+wordings, and picking one at random would mean a build was not a function of its
+inputs.
+
 ### Passes: over the document, or over the page
 
 Two seams rewrite what the renderer produces, and which one a rewrite belongs to
@@ -291,7 +349,7 @@ updated.
 ### Known differences from what Jekyll produces
 
 The bar is a page that reads correctly and looks right, not identical markup.
-Two differences are known and expected rather than regressions:
+These differences are known and expected rather than regressions:
 
 - A heading carries an anchor element (`<h2 id="…">Text<a class="anchor"></a>`)
   that kramdown does not emit. The identifier itself is the same — verified
@@ -300,6 +358,23 @@ Two differences are known and expected rather than regressions:
   [`lumis`](https://hex.pm/packages/lumis), which emits different markup from
   the `rouge` classes the theme is written against; enabling it is part of the
   theme's own migration.
+- **A column of a `cols` row carries the classes its marker asks for.** Jekyll
+  emitted them as the _content_ of the class attribute (`class="&lt;!-- col
+md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than
+  one. The classes the content writes are already in the stylesheet, since
+  Tailwind scans the Markdown they are written in.
+- **A folded callout of a cheatsheet is named after the cheatsheet.** Jekyll
+  built the prefix from two page variables its generator only sets for a
+  chapter, so every one of them was named `-`.
+- **A folded callout's congratulation is the same on every build**, where Jekyll
+  drew one at random each time it rendered the page.
+- **A tag's wrapper is emitted without the blank lines Jekyll's has.** kramdown
+  tolerated them inside an HTML block; CommonMark ends the block at the first
+  one, which would leave the rest of the wrapper to be read as Markdown.
+
+Everything else matches: the classes, identifiers and structure every tag of
+every subject, exercise and cheatsheet emits were diffed against a Jekyll build
+of the same content, and the four differences above are the whole list.
 
 ## Testing
 
@@ -323,6 +398,12 @@ Two specifics for this subsystem:
   rather than by the course's real ones, so that a test of the pipeline does not
   depend on what any particular tag happens to emit. They are also the worked
   example of the tag contract described above.
+- Each of the course's own tags has a test file of its own, driving it through
+  `Renderer.Liquid.render/1` and asserting the **whole** HTML it emits by `==`.
+  That is the tag's contract: it is one string, the theme is written against all
+  of it, and a projection of it would be a projection of the thing under test.
+  Each file builds its expected wrapper with a helper the test passes the parts
+  it is about, so that a test still asserts a whole value.
 
 [app-contributing]: ../../../CONTRIBUTING.md
 [bounded-contexts]: ../../../CONTRIBUTING.md#bounded-contexts

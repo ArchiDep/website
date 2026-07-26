@@ -8,8 +8,14 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Tags do
   into a confusing failure about templates instead of an unknown tag.
   """
 
+  alias ArchiDep.CourseSite.Renderer.Liquid.CalloutTag
+  alias ArchiDep.CourseSite.Renderer.Liquid.ColsTag
   alias ArchiDep.CourseSite.Renderer.Liquid.IncludeTag
   alias ArchiDep.CourseSite.Renderer.Liquid.LinkTag
+  alias ArchiDep.CourseSite.Renderer.Liquid.MarkdownTag
+  alias ArchiDep.CourseSite.Renderer.Liquid.MermaidTag
+  alias ArchiDep.CourseSite.Renderer.Liquid.NoteTag
+  alias ArchiDep.CourseSite.Renderer.Liquid.SolutionTag
 
   @doc """
   The tag table of a build.
@@ -18,6 +24,15 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Tags do
   def default do
     Solid.Tag.default_tags()
     |> Map.delete("render")
-    |> Map.merge(%{"include" => IncludeTag, "link" => LinkTag})
+    |> Map.merge(%{
+      "callout" => CalloutTag,
+      "cols" => ColsTag,
+      "include" => IncludeTag,
+      "link" => LinkTag,
+      "markdown" => MarkdownTag,
+      "mermaid" => MermaidTag,
+      "note" => NoteTag,
+      "solution" => SolutionTag
+    })
   end
 end

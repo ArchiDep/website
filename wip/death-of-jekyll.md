@@ -125,11 +125,20 @@ constraints](#goals-and-constraints).
       Liquid (`{% link %}`, `{% include %}`, `relative_file_url`), with five
       spec corrections recorded below — see [Shared Markdown rendering
       core](#shared-markdown-rendering-core).
-- [ ] Port the six custom block tags
+- [x] Port the six custom block tags
       (`note`/`callout`/`cols`/`solution`/`mermaid`/`markdown`) as `Solid`
-      custom tags — see [Custom block tags](#custom-block-tags).
+      custom tags. **Done**, with three Ruby bugs fixed rather than reproduced
+      and four spec corrections recorded below; the tag output of every subject,
+      exercise and cheatsheet was diffed against a Jekyll build — see [Custom
+      block tags](#custom-block-tags).
 - [ ] Reproduce reference-link resolution into extracted tag blocks and slides —
       see [Reference-link resolution](#reference-link-resolution).
+- [ ] Handle the two `{% highlight %}` blocks of
+      `101-command-line/subject.md`, the last unported tag and the one thing that
+      stops that document from rendering at all. Either register it as a raw-body
+      tag or convert both to fenced code blocks; both pass `mark_lines="4"`, so
+      this is settled together with the `lumis` swap below — see [Custom block
+      tags](#custom-block-tags).
 - [ ] Move syntax highlighting from rouge to `lumis` (MDEx's highlighter):
       replace `theme/src/highlight-{light,dark}.css` with the matching `lumis`
       theme stylesheets and update the `.highlighter-rouge` / `pre.highlight`
@@ -1281,6 +1290,60 @@ AST passes between them is safe.
 
 ### Custom block tags
 
+**Implemented** as `ArchiDep.CourseSite.Renderer.Liquid.{Note,Callout,Cols,Solution,Markdown,Mermaid}Tag`,
+plus `TagIcon` (an icon is the same `icons/…` partial the content includes by
+hand) and `Partial` (extracted from `IncludeTag`, so a partial the build was
+never given is reported in one wording wherever it was asked for). They are
+documented in
+[`app/lib/archidep/course_site/CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md).
+
+**Zero content edits were needed**, as this section predicted: the classes,
+identifiers and structure every tag of every subject, exercise and cheatsheet
+emits were diffed against the Jekyll build in `tmp/app-priv-static-2026-07-25`
+and match, save the three fixes below. The only documents that do not render are
+the ones already on the backlog — the two `{% note: %}` typos, the three missing
+excerpt separators, and `101-command-line/subject.md`, whose
+[`{% highlight %}`](#custom-block-tags) blocks are the last unported tag.
+
+Four corrections to this section, found while implementing it:
+
+- **Three Ruby bugs are fixed rather than reproduced.** (1) A `cols` column has
+  never carried the classes its marker asks for: `col_class = m and m[1] ? … :
+…` parses as `(col_class = m) and …` in Ruby, so `col_class` is the
+  `MatchData` and every column is emitted as `class="&lt;!-- col md:col-span-2
+--&gt;"`. The classes are already in the stylesheet — Tailwind scans the
+  Markdown they are written in — so fixing the tag is enough to make the layouts
+  the content asks for appear, and **five documents change visually** as a
+  result. (2) A folded callout of a cheatsheet was named `-`, because the prefix
+  came from `page["num"]` / `page["course_slug"]`, which Jekyll's generator only
+  sets for a chapter; the port derives it from the `PageRef`. (3) The
+  congratulation and the emoji next to it were drawn with `Array#sample` on
+  every render, which a build that is a function of its inputs cannot do; both
+  are derived from the callout's identifier instead.
+- **A callout's identifier is checked per document, not per site.** Ruby kept a
+  site-wide set and raised on a duplicate, but the identifier it emits is
+  already prefixed with the page, so the collision that actually breaks a page
+  is a repeat within one document — which is what `Registers` now tracks. A name
+  that is missing, malformed or taken is replaced by a positional one and
+  reported, so the fold still works while the build fails over the name.
+- **A value a tag cannot use falls back and is reported; only markup it cannot
+  read is a parse error.** Ruby raises for every one of them, which would make a
+  mistyped note kind suppress the page and every other problem on it. This
+  section's own doctrine — [reporting rather than
+  raising](#shared-markdown-rendering-core) — says otherwise, so an aside of an
+  unknown kind is shown as a plain note and a row of thirteen columns as a row
+  of two. `Solid` also makes parse-time validation the worse choice
+  mechanically: it resumes parsing just after the tag name, so one bad attribute
+  becomes an error about the attributes _and_ one about the unmatched `{%
+endnote %}`.
+- **The `solution` gate is not part of this.** `RenderOptions` already carries
+  `reveal_all_solutions`, but nothing reads it yet: the gate needs the progress
+  source, and its threshold is still undecided — see [Progressive solution
+  reveal](#progressive-solution-reveal). The tag renders every solution, as
+  today.
+
+The original design, for the record:
+
 Port the six tag files in `course/_plugins/tags/` (`note`, `callout`, `cols`,
 `solution`, `mermaid`, `markdown`) as **`Solid` custom tags** (implementation
 choice settled — see [Revisit the Solid (Liquid) library
@@ -1311,10 +1374,11 @@ URL), `{% include icons/x.html %}` (×44, SVG inlining), the `relative_file_url`
 filter (×22) and `{{ page.title }}` (×3), and `{% highlight %}` (×2, or convert
 to fenced code — both uses pass `mark_lines="4"`, which maps onto `lumis`'
 `highlight_lines` option). These are registered as `Solid` custom tags/filters
-rather than hand-parsed — with the two API constraints the spike surfaced: `{% link %}` and
-`{% include %}` consume their markup verbatim up to `%}` (their unquoted paths
-contain `/`, which `Solid`'s lexer rejects), and `relative_file_url` is built as
-a per-document closure because `Solid` custom filters get no render context.
+rather than hand-parsed — with the two API constraints the spike surfaced: `{%
+link %}` and `{% include %}` consume their markup verbatim up to `%}` (their
+unquoted paths contain `/`, which `Solid`'s lexer rejects), and
+`relative_file_url` is built as a per-document closure because `Solid` custom
+filters get no render context.
 
 ### Progressive solution reveal
 
