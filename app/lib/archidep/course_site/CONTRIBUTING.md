@@ -23,6 +23,7 @@ and tooling that also apply here. Read that document first.
   - [The tags the course writes](#the-tags-the-course-writes)
   - [Naming what a page renders](#naming-what-a-page-renders)
   - [Passes: over the document, or over the page](#passes-over-the-document-or-over-the-page)
+  - [Colouring a code block](#colouring-a-code-block)
   - [The opening of a page](#the-opening-of-a-page)
   - [Slides are not converted](#slides-are-not-converted)
   - [Reporting rather than raising](#reporting-rather-than-raising)
@@ -293,6 +294,25 @@ heading's text as it is rendered, and the course links to headings such as
 `#exclamation-create-your-server`. Replacing the shortcode before rendering
 would move every one of those anchors, so it can only be an `HtmlPass`.
 
+### Colouring a code block
+
+Highlighting is not one of those seams. Every code block of every document
+becomes the `<pre class="lumis">` that
+[`Highlighter`](./renderer/highlighter.ex) builds for it, on the way out of
+`Renderer.Markdown` and whatever the build asked for, because the theme's two
+highlighting stylesheets have one markup to style. What follows the language on
+the opening fence is [MDEx's code block decorator
+syntax](https://mdex.hexdocs.pm/code_block_decorators.html), of which
+`highlight_lines` is supported and anything else is reported.
+
+[Lumis](https://hexdocs.pm/lumis) is called directly rather than through MDEx's
+own syntax highlighting, which highlights a block and then splits the HTML it
+gets back on newlines to wrap each line in a `<div class="l-line">`: that severs
+every token spanning more than one line, which a quarter of the course's fenced
+blocks have — a blank line in a shell transcript is enough. Calling Lumis here
+is also what marks a line with the `l-highlighted` class the stylesheets define,
+rather than the `highlighted` class MDEx asks for and nothing styles.
+
 ### The opening of a page
 
 A page comes back in two pieces, because the site shows its opening above the
@@ -354,10 +374,11 @@ These differences are known and expected rather than regressions:
 - A heading carries an anchor element (`<h2 id="…">Text<a class="anchor"></a>`)
   that kramdown does not emit. The identifier itself is the same — verified
   against every heading of every course document.
-- Code blocks are not highlighted yet. MDEx highlights through
-  [`lumis`](https://hex.pm/packages/lumis), which emits different markup from
-  the `rouge` classes the theme is written against; enabling it is part of the
-  theme's own migration.
+- **A code block is coloured by [Lumis](https://hexdocs.pm/lumis) rather than by
+  Rouge**, so it is a `<pre class="lumis">` of `l-*` token classes where Jekyll
+  produced `<div class="highlighter-rouge">` of Pygments-style ones, and inline
+  code carries no class at all. The theme's two highlighting stylesheets are
+  written against the new markup.
 - **A column of a `cols` row carries the classes its marker asks for.** Jekyll
   emitted them as the _content_ of the class attribute (`class="&lt;!-- col
 md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than

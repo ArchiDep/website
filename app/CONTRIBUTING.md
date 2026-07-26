@@ -641,9 +641,11 @@ defines application-specific metrics as a [PromEx plugin][prom-ex-plugin]:
   it be rendered without editing it. [YamlElixir][yaml-elixir] reads the front
   matter of each document.
 
-  [Lumis][lumis] is the syntax highlighter MDEx delegates to. It is not enabled
-  yet — the theme's stylesheets are still written against the markup the
-  previous toolchain produced.
+  [Lumis][lumis] colours the code blocks. The renderer calls it directly rather
+  than through MDEx, for the reasons given in the [course material site
+  documentation](./lib/archidep/course_site/CONTRIBUTING.md#colouring-a-code-block),
+  and the theme's two highlighting stylesheets are generated from the Lumis
+  themes named in the `mix theme.highlight_css` task.
 
 - [Sentry][sentry] and its [Elixir integration][sentry-elixir] to report errors
   and exceptions in development and production. You will find the related
@@ -772,6 +774,9 @@ These [Mix aliases](./mix.exs) bundle common workflows:
   mirrors what runs in CI.
 - `mix check.security`: Run the [Sobelow][sobelow] security scanner.
 - `mix start` (alias for `mix phx.server`): Start the Phoenix server.
+- `mix theme.highlight_css`: Regenerate the two syntax highlighting stylesheets
+  of the [`theme` directory](../theme/CONTRIBUTING.md) from the Lumis themes the
+  task names. Run it after changing either theme and after upgrading Lumis.
 
 Continuous integration runs the equivalent checks via the workflows in
 [`.github/workflows`](../.github/workflows) (`build.yml`), so running `mix

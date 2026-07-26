@@ -4,13 +4,14 @@ git-memoir {
   @apply bg-zinc-400 border-slate-800 min-h-[var(--memoir-min-height)] my-4;
 }
 
-main > .highlight,
-main > .highlighter-rouge {
+main > pre.lumis {
   @apply -ml-4 lg:-ml-6 xl:-ml-8 -mr-4 lg:-mr-6 xl:-mr-8;
 }
 
-main * pre.highlight {
-  @apply my-0;
+/* A code block scrolls sideways, so a marked line must be as wide as the code
+ * rather than as wide as the box the code is read through. */
+main pre.lumis .l-highlighted {
+  @apply inline-block min-w-full;
 }
 
 main a:not(.btn):not(.no-hover) {
@@ -123,7 +124,7 @@ main .note {
     }
   }
 
-  & .highlighter-rouge:last-child pre.highlight {
+  & pre.lumis:last-child {
     @apply mb-2;
   }
 }
@@ -140,15 +141,15 @@ main .solution {
   @apply my-5;
 }
 
-main .solution pre.highlight {
+main .solution pre.lumis {
   @apply -mx-4;
 }
 
-main .solution .highlighter-rouge:first-child pre.highlight {
+main .solution pre.lumis:first-child {
   @apply mt-0 rounded-t-none;
 }
 
-main .solution .highlighter-rouge:last-child pre.highlight {
+main .solution pre.lumis:last-child {
   @apply -mb-4;
 }
 

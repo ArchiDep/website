@@ -36,6 +36,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderError do
           | {:missing_excerpt_separator, String.t()}
           | {:unknown_include, String.t()}
           | {:invalid_tag, tag :: String.t(), String.t()}
+          | {:invalid_code_fence, info :: String.t(), String.t()}
 
   @type t :: %__MODULE__{
           reason: reason(),
@@ -102,4 +103,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderError do
 
   defp describe({:unknown_include, path}), do: "There is no include named #{inspect(path)}"
   defp describe({:invalid_tag, tag, message}), do: "Invalid {% #{tag} %} tag (#{message})"
+
+  defp describe({:invalid_code_fence, info, message}),
+    do: "Invalid code fence ```#{info} (#{message})"
 end

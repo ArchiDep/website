@@ -27,6 +27,7 @@ for AI assistants and automated agents.
     - [Solutions](#solutions)
     - [Mermaid Diagrams](#mermaid-diagrams)
     - [Forced Markdown](#forced-markdown)
+    - [Code Blocks](#code-blocks)
     - [Cloud Server Widget](#cloud-server-widget)
     - [Randomized Values](#randomized-values)
     - [Interactive Git Diagrams](#interactive-git-diagrams)
@@ -493,6 +494,44 @@ The `markdown` tag wraps its content in a `<div class="markdown">` and forces
 Markdown rendering of the block. It is useful when content nested inside raw
 HTML would otherwise not be processed as Markdown. It is implemented in the
 [`_plugins/tags/markdown.rb` file](./_plugins/tags/markdown.rb).
+
+#### Code Blocks
+
+Write code as a fenced block naming its language, which is what the block is
+coloured by:
+
+````markdown
+```bash
+$> echo "Hello"
+```
+````
+
+A fence that names no language is shown as plain text rather than having its
+language guessed at, which is what to write for the output of a command.
+
+To draw the reader's eye to one line of a block, add the `highlight_lines`
+decorator after the language. It takes line numbers and ranges of them,
+separated by commas — `highlight_lines="4"`, `highlight_lines="1,3-5"` — and
+gives each of those lines a background of its own:
+
+````markdown
+```bash highlight_lines="4"
+$> pwd
+/Users/Batman
+
+$> cd .
+
+$> pwd
+/Users/Batman
+```
+````
+
+It is the only decorator available, and a fence asking for anything else fails
+the build.
+
+Decorators are read by the site's own renderer, which is replacing Jekyll. Until
+it serves the site, a fence carrying one renders as literal text: kramdown's
+fenced block accepts a bare language and nothing else.
 
 #### Cloud Server Widget
 

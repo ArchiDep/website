@@ -17,12 +17,18 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
     contents, the in-page anchors and the application's own links to the course
     all depend on.
 
+  Syntax highlighting is likewise not a choice a build makes: every code block
+  goes through `ArchiDep.CourseSite.Renderer.Highlighter` on its way out, so
+  that the theme's highlighting stylesheets have the same markup to style
+  wherever a code block was written.
+
   Parsing and rendering are separate steps here rather than one call because
   passes run in between, and because a page is split into its excerpt and its
   body as a document rather than as text. That is safe: rendering a parsed
   document is byte for byte what rendering the Markdown directly produces.
   """
 
+  alias ArchiDep.CourseSite.Renderer.Highlighter
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Source
@@ -65,13 +71,16 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
   end
 
   @doc """
-  Run the build's passes over a document and render it to HTML.
+  Run the build's passes over a document, highlight its code blocks and render
+  it to HTML.
   """
   @spec render(MDEx.Document.t(), RenderContext.t()) :: {String.t(), [RenderError.t()]}
   def render(%MDEx.Document{} = document, %RenderContext{} = context) do
-    {document, errors} = run_passes(document, context)
+    {passed, pass_errors} = run_passes(document, context)
+    {highlighted, highlighting_errors} = Highlighter.run(passed, context)
+    errors = pass_errors ++ highlighting_errors
 
-    case MDEx.to_html(document, @options) do
+    case MDEx.to_html(highlighted, @options) do
       {:ok, html} -> {html, errors}
       {:error, error} -> {"", errors ++ [markdown_error(error, context)]}
     end
