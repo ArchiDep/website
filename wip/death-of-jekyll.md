@@ -172,8 +172,12 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       emitter, drawing self-hosted Twemoji SVGs**, swept over the finished page
       by `EmojiImages`, with eight corrections recorded below — see [One emoji
       vocabulary](#one-emoji-vocabulary).
-- [ ] Replace the three remaining Jekyll plugins (`target-blank`, `seo-tag`,
-      `feed`) — see [Smaller Jekyll plugins](#smaller-jekyll-plugins).
+- [x] Replace the three remaining Jekyll plugins (`target-blank`, `seo-tag`,
+      `feed`) — see [Smaller Jekyll plugins](#smaller-jekyll-plugins). **Done:
+      `ExternalLinks` opens the links that leave the site, `PageMetadata` says
+      what a page is called, is about and where it lives, and the feed is
+      dropped**, with six corrections recorded there — including that the
+      ordering constraint this task was written around does not exist.
 - [ ] Handle slides with tag/asset preprocessing only (no Markdown→HTML step) —
       see [Slides](#slides).
 - [ ] Subsume the asset-digest plumbing via `phx.digest` + verified routes — see
@@ -1604,24 +1608,69 @@ Graded exercise` and `:scroll: Legend` for an exercise, `Presentation` for a
 
 ### Smaller Jekyll plugins
 
-Replace the remaining plugins:
+**Done.** The three of them came to one pass, one pure module and a deletion:
 
-- **`jekyll-target-blank`** — a trivial pass adding `target="_blank"` to
-  external links, over the **finished HTML** rather than the Markdown document:
-  184 links in 28 files sit inside block-tag bodies, which are already HTML by
-  the time the page's document exists (see [Shared Markdown rendering
-  core](#shared-markdown-rendering-core)). It must run on the **logical**
-  references, before the [URL and link emission
-  seam](#url-and-link-emission-seam) absolutizes content links: once a PDF build
-  has rewritten internal links to `https://archidep.ch/…` they are
-  indistinguishable from external ones by inspection.
-- **`jekyll-seo-tag`** — move into the HEEx `<head>` (and the static layout's
-  head for standalone mode).
-- **`jekyll-feed`** — drop, or reimplement if the RSS feed is still wanted.
-  Nothing links to `/feed.xml`; its only trace is the `{%- feed_meta -%}` call in
-  `course/_includes/head.html`.
+- **`jekyll-target-blank`** — `ArchiDep.CourseSite.Renderer.ExternalLinks`, an
+  `HtmlPass` over the **finished HTML** rather than the Markdown document: 184
+  links in 28 files sit inside block-tag bodies, which are already HTML by the
+  time the page's document exists (see [Shared Markdown rendering
+  core](#shared-markdown-rendering-core)). It emits the same `target="_blank"`
+  and `rel="noopener noreferrer"` the plugin does.
+- **`jekyll-seo-tag`** — `ArchiDep.CourseSite.Renderer.PageMetadata`, which
+  works out what a page is called, what it is about and where it really lives,
+  and writes them as the tags a `<head>` carries. Wiring it into a head is the
+  [page shell](#static-build-step)'s to do, along with the [table of
+  contents](#toc-and-heading-anchors) it renders the same way.
+- **`jekyll-feed`** — dropped. It wrote a `/feed.xml` of a course that has no
+  posts, and nothing has ever linked to it but the `{%- feed_meta -%}` call that
+  announced it; both it and the gem go with the rest of Jekyll at
+  [cutover](#cutover).
 
-The fourth, **`jemoji`**, is done, and was not a port of the plugin.
+The fourth, **`jemoji`**, is done too, and was not a port of the plugin.
+
+**Corrections while implementing:**
+
+- **There is no ordering constraint, because the classification is the seam's.**
+  This section required the pass to run on the _logical_ references, before
+  content links are absolutized, on the grounds that an absolutized internal
+  link is indistinguishable from an external one. It is indistinguishable _by
+  inspection_ — which is why the question is asked of
+  [`Urls.external?/2`](#url-and-link-emission-seam), the only thing that knows
+  the origin the build baked in. A build that bakes none has no absolute URL of
+  its own at all, so an absolute link in it points away by construction. The
+  pass is therefore free to run last, like the emoji sweep, and the
+  two-pass-seams correction to [Shared Markdown rendering
+  core](#shared-markdown-rendering-core) is the whole of the constraint.
+- **The pass is a default of `RenderOptions`**, for the reason the emoji sweep
+  is one: it is the same page wherever it is read, and a build that configured
+  its passes and forgot this one would publish a chapter that steals the
+  reader's tab on the way to a manual page.
+- **An anchor that already carries a `target` or a `rel` is left alone.** The
+  plugin merges its `rel` into whatever is there; nothing in the course writes
+  one, and an anchor the content wrote by hand saying how it opens has already
+  answered the question.
+- **Two thirds of what `jekyll-seo-tag` emits says nothing true**, and the port
+  leaves it out: the `generator`, an `og:type` of `article` whose
+  `article:published_time` is the time of the build (every course document gets
+  a date from Jekyll whether it has one or not), the JSON-LD repeating the tags
+  above it, and the `twitter:title`/`twitter:description` that fall back to the
+  `og:` ones anyway. The plugin also emitted a **second `<title>`**, so every
+  page of the site currently carries two, separated differently.
+- **A page is described by its own opening.** Nothing in the course declares a
+  `description`, and Jekyll only fell back to the excerpt for collection
+  documents — so the home page, being a page, has always described itself with
+  the site's tagline. The port uses [the
+  opening](#shared-markdown-rendering-core) of every page, which is the one
+  description that cannot drift from what the page says.
+- **The canonical URL is `{:live_site, page}`**, which is what stops the backup
+  copy and the archived editions from competing with the main site in a search
+  engine. That reference was wrong for the home page: it put it under the
+  edition prefix unconditionally, where the live site keeps the edition being
+  taught at its mount point — the `home_at_base?` rule the `:home` reference
+  already follows. Fixed and pinned for all three modes.
+- **The metadata is not part of the rendered `Page`.** A `Page` is what the site
+  shows _of_ a page and the head is around it, so the metadata is a value the
+  shell asks for, like the entries of the navigation.
 
 #### One emoji vocabulary
 

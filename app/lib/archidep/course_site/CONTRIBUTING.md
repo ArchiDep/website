@@ -24,6 +24,8 @@ and tooling that also apply here. Read that document first.
   - [Naming what a page renders](#naming-what-a-page-renders)
   - [Passes: over the document, or over the page](#passes-over-the-document-or-over-the-page)
   - [One emoji, one picture](#one-emoji-one-picture)
+  - [A link that leaves the site opens elsewhere](#a-link-that-leaves-the-site-opens-elsewhere)
+  - [What a page says about itself](#what-a-page-says-about-itself)
   - [A heading is identified by what it says, not by its decoration](#a-heading-is-identified-by-what-it-says-not-by-its-decoration)
   - [The navigation of a page](#the-navigation-of-a-page)
   - [Colouring a code block](#colouring-a-code-block)
@@ -332,6 +334,54 @@ It reads a page in either of the two ways one is written — the shortcode
 An emoji file is a global asset like a stylesheet, so where it is drawn from
 goes through [the URL seam](#url-and-link-emission) with the rest.
 
+### A link that leaves the site opens elsewhere
+
+A chapter sends the reader to a manual page or a specification every few
+paragraphs, and a link that navigated the tab away would lose the page they are
+working through. [`ExternalLinks`](./renderer/external_links.ex) gives every
+anchor pointing at another site a `target="_blank"` and the `rel="noopener
+noreferrer"` that stops the page it opens from reaching back into the one that
+opened it. It is a pass over the finished page rather than over the document
+because 184 links of the course are written inside the body of a block tag, and
+it is a [default](./renderer/render_options.ex) for the same reason drawing
+emoji is: it is the same page wherever it is read.
+
+**Whether a URL leaves the site is `Urls.external?/2`'s to say**, never the
+pass's. The build printed to PDF writes the site's own links as
+`https://archidep.ch/…`, which nothing but the seam that wrote them can tell
+apart from a link to somewhere else — and a build that bakes in no absolute base
+URL has no absolute URL of its own at all, so an absolute link in it points away
+by construction. That holds because a link to another page of the course is a
+[reference](#url-and-link-emission) rather than a URL an author wrote.
+
+An anchor the content wrote by hand that already carries a `target` or a `rel`
+is left exactly as it stands: it has already answered the question the pass
+asks.
+
+### What a page says about itself
+
+A page introduces itself to things that are not reading it — a browser tab, a
+search engine, a chat client unfurling a pasted link — and
+[`PageMetadata`](./renderer/page_metadata.ex) is where the three things it says
+are decided, instead of in whatever lays the page out. Deciding them in the
+layout is how the site came to serve two `<title>` elements per page, its own
+and `jekyll-seo-tag`'s, saying different things.
+
+- **What it is called** is the page's title with the site's name after it, which
+  is what the application's own layout does.
+- **What it is about** is the page's [opening](#the-opening-of-a-page) with its
+  markup taken back off, since nothing in the course declares a description. A
+  description written anywhere else is one more thing to keep in step with a
+  page that changes.
+- **Where it really lives** is the page on the **main site**, which is how the
+  backup copy and the archived editions avoid competing with it in a search
+  engine. A build that does not know where the main site is says nothing rather
+  than guessing.
+
+It is a value whatever lays the page out writes into its `<head>`, rather than a
+piece of the page: a [`Page`](./renderer/page.ex) is what the site shows _of_ a
+page, and the head is around it.
+
 ### A heading is identified by what it says, not by its decoration
 
 A heading's identifier is slugged from its text as it is rendered, so `##
@@ -473,6 +523,14 @@ md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than
 - **A tag's wrapper is emitted without the blank lines Jekyll's has.** kramdown
   tolerated them inside an HTML block; CommonMark ends the block at the first
   one, which would leave the rest of the wrapper to be read as Markdown.
+- **A page carries one `<title>`**, where the Jekyll site emits its own and then
+  `jekyll-seo-tag`'s, saying the same thing two ways with two different
+  separators. Along with the second one go the tags that said nothing true: the
+  `generator`, and an `og:type` of `article` whose publication date was the time
+  of the build.
+- **The site publishes no feed.** `jekyll-feed` wrote a `/feed.xml` of a course
+  that has no posts, and nothing has ever linked to it but the `feed_meta` tag
+  that announced it.
 
 Everything else matches: the classes, identifiers and structure every tag of
 every subject, exercise and cheatsheet emits were diffed against a Jekyll build

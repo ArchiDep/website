@@ -12,13 +12,16 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
   """
 
   alias ArchiDep.CourseSite.Renderer.EmojiImages
+  alias ArchiDep.CourseSite.Renderer.ExternalLinks
   alias ArchiDep.CourseSite.Renderer.Liquid.Tags
 
-  # Drawing the emoji of a page is not a preference. A heading's shortcodes are
-  # moved out of the text its identifier is slugged from before the page is
-  # rendered, so a build that swept none of them would publish anchors named
-  # after a decoration it then shows as text.
-  @default_html_passes [EmojiImages]
+  # Neither of these is a preference. Drawing the emoji of a page is the other
+  # half of identifying its headings: a heading's shortcodes are moved out of
+  # the text its identifier is slugged from before the page is rendered, so a
+  # build that swept none of them would publish anchors named after a decoration
+  # it then shows as text. And a link that leaves the site opens in a tab of its
+  # own wherever the page is read, since it is the same page everywhere.
+  @default_html_passes [EmojiImages, ExternalLinks]
 
   @enforce_keys [:tags, :ast_passes, :html_passes]
   defstruct reveal_all_solutions: false,
@@ -54,8 +57,10 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
     every Markdown document the build converts, whole pages and extracted tag
     bodies alike.
   - `:html_passes` — `ArchiDep.CourseSite.Renderer.HtmlPass` modules, run once
-    over the finished HTML of a page. Defaults to drawing the page's emoji with
-    `ArchiDep.CourseSite.Renderer.EmojiImages`, which every build wants.
+    over the finished HTML of a page. Defaults to the two every build wants:
+    drawing the page's emoji with `ArchiDep.CourseSite.Renderer.EmojiImages`,
+    and opening the links that leave the site in a tab of their own with
+    `ArchiDep.CourseSite.Renderer.ExternalLinks`.
   """
   @spec new(keyword()) :: t()
   def new(opts \\ []) when is_list(opts) do

@@ -151,6 +151,15 @@ defmodule ArchiDep.CourseSite.Urls do
   def resolve(%UrlContext{} = context, {:root_file, path}, _from) when is_binary(path),
     do: {:ok, context.base_path <> "/" <> UrlPath.encode(path)}
 
+  # The home page of an edition sits at the root of the live site while that
+  # edition is being taught and moves under its own prefix once archived, which
+  # is the rule `:home` follows for this build.
+  def resolve(%UrlContext{} = context, {:live_site, :home} = reference, _from) do
+    with {:ok, live_site_url} <- live_site_url(context, reference) do
+      {:ok, live_site_url <> live_site_home_prefix(context) <> "/"}
+    end
+  end
+
   def resolve(%UrlContext{} = context, {:live_site, page} = reference, _from) do
     with {:ok, live_site_url} <- live_site_url(context, reference) do
       {:ok, live_site_url <> edition_prefix(context) <> PageRef.output_path(page)}
@@ -184,6 +193,29 @@ defmodule ArchiDep.CourseSite.Urls do
     case resolve(context, reference, from) do
       {:ok, url} -> url
       {:error, error} -> raise UrlError, format_error(error)
+    end
+  end
+
+  @doc """
+  Whether a URL written into a page of this build points at another site.
+
+  Only this module can answer that, and it is why the question is asked here
+  rather than by looking at the URL: a build that bakes in an absolute base URL
+  — the one printed to PDF — emits its own links as `https://archidep.ch/…`,
+  which nothing else can tell apart from a link to somewhere else. A build that
+  bakes in none has no absolute URL of its own at all, so an absolute link in it
+  is by construction a link away from the site; that is a property of [the
+  seam](`resolve/3`), not an assumption about the content, since a link to
+  another page of the course is a reference rather than a URL an author wrote.
+
+  A URL naming no host — a path, a fragment, a `mailto:` — is not a link to
+  another site and is answered `false`.
+  """
+  @spec external?(UrlContext.t(), String.t()) :: boolean()
+  def external?(%UrlContext{} = context, url) when is_binary(url) do
+    case URI.parse(url) do
+      %URI{host: nil} -> false
+      %URI{host: host} -> downcase(host) != own_host(context)
     end
   end
 
@@ -224,6 +256,19 @@ defmodule ArchiDep.CourseSite.Urls do
 
   def format_error({:invalid_reference, reference}),
     do: "#{inspect(reference)} is not a valid reference"
+
+  defp own_host(%UrlContext{} = context) do
+    case URI.parse(UrlContext.content_origin(context)) do
+      %URI{host: nil} -> nil
+      %URI{host: host} -> downcase(host)
+    end
+  end
+
+  defp downcase(host), do: String.downcase(host, :ascii)
+
+  defp live_site_home_prefix(context) do
+    if UrlContext.home_at_base?(context), do: "", else: edition_prefix(context)
+  end
 
   defp content_url(context, output_path),
     do: UrlContext.content_origin(context) <> UrlContext.content_prefix(context) <> output_path

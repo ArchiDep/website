@@ -597,6 +597,31 @@ defmodule ArchiDep.CourseSite.UrlsTest do
       assert Urls.resolve(context, {:live_site, :home}) == {:ok, "https://archidep.example.com/"}
     end
 
+    test "resolves the home page of a backup copy of an edition being taught to the mount point of the live site" do
+      context =
+        CourseSiteFactory.build(:url_context,
+          mode: :backup,
+          base_path: "/website",
+          version: "2026",
+          live_site_url: "https://archidep.example.com"
+        )
+
+      assert Urls.resolve(context, {:live_site, :home}) == {:ok, "https://archidep.example.com/"}
+    end
+
+    test "resolves the home page of an archived edition to that edition's home page on the live site" do
+      context =
+        CourseSiteFactory.build(:url_context,
+          mode: :archive,
+          base_path: "/website",
+          version: "2025",
+          live_site_url: "https://archidep.example.com"
+        )
+
+      assert Urls.resolve(context, {:live_site, :home}) ==
+               {:ok, "https://archidep.example.com/2025/"}
+    end
+
     test "reports a build that does not know where the live site is" do
       context = CourseSiteFactory.build(:url_context, live_site_url: nil)
 
@@ -648,6 +673,65 @@ defmodule ArchiDep.CourseSite.UrlsTest do
 
       assert Urls.resolve(context, {:external, "mailto:teacher@example.com"}) ==
                {:ok, "mailto:teacher@example.com"}
+    end
+  end
+
+  describe "external?/2" do
+    test "says a URL of another site points away from this one" do
+      context = CourseSiteFactory.build(:url_context, absolute_base_url: nil)
+
+      assert Urls.external?(context, "https://man7.org/linux/man-pages/") == true
+    end
+
+    test "says a URL of another site points away from this one whatever it is written as" do
+      context = CourseSiteFactory.build(:url_context, absolute_base_url: nil)
+
+      assert Urls.external?(context, "//man7.org/linux/man-pages/") == true
+    end
+
+    test "says a path of this site does not point away from it" do
+      context = CourseSiteFactory.build(:url_context, absolute_base_url: nil)
+
+      assert Urls.external?(context, "/2026/course/104-ssh/") == false
+    end
+
+    test "says a fragment does not point away from the page it is on" do
+      context = CourseSiteFactory.build(:url_context, absolute_base_url: nil)
+
+      assert Urls.external?(context, "#create-your-server") == false
+    end
+
+    test "says an address that is not a site's does not point at another site" do
+      context = CourseSiteFactory.build(:url_context, absolute_base_url: nil)
+
+      assert Urls.external?(context, "mailto:contact@archidep.ch") == false
+    end
+
+    test "says a URL of this site does not point away from it, in a build writing URLs in full" do
+      context =
+        CourseSiteFactory.build(:url_context, absolute_base_url: "https://archidep.example.com")
+
+      assert Urls.external?(context, "https://archidep.example.com/2026/course/104-ssh/") == false
+    end
+
+    test "says a URL of this site does not point away from it whatever its case" do
+      context =
+        CourseSiteFactory.build(:url_context, absolute_base_url: "https://archidep.example.com")
+
+      assert Urls.external?(context, "https://ArchiDep.Example.com/2026/") == false
+    end
+
+    test "says another site's URL points away from a build writing URLs in full" do
+      context =
+        CourseSiteFactory.build(:url_context, absolute_base_url: "https://archidep.example.com")
+
+      assert Urls.external?(context, "https://backup.example.com/2026/") == true
+    end
+
+    test "says a URL of this site points away from a build that has no address of its own" do
+      context = CourseSiteFactory.build(:url_context, absolute_base_url: nil)
+
+      assert Urls.external?(context, "https://archidep.example.com/2026/") == true
     end
   end
 

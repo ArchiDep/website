@@ -15,6 +15,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
   alias ArchiDep.Support.CourseSiteRendererTestTags.SignaturePass
 
   @books ~s(<img class="emoji" src="/2026/assets/emoji/1f4da.svg" alt="📚" />)
+  @elsewhere ~s( target="_blank" rel="noopener noreferrer")
 
   describe "render_page/1" do
     test "renders a page in two pieces, resolving what it refers to" do
@@ -44,7 +45,8 @@ defmodule ArchiDep.CourseSite.RendererTest do
                {:ok,
                 %Page{
                   excerpt_html:
-                    ~s(<p>Learn to deploy on <a href="https://render.com">Render</a>.</p>),
+                    ~s(<p>Learn to deploy on <a href="https://render.com"#{@elsewhere}>) <>
+                      ~s(Render</a>.</p>),
                   html:
                     ~s(<h2 id="deploying">Deploying<a href="#deploying" ) <>
                       ~s(aria-label="Link to heading 'Deploying'" data-heading-content="Deploying" ) <>
