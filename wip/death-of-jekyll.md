@@ -30,7 +30,6 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Shared Markdown rendering core](#shared-markdown-rendering-core)
   - [Custom block tags](#custom-block-tags)
   - [Syntax highlighting](#syntax-highlighting)
-  - [Progressive solution reveal](#progressive-solution-reveal)
   - [Reference-link resolution](#reference-link-resolution)
   - [TOC and heading anchors](#toc-and-heading-anchors)
   - [Smaller Jekyll plugins](#smaller-jekyll-plugins)
@@ -42,6 +41,7 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [A richer Course.Material model](#a-richer-coursematerial-model)
   - [Heading references that compile-fail](#heading-references-that-compile-fail)
   - [Progress: structure vs status](#progress-structure-vs-status)
+  - [Progressive solution reveal](#progressive-solution-reveal)
   - [Static build step](#static-build-step)
   - [Development and production serving](#development-and-production-serving)
   - [Standalone / archival mode](#standalone--archival-mode)
@@ -199,20 +199,16 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       whole of it against the real content: 362 files digested, 63 documents
       rendered, every reference resolving.
 
-**New features (built alongside the migration)**
-
-- [ ] Hide solution blocks by default and reveal them from the progress source
-      as the course progresses — see [Progressive solution
-      reveal](#progressive-solution-reveal).
-
 **Metadata and the `Course.Material` model**
 
 - [ ] Enforce the two chapter document invariants — a chapter has a subject or
       an exercise but never both, and an exercise never has slides — as a hard
-      build failure listing every offending chapter — see [Chapter document
+      build failure listing every offending chapter, in
+      `ArchiDep.CourseSite.Build.ContentTree` — see [Chapter document
       invariants](#chapter-document-invariants).
-- [ ] Port the filename→metadata and progress-aggregation logic to deterministic
-      Elixir — see [Metadata generation](#metadata-generation).
+- [ ] Port the filename→metadata logic to deterministic Elixir — the
+      _structure_ only, the status aggregation belonging to the progress source
+      below — see [Metadata generation](#metadata-generation).
 - [ ] Keep and strengthen `ArchiDep.Course.Material` into a typed,
       compile-checked model of the course — see [A richer Course.Material
       model](#a-richer-coursematerial-model).
@@ -228,6 +224,15 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       collection) and expose current progress at a public, read-only API route
       for the backup build — see [Progress: structure vs
       status](#progress-structure-vs-status).
+
+**New features (built on the model above)**
+
+- [ ] Hide solution blocks by default and reveal them from the progress source
+      as the course progresses — see [Progressive solution
+      reveal](#progressive-solution-reveal). It sits after the progress source
+      rather than beside the rendering core, because reveal derives from a
+      chapter's status instead of a flag of its own: until that source exists
+      there is nothing to gate on.
 
 **Static build, archival and per-year versions**
 
@@ -1574,38 +1579,6 @@ lose their highlighting, since the stylesheets they load no longer style rouge's
 classes. Code blocks fall back to the `prose` styling of a `pre`, which is
 legible in both colour schemes.
 
-### Progressive solution reveal
-
-New feature to build alongside the migration: **`{% solution %}` blocks are
-hidden by default and revealed progressively** as the course advances, driven by
-the same progress source (see [Progress: structure vs
-status](#progress-structure-vs-status) and [Metadata
-generation](#metadata-generation)). Today every solution is always rendered; we
-want to gate them.
-
-Design decisions to settle:
-
-- **Reveal derives from the progress source, not a second flag.** A chapter's
-  solutions are revealed once its status crosses a threshold, so we flip one
-  thing (progress), not two. The remaining decision is only the **threshold** —
-  at `done`, or `done`/`due` — see [Progress: structure vs
-  status](#progress-structure-vs-status).
-- **Hidden must mean omitted, not just CSS-collapsed.** Because both the static
-  HTML and the reveal.js slide source are inspectable, a hidden solution should
-  be **left out of the rendered output entirely**, so students cannot read it in
-  the page source. A `display:none` toggle is not sufficient.
-- **Archival/standalone overrides reveal-all.** A frozen archive of a past year
-  ([Standalone / archival mode](#standalone--archival-mode)) should render
-  **all** solutions — the gating only applies to the live, in-progress build.
-  Provide a build option (e.g. `reveal_all_solutions`) the archival build sets.
-- **Tests.** Cover hidden-by-default, reveal-on-flag, and archival reveal-all in
-  the `Solid` custom tag unit tests ([Testing as we go](#testing-as-we-go)).
-
-This pairs with [Custom block tags](#custom-block-tags) (the `solution` tag is
-where the gate is enforced) and [A richer Course.Material
-model](#a-richer-coursematerial-model) (which already carries per-document
-progress metadata).
-
 ### Reference-link resolution
 
 Reproduce `utils.rb`'s `parse_markdown_link_references` /
@@ -1999,12 +1972,21 @@ The second rule has no such consequence today; it is enforced because it is
 true, and because leaving it unenforced invites a `/course/<n>-<slug>/slides/`
 page that nothing in the sidebar or the PDF conventions expects.
 
-**Where the check goes: the step that enumerates the source tree** — [metadata
-generation](#metadata-generation) — not the renderer. The renderer is handed one
-document and never sees its siblings, so it is structurally incapable of
-noticing either violation; putting the check where the chapter's files are first
-listed is what makes it unmissable. Fail with **every** offending chapter
-listed, not the first, so a bad restructuring is fixed in one pass.
+**Where the check goes: the step that enumerates the source tree**, not the
+renderer. The renderer is handed one document and never sees its siblings, so it
+is structurally incapable of noticing either violation; putting the check where
+the chapter's files are first listed is what makes it unmissable. Fail with
+**every** offending chapter listed, not the first, so a bad restructuring is
+fixed in one pass.
+
+That step is now `ArchiDep.CourseSite.Build.ContentTree` rather than [metadata
+generation](#metadata-generation), which is what this paragraph named when
+neither existed. `ContentTree.plan/1` already sorts the content directory into
+the documents a build renders, keyed by `ArchiDep.CourseSite.DocumentRef` — a
+chapter number, a slug and a type — so both rules are a function of what it has
+already computed, and it already reports every offending path of a run rather
+than the first. It is therefore the first thing to do of this group, and the one
+metadata generation's correctness rests on.
 
 **Consequences for the URL seam, which already assumes rule 1.**
 `PageRef.identity/1` deliberately collapses a subject and an exercise into one
@@ -2025,11 +2007,29 @@ step as the invariants themselves.
 ### Metadata generation
 
 Port `archidep.rb`'s deterministic logic to Elixir: filename →
-`num`/`section`/`section_chapter`/`course_type`/`graded`/`slug`/`url`;
-subject↔slides linking; and the `progress` aggregation
-(`done`/`due`/`next`/`future`) driven by the progress docs. This is the data
-that today populates `archidep.json` and the sidebar; it should feed [A richer
-Course.Material model](#a-richer-coursematerial-model) directly.
+`num`/`section`/`section_chapter`/`course_type`/`graded`/`slug`/`url`; the
+sections of `_data/course.yml`, with their numbers and slugs; subject↔slides
+linking; and the rule that keeps a chapter out of the sidebar twice (a slides
+document is listed only when no subject of the same chapter exists). This is the
+data that today populates `archidep.json` and the sidebar; it should feed [A
+richer Course.Material model](#a-richer-coursematerial-model) directly.
+
+**Structure only: the status aggregation is not part of this task**, even though
+`archidep.rb` computes both in one pass. The `progress`
+(`done`/`due`/`next`/`future`) of a chapter and of a section, the `open` flag
+the sidebar derives from it, and the home page's "Previously"/"Due next"/"Next
+time" lists are all reads of the progress _source_, and [Progress: structure vs
+status](#progress-structure-vs-status) is where they belong — that task exists
+precisely to keep them out of the compiled model. Porting them here would bake
+the line it draws back into one function.
+
+Two details of the Ruby worth carrying over deliberately when the status does
+get ported, because they are easy to mistake for the aggregation above them: the
+three home-page lists read the **last** progress document that carries each key,
+not the union of all of them, and each list filters by a different rule
+(previously excludes a chapter's slides when it has a subject, due next keeps
+only subjects and exercises, next time keeps documents that are not a subject's
+slides).
 
 ### A richer Course.Material model
 
@@ -2172,6 +2172,51 @@ either consumer.
   static build task.
 - Whether `progress.json` is retained as an export/interchange format once the
   database is the source, or dropped.
+
+### Progressive solution reveal
+
+New feature to build alongside the migration: **`{% solution %}` blocks are
+hidden by default and revealed progressively** as the course advances, driven by
+the same progress source (see [Progress: structure vs
+status](#progress-structure-vs-status) and [Metadata
+generation](#metadata-generation)). Today every solution is always rendered; we
+want to gate them.
+
+**This is why it comes after the progress source rather than beside the
+rendering core**, where it was originally listed. The half of it that belongs to
+the renderer already exists — `ArchiDep.CourseSite.Renderer.RenderOptions`
+carries `reveal_all_solutions` — and the half that does not is the chapter
+status the option is the exception to: nothing in `ArchiDep.CourseSite` knows a
+chapter's progress, and the tag would therefore have to hide every solution or
+none. Building it before its source means building the gate twice.
+
+Design decisions to settle:
+
+- **Reveal derives from the progress source, not a second flag.** A chapter's
+  solutions are revealed once its status crosses a threshold, so we flip one
+  thing (progress), not two. The remaining decision is only the **threshold** —
+  at `done`, or `done`/`due` — see [Progress: structure vs
+  status](#progress-structure-vs-status).
+- **The status has to reach the tag.** A `Solid` tag reads what
+  `ArchiDep.CourseSite.Renderer.RenderContext` carries, and that is today the
+  document, its page and the build's URLs — not its progress. The status of the
+  chapter being rendered is what the progress-source task has to add there,
+  alongside the document's other derived variables.
+- **Hidden must mean omitted, not just CSS-collapsed.** Because both the static
+  HTML and the reveal.js slide source are inspectable, a hidden solution should
+  be **left out of the rendered output entirely**, so students cannot read it in
+  the page source. A `display:none` toggle is not sufficient.
+- **Archival/standalone overrides reveal-all.** A frozen archive of a past year
+  ([Standalone / archival mode](#standalone--archival-mode)) should render
+  **all** solutions — the gating only applies to the live, in-progress build.
+  Provide a build option (e.g. `reveal_all_solutions`) the archival build sets.
+- **Tests.** Cover hidden-by-default, reveal-on-flag, and archival reveal-all in
+  the `Solid` custom tag unit tests ([Testing as we go](#testing-as-we-go)).
+
+This pairs with [Custom block tags](#custom-block-tags) (the `solution` tag is
+where the gate is enforced) and [A richer Course.Material
+model](#a-richer-coursematerial-model) (which already carries per-document
+progress metadata).
 
 ### Static build step
 
