@@ -21,8 +21,12 @@ defmodule Digest.MixProject do
 
   defp aliases do
     [
+      # The manifest is keyed by paths relative to the directory that was
+      # digested, and `ArchiDep.CourseSite.Build.AssetDigest` reads those keys
+      # as paths from the root of the site. So the static directory is
+      # digested, not the assets directory inside it.
       "assets.deploy": [
-        "phx.digest priv/static/assets -o priv/static/assets"
+        "phx.digest priv/static -o priv/static"
       ]
     ]
   end

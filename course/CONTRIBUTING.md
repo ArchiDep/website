@@ -196,9 +196,12 @@ settings` → `#configure-basic-settings`). The emoji shortcode a heading is
   published one directory deeper than it is written). The Elixir renderer
   resolves it to the digested name the file is published under, keeping the path
   shape written here, so a **missing file fails the build** rather than becoming
-  a broken image. Its name must stick to letters, digits, `.`, `_` and `-`. `{{
-'images/cli.jpg' | relative_file_url }}` is no longer needed — the plain path
-  is resolved wherever it is written — but the decks using it keep working.
+  a broken image. Its name, and every directory leading to it, must stick to
+  letters, digits, `.`, `_` and `-` — the build rejects anything that would have
+  to be percent-encoded. The file may be of any type: the diagrams published as
+  PDFs next to an exercise work exactly as the images do. `{{ 'images/cli.jpg' |
+relative_file_url }}` is no longer needed — the plain path is resolved wherever
+  it is written — but the decks using it keep working.
 - Use consistent terminology and style throughout the materials.
 - Follow accessibility best practices to ensure content is usable by all
   students.
@@ -708,18 +711,23 @@ Client-side assets are bundled by [Webpack][webpack]
 configurations:
 
 - The main config bundles the `course`, `slides` and `slides-mermaid` entry
-  points (and their CSS) into `app/priv/static/assets/course`, with
-  content-hashed filenames in production for cache busting.
+  points (and their CSS) into `app/priv/static/assets/course`.
 - A second config bundles the `search` entry point into
   `app/priv/static/assets/search`.
 
-In production, the main config writes a `manifest.json` mapping logical asset
-paths to their hashed filenames. The
-[`relative_asset_url.rb`](./_plugins/relative_asset_url.rb) plugin reads this
-manifest (and the Phoenix `cache_manifest.json`) so templates can reference
-assets by their logical name and get the correct hashed URL. **Do not hardcode
-hashed asset paths in templates** — use the asset-url filters instead. In
-development, the filters fall back to the plain path when no manifest exists.
+**Cache busting is `phx.digest`'s, and the Phoenix `cache_manifest.json` is the
+site's single asset manifest.** Entry bundles are therefore named plainly
+(`course.js`), and the digest step — which runs over the whole static directory,
+after every bundler has written into it — is what gives them a content-hashed
+name and records it. Chunks Webpack loads at runtime are the exception: the
+Webpack runtime requests those by name from its own `publicPath` and never
+consults a manifest, so they keep Webpack's `[chunkhash]`.
+
+The [`relative_asset_url.rb`](./_plugins/relative_asset_url.rb) plugin reads
+`cache_manifest.json` so templates can reference assets by their logical name
+and get the correct hashed URL. **Do not hardcode hashed asset paths in
+templates** — use the asset-url filters instead. In development, where nothing
+is digested, the filters fall back to the plain path.
 
 ### JSON Exports
 

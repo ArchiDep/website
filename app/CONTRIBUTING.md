@@ -109,6 +109,8 @@ components, can be found in the `theme` directory (see [`CONTRIBUTING.md` in the
       site](../course/CONTRIBUTING.md) — a pure, database-free subsystem that is
       deliberately **not** a bounded context, documented in
       [`lib/archidep/course_site/CONTRIBUTING.md`](./lib/archidep/course_site/CONTRIBUTING.md).
+      `course_site/build.ex` is its one exception: the only module of the
+      subsystem that reads or writes a file.
   - `lib/archidep_web`: The Phoenix web interface, including controllers, views,
     APIs, templates, live views, and channels.
 - **Supporting Files**

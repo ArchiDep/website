@@ -22,7 +22,7 @@ $compose build app-assets course course-assets theme
 # each component is ready.
 rm -f tmp/docker/dev/app/priv/static/archidep.json \
       tmp/docker/dev/app/priv/static/assets/app/app.js \
-      tmp/docker/dev/app/priv/static/assets/course/manifest.json \
+      tmp/docker/dev/app/priv/static/assets/course/course.js \
       tmp/docker/dev/app/priv/static/theme/theme.css
 
 # Phases 3-5: Run everything. Services will wait for each other to be healthy

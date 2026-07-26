@@ -187,13 +187,17 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       `Sweep` under both), with five corrections recorded below. All 14 decks
       and all 45 pages were rendered against manifests built from the real
       files: no reference is left undigested and none is falsely reported.
-- [ ] Subsume the asset-digest plumbing via `phx.digest` + verified routes — see
+- [x] Subsume the asset-digest plumbing via `phx.digest` + verified routes — see
       [Asset URLs](#asset-urls). The renderer's half of this landed with the
-      slides task above — every reference now goes through the seam, page
-      assets included. What remains is the build's half: filling the manifests
-      (`AssetManifest` from `phx.digest`'s `cache_manifest.json`), the step that
-      copies and digests the files next to a page, and the post-build link
-      check.
+      slides task above — every reference now goes through the seam, page assets
+      included. **Done: `ArchiDep.CourseSite.Build` is the one module of the
+      subsystem that touches a file**, and the rules beside it are pure —
+      `ContentTree` says what each source file is and where it goes,
+      `PageAssetDigest` what it is called, `AssetDigest` reads
+      `cache_manifest.json`, and `LinkCheck` reads a finished build. Seven
+      corrections are recorded below. `mix archidep.course_site.assets` runs the
+      whole of it against the real content: 362 files digested, 63 documents
+      rendered, every reference resolving.
 
 **New features (built alongside the migration)**
 
@@ -849,6 +853,49 @@ Traps to handle when implementing:
   regions are composed into one pattern, so `</\1>` would point at whichever
   group another region opened first. They refer to what they matched relatively
   (`\g{-1}`) instead.
+
+**Corrections while implementing the build's half:**
+
+- **The mapping is per chapter directory, not per document**, which is what
+  makes the off-by-one-`..` warned about above unwritable. Stated in
+  `ArchiDep.CourseSite.Build.ContentTree`.
+- **`phx.digest` did not cover `/assets/course`.** The digest stage of the
+  `Dockerfile` never received it, because webpack hashed those bundles itself
+  and published them through its own `manifest.json` — which is also where
+  `ARCHIDEP_BASE_PATH` was baked into an asset path. So webpack's entry hashing
+  was dropped and `/assets/course` routed through the digest stage, rather than
+  teaching the Elixir reader a second manifest. Its runtime-loaded chunks keep
+  `[chunkhash]`, and `chunkFilename` is now set explicitly, because webpack
+  derives that default from the entry filename that no longer carries a hash.
+- **The link check is not "a few lines with Floki".** No HTML parser can see
+  into a deck: `textarea` content is text to all of them. So a page is read as
+  HTML — `lazy_html`, promoted out of `only: :test` rather than adding a second
+  parser — and a deck as the Markdown it stays, with the scan its rewrite uses
+  (`AssetReferences.references/2`, extracted for it).
+- **`digest/mix.exs`'s `assets.deploy` alias contradicted the `Dockerfile`** —
+  `priv/static/assets` against `priv/static`, which are different manifest key
+  spaces, and only the Dockerfile's ever ran. The alias now matches, since which
+  one runs is no longer academic.
+- **`relative_asset_url.rb` had to lose its webpack branch too.** Dropping the
+  dual manifest is not only the Elixir reader's business: the Ruby plugin was
+  the thing reading two manifests, and Jekyll still builds the site until
+  cutover. Removing the branch made it 25 lines shorter.
+- **The digested name is `phx.digest`'s own**, and `UrlPath.insert_suffix/2`
+  already computed it — shared code rather than a coincidence, which settles the
+  two-dot question by not asking it.
+- **A file next to a page may be of any type**, so the filter is a deny-list:
+  the course publishes 22 diagrams as PDFs next to its exercises, and an
+  allow-list of image extensions would have dropped every one of them silently.
+- **A build with no manifest is a mode, not a fallback.** The Ruby returns its
+  argument unchanged for _any_ path outside production, so a mistyped asset
+  passes in development and fails in production. The replacement walks the
+  static directory instead, and is a function the caller chooses rather than a
+  branch inside the reader.
+- **Naming a published file and writing it are separate calls.** The check that
+  renders every document needs the manifest and nothing else, so making it name
+  an output directory — which it would then have had to empty — was a hazard
+  with no purpose. `page_asset_manifest/2` reads; `publish_page_assets/4`
+  writes.
 
 #### Generated PDFs may live anywhere
 

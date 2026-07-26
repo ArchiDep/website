@@ -65,6 +65,25 @@ defmodule ArchiDep.CourseSite.Renderer.AssetReferences do
   end
 
   @doc """
+  Every URL written in a fragment of raw HTML, or in the Markdown of a slide
+  deck, outside the regions a rewrite must leave alone.
+
+  This is what `rewrite/3` looks at before it decides which of those URLs could
+  be a file next to the document. A caller that has a different question to ask
+  of them — whether they lead anywhere, say — asks it of this list, so that
+  what a build checks and what it rewrites are read out of the text the same
+  way.
+  """
+  @spec references(String.t(), :html | :markdown) :: [{String.t(), :image | :link}]
+  def references(text, syntax) when is_binary(text) do
+    text
+    |> Sweep.split(sweep(syntax))
+    |> Sweep.text()
+    |> Enum.flat_map(&written_in(&1, written(syntax)))
+    |> Enum.uniq()
+  end
+
+  @doc """
   Resolve one reference, written where the whole of what is written is the
   reference: the URL of an image or of a link of a Markdown document.
 
@@ -132,12 +151,14 @@ defmodule ArchiDep.CourseSite.Renderer.AssetReferences do
     end)
   end
 
-  defp referenced_in(words, written) do
+  defp referenced_in(words, written),
+    do: words |> written_in(written) |> Enum.filter(fn {path, _kind} -> reference?(path) end)
+
+  defp written_in(words, written) do
     Enum.flat_map(written, fn {pattern, kind} ->
       pattern
       |> Regex.scan(words, capture: :all_but_first)
       |> Enum.map(fn [_before, path, _rest] -> {path, kind} end)
-      |> Enum.filter(fn {path, _kind} -> reference?(path) end)
     end)
   end
 

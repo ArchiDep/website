@@ -18,6 +18,8 @@ and tooling that also apply here. Read that document first.
   - [Assets co-located with a page](#assets-co-located-with-a-page)
   - [Generated PDFs](#generated-pdfs)
   - [Errors](#errors)
+- [Building](#building)
+  - [Checking it against the real content](#checking-it-against-the-real-content)
 - [Rendering](#rendering)
   - [Every tag body is its own Markdown document](#every-tag-body-is-its-own-markdown-document)
   - [The tags the course writes](#the-tags-the-course-writes)
@@ -48,7 +50,8 @@ that make up most of the website — and writes it as a set of static files.
 It is **pure and self-contained**: no database, no processes, no Phoenix. A
 build is a function of its inputs, which is what lets the same code produce the
 live site, a backup copy hosted elsewhere, a frozen archive of a past edition,
-and the build printed to PDF.
+and the build printed to PDF. [`Build`](./build.ex) is the single exception and
+the only module here that touches the filesystem — see [Building](#building).
 
 ## Why this is not a bounded context
 
@@ -216,6 +219,50 @@ the build collects every broken reference of a document rather than stopping at
 the first. Use the bang where a failure is a programmer error, such as the
 application's own navigation. Both render their message with `format_error/1`,
 so there is one wording for the same problem wherever it surfaces.
+
+## Building
+
+[`Build`](./build.ex) is the **only** module of this subsystem that reads or
+writes a file. Everything else is a function of its inputs, which is what lets
+one build produce the live site, a backup copy, a frozen archive and the PDF
+export; keeping the filesystem in one named place is what makes that checkable
+rather than merely intended. So what is left in `Build` is fetching bytes and
+putting them somewhere, and each rule of a build lives in a pure module beside
+it, documented there rather than here:
+
+| Module                                            | What it decides                                                       |
+| ------------------------------------------------- | --------------------------------------------------------------------- |
+| [`ContentTree`](./build/content_tree.ex)          | what each file of the content directory is, and where it is published |
+| [`PageAssetDigest`](./build/page_asset_digest.ex) | what a published file is called                                       |
+| [`AssetDigest`](./build/asset_digest.ex)          | where the global assets went, per `phx.digest`                        |
+| [`LinkCheck`](./build/link_check.ex)              | which of a finished build's links lead nowhere                        |
+
+Three things about the shape of it are worth knowing before reading any of them.
+
+**Naming a file and writing it are separate.** What a file is called follows
+from its content, so `page_asset_manifest/2` answers that by reading alone and
+`publish_page_assets/4` does the copying. A caller that only needs to resolve
+references — the check below, and anything that renders without publishing —
+never names a directory to write into, and therefore cannot be pointed at the
+wrong one.
+
+**Reading comes before writing.** Every file a build publishes is read and the
+whole manifest settled before any of them is written, so a content directory
+that is going to be rejected never leaves half a build behind. That is also what
+lets the eventual publish path render into a temporary directory and swap it
+into place.
+
+**Failures are collected.** A build reports every offending file rather than
+stopping at the first, the same way [a document reports all of its
+problems](#reporting-rather-than-raising) — otherwise a content directory takes
+as many runs to fix as it has mistakes.
+
+### Checking it against the real content
+
+`mix archidep.course_site.assets` builds both manifests from the real content
+and the real assets and renders every document against them, so that a reference
+no longer resolving is a command anyone can run rather than something noticed
+once. It writes nothing.
 
 ## Rendering
 
@@ -614,9 +661,13 @@ of the same content, and the differences above are the whole list.
 
 ## Testing
 
-Everything here is pure, so tests are plain `ExUnit.Case, async: true` with
-doctests for the self-evident functions, following the [testing guide][testing].
-Two specifics for this subsystem:
+Everything here is pure but [`Build`](./build.ex), so tests are plain
+`ExUnit.Case, async: true` with doctests for the self-evident functions,
+following the [testing guide][testing]. `Build`'s own tests are `async: true`
+too, using ExUnit's `:tmp_dir` tag so each gets a directory of its own; they
+assert the manifest a step returns **and** the exact list of files it wrote,
+since half of what that module does is the writing. Several specifics for this
+subsystem:
 
 - `Urls` is covered per reference kind **and** by a block asserting every kind
   at once under each configuration a build is really published under. The

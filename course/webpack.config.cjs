@@ -1,5 +1,4 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const path = require('path');
 
 const production = process.env.NODE_ENV === 'production';
@@ -53,7 +52,12 @@ module.exports = [
       ]
     },
     output: {
-      filename: production ? '[name].[chunkhash].js' : '[name].js',
+      // Entry bundles are named plainly and cache-busted by `mix phx.digest`,
+      // which is the site's single asset manifest. Chunks loaded at runtime
+      // are not: the webpack runtime requests them by name from `publicPath`,
+      // so they never go through a manifest and carry their own content hash.
+      filename: '[name].js',
+      chunkFilename: production ? '[id].[chunkhash].js' : '[id].js',
       path: path.resolve(
         __dirname,
         '..',
@@ -67,10 +71,8 @@ module.exports = [
     },
     plugins: [
       new MiniCssExtractPlugin({
-        filename: production ? '[name].[chunkhash].css' : '[name].css'
-      }),
-      new WebpackManifestPlugin({
-        basePath: '/assets/course/'
+        filename: '[name].css',
+        chunkFilename: production ? '[id].[chunkhash].css' : '[id].css'
       })
     ]
   },

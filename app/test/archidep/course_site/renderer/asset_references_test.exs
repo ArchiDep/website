@@ -129,6 +129,55 @@ defmodule ArchiDep.CourseSite.Renderer.AssetReferencesTest do
     end
   end
 
+  describe "references/2" do
+    test "reads every URL the raw HTML of a page writes, whatever it points at" do
+      assert AssetReferences.references(
+               ~s{<a href="../cli/">the CLI</a><img src="images/ssh.png"><a href="https://example.com/rfc">the RFC</a>},
+               :html
+             ) == [
+               {"images/ssh.png", :image},
+               {"../cli/", :link},
+               {"https://example.com/rfc", :link}
+             ]
+    end
+
+    test "reads every URL a deck writes, in Markdown and in the HTML it embeds" do
+      assert AssetReferences.references(
+               "![A whale](images/whale.png)\n\n<img src='../images/layers.png' />\n\n[the manual](https://example.com/docs)\n",
+               :markdown
+             ) == [
+               {"../images/layers.png", :image},
+               {"images/whale.png", :image},
+               {"https://example.com/docs", :link}
+             ]
+    end
+
+    test "reads a URL a page writes twice once" do
+      assert AssetReferences.references(
+               ~s{<img src="images/x.png"><img src="images/x.png">},
+               :html
+             ) == [{"images/x.png", :image}]
+    end
+
+    test "leaves alone the code a page shows as markup" do
+      assert AssetReferences.references(
+               ~s{<pre><code>&lt;img src="images/sample.png"&gt;</code></pre>},
+               :html
+             ) == []
+    end
+
+    test "leaves alone the code a deck writes the way Markdown does" do
+      assert AssetReferences.references(
+               "```html\n<img src='images/sample.png'>\n```\n\nSee `![x](images/other.png)`.\n",
+               :markdown
+             ) == []
+    end
+
+    test "reads nothing out of text referring to nothing" do
+      assert AssetReferences.references("<p>Just some words.</p>", :html) == []
+    end
+  end
+
   describe "rewrite/3 invariants" do
     property "resolving what a deck refers to again is resolving it once" do
       page_assets =

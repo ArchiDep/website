@@ -3,11 +3,13 @@ defmodule ArchiDep.CourseSite.Renderer.Sweep do
   What a rewrite of the text may look at, and what it must leave alone.
 
   Several rewrites of the course material are scans of text rather than walks of
-  a tree: there is no HTML library outside the test environment, and a slide
-  deck is never converted to HTML at all. Each of them needs the same thing
-  first — the text cut into the parts it may rewrite and the parts it may not —
-  and they do not agree on what those are, which is why the regions are named
-  and chosen by the caller:
+  a tree. A slide deck is never converted to HTML at all, so there is no tree to
+  walk; and what a rewrite has to change is often the text a parser hands back
+  in one piece, since a page shows markup as markup and a deck reaches the
+  browser as the text of a `textarea`. Each of these rewrites needs the same
+  thing first — the text cut into the parts it may rewrite and the parts it may
+  not — and they do not agree on what those are, which is why the regions are
+  named and chosen by the caller:
 
   | Region         | What it protects                                          |
   | -------------- | --------------------------------------------------------- |

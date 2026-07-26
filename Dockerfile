@@ -141,6 +141,7 @@ RUN mix local.hex --force && \
     mix compile
 
 COPY --chown=build:build --from=app-assets /build/app/priv/static/assets/app/ /build/digest/priv/static/assets/app/
+COPY --chown=build:build --from=course-assets /build/app/priv/static/assets/course/ /build/digest/priv/static/assets/course/
 COPY --chown=build:build --from=course-assets /build/app/priv/static/assets/search/ /build/digest/priv/static/assets/search/
 COPY --chown=build:build --from=theme /build/app/priv/static/assets/emoji/ /build/digest/priv/static/assets/emoji/
 COPY --chown=build:build --from=theme /build/app/priv/static/assets/theme/ /build/digest/priv/static/assets/theme/
@@ -175,7 +176,6 @@ RUN npm ci
 
 COPY --chown=build:build ./course/ /build/course/
 COPY --chown=build:build ./app/mix.exs /build/app/mix.exs
-COPY --chown=build:build --from=course-assets /build/app/priv/static/assets/course/ /build/app/priv/static/assets/course/
 COPY --chown=build:build --from=digest /build/digest/priv/static/ /build/app/priv/static/
 
 COPY ./.git/ /tmp/.git/
