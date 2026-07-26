@@ -7,6 +7,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
   use ArchiDep.Support, :factory
   use ExUnitProperties
 
+  alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.PageRef
   alias ArchiDep.CourseSite.Renderer.RenderContext
@@ -20,6 +21,17 @@ defmodule ArchiDep.Support.CourseSiteFactory do
 
   @doc_types [:subject, :exercise, :slides]
   @modes [:live, :backup, :archive]
+
+  # Every way a chapter directory may be filled, which is what the rules of
+  # `ArchiDep.CourseSite.Build.ContentTree` leave: a subject, a subject with a
+  # deck in either source layout, an exercise graded or not, or a deck alone.
+  @chapter_shapes [
+    ["subject.md"],
+    ["subject.md", "slides.md"],
+    ["subject.md", "slides/slides.md"],
+    ["exercise.md"],
+    ["slides.md"]
+  ]
 
   @spec document_ref_factory(map()) :: DocumentRef.t()
   def document_ref_factory(attrs!) do
@@ -197,6 +209,83 @@ defmodule ArchiDep.Support.CourseSiteFactory do
         live_site_url: live_site_url
       )
     end
+  end
+
+  @doc """
+  A generator of a whole course, for property-based tests: the content tree of
+  one, the front matter of every page of it and the declarations that go with
+  it.
+
+  The three are consistent by construction — every chapter is numbered for a
+  declared section, every page has a title, only an exercise is graded — so that
+  a property is about what `ArchiDep.CourseSite.Structure.plan/3` makes of a
+  course rather than about what it refuses.
+  """
+  @spec course_generator() ::
+          StreamData.t({ContentTree.t(), %{PageRef.t() => map()}, %{String.t() => term()}})
+  def course_generator do
+    gen all(
+          numbers <-
+            list_of(uniq_list_of(integer(1..99), min_length: 1, max_length: 3),
+              min_length: 1,
+              max_length: 4
+            ),
+          chapter_count <- constant(Enum.count(List.flatten(numbers))),
+          words <- list_of(slug_generator(), length: chapter_count),
+          shapes <- list_of(member_of(@chapter_shapes), length: chapter_count),
+          graded <- list_of(boolean(), length: chapter_count),
+          section_words <- list_of(slug_generator(), length: length(numbers)),
+          cheatsheet_slugs <- uniq_list_of(slug_generator(), max_length: 2)
+        ) do
+      chapter_numbers =
+        numbers
+        |> Enum.with_index(1)
+        |> Enum.flat_map(fn {chapter_numbers, section} ->
+          chapter_numbers |> Enum.sort() |> Enum.map(&(section * 100 + &1))
+        end)
+
+      chapters = Enum.zip([chapter_numbers, words, shapes, graded])
+
+      document_paths =
+        Enum.flat_map(chapters, fn {num, word, shape, _graded?} ->
+          Enum.map(shape, &"_course/#{num}-#{word}/#{&1}")
+        end)
+
+      cheatsheet_paths = Enum.map(cheatsheet_slugs, &"_cheatsheets/#{&1}/cheatsheet.md")
+
+      {:ok, tree} = ContentTree.plan(document_paths ++ cheatsheet_paths)
+
+      graded_chapters =
+        chapters
+        |> Enum.filter(fn {_num, _word, _shape, graded?} -> graded? end)
+        |> MapSet.new(&elem(&1, 0))
+
+      front_matter =
+        Map.merge(
+          Map.new(tree.documents, fn {ref, _source_path} ->
+            {{:document, ref}, document_front_matter(ref, graded_chapters)}
+          end),
+          Map.new(cheatsheet_slugs, &{{:cheatsheet, &1}, %{"title" => "#{&1} cheatsheet"}})
+        )
+
+      declarations = %{
+        "sections" =>
+          section_words
+          |> Enum.with_index(1)
+          |> Enum.map(fn {word, index} -> %{"title" => "Section #{index} #{word}"} end),
+        "cheatsheets" => cheatsheet_slugs
+      }
+
+      {tree, front_matter, declarations}
+    end
+  end
+
+  defp document_front_matter(%DocumentRef{num: num, type: type}, graded_chapters) do
+    front_matter = %{"title" => "Chapter #{num} #{type}"}
+
+    if type == :exercise and MapSet.member?(graded_chapters, num),
+      do: Map.put(front_matter, "graded", true),
+      else: front_matter
   end
 
   # An option the caller did not ask about is left out, so that the defaults of

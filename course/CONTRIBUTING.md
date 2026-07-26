@@ -100,7 +100,8 @@ the dashboard functionality is only available during the current semester).
     and exercises, all identified with a simple numeric code (101, 102, 103,
     201, 202, etc).
   - `_data/course.yml`: The definition of the overall course sections into which
-    the materials are organized.
+    the materials are organized, and the order the cheatsheets are listed in.
+    Both are things no single document states.
   - `collections/_cheatsheets`: Cheatsheets for students to quickly reference
     key concepts and commands.
   - `collections/_json`: JSON data exports for integration with the dashboard
@@ -261,6 +262,14 @@ structures.
   - The main file in each subdirectory should be named `cheatsheet.md`.
   - A cheatsheet can have additional files, such as images or data files, placed
     in an `images` subdirectory next to the `cheatsheet.md` file.
+  - Every cheatsheet must be listed, in the order it should appear in, under the
+    `cheatsheets` key of [`_data/course.yml`](./_data/course.yml). A cheatsheet
+    that is not listed there, or a slug listed there with no such directory,
+    **fails the build**: unlike a chapter, a cheatsheet has no number to be
+    ordered by, so its position is a decision rather than something to derive.
+    Jekyll reads the same order from the `collections.cheatsheets.order` key of
+    [`_config.yml`](./_config.yml); keep the two in step until the Jekyll build
+    is retired.
 
 ### Document Front Matter
 
@@ -273,17 +282,26 @@ overwritten. See [Custom Jekyll Plugins](#custom-jekyll-plugins).
 The following front matter keys are meant to be set by authors:
 
 - `title`: The document title. May include emoji shortcodes (rendered by
-  [jemoji][jemoji]), e.g. `:rocket:`.
+  [jemoji][jemoji]), e.g. `:rocket:`. **Required**: every document and
+  cheatsheet must have one, and one without it fails the build. It is what the
+  document is called in the sidebar, in a browser tab and in the name of its
+  PDF, none of which has anywhere else to look. (Jekyll instead publishes those
+  as blanks.)
 - `graded: true`: Marks an exercise as graded. Graded exercises are flagged in
-  the UI and indexed as a distinct `graded-exercise` type for search.
+  the UI and indexed as a distinct `graded-exercise` type for search. Only an
+  exercise may be graded: a subject, a slide deck or a cheatsheet declaring it
+  fails the build rather than saying something that has no effect, and so does a
+  value that is neither `true` nor `false`.
 - `published: false`: Hides a work-in-progress document (standard Jekyll
   behaviour).
 - `cloud_server: creation` or `cloud_server: details`: Embeds the [cloud server
   widget](#cloud-server-widget) in an exercise. Use `creation` on the exercise
   where students first create their server, and `details` on later exercises
   that only need to display the server's connection details.
-- `sidebar_title`: An alternate, usually shorter, title to display in the
-  sidebar (used by some cheatsheets).
+- `sidebar_title`: An alternate, usually shorter, title for a **cheatsheet** to
+  be listed under in the sidebar, since a cheatsheet's own title names the thing
+  it is a cheatsheet of. It falls back to the title, and it is read from
+  cheatsheets only.
 - `excerpt_separator: <!-- more -->`: Marks the boundary of the excerpt shown at
   the top of a document. Write the separator itself in the body, where the
   excerpt is meant to end: a document that declares one and never writes it
@@ -662,10 +680,13 @@ directory:
   `section_title`, `course_type`, `layout`, `permalink`, `progress`,
   `has_slides`, `toc`, etc.), links subjects to their slides, attaches items to
   their sections, and prepares the data shown on the [home page](#home-page).
-  Its hooks also expose the application version and Git revision (read from
-  `../app/mix.exs` and Git), render each document's `raw_markdown` (used by the
-  [slide layout](#slides)), build the [search data](#search), and write the
-  [JSON exports](#json-exports).
+  All of that but the progress is now also computed in Elixir by
+  [`ArchiDep.CourseSite.Structure`][course-site-structure], which is what will
+  replace this generator; the two agree, chapter for chapter, on the structure
+  they describe. Its hooks also expose the application version and Git revision
+  (read from `../app/mix.exs` and Git), render each document's `raw_markdown`
+  (used by the [slide layout](#slides)), build the [search data](#search), and
+  write the [JSON exports](#json-exports).
 - [`utils.rb`](./_plugins/utils.rb): Shared `ArchiDep::Utils` helpers used by
   the custom tags — `render_markdown`, `render_icon` (renders an SVG from
   [`_includes/icons`](./_includes)) and the Markdown reference-link resolution
@@ -868,6 +889,7 @@ agents.
 [git-memoir]: https://github.com/AlphaHydrae/git-memoir
 [jekyll]: https://jekyllrb.com
 [jekyll-docs]: https://jekyllrb.com/docs
+[course-site-structure]: ../app/lib/archidep/course_site/structure.ex
 [emoji]: ../app/lib/archidep/emoji.ex
 [jemoji]: https://github.com/jekyll/jemoji
 [liquid]: https://shopify.github.io/liquid/

@@ -17,6 +17,9 @@ defmodule ArchiDep.CourseSite.Build do
   alias ArchiDep.CourseSite.Build.AssetDigest
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.Build.PageAssetDigest
+  alias ArchiDep.CourseSite.PageRef
+  alias ArchiDep.CourseSite.Renderer.Source
+  alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
 
@@ -32,6 +35,11 @@ defmodule ArchiDep.CourseSite.Build do
           | {:undecodable_manifest, Path.t()}
           | {:unreadable_source, String.t(), Path.t(), File.posix()}
           | {:unwritable_output, String.t(), Path.t(), File.posix()}
+          | {:missing_declarations, Path.t()}
+          | {:unreadable_declarations, Path.t(), File.posix()}
+          | {:undecodable_declarations, Path.t(), String.t()}
+          | {:unreadable_document, String.t(), Path.t(), File.posix()}
+          | {:unparsable_document, String.t(), Source.error()}
 
   @doc """
   What each file of a content directory is and where it is published.
@@ -47,6 +55,58 @@ defmodule ArchiDep.CourseSite.Build do
     |> Enum.sort()
     |> ContentTree.plan()
   end
+
+  @doc """
+  What the course declares about itself: the sections it is divided into and the
+  order of its cheatsheets, neither of which any one document states.
+
+  The file is read and decoded here and validated by
+  `ArchiDep.CourseSite.Structure.plan/3`, which is where the rest of what a
+  build makes of the course is decided.
+  """
+  @spec declarations(Path.t()) :: {:ok, term()} | {:error, nonempty_list(error())}
+  def declarations(file) do
+    with {:ok, contents} <- read_declarations(file), do: decode_declarations(file, contents)
+  end
+
+  @doc """
+  Every page of a content directory, taken apart.
+
+  A build reads each source once: what a page *is* comes from its front matter
+  and what it shows comes from its body, and both are in here. Every document is
+  read and every one of them parsed before the first failure is reported, so a
+  content directory takes one run to fix rather than one run per mistake.
+  """
+  @spec sources(ContentTree.t(), Path.t()) ::
+          {:ok, %{PageRef.t() => Source.t()}} | {:error, nonempty_list(error())}
+  def sources(%ContentTree{documents: documents, cheatsheets: cheatsheets}, content_dir) do
+    pages =
+      Enum.map(documents, fn {ref, source_path} -> {{:document, ref}, source_path} end) ++
+        Enum.map(cheatsheets, fn {slug, source_path} -> {{:cheatsheet, slug}, source_path} end)
+
+    {sources, errors} =
+      Enum.reduce(pages, {%{}, []}, fn {page, source_path}, {sources, errors} ->
+        case source(content_dir, source_path) do
+          {:ok, source} -> {Map.put(sources, page, source), errors}
+          {:error, error} -> {sources, [error | errors]}
+        end
+      end)
+
+    case Enum.sort(errors) do
+      [] -> {:ok, sources}
+      [_first | _rest] = errors -> {:error, errors}
+    end
+  end
+
+  @doc """
+  The front matter of every page of a content directory, which is what
+  `ArchiDep.CourseSite.Structure.plan/3` reads a page's name and kind from.
+  """
+  @spec front_matter(%{PageRef.t() => Source.t()}) ::
+          %{PageRef.t() => Structure.front_matter()}
+  def front_matter(sources) when is_map(sources),
+    do:
+      Map.new(sources, fn {page, %Source{front_matter: front_matter}} -> {page, front_matter} end)
 
   @doc """
   The names the files sitting next to the pages of a content directory are
@@ -151,6 +211,25 @@ defmodule ArchiDep.CourseSite.Build do
   def format_error({:undecodable_manifest, path}),
     do: "Asset manifest #{inspect(path)} is not JSON"
 
+  def format_error({:missing_declarations, path}),
+    do: "Course declarations #{inspect(path)} do not exist"
+
+  def format_error({:unreadable_declarations, path, reason}),
+    do: "Course declarations #{inspect(path)} could not be read: #{:file.format_error(reason)}"
+
+  def format_error({:undecodable_declarations, path, why}),
+    do: "Course declarations #{inspect(path)} are not YAML: #{why}"
+
+  def format_error({:unreadable_document, source_path, file, reason}),
+    do:
+      "Document #{inspect(source_path)} could not be read from #{inspect(file)}: #{:file.format_error(reason)}"
+
+  def format_error({:unparsable_document, source_path, :unterminated_front_matter}),
+    do: "Document #{inspect(source_path)} opens front matter it never closes"
+
+  def format_error({:unparsable_document, source_path, {:invalid_front_matter, why}}),
+    do: "Document #{inspect(source_path)} has invalid front matter: #{why}"
+
   def format_error({:unreadable_source, output_path, source_path, reason}),
     do:
       "File #{inspect(source_path)}, published at #{inspect(output_path)}, could not be read: #{:file.format_error(reason)}"
@@ -211,6 +290,45 @@ defmodule ArchiDep.CourseSite.Build do
     |> then(&{:ok, &1})
   rescue
     error in File.Error -> {:error, error.reason}
+  end
+
+  defp read_declarations(file) do
+    case File.read(file) do
+      {:ok, contents} -> {:ok, contents}
+      {:error, :enoent} -> {:error, [{:missing_declarations, file}]}
+      {:error, reason} -> {:error, [{:unreadable_declarations, file, reason}]}
+    end
+  end
+
+  defp decode_declarations(file, contents) do
+    case YamlElixir.read_from_string(contents) do
+      {:ok, declarations} ->
+        {:ok, declarations}
+
+      {:error, error} ->
+        {:error, [{:undecodable_declarations, file, Exception.message(error)}]}
+    end
+  end
+
+  defp source(content_dir, source_path) do
+    file = Path.join(content_dir, source_path)
+
+    with {:ok, contents} <- read_document(source_path, file),
+         do: parse_document(source_path, contents)
+  end
+
+  defp read_document(source_path, file) do
+    case File.read(file) do
+      {:ok, contents} -> {:ok, contents}
+      {:error, reason} -> {:error, {:unreadable_document, source_path, file, reason}}
+    end
+  end
+
+  defp parse_document(source_path, contents) do
+    case Source.parse(contents) do
+      {:ok, source} -> {:ok, source}
+      {:error, error} -> {:error, {:unparsable_document, source_path, error}}
+    end
   end
 
   defp read_manifest(manifest_file) do

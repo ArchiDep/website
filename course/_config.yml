@@ -22,6 +22,7 @@ collections:
       - command-line/cheatsheet.md
       - git/cheatsheet.md
       - sysadmin/cheatsheet.md
+      - docker/cheatsheet.md
     output: true
   course:
     output: true

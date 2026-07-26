@@ -8,3 +8,8 @@ sections:
   - title: Automated Deployment
   - title: Managed Deployment
   - title: Docker Deployment
+cheatsheets:
+  - command-line
+  - git
+  - sysadmin
+  - docker

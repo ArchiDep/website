@@ -12,6 +12,10 @@ and tooling that also apply here. Read that document first.
 - [Overview](#overview)
 - [Why this is not a bounded context](#why-this-is-not-a-bounded-context)
 - [Identities](#identities)
+- [What the course is](#what-the-course-is)
+  - [A chapter is the unit](#a-chapter-is-the-unit)
+  - [What the course declares about itself](#what-the-course-declares-about-itself)
+  - [What it refuses](#what-it-refuses)
 - [URL and link emission](#url-and-link-emission)
   - [What a build is](#what-a-build-is)
   - [Reference kinds and their policy](#reference-kinds-and-their-policy)
@@ -99,6 +103,70 @@ both rules are enforced, along with the two other ways a chapter can turn out
 not to be one chapter: a document written twice — the two slides layouts are one
 identity — and a number used by two directories, which are two pages by URL but
 one chapter to anything that records progress against a number.
+
+## What the course is
+
+[`Structure`](./structure.ex) is the course as a whole: its sections, the
+chapters of each and its cheatsheets, in reading order. It is what
+`ArchiDep.Course.Material` compiles and what the material's own navigation is
+drawn from, and it is a function of three inputs — the
+[`ContentTree`](./build/content_tree.ex), the front matter of every page of it,
+and the [declarations](#what-the-course-declares-about-itself).
+
+It holds the **structure** and nothing else. A chapter's progress — done, due,
+next or still to come — changes on every teaching session and is read at build
+time from a source of its own, so none of it is in here. That line is what lets
+the structure be compiled while the status stays a runtime read.
+
+### A chapter is the unit
+
+The material lists a chapter once, whatever documents it holds, so
+[`Chapter`](./structure/chapter.ex) **is** that entry: a page — the chapter's
+subject, its exercise, or a deck standing on its own — and, beside it, the deck
+that page presents. There is therefore no rule that hides a chapter's deck when
+it also has a subject: the deck was never a second entry to be filtered back
+out, which is what the Jekyll generator had to do.
+
+Only four fillings of a chapter directory are representable, and they are
+exactly the four the [chapter rules](#identities) leave: a subject, a subject
+with a deck, an exercise, or a deck alone. `Structure` assumes a tree that
+passed those rules rather than re-checking them — it is handed the documents of
+a chapter, not the question of whether they may sit together.
+
+A chapter's number is the whole of its position: its section is the first digit
+and its place within that section the last two. Those are **functions** of the
+number rather than fields of the chapter, and a section's number and slug are
+likewise functions of its position and its title, so nothing can be numbered for
+one place in the course and listed in another. A cheatsheet's shorter name for a
+list falls back to its title the same way.
+
+### What the course declares about itself
+
+Two things no document states: which sections the course has, and in what order
+its cheatsheets go. Both are declared in `course/_data/course.yml`, read by
+[`Build.declarations/1`](./build.ex) and validated by `Structure.plan/3` — bytes
+in the one module that fetches them, rules in the pure one beside it.
+
+The cheatsheet list is **closed**: a cheatsheet the list does not name, or a
+name with no cheatsheet behind it, is refused. Jekyll ordered them from a
+`_config.yml` key that named three of the four, so the fourth came last by
+accident rather than by decision.
+
+### What it refuses
+
+A section is declared while a chapter names one with a digit, and a title is
+prose an author can forget, so each of those can be wrong in a way nothing
+notices. Every one of them was silent before and is now a build failure listing
+every offending document rather than the first: a chapter numbered for a section
+nobody declared, a declared section no chapter is numbered for, a page with no
+title or with something else in its place, a document graded as neither yes nor
+no, a document that is graded and is not an exercise, two sections whose titles
+slug alike — which would put two of the navigation's fold checkboxes under one
+identifier — and the two halves of the closed cheatsheet list.
+
+The declarations are the one exception to reporting everything: when the list of
+sections cannot be read, nothing else about the course can be trusted, so those
+are reported alone.
 
 ## URL and link emission
 
@@ -243,6 +311,14 @@ it, documented there rather than here:
 
 Three things about the shape of it are worth knowing before reading any of them.
 
+**A page is read once.** `sources/2` takes every document and cheatsheet of a
+content directory apart with [`Source`](./renderer/source.ex) and keys them by
+[`PageRef`](./page_ref.ex), because what a page _is_ comes from its front matter
+and what it shows comes from its body: `front_matter/1` projects the first for
+[`Structure`](#what-the-course-is) and the renderer takes the whole of it.
+`declarations/1` is the other read that is not a file of the site — see [what
+the course declares about itself](#what-the-course-declares-about-itself).
+
 **Naming a file and writing it are separate.** What a file is called follows
 from its content, so `page_asset_manifest/2` answers that by reading alone and
 `publish_page_assets/4` does the copying. A caller that only needs to resolve
@@ -263,10 +339,16 @@ as many runs to fix as it has mistakes.
 
 ### Checking it against the real content
 
-`mix archidep.course_site.assets` builds both manifests from the real content
-and the real assets and renders every document against them, so that a reference
-no longer resolving is a command anyone can run rather than something noticed
-once. It writes nothing.
+Two commands read the real content so that what would otherwise be noticed once
+is something anyone can run. Neither writes anything.
+
+- `mix archidep.course_site.assets` builds both manifests from the real content
+  and the real assets and renders every document against them, so that a
+  reference no longer resolving is a command rather than a broken image.
+- `mix archidep.course_site.structure` works out [what the course
+  is](#what-the-course-is) from the real content and the real declarations and
+  prints it, so that a chapter in an undeclared section, a page with no title or
+  a cheatsheet nobody listed is a command rather than a blank entry.
 
 ## Rendering
 
@@ -684,6 +766,15 @@ subsystem:
   identity round-trips hold, and that rendering a parsed document is rendering
   the Markdown — the premise the pass seams rest on. Generators live in
   [`CourseSiteFactory`](../../../test/support/course_site_factory.ex).
+- [`Structure`](./structure.ex) is tested by building a course out of
+  `ContentTree.plan/1` and a front-matter map written at the call site, and
+  asserting the whole `%Structure{}` by `==` — a section's chapters are what the
+  test is about, so a projection of them would be a projection of the thing under
+  test. Its properties are over `CourseSiteFactory.course_generator/0`, which
+  generates a course all three inputs agree on: that every document of the tree is
+  part of exactly one chapter, which is the listed-once rule stated as a rule, and
+  that a chapter is found by its number and listed under the section that number
+  names.
 - The renderer is driven by the tags and passes in
   [`CourseSiteRendererTestTags`](../../../test/support/course_site_renderer_test_tags.ex)
   rather than by the course's real ones, so that a test of the pipeline does not

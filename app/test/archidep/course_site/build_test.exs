@@ -4,6 +4,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
   alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.Renderer.Source
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
 
@@ -41,6 +42,116 @@ defmodule ArchiDep.CourseSite.BuildTest do
       assert Build.content_tree(content_dir) ==
                {:ok,
                 %ContentTree{documents: %{}, cheatsheets: %{}, page_assets: %{}, ignored: []}}
+    end
+  end
+
+  describe "declarations/1" do
+    test "reads what the course declares about itself", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "course.yml")
+
+      File.write!(file, """
+      ---
+      sections:
+        - title: Introduction
+        - title: Version Control
+      cheatsheets:
+        - command-line
+        - git
+      """)
+
+      assert Build.declarations(file) ==
+               {:ok,
+                %{
+                  "sections" => [%{"title" => "Introduction"}, %{"title" => "Version Control"}],
+                  "cheatsheets" => ["command-line", "git"]
+                }}
+    end
+
+    test "reports declarations that are not there", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "course.yml")
+
+      assert Build.declarations(file) == {:error, [{:missing_declarations, file}]}
+    end
+
+    test "reports declarations that are not YAML", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "course.yml")
+      File.write!(file, "sections:\n  - title: Introduction\n   - title: Security\n")
+
+      assert Build.declarations(file) ==
+               {:error,
+                [
+                  {:undecodable_declarations, file,
+                   ~s{Unexpected "yamerl_collection_start" token following a "yamerl_collection_end" token (line: 3, column: 4)}}
+                ]}
+    end
+  end
+
+  describe "sources/2" do
+    test "takes every page of a content directory apart", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(content_dir, "_course/507-dns/subject.md", "---\ntitle: DNS\n---\n\nA name.\n")
+      write!(content_dir, "_cheatsheets/git/cheatsheet.md", "---\ntitle: Git\n---\n\nA commit.\n")
+
+      {:ok, tree} = Build.content_tree(content_dir)
+      {:ok, subject} = Source.parse("---\ntitle: DNS\n---\n\nA name.\n")
+      {:ok, cheatsheet} = Source.parse("---\ntitle: Git\n---\n\nA commit.\n")
+
+      assert Build.sources(tree, content_dir) ==
+               {:ok,
+                %{
+                  {:document, DocumentRef.new(507, "dns", :subject)} => subject,
+                  {:cheatsheet, "git"} => cheatsheet
+                }}
+    end
+
+    test "reports every page that cannot be taken apart rather than the first", %{
+      tmp_dir: tmp_dir
+    } do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(content_dir, "_course/101-command-line/subject.md", "---\ntitle: Command Line\n")
+      write!(content_dir, "_cheatsheets/git/cheatsheet.md", "---\ntitle: [\n---\n\nA commit.\n")
+
+      {:ok, tree} = Build.content_tree(content_dir)
+
+      assert Build.sources(tree, content_dir) ==
+               {:error,
+                [
+                  {:unparsable_document, "_cheatsheets/git/cheatsheet.md",
+                   {:invalid_front_matter, "malformed yaml"}},
+                  {:unparsable_document, "_course/101-command-line/subject.md",
+                   :unterminated_front_matter}
+                ]}
+    end
+  end
+
+  describe "front_matter/1" do
+    test "reads what every page of a content directory says it is", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(
+        content_dir,
+        "_course/205-php-todolist/exercise.md",
+        "---\ntitle: PHP Todolist\ngraded: true\n---\n\nBuild it.\n"
+      )
+
+      write!(
+        content_dir,
+        "_cheatsheets/docker/cheatsheet.md",
+        "A cheatsheet with no front matter"
+      )
+
+      {:ok, tree} = Build.content_tree(content_dir)
+      {:ok, sources} = Build.sources(tree, content_dir)
+
+      assert Build.front_matter(sources) == %{
+               {:document, DocumentRef.new(205, "php-todolist", :exercise)} => %{
+                 "title" => "PHP Todolist",
+                 "graded" => true
+               },
+               {:cheatsheet, "docker"} => %{}
+             }
     end
   end
 
@@ -259,6 +370,46 @@ defmodule ArchiDep.CourseSite.BuildTest do
                 ["/course/808-consul/images/a-ff00.png", "/course/808-consul/images/a.png"]}
              ) ==
                ~s{Published path "/course/808-consul/images/a-ff00.png" would be written by "/course/808-consul/images/a-ff00.png" and "/course/808-consul/images/a.png"}
+    end
+
+    test "describes declarations that are not there" do
+      assert Build.format_error({:missing_declarations, "/course/_data/course.yml"}) ==
+               ~s{Course declarations "/course/_data/course.yml" do not exist}
+    end
+
+    test "describes declarations that could not be read" do
+      assert Build.format_error({:unreadable_declarations, "/course/_data/course.yml", :eacces}) ==
+               ~s{Course declarations "/course/_data/course.yml" could not be read: permission denied}
+    end
+
+    test "describes declarations that are not YAML" do
+      assert Build.format_error(
+               {:undecodable_declarations, "/course/_data/course.yml", "malformed yaml"}
+             ) ==
+               ~s{Course declarations "/course/_data/course.yml" are not YAML: malformed yaml}
+    end
+
+    test "describes a document that could not be read" do
+      assert Build.format_error(
+               {:unreadable_document, "_course/809-etcd/subject.md",
+                "/course/collections/_course/809-etcd/subject.md", :eacces}
+             ) ==
+               ~s{Document "_course/809-etcd/subject.md" could not be read from "/course/collections/_course/809-etcd/subject.md": permission denied}
+    end
+
+    test "describes a document that opens front matter it never closes" do
+      assert Build.format_error(
+               {:unparsable_document, "_course/810-vault/subject.md", :unterminated_front_matter}
+             ) ==
+               ~s{Document "_course/810-vault/subject.md" opens front matter it never closes}
+    end
+
+    test "describes a document whose front matter is not valid" do
+      assert Build.format_error(
+               {:unparsable_document, "_course/811-istio/subject.md",
+                {:invalid_front_matter, "malformed yaml"}}
+             ) ==
+               ~s{Document "_course/811-istio/subject.md" has invalid front matter: malformed yaml}
     end
 
     test "describes a manifest of an unsupported version" do

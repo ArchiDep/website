@@ -210,9 +210,15 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       a chapter number used twice; the real corpus obeys all of it over its 50
       chapters — see [Chapter document
       invariants](#chapter-document-invariants).
-- [ ] Port the filename→metadata logic to deterministic Elixir — the
-      _structure_ only, the status aggregation belonging to the progress source
-      below — see [Metadata generation](#metadata-generation).
+- [x] Port the filename→metadata logic to deterministic Elixir — the _structure_
+      only, the status aggregation belonging to the progress source below.
+      **Done: `ArchiDep.CourseSite.Structure`, where a chapter rather than a
+      document is the unit**, which is what makes the sidebar's list-once rule a
+      shape instead of a filter; the sections and the cheatsheet order are
+      declared in `_data/course.yml`, five silent holes are now build failures,
+      and every structural field of the model was diffed against the
+      `archidep.json` Jekyll builds — see [Metadata
+      generation](#metadata-generation).
 - [ ] Keep and strengthen `ArchiDep.Course.Material` into a typed,
       compile-checked model of the course — see [A richer Course.Material
       model](#a-richer-coursematerial-model).
@@ -2054,6 +2060,63 @@ not the union of all of them, and each list filters by a different rule
 only subjects and exercises, next time keeps documents that are not a subject's
 slides).
 
+**Corrections while implementing:**
+
+- **Most of the filename logic was already ported**, so this task was the model
+  rather than the filenames. `DocumentRef.parse_source_path/1` had already
+  settled `num`, `course_slug` and `course_type` — both slides layouts included
+  — and `PageRef.output_path/1` the `permalink`. What was left was the sections,
+  the front matter and the listing.
+- **A chapter is the unit, not a document, which deletes the rule this task was
+  written around.** The Ruby lists every document of a section and then filters
+  the slides of a chapter that also has a subject back out. `Structure.Chapter`
+  is instead one entry — a page (subject, exercise, or a deck of its own) and,
+  beside it, the deck that page presents — so there is no second entry to
+  filter. `has_slides` becomes `slides != nil`, and only the four fillings of a
+  chapter directory that `ContentTree` permits are representable at all.
+- **A chapter's position is a function of its number, not a field.** `section`,
+  `section_chapter`, a section's `num` and `slug`, and a cheatsheet's fallback
+  name in a list are all derived rather than stored — the same reason
+  `home_at_base?` was dropped from `UrlContext`: a chapter cannot then be
+  numbered for one place in the course and listed in another.
+- **The cheatsheet order was an undocumented `_config.yml` key with a gap in
+  it.** Jekyll ordered the cheatsheets from `collections.cheatsheets.order`,
+  which named three of the four; `docker` was unlisted and came last by
+  accident. The order is now declared in `_data/course.yml` as a **closed** list
+  — an unlisted cheatsheet, or a listed slug with no directory, fails the build
+  — and `docker` was added to the Jekyll key too so the two agree until cutover.
+- **The declarations stay YAML, in `_data/course.yml`.** Section titles are
+  author-facing prose that changes with the syllabus, the compile-time guarantee
+  is `Course.Material`'s either way (the file becomes an `@external_resource`
+  alongside the Markdown), and Jekyll still needs the file until cutover.
+  `Build.declarations/1` reads it and `Structure.plan/3` validates it, so bytes
+  stay in the one module that fetches them. The file moves out of `_data/` at
+  [cutover](#cutover).
+- **Five silent holes are now build failures**, each listing every offending
+  document rather than the first: a chapter numbered for a section nobody
+  declared (the Ruby indexed `sections[section - 1]` and got `nil`), a declared
+  section no chapter is numbered for, a page with no title or with something
+  else in its place, a document graded as neither `true` nor `false`, and a
+  document that is graded and is not an exercise. A sixth is new rather than
+  silent: two section titles that slug alike would put two of the navigation's
+  fold checkboxes under one identifier, so folding one folds the other.
+- **`sidebar_title` is read from cheatsheets only.** Jekyll's shared
+  `chapter-title.html` offers it to a chapter too, but `archidep.json` drops it,
+  so the application's sidebar could never honour one and no chapter writes one.
+  Keeping it a cheatsheet's is what the model says; a chapter writing one is
+  ignored exactly as it is today.
+- **`Build` gained the two reads this needed, and one of them replaces a double
+  parse.** `sources/2` takes every page of a content directory apart once, keyed
+  by `PageRef`, since what a page _is_ comes from its front matter and what it
+  shows from its body; `front_matter/1` projects the half `Structure` reads.
+- **The fidelity check is a diff against the checked-in `archidep.json`.** Every
+  structural field of every document (`num`, `title`, `course_type`, `graded`,
+  `course_slug`, `section`, `section_chapter`, `slides`, `url`) and the whole
+  ordered cheatsheet list match what Jekyll's generator produces, over all 8
+  sections, 50 chapters and 4 cheatsheets. `mix archidep.course_site.structure`
+  is the standing version of it: it builds the structure from the real content
+  and prints it, and writes nothing.
+
 ### A richer Course.Material model
 
 `ArchiDep.Course.Material` **stays a compiled module** — dynamic parts of the
@@ -2530,6 +2593,16 @@ fallback flag is left behind. Keep PDF generation and the search scripts running
 against the new output. The deployed archive used as the visual reference during
 the [HTML fidelity gate](#html-fidelity-gate) stays up as the previous-year
 archive regardless — there is nothing to discard after cutover.
+
+Two things move rather than being deleted, because the content still needs them
+once `_data/` and `_config.yml` are gone:
+
+- **`_data/course.yml`**, which declares the sections of the course and the order
+  of its cheatsheets ([metadata generation](#metadata-generation)). It is only in
+  `_data/` because that is where Jekyll looks; the Elixir build is told where it
+  is.
+- **The cheatsheet order in `_config.yml`**, which is the same list a second
+  time and is kept in step with the first only until here.
 
 ---
 
