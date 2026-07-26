@@ -430,7 +430,7 @@ $> cd ./Documents/TopSecret
 
 You can also _not go anywhere_:
 
-{% highlight bash mark_lines="4" %}
+```bash highlight_lines="4"
 $> pwd
 /Users/Batman
 
@@ -438,7 +438,7 @@ $> cd .
 
 $> pwd
 /Users/Batman
-{% endhighlight %}
+```
 
 Or compress the current directory:
 
@@ -452,7 +452,7 @@ This does not seem very useful now, but it will be in further tutorials.
 
 To go up into the parent directory, use the `..` path (**don't forget the space between `cd` and `..`**):
 
-{% highlight bash mark_lines="4" %}
+```bash highlight_lines="4"
 $> pwd
 /Users/Batman/Documents
 
@@ -460,7 +460,7 @@ $> cd ..
 
 $> pwd
 /Users/Batman
-{% endhighlight %}
+```
 
 You can also drag and drop a directory from your Explorer or your Finder to the CLI to see its absolute path automaticaly written:
 

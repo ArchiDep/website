@@ -226,7 +226,7 @@ At this point, you have a database. Congratulations. But you still need to set
 its tables up. As you did in the first Todolist tutorial, you will be running
 the `todolist.sql` script on the database, albeit remotely.
 
-{% note: type: more %}
+{% note type: more %}
 
 The script is a bit different than the previous one because of two factors.
 First, we are using PostgreSQL instead of MySQL. Second, we do not need to

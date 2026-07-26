@@ -131,22 +131,34 @@ constraints](#goals-and-constraints).
       and four spec corrections recorded below; the tag output of every subject,
       exercise and cheatsheet was diffed against a Jekyll build — see [Custom
       block tags](#custom-block-tags).
-- [ ] Reproduce reference-link resolution into extracted tag blocks and slides —
-      see [Reference-link resolution](#reference-link-resolution).
-- [ ] Handle the two `{% highlight %}` blocks of
-      `101-command-line/subject.md`, the last unported tag and the one thing that
-      stops that document from rendering at all. Either register it as a raw-body
-      tag or convert both to fenced code blocks; both pass `mark_lines="4"`, so
-      this is settled together with the `lumis` swap below — see [Custom block
-      tags](#custom-block-tags).
+- [x] Reproduce reference-link resolution into extracted tag blocks and slides.
+      **Done: `Source` collects the definitions, `Markdown` appends them to
+      every fragment it parses, and `render_slides/1` substitutes them into the
+      deck**, the two paths differing because a deck never reaches a Markdown
+      renderer — see [Reference-link resolution](#reference-link-resolution).
+- [x] Handle the two `{% highlight %}` blocks of `101-command-line/subject.md`,
+      the last unported tag and the one thing that stopped that document from
+      rendering at all. **Done: both are fenced code blocks carrying MDEx's
+      `highlight_lines="4"` decorator**, so there is no `highlight` tag to port
+      and the document renders. The mark itself waits on the `lumis` swap below,
+      and the decorator costs those two blocks their Jekyll rendering — see
+      [Custom block tags](#custom-block-tags).
 - [ ] Move syntax highlighting from rouge to `lumis` (MDEx's highlighter):
-      replace `theme/src/highlight-{light,dark}.css` with the matching `lumis`
-      theme stylesheets and update the `.highlighter-rouge` / `pre.highlight`
-      selectors in `theme/src/course.css` — see [Spike results](#spike-results).
-- [ ] Fix the two `{% note: %}` tag-name typos in
-      `514-certbot-deployment/exercise.md` and `704-render-deployment/exercise.md`,
-      which Ruby Liquid tolerates but `Solid` rejects — see [Spike
-      results](#spike-results).
+      enable it (`config :mdex_native, syntax_highlighter: :lumis`, which the
+      NIF is not currently compiled with), replace
+      `theme/src/highlight-{light,dark}.css` with the matching `lumis` theme
+      stylesheets and update the `.highlighter-rouge` / `pre.highlight` selectors
+      in `theme/src/course.css`. The `.highlight .hll` rule of those two
+      stylesheets becomes `lumis`' `l-highlighted` class, which is what marks the
+      line the two fences of `101-command-line/subject.md` ask for. Document the
+      fence decorator in the course writing guidelines with this item, not
+      before: it is what an author writes for a marked line, and it does nothing
+      until this swap — see [Spike results](#spike-results).
+- [x] Fix the two `{% note: %}` tag-name typos in
+      `514-certbot-deployment/exercise.md` and
+      `704-render-deployment/exercise.md`, which Ruby Liquid tolerates but
+      `Solid` rejects. **Done**; both documents render, and both notes keep
+      rendering under Jekyll — see [Spike results](#spike-results).
 - [ ] Generate heading IDs and the "On this page" TOC from the AST — see [TOC
       and heading anchors](#toc-and-heading-anchors).
 - [ ] Replace the smaller Jekyll plugins (`jemoji`, `target-blank`, `seo-tag`,
@@ -491,7 +503,8 @@ a stray `{{`/`{%` in a code sample — the risk flagged above remains latent:
   `{% note: type: more %}` in `704-render-deployment/exercise.md` are **content
   typos** (a stray colon after the tag name). Ruby Liquid tolerates them —
   both render as proper notes today — while `Solid` reads the tag name as
-  `note:` and fails. Fix the two sources; no code change is warranted.
+  `note:` and fails. Fix the two sources; no code change is warranted. **Both
+  are fixed**, and both documents render.
 
 Two divergences worth recording for the [HTML fidelity gate](#html-fidelity-gate):
 
@@ -507,7 +520,11 @@ Two divergences worth recording for the [HTML fidelity gate](#html-fidelity-gate
   per-theme stylesheets, including solarized light and dark variants, so the
   migration is to swap the two highlight stylesheets and update the structural
   selectors — a known, bounded task rather than an unknown. Inline code also
-  loses its `language-plaintext highlighter-rouge` classes.
+  loses its `language-plaintext highlighter-rouge` classes. `lumis` also subsumes
+  what `{% highlight %}`'s `mark_lines` did: a fence decorator asks for the line
+  and `l-highlighted` replaces the `.highlight .hll` rule of the two highlight
+  stylesheets (see [Custom block tags](#custom-block-tags)). Until it is enabled,
+  code blocks are unhighlighted and unmarked.
 - **A lone raw `<img>` line becomes an HTML block, not a paragraph.** kramdown
   wraps it in `<p>`; CommonMark does not. This affects the `<img class='w80'/>`
   lines in `507-dns/subject.md` and similar.
@@ -1297,15 +1314,17 @@ never given is reported in one wording wherever it was asked for). They are
 documented in
 [`app/lib/archidep/course_site/CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md).
 
-**Zero content edits were needed**, as this section predicted: the classes,
-identifiers and structure every tag of every subject, exercise and cheatsheet
-emits were diffed against the Jekyll build in `tmp/app-priv-static-2026-07-25`
-and match, save the three fixes below. The only documents that do not render are
-the ones already on the backlog — the two `{% note: %}` typos, the three missing
-excerpt separators, and `101-command-line/subject.md`, whose
-[`{% highlight %}`](#custom-block-tags) blocks are the last unported tag.
+**Zero content edits were needed by the six tags**, as this section predicted:
+the classes, identifiers and structure every tag of every subject, exercise and
+cheatsheet emits were diffed against the Jekyll build in
+`tmp/app-priv-static-2026-07-25` and match, save the three fixes below. The two
+`{% note: %}` typos and the two `{% highlight %}` blocks of
+`101-command-line/subject.md` have since been fixed in the content, so the only
+documents that still do not render are the three subjects that declare an
+excerpt separator they never write (chapters 411, 505 and 601 — see [Shared
+Markdown rendering core](#shared-markdown-rendering-core)).
 
-Four corrections to this section, found while implementing it:
+Five corrections to this section, found while implementing it:
 
 - **Three Ruby bugs are fixed rather than reproduced.** (1) A `cols` column has
   never carried the classes its marker asks for: `col_class = m and m[1] ? … :
@@ -1341,6 +1360,22 @@ endnote %}`.
   source, and its threshold is still undecided — see [Progressive solution
   reveal](#progressive-solution-reveal). The tag renders every solution, as
   today.
+- **`{% highlight %}` is not ported at all: a fence says what it said.** MDEx
+  reads `lumis` options from a code fence's info string (its [code block
+  decorators](https://mdex.hexdocs.pm/code_block_decorators.html)), so a fence
+  opened with `bash highlight_lines="4"` is `{% highlight bash mark_lines="4"
+%}` with nothing left for a tag to do, and the two blocks of
+  `101-command-line/subject.md` — the whole of the tag's use in the corpus — are
+  now fences. `lumis` puts `l-highlighted` on the line the decorator names,
+  which is the `.hll` span rouge emits today. Two consequences, both accepted:
+  the mark is **invisible until `lumis` is enabled**, because MDEx drops the
+  decorator when highlighting is off (the class stays a plain `language-bash`),
+  and **kramdown does not tolerate the decorator** — its fenced-block pattern
+  accepts a bare language token and nothing else, so under Jekyll these two
+  blocks now render as literal text. That is a transitional regression on two
+  blocks of one chapter, and it is the reason this is a content edit rather than
+  a ported tag: no fence syntax satisfies both renderers, and neither does a
+  plain fence, which loses the mark outright.
 
 The original design, for the record:
 
@@ -1992,7 +2027,7 @@ Jekyll-specific surface inside that content is remarkably thin:
 | `{% link path %}` (Jekyll core tag, path → URL)                                | 94                     | Inline cross-doc links         |
 | `{% include icons/… %}`                                                        | 44 (all icons)         | SVG inlining                   |
 | `{{ … \| relative_file_url }}`                                                 | 22                     | Per-page asset URLs            |
-| `{% highlight %}`                                                              | 2                      | Could be plain fenced code     |
+| `{% highlight %}`                                                              | 0 (was 2)              | Now decorated fenced code      |
 | **General Liquid logic** (`if`/`for`/`assign`/`capture`/`case`) **in content** | **0**                  | Only in `archidep.json.liquid` |
 | kramdown attribute lists `{:.foo}`                                             | 0                      | —                              |
 | Footnotes / definition lists                                                   | 1 / 0                  | negligible                     |

@@ -147,7 +147,7 @@ There are two things you need to do:
 Make sure your sites work at their new address. If they do, the `certbot`
 command should now also detect them.
 
-{% note: type: tip %}
+{% note type: tip %}
 
 It may take a few minutes for the new DNS entries to propagate. If you are sure
 the new DNS entries are correct but it doesn't work, try again a little while
