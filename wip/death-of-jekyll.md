@@ -34,6 +34,7 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Reference-link resolution](#reference-link-resolution)
   - [TOC and heading anchors](#toc-and-heading-anchors)
   - [Smaller Jekyll plugins](#smaller-jekyll-plugins)
+    - [One emoji vocabulary](#one-emoji-vocabulary)
   - [Slides](#slides)
   - [Asset URLs](#asset-urls)
   - [Chapter document invariants](#chapter-document-invariants)
@@ -166,7 +167,12 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       assigned, and `HeadingIdentifiers` keeps a heading's emoji shortcode out
       of its identifier — a deliberate behaviour change that moves 359 anchors,
       recorded below.
-- [ ] Replace the smaller Jekyll plugins (`jemoji`, `target-blank`, `seo-tag`,
+- [x] Replace `jemoji` with one emoji vocabulary the course material and the
+      application share. **Done: one closed registry (`ArchiDep.Emoji`) and one
+      emitter, drawing self-hosted Twemoji SVGs**, swept over the finished page
+      by `EmojiImages`, with eight corrections recorded below — see [One emoji
+      vocabulary](#one-emoji-vocabulary).
+- [ ] Replace the three remaining Jekyll plugins (`target-blank`, `seo-tag`,
       `feed`) — see [Smaller Jekyll plugins](#smaller-jekyll-plugins).
 - [ ] Handle slides with tag/asset preprocessing only (no Markdown→HTML step) —
       see [Slides](#slides).
@@ -257,6 +263,12 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 
 - [ ] Reuse the existing `npm run idx`/`lunr` path initially, building
       `search.json` with Floki — see [Search index](#search-index).
+- [ ] Draw the search dialog's own icons from the emoji registry. `search.ts`
+      writes the five type icons and the two of its result and empty-state
+      templates as characters, which is the last place the [emoji
+      vocabulary](#one-emoji-vocabulary) is not enforced; the client needs a
+      generated name→URL map, since only the build knows the digested names —
+      see [Search index](#search-index).
 - [ ] Run an HTML fidelity diff / visual-regression gate against current Jekyll
       output — see [HTML fidelity gate](#html-fidelity-gate).
 - [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stage —
@@ -1594,16 +1606,6 @@ Graded exercise` and `:scroll: Legend` for an exercise, `Presentation` for a
 
 Replace the remaining plugins:
 
-- **`jemoji`** — `:shortcode:` → emoji; needed in titles _and_ tag output (e.g.
-  `:books:`). Port the shortcode→emoji map. It is an HTML pass rather than an
-  AST one because a tag writes shortcodes into the wrapper around its body,
-  which was never Markdown (see [Shared Markdown rendering
-  core](#shared-markdown-rendering-core)). Heading IDs no longer constrain the
-  ordering: a heading's shortcodes are moved out of the text the slugger reads
-  before the page is rendered, so the sweep finds them wherever it runs — see
-  [TOC and heading anchors](#toc-and-heading-anchors). It must, however, agree
-  with `HeadingIdentifiers` on what a shortcode _is_: a shortcode that opens the
-  text or stands after a space.
 - **`jekyll-target-blank`** — a trivial pass adding `target="_blank"` to
   external links, over the **finished HTML** rather than the Markdown document:
   184 links in 28 files sit inside block-tag bodies, which are already HTML by
@@ -1616,6 +1618,160 @@ Replace the remaining plugins:
 - **`jekyll-seo-tag`** — move into the HEEx `<head>` (and the static layout's
   head for standalone mode).
 - **`jekyll-feed`** — drop, or reimplement if the RSS feed is still wanted.
+  Nothing links to `/feed.xml`; its only trace is the `{%- feed_meta -%}` call in
+  `course/_includes/head.html`.
+
+The fourth, **`jemoji`**, is done, and was not a port of the plugin.
+
+#### One emoji vocabulary
+
+**Decided and done: one closed registry and one emitter, rendering self-hosted
+Twemoji SVGs, used by the course material and the application alike.**
+
+The sweep that draws them is an HTML pass rather than an AST one because a tag
+writes shortcodes into the wrapper around its body, which was never Markdown
+(see [Shared Markdown rendering core](#shared-markdown-rendering-core)). Heading
+IDs do not constrain the ordering: a heading's shortcodes are moved out of the
+text the slugger reads before the page is rendered, so the sweep finds them
+wherever it runs — see [TOC and heading anchors](#toc-and-heading-anchors). It
+does, however, agree with `HeadingIdentifiers` on what a shortcode _is_: one
+that opens the text or stands after a space.
+
+Replacing `jemoji` is not the problem it looks like, because the plugin is not
+where the mess is. Counted over both halves of the project, the emoji of this
+course are decided in **six independent places**, in two spellings that do not
+agree:
+
+| Where                                                            | Spelling                                 | What                                                           |
+| ---------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------- |
+| Course content, 388 shortcodes                                   | `jemoji` → `<img>` hotlinked from GitHub | 11 distinct, mostly heading decoration                         |
+| Course layouts (`chapter-title`, `sidebar`, `exercise`)          | literal Unicode                          | 🎬 🏆 🛠️ 📝 📖                                                 |
+| Course search UI (`search.ts`, its templates)                    | literal Unicode                          | the same five, plus 🏠 🤷 🚀                                   |
+| Course prose                                                     | literal Unicode                          | 🛠️ ×10, 🎉 ×4, 🍺 🍻 💙 💸 😭 🤔                               |
+| The application (`core_components`, `layouts`, `dashboard_live`) | literal Unicode                          | 📚 💥 🎉 ⚔️ and the same five sidebar icons                    |
+| The new renderer's own tags (`CalloutTag`)                       | both                                     | a literal 🛠️ beside its siblings' `:books:`, nine celebrations |
+
+Two symptoms make the cost concrete. The `more` and `troubleshooting` notes are
+the _same_ component on both sides, and their 📚 and 💥 are a GitHub CDN image
+in the course and a system font glyph in the dashboard. And the trophy is
+written `🏆` in the course layouts and `🏆️` in the application — the same emoji
+with a variation selector on one side only, i.e. two different byte sequences
+chosen independently in two files.
+
+So the unit of work is the **vocabulary**, not the plugin:
+
+- `ArchiDep.Emoji` — a pure registry of the ~34-emoji union of both sides,
+  mapping a name to the character it stands for and the asset it is drawn from.
+  It is **closed on purpose**: this vocabulary is small and _meaningful_
+  (`:exclamation:` says "do this", `:boom:` says "here is what goes wrong"), and
+  a closed set is what makes "the same emoji everywhere" reviewable instead of
+  aspirational. Adding one is an entry plus an SVG.
+- One emitter on that registry is the only code that knows what an emoji _looks
+  like_ in HTML, which is what keeps the decision below reversible.
+- Its consumers: the HTML pass over a finished page, the block tags' own icons,
+  a HEEx component for the application, and a generated name→URL map for
+  `search.ts` — the one consumer that lives in JavaScript and therefore has to
+  be handed its URLs through the [seam](#url-and-link-emission-seam).
+
+**Why images rather than Unicode**, given that the vocabulary is what matters
+and either form would satisfy it:
+
+- **The theme is already written against images.** `course.css`, `toc.css` and
+  `slides.css` hang a heading's emoji into the left margin with `float` and a
+  negative margin keyed on `img.emoji`, and the exercise legend does the same.
+  That layout needs a box of known size; redoing it against font-sized spans is
+  real work for a worse result. `theme.css` bundles the application's stylesheet
+  with the course's, so the dashboard inherits the same rules for free.
+- **A glyph is not the same picture everywhere.** Unicode means the course looks
+  different on macOS, Windows and Linux — and several emoji in use (⚔️ 🏛️ 🛠️)
+  are text-presentation codepoints that need a variation selector nobody applies
+  consistently, which is exactly what the 🏆/🏆️ split is.
+- **PDF generation stops depending on installed fonts.** `npm run pdf` drives
+  Puppeteer; an image renders the same wherever Chrome runs.
+- **It fixes a standalone-mode bug that already exists.** Every emoji of the
+  site is currently an external request to `github.githubassets.com`, which
+  contradicts the self-contained output [archival
+  mode](#standalone--archival-mode) is supposed to produce. Self-hosting ~34
+  SVGs makes those builds genuinely offline.
+
+The assets are [Twemoji](https://github.com/jdecked/twemoji) SVGs, vendored from
+the maintained fork at a pinned tag: GitHub's own emoji images derive from
+Twemoji, so the course keeps the look it has today. The graphics are CC-BY 4.0,
+which the project's own attribution note says a mention in a README satisfies.
+
+**Rules the sweep has to keep**, beyond agreeing with `HeadingIdentifiers` on
+what a shortcode is:
+
+- **Code is not swept.** `jemoji` skips `<code>` and `<pre>`, and the content
+  needs it to: `404-unix-basics/subject.md` alone holds six `/etc/passwd` lines
+  such as `jde:x:1004:` that are shortcode-shaped by accident, and there are 66
+  `:00:` timestamps and 18 `:--:` table separators elsewhere.
+- **An unknown shortcode is left alone, in the body.** That leniency is what
+  keeps those accidents working, and it is `jemoji`'s behaviour.
+- **Both spellings converge.** The sweep rewrites the registry's own characters
+  as well as its shortcodes, so prose that types 🍺 and prose that writes
+  `:beer:` produce the same image and no content has to be normalised first.
+- **An emoji outside the registry is reported.** This is what enforces the
+  vocabulary rather than merely offering it. The check is deliberately narrow —
+  a character in the pictographic blocks, or a symbol written with an explicit
+  variation selector — so that ✓, ♯ and the arrows are never mistaken for
+  decoration.
+- **The pass is a scanner, not a DOM round-trip.** `Toc` already reads the
+  finished page with regexes and the application has no HTML library outside the
+  test environment; re-emitting every page through a parser would also put the
+  [fidelity gate](#html-fidelity-gate) at the mercy of that parser's
+  normalisation.
+
+Two consequences worth stating before they surprise someone. The fidelity gate
+needs this whitelisted: **every** emoji `src` changes, and the sites that are
+Unicode today become images. And slides keep their Unicode for now — a deck is
+never converted to HTML here, so its shortcodes are the [slides
+task](#slides)'s to sweep over the Markdown it hands to reveal.js.
+
+**Corrections while implementing:**
+
+- **The registry is a top-level `ArchiDep.Emoji`, not part of `CourseSite`.**
+  The dashboard's confetti is not course material, and making the application
+  reach into the course renderer for it would put the dependency the wrong way
+  round. Everything else about it is as described.
+- **The sweep is a default of `RenderOptions`, not a pass a build opts into.**
+  `html_passes` was designed as the seam a rewrite plugs into, but a build that
+  configured passes and forgot this one would publish headings whose decoration
+  was taken out of their identifiers for nothing — the same contradicting-itself
+  state the plan keeps eliminating elsewhere. So the default list draws the
+  emoji, exactly as `:tags` defaults to the tag table.
+- **An emoji's alternative text is the character it draws.** A reader who cannot
+  see the image is told which emoji it is by their own software, and a reader
+  copying the page out of their browser gets the emoji back rather than
+  `:books:` — which is what `jemoji` gave them.
+- **The vocabulary came to 34**, not the eleven shortcodes the course writes:
+  the five sidebar icons, the nine celebrations of a folded callout, ⚔️ and the
+  spiral-eyed face of the dashboard, the six one-off emoji of the prose (🍺 🍻
+  💙 💸 😭 🤔) and the three of the search dialog (🏠 🤷 🚀).
+- **`.callout .icon.text` is gone from the theme.** It sized the one emoji a tag
+  wrote as a character; with that written as a shortcode like its siblings,
+  nothing emitted the class. `img.emoji` also gained a default size of `1.2em`
+  seated on the baseline, so that an emoji outside the course's own layout — in
+  the dashboard — is sized like the character it stands for rather than by its
+  file.
+- **A test asserts the registry is the only place under `app/lib` that writes an
+  emoji character.** The course material has a sweep to enforce the vocabulary
+  and the application has nothing of the kind, and it was the application that
+  had drifted (`🏆` against `🏆️`).
+- **The release image needed a copy of its own.** The digest stage took
+  `assets/theme/` out of the theme build and nothing else, so the emoji would
+  have been missing from production while working in development.
+- **A tag names the emoji it shows.** `TagIcon` used to hold either a partial of
+  the icon set or a piece of HTML the tag spelled out, and with emoji a thing of
+  their own the second half no longer needs to be arbitrary: it is an emoji of
+  the registry and, where the theme sizes the icon by its box, the class to wrap
+  it in. Nothing a tag emits changed — the point is that `:hammr_and_wrench:`
+  now fails the build where it used to reach the page as words.
+
+The one consumer left out is the search dialog, whose icons are drawn by a
+script rather than by the renderer and therefore need that map: a task of its
+own, alongside the [search index](#search-index) work that produces what it
+reads.
 
 ### Slides
 
@@ -2086,6 +2242,16 @@ still need a versioned name to stay consistent with the pages they index. See
 index stores (`id`, `url`) come from the [URL and link emission
 seam](#url-and-link-emission-seam) like every other content link, so they are
 prefix- and origin-correct by construction.
+
+**The dialog draws its own icons, and they are the site's emoji.**
+`course/src/assets/course/search.ts` maps a result's type to one of five
+characters — 📝 🛠️ 🏆 🎬 📖 — and its two templates write a 🚀 and a 🤷 of their
+own. They are the same emoji the sidebar shows next to the same documents, so
+they must be the same picture: the [emoji vocabulary](#one-emoji-vocabulary) is
+enforced everywhere else and this is the last place it is not. The one thing
+that makes it more than a substitution is that a client cannot work out where an
+emoji file is — only the build knows the digested names — so the build hands it
+a generated name→URL map, the same one any other script would need.
 
 ### HTML fidelity gate
 

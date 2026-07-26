@@ -18,13 +18,14 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.NoteTag do
   alias ArchiDep.CourseSite.Renderer.Liquid.NestedBody
   alias ArchiDep.CourseSite.Renderer.Liquid.TagIcon
   alias ArchiDep.CourseSite.Renderer.RenderError
+  alias ArchiDep.Emoji
 
   @icons %{
-    "advanced" => {:literal, ":space_invader:"},
+    "advanced" => {:emoji, Emoji.fetch!("space_invader")},
     "info" => {:partial, "info-circle", "size-6"},
-    "more" => {:literal, ":books:"},
-    "tip" => {:literal, ":gem:"},
-    "troubleshooting" => {:literal, ":boom:"},
+    "more" => {:emoji, Emoji.fetch!("books")},
+    "tip" => {:emoji, Emoji.fetch!("gem")},
+    "troubleshooting" => {:emoji, Emoji.fetch!("boom")},
     "warning" => {:partial, "exclamation-triangle", "size-6"}
   }
 

@@ -11,14 +11,21 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
   changes no signature.
   """
 
+  alias ArchiDep.CourseSite.Renderer.EmojiImages
   alias ArchiDep.CourseSite.Renderer.Liquid.Tags
+
+  # Drawing the emoji of a page is not a preference. A heading's shortcodes are
+  # moved out of the text its identifier is slugged from before the page is
+  # rendered, so a build that swept none of them would publish anchors named
+  # after a decoration it then shows as text.
+  @default_html_passes [EmojiImages]
 
   @enforce_keys [:tags, :ast_passes, :html_passes]
   defstruct reveal_all_solutions: false,
             strict_variables: true,
             tags: nil,
             ast_passes: [],
-            html_passes: []
+            html_passes: @default_html_passes
 
   @type t :: %__MODULE__{
           reveal_all_solutions: boolean(),
@@ -47,7 +54,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
     every Markdown document the build converts, whole pages and extracted tag
     bodies alike.
   - `:html_passes` — `ArchiDep.CourseSite.Renderer.HtmlPass` modules, run once
-    over the finished HTML of a page.
+    over the finished HTML of a page. Defaults to drawing the page's emoji with
+    `ArchiDep.CourseSite.Renderer.EmojiImages`, which every build wants.
   """
   @spec new(keyword()) :: t()
   def new(opts \\ []) when is_list(opts) do
@@ -55,8 +63,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
       reveal_all_solutions: boolean!(opts, :reveal_all_solutions, false),
       strict_variables: boolean!(opts, :strict_variables, true),
       tags: tags!(opts),
-      ast_passes: modules!(opts, :ast_passes),
-      html_passes: modules!(opts, :html_passes)
+      ast_passes: modules!(opts, :ast_passes, []),
+      html_passes: modules!(opts, :html_passes, @default_html_passes)
     }
   end
 
@@ -82,8 +90,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
     end
   end
 
-  defp modules!(opts, key) do
-    case Keyword.get(opts, key, []) do
+  defp modules!(opts, key, default) do
+    case Keyword.get(opts, key, default) do
       passes when is_list(passes) ->
         module_list!(passes, key)
 

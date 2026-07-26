@@ -37,6 +37,38 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
     end
   end
 
+  describe "emoji/1" do
+    test "draws an emoji of the site from the file it is served at" do
+      assigns = %{}
+
+      html =
+        rendered_to_string(~H"""
+        <CoreComponents.emoji name="books" />
+        """)
+
+      assert emoji_projection(html) == %{
+               src: "/assets/emoji/1f4da.svg",
+               alt: "📚",
+               class: "emoji"
+             }
+    end
+
+    test "says what an emoji means, and takes the classes that size it" do
+      assigns = %{}
+
+      html =
+        rendered_to_string(~H"""
+        <CoreComponents.emoji name="trophy" alt="Graded exercise" class="size-4" />
+        """)
+
+      assert emoji_projection(html) == %{
+               src: "/assets/emoji/1f3c6.svg",
+               alt: "Graded exercise",
+               class: "emoji size-4"
+             }
+    end
+  end
+
   describe "note components" do
     test "warning_note renders the warning variant, title and content" do
       assigns = %{}
@@ -48,6 +80,7 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
 
       assert note_projection(html) == %{
                variant: ["note", "note-warning"],
+               icon: :symbol,
                title: "Warning",
                content: "Disk almost full"
              }
@@ -63,6 +96,7 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
 
       assert note_projection(html) == %{
                variant: ["note", "note-info"],
+               icon: :symbol,
                title: "Note",
                content: "Save your work"
              }
@@ -78,7 +112,8 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
 
       assert note_projection(html) == %{
                variant: ["note", "note-more"],
-               title: "📚 More information",
+               icon: {:emoji, "📚"},
+               title: "More information",
                content: "Read the docs"
              }
     end
@@ -93,7 +128,8 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
 
       assert note_projection(html) == %{
                variant: ["note", "note-troubleshooting"],
-               title: "💥 Troubleshooting",
+               icon: {:emoji, "💥"},
+               title: "Troubleshooting",
                content: "Restart the service"
              }
     end
@@ -112,6 +148,16 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
     end
   end
 
+  defp emoji_projection(html) do
+    [emoji] = find_html_elements(html, "img")
+
+    %{
+      src: html_element_attribute(emoji, "src"),
+      alt: html_element_attribute(emoji, "alt"),
+      class: html_element_attribute(emoji, "class")
+    }
+  end
+
   defp note_projection(html) do
     [note] = find_html_elements(html, ".note")
     [title] = find_html_elements(note, ".title")
@@ -119,9 +165,19 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
 
     %{
       variant: note |> html_element_attribute("class") |> String.split() |> Enum.sort(),
+      icon: note_icon(title),
       title: html_element_text(title),
       content: html_element_text(content)
     }
+  end
+
+  # A note opens with an icon of the site's own set or with one of its emoji,
+  # which is half of what tells one kind of note from another.
+  defp note_icon(title) do
+    case find_html_elements(title, "img.emoji") do
+      [emoji] -> {:emoji, html_element_attribute(emoji, "alt")}
+      [] -> if find_html_elements(title, "svg") == [], do: nil, else: :symbol
+    end
   end
 
   defp data_display_projection(html) do

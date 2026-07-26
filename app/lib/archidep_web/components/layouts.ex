@@ -257,16 +257,16 @@ defmodule ArchiDepWeb.Components.Layouts do
                     <span class="flex items-center gap-x-2">
                       <span class="size-4">
                         <%= if item["course_type"] == "slides" do %>
-                          🎬
+                          <.emoji name="clapper" alt="Slides" class="size-4" />
                         <% end %>
                         <%= if item["course_type"] == "exercise" and item["graded"] == true do %>
-                          🏆️
+                          <.emoji name="trophy" alt="Graded exercise" class="size-4" />
                         <% end %>
                         <%= if item["course_type"] == "exercise" and item["graded"] != true do %>
-                          🛠️
+                          <.emoji name="hammer_and_wrench" alt="Exercise" class="size-4" />
                         <% end %>
                         <%= if item["course_type"] != "slides" and item["course_type"] != "exercise" do %>
-                          📖
+                          <.emoji name="book" alt="Subject" class="size-4" />
                         <% end %>
                       </span>
                       <span>
@@ -275,7 +275,7 @@ defmodule ArchiDepWeb.Components.Layouts do
                     </span>
                     <%= if item["slides"] do %>
                       <span>
-                        🎬
+                        <.emoji name="clapper" alt="Slides" class="size-4" />
                       </span>
                     <% end %>
                     <%= if item["course_type"] == "slides" do %>
@@ -295,7 +295,7 @@ defmodule ArchiDepWeb.Components.Layouts do
                 <a href={cheatsheet["url"]} class="flex items-center gap-2">
                   <span class="flex items-center gap-x-2">
                     <span class="size-4">
-                      📝
+                      <.emoji name="memo" alt="Cheatsheet" class="size-4" />
                     </span>
                     <span>
                       {cheatsheet["sidebar_title"] || cheatsheet["title"]}

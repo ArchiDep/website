@@ -2,20 +2,29 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.TagIcon do
   @moduledoc """
   The icon a block tag shows inside its own wrapper.
 
-  A note and a callout both open with one, and it is written in the tag in one
-  of two ways: as a partial of the site's icon set, or as a piece of HTML the
-  tag holds itself — an emoji shortcode, or a shortcode already wrapped in the
-  element the theme styles.
+  A note and a callout both open with one, and it is one of two things: a
+  partial of the site's icon set, or one of the site's emoji. They are not the
+  same thing said twice — an icon of the set is an SVG the site draws itself,
+  and a partial is how the content includes one by hand; an emoji comes from
+  `ArchiDep.Emoji`, which is what the rest of the site draws its own from.
 
-  A shortcode is left as it is written. It becomes an image when the finished
-  page is swept for shortcodes, which cannot happen any earlier: a heading's
-  identifier is slugged from its text as it is rendered, and the course links to
-  headings named after the emoji in them.
+  An emoji is written here as the shortcode a page would write, and left at
+  that: it is drawn by the sweep of the finished page, which is the one place an
+  emoji becomes an image, whoever wrote it. Naming it rather than spelling the
+  shortcode out is what makes an emoji the site does not have a broken build
+  rather than a page showing `:hammr_and_wrench:` in words.
+
+  An emoji may carry the class of an element to wrap it in, for a tag whose
+  theme sizes the icon by its box rather than by the text around it.
   """
 
   alias ArchiDep.CourseSite.Renderer.Liquid.Partial
+  alias ArchiDep.Emoji
 
-  @type t :: {:partial, name :: String.t(), class :: String.t()} | {:literal, String.t()}
+  @type t ::
+          {:partial, name :: String.t(), class :: String.t()}
+          | {:emoji, Emoji.t()}
+          | {:emoji, Emoji.t(), class :: String.t()}
 
   @doc """
   Render an icon into what goes inside the tag's wrapper.
@@ -33,5 +42,9 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.TagIcon do
     {rendered |> IO.iodata_to_binary() |> String.trim(), context}
   end
 
-  def render({:literal, html}, %Solid.Context{} = context, _options, _loc), do: {html, context}
+  def render({:emoji, %Emoji{} = emoji}, %Solid.Context{} = context, _options, _loc),
+    do: {Emoji.shortcode(emoji), context}
+
+  def render({:emoji, %Emoji{} = emoji, class}, %Solid.Context{} = context, _options, _loc),
+    do: {~s(<div class="#{class}">#{Emoji.shortcode(emoji)}</div>), context}
 end

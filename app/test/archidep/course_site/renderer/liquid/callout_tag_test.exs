@@ -16,8 +16,11 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTagTest do
                &{&1, render("{% callout type: #{&1}, id: read-me %}\nDo this.\n{% endcallout %}")}
              ) == %{
                "danger" => {:ok, callout("danger", icon("exclamation-circle")), []},
-               "exercise" => {:ok, callout("exercise", ~s(<div class="icon text">🛠️</div>)), []},
-               "more" => {:ok, folded_callout("501-nginx:read-me", "🎊", "Amazing!"), []},
+               "exercise" =>
+                 {:ok, callout("exercise", ~s(<div class="icon image">:hammer_and_wrench:</div>)),
+                  []},
+               "more" =>
+                 {:ok, folded_callout("501-nginx:read-me", ":confetti_ball:", "Amazing!"), []},
                "warning" => {:ok, callout("warning", icon("exclamation-triangle")), []}
              }
     end
@@ -45,26 +48,30 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTagTest do
 
     test "prefixes the name of a folded callout with the page it is on" do
       assert render("{% callout type: more, id: what-is-nginx %}\nDo this.\n{% endcallout %}") ==
-               {:ok, folded_callout("501-nginx:what-is-nginx", "✨", "Terrific!"), []}
+               {:ok, folded_callout("501-nginx:what-is-nginx", ":sparkles:", "Terrific!"), []}
     end
 
     test "prefixes the name of a folded callout of a cheatsheet with the cheatsheet" do
       assert render("{% callout type: more, id: upgrade-restart %}\nDo this.\n{% endcallout %}",
                page: {:cheatsheet, "sysadmin"}
              ) ==
-               {:ok, folded_callout("cheatsheets-sysadmin:upgrade-restart", "😎", "Outstanding!"),
-                []}
+               {:ok,
+                folded_callout(
+                  "cheatsheets-sysadmin:upgrade-restart",
+                  ":sunglasses:",
+                  "Outstanding!"
+                ), []}
     end
 
     test "names a folded callout that names itself nothing after its position, and reports it" do
       assert render("{% callout type: more %}\nDo this.\n{% endcallout %}") ==
-               {:ok, folded_callout("501-nginx:callout-1", "👍", "Terrific!"),
+               {:ok, folded_callout("501-nginx:callout-1", ":thumbsup:", "Terrific!"),
                 [problem(~s(A "more" callout must have an id))]}
     end
 
     test "names a folded callout whose name is not a slug after its position, and reports it" do
       assert render(~s({% callout type: more, id: "What is Nginx" %}\nDo this.\n{% endcallout %})) ==
-               {:ok, folded_callout("501-nginx:callout-1", "👍", "Terrific!"),
+               {:ok, folded_callout("501-nginx:callout-1", ":thumbsup:", "Terrific!"),
                 [
                   problem(
                     ~s(The id "What is Nginx" must be lowercase alphanumeric words ) <>
@@ -83,8 +90,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTagTest do
              {% endcallout %}\
              """) ==
                {:ok,
-                folded_callout("501-nginx:what-is-nginx", "✨", "Terrific!") <>
-                  "\n" <> folded_callout("501-nginx:callout-2", "💫", "Amazing!"),
+                folded_callout("501-nginx:what-is-nginx", ":sparkles:", "Terrific!") <>
+                  "\n" <> folded_callout("501-nginx:callout-2", ":dizzy:", "Amazing!"),
                 [
                   RenderError.new(
                     {:invalid_tag, "callout",
@@ -97,7 +104,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTagTest do
 
     test "ignores the name of a callout that is not folded, since it names nothing" do
       assert render("{% callout type: exercise, id: what-is-nginx %}\nDo this.\n{% endcallout %}") ==
-               {:ok, callout("exercise", ~s(<div class="icon text">🛠️</div>)), []}
+               {:ok, callout("exercise", ~s(<div class="icon image">:hammer_and_wrench:</div>)),
+                []}
     end
 
     test "expands the Liquid its prose contains before converting it" do
@@ -108,7 +116,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTagTest do
              """) ==
                {:ok,
                 ~s(<div class="callout callout-exercise group/callout">) <>
-                  ~s(<div class="icon text">🛠️</div>) <>
+                  ~s(<div class="icon image">:hammer_and_wrench:</div>) <>
                   ~s(<div class="container">) <>
                   ~s(<div class="content"><p>Read the ) <>
                   ~s(<a href="/2028/course/410-sftp-deployment/">SFTP exercise</a>.</p></div>) <>
@@ -137,10 +145,10 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTagTest do
         ~s(<label for="callout-#{identifier}" class="less join-item">) <>
         ~s(<span class="mr-1">#{celebration}</span> #{congratulations}</label>) <>
         ~s(<button type="button" class="always-tell-me-more join-item">) <>
-        ~s(<span class="mr-1">📚</span> Always tell me more!</button>) <>
+        ~s(<span class="mr-1">:books:</span> Always tell me more!</button>) <>
         ~s(</div>) <>
         ~s(<button type="button" class="stop-telling-me-more">) <>
-        ~s(<span class="mr-1">😵‍💫</span> Stop telling me more...</button>) <>
+        ~s(<span class="mr-1">:face_with_spiral_eyes:</span> Stop telling me more...</button>) <>
         ~s(</div></div>)
 
   defp icon(name), do: ~s(<svg class="icon">#{name}</svg>)

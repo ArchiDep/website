@@ -14,6 +14,8 @@ defmodule ArchiDep.CourseSite.RendererTest do
   alias ArchiDep.Support.CourseSiteRendererTestTags.ShoutingPass
   alias ArchiDep.Support.CourseSiteRendererTestTags.SignaturePass
 
+  @books ~s(<img class="emoji" src="/2026/assets/emoji/1f4da.svg" alt="📚" />)
+
   describe "render_page/1" do
     test "renders a page in two pieces, resolving what it refers to" do
       {:ok, includes} =
@@ -70,7 +72,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
                {:ok,
                 %Page{
                   excerpt_html:
-                    ~s(<h2 id="what-you-will-learn">:books: What you will learn) <>
+                    ~s(<h2 id="what-you-will-learn">#{@books} What you will learn) <>
                       ~s(<a href="#what-you-will-learn" ) <>
                       ~s(aria-label="Link to heading 'What you will learn'" ) <>
                       ~s(data-heading-content="What you will learn" class="anchor"></a></h2>),
@@ -85,7 +87,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
                     %Entry{
                       id: "what-you-will-learn",
                       level: 2,
-                      label_html: ":books: What you will learn"
+                      label_html: "#{@books} What you will learn"
                     },
                     %Entry{
                       id: "deploying",

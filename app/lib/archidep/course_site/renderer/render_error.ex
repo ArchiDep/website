@@ -37,6 +37,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderError do
           | {:unknown_include, String.t()}
           | {:invalid_tag, tag :: String.t(), String.t()}
           | {:invalid_code_fence, info :: String.t(), String.t()}
+          | {:unregistered_emoji, String.t()}
 
   @type t :: %__MODULE__{
           reason: reason(),
@@ -106,4 +107,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderError do
 
   defp describe({:invalid_code_fence, info, message}),
     do: "Invalid code fence ```#{info} (#{message})"
+
+  defp describe({:unregistered_emoji, character}),
+    do: "#{character} is not one of the site's emoji"
 end

@@ -20,11 +20,12 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTag do
   alias ArchiDep.CourseSite.Renderer.Liquid.Registers
   alias ArchiDep.CourseSite.Renderer.Liquid.TagIcon
   alias ArchiDep.CourseSite.Renderer.RenderError
+  alias ArchiDep.Emoji
 
   @icons %{
     "danger" => {:partial, "exclamation-circle", "icon"},
-    "exercise" => {:literal, ~s(<div class="icon text">🛠️</div>)},
-    "more" => {:literal, ~s(<div class="icon image">:books:</div>)},
+    "exercise" => {:emoji, Emoji.fetch!("hammer_and_wrench"), "icon image"},
+    "more" => {:emoji, Emoji.fetch!("books"), "icon image"},
     "warning" => {:partial, "exclamation-triangle", "icon"}
   }
 
@@ -46,7 +47,12 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTag do
     "Wonderful!"
   ]
 
-  @celebrations ~w(🎉 🎊 🚀 👍 👏 🌟 ✨ 💫 😎)
+  # Written as the shortcodes the content itself writes, and drawn when the
+  # finished page is swept for emoji.
+  @celebrations Enum.map(
+                  ~w(tada confetti_ball rocket thumbsup clap star2 sparkles dizzy sunglasses),
+                  &(&1 |> Emoji.fetch!() |> Emoji.shortcode())
+                )
 
   @enforce_keys [:loc, :type, :icon, :identifier, :animate?, :body, :problems]
   defstruct [:loc, :type, :icon, :identifier, :animate?, :body, :problems]
@@ -219,10 +225,10 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTag do
         ~s(<label for="callout-#{identifier}" class="less join-item">) <>
         ~s(<span class="mr-1">#{celebration}</span> #{congratulations}</label>) <>
         ~s(<button type="button" class="always-tell-me-more join-item">) <>
-        ~s(<span class="mr-1">📚</span> Always tell me more!</button>) <>
+        ~s(<span class="mr-1">:books:</span> Always tell me more!</button>) <>
         ~s(</div>) <>
         ~s(<button type="button" class="stop-telling-me-more">) <>
-        ~s(<span class="mr-1">😵‍💫</span> Stop telling me more...</button>)
+        ~s(<span class="mr-1">:face_with_spiral_eyes:</span> Stop telling me more...</button>)
     end
   end
 end

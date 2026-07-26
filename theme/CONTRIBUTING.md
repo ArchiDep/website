@@ -74,8 +74,9 @@ the running application serves it:
 
 - `src/theme.css` is compiled to `app/priv/static/assets/theme/theme.css`.
 - `src/slides.css` is compiled to `app/priv/static/assets/theme/slides.css`.
+- `emoji/*.svg` are copied to `app/priv/static/assets/emoji/`.
 
-Both output files are generated and ignored by Git. The application must have the
+All output files are generated and ignored by Git. The application must have the
 theme built for it to compile and serve pages correctly, as documented in the
 [`app` directory][app-contributing] and in the main [README.md](../README.md).
 
@@ -103,6 +104,13 @@ theme built for it to compile and serve pages correctly, as documented in the
   - `src/highlight-light.css` & `src/highlight-dark.css`: Syntax highlighting
     color schemes for code blocks. See [Syntax Highlighting](#syntax-highlighting).
 - **Other Files**
+  - `emoji/`: The site's emoji as [Twemoji][twemoji] SVG files, copied into the
+    static assets by the build. Both the course material and the application
+    draw their emoji from these files so that the same emoji is the same picture
+    everywhere; which ones exist is decided in [`ArchiDep.Emoji`][emoji], and
+    [`emoji/README.md`](./emoji/README.md) says where they come from and how to
+    add one.
+  - `scripts/copy-emoji.mjs`: Copies the above into the static assets.
   - `package.json`: npm workspace configuration, dependencies and build scripts.
   - `.gitignore`: Ignores the local `dist` directory.
 
@@ -333,6 +341,7 @@ agents.
 [course-cols]: ../course/CONTRIBUTING.md#side-by-side-columns
 [course-code-blocks]: ../course/CONTRIBUTING.md#code-blocks
 [daisyui]: https://daisyui.com/docs/
+[emoji]: ../app/lib/archidep/emoji.ex
 [flashy]: https://hexdocs.pm/flashy/readme.html
 [git-memoir]: https://github.com/AlphaHydrae/git-memoir
 [lumis]: https://hexdocs.pm/lumis
@@ -341,3 +350,4 @@ agents.
 [tailwind]: https://tailwindcss.com/docs
 [tailwind-cli]: https://tailwindcss.com/docs/installation/tailwind-cli
 [tailwind-typography]: https://github.com/tailwindlabs/tailwindcss-typography
+[twemoji]: https://github.com/jdecked/twemoji

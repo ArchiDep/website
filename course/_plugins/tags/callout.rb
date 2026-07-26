@@ -60,7 +60,7 @@ module ArchiDep
         when "danger"
           "exclamation-circle"
         when "exercise"
-          %|<div class="icon text">🛠️</div>|
+          %|<div class="icon image">:hammer_and_wrench:</div>|
         when "more"
           %|<div class="icon image">:books:</div>|
         when "warning"

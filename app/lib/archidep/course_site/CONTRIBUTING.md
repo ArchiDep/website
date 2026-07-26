@@ -23,6 +23,7 @@ and tooling that also apply here. Read that document first.
   - [The tags the course writes](#the-tags-the-course-writes)
   - [Naming what a page renders](#naming-what-a-page-renders)
   - [Passes: over the document, or over the page](#passes-over-the-document-or-over-the-page)
+  - [One emoji, one picture](#one-emoji-one-picture)
   - [A heading is identified by what it says, not by its decoration](#a-heading-is-identified-by-what-it-says-not-by-its-decoration)
   - [The navigation of a page](#the-navigation-of-a-page)
   - [Colouring a code block](#colouring-a-code-block)
@@ -250,13 +251,15 @@ Three rules run across all of them:
   blank line ends an HTML block. The one exception is `mermaid`, whose body may
   contain blank lines and is therefore emitted inside a `pre` element, which
   CommonMark reads to its closing tag rather than to the next blank line.
-- **The emoji a tag shows is the shortcode the content itself writes**, left for
-  the sweep of the finished page to turn into an image — see
-  [Passes](#passes-over-the-document-or-over-the-page).
+- **A tag names the emoji it shows** rather than spelling out its shortcode, so
+  that an emoji the site does not have fails the build instead of reaching a
+  page as words. What it writes is the shortcode a page would write, left for
+  the sweep of the finished page to draw — see [One emoji, one
+  picture](#one-emoji-one-picture).
 
-An icon is not written out as an SVG either: a tag renders the same `icons/…`
-partial the content includes by hand, through
-[`TagIcon`](./renderer/liquid/tag_icon.ex).
+Neither kind of icon is written out as markup: a tag holds either an emoji of
+the site or the name of an `icons/…` partial — the same one the content includes
+by hand — and [`TagIcon`](./renderer/liquid/tag_icon.ex) renders both.
 
 ### Naming what a page renders
 
@@ -295,6 +298,39 @@ Emoji shortcodes are the case that shows the difference: a tag writes them in
 the wrapper it puts around its body, which was never Markdown at all, so a
 rewrite of the document would leave those alone and turn only the page's own
 into images.
+
+### One emoji, one picture
+
+Which emoji the site has is [`ArchiDep.Emoji`](../emoji.ex)'s to say, and it
+says it for the application too: the 📚 of a "more information" note is a
+shortcode in a chapter and a component in the dashboard, and both draw the same
+Twemoji SVG from `theme/emoji`. The registry is closed — an emoji that is not in
+it is not one of the site's — and it is the only place either half writes an
+emoji character or the markup one is shown as.
+
+[`EmojiImages`](./renderer/emoji_images.ex) is the pass that draws them, and it
+is in the [default options](./renderer/render_options.ex) of every build rather
+than left to one: it is the other half of [identifying a heading by what it
+says](#a-heading-is-identified-by-what-it-says-not-by-its-decoration), and a
+build that ran one without the other would publish anchors named after a
+decoration the page then shows as text.
+
+It reads a page in either of the two ways one is written — the shortcode
+`:books:`, or the character itself — and leaves four things alone:
+
+- **Code**, since the course teaches the command line: `jde:x:1004:` is a line
+  of `/etc/passwd`, not an emoji, and the content is full of `:00:` timestamps
+  and `:--:` alignment rows.
+- **A shortcode naming no emoji of the site**, which is what keeps those
+  accidents intact wherever they are written outside code.
+- **The markup of the page**, which is scanned past rather than into: an emoji
+  is written in a page's words.
+- **A character that is not one of the site's emoji** — left as it stands, but
+  reported, since it is the one thing on the page that would look different in
+  every browser.
+
+An emoji file is a global asset like a stylesheet, so where it is drawn from
+goes through [the URL seam](#url-and-link-emission) with the rest.
 
 ### A heading is identified by what it says, not by its decoration
 
@@ -430,6 +466,10 @@ md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than
   chapter, so every one of them was named `-`.
 - **A folded callout's congratulation is the same on every build**, where Jekyll
   drew one at random each time it rendered the page.
+- **An emoji is a file of the site's own** rather than an image hotlinked from
+  `github.githubassets.com`, and every emoji is one: `jemoji` drew the
+  shortcodes and left the characters a page or a layout typed to whatever font
+  the reader happened to have.
 - **A tag's wrapper is emitted without the blank lines Jekyll's has.** kramdown
   tolerated them inside an HTML block; CommonMark ends the block at the first
   one, which would leave the rest of the wrapper to be read as Markdown.

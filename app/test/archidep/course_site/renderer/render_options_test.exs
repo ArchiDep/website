@@ -1,6 +1,7 @@
 defmodule ArchiDep.CourseSite.Renderer.RenderOptionsTest do
   use ExUnit.Case, async: true
 
+  alias ArchiDep.CourseSite.Renderer.EmojiImages
   alias ArchiDep.CourseSite.Renderer.Liquid.LinkTag
   alias ArchiDep.CourseSite.Renderer.Liquid.Tags
   alias ArchiDep.CourseSite.Renderer.RenderOptions
@@ -14,7 +15,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptionsTest do
                strict_variables: true,
                tags: Tags.default(),
                ast_passes: [],
-               html_passes: []
+               html_passes: [EmojiImages]
              }
     end
 

@@ -25,6 +25,7 @@ This repository contains the source code for the Media Engineering Architecture
   - [Run in development mode on your machine](#run-in-development-mode-on-your-machine)
   - [Run the course only in development mode](#run-the-course-only-in-development-mode)
 - [Configuration](#configuration)
+- [Credits](#credits)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -215,7 +216,13 @@ minutes by default to avoid polluting the logs with database queries. Update
 `metrics_polling_interval` in your `config/local.exs` file to change this
 interval (only supported when running on your machine for now).
 
+## Credits
+
+The site's emoji are [Twemoji][twemoji] by the Twemoji contributors, licensed
+under [CC-BY 4.0][cc-by-4].
+
 [asdf]: https://asdf-vm.com
+[cc-by-4]: https://creativecommons.org/licenses/by/4.0/
 [direnv]: https://direnv.net
 [docker]: https://www.docker.com
 [elixir]: https://elixir-lang.org
@@ -227,4 +234,5 @@ interval (only supported when running on your machine for now).
 [postgresql]: https://www.postgresql.org
 [ruby]: https://www.ruby-lang.org
 [tailwind]: https://tailwindcss.com
+[twemoji]: https://github.com/jdecked/twemoji
 [typescript]: https://www.typescriptlang.org

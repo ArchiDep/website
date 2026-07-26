@@ -28,6 +28,8 @@ h6 {
   }
 }
 
+/* An emoji is a picture standing in for a character, so it is sized and seated
+   like one unless something else has a reason to place it. */
 img.emoji {
-  @apply inline my-0;
+  @apply inline my-0 size-[1.2em] align-[-0.2em];
 }

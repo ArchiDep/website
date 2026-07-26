@@ -16,6 +16,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
+  alias ArchiDep.Emoji
 
   @doc_types [:subject, :exercise, :slides]
   @modes [:live, :backup, :archive]
@@ -51,7 +52,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     {live_site_url, attrs!} =
       Map.pop_lazy(attrs!, :live_site_url, fn -> "https://#{slug()}.example.com" end)
 
-    {assets, attrs!} = Map.pop_lazy(attrs!, :assets, fn -> AssetManifest.new(%{}) end)
+    {assets, attrs!} = Map.pop_lazy(attrs!, :assets, fn -> AssetManifest.new(emoji_assets()) end)
 
     {page_assets, attrs!} =
       Map.pop_lazy(attrs!, :page_assets, fn -> PageAssetManifest.new(%{}) end)
@@ -73,6 +74,18 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     )
   end
 
+  @doc """
+  The emoji files of a build, undigested, as every real build has them: a page
+  that shows one has nowhere to draw it from otherwise.
+  """
+  @spec emoji_assets() :: %{String.t() => String.t()}
+  def emoji_assets do
+    Map.new(Emoji.names(), fn name ->
+      path = name |> Emoji.fetch!() |> Emoji.asset_path()
+      {path, path}
+    end)
+  end
+
   @spec source_factory(map()) :: Source.t()
   def source_factory(attrs!) do
     {text, attrs!} = Map.pop_lazy(attrs!, :text, fn -> "Body of #{slug()}.\n" end)
@@ -89,18 +102,20 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     {strict_variables, attrs!} = Map.pop(attrs!, :strict_variables, true)
     {tags, attrs!} = Map.pop(attrs!, :tags)
     {ast_passes, attrs!} = Map.pop(attrs!, :ast_passes, [])
-    {html_passes, attrs!} = Map.pop(attrs!, :html_passes, [])
+    {html_passes, attrs!} = Map.pop(attrs!, :html_passes)
 
     [] = Map.keys(attrs!)
 
-    opts = [
-      reveal_all_solutions: reveal_all_solutions,
-      strict_variables: strict_variables,
-      ast_passes: ast_passes,
-      html_passes: html_passes
-    ]
+    opts =
+      [
+        reveal_all_solutions: reveal_all_solutions,
+        strict_variables: strict_variables,
+        ast_passes: ast_passes
+      ]
+      |> optional(:html_passes, html_passes)
+      |> optional(:tags, tags)
 
-    RenderOptions.new(if tags, do: [{:tags, tags} | opts], else: opts)
+    RenderOptions.new(opts)
   end
 
   @spec render_context_factory(map()) :: RenderContext.t()
@@ -183,6 +198,12 @@ defmodule ArchiDep.Support.CourseSiteFactory do
       )
     end
   end
+
+  # An option the caller did not ask about is left out, so that the defaults of
+  # the thing being built are what a test gets rather than the factory's idea of
+  # them.
+  defp optional(opts, _key, nil), do: opts
+  defp optional(opts, key, value), do: [{key, value} | opts]
 
   defp slug, do: sequence(:course_site_slug, &"slug-#{&1}")
 

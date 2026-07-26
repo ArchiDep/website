@@ -182,6 +182,14 @@ settings` → `#configure-basic-settings`). The emoji shortcode a heading is
   `#exclamation-create-your-server`. (The Jekyll build still emits the shortcode
   in the anchor, so such a link scrolls nowhere until the Elixir renderer takes
   over; it still opens the right page.)
+- Write an emoji either as its shortcode (`:books:`) or as the character itself
+  (📚); the Elixir renderer draws both from the same file, so the two spellings
+  are the same picture. The emoji the site has are a **closed set**, listed in
+  [`app/lib/archidep/emoji.ex`][emoji]; the build reports any other one. Adding
+  an emoji is an entry there plus an SVG, as
+  [`theme/emoji/README.md`](../theme/emoji/README.md) describes. (Until the
+  Elixir renderer takes over, Jekyll draws a shortcode as an image hotlinked
+  from GitHub and leaves a character to whatever font the reader has.)
 - Use consistent terminology and style throughout the materials.
 - Follow accessibility best practices to ensure content is usable by all
   students.
@@ -843,6 +851,7 @@ agents.
 [git-memoir]: https://github.com/AlphaHydrae/git-memoir
 [jekyll]: https://jekyllrb.com
 [jekyll-docs]: https://jekyllrb.com/docs
+[emoji]: ../app/lib/archidep/emoji.ex
 [jemoji]: https://github.com/jekyll/jemoji
 [liquid]: https://shopify.github.io/liquid/
 [phoenix]: https://hexdocs.pm/phoenix/Phoenix.Channel.html

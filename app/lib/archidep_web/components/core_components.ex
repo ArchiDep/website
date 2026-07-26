@@ -5,7 +5,40 @@ defmodule ArchiDepWeb.Components.CoreComponents do
 
   use Phoenix.Component
 
+  alias ArchiDep.Emoji
   alias Phoenix.LiveView.Rendered
+
+  attr :name, :string, required: true, doc: "the name of the emoji to show"
+
+  attr :alt, :string,
+    default: nil,
+    doc: "what the emoji says, for an emoji that says something the text around it does not"
+
+  attr :class, :string, default: nil, doc: "the classes to size the emoji with"
+
+  @doc """
+  Show one of the site's emoji, drawn from the same file the course material
+  draws it from so that the two show the same picture.
+  """
+  @spec emoji(map()) :: Rendered.t()
+  def emoji(assigns) do
+    emoji = Emoji.fetch!(assigns.name)
+
+    assigns =
+      assign(assigns,
+        image:
+          Emoji.img(
+            emoji,
+            Phoenix.VerifiedRoutes.static_path(ArchiDepWeb.Endpoint, Emoji.asset_path(emoji)),
+            alt: assigns.alt || emoji.character,
+            class: assigns.class
+          )
+      )
+
+    ~H"""
+    {Phoenix.HTML.raw(@image)}
+    """
+  end
 
   attr :responsive, :boolean,
     default: true,
@@ -94,7 +127,7 @@ defmodule ArchiDepWeb.Components.CoreComponents do
     ~H"""
     <div class={["note note-more", Map.get(@rest, :class)]} {@rest}>
       <div class="title">
-        📚 <span>More information</span>
+        <.emoji name="books" /> <span>More information</span>
       </div>
       <div class="content">
         {render_slot(@inner_block)}
@@ -111,7 +144,7 @@ defmodule ArchiDepWeb.Components.CoreComponents do
     ~H"""
     <div class={["note note-troubleshooting", Map.get(@rest, :class)]} {@rest}>
       <div class="title">
-        💥 <span>Troubleshooting</span>
+        <.emoji name="boom" /> <span>Troubleshooting</span>
       </div>
       <div class="content">
         {render_slot(@inner_block)}

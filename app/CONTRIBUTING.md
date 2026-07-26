@@ -100,6 +100,11 @@ components, can be found in the `theme` directory (see [`CONTRIBUTING.md` in the
       shared error types, and release tasks.
     - `helpers/`: Shared helper modules used across contexts (e.g.
       `ChangesetHelpers`, `SchemaHelpers`, `UseCaseHelpers`, `GenStageHelpers`).
+    - `emoji.ex`: The closed registry of the site's emoji, shared by the course
+      material and the web interface — the only place in the application that
+      writes an emoji character or the markup one is shown as (see [One emoji,
+      one
+      picture](./lib/archidep/course_site/CONTRIBUTING.md#one-emoji-one-picture)).
     - `course_site/`: The renderer of the [course material
       site](../course/CONTRIBUTING.md) — a pure, database-free subsystem that is
       deliberately **not** a bounded context, documented in

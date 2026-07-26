@@ -218,10 +218,6 @@ main .solution pre.lumis:last-child {
   @apply size-6 md:size-10 shrink-0;
 }
 
-.callout .icon.text {
-  @apply text-white text-[2rem] leading-10 text-center;
-}
-
 .callout .icon.image > img.emoji {
   @apply size-full !my-0;
 }
