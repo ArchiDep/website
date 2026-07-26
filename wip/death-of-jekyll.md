@@ -187,6 +187,12 @@ constraints](#goals-and-constraints).
       production serving](#development-and-production-serving).
 - [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
       Pages backup) — see [Standalone / archival mode](#standalone--archival-mode).
+- [ ] Derive the dashboard-free chrome policy from `mode` instead of the host,
+      port it as one explicit list of dynamic chrome, and apply its two
+      non-`:live` rules: the sidebar's app-navigation icon submenu is dropped
+      entirely (not reduced to its home entry) in `:backup` and `:archive`, and
+      the home page's progress cards are hidden unconditionally in `:archive` —
+      see [Standalone / archival mode](#standalone--archival-mode).
 - [ ] Support an optional URL prefix (e.g. `/2026/`) for per-year archived
       versions — see [Optional URL prefix](#optional-url-prefix).
 - [ ] Emit the two "not the current thing" banners from the first build, not at
@@ -1560,6 +1566,12 @@ overlay would cause on every page load. This is the key difference from the `me`
 websocket channel, which carries genuinely per-user, live data — progress is
 global, slowly-changing state that does not need per-request injection.
 
+**Not every surface that _can_ read the status _should_.** The home page's
+"Previously" / "Due next" / "Next time" cards are hidden outright in an
+`:archive` build, whatever the source reports — a finished year has no "next
+time" — so the archival chrome policy overrides the source rather than being
+driven by it. See [Standalone / archival mode](#standalone--archival-mode).
+
 Solution content, by contrast, lives **only** in the static course build (there
 is no live-rendered surface that shows it), which is why [progressive solution
 reveal](#progressive-solution-reveal) is build-time in _all_ cases: the two are
@@ -1679,6 +1691,60 @@ standalone mode, omit dynamic chrome and emit self-contained HTML/assets
 suitable for GitHub Pages. This is both the **previous-years archive** and the
 **backup copy** students use when the main server is down. Asset URLs must
 resolve without the running app (see [Asset URLs](#asset-urls)).
+
+**Dashboard-free is derived from `mode`, not a fourth knob.** Today the flag is
+set by the GitHub Pages config, so "standalone" and "hosted on Pages" are the
+same thing. Under the per-year model they are not: an `:archive` build is served
+from **both** hosts ([Archived years: a banner and one dynamic
+resolver](#archived-years-a-banner-and-one-dynamic-resolver)), and a past year
+has no dashboard on either. So the chrome policy is a function of `mode` —
+`:live` carries the dynamic chrome, `:backup` and `:archive` do not — and must
+never be keyed off the host or the base path. This is the same correction as
+`home_at_base?` in the [configuration knobs](#configuration-knobs): a knob that
+is a function of `mode` in every row of the [consumers
+table](#consumers-as-configurations) is a representable state that can
+contradict itself.
+
+**What "dynamic chrome" covers**, enumerated from the Liquid templates so the
+port inherits an explicit list instead of a flag whose meaning is spread over
+five `{% unless %}` blocks: the header's login button and profile dropdown, the
+sidebar's app-navigation icon submenu (below), the status/CI badges on the home
+page, and the PDF download links in the "On this page" aside. The last one stops
+being a `mode` question at all: whether a page offers a PDF link becomes "does
+`PdfManifest` have a location for this page" ([Generated PDFs may live
+anywhere](#generated-pdfs-may-live-anywhere)), which is exactly why the archived
+years can keep their PDFs ([Per-year PDF archive](#per-year-pdf-archive)).
+
+**Archival mode hides the home page's progress cards unconditionally.** The home
+page shows three session-relative cards — "Previously", "Due next", "Next time"
+— built from the progress source ([Progress: structure vs
+status](#progress-structure-vs-status)). In `:archive` they are **not rendered
+at all**, regardless of what the source reports. This must be expressed as a
+chrome rule and not left to fall out of the data: the final archive's
+all-complete snapshot would otherwise emit a "Previously" card listing the whole
+course and drop the other two by emptiness — plausible-looking output that
+nobody decided on. "What is due next" is a statement about a course in progress;
+a finished year has no such thing to say. The sidebar's progress borders need no
+equivalent rule — an all-complete snapshot colours every chapter `done`, which
+is an accurate statement about a finished year.
+
+**The sidebar's icon submenu exists only in `:live`.** The small icon menu above
+the chapter list holds exactly three entries — Course (the home page), Dashboard
+(`/app`) and Admin (`/admin`, revealed by `course/src/assets/course.ts` when the
+session flag says root) — and its only purpose is switching between the static
+course and the dynamic app; the only script touching it toggles the admin
+entry's visibility. Every dashboard-free build therefore omits the whole `<ul>`
+and its wrapper, not just its dynamic entries: what the standalone flag leaves
+behind today is a **one-item menu** whose sole entry duplicates the header logo
+link (and the mobile sidebar logo), both of which already resolve to `{:home}`.
+`:backup` drops it for the same reason `:archive` does, and then some — the
+backup copy exists precisely for when the app is unreachable, so a Dashboard
+link there points at the thing that is down.
+
+The progress cards are **not** symmetric with the submenu: they stay in
+`:backup`, because the backup tracks the live progress source, so "due next" is
+still true there. So the two rules are keyed differently on purpose — the
+submenu is `:live`-only, the cards are hidden in `:archive` only.
 
 ### Optional URL prefix
 
