@@ -14,20 +14,25 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
   alias ArchiDep.CourseSite.Renderer.EmojiImages
   alias ArchiDep.CourseSite.Renderer.ExternalLinks
   alias ArchiDep.CourseSite.Renderer.Liquid.Tags
+  alias ArchiDep.CourseSite.Renderer.PageAssets
 
-  # Neither of these is a preference. Drawing the emoji of a page is the other
-  # half of identifying its headings: a heading's shortcodes are moved out of
-  # the text its identifier is slugged from before the page is rendered, so a
-  # build that swept none of them would publish anchors named after a decoration
-  # it then shows as text. And a link that leaves the site opens in a tab of its
-  # own wherever the page is read, since it is the same page everywhere.
+  # None of these is a preference. Drawing the emoji of a page is the other half
+  # of identifying its headings: a heading's shortcodes are moved out of the
+  # text its identifier is slugged from before the page is rendered, so a build
+  # that swept none of them would publish anchors named after a decoration it
+  # then shows as text. A link that leaves the site opens in a tab of its own
+  # wherever the page is read, since it is the same page everywhere. And the
+  # file a document refers to next to itself is published under a digested name,
+  # so a build resolving none of them would publish pages pointing at names that
+  # no longer exist.
+  @default_ast_passes [PageAssets]
   @default_html_passes [EmojiImages, ExternalLinks]
 
   @enforce_keys [:tags, :ast_passes, :html_passes]
   defstruct reveal_all_solutions: false,
             strict_variables: true,
             tags: nil,
-            ast_passes: [],
+            ast_passes: @default_ast_passes,
             html_passes: @default_html_passes
 
   @type t :: %__MODULE__{
@@ -55,7 +60,9 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
     `ArchiDep.CourseSite.Renderer.Liquid.Tags.default/0`.
   - `:ast_passes` — `ArchiDep.CourseSite.Renderer.AstPass` modules, run over
     every Markdown document the build converts, whole pages and extracted tag
-    bodies alike.
+    bodies alike. Defaults to the one every build wants: resolving what a
+    document refers to next to itself with
+    `ArchiDep.CourseSite.Renderer.PageAssets`.
   - `:html_passes` — `ArchiDep.CourseSite.Renderer.HtmlPass` modules, run once
     over the finished HTML of a page. Defaults to the two every build wants:
     drawing the page's emoji with `ArchiDep.CourseSite.Renderer.EmojiImages`,
@@ -68,7 +75,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
       reveal_all_solutions: boolean!(opts, :reveal_all_solutions, false),
       strict_variables: boolean!(opts, :strict_variables, true),
       tags: tags!(opts),
-      ast_passes: modules!(opts, :ast_passes, []),
+      ast_passes: modules!(opts, :ast_passes, @default_ast_passes),
       html_passes: modules!(opts, :html_passes, @default_html_passes)
     }
   end

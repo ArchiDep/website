@@ -190,6 +190,15 @@ settings` → `#configure-basic-settings`). The emoji shortcode a heading is
   [`theme/emoji/README.md`](../theme/emoji/README.md) describes. (Until the
   Elixir renderer takes over, Jekyll draws a shortcode as an image hotlinked
   from GitHub and leaves a character to whatever font the reader has.)
+- Refer to a file sitting next to a document — an image, a PDF — by a plain
+  relative path (`images/cli.jpg`, `./images/cli.jpg`, or `../images/cli.jpg`
+  from a `slides.md` written at the root of its chapter, since a deck is
+  published one directory deeper than it is written). The Elixir renderer
+  resolves it to the digested name the file is published under, keeping the path
+  shape written here, so a **missing file fails the build** rather than becoming
+  a broken image. Its name must stick to letters, digits, `.`, `_` and `-`. `{{
+'images/cli.jpg' | relative_file_url }}` is no longer needed — the plain path
+  is resolved wherever it is written — but the decks using it keep working.
 - Use consistent terminology and style throughout the materials.
 - Follow accessibility best practices to ensure content is usable by all
   students.

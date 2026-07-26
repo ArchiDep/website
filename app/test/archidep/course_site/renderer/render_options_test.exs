@@ -5,6 +5,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptionsTest do
   alias ArchiDep.CourseSite.Renderer.ExternalLinks
   alias ArchiDep.CourseSite.Renderer.Liquid.LinkTag
   alias ArchiDep.CourseSite.Renderer.Liquid.Tags
+  alias ArchiDep.CourseSite.Renderer.PageAssets
   alias ArchiDep.CourseSite.Renderer.RenderOptions
   alias ArchiDep.Support.CourseSiteRendererTestTags.ShoutingPass
   alias ArchiDep.Support.CourseSiteRendererTestTags.SignaturePass
@@ -15,7 +16,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptionsTest do
                reveal_all_solutions: false,
                strict_variables: true,
                tags: Tags.default(),
-               ast_passes: [],
+               ast_passes: [PageAssets],
                html_passes: [EmojiImages, ExternalLinks]
              }
     end

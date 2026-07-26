@@ -86,23 +86,57 @@ defmodule ArchiDep.CourseSite.Renderer.EmojiImagesTest do
     end
   end
 
+  describe "draw/3 over the Markdown of a deck" do
+    test "draws a shortcode a deck writes right after the markup it sizes it with" do
+      assert draw(~s(- Carelessness <div class="emoji-container">:coffee:</div>\n)) ==
+               {~s(- Carelessness <div class="emoji-container">#{img("coffee")}</div>\n), []}
+    end
+
+    test "draws an emoji a deck writes as the character itself" do
+      assert draw("> 🛠️ Try it yourself\n") ==
+               {"> #{img("hammer_and_wrench")} Try it yourself\n", []}
+    end
+
+    test "leaves the shortcode-shaped words of a fenced code block alone" do
+      assert draw("```bash\nNot After : Jan 15 14:28:11 2020 GMT\n```\n") ==
+               {"```bash\nNot After : Jan 15 14:28:11 2020 GMT\n```\n", []}
+    end
+
+    test "leaves the shortcode-shaped words written between backticks alone" do
+      assert draw("The address `0123:4567:89ab:cdef::1` is local.\n") ==
+               {"The address `0123:4567:89ab:cdef::1` is local.\n", []}
+    end
+
+    test "leaves the Markdown of a deck that writes no emoji alone" do
+      assert draw("# Slide\n\nSee [Ada](https://example.com/ada).\n") ==
+               {"# Slide\n\nSee [Ada](https://example.com/ada).\n", []}
+    end
+
+    test "reports an emoji of a deck that is not one of the site's" do
+      assert draw("# 🛼 Rolling\n") ==
+               {"# 🛼 Rolling\n", [RenderError.new({:unregistered_emoji, "🛼"}, @source_path)]}
+    end
+  end
+
   defp img(name) do
     emoji = Emoji.fetch!(name)
     Emoji.img(emoji, "/2027#{Emoji.asset_path(emoji)}")
   end
 
-  defp run(html, url_context \\ []) do
-    EmojiImages.run(
-      html,
-      CourseSiteFactory.build(:render_context,
-        source_path: @source_path,
-        page: {:document, DocumentRef.new(406, "unix-processes", :subject)},
-        urls:
-          CourseSiteFactory.build(
-            :url_context,
-            Keyword.merge([version: "2027", base_path: ""], url_context)
-          )
-      )
+  defp run(html, url_context \\ []), do: EmojiImages.run(html, context(url_context))
+
+  defp draw(markdown, url_context \\ []),
+    do: EmojiImages.draw(markdown, :markdown, context(url_context))
+
+  defp context(url_context) do
+    CourseSiteFactory.build(:render_context,
+      source_path: @source_path,
+      page: {:document, DocumentRef.new(406, "unix-processes", :subject)},
+      urls:
+        CourseSiteFactory.build(
+          :url_context,
+          Keyword.merge([version: "2027", base_path: ""], url_context)
+        )
     )
   end
 end

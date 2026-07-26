@@ -9,7 +9,10 @@ defmodule ArchiDep.CourseSite.Renderer do
 
   Slides stop after the first stage. A deck is converted in the browser by
   reveal.js, so `render_slides/1` hands back Markdown; converting it here would
-  produce a page where a deck was expected.
+  produce a page where a deck was expected. What a deck refers to is resolved
+  all the same — a reference is resolved wherever it is written, and a deck's
+  images and emoji would otherwise be the only ones the build published as the
+  author typed them.
 
   Nothing in here reads a file, talks to a database or knows about Phoenix: a
   render is a function of a `ArchiDep.CourseSite.Renderer.RenderContext`, which
@@ -25,6 +28,8 @@ defmodule ArchiDep.CourseSite.Renderer do
   Only a document that does not parse produces nothing at all.
   """
 
+  alias ArchiDep.CourseSite.Renderer.AssetReferences
+  alias ArchiDep.CourseSite.Renderer.EmojiImages
   alias ArchiDep.CourseSite.Renderer.Excerpt
   alias ArchiDep.CourseSite.Renderer.Liquid
   alias ArchiDep.CourseSite.Renderer.Liquid.Tags
@@ -67,17 +72,26 @@ defmodule ArchiDep.CourseSite.Renderer do
   appended to it: reveal.js splits a deck into slides and converts each one on
   its own, so definitions sitting at the bottom would only ever serve the last
   slide.
+
+  A deck goes through neither of the build's pass seams, having no document and
+  no page, so the two rewrites it needs regardless of what a build asked for are
+  called here: the files it shows are resolved to the names they are published
+  under, and its emoji are drawn.
   """
   @spec render_slides(RenderContext.t()) ::
           {:ok, Slides.t()} | {:error, nonempty_list(RenderError.t())}
   def render_slides(%RenderContext{} = context) do
     case Liquid.render(context) do
-      {:ok, markdown, errors} ->
-        result(
-          %Slides{markdown: Source.substitute(context.source, markdown)},
-          errors,
-          context
-        )
+      {:ok, markdown, liquid_errors} ->
+        {deck, sweep_errors} =
+          context.source
+          |> Source.substitute(markdown)
+          |> sweep(context)
+
+        # A deck writing `relative_file_url` asks for a file the Liquid stage
+        # resolves and the sweep then resolves again, so a file that is missing
+        # is missing twice. It is one problem with the deck.
+        result(%Slides{markdown: deck}, Enum.uniq(liquid_errors ++ sweep_errors), context)
 
       {:error, errors} ->
         {:error, shift(errors, context)}
@@ -103,6 +117,17 @@ defmodule ArchiDep.CourseSite.Renderer do
       [] -> {:ok, includes}
       errors -> {:error, errors}
     end
+  end
+
+  # The files first and the emoji second: drawing an emoji writes an image of
+  # its own, and it is an asset of the build rather than a file next to the
+  # deck. Sweeping in this order means neither sweep ever sees what the other
+  # wrote.
+  defp sweep(markdown, context) do
+    {with_files, file_errors} = AssetReferences.rewrite(markdown, :markdown, context)
+    {drawn, emoji_errors} = EmojiImages.draw(with_files, :markdown, context)
+
+    {drawn, file_errors ++ emoji_errors}
   end
 
   defp parse(markdown, context) do

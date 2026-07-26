@@ -178,10 +178,22 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       what a page is called, is about and where it lives, and the feed is
       dropped**, with six corrections recorded there — including that the
       ordering constraint this task was written around does not exist.
-- [ ] Handle slides with tag/asset preprocessing only (no Markdown→HTML step) —
-      see [Slides](#slides).
+- [x] Handle slides with tag/asset preprocessing only (no Markdown→HTML step) —
+      see [Slides](#slides). **Done: `render_slides/1` substitutes the deck's
+      link references, resolves the files it shows and draws its emoji, in that
+      order**, none of them through a pass seam because a deck has neither a
+      document nor a page; the rewrite of a reference itself is shared with the
+      page path (`AssetReferences` over text, `PageAssets` over a document,
+      `Sweep` under both), with five corrections recorded below. All 14 decks
+      and all 45 pages were rendered against manifests built from the real
+      files: no reference is left undigested and none is falsely reported.
 - [ ] Subsume the asset-digest plumbing via `phx.digest` + verified routes — see
-      [Asset URLs](#asset-urls).
+      [Asset URLs](#asset-urls). The renderer's half of this landed with the
+      slides task above — every reference now goes through the seam, page
+      assets included. What remains is the build's half: filling the manifests
+      (`AssetManifest` from `phx.digest`'s `cache_manifest.json`), the step that
+      copies and digests the files next to a page, and the post-build link
+      check.
 
 **New features (built alongside the migration)**
 
@@ -802,6 +814,41 @@ Traps to handle when implementing:
   immutable. Because _every_ page asset is digested, the production static
   server can match on extension under the course tree
   (`/20\d\d/course/.*\.(png|jpe?g|webp|gif|svg|pdf)$`) to serve them immutable.
+
+**Corrections while implementing:**
+
+- **Resolving a page asset had to become idempotent, and that replaced every
+  scheme for rewriting exactly once.** A reference is resolved twice by
+  construction, not by accident: a block tag's body is converted _during_ the
+  Liquid stage, so the images in it are resolved there, and the tag's finished
+  HTML then re-enters the page as one node the page's own rewrite reads again.
+  The 22 `relative_file_url` references are the same story. So
+  `PageAssetManifest` indexes an asset by its digested name as well, a resolved
+  reference resolves to itself, and nothing has to remember what has been done —
+  which is the point, since a marker would have to survive being handed to a
+  browser as the text of a `<textarea>`. Pinned as a property at both levels.
+  Its price: a page asset's file name must be URL-safe, since the second lookup
+  is by the emitted path. All 362 of them are; the copy/digest step should keep
+  it that way.
+- **A relative link is not a page asset.** This document assumed a reference is
+  a reference, but the corpus writes relative links to other _pages_ —
+  `dns-configuration.md`, `../cli/`, `../701-sysadmin-cheatsheet/#installing`.
+  Reporting those would have failed the build on a dozen documents. So an
+  **image** is a file and a missing one is an error, while a **link** that
+  resolves to no file is taken to be a link to a page and left as written. The
+  post-build link check is what covers a genuinely broken link to a file.
+- **The attribute list is narrower than this document asked for.** `img[src]`
+  and `a[href]` only: no deck or page writes `source[srcset]`, `url()` in an
+  inline style, or a `data-background-*`. Anything a future author adds is the
+  link check's to catch rather than something to implement speculatively.
+- **Do not protect indented code blocks.** Protecting four-space indentation
+  would have skipped `201-git/slides/slides.md:76`, an `<img>` indented inside
+  an HTML block, and left it pointing at a name that no longer exists. No deck
+  uses indented code; being more thorough here is a bug.
+- **Combining pattern sources breaks numbered backreferences.** The protected
+  regions are composed into one pattern, so `</\1>` would point at whichever
+  group another region opened first. They refer to what they matched relatively
+  (`\g{-1}`) instead.
 
 #### Generated PDFs may live anywhere
 
@@ -1774,8 +1821,11 @@ what a shortcode is:
 Two consequences worth stating before they surprise someone. The fidelity gate
 needs this whitelisted: **every** emoji `src` changes, and the sites that are
 Unicode today become images. And slides keep their Unicode for now — a deck is
-never converted to HTML here, so its shortcodes are the [slides
-task](#slides)'s to sweep over the Markdown it hands to reveal.js.
+never converted to HTML here, so its shortcodes are the [slides task](#slides)'s
+to sweep over the Markdown it hands to reveal.js. (Discharged: the deck sweep
+landed with the slides task, drawing both spellings there too. `EmojiImages` was
+generalized rather than cloned, so the shortcode pattern that has to agree with
+`HeadingIdentifiers` stays in one place.)
 
 **Corrections while implementing:**
 
@@ -1830,6 +1880,29 @@ into `page.raw_markdown` and stuffs it into a `<textarea data-template>` in
 reference-link preprocessing** but **not** the Markdown→HTML step. Keep the PDF
 download link convention (`/pdf/ArchiDep {num} - {section} - {title} -
 Slides.pdf`) and the reveal.js asset wiring.
+
+**Corrections while implementing:**
+
+- **A deck's three post-Liquid steps are unconditional calls, not entries of a
+  pass list.** The emoji correction above says a mandatory rewrite belongs in
+  the defaults of `RenderOptions`; that governs a rewrite plugging into a seam a
+  build configures, which is true of the page path (`PageAssets` is now a
+  default `ast_pass`) and false of a deck, which has neither a document nor a
+  page and so reaches neither seam. The precedent for a mandatory rewrite with
+  no seam is `Highlighter`: called straight from the renderer, because with no
+  list to be a default of, optional could only mean forgotten. Reusing
+  `html_passes` was the other candidate and is wrong twice over — a deck is not
+  HTML, and `ExternalLinks` is in that list, so a deck's eight external anchors
+  would have been rewritten as a side effect.
+- **The order is substitute, then files, then emoji.** Substitution first
+  because it is what turns `][ref]` into a destination the file sweep can
+  resolve; emoji last because drawing one writes an `<img>` whose `src` is a
+  global asset of the build, which the file sweep must never see. Ordering
+  removes the interaction instead of guarding against it.
+- **The PDF download link and the reveal.js wiring are the layout's, not the
+  renderer's.** They move with the rest of the chrome to the HEEx shell, so
+  nothing about them belongs to this task beyond `{:pdf, page}` already being a
+  reference kind of the [URL seam](#url-and-link-emission-seam).
 
 ### Asset URLs
 

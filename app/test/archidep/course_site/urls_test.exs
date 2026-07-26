@@ -960,6 +960,23 @@ defmodule ArchiDep.CourseSite.UrlsTest do
       end
     end
 
+    property "resolving an asset next to a page again is resolving it once" do
+      page_assets =
+        PageAssetManifest.new(%{
+          "/course/509-reverse-proxy/images/nginx.png" => "nginx-7a8b9c.png"
+        })
+
+      page = {:document, DocumentRef.new(509, "reverse-proxy", :slides)}
+
+      check all %UrlContext{} = generated <- CourseSiteFactory.url_context_generator() do
+        context = %{generated | page_assets: page_assets}
+
+        {:ok, url} = Urls.resolve(context, {:page_asset, page, "../images/nginx.png"})
+
+        assert Urls.resolve(context, {:page_asset, page, url}) == {:ok, url}
+      end
+    end
+
     property "a global asset is never absolutized" do
       assets = AssetManifest.new(%{"/assets/app/app.js" => "/assets/app/app-4d5e6f.js"})
       reference = {:asset, "/assets/app/app.js"}

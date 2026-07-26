@@ -35,12 +35,16 @@ defmodule ArchiDep.CourseSite.Renderer.EmojiImages do
 
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderError
+  alias ArchiDep.CourseSite.Renderer.Sweep
   alias ArchiDep.CourseSite.Urls
   alias ArchiDep.Emoji
 
   # A region of the page the sweep does not look into, or a tag it must not look
-  # inside of: an emoji is written in a page's words, never in its markup.
-  @protected ~r{<(pre|code|script|style)\b[^>]*>.*?</\1>|<!--.*?-->|<[^>]*>}s
+  # inside of: an emoji is written in a page's words, never in its markup. A
+  # deck writes code the way Markdown does as well, and a shortcode shown as
+  # code is not one the page is asking for.
+  @in_html Sweep.compile([:code_markup, :comments, :tags])
+  @in_markdown Sweep.compile([:fences, :code_markup, :comments, :inline_code, :tags])
 
   # An emoji as a page writes it: the shortcode the content spells it with, or
   # the character itself. The shortcode has to open the text or stand after a
@@ -61,26 +65,32 @@ defmodule ArchiDep.CourseSite.Renderer.EmojiImages do
   """
   @impl ArchiDep.CourseSite.Renderer.HtmlPass
   @spec run(String.t(), RenderContext.t()) :: {String.t(), [RenderError.t()]}
-  def run(html, %RenderContext{} = context) when is_binary(html) do
-    parts = Regex.split(@protected, html, include_captures: true)
-    words = Enum.reject(parts, &protected?/1)
+  def run(html, %RenderContext{} = context) when is_binary(html),
+    do: draw(html, :html, context)
+
+  @doc """
+  Draw the emoji of a page, which is HTML, or of a slide deck, which is the
+  Markdown a browser will convert.
+
+  The two differ only in what they write code with: a deck's words are as much
+  its own as a page's, but a shortcode inside a fenced block or between
+  backticks is being shown rather than written.
+  """
+  @spec draw(String.t(), :html | :markdown, RenderContext.t()) ::
+          {String.t(), [RenderError.t()]}
+  def draw(text, syntax, %RenderContext{} = context) when is_binary(text) do
+    parts = Sweep.split(text, sweep(syntax))
+    words = Sweep.text(parts)
 
     {urls, url_errors} = urls(words, context)
 
-    {Enum.map_join(parts, &draw(&1, urls)), url_errors ++ unregistered(words, context)}
+    {Sweep.map_text(parts, &drawn_in(&1, urls)), url_errors ++ unregistered(words, context)}
   end
 
-  # Every part of the split that is not a match of the protected pattern is the
-  # page's own words; a match always opens with the `<` that started it.
-  defp protected?(part), do: String.starts_with?(part, "<")
+  defp sweep(:html), do: @in_html
+  defp sweep(:markdown), do: @in_markdown
 
-  defp draw(part, urls) do
-    if protected?(part) do
-      part
-    else
-      Regex.replace(@written, part, &image(&1, &2, urls))
-    end
-  end
+  defp drawn_in(words, urls), do: Regex.replace(@written, words, &image(&1, &2, urls))
 
   # A shortcode is replaced by the emoji it names and a character by the emoji
   # it is; what names none of the site's emoji is left as the page wrote it.

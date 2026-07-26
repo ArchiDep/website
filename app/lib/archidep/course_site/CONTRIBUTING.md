@@ -158,6 +158,36 @@ the file. Two consequences to keep in mind when working on this:
   so `../images/x.jpg` stays `../images/x-<digest>.jpg`. A missing file is a
   build error, because resolving requires the manifest entry that only a real
   file produces.
+- **An image is a file and a link may be one.** An image the build has no file
+  for is a page showing a picture that is not there, and is reported. A link is
+  written the same way whether it points at a file or at another page of the
+  course — `dns-configuration.md` and `../cli/` are both links a chapter writes
+  — so one that resolves to no file is taken to be a link to a page and left
+  exactly as written.
+- **Resolving twice is resolving once.**
+  [`PageAssetManifest`](./urls/page_asset_manifest.ex) knows an asset by the
+  name it is written under _and_ by the name it is published under, so a
+  reference that has already been resolved resolves to itself. That is what
+  makes the rewrite safe to run where it cannot be run exactly once: a tag body
+  is converted during the Liquid stage, so the images in it are resolved there,
+  and the tag's finished HTML then re-enters the page as one node the page's own
+  rewrite reads again. The 22 references the content writes with
+  `relative_file_url` are the same story. Nothing needs to remember what has
+  already been done — which is the point, since a marker would have to survive
+  being handed to a browser as text.
+- **A page asset's file name has to be URL-safe** (`[A-Za-z0-9._-]`), because
+  the second lookup of the rule above is by the emitted path: a name needing
+  percent-encoding would resolve once and then fail to be found. Every file in
+  the course is named that way today, and the step that copies and digests them
+  is where to keep it that way.
+
+Two places do the rewriting, because a reference is written in two kinds of
+thing. [`PageAssets`](./renderer/page_assets.ex) is an
+[`AstPass`](#passes-over-the-document-or-over-the-page) over the URL of every
+image and every link of a document;
+[`AssetReferences`](./renderer/asset_references.ex) is the scan of text it
+delegates to for the raw HTML a document embeds, and the one a
+[deck](#slides-are-not-converted) uses for the whole of itself.
 
 ### Generated PDFs
 
@@ -291,7 +321,10 @@ is decided by what it needs to see:
 
 - An [`AstPass`](./renderer/ast_pass.ex) runs over **every** Markdown document
   the build converts, a page and a tag body alike. Rewriting the URL of an image
-  belongs here.
+  belongs here, and [`PageAssets`](./renderer/page_assets.ex) is the pass that
+  does it: what a document refers to is written in the document, and by the time
+  a page's HTML exists a code sample has become markup a rewrite would have to
+  learn to tell apart again.
 - An [`HtmlPass`](./renderer/html_pass.ex) runs **once**, over the finished HTML
   of a page. Anything that has to see inside a tag's output belongs here, since
   a tag's body is one opaque node by the time the page's document exists.
@@ -300,6 +333,19 @@ Emoji shortcodes are the case that shows the difference: a tag writes them in
 the wrapper it puts around its body, which was never Markdown at all, so a
 rewrite of the document would leave those alone and turn only the page's own
 into images.
+
+A rewrite a **deck** needs is neither, since a deck has no document and no page
+of its own. Those are called straight from `render_slides/1`, the way
+[highlighting](#colouring-a-code-block) is, and for the same reason: with no
+seam to be a default of, being optional could only mean being forgotten.
+
+Both seams and both sweeps read text with [`Sweep`](./renderer/sweep.ex), which
+cuts a fragment into the parts a rewrite may touch and the parts it may not.
+Which regions are protected is the rewrite's to choose, and the two choose
+differently: an emoji is written in a page's words, so every tag is protected
+from it, while the URL of an image is written in a tag's attributes, which is
+the whole reason that sweep is looking. A deck adds what Markdown writes code
+with — a fence, a backtick — to whatever markup protects.
 
 ### One emoji, one picture
 
@@ -316,6 +362,12 @@ than left to one: it is the other half of [identifying a heading by what it
 says](#a-heading-is-identified-by-what-it-says-not-by-its-decoration), and a
 build that ran one without the other would publish anchors named after a
 decoration the page then shows as text.
+
+It draws a [deck](#slides-are-not-converted) too, through the same function with
+the protected regions of Markdown added, so that a shortcode in a shell
+transcript stays a shell transcript. The heading argument does not apply there —
+a deck has no identifiers we assign — but the closed vocabulary does: a deck is
+the last place that would publish `:coffee:` as words.
 
 It reads a page in either of the two ways one is written — the shortcode
 `:books:`, or the character itself — and leaves four things alone:
@@ -465,6 +517,23 @@ rather than appended to it, as they are for a page: the definitions sit at the
 bottom of the file, and every slide but the last would be converted without
 them.
 
+Staying Markdown does not mean staying unresolved. What a deck refers to is
+settled here, since nothing downstream will: three things happen to it after the
+Liquid stage, in this order.
+
+1. **Its link reference definitions are substituted in**, as above — before
+   anything looks at what it refers to, so that a reference link pointing at a
+   file is a reference by then.
+2. **The files it shows are resolved** to the names they are published under,
+   with [`AssetReferences`](./renderer/asset_references.ex). A deck writes them
+   both ways, `![](images/x.png)` and `<img src='../images/x.png'>`, and the raw
+   HTML is the reason this is a scan of text and not a walk of a document.
+3. **Its emoji are drawn**, with the same pass that draws a page's.
+
+Files before emoji: drawing an emoji writes an image of its own, and that image
+is an asset of the build rather than a file next to the deck. Doing it in this
+order means neither sweep ever sees what the other wrote.
+
 ### Reporting rather than raising
 
 A document that refers to a chapter that does not exist, an image that is not
@@ -520,6 +589,13 @@ md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than
   `github.githubassets.com`, and every emoji is one: `jemoji` drew the
   shortcodes and left the characters a page or a layout typed to whatever font
   the reader happened to have.
+- **A deck's emoji are drawn too.** `jemoji` ran over a rendered page, and a
+  deck is handed to the browser as the text of a `<textarea>`, so a deck's
+  `:coffee:` was published as five words and its 🛠️ as whatever the reader had.
+- **A file next to a page is referred to by its digested name**, where Jekyll
+  emitted the plain relative path. The path shape the author wrote is kept, so
+  only the file name differs — and `relative_file_url`, which Jekyll's version
+  silently returned unchanged, now resolves.
 - **A tag's wrapper is emitted without the blank lines Jekyll's has.** kramdown
   tolerated them inside an HTML block; CommonMark ends the block at the first
   one, which would leave the rest of the wrapper to be read as Markdown.

@@ -23,8 +23,8 @@ defmodule ArchiDep.CourseSite.Renderer.MarkdownTest do
     end
 
     test "keeps the raw HTML the course writes in its Markdown" do
-      assert Markdown.to_html("<div class='w80'><img src='images/dns.jpg' /></div>\n", context()) ==
-               {"<div class='w80'><img src='images/dns.jpg' /></div>", []}
+      assert Markdown.to_html("<div class='w80'><span>Zone file</span></div>\n", context()) ==
+               {"<div class='w80'><span>Zone file</span></div>", []}
     end
 
     test "turns quotes into their typographic characters" do

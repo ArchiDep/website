@@ -101,7 +101,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     {reveal_all_solutions, attrs!} = Map.pop(attrs!, :reveal_all_solutions, false)
     {strict_variables, attrs!} = Map.pop(attrs!, :strict_variables, true)
     {tags, attrs!} = Map.pop(attrs!, :tags)
-    {ast_passes, attrs!} = Map.pop(attrs!, :ast_passes, [])
+    {ast_passes, attrs!} = Map.pop(attrs!, :ast_passes)
     {html_passes, attrs!} = Map.pop(attrs!, :html_passes)
 
     [] = Map.keys(attrs!)
@@ -109,9 +109,9 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     opts =
       [
         reveal_all_solutions: reveal_all_solutions,
-        strict_variables: strict_variables,
-        ast_passes: ast_passes
+        strict_variables: strict_variables
       ]
+      |> optional(:ast_passes, ast_passes)
       |> optional(:html_passes, html_passes)
       |> optional(:tags, tags)
 

@@ -8,6 +8,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Slides
   alias ArchiDep.CourseSite.Renderer.Toc.Entry
+  alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.Support.CourseSiteFactory
   alias ArchiDep.Support.CourseSiteRendererTestTags
   alias ArchiDep.Support.CourseSiteRendererTestTags.FailingPass
@@ -15,6 +16,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
   alias ArchiDep.Support.CourseSiteRendererTestTags.SignaturePass
 
   @books ~s(<img class="emoji" src="/2026/assets/emoji/1f4da.svg" alt="📚" />)
+  @coffee ~s(<img class="emoji" src="/2026/assets/emoji/2615.svg" alt="☕" />)
   @elsewhere ~s( target="_blank" rel="noopener noreferrer")
 
   describe "render_page/1" do
@@ -134,6 +136,29 @@ defmodule ArchiDep.CourseSite.RendererTest do
                 }}
     end
 
+    test "resolves the file the body of a block tag shows exactly once" do
+      assert render_page(
+               "{% prose %}\n<img src='images/cpu.png' class='w-full' />\n{% endprose %}\n",
+               urls:
+                 CourseSiteFactory.build(:url_context,
+                   version: "2026",
+                   base_path: "",
+                   page_assets:
+                     PageAssetManifest.new(%{
+                       "/course/701-paas/images/cpu.png" => "cpu-1a2b3c.png"
+                     })
+                 )
+             ) ==
+               {:ok,
+                %Page{
+                  excerpt_html: nil,
+                  html:
+                    ~s(<div class="prose-plain">) <>
+                      ~s(<img src='images/cpu-1a2b3c.png' class='w-full' /></div>),
+                  toc: []
+                }}
+    end
+
     test "reports a page that declares an excerpt separator it never writes" do
       assert render_page("""
              ---
@@ -245,9 +270,94 @@ defmodule ArchiDep.CourseSite.RendererTest do
                 }}
     end
 
+    test "resolves what a deck shows and draws what it celebrates with" do
+      assert render_slides(
+               """
+               # Cloud computing
+
+               <img class='w-3/4' src='../images/client-server.jpg' />
+
+               ---
+
+               ## Hosting
+
+               ![Shared hosting](../images/shared-hosting.png)
+
+               Carelessness and coffee spills <div class="emoji-container">:coffee:</div>
+               """,
+               page: {:document, DocumentRef.new(401, "cloud-computing", :slides)},
+               source_path: "_course/401-cloud-computing/slides.md",
+               urls:
+                 CourseSiteFactory.build(:url_context,
+                   version: "2026",
+                   base_path: "",
+                   page_assets:
+                     PageAssetManifest.new(%{
+                       "/course/401-cloud-computing/images/client-server.jpg" =>
+                         "client-server-1a2b3c.jpg",
+                       "/course/401-cloud-computing/images/shared-hosting.png" =>
+                         "shared-hosting-2b3c4d.png"
+                     })
+                 )
+             ) ==
+               {:ok,
+                %Slides{
+                  markdown: """
+                  # Cloud computing
+
+                  <img class='w-3/4' src='../images/client-server-1a2b3c.jpg' />
+
+                  ---
+
+                  ## Hosting
+
+                  ![Shared hosting](../images/shared-hosting-2b3c4d.png)
+
+                  Carelessness and coffee spills <div class="emoji-container">#{@coffee}</div>
+                  """
+                }}
+    end
+
+    test "leaves the picture of an emoji it just drew alone" do
+      assert render_slides("A drink :coffee: and a picture ![Zone](images/zone.png)\n",
+               page: {:document, DocumentRef.new(507, "dns", :slides)},
+               source_path: "_course/507-dns/slides/slides.md",
+               urls:
+                 CourseSiteFactory.build(:url_context,
+                   version: "2026",
+                   base_path: "",
+                   page_assets:
+                     PageAssetManifest.new(%{
+                       "/course/507-dns/slides/images/zone.png" => "zone-3c4d5e.png"
+                     })
+                 )
+             ) ==
+               {:ok,
+                %Slides{
+                  markdown: "A drink #{@coffee} and a picture ![Zone](images/zone-3c4d5e.png)\n"
+                }}
+    end
+
     test "reports a problem in a deck" do
       assert render_slides("# Slide\n\n{% boom %}\n") ==
                {:error, [boom_error(%{line: 3, column: 1})]}
+    end
+
+    test "reports the file a deck shows that the build does not have, once for the deck" do
+      assert render_slides(
+               "<img src='images/gone.png' />\n\n---\n\n![Gone](images/gone.png)\n",
+               page: {:document, DocumentRef.new(201, "git", :slides)},
+               source_path: "_course/201-git/slides/slides.md"
+             ) ==
+               {:error,
+                [
+                  RenderError.new(
+                    {:url,
+                     {:unknown_page_asset, {:document, DocumentRef.new(201, "git", :slides)},
+                      "images/gone.png", "/course/201-git/slides/images/gone.png"}},
+                    "_course/201-git/slides/slides.md"
+                  )
+                ]}
     end
   end
 

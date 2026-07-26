@@ -18,7 +18,7 @@ defmodule ArchiDep.CourseSite.Urls.UrlContextTest do
                absolute_base_url: nil,
                live_site_url: nil,
                assets: %AssetManifest{assets: %{}},
-               page_assets: %PageAssetManifest{page_assets: %{}},
+               page_assets: %PageAssetManifest{page_assets: %{}, digested: %{}},
                pdfs: %PdfManifest{base: :site, entries: %{}}
              }
     end
