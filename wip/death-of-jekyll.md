@@ -159,8 +159,13 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       `704-render-deployment/exercise.md`, which Ruby Liquid tolerates but
       `Solid` rejects. **Done**; both documents render, and both notes keep
       rendering under Jekyll — see [Spike results](#spike-results).
-- [ ] Generate heading IDs and the "On this page" TOC from the AST — see [TOC
-      and heading anchors](#toc-and-heading-anchors).
+- [x] Generate heading IDs and the "On this page" TOC from the AST — see [TOC
+      and heading anchors](#toc-and-heading-anchors). **Done:
+      `ArchiDep.CourseSite.Renderer.Toc` reads the navigation off the finished
+      page rather than off the AST**, because that is where the identifiers are
+      assigned, and `HeadingIdentifiers` keeps a heading's emoji shortcode out
+      of its identifier — a deliberate behaviour change that moves 359 anchors,
+      recorded below.
 - [ ] Replace the smaller Jekyll plugins (`jemoji`, `target-blank`, `seo-tag`,
       `feed`) — see [Smaller Jekyll plugins](#smaller-jekyll-plugins).
 - [ ] Handle slides with tag/asset preprocessing only (no Markdown→HTML step) —
@@ -1518,29 +1523,87 @@ which is what Jekyll's generator already does to `item.content` before the
 
 ### TOC and heading anchors
 
-Generate heading IDs and the "On this page" navigation from the MDEx AST,
-replacing `jekyll-toc` + the `toc_only` filter. The generated, _stable_ IDs are
-also what [Heading references that
-compile-fail](#heading-references-that-compile-fail) will key off.
+**Implemented** as `ArchiDep.CourseSite.Renderer.Toc` (plus `Toc.Entry`, and the
+`toc` a rendered `Page` now carries) and
+`ArchiDep.CourseSite.Renderer.HeadingIdentifiers`, both documented in
+[`app/lib/archidep/course_site/CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md).
+The IDs are what [Heading references that
+compile-fail](#heading-references-that-compile-fail) keys off.
 
-**Slugging needs no custom work.** The spike compared MDEx's
-`header_id_prefix: ""` slugs against the IDs Jekyll actually emitted, for every
-heading of every non-slide course document: **685 of 685 match**, including the
-awkward cases — emoji shortcodes (`### :exclamation: Create your server` →
-`exclamation-create-your-server`), dotted words (`Gandi.net` → `gandinet`) and
-inline code in headings. So this item is only the TOC, not a slugger.
+**Slugging needed no custom work**, as this section predicted. The spike
+compared MDEx's `header_id_prefix: ""` slugs against the IDs Jekyll actually
+emitted, for every heading of every non-slide course document: **685 of 685
+match**, including the awkward cases — dotted words (`Gandi.net` → `gandinet`)
+and inline code in headings. The one thing that _is_ slugged differently is
+deliberate, and is the first correction below.
+
+Four corrections to this section, three of them found while implementing it and
+the first a decision taken with it:
+
+- **An emoji shortcode is no longer part of a heading's identifier.** `###
+:exclamation: Create your server` was identified by
+  `exclamation-create-your-server`, which was never intentional: the shortcode
+  says the reader has something to do here and belongs in the anchor no more
+  than the words' capitalisation does. It cannot simply be dropped before
+  rendering, because the heading still has to show it — and MDEx offers no way
+  to hand a heading an identifier (`attrs.id` set on the node is ignored, and so
+  is the `{#id}` attribute syntax, both verified). So `HeadingIdentifiers` moves
+  the shortcode, with the space that follows it, out of the heading's _text_ and
+  into an inline HTML node: the renderer writes it out as it stands and the
+  slugger does not read it. **359 headings move** (`:exclamation:` ×234,
+  `:boom:` ×51, `:question:` ×25, `:checkered_flag:` ×24, `:classical_building:`
+  ×17, `:space_invader:` ×6, `:gem:` ×2; every one of them opens its heading),
+  and **no two headings collide** that did not already: the only post-strip
+  duplicate, `Alice: check the state of branches` in
+  `204-hello-github/exercise.md`, is written twice with the same shortcode today
+  and already relies on the `-1` suffix. Only a shortcode opening the text or
+  standing after a space is moved, which is what leaves a heading such as
+  `Meeting at 10:30: what to bring` alone; a heading of nothing _but_ a
+  shortcode keeps it, since there would otherwise be nothing left to slug. The
+  **21 anchors the content links to** and the **10 in
+  `server_help_component.ex`** have been updated with it — see [Heading
+  references that compile-fail](#heading-references-that-compile-fail) — which
+  means those links do not resolve under the Jekyll build that is still serving
+  the site, and start working again at [Cutover](#cutover). Nothing 404s in the
+  meantime: a stale fragment lands the reader at the top of the right page.
+- **The navigation is read off the finished page, not built from the AST.** Both
+  halves of an entry are only settled there. The identifiers are assigned while
+  the document is rendered, and a heading a page repeats is numbered according
+  to what came before it (`troubleshooting`, `troubleshooting-1`) — deriving
+  them from the AST would mean writing the second slugger this section says is
+  not needed. And a label is the heading as the page shows it, which is after
+  the [passes over the finished page](#smaller-jekyll-plugins) have turned its
+  shortcodes into images. This is also what `jekyll-toc` does, so the semantics
+  come along for free.
+- **The renderer's entries stop at the page.** `jekyll-toc` ran on the output of
+  the _layout_, so today's navigation opens with the layout's own headings — `🏆
+Graded exercise` and `:scroll: Legend` for an exercise, `Presentation` for a
+  chapter with slides. Those move to the HEEx shell with the rest of the chrome,
+  and so must their entries: the renderer returns the page's own headings, its
+  opening included, and whatever lays the page out prepends what it draws
+  itself. That shell is also what emits the markup `theme/src/toc.css` is
+  written against — an entry is sized by `toc-h1`…`toc-h6`, which is why an
+  entry carries its heading's level and not just its place in the tree. One to
+  pick up with the [static build step](#static-build-step).
+- **An entry keeps the heading's markup.** `jekyll-toc` replaced every element
+  of a heading but an image by its text, so `### :boom: \`Uncaught
+  PDOException\``lost its`<code>` in the navigation. The port keeps the
+  heading's inline HTML as it is, which is one fewer rule and reads better.
 
 ### Smaller Jekyll plugins
 
 Replace the remaining plugins:
 
 - **`jemoji`** — `:shortcode:` → emoji; needed in titles _and_ tag output (e.g.
-  `:books:`). Port the shortcode→emoji map. **Ordering constraint:** heading IDs
-  are slugged from the _shortcode_ text, not the emoji — `### :exclamation:
-Create your server` is `#exclamation-create-your-server`, and the app links to
-  it — so emoji substitution must run **after** heading IDs are generated, which
-  makes it an HTML pass rather than an AST one (see [Shared Markdown rendering
-  core](#shared-markdown-rendering-core)).
+  `:books:`). Port the shortcode→emoji map. It is an HTML pass rather than an
+  AST one because a tag writes shortcodes into the wrapper around its body,
+  which was never Markdown (see [Shared Markdown rendering
+  core](#shared-markdown-rendering-core)). Heading IDs no longer constrain the
+  ordering: a heading's shortcodes are moved out of the text the slugger reads
+  before the page is rendered, so the sweep finds them wherever it runs — see
+  [TOC and heading anchors](#toc-and-heading-anchors). It must, however, agree
+  with `HeadingIdentifiers` on what a shortcode _is_: a shortcode that opens the
+  text or stands after a space.
 - **`jekyll-target-blank`** — a trivial pass adding `target="_blank"` to
   external links, over the **finished HTML** rather than the Markdown document:
   184 links in 28 files sit inside block-tag bodies, which are already HTML by
@@ -1662,10 +1725,10 @@ Improve it so references are **typed and granular**:
 
 ### Heading references that compile-fail
 
-Today the app hardcodes brittle URL fragments into Jekyll-generated headings —
-**11 in `app/lib/archidep_web/servers/server_help_component.ex`** (e.g.
-`#exclamation-create-your-server`,
-`#boom-i-forgot-to-open-some-or-all-of-the-ports-in-the-firewall`) plus one in
+Today the app hardcodes brittle URL fragments into generated headings — **11 in
+`app/lib/archidep_web/servers/server_help_component.ex`** (e.g.
+`#create-your-server`,
+`#i-forgot-to-open-some-or-all-of-the-ports-in-the-firewall`) plus one in
 `app/lib/archidep_web/course/change_username_dialog_live.html.heex`
 (`#how-do-i-change-my-username-usermod`). These silently break when a heading is
 reworded.
@@ -1677,9 +1740,14 @@ single biggest robustness win of the migration and pairs with [TOC and heading
 anchors](#toc-and-heading-anchors) (which produces the stable IDs) and [A richer
 Course.Material model](#a-richer-coursematerial-model).
 
-All 10 distinct fragments the app hardcodes today are reproduced verbatim by the
-MDEx slugger, so this task is a pure robustness change: **no anchor has to move,
-and no redirect is needed** to keep existing links working.
+Nine of the 10 distinct fragments the app hardcodes are reproduced verbatim by
+the MDEx slugger; the tenth, `#how-do-i-change-my-username-usermod`, is a
+cheatsheet heading and equally unaffected. What did move is the **emoji
+shortcode** each of the `server_help_component.ex` fragments used to carry, so
+those strings have already been rewritten (`#exclamation-create-your-server` →
+`#create-your-server`) — see [TOC and heading
+anchors](#toc-and-heading-anchors). This task stays a pure robustness change on
+top of that: no further anchor has to move, and no redirect is needed.
 
 ### Progress: structure vs status
 
@@ -2025,11 +2093,14 @@ The gating QA step — but the bar is **functional and visual parity, not
 byte-identical HTML**. What must hold across all 59 course docs + 4 cheatsheets
 (and the slides): nothing is broken — links resolve, tags render, code
 highlights, TOC/anchors work, navigation and progress classes are correct — and
-each page **looks good**. Three divergences are **known and expected**, so look
+each page **looks good**. Four divergences are **known and expected**, so look
 for them deliberately rather than treating them as regressions: code blocks
 restyled from rouge to `lumis`, lone raw `<img>` lines no longer wrapped in
-`<p>`, and the `cols` column classes finally applying (see [Spike
-results](#spike-results)). We explicitly **do not** require pixel- or
+`<p>`, the `cols` column classes finally applying (see [Spike
+results](#spike-results)), and the **359 heading identifiers that drop their
+emoji shortcode** — with the 31 links that name them, which do not resolve under
+Jekyll and must resolve here (see [TOC and heading
+anchors](#toc-and-heading-anchors)). We explicitly **do not** require pixel- or
 byte-for-byte reproduction of the Jekyll output; small kramdown-vs-comrak
 differences (whitespace, slugging, minor markup) are acceptable as long as the
 page reads correctly and looks right.

@@ -210,7 +210,7 @@ it.
 This is a simplified architecture of the main running processes and
 communication flow at the end of this exercise. Note that it has not changed
 compared to [the previous exercises]({% link
-_course/501-git-clone-deployment/exercise.md %}#classical_building-architecture)
+_course/501-git-clone-deployment/exercise.md %}#architecture)
 since we have neither created any new processes nor changed how they
 communicate.
 

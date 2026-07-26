@@ -543,7 +543,7 @@ Automatic merge failed; fix conflicts and then commit the result.
 
 If the `git pull` command fails with a warning about reconciling divergent
 branches, see the [troubleshooting tip about configure Git's merge
-behavior](#boom-alices-git-pull-command-fails-with-a-warning).
+behavior](#alices-git-pull-command-fails-with-a-warning).
 
 {% endnote %}
 

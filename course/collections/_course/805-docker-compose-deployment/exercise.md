@@ -76,8 +76,8 @@ changes.
 
 Take a look at the [architecture of the PHP todolist deployment with nginx and
 the FastCGI process manager exercise]({% link
-_course/512-nginx-php-fpm-deployment/exercise.md
-%}#classical_building-architecture) you did earlier in the course:
+_course/512-nginx-php-fpm-deployment/exercise.md %}#architecture) you did
+earlier in the course:
 
 ![Simplified architecture](./images/original-architecture.png)
 
@@ -450,7 +450,7 @@ $> docker run -it -v /path/to/app:/app bitnami/php-fpm
 That's _almost good enough_ to run the PHP todolist. There's just one catch: in
 the PHP-FPM deployment exercise, we had to [add environment variables to FPM]({%
 link _course/512-nginx-php-fpm-deployment/exercise.md
-%}#exclamation-add-the-todolist_db_pass-environment-variable-to-php-fpm).
+%}#add-the-todolist_db_pass-environment-variable-to-php-fpm).
 
 We have to do the same with Docker. But we don't want to do exactly the same: we
 don't want the PHP todolist's database password to be baked into the image. That
@@ -698,14 +698,13 @@ The reverse proxy needs to **listen on a port**, e.g. `80`, the default HTTP
 port, or maybe a custom port for local testing. It already listens on a port
 inside the container, but you will need to **publish the port** on your host,
 much like you did during the [previous Docker exercise]({% link
-_course/802-docker-fibscale/exercise.md
-%}#exclamation-map-your-containers-ports).
+_course/802-docker-fibscale/exercise.md %}#map-your-containers-ports).
 
 The reverse proxy must **proxy requests to the application** service. You know
 how to do this from the [FPM exercise]({% link
 _course/512-nginx-php-fpm-deployment/exercise.md
-%}#exclamation-create-an-nginx-configuration-file-to-serve-the-application): you
-must create an nginx site configuration file to serve the application.
+%}#create-an-nginx-configuration-file-to-serve-the-application): you must create
+an nginx site configuration file to serve the application.
 
 As we've seen before when learning about [container file system
 isolation]({%link _course/803-docker-isolation/subject.md
@@ -1206,9 +1205,9 @@ your server.
 
 You should already have [installed Docker on your cloud server during the
 previous exercise]({% link _course/802-docker-fibscale/exercise.md
-%}#exclamation-install-docker-on-the-server). You can run `sudo docker run
-hello-world` to check everything works. You should see the "Hello from Docker!"
-message without error.
+%}#install-docker-on-the-server). You can run `sudo docker run hello-world` to
+check everything works. You should see the "Hello from Docker!" message without
+error.
 
 ### :exclamation: Copy your `.env` file to the server
 
@@ -1522,7 +1521,7 @@ application service's containers.
 You don't even have to use [an nginx `upstream` directive][nginx-upstream]
 directive like you did in the [original horizontal scaling exercise]({% link
 _course/515-fibscale-deployment/exercise.md
-%}#exclamation-configure-nginx-to-balance-the-load-among-the-available-fibscale-instances).
+%}#configure-nginx-to-balance-the-load-among-the-available-fibscale-instances).
 Nginx simply contacts the service available at the `app` hostname, and Docker
 Compose balances the load across the service's containers out of the box!
 

@@ -1029,7 +1029,7 @@ remote: sudo: no tty present and no askpass program specified
 It means that you have created a dedicated Unix user but you have not performed
 the following step correctly: [Allowing the dedicated `floodit` Unix user to
 control the systemd
-service](#space_invader-allowing-the-dedicated-floodit-unix-user-to-control-the-systemd-service).
+service](#allowing-the-dedicated-floodit-unix-user-to-control-the-systemd-service).
 
 Make sure that the list of authorized `systemctl` commands in the sudoers file
 match the name of your service (if you named your systemd configuration file

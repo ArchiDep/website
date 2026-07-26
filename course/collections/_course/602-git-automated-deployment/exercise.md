@@ -311,7 +311,7 @@ This is a simplified architecture of the main running processes and
 communication flow at the end of this exercise. Note that it has not changed
 compared to [the previous exercises]({% link
 _course/512-nginx-php-fpm-deployment/exercise.md
-%}#classical_building-architecture) since we have neither created any new
+%}#architecture) since we have neither created any new
 processes nor changed how they communicate:
 
 ![Diagram](./images/architecture.png)

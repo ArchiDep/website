@@ -648,12 +648,12 @@ For the first port of the `-p` option, you need to use a port that is publicly
 accessible and not already in use on your cloud server. In this example, we are
 using port `3001`, which is one of the two ports we asked that you open when you
 [set up your cloud server]({% link _course/402-run-virtual-server/exercise.md
-%}#exclamation-configure-open-ports).
+%}#configure-open-ports).
 
 If neither port is available, you can use another like 3002, but make sure to
 [open that port in your cloud server's firewall settings]({% link
 _course/402-run-virtual-server/exercise.md
-%}#boom-i-forgot-to-open-some-or-all-of-the-ports-in-the-firewall).
+%}#i-forgot-to-open-some-or-all-of-the-ports-in-the-firewall).
 Alternatively, you could stop whatever service is using port 3001 to free it
 (**as long as it's not your delivery for the graded exercise**).
 

@@ -211,7 +211,7 @@ nginx: configuration file /etc/nginx/nginx.conf test is successful
 {% note type: tip %}
 
 If an error occurs here, you may have made a mistake in the configuration. (See
-[Troubleshooting](#boom-troubleshooting) if you get an error about
+[Troubleshooting](#troubleshooting) if you get an error about
 `server_names_hash_bucket_size`.)
 
 {% endnote %}

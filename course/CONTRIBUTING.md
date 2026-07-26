@@ -175,6 +175,13 @@ materials.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.
 - Ensure all links are valid and point to relevant resources.
+- Link to a heading by the anchor slugged from its text — lowercased, with
+  punctuation dropped and spaces turned into hyphens (`## Configure basic
+settings` → `#configure-basic-settings`). The emoji shortcode a heading is
+  decorated with is **not** part of its anchor: write `#create-your-server`, not
+  `#exclamation-create-your-server`. (The Jekyll build still emits the shortcode
+  in the anchor, so such a link scrolls nowhere until the Elixir renderer takes
+  over; it still opens the right page.)
 - Use consistent terminology and style throughout the materials.
 - Follow accessibility best practices to ensure content is usable by all
   students.

@@ -7,6 +7,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
   alias ArchiDep.CourseSite.Renderer.Page
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Slides
+  alias ArchiDep.CourseSite.Renderer.Toc.Entry
   alias ArchiDep.Support.CourseSiteFactory
   alias ArchiDep.Support.CourseSiteRendererTestTags
   alias ArchiDep.Support.CourseSiteRendererTestTags.FailingPass
@@ -47,7 +48,52 @@ defmodule ArchiDep.CourseSite.RendererTest do
                       ~s(aria-label="Link to heading 'Deploying'" data-heading-content="Deploying" ) <>
                       ~s(class="anchor"></a></h2>\n) <>
                       ~s(<p>Read the <a href="/2026/course/410-sftp-deployment/">SFTP exercise</a> first,\n) <>
-                      ~s(then <svg class="size-6"/> look at Platform-as-a-Service.</p>)
+                      ~s(then <svg class="size-6"/> look at Platform-as-a-Service.</p>),
+                  toc: [%Entry{id: "deploying", level: 2, label_html: "Deploying"}]
+                }}
+    end
+
+    test "navigates a page by its headings, the ones opening it included" do
+      assert render_page("""
+             ---
+             excerpt_separator: <!-- more -->
+             ---
+
+             ## :books: What you will learn
+
+             <!-- more -->
+
+             ## Deploying
+
+             ### Over SFTP
+             """) ==
+               {:ok,
+                %Page{
+                  excerpt_html:
+                    ~s(<h2 id="what-you-will-learn">:books: What you will learn) <>
+                      ~s(<a href="#what-you-will-learn" ) <>
+                      ~s(aria-label="Link to heading 'What you will learn'" ) <>
+                      ~s(data-heading-content="What you will learn" class="anchor"></a></h2>),
+                  html:
+                    ~s(<h2 id="deploying">Deploying<a href="#deploying" ) <>
+                      ~s(aria-label="Link to heading 'Deploying'" data-heading-content="Deploying" ) <>
+                      ~s(class="anchor"></a></h2>\n) <>
+                      ~s(<h3 id="over-sftp">Over SFTP<a href="#over-sftp" ) <>
+                      ~s(aria-label="Link to heading 'Over SFTP'" data-heading-content="Over SFTP" ) <>
+                      ~s(class="anchor"></a></h3>),
+                  toc: [
+                    %Entry{
+                      id: "what-you-will-learn",
+                      level: 2,
+                      label_html: ":books: What you will learn"
+                    },
+                    %Entry{
+                      id: "deploying",
+                      level: 2,
+                      label_html: "Deploying",
+                      entries: [%Entry{id: "over-sftp", level: 3, label_html: "Over SFTP"}]
+                    }
+                  ]
                 }}
     end
 
@@ -56,13 +102,14 @@ defmodule ArchiDep.CourseSite.RendererTest do
                {:ok,
                 %Page{
                   excerpt_html: "<p>An opening paragraph.</p>",
-                  html: "<p>The rest of the page.</p>"
+                  html: "<p>The rest of the page.</p>",
+                  toc: []
                 }}
     end
 
     test "gives a page of a single block nothing to introduce it" do
       assert render_page("The only paragraph.\n") ==
-               {:ok, %Page{excerpt_html: nil, html: "<p>The only paragraph.</p>"}}
+               {:ok, %Page{excerpt_html: nil, html: "<p>The only paragraph.</p>", toc: []}}
     end
 
     test "runs the build's passes over both pieces of the page" do
@@ -78,7 +125,8 @@ defmodule ArchiDep.CourseSite.RendererTest do
                {:ok,
                 %Page{
                   excerpt_html: "<p>AN OPENING PARAGRAPH.</p><!-- signed -->",
-                  html: "<p>THE REST OF THE PAGE.</p><!-- signed -->"
+                  html: "<p>THE REST OF THE PAGE.</p><!-- signed -->",
+                  toc: []
                 }}
     end
 

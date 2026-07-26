@@ -33,12 +33,19 @@ defmodule ArchiDep.CourseSite.Renderer.MarkdownTest do
     end
 
     test "gives every heading an identifier slugged from its text" do
-      assert Markdown.to_html("## :exclamation: Create your server\n", context()) ==
-               {~s(<h2 id="exclamation-create-your-server">:exclamation: Create your server) <>
-                  ~s(<a href="#exclamation-create-your-server" ) <>
-                  ~s(aria-label="Link to heading ':exclamation: Create your server'" ) <>
-                  ~s(data-heading-content=":exclamation: Create your server" class="anchor"></a></h2>),
-                []}
+      assert Markdown.to_html("## Create your server\n", context()) ==
+               {~s(<h2 id="create-your-server">Create your server) <>
+                  ~s(<a href="#create-your-server" ) <>
+                  ~s(aria-label="Link to heading 'Create your server'" ) <>
+                  ~s(data-heading-content="Create your server" class="anchor"></a></h2>), []}
+    end
+
+    test "leaves the emoji a heading is decorated with out of its identifier" do
+      assert Markdown.to_html("## :exclamation: Register your server\n", context()) ==
+               {~s(<h2 id="register-your-server">:exclamation: Register your server) <>
+                  ~s(<a href="#register-your-server" ) <>
+                  ~s(aria-label="Link to heading 'Register your server'" ) <>
+                  ~s(data-heading-content="Register your server" class="anchor"></a></h2>), []}
     end
 
     test "converts the GitHub flavour the course writes" do

@@ -214,7 +214,7 @@ Standard B1s**).
 
 If Azure tells you that you cannot create a virtual machine in the region you
 have selected, go back to the [basic
-settings](#exclamation-configure-basic-settings) and find a region that works.
+settings](#configure-basic-settings) and find a region that works.
 **Make sure to re-check your estimated monthly cost afterwards.**
 
 {% endnote %}

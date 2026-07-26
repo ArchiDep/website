@@ -37,7 +37,7 @@ $> sudo apt install mysql-server
 
 APT may prompt you to restart some services. See the troubleshooting section
 about [:boom: Daemons using outdated
-libraries](#boom-daemons-using-outdated-libraries) if necessary.
+libraries](#daemons-using-outdated-libraries) if necessary.
 
 {% endnote %}
 
@@ -554,7 +554,7 @@ That's fine. Running the three queries will make sure you have nothing left that
 with a clean state.
 {% endnote %}
 
-Once you have dropped everything, you can resume the exercise from the [database initialization step](#exclamation-initialize-the-database).
+Once you have dropped everything, you can resume the exercise from the [database initialization step](#initialize-the-database).
 
 ### :boom: HTTP ERROR 500 error when trying to access the todolist in my browser
 
@@ -586,7 +586,7 @@ You may be using the wrong password. Make sure the `DB_PASS` constant at the top
 be the password that was in the `todolist.sql` file when you executed it.
 
 {% note type: tip %}
-If you do not remember the password, follow the troubleshooting instructions for an [error running `todolist.sql`](#boom-error-when-running-todolistsql) to re-create the database, user and password.
+If you do not remember the password, follow the troubleshooting instructions for an [error running `todolist.sql`](#error-when-running-todolistsql) to re-create the database, user and password.
 {% endnote %}
 
 [12factor-config]: https://12factor.net/config

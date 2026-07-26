@@ -228,7 +228,7 @@ resources, we can simplify the demonstration and concentrate on configuring load
 balancing with nginx.
 
 For more information, see [the additional explanations at the end of the
-exercise](#exclamation-not-the-solution-to-all-your-problems).
+exercise](#not-the-solution-to-all-your-problems).
 
 {% endcallout %}
 

@@ -50,7 +50,7 @@ Let's demonstrate how the default bridge network works.
 You may remember that before you started deployment exercises, you [established
 a bi-directional TCP connection between servers using the `nc` (**n**et**c**at)
 command]({% link _course/409-tcp/exercise.md
-%}#exclamation-establish-a-bi-directional-tcp-connection). Let's do the same
+%}#establish-a-bi-directional-tcp-connection). Let's do the same
 between containers.
 
 Run an container from the Ubuntu base image, naming it `nc-server`:

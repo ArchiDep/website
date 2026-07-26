@@ -9,11 +9,11 @@ defmodule ArchiDep.CourseSite.Renderer.HtmlPass do
   or a callout can only happen here. And a tag writes text of its own around
   that body, which was never Markdown at all.
 
-  There is a second, sharper reason for emoji shortcodes specifically: heading
-  identifiers are slugged from the heading's text as it is rendered, and the
-  course links to headings such as `#exclamation-create-your-server`. Replacing
-  `:exclamation:` with the character before rendering would silently move every
-  one of those anchors.
+  Emoji shortcodes are the case that shows why: a tag writes them in the wrapper
+  it puts around its body, which was never Markdown at all, so a sweep of the
+  document would leave those alone. The identifiers of the page are no argument
+  either way — `ArchiDep.CourseSite.Renderer.HeadingIdentifiers` keeps the
+  shortcodes of a heading out of them before the page is rendered.
   """
 
   alias ArchiDep.CourseSite.Renderer.RenderContext

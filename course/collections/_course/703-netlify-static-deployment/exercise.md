@@ -135,7 +135,7 @@ added 1437 packages, and audited 1438 packages in 15s
 {% note type: troubleshooting %}
 
 See the troubleshooting section if you get an [**EACCES**
-error](#boom-troubleshooting).
+error](#troubleshooting).
 
 {% endnote %}
 

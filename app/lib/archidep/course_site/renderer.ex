@@ -34,6 +34,7 @@ defmodule ArchiDep.CourseSite.Renderer do
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Slides
   alias ArchiDep.CourseSite.Renderer.Source
+  alias ArchiDep.CourseSite.Renderer.Toc
 
   @excerpt_separator "excerpt_separator"
 
@@ -50,7 +51,7 @@ defmodule ArchiDep.CourseSite.Renderer do
       {excerpt_html, excerpt_errors} = excerpt_html(excerpt, context)
 
       result(
-        %Page{html: html, excerpt_html: excerpt_html},
+        %Page{html: html, excerpt_html: excerpt_html, toc: toc(excerpt_html, html)},
         liquid_errors ++ separator_errors ++ body_errors ++ excerpt_errors,
         context
       )
@@ -135,6 +136,11 @@ defmodule ArchiDep.CourseSite.Renderer do
 
   defp excerpt_html(nil, _context), do: {nil, []}
   defp excerpt_html(document, context), do: html(document, context)
+
+  # The opening of a page is part of the page, so a heading in it is an entry of
+  # the table of contents like any other.
+  defp toc(nil, html), do: Toc.extract(html)
+  defp toc(excerpt_html, html), do: Toc.extract(excerpt_html <> html)
 
   # The passes see a finished fragment of the page — the opening and the rest of
   # it alike, since both end up on the same page and must be treated the same.

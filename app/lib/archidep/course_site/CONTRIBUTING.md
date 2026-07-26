@@ -23,6 +23,8 @@ and tooling that also apply here. Read that document first.
   - [The tags the course writes](#the-tags-the-course-writes)
   - [Naming what a page renders](#naming-what-a-page-renders)
   - [Passes: over the document, or over the page](#passes-over-the-document-or-over-the-page)
+  - [A heading is identified by what it says, not by its decoration](#a-heading-is-identified-by-what-it-says-not-by-its-decoration)
+  - [The navigation of a page](#the-navigation-of-a-page)
   - [Colouring a code block](#colouring-a-code-block)
   - [The opening of a page](#the-opening-of-a-page)
   - [Slides are not converted](#slides-are-not-converted)
@@ -289,10 +291,41 @@ is decided by what it needs to see:
   of a page. Anything that has to see inside a tag's output belongs here, since
   a tag's body is one opaque node by the time the page's document exists.
 
-Emoji shortcodes are the sharp case: heading identifiers are slugged from the
-heading's text as it is rendered, and the course links to headings such as
-`#exclamation-create-your-server`. Replacing the shortcode before rendering
-would move every one of those anchors, so it can only be an `HtmlPass`.
+Emoji shortcodes are the case that shows the difference: a tag writes them in
+the wrapper it puts around its body, which was never Markdown at all, so a
+rewrite of the document would leave those alone and turn only the page's own
+into images.
+
+### A heading is identified by what it says, not by its decoration
+
+A heading's identifier is slugged from its text as it is rendered, so `##
+:exclamation: Create your server` would be identified by
+`exclamation-create-your-server` — a shortcode named in the anchor the course,
+the application and every reader's bookmark link to.
+[`HeadingIdentifiers`](./renderer/heading_identifiers.ex) moves the shortcode
+out of the heading's text and into an inline HTML node, which the renderer
+writes out as it stands and the slugger does not read, leaving
+`create-your-server` to be linked to and the heading still showing its emoji.
+
+That rewrite is not one of the seams above: like [colouring a code
+block](#colouring-a-code-block), it is not a choice a build makes. A build that
+skipped it would publish a page whose anchors nothing points at.
+
+### The navigation of a page
+
+[`Toc`](./renderer/toc.ex) reads the "On this page" navigation off the page's
+own HTML rather than building it from the document, because both halves of an
+entry are only settled there: the identifiers are assigned while the document is
+rendered — and numbered (`troubleshooting`, `troubleshooting-1`) according to
+what came before them — and a label is the heading as the page shows it, its
+shortcodes turned into images by the passes over the finished page. Working
+either out again would mean writing a second slugger and keeping the two in
+agreement forever.
+
+The entries cover the page, its opening included, and nothing else. The headings
+the site shows around a page — the legend of an exercise, the presentation of a
+chapter with slides — belong to whatever lays the page out, and so do their
+entries.
 
 ### Colouring a code block
 
@@ -372,8 +405,16 @@ The bar is a page that reads correctly and looks right, not identical markup.
 These differences are known and expected rather than regressions:
 
 - A heading carries an anchor element (`<h2 id="…">Text<a class="anchor"></a>`)
-  that kramdown does not emit. The identifier itself is the same — verified
-  against every heading of every course document.
+  that kramdown does not emit.
+- **A heading decorated with an emoji shortcode is identified without it**, so
+  the 359 headings of the course that open with one — `#create-your-server`
+  rather than `#exclamation-create-your-server` — have moved. The shortcode was
+  never meant to be part of the anchor; every heading written without one is
+  identified exactly as kramdown identified it, verified against every heading
+  of every course document.
+- **An entry of the table of contents keeps the heading's markup.**
+  `jekyll-toc` replaced every element of a heading but an image by its text, so
+  a heading naming a command lost its `<code>` in the navigation.
 - **A code block is coloured by [Lumis](https://hexdocs.pm/lumis) rather than by
   Rouge**, so it is a `<pre class="lumis">` of `l-*` token classes where Jekyll
   produced `<div class="highlighter-rouge">` of Pygments-style ones, and inline
@@ -395,7 +436,7 @@ md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than
 
 Everything else matches: the classes, identifiers and structure every tag of
 every subject, exercise and cheatsheet emits were diffed against a Jekyll build
-of the same content, and the four differences above are the whole list.
+of the same content, and the differences above are the whole list.
 
 ## Testing
 

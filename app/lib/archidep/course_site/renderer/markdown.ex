@@ -17,10 +17,17 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
     contents, the in-page anchors and the application's own links to the course
     all depend on.
 
-  Syntax highlighting is likewise not a choice a build makes: every code block
-  goes through `ArchiDep.CourseSite.Renderer.Highlighter` on its way out, so
-  that the theme's highlighting stylesheets have the same markup to style
-  wherever a code block was written.
+  Two rewrites on the way out are likewise not choices a build makes, unlike the
+  passes it configures:
+
+  - Every code block goes through `ArchiDep.CourseSite.Renderer.Highlighter`, so
+    that the theme's highlighting stylesheets have the same markup to style
+    wherever a code block was written.
+  - Every heading goes through
+    `ArchiDep.CourseSite.Renderer.HeadingIdentifiers`, so that the emoji a
+    heading is decorated with stays out of the identifier the course and the
+    application link to. A build that skipped it would publish a page whose
+    anchors nothing points at.
 
   Parsing and rendering are separate steps here rather than one call because
   passes run in between, and because a page is split into its excerpt and its
@@ -28,6 +35,7 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
   document is byte for byte what rendering the Markdown directly produces.
   """
 
+  alias ArchiDep.CourseSite.Renderer.HeadingIdentifiers
   alias ArchiDep.CourseSite.Renderer.Highlighter
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderError
@@ -78,9 +86,10 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
   def render(%MDEx.Document{} = document, %RenderContext{} = context) do
     {passed, pass_errors} = run_passes(document, context)
     {highlighted, highlighting_errors} = Highlighter.run(passed, context)
+    identified = HeadingIdentifiers.run(highlighted)
     errors = pass_errors ++ highlighting_errors
 
-    case MDEx.to_html(highlighted, @options) do
+    case MDEx.to_html(identified, @options) do
       {:ok, html} -> {html, errors}
       {:error, error} -> {"", errors ++ [markdown_error(error, context)]}
     end
