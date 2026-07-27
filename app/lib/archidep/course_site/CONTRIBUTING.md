@@ -16,6 +16,7 @@ and tooling that also apply here. Read that document first.
   - [A chapter is the unit](#a-chapter-is-the-unit)
   - [What the course declares about itself](#what-the-course-declares-about-itself)
   - [What it refuses](#what-it-refuses)
+  - [The compiled model](#the-compiled-model)
 - [URL and link emission](#url-and-link-emission)
   - [What a build is](#what-a-build-is)
   - [Reference kinds and their policy](#reference-kinds-and-their-policy)
@@ -54,8 +55,18 @@ that make up most of the website — and writes it as a set of static files.
 It is **pure and self-contained**: no database, no processes, no Phoenix. A
 build is a function of its inputs, which is what lets the same code produce the
 live site, a backup copy hosted elsewhere, a frozen archive of a past edition,
-and the build printed to PDF. [`Build`](./build.ex) is the single exception and
-the only module here that touches the filesystem — see [Building](#building).
+and the build printed to PDF.
+
+Two modules stand outside that, each in one named way, and naming them is what
+keeps the claim checkable:
+
+- [`Build`](#building) is the only one that touches the **filesystem**, so a
+  stray `File` call anywhere else reads as obviously wrong.
+- [`Material`](#the-compiled-model) is the only **edition-bound** value:
+  everything else is a function of its inputs, and this is one particular set of
+  inputs, worked out while the application compiles. It reads nothing itself —
+  it calls `Build` — and it stores the [identities](#identities) defined here
+  rather than URLs, so no edition of the course is baked into it either.
 
 ## Why this is not a bounded context
 
@@ -66,11 +77,13 @@ access to them; this subsystem owns no state and answers no requests. Keeping it
 apart also keeps it honest: it must run standalone, so a stray `Repo` or
 `Endpoint` call in here is visibly wrong rather than merely unfortunate.
 
-The relationship to the [`Course` context](../course/CONTRIBUTING.md) runs one
-way. `ArchiDep.Course.Material` is a compiled model of the course _structure_
-that the dashboard links into; it is built from what this subsystem parses, and
-it stores the [identities](#identities) defined here rather than URLs, so no
-edition of the course is baked into the compiled module.
+That covers [`Material`](#the-compiled-model) too, which is the one thing here
+the dashboard reads and therefore the one that most looks like a context's read
+model. It owns no table, has no use case, policy or event, and every one of its
+inputs lives in this namespace. Keeping it here rather than in the [`Course`
+context](../course/CONTRIBUTING.md) also closes a hole in the web layer's rule
+that every context is replaced by its mock: reached through `Course`, it
+bypassed the facade and therefore `Course.ContextMock`.
 
 ## Identities
 
@@ -108,8 +121,8 @@ one chapter to anything that records progress against a number.
 
 [`Structure`](./structure.ex) is the course as a whole: its sections, the
 chapters of each and its cheatsheets, in reading order. It is what
-`ArchiDep.Course.Material` compiles and what the material's own navigation is
-drawn from, and it is a function of three inputs — the
+[`Material`](#the-compiled-model) compiles and what the material's own
+navigation is drawn from, and it is a function of three inputs — the
 [`ContentTree`](./build/content_tree.ex), the front matter of every page of it,
 and the [declarations](#what-the-course-declares-about-itself).
 
@@ -167,6 +180,76 @@ identifier — and the two halves of the closed cheatsheet list.
 The declarations are the one exception to reporting everything: when the list of
 sections cannot be read, nothing else about the course can be trusted, so those
 are reported alone.
+
+### The compiled model
+
+[`Material`](./material.ex) is the course as the running application knows it:
+`Build.course!/2` called while the module compiles.
+
+It is **compiled** because a page the dashboard names that the course no longer
+holds must fail the build rather than a reader's click — which is the whole
+point of the module — and because the structure of an edition does not change
+while the application runs. What does change is how far it has got, which is why
+that is kept apart from it (below). It is compiled from the **Markdown** rather
+than from a build artifact so that the application does not need the course
+material site to have been built in order to compile at all.
+
+That today's deployed release carries no `course/` directory — the material is
+served as static files by then — is a **consequence** of this, not a reason for
+it, and it is not permanent: rebuilding the site when progress is toggled from
+the database would mean the application holds the content at runtime. What that
+fact decides today is narrower, and both places are marked: `Material` resolves
+its content directory relative to its own source file rather than through a
+configuration knob, so it can only ever mean the repository the application was
+compiled from, and the [`Dockerfile`](../../../../Dockerfile) reproduces the
+repository layout so that the compile step finds it.
+
+**It stores references, and the application resolves them.** A chapter is a
+`Chapter`, whose page is a [`DocumentRef`](#identities), never a URL. The
+dashboard turns one into a link through
+[`ArchiDepWeb.Helpers.CourseMaterialHelpers`](../../archidep_web/helpers/course_material_helpers.ex),
+which is [the seam](#url-and-link-emission) with a `UrlContext` built from the
+`:course_site` key of the application's configuration — mount point, edition and
+mode, `build_id` a literal, since the application resolves no reference named
+after a build. That is what keeps an edition prefix out of a compiled module and
+puts it in one place for the whole application.
+
+**A page the dashboard names is an attribute, resolved at compile time.** The
+exercise a student is sent to for their virtual server is
+`Structure.chapter!(structure, 402, "run-virtual-server")` in `Material` rather
+than a lookup at each of the twelve places that link to it, so a renamed chapter
+is one compilation failure naming the reference instead of twelve dead links.
+The lookup matches on the number **and** the slug — either going stale is a link
+that no longer means what it said — but deliberately **not** on the type of the
+page: a subject and an exercise are published at the same URL, so a chapter
+turned from one into the other is the same chapter at the same address and must
+not fail.
+
+**Two mechanisms decide when it is compiled again**, because neither covers the
+other's case:
+
+- every Markdown source, the declarations and every recorded session are
+  `@external_resource`s, which is what catches a file being **edited or
+  deleted** — Mix compares each one's content digest, so it is immune to a fresh
+  checkout;
+- `__mix_recompile__?/0` compares `Build.content_digest/1`, a hash of the
+  **names** of every file of the collections, which is what catches one being
+  **added**. An `@external_resource` cannot: a file nobody registered is a file
+  Mix is not watching.
+
+The files beside a page are not registered — their names are all this depends on
+and the digest covers those, where registering 49 MB of images would have Mix
+digest every one of them on each compile. The digest covers the collections a
+build renders, so a newly added **session** is the one change neither mechanism
+notices.
+
+**How far the course has got is not part of the structure.**
+[`Progress`](./progress.ex) is the union of what each session recorded, with the
+later categories subtracted — due minus done, next minus both — and section and
+chapter numbers share one lookup, since a session records `100` beside `101`.
+Compiling it alongside the structure is an interim: the call site is already a
+render-time call taking the statuses as data, which is the half that has to be
+right for its source to move.
 
 ## URL and link emission
 
@@ -308,16 +391,27 @@ it, documented there rather than here:
 | [`PageAssetDigest`](./build/page_asset_digest.ex) | what a published file is called                                                                |
 | [`AssetDigest`](./build/asset_digest.ex)          | where the global assets went, per `phx.digest`                                                 |
 | [`LinkCheck`](./build/link_check.ex)              | which of a finished build's links lead nowhere                                                 |
+| [`Structure`](./structure.ex)                     | what the course is, which `course!/2` chains the reads for                                     |
 
-Three things about the shape of it are worth knowing before reading any of them.
+Four things about the shape of it are worth knowing before reading any of them.
 
 **A page is read once.** `sources/2` takes every document and cheatsheet of a
 content directory apart with [`Source`](./renderer/source.ex) and keys them by
 [`PageRef`](./page_ref.ex), because what a page _is_ comes from its front matter
 and what it shows comes from its body: `front_matter/1` projects the first for
-[`Structure`](#what-the-course-is) and the renderer takes the whole of it.
-`declarations/1` is the other read that is not a file of the site — see [what
-the course declares about itself](#what-the-course-declares-about-itself).
+[`Structure`](#what-the-course-is) and the renderer takes the whole of it. That
+is also what `course!/2` chains, rather than a second front-matter-only reader
+that would have to be kept in agreement with `Source.parse/1` forever.
+`declarations/1` and `progress_entries!/1` are the reads that are not files of
+the site — see [what the course declares about
+itself](#what-the-course-declares-about-itself) and [the compiled
+model](#the-compiled-model).
+
+**Listing the files and reading them are separate.** `content_files/1` is the
+walk of the content directory, `content_tree/1` is that walk planned, and
+`content_digest/1` hashes the same list — so what a build reads and what
+[`Material`](#the-compiled-model) watches for a change agree by construction
+rather than by two walks happening to match.
 
 **Naming a file and writing it are separate.** What a file is called follows
 from its content, so `page_asset_manifest/2` answers that by reading alone and
@@ -766,6 +860,16 @@ subsystem:
   identity round-trips hold, and that rendering a parsed document is rendering
   the Markdown — the premise the pass seams rest on. Generators live in
   [`CourseSiteFactory`](../../../test/support/course_site_factory.ex).
+- [`Material`](./material.ex) compiles from the real course, so its test asserts
+  facts about the **module** rather than about the syllabus: that `sections/0`
+  and `cheatsheets/0` are the corresponding fields of `structure/0`, that each
+  named reference is the whole `%Chapter{}` or `%Cheatsheet{}` it should be, and
+  that `__mix_recompile__?/0` answers no — a real oracle, since it fails if the
+  digest is not deterministic or reads the wrong directory. The whole
+  `%Structure{}` of the real course is deliberately **not** asserted: a
+  fifty-chapter literal would break on every syllabus edit made by someone who
+  is not touching Elixir. What the real content must satisfy is refused by
+  `Structure.plan/3` and checked by `mix archidep.course_site.structure`.
 - [`Structure`](./structure.ex) is tested by building a course out of
   `ContentTree.plan/1` and a front-matter map written at the call site, and
   asserting the whole `%Structure{}` by `==` — a section's chapters are what the

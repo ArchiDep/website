@@ -79,7 +79,12 @@
             <p>
               To change the username of your Unix user account on your server,
               connect to it via SSH then follow the instructions on <a
-                href={"#{Material.sysadmin_cheatsheet().url}#how-do-i-change-my-username-usermod"}
+                href={
+                  course_url(
+                    Material.sysadmin_cheatsheet(),
+                    "how-do-i-change-my-username-usermod"
+                  )
+                }
                 class="underline hover:no-underline"
                 target="_blank"
               >

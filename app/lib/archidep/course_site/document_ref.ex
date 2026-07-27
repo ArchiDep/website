@@ -4,9 +4,9 @@ defmodule ArchiDep.CourseSite.DocumentRef do
   chapter of the course material lives in a directory named `<num>-<slug>` and
   holds at most one document of each type.
 
-  This is the vocabulary the renderer and `ArchiDep.Course.Material` share to
-  refer to a document without naming a URL, so that URL policy (the deployment
-  mount point, the year prefix) stays out of both.
+  This is the vocabulary the renderer and `ArchiDep.CourseSite.Material` share
+  to refer to a document without naming a URL, so that URL policy (the
+  deployment mount point, the year prefix) stays out of both.
   """
 
   @enforce_keys [:num, :slug, :type]

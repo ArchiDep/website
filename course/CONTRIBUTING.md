@@ -757,8 +757,10 @@ during the build for integration with (and archival of) the dashboard
 application:
 
 - The course structure is exported to `app/priv/static/archidep.json` (from
-  [`collections/_json/archidep.json.liquid`](./collections/_json)) so that the
-  dashboard application can replicate the sidebar markup and navigation.
+  [`collections/_json/archidep.json.liquid`](./collections/_json)), which the
+  PDF generation script reads to know which pages to print. The dashboard
+  application no longer reads it: it compiles its own model of the course from
+  the Markdown sources.
 - The source data used to build the search index is exported to
   `app/priv/static/search.json` so that the dashboard application can display
   the same search results interface.

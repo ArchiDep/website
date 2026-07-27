@@ -18,6 +18,15 @@ config :archidep,
     # Refresh monitoring metrics every minute
     metrics_poll_rate: 60 * 1000
   ],
+  # Where the course material site the dashboard links into is published. There
+  # is no ArchiDep.CourseSite module to key this on: the subsystem is pure and
+  # has no configuration of its own, and this is what the application makes of
+  # it when it emits a URL.
+  course_site: [
+    mode: :live,
+    base_path: "",
+    version: nil
+  ],
   servers: [
     connection_timeout: 30_000,
     ssh_private_key_file: Path.expand("../priv/ssh/id_ed25519", __DIR__),

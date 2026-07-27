@@ -18,7 +18,6 @@ and tooling that also apply here. Read that document first.
   - [Student Import](#student-import)
   - [Username Confirmation](#username-confirmation)
 - [Expected Server Properties](#expected-server-properties)
-- [Course Material Integration](#course-material-integration)
 - [Use Cases](#use-cases)
 - [Business Events](#business-events)
 - [Authorization](#authorization)
@@ -52,9 +51,6 @@ Key concepts a contributor must understand:
 - **Expected server properties.** Each class defines the [expected
   properties](#expected-server-properties) of the cloud servers its students
   will create, used to flag misconfigured servers.
-- **Course material.** The context exposes the structure of the Jekyll [course
-  material site](../../../../course/CONTRIBUTING.md) (sections, documents,
-  cheatsheets) via [`Material`](#course-material-integration).
 - **Authorization is simple:** teachers are **root** users and may do anything;
   students may only read their own record and confirm their own username (see
   [Authorization](#authorization)).
@@ -78,10 +74,6 @@ The context follows the standard [bounded context anatomy][bounded-contexts]:
 - **PubSub** — [`pub_sub.ex`](./pub_sub.ex) broadcasts class and student changes
   on the `classes`, `classes:{id}`, `classes:{id}:students` and `students:{id}`
   topics.
-- **Course material** — [`material.ex`](./material.ex) and
-  [`helpers/material_helpers.ex`](./helpers/material_helpers.ex) (not part of
-  the standard anatomy), see [Course Material
-  Integration](#course-material-integration).
 
 ---
 
@@ -213,25 +205,6 @@ class expects (e.g. an oversized, costly VM, or the wrong OS).
 
 ---
 
-## Course Material Integration
-
-The [`Material`](./material.ex) module exposes the structure of the [course
-material site](../../../../course/CONTRIBUTING.md#json-exports) —
-`course_sections/0`, `course_cheatsheets/0`, and specific documents such as the
-"run a virtual server" exercise and the sysadmin cheatsheet — so the dashboard
-can render the same navigation and link to course content.
-
-The data comes from `priv/static/archidep.json`, which the Jekyll build of the
-`course` site writes into the application's static directory. Crucially,
-[`MaterialHelpers`](./helpers/material_helpers.ex) reads and decodes that file
-at **compile time** (into module attributes), so there is no runtime file I/O;
-its `__mix_recompile__?/0` hook compares a SHA-256 digest so the module is
-recompiled whenever `archidep.json` changes. As a result, the course material
-must be built before (or be rebuilt to update) the application — consistent with
-the [overall build][app-contributing].
-
----
-
 ## Use Cases
 
 Each public operation of [`course.ex`](../course.ex) is implemented by a use
@@ -316,9 +289,10 @@ There is no separate "teacher" role — teachers are simply root users.
 - [Application documentation][app-contributing] — overall architecture,
   [bounded context anatomy][bounded-contexts] and [authorization][authorization]
 - [Course material site documentation](../../../../course/CONTRIBUTING.md) — the
-  Jekyll site and its [JSON
-  exports](../../../../course/CONTRIBUTING.md#json-exports) consumed by
-  [`Material`](#course-material-integration)
+  course material this context's classes are taught from. The dashboard's model
+  of it belongs to the [course material site
+  subsystem](../course_site/CONTRIBUTING.md#the-compiled-model), not to this
+  context
 - [Accounts context](../accounts/CONTRIBUTING.md) — shares the `classes` and
   `students` tables
 

@@ -11,8 +11,8 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.StudentDeleted
-  alias ArchiDep.Course.Material
   alias ArchiDep.Course.StudentView
+  alias ArchiDep.CourseSite.Material
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient

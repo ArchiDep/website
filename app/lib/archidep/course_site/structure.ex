@@ -7,7 +7,7 @@ defmodule ArchiDep.CourseSite.Structure do
   whether it is done, due, next or still to come — changes on every teaching
   session and is read from a source of its own at build time, so none of it is
   here: this value is a function of the content directory alone, which is what
-  lets `ArchiDep.Course.Material` compile it.
+  lets `ArchiDep.CourseSite.Material` compile it.
 
   ## What it is made of
 
@@ -119,11 +119,65 @@ defmodule ArchiDep.CourseSite.Structure do
     do: structure |> chapters() |> Enum.find(&(Chapter.num(&1) == num)) |> wrap()
 
   @doc """
+  Look up a chapter by its number and its slug.
+
+  A chapter that has been renumbered or renamed is a different chapter, which is
+  what makes this the form to name one from outside the course material: the
+  application links to "chapter 402, run-virtual-server" and either half going
+  stale is a link that no longer means what it said.
+
+  The **type** of the chapter's page is deliberately not part of the lookup. A
+  subject and an exercise are published at the same URL by design, so a chapter
+  turned from one into the other is still the same chapter at the same address,
+  and refusing it here would fail over a content change that cannot break a
+  link.
+  """
+  @spec fetch_chapter(t(), pos_integer(), String.t()) :: {:ok, Chapter.t()} | :error
+  def fetch_chapter(%__MODULE__{} = structure, num, slug)
+      when is_integer(num) and is_binary(slug),
+      do:
+        structure
+        |> chapters()
+        |> Enum.find(&(Chapter.num(&1) == num and Chapter.slug(&1) == slug))
+        |> wrap()
+
+  @doc """
+  Look up a chapter by its number and its slug, raising when the course has no
+  such chapter.
+
+  Use this where a missing chapter is a stale reference the application wrote
+  rather than a fact about the content, the same distinction
+  `ArchiDep.CourseSite.Urls.resolve!/3` draws.
+  """
+  @spec chapter!(t(), pos_integer(), String.t()) :: Chapter.t()
+  def chapter!(%__MODULE__{} = structure, num, slug) do
+    case fetch_chapter(structure, num, slug) do
+      {:ok, chapter} -> chapter
+      :error -> raise ArgumentError, "The course has no chapter #{num}-#{slug}"
+    end
+  end
+
+  @doc """
   Look up a cheatsheet by its slug.
   """
   @spec fetch_cheatsheet(t(), String.t()) :: {:ok, Cheatsheet.t()} | :error
   def fetch_cheatsheet(%__MODULE__{cheatsheets: cheatsheets}, slug) when is_binary(slug),
     do: cheatsheets |> Enum.find(&(&1.slug == slug)) |> wrap()
+
+  @doc """
+  Look up a cheatsheet by its slug, raising when the course has no such
+  cheatsheet.
+
+  Use this where a missing cheatsheet is a stale reference rather than a fact
+  about the content, as for `chapter!/3`.
+  """
+  @spec cheatsheet!(t(), String.t()) :: Cheatsheet.t()
+  def cheatsheet!(%__MODULE__{} = structure, slug) do
+    case fetch_cheatsheet(structure, slug) do
+      {:ok, cheatsheet} -> cheatsheet
+      :error -> raise ArgumentError, "The course has no #{slug} cheatsheet"
+    end
+  end
 
   @doc """
   Describe what is wrong with what a build read of the course.

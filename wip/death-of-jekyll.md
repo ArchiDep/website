@@ -219,9 +219,12 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       and every structural field of the model was diffed against the
       `archidep.json` Jekyll builds — see [Metadata
       generation](#metadata-generation).
-- [ ] Keep and strengthen `ArchiDep.Course.Material` into a typed,
+- [x] Keep and strengthen `ArchiDep.Course.Material` into a typed,
       compile-checked model of the course — see [A richer Course.Material
-      model](#a-richer-coursematerial-model).
+      model](#a-richer-coursematerial-model). **The module moved to
+      `ArchiDep.CourseSite.Material`** and is compiled from the Markdown, so
+      `archidep.json` is no longer a compile-time input of the application; it
+      stores references and the web layer resolves them through the URL seam.
 - [ ] Make headings first-class so dynamic references compile-fail instead of
       using brittle anchor strings — see [Heading references that
       compile-fail](#heading-references-that-compile-fail).
@@ -618,11 +621,20 @@ flips:
 
 Consequences to handle when implementing:
 
-- **Replace the recompile trigger.** The `__mix_recompile__?/0` SHA over
-  `archidep.json` must be replaced by registering the course docs and
-  `_progress` files as `@external_resource`s (or digesting the metadata
-  generator's inputs), so a content or progress edit still forces recompilation
-  — now tracking the true source instead of a generated proxy.
+- **Replace the recompile trigger.** _Done, and it took **both** halves rather
+  than either._ The course documents, the declarations and the `_progress` files
+  are `@external_resource`s, which Elixir 1.19 compares by **content digest**
+  (so it is immune to CI's fresh checkouts) and which already covers a file
+  being **deleted** — `Mix.Compilers.Elixir.stale_external?/2` reads a missing
+  file's `{0, 0}` stat as stale. What an `@external_resource` cannot see is a
+  file being **added**, so `__mix_recompile__?/0` remains, now hashing the
+  **names** of every file of the collections (`Build.content_digest/1`) rather
+  than the bytes of a generated proxy. The files beside a page are counted in
+  that hash but not registered: their names are what the model depends on, and
+  registering 49 MB of images would have Mix digest all of them on every
+  compile. One gap is left: the digest covers the collections a build renders,
+  so a newly **added** `_progress` file is not noticed — which matters in
+  development, where a session is added every week.
 - **Confirmed consumers.** `pdf.ts` is the only non-app reader (verified across
   `course/src`, the app, and `package.json`); nothing reads the file at app
   runtime.
@@ -982,11 +994,12 @@ Three real Phoenix-side consequences remain, none of them blocking:
   means a recompile — acceptable for a yearly event that changes the content
   anyway.
 - **The app shell links into the course** (`layouts.ex` renders the sidebar from
-  `Material`). Those URLs must carry the current year's prefix. Keep
-  `Course.Material` storing **references** and resolve them in the web layer
-  through this same seam with runtime config — that preserves the compile-time
-  reference checking the plan wants while keeping URL policy out of the compiled
-  module.
+  `Material`). Those URLs must carry the current year's prefix. **Done**:
+  `ArchiDep.CourseSite.Material` stores **references** and
+  `ArchiDepWeb.Helpers.CourseMaterialHelpers` resolves them through this same
+  seam, building a `UrlContext` from the `:course_site` application
+  configuration — so this task only has to set `version` there (and teach
+  `static_paths/0` the year segment, above).
 - **Legacy URLs.** Moving `/course/…` to `/2026/course/…` invalidates every
   existing bookmark and external link. Handled by the same resolver the archive
   banners use — see [Archived years: a banner and one dynamic
@@ -1309,10 +1322,10 @@ Each consumer is then a configuration of the one seam, not its own rewrite.
 `UrlContext`, the three manifests, `UrlPath` and `UrlError`) in a new top-level
 `ArchiDep.CourseSite.*` namespace, deliberately outside the bounded contexts:
 the subsystem owns no state, answers no requests, and must run standalone, so a
-stray `Repo` call in it should read as obviously wrong.
-`ArchiDep.Course.Material` stays in the Course context for now — the [richer
-model task](#a-richer-coursematerial-model) decides whether it moves — and will
-store these references rather than URLs. See
+stray `Repo` call in it should read as obviously wrong. The compiled model of
+the course **moved into this namespace too**, as `ArchiDep.CourseSite.Material`,
+and stores these references rather than URLs — see [A richer Course.Material
+model](#a-richer-coursematerial-model). See
 [`app/lib/archidep/course_site/CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md).
 
 Tests cover the resolver in isolation: one block per reference kind, plus a
@@ -2133,6 +2146,77 @@ Improve it so references are **typed and granular**:
 - Provide **functions/constants that resolve to a specific document or
   heading**, so a renamed/removed target is a compile error, not a dead link at
   runtime.
+
+**Corrections while implementing:**
+
+- **The module moved to `ArchiDep.CourseSite.Material`.** Every one of its
+  inputs lives in that namespace; it owns no table, has no use case, policy or
+  event; and — the sharpest argument — it **bypassed the facade and therefore
+  `Course.ContextMock`**, a permanent hole in the web-layer rule that every
+  context is replaced by its mock. The move also deletes a real dependency edge:
+  `ArchiDep.Course`, a stateful context, used to compile-depend on
+  `../course/collections` being on disk. It is the one **edition-bound** value
+  of an otherwise pure subsystem, and that is how the subsystem's document now
+  states it.
+- **`@external_resource` already covers more than the plan assumed, and the
+  recompile hook covers what is left.** See [Drop the archidep.json
+  round-trip?](#drop-the-archidepjson-round-trip) for the whole of it: content
+  digests rather than mtimes, deletion already caught, additions caught by
+  `Build.content_digest/1`, and the one remaining gap (a newly added `_progress`
+  file).
+- **Compiling the model from the real corpus costs ~305 ms**, of which
+  `Build.sources/2` — the full parse, bodies included — is 261 ms. The full
+  parse was kept anyway rather than adding a front-matter-only reader: a second
+  parser is a second thing to keep in agreement with `Source.parse/1` forever,
+  and [headings](#heading-references-that-compile-fail) need the bodies. The
+  recompile hook is one directory walk at **16 ms**, against the 25 ms of `git`
+  subprocesses `ArchiDep.Git.__mix_recompile__?/0` already runs on every
+  code-reloaded request.
+- **A named reference is a module attribute, not a macro.** The callers are
+  `.heex` templates, where a macro would need a `require` and would move the
+  failure from one declaration to twelve call sites. The raise happens while
+  `Material` compiles, which _is_ the compile-fail guarantee.
+  `Structure.chapter!/3` matches on the number **and** the slug — no weaker than
+  the `MaterialHelpers.course_document/2` it replaces — but deliberately not on
+  the page's type, since a subject and an exercise share one URL.
+- **`build_id` is the literal `"app"`.** `UrlContext.new/1` requires a non-empty
+  string and the application resolves no `{:build_file, _}` reference, so it has
+  nothing meaningful to put there. Not `ArchiDep.Git.git_revision/0`: its spec
+  is `String.t() | nil`, so a checkout that cannot say what its revision is
+  would take every page of the dashboard down. Worth a follow-up: `build_id`
+  could become optional, with `{:build_file, _}` returning `{:error,
+{:missing_build_id, _}}`.
+- **`target="_target"` became `target="_blank"`.** `_target` is not a browser
+  keyword — it names a window literally called `_target`, so every slides link in
+  the sidebar shared one. A deliberate behaviour fix riding along, and the only
+  difference in the rendered sidebar: the whole `#course-material-menu` was
+  diffed before and after, and every section, chapter, cheatsheet, URL, status
+  class, fold state and icon is identical.
+- **The progress interim.**
+  [`Progress`](../app/lib/archidep/course_site/progress.ex) ports the
+  aggregation of `archidep.rb` with both of its rules — the union with later
+  categories subtracted, and a section open when its own number is `next` or any
+  of its chapters is neither `done` nor `future` — and its numbers come from
+  `Build.progress_entries!/1`, read while `Material` compiles — an interim for
+  exactly as long as the `_progress` collection is the source. The **call site
+  is already a render-time call taking the statuses as data**, which is the half
+  [Progress: structure vs status](#progress-structure-vs-status) needs to be
+  right. `section_open?/2` takes those statuses rather than the record, because
+  whatever lists the course is handed nothing else: a section's fold has to
+  follow from the same data its colours do. The three home-page lists read the
+  **last** entry carrying each key rather than the union, and belong to that
+  task.
+- **The sidebar became a component.** `#course-material-menu` moved out of
+  `layouts.ex` into `CourseComponents.course_material_menu/1`, which is the only
+  way to drive its branches — deck-only chapter, graded exercise, chapter with a
+  deck beside it, cheatsheet with and without a `sidebar_title`, all four
+  statuses — from a test; through `layouts.ex` they are fixed by the real corpus.
+- **The Docker build reverses a build-order dependency.** The stage copied
+  `archidep.json` out of the Jekyll stage so the application could compile; it
+  now copies `course/collections` and `_data/course.yml` instead, and the
+  application no longer needs Jekyll to have run in order to compile. A
+  follow-up (out of scope): CI's `build-app` depends on `build-course` only for
+  the static artifact, and that edge could now be relaxed.
 
 ### Heading references that compile-fail
 

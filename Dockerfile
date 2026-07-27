@@ -220,7 +220,13 @@ RUN mix local.hex --force --if-missing && \
     mix deps.compile
 
 COPY --chown=app:app ./app/ /usr/src/app/
-COPY --chown=app:app --from=course /build/app/priv/static/archidep.json /usr/src/app/priv/static/
+
+# The course material the application compiles its model of the course from.
+# `ArchiDep.CourseSite.Material` resolves it relative to its own source file, so
+# the repository layout has to be reproduced here: the working directory is
+# /usr/src/app, which makes /usr/src the repository root.
+COPY --chown=app:app ./course/collections/ /usr/src/course/collections/
+COPY --chown=app:app ./course/_data/course.yml /usr/src/course/_data/course.yml
 
 COPY ./.git/ /tmp/.git/
 RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\///' > /usr/src/app/.git-branch && \

@@ -145,7 +145,7 @@
                 Material.run_virtual_server_exercise().title |> html_escape() |> safe_to_string(),
               cs: "<code class=\"text-info\">",
               ce: "</code>",
-              as: "<a href=\"#{Material.run_virtual_server_exercise().url}\">",
+              as: "<a href=\"#{course_url(Material.run_virtual_server_exercise())}\">",
               ae: "</a>",
               ss: "<strong class=\"underline\">",
               se: "</strong>"
@@ -168,7 +168,7 @@
           <a
             :if={not @run_virtual_server_exercise_done and @student != nil}
             class="join-item btn btn-primary btn-xl"
-            href={Material.run_virtual_server_exercise().url}
+            href={course_url(Material.run_virtual_server_exercise())}
           >
             <span class="flex items-center gap-2 md:gap-3">
               <.emoji name="crossed_swords" class="size-6" />
@@ -206,7 +206,7 @@
           <a
             :if={@run_virtual_server_exercise_done}
             class="join-item btn btn-primary"
-            href={Material.run_virtual_server_exercise().url}
+            href={course_url(Material.run_virtual_server_exercise())}
           >
             <span class="flex items-center gap-x-2">
               <Heroicons.arrow_left_circle class="size-4" />

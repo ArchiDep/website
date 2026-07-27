@@ -2,6 +2,11 @@ defmodule ArchiDepWeb.Components.CourseComponentsTest do
   use ArchiDepWeb.Support.LiveCase, async: true
 
   import Phoenix.LiveViewTest, only: [render_component: 2]
+  alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.Structure
+  alias ArchiDep.CourseSite.Structure.Chapter
+  alias ArchiDep.CourseSite.Structure.Cheatsheet
+  alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.Support.CourseFactory
   alias ArchiDepWeb.Components.CourseComponents
 
@@ -18,6 +23,112 @@ defmodule ArchiDepWeb.Components.CourseComponentsTest do
     distribution_version: nil,
     distribution_release: nil
   }
+
+  describe "course_material_menu/1" do
+    test "lists every section, the chapters under it and the cheatsheets after them" do
+      structure = %Structure{
+        sections: [
+          Section.new(1, "Introduction", [
+            Chapter.new(DocumentRef.new(101, "command-line", :subject), "Command Line",
+              slides: DocumentRef.new(101, "command-line", :slides)
+            ),
+            Chapter.new(DocumentRef.new(102, "hello-shell", :exercise), "Hello Shell",
+              graded?: true
+            )
+          ]),
+          Section.new(2, "Version Control", [
+            Chapter.new(DocumentRef.new(201, "git-branching", :slides), "Git Branching"),
+            Chapter.new(DocumentRef.new(202, "git-collaborating", :exercise), "Collaborating"),
+            Chapter.new(DocumentRef.new(203, "git-rebasing", :subject), "Rebasing")
+          ])
+        ],
+        cheatsheets: [
+          Cheatsheet.new("git", "Git Cheatsheet", "Git"),
+          Cheatsheet.new("sysadmin", "System Administration Cheatsheet")
+        ]
+      }
+
+      progress = %{
+        100 => :done,
+        101 => :done,
+        102 => :done,
+        200 => :next,
+        201 => :next,
+        202 => :due,
+        203 => :future
+      }
+
+      assert course_material_menu_entries(structure, progress) == [
+               {:section,
+                %{
+                  title: "Introduction",
+                  toggle: "section-introduction-toggle",
+                  status: :done,
+                  open?: false,
+                  locked?: false,
+                  chevrons?: true
+                }},
+               {:chapter,
+                %{
+                  title: "Command Line",
+                  href: "/course/101-command-line/",
+                  target: "_self",
+                  icons: [:subject, :slides],
+                  external_link?: false,
+                  status: :done
+                }},
+               {:chapter,
+                %{
+                  title: "Hello Shell",
+                  href: "/course/102-hello-shell/",
+                  target: "_self",
+                  icons: [:graded_exercise],
+                  external_link?: false,
+                  status: :done
+                }},
+               {:section,
+                %{
+                  title: "Version Control",
+                  toggle: "section-version-control-toggle",
+                  status: :next,
+                  open?: true,
+                  locked?: true,
+                  chevrons?: false
+                }},
+               {:chapter,
+                %{
+                  title: "Git Branching",
+                  href: "/course/201-git-branching/slides/",
+                  target: "_blank",
+                  icons: [:slides],
+                  external_link?: true,
+                  status: :next
+                }},
+               {:chapter,
+                %{
+                  title: "Collaborating",
+                  href: "/course/202-git-collaborating/",
+                  target: "_self",
+                  icons: [:exercise],
+                  external_link?: false,
+                  status: :due
+                }},
+               {:chapter,
+                %{
+                  title: "Rebasing",
+                  href: "/course/203-git-rebasing/",
+                  target: "_self",
+                  icons: [:subject],
+                  external_link?: false,
+                  status: :future
+                }},
+               {:heading, "Cheatsheets"},
+               {:cheatsheet, %{name: "Git", href: "/cheatsheets/git/"}},
+               {:cheatsheet,
+                %{name: "System Administration Cheatsheet", href: "/cheatsheets/sysadmin/"}}
+             ]
+    end
+  end
 
   describe "student_username/1" do
     test "renders the username of a confirmed student without a suggestion" do
@@ -146,6 +257,95 @@ defmodule ArchiDepWeb.Components.CourseComponentsTest do
         })
 
       assert expected_properties_lines(properties) == ["2 CPUs", "512 MB RAM", "Linux", "Ubuntu"]
+    end
+  end
+
+  # Every entry of the menu, in the order it is listed. An emoji is read as the
+  # name it is announced under, a status as the name in the class that colours
+  # it, and a fold as the state of the checkbox that folds it — the menu's
+  # meaning rather than the markup carrying it.
+  defp course_material_menu_entries(structure, progress) do
+    html =
+      render_component(&CourseComponents.course_material_menu/1,
+        structure: structure,
+        progress: progress
+      )
+
+    html |> find_html_elements("#course-material-menu li") |> Enum.map(&menu_entry/1)
+  end
+
+  defp menu_entry(entry) do
+    class = html_element_attribute(entry, "class") || ""
+
+    cond do
+      status = status_shown(class, "course-section-") -> {:section, section_entry(entry, status)}
+      status = status_shown(class, "course-item-") -> {:chapter, chapter_entry(entry, status)}
+      find_html_elements(entry, "a") != [] -> {:cheatsheet, cheatsheet_entry(entry)}
+      true -> {:heading, html_element_text(entry)}
+    end
+  end
+
+  defp section_entry(entry, status) do
+    [label] = find_html_elements(entry, "label")
+    [input] = find_html_elements(entry, "input")
+
+    %{
+      title: entry |> find_html_elements("label > span") |> hd() |> html_element_text(),
+      toggle: toggle_shown(label, input),
+      status: status,
+      open?: html_element_attribute(input, "checked") != nil,
+      locked?: html_element_attribute(input, "disabled") != nil,
+      chevrons?: find_html_elements(entry, "svg") != []
+    }
+  end
+
+  defp chapter_entry(entry, status) do
+    [link] = find_html_elements(entry, "a")
+
+    %{
+      title:
+        entry |> find_html_elements("a > span > span:last-child") |> hd() |> html_element_text(),
+      href: html_element_attribute(link, "href"),
+      target: html_element_attribute(link, "target"),
+      icons: entry |> find_html_elements("img") |> Enum.map(&icon_shown/1),
+      external_link?: find_html_elements(entry, "svg") != [],
+      status: status
+    }
+  end
+
+  defp cheatsheet_entry(entry) do
+    [link] = find_html_elements(entry, "a")
+
+    %{
+      name:
+        entry |> find_html_elements("a > span > span:last-child") |> hd() |> html_element_text(),
+      href: html_element_attribute(link, "href")
+    }
+  end
+
+  defp status_shown(class, prefix) do
+    case Regex.run(~r/#{prefix}(\w+)/, class) do
+      [_whole, status] -> String.to_existing_atom(status)
+      nil -> nil
+    end
+  end
+
+  # A label and the checkbox it folds find each other by name, so a menu whose
+  # two halves disagree is a section that cannot be unfolded at all.
+  defp toggle_shown(label, input) do
+    case {html_element_attribute(label, "for"), html_element_attribute(input, "id")} do
+      {same, same} -> same
+      mismatched -> mismatched
+    end
+  end
+
+  defp icon_shown(image) do
+    case html_element_attribute(image, "alt") do
+      "Subject" -> :subject
+      "Exercise" -> :exercise
+      "Graded exercise" -> :graded_exercise
+      "Slides" -> :slides
+      "Cheatsheet" -> :cheatsheet
     end
   end
 

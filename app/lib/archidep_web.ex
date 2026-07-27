@@ -128,6 +128,7 @@ defmodule ArchiDepWeb do
       # Core UI components
       import ArchiDepWeb.Components.CoreComponents
       import ArchiDepWeb.Helpers.AuthHelpers
+      import ArchiDepWeb.Helpers.CourseMaterialHelpers
       import ArchiDepWeb.Helpers.DateFormatHelpers
       # Flash helpers
       import Flashy

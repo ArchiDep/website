@@ -381,7 +381,8 @@ steps.
   **[`FormComponents`](./components/form_components.ex)** — form fields, errors
   and a concurrent-modification warning;
   **[`CourseComponents`](./components/course_components.ex)** — course-specific
-  bits (student username badge, expected server properties).
+  bits (the navigation of the course material, `course_material_menu/1`; student
+  username badge; expected server properties).
 - **[`Layouts`](./components/layouts.ex)** — the
   [`root`](./components/layouts/root.html.heex) layout (HTML skeleton, assets,
   the shared [theme](../../../theme/CONTRIBUTING.md)) and the
@@ -426,6 +427,10 @@ two. Always use Gettext for user-facing text.
 
 - [`AuthHelpers`](./helpers/auth_helpers.ex) — login/role/impersonation checks
   (see [Authentication & Authorization](#authentication--authorization)).
+- [`CourseMaterialHelpers`](./helpers/course_material_helpers.ex) — where a page
+  of the [course material](../archidep/course_site/CONTRIBUTING.md) named by
+  `ArchiDep.CourseSite.Material` is served from, and the `UrlContext` the
+  application resolves one against.
 - [`ConnHelpers`](./helpers/conn_helpers.ex) /
   [`SocketHelpers`](./helpers/socket_helpers.ex) — extract client metadata
   (IP/user-agent) and the per-user `live_socket_id`.

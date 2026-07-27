@@ -465,9 +465,6 @@ tests now would only throw them away when the code changes:
 - `Monitoring.Metrics` (and the thin `PromEx` / `Web.Telemetry` glue) — waits on
   the metrics/observability rework.
 - `Git` and `Helpers.GitHelpers` — wait on the git-integration rework.
-- `Course.Helpers.MaterialHelpers` — waits on moving the static build out of
-  Jekyll (see [Death of
-  Jekyll](../../wip/death-of-jekyll.md#progress-structure-vs-status)).
 
 **Accepted uncovered — thin plumbing and entrypoints, low test value.** Booting
 or delegating code with no branch logic of its own, exercised indirectly if at

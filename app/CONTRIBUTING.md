@@ -110,7 +110,9 @@ components, can be found in the `theme` directory (see [`CONTRIBUTING.md` in the
       deliberately **not** a bounded context, documented in
       [`lib/archidep/course_site/CONTRIBUTING.md`](./lib/archidep/course_site/CONTRIBUTING.md).
       `course_site/build.ex` is its one exception: the only module of the
-      subsystem that reads or writes a file.
+      subsystem that reads or writes a file. `course_site/material.ex` is the
+      model of the course the dashboard links into, compiled from the Markdown
+      sources while the application compiles.
   - `lib/archidep_web`: The Phoenix web interface, including controllers, views,
     APIs, templates, live views, and channels.
 - **Supporting Files**
@@ -256,11 +258,12 @@ which also includes:
   `priv/static/assets/theme` directory. See [`CONTRIBUTING.md` in the `theme`
   directory](../theme/CONTRIBUTING.md) for more information.
 
-Both of these other components must be built for the application to compile and
-work properly.
-
-The document structure and full-text search index of the course material site
-are exported as JSON files for integration with this application.
+The theme must be built for the application to compile and work properly. The
+course material site does not: the application compiles [its own model of the
+course](./lib/archidep/course_site/CONTRIBUTING.md#the-compiled-model) from the
+Markdown sources in the `course` directory. The full-text search index of the
+course material site is exported as a JSON file for integration with this
+application.
 
 #### Development Environment
 
@@ -380,8 +383,7 @@ for an overview of its area of responsibility):
   [`lib/archidep/accounts/CONTRIBUTING.md`](./lib/archidep/accounts/CONTRIBUTING.md).
 
 - [`Course` context](./lib/archidep/course.ex): class and student management,
-  bulk student import, expected server properties, and integration with the
-  course material. Documented in detail in
+  bulk student import, and expected server properties. Documented in detail in
   [`lib/archidep/course/CONTRIBUTING.md`](./lib/archidep/course/CONTRIBUTING.md).
 
 - [`ArchiDep.Servers` context](./lib/archidep/servers.ex): cloud server

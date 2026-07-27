@@ -36,8 +36,9 @@ exhaustive index.
     properties:
     [`app/lib/archidep/course/CONTRIBUTING.md`](./app/lib/archidep/course/CONTRIBUTING.md)
   - Course material site renderer — the pure, non-context subsystem that renders
-    the course material, and the URL/link emission seam every emitted URL goes
-    through:
+    the course material, the URL/link emission seam every emitted URL goes
+    through, and the model of the course, compiled from the Markdown, that the
+    dashboard links into:
     [`app/lib/archidep/course_site/CONTRIBUTING.md`](./app/lib/archidep/course_site/CONTRIBUTING.md)
   - Servers context — cloud servers, server groups, server tracking, Ansible
     pipeline:

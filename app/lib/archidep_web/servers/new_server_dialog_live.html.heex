@@ -34,7 +34,7 @@
                   |> html_escape()
                   |> safe_to_string(),
                 as:
-                  "<a href=\"#{Material.run_virtual_server_exercise().url}\" target=\"_blank\">",
+                  "<a href=\"#{course_url(Material.run_virtual_server_exercise())}\" target=\"_blank\">",
                 ae: "</a>",
                 ss: "<strong class=\"underline\">",
                 se: "</strong>"

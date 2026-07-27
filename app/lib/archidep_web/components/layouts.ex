@@ -10,7 +10,9 @@ defmodule ArchiDepWeb.Components.Layouts do
   use ArchiDepWeb, :html
 
   import ArchiDepWeb.Helpers.AuthHelpers
-  alias ArchiDep.Course.Material
+  alias ArchiDep.CourseSite.Material
+  alias ArchiDep.CourseSite.Progress
+  alias ArchiDepWeb.Components.CourseComponents
 
   embed_templates "layouts/*"
 
@@ -209,102 +211,10 @@ defmodule ArchiDepWeb.Components.Layouts do
           >
             Course
           </div>
-          <ul id="course-material-menu" class="w-full menu px-4 pt-0 pb-4">
-            <%= for {section, i} <- Enum.with_index(Material.course_sections()) do %>
-              <li class={[
-                "peer/section-#{i}",
-                "group/section-#{i}",
-                if(section["progress"],
-                  do: "course-section-#{section["progress"]}",
-                  else: nil
-                )
-              ]}>
-                <label
-                  for={"section-#{section["slug"]}-toggle"}
-                  class="flex justify-between items-center"
-                >
-                  <span class="text-base-content/50 cursor-default">
-                    {section["title"]}
-                  </span>
-                  <%= if section["open"] == false do %>
-                    <span class={"group-has-checked/section-#{i}:hidden"}>
-                      <Heroicons.chevron_down class="size-4 text-base-content/50" />
-                    </span>
-                    <span class={"hidden group-has-checked/section-#{i}:inline"}>
-                      <Heroicons.chevron_up class="size-4 text-base-content/50" />
-                    </span>
-                  <% end %>
-                  <input
-                    type="checkbox"
-                    id={"section-#{section["slug"]}-toggle"}
-                    class="hidden"
-                    checked={section["open"]}
-                    disabled={section["open"]}
-                  />
-                </label>
-              </li>
-              <%= for item <- section["docs"] do %>
-                <li class={[
-                  "group",
-                  "hidden peer-has-checked/section-#{i}:flex",
-                  if(item["progress"], do: "course-item-#{item["progress"]}", else: nil)
-                ]}>
-                  <.link
-                    href={item["url"]}
-                    target={if item["course_type"] == "slides", do: "_target", else: "_self"}
-                    class="flex items-center gap-2"
-                  >
-                    <span class="flex items-center gap-x-2">
-                      <span class="size-4">
-                        <%= if item["course_type"] == "slides" do %>
-                          <.emoji name="clapper" alt="Slides" class="size-4" />
-                        <% end %>
-                        <%= if item["course_type"] == "exercise" and item["graded"] == true do %>
-                          <.emoji name="trophy" alt="Graded exercise" class="size-4" />
-                        <% end %>
-                        <%= if item["course_type"] == "exercise" and item["graded"] != true do %>
-                          <.emoji name="hammer_and_wrench" alt="Exercise" class="size-4" />
-                        <% end %>
-                        <%= if item["course_type"] != "slides" and item["course_type"] != "exercise" do %>
-                          <.emoji name="book" alt="Subject" class="size-4" />
-                        <% end %>
-                      </span>
-                      <span>
-                        {item["title"]}
-                      </span>
-                    </span>
-                    <%= if item["slides"] do %>
-                      <span>
-                        <.emoji name="clapper" alt="Slides" class="size-4" />
-                      </span>
-                    <% end %>
-                    <%= if item["course_type"] == "slides" do %>
-                      <Heroicons.arrow_top_right_on_square class="size-4 text-base-content/25 group-hover:text-base-content/75" />
-                    <% end %>
-                  </.link>
-                </li>
-              <% end %>
-            <% end %>
-            <li>
-              <span class="text-base-content/50 cursor-default">
-                Cheatsheets
-              </span>
-            </li>
-            <%= for cheatsheet <- Material.course_cheatsheets() do %>
-              <li>
-                <a href={cheatsheet["url"]} class="flex items-center gap-2">
-                  <span class="flex items-center gap-x-2">
-                    <span class="size-4">
-                      <.emoji name="memo" alt="Cheatsheet" class="size-4" />
-                    </span>
-                    <span>
-                      {cheatsheet["sidebar_title"] || cheatsheet["title"]}
-                    </span>
-                  </span>
-                </a>
-              </li>
-            <% end %>
-          </ul>
+          <CourseComponents.course_material_menu
+            structure={Material.structure()}
+            progress={Progress.statuses(Material.progress(), Material.structure())}
+          />
 
           <footer class="p-4 absolute bottom-0 left-0 right-0 border-t border-black/10 dark:border-white/10">
             <div class="flex justify-between items-center gap-2">

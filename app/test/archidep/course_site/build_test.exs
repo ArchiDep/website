@@ -5,10 +5,283 @@ defmodule ArchiDep.CourseSite.BuildTest do
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Renderer.Source
+  alias ArchiDep.CourseSite.Structure
+  alias ArchiDep.CourseSite.Structure.Chapter
+  alias ArchiDep.CourseSite.Structure.Cheatsheet
+  alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
 
   @moduletag :tmp_dir
+
+  describe "content_files/1" do
+    test "lists the files a build reads, sorted, litter included", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(content_dir, "_course/509-reverse-proxy/subject.md", "# Reverse proxy")
+      write!(content_dir, "_course/101-command-line/subject.md", "# Command line")
+      write!(content_dir, "_course/101-command-line/.DS_Store", "litter")
+      write!(content_dir, "_cheatsheets/git/cheatsheet.md", "# Git")
+      write!(content_dir, "_progress/2025-09-19-cli.md", "---\ndone: [101]\n---\n")
+      File.mkdir_p!(Path.join(content_dir, "_course/510-empty"))
+
+      assert Build.content_files(content_dir) == [
+               "_cheatsheets/git/cheatsheet.md",
+               "_course/101-command-line/.DS_Store",
+               "_course/101-command-line/subject.md",
+               "_course/509-reverse-proxy/subject.md"
+             ]
+    end
+
+    test "lists nothing of an empty content directory", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+      File.mkdir_p!(content_dir)
+
+      assert Build.content_files(content_dir) == []
+    end
+  end
+
+  describe "content_digest/1" do
+    test "hashes the names of the files a build reads", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(content_dir, "_course/301-security/subject.md", "# Security")
+      write!(content_dir, "_course/301-security/images/lock.png", "a lock")
+      write!(content_dir, "_cheatsheets/docker/cheatsheet.md", "# Docker")
+
+      assert Build.content_digest(content_dir) ==
+               :crypto.hash(
+                 :sha256,
+                 Enum.join(
+                   [
+                     "_cheatsheets/docker/cheatsheet.md",
+                     "_course/301-security/images/lock.png",
+                     "_course/301-security/subject.md"
+                   ],
+                   "\n"
+                 )
+               )
+    end
+
+    test "hashes a content directory differently once a file is added", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(content_dir, "_course/302-cloud-computing/subject.md", "# Cloud computing")
+      digest = Build.content_digest(content_dir)
+
+      write!(content_dir, "_course/302-cloud-computing/images/cloud.png", "a cloud")
+
+      refute Build.content_digest(content_dir) == digest
+    end
+
+    test "hashes a content directory differently once a file is removed", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(content_dir, "_course/303-hashing/subject.md", "# Hashing")
+      write!(content_dir, "_course/303-hashing/slides.md", "# Hashing, presented")
+      digest = Build.content_digest(content_dir)
+
+      File.rm!(Path.join(content_dir, "_course/303-hashing/slides.md"))
+
+      refute Build.content_digest(content_dir) == digest
+    end
+
+    test "hashes a content directory the same when only what a file holds changes", %{
+      tmp_dir: tmp_dir
+    } do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(content_dir, "_course/304-tls/subject.md", "# TLS")
+      digest = Build.content_digest(content_dir)
+
+      write!(content_dir, "_course/304-tls/subject.md", "# Transport Layer Security")
+
+      assert Build.content_digest(content_dir) == digest
+    end
+  end
+
+  describe "course!/2" do
+    test "works out what the course is from a content directory", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+      declarations_file = Path.join(tmp_dir, "course.yml")
+
+      write!(
+        content_dir,
+        "_course/101-command-line/subject.md",
+        "---\ntitle: Command Line\n---\n\nType.\n"
+      )
+
+      write!(
+        content_dir,
+        "_course/101-command-line/slides.md",
+        "---\ntitle: Command Line Slides\n---\n\nType.\n"
+      )
+
+      write!(
+        content_dir,
+        "_course/205-php-todolist/exercise.md",
+        "---\ntitle: PHP Todolist\ngraded: true\n---\n\nBuild it.\n"
+      )
+
+      write!(
+        content_dir,
+        "_cheatsheets/git/cheatsheet.md",
+        "---\ntitle: Git Cheatsheet\nsidebar_title: Git\n---\n\nCommit.\n"
+      )
+
+      File.write!(declarations_file, """
+      ---
+      sections:
+        - title: Introduction
+        - title: Version Control
+      cheatsheets:
+        - git
+      """)
+
+      assert Build.course!(content_dir, declarations_file) == %Structure{
+               sections: [
+                 Section.new(1, "Introduction", [
+                   Chapter.new(DocumentRef.new(101, "command-line", :subject), "Command Line",
+                     slides: DocumentRef.new(101, "command-line", :slides)
+                   )
+                 ]),
+                 Section.new(2, "Version Control", [
+                   Chapter.new(DocumentRef.new(205, "php-todolist", :exercise), "PHP Todolist",
+                     graded?: true
+                   )
+                 ])
+               ],
+               cheatsheets: [Cheatsheet.new("git", "Git Cheatsheet", "Git")]
+             }
+    end
+
+    test "reports every file of the content directory it cannot place", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+      declarations_file = Path.join(tmp_dir, "course.yml")
+
+      write!(content_dir, "_course/103-ssh/notes.md", "# Notes")
+      write!(content_dir, "_course/103-ssh/todo.md", "# Todo")
+
+      assert_raise RuntimeError,
+                   """
+                   The content directory could not be read:
+                     Source file "_course/103-ssh/notes.md" is neither a document nor a file of a page
+                     Source file "_course/103-ssh/todo.md" is neither a document nor a file of a page\
+                   """,
+                   fn -> Build.course!(content_dir, declarations_file) end
+    end
+
+    test "reports every page of the content directory it cannot take apart", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+      declarations_file = Path.join(tmp_dir, "course.yml")
+
+      write!(content_dir, "_course/104-git/subject.md", "---\ntitle: Git\n")
+      write!(content_dir, "_cheatsheets/git/cheatsheet.md", "---\ntitle: [\n---\n\nCommit.\n")
+
+      assert_raise RuntimeError,
+                   """
+                   The pages of the content directory could not be read:
+                     Document "_cheatsheets/git/cheatsheet.md" has invalid front matter: malformed yaml
+                     Document "_course/104-git/subject.md" opens front matter it never closes\
+                   """,
+                   fn -> Build.course!(content_dir, declarations_file) end
+    end
+
+    test "reports declarations it cannot read", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+      declarations_file = Path.join(tmp_dir, "course.yml")
+
+      write!(content_dir, "_course/105-tls/subject.md", "---\ntitle: TLS\n---\n\nEncrypt.\n")
+
+      assert_raise RuntimeError,
+                   """
+                   The course declarations could not be read:
+                     Course declarations #{inspect(declarations_file)} do not exist\
+                   """,
+                   fn -> Build.course!(content_dir, declarations_file) end
+    end
+
+    test "reports everything that makes the content not a course", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+      declarations_file = Path.join(tmp_dir, "course.yml")
+
+      write!(content_dir, "_course/106-dns/subject.md", "---\nlayout: subject\n---\n\nName.\n")
+
+      write!(
+        content_dir,
+        "_cheatsheets/docker/cheatsheet.md",
+        "---\ntitle: Docker\n---\n\nRun.\n"
+      )
+
+      File.write!(declarations_file, """
+      ---
+      sections:
+        - title: Introduction
+      cheatsheets: []
+      """)
+
+      assert_raise RuntimeError,
+                   """
+                   What the course says it is could not be worked out:
+                     Document "_course/106-dns/subject.md" has no title
+                     Cheatsheet "docker" is not one of the declared cheatsheets\
+                   """,
+                   fn -> Build.course!(content_dir, declarations_file) end
+    end
+  end
+
+  describe "progress_entries!/1" do
+    test "reads what each session said about the progress through the course, in order", %{
+      tmp_dir: tmp_dir
+    } do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(
+        content_dir,
+        "_progress/2025-09-26-ssh.md",
+        "---\ndone: [101]\ndue: [102]\n---\n\nSecond session\n"
+      )
+
+      write!(
+        content_dir,
+        "_progress/2025-09-19-cli.md",
+        "---\nnext: [100, 101, 102]\n---\n\nFirst session\n"
+      )
+
+      write!(
+        content_dir,
+        "_course/101-command-line/subject.md",
+        "---\ntitle: CLI\n---\n\nType.\n"
+      )
+
+      assert Build.progress_entries!(content_dir) == [
+               %{"next" => [100, 101, 102]},
+               %{"done" => [101], "due" => [102]}
+             ]
+    end
+
+    test "reads nothing from a course that has been taught no session", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+      File.mkdir_p!(content_dir)
+
+      assert Build.progress_entries!(content_dir) == []
+    end
+
+    test "reports every session it cannot take apart", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+
+      write!(content_dir, "_progress/2025-10-03-git.md", "---\ndone: [\n---\n\nThird session\n")
+      write!(content_dir, "_progress/2025-10-10-cloud.md", "---\ndue: [204]\n")
+
+      assert_raise RuntimeError,
+                   """
+                   The progress through the course could not be read:
+                     Document "_progress/2025-10-03-git.md" has invalid front matter: malformed yaml
+                     Document "_progress/2025-10-10-cloud.md" opens front matter it never closes\
+                   """,
+                   fn -> Build.progress_entries!(content_dir) end
+    end
+  end
 
   describe "content_tree/1" do
     test "sorts the files of a content directory, litter included", %{tmp_dir: tmp_dir} do

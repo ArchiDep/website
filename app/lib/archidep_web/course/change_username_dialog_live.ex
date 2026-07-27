@@ -4,7 +4,7 @@ defmodule ArchiDepWeb.Course.ChangeUsernameDialogLive do
   import ArchiDepWeb.Components.FormComponents
   import ArchiDepWeb.Helpers.DialogHelpers
   alias ArchiDep.Course
-  alias ArchiDep.Course.Material
+  alias ArchiDep.CourseSite.Material
   alias ArchiDepWeb.Course.ChangeUsernameForm
 
   @id "change-username-dialog"

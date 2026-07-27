@@ -25,6 +25,7 @@ defmodule ArchiDep.CourseSite.Build do
 
   @cache_manifest "cache_manifest.json"
   @assets_dir "assets"
+  @progress_dir "_progress"
 
   @type error ::
           ContentTree.error()
@@ -42,6 +43,34 @@ defmodule ArchiDep.CourseSite.Build do
           | {:unparsable_document, String.t(), Source.error()}
 
   @doc """
+  Every file a build reads from a content directory, relative to it, sorted.
+
+  Only the collections `ArchiDep.CourseSite.Build.ContentTree.roots/0` names are
+  walked, and nothing is left out of the listing — what a build ignores is a
+  decision `ArchiDep.CourseSite.Build.ContentTree` records rather than a default
+  of the walk.
+  """
+  @spec content_files(Path.t()) :: [String.t()]
+  def content_files(content_dir),
+    do:
+      ContentTree.roots()
+      |> Enum.flat_map(&relative_files(Path.join(content_dir, &1), content_dir))
+      |> Enum.sort()
+
+  @doc """
+  What a content directory holds, as one hash of the names of its files.
+
+  This answers whether a build reading the directory again would be handed the
+  same files, which is a different question from whether any of them has
+  changed. Every file counts rather than the documents alone, because
+  `ArchiDep.CourseSite.Build.ContentTree.plan/1` decides what a build makes of
+  the files beside a page too.
+  """
+  @spec content_digest(Path.t()) :: binary()
+  def content_digest(content_dir),
+    do: :crypto.hash(:sha256, content_dir |> content_files() |> Enum.join("\n"))
+
+  @doc """
   What each file of a content directory is and where it is published.
 
   The directory is the one holding the course's collections, and only the
@@ -49,12 +78,7 @@ defmodule ArchiDep.CourseSite.Build do
   from it.
   """
   @spec content_tree(Path.t()) :: {:ok, ContentTree.t()} | {:error, nonempty_list(error())}
-  def content_tree(content_dir) do
-    ContentTree.roots()
-    |> Enum.flat_map(&relative_files(Path.join(content_dir, &1), content_dir))
-    |> Enum.sort()
-    |> ContentTree.plan()
-  end
+  def content_tree(content_dir), do: content_dir |> content_files() |> ContentTree.plan()
 
   @doc """
   What the course declares about itself: the sections it is divided into and the
@@ -107,6 +131,79 @@ defmodule ArchiDep.CourseSite.Build do
   def front_matter(sources) when is_map(sources),
     do:
       Map.new(sources, fn {page, %Source{front_matter: front_matter}} -> {page, front_matter} end)
+
+  @doc """
+  Work out what the course is from a content directory and a declarations file,
+  raising when it is not a course.
+
+  This is the whole of the reading `ArchiDep.CourseSite.Structure` needs, in one
+  call, for a caller that has nothing to do with what went wrong: every problem
+  of every stage is in the message it raises, so a content directory takes one
+  run to fix rather than one run per mistake.
+  """
+  @spec course!(Path.t(), Path.t()) :: Structure.t()
+  def course!(content_dir, declarations_file) do
+    tree =
+      content_dir |> content_tree() |> or_raise("The content directory could not be read")
+
+    sources =
+      tree
+      |> sources(content_dir)
+      |> or_raise("The pages of the content directory could not be read")
+
+    declarations =
+      declarations_file
+      |> declarations()
+      |> or_raise("The course declarations could not be read")
+
+    tree
+    |> Structure.plan(front_matter(sources), declarations)
+    |> or_raise("What the course says it is could not be worked out", &Structure.format_error/1)
+  end
+
+  @doc """
+  Every file recording a session of the course, relative to the content
+  directory, in filename order.
+
+  These sit beside the collections a build renders rather than in them: they are
+  a record of when the course was taught rather than something it publishes, so
+  `ArchiDep.CourseSite.Build.ContentTree.roots/0` does not name them and this is
+  a read of its own.
+  """
+  @spec progress_files(Path.t()) :: [String.t()]
+  def progress_files(content_dir),
+    do:
+      content_dir
+      |> Path.join(@progress_dir)
+      |> Path.join("*.md")
+      |> Path.wildcard()
+      |> Enum.map(&Path.relative_to(&1, content_dir))
+      |> Enum.sort()
+
+  @doc """
+  What each session of the course has said about the progress through it, in
+  filename order, raising when one of those cannot be read.
+  """
+  @spec progress_entries!(Path.t()) :: [Structure.front_matter()]
+  def progress_entries!(content_dir) do
+    {entries, errors} =
+      content_dir
+      |> progress_files()
+      |> Enum.reduce({[], []}, fn source_path, {entries, errors} ->
+        case source(content_dir, source_path) do
+          {:ok, %Source{front_matter: front_matter}} -> {[front_matter | entries], errors}
+          {:error, error} -> {entries, [error | errors]}
+        end
+      end)
+
+    case Enum.reverse(errors) do
+      [] ->
+        Enum.reverse(entries)
+
+      [_first | _rest] = errors ->
+        raise_errors("The progress through the course could not be read", errors, &format_error/1)
+    end
+  end
 
   @doc """
   The names the files sitting next to the pages of a content directory are
@@ -251,6 +348,13 @@ defmodule ArchiDep.CourseSite.Build do
     do: AssetDigest.format_error(error)
 
   def format_error({:malformed_manifest, _why} = error), do: AssetDigest.format_error(error)
+
+  defp or_raise(result, what, format \\ &__MODULE__.format_error/1)
+  defp or_raise({:ok, value}, _what, _format), do: value
+  defp or_raise({:error, errors}, what, format), do: raise_errors(what, errors, format)
+
+  defp raise_errors(what, errors, format),
+    do: raise("#{what}:\n" <> Enum.map_join(errors, "\n", &("  " <> format.(&1))))
 
   # Dotfiles are listed rather than skipped here, so that what a build ignores
   # is a decision `ContentTree` records instead of a default of the walk.

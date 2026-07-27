@@ -463,6 +463,77 @@ defmodule ArchiDep.CourseSite.StructureTest do
     end
   end
 
+  describe "fetch_chapter/3" do
+    test "looks a chapter up by its number and its slug, whatever its page is" do
+      structure = %Structure{
+        sections: [
+          Section.new(4, "Basic Deployment", [
+            Chapter.new(DocumentRef.new(402, "run-virtual-server", :exercise), "Run a Server"),
+            Chapter.new(DocumentRef.new(403, "linux", :slides), "Linux")
+          ])
+        ],
+        cheatsheets: []
+      }
+
+      assert {
+               Structure.fetch_chapter(structure, 402, "run-virtual-server"),
+               Structure.fetch_chapter(structure, 403, "linux"),
+               Structure.fetch_chapter(structure, 402, "run-your-own-server"),
+               Structure.fetch_chapter(structure, 404, "run-virtual-server")
+             } == {
+               {:ok,
+                Chapter.new(DocumentRef.new(402, "run-virtual-server", :exercise), "Run a Server")},
+               {:ok, Chapter.new(DocumentRef.new(403, "linux", :slides), "Linux")},
+               :error,
+               :error
+             }
+    end
+  end
+
+  describe "chapter!/3" do
+    test "looks a chapter up by its number and its slug" do
+      chapter = Chapter.new(DocumentRef.new(507, "dns", :subject), "Domain Name System")
+      structure = %Structure{sections: [Section.new(5, "Advanced", [chapter])], cheatsheets: []}
+
+      assert Structure.chapter!(structure, 507, "dns") == chapter
+    end
+
+    test "refuses a chapter the course does not have" do
+      structure = %Structure{
+        sections: [
+          Section.new(5, "Advanced", [
+            Chapter.new(DocumentRef.new(507, "dns", :subject), "Domain Name System")
+          ])
+        ],
+        cheatsheets: []
+      }
+
+      assert_raise ArgumentError, "The course has no chapter 507-domain-name-system", fn ->
+        Structure.chapter!(structure, 507, "domain-name-system")
+      end
+    end
+  end
+
+  describe "cheatsheet!/2" do
+    test "looks a cheatsheet up by its slug" do
+      cheatsheet = Cheatsheet.new("sysadmin", "System Administration Cheatsheet")
+      structure = %Structure{sections: [], cheatsheets: [cheatsheet]}
+
+      assert Structure.cheatsheet!(structure, "sysadmin") == cheatsheet
+    end
+
+    test "refuses a cheatsheet the course does not have" do
+      structure = %Structure{
+        sections: [],
+        cheatsheets: [Cheatsheet.new("sysadmin", "System Administration Cheatsheet")]
+      }
+
+      assert_raise ArgumentError, "The course has no system-administration cheatsheet", fn ->
+        Structure.cheatsheet!(structure, "system-administration")
+      end
+    end
+  end
+
   describe "format_error/1" do
     test "describes declarations that cannot be read" do
       assert Structure.format_error({:malformed_declarations, ~s{the "sections" key is missing}}) ==
