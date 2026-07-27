@@ -2,6 +2,7 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpersTest do
   use ExUnit.Case, async: true
 
   alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.HeadingRef
   alias ArchiDep.CourseSite.Structure.Chapter
   alias ArchiDep.CourseSite.Structure.Cheatsheet
   alias ArchiDep.CourseSite.Urls.AssetManifest
@@ -28,6 +29,19 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpersTest do
       assert CourseMaterialHelpers.course_url(cheatsheet) == "/cheatsheets/sysadmin/"
     end
 
+    test "addresses a heading of a chapter of the course material" do
+      heading =
+        HeadingRef.new({:document, DocumentRef.new(403, "linux", :subject)}, "install-linux")
+
+      assert CourseMaterialHelpers.course_url(heading) == "/course/403-linux/#install-linux"
+    end
+
+    test "addresses a heading of a cheatsheet of the course material" do
+      heading = HeadingRef.new({:cheatsheet, "git"}, "how-do-i-commit")
+
+      assert CourseMaterialHelpers.course_url(heading) == "/cheatsheets/git/#how-do-i-commit"
+    end
+
     test "passes a reference of the course material site through" do
       assert CourseMaterialHelpers.course_url(:home) == "/"
     end
@@ -36,22 +50,6 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpersTest do
       assert_raise UrlError, ~s[{:nonsense, "402"} is not a valid reference], fn ->
         CourseMaterialHelpers.course_url({:nonsense, "402"})
       end
-    end
-  end
-
-  describe "course_url/2" do
-    test "addresses a heading of a chapter of the course material" do
-      chapter = Chapter.new(DocumentRef.new(403, "linux", :subject), "Linux")
-
-      assert CourseMaterialHelpers.course_url(chapter, "install-linux") ==
-               "/course/403-linux/#install-linux"
-    end
-
-    test "addresses a heading of a cheatsheet of the course material" do
-      cheatsheet = Cheatsheet.new("git", "Git Cheatsheet")
-
-      assert CourseMaterialHelpers.course_url(cheatsheet, "how-do-i-commit") ==
-               "/cheatsheets/git/#how-do-i-commit"
     end
   end
 

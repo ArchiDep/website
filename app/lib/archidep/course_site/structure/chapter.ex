@@ -18,6 +18,7 @@ defmodule ArchiDep.CourseSite.Structure.Chapter do
   """
 
   alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.PageRef
 
   @enforce_keys [:page, :title]
   defstruct [:page, :title, slides: nil, graded?: false]
@@ -45,6 +46,16 @@ defmodule ArchiDep.CourseSite.Structure.Chapter do
       slides: Keyword.get(opts, :slides),
       graded?: Keyword.get(opts, :graded?, false)
     }
+
+  @doc """
+  The page a chapter is listed as, as a reference anything that emits a URL or
+  links into the page can take.
+
+      iex> Chapter.page_ref(Chapter.new(DocumentRef.new(507, "dns", :subject), "Domain Name System"))
+      {:document, DocumentRef.new(507, "dns", :subject)}
+  """
+  @spec page_ref(t()) :: PageRef.t()
+  def page_ref(%__MODULE__{page: page}), do: {:document, page}
 
   @doc """
   The number of a chapter, which every document of it shares.

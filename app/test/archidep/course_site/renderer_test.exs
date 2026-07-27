@@ -1,5 +1,6 @@
 defmodule ArchiDep.CourseSite.RendererTest do
   use ExUnit.Case, async: true
+  use ExUnitProperties
 
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Renderer
@@ -7,8 +8,10 @@ defmodule ArchiDep.CourseSite.RendererTest do
   alias ArchiDep.CourseSite.Renderer.Page
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Slides
+  alias ArchiDep.CourseSite.Renderer.Toc
   alias ArchiDep.CourseSite.Renderer.Toc.Entry
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
+  alias ArchiDep.Emoji
   alias ArchiDep.Support.CourseSiteFactory
   alias ArchiDep.Support.CourseSiteRendererTestTags
   alias ArchiDep.Support.CourseSiteRendererTestTags.FailingPass
@@ -383,6 +386,81 @@ defmodule ArchiDep.CourseSite.RendererTest do
     end
   end
 
+  describe "headings/1" do
+    test "identifies the headings of a page, the ones opening it included" do
+      assert headings("""
+             ---
+             excerpt_separator: <!-- more -->
+             ---
+
+             ## :books: What you will learn
+
+             <!-- more -->
+
+             ## Deploying
+
+             ### Over SFTP
+             """) == {:ok, ["what-you-will-learn", "deploying", "over-sftp"]}
+    end
+
+    test "identifies the headings a tag writes as well as the ones the page does" do
+      assert headings("""
+             ## Deploying
+
+             {% prose kind: note %}
+             ### A word of warning
+             {% endprose %}
+             """) == {:ok, ["deploying", "a-word-of-warning"]}
+    end
+
+    test "tells apart the identifiers of a heading a page writes twice" do
+      assert headings("Opening.\n\n## Troubleshooting\n\nProse.\n\n## Troubleshooting\n") ==
+               {:ok, ["troubleshooting", "troubleshooting-1"]}
+    end
+
+    test "gives a page that writes no heading nothing to link to" do
+      assert headings("A page of prose.\n") == {:ok, []}
+    end
+
+    test "reports what is wrong with a page it cannot render" do
+      assert headings("{% boom %}\n") == {:error, [boom_error(%{line: 1, column: 1})]}
+    end
+
+    property "identifies the same headings a page rendered with its passes does" do
+      check all(written <- headings_generator()) do
+        context = context(document(written), [])
+
+        {:ok, %Page{toc: toc}} = Renderer.render_page(context)
+
+        assert Renderer.headings(context) == {:ok, Toc.identifiers(toc)}
+      end
+    end
+  end
+
+  # A page of headings alone, each of a level of its own and some of them
+  # decorated, which is what the identifiers depend on: the shortcode is moved
+  # out of the text before it is slugged, and a heading written twice is
+  # numbered according to what came before it.
+  defp headings_generator do
+    gen all(
+          words <- list_of(member_of(~w(deploying troubleshooting permissions)), min_length: 1),
+          levels <- list_of(integer(1..6), length: length(words)),
+          shortcodes <-
+            list_of(one_of([constant(nil), member_of(Emoji.names())]), length: length(words))
+        ) do
+      Enum.zip([levels, shortcodes, words])
+    end
+  end
+
+  defp document(written),
+    do:
+      Enum.map_join(written, "\n\n", fn {level, shortcode, word} ->
+        "#{String.duplicate("#", level)} #{decoration(shortcode)}#{word}"
+      end) <> "\n"
+
+  defp decoration(nil), do: ""
+  defp decoration(shortcode), do: ":#{shortcode}: "
+
   defp boom_error(loc),
     do:
       RenderError.new(
@@ -397,6 +475,8 @@ defmodule ArchiDep.CourseSite.RendererTest do
         {:invalid_tag, "pass", "this pass always fails"},
         "_course/701-paas/subject.md"
       )
+
+  defp headings(text, attrs \\ []), do: Renderer.headings(context(text, attrs))
 
   defp render_page(text, attrs \\ []), do: Renderer.render_page(context(text, attrs))
 

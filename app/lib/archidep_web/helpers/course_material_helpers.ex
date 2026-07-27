@@ -13,6 +13,7 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpers do
   `ArchiDep.CourseSite.Urls.resolve!/2` and raises.
   """
 
+  alias ArchiDep.CourseSite.HeadingRef
   alias ArchiDep.CourseSite.Structure.Chapter
   alias ArchiDep.CourseSite.Structure.Cheatsheet
   alias ArchiDep.CourseSite.Urls
@@ -25,19 +26,20 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpers do
   @build_id "app"
 
   @doc """
-  Where a page of the course material is served from, optionally at one of its
-  headings.
+  Where a page of the course material, or one of its headings, is served from.
 
-  A chapter and a cheatsheet are named by the values the compiled model holds;
-  anything else is taken to be a reference already and passed through, so the
-  home page of the course material is `course_url(:home)`.
+  A chapter, a cheatsheet and a heading are named by the values the compiled
+  model holds; anything else is taken to be a reference already and passed
+  through, so the home page of the course material is `course_url(:home)`.
+
+  There is deliberately no way to pass a heading as a string. An identifier is
+  the renderer's to assign rather than the application's to know, so naming one
+  goes through `ArchiDep.CourseSite.Material`, where a heading the course no
+  longer has fails the build.
   """
-  @spec course_url(Chapter.t() | Cheatsheet.t() | Urls.logical_reference()) :: String.t()
+  @spec course_url(Chapter.t() | Cheatsheet.t() | HeadingRef.t() | Urls.logical_reference()) ::
+          String.t()
   def course_url(page), do: Urls.resolve!(url_context(), reference(page))
-
-  @spec course_url(Chapter.t() | Cheatsheet.t(), String.t()) :: String.t()
-  def course_url(page, heading) when is_binary(heading),
-    do: Urls.resolve!(url_context(), {:heading, reference(page), heading})
 
   @doc """
   How the dashboard addresses the course material site: where it is mounted and
@@ -55,7 +57,8 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpers do
       |> Keyword.put(:build_id, @build_id)
       |> UrlContext.new()
 
-  defp reference(%Chapter{page: page}), do: {:document, page}
-  defp reference(%Cheatsheet{slug: slug}), do: {:cheatsheet, slug}
+  defp reference(%Chapter{} = chapter), do: Chapter.page_ref(chapter)
+  defp reference(%Cheatsheet{} = cheatsheet), do: Cheatsheet.page_ref(cheatsheet)
+  defp reference(%HeadingRef{page: page, id: id}), do: {:heading, page, id}
   defp reference(reference), do: reference
 end

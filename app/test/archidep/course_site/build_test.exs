@@ -4,6 +4,9 @@ defmodule ArchiDep.CourseSite.BuildTest do
   alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.Headings
+  alias ArchiDep.CourseSite.Renderer
+  alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Source
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Structure.Chapter
@@ -227,6 +230,115 @@ defmodule ArchiDep.CourseSite.BuildTest do
                      Cheatsheet "docker" is not one of the declared cheatsheets\
                    """,
                    fn -> Build.course!(content_dir, declarations_file) end
+    end
+  end
+
+  describe "include_files/1" do
+    test "lists the partials a document may include, sorted", %{tmp_dir: tmp_dir} do
+      includes_dir = Path.join(tmp_dir, "_includes")
+
+      write!(includes_dir, "icons/photo.html", "<svg/>")
+      write!(includes_dir, "icons/nested/gem.html", "<svg/>")
+      write!(includes_dir, "icons/README.md", "Icons.")
+      write!(includes_dir, "head.html", "{% seo %}")
+
+      assert Build.include_files(includes_dir) == ["icons/nested/gem.html", "icons/photo.html"]
+    end
+
+    test "lists nothing when there is no includes directory", %{tmp_dir: tmp_dir} do
+      assert Build.include_files(Path.join(tmp_dir, "_includes")) == []
+    end
+  end
+
+  describe "includes/1" do
+    test "parses the partials a document may include", %{tmp_dir: tmp_dir} do
+      includes_dir = Path.join(tmp_dir, "_includes")
+
+      write!(includes_dir, "icons/photo.html", ~s(<svg class="{{ include.class }}"/>))
+
+      {:ok, expected} =
+        Renderer.compile_includes(%{
+          "icons/photo.html" => ~s(<svg class="{{ include.class }}"/>)
+        })
+
+      assert Build.includes(includes_dir) == {:ok, expected}
+    end
+
+    test "parses nothing when there is no includes directory", %{tmp_dir: tmp_dir} do
+      assert Build.includes(Path.join(tmp_dir, "_includes")) == {:ok, %{}}
+    end
+
+    test "reports every partial it cannot parse", %{tmp_dir: tmp_dir} do
+      includes_dir = Path.join(tmp_dir, "_includes")
+
+      write!(includes_dir, "icons/broken.html", "{% endunless %}")
+
+      assert Build.includes(includes_dir) ==
+               {:error,
+                [
+                  {:unparsable_include,
+                   RenderError.new(
+                     {:liquid, "Unexpected tag 'endunless'"},
+                     "icons/broken.html",
+                     %{line: 1, column: 1}
+                   )}
+                ]}
+    end
+  end
+
+  describe "headings!/3" do
+    test "identifies the headings of the pages it is asked about", %{tmp_dir: tmp_dir} do
+      {content_dir, includes_dir} = course_with_headings(tmp_dir)
+
+      exercise = {:document, DocumentRef.new(402, "run-virtual-server", :exercise)}
+
+      assert Build.headings!(content_dir, includes_dir, [exercise, {:cheatsheet, "sysadmin"}]) ==
+               Headings.new(%{
+                 exercise => ["create-your-server", "configure-open-ports"],
+                 {:cheatsheet, "sysadmin"} => ["how-do-i-change-my-username-usermod"]
+               })
+    end
+
+    test "identifies the headings of no page at all", %{tmp_dir: tmp_dir} do
+      {content_dir, includes_dir} = course_with_headings(tmp_dir)
+
+      assert Build.headings!(content_dir, includes_dir, []) == Headings.new(%{})
+    end
+
+    test "refuses a page the content directory does not hold", %{tmp_dir: tmp_dir} do
+      {content_dir, includes_dir} = course_with_headings(tmp_dir)
+
+      assert_raise RuntimeError,
+                   """
+                   The headings of the course material could not be read:
+                     The content directory holds no page at "/cheatsheets/docker/"
+                     The content directory holds no page at "/"\
+                   """,
+                   fn ->
+                     Build.headings!(content_dir, includes_dir, [{:cheatsheet, "docker"}, :home])
+                   end
+    end
+
+    test "reports what is wrong with a page it cannot render", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+      includes_dir = Path.join(tmp_dir, "_includes")
+
+      write!(
+        content_dir,
+        "_course/507-dns/subject.md",
+        "---\ntitle: DNS\n---\n\n{% include icons/gone.html %}\n"
+      )
+
+      assert_raise RuntimeError,
+                   """
+                   The headings of the course material could not be read:
+                     Document "_course/507-dns/subject.md" could not be rendered: There is no include named "icons/gone.html" in _course/507-dns/subject.md at line 5, column 1\
+                   """,
+                   fn ->
+                     Build.headings!(content_dir, includes_dir, [
+                       {:document, DocumentRef.new(507, "dns", :subject)}
+                     ])
+                   end
     end
   end
 
@@ -632,6 +744,45 @@ defmodule ArchiDep.CourseSite.BuildTest do
                ~s{File published at "/course/806-k8s/images/x.png" could not be written to "/build/course/806-k8s/images/x-ff00.png": permission denied}
     end
 
+    test "describes a partial that could not be read" do
+      assert Build.format_error(
+               {:unreadable_include, "icons/photo.html", "/build/_includes/icons/photo.html",
+                :eacces}
+             ) ==
+               ~s{Partial "icons/photo.html" could not be read from "/build/_includes/icons/photo.html": permission denied}
+    end
+
+    test "describes a partial that could not be parsed" do
+      error =
+        RenderError.new(
+          {:liquid, "Unexpected tag 'endunless'"},
+          "icons/broken.html",
+          %{line: 1, column: 1}
+        )
+
+      assert Build.format_error({:unparsable_include, error}) ==
+               "A partial could not be parsed: Unexpected tag 'endunless' in icons/broken.html at line 1, column 1"
+    end
+
+    test "describes a page the content directory does not hold" do
+      assert Build.format_error({:unknown_page, {:cheatsheet, "docker"}}) ==
+               ~s{The content directory holds no page at "/cheatsheets/docker/"}
+    end
+
+    test "describes a document that could not be rendered" do
+      error =
+        RenderError.new(
+          {:invalid_tag, "note", "this tag always fails"},
+          "_course/507-dns/subject.md",
+          %{line: 3, column: 1}
+        )
+
+      assert Build.format_error({:unrenderable_document, "_course/507-dns/subject.md", error}) ==
+               "Document \"_course/507-dns/subject.md\" could not be rendered: " <>
+                 "Invalid {% note %} tag (this tag always fails) " <>
+                 "in _course/507-dns/subject.md at line 3, column 1"
+    end
+
     test "describes what went wrong in the content directory" do
       assert Build.format_error({:unknown_source, "_course/807-nomad/notes.md"}) ==
                ~s{Source file "_course/807-nomad/notes.md" is neither a document nor a file of a page}
@@ -689,6 +840,39 @@ defmodule ArchiDep.CourseSite.BuildTest do
       assert Build.format_error({:unsupported_manifest_version, 3}) ==
                "Asset manifest version 3 is not version 1, the one this build reads"
     end
+  end
+
+  # A content directory of two pages that write headings, and the one partial
+  # the tag of a note draws its icon from.
+  defp course_with_headings(tmp_dir) do
+    content_dir = Path.join(tmp_dir, "collections")
+    includes_dir = Path.join(tmp_dir, "_includes")
+
+    write!(includes_dir, "icons/info-circle.html", "<svg/>")
+
+    write!(content_dir, "_course/402-run-virtual-server/exercise.md", """
+    ---
+    title: Run your own virtual server
+    ---
+
+    Rent one.
+
+    ## Create your server
+
+    {% note %}
+    ## Configure open ports
+    {% endnote %}
+    """)
+
+    write!(content_dir, "_cheatsheets/sysadmin/cheatsheet.md", """
+    ---
+    title: System Administration Cheatsheet
+    ---
+
+    ### How do I change my username? (`usermod`)
+    """)
+
+    {content_dir, includes_dir}
   end
 
   defp write!(root, path, contents) do

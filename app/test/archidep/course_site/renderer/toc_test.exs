@@ -80,6 +80,31 @@ defmodule ArchiDep.CourseSite.Renderer.TocTest do
     end
   end
 
+  describe "identifiers/1" do
+    test "flattens the navigation into the order the page writes its headings in" do
+      assert identifiers("""
+             ## Deploying
+
+             ### Over SFTP
+
+             ### Over SSH
+
+             ## Troubleshooting
+             """) == ["deploying", "over-sftp", "over-ssh", "troubleshooting"]
+    end
+
+    test "tells apart the identifiers of a heading a page writes twice" do
+      assert identifiers("## Troubleshooting\n\nProse.\n\n## Troubleshooting\n") ==
+               ["troubleshooting", "troubleshooting-1"]
+    end
+
+    test "gives a page that writes no heading nothing to link to" do
+      assert identifiers("A page of prose.\n") == []
+    end
+  end
+
+  defp identifiers(markdown), do: markdown |> toc() |> Toc.identifiers()
+
   defp toc(markdown) do
     {html, []} = Markdown.to_html(markdown, CourseSiteFactory.build(:render_context))
 

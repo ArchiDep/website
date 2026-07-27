@@ -13,6 +13,8 @@ defmodule ArchiDep.CourseSite.Structure.Cheatsheet do
   declared alongside the sections of the course.
   """
 
+  alias ArchiDep.CourseSite.PageRef
+
   @enforce_keys [:slug, :title]
   defstruct [:slug, :title, sidebar_title: nil]
 
@@ -30,6 +32,16 @@ defmodule ArchiDep.CourseSite.Structure.Cheatsheet do
       when is_binary(slug) and is_binary(title) and
              (is_binary(sidebar_title) or is_nil(sidebar_title)),
       do: %__MODULE__{slug: slug, title: title, sidebar_title: sidebar_title}
+
+  @doc """
+  The page a cheatsheet is, as a reference anything that emits a URL or links
+  into the page can take.
+
+      iex> Cheatsheet.page_ref(Cheatsheet.new("git", "Git Cheatsheet"))
+      {:cheatsheet, "git"}
+  """
+  @spec page_ref(t()) :: PageRef.t()
+  def page_ref(%__MODULE__{slug: slug}), do: {:cheatsheet, slug}
 
   @doc """
   What a cheatsheet is called in a list, which is its title when it declares

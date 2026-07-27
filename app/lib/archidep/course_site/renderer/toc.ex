@@ -42,6 +42,13 @@ defmodule ArchiDep.CourseSite.Renderer.Toc do
     |> nest()
   end
 
+  @doc """
+  The identifiers of a page's headings, in the order the page writes them.
+  """
+  @spec identifiers([Entry.t()]) :: [String.t()]
+  def identifiers(entries) when is_list(entries),
+    do: Enum.flat_map(entries, fn %Entry{id: id, entries: under} -> [id | identifiers(under)] end)
+
   defp label(content), do: Regex.replace(@anchor, content, "")
 
   defp nest([]), do: []

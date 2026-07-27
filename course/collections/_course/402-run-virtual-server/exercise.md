@@ -86,7 +86,7 @@ cheapest.
 
 {% endnote %}
 
-#### :exclamation: Configure your administator account
+#### :exclamation: Configure your administrator account
 
 Under the **Administrator account** settings, configure your username.
 

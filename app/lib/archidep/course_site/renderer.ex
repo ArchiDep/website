@@ -37,6 +37,7 @@ defmodule ArchiDep.CourseSite.Renderer do
   alias ArchiDep.CourseSite.Renderer.Page
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderError
+  alias ArchiDep.CourseSite.Renderer.RenderOptions
   alias ArchiDep.CourseSite.Renderer.Slides
   alias ArchiDep.CourseSite.Renderer.Source
   alias ArchiDep.CourseSite.Renderer.Toc
@@ -95,6 +96,28 @@ defmodule ArchiDep.CourseSite.Renderer do
 
       {:error, errors} ->
         {:error, shift(errors, context)}
+    end
+  end
+
+  @doc """
+  The identifiers of a page's headings, in the order the page writes them.
+
+  This is what a caller that wants to link *into* a page needs, and it is all it
+  gets: the page is rendered with its passes dropped, so a heading's label still
+  carries the shortcode a finished page shows as a picture, and handing that
+  back would invite someone to display it. The identifiers are the same either
+  way — they are slugged while the document is converted, and no pass renames
+  one.
+
+  What that buys is a caller that needs neither asset manifest, and therefore an
+  answer that costs one document rather than a build.
+  """
+  @spec headings(RenderContext.t()) ::
+          {:ok, [String.t()]} | {:error, nonempty_list(RenderError.t())}
+  def headings(%RenderContext{options: options} = context) do
+    case render_page(%RenderContext{context | options: RenderOptions.without_passes(options)}) do
+      {:ok, %Page{toc: toc}} -> {:ok, Toc.identifiers(toc)}
+      {:error, errors} -> {:error, errors}
     end
   end
 

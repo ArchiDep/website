@@ -80,6 +80,19 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
     }
   end
 
+  @doc """
+  Drop every pass, leaving the Liquid stage and the Markdown conversion.
+
+  A pass rewrites what a page shows — the URL of a file it refers to, the
+  picture of an emoji, the tab a link opens in. None of them can rename a
+  heading: an identifier is slugged while the document is converted, before the
+  first pass sees the page. So a caller that wants the identifiers of a page and
+  nothing else needs neither asset manifest.
+  """
+  @spec without_passes(t()) :: t()
+  def without_passes(%__MODULE__{} = options),
+    do: %__MODULE__{options | ast_passes: [], html_passes: []}
+
   defp boolean!(opts, key, default) do
     case Keyword.get(opts, key, default) do
       value when is_boolean(value) -> value

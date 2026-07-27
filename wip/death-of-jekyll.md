@@ -225,8 +225,13 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       `ArchiDep.CourseSite.Material`** and is compiled from the Markdown, so
       `archidep.json` is no longer a compile-time input of the application; it
       stores references and the web layer resolves them through the URL seam.
-- [ ] Make headings first-class so dynamic references compile-fail instead of
-      using brittle anchor strings — see [Heading references that
+- [x] Make headings first-class so dynamic references compile-fail instead of
+      using brittle anchor strings. **Done: `ArchiDep.CourseSite.HeadingRef` is
+      what the model stores and `Headings` what checks it**, filled by a
+      compile-time render of the two pages the dashboard names; `course_url/2`
+      is gone, so an unchecked fragment is no longer writable. Five corrections
+      recorded below, the sharpest being that a page cannot be rendered without
+      the course's partials — see [Heading references that
       compile-fail](#heading-references-that-compile-fail).
 - [ ] Split progress into compiled _structure_ and a runtime _status source_ (a
       swappable source read by both the baked static build and the
@@ -2243,6 +2248,52 @@ those strings have already been rewritten (`#exclamation-create-your-server` →
 `#create-your-server`) — see [TOC and heading
 anchors](#toc-and-heading-anchors). This task stays a pure robustness change on
 top of that: no further anchor has to move, and no redirect is needed.
+
+**Corrections while implementing:**
+
+- **A heading is an identity, not structure, and that decided where it lives.**
+  An identifier is slugged while a page is _rendered_, whereas
+  `Structure.plan/3` is a function of the front matter, so a heading could not
+  be a field of `Chapter` without making a build a prerequisite of knowing what
+  the course is. `HeadingRef` therefore joins `DocumentRef` and `PageRef`, and
+  `Headings` — the identifiers of the pages that were _asked about_, and no
+  others — is what `heading!/3` refuses against. It refuses a page and a heading
+  differently, since a page it does not hold was never read (a caller's mistake)
+  while a heading a page does not have is the course having moved on, which is
+  why that one offers the identifiers closest to the one named.
+- **A page cannot be rendered without the course's partials**, which this plan
+  assumed away. Grepping the two documents for `{% include %}` finds none, so
+  the first implementation passed no partials at all and the compile failed on
+  six of them: it is the **tags** of the course that include partials, not its
+  documents — every `note` and `callout` draws its icon that way. So
+  `course/_includes` became a compile-time input of the application beside the
+  collections, its partials are `@external_resource`s, and the `Dockerfile`
+  copies it. Reading them also moved out of `mix archidep.course_site.assets`,
+  which was doing its own `File.read!` against the rule that `Build` is the only
+  module of the subsystem that touches a file.
+- **The passes can be dropped, and that is what keeps a render affordable.** A
+  pass rewrites what a page _shows_ — the URL of a file, the picture of an
+  emoji, the tab a link opens in — and an identifier is slugged before the first
+  of them runs, so `Renderer.headings/1` renders with `ast_passes: []` and
+  `html_passes: []` and needs neither asset manifest. Digesting 362 files to
+  learn the name of a heading would otherwise have been the price of every `mix
+compile`. The property that the two agree is pinned as a test.
+- **`course_url/2` was deleted rather than left beside the new form.** Keeping
+  an arity that takes a fragment as a string would leave the hole open, and the
+  point of the task is that it cannot be written.
+  `Material.sysadmin_cheatsheet/0` went with it: nothing names that page any
+  more, only a heading of it.
+- **The `administator` typo is fixed** rather than carried. It was the one
+  fragment this document expected to preserve verbatim, and the anchor moves
+  with it — nothing else links to it, in the content or in the app, so the cost
+  is a bookmark nobody is known to hold. **10 headings** are named in all, over
+  two pages, and compiling the model now costs ~645 ms against the ~305 ms
+  recorded above — `Build.headings!/3` is ~310 ms of it, for two documents and
+  the partials, which is what a render costs even with the passes off.
+- **The component test pinned no link at all**, so replacing every fragment with
+  garbage failed nothing. Its projection now carries the hrefs each
+  troubleshooting note shows, in order, which is what says _which_ page a note
+  points at now that the compiler answers for whether the heading exists.
 
 ### Progress: structure vs status
 

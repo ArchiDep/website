@@ -17,15 +17,25 @@ defmodule ArchiDep.CourseSite.Build do
   alias ArchiDep.CourseSite.Build.AssetDigest
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.Build.PageAssetDigest
+  alias ArchiDep.CourseSite.Headings
   alias ArchiDep.CourseSite.PageRef
+  alias ArchiDep.CourseSite.Renderer
+  alias ArchiDep.CourseSite.Renderer.RenderContext
+  alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Source
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
+  alias ArchiDep.CourseSite.Urls.UrlContext
 
   @cache_manifest "cache_manifest.json"
   @assets_dir "assets"
   @progress_dir "_progress"
+
+  # Only the partials a *document* includes, which today are the icons. The rest
+  # of the includes directory is the Liquid layout the site is wrapped in, which
+  # belongs to Jekyll and uses the tags of its plugins.
+  @includes "icons/**/*.html"
 
   @type error ::
           ContentTree.error()
@@ -41,6 +51,10 @@ defmodule ArchiDep.CourseSite.Build do
           | {:undecodable_declarations, Path.t(), String.t()}
           | {:unreadable_document, String.t(), Path.t(), File.posix()}
           | {:unparsable_document, String.t(), Source.error()}
+          | {:unknown_page, PageRef.t()}
+          | {:unrenderable_document, String.t(), RenderError.t()}
+          | {:unreadable_include, String.t(), Path.t(), File.posix()}
+          | {:unparsable_include, RenderError.t()}
 
   @doc """
   Every file a build reads from a content directory, relative to it, sorted.
@@ -159,6 +173,76 @@ defmodule ArchiDep.CourseSite.Build do
     tree
     |> Structure.plan(front_matter(sources), declarations)
     |> or_raise("What the course says it is could not be worked out", &Structure.format_error/1)
+  end
+
+  @doc """
+  Every partial a document of the course may include, relative to the includes
+  directory, sorted.
+  """
+  @spec include_files(Path.t()) :: [String.t()]
+  def include_files(includes_dir),
+    do:
+      includes_dir
+      |> Path.join(@includes)
+      |> Path.wildcard()
+      |> Enum.map(&Path.relative_to(&1, includes_dir))
+      |> Enum.sort()
+
+  @doc """
+  The partials a document of the course may include, parsed.
+
+  A build parses them once and every document that includes one looks it up, so
+  a partial drawn on forty pages is read and parsed once rather than forty
+  times.
+  """
+  @spec includes(Path.t()) ::
+          {:ok, %{String.t() => Solid.Template.t()}} | {:error, nonempty_list(error())}
+  def includes(includes_dir) do
+    with {:ok, sources} <- include_sources(includes_dir), do: compile_includes(sources)
+  end
+
+  @doc """
+  The headings of a named pages of a content directory, raising when one of them
+  cannot be read.
+
+  A heading's identifier is settled by rendering the page it is on, so this
+  renders each page it is asked about — and only those. What a caller wants is
+  to check the handful of headings it links to; rendering the whole course to
+  answer that would put a build inside every compilation of
+  `ArchiDep.CourseSite.Material`.
+
+  The partials are needed all the same, because it is the tags of the course
+  rather than its documents that include them: a note draws its icon that way,
+  and there is no page without a note. What the render does *not* need is either
+  asset manifest, its passes being dropped — see
+  `ArchiDep.CourseSite.Renderer.headings/1`.
+  """
+  @spec headings!(Path.t(), Path.t(), [PageRef.t()]) :: Headings.t()
+  def headings!(content_dir, includes_dir, pages) when is_list(pages) do
+    tree = content_dir |> content_tree() |> or_raise("The content directory could not be read")
+
+    includes =
+      includes_dir |> includes() |> or_raise("The partials of the course could not be read")
+
+    {identifiers, errors} =
+      Enum.reduce(pages, {%{}, []}, fn page, {identifiers, errors} ->
+        case page_headings(tree, content_dir, includes, page) do
+          {:ok, page_identifiers} -> {Map.put(identifiers, page, page_identifiers), errors}
+          {:error, page_errors} -> {identifiers, errors ++ page_errors}
+        end
+      end)
+
+    case errors do
+      [] ->
+        Headings.new(identifiers)
+
+      [_first | _rest] = errors ->
+        raise_errors(
+          "The headings of the course material could not be read",
+          errors,
+          &format_error/1
+        )
+    end
   end
 
   @doc """
@@ -327,6 +411,19 @@ defmodule ArchiDep.CourseSite.Build do
   def format_error({:unparsable_document, source_path, {:invalid_front_matter, why}}),
     do: "Document #{inspect(source_path)} has invalid front matter: #{why}"
 
+  def format_error({:unreadable_include, path, file, reason}),
+    do:
+      "Partial #{inspect(path)} could not be read from #{inspect(file)}: #{:file.format_error(reason)}"
+
+  def format_error({:unparsable_include, %RenderError{} = error}),
+    do: "A partial could not be parsed: #{RenderError.message(error)}"
+
+  def format_error({:unknown_page, page}),
+    do: "The content directory holds no page at #{inspect(PageRef.output_path(page))}"
+
+  def format_error({:unrenderable_document, source_path, %RenderError{} = error}),
+    do: "Document #{inspect(source_path)} could not be rendered: #{RenderError.message(error)}"
+
   def format_error({:unreadable_source, output_path, source_path, reason}),
     do:
       "File #{inspect(source_path)}, published at #{inspect(output_path)}, could not be read: #{:file.format_error(reason)}"
@@ -413,6 +510,80 @@ defmodule ArchiDep.CourseSite.Build do
         {:error, [{:undecodable_declarations, file, Exception.message(error)}]}
     end
   end
+
+  defp include_sources(includes_dir) do
+    {sources, errors} =
+      includes_dir
+      |> include_files()
+      |> Enum.reduce({%{}, []}, fn path, {sources, errors} ->
+        file = Path.join(includes_dir, path)
+
+        case File.read(file) do
+          {:ok, contents} -> {Map.put(sources, path, contents), errors}
+          {:error, reason} -> {sources, [{:unreadable_include, path, file, reason} | errors]}
+        end
+      end)
+
+    case Enum.reverse(errors) do
+      [] -> {:ok, sources}
+      [_first | _rest] = errors -> {:error, errors}
+    end
+  end
+
+  defp compile_includes(sources) do
+    case Renderer.compile_includes(sources) do
+      {:ok, includes} -> {:ok, includes}
+      {:error, errors} -> {:error, Enum.map(errors, &{:unparsable_include, &1})}
+    end
+  end
+
+  defp page_headings(tree, content_dir, includes, page) do
+    with {:ok, source_path} <- page_source_path(tree, page),
+         {:ok, source} <- page_source(content_dir, source_path),
+         do: rendered_headings(page, source_path, source, includes)
+  end
+
+  defp page_source_path(%ContentTree{documents: documents}, {:document, ref}),
+    do: documents |> Map.fetch(ref) |> or_unknown({:document, ref})
+
+  defp page_source_path(%ContentTree{cheatsheets: cheatsheets}, {:cheatsheet, slug}),
+    do: cheatsheets |> Map.fetch(slug) |> or_unknown({:cheatsheet, slug})
+
+  defp page_source_path(%ContentTree{}, page), do: {:error, [{:unknown_page, page}]}
+
+  defp or_unknown({:ok, source_path}, _page), do: {:ok, source_path}
+  defp or_unknown(:error, page), do: {:error, [{:unknown_page, page}]}
+
+  defp page_source(content_dir, source_path) do
+    case source(content_dir, source_path) do
+      {:ok, source} -> {:ok, source}
+      {:error, error} -> {:error, [error]}
+    end
+  end
+
+  defp rendered_headings(page, source_path, source, includes) do
+    context =
+      RenderContext.new(
+        source: source,
+        source_path: source_path,
+        urls: headings_urls(),
+        page: page,
+        includes: includes
+      )
+
+    case Renderer.headings(context) do
+      {:ok, identifiers} ->
+        {:ok, identifiers}
+
+      {:error, errors} ->
+        {:error, Enum.map(errors, &{:unrenderable_document, source_path, &1})}
+    end
+  end
+
+  # Every URL this render emits is discarded — only the identifiers of the
+  # headings are kept — so what it says about the build it is for cannot reach
+  # anything. It says the least a URL context may say.
+  defp headings_urls, do: UrlContext.new(mode: :live, build_id: "headings")
 
   defp source(content_dir, source_path) do
     file = Path.join(content_dir, source_path)

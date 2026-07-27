@@ -48,7 +48,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
           Did you configure the correct IP address? We might be trying to reach
           the wrong server. You can find your server's IP address in its
           information page (<a
-            href={course_url(Material.run_virtual_server_exercise(), "create-your-server")}
+            href={course_url(Material.create_your_server())}
             class="underline hover:no-underline"
             target="_blank"
           >after creating
@@ -86,7 +86,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
           Did you configure the correct IP address? We might be trying to reach
           the wrong server. You can find your server's IP address in its
           information page (<a
-            href={course_url(Material.run_virtual_server_exercise(), "create-your-server")}
+            href={course_url(Material.create_your_server())}
             class="underline hover:no-underline"
             target="_blank"
           >after creating
@@ -117,12 +117,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
           Did you configure the correct username? We might be trying to log in
           with the wrong user. We need the
           <a
-            href={
-              course_url(
-                Material.run_virtual_server_exercise(),
-                "configure-your-administator-account"
-              )
-            }
+            href={course_url(Material.configure_your_administrator_account())}
             class="underline hover:no-underline"
             target="_blank"
           >
@@ -132,12 +127,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
         </li>
         <li>
           Did you <a
-            href={
-              course_url(
-                Material.run_virtual_server_exercise(),
-                "give-the-teacher-access-to-your-virtual-machine"
-              )
-            }
+            href={course_url(Material.give_the_teacher_access())}
             class="underline hover:no-underline"
             target="_blank"
           >add the course's SSH public key to your user's authorized keys</a>?
@@ -167,9 +157,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
             <span>
               Most likely the problem is due to user error.
               When setting up your virtual server, did you <a
-                href={
-                  course_url(Material.run_virtual_server_exercise(), "register-your-azure-vm-with-us")
-                }
+                href={course_url(Material.register_your_server_with_us())}
                 class="underline hover:no-underline"
                 target="_blank"
               >give us the correct SSH host
@@ -216,7 +204,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
         <li :if={mismatch?(@state, &(&1 not in [:hostname, :swap]))}>
           The hardware and/or operating system of your server does not match the
           expected values. Did you <a
-            href={course_url(Material.run_virtual_server_exercise(), "configure-basic-settings")}
+            href={course_url(Material.configure_basic_settings())}
             class="underline hover:no-underline"
             target="_blank"
           >choose the correct image and size when configuring the basic settings</a>?
@@ -224,24 +212,14 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
         <li :if={mismatch?(@state, :hostname)}>
           The hostname of your server does not match the expected value.
           Did you <a
-            href={
-              course_url(
-                Material.run_virtual_server_exercise(),
-                "change-the-hostname-of-your-virtual-machine"
-              )
-            }
+            href={course_url(Material.change_the_hostname())}
             class="underline hover:no-underline"
             target="_blank"
           >configure the correct hostname for your server</a>?
         </li>
         <li :if={mismatch?(@state, :swap)}>
           Your server does not appear to have the expected amount of swap space. Did you <a
-            href={
-              course_url(
-                Material.run_virtual_server_exercise(),
-                "add-swap-space-to-your-virtual-server"
-              )
-            }
+            href={course_url(Material.add_swap_space())}
             class="underline hover:no-underline"
             target="_blank"
           >add swap space as instructed</a>?
@@ -261,7 +239,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
         <strong>Oops.</strong>
         We've connected to your server but we can't seem
         to reach some of the ports that should be open. Are you sure you <a
-          href={course_url(Material.run_virtual_server_exercise(), "configure-open-ports")}
+          href={course_url(Material.configure_open_ports())}
           class="underline hover:no-underline"
           target="_blank"
         >
@@ -272,12 +250,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
       <p class="mt-2">
         If you forgot some or all of them,
         <a
-          href={
-            course_url(
-              Material.run_virtual_server_exercise(),
-              "i-forgot-to-open-some-or-all-of-the-ports-in-the-firewall"
-            )
-          }
+          href={course_url(Material.forgot_to_open_ports())}
           class="underline hover:no-underline"
           target="_blank"
         >

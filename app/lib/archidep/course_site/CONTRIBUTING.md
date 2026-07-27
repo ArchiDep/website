@@ -16,6 +16,7 @@ and tooling that also apply here. Read that document first.
   - [A chapter is the unit](#a-chapter-is-the-unit)
   - [What the course declares about itself](#what-the-course-declares-about-itself)
   - [What it refuses](#what-it-refuses)
+  - [The headings a page has](#the-headings-a-page-has)
   - [The compiled model](#the-compiled-model)
 - [URL and link emission](#url-and-link-emission)
   - [What a build is](#what-a-build-is)
@@ -87,7 +88,8 @@ bypassed the facade and therefore `Course.ContextMock`.
 
 ## Identities
 
-Two modules define how a page of the site is referred to, without naming a URL:
+Three modules define how a place in the site is referred to, without naming a
+URL:
 
 - [`DocumentRef`](./document_ref.ex) — a course document: a chapter number, a
   slug and a type (`:subject`, `:exercise` or `:slides`). Its
@@ -97,6 +99,12 @@ Two modules define how a page of the site is referred to, without naming a URL:
 - [`PageRef`](./page_ref.ex) — anything with a page URL: the home page, a
   document or a cheatsheet. `output_path/1` is where that page lives inside a
   build, with no mount point and no edition prefix.
+- [`HeadingRef`](./heading_ref.ex) — a place _inside_ a page: a page and the
+  identifier one of its headings carries. Unlike the other two it names
+  something no author writes — an identifier is [slugged while the page is
+  rendered](#a-heading-is-identified-by-what-it-says-not-by-its-decoration) — so
+  one is only ever built from a page that has been read, which is
+  [`Headings`](#the-headings-a-page-has)' job.
 
 A page URL identifies a page **less** precisely than a reference does: a
 chapter's subject and its exercise are emitted at one and the same URL.
@@ -181,6 +189,21 @@ The declarations are the one exception to reporting everything: when the list of
 sections cannot be read, nothing else about the course can be trusted, so those
 are reported alone.
 
+### The headings a page has
+
+A chapter and a cheatsheet are structure; a **heading** is not. `Structure` is a
+function of the front matter, and a heading's identifier only exists once the
+page has been converted — which is why [`Headings`](./headings.ex) is a thing of
+its own rather than a field of `Chapter`. It holds the identifiers of the pages
+it was asked about and nothing more, and `heading!/3` is the raising lookup, as
+`Structure.chapter!/3` is for a chapter.
+
+It refuses a page and a heading **differently**, because they are different
+mistakes. A page it does not hold was never read, which is wrong in the caller.
+A heading a page does not have is the course having moved on, so that failure
+offers the identifiers closest to the one asked for: what is needed to fix it is
+the identifier that replaced the one that is gone.
+
 ### The compiled model
 
 [`Material`](./material.ex) is the course as the running application knows it:
@@ -225,13 +248,31 @@ page: a subject and an exercise are published at the same URL, so a chapter
 turned from one into the other is the same chapter at the same address and must
 not fail.
 
+**A heading the dashboard names is an attribute too**, and the same argument
+applies with more force: a fragment is a string nothing checks, so a reworded
+heading used to break ten links silently. `Build.headings!/3` renders the pages
+those headings are on while the module compiles, and `Headings.heading!/3` turns
+each identifier into a [`HeadingRef`](#identities) or fails the build naming it.
+`CourseMaterialHelpers.course_url/1` takes only those values — there is
+deliberately no arity taking a fragment as a string, so an unchecked one cannot
+be written.
+
+That is the one place a **render** happens while the application compiles, and
+it is kept to what it must be: the two pages that are named, with the renderer's
+passes dropped. Rendering the whole course, or rendering it with its passes,
+would put a build's asset manifests inside `mix compile`. The partials are
+needed even so — it is the tags of the course rather than its documents that
+include them, a note drawing its icon that way — so `course/_includes` is a
+compile-time input alongside the collections, and the
+[`Dockerfile`](../../../../Dockerfile) copies it.
+
 **Two mechanisms decide when it is compiled again**, because neither covers the
 other's case:
 
-- every Markdown source, the declarations and every recorded session are
-  `@external_resource`s, which is what catches a file being **edited or
-  deleted** — Mix compares each one's content digest, so it is immune to a fresh
-  checkout;
+- every Markdown source, the declarations, every recorded session and every
+  partial are `@external_resource`s, which is what catches a file being **edited
+  or deleted** — Mix compares each one's content digest, so it is immune to a
+  fresh checkout;
 - `__mix_recompile__?/0` compares `Build.content_digest/1`, a hash of the
   **names** of every file of the collections, which is what catches one being
   **added**. An `@external_resource` cannot: a file nobody registered is a file
@@ -392,8 +433,9 @@ it, documented there rather than here:
 | [`AssetDigest`](./build/asset_digest.ex)          | where the global assets went, per `phx.digest`                                                 |
 | [`LinkCheck`](./build/link_check.ex)              | which of a finished build's links lead nowhere                                                 |
 | [`Structure`](./structure.ex)                     | what the course is, which `course!/2` chains the reads for                                     |
+| [`Headings`](./headings.ex)                       | what a page's headings are called, which `headings!/3` chains the reads for                    |
 
-Four things about the shape of it are worth knowing before reading any of them.
+A few things about the shape of it are worth knowing before reading any of them.
 
 **A page is read once.** `sources/2` takes every document and cheatsheet of a
 content directory apart with [`Source`](./renderer/source.ex) and keys them by
@@ -405,7 +447,17 @@ that would have to be kept in agreement with `Source.parse/1` forever.
 `declarations/1` and `progress_entries!/1` are the reads that are not files of
 the site — see [what the course declares about
 itself](#what-the-course-declares-about-itself) and [the compiled
-model](#the-compiled-model).
+model](#the-compiled-model). `include_files/1` and `includes/1` are the read of
+the partials, which are files of neither: they are what a document is written
+against rather than something the site publishes.
+
+**Naming a heading takes a render.** `headings!/3` is the only read that runs
+the renderer, because an identifier is [settled while a page is
+converted](#a-heading-is-identified-by-what-it-says-not-by-its-decoration). It
+renders the pages it is asked about and no others, and
+[`Renderer.headings/1`](#the-navigation-of-a-page) drops the passes so that
+naming a heading needs no asset manifest — which is what makes it affordable
+inside a compilation of [`Material`](#the-compiled-model).
 
 **Listing the files and reading them are separate.** `content_files/1` is the
 walk of the content directory, `content_tree/1` is that walk planned, and
@@ -692,6 +744,15 @@ the site shows around a page — the legend of an exercise, the presentation of 
 chapter with slides — belong to whatever lays the page out, and so do their
 entries.
 
+`Renderer.headings/1` is the same reading for a caller that wants to link _into_
+a page rather than draw its navigation, and it hands back the identifiers alone.
+It renders with the passes dropped, which is safe for exactly the reason the
+labels are not: a pass rewrites what a page **shows** — the URL of a file, the
+picture of an emoji, the tab a link opens in — and an identifier is slugged
+before the first of them runs. That is what lets
+[`Build.headings!/3`](#building) answer for a page without either asset
+manifest, and the property that the two agree is pinned as a test.
+
 ### Colouring a code block
 
 Highlighting is not one of those seams. Every code block of every document
@@ -863,10 +924,12 @@ subsystem:
 - [`Material`](./material.ex) compiles from the real course, so its test asserts
   facts about the **module** rather than about the syllabus: that `sections/0`
   and `cheatsheets/0` are the corresponding fields of `structure/0`, that each
-  named reference is the whole `%Chapter{}` or `%Cheatsheet{}` it should be, and
+  named reference is the whole `%Chapter{}` or `%HeadingRef{}` it should be, and
   that `__mix_recompile__?/0` answers no — a real oracle, since it fails if the
-  digest is not deterministic or reads the wrong directory. The whole
-  `%Structure{}` of the real course is deliberately **not** asserted: a
+  digest is not deterministic or reads the wrong directory. The named headings
+  are asserted **together**, as one map by `==`, since ten separate assertions
+  of one fact each would let a heading be dropped without a test noticing. The
+  whole `%Structure{}` of the real course is deliberately **not** asserted: a
   fifty-chapter literal would break on every syllabus edit made by someone who
   is not touching Elixir. What the real content must satisfy is refused by
   `Structure.plan/3` and checked by `mix archidep.course_site.structure`.

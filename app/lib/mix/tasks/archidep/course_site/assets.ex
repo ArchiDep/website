@@ -104,24 +104,14 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
     end
   end
 
-  # Only the partials a *document* includes are parsed, which today are the
-  # icons. The rest of the directory is the Liquid layout the site is wrapped
-  # in — `head.html` and its siblings — which belongs to Jekyll, uses tags of
-  # its plugins, and is not this subsystem's to render.
   defp includes!(includes_dir) do
-    sources =
-      includes_dir
-      |> Path.join("icons/**/*.html")
-      |> Path.wildcard()
-      |> Map.new(&{Path.relative_to(&1, includes_dir), File.read!(&1)})
-
-    case Renderer.compile_includes(sources) do
+    case Build.includes(includes_dir) do
       {:ok, includes} ->
         Mix.shell().info("Parsed #{map_size(includes)} partials from #{includes_dir}")
         includes
 
       {:error, errors} ->
-        abort!("The partials could not be parsed", errors, &RenderError.message/1)
+        abort!("The partials could not be read", errors, &Build.format_error/1)
     end
   end
 

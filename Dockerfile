@@ -227,6 +227,9 @@ COPY --chown=app:app ./app/ /usr/src/app/
 # /usr/src/app, which makes /usr/src the repository root.
 COPY --chown=app:app ./course/collections/ /usr/src/course/collections/
 COPY --chown=app:app ./course/_data/course.yml /usr/src/course/_data/course.yml
+# The partials too: a page names its headings by being rendered, and it is the
+# tags of the course that include them rather than its documents.
+COPY --chown=app:app ./course/_includes/ /usr/src/course/_includes/
 
 COPY ./.git/ /tmp/.git/
 RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\///' > /usr/src/app/.git-branch && \
