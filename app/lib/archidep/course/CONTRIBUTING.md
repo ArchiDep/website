@@ -20,6 +20,7 @@ and tooling that also apply here. Read that document first.
 - [Expected Server Properties](#expected-server-properties)
 - [Use Cases](#use-cases)
 - [Business Events](#business-events)
+- [Course progress](#course-progress)
 - [Authorization](#authorization)
 - [References](#references)
 
@@ -44,6 +45,9 @@ Key concepts a contributor must understand:
   `UserGroup` and `PreregisteredUser`) for authentication. Course is the system
   of record for enrollment; Accounts observes it. When changing those tables,
   consider both contexts.
+- **How far the course has got.** `course_sessions/0` answers what each teaching
+  session recorded — see [Course progress](#course-progress). It is the one thing
+  this context serves that it owns no table for.
 - **Preregistration.** A student record exists **before** the person logs in.
   When they first authenticate, the Accounts context links the student to a
   newly created user account by email. A [`User`](./schemas/user.ex) read-view
@@ -268,6 +272,18 @@ to the `course:students:{id}` stream.
   [`StudentsImportedInClass`](./events/students_imported_in_class.ex)
 
 ---
+
+## Course progress
+
+`course_sessions/0` returns what each session of the course recorded, in the
+order they were taught, read from `app/priv/course/progress.json` by
+[`ReadCourseSessions`](./use_cases/read_course_sessions.ex).
+
+It is the odd one out of this context: it owns no table, and it takes no
+authentication because how far the course has got is public. Reading a file is
+the interim — progress is meant to become a model of this context edited through
+the admin console, and it is behind the facade now so that the move changes that
+use case and nothing else.
 
 ## Authorization
 

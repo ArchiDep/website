@@ -106,8 +106,6 @@ the dashboard functionality is only available during the current semester).
     key concepts and commands.
   - `collections/_json`: JSON data exports for integration with the dashboard
     application.
-  - `collections/_progress`: Progress posts to track course completion during
-    the semester, utilizing the numbering scheme of the main course materials.
 - **Important Files**
   - `_plugins/archidep.rb`: Custom Jekyll plugin to enrich documents with
     additional metadata, such as determining the type of document (subject,
@@ -314,35 +312,38 @@ The following front matter keys are meant to be set by authors:
 
 ### Progress Tracking
 
-The course's progress through the semester is tracked with documents in the
-[`collections/_progress`](./collections/_progress) directory, one per teaching
-session. Each is a front-matter-only post whose `done`, `due` and `next` keys
-list chapter numbers (the computed `num` of each document, e.g. `201`):
+How far the course has got is recorded in
+[`app/priv/course/progress.json`](../app/priv/course/progress.json) — under the
+dashboard application because both halves of the site read it from there — with
+one entry per teaching session, in the order they were taught:
 
-```yaml
----
-layout: post
-title: 'Git Branching and Collaborating'
-date: 2025-10-03 19:00:00 +0100
-categories: progress
-done: [105, 200, 201, 202, 203]
-due: [204, 205]
-next: [300, 301, 400, 401, 402, 403]
----
+```json
+{
+  "sessions": [
+    {
+      "date": "2025-10-03",
+      "title": "Git Branching and Collaborating",
+      "done": [105, 200, 201, 202, 203],
+      "due": [204, 205],
+      "next": [300, 301, 400, 401, 402, 403]
+    }
+  ]
+}
 ```
 
-The [`_plugins/archidep.rb`](./_plugins/archidep.rb) plugin aggregates these
-lists across all progress documents and assigns each chapter and section one of
-four progress states, which drive the sidebar indicators, the home page cards
-and search filtering:
+The numbers are the computed `num` of a document (e.g. `201`). To advance the
+course, **append a session** rather than editing the ones already there; a
+session may leave a category out.
+
+The [`_plugins/archidep.rb`](./_plugins/archidep.rb) plugin aggregates the lists
+across every session and assigns each chapter and section one of four progress
+states, which drive the sidebar indicators, the home page cards, search
+filtering and whether [solutions](#solutions) are shown:
 
 - `done`: listed in any `done` array.
 - `due`: listed in `due` but not yet `done`.
 - `next`: listed in `next` but not `done` or `due`.
 - `future`: not listed anywhere (the default).
-
-To advance the course, add a new progress document for the session rather than
-editing existing ones.
 
 ### Special Tags and Features
 
@@ -504,6 +505,13 @@ attempt the exercise first. It accepts an optional `title` attribute (default
 
 The `solution` tag is implemented in the [`_plugins/tags/solution.rb`
 file](./_plugins/tags/solution.rb).
+
+A solution belongs to a chapter's exercise: writing one on the home page or in a
+cheatsheet fails the build, since there is nothing there for it to answer. The
+Elixir renderer additionally **leaves an answer out of the page entirely** until
+the course has covered its chapter — see [Progress Tracking](#progress-tracking)
+— because a page's source is there to be read, so a solution a student can find
+by looking at the markup is not hidden at all.
 
 **Example usage:**
 

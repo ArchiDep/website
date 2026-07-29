@@ -13,6 +13,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderOptions
   alias ArchiDep.CourseSite.Renderer.Source
+  alias ArchiDep.CourseSite.Session
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
@@ -32,6 +33,22 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     ["exercise.md"],
     ["slides.md"]
   ]
+
+  @spec session_factory(map()) :: Session.t()
+  def session_factory(attrs!) do
+    {date, attrs!} = Map.pop_lazy(attrs!, :date, fn -> Faker.Date.backward(365) end)
+
+    {title, attrs!} =
+      Map.pop_lazy(attrs!, :title, fn -> Enum.join(Faker.Lorem.words(2), " ") end)
+
+    {done, attrs!} = Map.pop(attrs!, :done, [])
+    {due, attrs!} = Map.pop(attrs!, :due, [])
+    {next, attrs!} = Map.pop(attrs!, :next, [])
+
+    [] = Map.keys(attrs!)
+
+    Session.new(date, title, done, due, next)
+  end
 
   @spec document_ref_factory(map()) :: DocumentRef.t()
   def document_ref_factory(attrs!) do

@@ -233,34 +233,48 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       recorded below, the sharpest being that a page cannot be rendered without
       the course's partials — see [Heading references that
       compile-fail](#heading-references-that-compile-fail).
-- [ ] Split progress into compiled _structure_ and a runtime _status source_ (a
+- [x] Split progress into compiled _structure_ and a runtime _status source_ (a
       swappable source read by both the baked static build and the
       server-rendered app-shell sidebar), keeping status out of the compiled
-      model — see [Progress: structure vs
+      model. **Done: nothing about how far the course has got is compiled any
+      more** — `Material` lost `@progress`, and
+      `ArchiDep.Course.course_sessions/0` is what the app-shell sidebar reads at
+      render time. Only that one consumer exists so far: the baked static build
+      is [its own box](#static-build-step) and reads the same source when it
+      arrives — see [Progress: structure vs
       status](#progress-structure-vs-status).
-- [ ] Make `progress.json` the single progress source (replacing the `_progress`
+- [x] Make `progress.json` the single progress source (replacing the `_progress`
       collection) and expose current progress at a public, read-only API route
-      for the backup build — see [Progress: structure vs
+      for the backup build. **Done: `app/priv/course/progress.json` is read by
+      both pipelines** — the Ruby plugin reads the same file, so the collection
+      and its 14 documents are gone — and `GET /api/progress` serves it, with
+      seven corrections recorded below — see [Progress: structure vs
       status](#progress-structure-vs-status).
 
 **New features (built on the model above)**
 
-- [ ] Hide solution blocks by default and reveal them from the progress source
+- [x] Hide solution blocks by default and reveal them from the progress source
       as the course progresses — see [Progressive solution
-      reveal](#progressive-solution-reveal). It sits after the progress source
+      reveal](#progressive-solution-reveal). It sat after the progress source
       rather than beside the rendering core, because reveal derives from a
-      chapter's status instead of a flag of its own: until that source exists
-      there is nothing to gate on. **The gate itself is built** — the renderer
-      is handed a decision rather than a status,
-      `Progress.solutions_revealed?/2` names the `done` threshold, and a
-      solution outside a chapter now fails the build, with five corrections
-      recorded below — but it is driven by the compiled progress, so this stays
-      open until the source above replaces it.
+      chapter's status instead of a flag of its own: until that source existed
+      there was nothing to gate on. **Done in two parts**: the renderer is
+      handed a decision rather than a status and
+      `Progress.solutions_revealed?/2` names the `done` threshold (five
+      corrections recorded there), and it now reads the runtime source rather
+      than the compiled progress.
 
 **Static build, archival and per-year versions**
 
 - [ ] Implement the static build step writing to the same `priv/static` layout
       Jekyll produces — see [Static build step](#static-build-step).
+- [ ] Port the home page's three progress cards — "Previously", "Due next",
+      "Next time". They are the one read of the progress source with no Elixir
+      consumer yet, and the only one needing the **individual sessions** rather
+      than the aggregate, which is why `Course.course_sessions/0` returns them.
+      Waits on the static build step above, there being no Elixir home page
+      before it. The two rules that are easy to get wrong are recorded in
+      [Metadata generation](#metadata-generation).
 - [ ] Serve the build via Phoenix `Plug.Static` in development and via a
       separate static server (reverse-proxy routed) in production, publishing
       in-process rebuilds atomically to a shared volume — see [Development and
@@ -1508,11 +1522,11 @@ Five corrections to this section, found while implementing it:
   mechanically: it resumes parsing just after the tag name, so one bad attribute
   becomes an error about the attributes _and_ one about the unmatched `{%
 endnote %}`.
-- **The `solution` gate is not part of this.** `RenderOptions` already carries
-  `reveal_all_solutions`, but nothing reads it yet: the gate needs the progress
-  source, and its threshold is still undecided — see [Progressive solution
-  reveal](#progressive-solution-reveal). The tag renders every solution, as
-  today.
+- **The `solution` gate was not part of this.** `RenderOptions` carried
+  `reveal_all_solutions` and nothing read it: the gate needed the progress
+  source, and its threshold was undecided. Both have since landed — the option
+  is gone and the decision reaches the tag through `RenderContext` — see
+  [Progressive solution reveal](#progressive-solution-reveal).
 - **`{% highlight %}` is not ported at all: a fence says what it said.** MDEx
   reads `lumis` options from a code fence's info string (its [code block
   decorators](https://mdex.hexdocs.pm/code_block_decorators.html)), so a fence
@@ -2206,16 +2220,16 @@ Improve it so references are **typed and granular**:
   [`Progress`](../app/lib/archidep/course_site/progress.ex) ports the
   aggregation of `archidep.rb` with both of its rules — the union with later
   categories subtracted, and a section open when its own number is `next` or any
-  of its chapters is neither `done` nor `future` — and its numbers come from
-  `Build.progress_entries!/1`, read while `Material` compiles — an interim for
-  exactly as long as the `_progress` collection is the source. The **call site
-  is already a render-time call taking the statuses as data**, which is the half
-  [Progress: structure vs status](#progress-structure-vs-status) needs to be
-  right. `section_open?/2` takes those statuses rather than the record, because
-  whatever lists the course is handed nothing else: a section's fold has to
-  follow from the same data its colours do. The three home-page lists read the
-  **last** entry carrying each key rather than the union, and belong to that
-  task.
+  of its chapters is neither `done` nor `future` — and its numbers came from the
+  `_progress` collection, read while `Material` compiled: an interim that lasted
+  exactly as long as that collection did. The **call site was already a
+  render-time call taking the statuses as data**, which is the half [Progress:
+  structure vs status](#progress-structure-vs-status) needed to be right, and is
+  why moving the source touched only that call. `section_open?/2` takes those
+  statuses rather than the record, because whatever lists the course is handed
+  nothing else: a section's fold has to follow from the same data its colours
+  do. The three home-page lists read the **last** entry carrying each key rather
+  than the union, and belong to that task.
 - **The sidebar became a component.** `#course-material-menu` moved out of
   `layouts.ex` into `CourseComponents.course_material_menu/1`, which is the only
   way to drive its branches — deck-only chapter, graded exercise, chapter with a
@@ -2386,6 +2400,37 @@ keeps `Course.Material` a compiled module of _structure_ while _status_ is a
 runtime read — resolving the compile-time-to-runtime question the old
 frontmatter design raised (structure stays compiled, status is read from the
 source).
+
+**Corrections while implementing the seam:**
+
+- **The seam is a value passed in, not a swappable module.** There is no
+  `ProgressSource` behaviour and there should not be one: a behaviour selected
+  by `Application.compile_env!` gives one implementation per compiled
+  application when the point is that one application produces builds from
+  different sources. So `Build.progress/1` is handed a path and the fetching
+  lives where impurity is already named. When the database takes over, the
+  behaviour is the context facade that already exists — a callback on
+  `ArchiDep.Course.Behaviour` rather than a second seam.
+- **The file lives in `app/priv/course/progress.json`.** A release ships only
+  the release artifact, so the course directory does not exist at runtime and a
+  runtime read there is impossible; `Application.app_dir/2` names `priv`
+  identically in a development checkout and in a release, which is what avoids a
+  configuration knob. The Ruby plugin reads the same file directly, so the
+  `_progress` collection is deleted outright rather than surviving until cutover
+  — at the price of one `COPY` in the Dockerfile's Jekyll stage, the claim of no
+  Dockerfile change having held only for the release stage. The 14
+  `/progress/*.html` pages the collection published, which nothing linked to, go
+  with it.
+- **The context callback returns the sessions, not the `Progress`.** The sidebar
+  wants the aggregate, but the API and the [home page's three
+  cards](#static-build-step) want the sessions, and `Progress.new/1` is a pure
+  derivation any caller can do. `Progress` gains no `sessions` field either: an
+  aggregate stored beside its own input is two representations that can
+  disagree.
+- **The numbers are stored sorted and de-duplicated**, which the `MapSet` union
+  makes equivalent — one session recorded `403` and `404` twice — and the
+  session times are dropped. `archidep.json` came out byte-identical across the
+  change, which is what pins the transcription.
 
 **Deferred (scheduled after cutover):** swap the source implementation from
 `progress.json` to a **database model** edited through the admin console, so

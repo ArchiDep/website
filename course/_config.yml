@@ -30,8 +30,6 @@ collections:
     output: true
   notices:
     output: true
-  progress:
-    output: true
 
 collections_dir: collections
 

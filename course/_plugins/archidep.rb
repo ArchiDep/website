@@ -34,15 +34,31 @@ module ArchiDep
       course_docs = site.collections["course"].docs
       sections = site.data["course"]["sections"]
 
-      progress_docs = site.collections["progress"].docs
-      done_chapters = progress_docs.flat_map { |doc| doc.data["done"] || [] }
+      # How far the course has got, from the one file that records it. Read here
+      # rather than as a constant so that `jekyll serve` picks up a session
+      # added while it is running, and read from the Elixir application's `priv`
+      # because that is the copy a release ships and therefore the single source
+      # both halves of the site read.
+      progress_docs =
+        JSON.parse(
+          File.read(
+            File.expand_path(
+              "../../app/priv/course/progress.json",
+              File.dirname(__FILE__)
+            )
+          )
+        )[
+          "sessions"
+        ]
+
+      done_chapters = progress_docs.flat_map { |doc| doc["done"] || [] }
       due_chapters =
         progress_docs
-          .flat_map { |doc| doc.data["due"] || [] }
+          .flat_map { |doc| doc["due"] || [] }
           .reject { |ch| done_chapters.include?(ch) }
       next_chapters =
         progress_docs
-          .flat_map { |doc| doc.data["next"] || [] }
+          .flat_map { |doc| doc["next"] || [] }
           .reject do |ch|
             done_chapters.include?(ch) || due_chapters.include?(ch)
           end
@@ -159,11 +175,7 @@ module ArchiDep
       home_page_doc = site.pages.find { |doc| doc.data["layout"] == "home" }
 
       last_done =
-        progress_docs
-          .reverse
-          .find { |doc| doc.data["done"] }
-          &.data
-          &.[]("done") || []
+        progress_docs.reverse.find { |doc| doc["done"] }&.[]("done") || []
       previous_chapters =
         course_docs.select do |doc|
           (doc.data["course_type"] != "slides" || doc.data["subject"].nil?) &&
@@ -172,8 +184,7 @@ module ArchiDep
       home_page_doc.data["previous_chapters"] = previous_chapters
 
       last_due =
-        progress_docs.reverse.find { |doc| doc.data["due"] }&.data&.[]("due") ||
-          []
+        progress_docs.reverse.find { |doc| doc["due"] }&.[]("due") || []
       next_due_chapters =
         course_docs.select do |doc|
           (
@@ -184,11 +195,7 @@ module ArchiDep
       home_page_doc.data["next_due_exercises"] = next_due_chapters
 
       next_chapter_nums =
-        progress_docs
-          .reverse
-          .find { |doc| doc.data["next"] }
-          &.data
-          &.[]("next") || []
+        progress_docs.reverse.find { |doc| doc["next"] }&.[]("next") || []
       next_chapters =
         course_docs.select do |doc|
           doc.data["subject"] == nil &&

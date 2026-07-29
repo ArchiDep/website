@@ -26,6 +26,7 @@ defmodule ArchiDep.CourseSite.Progress do
   colours a section heading as well as an entry under it.
   """
 
+  alias ArchiDep.CourseSite.Session
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Structure.Chapter
   alias ArchiDep.CourseSite.Structure.Section
@@ -53,14 +54,14 @@ defmodule ArchiDep.CourseSite.Progress do
   Work out how far the course has got from what each of its sessions recorded,
   in the order they were taught.
   """
-  @spec new([Structure.front_matter()]) :: t()
-  def new(entries) when is_list(entries) do
-    done = numbers(entries, "done")
-    due = MapSet.difference(numbers(entries, "due"), done)
+  @spec new([Session.t()]) :: t()
+  def new(sessions) when is_list(sessions) do
+    done = numbers(sessions, :done)
+    due = MapSet.difference(numbers(sessions, :due), done)
 
     next =
-      entries
-      |> numbers("next")
+      sessions
+      |> numbers(:next)
       |> MapSet.difference(done)
       |> MapSet.difference(due)
 
@@ -123,6 +124,6 @@ defmodule ArchiDep.CourseSite.Progress do
 
   defp status_of(statuses, num), do: Map.get(statuses, num, :future)
 
-  defp numbers(entries, category),
-    do: entries |> Enum.flat_map(&List.wrap(Map.get(&1, category))) |> MapSet.new()
+  defp numbers(sessions, category),
+    do: sessions |> Enum.flat_map(&Session.numbers(&1, category)) |> MapSet.new()
 end

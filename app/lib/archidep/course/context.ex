@@ -6,6 +6,12 @@ defmodule ArchiDep.Course.Context do
   alias ArchiDep.Course.Behaviour
   alias ArchiDep.Course.UseCases
 
+  # Course progress
+
+  @doc false
+  @impl Behaviour
+  defdelegate course_sessions(), to: UseCases.ReadCourseSessions
+
   # Classes
 
   @doc false

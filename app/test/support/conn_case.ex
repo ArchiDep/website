@@ -85,6 +85,12 @@ defmodule ArchiDepWeb.Support.ConnCase do
 
   setup tags do
     DataCase.setup_sandbox(tags)
+
+    # Every page rendered in the application shell shows the course material's
+    # navigation, which is coloured by how far the course has got. A test that
+    # cares about those colours overrides this with sessions of its own.
+    stub(ArchiDep.Course.ContextMock, :course_sessions, fn -> [] end)
+
     {:ok, conn: ConnTest.build_conn()}
   end
 

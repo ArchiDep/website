@@ -13,8 +13,26 @@ defmodule ArchiDep.Course do
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.Types
+  alias ArchiDep.CourseSite.Session
 
   @implementation Application.compile_env!(:archidep, __MODULE__)
+
+  # Course progress
+
+  @doc """
+  What each session of the course recorded of the progress through it, in the
+  order they were taught.
+
+  This takes no authentication because how far the course has got is public: it
+  is what the course material's own navigation is coloured by, and it is served
+  at a public route so that a copy of the site built elsewhere can track it.
+
+  The sessions are returned rather than the `ArchiDep.CourseSite.Progress` they
+  add up to, because they answer two different questions and only the sessions
+  answer both — see that module.
+  """
+  @spec course_sessions() :: [Session.t()]
+  defdelegate course_sessions(), to: @implementation
 
   # Classes
 

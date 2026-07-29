@@ -176,6 +176,10 @@ RUN npm ci
 
 COPY --chown=build:build ./course/ /build/course/
 COPY --chown=build:build ./app/mix.exs /build/app/mix.exs
+# How far the course has got, which both halves of the site read from the one
+# copy the application ships: the Liquid sidebar colours its entries by it and
+# the home page's cards list what the last session covered.
+COPY --chown=build:build ./app/priv/course/ /build/app/priv/course/
 COPY --chown=build:build --from=digest /build/digest/priv/static/ /build/app/priv/static/
 
 COPY ./.git/ /tmp/.git/

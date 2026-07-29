@@ -8,6 +8,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
   alias ArchiDep.CourseSite.Renderer
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Source
+  alias ArchiDep.CourseSite.Session
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Structure.Chapter
   alias ArchiDep.CourseSite.Structure.Cheatsheet
@@ -25,7 +26,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
       write!(content_dir, "_course/101-command-line/subject.md", "# Command line")
       write!(content_dir, "_course/101-command-line/.DS_Store", "litter")
       write!(content_dir, "_cheatsheets/git/cheatsheet.md", "# Git")
-      write!(content_dir, "_progress/2025-09-19-cli.md", "---\ndone: [101]\n---\n")
+      write!(content_dir, "_notices/exam.md", "---\ntitle: Exam\n---\n")
       File.mkdir_p!(Path.join(content_dir, "_course/510-empty"))
 
       assert Build.content_files(content_dir) == [
@@ -342,56 +343,52 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
   end
 
-  describe "progress_entries!/1" do
-    test "reads what each session said about the progress through the course, in order", %{
-      tmp_dir: tmp_dir
-    } do
-      content_dir = Path.join(tmp_dir, "collections")
+  describe "progress/1" do
+    test "reads the sessions of the course from the file recording them", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "progress.json")
 
-      write!(
-        content_dir,
-        "_progress/2025-09-26-ssh.md",
-        "---\ndone: [101]\ndue: [102]\n---\n\nSecond session\n"
-      )
+      File.write!(file, """
+      {
+        "sessions": [
+          {"date": "2025-09-19", "title": "CLI", "done": [100], "due": [101], "next": [102]},
+          {"date": "2025-09-26", "title": "SSH", "done": [101], "due": [], "next": []}
+        ]
+      }
+      """)
 
-      write!(
-        content_dir,
-        "_progress/2025-09-19-cli.md",
-        "---\nnext: [100, 101, 102]\n---\n\nFirst session\n"
-      )
-
-      write!(
-        content_dir,
-        "_course/101-command-line/subject.md",
-        "---\ntitle: CLI\n---\n\nType.\n"
-      )
-
-      assert Build.progress_entries!(content_dir) == [
-               %{"next" => [100, 101, 102]},
-               %{"done" => [101], "due" => [102]}
-             ]
+      assert Build.progress(file) ==
+               {:ok,
+                [
+                  Session.new(~D[2025-09-19], "CLI", [100], [101], [102]),
+                  Session.new(~D[2025-09-26], "SSH", [101], [], [])
+                ]}
     end
 
-    test "reads nothing from a course that has been taught no session", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
-      File.mkdir_p!(content_dir)
+    test "reports a progress file that is not there", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "progress.json")
 
-      assert Build.progress_entries!(content_dir) == []
+      assert Build.progress(file) == {:error, [{:missing_progress, file}]}
     end
 
-    test "reports every session it cannot take apart", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+    test "reports a progress file that is not JSON", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "progress.json")
+      File.write!(file, "sessions:\n")
 
-      write!(content_dir, "_progress/2025-10-03-git.md", "---\ndone: [\n---\n\nThird session\n")
-      write!(content_dir, "_progress/2025-10-10-cloud.md", "---\ndue: [204]\n")
+      assert Build.progress(file) == {:error, [{:undecodable_progress, file}]}
+    end
 
-      assert_raise RuntimeError,
-                   """
-                   The progress through the course could not be read:
-                     Document "_progress/2025-10-03-git.md" has invalid front matter: malformed yaml
-                     Document "_progress/2025-10-10-cloud.md" opens front matter it never closes\
-                   """,
-                   fn -> Build.progress_entries!(content_dir) end
+    test "reports a progress file that is not an object", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "progress.json")
+      File.write!(file, "[]")
+
+      assert Build.progress(file) == {:error, [{:undecodable_progress, file}]}
+    end
+
+    test "reports what is wrong with the sessions a progress file records", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "progress.json")
+      File.write!(file, ~s({"sessions": [{"title": "CLI"}]}))
+
+      assert Build.progress(file) == {:error, [{:malformed_session, 0, ~s(no "date")}]}
     end
   end
 

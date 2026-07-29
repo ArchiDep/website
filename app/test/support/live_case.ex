@@ -50,6 +50,11 @@ defmodule ArchiDepWeb.Support.LiveCase do
     topic_suffix = ":test-#{System.unique_integer([:positive])}"
     Hammox.stub(ArchiDep.PubSub.Scope.Mock, :suffix, fn -> topic_suffix end)
 
+    # Every page of the dashboard renders the course material's navigation,
+    # which is coloured by how far the course has got. A test that cares about
+    # those colours overrides this with sessions of its own.
+    Hammox.stub(ArchiDep.Course.ContextMock, :course_sessions, fn -> [] end)
+
     {:ok, conn: build_conn(), start: DateTime.utc_now()}
   end
 

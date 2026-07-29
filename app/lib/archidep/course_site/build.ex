@@ -17,12 +17,14 @@ defmodule ArchiDep.CourseSite.Build do
   alias ArchiDep.CourseSite.Build.AssetDigest
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.Build.PageAssetDigest
+  alias ArchiDep.CourseSite.Build.ProgressFile
   alias ArchiDep.CourseSite.Headings
   alias ArchiDep.CourseSite.PageRef
   alias ArchiDep.CourseSite.Renderer
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Source
+  alias ArchiDep.CourseSite.Session
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
@@ -30,7 +32,6 @@ defmodule ArchiDep.CourseSite.Build do
 
   @cache_manifest "cache_manifest.json"
   @assets_dir "assets"
-  @progress_dir "_progress"
 
   # Only the partials a *document* includes, which today are the icons. The rest
   # of the includes directory is the Liquid layout the site is wrapped in, which
@@ -41,6 +42,7 @@ defmodule ArchiDep.CourseSite.Build do
           ContentTree.error()
           | PageAssetDigest.error()
           | AssetDigest.error()
+          | ProgressFile.error()
           | {:missing_manifest, Path.t()}
           | {:unreadable_manifest, Path.t(), File.posix()}
           | {:undecodable_manifest, Path.t()}
@@ -49,6 +51,9 @@ defmodule ArchiDep.CourseSite.Build do
           | {:missing_declarations, Path.t()}
           | {:unreadable_declarations, Path.t(), File.posix()}
           | {:undecodable_declarations, Path.t(), String.t()}
+          | {:missing_progress, Path.t()}
+          | {:unreadable_progress, Path.t(), File.posix()}
+          | {:undecodable_progress, Path.t()}
           | {:unreadable_document, String.t(), Path.t(), File.posix()}
           | {:unparsable_document, String.t(), Source.error()}
           | {:unknown_page, PageRef.t()}
@@ -246,46 +251,24 @@ defmodule ArchiDep.CourseSite.Build do
   end
 
   @doc """
-  Every file recording a session of the course, relative to the content
-  directory, in filename order.
+  What each session of the course recorded of the progress through it, in the
+  order they were taught.
 
-  These sit beside the collections a build renders rather than in them: they are
-  a record of when the course was taught rather than something it publishes, so
-  `ArchiDep.CourseSite.Build.ContentTree.roots/0` does not name them and this is
-  a read of its own.
+  This is read when a build runs rather than when the application compiles: how
+  far the course has got changes every week of the year, while what the course
+  *is* does not. So it is a file of its own, outside the collections a build
+  renders — `ArchiDep.CourseSite.Build.ContentTree.roots/0` does not name it —
+  and the caller says where it is, since only the caller knows whether it is
+  reading a repository or a release.
   """
-  @spec progress_files(Path.t()) :: [String.t()]
-  def progress_files(content_dir),
-    do:
-      content_dir
-      |> Path.join(@progress_dir)
-      |> Path.join("*.md")
-      |> Path.wildcard()
-      |> Enum.map(&Path.relative_to(&1, content_dir))
-      |> Enum.sort()
-
-  @doc """
-  What each session of the course has said about the progress through it, in
-  filename order, raising when one of those cannot be read.
-  """
-  @spec progress_entries!(Path.t()) :: [Structure.front_matter()]
-  def progress_entries!(content_dir) do
-    {entries, errors} =
-      content_dir
-      |> progress_files()
-      |> Enum.reduce({[], []}, fn source_path, {entries, errors} ->
-        case source(content_dir, source_path) do
-          {:ok, %Source{front_matter: front_matter}} -> {[front_matter | entries], errors}
-          {:error, error} -> {entries, [error | errors]}
-        end
-      end)
-
-    case Enum.reverse(errors) do
-      [] ->
-        Enum.reverse(entries)
-
-      [_first | _rest] = errors ->
-        raise_errors("The progress through the course could not be read", errors, &format_error/1)
+  @spec progress(Path.t()) :: {:ok, [Session.t()]} | {:error, nonempty_list(error())}
+  def progress(file) do
+    with {:ok, contents} <- read_progress(file),
+         {:ok, decoded} <- decode_progress(file, contents) do
+      case ProgressFile.sessions(decoded) do
+        {:ok, sessions} -> {:ok, sessions}
+        {:error, error} -> {:error, [error]}
+      end
     end
   end
 
@@ -392,6 +375,15 @@ defmodule ArchiDep.CourseSite.Build do
   def format_error({:undecodable_manifest, path}),
     do: "Asset manifest #{inspect(path)} is not JSON"
 
+  def format_error({:missing_progress, path}),
+    do: "The progress file #{path} does not exist"
+
+  def format_error({:unreadable_progress, path, reason}),
+    do: "The progress file #{path} could not be read: #{:file.format_error(reason)}"
+
+  def format_error({:undecodable_progress, path}),
+    do: "The progress file #{path} is not a JSON object"
+
   def format_error({:missing_declarations, path}),
     do: "Course declarations #{inspect(path)} do not exist"
 
@@ -445,6 +437,11 @@ defmodule ArchiDep.CourseSite.Build do
     do: AssetDigest.format_error(error)
 
   def format_error({:malformed_manifest, _why} = error), do: AssetDigest.format_error(error)
+
+  def format_error({:malformed_progress, _why} = error), do: ProgressFile.format_error(error)
+
+  def format_error({:malformed_session, _index, _why} = error),
+    do: ProgressFile.format_error(error)
 
   defp or_raise(result, what, format \\ &__MODULE__.format_error/1)
   defp or_raise({:ok, value}, _what, _format), do: value
@@ -603,6 +600,21 @@ defmodule ArchiDep.CourseSite.Build do
     case Source.parse(contents) do
       {:ok, source} -> {:ok, source}
       {:error, error} -> {:error, {:unparsable_document, source_path, error}}
+    end
+  end
+
+  defp read_progress(file) do
+    case File.read(file) do
+      {:ok, contents} -> {:ok, contents}
+      {:error, :enoent} -> {:error, [{:missing_progress, file}]}
+      {:error, reason} -> {:error, [{:unreadable_progress, file, reason}]}
+    end
+  end
+
+  defp decode_progress(file, contents) do
+    case JSON.decode(contents) do
+      {:ok, decoded} when is_map(decoded) -> {:ok, decoded}
+      _other -> {:error, [{:undecodable_progress, file}]}
     end
   end
 

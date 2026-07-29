@@ -22,6 +22,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
   - `--static` — the static directory holding the global assets. Defaults to
     `priv/static`. Its `cache_manifest.json` is read when it is there, and the
     assets are taken to be undigested when it is not.
+  - `--progress` — the file recording how far the course has got, which decides
+    which chapters show their answers. Defaults to the application's own
+    `priv/course/progress.json`; pointing it at a file recording fewer sessions
+    is how the gating is checked against a course still being taught.
   """
 
   use Mix.Task
@@ -43,17 +47,22 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
   @impl Mix.Task
   def run(args) do
     {opts, [], []} =
-      OptionParser.parse(args, strict: [content: :string, includes: :string, static: :string])
+      OptionParser.parse(args,
+        strict: [content: :string, includes: :string, static: :string, progress: :string]
+      )
 
     content_dir = Keyword.get(opts, :content, Path.join(@app_dir, "../course/collections"))
     includes_dir = Keyword.get(opts, :includes, Path.join(@app_dir, "../course/_includes"))
     static_dir = Keyword.get(opts, :static, Path.join(@app_dir, "priv/static"))
 
+    progress_file =
+      Keyword.get(opts, :progress, Path.join(@app_dir, "priv/course/progress.json"))
+
     tree = tree!(content_dir)
     page_assets = page_assets!(tree, content_dir)
     assets = assets!(static_dir)
     includes = includes!(includes_dir)
-    progress = progress!(content_dir)
+    progress = progress!(progress_file)
 
     urls =
       UrlContext.new(mode: :live, build_id: "check", assets: assets, page_assets: page_assets)
@@ -121,14 +130,20 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
     end
   end
 
-  defp progress!(content_dir) do
-    progress = content_dir |> Build.progress_entries!() |> Progress.new()
+  defp progress!(progress_file) do
+    case Build.progress(progress_file) do
+      {:ok, sessions} ->
+        progress = Progress.new(sessions)
 
-    Mix.shell().info(
-      "Read the progress through the course: #{MapSet.size(progress.done)} sections and chapters are done"
-    )
+        Mix.shell().info(
+          "Read #{length(sessions)} sessions from #{progress_file}; #{MapSet.size(progress.done)} sections and chapters are done"
+        )
 
-    progress
+        progress
+
+      {:error, errors} ->
+        abort!("The progress through the course could not be read", errors, &Build.format_error/1)
+    end
   end
 
   # A page that is not a chapter has no status to consult, and may not hold an

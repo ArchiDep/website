@@ -10,7 +10,8 @@ defmodule ArchiDep.CourseSite.Material do
   It is compiled because a page the dashboard names that the course no longer
   holds has to fail the build rather than a reader's click, and because the
   structure of an edition does not change while the application runs — unlike
-  `ArchiDep.CourseSite.Progress`, whose source is meant to move.
+  `ArchiDep.CourseSite.Progress`, which is read from a source of its own every
+  time it is wanted.
 
   It reads nothing itself. `ArchiDep.CourseSite.Build` stays the only module
   here that touches the filesystem; what happens at compile time is a call to
@@ -40,10 +41,9 @@ defmodule ArchiDep.CourseSite.Material do
   Two mechanisms, covering two different questions, because neither covers the
   other's case:
 
-  - **What a file says** — every Markdown source, the declarations, every
-    recorded session and every partial a document may include are
-    `@external_resource`s, so Mix compares each one's content digest and
-    recompiles when one is edited or deleted.
+  - **What a file says** — every Markdown source, the declarations and every
+    partial a document may include are `@external_resource`s, so Mix compares
+    each one's content digest and recompiles when one is edited or deleted.
   - **What the directory holds** — `__mix_recompile__?/0` compares
     `ArchiDep.CourseSite.Build.content_digest/1`, which is what catches a file
     being *added*. An `@external_resource` cannot: a file nobody has registered
@@ -52,15 +52,17 @@ defmodule ArchiDep.CourseSite.Material do
   Only the Markdown sources are registered, not the files beside them: their
   *names* are what this module depends on and the digest already covers those,
   where registering 49 MB of images would have Mix digest all of them on every
-  compile. The digest covers the collections a build renders, so a **newly
-  added** session of the course, and a partial nothing yet includes, are the
-  changes neither mechanism notices.
+  compile. A partial nothing yet includes is the one change neither mechanism
+  notices.
+
+  How far the course has got is not in here at all: it is read when a build
+  runs, from the source `ArchiDep.CourseSite.Build.progress/1` names. That is
+  what keeps a week of teaching from being a recompilation of the course.
   """
 
   alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.HeadingRef
   alias ArchiDep.CourseSite.Headings
-  alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Structure.Chapter
   alias ArchiDep.CourseSite.Structure.Cheatsheet
@@ -79,17 +81,12 @@ defmodule ArchiDep.CourseSite.Material do
     @external_resource Path.join(@content_dir, file)
   end
 
-  for file <- Build.progress_files(@content_dir) do
-    @external_resource Path.join(@content_dir, file)
-  end
-
   for file <- Build.include_files(@includes_dir) do
     @external_resource Path.join(@includes_dir, file)
   end
 
   @content_digest Build.content_digest(@content_dir)
   @structure Build.course!(@content_dir, @declarations_file)
-  @progress Progress.new(Build.progress_entries!(@content_dir))
 
   # Projected while this module compiles rather than in a function body, so that
   # listing the course is not a map access on a literal of a few thousand words
@@ -172,16 +169,6 @@ defmodule ArchiDep.CourseSite.Material do
   """
   @spec cheatsheets() :: [Cheatsheet.t()]
   def cheatsheets, do: @cheatsheets
-
-  @doc """
-  How far the course had got when this application was built.
-
-  This one is an interim: it is compiled from the sessions recorded in the
-  content directory, so the dashboard shows the same progress until it is built
-  again.
-  """
-  @spec progress() :: Progress.t()
-  def progress, do: @progress
 
   @doc """
   The exercise the dashboard sends a student to when they have no server yet.

@@ -111,6 +111,12 @@ defmodule ArchiDepWeb.Router do
     scope "/health", Health do
       get "/", HealthController, :health, log: false
     end
+
+    # Public, so a copy of the course material site built elsewhere can bake the
+    # same progress into its pages.
+    scope "/progress", Course do
+      get "/", ProgressController, :progress
+    end
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

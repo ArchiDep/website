@@ -284,19 +284,12 @@ digest every one of them on each compile. The digest covers the collections a
 build renders, so a newly added **session** is the one change neither mechanism
 notices.
 
-**How far the course has got is not part of the structure.**
-[`Progress`](./progress.ex) is the union of what each session recorded, with the
-later categories subtracted — due minus done, next minus both — and section and
-chapter numbers share one lookup, since a session records `100` beside `101`.
-Compiling it alongside the structure is an interim: the call site is already a
-render-time call taking the statuses as data, which is the half that has to be
-right for its source to move.
-
-It is an aggregate, and it loses which session said what. That is enough for
-everything reading it today, and **not** enough for the three cards of the home
-page, which show what the _last_ session covered rather than the union — so
-whatever replaces the `_progress` collection has to stay a list of sessions in
-order, with this value derived from it, or those cards become underivable.
+**How far the course has got is not part of the structure, and not compiled at
+all.** A [`Session`](./session.ex) is what one teaching session recorded and
+[`Progress`](./progress.ex) is the union of all of them; both modules say why
+the two are kept apart. [`Build.progress/1`](#building) reads them from a file
+the **caller** names, since this subsystem configures nothing — which is the
+whole of the seam the source needs in order to become a database later.
 
 **The renderer is told what to show, not how far the course has got.**
 `solutions_revealed?/2` names the one threshold — a chapter's answers are shown
@@ -459,11 +452,13 @@ and what it shows comes from its body: `front_matter/1` projects the first for
 [`Structure`](#what-the-course-is) and the renderer takes the whole of it. That
 is also what `course!/2` chains, rather than a second front-matter-only reader
 that would have to be kept in agreement with `Source.parse/1` forever.
-`declarations/1` and `progress_entries!/1` are the reads that are not files of
-the site — see [what the course declares about
-itself](#what-the-course-declares-about-itself) and [the compiled
-model](#the-compiled-model). `include_files/1` and `includes/1` are the read of
-the partials, which are files of neither: they are what a document is written
+`declarations/1` and `progress/1` are the reads that are not files of the site —
+see [what the course declares about
+itself](#what-the-course-declares-about-itself) and [what the course
+is](#what-the-course-is). Both read one file and hand what they decoded to a
+pure module that says what it means, which is also how `asset_manifest/1` reads
+the digester's manifest. `include_files/1` and `includes/1` are the read of the
+partials, which are files of neither: they are what a document is written
 against rather than something the site publishes.
 
 **Naming a heading takes a render.** `headings!/3` is the only read that runs

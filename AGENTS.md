@@ -94,6 +94,15 @@ instructions targeted towards AI agents.
     making the change. Avoiding duplication is never a justification — use a
     helper that builds a well-known shape and accepts overrides so each test
     still asserts the whole value by equality.
+  - **Every fact gets exactly one home.** Duplicated documentation drifts and
+    rots, so do not explain the same thing in a module doc and a
+    `CONTRIBUTING.md`, in two `CONTRIBUTING.md` files, or in a doc and the
+    backlog. Pick the one place a reader of that fact will be, and **link** from
+    anywhere else instead of restating. Prefer the code for why the code is
+    shaped the way it is, the component's `CONTRIBUTING.md` for how its parts
+    fit together, and the backlog only for decisions that differ from what was
+    planned. You do not have to explain everything everywhere; err on the side
+    of writing less.
   - **Code and test comments exist to explain the _purpose_ of the code as it
     stands now** — what it does and why, for a reader who has no other context.
     A comment that would be wrong or meaningless once some _other_ artifact

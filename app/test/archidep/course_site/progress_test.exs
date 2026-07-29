@@ -1,6 +1,7 @@
 defmodule ArchiDep.CourseSite.ProgressTest do
   use ExUnit.Case, async: true
 
+  import ArchiDep.Support.CourseSiteFactory, only: [build: 2]
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Structure
@@ -9,13 +10,13 @@ defmodule ArchiDep.CourseSite.ProgressTest do
 
   describe "new/1" do
     test "unites what the sessions recorded, later categories subtracted" do
-      entries = [
-        %{"next" => [100, 101, 102, 103]},
-        %{"done" => [100, 101], "due" => [102], "next" => [103, 104]},
-        %{"done" => [102], "due" => [103, 104], "next" => [105]}
+      sessions = [
+        build(:session, next: [100, 101, 102, 103]),
+        build(:session, done: [100, 101], due: [102], next: [103, 104]),
+        build(:session, done: [102], due: [103, 104], next: [105])
       ]
 
-      assert Progress.new(entries) == %Progress{
+      assert Progress.new(sessions) == %Progress{
                done: MapSet.new([100, 101, 102]),
                due: MapSet.new([103, 104]),
                next: MapSet.new([105])
@@ -23,11 +24,12 @@ defmodule ArchiDep.CourseSite.ProgressTest do
     end
 
     test "reads a session that recorded only some of the three categories" do
-      assert Progress.new([%{"done" => [201]}, %{"next" => [202]}]) == %Progress{
-               done: MapSet.new([201]),
-               due: MapSet.new([]),
-               next: MapSet.new([202])
-             }
+      assert Progress.new([build(:session, done: [201]), build(:session, next: [202])]) ==
+               %Progress{
+                 done: MapSet.new([201]),
+                 due: MapSet.new([]),
+                 next: MapSet.new([202])
+               }
     end
 
     test "reads a course that has been taught no session" do
@@ -41,7 +43,7 @@ defmodule ArchiDep.CourseSite.ProgressTest do
 
   describe "status/2" do
     test "answers for a section and a chapter out of the same lists" do
-      progress = Progress.new([%{"done" => [300, 301], "due" => [302], "next" => [400, 401]}])
+      progress = Progress.new([build(:session, done: [300, 301], due: [302], next: [400, 401])])
 
       assert {
                Progress.status(progress, 300),
@@ -69,7 +71,7 @@ defmodule ArchiDep.CourseSite.ProgressTest do
         cheatsheets: []
       }
 
-      progress = Progress.new([%{"done" => [100, 101], "due" => [102], "next" => [200]}])
+      progress = Progress.new([build(:session, done: [100, 101], due: [102], next: [200])])
 
       assert Progress.statuses(progress, structure) == %{
                100 => :done,
@@ -83,8 +85,7 @@ defmodule ArchiDep.CourseSite.ProgressTest do
 
   describe "solutions_revealed?/2" do
     test "shows the answers of a chapter the course has covered and of no other" do
-      progress =
-        Progress.new([%{"done" => [101], "due" => [102], "next" => [103]}])
+      progress = Progress.new([build(:session, done: [101], due: [102], next: [103])])
 
       assert {
                Progress.solutions_revealed?(progress, 101),

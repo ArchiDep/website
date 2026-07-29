@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Components.Layouts do
   use ArchiDepWeb, :html
 
   import ArchiDepWeb.Helpers.AuthHelpers
+  alias ArchiDep.Course
   alias ArchiDep.CourseSite.Material
   alias ArchiDep.CourseSite.Progress
   alias ArchiDepWeb.Components.CourseComponents
@@ -213,7 +214,12 @@ defmodule ArchiDepWeb.Components.Layouts do
           </div>
           <CourseComponents.course_material_menu
             structure={Material.structure()}
-            progress={Progress.statuses(Material.progress(), Material.structure())}
+            progress={
+              Progress.statuses(
+                Progress.new(Course.course_sessions()),
+                Material.structure()
+              )
+            }
           />
 
           <footer class="p-4 absolute bottom-0 left-0 right-0 border-t border-black/10 dark:border-white/10">
