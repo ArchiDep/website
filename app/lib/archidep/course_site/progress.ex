@@ -94,6 +94,19 @@ defmodule ArchiDep.CourseSite.Progress do
       |> Map.new(&{&1, status(progress, &1)})
 
   @doc """
+  Whether the chapter with the given number shows the answers to its exercise,
+  which it does once the course has covered it.
+
+  A chapter that is merely due is one the course has covered *and* set work on,
+  so its answers stay withheld until that work is in. The threshold is named
+  here rather than at each build that applies it, so that two builds of the same
+  course cannot disagree about what a student may read.
+  """
+  @spec solutions_revealed?(t(), pos_integer()) :: boolean()
+  def solutions_revealed?(%__MODULE__{} = progress, num) when is_integer(num),
+    do: status(progress, num) == :done
+
+  @doc """
   Whether a section is shown unfolded, which it is when it is what the coming
   session covers or when it holds a chapter the course is currently working
   through.

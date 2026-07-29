@@ -29,6 +29,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
   alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Renderer
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderError
@@ -52,11 +53,16 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
     page_assets = page_assets!(tree, content_dir)
     assets = assets!(static_dir)
     includes = includes!(includes_dir)
+    progress = progress!(content_dir)
 
     urls =
       UrlContext.new(mode: :live, build_id: "check", assets: assets, page_assets: page_assets)
 
-    report(tree, problems_rendering(tree, content_dir, urls, includes))
+    report(
+      tree,
+      problems_rendering(tree, content_dir, urls, includes, progress),
+      withheld(tree, progress)
+    )
   end
 
   defp tree!(content_dir) do
@@ -115,7 +121,31 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
     end
   end
 
-  defp problems_rendering(%ContentTree{} = tree, content_dir, urls, includes) do
+  defp progress!(content_dir) do
+    progress = content_dir |> Build.progress_entries!() |> Progress.new()
+
+    Mix.shell().info(
+      "Read the progress through the course: #{MapSet.size(progress.done)} sections and chapters are done"
+    )
+
+    progress
+  end
+
+  # A page that is not a chapter has no status to consult, and may not hold an
+  # answer at all: the renderer refuses a solution written on the home page or
+  # in a cheatsheet rather than showing it.
+  defp solutions({:document, %DocumentRef{num: num}}, progress),
+    do: if(Progress.solutions_revealed?(progress, num), do: :revealed, else: :hidden)
+
+  defp solutions(_page, _progress), do: :revealed
+
+  defp withheld(%ContentTree{documents: documents}, progress),
+    do:
+      Enum.count(documents, fn {ref, _source_path} ->
+        solutions({:document, ref}, progress) == :hidden
+      end)
+
+  defp problems_rendering(%ContentTree{} = tree, content_dir, urls, includes, progress) do
     documents =
       Enum.map(tree.documents, fn {ref, source_path} -> {{:document, ref}, source_path} end) ++
         Enum.map(tree.cheatsheets, fn {slug, source_path} ->
@@ -123,11 +153,11 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
         end)
 
     Enum.flat_map(documents, fn {page, source_path} ->
-      problems_rendering_one(page, source_path, content_dir, urls, includes)
+      problems_rendering_one(page, source_path, content_dir, urls, includes, progress)
     end)
   end
 
-  defp problems_rendering_one(page, source_path, content_dir, urls, includes) do
+  defp problems_rendering_one(page, source_path, content_dir, urls, includes, progress) do
     contents = content_dir |> Path.join(source_path) |> File.read!()
 
     case Source.parse(contents) do
@@ -138,7 +168,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
             source_path: source_path,
             urls: urls,
             page: page,
-            includes: includes
+            includes: includes,
+            solutions: solutions(page, progress)
           )
 
         page |> render(context) |> problems(source_path)
@@ -165,10 +196,14 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
   defp kind(%RenderError{reason: {:url, _error}}), do: :reference
   defp kind(%RenderError{}), do: :other
 
-  defp report(%ContentTree{} = tree, problems) do
+  defp report(%ContentTree{} = tree, problems, withheld) do
     {unresolved, other} = Enum.split_with(problems, &(elem(&1, 0) == :reference))
 
     rendered = map_size(tree.documents) + map_size(tree.cheatsheets)
+
+    Mix.shell().info(
+      "Withheld the answers of #{withheld} documents the course has not covered yet"
+    )
 
     if other != [] do
       Mix.shell().info("#{length(other)} documents are wrong in ways this task does not fail on:")

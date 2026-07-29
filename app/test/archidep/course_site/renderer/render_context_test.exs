@@ -26,7 +26,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
                page: page,
                page_variables: %{},
                includes: %{},
-               options: RenderOptions.new()
+               options: RenderOptions.new(),
+               solutions: :revealed
              }
     end
 
@@ -34,7 +35,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
       {:ok, source} = Source.parse("Prose.\n")
       {:ok, includes} = Renderer.compile_includes(%{"icons/photo.html" => "<svg/>"})
       urls = UrlContext.new(mode: :archive, build_id: "9c8b7a", version: "2025")
-      options = RenderOptions.new(reveal_all_solutions: true)
+      options = RenderOptions.new(strict_variables: false)
 
       assert RenderContext.new(
                source: source,
@@ -43,7 +44,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
                page: {:cheatsheet, "git"},
                page_variables: %{"num" => 507},
                includes: includes,
-               options: options
+               options: options,
+               solutions: :hidden
              ) == %RenderContext{
                source: source,
                source_path: "_cheatsheets/git/cheatsheet.md",
@@ -51,7 +53,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
                page: {:cheatsheet, "git"},
                page_variables: %{"num" => 507},
                includes: includes,
-               options: options
+               options: options,
+               solutions: :hidden
              }
     end
 
@@ -77,6 +80,12 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
       assert_raise ArgumentError,
                    "Page variables must be keyed by strings, got: %{num: 507}",
                    fn -> new(page_variables: %{num: 507}) end
+    end
+
+    test "rejects an answer to whether the page shows its solutions that is neither" do
+      assert_raise ArgumentError,
+                   "Solutions must be :revealed or :hidden, got: :maybe",
+                   fn -> new(solutions: :maybe) end
     end
 
     test "rejects partials that were never parsed" do

@@ -58,6 +58,7 @@ defmodule ArchiDep.Emoji do
     "gem" => "💎",
     "hammer_and_wrench" => "🛠️",
     "house" => "🏠",
+    "key" => "🔑",
     "memo" => "📝",
     "money_with_wings" => "💸",
     "question" => "❓",

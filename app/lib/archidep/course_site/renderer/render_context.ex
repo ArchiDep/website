@@ -22,7 +22,25 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
   alias ArchiDep.CourseSite.Urls.UrlContext
 
   @enforce_keys [:source, :source_path, :urls, :page, :options]
-  defstruct [:source, :source_path, :urls, :page, :options, page_variables: %{}, includes: %{}]
+  defstruct [
+    :source,
+    :source_path,
+    :urls,
+    :page,
+    :options,
+    page_variables: %{},
+    includes: %{},
+    solutions: :revealed
+  ]
+
+  @typedoc """
+  Whether this page shows the answers it holds, which is a decision the build
+  has already made: a chapter's solutions are revealed once the course has
+  covered it. The renderer is told the answer rather than the chapter's status,
+  so that it never has to know how far the course has got or where the threshold
+  is.
+  """
+  @type solutions :: :revealed | :hidden
 
   @type t :: %__MODULE__{
           source: Source.t(),
@@ -31,7 +49,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
           page: PageRef.t(),
           page_variables: %{String.t() => term()},
           includes: %{String.t() => Solid.Template.t()},
-          options: RenderOptions.t()
+          options: RenderOptions.t(),
+          solutions: solutions()
         }
 
   @doc """
@@ -57,6 +76,11 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
     `ArchiDep.CourseSite.Renderer.compile_includes/1`.
   - `:options` — the build's `ArchiDep.CourseSite.Renderer.RenderOptions`.
     Defaults to `RenderOptions.new/0`.
+  - `:solutions` — whether this page shows the answers it holds, `:revealed` or
+    `:hidden`. The caller decides, from the chapter's progress; defaults to
+    `:revealed`, which is what a caller with no progress to consult wants — the
+    extraction of a page's headings, the check that renders every document, and
+    a frozen archive of a finished year.
   """
   @spec new(keyword()) :: t()
   def new(opts) when is_list(opts) do
@@ -67,7 +91,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
       page: page!(opts),
       page_variables: page_variables!(opts),
       includes: includes!(opts),
-      options: options!(opts)
+      options: options!(opts),
+      solutions: solutions!(opts)
     }
   end
 
@@ -155,6 +180,16 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
       other ->
         raise ArgumentError,
               "Options must be a #{inspect(RenderOptions)}, got: #{inspect(other)}"
+    end
+  end
+
+  defp solutions!(opts) do
+    case Keyword.get(opts, :solutions, :revealed) do
+      solutions when solutions in [:revealed, :hidden] ->
+        solutions
+
+      other ->
+        raise ArgumentError, "Solutions must be :revealed or :hidden, got: #{inspect(other)}"
     end
   end
 end

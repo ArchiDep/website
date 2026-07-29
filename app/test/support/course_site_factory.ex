@@ -110,7 +110,6 @@ defmodule ArchiDep.Support.CourseSiteFactory do
 
   @spec render_options_factory(map()) :: RenderOptions.t()
   def render_options_factory(attrs!) do
-    {reveal_all_solutions, attrs!} = Map.pop(attrs!, :reveal_all_solutions, false)
     {strict_variables, attrs!} = Map.pop(attrs!, :strict_variables, true)
     {tags, attrs!} = Map.pop(attrs!, :tags)
     {ast_passes, attrs!} = Map.pop(attrs!, :ast_passes)
@@ -119,10 +118,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     [] = Map.keys(attrs!)
 
     opts =
-      [
-        reveal_all_solutions: reveal_all_solutions,
-        strict_variables: strict_variables
-      ]
+      [strict_variables: strict_variables]
       |> optional(:ast_passes, ast_passes)
       |> optional(:html_passes, html_passes)
       |> optional(:tags, tags)
@@ -145,6 +141,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     {page_variables, attrs!} = Map.pop(attrs!, :page_variables, %{})
     {includes, attrs!} = Map.pop(attrs!, :includes, %{})
     {options, attrs!} = Map.pop_lazy(attrs!, :options, fn -> build(:render_options) end)
+    {solutions, attrs!} = Map.pop(attrs!, :solutions, :revealed)
 
     [] = Map.keys(attrs!)
 
@@ -155,7 +152,8 @@ defmodule ArchiDep.Support.CourseSiteFactory do
       page: page,
       page_variables: page_variables,
       includes: includes,
-      options: options
+      options: options,
+      solutions: solutions
     )
   end
 

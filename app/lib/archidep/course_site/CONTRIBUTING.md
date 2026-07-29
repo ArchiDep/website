@@ -292,6 +292,21 @@ Compiling it alongside the structure is an interim: the call site is already a
 render-time call taking the statuses as data, which is the half that has to be
 right for its source to move.
 
+It is an aggregate, and it loses which session said what. That is enough for
+everything reading it today, and **not** enough for the three cards of the home
+page, which show what the _last_ session covered rather than the union — so
+whatever replaces the `_progress` collection has to stay a list of sessions in
+order, with this value derived from it, or those cards become underivable.
+
+**The renderer is told what to show, not how far the course has got.**
+`solutions_revealed?/2` names the one threshold — a chapter's answers are shown
+once it is done, and a chapter that is merely due has work still to hand in —
+and whatever builds a page applies it, handing the renderer the answer as
+[`RenderContext`](./renderer/render_context.ex)'s `solutions`. So the renderer
+never learns the course calendar, an archive of a finished year is a build that
+says `:revealed` rather than one carrying a second flag, and moving the source
+of the status changes the caller and nothing here.
+
 ## URL and link emission
 
 [`Urls`](./urls.ex) is the **only** place in the rendering pipeline allowed to
@@ -542,7 +557,11 @@ Six block tags wrap prose in the HTML the theme styles:
 - [`note`](./renderer/liquid/note_tag.ex) (an aside)
 - [`callout`](./renderer/liquid/callout_tag.ex) (something not to skip)
 - [`cols`](./renderer/liquid/cols_tag.ex) (a row of columns)
-- [`solution`](./renderer/liquid/solution_tag.ex) (a collapsed answer)
+- [`solution`](./renderer/liquid/solution_tag.ex) (a collapsed answer, and the
+  one tag whose output depends on which page it is on: an answer is left out of
+  the page entirely until the course has covered the chapter, and refused
+  outright anywhere but a chapter, since only a chapter has an exercise for it
+  to answer)
 - [`markdown`](./renderer/liquid/markdown_tag.ex) (a piece converted where the
   page would not convert it)
 - [`mermaid`](./renderer/liquid/mermaid_tag.ex) (a diagram).

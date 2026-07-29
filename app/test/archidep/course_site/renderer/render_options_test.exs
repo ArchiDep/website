@@ -13,7 +13,6 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptionsTest do
   describe "new/1" do
     test "builds the options of a build that asked for nothing in particular" do
       assert RenderOptions.new() == %RenderOptions{
-               reveal_all_solutions: false,
                strict_variables: true,
                tags: Tags.default(),
                ast_passes: [PageAssets],
@@ -23,13 +22,11 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptionsTest do
 
     test "builds fully configured options" do
       assert RenderOptions.new(
-               reveal_all_solutions: true,
                strict_variables: false,
                tags: %{"link" => LinkTag},
                ast_passes: [ShoutingPass],
                html_passes: [SignaturePass]
              ) == %RenderOptions{
-               reveal_all_solutions: true,
                strict_variables: false,
                tags: %{"link" => LinkTag},
                ast_passes: [ShoutingPass],
@@ -39,8 +36,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptionsTest do
 
     test "rejects a policy that is not a yes or a no" do
       assert_raise ArgumentError,
-                   ":reveal_all_solutions must be a boolean, got: \"yes\"",
-                   fn -> RenderOptions.new(reveal_all_solutions: "yes") end
+                   ":strict_variables must be a boolean, got: \"yes\"",
+                   fn -> RenderOptions.new(strict_variables: "yes") end
     end
 
     test "rejects a tag table that is not one" do

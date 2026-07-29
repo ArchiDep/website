@@ -29,14 +29,12 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
   @default_html_passes [EmojiImages, ExternalLinks]
 
   @enforce_keys [:tags, :ast_passes, :html_passes]
-  defstruct reveal_all_solutions: false,
-            strict_variables: true,
+  defstruct strict_variables: true,
             tags: nil,
             ast_passes: @default_ast_passes,
             html_passes: @default_html_passes
 
   @type t :: %__MODULE__{
-          reveal_all_solutions: boolean(),
           strict_variables: boolean(),
           tags: %{String.t() => module()},
           ast_passes: [module()],
@@ -49,9 +47,6 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
 
   Options:
 
-  - `:reveal_all_solutions` — render every solution regardless of how far the
-    course has progressed. A frozen archive of a past edition sets this; the
-    edition being taught does not.
   - `:strict_variables` — report a reference to a variable the document was not
     given, instead of rendering nothing. On by default: the content's whole
     variable surface is `{{ page.title }}`, so a typo is a mistake rather than a
@@ -72,7 +67,6 @@ defmodule ArchiDep.CourseSite.Renderer.RenderOptions do
   @spec new(keyword()) :: t()
   def new(opts \\ []) when is_list(opts) do
     %__MODULE__{
-      reveal_all_solutions: boolean!(opts, :reveal_all_solutions, false),
       strict_variables: boolean!(opts, :strict_variables, true),
       tags: tags!(opts),
       ast_passes: modules!(opts, :ast_passes, @default_ast_passes),

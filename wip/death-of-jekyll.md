@@ -250,7 +250,12 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       reveal](#progressive-solution-reveal). It sits after the progress source
       rather than beside the rendering core, because reveal derives from a
       chapter's status instead of a flag of its own: until that source exists
-      there is nothing to gate on.
+      there is nothing to gate on. **The gate itself is built** — the renderer
+      is handed a decision rather than a status,
+      `Progress.solutions_revealed?/2` names the `done` threshold, and a
+      solution outside a chapter now fails the build, with five corrections
+      recorded below — but it is driven by the compiled progress, so this stays
+      open until the source above replaces it.
 
 **Static build, archival and per-year versions**
 
@@ -2350,6 +2355,19 @@ replaces the _source_, not the _shape_), the **API** response body, and the
 from `archidep.json`, which stays a build _output_ ([Drop the archidep.json
 round-trip?](#drop-the-archidepjson-round-trip)).
 
+**That shape is a list of sessions in order, not the aggregate.**
+`ArchiDep.CourseSite.Progress` is the union of every session with the later
+categories subtracted, and it therefore loses which session said what — which is
+enough for the sidebar's colours and for [solution
+reveal](#progressive-solution-reveal), and **not** enough for the home page's
+three cards. `_plugins/archidep.rb` fills "Previously", "Due next" and "Next
+time" from the **last session that declares each category**, independently per
+category, and `_layouts/home.html` hides a card whose list is empty; none of
+that is derivable from the union. So the file keeps the sessions the `_progress`
+collection has today and `Progress` stays the value derived from it. Storing the
+three aggregated sets would be lossy on the day it was written, and expensive to
+correct once the shape is published at `GET /api/progress`.
+
 **Public progress API.** Expose the current progress at a public, read-only
 route (e.g. `GET /api/progress`) serving that shape from the source. Its
 consumer is the standalone/GitHub-Pages backup build (see [Standalone / archival
@@ -2436,8 +2454,37 @@ Design decisions to settle:
 
 This pairs with [Custom block tags](#custom-block-tags) (the `solution` tag is
 where the gate is enforced) and [A richer Course.Material
-model](#a-richer-coursematerial-model) (which already carries per-document
-progress metadata).
+model](#a-richer-coursematerial-model).
+
+**The gate is built**, against the compiled progress rather than the runtime
+source, which is why the backlog item above stays open. Five corrections to the
+decisions as written:
+
+- **The tag is handed the decision, not the status.** `RenderContext` carries
+  `solutions: :revealed | :hidden`, worked out by whatever builds the page. Two
+  of the bullets above are the same design pulling in opposite directions: a
+  status on the context _plus_ a `reveal_all_solutions` option is two fields
+  whose disagreement is representable, which is what
+  [`home_at_base?`](#configuration-knobs) was deleted for. With a decision there
+  is no second flag — an archive is a build that says `:revealed` — and no rule
+  to invent for a page that has no chapter number.
+- **`reveal_all_solutions` is deleted rather than wired.** It was on
+  `RenderOptions`, which is by contract the same for every document of a build;
+  reveal is per document, so it could never have lived there.
+- **The threshold is `done` only.** A chapter that is `due` is one the course
+  has covered _and_ set work on, so revealing there hands out the answer to work
+  not yet submitted. `Progress.solutions_revealed?/2` is the one place it is
+  written.
+- **A solution outside a chapter fails the build.** There is nothing on the home
+  page or in a cheatsheet for one to answer and no status that could ever reveal
+  it, so the tag refuses it rather than choosing between showing it forever and
+  hiding it forever. The corpus obeys this — all 23 solutions are in
+  `_course/*/exercise.md`.
+- **A withheld body is still rendered, then thrown away.** What it refers to is
+  resolved there and nowhere else, so a build that rendered only the answers it
+  shows would stop checking the rest. Confirmed against the real content: with
+  three sessions recorded, 53 of 59 documents withhold their answers and every
+  reference still resolves.
 
 ### Static build step
 

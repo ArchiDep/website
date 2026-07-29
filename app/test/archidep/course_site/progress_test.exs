@@ -81,6 +81,20 @@ defmodule ArchiDep.CourseSite.ProgressTest do
     end
   end
 
+  describe "solutions_revealed?/2" do
+    test "shows the answers of a chapter the course has covered and of no other" do
+      progress =
+        Progress.new([%{"done" => [101], "due" => [102], "next" => [103]}])
+
+      assert {
+               Progress.solutions_revealed?(progress, 101),
+               Progress.solutions_revealed?(progress, 102),
+               Progress.solutions_revealed?(progress, 103),
+               Progress.solutions_revealed?(progress, 104)
+             } == {true, false, false, false}
+    end
+  end
+
   describe "section_open?/2" do
     test "unfolds the section the coming session covers" do
       section =
