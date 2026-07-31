@@ -5,6 +5,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Headings
+  alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Renderer
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Source
@@ -709,7 +710,182 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
   end
 
+  describe "site_inputs/1" do
+    test "reads everything a build decides from", %{tmp_dir: tmp_dir} do
+      dirs = site_fixture(tmp_dir)
+
+      assert {:ok, inputs} = Build.site_inputs(site_options(dirs))
+
+      {:ok, tree} = Build.content_tree(dirs.content_dir)
+      {:ok, sources} = Build.sources(tree, dirs.content_dir)
+      {:ok, page_assets} = Build.page_asset_manifest(tree, dirs.content_dir)
+
+      assert inputs == %Build.Site.Inputs{
+               tree: tree,
+               sources: sources,
+               structure: %Structure{
+                 sections: [
+                   Section.new(1, "Introduction", [
+                     Chapter.new(DocumentRef.new(101, "command-line", :subject), "Command Line")
+                   ])
+                 ],
+                 cheatsheets: [Cheatsheet.new("git", "Git Cheatsheet")]
+               },
+               progress: Progress.new([Session.new(~D[2026-02-02], "CLI", [100], [101], [])]),
+               includes: %{},
+               assets:
+                 AssetManifest.new(%{
+                   "/assets/theme/theme.css" => "/assets/theme/theme-abc123.css"
+                 }),
+               page_assets: page_assets
+             }
+    end
+
+    test "takes the assets of a build that never digested them", %{tmp_dir: tmp_dir} do
+      dirs = site_fixture(tmp_dir)
+      File.rm!(Path.join(dirs.static_dir, "cache_manifest.json"))
+      write!(dirs.static_dir, "assets/theme/theme.css", "body {}")
+
+      assert {:ok, inputs} =
+               Build.site_inputs(site_options(dirs) ++ [digested: false])
+
+      assert inputs.assets ==
+               AssetManifest.new(%{"/assets/theme/theme.css" => "/assets/theme/theme.css"})
+    end
+
+    test "refuses a build whose assets were never digested", %{tmp_dir: tmp_dir} do
+      dirs = site_fixture(tmp_dir)
+      File.rm!(Path.join(dirs.static_dir, "cache_manifest.json"))
+
+      assert Build.site_inputs(site_options(dirs)) ==
+               {:error, [{:missing_manifest, Path.join(dirs.static_dir, "cache_manifest.json")}]}
+    end
+
+    test "reports a content directory it cannot read, and nothing else", %{tmp_dir: tmp_dir} do
+      dirs = site_fixture(tmp_dir)
+      write!(dirs.content_dir, "_course/101-command-line/notes.md", "# Notes")
+      File.rm!(dirs.progress_file)
+
+      assert Build.site_inputs(site_options(dirs)) ==
+               {:error, [{:unknown_source, "_course/101-command-line/notes.md"}]}
+    end
+
+    test "reports everything else that is wrong at once", %{tmp_dir: tmp_dir} do
+      dirs = site_fixture(tmp_dir)
+      File.rm!(dirs.progress_file)
+      File.rm!(dirs.declarations_file)
+      File.rm!(Path.join(dirs.static_dir, "cache_manifest.json"))
+
+      assert Build.site_inputs(site_options(dirs)) ==
+               {:error,
+                [
+                  {:missing_declarations, dirs.declarations_file},
+                  {:missing_manifest, Path.join(dirs.static_dir, "cache_manifest.json")},
+                  {:missing_progress, dirs.progress_file}
+                ]}
+    end
+
+    test "reports what makes the content not a course", %{tmp_dir: tmp_dir} do
+      dirs = site_fixture(tmp_dir)
+      File.write!(dirs.declarations_file, "---\nsections: []\ncheatsheets:\n  - git\n")
+
+      assert Build.site_inputs(site_options(dirs)) ==
+               {:error, [{:invalid_course, {:unknown_section, "101-command-line", 1}}]}
+    end
+  end
+
+  describe "prepare_output/2" do
+    test "accepts an output directory that does not exist yet", %{tmp_dir: tmp_dir} do
+      output_dir = Path.join(tmp_dir, "build")
+
+      assert Build.prepare_output(output_dir, :empty) == :ok
+      assert written(output_dir) == %{}
+    end
+
+    test "accepts an output directory that is empty", %{tmp_dir: tmp_dir} do
+      output_dir = Path.join(tmp_dir, "build")
+      File.mkdir_p!(output_dir)
+
+      assert Build.prepare_output(output_dir, :empty) == :ok
+      assert written(output_dir) == %{}
+    end
+
+    test "refuses an output directory it does not own, naming what is in it", %{tmp_dir: tmp_dir} do
+      output_dir = Path.join(tmp_dir, "build")
+
+      write!(output_dir, "index.html", "an earlier build")
+      write!(output_dir, "course/507-dns/index.html", "a chapter that has since been renamed")
+
+      assert Build.prepare_output(output_dir, :empty) ==
+               {:error, [{:output_not_empty, output_dir, ["course", "index.html"]}]}
+
+      assert written(output_dir) == %{
+               "/index.html" => "an earlier build",
+               "/course/507-dns/index.html" => "a chapter that has since been renamed"
+             }
+    end
+
+    test "empties an output directory it is told to clean", %{tmp_dir: tmp_dir} do
+      output_dir = Path.join(tmp_dir, "build")
+
+      write!(output_dir, "index.html", "an earlier build")
+      write!(output_dir, "course/507-dns/index.html", "a chapter that has since been renamed")
+
+      assert Build.prepare_output(output_dir, :clean) == :ok
+      assert written(output_dir) == %{}
+    end
+  end
+
+  describe "publish_site/4" do
+    test "writes every planned file and copies the files next to the pages", %{tmp_dir: tmp_dir} do
+      content_dir = Path.join(tmp_dir, "collections")
+      output_dir = Path.join(tmp_dir, "build")
+
+      write!(content_dir, "_course/507-dns/subject.md", "---\ntitle: DNS\n---\n\nLearn.\n")
+      write!(content_dir, "_course/507-dns/images/zone.png", "a picture")
+
+      {:ok, tree} = Build.content_tree(content_dir)
+      {:ok, page_assets} = Build.page_asset_manifest(tree, content_dir)
+
+      site = %Build.Site{
+        files: %{
+          "/course/507-dns/index.html" => "the chapter",
+          "/archidep.json" => "the course"
+        },
+        pages: []
+      }
+
+      inputs = %Build.Site.Inputs{
+        tree: tree,
+        sources: %{},
+        structure: %Structure{sections: [], cheatsheets: []},
+        progress: Progress.new([]),
+        includes: %{},
+        assets: AssetManifest.new(%{}),
+        page_assets: page_assets
+      }
+
+      assert Build.publish_site(site, inputs, content_dir, output_dir) == :ok
+
+      assert written(output_dir) == %{
+               "/course/507-dns/index.html" => "the chapter",
+               "/archidep.json" => "the course",
+               "/course/507-dns/images/#{digested("zone.png", "a picture")}" => "a picture"
+             }
+    end
+  end
+
   describe "format_error/1" do
+    test "describes an output directory a build does not own" do
+      assert Build.format_error({:output_not_empty, "/build/site", ["course", "index.html"]}) ==
+               ~s{Output directory "/build/site" is not empty; a build owns its output and must start from nothing, but it holds: course, index.html}
+    end
+
+    test "describes an output that could not be removed" do
+      assert Build.format_error({:unremovable_output, "/build/site", :eacces}) ==
+               ~s{Output "/build/site" could not be removed: permission denied}
+    end
+
     test "describes a build whose assets were never digested" do
       assert Build.format_error({:missing_manifest, "/build/static/cache_manifest.json"}) ==
                ~s{Asset manifest "/build/static/cache_manifest.json" does not exist; run the digest step before building}
@@ -870,6 +1046,64 @@ defmodule ArchiDep.CourseSite.BuildTest do
     """)
 
     {content_dir, includes_dir}
+  end
+
+  # The smallest content directory a build can be read from: one chapter, one
+  # cheatsheet, the two files the course declares itself with and one digested
+  # asset.
+  defp site_fixture(tmp_dir) do
+    dirs = %{
+      content_dir: Path.join(tmp_dir, "collections"),
+      includes_dir: Path.join(tmp_dir, "includes"),
+      static_dir: Path.join(tmp_dir, "static"),
+      declarations_file: Path.join(tmp_dir, "course.yml"),
+      progress_file: Path.join(tmp_dir, "progress.json")
+    }
+
+    write!(
+      dirs.content_dir,
+      "_course/101-command-line/subject.md",
+      "---\ntitle: Command Line\n---\n\nType.\n"
+    )
+
+    write!(
+      dirs.content_dir,
+      "_cheatsheets/git/cheatsheet.md",
+      "---\ntitle: Git Cheatsheet\n---\n\nCommit.\n"
+    )
+
+    File.mkdir_p!(dirs.includes_dir)
+
+    write!(
+      dirs.static_dir,
+      "cache_manifest.json",
+      JSON.encode!(%{
+        "version" => 1,
+        "latest" => %{"assets/theme/theme.css" => "assets/theme/theme-abc123.css"},
+        "digests" => %{}
+      })
+    )
+
+    File.write!(
+      dirs.declarations_file,
+      "---\nsections:\n  - title: Introduction\ncheatsheets:\n  - git\n"
+    )
+
+    File.write!(dirs.progress_file, """
+    {"sessions": [{"date": "2026-02-02", "title": "CLI", "done": [100], "due": [101], "next": []}]}
+    """)
+
+    dirs
+  end
+
+  defp site_options(dirs) do
+    [
+      content_dir: dirs.content_dir,
+      includes_dir: dirs.includes_dir,
+      declarations_file: dirs.declarations_file,
+      progress_file: dirs.progress_file,
+      static_dir: dirs.static_dir
+    ]
   end
 
   defp write!(root, path, contents) do

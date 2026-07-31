@@ -1,0 +1,286 @@
+defmodule ArchiDep.CourseSite.Build.SiteTest do
+  use ExUnit.Case, async: true
+
+  import ArchiDep.Support.CourseSiteFactory, only: [build: 2]
+
+  alias ArchiDep.CourseSite.Build.ContentTree
+  alias ArchiDep.CourseSite.Build.Site
+  alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.Progress
+  alias ArchiDep.CourseSite.Renderer.RenderError
+  alias ArchiDep.CourseSite.Renderer.Source
+  alias ArchiDep.CourseSite.Session
+  alias ArchiDep.CourseSite.SiteInfo
+  alias ArchiDep.CourseSite.Structure
+  alias ArchiDep.CourseSite.Structure.Chapter
+  alias ArchiDep.CourseSite.Structure.Cheatsheet
+  alias ArchiDep.CourseSite.Structure.Section
+  alias ArchiDep.CourseSite.Urls.AssetManifest
+  alias ArchiDep.CourseSite.Urls.PageAssetManifest
+  alias ArchiDep.Support.CourseSiteTestLayout
+
+  @cli_subject DocumentRef.new(101, "command-line", :subject)
+  @cli_slides DocumentRef.new(101, "command-line", :slides)
+  @todolist DocumentRef.new(205, "php-todolist", :exercise)
+  @branching DocumentRef.new(202, "git-branching", :slides)
+
+  describe "plan/2" do
+    test "plans a file for every page of the course, and the two it says of itself" do
+      assert {:ok, site} = Site.plan(inputs(), options())
+
+      assert site.files == %{
+               "/course/101-command-line/index.html" =>
+                 "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>",
+               "/course/101-command-line/slides/index.html" =>
+                 "/course/101-command-line/slides/|_course/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|deck:# Command Line\n",
+               "/course/202-git-branching/slides/index.html" =>
+                 "/course/202-git-branching/slides/|_course/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|deck:# Branching\n",
+               "/course/205-php-todolist/index.html" =>
+                 "/course/205-php-todolist/|_course/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|page:::<p>Build it.</p>",
+               "/cheatsheets/git/index.html" =>
+                 "/cheatsheets/git/|_cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||page:::<p>Commit.</p>",
+               "/archidep.json" => archidep_json(),
+               "/version.json" => version_json()
+             }
+    end
+
+    test "hands the link check a deck as the Markdown it stays and as what was written" do
+      assert {:ok, site} = Site.plan(inputs(), options())
+
+      assert site.pages == [
+               {{:document, @cli_subject}, :html,
+                "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>"},
+               {{:document, @cli_slides}, :markdown, "# Command Line\n"},
+               {{:document, @cli_slides}, :html,
+                "/course/101-command-line/slides/|_course/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|deck:# Command Line\n"},
+               {{:document, @branching}, :markdown, "# Branching\n"},
+               {{:document, @branching}, :html,
+                "/course/202-git-branching/slides/|_course/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|deck:# Branching\n"},
+               {{:document, @todolist}, :html,
+                "/course/205-php-todolist/|_course/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|page:::<p>Build it.</p>"},
+               {{:cheatsheet, "git"}, :html,
+                "/cheatsheets/git/|_cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||page:::<p>Commit.</p>"}
+             ]
+    end
+
+    test "reports every page whose layout could not resolve a reference of its own" do
+      assert Site.plan(inputs(), options(layout: CourseSiteTestLayout.Failing)) ==
+               {:error,
+                [
+                  {:unlayoutable_page, {:cheatsheet, "git"},
+                   {:unknown_asset, "/assets/missing.css"}},
+                  {:unlayoutable_page, {:document, @cli_slides},
+                   {:unknown_asset, "/assets/missing.css"}},
+                  {:unlayoutable_page, {:document, @cli_subject},
+                   {:unknown_asset, "/assets/missing.css"}},
+                  {:unlayoutable_page, {:document, @branching},
+                   {:unknown_asset, "/assets/missing.css"}},
+                  {:unlayoutable_page, {:document, @todolist},
+                   {:unknown_asset, "/assets/missing.css"}}
+                ]}
+    end
+
+    test "reports every document it cannot render rather than the first" do
+      sources = %{
+        {:document, @cli_subject} => source("---\ntitle: Command Line\n---\n\n{% link nope %}\n"),
+        {:document, @todolist} => source("---\ntitle: PHP Todolist\n---\n\n{% link nope %}\n")
+      }
+
+      assert Site.plan(inputs(sources: sources, structure: two_pages()), options()) ==
+               {:error,
+                [
+                  {:unrenderable_document, "_course/101-command-line/subject.md",
+                   %RenderError{
+                     reason: {:invalid_document, "nope"},
+                     source_path: "_course/101-command-line/subject.md",
+                     loc: %{line: 5, column: 1}
+                   }},
+                  {:unrenderable_document, "_course/205-php-todolist/exercise.md",
+                   %RenderError{
+                     reason: {:invalid_document, "nope"},
+                     source_path: "_course/205-php-todolist/exercise.md",
+                     loc: %{line: 5, column: 1}
+                   }}
+                ]}
+    end
+  end
+
+  describe "format_error/1" do
+    test "describes a document that could not be rendered" do
+      error = %RenderError{
+        reason: {:invalid_document, "nope"},
+        source_path: "_course/507-dns/subject.md",
+        loc: %{line: 5, column: 1}
+      }
+
+      assert Site.format_error({:unrenderable_document, "_course/507-dns/subject.md", error}) ==
+               "Document _course/507-dns/subject.md could not be rendered: " <>
+                 RenderError.message(error)
+    end
+
+    test "describes a page that could not be laid out" do
+      assert Site.format_error(
+               {:unlayoutable_page, {:cheatsheet, "git"}, {:unknown_asset, "/assets/missing.css"}}
+             ) ==
+               ~s{Page /cheatsheets/git/ could not be laid out: Global asset "/assets/missing.css" is not in the asset manifest}
+    end
+  end
+
+  defp inputs(overrides \\ []) do
+    %Site.Inputs{
+      tree: tree(),
+      sources: Keyword.get(overrides, :sources, sources()),
+      structure: Keyword.get(overrides, :structure, structure()),
+      progress: Progress.new([Session.new(~D[2026-02-02], "Session", [100, 101], [200], [202])]),
+      includes: %{},
+      assets: AssetManifest.new(%{}),
+      page_assets: PageAssetManifest.new(%{})
+    }
+  end
+
+  defp options(overrides \\ []) do
+    Site.Options.new(
+      urls: build(:url_context, mode: :live, base_path: "", version: nil, live_site_url: nil),
+      site: SiteInfo.new(version: "1.2.3", git_branch: "main", git_revision: "abc123"),
+      layout: Keyword.get(overrides, :layout, CourseSiteTestLayout.Wrapper)
+    )
+  end
+
+  defp tree do
+    %ContentTree{
+      documents: %{
+        @cli_subject => "_course/101-command-line/subject.md",
+        @cli_slides => "_course/101-command-line/slides.md",
+        @branching => "_course/202-git-branching/slides.md",
+        @todolist => "_course/205-php-todolist/exercise.md"
+      },
+      cheatsheets: %{"git" => "_cheatsheets/git/cheatsheet.md"},
+      page_assets: %{},
+      ignored: []
+    }
+  end
+
+  defp sources do
+    %{
+      {:document, @cli_subject} => source("---\ntitle: Command Line\n---\n\n## What\n"),
+      {:document, @cli_slides} =>
+        source("---\ntitle: Command Line Slides\n---\n\n# Command Line\n"),
+      {:document, @branching} => source("---\ntitle: Git Branching\n---\n\n# Branching\n"),
+      {:document, @todolist} => source("---\ntitle: PHP Todolist\n---\n\nBuild it.\n"),
+      {:cheatsheet, "git"} => source("---\ntitle: Git Cheatsheet\n---\n\nCommit.\n")
+    }
+  end
+
+  defp structure do
+    %Structure{
+      sections: [
+        Section.new(1, "Introduction", [
+          Chapter.new(@cli_subject, "Command Line", slides: @cli_slides)
+        ]),
+        Section.new(2, "Version Control", [
+          Chapter.new(@branching, "Git Branching"),
+          Chapter.new(@todolist, "PHP Todolist")
+        ])
+      ],
+      cheatsheets: [Cheatsheet.new("git", "Git Cheatsheet")]
+    }
+  end
+
+  defp two_pages do
+    %Structure{
+      sections: [
+        Section.new(1, "Introduction", [Chapter.new(@cli_subject, "Command Line")]),
+        Section.new(2, "Version Control", [Chapter.new(@todolist, "PHP Todolist")])
+      ],
+      cheatsheets: []
+    }
+  end
+
+  defp source(contents) do
+    {:ok, %Source{} = source} = Source.parse(contents)
+    source
+  end
+
+  defp archidep_json do
+    """
+    {
+      "sections": [
+        {
+          "title": "Introduction",
+          "slug": "introduction",
+          "num": 100,
+          "progress": "done",
+          "open": false,
+          "docs": [
+            {
+              "title": "Command Line",
+              "num": 101,
+              "course_type": "subject",
+              "graded": false,
+              "course_slug": "command-line",
+              "section": 1,
+              "section_chapter": 1,
+              "progress": "done",
+              "slides": true,
+              "url": "/course/101-command-line/"
+            }
+          ]
+        },
+        {
+          "title": "Version Control",
+          "slug": "version-control",
+          "num": 200,
+          "progress": "due",
+          "open": true,
+          "docs": [
+            {
+              "title": "Git Branching",
+              "num": 202,
+              "course_type": "slides",
+              "graded": false,
+              "course_slug": "git-branching",
+              "section": 2,
+              "section_chapter": 2,
+              "progress": "next",
+              "slides": false,
+              "url": "/course/202-git-branching/slides/"
+            },
+            {
+              "title": "PHP Todolist",
+              "num": 205,
+              "course_type": "exercise",
+              "graded": false,
+              "course_slug": "php-todolist",
+              "section": 2,
+              "section_chapter": 5,
+              "progress": "future",
+              "slides": false,
+              "url": "/course/205-php-todolist/"
+            }
+          ]
+        }
+      ],
+      "cheatsheets": [
+        {
+          "title": "Git Cheatsheet",
+          "sidebar_title": "Git Cheatsheet",
+          "slug": "git",
+          "url": "/cheatsheets/git/"
+        }
+      ]
+    }
+    """
+  end
+
+  defp version_json do
+    """
+    {
+      "version": "1.2.3",
+      "git": {
+        "branch": "main",
+        "revision": "abc123"
+      }
+    }
+    """
+  end
+end

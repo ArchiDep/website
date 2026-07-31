@@ -379,7 +379,7 @@ When you install a package with APT (e.g. MySQL), it _may_ prompt you to reboot 
 Simply select "Ok" by pressing the Tab key, then press Enter to confirm.
 
 {% callout type: more, id:unattended-upgrades %}
-This happens because most recent Linux versions have [unattended upgrades](linux-unattended-upgrades): a tool that automatically installs daily security upgrades on your server without human intervention. Sometimes, some of the background services running on your server may need to be restarted for these upgrades to be applied.
+This happens because most recent Linux versions have [unattended upgrades][linux-unattended-upgrades]: a tool that automatically installs daily security upgrades on your server without human intervention. Sometimes, some of the background services running on your server may need to be restarted for these upgrades to be applied.
 
 Since you are installing a new background service (the MySQL server) which must be started, APT asks whether you want to apply upgrades to other
 background services by restarting them. Rebooting your server would also have the effect of restarting these services and applying the security upgrades.

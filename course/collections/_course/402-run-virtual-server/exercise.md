@@ -658,5 +658,5 @@ everywhere else you may have used it.)
 [fstab-linux-manpage]: https://man7.org/linux/man-pages/man5/fstab.5.html
 [man-in-the-middle-attacks]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
 [microsoft-azure]: https://azure.microsoft.com
-[sysadmin-cheatsheet]: ../701-sysadmin-cheatsheet/
-[sysadmin-cheatsheet-change-username]: ../701-sysadmin-cheatsheet/#how-do-i-change-my-username-usermod
+[sysadmin-cheatsheet]: ../../cheatsheets/sysadmin/
+[sysadmin-cheatsheet-change-username]: ../../cheatsheets/sysadmin/#how-do-i-change-my-username-usermod

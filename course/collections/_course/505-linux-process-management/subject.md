@@ -5,6 +5,8 @@ excerpt_separator: <!-- more -->
 
 Learn about process management on Linux and how to do it with [systemd][systemd].
 
+<!-- more -->
+
 ## What is process management?
 
 Many processes must run for a computer to do its job.

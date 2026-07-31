@@ -17,8 +17,8 @@ Learn the basics of Unix networking and how to make TCP connections.
 
 **Recommended reading**
 
-- [Unix Basics & Administration](../unix-admin/)
-- [Unix Processes](../unix-processes/)
+- [Unix Basics & Administration]({% link _course/404-unix-basics/subject.md %})
+- [Unix Processes]({% link _course/406-unix-processes/subject.md %})
 
 ---
 

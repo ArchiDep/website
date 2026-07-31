@@ -10,7 +10,7 @@ Learn about the SSH cryptographic network protocol and how to use the SSH comman
 
 **Recommended reading**
 
-- [Command Line Introduction](../cli/)
+- [Command Line Introduction]({% link _course/101-command-line/subject.md %})
 
 ## The `ssh` command
 

@@ -333,8 +333,9 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       see [Search index](#search-index).
 - [ ] Run an HTML fidelity diff / visual-regression gate against current Jekyll
       output — see [HTML fidelity gate](#html-fidelity-gate).
-- [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stage —
-      see [Cutover](#cutover).
+- [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stage,
+      and remove the JSON ordering scaffolding that only exists to keep
+      `archidep.json` diffable against Jekyll's — see [Cutover](#cutover).
 
 **Deferred (scheduled after cutover)**
 
@@ -2546,6 +2547,44 @@ production serving](#development-and-production-serving). The runtime serving
 mode stays explicitly out of scope (see [An architectural fork worth deciding
 early](#an-architectural-fork-worth-deciding-early)).
 
+**Corrections while implementing the writer half**, the chrome being the second
+half of this task:
+
+- **The driver splits three ways rather than being one function.** Rendering the
+  whole site is _pure_ — given the content, the course, its progress and where
+  the build is published, the files and their contents follow — so `Build`
+  chains the reads (`site_inputs/1`), `Build.Site.plan/2` decides everything,
+  and `prepare_output/2` and `publish_site/4` write. Reading before writing
+  stops being a rule to remember and becomes the shape of the call.
+- **A build owns an empty output directory** rather than clearing the paths it
+  recognises, which is what Jekyll's `keep_files` does. The reason is sharper
+  than tidiness: `LinkCheck` is measured against what the directory holds, so a
+  page left by an earlier build would make a broken link **pass**.
+- **The layout is a seam with one callback**, `Layout.document/1` over a
+  `LayoutContext`, because choosing between the site's five layouts is the
+  layout's business and a build that chose would have to learn Jekyll's layout
+  table. `Layout.Minimal` is what this half writes with.
+- **The home page belongs to the chrome half.** It is not in the content tree,
+  it is not part of `Structure`, and `_layouts/home.html` needs the three
+  progress cards, which are their own item below.
+- **Three subjects declared an `excerpt_separator` they never wrote** —
+  `411-how-to-improve`, `505-linux-process-management` and `601-git-hooks` —
+  which is a render error, and a build fails on every render error. Fixed in the
+  content; the corpus now renders with nothing wrong with it at all.
+- **Wiring up `LinkCheck` found eleven links that have never resolved**, in six
+  documents: three `[text](ref)` where `[text][ref]` was meant, six pointing at
+  chapter slugs that were renumbered years ago (`../cli/`, `../unix-admin/`, …),
+  and two reference definitions naming chapters that have since become
+  cheatsheets. All fixed. `{% link %}` takes a course document and not a
+  cheatsheet, so the two cheatsheet links use the relative form the corpus
+  already writes elsewhere.
+- **A deck escapes `</textarea` and nothing else.** An earlier attempt escaped
+  `&` and `<` as well, which is sound — the element holds RCDATA — but left
+  every deck differing from Jekyll's for no reason.
+- **`archidep.json` comes out byte-for-byte identical** to the one Jekyll
+  produces, and the page and page-asset file sets match it exactly, modulo the
+  digest each file now carries.
+
 ### Development and production serving
 
 The single parameterized static build (production and archival differ only by
@@ -2830,6 +2869,27 @@ once `_data/` and `_config.yml` are gone:
   is.
 - **The cheatsheet order in `_config.yml`**, which is the same list a second
   time and is kept in step with the first only until here.
+
+One thing becomes **scaffolding to remove** rather than something to keep:
+`archidep.json` is written with `Jason.OrderedObject` and `pretty: true` so that
+its keys come out in Jekyll's order and its shape stays diffable against the
+file Jekyll produces. That is the **only** reason: `pdf.ts` merely parses the
+file, and `priv/static` is gitignored, so nothing reviews the bytes. Once there
+is no Jekyll output left to compare against, the ordering shim is answering a
+question nobody asks — and it is what makes
+[`Build.Site`](../app/lib/archidep/course_site/build/site.ex) the one place in
+the subsystem that encodes with `Jason` while everything else decodes with
+Elixir's own `JSON`. So at cutover:
+
+- Encode both build outputs with `JSON.encode!`, leaving one JSON library in the
+  subsystem. (The `jason` dependency stays — the events and the admin console
+  use it, and several dependencies pull it in regardless.)
+- Delete the comment above `course_json/3` that explains the choice. It is the
+  rationale for a constraint that will no longer exist, which is exactly the
+  kind of comment that rots.
+- Take the opportunity to slim the shape if wanted — `archidep.json` is
+  [ours to define](#drop-the-archidepjson-round-trip) by then, and `pdf.ts` reads
+  five keys of a document and four of a cheatsheet.
 
 ---
 

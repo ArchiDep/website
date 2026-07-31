@@ -26,6 +26,7 @@ and tooling that also apply here. Read that document first.
   - [Errors](#errors)
 - [Building](#building)
   - [Checking it against the real content](#checking-it-against-the-real-content)
+- [Laying a page out](#laying-a-page-out)
 - [Rendering](#rendering)
   - [Every tag body is its own Markdown document](#every-tag-body-is-its-own-markdown-document)
   - [The tags the course writes](#the-tags-the-course-writes)
@@ -440,6 +441,7 @@ it, documented there rather than here:
 | [`PageAssetDigest`](./build/page_asset_digest.ex) | what a published file is called                                                                |
 | [`AssetDigest`](./build/asset_digest.ex)          | where the global assets went, per `phx.digest`                                                 |
 | [`LinkCheck`](./build/link_check.ex)              | which of a finished build's links lead nowhere                                                 |
+| [`Site`](./build/site.ex)                         | every file a build writes and what is in each, which `site_inputs/1` chains the reads for      |
 | [`Structure`](./structure.ex)                     | what the course is, which `course!/2` chains the reads for                                     |
 | [`Headings`](./headings.ex)                       | what a page's headings are called, which `headings!/3` chains the reads for                    |
 
@@ -493,6 +495,20 @@ stopping at the first, the same way [a document reports all of its
 problems](#reporting-rather-than-raising) — otherwise a content directory takes
 as many runs to fix as it has mistakes.
 
+**A build owns its output directory.** It refuses one that is not empty rather
+than merging into it. That is not tidiness: the link check is measured against
+what the directory holds, so a page left behind by an earlier build would make a
+link that leads nowhere look like a link that resolves. An output that is a
+function of its inputs has to start from nothing — which is also the shape the
+publish path wants, since rendering into a fresh directory is half of swapping
+one into place.
+
+**A render error fails the build.** The renderer is all-or-nothing: any error it
+collects discards the page, so there is no such thing as publishing a page that
+is known to be wrong. `mix archidep.course_site.assets` sorts errors into those
+about a reference and everything else, but that is a property of a check that
+answers for the manifests and nothing else — it is not a model for a build.
+
 ### Checking it against the real content
 
 Two commands read the real content so that what would otherwise be noticed once
@@ -505,6 +521,31 @@ is something anyone can run. Neither writes anything.
   is](#what-the-course-is) from the real content and the real declarations and
   prints it, so that a chapter in an undeclared section, a page with no title or
   a cheatsheet nobody listed is a command rather than a blank entry.
+
+`mix archidep.course_site.build` is the third and the only one that writes: it
+renders the whole site into a directory of its own and checks the links of what
+it wrote. Every knob of [what a build is](#what-a-build-is) is an option of it,
+so the backup copy, an archived edition and the build printed to PDF are
+configurations of one command rather than three.
+
+## Laying a page out
+
+[`Layout`](./layout.ex) is what the site shows around a rendered document. The
+renderer produces a page's own prose and stops there, so a `<head>`, a header,
+the course's navigation and a footer are somebody else's to add, and that
+somebody is a value the build is handed rather than a function of it.
+
+It is **one callback** taking a [`LayoutContext`](./layout/layout_context.ex),
+not one per kind of page. Choosing between a subject that presents its deck, an
+exercise that prints its legend, a bare cheatsheet and a deck that is not a page
+at all is the layout's own business: a build that chose would have to learn that
+table, and every layout added to it would change the build's shape.
+
+A layout **reports rather than raises**, for the reason [a document
+does](#reporting-rather-than-raising): the references it resolves of its own —
+its stylesheets, a page's PDF — can fail to resolve, and which of those is fatal
+is the layout's to know. A missing stylesheet is a build nobody can read; a PDF
+that has not been exported yet is a download link left out.
 
 ## Rendering
 
@@ -909,6 +950,11 @@ md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than
 - **The site publishes no feed.** `jekyll-feed` wrote a `/feed.xml` of a course
   that has no posts, and nothing has ever linked to it but the `feed_meta` tag
   that announced it.
+- **A deck escapes the one sequence that would cut it short.** Its `<textarea>`
+  holds RCDATA, so the markup and the entities a deck writes reach `reveal.js`
+  exactly as they stand — but `</textarea` would end the element wherever it
+  appeared, so that alone is written as `&lt;/textarea`, which decodes back to
+  itself. Jekyll escaped nothing and would have published a broken page for it.
 
 Everything else matches: the classes, identifiers and structure every tag of
 every subject, exercise and cheatsheet emits were diffed against a Jekyll build

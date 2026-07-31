@@ -12,8 +12,8 @@ and make them communicate.
 
 **Recommended reading**
 
-- [Command Line Introduction](../cli/)
-- [Secure Shell (SSH)](../ssh/)
+- [Command Line Introduction]({% link _course/101-command-line/subject.md %})
+- [Secure Shell (SSH)]({% link _course/104-ssh/subject.md %})
 
 ## What is a process?
 

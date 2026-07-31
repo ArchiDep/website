@@ -96,6 +96,24 @@ defmodule ArchiDep.CourseSite.ProgressTest do
     end
   end
 
+  describe "solutions/2" do
+    test "withholds the answers of every page but a chapter the course has covered" do
+      progress = Progress.new([build(:session, done: [101], due: [102], next: [103])])
+
+      assert {
+               Progress.solutions(progress, {:document, DocumentRef.new(101, "cli", :exercise)}),
+               Progress.solutions(
+                 progress,
+                 {:document, DocumentRef.new(102, "shell", :exercise)}
+               ),
+               Progress.solutions(progress, {:document, DocumentRef.new(103, "ssh", :exercise)}),
+               Progress.solutions(progress, {:document, DocumentRef.new(104, "git", :exercise)}),
+               Progress.solutions(progress, {:cheatsheet, "sysadmin"}),
+               Progress.solutions(progress, :home)
+             } == {:revealed, :hidden, :hidden, :hidden, :revealed, :revealed}
+    end
+  end
+
   describe "section_open?/2" do
     test "unfolds the section the coming session covers" do
       section =

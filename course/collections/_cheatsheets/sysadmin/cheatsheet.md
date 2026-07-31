@@ -457,7 +457,7 @@ Simply select "Ok" by pressing the Tab key, then press Enter to confirm.
 
 {% callout type: more, id:upgrade-restart %}
 
-This happens either because you have installed a new background service, or because your Linux distribution uses [unattended upgrades](linux-unattended-upgrades): a tool that automatically installs daily security upgrades on your server without human intervention. Sometimes, some of the background services running on your server need to be restarted for upgrades to be applied. Rebooting your server would also have the effect of restarting these services and applying the security upgrades.
+This happens either because you have installed a new background service, or because your Linux distribution uses [unattended upgrades][linux-unattended-upgrades]: a tool that automatically installs daily security upgrades on your server without human intervention. Sometimes, some of the background services running on your server need to be restarted for upgrades to be applied. Rebooting your server would also have the effect of restarting these services and applying the security upgrades.
 
 {% endcallout %}
 
@@ -559,5 +559,6 @@ This will give you a new commit to push without actually making a change.
 
 [bottom]: https://github.com/ClementTsang/bottom
 [duf]: https://github.com/muesli/duf
+[linux-unattended-upgrades]: https://wiki.debian.org/UnattendedUpgrades
 [procs]: https://github.com/dalance/procs
-[sftp-deploy-ex]: ../410-deploy-a-php-app-with-sftp/
+[sftp-deploy-ex]: ../../course/410-sftp-deployment/

@@ -26,6 +26,8 @@ defmodule ArchiDep.CourseSite.Progress do
   colours a section heading as well as an entry under it.
   """
 
+  alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.PageRef
   alias ArchiDep.CourseSite.Session
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Structure.Chapter
@@ -43,6 +45,13 @@ defmodule ArchiDep.CourseSite.Progress do
   - `:future` — still to come.
   """
   @type status :: :done | :due | :next | :future
+
+  @typedoc """
+  Whether a page shows the answers it holds. Declared here rather than borrowed
+  from the renderer that is told it, so that how far the course has got does not
+  depend on what renders it.
+  """
+  @type solutions :: :revealed | :hidden
 
   @type t :: %__MODULE__{
           done: MapSet.t(pos_integer()),
@@ -106,6 +115,22 @@ defmodule ArchiDep.CourseSite.Progress do
   @spec solutions_revealed?(t(), pos_integer()) :: boolean()
   def solutions_revealed?(%__MODULE__{} = progress, num) when is_integer(num),
     do: status(progress, num) == :done
+
+  @doc """
+  Whether a page shows the answers it holds, as the renderer is told it.
+
+  Only a chapter has a status to consult, and only a chapter may hold an answer
+  at all — the renderer refuses a solution written on the home page or in a
+  cheatsheet — so every other page is handed `:revealed` and the question never
+  arises. Applying `solutions_revealed?/2` is what a build does with the
+  threshold above, and it is here rather than in each build so that two of them
+  cannot disagree.
+  """
+  @spec solutions(t(), PageRef.t()) :: solutions()
+  def solutions(%__MODULE__{} = progress, {:document, %DocumentRef{num: num}}),
+    do: if(solutions_revealed?(progress, num), do: :revealed, else: :hidden)
+
+  def solutions(%__MODULE__{}, _page), do: :revealed
 
   @doc """
   Whether a section is shown unfolded, which it is when it is what the coming

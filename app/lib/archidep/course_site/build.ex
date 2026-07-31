@@ -18,8 +18,10 @@ defmodule ArchiDep.CourseSite.Build do
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.Build.PageAssetDigest
   alias ArchiDep.CourseSite.Build.ProgressFile
+  alias ArchiDep.CourseSite.Build.Site
   alias ArchiDep.CourseSite.Headings
   alias ArchiDep.CourseSite.PageRef
+  alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Renderer
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderError
@@ -60,6 +62,10 @@ defmodule ArchiDep.CourseSite.Build do
           | {:unrenderable_document, String.t(), RenderError.t()}
           | {:unreadable_include, String.t(), Path.t(), File.posix()}
           | {:unparsable_include, RenderError.t()}
+          | {:output_not_empty, Path.t(), [String.t()]}
+          | {:unremovable_output, Path.t(), File.posix()}
+          | {:invalid_course, Structure.error()}
+          | Site.error()
 
   @doc """
   Every file a build reads from a content directory, relative to it, sorted.
@@ -363,6 +369,83 @@ defmodule ArchiDep.CourseSite.Build do
     do: output_dir |> relative_files(output_dir) |> MapSet.new(&("/" <> &1))
 
   @doc """
+  Everything a build reads before it decides anything.
+
+  The content tree is read first and its failure is reported **alone**: what
+  each file of the directory is, is what every other read is expressed in terms
+  of, so nothing else about the course can be trusted once that is wrong. This
+  is the same exception the declarations already get in `course!/2`.
+
+  Everything after it is read whether or not the others succeeded, and every
+  failure is reported together — a build directory takes one run to fix rather
+  than one run per mistake.
+
+  Options:
+
+  - `:content_dir` (required) — the course collections.
+  - `:includes_dir` (required) — the partials a document may include.
+  - `:declarations_file` (required) — what the course declares about itself.
+  - `:progress_file` (required) — how far the course has got.
+  - `:static_dir` (required) — where the global assets were published.
+  - `:digested` — whether those assets carry a digest, which is a **mode**
+    rather than a fallback: a build whose manifest is missing fails rather than
+    quietly emitting names that only resolve in development. Defaults to `true`.
+  """
+  @spec site_inputs(keyword()) :: {:ok, Site.Inputs.t()} | {:error, nonempty_list(error())}
+  def site_inputs(opts) when is_list(opts) do
+    content_dir = Keyword.fetch!(opts, :content_dir)
+
+    with {:ok, tree} <- content_tree(content_dir),
+         do: read_site_inputs(tree, content_dir, opts)
+  end
+
+  @doc """
+  Make ready the directory a build writes into.
+
+  A build **owns** its output directory rather than merging into it. That is not
+  tidiness: the link check is measured against what the directory holds
+  (`output_files/1`), so a page left behind by an earlier build would make a
+  link that leads nowhere look like a link that resolves. An output that is a
+  function of the inputs has to start from nothing.
+
+  `:empty` accepts a directory that is absent or empty and refuses one that is
+  not, naming what is in it; `:clean` empties it first.
+  """
+  @spec prepare_output(Path.t(), :empty | :clean) :: :ok | {:error, nonempty_list(error())}
+  def prepare_output(output_dir, mode) when mode in [:empty, :clean] do
+    with :ok <- clear_output(output_dir, mode),
+         :ok <- check_output_empty(output_dir),
+         do: make_output(output_dir)
+  end
+
+  @doc """
+  Write a planned build, and copy the files sitting next to its pages.
+
+  Everything was read, rendered and laid out before this is called, so what is
+  left is putting bytes where they go.
+  """
+  @spec publish_site(Site.t(), Site.Inputs.t(), Path.t(), Path.t()) ::
+          :ok | {:error, nonempty_list(error())}
+  def publish_site(%Site{files: files}, %Site.Inputs{} = inputs, content_dir, output_dir) do
+    errors =
+      Enum.flat_map(files, fn {output_path, contents} ->
+        target = Path.join(output_dir, output_path)
+
+        with :ok <- File.mkdir_p(Path.dirname(target)),
+             :ok <- File.write(target, contents) do
+          []
+        else
+          {:error, reason} -> [{:unwritable_output, output_path, target, reason}]
+        end
+      end)
+
+    case Enum.sort(errors) do
+      [] -> publish_page_assets(inputs.page_assets, inputs.tree, content_dir, output_dir)
+      [_first | _rest] = errors -> {:error, errors}
+    end
+  end
+
+  @doc """
   Describe what went wrong, whichever part of a build it came from.
   """
   @spec format_error(error()) :: String.t()
@@ -443,12 +526,106 @@ defmodule ArchiDep.CourseSite.Build do
   def format_error({:malformed_session, _index, _why} = error),
     do: ProgressFile.format_error(error)
 
+  def format_error({:output_not_empty, path, entries}),
+    do:
+      "Output directory #{inspect(path)} is not empty; a build owns its output and must start from nothing, but it holds: #{Enum.join(entries, ", ")}"
+
+  def format_error({:unremovable_output, path, reason}),
+    do: "Output #{inspect(path)} could not be removed: #{:file.format_error(reason)}"
+
+  # What the course is, is one problem with one wording wherever it surfaces, so
+  # this delegates rather than restating eleven of `Structure`'s failures.
+  def format_error({:invalid_course, error}), do: Structure.format_error(error)
+
+  def format_error({:unlayoutable_page, _page, _error} = error), do: Site.format_error(error)
+
   defp or_raise(result, what, format \\ &__MODULE__.format_error/1)
   defp or_raise({:ok, value}, _what, _format), do: value
   defp or_raise({:error, errors}, what, format), do: raise_errors(what, errors, format)
 
   defp raise_errors(what, errors, format),
     do: raise("#{what}:\n" <> Enum.map_join(errors, "\n", &("  " <> format.(&1))))
+
+  defp read_site_inputs(tree, content_dir, opts) do
+    sources = sources(tree, content_dir)
+    declarations = declarations(Keyword.fetch!(opts, :declarations_file))
+    progress = progress(Keyword.fetch!(opts, :progress_file))
+    includes = includes(Keyword.fetch!(opts, :includes_dir))
+    page_assets = page_asset_manifest(tree, content_dir)
+    assets = assets(Keyword.fetch!(opts, :static_dir), Keyword.get(opts, :digested, true))
+    structure = structure(tree, sources, declarations)
+
+    reads = [sources, declarations, progress, includes, page_assets, assets, structure]
+
+    case Enum.sort(errors_of(reads)) do
+      [] ->
+        {:ok,
+         %Site.Inputs{
+           tree: tree,
+           sources: value_of(sources),
+           structure: value_of(structure),
+           progress: sessions_progress(value_of(progress)),
+           includes: value_of(includes),
+           assets: value_of(assets),
+           page_assets: value_of(page_assets)
+         }}
+
+      [_first | _rest] = errors ->
+        {:error, errors}
+    end
+  end
+
+  # What the course says it is is a different kind of failure from a file that
+  # could not be read, so it is wrapped and worded by `Structure` itself. The
+  # sources and the declarations report their own failures, so a structure that
+  # could not even be attempted reports nothing rather than repeating them.
+  defp structure(tree, {:ok, sources}, {:ok, declarations}) do
+    case Structure.plan(tree, front_matter(sources), declarations) do
+      {:ok, structure} -> {:ok, structure}
+      {:error, errors} -> {:error, Enum.map(errors, &{:invalid_course, &1})}
+    end
+  end
+
+  defp structure(_tree, _sources, _declarations), do: {:error, []}
+
+  defp assets(static_dir, true), do: asset_manifest(static_dir)
+  defp assets(static_dir, false), do: {:ok, undigested_asset_manifest(static_dir)}
+
+  defp sessions_progress(sessions), do: Progress.new(sessions)
+
+  defp errors_of(results),
+    do:
+      Enum.flat_map(results, fn
+        {:ok, _value} -> []
+        {:error, errors} -> errors
+      end)
+
+  defp value_of({:ok, value}), do: value
+
+  defp clear_output(_output_dir, :empty), do: :ok
+
+  defp clear_output(output_dir, :clean) do
+    case File.rm_rf(output_dir) do
+      {:ok, _removed} -> :ok
+      {:error, reason, path} -> {:error, [{:unremovable_output, path, reason}]}
+    end
+  end
+
+  defp check_output_empty(output_dir) do
+    case File.ls(output_dir) do
+      {:ok, []} -> :ok
+      {:ok, entries} -> {:error, [{:output_not_empty, output_dir, Enum.sort(entries)}]}
+      {:error, :enoent} -> :ok
+      {:error, reason} -> {:error, [{:unwritable_output, "/", output_dir, reason}]}
+    end
+  end
+
+  defp make_output(output_dir) do
+    case File.mkdir_p(output_dir) do
+      :ok -> :ok
+      {:error, reason} -> {:error, [{:unwritable_output, "/", output_dir, reason}]}
+    end
+  end
 
   # Dotfiles are listed rather than skipped here, so that what a build ignores
   # is a decision `ContentTree` records instead of a default of the walk.

@@ -1,6 +1,5 @@
 ---
 title: How to improve our basic deployment
-excerpt_separator: <!-- more -->
 ---
 
 The basic SFTP deployment of the PHP TodoList has several flaws which we will

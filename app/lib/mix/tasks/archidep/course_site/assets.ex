@@ -146,18 +146,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
     end
   end
 
-  # A page that is not a chapter has no status to consult, and may not hold an
-  # answer at all: the renderer refuses a solution written on the home page or
-  # in a cheatsheet rather than showing it.
-  defp solutions({:document, %DocumentRef{num: num}}, progress),
-    do: if(Progress.solutions_revealed?(progress, num), do: :revealed, else: :hidden)
-
-  defp solutions(_page, _progress), do: :revealed
-
   defp withheld(%ContentTree{documents: documents}, progress),
     do:
       Enum.count(documents, fn {ref, _source_path} ->
-        solutions({:document, ref}, progress) == :hidden
+        Progress.solutions(progress, {:document, ref}) == :hidden
       end)
 
   defp problems_rendering(%ContentTree{} = tree, content_dir, urls, includes, progress) do
@@ -184,7 +176,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
             urls: urls,
             page: page,
             includes: includes,
-            solutions: solutions(page, progress)
+            solutions: Progress.solutions(progress, page)
           )
 
         page |> render(context) |> problems(source_path)

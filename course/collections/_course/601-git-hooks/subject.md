@@ -18,6 +18,8 @@ Learn the basics of Git hooks.
 - [Collaborating with Git]({% link _course/204-hello-github/exercise.md %})
 - [Shell Scripting]({% link _course/102-shell-scripting/subject.md %})
 
+<!-- more -->
+
 ## What is a Git hook?
 
 A Git hook is **an executable file** that can be **triggered when certain
