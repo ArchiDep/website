@@ -9,13 +9,13 @@ defmodule ArchiDep.CourseSite.Build.Site.Options do
   in, and what produced it.
   """
 
-  alias ArchiDep.CourseSite.Layout.Minimal
+  alias ArchiDep.CourseSite.Layout.Chrome
   alias ArchiDep.CourseSite.Renderer.RenderOptions
   alias ArchiDep.CourseSite.SiteInfo
   alias ArchiDep.CourseSite.Urls.UrlContext
 
   @enforce_keys [:urls, :site]
-  defstruct [:urls, :site, layout: Minimal, render_options: nil]
+  defstruct [:urls, :site, layout: Chrome, render_options: nil]
 
   @type t :: %__MODULE__{
           urls: UrlContext.t(),
@@ -32,7 +32,10 @@ defmodule ArchiDep.CourseSite.Build.Site.Options do
   - `:urls` (required) — the build, as an `ArchiDep.CourseSite.Urls.UrlContext`.
   - `:site` (required) — what produced it, as an `ArchiDep.CourseSite.SiteInfo`.
   - `:layout` — the `ArchiDep.CourseSite.Layout` its pages are wrapped in.
-    Defaults to `ArchiDep.CourseSite.Layout.Minimal`.
+    Defaults to `ArchiDep.CourseSite.Layout.Chrome`, the site's own chrome,
+    which is what a build of the site is for;
+    `ArchiDep.CourseSite.Layout.Minimal` is the one to pass when the chrome is
+    not what is being looked at.
   - `:render_options` — the renderer's own
     `ArchiDep.CourseSite.Renderer.RenderOptions`. Defaults to
     `RenderOptions.new/0`, which is what every real build wants: its passes are
@@ -71,7 +74,7 @@ defmodule ArchiDep.CourseSite.Build.Site.Options do
   end
 
   defp layout!(opts) do
-    case Keyword.get(opts, :layout, Minimal) do
+    case Keyword.get(opts, :layout, Chrome) do
       layout when is_atom(layout) and not is_nil(layout) ->
         layout
 

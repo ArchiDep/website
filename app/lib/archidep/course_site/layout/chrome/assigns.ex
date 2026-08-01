@@ -1,6 +1,12 @@
 defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   @moduledoc """
-  Everything the chrome draws, worked out before a byte of it is drawn.
+  Everything one page is drawn from, worked out before a byte of it is drawn.
+
+  Not only the chrome, despite the name it sits under: the page's own content is
+  in here beside the navigation and the links, because what the chrome does with
+  a page is place it, and something placing a page needs the page. Whatever
+  draws one is handed this and nothing else, which is why the components take it
+  as `page` rather than as a bag of chrome.
 
   A layout owes the build every reference it could not resolve, not the first
   one (`ArchiDep.CourseSite.Layout` says why). A template cannot do that: HEEx
@@ -67,9 +73,10 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   alias ArchiDep.Emoji
 
   @enforce_keys [
-    :page,
+    :ref,
     :kind,
     :title,
+    :graded?,
     :content,
     :toc,
     :metadata_html,
@@ -79,15 +86,18 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     :sections,
     :cheatsheets,
     :base_path,
+    :standalone?,
+    :legend_emoji,
     :page_class,
     :cloud_server,
     :pdf_tooltip,
     :links
   ]
   defstruct [
-    :page,
+    :ref,
     :kind,
     :title,
+    :graded?,
     :content,
     :toc,
     :metadata_html,
@@ -97,6 +107,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     :sections,
     :cheatsheets,
     :base_path,
+    :standalone?,
+    :legend_emoji,
     :page_class,
     :cloud_server,
     :pdf_tooltip,
@@ -110,14 +122,15 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   @type kind :: :home | :subject | :exercise | :cheatsheet | :deck
 
   @typedoc """
-  What the chrome of one page is drawn from: which page it is and how it is laid
-  out, what the page itself says, the course beside it, the build around it, and
-  every URL it writes.
+  What one page is drawn from: which page it is and how it is laid out, what the
+  page itself says, the course beside it, the build around it, and every URL it
+  writes.
   """
   @type t :: %__MODULE__{
-          page: PageRef.t(),
+          ref: PageRef.t(),
           kind: kind(),
           title: String.t() | nil,
+          graded?: boolean(),
           content: Page.t() | Slides.t(),
           toc: [Entry.t()],
           metadata_html: String.t(),
@@ -127,6 +140,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
           sections: [MenuSection.t()],
           cheatsheets: [MenuEntry.t()],
           base_path: String.t(),
+          standalone?: boolean(),
+          legend_emoji: %{String.t() => String.t()},
           page_class: String.t(),
           cloud_server: String.t() | nil,
           pdf_tooltip: String.t(),
@@ -161,6 +176,21 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   # punctuation beside the title rather than as an illustration of it.
   @menu_emoji_class "size-4"
 
+  # The pictures an exercise's legend explains, drawn at the size the prose
+  # around them is drawn at rather than sized here: in the legend they are read
+  # as words, not as icons. They are keyed by the name the course itself writes
+  # them under, which is what the legend reads them back by.
+  @legend_emoji %{
+    legend_trophy: "trophy",
+    legend_scroll: "scroll",
+    legend_exclamation: "exclamation",
+    legend_question: "question",
+    legend_space_invader: "space_invader",
+    legend_checkered_flag: "checkered_flag",
+    legend_classical_building: "classical_building",
+    legend_boom: "boom"
+  }
+
   # The identifiers of the headings the chrome draws. They are named here rather
   # than in the templates because the navigation and the heading must agree, and
   # the two are drawn in different places.
@@ -183,13 +213,17 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   resolve.
 
   Every reference is attempted before the first failure is reported, so a build
-  missing two files names both rather than taking one run per file.
+  missing two files names both rather than taking one run per file. They come
+  back sorted and without repeats, so that the same build reports the same thing
+  twice running and one missing file is one problem: which reference the chrome
+  happened to ask for first, and how many places it draws the same picture, are
+  not things anybody reading the list should have to know.
   """
   @spec build(LayoutContext.t()) :: {:ok, t()} | {:error, nonempty_list(Urls.error())}
   def build(%LayoutContext{} = context) do
     resolved = links(context)
 
-    case Enum.reverse(resolved.errors) do
+    case resolved.errors |> Enum.sort() |> Enum.uniq() do
       [] -> {:ok, assigns(context, resolved.links)}
       [_first | _rest] = errors -> {:error, errors}
     end
@@ -224,11 +258,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
 
   defp assigns(%LayoutContext{} = context, links) do
     %__MODULE__{
-      page: context.page,
+      ref: context.page,
       kind: kind(context),
       title: context.metadata.page_title,
+      graded?: graded?(context),
       content: context.content,
-      toc: toc(context),
+      toc: toc(context, links),
       metadata_html: PageMetadata.to_html(context.metadata),
       policy: Policy.of(context.urls),
       site: context.site,
@@ -236,6 +271,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
       sections: sections(context, links),
       cheatsheets: cheatsheets(context, links),
       base_path: UrlContext.content_prefix(context.urls),
+      standalone?: context.urls.mode != :live,
+      legend_emoji: legend_emoji(links),
       page_class: page_class(context),
       cloud_server: front_matter(context, "cloud_server"),
       pdf_tooltip: pdf_tooltip(kind(context)),
@@ -245,19 +282,38 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
 
   defp links(%LayoutContext{} = context) do
     %{urls: context.urls, page: context.page, links: %{}, errors: []}
-    |> required(:theme_css, {:asset, "/assets/theme/theme.css"})
-    |> required(:course_js, {:asset, "/assets/course/course.js"})
+    |> stylesheets_and_scripts(context)
     |> required(:home, :home)
     |> required(:favicon, {:root_file, "favicon.ico"})
     |> required(:heig_logo, {:root_file, "favicons/heig.png"})
+    |> required(:logo, {:root_file, "favicons/archidep-512-flat.png"})
     |> required(:coffee_logo, {:root_file, "favicons/archidep-coffee.png"})
     |> favicons()
-    |> emoji()
+    |> menu_emoji()
+    |> emoji(@legend_emoji)
     |> put(:repository, @repository)
     |> put(:branch, branch_url(context.site))
     |> put(:source, source_url(context))
+    |> deck(context)
     |> optional(:page_pdf, {:pdf, context.page})
-    |> deck_pdf(context)
+  end
+
+  # A page and a deck load nothing in common: one is the site, the other is a
+  # presentation the site happens to publish. Each build asks only for what the
+  # page it is drawing will actually load, so a missing deck stylesheet cannot
+  # fail a chapter that has no deck.
+  defp stylesheets_and_scripts(resolved, %LayoutContext{content: %Slides{}}) do
+    resolved
+    |> required(:slides_css, {:asset, "/assets/course/slides.css"})
+    |> required(:theme_slides_css, {:asset, "/assets/theme/slides.css"})
+    |> required(:slides_js, {:asset, "/assets/course/slides.js"})
+    |> required(:slides_mermaid_js, {:asset, "/assets/course/slides-mermaid.js"})
+  end
+
+  defp stylesheets_and_scripts(resolved, %LayoutContext{}) do
+    resolved
+    |> required(:theme_css, {:asset, "/assets/theme/theme.css"})
+    |> required(:course_js, {:asset, "/assets/course/course.js"})
   end
 
   defp favicons(resolved) do
@@ -266,17 +322,38 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     end)
   end
 
-  defp emoji(resolved) do
-    Enum.reduce(@menu_emoji, resolved, fn {key, {name, _alt}}, resolved ->
-      emoji = Emoji.fetch!(name)
-      required(resolved, key, {:asset, Emoji.asset_path(emoji)})
+  defp menu_emoji(resolved) do
+    emoji(resolved, Map.new(@menu_emoji, fn {key, {name, _alt}} -> {key, name} end))
+  end
+
+  defp emoji(resolved, names) do
+    Enum.reduce(names, resolved, fn {key, name}, resolved ->
+      required(resolved, key, {:asset, Emoji.asset_path(Emoji.fetch!(name))})
     end)
   end
 
-  defp deck_pdf(resolved, %LayoutContext{entry: %Chapter{slides: %DocumentRef{} = deck}}),
-    do: optional(resolved, :deck_pdf, {:pdf, {:document, deck}})
+  # The legend reads its pictures back by the name the course writes them under,
+  # so what it is handed is keyed by that rather than by the key they were
+  # resolved under.
+  defp legend_emoji(links) do
+    Map.new(@legend_emoji, fn {key, name} ->
+      {name, Emoji.img(Emoji.fetch!(name), Map.fetch!(links, key))}
+    end)
+  end
 
-  defp deck_pdf(resolved, %LayoutContext{}), do: resolved
+  # A chapter that was presented links to its deck twice: to the deck itself,
+  # which always resolves, and to the deck printed as a PDF, which resolves only
+  # once somebody has printed it.
+  defp deck(resolved, %LayoutContext{entry: %Chapter{slides: %DocumentRef{} = deck}}) do
+    resolved
+    |> required(:deck, {:document, deck})
+    |> optional(:deck_pdf, {:pdf, {:document, deck}})
+  end
+
+  defp deck(resolved, %LayoutContext{}), do: resolved
+
+  defp graded?(%LayoutContext{entry: %Chapter{graded?: graded?}}), do: graded?
+  defp graded?(%LayoutContext{}), do: false
 
   defp required(resolved, key, reference) do
     case Urls.resolve(resolved.urls, reference, resolved.page) do
@@ -358,29 +435,37 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   # chapter's presentation, an exercise's legend — because the reader sees those
   # first. The renderer never sees them: they are not in the document, so
   # nothing but this can put them in front of the document's own.
-  defp toc(%LayoutContext{content: %Slides{}}), do: []
+  defp toc(%LayoutContext{content: %Slides{}}, _links), do: []
 
-  defp toc(%LayoutContext{content: %Page{toc: entries}} = context),
-    do: chrome_headings(context) ++ entries
+  defp toc(%LayoutContext{content: %Page{toc: entries}} = context, links),
+    do: chrome_headings(context, links) ++ entries
 
-  defp chrome_headings(%LayoutContext{entry: %Chapter{slides: %DocumentRef{}}} = context) do
+  defp chrome_headings(%LayoutContext{entry: %Chapter{slides: %DocumentRef{}}} = context, _links) do
     case kind(context) do
       :subject -> [heading(@presentation_id, "Presentation")]
       _other -> []
     end
   end
 
-  defp chrome_headings(%LayoutContext{} = context) do
+  defp chrome_headings(%LayoutContext{} = context, links) do
     case kind(context) do
-      :exercise -> exercise_headings(context)
+      :exercise -> exercise_headings(context, links)
       _other -> []
     end
   end
 
-  defp exercise_headings(%LayoutContext{entry: %Chapter{graded?: true}}),
-    do: [heading(@graded_id, "Graded exercise"), heading(@legend_id, "Legend")]
+  # An entry says what the heading it points at says, pictures included, which
+  # is why these are drawn here rather than named: the two are read as one line.
+  defp exercise_headings(%LayoutContext{entry: %Chapter{graded?: true}}, links),
+    do: [
+      heading(@graded_id, decorated(links, "trophy", "Graded exercise")),
+      heading(@legend_id, decorated(links, "scroll", "Legend"))
+    ]
 
-  defp exercise_headings(%LayoutContext{}), do: [heading(@legend_id, "Legend")]
+  defp exercise_headings(%LayoutContext{}, links),
+    do: [heading(@legend_id, decorated(links, "scroll", "Legend"))]
+
+  defp decorated(links, name, label), do: "#{Map.fetch!(legend_emoji(links), name)} #{label}"
 
   defp heading(id, label), do: %Entry{id: id, level: 2, label_html: label, entries: []}
 

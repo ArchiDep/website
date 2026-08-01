@@ -177,12 +177,13 @@ points (`theme.css` and `slides.css`) and uses the following directives:
 - `@theme { ... }` defines design tokens such as the custom `xs` breakpoint
   (`--breakpoint-xs`) and the title font (`--font-title`).
 - `@source "..."` tells Tailwind which files to scan for class names. The theme
-  scans the application's web templates (`app/lib/archidep_web`), the
-  [Flashy][flashy] dependency used for notifications, and the course material
-  (`course/collections`, `course/_includes`, `course/_layouts`,
-  `course/_plugins`, `course/_posts`, `course/index.md` and
+  scans the application's web templates (`app/lib/archidep_web`), the course
+  site's own chrome (`app/lib/archidep/course_site/layout`, which is Elixir
+  rather than Liquid), the [Flashy][flashy] dependency used for notifications,
+  and the course material (`course/collections`, `course/_includes`,
+  `course/_layouts`, `course/_plugins`, `course/_posts`, `course/index.md` and
   `course/src/assets`). This is why the theme must be rebuilt whenever utility
-  classes change in either component (see [Integration With Other
+  classes change in any of them (see [Integration With Other
   Components](#integration-with-other-components)).
 - `@source inline("...")` safelists classes that are composed dynamically and
   therefore cannot be discovered by scanning, such as the `section-{0..10}`

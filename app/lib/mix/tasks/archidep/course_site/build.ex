@@ -36,6 +36,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     Defaults to `25-26`.
   - `--output` — where to write. Defaults to `tmp/course_site`.
   - `--clean` — empty the output directory first.
+  - `--minimal` — wrap the pages in the bare layout rather than the site's own
+    chrome, to tell a page that is wrong from chrome that is.
   - `--undigested` — take the global assets to carry no digest.
 
   Where the build is published, which is what every URL in it follows from:
@@ -54,6 +56,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.Build.LinkCheck
   alias ArchiDep.CourseSite.Build.Site
+  alias ArchiDep.CourseSite.Layout.Chrome
+  alias ArchiDep.CourseSite.Layout.Minimal
   alias ArchiDep.CourseSite.SiteInfo
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Urls.UrlContext
@@ -79,6 +83,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     static: :string,
     output: :string,
     clean: :boolean,
+    minimal: :boolean,
     undigested: :boolean,
     mode: :string,
     base_path: :string,
@@ -147,6 +152,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
 
     Site.Options.new(
       urls: urls,
+      layout: if(Keyword.get(opts, :minimal, false), do: Minimal, else: Chrome),
       site:
         SiteInfo.new(
           version: Mix.Project.config()[:version],

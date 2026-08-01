@@ -266,8 +266,10 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 
 **Static build, archival and per-year versions**
 
-- [ ] Implement the static build step writing to the same `priv/static` layout
-      Jekyll produces — see [Static build step](#static-build-step).
+- [x] Implement the static build step writing to the same `priv/static` layout
+      Jekyll produces — see [Static build step](#static-build-step). **Done in
+      two halves**: the writer, then the chrome that replaced `Layout.Minimal`
+      as what a build writes with.
 - [ ] Port the home page's three progress cards — "Previously", "Due next",
       "Next time". They are the one read of the progress source with no Elixir
       consumer yet, and the only one needing the **individual sessions** rather
@@ -275,18 +277,24 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       Waits on the static build step above, there being no Elixir home page
       before it. The two rules that are easy to get wrong are recorded in
       [Metadata generation](#metadata-generation).
+- [ ] Port `course/404.html`, deciding whether it is a page with chrome or a
+      `{:site_file, "404.html"}` the build writes verbatim. It is not a page of
+      the course — no `PageRef`, no `DocumentRef`, HTML rather than Markdown, and
+      an inline `<style>` — so it is a different shape of work from the chrome,
+      but it must land before [cutover](#cutover).
 - [ ] Serve the build via Phoenix `Plug.Static` in development and via a
       separate static server (reverse-proxy routed) in production, publishing
       in-process rebuilds atomically to a shared volume — see [Development and
       production serving](#development-and-production-serving).
 - [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
       Pages backup) — see [Standalone / archival mode](#standalone--archival-mode).
-- [ ] Derive the dashboard-free chrome policy from `mode` instead of the host,
-      port it as one explicit list of dynamic chrome, and apply its two
-      non-`:live` rules: the sidebar's app-navigation icon submenu is dropped
-      entirely (not reduced to its home entry) in `:backup` and `:archive`, and
-      the home page's progress cards are hidden unconditionally in `:archive` —
-      see [Standalone / archival mode](#standalone--archival-mode).
+- [ ] Hide the home page's progress cards unconditionally in `:archive` — see
+      [Standalone / archival mode](#standalone--archival-mode). The rest of this
+      item is **done**: `Chrome.Policy` is the explicit list of dynamic chrome,
+      derived from `mode` rather than from the host, and the sidebar's
+      app-navigation submenu is dropped entirely outside `:live`. What is left is
+      keyed differently from every field it holds, which is why it waits for the
+      cards themselves.
 - [ ] Support an optional URL prefix (e.g. `/2026/`) for per-year archived
       versions — see [Optional URL prefix](#optional-url-prefix).
 - [ ] Emit the two "not the current thing" banners from the first build, not at
@@ -2547,8 +2555,7 @@ production serving](#development-and-production-serving). The runtime serving
 mode stays explicitly out of scope (see [An architectural fork worth deciding
 early](#an-architectural-fork-worth-deciding-early)).
 
-**Corrections while implementing the writer half**, the chrome being the second
-half of this task:
+**Corrections while implementing the writer half:**
 
 - **The driver splits three ways rather than being one function.** Rendering the
   whole site is _pure_ — given the content, the course, its progress and where
@@ -2584,6 +2591,81 @@ half of this task:
 - **`archidep.json` comes out byte-for-byte identical** to the one Jekyll
   produces, and the page and page-asset file sets match it exactly, modulo the
   digest each file now carries.
+
+**Corrections while implementing the chrome half:**
+
+- **The chrome is HEEx, and "no Phoenix" was the wrong rule.** What the
+  subsystem must keep out is anything needing a _running system_ — a `Repo`, an
+  `Endpoint`, a request — not anything named Phoenix. A component is a function
+  of its assigns and `Phoenix.HTML.Safe` writes one out with no conn and no
+  socket, which is what lets the chrome be markup written the way the dashboard
+  writes markup. `~p` stays out, and out by construction: `use
+Phoenix.Component` never imports `Phoenix.VerifiedRoutes`.
+- **Everything resolves before anything is drawn**, into `Chrome.Assigns`. This
+  is not tidiness: HEEx evaluates as it goes, so a template resolving its own
+  references could only raise on the first failure or swallow it, and the
+  behaviour owes the build _every_ failure. Resolving first also means the
+  templates cannot fail, so a page missing from the output is always a page the
+  build refused.
+- **The errors come back sorted and deduplicated.** The chrome draws the same
+  picture in more than one place, and which reference it happened to ask for
+  first is not something a reader of the list should have to know.
+- **Icons are `Heroicons`, not a copy.** The partials are Heroicons paths
+  verbatim and the package is already a dependency; copying them here would be a
+  third copy of the same SVGs, which is the duplication being removed. Only
+  GitHub's mark is drawn by hand — the one chrome icon the package lacks. Two
+  things to know rather than to design around: Heroicons' own components carry
+  `data-phx-loc` in a build made in `:dev` (our modules opt out with
+  `@debug_heex_annotations false`, which cannot reach a dependency), and
+  whole-HTML tests pin the package's markup.
+- **Three of Jekyll's anchors never resolved.** `#presentation`,
+  `#-graded-exercise` and `#scroll-legend` all pointed at headings with no `id`,
+  since `jekyll-toc` derived entries from headings the layout wrote and the
+  layout wrote none. The port writes them, and names them by what the heading
+  says rather than by its decoration: `graded-exercise`, `legend`.
+- **The navigation had a duplicate `id="toc"`**, one per copy of the same list.
+  Neither copy carries it now; `theme/src/toc.css` reaches them through the
+  `aside` and the `nav` around them, which is what tells the two apart anyway.
+- **The sidebar says `course-item-done`, not the border classes.** The theme
+  already defines those under `#course-material-menu` for the dashboard's copy
+  of this menu, so saying it the same way is what stops the two from drifting —
+  and makes the cutover deduplication a deletion. One class was missing and has
+  been added: `course-item-current`, the page being read, which the dashboard
+  never needs because the dashboard is not one of the pages the menu lists.
+- **A cheatsheet has no progress and now says so.** It was briefly `:future`,
+  which is both a claim nobody made and visibly wrong — `:future` is what the
+  navigation dims, and a cheatsheet is never dimmed. `MenuEntry.status` is `nil`
+  for one.
+- **The status badge is `:live`-only**, where Jekyll drew it everywhere. The
+  backup copy is read precisely when the site the badge reports on is down, so a
+  green dot there contradicts the reason somebody is looking at it. The header's
+  **login button** moves the same way, where today it sits outside the
+  standalone gate that hides the profile menu beside it.
+- **The chrome policy landed here rather than in its own task.** The rules were
+  already enumerated (see [Standalone / archival
+  mode](#standalone--archival-mode)); writing six `:live`-shaped blocks and
+  threading a policy through them later was the larger, riskier change. What is
+  left of that item is the progress-cards rule, which is keyed differently.
+- **No page carries a PDF link yet.** Nothing populates `PdfManifest`, so
+  `{:pdf, _}` never resolves and every download link is left out — which is the
+  decided behaviour, not a regression, but the fidelity gate has to be told.
+- **`SiteInfo` gained the edition.** The academic year is read by the print
+  header and the deck's footer and was carried by nothing; the alternative,
+  deriving it from the `version` knob, does not work for a build that has no
+  version. The repository URL went the other way and is a constant of the
+  chrome: there is one repository, and a build that could claim another could
+  lie about where its own pages are.
+- **Four front-matter keys stopped being read.** `title_include` named a Liquid
+  partial that will not exist — the home page draws its own title because it
+  _is_ the home page. `pdf_name` and `pdf_title` are `PdfManifest`'s business.
+  `subtitle` is read by `toc.html` and set by no document.
+- **The home page now has an opening.** Jekyll gave `excerpt` to collection
+  documents only, so `index.md` had an empty one; the renderer splits every page
+  the same way, so its first paragraph now sits above the folded navigation and
+  is what the page says it is about.
+- **Eight icon partials are used by neither the content nor the chrome**, and
+  `theme.css` sources a `course/_posts` directory that does not exist. Both are
+  cutover cleanup rather than this task's.
 
 ### Development and production serving
 

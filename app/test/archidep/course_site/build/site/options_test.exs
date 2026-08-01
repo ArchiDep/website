@@ -4,20 +4,20 @@ defmodule ArchiDep.CourseSite.Build.Site.OptionsTest do
   import ArchiDep.Support.CourseSiteFactory, only: [build: 2]
 
   alias ArchiDep.CourseSite.Build.Site.Options
-  alias ArchiDep.CourseSite.Layout.Minimal
+  alias ArchiDep.CourseSite.Layout.Chrome
   alias ArchiDep.CourseSite.Renderer.RenderOptions
   alias ArchiDep.CourseSite.SiteInfo
   alias ArchiDep.Support.CourseSiteTestLayout
 
   describe "new/1" do
-    test "states what a build is, wrapping its pages in the bare layout by default" do
+    test "states what a build is, wrapping its pages in the site's own chrome by default" do
       urls = build(:url_context, version: nil)
       site = SiteInfo.new(version: "1.2.3", years: "2025-2026", years_short: "25-26")
 
       assert Options.new(urls: urls, site: site) == %Options{
                urls: urls,
                site: site,
-               layout: Minimal,
+               layout: Chrome,
                render_options: RenderOptions.new()
              }
     end

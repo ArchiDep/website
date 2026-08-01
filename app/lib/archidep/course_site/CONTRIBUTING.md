@@ -27,6 +27,7 @@ and tooling that also apply here. Read that document first.
 - [Building](#building)
   - [Checking it against the real content](#checking-it-against-the-real-content)
 - [Laying a page out](#laying-a-page-out)
+  - [The chrome](#the-chrome)
 - [Rendering](#rendering)
   - [Every tag body is its own Markdown document](#every-tag-body-is-its-own-markdown-document)
   - [The tags the course writes](#the-tags-the-course-writes)
@@ -54,10 +55,27 @@ This subsystem renders the [course material
 site](../../../../course/CONTRIBUTING.md) — the chapters, cheatsheets and slides
 that make up most of the website — and writes it as a set of static files.
 
-It is **pure and self-contained**: no database, no processes, no Phoenix. A
-build is a function of its inputs, which is what lets the same code produce the
-live site, a backup copy hosted elsewhere, a frozen archive of a past edition,
-and the build printed to PDF.
+It is **pure and self-contained**: no `Repo`, no `Endpoint`, no processes, no
+request. A build is a function of its inputs, which is what lets the same code
+produce the live site, a backup copy hosted elsewhere, a frozen archive of a
+past edition, and the build printed to PDF.
+
+It does use `Phoenix.Component`. The site's chrome is markup, and markup is
+written in HEEx here as it is in the dashboard — but nothing about that needs an
+application to be running: a component is a function of its assigns, and
+[`Chrome.Html`](../../../lib/archidep/course_site/layout/chrome/html.ex) turns
+one into a string with no conn and no socket. What the rule keeps out is
+anything that would need a _running system_ rather than anything named Phoenix.
+`~p` is out with it, and out by construction rather than by discipline: `use
+Phoenix.Component` does not import `Phoenix.VerifiedRoutes`, so a verified route
+does not compile here. Every URL goes through
+[`Urls.resolve/2,3`](#url-and-link-emission) instead, which is the rule a stray
+`~p` would break loudly rather than quietly.
+
+Every module writing HEEx here also sets `@debug_heex_annotations false` and
+`@debug_attributes false`. Those are read at compile time and are on in
+development, and what this subsystem writes is a file somebody publishes rather
+than a page somebody is debugging in a browser.
 
 Two modules stand outside that, each in one named way, and naming them is what
 keeps the claim checkable:
@@ -547,6 +565,55 @@ its stylesheets, a page's PDF — can fail to resolve, and which of those is fat
 is the layout's to know. A missing stylesheet is a build nobody can read; a PDF
 that has not been exported yet is a download link left out.
 
+Two layouts fit the seam. [`Minimal`](./layout/minimal.ex) is the least a
+document can be wrapped in and still be shown, for a build whose chrome is not
+what is being looked at; [`Chrome`](./layout/chrome.ex) is the site's own, and
+what every real build uses.
+
+### The chrome
+
+`Chrome` is one module per thing the Jekyll site kept in a template, under
+[`layout/chrome/`](./layout/chrome): the [document](./layout/chrome/document.ex)
+and the [deck](./layout/chrome/deck.ex) it dispatches between, the
+[header](./layout/chrome/header.ex), [sidebar](./layout/chrome/sidebar.ex) and
+[footer](./layout/chrome/footer.ex) around every page, the
+[article](./layout/chrome/article.ex) holding one, and the blocks it opens with
+— a chapter's [presentation](./layout/chrome/presentation.ex), an exercise's
+[legend](./layout/chrome/legend.ex), the home page's
+[title](./layout/chrome/home.ex).
+
+**Everything is resolved before anything is drawn.**
+[`Chrome.Assigns`](./layout/chrome/assigns.ex) is where that happens, and it is
+what makes the reporting above possible at all: HEEx evaluates what is
+interpolated into it as it goes, so a template resolving its own references
+could only raise on the first failure or swallow it, and neither is reporting.
+Resolving first means the templates deal in strings and cannot fail — so a page
+missing from the output is always a page the build refused, never one something
+threw half way through.
+
+Reading `Urls`, only two references the chrome writes can fail: a global asset
+that is not in the manifest and a page whose PDF has not been published. So the
+fatal/omit split is exactly two combinators, `required` and `optional`, and
+which one a reference goes through _is_ the decision the layout is making.
+
+The same module owns the two things the chrome knows that no document does: the
+identifiers of the headings it draws (a page's navigation and the heading it
+points at are drawn in different places and have to agree), and the entries
+those headings add to the front of a page's own.
+
+**What a build carries of the running application** is
+[`Chrome.Policy`](./layout/chrome/policy.ex): one value, named field by field,
+derived from `UrlContext` `mode` and never from the host. A past edition has no
+dashboard whichever host serves it, and the backup copy exists for when the
+application is unreachable.
+
+**Icons come from `Heroicons`**, the package the dashboard already draws from,
+rather than being copied here — a third copy of the same paths is the
+duplication this rendering exists to remove.
+[`Chrome.Icons`](./layout/chrome/icons.ex) holds the one icon that package does
+not have. The icons a _document_ asks for are a different thing entirely: they
+are part of what the page says, and go through the partials it includes.
+
 ## Rendering
 
 [`Renderer`](./renderer.ex) turns one source file into what the site serves for
@@ -1013,8 +1080,25 @@ subsystem:
   of it, and a projection of it would be a projection of the thing under test.
   Each file builds its expected wrapper with a helper the test passes the parts
   it is about, so that a test still asserts a whole value.
+- The **chrome** is tested the same way, and for a stronger version of the same
+  reason. The [DOM projection rules][dom] do not apply to it: a projection is
+  right where "the markup is incidental", and here the markup **is** the value
+  and we own all of it — `theme/src/toc.css` selects `.toc-h3 > a`, `course.css`
+  selects `#course-material-menu .course-item-due`, `theme.css` safelists
+  `peer-has-checked/section-{0..10}`, and Tailwind emits nothing for a class it
+  does not scan. A projection that ignored utility classes would ignore
+  precisely what can break. So each part asserts the whole fragment it draws by
+  `==`, built by a helper from the parts that vary between that file's tests.
+- What [`Chrome`](./layout/chrome.ex) itself is tested for is only what it
+  decides over and above its parts: which of the two documents a page becomes,
+  and that a reference that does not resolve is reported rather than drawn
+  around. Everything the chrome works out before drawing is pinned as **values**
+  in [`Chrome.Assigns`](./layout/chrome/assigns.ex)'s own tests, which is where
+  the error list, the flattened navigation and the layout's own headings are
+  asserted.
 
 [app-contributing]: ../../../CONTRIBUTING.md
+[dom]: ../../../docs/testing.md#asserting-the-dom-a-meaningful-projection-not-exact-markup
 [bounded-contexts]: ../../../CONTRIBUTING.md#bounded-contexts
 [properties]: ../../../docs/testing.md#property-based-tests
 [testing]: ../../../docs/testing.md
