@@ -27,7 +27,6 @@
 @source "../../course/index.md";
 @source "../../course/_layouts";
 @source "../../course/_plugins";
-@source "../../course/_posts";
 @source "../../course/src/assets";
 
 @import './shared.css';

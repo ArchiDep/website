@@ -9,6 +9,7 @@
 
 @source "../../course/collections/_course/**/slides/**/*.md";
 @source "../../course/collections/_course/**/slides.md";
+@source "../../app/lib/archidep/course_site/layout/chrome/deck.ex";
 @source "../../course/_layouts/slides.html";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));

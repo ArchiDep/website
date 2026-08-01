@@ -2663,9 +2663,15 @@ Phoenix.Component` never imports `Phoenix.VerifiedRoutes`.
   documents only, so `index.md` had an empty one; the renderer splits every page
   the same way, so its first paragraph now sits above the folded navigation and
   is what the page says it is about.
-- **Eight icon partials are used by neither the content nor the chrome**, and
-  `theme.css` sources a `course/_posts` directory that does not exist. Both are
-  cutover cleanup rather than this task's.
+- **Five icon partials were used by nothing** — `archive-box-arrow-down`,
+  `arrow-path`, `eye-slash`, `play` and `rss` — and `theme.css` sourced a
+  `course/_posts` directory that does not exist. Both are gone. Two more looked
+  dead and are not: `exclamation-triangle` and `exclamation-circle` are asked
+  for by the `note` and `callout` tags, from Elixir rather than from Liquid, so
+  a search of `course/` alone says they are unused.
+- **`slides.css` scanned the Liquid deck layout and nothing else.** A deck's
+  classes now come from the module that writes them, which is what stops them
+  disappearing when that layout is deleted at [cutover](#cutover).
 
 ### Development and production serving
 
