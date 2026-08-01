@@ -301,7 +301,8 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 - [ ] Serve the build via Phoenix `Plug.Static` in development and via a
       separate static server (reverse-proxy routed) in production, publishing
       in-process rebuilds atomically to a shared volume — see [Development and
-      production serving](#development-and-production-serving).
+      production serving](#development-and-production-serving). The development
+      half is planned in [`dev-serving.md`](./dev-serving.md).
 - [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
       Pages backup) — see [Standalone / archival
       mode](#standalone--archival-mode).
