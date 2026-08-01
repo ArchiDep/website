@@ -34,7 +34,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HeaderTest do
 
     render(&Header.header/1, %{
       links: Keyword.get(overrides, :links, @links),
-      policy: %Policy{app_navigation?: account?, account?: account?, badges?: account?},
+      policy: %Policy{
+        app_navigation?: account?,
+        account?: account?,
+        badges?: account?,
+        progress_cards?: true
+      },
       site:
         SiteInfo.new(
           version: "1.2.3",

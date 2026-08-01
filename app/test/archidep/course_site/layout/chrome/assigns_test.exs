@@ -168,11 +168,33 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                 expected(
                   base_path: "/2025",
                   standalone?: true,
-                  policy: %Policy{app_navigation?: false, account?: false, badges?: false},
+                  policy: archived_policy(),
                   sections: sections(prefix: "/2025"),
                   cheatsheets: [cheatsheet_entry(prefix: "/2025")],
                   legend_emoji: legend_emoji("/2025"),
                   links: archived_links()
+                )}
+    end
+
+    test "says nothing about where an archived edition got to, whatever its progress says" do
+      urls =
+        build(:url_context, base_path: "", version: "2025", mode: :archive, assets: manifest())
+
+      assert Assigns.build(context(page: :home, urls: urls)) ==
+               {:ok,
+                expected(
+                  ref: :home,
+                  kind: :home,
+                  page_class: "course-home",
+                  pdf_tooltip: "Home PDF",
+                  toc: [page_heading()],
+                  base_path: "/2025",
+                  standalone?: true,
+                  policy: archived_policy(),
+                  sections: sections(prefix: "/2025", current: nil),
+                  cheatsheets: [cheatsheet_entry(prefix: "/2025")],
+                  legend_emoji: legend_emoji("/2025"),
+                  links: archived_home_links()
                 )}
     end
 
@@ -263,7 +285,11 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     }
   end
 
-  defp live_policy, do: %Policy{app_navigation?: true, account?: true, badges?: true}
+  defp live_policy,
+    do: %Policy{app_navigation?: true, account?: true, badges?: true, progress_cards?: true}
+
+  defp archived_policy,
+    do: %Policy{app_navigation?: false, account?: false, badges?: false, progress_cards?: false}
 
   # What an archived edition writes instead: everything under the edition's own
   # prefix but the files anchored at the mount point, which stay where a browser
@@ -289,6 +315,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       legend_boom: "/2025/assets/emoji/1f4a5.svg"
     })
   end
+
+  # The same edition's home page, which has no deck to link to and is written
+  # somewhere else.
+  defp archived_home_links,
+    do:
+      archived_links()
+      |> Map.delete(:deck)
+      |> Map.put(:source, source_url("course/index.md"))
 
   # Every URL the chrome of a page writes. No PDF is ever among them: nothing
   # populates the manifest, so no page offers a download.

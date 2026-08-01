@@ -108,7 +108,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.SidebarTest do
       sections: Keyword.get(overrides, :sections, [section()]),
       cheatsheets: Keyword.get(overrides, :cheatsheets, [cheatsheet()]),
       links: @links,
-      policy: %Policy{app_navigation?: app_navigation?, account?: true, badges?: true},
+      policy: %Policy{
+        app_navigation?: app_navigation?,
+        account?: true,
+        badges?: true,
+        progress_cards?: true
+      },
       home?: Keyword.get(overrides, :home?, false),
       version: "1.2.3",
       commit: "main@abc1234"
@@ -280,7 +285,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.SidebarTest do
   defp footer_markup do
     %{
       links: @links,
-      policy: %Policy{app_navigation?: true, account?: true, badges?: true},
+      policy: %Policy{app_navigation?: true, account?: true, badges?: true, progress_cards?: true},
       version: "1.2.3",
       commit: "main@abc1234",
       __changed__: nil

@@ -305,13 +305,18 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 - [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
       Pages backup) — see [Standalone / archival
       mode](#standalone--archival-mode).
-- [ ] Hide the home page's progress cards unconditionally in `:archive` — see
+- [x] Hide the home page's progress cards unconditionally in `:archive` — see
       [Standalone / archival mode](#standalone--archival-mode). The rest of this
-      item is **done**: `Chrome.Policy` is the explicit list of dynamic chrome,
-      derived from `mode` rather than from the host, and the sidebar's
-      app-navigation submenu is dropped entirely outside `:live`. What is left
-      is keyed differently from every field it holds, which is why it waits for
-      the cards themselves.
+      item was already done: `Chrome.Policy` is the explicit list of dynamic
+      chrome, derived from `mode` rather than from the host, and the sidebar's
+      app-navigation submenu is dropped entirely outside `:live`. **Done**: a
+      `progress_cards?` field of the same policy, which `Chrome.Assigns` reads
+      where it builds the cards, so an archive's home page holds none rather
+      than holding three nobody draws. It is keyed on `mode != :archive` where
+      every other field is `mode == :live`, which is what makes the policy
+      _which parts of the chrome a build carries_ rather than what a build
+      carries of the running application: the cards are the one entry that is
+      not about the dashboard at all.
 - [ ] Support an optional URL prefix (e.g. `/2026/`) for per-year archived
       versions — see [Optional URL prefix](#optional-url-prefix).
 - [ ] Emit the two "not the current thing" banners from the first build, not at

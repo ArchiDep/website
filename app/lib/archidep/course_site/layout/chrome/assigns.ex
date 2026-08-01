@@ -270,6 +270,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   def heading_id(:legend), do: @legend_id
 
   defp assigns(%LayoutContext{} = context, links) do
+    policy = Policy.of(context.urls)
+
     %__MODULE__{
       ref: context.page,
       kind: kind(context),
@@ -278,12 +280,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
       content: context.content,
       toc: toc(context, links),
       metadata_html: PageMetadata.to_html(context.metadata),
-      policy: Policy.of(context.urls),
+      policy: policy,
       site: context.site,
       commit: Footer.commit(context.site),
       sections: sections(context, links),
       cheatsheets: cheatsheets(context, links),
-      cards: cards(context, links),
+      cards: cards(context, policy, links),
       base_path: UrlContext.content_prefix(context.urls),
       standalone?: context.urls.mode != :live,
       legend_emoji: legend_emoji(links),
@@ -405,8 +407,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   # single session rather than from the whole progression — see
   # `ArchiDep.CourseSite.Progress.last_recorded/3`. Every other page is handed
   # none: working out what the course did last time for a page that does not say
-  # so would be fifty-five answers nobody reads.
-  defp cards(%LayoutContext{} = context, links) do
+  # so would be fifty-five answers nobody reads. Whether a build says where the
+  # course has got to at all is the policy's to answer, not the progress
+  # source's.
+  defp cards(%LayoutContext{}, %Policy{progress_cards?: false}, _links), do: []
+
+  defp cards(%LayoutContext{} = context, %Policy{progress_cards?: true}, links) do
     case kind(context) do
       :home -> Enum.flat_map(@cards, &card(&1, context, links))
       _other -> []

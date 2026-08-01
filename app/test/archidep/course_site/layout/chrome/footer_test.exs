@@ -25,7 +25,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
     end
 
     test "leaves out the status badge in a build that is not the live site" do
-      assert render(policy: %Policy{app_navigation?: false, account?: false, badges?: false}) ==
+      assert render(
+               policy: %Policy{
+                 app_navigation?: false,
+                 account?: false,
+                 badges?: false,
+                 progress_cards?: false
+               }
+             ) ==
                expected_footer(status_badge: "", version: version_markup(commit: nil))
     end
   end
@@ -47,7 +54,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
   defp render(overrides) do
     [
       links: @links,
-      policy: %Policy{app_navigation?: true, account?: true, badges?: true},
+      policy: %Policy{app_navigation?: true, account?: true, badges?: true, progress_cards?: true},
       version: "1.2.3"
     ]
     |> Keyword.merge(overrides)

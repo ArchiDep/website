@@ -66,7 +66,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
       content: %Slides{markdown: Keyword.get(overrides, :markdown, "# DNS\n")},
       toc: [],
       metadata_html: "<title>Domain Name System (DNS) · ArchiDep</title>",
-      policy: %Policy{app_navigation?: true, account?: true, badges?: true},
+      policy: %Policy{app_navigation?: true, account?: true, badges?: true, progress_cards?: true},
       site: site(overrides),
       commit: Keyword.get(overrides, :commit, "main@abc123"),
       sections: [],

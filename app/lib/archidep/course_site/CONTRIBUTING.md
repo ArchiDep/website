@@ -605,11 +605,14 @@ identifiers of the headings it draws (a page's navigation and the heading it
 points at are drawn in different places and have to agree), and the entries
 those headings add to the front of a page's own.
 
-**What a build carries of the running application** is
+**Which parts of the chrome a build carries** is
 [`Chrome.Policy`](./layout/chrome/policy.ex): one value, named field by field,
 derived from `UrlContext` `mode` and never from the host. A past edition has no
 dashboard whichever host serves it, and the backup copy exists for when the
-application is unreachable.
+application is unreachable. The fields are not keyed alike — the home page's
+progress cards are hidden in an archive alone, for a reason that has nothing to
+do with the dashboard — which is why the module names each one rather than
+deriving them from one boolean.
 
 **Icons come from `Heroicons`**, the package the dashboard already draws from,
 rather than being copied here — a third copy of the same paths is the
@@ -1021,6 +1024,12 @@ md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than
 - **The site publishes no feed.** `jekyll-feed` wrote a `/feed.xml` of a course
   that has no posts, and nothing has ever linked to it but the `feed_meta` tag
   that announced it.
+- **A home page with no cards draws no row for them.** Jekyll emitted the grid
+  holding the "Previously", "Due next" and "Next time" cards whatever it held,
+  guarding each card inside it, so a home page with nothing to say about where
+  the course has got to left an empty `<div>` behind. The row is what holds
+  cards apart, and a page with none of them omits it —
+  [`Chrome.Home`](./layout/chrome/home.ex).
 - **The 404 page carries none of the site's chrome and loads nothing**, where
   the Jekyll one was a page like any other, with the sidebar, the header and the
   theme's stylesheet around it. A host offering a 404 page at all offers exactly

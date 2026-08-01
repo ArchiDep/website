@@ -24,7 +24,11 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Home do
 
   Which chapters each card holds is settled before any of this is drawn, and a
   card with none is [not in the list at
-  all](`ArchiDep.CourseSite.Layout.Chrome.HomeCard`).
+  all](`ArchiDep.CourseSite.Layout.Chrome.HomeCard`). A page handed no cards at
+  all — a year nobody has taught yet, or one that is over ([the
+  policy](`ArchiDep.CourseSite.Layout.Chrome.Policy`) says which) — draws
+  nothing here, not an empty row: the row is what holds cards apart, and there
+  is nothing to hold apart.
   """
 
   use Phoenix.Component
@@ -154,7 +158,10 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Home do
   @spec cards(map()) :: Rendered.t()
   def cards(assigns) do
     ~H"""
-    <div class="not-prose my-4 grid grid-cols-1 xl:grid-cols-3 gap-4 print:hidden">
+    <div
+      :if={@cards != []}
+      class="not-prose my-4 grid grid-cols-1 xl:grid-cols-3 gap-4 print:hidden"
+    >
       <div
         :for={card <- @cards}
         class={["card card-sm 2xl:card-md", style(card.kind).card_class]}

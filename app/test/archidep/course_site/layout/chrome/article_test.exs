@@ -123,7 +123,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
       },
       toc: Keyword.get(overrides, :toc, [@entry]),
       metadata_html: "",
-      policy: %Policy{app_navigation?: true, account?: true, badges?: true},
+      policy: %Policy{app_navigation?: true, account?: true, badges?: true, progress_cards?: true},
       site:
         SiteInfo.new(
           version: "1.2.3",

@@ -70,8 +70,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
                ])
     end
 
-    test "makes room for the cards a course that has recorded nothing has none of" do
-      assert render(&Home.cards/1, %{cards: []}) == expected_cards([])
+    test "draws nothing at all for a course with nothing to say about where it is" do
+      assert render(&Home.cards/1, %{cards: []}) == ""
     end
   end
 

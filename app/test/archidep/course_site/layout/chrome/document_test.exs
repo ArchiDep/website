@@ -154,7 +154,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
         commit: "main@abc123"
       })
 
-  defp live_policy, do: %Policy{app_navigation?: true, account?: true, badges?: true}
+  defp live_policy,
+    do: %Policy{app_navigation?: true, account?: true, badges?: true, progress_cards?: true}
 
   defp site,
     do:
