@@ -5,14 +5,17 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
 
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Layout.Chrome.Assigns
+  alias ArchiDep.CourseSite.Layout.Chrome.HomeCard
   alias ArchiDep.CourseSite.Layout.Chrome.MenuEntry
   alias ArchiDep.CourseSite.Layout.Chrome.MenuSection
   alias ArchiDep.CourseSite.Layout.Chrome.Policy
   alias ArchiDep.CourseSite.Layout.LayoutContext
+  alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Renderer.Page
   alias ArchiDep.CourseSite.Renderer.PageMetadata
   alias ArchiDep.CourseSite.Renderer.Slides
   alias ArchiDep.CourseSite.Renderer.Toc.Entry
+  alias ArchiDep.CourseSite.Session
   alias ArchiDep.CourseSite.SiteInfo
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Structure.Chapter
@@ -105,6 +108,24 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
 
     test "works out everything the page introducing the course is drawn from" do
       assert Assigns.build(context(page: :home)) ==
+               {:ok,
+                expected(
+                  ref: :home,
+                  kind: :home,
+                  page_class: "course-home",
+                  pdf_tooltip: "Home PDF",
+                  toc: [page_heading()],
+                  sections: sections(current: nil),
+                  cards: [
+                    %HomeCard{kind: :previously, entries: [dns_entry("", nil)]},
+                    %HomeCard{kind: :due_next, entries: [todolist_entry("", nil)]}
+                  ],
+                  links: links(deck: false, source: source_url("course/index.md"))
+                )}
+    end
+
+    test "shows the home page of a course nobody has taught yet no cards at all" do
+      assert Assigns.build(context(page: :home, progress: Progress.new([]))) ==
                {:ok,
                 expected(
                   ref: :home,
@@ -231,6 +252,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       commit: Keyword.get(overrides, :commit, "main@abc123"),
       sections: Keyword.get(overrides, :sections, sections()),
       cheatsheets: Keyword.get(overrides, :cheatsheets, [cheatsheet_entry()]),
+      cards: Keyword.get(overrides, :cards, []),
       base_path: Keyword.get(overrides, :base_path, ""),
       standalone?: Keyword.get(overrides, :standalone?, false),
       legend_emoji: Keyword.get(overrides, :legend_emoji, legend_emoji("")),
@@ -323,37 +345,41 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
         slug: "networking",
         status: :due,
         open?: true,
-        entries: [
-          %MenuEntry{
-            url: "#{prefix}/course/507-dns/",
-            title: "Domain Name System (DNS)",
-            emoji_html: menu_emoji(prefix, "book", "Subject"),
-            deck_emoji_html: menu_emoji(prefix, "clapper", "Slides"),
-            status: :due,
-            current?: current == {:document, @dns},
-            deck?: false
-          }
-        ]
+        entries: [dns_entry(prefix, current)]
       },
       %MenuSection{
         title: "Databases",
         slug: "databases",
         status: :future,
         open?: false,
-        entries: [
-          %MenuEntry{
-            url: "#{prefix}/course/205-php-todolist/",
-            title: "PHP Todolist",
-            emoji_html: menu_emoji(prefix, "trophy", "Graded exercise"),
-            deck_emoji_html: nil,
-            status: :future,
-            current?: current == {:document, @todolist},
-            deck?: false
-          }
-        ]
+        entries: [todolist_entry(prefix, current)]
       }
     ]
   end
+
+  # The lines the course is listed as, which the navigation and the home page's
+  # cards are both drawn from.
+  defp dns_entry(prefix, current),
+    do: %MenuEntry{
+      url: "#{prefix}/course/507-dns/",
+      title: "Domain Name System (DNS)",
+      emoji_html: menu_emoji(prefix, "book", "Subject"),
+      deck_emoji_html: menu_emoji(prefix, "clapper", "Slides"),
+      status: :due,
+      current?: current == {:document, @dns},
+      deck?: false
+    }
+
+  defp todolist_entry(prefix, current),
+    do: %MenuEntry{
+      url: "#{prefix}/course/205-php-todolist/",
+      title: "PHP Todolist",
+      emoji_html: menu_emoji(prefix, "trophy", "Graded exercise"),
+      deck_emoji_html: nil,
+      status: :future,
+      current?: current == {:document, @todolist},
+      deck?: false
+    }
 
   defp cheatsheet_entry(overrides \\ []) do
     prefix = Keyword.get(overrides, :prefix, "")
@@ -400,6 +426,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       section: section(page),
       front_matter: %{"title" => "Domain Name System (DNS)"},
       structure: structure(),
+      progress: Keyword.get(overrides, :progress, progress()),
       statuses: %{500 => :due, 507 => :due},
       urls:
         Keyword.get_lazy(overrides, :urls, fn ->
@@ -453,6 +480,11 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       description: "A name.",
       canonical_url: nil
     }
+
+  # One session, which finished the chapter the tests are about and set work on
+  # the other: enough for two of the home page's three cards and none of the
+  # third.
+  defp progress, do: Progress.new([Session.new(~D[2026-02-02], "DNS", [500, 507], [205], [])])
 
   defp structure,
     do: %Structure{

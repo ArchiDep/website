@@ -4,6 +4,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
   import ArchiDep.Support.CourseSiteChrome, only: [icon: 2, render: 1, render: 2]
 
   alias ArchiDep.CourseSite.Layout.Chrome.Home
+  alias ArchiDep.CourseSite.Layout.Chrome.HomeCard
+  alias ArchiDep.CourseSite.Layout.Chrome.MenuEntry
 
   @links %{logo: "/favicons/archidep-512-flat.png", heig_logo: "/favicons/heig.png"}
 
@@ -30,6 +32,100 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
                """)
     end
   end
+
+  describe "cards/1" do
+    test "shows what was covered, what is due and what the next session covers" do
+      cards = [
+        %HomeCard{kind: :previously, entries: [entry("/course/507-dns/", "DNS")]},
+        %HomeCard{kind: :due_next, entries: [entry("/course/508-tls/", "TLS")]},
+        %HomeCard{
+          kind: :next_time,
+          entries: [entry("/course/600-git-hooks/", "Git Hooks"), entry("/course/601-ci/", "CI")]
+        }
+      ]
+
+      assert render(&Home.cards/1, %{cards: cards}) ==
+               expected_cards([
+                 card_markup(
+                   "Previously",
+                   "bg-success text-success-content",
+                   "hover:bg-success-content/10",
+                   "hover:!text-success-content",
+                   [{"/course/507-dns/", "DNS"}]
+                 ),
+                 card_markup(
+                   "Due next",
+                   "bg-warning text-warning-content",
+                   "hover:bg-warning-content/10",
+                   "hover:!text-warning-content",
+                   [{"/course/508-tls/", "TLS"}]
+                 ),
+                 card_markup(
+                   "Next time",
+                   "bg-info text-info-content",
+                   "hover:bg-info-content/10",
+                   "hover:!text-info-content",
+                   [{"/course/600-git-hooks/", "Git Hooks"}, {"/course/601-ci/", "CI"}]
+                 )
+               ])
+    end
+
+    test "makes room for the cards a course that has recorded nothing has none of" do
+      assert render(&Home.cards/1, %{cards: []}) == expected_cards([])
+    end
+  end
+
+  defp entry(url, title),
+    do: %MenuEntry{
+      url: url,
+      title: title,
+      emoji_html: "<E:book>",
+      deck_emoji_html: nil,
+      status: :done,
+      current?: false,
+      deck?: false
+    }
+
+  ## What the cards should draw. The row indents the first card it holds and
+  ## the first line of each, and every one after that follows its predecessor
+  ## directly: HEEx writes the whitespace around a repeated element once.
+
+  defp expected_cards(cards) do
+    String.trim_trailing("""
+    <div class="not-prose my-4 grid grid-cols-1 xl:grid-cols-3 gap-4 print:hidden">
+      #{Enum.join(cards)}
+    </div>
+    """)
+  end
+
+  defp card_markup(title, card_class, line_class, link_class, entries) do
+    ~s(<div class="card card-sm 2xl:card-md #{card_class}">\n) <>
+      ~s(    <div class="card-body">\n) <>
+      ~s(      <p class="card-title font-title text-2xl mt-0 flex-none">\n) <>
+      ~s(        #{title}\n) <>
+      ~s(      </p>\n) <>
+      ~s(      <ul class="flex flex-col gap-y-1">\n) <>
+      ~s(        ) <>
+      Enum.map_join(entries, fn {url, name} -> line_markup(url, name, line_class, link_class) end) <>
+      ~s(\n      </ul>\n) <>
+      ~s(    </div>\n) <>
+      ~s(  </div>)
+  end
+
+  defp line_markup(url, name, line_class, link_class) do
+    ~s(<li class="px-2 py-1 rounded-full #{line_class}">\n) <>
+      ~s(          <a href="#{url}" class="#{link_class}">\n) <>
+      ~s(            #{title_markup(name)}\n) <>
+      ~s(          </a>\n) <>
+      ~s(        </li>)
+  end
+
+  defp title_markup(name),
+    do:
+      ~s(<span class="flex items-center gap-x-2">\n) <>
+        ~s(  <span class="size-4"><E:book></span>\n) <>
+        ~s(  <span>#{name}</span>\n) <>
+        ~s(</span>)
 
   defp expected_title(parts) do
     String.trim_trailing("""

@@ -6,9 +6,11 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
   alias ArchiDep.CourseSite.Layout.Chrome.Article
   alias ArchiDep.CourseSite.Layout.Chrome.Assigns
   alias ArchiDep.CourseSite.Layout.Chrome.Home
+  alias ArchiDep.CourseSite.Layout.Chrome.HomeCard
   alias ArchiDep.CourseSite.Layout.Chrome.Html
   alias ArchiDep.CourseSite.Layout.Chrome.Icons
   alias ArchiDep.CourseSite.Layout.Chrome.Legend
+  alias ArchiDep.CourseSite.Layout.Chrome.MenuEntry
   alias ArchiDep.CourseSite.Layout.Chrome.Policy
   alias ArchiDep.CourseSite.Layout.Chrome.Presentation
   alias ArchiDep.CourseSite.Layout.Chrome.Toc
@@ -17,6 +19,15 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
   alias ArchiDep.CourseSite.SiteInfo
 
   @entry %Entry{id: "what", level: 2, label_html: "What", entries: []}
+  @card_entry %MenuEntry{
+    url: "/course/507-dns/",
+    title: "DNS",
+    emoji_html: "<E:book>",
+    deck_emoji_html: nil,
+    status: :done,
+    current?: false,
+    deck?: false
+  }
   @source "https://github.com/ArchiDep/website/blob/abc123/course/collections/x.md"
 
   describe "article/1" do
@@ -48,11 +59,15 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
     end
 
     test "names the home page by the course rather than by a line of front matter" do
-      assert article(kind: :home, page_class: "course-home") ==
+      cards = [%HomeCard{kind: :previously, entries: [@card_entry]}]
+
+      assert article(kind: :home, page_class: "course-home", cards: cards) ==
                expected(
                  page_class: "course-home",
                  title: render(&Home.title/1, %{links: links(), badges?: true}),
-                 opening: render(&Home.welcome/1, %{})
+                 opening:
+                   render(&Home.welcome/1, %{}) <>
+                     "\n" <> render(&Home.cards/1, %{cards: cards})
                )
     end
 
@@ -120,6 +135,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
       commit: "main@abc123",
       sections: [],
       cheatsheets: [],
+      cards: Keyword.get(overrides, :cards, []),
       base_path: "",
       standalone?: false,
       legend_emoji: legend_emoji(),

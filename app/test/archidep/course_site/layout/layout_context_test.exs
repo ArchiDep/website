@@ -5,8 +5,10 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
 
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Layout.LayoutContext
+  alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Renderer.Page
   alias ArchiDep.CourseSite.Renderer.PageMetadata
+  alias ArchiDep.CourseSite.Session
   alias ArchiDep.CourseSite.SiteInfo
   alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Structure.Chapter
@@ -37,6 +39,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
       chapter = Chapter.new(DocumentRef.new(507, "dns", :subject), "DNS")
       section = Section.new(5, "Deployment", [chapter])
       structure = %Structure{sections: [section], cheatsheets: []}
+      progress = Progress.new([Session.new(~D[2026-02-02], "DNS", [500], [507], [])])
 
       assert LayoutContext.new(
                page: @page,
@@ -47,6 +50,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
                section: section,
                front_matter: %{"title" => "DNS"},
                structure: structure,
+               progress: progress,
                statuses: %{500 => :done, 507 => :due},
                urls: urls,
                site: site
@@ -59,6 +63,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
                section: section,
                front_matter: %{"title" => "DNS"},
                structure: structure,
+               progress: progress,
                statuses: %{500 => :done, 507 => :due},
                urls: urls,
                site: site
@@ -86,6 +91,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
                section: nil,
                front_matter: %{"title" => "DNS"},
                structure: %Structure{sections: [], cheatsheets: []},
+               progress: Progress.new([]),
                statuses: %{},
                urls: urls,
                site: site
@@ -113,6 +119,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
                section: nil,
                front_matter: %{"title" => "DNS"},
                structure: %Structure{sections: [], cheatsheets: []},
+               progress: Progress.new([]),
                statuses: %{},
                urls: urls,
                site: site
@@ -129,6 +136,12 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
       assert_raise ArgumentError,
                    ~s{Content must be a page or a deck, got: "<p>Learn.</p>"},
                    fn -> LayoutContext.new(options(content: "<p>Learn.</p>")) end
+    end
+
+    test "refuses the sessions where the record they unite into belongs" do
+      assert_raise ArgumentError,
+                   "Progress must be a ArchiDep.CourseSite.Progress, got: []",
+                   fn -> LayoutContext.new(options(progress: [])) end
     end
 
     test "refuses statuses that are not chapter numbers" do
@@ -207,6 +220,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
         metadata: @metadata,
         front_matter: %{"title" => "DNS"},
         structure: %Structure{sections: [], cheatsheets: []},
+        progress: Progress.new([]),
         statuses: %{},
         urls: build(:url_context, version: nil),
         site:

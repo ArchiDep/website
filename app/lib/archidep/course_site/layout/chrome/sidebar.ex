@@ -28,6 +28,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Sidebar do
 
   use Phoenix.Component
 
+  alias ArchiDep.CourseSite.Layout.Chrome.EntryTitle
   alias ArchiDep.CourseSite.Layout.Chrome.Footer
   alias ArchiDep.CourseSite.Layout.Chrome.MenuEntry
   alias ArchiDep.CourseSite.Layout.Chrome.MenuSection
@@ -145,7 +146,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Sidebar do
               target={if entry.deck?, do: "_blank", else: "_self"}
               class="flex items-center gap-2"
             >
-              <.entry_title entry={entry} />
+              <EntryTitle.entry_title entry={entry} />
               <span :if={entry.deck_emoji_html}>{Phoenix.HTML.raw(entry.deck_emoji_html)}</span>
               <Heroicons.arrow_top_right_on_square
                 :if={entry.deck?}
@@ -159,24 +160,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Sidebar do
         </li>
         <li :for={entry <- @cheatsheets} class={entry.current? && "course-item-current"}>
           <a href={entry.url} class="flex items-center gap-2">
-            <.entry_title entry={entry} />
+            <EntryTitle.entry_title entry={entry} />
           </a>
         </li>
       </ul>
 
       <Footer.footer links={@links} policy={@policy} version={@version} commit={@commit} />
     </div>
-    """
-  end
-
-  attr :entry, MenuEntry, required: true, doc: "the line of the navigation to name"
-
-  defp entry_title(assigns) do
-    ~H"""
-    <span class="flex items-center gap-x-2">
-      <span class="size-4">{Phoenix.HTML.raw(@entry.emoji_html)}</span>
-      <span>{@entry.title}</span>
-    </span>
     """
   end
 

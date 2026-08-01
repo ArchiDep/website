@@ -7,10 +7,10 @@ defmodule ArchiDep.CourseSite.Session do
   on, and what the next one covers — and section and chapter numbers share one
   space, since a session lists `100` beside `101`.
 
-  The sessions are kept as the list they are rather than folded into
-  `ArchiDep.CourseSite.Progress` on the way in, because the union that module
-  builds cannot answer what the **last** session covered, which is what the
-  course material's home page shows.
+  The sessions are read as the list they are and folded into
+  `ArchiDep.CourseSite.Progress` on the way in, which keeps the **last** of them
+  beside the union: what the last session covered is what the course material's
+  home page shows, and the union cannot answer it.
   """
 
   @enforce_keys [:date, :title, :done, :due, :next]

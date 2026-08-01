@@ -43,7 +43,10 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   [entries](`ArchiDep.CourseSite.Layout.Chrome.MenuEntry`) rather than the
   course's own `ArchiDep.CourseSite.Structure`, for the same reason: a chapter's
   URL and the picture beside it are both resolved references, and a template
-  that resolved them would be a template that could fail.
+  that resolved them would be a template that could fail. The home page's
+  [cards](`ArchiDep.CourseSite.Layout.Chrome.HomeCard`) are the same lines drawn
+  somewhere else, so they are the same value: a chapter is named and linked to
+  the one way wherever the site lists it.
 
   ## What is not in `links`
 
@@ -54,6 +57,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
 
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Layout.Chrome.Footer
+  alias ArchiDep.CourseSite.Layout.Chrome.HomeCard
   alias ArchiDep.CourseSite.Layout.Chrome.MenuEntry
   alias ArchiDep.CourseSite.Layout.Chrome.MenuSection
   alias ArchiDep.CourseSite.Layout.Chrome.Policy
@@ -85,6 +89,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     :commit,
     :sections,
     :cheatsheets,
+    :cards,
     :base_path,
     :standalone?,
     :legend_emoji,
@@ -106,6 +111,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     :commit,
     :sections,
     :cheatsheets,
+    :cards,
     :base_path,
     :standalone?,
     :legend_emoji,
@@ -139,6 +145,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
           commit: String.t() | nil,
           sections: [MenuSection.t()],
           cheatsheets: [MenuEntry.t()],
+          cards: [HomeCard.t()],
           base_path: String.t(),
           standalone?: boolean(),
           legend_emoji: %{String.t() => String.t()},
@@ -171,6 +178,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     emoji_subject: {"book", "Subject"},
     emoji_cheatsheet: {"memo", "Cheatsheet"}
   }
+
+  # Which of the course's own categories each of the home page's cards lists,
+  # in the order the page shows them. What each is called and how it is drawn
+  # belongs to `ArchiDep.CourseSite.Layout.Chrome.Home`; which lines it holds is
+  # settled here, like every other list the chrome draws.
+  @cards [previously: :done, due_next: :due, next_time: :next]
 
   # What the navigation draws a picture at, which is small enough to read as
   # punctuation beside the title rather than as an illustration of it.
@@ -270,6 +283,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
       commit: Footer.commit(context.site),
       sections: sections(context, links),
       cheatsheets: cheatsheets(context, links),
+      cards: cards(context, links),
       base_path: UrlContext.content_prefix(context.urls),
       standalone?: context.urls.mode != :live,
       legend_emoji: legend_emoji(links),
@@ -386,6 +400,31 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
 
   defp cheatsheets(%LayoutContext{} = context, links),
     do: Enum.map(context.structure.cheatsheets, &cheatsheet_entry(&1, context, links))
+
+  # The home page's three cards, which are the one thing the chrome draws from a
+  # single session rather than from the whole progression — see
+  # `ArchiDep.CourseSite.Progress.last_recorded/3`. Every other page is handed
+  # none: working out what the course did last time for a page that does not say
+  # so would be fifty-five answers nobody reads.
+  defp cards(%LayoutContext{} = context, links) do
+    case kind(context) do
+      :home -> Enum.flat_map(@cards, &card(&1, context, links))
+      _other -> []
+    end
+  end
+
+  defp card({kind, category}, %LayoutContext{} = context, links) do
+    case Progress.last_recorded(context.progress, context.structure, category) do
+      [] ->
+        []
+
+      [_first | _rest] = chapters ->
+        [%HomeCard{kind: kind, entries: entries(chapters, context, links)}]
+    end
+  end
+
+  defp entries(chapters, context, links),
+    do: Enum.map(chapters, &chapter_entry(&1, context, links))
 
   defp chapter_entry(%Chapter{} = chapter, %LayoutContext{} = context, links) do
     page = Chapter.page_ref(chapter)

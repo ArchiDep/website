@@ -10,25 +10,32 @@ defmodule ArchiDep.CourseSite.ProgressTest do
 
   describe "new/1" do
     test "unites what the sessions recorded, later categories subtracted" do
+      last = build(:session, done: [102], due: [103, 104], next: [105])
+
       sessions = [
         build(:session, next: [100, 101, 102, 103]),
         build(:session, done: [100, 101], due: [102], next: [103, 104]),
-        build(:session, done: [102], due: [103, 104], next: [105])
+        last
       ]
 
       assert Progress.new(sessions) == %Progress{
                done: MapSet.new([100, 101, 102]),
                due: MapSet.new([103, 104]),
-               next: MapSet.new([105])
+               next: MapSet.new([105]),
+               last: last
              }
     end
 
     test "reads a session that recorded only some of the three categories" do
-      assert Progress.new([build(:session, done: [201]), build(:session, next: [202])]) ==
+      first = build(:session, done: [201])
+      last = build(:session, next: [202])
+
+      assert Progress.new([first, last]) ==
                %Progress{
                  done: MapSet.new([201]),
                  due: MapSet.new([]),
-                 next: MapSet.new([202])
+                 next: MapSet.new([202]),
+                 last: last
                }
     end
 
@@ -36,7 +43,8 @@ defmodule ArchiDep.CourseSite.ProgressTest do
       assert Progress.new([]) == %Progress{
                done: MapSet.new([]),
                due: MapSet.new([]),
-               next: MapSet.new([])
+               next: MapSet.new([]),
+               last: nil
              }
     end
   end
@@ -80,6 +88,56 @@ defmodule ArchiDep.CourseSite.ProgressTest do
                200 => :next,
                201 => :future
              }
+    end
+  end
+
+  describe "last_recorded/3" do
+    test "names what the last session recorded, in the order the course lists it" do
+      progress =
+        Progress.new([
+          build(:session, done: [101], due: [102], next: [103]),
+          build(:session, done: [100, 103, 102], due: [201], next: [])
+        ])
+
+      assert {
+               Progress.last_recorded(progress, structure(), :done),
+               Progress.last_recorded(progress, structure(), :due),
+               Progress.last_recorded(progress, structure(), :next)
+             } == {[shell(), demo()], [git()], []}
+    end
+
+    test "leaves a chapter that is only a deck out of what is due and nothing else" do
+      progress = Progress.new([build(:session, done: [103], due: [103], next: [103])])
+
+      assert {
+               Progress.last_recorded(progress, structure(), :done),
+               Progress.last_recorded(progress, structure(), :due),
+               Progress.last_recorded(progress, structure(), :next)
+             } == {[demo()], [], [demo()]}
+    end
+
+    test "forgets what an earlier session recorded and the last one did not" do
+      progress =
+        Progress.new([
+          build(:session, done: [101], due: [102], next: [201]),
+          build(:session, done: [102], due: [], next: [])
+        ])
+
+      assert {
+               Progress.last_recorded(progress, structure(), :done),
+               Progress.last_recorded(progress, structure(), :due),
+               Progress.last_recorded(progress, structure(), :next)
+             } == {[shell()], [], []}
+    end
+
+    test "names nothing for a course nobody has taught a session of" do
+      progress = Progress.new([])
+
+      assert {
+               Progress.last_recorded(progress, structure(), :done),
+               Progress.last_recorded(progress, structure(), :due),
+               Progress.last_recorded(progress, structure(), :next)
+             } == {[], [], []}
     end
   end
 
@@ -179,4 +237,30 @@ defmodule ArchiDep.CourseSite.ProgressTest do
       refute Progress.section_open?(%{900 => :done, 901 => :done, 1001 => :due}, section)
     end
   end
+
+  ## A course of every shape a chapter comes in: a subject presenting a deck, a
+  ## graded exercise, a deck standing on its own, and a chapter of a second
+  ## section.
+
+  defp structure,
+    do: %Structure{
+      sections: [
+        Section.new(1, "Introduction", [cli(), shell(), demo()]),
+        Section.new(2, "Version Control", [git()])
+      ],
+      cheatsheets: []
+    }
+
+  defp cli,
+    do:
+      Chapter.new(DocumentRef.new(101, "command-line", :subject), "Command Line",
+        slides: DocumentRef.new(101, "command-line", :slides)
+      )
+
+  defp shell,
+    do: Chapter.new(DocumentRef.new(102, "hello-shell", :exercise), "Hello Shell", graded?: true)
+
+  defp demo, do: Chapter.new(DocumentRef.new(103, "demo", :slides), "Demo")
+
+  defp git, do: Chapter.new(DocumentRef.new(201, "git", :subject), "Git")
 end

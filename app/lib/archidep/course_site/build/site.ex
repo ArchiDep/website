@@ -191,6 +191,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
         section: section,
         front_matter: context.source.front_matter,
         structure: inputs.structure,
+        progress: inputs.progress,
         statuses: statuses,
         urls: options.urls,
         site: options.site

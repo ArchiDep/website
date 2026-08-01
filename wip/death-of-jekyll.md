@@ -270,13 +270,16 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       Jekyll produces — see [Static build step](#static-build-step). **Done in
       two halves**: the writer, then the chrome that replaced `Layout.Minimal`
       as what a build writes with.
-- [ ] Port the home page's three progress cards — "Previously", "Due next",
+- [x] Port the home page's three progress cards — "Previously", "Due next",
       "Next time". They are the one read of the progress source with no Elixir
       consumer yet, and the only one needing the **individual sessions** rather
       than the aggregate, which is why `Course.course_sessions/0` returns them.
       Waits on the static build step above, there being no Elixir home page
       before it. The two rules that are easy to get wrong are recorded in
-      [Metadata generation](#metadata-generation).
+      [Metadata generation](#metadata-generation). **Done**: one of those two
+      rules survived and the other went with the document-as-unit, and the cards
+      read the last session rather than the last session per category — see
+      [Static build step](#static-build-step).
 - [ ] Port `course/404.html`, deciding whether it is a page with chrome or a
       `{:site_file, "404.html"}` the build writes verbatim. It is not a page of
       the course — no `PageRef`, no `DocumentRef`, HTML rather than Markdown, and
@@ -2672,6 +2675,56 @@ Phoenix.Component` never imports `Phoenix.VerifiedRoutes`.
 - **`slides.css` scanned the Liquid deck layout and nothing else.** A deck's
   classes now come from the module that writes them, which is what stops them
   disappearing when that layout is deleted at [cutover](#cutover).
+
+**Corrections while implementing the three cards:**
+
+- **The three lists are the _last session's_, not the last session that carries
+  each key.** `Progress.last_recorded/3` reads one session for all three
+  categories, where `archidep.rb` looked back per category until it found a
+  document declaring that key — which corrects what [Progress: structure vs
+  status](#progress-structure-vs-status) says the cards do. The two agree on
+  every session ever written (all 14 declare all three keys), and where they
+  would differ the Ruby is wrong: a session that ends the course by recording
+  `due: []` says nothing is due, and falling back would leave the previous
+  session's work due for ever. A category left out and one written empty are
+  already the same thing to
+  [`ProgressFile`](../app/lib/archidep/course_site/build/progress_file.ex), so
+  the distinction the Ruby rule rests on is not one this port can even see.
+- **Two of the three filtering rules disappeared with the document-as-unit.**
+  The Ruby filtered a subject's slides document back out of "previously" and
+  "next time"; a chapter is the unit (see [Metadata
+  generation](#metadata-generation)), so there is no second entry to filter and
+  neither list has a rule left. Only "due next" keeps one, and it is meaning
+  rather than presentation — a chapter that is only a deck has nothing to hand
+  in — so it lives with the progression rather than with the drawing.
+- **`Progress` keeps the last session beside the union, and nothing threads the
+  sessions.** The first attempt carried the list from `Site.Inputs` through
+  `Site.plan/2` to `LayoutContext` beside the record derived from it, on the
+  grounds that uniting them is a decision rather than a read. That is two things
+  to carry where the second is only ever asked one question, so `Progress.new/1`
+  answers it: it keeps `last`, and `last_recorded/3` is a read of the record
+  like `status/2` is. Nothing else moved — `Inputs` holds the record it always
+  held, and `LayoutContext` gains one field rather than a parameter threaded
+  through the planner. This refines rather than contradicts the seam's
+  "`Progress` gains no `sessions` field": what is folded into the union stays
+  folded, one session is kept whole, and both come out of the same pass, so
+  there are no two representations to disagree.
+- **`LayoutContext` holds the progression twice, asymmetrically on purpose.**
+  `statuses` is what the record says about _this_ course, worked out once for a
+  whole build because every page draws it; `progress` is the record, for the one
+  question the home page asks that is about a session rather than about the
+  course.
+- **A card with nothing in it is absent rather than empty**, like a link the
+  build cannot offer — what draws them asks one question instead of two. That is
+  also the shape the `:archive` rule below needs: hiding the cards is an empty
+  list rather than a flag threaded through the drawing.
+- **A card's line is the navigation's `MenuEntry`.** The two are the same
+  chapter named the same way, so the span naming one became a component of its
+  own — which is what `chapter-title.html` was in Jekyll, shared by the sidebar
+  and the card include.
+- **The test layout writes the last session's title**, so that the record
+  reaching the layout is pinned by the build's own test rather than only by the
+  chrome's.
 
 ### Development and production serving
 

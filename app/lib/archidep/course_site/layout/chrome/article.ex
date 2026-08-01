@@ -184,6 +184,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
   defp opening(%{page: %Assigns{kind: :home}} = assigns) do
     ~H"""
     <Home.welcome />
+    <Home.cards cards={@page.cards} />
     """
   end
 

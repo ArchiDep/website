@@ -18,8 +18,10 @@ defmodule ArchiDep.Support.CourseSiteTestLayout do
 
     alias ArchiDep.CourseSite.Layout.LayoutContext
     alias ArchiDep.CourseSite.PageRef
+    alias ArchiDep.CourseSite.Progress
     alias ArchiDep.CourseSite.Renderer.Page
     alias ArchiDep.CourseSite.Renderer.Slides
+    alias ArchiDep.CourseSite.Session
 
     @impl ArchiDep.CourseSite.Layout
     def document(%LayoutContext{} = context) do
@@ -31,6 +33,7 @@ defmodule ArchiDep.Support.CourseSiteTestLayout do
            context.metadata.title,
            entry(context.entry),
            section(context.section),
+           last_session(context.progress),
            body(context.content)
          ],
          "|"
@@ -42,6 +45,10 @@ defmodule ArchiDep.Support.CourseSiteTestLayout do
 
     defp section(nil), do: ""
     defp section(%{title: title}), do: title
+
+    # The last session the record kept, since that is the one it is kept for.
+    defp last_session(%Progress{last: nil}), do: ""
+    defp last_session(%Progress{last: %Session{title: title}}), do: title
 
     defp body(%Slides{markdown: markdown}), do: "deck:" <> markdown
 

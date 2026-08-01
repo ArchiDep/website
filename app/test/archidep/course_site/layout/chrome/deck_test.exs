@@ -71,6 +71,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
       commit: Keyword.get(overrides, :commit, "main@abc123"),
       sections: [],
       cheatsheets: [],
+      cards: [],
       base_path: "",
       standalone?: false,
       legend_emoji: %{},

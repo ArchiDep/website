@@ -579,8 +579,11 @@ and the [deck](./layout/chrome/deck.ex) it dispatches between, the
 [footer](./layout/chrome/footer.ex) around every page, the
 [article](./layout/chrome/article.ex) holding one, and the blocks it opens with
 — a chapter's [presentation](./layout/chrome/presentation.ex), an exercise's
-[legend](./layout/chrome/legend.ex), the home page's
-[title](./layout/chrome/home.ex).
+[legend](./layout/chrome/legend.ex), the home page's title, greeting and
+[cards](./layout/chrome/home.ex). What one chapter is called and the picture
+beside it is [a module of its own](./layout/chrome/entry_title.ex): the
+navigation and the cards both draw it, and a chapter is named the same way
+wherever the site lists it.
 
 **Everything is resolved before anything is drawn.**
 [`Chrome.Assigns`](./layout/chrome/assigns.ex) is where that happens, and it is

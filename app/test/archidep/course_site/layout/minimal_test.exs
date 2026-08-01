@@ -6,6 +6,7 @@ defmodule ArchiDep.CourseSite.Layout.MinimalTest do
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Layout.LayoutContext
   alias ArchiDep.CourseSite.Layout.Minimal
+  alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Renderer.Page
   alias ArchiDep.CourseSite.Renderer.PageMetadata
   alias ArchiDep.CourseSite.Renderer.Slides
@@ -76,6 +77,7 @@ defmodule ArchiDep.CourseSite.Layout.MinimalTest do
       metadata: @metadata,
       front_matter: %{"title" => "Domain Name System (DNS)"},
       structure: %Structure{sections: [], cheatsheets: []},
+      progress: Progress.new([]),
       statuses: %{},
       urls: build(:url_context, version: nil),
       site:

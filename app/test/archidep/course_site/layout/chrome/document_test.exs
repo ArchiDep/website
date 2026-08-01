@@ -67,6 +67,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
       commit: "main@abc123",
       sections: [],
       cheatsheets: [],
+      cards: [],
       base_path: Keyword.get(overrides, :base_path, ""),
       standalone?: Keyword.get(overrides, :standalone?, false),
       legend_emoji: %{},
@@ -145,6 +146,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
       render(&Sidebar.sidebar/1, %{
         sections: [],
         cheatsheets: [],
+        cards: [],
         links: @links,
         policy: live_policy(),
         home?: Keyword.get(parts, :home?, false),

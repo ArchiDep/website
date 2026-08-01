@@ -24,6 +24,14 @@ defmodule ArchiDep.CourseSite.Progress do
   chapter's (101, 402, …) — the course's first session lists `100` beside its
   chapters. So `status/2` is one lookup rather than one per kind, and it is what
   colours a section heading as well as an entry under it.
+
+  ## The union, and the last session
+
+  Everything above is the union. `last_recorded/3` is the one question it cannot
+  answer: what the course did *last time*, which is what the home page shows and
+  which the union has folded into everything that came before it. That is why
+  the sessions are kept as the list they are — see
+  `ArchiDep.CourseSite.Session`.
   """
 
   alias ArchiDep.CourseSite.DocumentRef
@@ -33,8 +41,8 @@ defmodule ArchiDep.CourseSite.Progress do
   alias ArchiDep.CourseSite.Structure.Chapter
   alias ArchiDep.CourseSite.Structure.Section
 
-  @enforce_keys [:done, :due, :next]
-  defstruct [:done, :due, :next]
+  @enforce_keys [:done, :due, :next, :last]
+  defstruct [:done, :due, :next, :last]
 
   @typedoc """
   What has become of one section or chapter of the course:
@@ -53,10 +61,16 @@ defmodule ArchiDep.CourseSite.Progress do
   """
   @type solutions :: :revealed | :hidden
 
+  @typedoc """
+  How far the course has got: what has been done, what is due and what comes
+  next, and the last session that was taught — `nil` for a course nobody has
+  taught yet.
+  """
   @type t :: %__MODULE__{
           done: MapSet.t(pos_integer()),
           due: MapSet.t(pos_integer()),
-          next: MapSet.t(pos_integer())
+          next: MapSet.t(pos_integer()),
+          last: Session.t() | nil
         }
 
   @doc """
@@ -74,7 +88,7 @@ defmodule ArchiDep.CourseSite.Progress do
       |> MapSet.difference(done)
       |> MapSet.difference(due)
 
-    %__MODULE__{done: done, due: due, next: next}
+    %__MODULE__{done: done, due: due, next: next, last: List.last(sessions)}
   end
 
   @doc """
@@ -102,6 +116,36 @@ defmodule ArchiDep.CourseSite.Progress do
         [Section.num(section) | Enum.map(chapters, &Chapter.num/1)]
       end)
       |> Map.new(&{&1, status(progress, &1)})
+
+  @doc """
+  The chapters the course's last session recorded in one category, in the order
+  the course lists them.
+
+  A section's number is recorded in the same lists as a chapter's, so a number
+  naming one is simply not a chapter and drops out: what comes back is what the
+  home page can link to.
+
+  `:due` is work to hand in, and a chapter that is only a deck has none — a
+  presentation is watched, not handed in — so those are left out of that
+  category alone. Every chapter is a candidate for the other two.
+
+  ## A session that recorded nothing recorded nothing
+
+  The lists are the last session's and no earlier one's: a session that ends the
+  course by setting no work leaves nothing due, rather than leaving the
+  previous session's work due for ever. A category a session left out and one it
+  wrote empty say the same thing here, which is what
+  `ArchiDep.CourseSite.Build.ProgressFile` already reads them as.
+  """
+  @spec last_recorded(t(), Structure.t(), :done | :due | :next) :: [Chapter.t()]
+  def last_recorded(%__MODULE__{last: last}, %Structure{} = structure, category)
+      when category in [:done, :due, :next] do
+    numbers = recorded(last, category)
+
+    structure
+    |> Structure.chapters()
+    |> Enum.filter(&(MapSet.member?(numbers, Chapter.num(&1)) and listed?(&1, category)))
+  end
 
   @doc """
   Whether the chapter with the given number shows the answers to its exercise,
@@ -148,6 +192,14 @@ defmodule ArchiDep.CourseSite.Progress do
         Enum.any?(chapters, &(status_of(statuses, Chapter.num(&1)) not in [:done, :future]))
 
   defp status_of(statuses, num), do: Map.get(statuses, num, :future)
+
+  defp recorded(nil, _category), do: MapSet.new()
+
+  defp recorded(%Session{} = session, category),
+    do: session |> Session.numbers(category) |> MapSet.new()
+
+  defp listed?(%Chapter{page: %DocumentRef{type: :slides}}, :due), do: false
+  defp listed?(%Chapter{}, _category), do: true
 
   defp numbers(sessions, category),
     do: sessions |> Enum.flat_map(&Session.numbers(&1, category)) |> MapSet.new()

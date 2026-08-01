@@ -15,6 +15,15 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContext do
   The home page is the only such page and it is the only one whose title,
   numbering and section come from nowhere: it is not part of the course's
   structure, it introduces it.
+
+  ## Why the progression is here twice
+
+  `statuses` is what the record says about every section and chapter of *this*
+  course, which every page draws and which is therefore worked out once for the
+  whole build rather than per page. `progress` is the record itself, which the
+  home page asks a second question of: what the last session covered
+  (`ArchiDep.CourseSite.Progress.last_recorded/3`), which is a question about
+  one session rather than about the course.
   """
 
   alias ArchiDep.CourseSite.DocumentRef
@@ -37,6 +46,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContext do
     :metadata,
     :front_matter,
     :structure,
+    :progress,
     :statuses,
     :urls,
     :site
@@ -48,6 +58,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContext do
     :metadata,
     :front_matter,
     :structure,
+    :progress,
     :statuses,
     :urls,
     :site,
@@ -70,6 +81,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContext do
           section: Section.t() | nil,
           front_matter: %{String.t() => term()},
           structure: Structure.t(),
+          progress: Progress.t(),
           statuses: %{pos_integer() => Progress.status()},
           urls: UrlContext.t(),
           site: SiteInfo.t()
@@ -91,6 +103,8 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContext do
     layout reads.
   - `:structure` (required) — the course, for the navigation the site shows
     beside every page.
+  - `:progress` (required) — how far the course has got, as the record itself,
+    for what the home page says the last session covered.
   - `:statuses` (required) — how far the course has got, per chapter and
     section, for the navigation's colours.
   - `:urls` (required) — the build, as an `ArchiDep.CourseSite.Urls.UrlContext`.
@@ -113,6 +127,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContext do
       metadata: metadata!(opts),
       front_matter: front_matter!(opts),
       structure: structure!(opts),
+      progress: progress!(opts),
       statuses: statuses!(opts),
       urls: urls!(opts),
       site: site!(opts),
@@ -184,6 +199,16 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContext do
 
       other ->
         raise ArgumentError, "Structure must be a #{inspect(Structure)}, got: #{inspect(other)}"
+    end
+  end
+
+  defp progress!(opts) do
+    case Keyword.fetch!(opts, :progress) do
+      %Progress{} = progress ->
+        progress
+
+      other ->
+        raise ArgumentError, "Progress must be a #{inspect(Progress)}, got: #{inspect(other)}"
     end
   end
 

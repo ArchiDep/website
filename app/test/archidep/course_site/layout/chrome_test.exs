@@ -10,6 +10,7 @@ defmodule ArchiDep.CourseSite.Layout.ChromeTest do
   alias ArchiDep.CourseSite.Layout.Chrome.Document
   alias ArchiDep.CourseSite.Layout.Chrome.Html
   alias ArchiDep.CourseSite.Layout.LayoutContext
+  alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Renderer.Page
   alias ArchiDep.CourseSite.Renderer.PageMetadata
   alias ArchiDep.CourseSite.Renderer.Slides
@@ -95,6 +96,7 @@ defmodule ArchiDep.CourseSite.Layout.ChromeTest do
       section: section(page),
       front_matter: %{"title" => "Domain Name System (DNS)"},
       structure: structure(),
+      progress: Progress.new([]),
       statuses: %{500 => :due, 507 => :due},
       urls:
         build(:url_context,
