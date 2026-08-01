@@ -460,6 +460,7 @@ it, documented there rather than here:
 | [`AssetDigest`](./build/asset_digest.ex)          | where the global assets went, per `phx.digest`                                                 |
 | [`LinkCheck`](./build/link_check.ex)              | which of a finished build's links lead nowhere                                                 |
 | [`Site`](./build/site.ex)                         | every file a build writes and what is in each, which `site_inputs/1` chains the reads for      |
+| [`NotFound`](./build/not_found.ex)                | what a static host shows for a path the build never wrote                                      |
 | [`Structure`](./structure.ex)                     | what the course is, which `course!/2` chains the reads for                                     |
 | [`Headings`](./headings.ex)                       | what a page's headings are called, which `headings!/3` chains the reads for                    |
 
@@ -1020,6 +1021,11 @@ md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than
 - **The site publishes no feed.** `jekyll-feed` wrote a `/feed.xml` of a course
   that has no posts, and nothing has ever linked to it but the `feed_meta` tag
   that announced it.
+- **The 404 page carries none of the site's chrome and loads nothing**, where
+  the Jekyll one was a page like any other, with the sidebar, the header and the
+  theme's stylesheet around it. A host offering a 404 page at all offers exactly
+  one of them for every edition it publishes, and it is shown when something was
+  not found — see [`NotFound`](./build/not_found.ex).
 - **A deck escapes the one sequence that would cut it short.** Its `<textarea>`
   holds RCDATA, so the markup and the entities a deck writes reach `reveal.js`
   exactly as they stand — but `</textarea` would end the element wherever it

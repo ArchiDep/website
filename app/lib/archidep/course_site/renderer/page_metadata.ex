@@ -106,6 +106,26 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
     |> Enum.join("\n")
   end
 
+  @doc """
+  What a page called this is called in a browser tab.
+
+  Pass no title for a page that has none, and for a page whose own title is
+  already the name of the site, which says it once rather than twice.
+
+      iex> PageMetadata.title("Cloud Computing")
+      "Cloud Computing · ArchiDep"
+
+      iex> PageMetadata.title(nil)
+      "ArchiDep"
+
+      iex> PageMetadata.title("ArchiDep")
+      "ArchiDep"
+  """
+  @spec title(String.t() | nil) :: String.t()
+  def title(nil), do: @site_title
+  def title(@site_title), do: @site_title
+  def title(page_title), do: page_title <> @title_separator <> @site_title
+
   defp meta(attributes), do: element("meta", attributes)
   defp link(attributes), do: element("link", attributes)
 
@@ -131,10 +151,6 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
       _none -> nil
     end
   end
-
-  defp title(nil), do: @site_title
-  defp title(@site_title), do: @site_title
-  defp title(page_title), do: page_title <> @title_separator <> @site_title
 
   defp description(nil), do: @site_description
 

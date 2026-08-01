@@ -280,24 +280,38 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       rules survived and the other went with the document-as-unit, and the cards
       read the last session rather than the last session per category — see
       [Static build step](#static-build-step).
-- [ ] Port `course/404.html`, deciding whether it is a page with chrome or a
-      `{:site_file, "404.html"}` the build writes verbatim. It is not a page of
-      the course — no `PageRef`, no `DocumentRef`, HTML rather than Markdown, and
-      an inline `<style>` — so it is a different shape of work from the chrome,
-      but it must land before [cutover](#cutover).
+- [x] Port `course/404.html`. **Done: a chrome-free, self-contained page the
+      build writes at `/404.html`**, beside the two files it already says of
+      itself —
+      [`ArchiDep.CourseSite.Build.NotFound`](../app/lib/archidep/course_site/build/not_found.ex),
+      which records why it is shaped that way. Two corrections to what this item
+      assumed. It is **not** a `{:site_file, "404.html"}`: a site file is
+      edition-prefixed, and the one host that ever reads this file — GitHub
+      Pages, serving the [backup](#standalone--archival-mode) — consults exactly
+      one of them, at the publishing root. So it belongs at the mount point,
+      where `{:root_file, _}` is anchored, which is a constraint the [optional
+      URL prefix](#optional-url-prefix) has to honour rather than something it
+      can prefix along with everything else. And that settles the chrome
+      question **against** chrome: one file standing for every edition can carry
+      neither one edition's chapter list nor one build's digested stylesheet
+      name. The Jekyll page it replaces had both, which is a [known
+      difference](../app/lib/archidep/course_site/CONTRIBUTING.md#known-differences-from-what-jekyll-produces)
+      rather than a fidelity regression. The `course/404.html` source goes with
+      the rest of the Jekyll layer at [cutover](#cutover).
 - [ ] Serve the build via Phoenix `Plug.Static` in development and via a
       separate static server (reverse-proxy routed) in production, publishing
       in-process rebuilds atomically to a shared volume — see [Development and
       production serving](#development-and-production-serving).
 - [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
-      Pages backup) — see [Standalone / archival mode](#standalone--archival-mode).
+      Pages backup) — see [Standalone / archival
+      mode](#standalone--archival-mode).
 - [ ] Hide the home page's progress cards unconditionally in `:archive` — see
       [Standalone / archival mode](#standalone--archival-mode). The rest of this
       item is **done**: `Chrome.Policy` is the explicit list of dynamic chrome,
       derived from `mode` rather than from the host, and the sidebar's
-      app-navigation submenu is dropped entirely outside `:live`. What is left is
-      keyed differently from every field it holds, which is why it waits for the
-      cards themselves.
+      app-navigation submenu is dropped entirely outside `:live`. What is left
+      is keyed differently from every field it holds, which is why it waits for
+      the cards themselves.
 - [ ] Support an optional URL prefix (e.g. `/2026/`) for per-year archived
       versions — see [Optional URL prefix](#optional-url-prefix).
 - [ ] Emit the two "not the current thing" banners from the first build, not at

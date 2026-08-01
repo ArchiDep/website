@@ -34,6 +34,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
 
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.Build.LinkCheck
+  alias ArchiDep.CourseSite.Build.NotFound
   alias ArchiDep.CourseSite.Build.Site.Inputs
   alias ArchiDep.CourseSite.Build.Site.Options
   alias ArchiDep.CourseSite.DocumentRef
@@ -65,6 +66,12 @@ defmodule ArchiDep.CourseSite.Build.Site do
   # What produced the build, for the footer of the site and anyone asking which
   # revision they are looking at.
   @version_file "/version.json"
+
+  # What a static host shows for a path the build never wrote. Alone among the
+  # files planned here it belongs at the build's mount point rather than under
+  # its edition, a host offering one at all offering exactly one — see
+  # `ArchiDep.CourseSite.Build.NotFound`.
+  @not_found_file "/404.html"
 
   @enforce_keys [:files, :pages]
   defstruct [:files, :pages]
@@ -222,7 +229,8 @@ defmodule ArchiDep.CourseSite.Build.Site do
   defp build_files(inputs, options, statuses),
     do: %{
       @course_file => course_json(inputs.structure, options.urls, statuses),
-      @version_file => version_json(options.site)
+      @version_file => version_json(options.site),
+      @not_found_file => NotFound.html(options.urls)
     }
 
   # The key order and the indentation are Jekyll's, so that the file this

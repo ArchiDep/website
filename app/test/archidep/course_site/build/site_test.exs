@@ -25,7 +25,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
   @branching DocumentRef.new(202, "git-branching", :slides)
 
   describe "plan/2" do
-    test "plans a file for every page of the course, and the two it says of itself" do
+    test "plans a file for every page of the course, and the three it writes of its own" do
       assert {:ok, site} = Site.plan(inputs(), options())
 
       assert site.files == %{
@@ -42,7 +42,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                "/cheatsheets/git/index.html" =>
                  "/cheatsheets/git/|_cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>",
                "/archidep.json" => archidep_json(),
-               "/version.json" => version_json()
+               "/version.json" => version_json(),
+               "/404.html" => not_found_html()
              }
     end
 
@@ -296,6 +297,39 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         "revision": "abc123"
       }
     }
+    """
+  end
+
+  defp not_found_html do
+    """
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Page not found · ArchiDep</title>
+    <style>
+    :root { color-scheme: light dark }
+    body { display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; margin: 0; background: #eceff4; color: #2e3440;
+      font-family: system-ui, sans-serif; line-height: 1.5 }
+    main { max-width: 40rem; padding: 2rem; text-align: center }
+    h1 { margin: 0 0 1rem; font-size: 4rem; line-height: 1; letter-spacing: -1px }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f172a; color: #b8c4d9 }
+    }
+    </style>
+    </head>
+    <body>
+    <main>
+    <h1>404</h1>
+    <p><strong>Page not found :(</strong></p>
+    <p>The requested page could not be found.</p>
+    <p><a href="/">Back to the course</a></p>
+    </main>
+    </body>
+    </html>
     """
   end
 end

@@ -5,6 +5,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
   alias ArchiDep.CourseSite.Renderer.PageMetadata
   alias ArchiDep.Support.CourseSiteFactory
 
+  doctest ArchiDep.CourseSite.Renderer.PageMetadata
+
   @site_description "Media engineering architecture and deployment course"
 
   describe "of/2" do
