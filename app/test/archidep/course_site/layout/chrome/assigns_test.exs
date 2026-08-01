@@ -151,7 +151,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                   sections: sections(prefix: "/2025"),
                   cheatsheets: [cheatsheet_entry(prefix: "/2025")],
                   legend_emoji: legend_emoji("/2025"),
-                  links: links(prefix: "/2025")
+                  links: archived_links()
                 )}
     end
 
@@ -214,9 +214,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     end
   end
 
-  # The whole of what a chapter is drawn from. Every test asserts one of these
-  # by equality, passing in what its own case changes, so that what a case does
-  # *not* change is still pinned rather than left unsaid.
+  # The whole of what a chapter is drawn from, which each case is handed and
+  # changes only what it is about.
   defp expected(overrides \\ []) do
     %Assigns{
       ref: Keyword.get(overrides, :ref, {:document, @dns}),
@@ -244,14 +243,38 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
 
   defp live_policy, do: %Policy{app_navigation?: true, account?: true, badges?: true}
 
+  # What an archived edition writes instead: everything under the edition's own
+  # prefix but the files anchored at the mount point, which stay where a browser
+  # and an operating system look for them.
+  defp archived_links do
+    Map.merge(links(), %{
+      home: "/2025/",
+      theme_css: "/2025/assets/theme/theme.css",
+      course_js: "/2025/assets/course/course.js",
+      deck: "/2025/course/507-dns/slides/",
+      emoji_subject: "/2025/assets/emoji/1f4d6.svg",
+      emoji_cheatsheet: "/2025/assets/emoji/1f4dd.svg",
+      emoji_graded_exercise: "/2025/assets/emoji/1f3c6.svg",
+      emoji_exercise: "/2025/assets/emoji/1f6e0.svg",
+      emoji_slides: "/2025/assets/emoji/1f3ac.svg",
+      legend_trophy: "/2025/assets/emoji/1f3c6.svg",
+      legend_scroll: "/2025/assets/emoji/1f4dc.svg",
+      legend_exclamation: "/2025/assets/emoji/2757.svg",
+      legend_question: "/2025/assets/emoji/2753.svg",
+      legend_space_invader: "/2025/assets/emoji/1f47e.svg",
+      legend_checkered_flag: "/2025/assets/emoji/1f3c1.svg",
+      legend_classical_building: "/2025/assets/emoji/1f3db.svg",
+      legend_boom: "/2025/assets/emoji/1f4a5.svg"
+    })
+  end
+
   # Every URL the chrome of a page writes. No PDF is ever among them: nothing
   # populates the manifest, so no page offers a download.
   defp links(overrides \\ []) do
-    prefix = Keyword.get(overrides, :prefix, "")
     assets = Keyword.get(overrides, :assets, @page_assets)
 
     %{
-      home: home_url(prefix),
+      home: "/",
       favicon: "/favicon.ico",
       favicon_16: "/favicons/archidep-rocket-16.png",
       favicon_32: "/favicons/archidep-rocket-32.png",
@@ -271,24 +294,15 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
           source_url("course/collections/_course/507-dns/subject.md")
         )
     }
-    |> Map.merge(Map.new(assets, &{asset_key(&1), prefix <> &1}))
-    |> Map.merge(
-      Map.new(@menu_emoji, fn {key, {name, _alt}} -> {key, prefix <> emoji_path(name)} end)
-    )
-    |> Map.merge(Map.new(@legend_emoji, fn {key, name} -> {key, prefix <> emoji_path(name)} end))
-    |> deck_link(prefix, Keyword.get(overrides, :deck, true))
+    |> Map.merge(Map.new(assets, &{asset_key(&1), &1}))
+    |> Map.merge(Map.new(@menu_emoji, fn {key, {name, _alt}} -> {key, emoji_path(name)} end))
+    |> Map.merge(Map.new(@legend_emoji, fn {key, name} -> {key, emoji_path(name)} end))
+    |> deck_link(Keyword.get(overrides, :deck, true))
   end
 
   # Only a chapter that has one links to a deck.
-  defp deck_link(links, _prefix, false), do: links
-
-  defp deck_link(links, prefix, true),
-    do: Map.put(links, :deck, "#{prefix}/course/507-dns/slides/")
-
-  # The home page sits at the root of the site while its edition is being
-  # taught, and moves under the edition's own prefix once archived.
-  defp home_url(""), do: "/"
-  defp home_url(prefix), do: prefix <> "/"
+  defp deck_link(links, false), do: links
+  defp deck_link(links, true), do: Map.put(links, :deck, "/course/507-dns/slides/")
 
   defp asset_key("/assets/theme/theme.css"), do: :theme_css
   defp asset_key("/assets/course/course.js"), do: :course_js

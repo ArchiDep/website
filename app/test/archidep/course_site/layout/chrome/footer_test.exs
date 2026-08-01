@@ -16,16 +16,17 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
 
   describe "footer/1" do
     test "says who the course belongs to and which build this is" do
-      assert render(commit: "main@abc1234") == expected_footer("main@abc1234", badges?: true)
+      assert render(commit: "main@abc1234") ==
+               expected_footer(version: version_markup(commit: "main@abc1234"))
     end
 
     test "shows the release alone when the checkout could name no commit" do
-      assert render([]) == expected_footer(nil, badges?: true)
+      assert render([]) == expected_footer(version: version_markup(commit: nil))
     end
 
     test "leaves out the status badge in a build that is not the live site" do
       assert render(policy: %Policy{app_navigation?: false, account?: false, badges?: false}) ==
-               expected_footer(nil, badges?: false)
+               expected_footer(status_badge: "", version: version_markup(commit: nil))
     end
   end
 
@@ -61,7 +62,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
     |> SiteInfo.new()
   end
 
-  defp expected_footer(commit, badges?: badges?) do
+  defp expected_footer(parts) do
     String.trim_trailing("""
     <footer class="p-4 absolute bottom-0 left-0 right-0 border-t border-black/10 dark:border-white/10">
       <div class="flex justify-between items-center gap-2">
@@ -69,7 +70,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
           <a href="https://heig-vd.ch/" target="_blank" rel="noopener noreferrer">
             <img src="/favicons/heig.png" alt="HEIG-VD logo" class="!m-0 w-8">
           </a>
-          #{status_badge(badges?)}
+          #{Keyword.get(parts, :status_badge, status_badge_markup())}
           <a href="https://github.com/ArchiDep/website" target="_blank" rel="noopener noreferrer">
             #{github_icon()}
           </a>
@@ -83,7 +84,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
             </span>
             <span class="font-title">ArchiDep</span>
           </a>
-          #{version(commit)}
+          #{Keyword.fetch!(parts, :version)}
         </p>
       </div>
     </footer>
@@ -92,9 +93,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
 
   # Whichever of the two the build has, the other leaves the blank line an
   # unwritten element leaves behind.
-  defp version(nil), do: ~s(\n      <span class="font-title">1.2.3</span>)
+  defp version_markup(commit: nil), do: ~s(\n      <span class="font-title">1.2.3</span>)
 
-  defp version(commit),
+  defp version_markup(commit: commit),
     do: """
     <span class="tooltip tooltip-left">
             <span class="tooltip-content">#{commit}</span>
@@ -103,11 +104,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
           \
     """
 
-  # A build that draws no badge leaves behind the blank line an unwritten
-  # element leaves.
-  defp status_badge(false), do: ""
-
-  defp status_badge(true),
+  defp status_badge_markup,
     do: """
     <a href="https://status.archidep.ch" target="_blank" rel="noopener noreferrer">
             <img src="https://status.archidep.ch/badge/_/dot" alt="Status">
