@@ -24,7 +24,16 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
   describe "new/1" do
     test "gathers what a layout is given" do
       urls = build(:url_context, version: nil)
-      site = SiteInfo.new(version: "0.1.0", git_branch: "main", git_revision: "abc")
+
+      site =
+        SiteInfo.new(
+          version: "0.1.0",
+          git_branch: "main",
+          git_revision: "abc",
+          years: "2025-2026",
+          years_short: "25-26"
+        )
+
       chapter = Chapter.new(DocumentRef.new(507, "dns", :subject), "DNS")
       section = Section.new(5, "Deployment", [chapter])
       structure = %Structure{sections: [section], cheatsheets: []}
@@ -58,7 +67,15 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
 
     test "leaves the entry and the section out for a page that is neither" do
       urls = build(:url_context, version: nil)
-      site = SiteInfo.new(version: "0.1.0", git_branch: nil, git_revision: nil)
+
+      site =
+        SiteInfo.new(
+          version: "0.1.0",
+          git_branch: nil,
+          git_revision: nil,
+          years: "2025-2026",
+          years_short: "25-26"
+        )
 
       assert LayoutContext.new(options(urls: urls, site: site)) == %LayoutContext{
                page: @page,
@@ -77,7 +94,15 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
 
     test "gathers what the home page needs, which is a chapter of nothing" do
       urls = build(:url_context, version: nil)
-      site = SiteInfo.new(version: "0.1.0", git_branch: nil, git_revision: nil)
+
+      site =
+        SiteInfo.new(
+          version: "0.1.0",
+          git_branch: nil,
+          git_revision: nil,
+          years: "2025-2026",
+          years_short: "25-26"
+        )
 
       assert LayoutContext.new(options(page: :home, urls: urls, site: site)) == %LayoutContext{
                page: :home,
@@ -184,7 +209,14 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
         structure: %Structure{sections: [], cheatsheets: []},
         statuses: %{},
         urls: build(:url_context, version: nil),
-        site: SiteInfo.new(version: "0.1.0", git_branch: nil, git_revision: nil)
+        site:
+          SiteInfo.new(
+            version: "0.1.0",
+            git_branch: nil,
+            git_revision: nil,
+            years: "2025-2026",
+            years_short: "25-26"
+          )
       ],
       overrides
     )

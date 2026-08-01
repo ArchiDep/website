@@ -509,6 +509,33 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
   end
 
+  describe "home_source/1" do
+    test "takes apart the page introducing the course", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "index.md")
+      File.write!(file, "---\ntitle: Architecture & Deployment\n---\n\nWelcome.\n")
+
+      assert Build.home_source(file) ==
+               Source.parse("---\ntitle: Architecture & Deployment\n---\n\nWelcome.\n")
+    end
+
+    test "names the home page by its file rather than by where it was read from", %{
+      tmp_dir: tmp_dir
+    } do
+      file = Path.join(tmp_dir, "index.md")
+      File.write!(file, "---\ntitle: Architecture & Deployment\n")
+
+      assert Build.home_source(file) ==
+               {:error, [{:unparsable_document, "index.md", :unterminated_front_matter}]}
+    end
+
+    test "reports a home page that is not there", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "index.md")
+
+      assert Build.home_source(file) ==
+               {:error, [{:unreadable_document, "index.md", file, :enoent}]}
+    end
+  end
+
   describe "front_matter/1" do
     test "reads what every page of a content directory says it is", %{tmp_dir: tmp_dir} do
       content_dir = Path.join(tmp_dir, "collections")
@@ -718,11 +745,13 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
       {:ok, tree} = Build.content_tree(dirs.content_dir)
       {:ok, sources} = Build.sources(tree, dirs.content_dir)
+      {:ok, home} = Build.home_source(dirs.home_file)
       {:ok, page_assets} = Build.page_asset_manifest(tree, dirs.content_dir)
 
       assert inputs == %Build.Site.Inputs{
                tree: tree,
-               sources: sources,
+               sources: Map.put(sources, :home, home),
+               home_source_path: "index.md",
                structure: %Structure{
                  sections: [
                    Section.new(1, "Introduction", [
@@ -774,6 +803,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
       dirs = site_fixture(tmp_dir)
       File.rm!(dirs.progress_file)
       File.rm!(dirs.declarations_file)
+      File.rm!(dirs.home_file)
       File.rm!(Path.join(dirs.static_dir, "cache_manifest.json"))
 
       assert Build.site_inputs(site_options(dirs)) ==
@@ -781,7 +811,8 @@ defmodule ArchiDep.CourseSite.BuildTest do
                 [
                   {:missing_declarations, dirs.declarations_file},
                   {:missing_manifest, Path.join(dirs.static_dir, "cache_manifest.json")},
-                  {:missing_progress, dirs.progress_file}
+                  {:missing_progress, dirs.progress_file},
+                  {:unreadable_document, "index.md", dirs.home_file, :enoent}
                 ]}
     end
 
@@ -858,6 +889,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
       inputs = %Build.Site.Inputs{
         tree: tree,
         sources: %{},
+        home_source_path: "index.md",
         structure: %Structure{sections: [], cheatsheets: []},
         progress: Progress.new([]),
         includes: %{},
@@ -1057,8 +1089,14 @@ defmodule ArchiDep.CourseSite.BuildTest do
       includes_dir: Path.join(tmp_dir, "includes"),
       static_dir: Path.join(tmp_dir, "static"),
       declarations_file: Path.join(tmp_dir, "course.yml"),
-      progress_file: Path.join(tmp_dir, "progress.json")
+      progress_file: Path.join(tmp_dir, "progress.json"),
+      home_file: Path.join(tmp_dir, "index.md")
     }
+
+    File.write!(
+      dirs.home_file,
+      "---\ntitle: Architecture & Deployment\n---\n\nWelcome.\n"
+    )
 
     write!(
       dirs.content_dir,
@@ -1099,6 +1137,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
   defp site_options(dirs) do
     [
       content_dir: dirs.content_dir,
+      home_file: dirs.home_file,
       includes_dir: dirs.includes_dir,
       declarations_file: dirs.declarations_file,
       progress_file: dirs.progress_file,

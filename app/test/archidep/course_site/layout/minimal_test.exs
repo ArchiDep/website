@@ -78,7 +78,14 @@ defmodule ArchiDep.CourseSite.Layout.MinimalTest do
       structure: %Structure{sections: [], cheatsheets: []},
       statuses: %{},
       urls: build(:url_context, version: nil),
-      site: SiteInfo.new(version: "0.1.0", git_branch: "main", git_revision: "abc123")
+      site:
+        SiteInfo.new(
+          version: "0.1.0",
+          git_branch: "main",
+          git_revision: "abc123",
+          years: "2025-2026",
+          years_short: "25-26"
+        )
     )
   end
 

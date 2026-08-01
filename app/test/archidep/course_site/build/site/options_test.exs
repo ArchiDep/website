@@ -12,7 +12,7 @@ defmodule ArchiDep.CourseSite.Build.Site.OptionsTest do
   describe "new/1" do
     test "states what a build is, wrapping its pages in the bare layout by default" do
       urls = build(:url_context, version: nil)
-      site = SiteInfo.new(version: "1.2.3")
+      site = SiteInfo.new(version: "1.2.3", years: "2025-2026", years_short: "25-26")
 
       assert Options.new(urls: urls, site: site) == %Options{
                urls: urls,
@@ -24,7 +24,7 @@ defmodule ArchiDep.CourseSite.Build.Site.OptionsTest do
 
     test "takes the layout and the renderer's own options a build chooses" do
       urls = build(:url_context, version: nil)
-      site = SiteInfo.new(version: "1.2.3")
+      site = SiteInfo.new(version: "1.2.3", years: "2025-2026", years_short: "25-26")
       render_options = RenderOptions.new(strict_variables: false)
 
       assert Options.new(
@@ -43,7 +43,13 @@ defmodule ArchiDep.CourseSite.Build.Site.OptionsTest do
     test "refuses a URL context that is not one" do
       assert_raise ArgumentError,
                    "URL context must be a ArchiDep.CourseSite.Urls.UrlContext, got: :live",
-                   fn -> Options.new(urls: :live, site: SiteInfo.new(version: "1.2.3")) end
+                   fn ->
+                     Options.new(
+                       urls: :live,
+                       site:
+                         SiteInfo.new(version: "1.2.3", years: "2025-2026", years_short: "25-26")
+                     )
+                   end
     end
 
     test "refuses site info that is not a ArchiDep.CourseSite.SiteInfo" do
@@ -58,7 +64,8 @@ defmodule ArchiDep.CourseSite.Build.Site.OptionsTest do
                    fn ->
                      Options.new(
                        urls: build(:url_context, version: nil),
-                       site: SiteInfo.new(version: "1.2.3"),
+                       site:
+                         SiteInfo.new(version: "1.2.3", years: "2025-2026", years_short: "25-26"),
                        layout: "minimal"
                      )
                    end
@@ -70,7 +77,8 @@ defmodule ArchiDep.CourseSite.Build.Site.OptionsTest do
                    fn ->
                      Options.new(
                        urls: build(:url_context, version: nil),
-                       site: SiteInfo.new(version: "1.2.3"),
+                       site:
+                         SiteInfo.new(version: "1.2.3", years: "2025-2026", years_short: "25-26"),
                        render_options: []
                      )
                    end

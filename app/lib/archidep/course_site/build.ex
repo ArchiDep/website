@@ -148,6 +148,23 @@ defmodule ArchiDep.CourseSite.Build do
   end
 
   @doc """
+  The home page, which is not in the content directory.
+
+  The home page introduces the course rather than being part of it: it has no
+  number, no section and no chapter directory, so there is nowhere in the
+  content tree to put it and it is read from where it is written instead. Its
+  source path is its file name, which is what the course's own repository shows
+  it under.
+  """
+  @spec home_source(Path.t()) :: {:ok, Source.t()} | {:error, nonempty_list(error())}
+  def home_source(file) do
+    case source(Path.dirname(file), Path.basename(file)) do
+      {:ok, source} -> {:ok, source}
+      {:error, error} -> {:error, [error]}
+    end
+  end
+
+  @doc """
   The front matter of every page of a content directory, which is what
   `ArchiDep.CourseSite.Structure.plan/3` reads a page's name and kind from.
   """
@@ -383,6 +400,8 @@ defmodule ArchiDep.CourseSite.Build do
   Options:
 
   - `:content_dir` (required) — the course collections.
+  - `:home_file` (required) — the page introducing the course, which is not one
+    of them.
   - `:includes_dir` (required) — the partials a document may include.
   - `:declarations_file` (required) — what the course declares about itself.
   - `:progress_file` (required) — how far the course has got.
@@ -547,7 +566,10 @@ defmodule ArchiDep.CourseSite.Build do
     do: raise("#{what}:\n" <> Enum.map_join(errors, "\n", &("  " <> format.(&1))))
 
   defp read_site_inputs(tree, content_dir, opts) do
+    home_file = Keyword.fetch!(opts, :home_file)
+
     sources = sources(tree, content_dir)
+    home = home_source(home_file)
     declarations = declarations(Keyword.fetch!(opts, :declarations_file))
     progress = progress(Keyword.fetch!(opts, :progress_file))
     includes = includes(Keyword.fetch!(opts, :includes_dir))
@@ -555,14 +577,15 @@ defmodule ArchiDep.CourseSite.Build do
     assets = assets(Keyword.fetch!(opts, :static_dir), Keyword.get(opts, :digested, true))
     structure = structure(tree, sources, declarations)
 
-    reads = [sources, declarations, progress, includes, page_assets, assets, structure]
+    reads = [sources, home, declarations, progress, includes, page_assets, assets, structure]
 
     case Enum.sort(errors_of(reads)) do
       [] ->
         {:ok,
          %Site.Inputs{
            tree: tree,
-           sources: value_of(sources),
+           sources: Map.put(value_of(sources), :home, value_of(home)),
+           home_source_path: Path.basename(home_file),
            structure: value_of(structure),
            progress: sessions_progress(value_of(progress)),
            includes: value_of(includes),

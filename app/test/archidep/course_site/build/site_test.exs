@@ -29,6 +29,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       assert {:ok, site} = Site.plan(inputs(), options())
 
       assert site.files == %{
+               "/index.html" =>
+                 "/|index.md|Architecture & Deployment · ArchiDep|||page:::<p>Welcome.</p>",
                "/course/101-command-line/index.html" =>
                  "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>",
                "/course/101-command-line/slides/index.html" =>
@@ -48,6 +50,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       assert {:ok, site} = Site.plan(inputs(), options())
 
       assert site.pages == [
+               {:home, :html,
+                "/|index.md|Architecture & Deployment · ArchiDep|||page:::<p>Welcome.</p>"},
                {{:document, @cli_subject}, :html,
                 "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>"},
                {{:document, @cli_slides}, :markdown, "# Command Line\n"},
@@ -67,6 +71,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       assert Site.plan(inputs(), options(layout: CourseSiteTestLayout.Failing)) ==
                {:error,
                 [
+                  {:unlayoutable_page, :home, {:unknown_asset, "/assets/missing.css"}},
                   {:unlayoutable_page, {:cheatsheet, "git"},
                    {:unknown_asset, "/assets/missing.css"}},
                   {:unlayoutable_page, {:document, @cli_slides},
@@ -82,6 +87,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
 
     test "reports every document it cannot render rather than the first" do
       sources = %{
+        :home => source("---\ntitle: Architecture & Deployment\n---\n\nWelcome.\n"),
         {:document, @cli_subject} => source("---\ntitle: Command Line\n---\n\n{% link nope %}\n"),
         {:document, @todolist} => source("---\ntitle: PHP Todolist\n---\n\n{% link nope %}\n")
       }
@@ -130,6 +136,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     %Site.Inputs{
       tree: tree(),
       sources: Keyword.get(overrides, :sources, sources()),
+      home_source_path: "index.md",
       structure: Keyword.get(overrides, :structure, structure()),
       progress: Progress.new([Session.new(~D[2026-02-02], "Session", [100, 101], [200], [202])]),
       includes: %{},
@@ -141,7 +148,14 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
   defp options(overrides \\ []) do
     Site.Options.new(
       urls: build(:url_context, mode: :live, base_path: "", version: nil, live_site_url: nil),
-      site: SiteInfo.new(version: "1.2.3", git_branch: "main", git_revision: "abc123"),
+      site:
+        SiteInfo.new(
+          version: "1.2.3",
+          git_branch: "main",
+          git_revision: "abc123",
+          years: "2025-2026",
+          years_short: "25-26"
+        ),
       layout: Keyword.get(overrides, :layout, CourseSiteTestLayout.Wrapper)
     )
   end
@@ -162,6 +176,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
 
   defp sources do
     %{
+      :home => source("---\ntitle: Architecture & Deployment\n---\n\nWelcome.\n"),
       {:document, @cli_subject} => source("---\ntitle: Command Line\n---\n\n## What\n"),
       {:document, @cli_slides} =>
         source("---\ntitle: Command Line Slides\n---\n\n# Command Line\n"),

@@ -20,6 +20,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
 
   - `--content` — the course collections directory. Defaults to
     `../course/collections`.
+  - `--home` — the page introducing the course, which is not one of them.
+    Defaults to `../course/index.md`.
   - `--includes` — the directory of partials a document may include. Defaults to
     `../course/_includes`.
   - `--declarations` — what the course declares about itself. Defaults to
@@ -29,6 +31,9 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     `priv/course/progress.json`.
   - `--static` — the static directory holding the global assets. Defaults to
     `priv/static`.
+  - `--years` — the academic year this edition covers. Defaults to `2025-2026`.
+  - `--years-short` — the same year as it fits in the corner of a slide.
+    Defaults to `25-26`.
   - `--output` — where to write. Defaults to `tmp/course_site`.
   - `--clean` — empty the output directory first.
   - `--undigested` — take the global assets to carry no digest.
@@ -58,9 +63,17 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
 
   @app_dir Path.expand("../../../../..", __DIR__)
 
+  # The edition being taught, which nothing in the checkout states: the content
+  # is the same course whichever year it is read in.
+  @years "2025-2026"
+  @years_short "25-26"
+
   @switches [
     content: :string,
+    home: :string,
     includes: :string,
+    years: :string,
+    years_short: :string,
     declarations: :string,
     progress: :string,
     static: :string,
@@ -98,6 +111,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     result =
       Build.site_inputs(
         content_dir: content_dir,
+        home_file: path(opts, :home, "../course/index.md"),
         includes_dir: path(opts, :includes, "../course/_includes"),
         declarations_file: path(opts, :declarations, "../course/_data/course.yml"),
         progress_file: path(opts, :progress, "priv/course/progress.json"),
@@ -137,7 +151,9 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
         SiteInfo.new(
           version: Mix.Project.config()[:version],
           git_branch: Git.git_branch(),
-          git_revision: Git.git_revision()
+          git_revision: Git.git_revision(),
+          years: Keyword.get(opts, :years, @years),
+          years_short: Keyword.get(opts, :years_short, @years_short)
         )
     )
   end

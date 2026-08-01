@@ -11,11 +11,16 @@ defmodule ArchiDep.CourseSite.Build.Site do
 
   ## The order pages are planned in
 
-  The site is walked in the order it is read: each section's chapters, each
-  chapter's page and then the deck it presents, and the cheatsheets after them.
-  A chapter is the unit, so a chapter with a subject and a deck is two files and
-  one entry — there is no rule hiding a second listing, because there is no
-  second listing.
+  The site is walked in the order it is read: the home page, then each section's
+  chapters, each chapter's page and the deck it presents, and the cheatsheets
+  after them. A chapter is the unit, so a chapter with a subject and a deck is
+  two files and one entry — there is no rule hiding a second listing, because
+  there is no second listing.
+
+  The home page is the one page belonging to no chapter and no section, and so
+  the one laid out with neither. It introduces the course rather than being part
+  of it, which is also why it is read from outside the content directory
+  (`ArchiDep.CourseSite.Build.home_source/1`).
 
   ## What is handed to the link check
 
@@ -120,17 +125,18 @@ defmodule ArchiDep.CourseSite.Build.Site do
   defp collect(_planned, [_first | _rest] = errors, _build),
     do: {:error, Enum.sort(Enum.reverse(errors))}
 
-  # Every page of the site, in the order the site is read: a chapter's own page
-  # and then the deck it presents, section by section, and the cheatsheets last.
-  # The home page is not among them — it is not part of the course's structure,
-  # it introduces it.
+  # Every page of the site, in the order the site is read: the home page, then a
+  # chapter's own page and the deck it presents, section by section, and the
+  # cheatsheets last. The home page comes first and belongs to neither a chapter
+  # nor a section — it is not part of the course's structure, it introduces it,
+  # which is why it is the one page carrying no entry.
   defp pages(%Structure{sections: sections, cheatsheets: cheatsheets}) do
     chapters =
       Enum.flat_map(sections, fn %Section{chapters: chapters} = section ->
         Enum.flat_map(chapters, &chapter_pages(&1, section))
       end)
 
-    chapters ++ Enum.map(cheatsheets, &{Cheatsheet.page_ref(&1), &1, nil})
+    [{:home, nil, nil} | chapters] ++ Enum.map(cheatsheets, &{Cheatsheet.page_ref(&1), &1, nil})
   end
 
   defp chapter_pages(%Chapter{slides: nil} = chapter, section),
@@ -141,7 +147,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
 
   defp page({page, entry, section}, inputs, options, statuses) do
     source = Map.fetch!(inputs.sources, page)
-    source_path = source_path(inputs.tree, page)
+    source_path = source_path(inputs, page)
 
     context =
       RenderContext.new(
@@ -204,10 +210,12 @@ defmodule ArchiDep.CourseSite.Build.Site do
 
   defp link_check_pages(page, %Page{}, html), do: [{page, :html, html}]
 
-  defp source_path(%ContentTree{documents: documents}, {:document, ref}),
+  defp source_path(%Inputs{home_source_path: path}, :home), do: path
+
+  defp source_path(%Inputs{tree: %ContentTree{documents: documents}}, {:document, ref}),
     do: Map.fetch!(documents, ref)
 
-  defp source_path(%ContentTree{cheatsheets: cheatsheets}, {:cheatsheet, slug}),
+  defp source_path(%Inputs{tree: %ContentTree{cheatsheets: cheatsheets}}, {:cheatsheet, slug}),
     do: Map.fetch!(cheatsheets, slug)
 
   defp build_files(inputs, options, statuses),

@@ -293,6 +293,34 @@ main .solution pre.lumis:last-child {
   .course-item-future {
     @apply opacity-25 hover:opacity-100;
   }
+
+  /* The page being read, which the course site marks and the dashboard never
+     has to: the dashboard is not one of the pages this menu lists. It is drawn
+     at full strength where every other entry is drawn at half, so that where
+     you are reads as a statement rather than as another link. */
+  .course-item-current {
+    @apply bg-neutral/25 dark:bg-neutral;
+
+    & > a {
+      @apply font-bold;
+    }
+
+    &.course-item-done {
+      @apply border-success;
+    }
+
+    &.course-item-due {
+      @apply border-warning;
+    }
+
+    &.course-item-next {
+      @apply border-info;
+    }
+
+    &.course-item-future {
+      @apply opacity-100;
+    }
+  }
 }
 
 .cols {
