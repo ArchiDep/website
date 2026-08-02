@@ -38,30 +38,26 @@ defmodule ArchiDep.CourseSite.PageRefTest do
     end
   end
 
-  describe "parse_output_path/1" do
-    test "parses the home page" do
-      assert PageRef.parse_output_path("/") == {:ok, :home}
+  describe "edition_path/2" do
+    test "returns the path of a subject within its edition" do
+      subject = DocumentRef.new(507, "dns", :subject)
+
+      assert PageRef.edition_path("2025", PageRef.output_path({:document, subject})) ==
+               "/2025/course/507-dns/"
     end
 
-    test "rejects a path missing its trailing slash" do
-      assert PageRef.parse_output_path("/course/704-render-deployment") ==
-               {:error, {:invalid_output_path, "/course/704-render-deployment"}}
+    test "returns the path of slides within their edition" do
+      slides = DocumentRef.new(203, "git-collaboration", :slides)
+
+      assert PageRef.edition_path("1985", PageRef.output_path({:document, slides})) ==
+               "/1985/course/203-git-collaboration/slides/"
     end
 
-    test "rejects a path below a chapter's slides" do
-      assert PageRef.parse_output_path("/course/101-command-line/slides/images/") ==
-               {:error, {:invalid_output_path, "/course/101-command-line/slides/images/"}}
-    end
-
-    test "rejects an unversioned path outside the course material" do
-      assert PageRef.parse_output_path("/assets/theme/theme.css") ==
-               {:error, {:invalid_output_path, "/assets/theme/theme.css"}}
-    end
-
-    property "recovers the identity a page's path preserves" do
+    property "prefixes any page of an edition with that edition" do
       check all page <- CourseSiteFactory.page_ref_generator() do
-        assert page |> PageRef.output_path() |> PageRef.parse_output_path() ==
-                 {:ok, PageRef.identity(page)}
+        path = PageRef.output_path(page)
+
+        assert PageRef.edition_path("1955", path) == "/1955" <> path
       end
     end
   end

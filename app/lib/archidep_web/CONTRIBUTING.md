@@ -115,6 +115,20 @@ secure headers, SSL), `:api` (JSON, SSL) and `:dev` — and these route groups:
 :fetch_authentication`): `/profile`, the [dashboard](#user-facing-pages)
   (`/app`, `/app/my-servers`), the user-facing [server page](#servers-ui)
   (`/servers/:id`), and the `/admin/...` [admin console](#admin-console).
+- **The archive resolver:** `GET /latest?to=<the archived page's own path>`
+  (`Course.LatestController`), which sends a reader who followed the banner of
+  an archived edition of the course material to the page that superseded it, or
+  renders a `404` saying there is none. It is **public and unauthenticated** —
+  every page of every archive links to it, from any host — and it pipes through
+  `:fetch_authentication` and `:set_current_path` only because that `404` is
+  rendered in the [application shell](#components--layouts). The correspondence
+  it resolves is [the course site
+  subsystem's](../archidep/course_site/CONTRIBUTING.md#the-editions-that-came-before);
+  what belongs here is that the redirect is a `302` with `Cache-Control:
+no-store`, never a `301`, because its target is a fact about the edition
+  currently being taught. The `to` value is untrusted and is only ever a key
+  looked up in that mapping — never a redirect target, and never echoed into the
+  page.
 - **API callbacks:** `/api/callbacks/servers/:id/up` (the [token-authenticated
   server callback](../archidep/servers/CONTRIBUTING.md#use-cases)) and
   `/api/health` (see [Errors, Health & Telemetry](#errors-health--telemetry)).

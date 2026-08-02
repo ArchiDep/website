@@ -18,6 +18,7 @@ and tooling that also apply here. Read that document first.
   - [What it refuses](#what-it-refuses)
   - [The headings a page has](#the-headings-a-page-has)
   - [The compiled model](#the-compiled-model)
+  - [The editions that came before](#the-editions-that-came-before)
 - [URL and link emission](#url-and-link-emission)
   - [What a build is](#what-a-build-is)
   - [Reference kinds and their policy](#reference-kinds-and-their-policy)
@@ -77,16 +78,18 @@ Every module writing HEEx here also sets `@debug_heex_annotations false` and
 development, and what this subsystem writes is a file somebody publishes rather
 than a page somebody is debugging in a browser.
 
-Two modules stand outside that, each in one named way, and naming them is what
-keeps the claim checkable:
+A few modules stand outside that, each in one named way, and naming them is
+what keeps the claim checkable:
 
 - [`Build`](#building) is the only one that touches the **filesystem**, so a
   stray `File` call anywhere else reads as obviously wrong.
-- [`Material`](#the-compiled-model) is the only **edition-bound** value:
-  everything else is a function of its inputs, and this is one particular set of
-  inputs, worked out while the application compiles. It reads nothing itself —
-  it calls `Build` — and it stores the [identities](#identities) defined here
-  rather than URLs, so no edition of the course is baked into it either.
+- [`Material`](#the-compiled-model) and
+  [`Archives`](#the-editions-that-came-before) are the only **edition-bound**
+  values: everything else is a function of its inputs, and these are one
+  particular set of inputs, worked out while the application compiles. Neither
+  reads anything itself — both call `Build` — and both store the
+  [identities](#identities) defined here rather than URLs, so no edition of the
+  course is baked into either.
 
 ## Why this is not a bounded context
 
@@ -97,13 +100,15 @@ access to them; this subsystem owns no state and answers no requests. Keeping it
 apart also keeps it honest: it must run standalone, so a stray `Repo` or
 `Endpoint` call in here is visibly wrong rather than merely unfortunate.
 
-That covers [`Material`](#the-compiled-model) too, which is the one thing here
-the dashboard reads and therefore the one that most looks like a context's read
-model. It owns no table, has no use case, policy or event, and every one of its
-inputs lives in this namespace. Keeping it here rather than in the [`Course`
-context](../course/CONTRIBUTING.md) also closes a hole in the web layer's rule
-that every context is replaced by its mock: reached through `Course`, it
-bypassed the facade and therefore `Course.ContextMock`.
+That covers the two modules the dashboard reads —
+[`Material`](#the-compiled-model) and
+[`Archives`](#the-editions-that-came-before) — which are the ones that most look
+like a context's read model. Neither owns a table, has a use case, policy or
+event, and every one of their inputs lives in this namespace. Keeping `Material`
+here rather than in the [`Course` context](../course/CONTRIBUTING.md) also
+closes a hole in the web layer's rule that every context is replaced by its
+mock: reached through `Course`, it bypassed the facade and therefore
+`Course.ContextMock`.
 
 ## Identities
 
@@ -127,9 +132,9 @@ URL:
 
 A page URL identifies a page **less** precisely than a reference does: a
 chapter's subject and its exercise are emitted at one and the same URL.
-`PageRef.identity/1` is that weaker identity and `parse_output_path/1` recovers
-it from a path — enough to match an archived page against the current edition of
-the course.
+`PageRef.identity/1` is that weaker identity, and it is what an archived edition
+records of each of its pages so that [the resolver](#the-editions-that-came-before)
+can match one against the current course.
 
 That collapse is safe only because of a rule the content obeys: **a chapter has
 a subject or an exercise, never both, and an exercise never has slides.** Two
@@ -319,6 +324,52 @@ never learns the course calendar, an archive of a finished year is a build that
 says `:revealed` rather than one carrying a second flag, and moving the source
 of the status changes the caller and nothing here.
 
+### The editions that came before
+
+Every page of an archived edition carries a link to the current version of
+itself ([the banner](#the-chrome)), and that link names the archived page rather
+than its replacement, because an archive is frozen bytes and what supersedes it
+changes as the course is reworked. [`Archives`](./archives.ex) is what answers
+it. It is the second [edition-bound](#the-compiled-model) module of the
+subsystem, and separate from `Material` because an edition **archived** since is
+a new file in a directory `Material` does not watch — a recompilation question
+`Material.__mix_recompile__?/0` cannot ask.
+
+Three pure modules decide what it holds, and `Build` reads the two files:
+
+| Module                                          | What it decides                                                                                   |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| [`Archives.Manifest`](./archives/manifest.ex)   | What one finished edition published, as `course/archives/<year>.json`                             |
+| [`Archives.Overrides`](./archives/overrides.ex) | What the course declares in `course/_data/archives.yml` about the pages it has renamed or dropped |
+| [`Archives.Mapping`](./archives/mapping.ex)     | What each archived page has become, and which of them nothing accounts for                        |
+
+**An archived path is opaque.** It is compared for equality and never taken
+apart: the numbering, the slugging and the shape of a URL may all differ in a
+later edition, so a parser here would be this edition's grammar applied to an
+archive it never described. That is why a manifest records each page's
+[identity](#identities) **beside** its path — written by the edition that
+assigned it, at the one moment anything knows it — and why `mix
+archidep.course_site.archives` is a rollover step rather than something derived
+later. It is also why there is no way back from a path to an identity.
+
+**Matching is by kind and slug, never by number**, so a renumbered chapter needs
+no entry at all and the yearly cost of the whole mechanism is the diff. An
+override wins wherever one is declared — the course saying outright where a page
+went beats an answer worked out from a slug — and a slug the current edition
+uses twice is refused rather than guessed at.
+
+**A page that resolves to nothing fails this application's build**, naming every
+offender. Nothing falls back to the home page on its own: were that automatic, a
+single rename would silently degrade every archived year and the table would
+decay into "everything points at the home page" with nobody noticing.
+
+The mapping is kept as **data** rather than as function clauses, because when
+the course ends for good and the application goes down the archives outlive it
+on a static host, and one file reading `location.search` against that same map
+answers these URLs with no application at all. The route that serves it today is
+[the web
+layer's](../../archidep_web/CONTRIBUTING.md#routing-endpoint--pipelines).
+
 ## URL and link emission
 
 [`Urls`](./urls.ex) is the **only** place in the rendering pipeline allowed to
@@ -472,6 +523,7 @@ it, documented there rather than here:
 | [`NotFound`](./build/not_found.ex)                | what a static host shows for a path the build never wrote                                      |
 | [`Structure`](./structure.ex)                     | what the course is, which `course!/2` chains the reads for                                     |
 | [`Headings`](./headings.ex)                       | what a page's headings are called, which `headings!/3` chains the reads for                    |
+| [`Archives.Mapping`](./archives/mapping.ex)       | what each page of a past edition has become, which `archives!/3` chains the reads for          |
 
 A few things about the shape of it are worth knowing before reading any of them.
 

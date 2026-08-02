@@ -1,0 +1,33 @@
+<Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
+  <div id="no-equivalent" class="my-4 hero bg-base-200">
+    <div class="hero-content p-10 text-center">
+      <div class="max-w-md">
+        <h1 class="text-3xl font-bold">
+          {gettext("This page is no longer part of the course")}
+        </h1>
+
+        <p class="py-6">
+          {if @archived,
+            do:
+              gettext(
+                "The page you came from was published by an earlier edition of the course, and the current one has nothing that replaces it."
+              ),
+            else:
+              gettext(
+                "That link does not name a page of any edition of the course we have published."
+              )}
+        </p>
+
+        <div class="flex flex-col gap-2">
+          <.link id="current-course" navigate={@home} class="btn btn-primary">
+            {gettext("Go to the course")}
+          </.link>
+
+          <.link :if={@archived} id="archived-page" navigate={@archived} class="btn btn-ghost">
+            {gettext("Back to the page you came from")}
+          </.link>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layouts.app>

@@ -362,11 +362,19 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       banner: `mode != :live` requires `live_site_url` and `:archive` requires
       `version`, which is also what makes both banner references total where the
       chrome resolves them.
-- [ ] Build the `/latest?to=…` resolver in the app, with a per-year archive
+- [x] Build the `/latest?to=…` resolver in the app, with a per-year archive
       manifest and a compile-checked mapping (kept as **data**, so a client-side
       resolver can replace it once the app is retired) from archived document
       identities to current ones — see [Archived years: a banner and one dynamic
-      resolver](#archived-years-a-banner-and-one-dynamic-resolver).
+      resolver](#archived-years-a-banner-and-one-dynamic-resolver). **Done:
+      `ArchiDep.CourseSite.Archives` and the three pure modules under it**, with
+      six corrections recorded there. The sharpest is that an archived path is
+      **opaque** — never parsed with the current edition's grammar, which is
+      what `PageRef.parse_output_path/1` was written to do and why it is gone;
+      a manifest records each page's identity beside its path instead, written
+      by the edition that assigned it. `course/archives/2025.json` is seeded
+      from the current model, so the mechanism ships answering rather than
+      inert.
 - [ ] Redirect the unprefixed legacy paths **into the 2025 archive**, not to the
       resolver — `301` from `/course/*` and `/cheatsheets/*` to the same path
       under `/2025/`, in the reverse proxy, with a catch-all route covering
@@ -1226,6 +1234,41 @@ implicit:
 **Cache semantics: 302, not 301.** The target is year-dependent, so a
 permanently-cached redirect would be wrong next year; send `Cache-Control:
 no-store` with it.
+
+Six corrections, applied while building it:
+
+- **An archived path is never parsed** — step 1 above is gone, and with it
+  `PageRef.parse_output_path/1`, which existed for it and nothing else. The
+  numbering, the slugging and the shape of a URL may all differ in a later
+  edition, and an archive is frozen: a parser would be the current grammar
+  applied to bytes it never described. So a **manifest records each page's
+  identity beside its path**, written at the rollover by the edition that
+  assigned it, and the path itself is only ever compared for equality. That
+  makes the manifest an input of the resolution rather than only of the check,
+  which is a bigger change than it sounds: `to` matches a _key of a map this
+  application generated_, so an off-site or `..`-bearing value cannot match
+  anything and there is nothing left to sanitise. The two rules this section
+  states about `to` are held by construction rather than enforced.
+- **Matching is on the kind and the slug, not on `{slug, type}`.** A subject and
+  an exercise are one page at one URL, so `type` is not part of a page's
+  identity in the first place — the same argument `Structure.fetch_chapter/3`
+  already makes. What a URL preserves is chapter / deck / cheatsheet, which is
+  `PageRef.identity/1` with the number dropped.
+- **An override wins over an automatic match**, where the order above implies
+  the reverse. An override that a slug happens to satisfy would otherwise be
+  dead text, and there is no reading under which an answer worked out from a
+  slug should beat the course saying outright where a page went.
+- **A slug the current edition uses twice is refused**, not guessed at. The
+  design assumed the automatic match is a function; it is one only while slugs
+  are unique, and an override is what says which of the two a page became.
+- **The manifest is generated, the overrides are hand-written, and they are
+  separate files** — `course/archives/<year>.json` beside
+  `course/_data/archives.yml`, both sides of an entry a page path. Folding the
+  declarations into the generated file would have the rollover overwrite them.
+- **A manifest carries a format version.** An edition whose pages are identified
+  by something other than a kind and a slug is what a bump is for, and the
+  manifests written before it must go on being read by the clauses that
+  understood them — which is the whole reason this survives a grammar change.
 
 **One `mode`, three mutually exclusive values — both banners ship from the
 start.** A build is never both a backup copy and an archive: the GitHub Pages

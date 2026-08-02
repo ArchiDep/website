@@ -11,9 +11,15 @@ defmodule ArchiDep.CourseSite.PageRef do
   A page URL identifies a page less precisely than a reference does: a chapter's
   subject and its exercise are emitted at one and the same URL, which is
   coherent only because a chapter never holds both. `identity/1` is that weaker
-  identity, and it is what `parse_output_path/1` recovers from a path — enough
-  to match an archived page against the current edition of the course, which is
-  the reason the inverse direction exists.
+  identity, and it is what an archived edition records of each of its pages so
+  that `ArchiDep.CourseSite.Archives` can match one against the current course.
+
+  There is deliberately no way back from a path to an identity. A path is only
+  ever read by the edition that emitted it, and the numbering, the slugging and
+  the shape of a URL are all free to differ from one edition to the next; a
+  parser here would be this edition's grammar applied to a frozen archive it
+  never described. An archived path is an opaque string, compared for equality
+  and nothing else.
   """
 
   alias ArchiDep.CourseSite.DocumentRef
@@ -25,9 +31,6 @@ defmodule ArchiDep.CourseSite.PageRef do
           | {:chapter, pos_integer(), String.t()}
           | {:chapter_slides, pos_integer(), String.t()}
           | {:cheatsheet, String.t()}
-
-  @document_path_regex ~r{\A/course/([1-9]\d\d)-([^/]+)/(slides/)?\z}
-  @cheatsheet_path_regex ~r{\A/cheatsheets/([^/]+)/\z}
 
   @doc """
   The path of a page within a build, always starting and ending with a slash.
@@ -82,44 +85,22 @@ defmodule ArchiDep.CourseSite.PageRef do
   def identity({:cheatsheet, slug}) when is_binary(slug), do: {:cheatsheet, slug}
 
   @doc """
-  Parse the path of a page within a build back into the identity that path
-  preserves.
+  Where a page of a given edition is served from, relative to the site's mount
+  point: the edition's prefix followed by the page's path within its build.
 
-      iex> PageRef.parse_output_path("/course/401-cloud-computing/slides/")
-      {:ok, {:chapter_slides, 401, "cloud-computing"}}
+  This is what names a page of an *archived* edition — the whole of the identity
+  `ArchiDep.CourseSite.Urls` hands to the `/latest` resolver, and the key
+  `ArchiDep.CourseSite.Archives` matches it against. It takes the path rather
+  than the page so that both sides can call it: only the live edition holds a
+  page reference, while an archive holds the paths it emitted and nothing more.
 
-      iex> PageRef.parse_output_path("/course/402-run-virtual-server/")
-      {:ok, {:chapter, 402, "run-virtual-server"}}
+      iex> PageRef.edition_path("2025", PageRef.output_path({:cheatsheet, "git"}))
+      "/2025/cheatsheets/git/"
 
-      iex> PageRef.parse_output_path("/cheatsheets/git/")
-      {:ok, {:cheatsheet, "git"}}
-
-      iex> PageRef.parse_output_path("/course/101-command-line/images/cli.jpg")
-      {:error, {:invalid_output_path, "/course/101-command-line/images/cli.jpg"}}
+      iex> PageRef.edition_path("2025", PageRef.output_path(:home))
+      "/2025/"
   """
-  @spec parse_output_path(String.t()) ::
-          {:ok, identity()} | {:error, {:invalid_output_path, String.t()}}
-  def parse_output_path("/"), do: {:ok, :home}
-
-  def parse_output_path(path) when is_binary(path) do
-    with nil <- parse_document_path(path),
-         nil <- parse_cheatsheet_path(path) do
-      {:error, {:invalid_output_path, path}}
-    end
-  end
-
-  defp parse_document_path(path) do
-    case Regex.run(@document_path_regex, path) do
-      [_match, num, slug] -> {:ok, {:chapter, String.to_integer(num), slug}}
-      [_match, num, slug, "slides/"] -> {:ok, {:chapter_slides, String.to_integer(num), slug}}
-      nil -> nil
-    end
-  end
-
-  defp parse_cheatsheet_path(path) do
-    case Regex.run(@cheatsheet_path_regex, path) do
-      [_match, slug] -> {:ok, {:cheatsheet, slug}}
-      nil -> nil
-    end
-  end
+  @spec edition_path(String.t(), String.t()) :: String.t()
+  def edition_path(edition, path) when is_binary(edition) and is_binary(path),
+    do: "/" <> edition <> path
 end

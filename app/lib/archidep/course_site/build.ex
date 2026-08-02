@@ -14,6 +14,9 @@ defmodule ArchiDep.CourseSite.Build do
   directory that is going to be rejected never leaves half a build behind.
   """
 
+  alias ArchiDep.CourseSite.Archives.Manifest
+  alias ArchiDep.CourseSite.Archives.Mapping
+  alias ArchiDep.CourseSite.Archives.Overrides
   alias ArchiDep.CourseSite.Build.AssetDigest
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.Build.PageAssetDigest
@@ -58,11 +61,20 @@ defmodule ArchiDep.CourseSite.Build do
     "favicons/archidep-rocket-192.png"
   ]
 
+  @archives "*.json"
+
   @type error ::
           ContentTree.error()
           | PageAssetDigest.error()
           | AssetDigest.error()
           | ProgressFile.error()
+          | Overrides.error()
+          | {:unreadable_archive, Path.t(), File.posix()}
+          | {:undecodable_archive, Path.t()}
+          | {:invalid_archive, Path.t(), Manifest.error()}
+          | {:missing_overrides, Path.t()}
+          | {:unreadable_overrides, Path.t(), File.posix()}
+          | {:undecodable_overrides, Path.t(), String.t()}
           | {:missing_manifest, Path.t()}
           | {:unreadable_manifest, Path.t(), File.posix()}
           | {:undecodable_manifest, Path.t()}
@@ -219,6 +231,92 @@ defmodule ArchiDep.CourseSite.Build do
     tree
     |> Structure.plan(front_matter(sources), declarations)
     |> or_raise("What the course says it is could not be worked out", &Structure.format_error/1)
+  end
+
+  @doc """
+  Every archive manifest of a directory of them, relative to it, sorted.
+
+  One file per finished edition, written at that year's rollover. A directory
+  that holds none — a repository whose first edition is still being taught — is
+  not an error.
+  """
+  @spec archive_files(Path.t()) :: [String.t()]
+  def archive_files(archives_dir),
+    do:
+      archives_dir
+      |> Path.join(@archives)
+      |> Path.wildcard()
+      |> Enum.map(&Path.relative_to(&1, archives_dir))
+      |> Enum.sort()
+
+  @doc """
+  What a directory of archive manifests holds, as one hash of their names.
+
+  This answers whether an edition has been archived or unarchived since, which
+  no manifest's own content can say. It is the counterpart of
+  `content_digest/1`, for the same reason: a file that is *added* is invisible
+  to the `@external_resource`s registered for the ones that were there.
+  """
+  @spec archives_digest(Path.t()) :: binary()
+  def archives_digest(archives_dir),
+    do: :crypto.hash(:sha256, archives_dir |> archive_files() |> Enum.join("\n"))
+
+  @doc """
+  What each finished edition of the course published, one manifest per edition,
+  in the order the years sort in.
+  """
+  @spec archives(Path.t()) :: {:ok, [Manifest.t()]} | {:error, nonempty_list(error())}
+  def archives(archives_dir) do
+    {manifests, errors} =
+      archives_dir
+      |> archive_files()
+      |> Enum.reduce({[], []}, &read_archive(Path.join(archives_dir, &1), &2))
+
+    case Enum.reverse(errors) do
+      [] -> {:ok, Enum.reverse(manifests)}
+      [_first | _rest] = errors -> {:error, errors}
+    end
+  end
+
+  @doc """
+  What the course declares about the pages of its past editions the current one
+  no longer answers for by itself.
+
+  The file is read and decoded here and validated by
+  `ArchiDep.CourseSite.Archives.Overrides`, as the declarations are.
+  """
+  @spec archive_overrides(Path.t()) :: {:ok, Overrides.t()} | {:error, nonempty_list(error())}
+  def archive_overrides(file) do
+    with {:ok, contents} <- read_overrides(file),
+         {:ok, decoded} <- decode_overrides(file, contents),
+         do: Overrides.from_yaml(decoded)
+  end
+
+  @doc """
+  Work out what every page of every archived edition has become in a given
+  course, raising when any of them has become nothing.
+
+  This is the reading `ArchiDep.CourseSite.Archives.Mapping` needs, in one call,
+  and it raises for the same reason `course!/2` does: its only caller is a
+  module compiling, and a page of an archive that resolves to nothing is
+  precisely what has to stop the build rather than reach a reader.
+  """
+  @spec archives!(Path.t(), Path.t(), Structure.t()) :: Mapping.t()
+  def archives!(archives_dir, overrides_file, %Structure{} = structure) do
+    manifests =
+      archives_dir |> archives() |> or_raise("The archived editions could not be read")
+
+    overrides =
+      overrides_file
+      |> archive_overrides()
+      |> or_raise("The archive overrides could not be read")
+
+    manifests
+    |> Mapping.build(overrides, structure)
+    |> or_raise(
+      "What the archived editions have become could not be worked out",
+      &Mapping.format_error/1
+    )
   end
 
   @doc """
@@ -584,6 +682,37 @@ defmodule ArchiDep.CourseSite.Build do
   def format_error({:undecodable_progress, path}),
     do: "The progress file #{path} is not a JSON object"
 
+  def format_error({:unreadable_archive, path, reason}),
+    do: "Archive manifest #{inspect(path)} could not be read: #{:file.format_error(reason)}"
+
+  def format_error({:undecodable_archive, path}),
+    do: "Archive manifest #{inspect(path)} is not JSON"
+
+  def format_error({:invalid_archive, path, error}),
+    do: "#{inspect(path)}: #{Manifest.format_error(error)}"
+
+  def format_error({:missing_overrides, path}),
+    do: "Archive overrides #{inspect(path)} do not exist"
+
+  def format_error({:unreadable_overrides, path, reason}),
+    do: "Archive overrides #{inspect(path)} could not be read: #{:file.format_error(reason)}"
+
+  def format_error({:undecodable_overrides, path, why}),
+    do: "Archive overrides #{inspect(path)} are not YAML: #{why}"
+
+  def format_error({:malformed_overrides, _why} = error), do: Overrides.format_error(error)
+  def format_error({:malformed_edition, _edition} = error), do: Overrides.format_error(error)
+  def format_error({:duplicate_edition, _edition} = error), do: Overrides.format_error(error)
+
+  def format_error({:malformed_entries, _edition, _entries} = error),
+    do: Overrides.format_error(error)
+
+  def format_error({:malformed_source, _edition, _source} = error),
+    do: Overrides.format_error(error)
+
+  def format_error({:malformed_target, _edition, _source, _target} = error),
+    do: Overrides.format_error(error)
+
   def format_error({:missing_declarations, path}),
     do: "Course declarations #{inspect(path)} do not exist"
 
@@ -628,6 +757,18 @@ defmodule ArchiDep.CourseSite.Build do
   def format_error({:unsafe_name, _path, _segment} = error), do: ContentTree.format_error(error)
 
   def format_error({:duplicate_output_path, _path, _sources} = error),
+    do: ContentTree.format_error(error)
+
+  def format_error({:duplicate_document, _chapter, _type, _sources} = error),
+    do: ContentTree.format_error(error)
+
+  def format_error({:duplicate_chapter_number, _num, _chapters} = error),
+    do: ContentTree.format_error(error)
+
+  def format_error({:subject_and_exercise, _chapter, _sources} = error),
+    do: ContentTree.format_error(error)
+
+  def format_error({:exercise_with_slides, _chapter, _sources} = error),
     do: ContentTree.format_error(error)
 
   def format_error({:digested_name_collision, _path, _owners} = error),
@@ -842,6 +983,55 @@ defmodule ArchiDep.CourseSite.Build do
     |> then(&{:ok, &1})
   rescue
     error in File.Error -> {:error, error.reason}
+  end
+
+  defp read_archive(file, {manifests, errors}) do
+    case archive(file) do
+      {:ok, manifest} -> {[manifest | manifests], errors}
+      {:error, error} -> {manifests, [error | errors]}
+    end
+  end
+
+  defp archive(file) do
+    with {:ok, contents} <- read_archive_file(file),
+         {:ok, decoded} <- decode_archive(file, contents),
+         do: validate_archive(file, decoded)
+  end
+
+  defp read_archive_file(file) do
+    case File.read(file) do
+      {:ok, contents} -> {:ok, contents}
+      {:error, reason} -> {:error, {:unreadable_archive, file, reason}}
+    end
+  end
+
+  defp decode_archive(file, contents) do
+    case JSON.decode(contents) do
+      {:ok, decoded} -> {:ok, decoded}
+      {:error, _reason} -> {:error, {:undecodable_archive, file}}
+    end
+  end
+
+  defp validate_archive(file, decoded) do
+    case Manifest.from_json(decoded) do
+      {:ok, manifest} -> {:ok, manifest}
+      {:error, error} -> {:error, {:invalid_archive, file, error}}
+    end
+  end
+
+  defp read_overrides(file) do
+    case File.read(file) do
+      {:ok, contents} -> {:ok, contents}
+      {:error, :enoent} -> {:error, [{:missing_overrides, file}]}
+      {:error, reason} -> {:error, [{:unreadable_overrides, file, reason}]}
+    end
+  end
+
+  defp decode_overrides(file, contents) do
+    case YamlElixir.read_from_string(contents) do
+      {:ok, overrides} -> {:ok, overrides}
+      {:error, error} -> {:error, [{:undecodable_overrides, file, Exception.message(error)}]}
+    end
   end
 
   defp read_declarations(file) do

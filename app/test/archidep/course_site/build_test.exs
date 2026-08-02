@@ -1,6 +1,8 @@
 defmodule ArchiDep.CourseSite.BuildTest do
   use ExUnit.Case, async: true
 
+  alias ArchiDep.CourseSite.Archives.Manifest
+  alias ArchiDep.CourseSite.Archives.Overrides
   alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.DocumentRef
@@ -480,6 +482,145 @@ defmodule ArchiDep.CourseSite.BuildTest do
                 [
                   {:undecodable_declarations, file,
                    ~s{Unexpected "yamerl_collection_start" token following a "yamerl_collection_end" token (line: 3, column: 4)}}
+                ]}
+    end
+  end
+
+  describe "archive_files/1" do
+    test "lists the manifests of a directory of them, sorted", %{tmp_dir: tmp_dir} do
+      archives_dir = Path.join(tmp_dir, "archives")
+      write!(archives_dir, "2026.json", "{}")
+      write!(archives_dir, "2025.json", "{}")
+      write!(archives_dir, "notes.md", "not a manifest")
+
+      assert Build.archive_files(archives_dir) == ["2025.json", "2026.json"]
+    end
+
+    test "lists nothing for a repository whose first edition is still being taught", %{
+      tmp_dir: tmp_dir
+    } do
+      assert Build.archive_files(Path.join(tmp_dir, "archives")) == []
+    end
+  end
+
+  describe "archives_digest/1" do
+    test "answers the same for a directory holding the same manifests", %{tmp_dir: tmp_dir} do
+      one = Path.join(tmp_dir, "one")
+      other = Path.join(tmp_dir, "other")
+      write!(one, "2025.json", ~s({"version": 1}))
+      write!(other, "2025.json", ~s({"version": 1, "edition": "2025"}))
+
+      assert Build.archives_digest(one) == Build.archives_digest(other)
+    end
+
+    test "answers differently once an edition is archived", %{tmp_dir: tmp_dir} do
+      archives_dir = Path.join(tmp_dir, "archives")
+      write!(archives_dir, "2025.json", "{}")
+      before_rollover = Build.archives_digest(archives_dir)
+
+      write!(archives_dir, "2026.json", "{}")
+
+      refute Build.archives_digest(archives_dir) == before_rollover
+    end
+  end
+
+  describe "archives/1" do
+    test "reads what each archived edition published", %{tmp_dir: tmp_dir} do
+      archives_dir = Path.join(tmp_dir, "archives")
+
+      write!(
+        archives_dir,
+        "2025.json",
+        JSON.encode!(%{
+          "version" => 1,
+          "edition" => "2025",
+          "pages" => [%{"path" => "/cheatsheets/git/", "kind" => "cheatsheet", "slug" => "git"}]
+        })
+      )
+
+      write!(
+        archives_dir,
+        "2026.json",
+        JSON.encode!(%{"version" => 1, "edition" => "2026", "pages" => []})
+      )
+
+      assert Build.archives(archives_dir) ==
+               {:ok,
+                [
+                  %Manifest{
+                    edition: "2025",
+                    pages: [{"/cheatsheets/git/", {:cheatsheet, "git"}}]
+                  },
+                  %Manifest{edition: "2026", pages: []}
+                ]}
+    end
+
+    test "reads a repository that has archived nothing", %{tmp_dir: tmp_dir} do
+      assert Build.archives(Path.join(tmp_dir, "archives")) == {:ok, []}
+    end
+
+    test "reports a manifest that is not JSON", %{tmp_dir: tmp_dir} do
+      archives_dir = Path.join(tmp_dir, "archives")
+      write!(archives_dir, "2025.json", "not json at all")
+
+      assert Build.archives(archives_dir) ==
+               {:error, [{:undecodable_archive, Path.join(archives_dir, "2025.json")}]}
+    end
+
+    test "reports every manifest it cannot make sense of", %{tmp_dir: tmp_dir} do
+      archives_dir = Path.join(tmp_dir, "archives")
+      write!(archives_dir, "2025.json", JSON.encode!(%{"version" => 9}))
+      write!(archives_dir, "2026.json", JSON.encode!(%{"version" => 1, "edition" => "2026"}))
+
+      assert Build.archives(archives_dir) ==
+               {:error,
+                [
+                  {:invalid_archive, Path.join(archives_dir, "2025.json"),
+                   {:unsupported_manifest_version, 9}},
+                  {:invalid_archive, Path.join(archives_dir, "2026.json"),
+                   {:malformed_manifest, ~s{no "pages" list}}}
+                ]}
+    end
+  end
+
+  describe "archive_overrides/1" do
+    test "reads what the course declares about its past editions", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "archives.yml")
+
+      File.write!(file, """
+      ---
+      2025:
+        /course/104-ssh/: /course/106-secure-shell/
+        /cheatsheets/unix/: gone
+      """)
+
+      assert Build.archive_overrides(file) ==
+               {:ok,
+                %Overrides{
+                  editions: %{
+                    "2025" => %{
+                      "/course/104-ssh/" => {:page, "/course/106-secure-shell/"},
+                      "/cheatsheets/unix/" => :gone
+                    }
+                  }
+                }}
+    end
+
+    test "reports overrides that are not there", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "archives.yml")
+
+      assert Build.archive_overrides(file) == {:error, [{:missing_overrides, file}]}
+    end
+
+    test "reports overrides that are not YAML", %{tmp_dir: tmp_dir} do
+      file = Path.join(tmp_dir, "archives.yml")
+      File.write!(file, "2025:\n  /a/: gone\n   /b/: gone\n")
+
+      assert Build.archive_overrides(file) ==
+               {:error,
+                [
+                  {:undecodable_overrides, file,
+                   "Block mapping value not allowed here (line: 3, column: 7)"}
                 ]}
     end
   end

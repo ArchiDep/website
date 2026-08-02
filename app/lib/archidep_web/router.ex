@@ -45,6 +45,13 @@ defmodule ArchiDepWeb.Router do
       get "/login", AuthController, :login
     end
 
+    # Public: every page of an archived edition of the course material links
+    # here, and those archives are frozen bytes served from anywhere.
+    scope "/", Course do
+      pipe_through [:fetch_authentication, :set_current_path]
+      get "/latest", LatestController, :latest
+    end
+
     scope "/", Auth do
       pipe_through :fetch_authentication
       get "/auth/csrf", AuthController, :generate_csrf_token

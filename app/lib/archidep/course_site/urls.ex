@@ -176,7 +176,8 @@ defmodule ArchiDep.CourseSite.Urls do
   def resolve(%UrlContext{} = context, {:current_edition, page} = reference, _from) do
     with {:ok, live_site_url} <- live_site_url(context, reference),
          {:ok, version} <- version(context, reference) do
-      {:ok, "#{live_site_url}/latest?to=/#{version}#{PageRef.output_path(page)}"}
+      to = PageRef.edition_path(version, PageRef.output_path(page))
+      {:ok, "#{live_site_url}/latest?to=#{to}"}
     end
   end
 
