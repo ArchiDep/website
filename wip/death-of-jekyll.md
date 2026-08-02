@@ -375,17 +375,31 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       by the edition that assigned it. `course/archives/2025.json` is seeded
       from the current model, so the mechanism ships answering rather than
       inert.
-- [ ] Redirect the unprefixed legacy paths **into the 2025 archive**, not to the
+- [x] Redirect the unprefixed legacy paths **into the 2025 archive**, not to the
       resolver — `301` from `/course/*` and `/cheatsheets/*` to the same path
-      under `/2025/`, in the reverse proxy, with a catch-all route covering
-      development. The content has now moved, so those paths already 404 in
+      under `/2025/`. The content has now moved, so those paths already 404 in
       development, which is the honest interim state and the one this closes. A
       [cutover](#cutover) blocker, since moving the content under a prefix
       breaks every existing bookmark the moment it happens — see [Archived
       years: a banner and one dynamic
-      resolver](#archived-years-a-banner-and-one-dynamic-resolver). The
-      development half is ours; whether the production half is depends on which
-      of the proxy's rules the deployment repository sets rather than this one.
+      resolver](#archived-years-a-banner-and-one-dynamic-resolver). **Done:
+      `ArchiDepWeb.Course.LegacyController` and two catch-all routes**, with
+      three corrections. The first reverses this item's own shape: the route is
+      **not** a development stand-in for a proxy rule. The static server falls
+      back to this application for anything it does not hold, and
+      `/cheatsheets/` is not even among the paths the proxy sends it, so both
+      prefixes reach the router in production as well — the route answers
+      everywhere and a proxy rule only saves a hop. So nothing of this is left
+      outside the repository, and what would have been the production half is a
+      line of the [production serving](#development-and-production-serving) item
+      below rather than a blocker of its own. The other two are traps of the
+      target rather than of the routing. The edition is a **constant**, not the
+      `version` knob those paths currently agree with: they name what a reader
+      kept a bookmark of, so reading the knob would re-point every one of them
+      at a different year's material at the rollover, permanently and silently.
+      And a `301` had to say outright that it is cacheable, the `:browser`
+      pipeline's secure headers telling a browser to revalidate everything —
+      which is right for a page and wrong for an address that cannot change.
 - [ ] Decide whether to re-render the 2025–2026 content from its git tag as the
       first `/2025/` archive, seeding the resolver and doubling as fidelity-gate
       input — see [Archived years: a banner and one dynamic
@@ -423,14 +437,18 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       beside the development half because it blocks **nothing but the cutover
       below**, which cannot happen without it: dropping the Ruby stage takes
       away what production serves today. It splits in two, and only the second
-      half reaches outside this repository: - **What the static server serves.** The separate static server, its
-      configuration and the proxy split already exist here and serve Jekyll's
-      output; what is left is pointing them at the Elixir build. This is the
-      half the cutover waits on. - **Publishing an in-process rebuild atomically to a volume shared with
-      that server**, replacing the build baked into the image. Only the
-      [database progress source](#progress-structure-vs-status) needs this,
-      and that is already deferred past the cutover. `Build.swap_output/2` is
-      the atomic publish itself and is done.
+      half reaches outside this repository: - **What the static server serves.**
+      The separate static server, its configuration and the proxy split already
+      exist here and serve Jekyll's output; what is left is pointing them at the
+      Elixir build. This is the half the cutover waits on. Forwarding the
+      [legacy paths](#optional-url-prefix) at the proxy belongs to this change
+      and to nowhere else, since the same rules name the same paths — and it is
+      optional, the application already answering them wherever the proxy does
+      not. - **Publishing an in-process rebuild atomically to a volume shared
+      with that server**, replacing the build baked into the image. Only the
+      [database progress source](#progress-structure-vs-status) needs this, and
+      that is already deferred past the cutover. `Build.swap_output/2` is the
+      atomic publish itself and is done.
 - [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stage,
       and remove the JSON ordering scaffolding that only exists to keep
       `archidep.json` diffable against Jekyll's — see [Cutover](#cutover). The

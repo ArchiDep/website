@@ -129,6 +129,18 @@ no-store`, never a `301`, because its target is a fact about the edition
   currently being taught. The `to` value is untrusted and is only ever a key
   looked up in that mapping — never a redirect target, and never echoed into the
   page.
+- **The legacy course material paths:** `GET /course/*` and `GET /cheatsheets/*`
+  ([`Course.LegacyController`](./course/legacy_controller.ex)), the addresses
+  the course material was served at before it moved under an edition prefix,
+  which forward to the same path under the edition that published them. Also
+  public, and unauthenticated outright — a redirect that does not depend on who
+  is asking. It is the **opposite** statement to the resolver above: a `301`
+  cacheable for a year, because which edition those paths named is settled
+  forever. Production is expected to forward these paths at the reverse proxy
+  rather than here, but does not have to: the static server falls back to this
+  application for anything it does not hold
+  ([`docker/nginx.conf`](../../../docker/nginx.conf)), so the route answers
+  either way and the proxy rule only saves a hop.
 - **API callbacks:** `/api/callbacks/servers/:id/up` (the [token-authenticated
   server callback](../archidep/servers/CONTRIBUTING.md#use-cases)) and
   `/api/health` (see [Errors, Health & Telemetry](#errors-health--telemetry)).

@@ -52,6 +52,14 @@ defmodule ArchiDepWeb.Router do
       get "/latest", LatestController, :latest
     end
 
+    # Public: the addresses the course material was served at before it moved
+    # under an edition prefix. No authentication, the answer being a redirect
+    # that does not depend on who is asking.
+    scope "/", Course do
+      get "/course/*path", LegacyController, :legacy
+      get "/cheatsheets/*path", LegacyController, :legacy
+    end
+
     scope "/", Auth do
       pipe_through :fetch_authentication
       get "/auth/csrf", AuthController, :generate_csrf_token
