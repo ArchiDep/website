@@ -400,9 +400,13 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       And a `301` had to say outright that it is cacheable, the `:browser`
       pipeline's secure headers telling a browser to revalidate everything —
       which is right for a page and wrong for an address that cannot change.
-- [ ] Decide whether to re-render the 2025–2026 content from its git tag as the
+- [x] Decide whether to re-render the 2025–2026 content from its git tag as the
       first `/2025/` archive, seeding the resolver and doubling as fidelity-gate
-      input — see [Archived years: a banner and one dynamic
+      input. **Decided: re-render it — and not from a git tag, because this
+      repository still holds that edition**, so every build the renderer
+      produces today already is it. What the decision leaves behind is an
+      ordering constraint on the items below rather than work of its own — see
+      [Archived years: a banner and one dynamic
       resolver](#archived-years-a-banner-and-one-dynamic-resolver).
 - [ ] Decide where per-year generated PDFs are kept alongside the archived site
       — see [Per-year PDF archive](#per-year-pdf-archive). Open, and **not** the
@@ -1342,26 +1346,26 @@ static output, and a JavaScript resolver becomes a drop-in: a static
 is exactly why the route takes a query parameter. Compile-time checking works
 identically either way, so this constraint costs nothing today.
 
-**Seeding the first archive.** The ideal is to **re-render the 2025–2026 content
-from its git tag with the new renderer** at cutover, producing a proper `/2025/`
-archive: the mechanism goes live a year earlier, and it doubles as the strongest
-possible input for the [HTML fidelity gate](#html-fidelity-gate) — the same
-content, renderable side by side against the deployed Jekyll output. It depends
-on that year's material staying untouched until the refactoring lands, which may
-not survive the run-up to the course.
+**Seeding the first archive — decided: re-render it.** The condition the ideal
+rested on held. That year's material was still what this repository holds when
+the renderer landed, so the `/2025/` archive is not rendered from a git tag at
+all: the edition is the working content, and every build already produces it.
+The mechanism went live a year early as intended, and
+`course/archives/2025.json` is seeded from that same model. Both fallbacks are
+therefore moot rather than merely unused — post-processing the deployed 2025
+HTML to insert the banner and the `noindex` meta answers a question that never
+arose, and deriving the manifest from the identities in the old build's
+`archidep.json` would be a second source for a file the renderer already writes.
 
-Two fallbacks if it does not, and neither blocks anything:
-
-- **Post-process the deployed 2025 HTML** — a one-off pass inserting the banner
-  and the `noindex` meta into the frozen output. Viable precisely because the
-  files are frozen and it is done once; it does not need Jekyll, which is being
-  deleted at [cutover](#cutover).
-- **Seed the resolver from the old build regardless.** The 2025 deployment
-  already contains `archidep.json`, which carries `num`, `course_slug`,
-  `course_type` and `url` for every document — exactly the identity the resolver
-  needs. So `course/archives/2025.json` can be derived from the old build
-  whether or not that year is ever re-rendered, and the compile-checked override
-  table starts working immediately.
+What the decision leaves is an **ordering constraint**, not work of its own. The
+re-render costs nothing only while this repository holds that content: once it
+is upgraded for 2026–2027, the [fidelity gate](#html-fidelity-gate) stops being
+a same-content comparison against the deployed Jekyll output, which is the
+property that makes this the strongest input for it. So the items through
+[cutover](#cutover) want to land before that upgrade. The `archive/2025` tag is
+step 3 of the [rollover](#where-past-editions-are-kept) rather than something to
+do in advance — the edition is still being corrected, and a tag placed on an
+unfinished state would name the wrong bytes.
 
 **Legacy unprefixed URLs** (`/course/104-ssh/`, from before versioning) are
 **the 2025–2026 archive's own URLs**, and therefore fall under the same rule as
