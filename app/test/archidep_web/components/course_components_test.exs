@@ -71,7 +71,7 @@ defmodule ArchiDepWeb.Components.CourseComponentsTest do
                {:chapter,
                 %{
                   title: "Command Line",
-                  href: "/course/101-command-line/",
+                  href: "/1955/course/101-command-line/",
                   target: "_self",
                   icons: [:subject, :slides],
                   external_link?: false,
@@ -80,7 +80,7 @@ defmodule ArchiDepWeb.Components.CourseComponentsTest do
                {:chapter,
                 %{
                   title: "Hello Shell",
-                  href: "/course/102-hello-shell/",
+                  href: "/1955/course/102-hello-shell/",
                   target: "_self",
                   icons: [:graded_exercise],
                   external_link?: false,
@@ -98,7 +98,7 @@ defmodule ArchiDepWeb.Components.CourseComponentsTest do
                {:chapter,
                 %{
                   title: "Git Branching",
-                  href: "/course/201-git-branching/slides/",
+                  href: "/1955/course/201-git-branching/slides/",
                   target: "_blank",
                   icons: [:slides],
                   external_link?: true,
@@ -107,7 +107,7 @@ defmodule ArchiDepWeb.Components.CourseComponentsTest do
                {:chapter,
                 %{
                   title: "Collaborating",
-                  href: "/course/202-git-collaborating/",
+                  href: "/1955/course/202-git-collaborating/",
                   target: "_self",
                   icons: [:exercise],
                   external_link?: false,
@@ -116,16 +116,16 @@ defmodule ArchiDepWeb.Components.CourseComponentsTest do
                {:chapter,
                 %{
                   title: "Rebasing",
-                  href: "/course/203-git-rebasing/",
+                  href: "/1955/course/203-git-rebasing/",
                   target: "_self",
                   icons: [:subject],
                   external_link?: false,
                   status: :future
                 }},
                {:heading, "Cheatsheets"},
-               {:cheatsheet, %{name: "Git", href: "/cheatsheets/git/"}},
+               {:cheatsheet, %{name: "Git", href: "/1955/cheatsheets/git/"}},
                {:cheatsheet,
-                %{name: "System Administration Cheatsheet", href: "/cheatsheets/sysadmin/"}}
+                %{name: "System Administration Cheatsheet", href: "/1955/cheatsheets/sysadmin/"}}
              ]
     end
   end

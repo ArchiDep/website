@@ -54,6 +54,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   - `--mode` — `live`, `backup` or `archive`. Defaults to `live`.
   - `--base-path` — the mount point, e.g. `/website`. Defaults to none.
   - `--version` — the edition, i.e. the starting year of the academic year.
+    Defaults to the edition the application's `course_site` configuration says
+    this deployment holds, every build being an edition's.
   - `--live-site-url` — where the main site is, for a build that is not it.
   - `--absolute-base-url` — baked onto content links, for the PDF export.
   - `--build-id` — names the files a build produces of itself. Defaults to
@@ -168,7 +170,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
         mode: mode(opts),
         build_id: Keyword.get(opts, :build_id, "build"),
         base_path: Keyword.get(opts, :base_path, ""),
-        version: Keyword.get(opts, :version),
+        version: Keyword.get_lazy(opts, :version, fn -> Keyword.get(course_site, :version) end),
         live_site_url: Keyword.get(opts, :live_site_url),
         absolute_base_url: Keyword.get(opts, :absolute_base_url)
       )

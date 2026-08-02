@@ -17,6 +17,7 @@ defmodule ArchiDepWeb.CourseSitePagesTest do
   setup %{tmp_dir: tmp_dir} do
     write!(tmp_dir, "index.html", "<html><body>The course</body></html>")
     write!(tmp_dir, "course/507-dns/index.html", "<html><body>DNS</body></html>")
+    write!(tmp_dir, "2025/course/507-dns/index.html", "<html><body>DNS in 2025</body></html>")
     write!(tmp_dir, "course/507-dns/images/zone-9f8e.png", "a picture")
     write!(Path.dirname(tmp_dir), "secret.html", "not part of the build")
 
@@ -30,6 +31,18 @@ defmodule ArchiDepWeb.CourseSitePagesTest do
                content_type: "text/html; charset=utf-8",
                cache_control: "no-cache",
                body: "<html><body>DNS</body></html>",
+               halted: true
+             }
+    end
+
+    # A build writes into the directory its mount point names, so the edition it
+    # holds is a directory of that one and needs nothing said about it here.
+    test "sends a page of the edition the build holds", %{opts: opts} do
+      assert response(:get, "/2025/course/507-dns/index.html", opts) == %{
+               status: 200,
+               content_type: "text/html; charset=utf-8",
+               cache_control: "no-cache",
+               body: "<html><body>DNS in 2025</body></html>",
                halted: true
              }
     end

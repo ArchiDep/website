@@ -18,7 +18,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
     success: false
   }
 
-  @exercise "/course/402-run-virtual-server/"
+  @exercise "/1955/course/402-run-virtual-server/"
   @create_your_server @exercise <> "#create-your-server"
   @administrator_account @exercise <> "#configure-your-administrator-account"
   @teacher_access @exercise <> "#give-the-teacher-access-to-your-virtual-machine"

@@ -357,9 +357,11 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 - [ ] Redirect the unprefixed legacy paths **into the 2025 archive**, not to the
       resolver — `301` from `/course/*` and `/cheatsheets/*` to the same path
       under `/2025/`, in the reverse proxy, with a catch-all route covering
-      development. A [cutover](#cutover) blocker, since moving the content under
-      a prefix breaks every existing bookmark the moment it happens — see
-      [Archived years: a banner and one dynamic
+      development. The content has now moved, so those paths already 404 in
+      development, which is the honest interim state and the one this closes. A
+      [cutover](#cutover) blocker, since moving the content under a prefix
+      breaks every existing bookmark the moment it happens — see [Archived
+      years: a banner and one dynamic
       resolver](#archived-years-a-banner-and-one-dynamic-resolver). The
       development half is ours; whether the production half is depends on which
       of the proxy's rules the deployment repository sets rather than this one.
@@ -1109,19 +1111,27 @@ exception costs one flag, not a special pipeline.)
 
 Three real Phoenix-side consequences remain, none of them blocking:
 
-- **`ArchiDepWeb.static_paths/0`** whitelists first path segments
-  (`~w(assets cheatsheets course …)`); it must gain the year segment.
-  `Plug.Static`'s `only` is a compile-time plug option, so the year comes from
-  `Application.compile_env/2` like `:serve_static` already does. Changing year
-  means a recompile — acceptable for a yearly event that changes the content
-  anyway.
+- **`ArchiDepWeb.static_paths/0`** whitelists the first path segments
+  `priv/static` may answer for. **Done, and the opposite way round**: it was to
+  gain the year segment, and instead it **lost** `cheatsheets`, `course` and
+  `index.html`. Those entries are Jekyll's, from when the site was built into
+  `priv/static`; a build is now served from its own directory, so keeping them
+  would only have let the stale copy Jekyll leaves behind answer for the
+  unprefixed paths — quietly, in place of the 404 that says the content has
+  moved. The year segment did turn out to need a mount of its own, but for the
+  global assets alone, and only where a build does not carry them ([optional URL
+  prefix](#optional-url-prefix)); `Plug.Static`'s `only` being a compile-time
+  option, that one reads the edition from `Application.compile_env/2` as
+  `:serve_static` already does.
 - **The app shell links into the course** (`layouts.ex` renders the sidebar from
   `Material`). Those URLs must carry the current year's prefix. **Done**:
   `ArchiDep.CourseSite.Material` stores **references** and
   `ArchiDepWeb.Helpers.CourseMaterialHelpers` resolves them through this same
   seam, building a `UrlContext` from the `:course_site` application
-  configuration — so this task only has to set `version` there (and teach
-  `static_paths/0` the year segment, above).
+  configuration — so this task only had to set `version` there, which it now
+  does: the deployment holds the `2025` edition, the test environment an edition
+  of its own so that a rollover never churns the suite, and the build task
+  defaults to the configured one, every build being an edition's.
 - **Legacy URLs.** Moving `/course/…` to `/2026/course/…` invalidates every
   existing bookmark and external link. Handled by the same resolver the archive
   banners use — see [Archived years: a banner and one dynamic

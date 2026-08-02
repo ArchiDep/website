@@ -4,6 +4,10 @@ config :archidep,
   auth: [
     root_users: [switch_edu_id: ["root@archidep.ch", "root-by-unique-id"]]
   ],
+  # An edition of its own, so that what a test asserts about a URL is a fact
+  # about the code rather than about the year the course is currently in: the
+  # edition the deployment holds moves every year and this one never does.
+  course_site: [version: "1955"],
   servers: [
     api_base_url: "http://localhost:42000/api",
     connection_timeout: 5_000,

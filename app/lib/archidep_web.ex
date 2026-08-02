@@ -3,10 +3,13 @@ defmodule ArchiDepWeb do
   Phoenix live view web interface for the ArchiDep application.
   """
 
+  # The first path segments `priv/static` may answer for. The course material's
+  # own are deliberately not among them: a build of it is served from its own
+  # directory, under the edition it holds, so a segment listed here could only
+  # let a copy left in `priv/static` answer for the site instead.
   @spec static_paths :: list(String.t())
   def static_paths,
-    do:
-      ~w(assets cheatsheets course favicon.ico favicons feed.xml fonts images index.html lunr.json robots.txt search.json)
+    do: ~w(assets favicon.ico favicons feed.xml fonts images lunr.json robots.txt search.json)
 
   @spec router :: Macro.t()
   def router do

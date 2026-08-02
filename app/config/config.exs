@@ -24,6 +24,11 @@ config :archidep,
   # own, and this is what the application makes of it — when it emits a URL, and
   # when it builds the site itself.
   #
+  # Every build is an edition's, so `version` is set here rather than left
+  # empty: the deployment holds the edition `years` names, and the two say the
+  # same thing in the two forms the site needs — the URL carries the starting
+  # year alone, the chrome writes both.
+  #
   # `watch` and `serve` are off here and switched on only by dev.exs. They are
   # asked explicitly rather than inferred from `course_dir` and `build_dir`
   # being set, because production will eventually set both: it rebuilds the site
@@ -33,7 +38,7 @@ config :archidep,
   course_site: [
     mode: :live,
     base_path: "",
-    version: nil,
+    version: "2025",
     years: "2025-2026",
     years_short: "25-26",
     watch: false,

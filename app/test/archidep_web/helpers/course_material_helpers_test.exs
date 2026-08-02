@@ -20,26 +20,26 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpersTest do
           "Run your own virtual server"
         )
 
-      assert CourseMaterialHelpers.course_url(chapter) == "/course/402-run-virtual-server/"
+      assert CourseMaterialHelpers.course_url(chapter) == "/1955/course/402-run-virtual-server/"
     end
 
     test "addresses a cheatsheet of the course material" do
       cheatsheet = Cheatsheet.new("sysadmin", "System Administration Cheatsheet")
 
-      assert CourseMaterialHelpers.course_url(cheatsheet) == "/cheatsheets/sysadmin/"
+      assert CourseMaterialHelpers.course_url(cheatsheet) == "/1955/cheatsheets/sysadmin/"
     end
 
     test "addresses a heading of a chapter of the course material" do
       heading =
         HeadingRef.new({:document, DocumentRef.new(403, "linux", :subject)}, "install-linux")
 
-      assert CourseMaterialHelpers.course_url(heading) == "/course/403-linux/#install-linux"
+      assert CourseMaterialHelpers.course_url(heading) == "/1955/course/403-linux/#install-linux"
     end
 
     test "addresses a heading of a cheatsheet of the course material" do
       heading = HeadingRef.new({:cheatsheet, "git"}, "how-do-i-commit")
 
-      assert CourseMaterialHelpers.course_url(heading) == "/cheatsheets/git/#how-do-i-commit"
+      assert CourseMaterialHelpers.course_url(heading) == "/1955/cheatsheets/git/#how-do-i-commit"
     end
 
     test "passes a reference of the course material site through" do
@@ -58,7 +58,7 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpersTest do
       assert CourseMaterialHelpers.url_context() == %UrlContext{
                mode: :live,
                base_path: "",
-               version: nil,
+               version: "1955",
                build_id: "app",
                absolute_base_url: nil,
                live_site_url: nil,
