@@ -306,9 +306,21 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       corrections recorded there; the sharpest is that a `Plug.Static` response
       can never carry the live-reload script, which is why a plug of our own
       serves the pages.
-- [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
+- [x] Preserve a fully static, dashboard-free standalone/archival output (GitHub
       Pages backup) — see [Standalone / archival
-      mode](#standalone--archival-mode).
+      mode](#standalone--archival-mode). **Done, and there was nothing left to
+      build**: the rules landed with the chrome half and the cards with the item
+      below, and `--mode` on the build task is what a caller states them with.
+      Checked by building the corpus twice, the live site against a backup copy
+      mounted at `/website`: the backup copy leaves out the login button, the
+      profile dropdown, the icon submenu and both badges, keeps its cards, and
+      says `data-archidep-standalone="true"`, which is what turns off the
+      analytics and the socket in `course.ts`. One claim was covered by nothing
+      and now is: that the **backup** copy is standalone too. Only the archive
+      pinned it, so keying that flag on the archive alone — the shape every
+      other rule here has — would have passed the whole suite and shipped a
+      backup copy that opens a socket to the site whose being down is why anyone
+      is reading it.
 - [x] Hide the home page's progress cards unconditionally in `:archive` — see
       [Standalone / archival mode](#standalone--archival-mode). The rest of this
       item was already done: `Chrome.Policy` is the explicit list of dynamic
@@ -386,7 +398,12 @@ theme.highlight_css`; the fence decorator is documented in the course writing
         the atomic publish itself and is done.
 - [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stage,
       and remove the JSON ordering scaffolding that only exists to keep
-      `archidep.json` diffable against Jekyll's — see [Cutover](#cutover).
+      `archidep.json` diffable against Jekyll's — see [Cutover](#cutover). The
+      CI job publishing the **GitHub Pages backup** is part of that stage: it
+      builds the site with `_config.pages.yml` today, and what it must run
+      instead is the build task with the `:backup` row of the [consumers
+      table](#consumers-as-configurations), beside the global assets that row's
+      URLs point at.
 
 **Deferred (scheduled after cutover)**
 

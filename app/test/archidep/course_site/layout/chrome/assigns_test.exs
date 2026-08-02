@@ -198,6 +198,32 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                 )}
     end
 
+    test "leaves the dashboard out of the backup copy as well, which still says where the course has got to" do
+      urls =
+        build(:url_context, base_path: "", version: "2025", mode: :backup, assets: manifest())
+
+      assert Assigns.build(context(page: :home, urls: urls)) ==
+               {:ok,
+                expected(
+                  ref: :home,
+                  kind: :home,
+                  page_class: "course-home",
+                  pdf_tooltip: "Home PDF",
+                  toc: [page_heading()],
+                  base_path: "/2025",
+                  standalone?: true,
+                  policy: backup_policy(),
+                  sections: sections(prefix: "/2025", current: nil),
+                  cheatsheets: [cheatsheet_entry(prefix: "/2025")],
+                  cards: [
+                    %HomeCard{kind: :previously, entries: [dns_entry("/2025", nil)]},
+                    %HomeCard{kind: :due_next, entries: [todolist_entry("/2025", nil)]}
+                  ],
+                  legend_emoji: legend_emoji("/2025"),
+                  links: backup_home_links()
+                )}
+    end
+
     test "offers no source at all for a checkout that cannot name its revision" do
       assert Assigns.build(context(git_revision: nil)) ==
                {:ok,
@@ -291,6 +317,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   defp archived_policy,
     do: %Policy{app_navigation?: false, account?: false, badges?: false, progress_cards?: false}
 
+  defp backup_policy,
+    do: %Policy{app_navigation?: false, account?: false, badges?: false, progress_cards?: true}
+
   # What an archived edition writes instead: everything under the edition's own
   # prefix but the files anchored at the mount point, which stay where a browser
   # and an operating system look for them.
@@ -323,6 +352,11 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       archived_links()
       |> Map.delete(:deck)
       |> Map.put(:source, source_url("course/index.md"))
+
+  # The home page of the copy of the edition being taught, which writes its
+  # content where that edition writes it but keeps its own home page at the
+  # mount point, as the site it copies does.
+  defp backup_home_links, do: Map.put(archived_home_links(), :home, "/")
 
   # Every URL the chrome of a page writes. No PDF is ever among them: nothing
   # populates the manifest, so no page offers a download.
