@@ -46,6 +46,31 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       assert written(dirs.output_dir) == expected_build()
     end
 
+    test "writes an edition under its own prefix", %{tmp_dir: tmp_dir} do
+      dirs = course_fixture(tmp_dir)
+      urls = UrlContext.new(mode: :live, build_id: "test", version: "2026")
+
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 16)}
+      assert written(dirs.output_dir) == expected_build("/2026")
+    end
+
+    test "keeps an archived edition's home page under its prefix", %{tmp_dir: tmp_dir} do
+      dirs = course_fixture(tmp_dir)
+      urls = UrlContext.new(mode: :archive, build_id: "test", version: "2025")
+
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs)}
+      assert written(dirs.output_dir) == expected_build("/2025", false)
+    end
+
+    test "leaves the global assets out when something else serves them", %{tmp_dir: tmp_dir} do
+      dirs = course_fixture(tmp_dir)
+
+      assert Builder.build(opts(dirs, carry_assets: false)) == {:ok, expected_report(dirs)}
+
+      assert written(dirs.output_dir) ==
+               Map.delete(expected_build(), "/assets/theme/theme.css")
+    end
+
     test "publishes a build rendered beside the one being served", %{tmp_dir: tmp_dir} do
       dirs = course_fixture(tmp_dir)
       write!(dirs.output_dir, "index.html", "an earlier build")
@@ -147,6 +172,40 @@ defmodule ArchiDep.CourseSite.BuilderTest do
                     ~s{nothing at "/course/101-command-line/nowhere/index.html"}
                 ]}
     end
+
+    # A relative link is written from one page of an edition to another, so an
+    # edition's own directory is what its links resolve against; checking them
+    # against the whole output would report every one of them as broken.
+    test "resolves the links of an edition within it", %{tmp_dir: tmp_dir} do
+      dirs = course_fixture(tmp_dir)
+      urls = UrlContext.new(mode: :live, build_id: "test", version: "2026")
+
+      write!(
+        dirs.course_dir,
+        "collections/_course/101-command-line/subject.md",
+        "---\ntitle: Command Line\n---\n\n![CLI](images/cli.jpg)\n"
+      )
+
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 16)}
+    end
+
+    test "says which of an edition's links lead nowhere", %{tmp_dir: tmp_dir} do
+      dirs = course_fixture(tmp_dir)
+      urls = UrlContext.new(mode: :live, build_id: "test", version: "2026")
+
+      write!(
+        dirs.course_dir,
+        "collections/_course/101-command-line/subject.md",
+        "---\ntitle: Command Line\n---\n\n[Nowhere](nowhere/)\n"
+      )
+
+      assert Builder.build(opts(dirs, urls: urls)) ==
+               {:error, "1 links lead nowhere",
+                [
+                  ~s{Page /course/101-command-line/ links to "nowhere/", and the build wrote } <>
+                    ~s{nothing at "/course/101-command-line/nowhere/index.html"}
+                ]}
+    end
   end
 
   # The smallest course a build can be run over: one chapter with a picture
@@ -190,6 +249,9 @@ defmodule ArchiDep.CourseSite.BuilderTest do
   end
 
   defp opts(dirs, overrides \\ []) do
+    {urls, overrides} =
+      Keyword.pop_lazy(overrides, :urls, fn -> UrlContext.new(mode: :live, build_id: "test") end)
+
     Builder.course_inputs(dirs.course_dir) ++
       [
         progress: dirs.progress,
@@ -198,7 +260,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         output_dir: dirs.output_dir,
         options:
           Site.Options.new(
-            urls: UrlContext.new(mode: :live, build_id: "test"),
+            urls: urls,
             site:
               SiteInfo.new(
                 version: "1.2.3",
@@ -212,36 +274,49 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       ] ++ overrides
   end
 
-  defp expected_report(dirs),
+  # A build that writes the home page twice writes one file more, which is the
+  # only thing an edition changes about what a build reports of itself.
+  defp expected_report(dirs, overrides \\ []),
     do: %Report{
       output_dir: dirs.output_dir,
       pages: 2,
       chapters: 1,
-      files: 15,
+      files: Keyword.get(overrides, :files, 15),
       page_assets: 1,
       assets: 1
     }
 
   # The whole of what a build leaves behind: the two pages as the test layout
   # writes them down, the three files a build makes of itself, the ten anchored
-  # at its mount point and the one picture beside a page.
-  defp expected_build,
-    do:
-      Map.merge(
-        Map.new(@root_files, &{"/" <> &1, &1}),
-        %{
-          "/index.html" =>
-            "/|index.md|Architecture & Deployment · ArchiDep|||CLI|page:::<p>Welcome.</p>",
-          "/course/101-command-line/index.html" =>
-            "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|CLI|page:::<p>Type.</p>",
-          "/course/101-command-line/images/cli-#{digest("a picture")}.jpg" => "a picture",
-          "/archidep.json" => archidep_json(),
-          "/version.json" => version_json(),
-          "/404.html" => not_found_html()
-        }
-      )
+  # at its mount point, the picture beside a page and the asset the build
+  # carries. An edition holds all of its own under its prefix; what is anchored
+  # at the mount point sits beside it, and so does a second copy of the home
+  # page for as long as that edition is the one being taught.
+  defp expected_build(edition \\ "", home_at_base? \\ true) do
+    home = "/|index.md|Architecture & Deployment · ArchiDep|||CLI|page:::<p>Welcome.</p>"
+    home_url = if home_at_base?, do: "/", else: edition <> "/"
 
-  defp archidep_json do
+    edition_files = %{
+      (edition <> "/index.html") => home,
+      (edition <> "/course/101-command-line/index.html") =>
+        "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|CLI|page:::<p>Type.</p>",
+      (edition <> "/course/101-command-line/images/cli-#{digest("a picture")}.jpg") =>
+        "a picture",
+      (edition <> "/assets/theme/theme.css") => "body {}",
+      (edition <> "/archidep.json") => archidep_json(edition),
+      (edition <> "/version.json") => version_json()
+    }
+
+    mount_point =
+      @root_files
+      |> Map.new(&{"/" <> &1, &1})
+      |> Map.put("/404.html", not_found_html(home_url))
+      |> then(&if home_at_base?, do: Map.put(&1, "/index.html", home), else: &1)
+
+    Map.merge(edition_files, mount_point)
+  end
+
+  defp archidep_json(edition) do
     """
     {
       "sections": [
@@ -262,7 +337,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
               "section_chapter": 1,
               "progress": "due",
               "slides": false,
-              "url": "/course/101-command-line/"
+              "url": "#{edition}/course/101-command-line/"
             }
           ]
         }
@@ -284,7 +359,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     """
   end
 
-  defp not_found_html do
+  defp not_found_html(home_url) do
     """
     <!doctype html>
     <html lang="en">
@@ -310,7 +385,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     <h1>404</h1>
     <p><strong>Page not found :(</strong></p>
     <p>The requested page could not be found.</p>
-    <p><a href="/">Back to the course</a></p>
+    <p><a href="#{home_url}">Back to the course</a></p>
     </main>
     </body>
     </html>

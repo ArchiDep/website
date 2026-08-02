@@ -46,6 +46,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   - `--minimal` — wrap the pages in the bare layout rather than the site's own
     chrome, to tell a page that is wrong from chrome that is.
   - `--undigested` — take the global assets to carry no digest.
+  - `--no-assets` — leave the global assets out of the build, for a build
+    something else serves them for.
 
   Where the build is published, which is what every URL in it follows from:
 
@@ -89,6 +91,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     clean: :boolean,
     minimal: :boolean,
     undigested: :boolean,
+    assets: :boolean,
     mode: :string,
     base_path: :string,
     version: :string,
@@ -107,6 +110,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
           [
             output_dir: path(opts, :output, "tmp/course_site"),
             output: if(Keyword.get(opts, :clean, false), do: :clean, else: :empty),
+            carry_assets: Keyword.get(opts, :assets, true),
             options: options(opts)
           ]
       )

@@ -968,44 +968,55 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
   end
 
-  describe "publish_site/4" do
-    test "writes every planned file and copies the files next to the pages", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+  describe "publish_site/2" do
+    test "writes every planned file where the plan says", %{tmp_dir: tmp_dir} do
       output_dir = Path.join(tmp_dir, "build")
-
-      write!(content_dir, "_course/507-dns/subject.md", "---\ntitle: DNS\n---\n\nLearn.\n")
-      write!(content_dir, "_course/507-dns/images/zone.png", "a picture")
-
-      {:ok, tree} = Build.content_tree(content_dir)
-      {:ok, page_assets} = Build.page_asset_manifest(tree, content_dir)
 
       site = %Build.Site{
         files: %{
-          "/course/507-dns/index.html" => "the chapter",
-          "/archidep.json" => "the course"
+          "/2026/course/507-dns/index.html" => "the chapter",
+          "/2026/archidep.json" => "the course",
+          "/404.html" => "not found"
         },
         pages: []
       }
 
-      inputs = %Build.Site.Inputs{
-        tree: tree,
-        sources: %{},
-        home_source_path: "index.md",
-        structure: %Structure{sections: [], cheatsheets: []},
-        progress: Progress.new([]),
-        includes: %{},
-        root_files: %{},
-        assets: AssetManifest.new(%{}),
-        page_assets: page_assets
-      }
-
-      assert Build.publish_site(site, inputs, content_dir, output_dir) == :ok
+      assert Build.publish_site(site, output_dir) == :ok
 
       assert written(output_dir) == %{
-               "/course/507-dns/index.html" => "the chapter",
-               "/archidep.json" => "the course",
-               "/course/507-dns/images/#{digested("zone.png", "a picture")}" => "a picture"
+               "/2026/course/507-dns/index.html" => "the chapter",
+               "/2026/archidep.json" => "the course",
+               "/404.html" => "not found"
              }
+    end
+  end
+
+  describe "publish_assets/2" do
+    test "copies the whole of the static directory's assets", %{tmp_dir: tmp_dir} do
+      static_dir = Path.join(tmp_dir, "static")
+      output_dir = Path.join(tmp_dir, "build")
+
+      write!(static_dir, "assets/theme/theme-abc123.css", "body {}")
+      write!(static_dir, "assets/course/course-def456.js", "console.log('hi')")
+      write!(static_dir, "cache_manifest.json", "the manifest")
+      write!(static_dir, "robots.txt", "a file that is not an asset")
+
+      assert Build.publish_assets(static_dir, output_dir) == :ok
+
+      assert written(output_dir) == %{
+               "/assets/theme/theme-abc123.css" => "body {}",
+               "/assets/course/course-def456.js" => "console.log('hi')"
+             }
+    end
+
+    test "copies nothing when there are no assets", %{tmp_dir: tmp_dir} do
+      static_dir = Path.join(tmp_dir, "static")
+      output_dir = Path.join(tmp_dir, "build")
+
+      File.mkdir_p!(static_dir)
+
+      assert Build.publish_assets(static_dir, output_dir) == :ok
+      assert written(output_dir) == %{}
     end
   end
 

@@ -504,6 +504,15 @@ references — the check below, and anything that renders without publishing —
 never names a directory to write into, and therefore cannot be pointed at the
 wrong one.
 
+**A build's output directory is its mount point**, so an edition's own files sit
+under its prefix and the files a host keeps one of sit beside them —
+[`Site`](./build/site.ex) says which is which, and it is the same split
+[`Urls`](#url-and-link-emission) emits URLs for. What the build does _not_ write
+is the global assets of a development build: they are rewritten by the asset
+watchers while the site is being served, so the application serves them where
+they are rather than from a copy that would be stale — the `:carry_assets`
+option of [`Builder.build/1`](./builder.ex).
+
 **A build carries the files anchored at its mount point.** The `{:root_file, _}`
 targets — `favicon.ico` and the marks under `favicons/` — are read from the
 course material like everything else and planned as files of the build, under

@@ -67,6 +67,7 @@ defmodule ArchiDep.CourseSiteWatcherTest do
                root_files_dir: dirs.course_dir,
                static_dir: dirs.static_dir,
                digested: false,
+               carry_assets: false,
                output_dir: dirs.build_dir,
                output: :swap,
                options: options

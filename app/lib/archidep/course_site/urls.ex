@@ -162,7 +162,7 @@ defmodule ArchiDep.CourseSite.Urls do
 
   def resolve(%UrlContext{} = context, {:live_site, page} = reference, _from) do
     with {:ok, live_site_url} <- live_site_url(context, reference) do
-      {:ok, live_site_url <> edition_prefix(context) <> PageRef.output_path(page)}
+      {:ok, live_site_url <> UrlContext.edition_prefix(context) <> PageRef.output_path(page)}
     end
   end
 
@@ -267,7 +267,7 @@ defmodule ArchiDep.CourseSite.Urls do
   defp downcase(host), do: String.downcase(host, :ascii)
 
   defp live_site_home_prefix(context) do
-    if UrlContext.home_at_base?(context), do: "", else: edition_prefix(context)
+    if UrlContext.home_at_base?(context), do: "", else: UrlContext.edition_prefix(context)
   end
 
   defp content_url(context, output_path),
@@ -332,9 +332,6 @@ defmodule ArchiDep.CourseSite.Urls do
 
   defp version(%UrlContext{version: nil}, reference), do: {:error, {:missing_version, reference}}
   defp version(%UrlContext{version: version}, _reference), do: {:ok, version}
-
-  defp edition_prefix(%UrlContext{version: nil}), do: ""
-  defp edition_prefix(%UrlContext{version: version}), do: "/#{version}"
 
   defp describe_page(:home), do: "the home page"
 

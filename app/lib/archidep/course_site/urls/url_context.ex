@@ -108,10 +108,26 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
       ""
   """
   @spec content_prefix(t()) :: String.t()
-  def content_prefix(%__MODULE__{base_path: base_path, version: nil}), do: base_path
+  def content_prefix(%__MODULE__{base_path: base_path} = context),
+    do: base_path <> edition_prefix(context)
 
-  def content_prefix(%__MODULE__{base_path: base_path, version: version}),
-    do: "#{base_path}/#{version}"
+  @doc """
+  What this build's edition adds to a path, below the mount point.
+
+  It is the half of `content_prefix/1` that says *which* edition rather than
+  where the site is mounted, and so what tells an edition's own files from the
+  ones a host keeps one of — which is why `ArchiDep.CourseSite.Build.Site`
+  writes a build in these terms.
+
+      iex> UrlContext.edition_prefix(UrlContext.new(mode: :live, build_id: "abc123", version: "2026"))
+      "/2026"
+
+      iex> UrlContext.edition_prefix(UrlContext.new(mode: :live, build_id: "abc123"))
+      ""
+  """
+  @spec edition_prefix(t()) :: String.t()
+  def edition_prefix(%__MODULE__{version: nil}), do: ""
+  def edition_prefix(%__MODULE__{version: version}), do: "/" <> version
 
   @doc """
   The origin content links are emitted against: nothing at all, unless the build

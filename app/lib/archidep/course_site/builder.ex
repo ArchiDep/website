@@ -80,6 +80,11 @@ defmodule ArchiDep.CourseSite.Builder do
     caller can state, and threading them back in by hand is the step this exists
     to remove.
   - `:output` — see `t:output_mode/0`. Defaults to `:empty`.
+  - `:carry_assets` — whether the build copies the global assets into itself.
+    Defaults to `true`, which is what makes a build self-contained. The
+    development build is the exception: its assets are rewritten by the watchers
+    while it is being served, so a copy of them would be stale the moment a
+    stylesheet is edited, and the application serves them live instead.
   """
   @spec build(keyword()) :: {:ok, Report.t()} | failure()
   def build(opts) when is_list(opts) do
@@ -88,10 +93,12 @@ defmodule ArchiDep.CourseSite.Builder do
     write_dir = write_dir(output_dir, output)
 
     with {:ok, inputs} <- read(opts),
-         {:ok, site} <- plan(inputs, options(Keyword.fetch!(opts, :options), inputs)),
+         options = options(Keyword.fetch!(opts, :options), inputs),
+         edition_dir = edition_dir(write_dir, options),
+         {:ok, site} <- plan(inputs, options),
          :ok <- prepare(write_dir, output),
-         :ok <- publish(site, inputs, Keyword.fetch!(opts, :content_dir), write_dir),
-         :ok <- check(site, write_dir),
+         :ok <- publish(site, inputs, opts, write_dir, edition_dir),
+         :ok <- check(site, edition_dir),
          :ok <- swap(output_dir, write_dir, output),
          do: {:ok, report(output_dir, inputs, site)}
   end
@@ -123,15 +130,37 @@ defmodule ArchiDep.CourseSite.Builder do
     end
   end
 
-  defp publish(site, inputs, content_dir, write_dir) do
-    case Build.publish_site(site, inputs, content_dir, write_dir) do
+  # The pages of an edition and the files sitting next to them go under the
+  # edition; the planned files carry their own path, the mount point's among
+  # them, so they are written from the output directory itself.
+  defp publish(site, inputs, opts, write_dir, edition_dir) do
+    result =
+      with :ok <- Build.publish_site(site, write_dir),
+           :ok <-
+             Build.publish_page_assets(
+               inputs.page_assets,
+               inputs.tree,
+               Keyword.fetch!(opts, :content_dir),
+               edition_dir
+             ),
+           do: publish_assets(opts, edition_dir)
+
+    case result do
       :ok -> :ok
       {:error, errors} -> failure("The build could not be written", errors, &Build.format_error/1)
     end
   end
 
-  defp check(site, write_dir) do
-    case LinkCheck.check(site.pages, Build.output_files(write_dir)) do
+  defp publish_assets(opts, edition_dir) do
+    if Keyword.get(opts, :carry_assets, true) do
+      Build.publish_assets(Keyword.fetch!(opts, :static_dir), edition_dir)
+    else
+      :ok
+    end
+  end
+
+  defp check(site, edition_dir) do
+    case LinkCheck.check(site.pages, Build.output_files(edition_dir)) do
       [] ->
         :ok
 
@@ -160,6 +189,11 @@ defmodule ArchiDep.CourseSite.Builder do
 
   defp write_dir(output_dir, :swap), do: output_dir <> @staging_suffix
   defp write_dir(output_dir, _mode), do: output_dir
+
+  # A build writes into the directory its mount point names, so the edition it
+  # holds is a directory of that one — the same segment its URLs carry.
+  defp edition_dir(write_dir, %Options{urls: urls}),
+    do: write_dir <> UrlContext.edition_prefix(urls)
 
   defp failure(what, errors, format), do: {:error, what, Enum.map(errors, format)}
 

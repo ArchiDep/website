@@ -21,10 +21,17 @@ defmodule ArchiDepWeb.Endpoint do
   # a build directory being configured, which production will do as well.
   @course_site :archidep
                |> Application.compile_env(:course_site, [])
-               |> Keyword.take([:serve, :build_dir])
+               |> Keyword.take([:serve, :build_dir, :version])
 
   @course_site_dir if Keyword.get(@course_site, :serve, false),
                      do: Keyword.fetch!(@course_site, :build_dir)
+
+  # The edition a served build holds, as a path. A build that carries its own
+  # global assets answers for them itself; the one served here does not, being
+  # rewritten by the asset watchers as it is served, so its edition prefix is
+  # where "priv/static" has to answer as well.
+  @course_site_edition if @course_site_dir && Keyword.get(@course_site, :version),
+                         do: "/" <> Keyword.fetch!(@course_site, :version)
 
   # Phoenix LiveView
   socket "/live", Phoenix.LiveView.Socket,
@@ -54,7 +61,13 @@ defmodule ArchiDepWeb.Endpoint do
   # Serve the course material site from the build. It comes first, so it wins
   # "/", "/course/…", "/cheatsheets/…", "/favicon.ico" and "/404.html", and it
   # has no whitelist: a build owns its output directory, so everything in there
-  # is something it published.
+  # is something it published. The assets alone: everything else an edition
+  # answers for is the build's own, and serving "priv/static" whole here would
+  # put a stale copy of it in front.
+  if @course_site_edition do
+    plug Plug.Static, at: @course_site_edition, from: :archidep, gzip: false, only: ~w(assets)
+  end
+
   if @course_site_dir do
     plug ArchiDepWeb.CourseSitePages, from: @course_site_dir
     plug Plug.Static, at: "/", from: @course_site_dir, gzip: false

@@ -22,6 +22,21 @@ defmodule ArchiDep.CourseSite.Build.Site do
   of it, which is also why it is read from outside the content directory
   (`ArchiDep.CourseSite.Build.home_source/1`).
 
+  ## Where a file goes
+
+  A build writes into the directory its **mount point** names, so an edition's
+  own files — its pages, the two it makes of itself — go under
+  `ArchiDep.CourseSite.Urls.UrlContext.edition_prefix/1` and the files anchored
+  at the mount point go beside it, which is exactly the split
+  `ArchiDep.CourseSite.Urls` emits URLs for. A build that names no edition puts
+  the two in the same place, and nothing else about it changes.
+
+  The home page is the one page that may be written **twice**: while its edition
+  is being taught it answers at the mount point as well as under the edition,
+  and only an archived edition keeps it under its own prefix alone. The same
+  bytes serve both, which holds because a page's own URLs are the seam's and the
+  home page has no file sitting next to it to address relatively.
+
   ## What is handed to the link check
 
   A page is recorded as the HTML that was written for it, and a deck **also** as
@@ -53,6 +68,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
   alias ArchiDep.CourseSite.Structure.Cheatsheet
   alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.CourseSite.Urls
+  alias ArchiDep.CourseSite.Urls.UrlContext
 
   # A page is published as a directory holding this, which is what a static
   # server answers a request for the directory with.
@@ -68,8 +84,8 @@ defmodule ArchiDep.CourseSite.Build.Site do
   @version_file "/version.json"
 
   # What a static host shows for a path the build never wrote. Alone among the
-  # files planned here it belongs at the build's mount point rather than under
-  # its edition, a host offering one at all offering exactly one — see
+  # files a build makes of itself it belongs at the mount point rather than
+  # under the edition, a host offering one at all offering exactly one — see
   # `ArchiDep.CourseSite.Build.NotFound`.
   @not_found_file "/404.html"
 
@@ -169,10 +185,19 @@ defmodule ArchiDep.CourseSite.Build.Site do
 
     with {:ok, content} <- render(page, context, source_path),
          {:ok, html} <- lay_out(page, content, context, entry, section, inputs, options, statuses) do
-      {:ok, %{(PageRef.output_path(page) <> @page_file) => html},
-       link_check_pages(page, content, html)}
+      {:ok, page_files(page, options.urls, html), link_check_pages(page, content, html)}
     end
   end
+
+  defp page_files(:home, urls, html) do
+    path = PageRef.output_path(:home) <> @page_file
+    home = %{(UrlContext.edition_prefix(urls) <> path) => html}
+
+    if UrlContext.home_at_base?(urls), do: Map.put(home, path, html), else: home
+  end
+
+  defp page_files(page, urls, html),
+    do: %{(UrlContext.edition_prefix(urls) <> PageRef.output_path(page) <> @page_file) => html}
 
   defp render(page, context, source_path) do
     result =
@@ -229,13 +254,15 @@ defmodule ArchiDep.CourseSite.Build.Site do
   # The files anchored at the mount point go in *under* the three a build makes
   # of itself, so that a course directory holding a `version.json` of its own
   # cannot take the place of the one saying what produced the build.
-  defp build_files(inputs, options, statuses),
-    do:
-      Map.merge(inputs.root_files, %{
-        @course_file => course_json(inputs.structure, options.urls, statuses),
-        @version_file => version_json(options.site),
-        @not_found_file => NotFound.html(options.urls)
-      })
+  defp build_files(inputs, options, statuses) do
+    edition = UrlContext.edition_prefix(options.urls)
+
+    Map.merge(inputs.root_files, %{
+      (edition <> @course_file) => course_json(inputs.structure, options.urls, statuses),
+      (edition <> @version_file) => version_json(options.site),
+      @not_found_file => NotFound.html(options.urls)
+    })
+  end
 
   # The key order and the indentation are Jekyll's, so that the file this
   # replaces stays diffable against the one it produced. Elixir's own `JSON`

@@ -334,21 +334,17 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       _which parts of the chrome a build carries_ rather than what a build
       carries of the running application: the cards are the one entry that is
       not about the dashboard at all.
-- [ ] Support an optional URL prefix (e.g. `/2026/`) for per-year archived
-      versions — see [Optional URL prefix](#optional-url-prefix).
-- [ ] Stand up the **archive repository** that keeps the finished editions and
-      is itself the backup site: an organisation Pages site mounted at a root,
-      named `backup.archidep.ch`, published by pushing this repository's build
-      into it rather than by uploading a Pages artifact — see [Where past
-      editions are kept](#where-past-editions-are-kept). It is what makes the
-      prefix worth having: without it there is nowhere for a past edition to
-      live, this repository holding only the current one.
-- [ ] Write and run the **year-end rollover**: build the finished edition with
-      `--mode archive` and its own progress file, commit it and its PDFs as
-      `<year>/`, emit `course/archives/<year>.json`, tag the source
-      `archive/<year>`, and move the `version` knob on — see [Where past
-      editions are kept](#where-past-editions-are-kept). Distinct from the
-      [cutover](#cutover) below, which happens once; this happens every year.
+- [x] Support an optional URL prefix (e.g. `/2026/`) for per-year archived
+      versions — see [Optional URL prefix](#optional-url-prefix). The seam had
+      emitted prefixed URLs from the start; what was missing was everything on
+      the other side of them. **Done**: a build's output directory is its mount
+      point, so the edition is a directory of it and the root files sit beside
+      it; the home page is written twice while its edition is taught; the files
+      next to a page and the global assets follow the edition; and the link
+      check is pointed at the edition's own directory, which is what its
+      relative links are written against. The one thing the plan had not
+      anticipated is the `:carry_assets` option it took to keep development's
+      live asset tree out of a build that would freeze it.
 - [ ] Emit the two "not the current thing" banners from the first build, not at
       year end, driven by a single three-valued `mode`
       (`:live`/`:backup`/`:archive`) — see [Archived years: a banner and one
@@ -426,6 +422,20 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 - [ ] Move the progress _status source_ from `progress.json` to a database model
       edited through the admin console, driving an in-process rebuild — see
       [Progress: structure vs status](#progress-structure-vs-status).
+- [ ] Stand up the **archive repository** that keeps the finished editions and
+      is itself the backup site: an organisation Pages site mounted at a root,
+      named `backup.archidep.ch`, published by pushing this repository's build
+      into it rather than by uploading a Pages artifact — see [Where past
+      editions are kept](#where-past-editions-are-kept). It sits here because
+      there is nothing to seed it with until the renderer can generate the 2025
+      edition; until it exists the backup keeps publishing to today's project
+      Pages site, which is the one place `base_path` is not `""`.
+- [ ] Write and run the **year-end rollover**: build the finished edition with
+      `--mode archive` and its own progress file, commit it as `<year>/`, emit
+      `course/archives/<year>.json`, tag the source `archive/<year>`, and move
+      the `version` knob on — see [Where past editions are
+      kept](#where-past-editions-are-kept). Distinct from the
+      [cutover](#cutover) above, which happens once; this happens every year.
 
 ---
 
@@ -2941,11 +2951,11 @@ What this leaves open, beyond the production half above:
   picked up on the next rebuild, the watcher ignoring `priv/static/assets`,
   which churns constantly. `ArchiDep.CourseSiteWatcher.rebuild()` covers it, and
   also covers the first build failing because the asset watchers had not yet
-  written `priv/static`.
-- **Root files under a version prefix**: `Urls` anchors them at `base_path`
-  while the build writes them at the output root, which is the wrinkle
-  `/404.html` already has. The [optional URL prefix](#optional-url-prefix) has
-  to settle both together.
+  written `priv/static`. Root files under a version prefix stood here as a
+  fourth and are now settled: the output directory is the mount point, so `Urls`
+  anchoring them at `base_path` and the build writing them at the output root
+  are one statement rather than two — see [Optional URL
+  prefix](#optional-url-prefix).
 
 ### Standalone / archival mode
 
@@ -3034,6 +3044,28 @@ seam](#url-and-link-emission-seam), which settles the details:
   unprefixed edition: they 301 into `/2025/…` and get the banner, rather than
   being resolved away — see [Archived years: a banner and one dynamic
   resolver](#archived-years-a-banner-and-one-dynamic-resolver).
+
+Two things the seam had left for this task, both settled by one rule: **a
+build's output directory is its mount point**. An edition's own files are
+written under its prefix and the files a host keeps exactly one of are written
+beside them, so the wrinkle `/404.html` already had ([the development half, as
+built](#the-development-half-as-built)) is answered for every root file at once,
+and an emitted URL is the path on disk plus `base_path`. The published tree is
+then what a host serves as it stands, which is what the [archive
+repository](#where-past-editions-are-kept) commits.
+
+It also settles what the link check resolves against: an edition's **own**
+directory, since a relative link is written from one page of an edition to
+another. Checking against the whole output would report every relative link in a
+prefixed build as broken.
+
+One thing the plan did not anticipate: a build **carrying** its own global
+assets is not free where the assets are still being written. The development
+build is served while the asset watchers rewrite `priv/static`, so a copy taken
+at build time would be stale the moment a stylesheet is edited — a full site
+rebuild per CSS keystroke. So carrying them is an option of the build rather
+than a property of every build (`:carry_assets`), on everywhere but there, and
+the application serves the live tree at the edition prefix instead.
 
 #### Where past editions are kept
 

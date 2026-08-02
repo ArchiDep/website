@@ -396,8 +396,13 @@ defmodule ArchiDep.CourseSite.Build do
   end
 
   @doc """
-  Every path a build wrote, as an output path, ready to check its links
-  against.
+  Every path a build wrote, as an output path, ready to check its links against.
+
+  Hand it the directory of the **edition** rather than the whole output: a
+  relative link is written from one page of an edition to another, so those are
+  the coordinates `ArchiDep.CourseSite.Build.LinkCheck` resolves in, and the
+  files anchored above an edition are not addressable from a page in the first
+  place.
   """
   @spec output_files(Path.t()) :: MapSet.t(String.t())
   def output_files(output_dir),
@@ -492,14 +497,14 @@ defmodule ArchiDep.CourseSite.Build do
   end
 
   @doc """
-  Write a planned build, and copy the files sitting next to its pages.
+  Write the files of a planned build.
 
   Everything was read, rendered and laid out before this is called, so what is
-  left is putting bytes where they go.
+  left is putting bytes where they go — each of them at the path the plan
+  already worked out, mount point and edition included.
   """
-  @spec publish_site(Site.t(), Site.Inputs.t(), Path.t(), Path.t()) ::
-          :ok | {:error, nonempty_list(error())}
-  def publish_site(%Site{files: files}, %Site.Inputs{} = inputs, content_dir, output_dir) do
+  @spec publish_site(Site.t(), Path.t()) :: :ok | {:error, nonempty_list(error())}
+  def publish_site(%Site{files: files}, output_dir) do
     errors =
       Enum.flat_map(files, fn {output_path, contents} ->
         target = Path.join(output_dir, output_path)
@@ -513,7 +518,46 @@ defmodule ArchiDep.CourseSite.Build do
       end)
 
     case Enum.sort(errors) do
-      [] -> publish_page_assets(inputs.page_assets, inputs.tree, content_dir, output_dir)
+      [] -> :ok
+      [_first | _rest] = errors -> {:error, errors}
+    end
+  end
+
+  @doc """
+  Copy the global assets of a build into it, under the names they were published
+  as.
+
+  A build carries its own copy of them so that it is self-contained: it is what
+  lets an edition be frozen without a later year's asset build reaching back
+  into it, and what lets a build be served from anywhere at all. The whole
+  directory is copied rather than the manifest's own entries, because a bundle
+  loads the chunks beside it by names no manifest is asked about.
+
+  The one build that does not carry them is the development one, whose assets
+  are written by the watchers while it is being served — see the `:carry_assets`
+  option of `ArchiDep.CourseSite.Builder.build/1`.
+  """
+  @spec publish_assets(Path.t(), Path.t()) :: :ok | {:error, nonempty_list(error())}
+  def publish_assets(static_dir, output_dir) do
+    assets_dir = Path.join(static_dir, @assets_dir)
+
+    errors =
+      assets_dir
+      |> relative_files(static_dir)
+      |> Enum.sort()
+      |> Enum.flat_map(fn path ->
+        target = Path.join(output_dir, path)
+
+        with :ok <- File.mkdir_p(Path.dirname(target)),
+             :ok <- File.cp(Path.join(static_dir, path), target) do
+          []
+        else
+          {:error, reason} -> [{:unwritable_output, "/" <> path, target, reason}]
+        end
+      end)
+
+    case errors do
+      [] -> :ok
       [_first | _rest] = errors -> {:error, errors}
     end
   end

@@ -160,8 +160,12 @@ defmodule ArchiDep.CourseSiteWatcher do
       build_opts:
         Builder.course_inputs(course_dir) ++
           [
+            # The asset watchers rewrite `priv/static` while the site is being
+            # served, so a development build neither digests those names nor
+            # takes a copy of them: the application serves them where they are.
             static_dir: Keyword.get_lazy(opts, :static_dir, &static_dir/0),
             digested: false,
+            carry_assets: false,
             output_dir: build_dir,
             output: :swap,
             options: Keyword.get_lazy(opts, :options, &build_options/0)
