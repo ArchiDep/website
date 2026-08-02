@@ -18,14 +18,26 @@ config :archidep,
     # Refresh monitoring metrics every minute
     metrics_poll_rate: 60 * 1000
   ],
-  # Where the course material site the dashboard links into is published. There
-  # is no ArchiDep.CourseSite module to key this on: the subsystem is pure and
-  # has no configuration of its own, and this is what the application makes of
-  # it when it emits a URL.
+  # Where the course material site the dashboard links into is published, and
+  # which edition of it this deployment holds. There is no ArchiDep.CourseSite
+  # module to key this on: the subsystem is pure and has no configuration of its
+  # own, and this is what the application makes of it — when it emits a URL, and
+  # when it builds the site itself.
+  #
+  # `watch` and `serve` are off here and switched on only by dev.exs. They are
+  # asked explicitly rather than inferred from `course_dir` and `build_dir`
+  # being set, because production will eventually set both: it rebuilds the site
+  # too, but on an edit in the admin console rather than on a file changing, and
+  # a separate static server puts the result in front of users. Inferring either
+  # from a directory would turn both on exactly where neither is wanted.
   course_site: [
     mode: :live,
     base_path: "",
-    version: nil
+    version: nil,
+    years: "2025-2026",
+    years_short: "25-26",
+    watch: false,
+    serve: false
   ],
   servers: [
     connection_timeout: 30_000,

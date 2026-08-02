@@ -40,6 +40,24 @@ defmodule ArchiDep.CourseSite.Build do
   # belongs to Jekyll and uses the tags of its plugins.
   @includes "icons/**/*.html"
 
+  # The files anchored at the build's mount point rather than under its edition,
+  # which is what `{:root_file, _}` means. They are named one by one rather than
+  # walked, for the same reason the includes are: the directory they come from
+  # holds marks nothing draws, and what a build publishes is a decision rather
+  # than whatever happens to be sitting there.
+  @root_files [
+    "favicon.ico",
+    "favicons/heig.png",
+    "favicons/archidep-512-flat.png",
+    "favicons/archidep-coffee.png",
+    "favicons/archidep-rocket-16.png",
+    "favicons/archidep-rocket-32.png",
+    "favicons/archidep-rocket-48.png",
+    "favicons/archidep-rocket-96.png",
+    "favicons/archidep-rocket-180.png",
+    "favicons/archidep-rocket-192.png"
+  ]
+
   @type error ::
           ContentTree.error()
           | PageAssetDigest.error()
@@ -403,8 +421,15 @@ defmodule ArchiDep.CourseSite.Build do
   - `:home_file` (required) — the page introducing the course, which is not one
     of them.
   - `:includes_dir` (required) — the partials a document may include.
+  - `:root_files_dir` (required) — where the files anchored at the build's mount
+    point are read from.
   - `:declarations_file` (required) — what the course declares about itself.
-  - `:progress_file` (required) — how far the course has got.
+  - `:progress` (required) — how far the course has got, as the sessions that
+    taught it. It is handed over already read, where every other input is a path
+    to read from: which chapters have been covered is the one thing about a
+    build that is **not** a fact about the course material, and where it is kept
+    is the caller's business. `progress/1` is the reader for a caller whose
+    source is a file.
   - `:static_dir` (required) — where the global assets were published.
   - `:digested` — whether those assets carry a digest, which is a **mode**
     rather than a fallback: a build whose manifest is missing fails rather than
@@ -435,6 +460,35 @@ defmodule ArchiDep.CourseSite.Build do
     with :ok <- clear_output(output_dir, mode),
          :ok <- check_output_empty(output_dir),
          do: make_output(output_dir)
+  end
+
+  @doc """
+  Put a build rendered into a staging directory in the place of the one being
+  served, and remove what it replaced.
+
+  A build that renders into the directory it is served from is broken for as
+  long as it takes to write, and a build that fails half way through leaves it
+  broken for good. So a rebuild of a site somebody is reading renders into
+  `<output>.staging` and finishes here, where the only thing that can go wrong
+  is a rename.
+
+  Two renames rather than one, because this needs no symlink to indirect
+  through: the output is moved aside to `<output>.old`, the staging directory is
+  renamed into place and the old one is removed. That leaves a window of less
+  than a millisecond in which the output directory does not exist — which is
+  what the `current`-symlink variant would close, and which is worth closing
+  where a rebuild happens under production traffic rather than under one
+  developer's browser.
+  """
+  @spec swap_output(Path.t(), Path.t()) :: :ok | {:error, nonempty_list(error())}
+  def swap_output(output_dir, staging_dir) do
+    old_dir = output_dir <> ".old"
+
+    with :ok <- check_staging(staging_dir),
+         :ok <- remove_output(old_dir),
+         :ok <- move_output_aside(output_dir, old_dir),
+         :ok <- move_output(staging_dir, output_dir),
+         do: remove_output(old_dir)
   end
 
   @doc """
@@ -571,13 +625,13 @@ defmodule ArchiDep.CourseSite.Build do
     sources = sources(tree, content_dir)
     home = home_source(home_file)
     declarations = declarations(Keyword.fetch!(opts, :declarations_file))
-    progress = progress(Keyword.fetch!(opts, :progress_file))
     includes = includes(Keyword.fetch!(opts, :includes_dir))
+    root_files = root_files(Keyword.fetch!(opts, :root_files_dir))
     page_assets = page_asset_manifest(tree, content_dir)
     assets = assets(Keyword.fetch!(opts, :static_dir), Keyword.get(opts, :digested, true))
     structure = structure(tree, sources, declarations)
 
-    reads = [sources, home, declarations, progress, includes, page_assets, assets, structure]
+    reads = [sources, home, declarations, includes, root_files, page_assets, assets, structure]
 
     case Enum.sort(errors_of(reads)) do
       [] ->
@@ -587,8 +641,9 @@ defmodule ArchiDep.CourseSite.Build do
            sources: Map.put(value_of(sources), :home, value_of(home)),
            home_source_path: Path.basename(home_file),
            structure: value_of(structure),
-           progress: sessions_progress(value_of(progress)),
+           progress: Progress.new(Keyword.fetch!(opts, :progress)),
            includes: value_of(includes),
+           root_files: value_of(root_files),
            assets: value_of(assets),
            page_assets: value_of(page_assets)
          }}
@@ -611,10 +666,32 @@ defmodule ArchiDep.CourseSite.Build do
 
   defp structure(_tree, _sources, _declarations), do: {:error, []}
 
+  # The bytes travel through the plan rather than being copied straight across.
+  # There is a fixed handful of these and none of them is large, unlike the
+  # files sitting next to a page, which are copied because the whole of them is
+  # far too big to hold in memory.
+  defp root_files(root_files_dir) do
+    {contents, errors} =
+      Enum.reduce(@root_files, {%{}, []}, fn path, {contents, errors} ->
+        file = Path.join(root_files_dir, path)
+
+        case File.read(file) do
+          {:ok, bytes} ->
+            {Map.put(contents, "/" <> path, bytes), errors}
+
+          {:error, reason} ->
+            {contents, [{:unreadable_source, "/" <> path, file, reason} | errors]}
+        end
+      end)
+
+    case Enum.reverse(errors) do
+      [] -> {:ok, contents}
+      [_first | _rest] = errors -> {:error, errors}
+    end
+  end
+
   defp assets(static_dir, true), do: asset_manifest(static_dir)
   defp assets(static_dir, false), do: {:ok, undigested_asset_manifest(static_dir)}
-
-  defp sessions_progress(sessions), do: Progress.new(sessions)
 
   defp errors_of(results),
     do:
@@ -647,6 +724,39 @@ defmodule ArchiDep.CourseSite.Build do
     case File.mkdir_p(output_dir) do
       :ok -> :ok
       {:error, reason} -> {:error, [{:unwritable_output, "/", output_dir, reason}]}
+    end
+  end
+
+  # Asked before anything is moved, so that a swap of a build that was never
+  # rendered leaves the one being served where it is rather than in the
+  # directory it was moved aside to.
+  defp check_staging(staging_dir) do
+    if File.dir?(staging_dir),
+      do: :ok,
+      else: {:error, [{:unwritable_output, "/", staging_dir, :enoent}]}
+  end
+
+  defp remove_output(dir) do
+    case File.rm_rf(dir) do
+      {:ok, _removed} -> :ok
+      {:error, reason, path} -> {:error, [{:unremovable_output, path, reason}]}
+    end
+  end
+
+  # A build that has never been published has nothing to move aside, which is
+  # the first swap of a development server rather than a failure.
+  defp move_output_aside(dir, target) do
+    case File.rename(dir, target) do
+      :ok -> :ok
+      {:error, :enoent} -> :ok
+      {:error, reason} -> {:error, [{:unwritable_output, "/", target, reason}]}
+    end
+  end
+
+  defp move_output(dir, target) do
+    case File.rename(dir, target) do
+      :ok -> :ok
+      {:error, reason} -> {:error, [{:unwritable_output, "/", target, reason}]}
     end
   end
 

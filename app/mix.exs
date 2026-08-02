@@ -68,6 +68,11 @@ defmodule ArchiDep.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:ex_cldr_messages, "~> 2.0"},
       {:ex_cmd, "~> 0.18.0"},
+      # Named here rather than inherited: several dependencies already pull it
+      # in, but every one of them is itself limited to :dev or :test, so
+      # ArchiDep.CourseSiteWatcher referring to it from lib/ would warn while
+      # compiling and be missing in :prod.
+      {:file_system, "~> 1.0"},
       {:finch, "~> 0.13"},
       {:flashy, "~> 0.4.3"},
       {:gen_stage, "~> 1.2"},

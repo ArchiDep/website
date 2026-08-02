@@ -3,6 +3,18 @@ import Config
 # Enable dev routes for dashboard and mailbox
 config :archidep,
   dev_routes: true,
+  # This is the one environment that both renders the course material site and
+  # puts it in front of a browser itself: ArchiDep.CourseSiteWatcher rebuilds it
+  # as it is edited and ArchiDepWeb.Endpoint serves what it wrote, so that a
+  # developer runs one process. The output stays under the application's own
+  # tmp/ so that the container and the host, which run this same configuration,
+  # do not build over each other through a bind mount.
+  course_site: [
+    watch: true,
+    serve: true,
+    build_dir: Path.expand("../tmp/course_site", __DIR__),
+    course_dir: Path.expand("../../course", __DIR__)
+  ],
   monitoring: [
     # Refresh monitoring metrics every 10 minutes to avoid polluting the logs
     metrics_poll_rate: 10 * 60 * 1000
@@ -36,7 +48,14 @@ config :archidep, ArchiDepWeb.Endpoint,
     patterns: [
       ~r"priv/gettext/.*(po)$"E,
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$"E,
-      ~r"lib/archidep_web/(controllers|live|components)/.*(ex|heex)$"E
+      ~r"lib/archidep_web/(controllers|live|components)/.*(ex|heex)$"E,
+      # A marker ArchiDep.CourseSiteWatcher touches rather than the build it
+      # publishes: publishing is a directory rename, which the filesystem
+      # reports as one event without descending into it, so none of the files
+      # of a new build would be seen. Touching the marker afterwards also gets
+      # the ordering right — the browser is told when the build is done rather
+      # than when the document was saved.
+      ~r"tmp/course_site\.reload$"E
     ]
   ]
 

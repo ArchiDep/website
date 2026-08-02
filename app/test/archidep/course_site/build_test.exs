@@ -19,6 +19,21 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
   @moduletag :tmp_dir
 
+  # The files a build publishes at its mount point, which the site fixture below
+  # writes with their own path as their content.
+  @root_files [
+    "favicon.ico",
+    "favicons/archidep-512-flat.png",
+    "favicons/archidep-coffee.png",
+    "favicons/archidep-rocket-16.png",
+    "favicons/archidep-rocket-180.png",
+    "favicons/archidep-rocket-192.png",
+    "favicons/archidep-rocket-32.png",
+    "favicons/archidep-rocket-48.png",
+    "favicons/archidep-rocket-96.png",
+    "favicons/heig.png"
+  ]
+
   describe "content_files/1" do
     test "lists the files a build reads, sorted, litter included", %{tmp_dir: tmp_dir} do
       content_dir = Path.join(tmp_dir, "collections")
@@ -762,6 +777,18 @@ defmodule ArchiDep.CourseSite.BuildTest do
                },
                progress: Progress.new([Session.new(~D[2026-02-02], "CLI", [100], [101], [])]),
                includes: %{},
+               root_files: %{
+                 "/favicon.ico" => "favicon.ico",
+                 "/favicons/archidep-512-flat.png" => "favicons/archidep-512-flat.png",
+                 "/favicons/archidep-coffee.png" => "favicons/archidep-coffee.png",
+                 "/favicons/archidep-rocket-16.png" => "favicons/archidep-rocket-16.png",
+                 "/favicons/archidep-rocket-180.png" => "favicons/archidep-rocket-180.png",
+                 "/favicons/archidep-rocket-192.png" => "favicons/archidep-rocket-192.png",
+                 "/favicons/archidep-rocket-32.png" => "favicons/archidep-rocket-32.png",
+                 "/favicons/archidep-rocket-48.png" => "favicons/archidep-rocket-48.png",
+                 "/favicons/archidep-rocket-96.png" => "favicons/archidep-rocket-96.png",
+                 "/favicons/heig.png" => "favicons/heig.png"
+               },
                assets:
                  AssetManifest.new(%{
                    "/assets/theme/theme.css" => "/assets/theme/theme-abc123.css"
@@ -793,7 +820,6 @@ defmodule ArchiDep.CourseSite.BuildTest do
     test "reports a content directory it cannot read, and nothing else", %{tmp_dir: tmp_dir} do
       dirs = site_fixture(tmp_dir)
       write!(dirs.content_dir, "_course/101-command-line/notes.md", "# Notes")
-      File.rm!(dirs.progress_file)
 
       assert Build.site_inputs(site_options(dirs)) ==
                {:error, [{:unknown_source, "_course/101-command-line/notes.md"}]}
@@ -801,7 +827,6 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
     test "reports everything else that is wrong at once", %{tmp_dir: tmp_dir} do
       dirs = site_fixture(tmp_dir)
-      File.rm!(dirs.progress_file)
       File.rm!(dirs.declarations_file)
       File.rm!(dirs.home_file)
       File.rm!(Path.join(dirs.static_dir, "cache_manifest.json"))
@@ -811,8 +836,34 @@ defmodule ArchiDep.CourseSite.BuildTest do
                 [
                   {:missing_declarations, dirs.declarations_file},
                   {:missing_manifest, Path.join(dirs.static_dir, "cache_manifest.json")},
-                  {:missing_progress, dirs.progress_file},
                   {:unreadable_document, "index.md", dirs.home_file, :enoent}
+                ]}
+    end
+
+    test "reports a file anchored at the mount point that is missing", %{tmp_dir: tmp_dir} do
+      dirs = site_fixture(tmp_dir)
+      File.rm!(Path.join(dirs.root_files_dir, "favicons/archidep-coffee.png"))
+
+      assert Build.site_inputs(site_options(dirs)) ==
+               {:error,
+                [
+                  {:unreadable_source, "/favicons/archidep-coffee.png",
+                   Path.join(dirs.root_files_dir, "favicons/archidep-coffee.png"), :enoent}
+                ]}
+    end
+
+    test "reports every file anchored at the mount point that is missing", %{tmp_dir: tmp_dir} do
+      dirs = site_fixture(tmp_dir)
+      File.rm!(Path.join(dirs.root_files_dir, "favicon.ico"))
+      File.rm!(Path.join(dirs.root_files_dir, "favicons/heig.png"))
+
+      assert Build.site_inputs(site_options(dirs)) ==
+               {:error,
+                [
+                  {:unreadable_source, "/favicon.ico",
+                   Path.join(dirs.root_files_dir, "favicon.ico"), :enoent},
+                  {:unreadable_source, "/favicons/heig.png",
+                   Path.join(dirs.root_files_dir, "favicons/heig.png"), :enoent}
                 ]}
     end
 
@@ -867,6 +918,56 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
   end
 
+  # A swap moves three directories around, so every one of these asserts the
+  # whole of the directory holding them: what is left beside the output is as
+  # much of the result as what is in it.
+  describe "swap_output/2" do
+    test "publishes a build that has nothing to replace", %{tmp_dir: tmp_dir} do
+      output_dir = Path.join(tmp_dir, "build")
+      staging_dir = Path.join(tmp_dir, "build.staging")
+
+      write!(staging_dir, "index.html", "the home page")
+
+      assert Build.swap_output(output_dir, staging_dir) == :ok
+      assert written(tmp_dir) == %{"/build/index.html" => "the home page"}
+    end
+
+    test "leaves nothing of the build it replaced", %{tmp_dir: tmp_dir} do
+      output_dir = Path.join(tmp_dir, "build")
+      staging_dir = Path.join(tmp_dir, "build.staging")
+
+      write!(output_dir, "index.html", "an earlier home page")
+      write!(output_dir, "course/507-dns/index.html", "a chapter that has since been renamed")
+      write!(staging_dir, "index.html", "the home page")
+
+      assert Build.swap_output(output_dir, staging_dir) == :ok
+      assert written(tmp_dir) == %{"/build/index.html" => "the home page"}
+    end
+
+    test "removes what an interrupted swap left behind", %{tmp_dir: tmp_dir} do
+      output_dir = Path.join(tmp_dir, "build")
+      staging_dir = Path.join(tmp_dir, "build.staging")
+
+      write!(output_dir <> ".old", "index.html", "a build that was moved aside and never removed")
+      write!(staging_dir, "index.html", "the home page")
+
+      assert Build.swap_output(output_dir, staging_dir) == :ok
+      assert written(tmp_dir) == %{"/build/index.html" => "the home page"}
+    end
+
+    test "refuses to publish a build that was never rendered", %{tmp_dir: tmp_dir} do
+      output_dir = Path.join(tmp_dir, "build")
+      staging_dir = Path.join(tmp_dir, "build.staging")
+
+      write!(output_dir, "index.html", "the build being served")
+
+      assert Build.swap_output(output_dir, staging_dir) ==
+               {:error, [{:unwritable_output, "/", staging_dir, :enoent}]}
+
+      assert written(tmp_dir) == %{"/build/index.html" => "the build being served"}
+    end
+  end
+
   describe "publish_site/4" do
     test "writes every planned file and copies the files next to the pages", %{tmp_dir: tmp_dir} do
       content_dir = Path.join(tmp_dir, "collections")
@@ -893,6 +994,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
         structure: %Structure{sections: [], cheatsheets: []},
         progress: Progress.new([]),
         includes: %{},
+        root_files: %{},
         assets: AssetManifest.new(%{}),
         page_assets: page_assets
       }
@@ -1081,17 +1183,20 @@ defmodule ArchiDep.CourseSite.BuildTest do
   end
 
   # The smallest content directory a build can be read from: one chapter, one
-  # cheatsheet, the two files the course declares itself with and one digested
-  # asset.
+  # cheatsheet, the two files the course declares itself with, the files
+  # anchored at the mount point and one digested asset.
   defp site_fixture(tmp_dir) do
     dirs = %{
       content_dir: Path.join(tmp_dir, "collections"),
       includes_dir: Path.join(tmp_dir, "includes"),
+      root_files_dir: Path.join(tmp_dir, "root"),
       static_dir: Path.join(tmp_dir, "static"),
       declarations_file: Path.join(tmp_dir, "course.yml"),
-      progress_file: Path.join(tmp_dir, "progress.json"),
+      progress: [Session.new(~D[2026-02-02], "CLI", [100], [101], [])],
       home_file: Path.join(tmp_dir, "index.md")
     }
+
+    Enum.each(@root_files, &write!(dirs.root_files_dir, &1, &1))
 
     File.write!(
       dirs.home_file,
@@ -1127,10 +1232,6 @@ defmodule ArchiDep.CourseSite.BuildTest do
       "---\nsections:\n  - title: Introduction\ncheatsheets:\n  - git\n"
     )
 
-    File.write!(dirs.progress_file, """
-    {"sessions": [{"date": "2026-02-02", "title": "CLI", "done": [100], "due": [101], "next": []}]}
-    """)
-
     dirs
   end
 
@@ -1139,8 +1240,9 @@ defmodule ArchiDep.CourseSite.BuildTest do
       content_dir: dirs.content_dir,
       home_file: dirs.home_file,
       includes_dir: dirs.includes_dir,
+      root_files_dir: dirs.root_files_dir,
       declarations_file: dirs.declarations_file,
-      progress_file: dirs.progress_file,
+      progress: dirs.progress,
       static_dir: dirs.static_dir
     ]
   end

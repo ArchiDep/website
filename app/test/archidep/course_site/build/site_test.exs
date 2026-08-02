@@ -47,6 +47,36 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
              }
     end
 
+    test "plans the files anchored at the mount point, which cannot shadow its own" do
+      root_files = %{
+        "/favicon.ico" => "the mark",
+        "/favicons/heig.png" => "the school's mark",
+        "/version.json" => "a course directory claiming to say what produced the build"
+      }
+
+      assert {:ok, site} = Site.plan(inputs(root_files: root_files), options())
+
+      assert site.files == %{
+               "/index.html" =>
+                 "/|index.md|Architecture & Deployment · ArchiDep|||Session|page:::<p>Welcome.</p>",
+               "/course/101-command-line/index.html" =>
+                 "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|Session|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>",
+               "/course/101-command-line/slides/index.html" =>
+                 "/course/101-command-line/slides/|_course/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|Session|deck:# Command Line\n",
+               "/course/202-git-branching/slides/index.html" =>
+                 "/course/202-git-branching/slides/|_course/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|Session|deck:# Branching\n",
+               "/course/205-php-todolist/index.html" =>
+                 "/course/205-php-todolist/|_course/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|Session|page:::<p>Build it.</p>",
+               "/cheatsheets/git/index.html" =>
+                 "/cheatsheets/git/|_cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>",
+               "/favicon.ico" => "the mark",
+               "/favicons/heig.png" => "the school's mark",
+               "/archidep.json" => archidep_json(),
+               "/version.json" => version_json(),
+               "/404.html" => not_found_html()
+             }
+    end
+
     test "hands the link check a deck as the Markdown it stays and as what was written" do
       assert {:ok, site} = Site.plan(inputs(), options())
 
@@ -141,6 +171,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       structure: Keyword.get(overrides, :structure, structure()),
       progress: Progress.new([Session.new(~D[2026-02-02], "Session", [100, 101], [200], [202])]),
       includes: %{},
+      root_files: Keyword.get(overrides, :root_files, %{}),
       assets: AssetManifest.new(%{}),
       page_assets: PageAssetManifest.new(%{})
     }

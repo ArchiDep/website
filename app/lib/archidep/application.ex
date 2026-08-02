@@ -13,27 +13,47 @@ defmodule ArchiDep.Application do
     ArchiDep.Config.start!()
     ArchiDepWeb.Config.start!()
 
-    children = [
-      ArchiDepWeb.Telemetry,
-      # PromEx should be started before most other stuff as PromEx will capture
-      # init events from libraries like Ecto and Phoenix. If it is started after
-      # those other supervision trees those events and metrics will be missed.
-      ArchiDep.PromEx,
-      ArchiDep.Repo,
-      {DNSCluster, query: Application.get_env(:archidep, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: ArchiDep.PubSub},
-      {ArchiDep.Tracker, pubsub_server: ArchiDep.PubSub},
-      # Start the Finch HTTP client for sending emails.
-      {Finch, name: ArchiDep.Finch},
-      # Start supervisors for the application's contexts.
-      ArchiDep.Servers.Supervisor,
-      # Start to serve requests, typically the last entry
-      ArchiDepWeb.Endpoint
-    ]
+    children =
+      [
+        ArchiDepWeb.Telemetry,
+        # PromEx should be started before most other stuff as PromEx will capture
+        # init events from libraries like Ecto and Phoenix. If it is started after
+        # those other supervision trees those events and metrics will be missed.
+        ArchiDep.PromEx,
+        ArchiDep.Repo,
+        {DNSCluster, query: Application.get_env(:archidep, :dns_cluster_query) || :ignore},
+        {Phoenix.PubSub, name: ArchiDep.PubSub},
+        {ArchiDep.Tracker, pubsub_server: ArchiDep.PubSub},
+        # Start the Finch HTTP client for sending emails.
+        {Finch, name: ArchiDep.Finch},
+        # Start supervisors for the application's contexts.
+        ArchiDep.Servers.Supervisor,
+        # Start to serve requests, typically the last entry
+        ArchiDepWeb.Endpoint
+      ] ++ course_site_watcher()
 
     # See https://hexdocs.pm/elixir/Supervisor.html for other strategies and
     # supported options.
     Supervisor.start_link(children, name: ArchiDep.Supervisor, strategy: :one_for_one)
+  end
+
+  # Watching the course material and rebuilding the site as it changes is asked
+  # for explicitly, by the `watch` key of the `course_site` configuration, and
+  # only development asks. A deployment that is missing the two directories it
+  # takes while asking for it is misconfigured rather than opting out, so this
+  # fetches them and lets the application refuse to boot.
+  defp course_site_watcher do
+    config = Application.get_env(:archidep, :course_site, [])
+
+    if Keyword.get(config, :watch, false) do
+      [
+        {ArchiDep.CourseSiteWatcher,
+         course_dir: Keyword.fetch!(config, :course_dir),
+         build_dir: Keyword.fetch!(config, :build_dir)}
+      ]
+    else
+      []
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration whenever the application

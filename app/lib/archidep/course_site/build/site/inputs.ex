@@ -13,6 +13,13 @@ defmodule ArchiDep.CourseSite.Build.Site.Inputs do
   directory (`ArchiDep.CourseSite.Build.home_source/1` says why), so the content
   tree, which is where every other page's source path comes from, has nothing to
   say about it.
+
+  The files anchored at the build's mount point are held as bytes keyed by the
+  path they are published at, rather than as names to copy from later. They are
+  the fixed handful `ArchiDep.CourseSite.Build` names and none of them is large,
+  so carrying them through the plan is cheap and buys them the writing every
+  other planned file already gets — unlike the files sitting next to a page,
+  which are copied.
   """
 
   alias ArchiDep.CourseSite.Build.ContentTree
@@ -30,6 +37,7 @@ defmodule ArchiDep.CourseSite.Build.Site.Inputs do
     :structure,
     :progress,
     :includes,
+    :root_files,
     :assets,
     :page_assets
   ]
@@ -40,6 +48,7 @@ defmodule ArchiDep.CourseSite.Build.Site.Inputs do
     :structure,
     :progress,
     :includes,
+    :root_files,
     :assets,
     :page_assets
   ]
@@ -51,6 +60,7 @@ defmodule ArchiDep.CourseSite.Build.Site.Inputs do
           structure: Structure.t(),
           progress: Progress.t(),
           includes: %{String.t() => Solid.Template.t()},
+          root_files: %{String.t() => binary()},
           assets: AssetManifest.t(),
           page_assets: PageAssetManifest.t()
         }

@@ -150,7 +150,9 @@ How to run the website in development mode with live reload on code changes.
 > - Serve the course material (`course` container)
 > - Start the application (`app` container)
 
-Visit http://localhost:42000 once the application has started.
+Visit http://localhost:42000 once the application has started. The `app`
+container renders the course material itself and serves what it rendered, so
+editing a document under `course/` rebuilds the site and reloads the browser.
 
 ### Run in development mode on your machine
 
@@ -178,7 +180,13 @@ cd app
 mix phx.server
 ```
 
-Visit http://localhost:42000 once all tasks have finished starting.
+Visit http://localhost:42000 once all tasks have finished starting. The Phoenix
+application renders the course material itself and serves what it rendered, so
+editing a document under `course/` rebuilds the site and reloads the browser.
+Start it **after** the asset watchers, since the first build reads what they
+write into `app/priv/static`; `ArchiDep.CourseSiteWatcher.rebuild()` from IEx
+runs one by hand if it was too early. Jekyll is still needed for the search
+index it produces.
 
 ### Run the course only in development mode
 

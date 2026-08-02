@@ -44,6 +44,7 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Progressive solution reveal](#progressive-solution-reveal)
   - [Static build step](#static-build-step)
   - [Development and production serving](#development-and-production-serving)
+    - [The development half, as built](#the-development-half-as-built)
   - [Standalone / archival mode](#standalone--archival-mode)
   - [Optional URL prefix](#optional-url-prefix)
   - [Decouple PDF generation from production](#decouple-pdf-generation-from-production)
@@ -298,11 +299,18 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       difference](../app/lib/archidep/course_site/CONTRIBUTING.md#known-differences-from-what-jekyll-produces)
       rather than a fidelity regression. The `course/404.html` source goes with
       the rest of the Jekyll layer at [cutover](#cutover).
-- [ ] Serve the build via Phoenix `Plug.Static` in development and via a
-      separate static server (reverse-proxy routed) in production, publishing
-      in-process rebuilds atomically to a shared volume — see [Development and
-      production serving](#development-and-production-serving). The development
-      half is planned in [`dev-serving.md`](./dev-serving.md).
+- [x] Serve the build via Phoenix in **development**, rebuilt as the course is
+      edited — see [Development and production
+      serving](#development-and-production-serving). **Done**, with five
+      corrections recorded there; the sharpest is that a `Plug.Static` response
+      can never carry the live-reload script, which is why a plug of our own
+      serves the pages.
+- [ ] Serve the build in **production** from a separate static server
+      (reverse-proxy routed), publishing in-process rebuilds atomically to a
+      shared volume — see [Development and production
+      serving](#development-and-production-serving). The atomic publish itself
+      is already built (`Build.swap_output/2`); what is left is the static
+      server, the shared volume and the proxy routes.
 - [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
       Pages backup) — see [Standalone / archival
       mode](#standalone--archival-mode).
@@ -2775,6 +2783,85 @@ naturally — each year is an immutable directory under the same volume.
 in the static HTML; the reverse proxy must route `/assets/…` consistently so
 both the static course pages and the dynamic app resolve the same digested
 files.
+
+#### The development half, as built
+
+`ArchiDep.CourseSiteWatcher` rebuilds the site whenever the course material
+changes and the endpoint serves what it wrote, both switched on explicitly by
+the `watch` and `serve` keys of the `course_site` configuration — which only
+`dev.exs` sets. Six corrections to what this section assumed:
+
+- **A `Plug.Static` response can never carry the live-reload script.**
+  `Phoenix.LiveReloader` injects from a `before_send` guarded by the response
+  having a body, and `Plug.Conn.send_file/5` leaves it empty; the course pages
+  reload today only because Jekyll injects a script of its own, and that goes
+  with Jekyll's pages. So `ArchiDepWeb.CourseSitePages` sits in front of
+  `Plug.Static` and answers an `.html` request by reading the file and sending
+  it as a body. The live reloader also had to move **above** the static plugs,
+  its callback needing to be registered before the response.
+- **The browser is told to reload by a marker file**, `tmp/course_site.reload`,
+  touched after a successful swap. The output tree cannot be watched: publishing
+  is a directory rename, which the filesystem reports as one event without
+  descending into it, so none of the built files would ever be seen. Touching it
+  afterwards also gets the ordering right — the browser is told when the build
+  is _complete_, not when the edit happened.
+- **A build carries the ten files anchored at its mount point.** `favicon.ico`
+  and the nine marks under `favicons/` are `{:root_file, _}` references only
+  Jekyll published, so a served build depended on Jekyll being up. They are now
+  build inputs; see the [subsystem
+  documentation](../app/lib/archidep/course_site/CONTRIBUTING.md#building).
+  `LinkCheck` is **not** taught about them — it skips root-anchored URLs because
+  a build does not own everything under its mount point — so an eleventh one
+  added to the chrome without a matching entry still publishes a broken image
+  and no error. A root-file manifest on `UrlContext` is the fix, deferred.
+- **Docker development was already broken**, by earlier items rather than by
+  this one: the `app` service mounted neither `./course`, which
+  `CourseSite.Material` reads at compile time, nor `./app/priv/course`, which
+  the progress source resolves at runtime. Both are mounted now. The **build
+  output stays inside the container**: it is derived, writing ~2400 files per
+  rebuild across a macOS bind mount would dominate the rebuild, and a host-run
+  build defaults to the same path.
+- **The edition's years moved into configuration.** They were a module attribute
+  of the Mix task, and a second driver needed them; they are now part of the
+  `course_site` block, which is already the one home for what this deployment's
+  course site is, and the task's `--years` switches override it.
+- **A build is handed the progress rather than pointed at a file.**
+  `Build.site_inputs/1` takes `:progress` — the sessions, already read — where
+  every other input is a path. The watcher reads them through
+  `ArchiDep.Course.course_sessions/0`, so moving that record to the database is
+  a change to the context and to nothing in the build or the watcher; the Mix
+  task keeps reading a file, which is what lets it build an edition that is over
+  and whose progress no running application holds. The watcher therefore does
+  **not** watch the progress file: until the admin console is what edits
+  progress, a progress change is picked up by
+  `ArchiDep.CourseSiteWatcher.rebuild/1` rather than on its own.
+
+Two things are **not** covered by a test and are said here instead: the
+endpoint's plug **ordering** (both gates are compile-time and neither is set in
+`:test`, so no request can reach them without recompiling the endpoint), and the
+live-reload chain end to end, three of whose four hops are in a dependency — the
+watcher test covers the one hop that is ours, that a successful build touches
+the marker.
+
+What this leaves open, beyond the production half above:
+
+- **Jekyll must keep running in development**, for `search.json`, `lunr.json`
+  and `feed.xml`, which this build does not write. That puts the [search
+  index](#search-index) on the critical path to deleting Jekyll.
+- **Every rebuild copies all 373 files that sit next to a page** — 49 MB —
+  because a staging directory starts empty by design. A whole rebuild measures
+  ~2.2 s on an SSD, which is the per-edit cost; hard-linking, or carrying the
+  previous build's asset tree over when the content tree is unchanged, are the
+  candidates if it ever becomes unpleasant.
+- **A newly added global asset** — a new emoji, a new stylesheet — is only
+  picked up on the next rebuild, the watcher ignoring `priv/static/assets`,
+  which churns constantly. `ArchiDep.CourseSiteWatcher.rebuild()` covers it, and
+  also covers the first build failing because the asset watchers had not yet
+  written `priv/static`.
+- **Root files under a version prefix**: `Urls` anchors them at `base_path`
+  while the build writes them at the output root, which is the wrinkle
+  `/404.html` already has. The [optional URL prefix](#optional-url-prefix) has
+  to settle both together.
 
 ### Standalone / archival mode
 

@@ -13,6 +13,19 @@ defmodule ArchiDepWeb.Endpoint do
 
   @serve_static :archidep |> Application.compile_env!(__MODULE__) |> Keyword.fetch!(:serve_static)
 
+  # Where the course material site is published, for a deployment that asked
+  # this application to serve it. Only development does: production publishes a
+  # build to a directory of the same kind but puts a separate static server in
+  # front of it, the reverse proxy routing the course URLs there and the
+  # dashboard's here. So this is keyed on `serve` being asked for rather than on
+  # a build directory being configured, which production will do as well.
+  @course_site :archidep
+               |> Application.compile_env(:course_site, [])
+               |> Keyword.take([:serve, :build_dir])
+
+  @course_site_dir if Keyword.get(@course_site, :serve, false),
+                     do: Keyword.fetch!(@course_site, :build_dir)
+
   # Phoenix LiveView
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [:peer_data, :user_agent, session: @session_options]],
@@ -24,11 +37,32 @@ defmodule ArchiDepWeb.Endpoint do
     longpoll: [connect_info: [:peer_data, :user_agent, session: @session_options]],
     error_handler: {ArchiDepWeb.Channels.UserSocket, :handle_error, []}
 
-  if @serve_static do
-    # Serve course material in the "priv/static" directory.
-    plug Plug.Static.IndexHtml
+  # The live reloader comes before anything that answers a request, because it
+  # injects its script from a callback it has to register before the response is
+  # sent. It is also why ArchiDepWeb.CourseSitePages exists at all.
+  if code_reloading? do
+    socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
+    plug Phoenix.LiveReloader
+  end
 
-    # Serve at "/" the static files from "priv/static" directory.
+  if @serve_static do
+    # A request for a directory is a request for the page in it, for all three
+    # of the plugs below.
+    plug Plug.Static.IndexHtml
+  end
+
+  # Serve the course material site from the build. It comes first, so it wins
+  # "/", "/course/…", "/cheatsheets/…", "/favicon.ico" and "/404.html", and it
+  # has no whitelist: a build owns its output directory, so everything in there
+  # is something it published.
+  if @course_site_dir do
+    plug ArchiDepWeb.CourseSitePages, from: @course_site_dir
+    plug Plug.Static, at: "/", from: @course_site_dir, gzip: false
+  end
+
+  if @serve_static do
+    # Serve at "/" the static files from "priv/static" directory, which is what
+    # answers "/assets/**" and the search index behind the build.
     #
     # You should set gzip to true if you are running phx.digest
     # when deploying your static files in production.
@@ -40,10 +74,9 @@ defmodule ArchiDepWeb.Endpoint do
   end
 
   # Code reloading can be explicitly enabled under the
-  # :code_reloader configuration of your endpoint.
+  # :code_reloader configuration of your endpoint. It stays after the static
+  # plugs, so that serving a file never recompiles the application.
   if code_reloading? do
-    socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
-    plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :archidep
   end

@@ -77,7 +77,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
   defstruct [:files, :pages]
 
   @type t :: %__MODULE__{
-          files: %{String.t() => String.t()},
+          files: %{String.t() => binary()},
           pages: [LinkCheck.page()]
         }
 
@@ -226,12 +226,16 @@ defmodule ArchiDep.CourseSite.Build.Site do
   defp source_path(%Inputs{tree: %ContentTree{cheatsheets: cheatsheets}}, {:cheatsheet, slug}),
     do: Map.fetch!(cheatsheets, slug)
 
+  # The files anchored at the mount point go in *under* the three a build makes
+  # of itself, so that a course directory holding a `version.json` of its own
+  # cannot take the place of the one saying what produced the build.
   defp build_files(inputs, options, statuses),
-    do: %{
-      @course_file => course_json(inputs.structure, options.urls, statuses),
-      @version_file => version_json(options.site),
-      @not_found_file => NotFound.html(options.urls)
-    }
+    do:
+      Map.merge(inputs.root_files, %{
+        @course_file => course_json(inputs.structure, options.urls, statuses),
+        @version_file => version_json(options.site),
+        @not_found_file => NotFound.html(options.urls)
+      })
 
   # The key order and the indentation are Jekyll's, so that the file this
   # replaces stays diffable against the one it produced. Elixir's own `JSON`

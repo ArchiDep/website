@@ -460,6 +460,7 @@ it, documented there rather than here:
 | [`AssetDigest`](./build/asset_digest.ex)          | where the global assets went, per `phx.digest`                                                 |
 | [`LinkCheck`](./build/link_check.ex)              | which of a finished build's links lead nowhere                                                 |
 | [`Site`](./build/site.ex)                         | every file a build writes and what is in each, which `site_inputs/1` chains the reads for      |
+| [`Builder`](./builder.ex)                         | the order those steps are run in, for a caller that is not a Mix task                          |
 | [`NotFound`](./build/not_found.ex)                | what a static host shows for a path the build never wrote                                      |
 | [`Structure`](./structure.ex)                     | what the course is, which `course!/2` chains the reads for                                     |
 | [`Headings`](./headings.ex)                       | what a page's headings are called, which `headings!/3` chains the reads for                    |
@@ -503,11 +504,25 @@ references — the check below, and anything that renders without publishing —
 never names a directory to write into, and therefore cannot be pointed at the
 wrong one.
 
+**A build carries the files anchored at its mount point.** The `{:root_file, _}`
+targets — `favicon.ico` and the marks under `favicons/` — are read from the
+course material like everything else and planned as files of the build, under
+the three files a build makes of itself so that neither can shadow the other.
+They are named one by one rather than walked, the same way the partials are: the
+directory they come from holds marks nothing draws, and what a build publishes
+is a decision rather than whatever is sitting there. Their bytes travel through
+the plan rather than being copied like the files beside a page: there is a fixed
+handful of them and none is large.
+
 **Reading comes before writing.** Every file a build publishes is read and the
 whole manifest settled before any of them is written, so a content directory
-that is going to be rejected never leaves half a build behind. That is also what
-lets the eventual publish path render into a temporary directory and swap it
-into place.
+that is going to be rejected never leaves half a build behind. That is what lets
+`swap_output/2` finish a build that rendered into a staging directory: it moves
+the output aside, renames the staging directory into place and removes what it
+replaced, so a build that failed leaves the previous one being served rather
+than a half-written one. Two renames rather than a `current` symlink, the
+sub-millisecond gap between them being worth closing where rebuilds happen under
+production traffic rather than under one developer's browser.
 
 **Failures are collected.** A build reports every offending file rather than
 stopping at the first, the same way [a document reports all of its
@@ -546,6 +561,14 @@ renders the whole site into a directory of its own and checks the links of what
 it wrote. Every knob of [what a build is](#what-a-build-is) is an option of it,
 so the backup copy, an archived edition and the build printed to PDF are
 configurations of one command rather than three.
+
+It is a thin shell over [`Builder`](./builder.ex), which names the order the
+steps of `Build` are run in and turns each stage's failures into strings — so
+that a caller with no `Mix.shell/0` to print to and no `exit/1` to abort with
+runs the same build. `ArchiDep.CourseSiteWatcher` is that caller: it rebuilds
+the site as it is edited, for the development server to serve.
+`Builder.course_inputs/1` derives every input a build reads from one course
+directory, so that the two drivers cannot disagree about where `course.yml` is.
 
 ## Laying a page out
 

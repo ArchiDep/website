@@ -56,7 +56,15 @@ services:
       - ./app/mix.exs:/archidep/app/mix.exs:ro
       - ./app/mix.lock:/archidep/app/mix.lock:ro
       - ./app/lib:/archidep/app/lib:ro
+      # The course material, which the application both compiles against and
+      # renders, and the record of how far the course has got, which it reads at
+      # runtime. The build itself is *not* mounted: it stays inside the
+      # container, both because a rebuild writes the whole site and doing that
+      # across a bind mount would dominate it, and because a host-run build
+      # writes to the same path and the two must not fight over it.
+      - ./course:/archidep/course:ro
       - ./app/priv/ansible:/archidep/app/priv/ansible:ro
+      - ./app/priv/course:/archidep/app/priv/course:ro
       - ./app/priv/gettext:/archidep/app/priv/gettext:ro
       - ./app/priv/repo:/archidep/app/priv/repo:ro
       - ./app/priv/scripts:/archidep/app/priv/scripts:ro

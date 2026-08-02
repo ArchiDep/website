@@ -42,8 +42,10 @@ architecture][app-contributing]: it turns HTTP requests and WebSocket
 connections into calls on the [bounded contexts][bounded-contexts] and renders
 the result with Phoenix LiveView. It also:
 
-- **serves the compiled course material site** from `priv/static` (the Jekyll
-  [`course`](../../../course/CONTRIBUTING.md) build outputs there), and
+- **serves the compiled course material site** — in development, from what
+  [`ArchiDep.CourseSiteWatcher`](../archidep/course_site_watcher.ex) built, and
+  its assets from `priv/static` (see [Routing, Endpoint &
+  Pipelines](#routing-endpoint--pipelines)) — and
 - **drives that site in real time** over a WebSocket channel (see [Real-Time
   Integration](#real-time-integration)).
 
@@ -79,8 +81,27 @@ Two things worth knowing:
 [`endpoint.ex`](./endpoint.ex) mounts two sockets — the LiveView socket at
 `/live` and the [`UserSocket`](#real-time-integration) at `/socket` — runs the
 usual plug pipeline (Sentry capture, request id, telemetry, parsers, session),
-and serves the static course site via `Plug.Static` (from `priv/static`, limited
-to [`ArchiDepWeb.static_paths/0`](../archidep_web.ex)).
+and serves the static course site.
+
+Serving it takes three plugs, in this order, and only where the
+[`course_site`](../../config/config.exs) configuration says where a build of the
+site is published — which is development and nowhere else, production putting a
+separate static server in front of the same build:
+
+1. [`ArchiDepWeb.CourseSitePages`](./course_site_pages.ex) answers a request for
+   an `.html` file of the build with a **body**, because
+   `Phoenix.LiveReloader` can only inject its script into a response that has
+   one and `Plug.Static` sends a file instead.
+2. `Plug.Static` over the build directory answers everything else in it, with no
+   whitelist: a build owns its output directory.
+3. `Plug.Static` over `priv/static`, limited to
+   [`ArchiDepWeb.static_paths/0`](../archidep_web.ex), answers `/assets/**` and
+   the search index behind the two above.
+
+`Phoenix.LiveReloader` is mounted **before** all of them, since its callback has
+to be registered before a response is sent, and `Phoenix.CodeReloader` after, so
+that serving a file never recompiles the application. What rebuilds the site as
+it is edited is [`ArchiDep.CourseSiteWatcher`](../archidep/course_site_watcher.ex).
 
 [`router.ex`](./router.ex) defines three pipelines — `:browser` (session, CSRF,
 secure headers, SSL), `:api` (JSON, SSL) and `:dev` — and these route groups:

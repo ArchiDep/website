@@ -110,9 +110,15 @@ components, can be found in the `theme` directory (see [`CONTRIBUTING.md` in the
       deliberately **not** a bounded context, documented in
       [`lib/archidep/course_site/CONTRIBUTING.md`](./lib/archidep/course_site/CONTRIBUTING.md).
       `course_site/build.ex` is its one exception: the only module of the
-      subsystem that reads or writes a file. `course_site/material.ex` is the
-      model of the course the dashboard links into, compiled from the Markdown
-      sources while the application compiles.
+      subsystem that reads or writes a file, and `course_site/builder.ex` names
+      the order those steps are run in for a caller that is not a Mix task.
+      `course_site/material.ex` is the model of the course the dashboard links
+      into, compiled from the Markdown sources while the application compiles.
+    - `course_site_watcher.ex`: Rebuilds the course material site whenever one
+      of its sources changes, and is started only where the `course_site`
+      configuration says both where the material is and where a build of it
+      goes — which is development, the environment whose endpoint serves that
+      build.
   - `lib/archidep_web`: The Phoenix web interface, including controllers, views,
     APIs, templates, live views, and channels.
 - **Supporting Files**

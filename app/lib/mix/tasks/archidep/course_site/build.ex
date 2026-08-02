@@ -18,22 +18,29 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
 
   Options:
 
-  - `--content` — the course collections directory. Defaults to
-    `../course/collections`.
+  - `--course` — the course material directory, which every input but the
+    progress file below is read from. Defaults to `../course`.
+  - `--content` — the course collections directory. Defaults to the
+    `collections` directory of the course.
   - `--home` — the page introducing the course, which is not one of them.
-    Defaults to `../course/index.md`.
+    Defaults to the `index.md` of the course.
   - `--includes` — the directory of partials a document may include. Defaults to
-    `../course/_includes`.
-  - `--declarations` — what the course declares about itself. Defaults to
-    `../course/_data/course.yml`.
+    the `_includes` directory of the course.
+  - `--root-files` — the directory the files anchored at the build's mount point
+    are read from. Defaults to the course itself.
+  - `--declarations` — what the course declares about itself. Defaults to the
+    `_data/course.yml` of the course.
   - `--progress` — the file recording how far the course has got, which decides
     which chapters show their answers. Defaults to the application's own
-    `priv/course/progress.json`.
+    `priv/course/progress.json`. Reading it from a file is what makes this
+    command able to build an edition that is over, whose progress no running
+    application holds any more.
   - `--static` — the static directory holding the global assets. Defaults to
     `priv/static`.
-  - `--years` — the academic year this edition covers. Defaults to `2025-2026`.
+  - `--years` — the academic year this edition covers. Defaults to what the
+    application's `course_site` configuration says the edition is.
   - `--years-short` — the same year as it fits in the corner of a slide.
-    Defaults to `25-26`.
+    Defaults to the same place.
   - `--output` — where to write. Defaults to `tmp/course_site`.
   - `--clean` — empty the output directory first.
   - `--minimal` — wrap the pages in the bare layout rather than the site's own
@@ -54,12 +61,12 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   use Mix.Task
 
   alias ArchiDep.CourseSite.Build
-  alias ArchiDep.CourseSite.Build.LinkCheck
   alias ArchiDep.CourseSite.Build.Site
+  alias ArchiDep.CourseSite.Builder
+  alias ArchiDep.CourseSite.Builder.Report
   alias ArchiDep.CourseSite.Layout.Chrome
   alias ArchiDep.CourseSite.Layout.Minimal
   alias ArchiDep.CourseSite.SiteInfo
-  alias ArchiDep.CourseSite.Structure
   alias ArchiDep.CourseSite.Urls.UrlContext
   alias ArchiDep.Git
 
@@ -67,15 +74,12 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
 
   @app_dir Path.expand("../../../../..", __DIR__)
 
-  # The edition being taught, which nothing in the checkout states: the content
-  # is the same course whichever year it is read in.
-  @years "2025-2026"
-  @years_short "25-26"
-
   @switches [
+    course: :string,
     content: :string,
     home: :string,
     includes: :string,
+    root_files: :string,
     years: :string,
     years_short: :string,
     declarations: :string,
@@ -97,47 +101,64 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   def run(args) do
     {opts, [], []} = OptionParser.parse(args, strict: @switches)
 
-    content_dir = path(opts, :content, "../course/collections")
-    output_dir = path(opts, :output, "tmp/course_site")
+    result =
+      Builder.build(
+        inputs(opts) ++
+          [
+            output_dir: path(opts, :output, "tmp/course_site"),
+            output: if(Keyword.get(opts, :clean, false), do: :clean, else: :empty),
+            options: options(opts)
+          ]
+      )
 
-    inputs = inputs!(opts, content_dir)
-    options = options(opts, inputs)
-    site = plan!(inputs, options)
+    case result do
+      {:ok, report} -> report!(report)
+      {:error, what, errors} -> abort!(what, errors)
+    end
+  end
 
-    prepare!(output_dir, if(Keyword.get(opts, :clean, false), do: :clean, else: :empty))
-    publish!(site, inputs, content_dir, output_dir)
+  # The switches are overrides of what a course directory holds, so that naming
+  # the course is enough and naming one input does not mean naming all of them.
+  defp inputs(opts) do
+    overrides = [
+      content_dir: Keyword.get(opts, :content),
+      home_file: Keyword.get(opts, :home),
+      includes_dir: Keyword.get(opts, :includes),
+      root_files_dir: Keyword.get(opts, :root_files),
+      declarations_file: Keyword.get(opts, :declarations)
+    ]
 
-    check!(site, output_dir)
+    opts
+    |> path(:course, "../course")
+    |> Builder.course_inputs()
+    |> Keyword.merge(Enum.reject(overrides, fn {_key, value} -> is_nil(value) end))
+    |> Keyword.merge(
+      progress: progress!(path(opts, :progress, "priv/course/progress.json")),
+      static_dir: path(opts, :static, "priv/static"),
+      digested: not Keyword.get(opts, :undigested, false)
+    )
+  end
+
+  # The one input a build is handed rather than pointed at, and so the one this
+  # command reads for itself.
+  defp progress!(file) do
+    case Build.progress(file) do
+      {:ok, sessions} ->
+        sessions
+
+      {:error, errors} ->
+        abort!(
+          "The progress through the course could not be read",
+          Enum.map(errors, &Build.format_error/1)
+        )
+    end
   end
 
   defp path(opts, key, default), do: Keyword.get(opts, key, Path.join(@app_dir, default))
 
-  defp inputs!(opts, content_dir) do
-    result =
-      Build.site_inputs(
-        content_dir: content_dir,
-        home_file: path(opts, :home, "../course/index.md"),
-        includes_dir: path(opts, :includes, "../course/_includes"),
-        declarations_file: path(opts, :declarations, "../course/_data/course.yml"),
-        progress_file: path(opts, :progress, "priv/course/progress.json"),
-        static_dir: path(opts, :static, "priv/static"),
-        digested: not Keyword.get(opts, :undigested, false)
-      )
+  defp options(opts) do
+    course_site = Application.get_env(:archidep, :course_site, [])
 
-    case result do
-      {:ok, inputs} ->
-        Mix.shell().info(
-          "Read #{map_size(inputs.sources)} pages, #{map_size(inputs.tree.page_assets)} files next to a page and #{map_size(inputs.assets.assets)} global assets"
-        )
-
-        inputs
-
-      {:error, errors} ->
-        abort!("The build could not be read", errors, &Build.format_error/1)
-    end
-  end
-
-  defp options(opts, inputs) do
     urls =
       UrlContext.new(
         mode: mode(opts),
@@ -145,9 +166,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
         base_path: Keyword.get(opts, :base_path, ""),
         version: Keyword.get(opts, :version),
         live_site_url: Keyword.get(opts, :live_site_url),
-        absolute_base_url: Keyword.get(opts, :absolute_base_url),
-        assets: inputs.assets,
-        page_assets: inputs.page_assets
+        absolute_base_url: Keyword.get(opts, :absolute_base_url)
       )
 
     Site.Options.new(
@@ -158,8 +177,11 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
           version: Mix.Project.config()[:version],
           git_branch: Git.git_branch(),
           git_revision: Git.git_revision(),
-          years: Keyword.get(opts, :years, @years),
-          years_short: Keyword.get(opts, :years_short, @years_short)
+          years: Keyword.get_lazy(opts, :years, fn -> Keyword.fetch!(course_site, :years) end),
+          years_short:
+            Keyword.get_lazy(opts, :years_short, fn ->
+              Keyword.fetch!(course_site, :years_short)
+            end)
         )
     )
   end
@@ -173,55 +195,17 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     end
   end
 
-  defp plan!(inputs, options) do
-    case Site.plan(inputs, options) do
-      {:ok, site} ->
-        Mix.shell().info(
-          "Rendered #{length(site.pages)} pages and #{Enum.count(Structure.chapters(inputs.structure))} chapters into #{map_size(site.files)} files"
-        )
+  defp report!(%Report{} = report) do
+    Mix.shell().info(
+      "Rendered #{report.pages} pages and #{report.chapters} chapters into #{report.files} files, beside #{report.page_assets} files next to a page and #{report.assets} global assets"
+    )
 
-        site
-
-      {:error, errors} ->
-        abort!("The site could not be rendered", errors, &Site.format_error/1)
-    end
+    Mix.shell().info("Wrote #{report.output_dir}, and every link of it resolves")
   end
 
-  defp prepare!(output_dir, mode) do
-    case Build.prepare_output(output_dir, mode) do
-      :ok ->
-        Mix.shell().info("Writing into #{output_dir}")
-
-      {:error, errors} ->
-        abort!("The output directory could not be made ready", errors, &Build.format_error/1)
-    end
-  end
-
-  defp publish!(site, inputs, content_dir, output_dir) do
-    case Build.publish_site(site, inputs, content_dir, output_dir) do
-      :ok ->
-        Mix.shell().info(
-          "Wrote #{map_size(site.files)} files and #{map_size(inputs.page_assets.page_assets)} files next to a page"
-        )
-
-      {:error, errors} ->
-        abort!("The build could not be written", errors, &Build.format_error/1)
-    end
-  end
-
-  defp check!(site, output_dir) do
-    case LinkCheck.check(site.pages, Build.output_files(output_dir)) do
-      [] ->
-        Mix.shell().info("Every link of the build resolves")
-
-      [_first | _rest] = broken ->
-        abort!("#{length(broken)} links lead nowhere", broken, &LinkCheck.format_error/1)
-    end
-  end
-
-  defp abort!(what, errors, format) do
+  defp abort!(what, errors) do
     Mix.shell().error("#{what}:")
-    Enum.each(errors, &Mix.shell().error("  " <> format.(&1)))
+    Enum.each(errors, &Mix.shell().error("  " <> &1))
     exit({:shutdown, 1})
   end
 end
