@@ -24,8 +24,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   Reading `ArchiDep.CourseSite.Urls`, only two kinds of reference the chrome
   writes can fail at all: a global asset that is not in the manifest, and a page
   whose PDF has not been published. Everything else — the home page, a document,
-  a cheatsheet, a file at the root, an external link — is total, and asking for
-  one is a programmer error rather than a fact about the build.
+  a cheatsheet, a file at the root, an external link, the page the banner offers
+  in a build that is not the live site — is total, and asking for one is a
+  programmer error rather than a fact about the build.
 
   So the split a layout has to make is exactly the split between those two:
 
@@ -51,8 +52,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   ## What is not in `links`
 
   A link the build cannot offer is **absent** from the map rather than present
-  and `nil`: the page has no PDF, the checkout has no revision to point at. What
-  draws it asks whether it is there, which is one question instead of two.
+  and `nil`: the page has no PDF, the checkout has no revision to point at, the
+  build *is* the live site and so has nowhere else to send anybody. What draws
+  it asks whether it is there, which is one question instead of two.
   """
 
   alias ArchiDep.CourseSite.DocumentRef
@@ -85,6 +87,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     :toc,
     :metadata_html,
     :policy,
+    :banner,
     :site,
     :commit,
     :sections,
@@ -107,6 +110,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     :toc,
     :metadata_html,
     :policy,
+    :banner,
     :site,
     :commit,
     :sections,
@@ -128,6 +132,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   @type kind :: :home | :subject | :exercise | :cheatsheet | :deck
 
   @typedoc """
+  Which copy of the site this build is, for a build that is not the current one
+  and has to say so — see `ArchiDep.CourseSite.Layout.Chrome.Banner`. The live
+  site says nothing, and is `nil`.
+  """
+  @type banner :: :backup | :archive | nil
+
+  @typedoc """
   What one page is drawn from: which page it is and how it is laid out, what the
   page itself says, the course beside it, the build around it, and every URL it
   writes.
@@ -141,6 +152,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
           toc: [Entry.t()],
           metadata_html: String.t(),
           policy: Policy.t(),
+          banner: banner(),
           site: SiteInfo.t(),
           commit: String.t() | nil,
           sections: [MenuSection.t()],
@@ -281,6 +293,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
       toc: toc(context, links),
       metadata_html: PageMetadata.to_html(context.metadata),
       policy: policy,
+      banner: banner(context),
       site: context.site,
       commit: Footer.commit(context.site),
       sections: sections(context, links),
@@ -311,8 +324,30 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     |> put(:branch, branch_url(context.site))
     |> put(:source, source_url(context))
     |> deck(context)
+    |> banner_link(context)
     |> optional(:page_pdf, {:pdf, context.page})
   end
+
+  # Which copy of the site a build is, which is the whole of what the banner
+  # says: the live site is the current one and says nothing.
+  defp banner(%LayoutContext{urls: %UrlContext{mode: :live}}), do: nil
+  defp banner(%LayoutContext{urls: %UrlContext{mode: mode}}), do: mode
+
+  # Every page of a copy of the site offers *itself* elsewhere: the backup copy
+  # the same page on the live site, an archived page whatever supersedes it.
+  # Neither can fail the way a stylesheet can — a build that could not say where
+  # the live site is, or an archive with no edition, is not representable
+  # (`ArchiDep.CourseSite.Urls.UrlContext`).
+  defp banner_link(resolved, %LayoutContext{urls: %UrlContext{mode: :live}}), do: resolved
+
+  defp banner_link(resolved, %LayoutContext{} = context),
+    do: put(resolved, :banner, Urls.resolve!(context.urls, banner_reference(context)))
+
+  defp banner_reference(%LayoutContext{urls: %UrlContext{mode: :backup}, page: page}),
+    do: {:live_site, page}
+
+  defp banner_reference(%LayoutContext{urls: %UrlContext{mode: :archive}, page: page}),
+    do: {:current_edition, page}
 
   # A page and a deck load nothing in common: one is the site, the other is a
   # presentation the site happens to publish. Each build asks only for what the

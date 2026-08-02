@@ -166,10 +166,17 @@ defmodule ArchiDep.CourseSite.Urls do
     end
   end
 
+  # What supersedes an archived page is only known when somebody asks, so this
+  # names the page rather than its replacement: the archived page's own path,
+  # edition included, which is the whole of its identity. It is handed over as a
+  # query parameter rather than as further path segments so that the day the
+  # application goes down, one static file reading `location.search` against the
+  # same mapping answers these URLs from any host — which is what lets the
+  # archives stay frozen bytes.
   def resolve(%UrlContext{} = context, {:current_edition, page} = reference, _from) do
     with {:ok, live_site_url} <- live_site_url(context, reference),
          {:ok, version} <- version(context, reference) do
-      {:ok, "#{live_site_url}/latest/#{version}#{PageRef.output_path(page)}"}
+      {:ok, "#{live_site_url}/latest?to=/#{version}#{PageRef.output_path(page)}"}
     end
   end
 

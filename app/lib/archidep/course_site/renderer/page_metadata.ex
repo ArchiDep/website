@@ -24,10 +24,20 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
   engine — they are the same pages at other addresses, and this is how they say
   so. A build that does not know where the main site is says nothing rather than
   guessing, since a canonical URL that is wrong is worse than none.
+
+  ## What an archived page asks a search engine to do with it
+
+  A past edition asks to be kept out of the results (`noindex`) so that a search
+  sends a reader to the current edition rather than to a five-year-old page —
+  and, in the same breath, to be *followed*, which is what actively points the
+  crawler at the current edition: the way there is the link the page itself
+  offers (`ArchiDep.CourseSite.Layout.Chrome.Banner`), and `nofollow` would keep
+  the archive out of the results just as well while severing it.
   """
 
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Urls
+  alias ArchiDep.CourseSite.Urls.UrlContext
 
   # What the site is called and what it is about, for a page that has nothing of
   # its own to say. The application says the same of itself in its layout.
@@ -51,18 +61,23 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
   # `jekyll-seo-tag` truncates at.
   @description_max_words 200
 
-  @enforce_keys [:title, :page_title, :description, :canonical_url]
-  defstruct [:title, :page_title, :description, :canonical_url]
+  # What a page of a frozen edition asks of a crawler.
+  @archive_robots "noindex, follow"
+
+  @enforce_keys [:title, :page_title, :description, :canonical_url, :robots]
+  defstruct [:title, :page_title, :description, :canonical_url, :robots]
 
   @typedoc """
   What a page says about itself: the title of its tab, its own title, what it is
-  about, and where it lives on the main site if the build knows.
+  about, where it lives on the main site if the build knows, and what it asks a
+  crawler to do with it if it has anything to ask.
   """
   @type t :: %__MODULE__{
           title: String.t(),
           page_title: String.t() | nil,
           description: String.t(),
-          canonical_url: String.t() | nil
+          canonical_url: String.t() | nil,
+          robots: String.t() | nil
         }
 
   @doc """
@@ -81,7 +96,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
       title: title(page_title),
       page_title: page_title,
       description: description(excerpt_html),
-      canonical_url: canonical_url(context)
+      canonical_url: canonical_url(context),
+      robots: robots(context)
     }
   end
 
@@ -93,6 +109,7 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
     [
       "<title>#{escape(metadata.title)}</title>",
       meta(name: "description", content: metadata.description),
+      meta(name: "robots", content: metadata.robots),
       link(rel: "canonical", href: metadata.canonical_url),
       meta(property: "og:type", content: "website"),
       meta(property: "og:site_name", content: @site_title),
@@ -182,6 +199,9 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
         Enum.join(cut, " ") <> "…"
     end
   end
+
+  defp robots(%RenderContext{urls: %UrlContext{mode: :archive}}), do: @archive_robots
+  defp robots(%RenderContext{}), do: nil
 
   defp canonical_url(%RenderContext{urls: urls, page: page}) do
     case Urls.resolve(urls, {:live_site, page}) do

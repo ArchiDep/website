@@ -56,7 +56,14 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
     test "keeps an archived edition's home page under its prefix", %{tmp_dir: tmp_dir} do
       dirs = course_fixture(tmp_dir)
-      urls = UrlContext.new(mode: :archive, build_id: "test", version: "2025")
+
+      urls =
+        UrlContext.new(
+          mode: :archive,
+          build_id: "test",
+          version: "2025",
+          live_site_url: "https://archidep.example.com"
+        )
 
       assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs)}
       assert written(dirs.output_dir) == expected_build("/2025", false)

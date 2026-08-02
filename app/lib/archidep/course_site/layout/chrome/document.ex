@@ -30,6 +30,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Document do
 
   alias ArchiDep.CourseSite.Layout.Chrome.Article
   alias ArchiDep.CourseSite.Layout.Chrome.Assigns
+  alias ArchiDep.CourseSite.Layout.Chrome.Banner
   alias ArchiDep.CourseSite.Layout.Chrome.Header
   alias ArchiDep.CourseSite.Layout.Chrome.Sidebar
   alias Phoenix.LiveView.Rendered
@@ -101,6 +102,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Document do
         </script>
 
         <Header.header links={@page.links} policy={@page.policy} site={@page.site} />
+
+        <Banner.banner
+          :if={@page.banner}
+          kind={@page.banner}
+          url={@page.links[:banner]}
+          years={@page.site.years}
+        />
 
         <div class="drawer lg:drawer-open">
           <input id={drawer_id()} type="checkbox" class="drawer-toggle" />

@@ -68,10 +68,19 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Policy do
       iex> Policy.of(UrlContext.new(mode: :live, build_id: "build"))
       %Policy{app_navigation?: true, account?: true, badges?: true, progress_cards?: true}
 
-      iex> Policy.of(UrlContext.new(mode: :backup, build_id: "build"))
+      iex> Policy.of(
+      ...>   UrlContext.new(mode: :backup, build_id: "build", live_site_url: "https://archidep.ch")
+      ...> )
       %Policy{app_navigation?: false, account?: false, badges?: false, progress_cards?: true}
 
-      iex> Policy.of(UrlContext.new(mode: :archive, build_id: "build", version: "2025"))
+      iex> Policy.of(
+      ...>   UrlContext.new(
+      ...>     mode: :archive,
+      ...>     build_id: "build",
+      ...>     version: "2025",
+      ...>     live_site_url: "https://archidep.ch"
+      ...>   )
+      ...> )
       %Policy{app_navigation?: false, account?: false, badges?: false, progress_cards?: false}
   """
   @spec of(UrlContext.t()) :: t()

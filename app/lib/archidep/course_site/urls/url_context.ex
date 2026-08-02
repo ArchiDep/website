@@ -68,24 +68,37 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
   - `:base_path` — where the site is mounted, e.g. `"/website"`. Empty by
     default, meaning the host's root. Must not end with a slash.
   - `:version` — the edition, i.e. the starting year of the academic year, e.g.
-    `"2026"`. When absent, the build is not versioned.
+    `"2026"`. When absent, the build is not versioned. Required of an archive,
+    which is identified by the edition it holds.
   - `:absolute_base_url` — baked onto content links so that they point at the
     main site wherever the build itself is served from. Set for the PDF export
     only.
-  - `:live_site_url` — where the current edition lives, for a build that is not
-    it.
+  - `:live_site_url` — where the current edition lives. Required of every build
+    that is not it.
   - `:assets`, `:page_assets`, `:pdfs` — the manifests, empty by default.
+
+  Those last two requirements are what a build that is not the live site owes
+  its reader: a copy that cannot say where the current edition is cannot tell
+  them they are not reading it. Stating them here rather than where the page
+  offering that link is drawn is what keeps such a build unrepresentable instead
+  of leaving it to fail one page at a time.
   """
   @spec new(keyword()) :: t()
   def new(opts) when is_list(opts) do
+    mode = validate_mode!(Keyword.fetch!(opts, :mode))
+
     %__MODULE__{
-      mode: validate_mode!(Keyword.fetch!(opts, :mode)),
+      mode: mode,
       build_id: validate_build_id!(Keyword.fetch!(opts, :build_id)),
       base_path: opts |> Keyword.get(:base_path, "") |> validate_base_path!(),
-      version: opts |> Keyword.get(:version) |> validate_version!(),
+      version: opts |> Keyword.get(:version) |> validate_version!() |> validate_edition!(mode),
       absolute_base_url:
         opts |> Keyword.get(:absolute_base_url) |> validate_url!(:absolute_base_url),
-      live_site_url: opts |> Keyword.get(:live_site_url) |> validate_url!(:live_site_url),
+      live_site_url:
+        opts
+        |> Keyword.get(:live_site_url)
+        |> validate_url!(:live_site_url)
+        |> validate_counterpart!(mode),
       assets: Keyword.get(opts, :assets) || AssetManifest.new(%{}),
       page_assets: Keyword.get(opts, :page_assets) || PageAssetManifest.new(%{}),
       pdfs: Keyword.get(opts, :pdfs) || PdfManifest.new(:site, %{})
@@ -100,7 +113,13 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
       "/2026"
 
       iex> UrlContext.content_prefix(
-      ...>   UrlContext.new(mode: :backup, build_id: "abc123", base_path: "/website", version: "2026")
+      ...>   UrlContext.new(
+      ...>     mode: :backup,
+      ...>     build_id: "abc123",
+      ...>     base_path: "/website",
+      ...>     version: "2026",
+      ...>     live_site_url: "https://archidep.ch"
+      ...>   )
       ...> )
       "/website/2026"
 
@@ -153,7 +172,14 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
       iex> UrlContext.home_at_base?(UrlContext.new(mode: :live, build_id: "abc123"))
       true
 
-      iex> UrlContext.home_at_base?(UrlContext.new(mode: :archive, build_id: "abc123"))
+      iex> UrlContext.home_at_base?(
+      ...>   UrlContext.new(
+      ...>     mode: :archive,
+      ...>     build_id: "abc123",
+      ...>     version: "2025",
+      ...>     live_site_url: "https://archidep.ch"
+      ...>   )
+      ...> )
       false
   """
   @spec home_at_base?(t()) :: boolean()
@@ -200,6 +226,24 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
 
   defp validate_version!(version),
     do: raise(ArgumentError, "Version #{inspect(version)} must be a string")
+
+  defp validate_edition!(nil, :archive),
+    do:
+      raise(
+        ArgumentError,
+        "Option :version is required of an archive, which is identified by the edition it holds"
+      )
+
+  defp validate_edition!(version, _mode), do: version
+
+  defp validate_counterpart!(nil, mode) when mode != :live,
+    do:
+      raise(
+        ArgumentError,
+        "Option :live_site_url is required of a build in #{inspect(mode)} mode, which has to say where the current edition is"
+      )
+
+  defp validate_counterpart!(live_site_url, _mode), do: live_site_url
 
   defp validate_url!(nil, _option), do: nil
 

@@ -34,7 +34,15 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
     test "builds a fully configured context" do
       {:ok, source} = Source.parse("Prose.\n")
       {:ok, includes} = Renderer.compile_includes(%{"icons/photo.html" => "<svg/>"})
-      urls = UrlContext.new(mode: :archive, build_id: "9c8b7a", version: "2025")
+
+      urls =
+        UrlContext.new(
+          mode: :archive,
+          build_id: "9c8b7a",
+          version: "2025",
+          live_site_url: "https://archidep.example.com"
+        )
+
       options = RenderOptions.new(strict_variables: false)
 
       assert RenderContext.new(

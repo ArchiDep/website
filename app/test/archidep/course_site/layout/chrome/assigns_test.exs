@@ -28,6 +28,10 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   @dns_deck DocumentRef.new(507, "dns", :slides)
   @todolist DocumentRef.new(205, "php-todolist", :exercise)
 
+  # Where a build that is not the live site says the current edition is, which
+  # is the one thing such a build writes an absolute URL for.
+  @live_site_url "https://archidep.example.com"
+
   @page_assets ["/assets/theme/theme.css", "/assets/course/course.js"]
   @deck_assets [
     "/assets/course/slides.css",
@@ -160,15 +164,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     end
 
     test "leaves out everything a build that is not the live site does not carry" do
-      urls =
-        build(:url_context, base_path: "", version: "2025", mode: :archive, assets: manifest())
-
-      assert Assigns.build(context(urls: urls)) ==
+      assert Assigns.build(context(urls: archived_urls())) ==
                {:ok,
                 expected(
                   base_path: "/2025",
                   standalone?: true,
                   policy: archived_policy(),
+                  banner: :archive,
                   sections: sections(prefix: "/2025"),
                   cheatsheets: [cheatsheet_entry(prefix: "/2025")],
                   legend_emoji: legend_emoji("/2025"),
@@ -177,10 +179,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     end
 
     test "says nothing about where an archived edition got to, whatever its progress says" do
-      urls =
-        build(:url_context, base_path: "", version: "2025", mode: :archive, assets: manifest())
-
-      assert Assigns.build(context(page: :home, urls: urls)) ==
+      assert Assigns.build(context(page: :home, urls: archived_urls())) ==
                {:ok,
                 expected(
                   ref: :home,
@@ -191,6 +190,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                   base_path: "/2025",
                   standalone?: true,
                   policy: archived_policy(),
+                  banner: :archive,
                   sections: sections(prefix: "/2025", current: nil),
                   cheatsheets: [cheatsheet_entry(prefix: "/2025")],
                   legend_emoji: legend_emoji("/2025"),
@@ -200,7 +200,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
 
     test "leaves the dashboard out of the backup copy as well, which still says where the course has got to" do
       urls =
-        build(:url_context, base_path: "", version: "2025", mode: :backup, assets: manifest())
+        build(:url_context,
+          base_path: "",
+          version: "2025",
+          mode: :backup,
+          live_site_url: @live_site_url,
+          assets: manifest()
+        )
 
       assert Assigns.build(context(page: :home, urls: urls)) ==
                {:ok,
@@ -213,6 +219,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                   base_path: "/2025",
                   standalone?: true,
                   policy: backup_policy(),
+                  banner: :backup,
                   sections: sections(prefix: "/2025", current: nil),
                   cheatsheets: [cheatsheet_entry(prefix: "/2025")],
                   cards: [
@@ -296,6 +303,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
         Keyword.get(overrides, :toc, [heading("presentation", "Presentation"), page_heading()]),
       metadata_html: PageMetadata.to_html(metadata()),
       policy: Keyword.get(overrides, :policy, live_policy()),
+      banner: Keyword.get(overrides, :banner, nil),
       site: Keyword.get(overrides, :site, site()),
       commit: Keyword.get(overrides, :commit, "main@abc123"),
       sections: Keyword.get(overrides, :sections, sections()),
@@ -320,11 +328,24 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   defp backup_policy,
     do: %Policy{app_navigation?: false, account?: false, badges?: false, progress_cards?: true}
 
+  defp archived_urls,
+    do:
+      build(:url_context,
+        base_path: "",
+        version: "2025",
+        mode: :archive,
+        live_site_url: @live_site_url,
+        assets: manifest()
+      )
+
   # What an archived edition writes instead: everything under the edition's own
   # prefix but the files anchored at the mount point, which stay where a browser
-  # and an operating system look for them.
+  # and an operating system look for them; and the one URL of a build that is
+  # not the live site, which is where it sends a reader who wants the current
+  # thing.
   defp archived_links do
     Map.merge(links(), %{
+      banner: "#{@live_site_url}/latest?to=/2025/course/507-dns/",
       home: "/2025/",
       theme_css: "/2025/assets/theme/theme.css",
       course_js: "/2025/assets/course/course.js",
@@ -352,11 +373,17 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       archived_links()
       |> Map.delete(:deck)
       |> Map.put(:source, source_url("course/index.md"))
+      |> Map.put(:banner, "#{@live_site_url}/latest?to=/2025/")
 
   # The home page of the copy of the edition being taught, which writes its
   # content where that edition writes it but keeps its own home page at the
-  # mount point, as the site it copies does.
-  defp backup_home_links, do: Map.put(archived_home_links(), :home, "/")
+  # mount point, as the site it copies does — and offers the very same page of
+  # the site it stands in for, rather than whatever superseded it.
+  defp backup_home_links,
+    do:
+      archived_home_links()
+      |> Map.put(:home, "/")
+      |> Map.put(:banner, "#{@live_site_url}/")
 
   # Every URL the chrome of a page writes. No PDF is ever among them: nothing
   # populates the manifest, so no page offers a download.
@@ -546,7 +573,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       title: "Domain Name System (DNS) · ArchiDep",
       page_title: "Domain Name System (DNS)",
       description: "A name.",
-      canonical_url: nil
+      canonical_url: nil,
+      robots: nil
     }
 
   # One session, which finished the chapter the tests are about and set work on

@@ -5,6 +5,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
 
   alias ArchiDep.CourseSite.Layout.Chrome.Article
   alias ArchiDep.CourseSite.Layout.Chrome.Assigns
+  alias ArchiDep.CourseSite.Layout.Chrome.Banner
   alias ArchiDep.CourseSite.Layout.Chrome.Document
   alias ArchiDep.CourseSite.Layout.Chrome.Header
   alias ArchiDep.CourseSite.Layout.Chrome.Policy
@@ -28,6 +29,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
     repository: "https://github.com/ArchiDep/website"
   }
 
+  @banner_url "https://archidep.example.com/latest?to=/2025/cheatsheets/git/"
+
   describe "document/1" do
     test "wraps a page in the whole of what a browser receives" do
       assert document() == expected([])
@@ -40,6 +43,16 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
 
     test "tells the script that a build which is not the live site stands in for it" do
       assert document(standalone?: true) == expected(standalone: "true")
+    end
+
+    test "tells a reader of an archived edition that it is over, under the header" do
+      assert document(banner: :archive, standalone?: true) ==
+               expected(standalone: "true", banner: banner_markup(:archive))
+    end
+
+    test "tells a reader of the backup copy where the site it stands in for is" do
+      assert document(banner: :backup, standalone?: true) ==
+               expected(standalone: "true", banner: banner_markup(:backup))
     end
 
     test "marks the home page's own entry in the navigation when that is the page" do
@@ -63,6 +76,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
       toc: [],
       metadata_html: "<title>Git Cheatsheet · ArchiDep</title>",
       policy: live_policy(),
+      banner: Keyword.get(overrides, :banner),
       site: site(),
       commit: "main@abc123",
       sections: [],
@@ -74,9 +88,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
       page_class: "course-cheatsheet",
       cloud_server: nil,
       pdf_tooltip: "Cheatsheet PDF",
-      links: @links
+      links: links(Keyword.get(overrides, :banner))
     }
   end
+
+  defp links(nil), do: @links
+  defp links(_kind), do: Map.put(@links, :banner, @banner_url)
 
   # What each part draws is pinned by that part's own test; what this one is
   # about is the document those parts are placed in — the head a browser reads
@@ -119,6 +136,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
 
         #{Keyword.get(parts, :header, header_markup())}
 
+        #{Keyword.get(parts, :banner, "")}
+
         <div class="drawer lg:drawer-open">
           <input id="sidebar" type="checkbox" class="drawer-toggle">
           <div class="drawer-content">
@@ -138,6 +157,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
 
   defp header_markup,
     do: render(&Header.header/1, %{links: @links, policy: live_policy(), site: site()})
+
+  defp banner_markup(kind),
+    do: render(&Banner.banner/1, %{kind: kind, url: @banner_url, years: "2025-2026"})
 
   defp article_markup(parts), do: render(&Article.article/1, %{page: page(parts)})
 

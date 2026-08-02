@@ -104,11 +104,41 @@ defmodule ArchiDep.CourseSite.Urls.UrlContextTest do
                      )
                    end
     end
+
+    test "rejects a copy of the site that cannot say where the current edition is" do
+      assert_raise ArgumentError,
+                   "Option :live_site_url is required of a build in :backup mode, which has to say where the current edition is",
+                   fn -> UrlContext.new(mode: :backup, build_id: "1a2b3c") end
+    end
+
+    test "rejects an archive that cannot say where the current edition is" do
+      assert_raise ArgumentError,
+                   "Option :live_site_url is required of a build in :archive mode, which has to say where the current edition is",
+                   fn -> UrlContext.new(mode: :archive, build_id: "1a2b3c", version: "2025") end
+    end
+
+    test "rejects an archive of no edition in particular" do
+      assert_raise ArgumentError,
+                   "Option :version is required of an archive, which is identified by the edition it holds",
+                   fn ->
+                     UrlContext.new(
+                       mode: :archive,
+                       build_id: "1a2b3c",
+                       live_site_url: "https://archidep.example.com"
+                     )
+                   end
+    end
   end
 
   describe "content_prefix/1" do
     test "returns the mount point of an unversioned build" do
-      context = UrlContext.new(mode: :backup, build_id: "1a2b3c", base_path: "/website")
+      context =
+        UrlContext.new(
+          mode: :backup,
+          build_id: "1a2b3c",
+          base_path: "/website",
+          live_site_url: "https://archidep.example.com"
+        )
 
       assert UrlContext.content_prefix(context) == "/website"
     end
@@ -117,7 +147,13 @@ defmodule ArchiDep.CourseSite.Urls.UrlContextTest do
   describe "edition_prefix/1" do
     test "is what the edition adds to the mount point of a versioned build" do
       context =
-        UrlContext.new(mode: :backup, build_id: "1a2b3c", base_path: "/website", version: "2026")
+        UrlContext.new(
+          mode: :backup,
+          build_id: "1a2b3c",
+          base_path: "/website",
+          version: "2026",
+          live_site_url: "https://archidep.example.com"
+        )
 
       assert UrlContext.edition_prefix(context) == "/2026"
     end
@@ -125,7 +161,13 @@ defmodule ArchiDep.CourseSite.Urls.UrlContextTest do
 
   describe "home_at_base?/1" do
     test "is true for a backup of the edition being taught" do
-      assert UrlContext.home_at_base?(UrlContext.new(mode: :backup, build_id: "1a2b3c"))
+      assert UrlContext.home_at_base?(
+               UrlContext.new(
+                 mode: :backup,
+                 build_id: "1a2b3c",
+                 live_site_url: "https://archidep.example.com"
+               )
+             )
     end
   end
 end

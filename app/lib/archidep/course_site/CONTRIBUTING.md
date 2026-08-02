@@ -347,6 +347,14 @@ being taught its home page sits at the mount point, and it moves under the
 edition prefix once archived. That rule is derived from `mode`, not stored, so a
 build cannot claim to be both.
 
+Two combinations are **refused outright**, rather than left to fail one page at
+a time: a build in any mode but `:live` must have a `live_site_url`, and an
+archive must have a `version`. A copy of the site that cannot say where the
+current edition is cannot tell its reader they are not reading it ([the
+chrome](#the-chrome)), and an archived page is identified by its edition plus
+its path. Stating both here means the mistake surfaces once, where the build is
+configured.
+
 `build_id` exists because the search index cannot be named after its own
 content: it is built _from_ the rendered pages whose `<head>` has to name it.
 Naming it after the build's _inputs_ breaks the cycle, which is what separates
@@ -637,6 +645,17 @@ identifiers of the headings it draws (a page's navigation and the heading it
 points at are drawn in different places and have to agree), and the entries
 those headings add to the front of a page's own.
 
+**A build that is not the current site says so on every page.**
+[`Chrome.Banner`](./layout/chrome/banner.ex) is the backup copy pointing at the
+same page on the live site and an archived edition pointing at whatever
+supersedes the page, which only the application can work out — so the archive
+links to `/latest?to=<the page's own path>` rather than to a page named when it
+was frozen, and never needs rebuilding for that link to stay right. Which of the
+two a build draws is `mode` and nothing else, never the presence of an edition
+prefix: the current edition is served under one too. A deck gets the same
+statement as a badge in its corner, because it has no header to put a bar under
+and no other way of saying it.
+
 **Which parts of the chrome a build carries** is
 [`Chrome.Policy`](./layout/chrome/policy.ex): one value, named field by field,
 derived from `UrlContext` `mode` and never from the host. A past edition has no
@@ -854,7 +873,7 @@ asks.
 
 A page introduces itself to things that are not reading it — a browser tab, a
 search engine, a chat client unfurling a pasted link — and
-[`PageMetadata`](./renderer/page_metadata.ex) is where the three things it says
+[`PageMetadata`](./renderer/page_metadata.ex) is where the four things it says
 are decided, instead of in whatever lays the page out. Deciding them in the
 layout is how the site came to serve two `<title>` elements per page, its own
 and `jekyll-seo-tag`'s, saying different things.
@@ -869,6 +888,10 @@ and `jekyll-seo-tag`'s, saying different things.
   backup copy and the archived editions avoid competing with it in a search
   engine. A build that does not know where the main site is says nothing rather
   than guessing.
+- **What it asks of a crawler** is nothing at all, except in an archive: a page
+  of a past edition is `noindex, follow`, so that a search sends a reader to the
+  current edition and a crawler is left free to get there through the
+  [banner](#the-chrome) — which is what `nofollow` would sever.
 
 It is a value whatever lays the page out writes into its `<head>`, rather than a
 piece of the page: a [`Page`](./renderer/page.ex) is what the site shows _of_ a

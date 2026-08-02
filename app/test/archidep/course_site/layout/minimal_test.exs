@@ -18,7 +18,8 @@ defmodule ArchiDep.CourseSite.Layout.MinimalTest do
     title: "Domain Name System (DNS) · ArchiDep",
     page_title: "Domain Name System (DNS)",
     description: "Learn the basics of DNS.",
-    canonical_url: nil
+    canonical_url: nil,
+    robots: nil
   }
 
   describe "document/1" do

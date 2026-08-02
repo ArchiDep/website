@@ -65,8 +65,6 @@ defmodule ArchiDep.Support.CourseSiteFactory do
 
   @spec url_context_factory(map()) :: UrlContext.t()
   def url_context_factory(attrs!) do
-    {mode, attrs!} = Map.pop_lazy(attrs!, :mode, fn -> Enum.random(@modes) end)
-
     {base_path, attrs!} =
       Map.pop_lazy(attrs!, :base_path, fn -> Enum.random(["", "/" <> slug()]) end)
 
@@ -80,6 +78,9 @@ defmodule ArchiDep.Support.CourseSiteFactory do
 
     {live_site_url, attrs!} =
       Map.pop_lazy(attrs!, :live_site_url, fn -> "https://#{slug()}.example.com" end)
+
+    {mode, attrs!} =
+      Map.pop_lazy(attrs!, :mode, fn -> Enum.random(modes(version, live_site_url)) end)
 
     {assets, attrs!} = Map.pop_lazy(attrs!, :assets, fn -> AssetManifest.new(emoji_assets()) end)
 
@@ -174,6 +175,15 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     )
   end
 
+  # Which builds the attributes a test named leave possible: an archive is
+  # identified by its edition, and every build that is not the live site has to
+  # say where the current edition is, so a context asked for without one of
+  # those is one of the builds that does not need it. A test wanting the
+  # combination `ArchiDep.CourseSite.Urls.UrlContext` refuses states it there.
+  defp modes(_version, nil), do: [:live]
+  defp modes(nil, _live_site_url), do: [:live, :backup]
+  defp modes(_version, _live_site_url), do: @modes
+
   @doc """
   A generator of document references, for property-based tests.
   """
@@ -203,13 +213,17 @@ defmodule ArchiDep.Support.CourseSiteFactory do
   @doc """
   A generator of URL contexts, for property-based tests. The manifests are left
   empty: a property that needs an entry must build the context around it.
+
+  Every generated context knows where the live site is, so the only build a
+  generated edition rules out is the archive, which is identified by the edition
+  it holds.
   """
   @spec url_context_generator() :: StreamData.t(UrlContext.t())
   def url_context_generator do
     gen all(
-          mode <- member_of(@modes),
           base_path <- one_of([constant(""), map(slug_generator(), &"/#{&1}")]),
           version <- one_of([constant(nil), map(integer(2020..2039), &to_string/1)]),
+          mode <- member_of(if(version, do: @modes, else: @modes -- [:archive])),
           build_id <- slug_generator(),
           absolute_base_url <-
             one_of([constant(nil), map(slug_generator(), &"https://#{&1}.example.com")]),

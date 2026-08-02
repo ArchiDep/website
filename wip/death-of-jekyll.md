@@ -345,10 +345,23 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       relative links are written against. The one thing the plan had not
       anticipated is the `:carry_assets` option it took to keep development's
       live asset tree out of a build that would freeze it.
-- [ ] Emit the two "not the current thing" banners from the first build, not at
+- [x] Emit the two "not the current thing" banners from the first build, not at
       year end, driven by a single three-valued `mode`
       (`:live`/`:backup`/`:archive`) — see [Archived years: a banner and one
       dynamic resolver](#archived-years-a-banner-and-one-dynamic-resolver).
+      **Done**, as one `Chrome.Banner` drawn in two shapes: a bar under the
+      header of a page, and a badge in the corner of a deck, which has no header
+      and no other way of saying it. It ships with the `noindex, follow` of the
+      same section, that being the same statement made to a crawler. Two things
+      worth recording. The seam had shipped `{:current_edition, _}` as
+      `/latest/2025/course/104-ssh/` — the **path shape this section rejects** —
+      and the banner is what would have frozen it into every archive forever, so
+      it was corrected to `?to=` first; a reference nothing calls is a decision
+      nothing enforces. And a copy of the site that cannot say where the current
+      edition is now fails to be _built_ rather than being drawn without the
+      banner: `mode != :live` requires `live_site_url` and `:archive` requires
+      `version`, which is also what makes both banner references total where the
+      chrome resolves them.
 - [ ] Build the `/latest?to=…` resolver in the app, with a per-year archive
       manifest and a compile-checked mapping (kept as **data**, so a client-side
       resolver can replace it once the app is retired) from archived document

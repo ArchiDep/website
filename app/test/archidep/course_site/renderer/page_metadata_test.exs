@@ -19,7 +19,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "Secure Shell (SSH) · ArchiDep",
                  page_title: "Secure Shell (SSH)",
                  description: "Learn about the SSH cryptographic network protocol.",
-                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/"
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
                }
     end
 
@@ -34,7 +35,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "Secure Shell (SSH) · ArchiDep",
                  page_title: "Secure Shell (SSH)",
                  description: "What you will learn How to connect.",
-                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/"
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
                }
     end
 
@@ -44,7 +46,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "Deployment · ArchiDep",
                  page_title: "Deployment",
                  description: "Learn about Q&A and the <head>.",
-                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/"
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
                }
     end
 
@@ -57,7 +60,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "Secure Shell (SSH) · ArchiDep",
                  page_title: "Secure Shell (SSH)",
                  description: cut <> "…",
-                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/"
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
                }
     end
 
@@ -67,7 +71,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "Secure Shell (SSH) · ArchiDep",
                  page_title: "Secure Shell (SSH)",
                  description: @site_description,
-                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/"
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
                }
     end
 
@@ -77,7 +82,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "Secure Shell (SSH) · ArchiDep",
                  page_title: "Secure Shell (SSH)",
                  description: @site_description,
-                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/"
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
                }
     end
 
@@ -87,7 +93,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "ArchiDep",
                  page_title: nil,
                  description: "An untitled page.",
-                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/"
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
                }
     end
 
@@ -97,7 +104,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "ArchiDep",
                  page_title: "ArchiDep",
                  description: "The course itself.",
-                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/"
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
                }
     end
 
@@ -107,7 +115,30 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "Secure Shell (SSH) · ArchiDep",
                  page_title: "Secure Shell (SSH)",
                  description: "An opening.",
-                 canonical_url: nil
+                 canonical_url: nil,
+                 robots: nil
+               }
+    end
+
+    test "asks a search engine to leave a past edition out of its results but to follow it" do
+      assert metadata_of("Secure Shell (SSH)", "<p>An opening.</p>", mode: :archive) ==
+               %PageMetadata{
+                 title: "Secure Shell (SSH) · ArchiDep",
+                 page_title: "Secure Shell (SSH)",
+                 description: "An opening.",
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: "noindex, follow"
+               }
+    end
+
+    test "asks nothing of a search engine on the copy standing in for the current edition" do
+      assert metadata_of("Secure Shell (SSH)", "<p>An opening.</p>", mode: :backup) ==
+               %PageMetadata{
+                 title: "Secure Shell (SSH) · ArchiDep",
+                 page_title: "Secure Shell (SSH)",
+                 description: "An opening.",
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
                }
     end
 
@@ -130,7 +161,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                  title: "Secure Shell (SSH) · ArchiDep",
                  page_title: "Secure Shell (SSH)",
                  description: @site_description,
-                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/slides/"
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/slides/",
+                 robots: nil
                }
     end
   end
@@ -141,7 +173,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
         title: "Secure Shell (SSH) · ArchiDep",
         page_title: "Secure Shell (SSH)",
         description: "Learn about the SSH cryptographic network protocol.",
-        canonical_url: "https://archidep.ch/2027/course/104-ssh/"
+        canonical_url: "https://archidep.ch/2027/course/104-ssh/",
+        robots: nil
       }
 
       assert PageMetadata.to_html(metadata) ==
@@ -159,12 +192,38 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                """)
     end
 
+    test "writes what a page of a past edition asks of a crawler" do
+      metadata = %PageMetadata{
+        title: "Secure Shell (SSH) · ArchiDep",
+        page_title: "Secure Shell (SSH)",
+        description: "Learn about the SSH cryptographic network protocol.",
+        canonical_url: "https://archidep.ch/2025/course/104-ssh/",
+        robots: "noindex, follow"
+      }
+
+      assert PageMetadata.to_html(metadata) ==
+               String.trim_trailing("""
+               <title>Secure Shell (SSH) · ArchiDep</title>
+               <meta name="description" content="Learn about the SSH cryptographic network protocol." />
+               <meta name="robots" content="noindex, follow" />
+               <link rel="canonical" href="https://archidep.ch/2025/course/104-ssh/" />
+               <meta property="og:type" content="website" />
+               <meta property="og:site_name" content="ArchiDep" />
+               <meta property="og:locale" content="en_US" />
+               <meta property="og:title" content="Secure Shell (SSH)" />
+               <meta property="og:description" content="Learn about the SSH cryptographic network protocol." />
+               <meta property="og:url" content="https://archidep.ch/2025/course/104-ssh/" />
+               <meta name="twitter:card" content="summary" />
+               """)
+    end
+
     test "leaves out what the build has nothing to say" do
       metadata = %PageMetadata{
         title: "ArchiDep",
         page_title: nil,
         description: @site_description,
-        canonical_url: nil
+        canonical_url: nil,
+        robots: nil
       }
 
       assert PageMetadata.to_html(metadata) ==
@@ -184,7 +243,8 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
         title: ~s(Architecture & Deployment · ArchiDep),
         page_title: ~s(Architecture & Deployment),
         description: ~s(Deploy the "todolist" application <not> the other one.),
-        canonical_url: "https://archidep.ch/"
+        canonical_url: "https://archidep.ch/",
+        robots: nil
       }
 
       assert PageMetadata.to_html(metadata) ==

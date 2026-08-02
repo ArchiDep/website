@@ -21,6 +21,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
     page_pdf: "/pdf/Slides.pdf"
   }
 
+  @banner_url "https://archidep.example.com/latest?to=/2025/course/507-dns/slides/"
+
   describe "deck/1" do
     test "hands the deck to the browser as the text of a textarea" do
       assert deck() == expected([])
@@ -45,6 +47,16 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
       assert deck(links: Map.delete(@links, :source)) == expected(source: "")
     end
 
+    test "says in the corner of an archived deck that the edition is over" do
+      assert deck(banner: :archive) ==
+               expected(banner: banner_markup("Archived edition", "Go to the current version."))
+    end
+
+    test "says in the corner of a deck of the backup copy where the live site is" do
+      assert deck(banner: :backup) ==
+               expected(banner: banner_markup("Backup copy", "Go to the live site."))
+    end
+
     test "says only what a checkout that cannot name its branch knows" do
       assert deck(git_branch: nil, git_revision: nil, commit: nil) ==
                expected(
@@ -67,6 +79,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
       toc: [],
       metadata_html: "<title>Domain Name System (DNS) · ArchiDep</title>",
       policy: %Policy{app_navigation?: true, account?: true, badges?: true, progress_cards?: true},
+      banner: Keyword.get(overrides, :banner),
       site: site(overrides),
       commit: Keyword.get(overrides, :commit, "main@abc123"),
       sections: [],
@@ -78,9 +91,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
       page_class: "course-deck",
       cloud_server: nil,
       pdf_tooltip: "Slides PDF",
-      links: Keyword.get(overrides, :links, @links)
+      links: Keyword.get_lazy(overrides, :links, fn -> links(Keyword.get(overrides, :banner)) end)
     }
   end
+
+  defp links(nil), do: @links
+  defp links(_kind), do: Map.put(@links, :banner, @banner_url)
 
   defp site(overrides) do
     SiteInfo.new(
@@ -128,6 +144,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
           #{Keyword.get(parts, :source, source_markup(@links[:source]))}
 
           #{Keyword.get(parts, :download, download_markup(@links[:page_pdf]))}
+
+          #{Keyword.get(parts, :banner, "")}
         </div>
 
         <div id="footer" class="tooltip absolute bottom-4 left-1/4 right-1/4 z-10 text-center font-meta text-sm opacity-25 hover:opacity-100">
@@ -152,6 +170,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
       ~s(<a id="download-pdf" href="#{url}" class="print:hidden tooltip" data-tip="Download PDF" download>\n) <>
         ~s(        #{icon(:document_arrow_down, "size-6 opacity-50 hover:opacity-100")}\n) <>
         ~s(      </a>)
+
+  defp banner_markup(label, statement),
+    do:
+      ~s(<a href="#{@banner_url}" class="tooltip print:hidden" data-tip="#{statement}">\n) <>
+        ~s(  <span class="badge badge-warning badge-sm">#{label}</span>\n) <>
+        ~s(</a>)
 
   defp source_markup(url),
     do:

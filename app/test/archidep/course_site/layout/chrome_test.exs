@@ -136,7 +136,8 @@ defmodule ArchiDep.CourseSite.Layout.ChromeTest do
       title: "Domain Name System (DNS) · ArchiDep",
       page_title: "Domain Name System (DNS)",
       description: "A name.",
-      canonical_url: nil
+      canonical_url: nil,
+      robots: nil
     }
 
   defp structure,

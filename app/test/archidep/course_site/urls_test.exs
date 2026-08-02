@@ -644,13 +644,26 @@ defmodule ArchiDep.CourseSite.UrlsTest do
         )
 
       assert Urls.resolve(context, {:current_edition, {:document, document}}) ==
-               {:ok, "https://archidep.example.com/latest/2025/course/104-ssh/"}
+               {:ok, "https://archidep.example.com/latest?to=/2025/course/104-ssh/"}
+    end
+
+    test "names the archived page by the path it has on the live site, whatever mounts this copy" do
+      context =
+        CourseSiteFactory.build(:url_context,
+          mode: :archive,
+          base_path: "/website",
+          version: "2025",
+          live_site_url: "https://archidep.example.com"
+        )
+
+      assert Urls.resolve(context, {:current_edition, :home}) ==
+               {:ok, "https://archidep.example.com/latest?to=/2025/"}
     end
 
     test "reports a build that has no edition to resolve from" do
       context =
         CourseSiteFactory.build(:url_context,
-          mode: :archive,
+          mode: :backup,
           version: nil,
           live_site_url: "https://archidep.example.com"
         )
@@ -836,7 +849,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                pdf: "/2026/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
                root_file: "/favicon.ico",
                live_site: "https://archidep.example.com/2026/course/104-ssh/",
-               current_edition: "https://archidep.example.com/latest/2026/course/104-ssh/",
+               current_edition: "https://archidep.example.com/latest?to=/2026/course/104-ssh/",
                external: "https://azure.microsoft.com/"
              }
     end
@@ -862,7 +875,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                pdf: "/website/2026/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
                root_file: "/website/favicon.ico",
                live_site: "https://archidep.example.com/2026/course/104-ssh/",
-               current_edition: "https://archidep.example.com/latest/2026/course/104-ssh/",
+               current_edition: "https://archidep.example.com/latest?to=/2026/course/104-ssh/",
                external: "https://azure.microsoft.com/"
              }
     end
@@ -887,7 +900,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                pdf: "/2025/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
                root_file: "/favicon.ico",
                live_site: "https://archidep.example.com/2025/course/104-ssh/",
-               current_edition: "https://archidep.example.com/latest/2025/course/104-ssh/",
+               current_edition: "https://archidep.example.com/latest?to=/2025/course/104-ssh/",
                external: "https://azure.microsoft.com/"
              }
     end
@@ -913,7 +926,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                pdf: "/website/2025/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
                root_file: "/website/favicon.ico",
                live_site: "https://archidep.example.com/2025/course/104-ssh/",
-               current_edition: "https://archidep.example.com/latest/2025/course/104-ssh/",
+               current_edition: "https://archidep.example.com/latest?to=/2025/course/104-ssh/",
                external: "https://azure.microsoft.com/"
              }
     end
@@ -939,7 +952,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                pdf: "/2026/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
                root_file: "/favicon.ico",
                live_site: "https://archidep.example.com/2026/course/104-ssh/",
-               current_edition: "https://archidep.example.com/latest/2026/course/104-ssh/",
+               current_edition: "https://archidep.example.com/latest?to=/2026/course/104-ssh/",
                external: "https://azure.microsoft.com/"
              }
     end

@@ -20,7 +20,8 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
     title: "DNS · ArchiDep",
     page_title: "DNS",
     description: "Learn.",
-    canonical_url: nil
+    canonical_url: nil,
+    robots: nil
   }
 
   describe "new/1" do

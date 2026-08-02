@@ -55,8 +55,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   - `--base-path` — the mount point, e.g. `/website`. Defaults to none.
   - `--version` — the edition, i.e. the starting year of the academic year.
     Defaults to the edition the application's `course_site` configuration says
-    this deployment holds, every build being an edition's.
-  - `--live-site-url` — where the main site is, for a build that is not it.
+    this deployment holds, every build being an edition's. Required of an
+    archive.
+  - `--live-site-url` — where the main site is. Required of every build that is
+    not it, which has to offer its reader the current edition.
   - `--absolute-base-url` — baked onto content links, for the PDF export.
   - `--build-id` — names the files a build produces of itself. Defaults to
     `build`.

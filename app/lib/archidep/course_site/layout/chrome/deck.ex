@@ -7,7 +7,10 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Deck do
   than read in a browser tab beside other tabs: everything that is a way of
   getting somewhere else would be a thing to click by accident while presenting.
   What it carries instead is a corner saying which course, which build, and
-  where the slides are written.
+  where the slides are written — and, in a build that is not the current site,
+  the one link that corner does hold
+  (`ArchiDep.CourseSite.Layout.Chrome.Banner`): a reader who has landed on a
+  deck of a past edition has no other way of being told so.
 
   ## The deck stays Markdown
 
@@ -32,6 +35,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Deck do
   use Phoenix.Component
 
   alias ArchiDep.CourseSite.Layout.Chrome.Assigns
+  alias ArchiDep.CourseSite.Layout.Chrome.Banner
   alias ArchiDep.CourseSite.Layout.Chrome.Icons
   alias Phoenix.LiveView.Rendered
 
@@ -112,6 +116,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Deck do
           >
             <Heroicons.document_arrow_down class="size-6 opacity-50 hover:opacity-100" />
           </a>
+
+          <Banner.corner :if={@page.banner} kind={@page.banner} url={@page.links[:banner]} />
         </div>
 
         <div
