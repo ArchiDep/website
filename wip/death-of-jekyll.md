@@ -44,6 +44,7 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Progressive solution reveal](#progressive-solution-reveal)
   - [Static build step](#static-build-step)
   - [Development and production serving](#development-and-production-serving)
+    - [The production half already stands, serving the wrong thing](#the-production-half-already-stands-serving-the-wrong-thing)
     - [The development half, as built](#the-development-half-as-built)
   - [Standalone / archival mode](#standalone--archival-mode)
   - [Optional URL prefix](#optional-url-prefix)
@@ -305,12 +306,6 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       corrections recorded there; the sharpest is that a `Plug.Static` response
       can never carry the live-reload script, which is why a plug of our own
       serves the pages.
-- [ ] Serve the build in **production** from a separate static server
-      (reverse-proxy routed), publishing in-process rebuilds atomically to a
-      shared volume — see [Development and production
-      serving](#development-and-production-serving). The atomic publish itself
-      is already built (`Build.swap_output/2`); what is left is the static
-      server, the shared volume and the proxy routes.
 - [ ] Preserve a fully static, dashboard-free standalone/archival output (GitHub
       Pages backup) — see [Standalone / archival
       mode](#standalone--archival-mode).
@@ -343,7 +338,9 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       development. A [cutover](#cutover) blocker, since moving the content under
       a prefix breaks every existing bookmark the moment it happens — see
       [Archived years: a banner and one dynamic
-      resolver](#archived-years-a-banner-and-one-dynamic-resolver).
+      resolver](#archived-years-a-banner-and-one-dynamic-resolver). The
+      development half is ours; whether the production half is depends on which
+      of the proxy's rules the deployment repository sets rather than this one.
 - [ ] Decide whether to re-render the 2025–2026 content from its git tag as the
       first `/2025/` archive, seeding the resolver and doubling as fidelity-gate
       input — see [Archived years: a banner and one dynamic
@@ -372,6 +369,21 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       see [Search index](#search-index).
 - [ ] Run an HTML fidelity diff / visual-regression gate against current Jekyll
       output — see [HTML fidelity gate](#html-fidelity-gate).
+- [ ] Serve the build in **production** — see [Development and production
+      serving](#development-and-production-serving). It sits here rather than
+      beside the development half because it blocks **nothing but the cutover
+      below**, which cannot happen without it: dropping the Ruby stage takes
+      away what production serves today. It splits in two, and only the second
+      half reaches outside this repository:
+      - **What the static server serves.** The separate static server, its
+        configuration and the proxy split already exist here and serve Jekyll's
+        output; what is left is pointing them at the Elixir build. This is the
+        half the cutover waits on.
+      - **Publishing an in-process rebuild atomically to a volume shared with
+        that server**, replacing the build baked into the image. Only the
+        [database progress source](#progress-structure-vs-status) needs this,
+        and that is already deferred past the cutover. `Build.swap_output/2` is
+        the atomic publish itself and is done.
 - [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stage,
       and remove the JSON ordering scaffolding that only exists to keep
       `archidep.json` diffable against Jekyll's — see [Cutover](#cutover).
@@ -2783,6 +2795,36 @@ naturally — each year is an immutable directory under the same volume.
 in the static HTML; the reverse proxy must route `/assets/…` consistently so
 both the static course pages and the dynamic app resolve the same digested
 files.
+
+#### The production half already stands, serving the wrong thing
+
+Written as though the production topology had to be built, this section
+describes what **this repository already runs**. Reading it back against the
+deployment:
+
+- The **separate static server** is the `assets-server` stage of the
+  [`Dockerfile`](../Dockerfile) — nginx over
+  [`docker/nginx.conf`](../docker/nginx.conf) — and the **reverse proxy** is the
+  Traefik service of [`compose.prod.yml`](../compose.prod.yml), whose rules
+  already send `/`, `/assets/`, `/course/` and the root files to it and
+  everything else to Phoenix, with nginx falling back to Phoenix for anything it
+  does not hold.
+- What it serves is `priv/static` **baked into the image**, which is where
+  Jekyll writes. So production serving is not a topology to build but a source
+  to change: the same stage taking the Elixir build, and the paths the proxy and
+  nginx name kept in step with what that build writes (`/cheatsheets/`, and
+  `/404.html` as an error page rather than a fall-through).
+- **The shared volume is a separate concern from that**, and a later one. It
+  exists to let a running application republish the site without rebuilding the
+  image, which is what the [database progress
+  source](#progress-structure-vs-status) needs — and that is deferred past the
+  [cutover](#cutover). Until then the build is an artifact of the image like
+  Jekyll's is, and nothing has to be shared.
+
+The consequence for ordering is that the half the cutover waits on is a change
+to the `Dockerfile`, `docker/nginx.conf` and the proxy rules, and how much of
+that reaches the deployment repository depends only on which of those rules that
+repository sets rather than this one.
 
 #### The development half, as built
 
