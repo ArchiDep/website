@@ -48,6 +48,7 @@ actually uses is small and clean, and the codebase is already half-way there.
     - [The development half, as built](#the-development-half-as-built)
   - [Standalone / archival mode](#standalone--archival-mode)
   - [Optional URL prefix](#optional-url-prefix)
+    - [Where past editions are kept](#where-past-editions-are-kept)
   - [Decouple PDF generation from production](#decouple-pdf-generation-from-production)
   - [Per-year PDF archive](#per-year-pdf-archive)
   - [Search index](#search-index)
@@ -335,6 +336,19 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       not about the dashboard at all.
 - [ ] Support an optional URL prefix (e.g. `/2026/`) for per-year archived
       versions — see [Optional URL prefix](#optional-url-prefix).
+- [ ] Stand up the **archive repository** that keeps the finished editions and
+      is itself the backup site: an organisation Pages site mounted at a root,
+      named `backup.archidep.ch`, published by pushing this repository's build
+      into it rather than by uploading a Pages artifact — see [Where past
+      editions are kept](#where-past-editions-are-kept). It is what makes the
+      prefix worth having: without it there is nowhere for a past edition to
+      live, this repository holding only the current one.
+- [ ] Write and run the **year-end rollover**: build the finished edition with
+      `--mode archive` and its own progress file, commit it and its PDFs as
+      `<year>/`, emit `course/archives/<year>.json`, tag the source
+      `archive/<year>`, and move the `version` knob on — see [Where past
+      editions are kept](#where-past-editions-are-kept). Distinct from the
+      [cutover](#cutover) below, which happens once; this happens every year.
 - [ ] Emit the two "not the current thing" banners from the first build, not at
       year end, driven by a single three-valued `mode`
       (`:live`/`:backup`/`:archive`) — see [Archived years: a banner and one
@@ -358,7 +372,11 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       input — see [Archived years: a banner and one dynamic
       resolver](#archived-years-a-banner-and-one-dynamic-resolver).
 - [ ] Decide where per-year generated PDFs are kept alongside the archived site
-      — see [Per-year PDF archive](#per-year-pdf-archive).
+      — see [Per-year PDF archive](#per-year-pdf-archive). Open, and **not** the
+      [archive repository](#where-past-editions-are-kept): at 127 MB a year of
+      blobs that never repeat, they would swamp the one artifact meant to stay
+      cheap to clone. `PdfManifest` already lets a build point at PDFs published
+      anywhere, so this can be settled late.
 - [ ] Decouple PDF generation from the production website: bake absolute
       production URLs into content links at build time and serve the build
       locally — see [Decouple PDF generation from
@@ -386,16 +404,14 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       beside the development half because it blocks **nothing but the cutover
       below**, which cannot happen without it: dropping the Ruby stage takes
       away what production serves today. It splits in two, and only the second
-      half reaches outside this repository:
-      - **What the static server serves.** The separate static server, its
-        configuration and the proxy split already exist here and serve Jekyll's
-        output; what is left is pointing them at the Elixir build. This is the
-        half the cutover waits on.
-      - **Publishing an in-process rebuild atomically to a volume shared with
-        that server**, replacing the build baked into the image. Only the
-        [database progress source](#progress-structure-vs-status) needs this,
-        and that is already deferred past the cutover. `Build.swap_output/2` is
-        the atomic publish itself and is done.
+      half reaches outside this repository: - **What the static server serves.** The separate static server, its
+      configuration and the proxy split already exist here and serve Jekyll's
+      output; what is left is pointing them at the Elixir build. This is the
+      half the cutover waits on. - **Publishing an in-process rebuild atomically to a volume shared with
+      that server**, replacing the build baked into the image. Only the
+      [database progress source](#progress-structure-vs-status) needs this,
+      and that is already deferred past the cutover. `Build.swap_output/2` is
+      the atomic publish itself and is done.
 - [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stage,
       and remove the JSON ordering scaffolding that only exists to keep
       `archidep.json` diffable against Jekyll's — see [Cutover](#cutover). The
@@ -835,8 +851,11 @@ shortened).
 
 `base_path` and `version` are kept **separate** rather than pre-concatenated
 because the home-page exception needs the deployment mount point on its own:
-during the year the home page sits at `base_path`, which is `/` on
-`archidep.ch` but `/website/` on the GitHub Pages backup.
+during the year the home page sits at `base_path` while everything else sits
+under the edition, which the derived `content_prefix` cannot express alone. Both
+hosts mount at a root today ([Where past editions are
+kept](#where-past-editions-are-kept)), so the knob is a deployment fact rather
+than a constant of the design.
 
 Resolution also takes the **current document** (`from:`), needed to express page
 assets relative to the page and to leave same-document fragments bare.
@@ -1111,8 +1130,9 @@ correspondence between an archived page and the current one **changes during the
 year** as the course is reworked, so no target known at archival time stays
 correct. Routing through the app makes the banner URL stable forever and leaves
 only the app's resolution to change — so **archives never need rebuilding** for
-their links to stay right. (Re-render a past year only to change the banner
-wording or pick up a renderer fix.)
+their links to stay right, which is what lets them be kept as frozen bytes
+rather than as sources ([Where past editions are
+kept](#where-past-editions-are-kept)).
 
 **Route:** `GET /latest?to=<path>`, where `to` is the archived page's **own URL
 path, version prefix included** — so the banner link is mechanically
@@ -1204,10 +1224,10 @@ page and avoids any "both at once" state.
 
 **Hosting: both hosts carry every year.** archidep.ch serves the live current
 year _and_ the past years under their prefixes; the GitHub Pages deployment
-mirrors all of them plus the current-year backup copy. So a given year has two
-`:archive` builds differing only in `base_path` — the seam already handles that,
-but the reverse-proxy rules and `static_paths/0` must account for every year
-segment on archidep.ch.
+mirrors all of them plus the current-year backup copy. Both hosts are roots, so
+a given year is **one** `:archive` build serving both — see [Where past editions
+are kept](#where-past-editions-are-kept) — but the reverse-proxy rules and
+`static_paths/0` must still account for every year segment on archidep.ch.
 
 The Pages mirror is not redundancy for its own sake: **when the course ends for
 good, the dynamic app goes down permanently and GitHub Pages becomes the only
@@ -1215,16 +1235,18 @@ surviving copy.**
 
 That end state has one consequence worth spending nothing on now but designing
 _around_: every archive banner points at `/latest?to=…` on archidep.ch, so those
-links die with the app — and with the domain. Two ways across that bridge when
-it comes: a **final rebuild of every year** with a terminal configuration
-(archives are rebuildable, so this is a rebuild, not a migration), or a
-**client-side resolver** shipped with the Pages deployment. Both are much easier
-if the resolver's mapping is **data rather than hand-written function clauses**
-— keep the archive manifests and the override table as a map the build can also
-emit into the static output, and a JavaScript resolver becomes a drop-in: a
-static `/latest/index.html` reading `to` from `location.search` against that
-map, which is exactly why the route takes a query parameter. Compile-time
-checking works identically either way, so this constraint costs nothing today.
+links die with the app — and with the domain. The way across that bridge is a
+**client-side resolver** shipped with the Pages deployment, rather than a final
+rebuild of every year with a terminal configuration: the editions are frozen
+bytes, so rebuilding them all would replace each one with the output of a much
+later renderer ([Where past editions are kept](#where-past-editions-are-kept)).
+That makes it load-bearing, rather than merely convenient, that the resolver's
+mapping is **data rather than hand-written function clauses** — keep the archive
+manifests and the override table as a map the build can also emit into the
+static output, and a JavaScript resolver becomes a drop-in: a static
+`/latest/index.html` reading `to` from `location.search` against that map, which
+is exactly why the route takes a query parameter. Compile-time checking works
+identically either way, so this constraint costs nothing today.
 
 **Seeding the first archive.** The ideal is to **re-render the 2025–2026 content
 from its git tag with the new renderer** at cutover, producing a proper `/2025/`
@@ -1374,13 +1396,16 @@ rebuilds anyway, so the indirection buys little.
 
 #### Consumers as configurations
 
-| Build                 | `mode`     | `base_path`  | `version` | `absolute_base_url`     |
-| --------------------- | ---------- | ------------ | --------- | ----------------------- |
-| Development / live    | `:live`    | `""`         | `"2026"`  | `nil`                   |
-| GitHub Pages backup   | `:backup`  | `"/website"` | `"2026"`  | `nil`                   |
-| Archive, archidep.ch  | `:archive` | `""`         | `"2025"`  | `nil`                   |
-| Archive, GitHub Pages | `:archive` | `"/website"` | `"2025"`  | `nil`                   |
-| PDF export            | `:live`    | `""`         | `"2026"`  | `"https://archidep.ch"` |
+| Build               | `mode`     | `base_path` | `version` | `absolute_base_url`     |
+| ------------------- | ---------- | ----------- | --------- | ----------------------- |
+| Development / live  | `:live`    | `""`        | `"2026"`  | `nil`                   |
+| Backup, Pages       | `:backup`  | `""`        | `"2026"`  | `nil`                   |
+| Archive, both hosts | `:archive` | `""`        | `"2025"`  | `nil`                   |
+| PDF export          | `:live`    | `""`        | `"2026"`  | `"https://archidep.ch"` |
+
+An archive is **one** row rather than one per host because both hosts serve it
+at a root — see [Where past editions are kept](#where-past-editions-are-kept),
+which is also why `base_path` is `""` in every row above.
 
 `absolute_base_url` is `nil` everywhere except the PDF build — in particular the
 **backup copy must keep its content links local**. Absolutizing them to
@@ -3010,6 +3035,82 @@ seam](#url-and-link-emission-seam), which settles the details:
   being resolved away — see [Archived years: a banner and one dynamic
   resolver](#archived-years-a-banner-and-one-dynamic-resolver).
 
+#### Where past editions are kept
+
+The prefix lets every edition coexist; this is where the bytes of the finished
+ones actually live. It has to be answered outside this repository, which holds
+**one** edition of the course material at a time: the moment the content is
+upgraded for 2026 there is nothing left here to render 2025 from.
+
+**Decision: a finished edition is frozen output kept in a git repository that is
+also the backup site — not sources kept in order to be rebuilt.**
+
+**Frozen, not rebuildable.** A build is a function of the sources _and_ the
+renderer, the theme, the asset bundles, the progress source and the toolchain;
+only the first of those is in a git tag. Rebuilding 2025 in 2029 would mean the
+2029 renderer still parsing 2025's front matter and the 2029 theme still styling
+it, and any of them moving silently rewrites a year that was supposed to be
+finished — discovered, if ever, as a visual regression in an edition nobody is
+looking at. `:archive` mode exists to say "this is over"; an archive that is
+regenerated on every deploy is not over. So an edition is rendered **once**, at
+the year-end rollover below, and the bytes are the artifact from then on. The
+source commit is tagged `archive/<year>` for forensics rather than as a rebuild
+path, and the `version.json` already inside the tree records the revision that
+produced it. Re-rendering a past edition stays possible, but it is a deliberate
+act producing a **new** frozen artifact, and nothing in the design may assume
+it.
+
+**The store is the backup site.** Of the places bytes could sit — CI artifacts
+(they expire), release tarballs (opaque, and needing credentials at every
+deploy), object storage (one more account that has to outlive the course) — a
+git repository is the only one that is already replicated, already
+content-addressed and already publishable as a website. Today's Pages
+deployment is artifact-based (`.github/workflows/build.yml` uploads
+`app/priv/static` on every push to `main`), so nothing survives between deploys
+and the archives would have to be re-supplied on each one, forever. Making the
+store _be_ the published tree removes that: one repository holds `<year>/` per
+edition, an edition is added in a single commit at its rollover and never
+touched again, and this repository's CI pushes the current year's fresh build
+into it in place of the artifact upload — where that build is the `:backup`
+copy. When the app is retired, that repository is the whole surviving site,
+plus the history of how it got there.
+
+**It is an organisation Pages site, so `base_path` is `""` everywhere.** Content
+links are root-relative, so a frozen tree commits to one mount point: `/2025/…`
+and `/website/2025/…` cannot both be it, and rewriting them at deploy time is
+exactly the string concatenation the [seam](#url-and-link-emission-seam) exists
+to abolish. Serving the backup at a **root** settles it, and an organisation
+Pages site (`archidep.github.io`) is a root even without a domain — so
+`backup.archidep.ch` is the memorable name while the GitHub URL stays a working
+fallback if the domain ever lapses, which matters for the one copy meant to
+outlive everything. Two rows of the [consumers
+table](#consumers-as-configurations) collapse into one as a result: an edition
+is a single `:archive` build, served by both hosts.
+
+**The year-end rollover**, then, is four steps and no rendering decisions:
+
+1. Build the finished edition with `--mode archive --version <year>` and that
+   year's `--progress` file — the option exists precisely so that an edition
+   whose progress no running application still holds can be built.
+2. Commit it as `<year>/` in the archive repository. The year's PDFs are **not**
+   part of that tree — see [Per-year PDF archive](#per-year-pdf-archive), still
+   open.
+3. Emit `course/archives/<year>.json` here and tag the source `archive/<year>`.
+4. Move the `version` knob to the new edition; the next build lands beside the
+   frozen ones rather than over them.
+
+**What it costs, and what has to stay out of it.** A published edition measures
+~53 MB of content (the ~370 files sitting next to pages) plus the ~55 MB of
+global assets each edition carries under its own prefix. Git content-addresses,
+so the page assets that survive from one year to the next cost nothing to keep a
+second time; the real growth is the bundles. Source maps (~9 MB of that) have no
+business in a frozen edition and should be left out of archive builds. That
+budget is the reason the [PDFs are stored elsewhere](#per-year-pdf-archive) —
+127 MB an edition, none of it shared with the year before — and the reason to
+keep checking the total against the host's published-size limit rather than
+assuming the room is unlimited. The one moving part this adds is a credential:
+publishing into another repository replaces `upload-pages-artifact` with a push.
+
 ### Decouple PDF generation from production
 
 **Goal: `npm run pdf` should run against a local build, not the deployed
@@ -3085,12 +3186,32 @@ up, that content would need a static fallback in the export build.
 ### Per-year PDF archive
 
 The per-year PDFs (slides, cheatsheets) generated by `npm run pdf` should be
-**kept alongside the archived static site** for that year (e.g. under the year's
-prefix, or a parallel archive location). Not strictly part of the rendering
-refactor, but a stated goal: decide the storage location/convention so that an
-archived `/2025/` site and its PDFs travel together.
+**kept alongside the archived static site** for that year. Not strictly part of
+the rendering refactor, but a stated goal: decide the storage
+location/convention so that an archived `/2025/` site and its PDFs travel
+together.
 
-The convention has to be one **CI** can write to, since that is where generation
+**The one thing now settled is where they do _not_ go: the [archive
+repository](#where-past-editions-are-kept).** The 2025 export is 127 MB across
+65 files, more than the site it belongs to, and unlike the site's images a
+regenerated PDF shares no bytes with last year's — so they would dominate the
+one artifact meant to stay cheap to clone and to stay under the published-size
+ceiling of the host. Their storage is therefore a **separate** decision from the
+site's, which is what [`PdfManifest`'s `{:external, base}`
+base](#generated-pdfs-may-live-anywhere) already allows for: a build's pages can
+point at PDFs published anywhere, so this can be settled late without touching
+the renderer or the seam.
+
+Candidates, none of them chosen yet: **release assets** of the archive
+repository (out of the git history, permanently addressable, no extra account);
+a **regeneration** path, viable in a way re-rendering the site is not, since the
+input would be that year's frozen HTML rather than its sources — at the price of
+depending on a browser whose page rendering drifts; or hosting them wherever the
+course's other large files end up. What rules a candidate out is the end state:
+the PDFs of a past edition have to survive the app, the domain and eventually
+this repository.
+
+Whichever it is, publication has to be **CI**'s, since that is where generation
 and publication end up once [the export no longer needs the production
 site](#decouple-pdf-generation-from-production) — an archive whose PDFs still
 depend on someone remembering to upload them is an archive that will eventually
