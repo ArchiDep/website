@@ -41,6 +41,10 @@ config :archidep,
     version: "2025",
     years: "2025-2026",
     years_short: "25-26",
+    # Where the generated PDFs of a build are published, as a base of
+    # ArchiDep.CourseSite.Urls.PdfManifest. Nothing publishes them yet, and a
+    # build that cannot say where they are offers no download link.
+    pdf_base: nil,
     watch: false,
     serve: false
   ],

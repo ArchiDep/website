@@ -22,6 +22,7 @@ defmodule ArchiDep.CourseSite.Builder do
 
   alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.Build.LinkCheck
+  alias ArchiDep.CourseSite.Build.PdfNames
   alias ArchiDep.CourseSite.Build.Site
   alias ArchiDep.CourseSite.Build.Site.Options
   alias ArchiDep.CourseSite.Builder.Report
@@ -78,8 +79,17 @@ defmodule ArchiDep.CourseSite.Builder do
     context are **replaced** by the ones the build read: which name each asset
     was published under is something a build finds out rather than something its
     caller can state, and threading them back in by hand is the step this exists
-    to remove.
+    to remove. The PDF manifest is replaced the same way, but only when
+    `:pdf_base` says so.
   - `:output` — see `t:output_mode/0`. Defaults to `:empty`.
+  - `:pdf_base` — where the generated PDFs of this build are published, as a
+    base of `ArchiDep.CourseSite.Urls.PdfManifest`. The manifest itself is
+    worked out here from the course that was read: what each PDF is called
+    follows from the page it is of, so where they are published is the only half
+    a caller can state. A build that states nothing keeps the manifest its URL
+    context carries — empty, unless the caller filled it in — and every page of
+    it leaves its download link out, which is what a build made before its PDFs
+    have been printed wants.
   - `:carry_assets` — whether the build copies the global assets into itself.
     Defaults to `true`, which is what makes a build self-contained. The
     development build is the exception: its assets are rewritten by the watchers
@@ -93,7 +103,7 @@ defmodule ArchiDep.CourseSite.Builder do
     write_dir = write_dir(output_dir, output)
 
     with {:ok, inputs} <- read(opts),
-         options = options(Keyword.fetch!(opts, :options), inputs),
+         options = options(Keyword.fetch!(opts, :options), inputs, Keyword.get(opts, :pdf_base)),
          edition_dir = edition_dir(write_dir, options),
          {:ok, site} <- plan(inputs, options),
          :ok <- prepare(write_dir, output),
@@ -110,8 +120,19 @@ defmodule ArchiDep.CourseSite.Builder do
     end
   end
 
-  defp options(%Options{urls: %UrlContext{} = urls} = options, inputs),
-    do: %{options | urls: %{urls | assets: inputs.assets, page_assets: inputs.page_assets}}
+  defp options(%Options{urls: %UrlContext{} = urls} = options, inputs, pdf_base),
+    do: %{
+      options
+      | urls: %{
+          urls
+          | assets: inputs.assets,
+            page_assets: inputs.page_assets,
+            pdfs: pdfs(urls.pdfs, pdf_base, inputs.structure)
+        }
+    }
+
+  defp pdfs(pdfs, nil, _structure), do: pdfs
+  defp pdfs(_pdfs, base, structure), do: PdfNames.manifest(base, structure)
 
   defp plan(inputs, options) do
     case Site.plan(inputs, options) do

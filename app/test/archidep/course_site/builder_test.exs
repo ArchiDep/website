@@ -69,6 +69,42 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       assert written(dirs.output_dir) == expected_build("/2025", false)
     end
 
+    test "offers every page the PDF of it the build publishes", %{tmp_dir: tmp_dir} do
+      dirs = course_fixture(tmp_dir)
+
+      opts =
+        opts(dirs,
+          layout: CourseSiteTestLayout.Downloads,
+          pdf_base: {:external, "https://example.com/pdf/2026"}
+        )
+
+      assert Builder.build(opts) == {:ok, expected_report(dirs)}
+
+      assert written(dirs.output_dir) ==
+               expected_build()
+               |> Map.put(
+                 "/index.html",
+                 "/|https://example.com/pdf/2026/archidep-000-course.pdf"
+               )
+               |> Map.put(
+                 "/course/101-command-line/index.html",
+                 "/course/101-command-line/|https://example.com/pdf/2026/archidep-101-command-line-subject.pdf"
+               )
+    end
+
+    test "offers no PDF at all when the build does not say where they are",
+         %{tmp_dir: tmp_dir} do
+      dirs = course_fixture(tmp_dir)
+
+      assert Builder.build(opts(dirs, layout: CourseSiteTestLayout.Downloads)) ==
+               {:ok, expected_report(dirs)}
+
+      assert written(dirs.output_dir) ==
+               expected_build()
+               |> Map.put("/index.html", "/|")
+               |> Map.put("/course/101-command-line/index.html", "/course/101-command-line/|")
+    end
+
     test "leaves the global assets out when something else serves them", %{tmp_dir: tmp_dir} do
       dirs = course_fixture(tmp_dir)
 
@@ -256,8 +292,10 @@ defmodule ArchiDep.CourseSite.BuilderTest do
   end
 
   defp opts(dirs, overrides \\ []) do
-    {urls, overrides} =
+    {urls, without_urls} =
       Keyword.pop_lazy(overrides, :urls, fn -> UrlContext.new(mode: :live, build_id: "test") end)
+
+    {layout, build_opts} = Keyword.pop(without_urls, :layout, CourseSiteTestLayout.Wrapper)
 
     Builder.course_inputs(dirs.course_dir) ++
       [
@@ -276,9 +314,9 @@ defmodule ArchiDep.CourseSite.BuilderTest do
                 years: "2025-2026",
                 years_short: "25-26"
               ),
-            layout: CourseSiteTestLayout.Wrapper
+            layout: layout
           )
-      ] ++ overrides
+      ] ++ build_opts
   end
 
   # A build that writes the home page twice writes one file more, which is the
@@ -310,7 +348,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       (edition <> "/course/101-command-line/images/cli-#{digest("a picture")}.jpg") =>
         "a picture",
       (edition <> "/assets/theme/theme.css") => "body {}",
-      (edition <> "/archidep.json") => archidep_json(edition),
+      (edition <> "/archidep.json") => archidep_json(edition, home_url),
       (edition <> "/version.json") => version_json()
     }
 
@@ -323,9 +361,13 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     Map.merge(edition_files, mount_point)
   end
 
-  defp archidep_json(edition) do
+  defp archidep_json(edition, home_url) do
     """
     {
+      "home": {
+        "url": "#{home_url}",
+        "pdf": "archidep-000-course.pdf"
+      },
       "sections": [
         {
           "title": "Introduction",
@@ -344,7 +386,9 @@ defmodule ArchiDep.CourseSite.BuilderTest do
               "section_chapter": 1,
               "progress": "due",
               "slides": false,
-              "url": "#{edition}/course/101-command-line/"
+              "url": "#{edition}/course/101-command-line/",
+              "pdf": "archidep-101-command-line-subject.pdf",
+              "slides_pdf": null
             }
           ]
         }

@@ -68,6 +68,31 @@ defmodule ArchiDep.CourseSiteWatcherTest do
                static_dir: dirs.static_dir,
                digested: false,
                carry_assets: false,
+               pdf_base: nil,
+               output_dir: dirs.build_dir,
+               output: :swap,
+               options: options
+             ]
+    end
+
+    test "says where the PDFs are when the configuration does", %{tmp_dir: tmp_dir} do
+      dirs = dirs(tmp_dir)
+      options = options()
+      start_watcher!(dirs, options: options, pdf_base: {:external, "https://example.com/pdf"})
+
+      assert_receive {:built, opts}
+
+      assert opts == [
+               progress: sessions(),
+               content_dir: Path.join(dirs.course_dir, "collections"),
+               home_file: Path.join(dirs.course_dir, "index.md"),
+               includes_dir: Path.join(dirs.course_dir, "_includes"),
+               declarations_file: Path.join(dirs.course_dir, "_data/course.yml"),
+               root_files_dir: dirs.course_dir,
+               static_dir: dirs.static_dir,
+               digested: false,
+               carry_assets: false,
+               pdf_base: {:external, "https://example.com/pdf"},
                output_dir: dirs.build_dir,
                output: :swap,
                options: options
@@ -194,7 +219,7 @@ defmodule ArchiDep.CourseSiteWatcherTest do
            send(test, {:built, opts})
            result
          end
-       ]}
+       ] ++ Keyword.take(overrides, [:pdf_base])}
     )
   end
 

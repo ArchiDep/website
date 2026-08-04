@@ -4,6 +4,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
   import ArchiDep.Support.CourseSiteFactory, only: [build: 2]
 
   alias ArchiDep.CourseSite.Build.ContentTree
+  alias ArchiDep.CourseSite.Build.PdfNames
   alias ArchiDep.CourseSite.Build.Site
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Progress
@@ -17,6 +18,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
   alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
+  alias ArchiDep.CourseSite.Urls.PdfManifest
   alias ArchiDep.Support.CourseSiteTestLayout
 
   @cli_subject DocumentRef.new(101, "command-line", :subject)
@@ -45,6 +47,16 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                "/version.json" => version_json(),
                "/404.html" => not_found_html()
              }
+    end
+
+    test "says what every page's PDF is called whether or not the build publishes one" do
+      published =
+        PdfNames.manifest({:external, "https://example.com/pdf/2026"}, structure())
+
+      assert {:ok, publishing} = Site.plan(inputs(), options(pdfs: published))
+      assert {:ok, publishing_none} = Site.plan(inputs(), options())
+
+      assert publishing.files == publishing_none.files
     end
 
     test "plans the files anchored at the mount point, which cannot shadow its own" do
@@ -179,7 +191,14 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
 
   defp options(overrides \\ []) do
     Site.Options.new(
-      urls: build(:url_context, mode: :live, base_path: "", version: nil, live_site_url: nil),
+      urls:
+        build(:url_context,
+          mode: :live,
+          base_path: "",
+          version: nil,
+          live_site_url: nil,
+          pdfs: Keyword.get(overrides, :pdfs, PdfManifest.new(:site, %{}))
+        ),
       site:
         SiteInfo.new(
           version: "1.2.3",
@@ -251,6 +270,10 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
   defp archidep_json do
     """
     {
+      "home": {
+        "url": "/",
+        "pdf": "archidep-000-course.pdf"
+      },
       "sections": [
         {
           "title": "Introduction",
@@ -269,7 +292,9 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
               "section_chapter": 1,
               "progress": "done",
               "slides": true,
-              "url": "/course/101-command-line/"
+              "url": "/course/101-command-line/",
+              "pdf": "archidep-101-command-line-subject.pdf",
+              "slides_pdf": "archidep-101-command-line-slides.pdf"
             }
           ]
         },
@@ -290,7 +315,9 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
               "section_chapter": 2,
               "progress": "next",
               "slides": false,
-              "url": "/course/202-git-branching/slides/"
+              "url": "/course/202-git-branching/slides/",
+              "pdf": "archidep-202-git-branching-slides.pdf",
+              "slides_pdf": null
             },
             {
               "title": "PHP Todolist",
@@ -302,7 +329,9 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
               "section_chapter": 5,
               "progress": "future",
               "slides": false,
-              "url": "/course/205-php-todolist/"
+              "url": "/course/205-php-todolist/",
+              "pdf": "archidep-205-php-todolist-exercise.pdf",
+              "slides_pdf": null
             }
           ]
         }
@@ -312,7 +341,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
           "title": "Git Cheatsheet",
           "sidebar_title": "Git Cheatsheet",
           "slug": "git",
-          "url": "/cheatsheets/git/"
+          "url": "/cheatsheets/git/",
+          "pdf": "archidep-999-git.pdf"
         }
       ]
     }

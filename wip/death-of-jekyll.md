@@ -418,21 +418,37 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       cheap to clone — while staying free, on the account and the credential the
       archive already needs. What is left is implementation, in the CI item
       below.
-- [ ] Feed `PdfManifest` from the build, so that a page offers its PDF again.
-      Nothing populates it today — the build task has no switch for it and
+- [x] Feed `PdfManifest` from the build, so that a page offers its PDF again.
+      Nothing populated it — the build task had no switch for it and
       `UrlContext.new/1` falls back to an empty `:site` manifest — so `{:pdf, _}`
-      never resolves and every page of every build looks like a document whose
+      never resolved and every page of every build looked like a document whose
       PDF has not been exported yet, which is the one shape the layout is built
-      to tolerate silently. Jekyll offers that link unconditionally, so this is a
+      to tolerate silently. Jekyll offers that link unconditionally, so it was a
       live regression the [fidelity gate](#html-fidelity-gate) would report and
-      the [cutover](#cutover) cannot ship with, which is why it sits ahead of
-      both and ahead of the two items below. It needs no interim pointing at
-      today's hand-uploaded PDFs: the target is a release of the [archive
-      repository](#where-past-editions-are-kept), and since CI chooses flat
-      deterministic names there, the whole manifest is derivable from the
-      external publication base alone before a single PDF exists — see
-      [Generated PDFs may live anywhere](#generated-pdfs-may-live-anywhere) and
-      [Per-year PDF archive](#per-year-pdf-archive).
+      the [cutover](#cutover) could not ship with. **Done: the build says what
+      each PDF is called and the caller says only where they are published** —
+      `ArchiDep.CourseSite.Build.PdfNames` names one after the page it is of
+      (`archidep-<num>-<slug>-<type>.pdf`), `Builder` assembles the manifest
+      from the course it read the way it already does the two asset manifests,
+      and `--pdf-base` / `:pdf_base` state the base. Three things differed from
+      what this item assumed. The base is an option of `Builder.build/1` rather
+      than something stated on the `UrlContext`, because `UrlContext.new/1`
+      normalises an absent `:pdfs` to an empty `:site` manifest — so a caller
+      who says nothing and one who says `:site` are the same value there, and
+      this item needs them to differ. **A title contributes nothing to a name**:
+      it is prose that gets reworded, and renaming a published PDF breaks every
+      archived link to it, so the name is a function of the page reference alone
+      — which is also what lets `archidep.json` carry it without carrying the
+      manifest. And nothing here needed an interim pointing at today's
+      hand-uploaded PDFs: the names are computed, so the whole manifest is
+      derivable from the external publication base alone before a single PDF
+      exists — see [Generated PDFs may live
+      anywhere](#generated-pdfs-may-live-anywhere) and [Per-year PDF
+      archive](#per-year-pdf-archive). The home page's hand-written
+      `/pdf/ArchiDep.zip` link went with it, being the one PDF reference the seam
+      does not resolve: a path written into content cannot follow the base, and
+      writing an absolute one would freeze an edition's year into the page for
+      good. The zipping step of `pdf.ts` goes with the export rework below.
 - [ ] Point the PDF export at a local build instead of at the production website.
       The seam's half of this is already built (`absolute_base_url`, and
       `--absolute_base_url` on the build task); what is left is the export side —
@@ -810,8 +826,13 @@ flips:
   JSON is read to build the module.
 - **As a build _output_ artifact** — kept. The Elixir static build serializes
   its already-built `Course.Material` model to `archidep.json` so `pdf.ts` keeps
-  working unchanged. The shape stays as it is today to avoid churn in `pdf.ts`;
-  it can be slimmed later since it is now ours to define.
+  working unchanged. The shape was to stay as it is today to avoid churn in
+  `pdf.ts`; it has since **grown** rather than stayed — a `home` object and a
+  `pdf` name per page — because the build is now what says [what a PDF is
+  called](#decouple-pdf-generation-from-production). `pdf.ts` decodes with
+  io-ts's `t.exact`, which strips a field it does not know, so the additions
+  reached it without breaking it. It can still be slimmed later, being ours to
+  define.
 
 Consequences to handle when implementing:
 

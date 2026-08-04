@@ -520,12 +520,24 @@ defmodule ArchiDep.CourseSite.UrlsTest do
           version: "2026",
           pdfs:
             PdfManifest.new(:site, %{
-              {:document, document} => "ArchiDep 202 - Git branching - Slides.pdf"
+              {:document, document} => "archidep-202-git-branching-slides.pdf"
             })
         )
 
       assert Urls.resolve(context, {:pdf, {:document, document}}) ==
-               {:ok, "/2026/pdf/ArchiDep%20202%20-%20Git%20branching%20-%20Slides.pdf"}
+               {:ok, "/2026/pdf/archidep-202-git-branching-slides.pdf"}
+    end
+
+    test "resolves a PDF whose name a URL cannot carry as it is" do
+      context =
+        CourseSiteFactory.build(:url_context,
+          base_path: "",
+          version: "2026",
+          pdfs: PdfManifest.new(:site, %{home: "ArchiDep 000 - Course.pdf"})
+        )
+
+      assert Urls.resolve(context, {:pdf, :home}) ==
+               {:ok, "/2026/pdf/ArchiDep%20000%20-%20Course.pdf"}
     end
 
     test "resolves a PDF published under an absolute base URL" do
@@ -535,12 +547,12 @@ defmodule ArchiDep.CourseSite.UrlsTest do
           version: "2026",
           pdfs:
             PdfManifest.new({:external, "https://pdfs.example.com/2026"}, %{
-              {:cheatsheet, "docker"} => "ArchiDep 999 - Docker.pdf"
+              {:cheatsheet, "docker"} => "archidep-999-docker.pdf"
             })
         )
 
       assert Urls.resolve(context, {:pdf, {:cheatsheet, "docker"}}) ==
-               {:ok, "https://pdfs.example.com/2026/ArchiDep%20999%20-%20Docker.pdf"}
+               {:ok, "https://pdfs.example.com/2026/archidep-999-docker.pdf"}
     end
 
     test "resolves a PDF published at a URL of its own, which a host may have renamed" do
@@ -549,12 +561,12 @@ defmodule ArchiDep.CourseSite.UrlsTest do
           pdfs:
             PdfManifest.new({:external, "https://example.com/releases/pdf-2026"}, %{
               {:cheatsheet, "git"} =>
-                {:url, "https://example.com/releases/pdf-2026/ArchiDep.999.-.Git.pdf"}
+                {:url, "https://example.com/releases/pdf-2026/archidep-999-git.1.pdf"}
             })
         )
 
       assert Urls.resolve(context, {:pdf, {:cheatsheet, "git"}}) ==
-               {:ok, "https://example.com/releases/pdf-2026/ArchiDep.999.-.Git.pdf"}
+               {:ok, "https://example.com/releases/pdf-2026/archidep-999-git.1.pdf"}
     end
 
     test "reports a page whose PDF has not been published" do
@@ -846,7 +858,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                asset: "/2026/assets/theme/theme-1a2b3c.css",
                build_file: "/2026/lunr-abc123.json",
                site_file: "/2026/archidep.json",
-               pdf: "/2026/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
+               pdf: "/2026/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/favicon.ico",
                live_site: "https://archidep.example.com/2026/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2026/course/104-ssh/",
@@ -872,7 +884,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                asset: "/website/2026/assets/theme/theme-1a2b3c.css",
                build_file: "/website/2026/lunr-abc123.json",
                site_file: "/website/2026/archidep.json",
-               pdf: "/website/2026/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
+               pdf: "/website/2026/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/website/favicon.ico",
                live_site: "https://archidep.example.com/2026/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2026/course/104-ssh/",
@@ -897,7 +909,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                asset: "/2025/assets/theme/theme-1a2b3c.css",
                build_file: "/2025/lunr-abc123.json",
                site_file: "/2025/archidep.json",
-               pdf: "/2025/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
+               pdf: "/2025/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/favicon.ico",
                live_site: "https://archidep.example.com/2025/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2025/course/104-ssh/",
@@ -923,7 +935,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                asset: "/website/2025/assets/theme/theme-1a2b3c.css",
                build_file: "/website/2025/lunr-abc123.json",
                site_file: "/website/2025/archidep.json",
-               pdf: "/website/2025/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
+               pdf: "/website/2025/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/website/favicon.ico",
                live_site: "https://archidep.example.com/2025/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2025/course/104-ssh/",
@@ -949,7 +961,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                asset: "/2026/assets/theme/theme-1a2b3c.css",
                build_file: "/2026/lunr-abc123.json",
                site_file: "/2026/archidep.json",
-               pdf: "/2026/pdf/ArchiDep%20103%20-%20Hello%20Shell.pdf",
+               pdf: "/2026/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/favicon.ico",
                live_site: "https://archidep.example.com/2026/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2026/course/104-ssh/",
@@ -1017,7 +1029,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
         context = %{
           generated
           | assets: AssetManifest.new(%{"/assets/app/app.js" => "/assets/app/app-4d5e6f.js"}),
-            pdfs: PdfManifest.new(:site, %{page => "ArchiDep 103 - Hello Shell.pdf"})
+            pdfs: PdfManifest.new(:site, %{page => "archidep-103-hello-shell-exercise.pdf"})
         }
 
         {:ok, url} = Urls.resolve(context, reference)
@@ -1047,7 +1059,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
             }),
           pdfs:
             PdfManifest.new(:site, %{
-              {:document, hello_shell} => "ArchiDep 103 - Hello Shell.pdf"
+              {:document, hello_shell} => "archidep-103-hello-shell-exercise.pdf"
             })
         )
       )

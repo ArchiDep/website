@@ -166,6 +166,7 @@ defmodule ArchiDep.CourseSiteWatcher do
             static_dir: Keyword.get_lazy(opts, :static_dir, &static_dir/0),
             digested: false,
             carry_assets: false,
+            pdf_base: Keyword.get_lazy(opts, :pdf_base, &pdf_base/0),
             output_dir: build_dir,
             output: :swap,
             options: Keyword.get_lazy(opts, :options, &build_options/0)
@@ -265,6 +266,11 @@ defmodule ArchiDep.CourseSiteWatcher do
   end
 
   defp static_dir, do: Application.app_dir(:archidep, "priv/static")
+
+  # Stated in the seam's own terms — `:site` or `{:external, url}` — because
+  # configuration is Elixir; only a command line has a string to parse.
+  defp pdf_base,
+    do: :archidep |> Application.get_env(:course_site, []) |> Keyword.get(:pdf_base)
 
   defp course_input?([first | rest]),
     do: first in @watched_dirs or (rest == [] and first in @watched_files)

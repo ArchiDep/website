@@ -61,6 +61,30 @@ defmodule ArchiDep.Support.CourseSiteTestLayout do
         )
   end
 
+  defmodule Downloads do
+    @moduledoc """
+    A layout that writes down where a page's PDF is, so that a test can see
+    whether a build resolved one at all.
+    """
+
+    @behaviour ArchiDep.CourseSite.Layout
+
+    alias ArchiDep.CourseSite.Layout.LayoutContext
+    alias ArchiDep.CourseSite.PageRef
+    alias ArchiDep.CourseSite.Urls
+
+    @impl ArchiDep.CourseSite.Layout
+    def document(%LayoutContext{} = context),
+      do: {:ok, PageRef.output_path(context.page) <> "|" <> pdf(context)}
+
+    defp pdf(%LayoutContext{urls: urls, page: page}) do
+      case Urls.resolve(urls, {:pdf, page}, page) do
+        {:ok, url} -> url
+        {:error, _unpublished} -> ""
+      end
+    end
+  end
+
   defmodule Failing do
     @moduledoc """
     A layout that cannot resolve a reference of its own, which is how a build

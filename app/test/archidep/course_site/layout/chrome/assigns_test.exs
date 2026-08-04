@@ -22,6 +22,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   alias ArchiDep.CourseSite.Structure.Cheatsheet
   alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.CourseSite.Urls.AssetManifest
+  alias ArchiDep.CourseSite.Urls.PdfManifest
   alias ArchiDep.Emoji
 
   @dns DocumentRef.new(507, "dns", :subject)
@@ -65,6 +66,45 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   describe "build/1" do
     test "works out everything a chapter is drawn from" do
       assert Assigns.build(context()) == {:ok, expected()}
+    end
+
+    test "offers a chapter its own PDF and its deck's once the build publishes them" do
+      urls =
+        build(:url_context,
+          mode: :live,
+          base_path: "",
+          version: nil,
+          assets: manifest(),
+          pdfs:
+            PdfManifest.new({:external, "https://example.com/pdf"}, %{
+              {:document, @dns} => "archidep-507-dns-subject.pdf",
+              {:document, @dns_deck} => "archidep-507-dns-slides.pdf"
+            })
+        )
+
+      assert Assigns.build(context(urls: urls)) ==
+               {:ok,
+                expected(
+                  links:
+                    links(
+                      page_pdf: "https://example.com/pdf/archidep-507-dns-subject.pdf",
+                      deck_pdf: "https://example.com/pdf/archidep-507-dns-slides.pdf"
+                    )
+                )}
+    end
+
+    test "leaves out the download of a deck whose PDF has not been printed" do
+      urls =
+        build(:url_context,
+          mode: :live,
+          base_path: "",
+          version: nil,
+          assets: manifest(),
+          pdfs: PdfManifest.new(:site, %{{:document, @dns} => "archidep-507-dns-subject.pdf"})
+        )
+
+      assert Assigns.build(context(urls: urls)) ==
+               {:ok, expected(links: links(page_pdf: "/pdf/archidep-507-dns-subject.pdf"))}
     end
 
     test "works out everything an exercise is drawn from" do
@@ -385,8 +425,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       |> Map.put(:home, "/")
       |> Map.put(:banner, "#{@live_site_url}/")
 
-  # Every URL the chrome of a page writes. No PDF is ever among them: nothing
-  # populates the manifest, so no page offers a download.
+  # Every URL the chrome of a page writes. A PDF is among them only where the
+  # build publishing one is what the case is about: a page whose PDF has not
+  # been printed offers no download.
   defp links(overrides \\ []) do
     assets = Keyword.get(overrides, :assets, @page_assets)
 
@@ -415,11 +456,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     |> Map.merge(Map.new(@menu_emoji, fn {key, {name, _alt}} -> {key, emoji_path(name)} end))
     |> Map.merge(Map.new(@legend_emoji, fn {key, name} -> {key, emoji_path(name)} end))
     |> deck_link(Keyword.get(overrides, :deck, true))
+    |> pdf_links(Keyword.take(overrides, [:page_pdf, :deck_pdf]))
   end
 
   # Only a chapter that has one links to a deck.
   defp deck_link(links, false), do: links
   defp deck_link(links, true), do: Map.put(links, :deck, "/course/507-dns/slides/")
+
+  defp pdf_links(links, pdfs), do: Map.merge(links, Map.new(pdfs))
 
   defp asset_key("/assets/theme/theme.css"), do: :theme_css
   defp asset_key("/assets/course/course.js"), do: :course_js

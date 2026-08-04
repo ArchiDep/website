@@ -38,7 +38,7 @@ defmodule ArchiDep.CourseSite.Structure do
   number, so the two can disagree; a title is prose an author may forget to
   write. Neither fails loudly on its own — an undeclared section is a chapter
   with no section title at all, a missing title an empty string in the
-  navigation and in the name of a PDF — so each is refused here, with every
+  navigation and at the head of the page — so each is refused here, with every
   offending document reported rather than the first. The declarations are the
   exception: nothing else can be trusted when the list of sections cannot be
   read, so those are reported alone.
@@ -103,6 +103,20 @@ defmodule ArchiDep.CourseSite.Structure do
   """
   @spec chapters(t()) :: [Chapter.t()]
   def chapters(%__MODULE__{sections: sections}), do: Enum.flat_map(sections, & &1.chapters)
+
+  @doc """
+  Every page of the course, in reading order: each chapter's page, the deck
+  beside it when it has one, then the cheatsheets.
+
+  The page introducing the course is not among them. It belongs to no section
+  and no chapter, so it is not part of the course this value describes — whoever
+  needs the whole site adds it.
+  """
+  @spec pages(t()) :: [PageRef.t()]
+  def pages(%__MODULE__{cheatsheets: cheatsheets} = structure),
+    do:
+      Enum.flat_map(chapters(structure), &chapter_pages/1) ++
+        Enum.map(cheatsheets, &Cheatsheet.page_ref/1)
 
   @doc """
   Look up a section by its number.
@@ -222,6 +236,11 @@ defmodule ArchiDep.CourseSite.Structure do
   defp wrap(nil), do: :error
   defp wrap(found), do: {:ok, found}
 
+  defp chapter_pages(%Chapter{slides: nil} = chapter), do: [Chapter.page_ref(chapter)]
+
+  defp chapter_pages(%Chapter{slides: %DocumentRef{} = deck} = chapter),
+    do: [Chapter.page_ref(chapter), {:document, deck}]
+
   defp build(tree, front_matter, section_titles, cheatsheet_slugs) do
     sections =
       section_titles
@@ -326,7 +345,7 @@ defmodule ArchiDep.CourseSite.Structure do
   end
 
   defp page_errors(tree, front_matter) do
-    Enum.flat_map(pages(tree), fn {page, source_path} ->
+    Enum.flat_map(sourced_pages(tree), fn {page, source_path} ->
       page_front_matter = front_matter!(front_matter, page, source_path)
 
       title_error(source_path, page_front_matter) ++
@@ -335,7 +354,7 @@ defmodule ArchiDep.CourseSite.Structure do
     end)
   end
 
-  defp pages(%ContentTree{documents: documents, cheatsheets: cheatsheets}) do
+  defp sourced_pages(%ContentTree{documents: documents, cheatsheets: cheatsheets}) do
     documents = Enum.map(documents, fn {ref, source_path} -> {{:document, ref}, source_path} end)
 
     cheatsheets =

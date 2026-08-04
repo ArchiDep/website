@@ -50,6 +50,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.Build.LinkCheck
   alias ArchiDep.CourseSite.Build.NotFound
+  alias ArchiDep.CourseSite.Build.PdfNames
   alias ArchiDep.CourseSite.Build.Site.Inputs
   alias ArchiDep.CourseSite.Build.Site.Options
   alias ArchiDep.CourseSite.DocumentRef
@@ -268,15 +269,27 @@ defmodule ArchiDep.CourseSite.Build.Site do
   # replaces stays diffable against the one it produced. Elixir's own `JSON`
   # does neither, which is why this is the one place the subsystem encodes with
   # `Jason` rather than decoding with `JSON`.
+  #
+  # The name of a PDF is asked of `PdfNames` rather than read out of the URL
+  # context's manifest, which is empty in a build that publishes none — and a
+  # build that publishes none is exactly the one this file is printed from.
   defp course_json(%Structure{} = structure, urls, statuses),
     do:
       Jason.encode!(
         Jason.OrderedObject.new(
+          home: home_json(urls),
           sections: Enum.map(structure.sections, &section_json(&1, urls, statuses)),
           cheatsheets: Enum.map(structure.cheatsheets, &cheatsheet_json(&1, urls))
         ),
         pretty: true
       ) <> "\n"
+
+  defp home_json(urls),
+    do:
+      Jason.OrderedObject.new(
+        url: Urls.resolve!(urls, :home),
+        pdf: PdfNames.name(:home)
+      )
 
   defp section_json(%Section{} = section, urls, statuses),
     do:
@@ -301,8 +314,13 @@ defmodule ArchiDep.CourseSite.Build.Site do
         section_chapter: Chapter.section_chapter(chapter),
         progress: status(statuses, Chapter.num(chapter)),
         slides: Chapter.slides?(chapter),
-        url: Urls.resolve!(urls, Chapter.page_ref(chapter))
+        url: Urls.resolve!(urls, Chapter.page_ref(chapter)),
+        pdf: PdfNames.name(Chapter.page_ref(chapter)),
+        slides_pdf: slides_pdf(chapter)
       )
+
+  defp slides_pdf(%Chapter{slides: nil}), do: nil
+  defp slides_pdf(%Chapter{slides: %DocumentRef{} = deck}), do: PdfNames.name({:document, deck})
 
   defp cheatsheet_json(%Cheatsheet{} = cheatsheet, urls),
     do:
@@ -310,7 +328,8 @@ defmodule ArchiDep.CourseSite.Build.Site do
         title: cheatsheet.title,
         sidebar_title: Cheatsheet.sidebar_title(cheatsheet),
         slug: cheatsheet.slug,
-        url: Urls.resolve!(urls, Cheatsheet.page_ref(cheatsheet))
+        url: Urls.resolve!(urls, Cheatsheet.page_ref(cheatsheet)),
+        pdf: PdfNames.name(Cheatsheet.page_ref(cheatsheet))
       )
 
   defp version_json(%SiteInfo{} = site) do

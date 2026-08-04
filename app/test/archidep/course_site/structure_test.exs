@@ -435,6 +435,41 @@ defmodule ArchiDep.CourseSite.StructureTest do
     end
   end
 
+  describe "pages/1" do
+    test "reads every page of the course in reading order, deck included" do
+      structure = %Structure{
+        sections: [
+          Section.new(1, "Introduction", [
+            Chapter.new(DocumentRef.new(101, "command-line", :subject), "Command Line",
+              slides: DocumentRef.new(101, "command-line", :slides)
+            ),
+            Chapter.new(DocumentRef.new(102, "hello-shell", :exercise), "Hello Shell")
+          ]),
+          Section.new(2, "Version Control", [
+            Chapter.new(DocumentRef.new(201, "git", :slides), "Git")
+          ])
+        ],
+        cheatsheets: [
+          Cheatsheet.new("git", "Git Cheatsheet"),
+          Cheatsheet.new("command-line", "Command Line Cheatsheet")
+        ]
+      }
+
+      assert Structure.pages(structure) == [
+               {:document, DocumentRef.new(101, "command-line", :subject)},
+               {:document, DocumentRef.new(101, "command-line", :slides)},
+               {:document, DocumentRef.new(102, "hello-shell", :exercise)},
+               {:document, DocumentRef.new(201, "git", :slides)},
+               {:cheatsheet, "git"},
+               {:cheatsheet, "command-line"}
+             ]
+    end
+
+    test "reads no page at all of a course with no chapter and no cheatsheet" do
+      assert Structure.pages(%Structure{sections: [], cheatsheets: []}) == []
+    end
+  end
+
   describe "fetch_section/2, fetch_chapter/2 and fetch_cheatsheet/2" do
     test "look up what the course holds, and say when it holds no such thing" do
       section =

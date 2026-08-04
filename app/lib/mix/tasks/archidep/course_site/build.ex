@@ -60,6 +60,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   - `--live-site-url` — where the main site is. Required of every build that is
     not it, which has to offer its reader the current edition.
   - `--absolute-base-url` — baked onto content links, for the PDF export.
+  - `--pdf-base` — where the generated PDFs of this build are published: `site`
+    for the build's own `/pdf/` directory, or the absolute base URL of wherever
+    they are, e.g. a release. A build that says nothing offers no download link
+    at all, which is what a build made before its PDFs have been printed wants.
   - `--build-id` — names the files a build produces of itself. Defaults to
     `build`.
   """
@@ -73,6 +77,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   alias ArchiDep.CourseSite.Layout.Chrome
   alias ArchiDep.CourseSite.Layout.Minimal
   alias ArchiDep.CourseSite.SiteInfo
+  alias ArchiDep.CourseSite.Urls.PdfManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
   alias ArchiDep.Git
 
@@ -101,6 +106,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     version: :string,
     live_site_url: :string,
     absolute_base_url: :string,
+    pdf_base: :string,
     build_id: :string
   ]
 
@@ -115,6 +121,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
             output_dir: path(opts, :output, "tmp/course_site"),
             output: if(Keyword.get(opts, :clean, false), do: :clean, else: :empty),
             carry_assets: Keyword.get(opts, :assets, true),
+            pdf_base: pdf_base(opts),
             options: options(opts)
           ]
       )
@@ -192,6 +199,16 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
             end)
         )
     )
+  end
+
+  # Checked here rather than after the course has been read, a base being what
+  # the caller wrote rather than something the build finds out.
+  defp pdf_base(opts) do
+    case Keyword.fetch(opts, :pdf_base) do
+      :error -> nil
+      {:ok, "site"} -> :site
+      {:ok, base} -> PdfManifest.validate_base!({:external, base})
+    end
   end
 
   defp mode(opts) do
