@@ -418,15 +418,41 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       cheap to clone — while staying free, on the account and the credential the
       archive already needs. What is left is implementation, in the CI item
       below.
-- [ ] Decouple PDF generation from the production website: bake absolute
-      production URLs into content links at build time and serve the build
-      locally — see [Decouple PDF generation from
-      production](#decouple-pdf-generation-from-production).
-- [ ] Move PDF generation and publication into CI, replacing the human-run export
-      and the manual upload, and feed the resulting locations back through
-      `PdfManifest` — see [Decouple PDF generation from
+- [ ] Feed `PdfManifest` from the build, so that a page offers its PDF again.
+      Nothing populates it today — the build task has no switch for it and
+      `UrlContext.new/1` falls back to an empty `:site` manifest — so `{:pdf, _}`
+      never resolves and every page of every build looks like a document whose
+      PDF has not been exported yet, which is the one shape the layout is built
+      to tolerate silently. Jekyll offers that link unconditionally, so this is a
+      live regression the [fidelity gate](#html-fidelity-gate) would report and
+      the [cutover](#cutover) cannot ship with, which is why it sits ahead of
+      both and ahead of the two items below. It needs no interim pointing at
+      today's hand-uploaded PDFs: the target is a release of the [archive
+      repository](#where-past-editions-are-kept), and since CI chooses flat
+      deterministic names there, the whole manifest is derivable from the
+      external publication base alone before a single PDF exists — see
+      [Generated PDFs may live anywhere](#generated-pdfs-may-live-anywhere) and
+      [Per-year PDF archive](#per-year-pdf-archive).
+- [ ] Point the PDF export at a local build instead of at the production website.
+      The seam's half of this is already built (`absolute_base_url`, and
+      `--absolute_base_url` on the build task); what is left is the export side —
+      keeping `archidep.json` local in a build whose content links are absolute,
+      and telling `pdf.ts` where the build, the manifest and the output directory
+      are rather than having it assume this repository's layout, which is also
+      what lets a human generate the PDFs anywhere — see [Decouple PDF generation
+      from production](#decouple-pdf-generation-from-production).
+- [ ] Add the CI job that builds, serves, prints and publishes, replacing the
+      human-run export and the manual upload — see [Decouple PDF generation from
       production](#decouple-pdf-generation-from-production) and [Per-year PDF
-      archive](#per-year-pdf-archive).
+      archive](#per-year-pdf-archive). It is written and tested **now** but gated
+      on `github.repository`, the way the Pages deployment already is, so that it
+      stays dormant while the work happens in a private repository whose CI
+      minutes are metered; for the same reason it is triggered by a tag or by
+      hand rather than by every push. Only its last step waits on anything: the
+      release it uploads to belongs to the archive repository, which is
+      [deferred](#where-past-editions-are-kept), so until that exists the job can
+      prove everything except the publish — and every step before it is the same
+      one a human runs locally.
 
 **Search, QA and cutover**
 
@@ -1520,7 +1546,9 @@ rel="canonical">`.
 The PDF row is the proof the split works: content links come out absolute, page
 assets stay document-relative and global assets stay root-relative, so the build
 can be served from `localhost` and still print production links — no
-`<base href>`, no running site.
+`<base href>`, no running site. The `archidep.json` that row writes is the one
+thing that does **not** follow its content links — see [Decouple PDF generation
+from production](#decouple-pdf-generation-from-production).
 
 #### Two corrections to the rest of the plan
 
@@ -3241,13 +3269,14 @@ publishing into another repository replaces `upload-pages-artifact` with a push.
 
 **Goal: `npm run pdf` should run against a local build, not the deployed
 production website, while the links inside the PDFs still point to production
-URLs.** Today `pdf.ts` is pointed at `https://archidep.ch` because that is the
-only way to get production URLs into the exported PDFs — a constraint that ties
-an expensive step to the live site, and the reason that step is still run by a
-human rather than by CI.
+URLs.** `pdf.ts` has always taken the base URL it prints from as an argument and
+defaults to `http://localhost:42000`; what ties the export to the live site is
+how it is **invoked** — at `https://archidep.ch`, because serving anything else
+is the only way today to get production URLs into the exported PDFs. That is a
+constraint on an expensive step, and the reason it is still run by a human
+rather than by CI.
 
-The dependency is narrow. Internal links are generated with `relative_url` and
-`baseurl` is empty, so anchor hrefs are **root-relative** (`/course/…`). When
+The dependency is narrow. Anchor hrefs are **root-relative** (`/course/…`). When
 Puppeteer prints a page, Chrome resolves those hrefs against the URL it loaded
 (`page.goto`), so the serving origin becomes the link target — serve from
 localhost and you get localhost links. Nothing in the PDF _content_ needs
@@ -3266,17 +3295,41 @@ Do **not** solve this with a `<base href>` element — it also redirects
 root-relative _asset_ URLs to the base origin, reintroducing the very dependency
 we are removing and breaking local asset loading.
 
-The clean end state (with the Elixir renderer): a **configurable absolute base
-URL** alongside the [optional URL prefix](#optional-url-prefix), both knobs of
-the [URL and link emission seam](#url-and-link-emission-seam) — kept separate
-because the base URL applies only to content links, while the prefix also
-applies to global assets. It is set for the **PDF build only**; every other
-build leaves it `nil`. The static build emits absolute production URLs
-on content links and relative URLs on assets; serve that build locally (a
-throwaway `Plug.Static`, or the app in a preview mode) and point Puppeteer at
-it. PDF generation then depends on a **build artifact**, not a running site —
-working offline and able to regenerate a past year's PDFs from that year's
-frozen archive.
+**The seam's half of this is built.** `absolute_base_url` is a knob of
+`UrlContext` alongside the [optional URL prefix](#optional-url-prefix) — kept
+separate from it because the base URL applies only to content links, while the
+prefix also applies to global assets — and the build task exposes it as
+`--absolute_base_url`. It is set for the **PDF build only**; every other build
+leaves it `nil`. So a build already emits absolute production URLs on content
+links and relative URLs on assets. What is left is on the export side, and it is
+two things.
+
+**The manifest is a fact about the build, not a content link.** `archidep.json`
+lists each document's URL by resolving its reference through the seam, which
+means an `absolute_base_url` build writes production URLs into it — and
+`pdf.ts` joins those to the base URL it was given. The one build that gets
+production links into the PDFs would therefore be the build that sends Puppeteer
+to production, reintroducing through the manifest exactly the dependency the
+`<base href>` warning above rejects. The manifest describes _this_ build, for a
+consumer that is about to walk it: it stays **root-relative**, resolved as if
+`absolute_base_url` were `nil`, independently of what the pages say. That is the
+design principle above applied to a surface that is not content — and it
+composes with keeping `archidep.json` as an
+output artifact ([Drop the archidep.json
+round-trip?](#drop-the-archidepjson-round-trip)): the manifest says _what_ to
+print and _where it is in this build_, the absolute base URL says _what the
+links inside say_.
+
+**`pdf.ts` stops assuming this repository's layout.** It hardcodes the manifest
+at `app/priv/static/archidep.json` and the output at `course/pdf`, with the
+clearing of that directory sitting outside the script in the `pdf:clear` npm
+script. Neither survives contact with the new build: the manifest is written
+inside whatever `--output` directory the build was given, under the edition
+prefix. So the export takes the build directory, the output directory and the
+base URL as inputs, and clears the output directory itself so that one place
+knows where the PDFs go. That is what lets a human generate them into an
+arbitrary directory, what lets CI generate them from an artifact, and what would
+let either regenerate a past year's PDFs from that year's frozen archive.
 
 **That is the prerequisite for the actual goal: PDF generation belongs in CI.**
 A step that needs the production site up cannot run unattended, which is why the
@@ -3289,17 +3342,32 @@ PDFs](#generated-pdfs-may-live-anywhere)), whose `{:external, base}` base and
 still not run `npm run pdf` locally (see [`AGENTS.md`](../AGENTS.md)); that is a
 cost-control rule about this working copy, not a statement about the end state.
 
-It composes with the
-`archidep.json`-as-output-artifact decision ([Drop the archidep.json
-round-trip?](#drop-the-archidepjson-round-trip)): `pdf.ts` reads the emitted
-manifest for _what_ to print, and the absolute base URL controls _what the links
-say_.
+**The job serves the build itself — not the application, and not the production
+image.** What Puppeteer loads is a static build artifact, and the only thing its
+server has to do is answer `/course/104-ssh/` with that directory's
+`index.html`. Three candidates are rejected for reasons worth recording, since
+each looks like reuse:
 
-An interim option that works before the renderer lands — serve the current
-Jekyll `priv/static` build locally and rewrite root-relative anchor hrefs to the
-production origin in a `page.evaluate` just before `page.pdf()` — is available
-if decoupling is wanted sooner, but the canonical-base-URL build is the intended
-outcome.
+- **The Phoenix application.** Serving the artifact through the app puts a
+  running site back in front of the export, which is the whole of what this
+  section removes, and it drags in a database and the endpoint secrets that
+  `build.yml`'s app job needs merely to boot. The build task itself needs
+  neither: it declares `app.config` rather than `app.start`.
+- **The `assets-server` image stage.** It copies `priv/static` out of the **app**
+  image, so reaching it means building the entire chain — deps, assets, theme,
+  digest, release — and it bakes in one build, while a PDF build is a different
+  build.
+- **`docker/nginx.conf` mounted on a stock nginx.** Its fallback proxies misses
+  to `http://archidep-website-app:42000`, a literal hostname nginx resolves when
+  it starts, so with no application container it does not start at all.
+
+The job therefore mirrors the shape of the course build rather than the app
+build: the asset artifacts, the build task with the PDF flags, a throwaway
+static server on the port `pdf.ts` already defaults to, then the export. The
+PDF links inside the printed pages come from the same manifest the publish step
+uploads to, and because that step chooses [flat deterministic
+names](#per-year-pdf-archive), the URLs are derivable before the upload happens
+— so the build renders them without a second pass.
 
 **Verify before relying on local serving:** this assumes no course page bakes a
 runtime-fetched value into visible content at page load (which would differ
