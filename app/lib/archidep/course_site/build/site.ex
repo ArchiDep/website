@@ -259,7 +259,8 @@ defmodule ArchiDep.CourseSite.Build.Site do
     edition = UrlContext.edition_prefix(options.urls)
 
     Map.merge(inputs.root_files, %{
-      (edition <> @course_file) => course_json(inputs.structure, options.urls, statuses),
+      (edition <> @course_file) =>
+        course_json(inputs.structure, UrlContext.local(options.urls), statuses),
       (edition <> @version_file) => version_json(options.site),
       @not_found_file => NotFound.html(options.urls)
     })
@@ -273,6 +274,11 @@ defmodule ArchiDep.CourseSite.Build.Site do
   # The name of a PDF is asked of `PdfNames` rather than read out of the URL
   # context's manifest, which is empty in a build that publishes none — and a
   # build that publishes none is exactly the one this file is printed from.
+  #
+  # For the same reason the URLs are the build's own
+  # (`ArchiDep.CourseSite.Urls.UrlContext.local/1`) whatever its pages say: this
+  # describes the copy the consumer is about to walk, so a build printing links
+  # to the main site would otherwise send that consumer there too.
   defp course_json(%Structure{} = structure, urls, statuses),
     do:
       Jason.encode!(

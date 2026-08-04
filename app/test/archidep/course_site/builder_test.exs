@@ -54,6 +54,26 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       assert written(dirs.output_dir) == expected_build("/2026")
     end
 
+    test "says where things are in this build, whatever its pages say they link to",
+         %{tmp_dir: tmp_dir} do
+      dirs = course_fixture(tmp_dir)
+
+      urls =
+        UrlContext.new(
+          mode: :live,
+          build_id: "test",
+          version: "2026",
+          absolute_base_url: "https://archidep.example.com"
+        )
+
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 16)}
+
+      assert written(dirs.output_dir) == %{
+               expected_build("/2026")
+               | "/404.html" => not_found_html("https://archidep.example.com/")
+             }
+    end
+
     test "keeps an archived edition's home page under its prefix", %{tmp_dir: tmp_dir} do
       dirs = course_fixture(tmp_dir)
 

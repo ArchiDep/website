@@ -218,7 +218,9 @@ and `theme`) for component-specific commands.
 format`.
 - `npm run lint:md`: Lint the project's Markdown documentation with remark
   (validating internal links, heading structure and fenced-code languages).
-- `npm run pdf`: Generate the PDF version of the course materials.
+- `npm run pdf -- --build <dir> --output <dir>`: Generate the PDF version of the
+  course materials from a local build (see [PDF
+  Generation](./course/CONTRIBUTING.md#pdf-generation)).
 
 ---
 

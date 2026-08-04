@@ -1,89 +1,94 @@
 import { N } from '@mobily/ts-belt';
-import { ZipArchive } from 'archiver';
-import { isLeft } from 'fp-ts/lib/Either.js';
-import * as t from 'io-ts';
-import { createWriteStream } from 'node:fs';
-import { mkdir, readFile, rename } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
+import { parseArgs } from 'node:util';
 import ProgressBar from 'progress';
 import puppeteer, { Page, PDFOptions } from 'puppeteer';
-import { match } from 'ts-pattern';
 
-import { getValidationErrorDetails } from '../shared/codecs/utils';
-import { courseDataFile, courseRoot, tmpDir } from './utils/constants';
+import {
+  findCourseManifest,
+  readCourseManifest
+} from './utils/course-manifest';
+import { serveDirectory, StaticServer } from './utils/static-server';
 
-const courseType = t.union([
-  t.literal('cheatsheet'),
-  t.literal('exercise'),
-  t.literal('slides'),
-  t.literal('subject')
-]);
+const { values } = parseArgs({
+  allowPositionals: false,
+  options: {
+    build: { type: 'string' },
+    output: { type: 'string' },
+    manifest: { type: 'string' },
+    'base-url': { type: 'string' },
+    port: { type: 'string' }
+  },
+  strict: true
+});
 
-const courseDocType = t.readonly(
-  t.exact(
-    t.type({
-      title: t.string,
-      num: t.number,
-      course_type: courseType,
-      slides: t.boolean,
-      url: t.string
-    })
-  )
-);
+// npm runs a workspace script from that workspace's directory, so a relative
+// path has to be read against the directory the command was typed in for the
+// script to be pointed anywhere at all.
+const invokedFrom = process.env['INIT_CWD'] ?? process.cwd();
+const resolvePath = (value: string): string => path.resolve(invokedFrom, value);
 
-const courseSectionType = t.readonly(
-  t.exact(
-    t.type({
-      title: t.string,
-      docs: t.readonlyArray(courseDocType)
-    })
-  )
-);
+const buildDir =
+  values.build === undefined ? undefined : resolvePath(values.build);
+const baseUrlArg = values['base-url'];
 
-const courseCheatsheetType = t.readonly(
-  t.exact(
-    t.type({
-      title: t.string,
-      sidebar_title: t.string,
-      slug: t.string,
-      url: t.string
-    })
-  )
-);
+if (values.output === undefined) {
+  throw new Error('Pass --output <dir> to say where the PDFs go');
+}
 
-const courseDataType = t.readonly(
-  t.exact(
-    t.type({
-      sections: t.readonlyArray(courseSectionType),
-      cheatsheets: t.readonlyArray(courseCheatsheetType)
-    })
-  )
-);
+const port = values.port === undefined ? 0 : Number.parseInt(values.port, 10);
+if (!Number.isInteger(port) || port < 0 || port > 65535) {
+  throw new Error(`--port must be a port number, got ${values.port}`);
+}
 
-const pdfExportDir = path.join(courseRoot, 'pdf');
-
-await mkdir(pdfExportDir, { recursive: true });
-
-const courseJson = JSON.parse(await readFile(courseDataFile, 'utf-8'));
-const decodedCourseData = courseDataType.decode(courseJson);
-if (isLeft(decodedCourseData)) {
+let manifestFile: string;
+if (values.manifest !== undefined) {
+  manifestFile = resolvePath(values.manifest);
+} else if (buildDir !== undefined) {
+  manifestFile = await findCourseManifest(buildDir);
+} else {
   throw new Error(
-    `Course data in ${courseDataFile} is invalid: ${getValidationErrorDetails(decodedCourseData.left)}`
+    'Pass --build <dir> to find the manifest in, or --manifest <file> to name it'
   );
 }
 
-const courseData = decodedCourseData.right;
+const outputDir = resolvePath(values.output);
+if (outputDir === path.parse(outputDir).root) {
+  throw new Error(`Refusing to empty ${outputDir}`);
+}
+if (
+  buildDir !== undefined &&
+  (buildDir === outputDir || buildDir.startsWith(outputDir + path.sep))
+) {
+  throw new Error(
+    `Refusing to empty ${outputDir}, which holds the build being printed`
+  );
+}
 
-const browser = await puppeteer.launch();
-const page = await browser.newPage();
+const courseData = await readCourseManifest(manifestFile);
 
-const docsToExport = courseData.sections.flatMap(section =>
-  section.docs.map(doc => ({
-    ...doc,
-    section,
-    exportCount: doc.slides ? 2 : 1
-  }))
-);
+await rm(outputDir, { recursive: true, force: true });
+await mkdir(outputDir, { recursive: true });
+
+// Nothing outside this process has to be running: the pages are static files
+// and their links are whatever the build baked into them, so where they are
+// served from cannot reach what is printed.
+let baseUrl: string;
+let server: StaticServer | undefined;
+if (baseUrlArg !== undefined) {
+  baseUrl = baseUrlArg;
+  server = undefined;
+} else if (buildDir !== undefined) {
+  server = await serveDirectory(buildDir, port);
+  baseUrl = server.baseUrl;
+} else {
+  throw new Error(
+    'Pass --build <dir> to serve, or --base-url <url> to print a site that is already being served'
+  );
+}
+
+const docsToExport = courseData.sections.flatMap(section => section.docs);
 
 const progress = new ProgressBar(
   '[:bar] :current/:total :percent :elapseds :what',
@@ -91,109 +96,90 @@ const progress = new ProgressBar(
     width: Math.min(30, process.stdout.columns),
     total:
       1 +
-      docsToExport.map(doc => doc.exportCount).reduce(N.add, 0) +
+      docsToExport
+        .map(doc => (doc.slides_pdf === null ? 1 : 2))
+        .reduce(N.add, 0) +
       courseData.cheatsheets.length
   }
 );
 
 const progressInterval = setInterval(() => progress.render(), 1000);
+const browser = await puppeteer.launch();
 
-const baseUrl = process.argv[2] ?? `http://localhost:42000`;
-progress.render({ what: 'Home' });
-await exportPageToPdf(
-  page,
-  baseUrl,
-  path.join(pdfExportDir, 'ArchiDep 000 - Course.pdf')
-);
-progress.tick();
+try {
+  const page = await browser.newPage();
+  await page.evaluateOnNewDocument(() => {
+    localStorage.setItem('plausible_ignore', 'true');
+  });
 
-for (const doc of docsToExport) {
-  const docBaseUrl = `${baseUrl}${doc.url}`;
-  progress.render({ what: doc.title });
-
-  const basename = [
-    `ArchiDep ${doc.num} - ${doc.section.title.replaceAll('/', ' ')} - ${doc.title.replaceAll('/', ' ')}`,
-    match(doc.course_type)
-      .with('subject', () => ' - Subject')
-      .with('slides', () => ' - Slides')
-      .with('exercise', () => ' - Exercise')
-      .with('cheatsheet', () => ' - Cheatsheet')
-      .exhaustive(),
-    '.pdf'
-  ].join('');
-  const file = path.join(pdfExportDir, basename);
-
-  const params = new URLSearchParams();
-  if (doc.course_type === 'slides') {
-    params.set('print-pdf', '');
-    params.set('git-memoir-mode', 'visualization');
-  } else {
-    params.set('git-memoir-force', 'true');
-    params.set('git-memoir-mode', 'visualization');
-  }
-
-  const exportUrl = `${docBaseUrl}?${params.toString()}`;
-  const exportPromise =
-    doc.course_type === 'slides'
-      ? exportSlidesToPdf(page, exportUrl, file)
-      : exportPageToPdf(page, exportUrl, file);
-  await exportPromise;
-
+  progress.render({ what: 'Home' });
+  await exportPageToPdf(
+    page,
+    new URL(courseData.home.url, baseUrl),
+    path.join(outputDir, courseData.home.pdf)
+  );
   progress.tick();
 
-  if (doc.slides) {
-    params.set('print-pdf', '');
-    params.set('git-memoir-mode', 'visualization');
-    await exportSlidesToPdf(
+  for (const doc of docsToExport) {
+    const docUrl = new URL(doc.url, baseUrl);
+    progress.render({ what: doc.title });
+
+    const params = new URLSearchParams();
+    if (doc.course_type === 'slides') {
+      params.set('print-pdf', '');
+      params.set('git-memoir-mode', 'visualization');
+    } else {
+      params.set('git-memoir-force', 'true');
+      params.set('git-memoir-mode', 'visualization');
+    }
+
+    const exportUrl = new URL(docUrl);
+    exportUrl.search = params.toString();
+    const file = path.join(outputDir, doc.pdf);
+
+    await (doc.course_type === 'slides'
+      ? exportSlidesToPdf(page, exportUrl, file)
+      : exportPageToPdf(page, exportUrl, file));
+
+    progress.tick();
+
+    if (doc.slides_pdf !== null) {
+      params.set('print-pdf', '');
+      params.set('git-memoir-mode', 'visualization');
+
+      const slidesUrl = new URL('slides/', docUrl);
+      slidesUrl.search = params.toString();
+
+      await exportSlidesToPdf(
+        page,
+        slidesUrl,
+        path.join(outputDir, doc.slides_pdf)
+      );
+
+      progress.tick();
+    }
+  }
+
+  for (const cheatsheet of courseData.cheatsheets) {
+    progress.render({ what: cheatsheet.title });
+
+    await exportPageToPdf(
       page,
-      `${docBaseUrl}slides/?${params.toString()}`,
-      file.replace(/Subject\.pdf$/, 'Slides.pdf')
+      new URL(cheatsheet.url, baseUrl),
+      path.join(outputDir, cheatsheet.pdf)
     );
 
     progress.tick();
   }
-}
-
-for (const cheatsheet of courseData.cheatsheets) {
-  const exportUrl = `${baseUrl}${cheatsheet.url}`;
-  progress.render({ what: cheatsheet.title });
-
-  const basename = `ArchiDep 999 - ${cheatsheet.title.replaceAll('/', ' ')}.pdf`;
-  const file = path.join(pdfExportDir, basename);
-
-  await exportPageToPdf(page, exportUrl, file);
-
-  progress.tick();
-}
-
-clearInterval(progressInterval);
-
-await browser.close();
-
-await zipDirectory(pdfExportDir, path.join(tmpDir, 'ArchiDep.zip'));
-await rename(
-  path.join(tmpDir, 'ArchiDep.zip'),
-  path.join(pdfExportDir, 'ArchiDep.zip')
-);
-
-function zipDirectory(sourceDir: string, outPath: string): Promise<void> {
-  const archive = new ZipArchive({ zlib: { level: 9 } });
-  const stream = createWriteStream(outPath);
-
-  return new Promise((resolve, reject) => {
-    archive
-      .directory(sourceDir, false)
-      .on('error', err => reject(err))
-      .pipe(stream);
-
-    stream.on('close', () => resolve());
-    archive.finalize();
-  });
+} finally {
+  clearInterval(progressInterval);
+  await browser.close();
+  await server?.close();
 }
 
 async function exportPageToPdf(
   page: Page,
-  url: string,
+  url: URL,
   file: string
 ): Promise<void> {
   await exportToPdf(page, url, {
@@ -211,7 +197,7 @@ async function exportPageToPdf(
 
 async function exportSlidesToPdf(
   page: Page,
-  url: string,
+  url: URL,
   file: string
 ): Promise<void> {
   await exportToPdf(page, url, {
@@ -224,14 +210,10 @@ async function exportSlidesToPdf(
 
 async function exportToPdf(
   page: Page,
-  url: string,
+  url: URL,
   options: PDFOptions
 ): Promise<void> {
-  await page.evaluateOnNewDocument(() => {
-    localStorage.setItem('plausible_ignore', 'true');
-  });
-
-  await page.goto(url, {
+  await page.goto(url.toString(), {
     waitUntil: 'networkidle2'
   });
 

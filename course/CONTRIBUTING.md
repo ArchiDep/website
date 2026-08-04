@@ -768,7 +768,11 @@ application:
   [`collections/_json/archidep.json.liquid`](./collections/_json)), which the
   PDF generation script reads to know which pages to print. The dashboard
   application no longer reads it: it compiles its own model of the course from
-  the Markdown sources.
+  the Markdown sources. The Elixir build writes the same file, under the edition
+  prefix of whatever directory it was given, and adds what each page's PDF is
+  called; its URLs are the build's own even when the build's pages link to the
+  deployed site, because the file describes the copy the export is about to
+  walk. See [PDF Generation](#pdf-generation).
 - The source data used to build the search index is exported to
   `app/priv/static/search.json` so that the dashboard application can display
   the same search results interface.
@@ -834,12 +838,42 @@ query parameters include `?print-pdf` (PDF export layout), `?view=scroll`
 
 The `npm run pdf` script ([`src/scripts/pdf.ts`](./src/scripts/pdf.ts))
 generates PDF versions of the course materials using [Puppeteer][puppeteer]. It
-reads the exported `archidep.json`, drives a headless browser to each document
-and slide deck (with the appropriate query parameters), prints each to a PDF in
-the `pdf/` directory, and bundles them into a `pdf/ArchiDep.zip` archive. **It
-requires a running instance of the website** (it defaults to
-`http://localhost:42000`). As noted in the [`AGENTS.md`](./AGENTS.md), this is
-an expensive operation; a human runs it when needed.
+prints a **local build**: it reads that build's `archidep.json` to know which
+pages to print and what each PDF is called, serves the build over loopback
+itself, drives a headless browser to each page and slide deck (with the
+appropriate query parameters), and writes the PDFs into the output directory,
+emptying it first.
+
+```bash
+npm run pdf -- --build tmp/pdf-build --output tmp/pdf
+```
+
+Both `--build` and `--output` are required — the script assumes nothing about
+where either sits. It also accepts `--manifest <file>` (when the build holds
+more than one `archidep.json`, or none where they are looked for), `--base-url
+<url>` (print a site that is already being served rather than serving the
+build), and `--port <n>` (pin the throwaway server's port instead of taking any
+free one).
+
+**Nothing has to be running, and no page ever reaches the deployed site.** The
+links printed inside the PDFs are whatever the build baked into them, so the
+build that is printed is the one made with `--absolute-base-url`:
+
+```bash
+cd app && mix archidep.course_site.build \
+  --output ../tmp/pdf-build --clean \
+  --absolute-base-url https://archidep.ch \
+  --pdf-base https://github.com/ArchiDep/archive/releases/download/pdf/2026
+```
+
+Such a build must not set `--base-path`: the export maps URL paths straight onto
+the build directory, and a mount point would put a prefix in every URL that the
+served tree does not have. See the [renderer's own
+documentation](../app/lib/archidep/course_site/CONTRIBUTING.md#generated-pdfs)
+for what decides the PDF names and where they are published.
+
+As noted in the [`AGENTS.md`](./AGENTS.md), this is an expensive operation; a
+human runs it when needed.
 
 ### Home Page
 

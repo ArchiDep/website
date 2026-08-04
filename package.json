@@ -33,7 +33,7 @@
     "format:root:write": "prettier --write .",
     "format:write": "npm run format:root:write && npm run --workspace course format:write",
     "lint:md": "remark . --frail",
-    "pdf": "npm run --workspace course pdf"
+    "pdf": "npm run --workspace course pdf --"
   },
   "workspaces": [
     "app",
@@ -41,7 +41,6 @@
     "theme"
   ],
   "devDependencies": {
-    "@types/archiver": "^8.0.0",
     "concurrently": "^10.0.3",
     "doctoc": "^2.2.1",
     "prettier": "^3.6.2",

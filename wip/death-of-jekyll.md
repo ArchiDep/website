@@ -449,14 +449,22 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       does not resolve: a path written into content cannot follow the base, and
       writing an absolute one would freeze an edition's year into the page for
       good. The zipping step of `pdf.ts` goes with the export rework below.
-- [ ] Point the PDF export at a local build instead of at the production website.
-      The seam's half of this is already built (`absolute_base_url`, and
-      `--absolute_base_url` on the build task); what is left is the export side —
-      keeping `archidep.json` local in a build whose content links are absolute,
-      and telling `pdf.ts` where the build, the manifest and the output directory
-      are rather than having it assume this repository's layout, which is also
-      what lets a human generate the PDFs anywhere — see [Decouple PDF generation
-      from production](#decouple-pdf-generation-from-production).
+- [x] Point the PDF export at a local build instead of at the production
+      website. The seam's half of this is already built (`absolute_base_url`,
+      and `--absolute_base_url` on the build task); what is left is the export
+      side — keeping `archidep.json` local in a build whose content links are
+      absolute, and telling `pdf.ts` where the build, the manifest and the
+      output directory are rather than having it assume this repository's
+      layout, which is also what lets a human generate the PDFs anywhere — see
+      [Decouple PDF generation from
+      production](#decouple-pdf-generation-from-production). **Done:
+      `UrlContext.local/1` is what the manifest is resolved through, and
+      `pdf.ts` serves the build it prints**, with four corrections recorded
+      there. The sharpest is that the export takes _two_ inputs rather than the
+      three this item names: the base URL stops being one of them, because a
+      script that is handed a build and then asked where that build is being
+      served is a script that can be pointed back at production by accident —
+      which is the whole of what this item removes.
 - [ ] Add the CI job that builds, serves, prints and publishes, replacing the
       human-run export and the manual upload — see [Decouple PDF generation from
       production](#decouple-pdf-generation-from-production) and [Per-year PDF
@@ -3397,6 +3405,53 @@ the pages appear to render entirely client-side from static assets, with the
 dashboard websocket carrying only session/cloud-server data irrelevant to an
 anonymous export — but confirm it when implementing this task; if one does turn
 up, that content would need a static fallback in the export build.
+
+**Checked, and the assumption holds.** Exactly one fetch runs at page load that
+a static server cannot answer: `/auth/socket`, gated on the page not being
+standalone. Puppeteer starts with an empty profile, so `currentSession` is
+already `anonymousSession()` before it is made; against production an anonymous
+request is a `401` and the handler sets that same value, while against the
+static server it is a `404` and the handler leaves it alone. Both end at the
+`session === undefined` branch of `cloud-server.tsx`, which is the one component
+drawn into page content from that signal — the same login instructions either
+way. The retry the `404` schedules is one request every half-second at worst,
+which `networkidle2` tolerates. The other two fetches of `course.ts` belong to
+the logout button. `search.ts` **does** fetch its two files at load rather than
+lazily, which is not what this section assumed, but they are files _of the
+build_: they resolve wherever the build is served, so they say nothing about the
+origin. They are absent from an Elixir build today, which is the [search
+index](#search-index) item below rather than anything about serving locally.
+
+**Four corrections from implementing it.**
+
+- **The export serves the build; the base URL is not one of its inputs.** This
+  section had it take three — the build, the output and the base URL — and
+  standing up a server was to be the caller's problem, a step the CI job below
+  would carry and a human would have to remember. But the base URL is exactly
+  the input whose wrong value is this whole section's problem, and a script that
+  is handed a build and _then_ asked where that build is being served can be
+  pointed back at production by accident. So `pdf.ts` serves what it prints, on
+  a loopback port the operating system picks, and `--base-url` survives only as
+  an override for printing a site somebody else is already serving. That also
+  makes the CI job one command rather than a server, a wait and a teardown; the
+  three rejected candidates above are rejected by there being nothing left for
+  them to do.
+- **Naming the manifest's rule beats writing it.** `UrlContext.local/1` is what
+  the manifest resolves through, rather than `Site` clearing the field itself,
+  because the rule is about what a knob means and belongs where the knob is
+  defined — where it also costs one doctest and no test of its own.
+- **A build's own file names are the export's, and one of them was wrong.**
+  `pdf.ts` composed `ArchiDep <num> - <section> - <title> - <Type>.pdf` and
+  derived a deck's name by rewriting `Subject.pdf` to `Slides.pdf` in it — which
+  matches nothing for a chapter that is not a subject, so such a chapter's deck
+  was written **over** the chapter's own PDF. Reading `pdf`/`slides_pdf` out of
+  the manifest deletes the bug along with the composition, and drops `slides`
+  with it: `slides_pdf !== null` is the same fact, and two fields that must
+  agree are one field too many.
+- **The zip goes, and the output directory is emptied by the one thing that
+  writes into it.** `pdf:clear` was a separate npm script deleting a hardcoded
+  path, which cannot survive an output directory the caller names. `archiver`
+  and `del-cli` leave with them.
 
 ### Per-year PDF archive
 

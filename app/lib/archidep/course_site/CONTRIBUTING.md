@@ -419,7 +419,8 @@ of it:
 1. **Content links may be absolutized; assets never are.** Only the PDF export
    sets `absolute_base_url`, so a build can be served from a throwaway local
    server and still print links to the main site — with its stylesheets and
-   images loading locally.
+   images loading locally. A file _describing_ the build sides with the assets
+   rather than with the content; see [Generated PDFs](#generated-pdfs).
 2. **Assets co-located with a page stay relative to that page**, so no knob
    touches them at all: they are immune to the mount point, the edition prefix
    and the origin alike.
@@ -503,6 +504,18 @@ chapter may simply not have been exported yet, and the caller is expected to
 leave the download link out. This stays true once the export is automated, since
 the PDFs are printed _from_ a build — new content is always rendered at least
 once before its PDF exists.
+
+The step that prints them is handed a build and told nothing else, which is what
+the `archidep.json` a build writes is for: it says which pages there are, where
+each one is **in this build**, and what each one's PDF is called. Its URLs are
+therefore resolved through [`UrlContext.local/1`](./urls/url_context.ex) — as if
+no absolute base URL were set — because the one build that carries one is
+exactly the build being printed, and a manifest following its pages would send
+the export to the deployed site instead of to the copy in front of it. The
+absolute base URL says what the links _inside_ the printed pages say; the
+manifest says where the pages are. See the [course's own
+documentation](../../../../course/CONTRIBUTING.md#pdf-generation) for how the
+export is run.
 
 ### Errors
 

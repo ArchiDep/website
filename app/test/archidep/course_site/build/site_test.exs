@@ -59,6 +59,18 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       assert publishing.files == publishing_none.files
     end
 
+    test "says where things are in this build, whatever its pages say they link to" do
+      absolute = "https://archidep.example.com"
+
+      assert {:ok, printed} = Site.plan(inputs(), options(absolute_base_url: absolute))
+      assert {:ok, served} = Site.plan(inputs(), options())
+
+      assert printed == %{
+               served
+               | files: %{served.files | "/404.html" => not_found_html(absolute <> "/")}
+             }
+    end
+
     test "plans the files anchored at the mount point, which cannot shadow its own" do
       root_files = %{
         "/favicon.ico" => "the mark",
@@ -197,6 +209,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
           base_path: "",
           version: nil,
           live_site_url: nil,
+          absolute_base_url: Keyword.get(overrides, :absolute_base_url),
           pdfs: Keyword.get(overrides, :pdfs, PdfManifest.new(:site, %{}))
         ),
       site:
@@ -361,7 +374,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     """
   end
 
-  defp not_found_html do
+  defp not_found_html(home_url \\ "/") do
     """
     <!doctype html>
     <html lang="en">
@@ -387,7 +400,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     <h1>404</h1>
     <p><strong>Page not found :(</strong></p>
     <p>The requested page could not be found.</p>
-    <p><a href="/">Back to the course</a></p>
+    <p><a href="#{home_url}">Back to the course</a></p>
     </main>
     </body>
     </html>

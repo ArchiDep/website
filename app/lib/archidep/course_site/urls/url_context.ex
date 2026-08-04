@@ -165,6 +165,30 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
   def content_origin(%__MODULE__{absolute_base_url: absolute_base_url}), do: absolute_base_url
 
   @doc """
+  The same build, addressed as it is served rather than as its content links
+  say.
+
+  A build's pages may be given an absolute base URL so that they point at the
+  main site wherever they are served from. A file *describing* the build is read
+  by a consumer that is about to walk it, and so has to say where things are in
+  the copy in front of it — which is the rule assets already follow, applied to
+  a surface that is not content.
+
+      iex> UrlContext.content_origin(
+      ...>   UrlContext.local(
+      ...>     UrlContext.new(
+      ...>       mode: :live,
+      ...>       build_id: "abc123",
+      ...>       absolute_base_url: "https://archidep.ch"
+      ...>     )
+      ...>   )
+      ...> )
+      ""
+  """
+  @spec local(t()) :: t()
+  def local(%__MODULE__{} = context), do: %__MODULE__{context | absolute_base_url: nil}
+
+  @doc """
   Whether the home page of this build sits at its mount point rather than under
   its edition prefix. It does for the edition currently being taught, while an
   archived edition keeps its home page under its own prefix.
