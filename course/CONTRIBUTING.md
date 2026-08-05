@@ -863,7 +863,7 @@ build that is printed is the one made with `--absolute-base-url`:
 cd app && mix archidep.course_site.build \
   --output ../tmp/pdf-build --clean \
   --absolute-base-url https://archidep.ch \
-  --pdf-base https://github.com/ArchiDep/archive/releases/download/pdf/2026
+  --pdf-base https://example.com/where/the/pdfs/are/published
 ```
 
 Such a build must not set `--base-path`: the export maps URL paths straight onto
@@ -872,8 +872,13 @@ served tree does not have. See the [renderer's own
 documentation](../app/lib/archidep/course_site/CONTRIBUTING.md#generated-pdfs)
 for what decides the PDF names and where they are published.
 
-As noted in the [`AGENTS.md`](./AGENTS.md), this is an expensive operation; a
-human runs it when needed.
+Those two commands are also what the [`pdf`
+workflow](../.github/workflows/pdf.yml) runs, on every change to `main` that
+could reach a PDF, so the published PDFs of the current edition are always the
+current material. It can be run by hand from the Actions tab as well.
+
+As noted in the [`AGENTS.md`](./AGENTS.md), this is an expensive operation; run
+it locally only when you need the files themselves.
 
 ### Home Page
 

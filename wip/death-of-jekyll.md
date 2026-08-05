@@ -51,6 +51,7 @@ actually uses is small and clean, and the codebase is already half-way there.
     - [Where past editions are kept](#where-past-editions-are-kept)
   - [Decouple PDF generation from production](#decouple-pdf-generation-from-production)
   - [Per-year PDF archive](#per-year-pdf-archive)
+  - [The CI job](#the-ci-job)
   - [Search index](#search-index)
   - [HTML fidelity gate](#html-fidelity-gate)
   - [Cutover](#cutover)
@@ -465,18 +466,23 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       script that is handed a build and then asked where that build is being
       served is a script that can be pointed back at production by accident —
       which is the whole of what this item removes.
-- [ ] Add the CI job that builds, serves, prints and publishes, replacing the
+- [x] Add the CI job that builds, serves, prints and publishes, replacing the
       human-run export and the manual upload — see [Decouple PDF generation from
       production](#decouple-pdf-generation-from-production) and [Per-year PDF
-      archive](#per-year-pdf-archive). It is written and tested **now** but gated
-      on `github.repository`, the way the Pages deployment already is, so that it
-      stays dormant while the work happens in a private repository whose CI
-      minutes are metered; for the same reason it is triggered by a tag or by
+      archive](#per-year-pdf-archive). It is written and tested **now** but
+      gated on `github.repository`, the way the Pages deployment already is, so
+      that it stays dormant while the work happens in a private repository whose
+      CI minutes are metered; for the same reason it is triggered by a tag or by
       hand rather than by every push. Only its last step waits on anything: the
       release it uploads to belongs to the archive repository, which is
-      [deferred](#where-past-editions-are-kept), so until that exists the job can
-      prove everything except the publish — and every step before it is the same
-      one a human runs locally.
+      [deferred](#where-past-editions-are-kept), so until that exists the job
+      can prove everything except the publish — and every step before it is the
+      same one a human runs locally. **Done:
+      [`.github/workflows/pdf.yml`](../.github/workflows/pdf.yml) is the two
+      documented commands and what has to be true around them**, with five
+      corrections recorded below — the sharpest being that this item answered
+      the question of _how often_ with the answer to _where_ — see [The CI
+      job](#the-ci-job).
 
 **Search, QA and cutover**
 
@@ -3370,6 +3376,10 @@ PDFs](#generated-pdfs-may-live-anywhere)), whose `{:external, base}` base and
 `{:url, …}` overrides exist for exactly that handoff. Note that agents must
 still not run `npm run pdf` locally (see [`AGENTS.md`](../AGENTS.md)); that is a
 cost-control rule about this working copy, not a statement about the end state.
+**Nothing is fed back**, in the end: the names are the build's own and the base
+is stated on the way in, so every location is known before a byte is uploaded —
+which is what the `{:url, …}` override was predicted to make unnecessary, and
+did. The job is [below](#the-ci-job).
 
 **The job serves the build itself — not the application, and not the production
 image.** What Puppeteer loads is a static build artifact, and the only thing its
@@ -3502,6 +3512,12 @@ lowercase names (`archidep-000-course.pdf`): the URL is then derivable from
 net it should be rather than the mechanism every entry depends on. The cost is
 that the downloaded file carries the flat name instead of the pretty one — but
 the host was going to mangle it either way, so the choice is only who decides.
+**There was nothing left for CI to sanitise, in the end**, and that is the
+better outcome rather than a smaller one: `PdfNames` already emits those flat
+lowercase names and the export writes what the manifest tells it to, so the
+_build_ chose the URL and the publish step uploads it verbatim. A name that
+would have been rewritten on the way up is a name two steps have to agree on;
+this way there is only one.
 
 **The runner-up was Cloudflare R2** (10 GB free, no egress charge, a custom
 domain such as `pdf.archidep.ch`, and PDFs viewable inline rather than forced
@@ -3522,6 +3538,68 @@ publication end up once [the export no longer needs the production
 site](#decouple-pdf-generation-from-production). (Do **not** run `npm run pdf`
 from this working copy — it is expensive and human-triggered per project
 policy.)
+
+### The CI job
+
+The job the two sections above lead to:
+[`.github/workflows/pdf.yml`](../.github/workflows/pdf.yml). Its middle is the
+two commands the [course's own
+documentation](../course/CONTRIBUTING.md#pdf-generation) gives a human — render
+with `--absolute-base-url`, then print with `--build` and `--output` — and the
+rest of it is what has to be true around them. Five corrections.
+
+- **Dormancy and cadence are different questions, and this item answered the
+  second with the first.** "Triggered by a tag or by hand rather than by every
+  push" was written to keep the job off a metered private repository, but that
+  is what the `github.repository` gate does, whatever the trigger; where the
+  gate lets it run the minutes are free. What the design actually needs is a
+  push to `main` that could reach a PDF, which is the only reading under which
+  "each generation run uploads with `--clobber` … so the live edition's PDFs are
+  always the current ones" describes something that happens rather than
+  something somebody could do. Which changes are those is a **deny-list**, not
+  an allow-list: a path left out of an allow-list publishes stale PDFs and says
+  nothing, while one left out of a deny-list costs a run. The manual dispatch
+  survives the change for a different reason than it was written for — it is how
+  the job is proved in the repository where it is dormant, which "written and
+  tested now" otherwise cannot mean.
+- **It cannot reuse the artifacts the `build` workflow already publishes**,
+  which is what makes it a workflow of its own rather than a job beside them.
+  That workflow builds the course assets with `ARCHIDEP_BASE_PATH=/website` for
+  the Pages copy, and webpack bakes that into the address its runtime chunks are
+  fetched from, so a build served at a root would 404 every one of mermaid's
+  chunks — and the export waits for the network to go quiet, which a 404 does.
+  The run stays green and every deck prints with its diagrams missing, which is
+  the worst shape a failure can take here. So the job builds its own assets and
+  asserts the address, one `grep` that turns the whole class into a red build.
+  The theme artifact is no better: it carries `assets/theme` and not
+  `assets/emoji`, which Jekyll never needed and every page of this renderer
+  does.
+- **`MIX_ENV=test` would build the 1955 edition.** The test configuration names
+  an edition of its own so that a test asserting a URL asserts a fact about the
+  code; a job inheriting the app job's environment would have inherited that,
+  rendered 1955 and uploaded it to a release tagged `pdf/1955`. The edition is
+  read once from the configuration and reused by the base baked into the pages
+  and by the release tag, so the three cannot disagree — and `prod` is what the
+  site ships in. Building in `prod` costs one environment variable more than the
+  app job sets, `ARCHIDEP_SERVERS_API_BASE_URL` being the one required value
+  that has a development and a test default and no production one; the build
+  task reads none of them and needs them all, the runtime configuration being
+  read whatever the command.
+- **The archive repository is a variable rather than a name**, and it is the
+  same variable in both places it is needed: unset, the render is told no PDF
+  base and the publish step does not run; set, both follow it. So the day the
+  repository exists nothing in the workflow changes, which is the shape "only
+  its last step waits on anything" asks for. It also defers a contradiction —
+  the [archive](#where-past-editions-are-kept) is an organisation Pages site,
+  which GitHub serves at a root only under one name, and that is not the name
+  the export's documentation had been using in its example.
+- **Saying nothing about the PDFs costs only the download link.** A build told
+  no base resolves every `{:pdf, _}` to an error and the layout leaves the link
+  out, but `archidep.json` takes its names from `PdfNames` rather than from that
+  manifest — so the interim run prints all 64 files under exactly the names the
+  publish step will one day upload. The PDFs are kept as a workflow artifact
+  meanwhile, which is also what a human fetches when it is the upload that
+  failed.
 
 ### Search index
 

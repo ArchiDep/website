@@ -1,0 +1,191 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: pdf
+
+on:
+  push:
+    branches:
+      - main
+    # A deny-list rather than an allow-list, because the two mistakes are not
+    # the same size: a path missing from an allow-list publishes stale PDFs and
+    # says nothing, while one missing from here costs a run. Note `**.md` must
+    # never be listed — the course material is Markdown.
+    paths-ignore:
+      - '*.md'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/publish.yml'
+      - 'ansible/**'
+      - 'app/priv/repo/**'
+      - 'app/test/**'
+      - 'docker/**'
+      - 'wip/**'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Run even where this workflow is normally dormant'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# A run rewrites every PDF of the edition, so a newer one supersedes an older
+# one rather than queueing behind it. What that costs is a window in which the
+# release holds a mix of the two, which the superseding run closes.
+concurrency:
+  group: 'pdf'
+  cancel-in-progress: true
+
+jobs:
+  pdf:
+    runs-on: ubuntu-24.04
+    name: Print & publish the PDFs
+    timeout-minutes: 60
+    # Dormant outside the public repository, where the minutes are metered; the
+    # dispatch input is how it is proved there anyway, once and deliberately.
+    if: github.repository == 'ArchiDep/website' || inputs.force
+    env:
+      # The runtime configuration is read whatever the command, so the build
+      # task needs a value for everything it makes mandatory even though it
+      # starts neither an endpoint nor a repository. There is one more of them
+      # here than in the `build` workflow: the servers API base URL has a
+      # development and a test default and no production one.
+      ARCHIDEP_REPO_URL: ecto://archidep:archidep@127.0.0.1:5432/archidep
+      ARCHIDEP_SERVERS_API_BASE_URL: https://archidep.ch/api
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID: id
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_SECRET: secret
+      ARCHIDEP_WEB_ENDPOINT_LIVE_VIEW_SIGNING_SALT: 5vur1eNR+LPxlMBG7Z8dgcipgv4N9+ADI2MzF/2jiFqNZUG2Ts/g4+hK1y5bAqOU9QT+9X2tU7lvwXz5
+      ARCHIDEP_WEB_ENDPOINT_SECRET_KEY_BASE: 5JCHwFiOWjHyyGcp+dTHqYniYWdBvKvkT2CnwJwTBat9XlGRF1juYvGwEWGcKaXz/a61Hqn4bxHWAt+g
+      ARCHIDEP_WEB_ENDPOINT_SESSION_SIGNING_SALT: WIrprzaArMvOUrkFjBi81OwfIGRIlzJXYISJycsk0qhKEELihlYp7i8QFj1Km+CmTwmroGsgS9byMgAw
+      ELIXIR_VERSION: 1.19.5
+      ERLANG_VERSION: 28.5.0.1
+      # The environment the site ships in. Not `test`, whose configuration
+      # names an edition of its own so that a test asserting a URL is asserting
+      # a fact about the code.
+      MIX_ENV: prod
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: npm
+          cache-dependency-path: package-lock.json
+          node-version: 24.4.0
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the theme
+        run: npm run build
+        working-directory: theme
+
+      # No ARCHIDEP_BASE_PATH: this build is served at a root, and webpack bakes
+      # the base path into the address its runtime chunks are fetched from.
+      - name: Build course assets
+        run: npm run build
+        working-directory: course
+        env:
+          NODE_ENV: production
+
+      # A wrong base path would only ever show up as a slide deck printed with
+      # its diagrams missing: the chunks 404 and the export waits for the
+      # network to go quiet, which a 404 does.
+      - name: Check the assets are addressed at a root
+        run: grep -q '__webpack_require__.p = "/assets/course/"' app/priv/static/assets/course/slides-mermaid.js
+
+      - name: Install Erlang/OTP & Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.ERLANG_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      # Keyed by environment as well, the build directory holding one of them: a
+      # key is written once and never replaced, so sharing it with the test
+      # build of the `build` workflow would leave whichever ran second with
+      # nothing to restore for the life of the lock file.
+      - name: Cache app build
+        uses: actions/cache@v3
+        with:
+          path: |
+            app/deps
+            app/_build
+          key: ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ env.MIX_ENV }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ env.MIX_ENV }}-
+
+      - name: Install dependencies
+        run: mix deps.get
+        working-directory: app
+
+      - name: Compile the app
+        run: mix compile
+        working-directory: app
+
+      - name: Digest the assets
+        run: mix assets.deploy
+        working-directory: app
+
+      # Read rather than written here, so that the edition rendered, the base
+      # baked into its pages and the release it is uploaded to are one fact
+      # instead of three that have to be moved together at the rollover.
+      - name: Read the edition being published
+        id: edition
+        working-directory: app
+        run: |
+          year="$(mix run --no-start --no-compile -e 'IO.puts(Keyword.fetch!(Application.fetch_env!(:archidep, :course_site), :version))' | tail -n 1)"
+          test -n "$year"
+          echo "Publishing the $year edition"
+          echo "year=$year" >> "$GITHUB_OUTPUT"
+
+      # No base path: the export maps a URL path straight onto the build
+      # directory, so a mount point would prefix every URL the served tree does
+      # not have. A build told of no PDF base offers no download link, which is
+      # what a build has to do until there is a release to link to.
+      - name: Render the site the PDFs are printed from
+        working-directory: app
+        env:
+          ARCHIVE_REPO: ${{ vars.ARCHIDEP_ARCHIVE_REPO }}
+          YEAR: ${{ steps.edition.outputs.year }}
+        run: |
+          args=(--output ../tmp/pdf-build --clean --absolute-base-url https://archidep.ch)
+          if [ -n "$ARCHIVE_REPO" ]; then
+            args+=(--pdf-base "https://github.com/$ARCHIVE_REPO/releases/download/pdf/$YEAR")
+          fi
+          mix archidep.course_site.build "${args[@]}"
+
+      - name: Print the PDFs
+        run: npm run pdf -- --build tmp/pdf-build --output tmp/pdf
+
+      - name: Ensure there are no uncommitted changes
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+
+      # Uploaded whether or not the step below publishes them, being both what
+      # a human fetches while nothing does and the evidence of a run whose
+      # publication is what failed.
+      - name: Upload the PDFs
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-${{ steps.edition.outputs.year }}
+          path: tmp/pdf
+          compression-level: 0
+          retention-days: 5
+
+      # The edition's release lives in the archive repository, which does not
+      # exist yet. Naming it is what turns this step on, here and in the render
+      # above; until then every step but this one runs.
+      - name: Publish the PDFs
+        if: vars.ARCHIDEP_ARCHIVE_REPO != ''
+        env:
+          ARCHIVE_REPO: ${{ vars.ARCHIDEP_ARCHIVE_REPO }}
+          GH_TOKEN: ${{ secrets.ARCHIDEP_ARCHIVE_TOKEN }}
+          YEAR: ${{ steps.edition.outputs.year }}
+        run: |
+          tag="pdf/$YEAR"
+          gh release view "$tag" --repo "$ARCHIVE_REPO" > /dev/null 2>&1 || \
+            gh release create "$tag" --repo "$ARCHIVE_REPO" \
+              --title "ArchiDep $YEAR PDFs" \
+              --notes "Generated PDFs of the $YEAR edition of the course."
+          gh release upload "$tag" tmp/pdf/*.pdf --repo "$ARCHIVE_REPO" --clobber
