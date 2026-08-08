@@ -7,6 +7,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
   use ArchiDep.Support, :factory
   use ExUnitProperties
 
+  alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.PageRef
@@ -17,6 +18,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
+  alias ArchiDep.CourseSite.Urls.RootFileManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
   alias ArchiDep.Emoji
 
@@ -89,6 +91,9 @@ defmodule ArchiDep.Support.CourseSiteFactory do
 
     {pdfs, attrs!} = Map.pop_lazy(attrs!, :pdfs, fn -> PdfManifest.new(:site, %{}) end)
 
+    {root_files, attrs!} =
+      Map.pop_lazy(attrs!, :root_files, fn -> RootFileManifest.new(Build.root_files()) end)
+
     [] = Map.keys(attrs!)
 
     UrlContext.new(
@@ -100,7 +105,8 @@ defmodule ArchiDep.Support.CourseSiteFactory do
       live_site_url: live_site_url,
       assets: assets,
       page_assets: page_assets,
-      pdfs: pdfs
+      pdfs: pdfs,
+      root_files: root_files
     )
   end
 

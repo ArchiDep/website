@@ -47,18 +47,19 @@ defmodule ArchiDep.CourseSite.Build do
   # which is what `{:root_file, _}` means. They are named one by one rather than
   # walked, for the same reason the includes are: the directory they come from
   # holds marks nothing draws, and what a build publishes is a decision rather
-  # than whatever happens to be sitting there.
+  # than whatever happens to be sitting there. As output paths, since that is
+  # what a build writes them as and what the chrome asks for them by.
   @root_files [
-    "favicon.ico",
-    "favicons/heig.png",
-    "favicons/archidep-512-flat.png",
-    "favicons/archidep-coffee.png",
-    "favicons/archidep-rocket-16.png",
-    "favicons/archidep-rocket-32.png",
-    "favicons/archidep-rocket-48.png",
-    "favicons/archidep-rocket-96.png",
-    "favicons/archidep-rocket-180.png",
-    "favicons/archidep-rocket-192.png"
+    "/favicon.ico",
+    "/favicons/heig.png",
+    "/favicons/archidep-512-flat.png",
+    "/favicons/archidep-coffee.png",
+    "/favicons/archidep-rocket-16.png",
+    "/favicons/archidep-rocket-32.png",
+    "/favicons/archidep-rocket-48.png",
+    "/favicons/archidep-rocket-96.png",
+    "/favicons/archidep-rocket-180.png",
+    "/favicons/archidep-rocket-192.png"
   ]
 
   @archives "*.json"
@@ -96,6 +97,17 @@ defmodule ArchiDep.CourseSite.Build do
           | {:unremovable_output, Path.t(), File.posix()}
           | {:invalid_course, Structure.error()}
           | Site.error()
+
+  @doc """
+  The files a build publishes at its mount point rather than under its edition,
+  as output paths.
+
+  This is the declaration the chrome's `{:root_file, _}` references are checked
+  against, through the `ArchiDep.CourseSite.Urls.RootFileManifest` of the build
+  that carries them.
+  """
+  @spec root_files() :: [String.t()]
+  def root_files, do: @root_files
 
   @doc """
   Every file a build reads from a content directory, relative to it, sorted.
@@ -811,7 +823,7 @@ defmodule ArchiDep.CourseSite.Build do
     home = home_source(home_file)
     declarations = declarations(Keyword.fetch!(opts, :declarations_file))
     includes = includes(Keyword.fetch!(opts, :includes_dir))
-    root_files = root_files(Keyword.fetch!(opts, :root_files_dir))
+    root_files = root_file_contents(Keyword.fetch!(opts, :root_files_dir))
     page_assets = page_asset_manifest(tree, content_dir)
     assets = assets(Keyword.fetch!(opts, :static_dir), Keyword.get(opts, :digested, true))
     structure = structure(tree, sources, declarations)
@@ -855,17 +867,17 @@ defmodule ArchiDep.CourseSite.Build do
   # There is a fixed handful of these and none of them is large, unlike the
   # files sitting next to a page, which are copied because the whole of them is
   # far too big to hold in memory.
-  defp root_files(root_files_dir) do
+  defp root_file_contents(root_files_dir) do
     {contents, errors} =
       Enum.reduce(@root_files, {%{}, []}, fn path, {contents, errors} ->
         file = Path.join(root_files_dir, path)
 
         case File.read(file) do
           {:ok, bytes} ->
-            {Map.put(contents, "/" <> path, bytes), errors}
+            {Map.put(contents, path, bytes), errors}
 
           {:error, reason} ->
-            {contents, [{:unreadable_source, "/" <> path, file, reason} | errors]}
+            {contents, [{:unreadable_source, path, file, reason} | errors]}
         end
       end)
 

@@ -57,6 +57,7 @@ defmodule ArchiDep.CourseSite.Urls do
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
+  alias ArchiDep.CourseSite.Urls.RootFileManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
   alias ArchiDep.CourseSite.Urls.UrlError
   alias ArchiDep.CourseSite.Urls.UrlPath
@@ -81,6 +82,7 @@ defmodule ArchiDep.CourseSite.Urls do
           {:unknown_asset, String.t()}
           | {:unknown_page_asset, PageRef.t(), String.t(), String.t()}
           | {:unknown_pdf, PageRef.t()}
+          | {:unknown_root_file, String.t()}
           | {:absolute_page_asset, PageRef.t(), String.t()}
           | {:invalid_page_asset, PageRef.t(), String.t()}
           | {:page_asset_outside_site, PageRef.t(), String.t()}
@@ -152,8 +154,18 @@ defmodule ArchiDep.CourseSite.Urls do
 
   def resolve(%UrlContext{} = context, {:pdf, page}, _from), do: pdf_url(context, page)
 
-  def resolve(%UrlContext{} = context, {:root_file, path}, _from) when is_binary(path),
-    do: {:ok, context.base_path <> "/" <> UrlPath.encode(path)}
+  # A root file is published verbatim, so the manifest says only whether the
+  # build carries it at all — which is the whole of what
+  # `ArchiDep.CourseSite.Urls.RootFileManifest` is for.
+  def resolve(%UrlContext{} = context, {:root_file, path}, _from) when is_binary(path) do
+    output_path = "/" <> path
+
+    if RootFileManifest.member?(context.root_files, output_path) do
+      {:ok, context.base_path <> UrlPath.encode(output_path)}
+    else
+      {:error, {:unknown_root_file, path}}
+    end
+  end
 
   # The application answers beside the site rather than under the edition it is
   # serving: it is one dashboard across every edition, so its address carries
@@ -259,6 +271,9 @@ defmodule ArchiDep.CourseSite.Urls do
 
   def format_error({:unknown_pdf, page}),
     do: "No PDF has been published for page #{describe_page(page)}"
+
+  def format_error({:unknown_root_file, path}),
+    do: "Root file #{inspect(path)} is not in the root file manifest"
 
   def format_error({:absolute_page_asset, page, path}),
     do:

@@ -7,6 +7,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
+  alias ArchiDep.CourseSite.Urls.RootFileManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
   alias ArchiDep.CourseSite.Urls.UrlError
   alias ArchiDep.CourseSite.Urls.UrlPath
@@ -503,9 +504,21 @@ defmodule ArchiDep.CourseSite.UrlsTest do
     end
 
     test "resolves under the mount point but never under the edition prefix" do
-      context = CourseSiteFactory.build(:url_context, base_path: "/website", version: "2026")
+      context =
+        CourseSiteFactory.build(:url_context,
+          base_path: "/website",
+          version: "2026",
+          root_files: RootFileManifest.new(["/robots.txt"])
+        )
 
       assert Urls.resolve(context, {:root_file, "robots.txt"}) == {:ok, "/website/robots.txt"}
+    end
+
+    test "refuses a file the build does not publish at its mount point" do
+      context = CourseSiteFactory.build(:url_context, root_files: RootFileManifest.new([]))
+
+      assert Urls.resolve(context, {:root_file, "favicon.ico"}) ==
+               {:error, {:unknown_root_file, "favicon.ico"}}
     end
   end
 
@@ -866,6 +879,11 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                "Page asset \"../../../images/tty.jpg\" of page 101-command-line (slides) points outside the site's root"
     end
 
+    test "describes a file the build does not publish at its mount point" do
+      assert Urls.format_error({:unknown_root_file, "favicons/heig.png"}) ==
+               "Root file \"favicons/heig.png\" is not in the root file manifest"
+    end
+
     test "describes a reference needing the live site's URL" do
       assert Urls.format_error({:missing_live_site_url, {:live_site, :home}}) ==
                "Reference {:live_site, :home} requires the URL of the current edition's site"
@@ -1081,7 +1099,8 @@ defmodule ArchiDep.CourseSite.UrlsTest do
         context = %{
           generated
           | assets: AssetManifest.new(%{"/assets/app/app.js" => "/assets/app/app-4d5e6f.js"}),
-            pdfs: PdfManifest.new(:site, %{page => "archidep-103-hello-shell-exercise.pdf"})
+            pdfs: PdfManifest.new(:site, %{page => "archidep-103-hello-shell-exercise.pdf"}),
+            root_files: RootFileManifest.new(["/favicon.ico"])
         }
 
         {:ok, url} = Urls.resolve(context, reference)
@@ -1112,7 +1131,8 @@ defmodule ArchiDep.CourseSite.UrlsTest do
           pdfs:
             PdfManifest.new(:site, %{
               {:document, hello_shell} => "archidep-103-hello-shell-exercise.pdf"
-            })
+            }),
+          root_files: RootFileManifest.new(["/favicon.ico"])
         )
       )
 

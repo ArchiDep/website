@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpersTest do
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
+  alias ArchiDep.CourseSite.Urls.RootFileManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
   alias ArchiDep.CourseSite.Urls.UrlError
   alias ArchiDepWeb.Helpers.CourseMaterialHelpers
@@ -64,7 +65,8 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpersTest do
                live_site_url: nil,
                assets: AssetManifest.new(%{}),
                page_assets: PageAssetManifest.new(%{}),
-               pdfs: PdfManifest.new(:site, %{})
+               pdfs: PdfManifest.new(:site, %{}),
+               root_files: RootFileManifest.new([])
              }
     end
   end

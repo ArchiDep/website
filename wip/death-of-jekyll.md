@@ -868,9 +868,11 @@ Consequences to handle when implementing:
   than the bytes of a generated proxy. The files beside a page are counted in
   that hash but not registered: their names are what the model depends on, and
   registering 49 MB of images would have Mix digest all of them on every
-  compile. One gap is left: the digest covers the collections a build renders,
-  so a newly **added** `_progress` file is not noticed — which matters in
-  development, where a session is added every week.
+  compile. The gap this left — the digest covering the collections a build
+  renders, so a newly **added** `_progress` file went unnoticed — **closed
+  itself** when `progress.json` replaced that collection and nothing about how
+  far the course has got stayed compiled: a session added in the middle of the
+  year is now read at render time rather than being a reason to recompile.
 - **Confirmed consumers.** `pdf.ts` is the only non-app reader (verified across
   `course/src`, the app, and `package.json`); nothing reads the file at app
   runtime.
@@ -3069,8 +3071,16 @@ the `watch` and `serve` keys of the `course_site` configuration — which only
   documentation](../app/lib/archidep/course_site/CONTRIBUTING.md#building).
   `LinkCheck` is **not** taught about them — it skips root-anchored URLs because
   a build does not own everything under its mount point — so an eleventh one
-  added to the chrome without a matching entry still publishes a broken image
-  and no error. A root-file manifest on `UrlContext` is the fix, deferred.
+  added to the chrome without a matching entry would publish a broken image and
+  no error. **Closed since**, by the root-file manifest this predicted rather
+  than by teaching the link check: `RootFileManifest` is what a build states it
+  carries at its mount point, `Builder` fills it from the files it read, and
+  `{:root_file, _}` resolves through it, so a mark the chrome draws and the
+  build does not carry fails the build the way an unpublished stylesheet does.
+  That makes `{:root_file, _}` the third reference the chrome writes that can
+  fail at all, which is a claim
+  [`Chrome.Assigns`](../app/lib/archidep/course_site/layout/chrome/assigns.ex)
+  documents and had to be corrected for.
 - **Docker development was already broken**, by earlier items rather than by
   this one: the `app` service mounted neither `./course`, which
   `CourseSite.Material` reads at compile time, nor `./app/priv/course`, which

@@ -21,18 +21,20 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
 
   ## Which failures are fatal
 
-  Reading `ArchiDep.CourseSite.Urls`, only two kinds of reference the chrome
-  writes can fail at all: a global asset that is not in the manifest, and a page
-  whose PDF has not been published. Everything else — the home page, a document,
-  a cheatsheet, a file at the root, an external link, the page the banner offers
-  in a build that is not the live site — is total, and asking for one is a
-  programmer error rather than a fact about the build.
+  Reading `ArchiDep.CourseSite.Urls`, only three kinds of reference the chrome
+  writes can fail at all: a global asset that is not in the manifest, a file at
+  the mount point the build does not publish, and a page whose PDF has not been
+  published. Everything else — the home page, a document, a cheatsheet, an
+  external link, the page the banner offers in a build that is not the live site
+  — is total, and asking for one is a programmer error rather than a fact about
+  the build.
 
-  So the split a layout has to make is exactly the split between those two:
+  So the split a layout has to make is exactly the split between those:
 
   - A **stylesheet, script or picture** that does not resolve is a build
     publishing pages nobody can read properly, so it is collected and the page
-    is refused.
+    is refused. A mark at the mount point the build does not carry
+    (`ArchiDep.CourseSite.Urls.RootFileManifest`) is one of those.
   - A **PDF** that does not resolve is a page whose slides have not been printed
     yet, which is ordinary, so the download link is left out and the page is
     published.

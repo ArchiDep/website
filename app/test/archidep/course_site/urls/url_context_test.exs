@@ -4,6 +4,7 @@ defmodule ArchiDep.CourseSite.Urls.UrlContextTest do
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
+  alias ArchiDep.CourseSite.Urls.RootFileManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
 
   doctest ArchiDep.CourseSite.Urls.UrlContext
@@ -19,7 +20,8 @@ defmodule ArchiDep.CourseSite.Urls.UrlContextTest do
                live_site_url: nil,
                assets: %AssetManifest{assets: %{}},
                page_assets: %PageAssetManifest{page_assets: %{}, digested: %{}},
-               pdfs: %PdfManifest{base: :site, entries: %{}}
+               pdfs: %PdfManifest{base: :site, entries: %{}},
+               root_files: %RootFileManifest{paths: MapSet.new()}
              }
     end
 
@@ -27,6 +29,7 @@ defmodule ArchiDep.CourseSite.Urls.UrlContextTest do
       assets = AssetManifest.new(%{"/assets/app/app.js" => "/assets/app/app-4d5e6f.js"})
       page_assets = PageAssetManifest.new(%{"/course/507-dns/images/dig.png" => "dig-7a8b9c.png"})
       pdfs = PdfManifest.new({:external, "https://pdfs.example.com"}, %{})
+      root_files = RootFileManifest.new(["/favicon.ico"])
 
       assert UrlContext.new(
                mode: :archive,
@@ -37,7 +40,8 @@ defmodule ArchiDep.CourseSite.Urls.UrlContextTest do
                live_site_url: "https://live.example.com",
                assets: assets,
                page_assets: page_assets,
-               pdfs: pdfs
+               pdfs: pdfs,
+               root_files: root_files
              ) == %UrlContext{
                mode: :archive,
                base_path: "/website",
@@ -47,7 +51,8 @@ defmodule ArchiDep.CourseSite.Urls.UrlContextTest do
                live_site_url: "https://live.example.com",
                assets: assets,
                page_assets: page_assets,
-               pdfs: pdfs
+               pdfs: pdfs,
+               root_files: root_files
              }
     end
 

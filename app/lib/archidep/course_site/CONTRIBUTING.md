@@ -390,7 +390,7 @@ A [`UrlContext`](./urls/url_context.ex) is one build. Its `mode` says what the
 build _is_ — `:live`, `:backup` or `:archive` — and the rest says where it sits:
 `base_path` (the mount point), `version` (the edition, i.e. the starting year of
 the academic year), `build_id`, `absolute_base_url`, `live_site_url` and the
-three manifests.
+four manifests.
 
 The mount point and the edition are **separate knobs** rather than one prefix
 because the home page needs the mount point on its own: while an edition is
@@ -617,6 +617,11 @@ directory they come from holds marks nothing draws, and what a build publishes
 is a decision rather than whatever is sitting there. Their bytes travel through
 the plan rather than being copied like the files beside a page: there is a fixed
 handful of them and none is large.
+
+That list is also what the chrome's `{:root_file, _}` references are checked
+against, through the [`RootFileManifest`](./urls/root_file_manifest.ex) of the
+build carrying them — which is the only thing that would notice the two
+disagreeing, and says there why.
 
 **Reading comes before writing.** Every file a build publishes is read and the
 whole manifest settled before any of them is written, so a content directory

@@ -23,6 +23,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
+  alias ArchiDep.CourseSite.Urls.RootFileManifest
   alias ArchiDep.Emoji
 
   @dns DocumentRef.new(507, "dns", :subject)
@@ -32,6 +33,21 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   # Where a build that is not the live site says the current edition is, which
   # is the one thing such a build writes an absolute URL for.
   @live_site_url "https://archidep.example.com"
+
+  # The marks the chrome draws from the mount point rather than from the
+  # edition, which every page and every deck asks for alike.
+  @root_files [
+    "favicon.ico",
+    "favicons/heig.png",
+    "favicons/archidep-512-flat.png",
+    "favicons/archidep-coffee.png",
+    "favicons/archidep-rocket-16.png",
+    "favicons/archidep-rocket-32.png",
+    "favicons/archidep-rocket-48.png",
+    "favicons/archidep-rocket-96.png",
+    "favicons/archidep-rocket-180.png",
+    "favicons/archidep-rocket-192.png"
+  ]
 
   @page_assets ["/assets/theme/theme.css", "/assets/course/course.js"]
   @deck_assets [
@@ -307,6 +323,11 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     test "asks a deck for the files a deck loads rather than the files a page loads" do
       assert Assigns.build(context(content: %Slides{markdown: "# DNS\n"}, assets: [])) ==
                {:error, missing(@deck_assets ++ emoji_assets())}
+    end
+
+    test "reports every mark at the mount point the build does not carry" do
+      assert Assigns.build(context(root_files: RootFileManifest.new([]))) ==
+               {:error, unpublished(@root_files)}
     end
   end
 
@@ -591,6 +612,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   defp missing(paths),
     do: paths |> Enum.uniq() |> Enum.sort() |> Enum.map(&{:unknown_asset, &1})
 
+  defp unpublished(paths),
+    do: paths |> Enum.uniq() |> Enum.sort() |> Enum.map(&{:unknown_root_file, &1})
+
   defp context(overrides \\ []) do
     page = Keyword.get(overrides, :page, {:document, @dns})
 
@@ -605,19 +629,23 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       structure: structure(),
       progress: Keyword.get(overrides, :progress, progress()),
       statuses: %{500 => :due, 507 => :due},
-      urls:
-        Keyword.get_lazy(overrides, :urls, fn ->
-          build(:url_context,
-            build_id: "9f8e7d",
-            mode: :live,
-            base_path: "",
-            version: nil,
-            assets: manifest(overrides)
-          )
-        end),
+      urls: Keyword.get_lazy(overrides, :urls, fn -> urls(overrides) end),
       site: site(Keyword.take(overrides, [:git_revision]))
     )
   end
+
+  defp urls(overrides),
+    do:
+      build(
+        :url_context,
+        [
+          build_id: "9f8e7d",
+          mode: :live,
+          base_path: "",
+          version: nil,
+          assets: manifest(overrides)
+        ] ++ Keyword.take(overrides, [:root_files])
+      )
 
   defp manifest(overrides \\ []) do
     paths = Keyword.get(overrides, :assets, @page_assets ++ @deck_assets ++ emoji_assets())

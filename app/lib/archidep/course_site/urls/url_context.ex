@@ -17,6 +17,7 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
   alias ArchiDep.CourseSite.Urls.AssetManifest
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.PdfManifest
+  alias ArchiDep.CourseSite.Urls.RootFileManifest
 
   @enforce_keys [:mode, :build_id]
   defstruct mode: nil,
@@ -27,7 +28,8 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
             live_site_url: nil,
             assets: nil,
             page_assets: nil,
-            pdfs: nil
+            pdfs: nil,
+            root_files: nil
 
   @typedoc """
   What a build is:
@@ -48,7 +50,8 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
           live_site_url: String.t() | nil,
           assets: AssetManifest.t(),
           page_assets: PageAssetManifest.t(),
-          pdfs: PdfManifest.t()
+          pdfs: PdfManifest.t(),
+          root_files: RootFileManifest.t()
         }
 
   @modes [:live, :backup, :archive]
@@ -75,7 +78,8 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
     only.
   - `:live_site_url` — where the current edition lives. Required of every build
     that is not it.
-  - `:assets`, `:page_assets`, `:pdfs` — the manifests, empty by default.
+  - `:assets`, `:page_assets`, `:pdfs`, `:root_files` — the manifests, empty by
+    default.
 
   Those last two requirements are what a build that is not the live site owes
   its reader: a copy that cannot say where the current edition is cannot tell
@@ -101,7 +105,8 @@ defmodule ArchiDep.CourseSite.Urls.UrlContext do
         |> validate_counterpart!(mode),
       assets: Keyword.get(opts, :assets) || AssetManifest.new(%{}),
       page_assets: Keyword.get(opts, :page_assets) || PageAssetManifest.new(%{}),
-      pdfs: Keyword.get(opts, :pdfs) || PdfManifest.new(:site, %{})
+      pdfs: Keyword.get(opts, :pdfs) || PdfManifest.new(:site, %{}),
+      root_files: Keyword.get(opts, :root_files) || RootFileManifest.new([])
     }
   end
 

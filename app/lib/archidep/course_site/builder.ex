@@ -27,6 +27,7 @@ defmodule ArchiDep.CourseSite.Builder do
   alias ArchiDep.CourseSite.Build.Site.Options
   alias ArchiDep.CourseSite.Builder.Report
   alias ArchiDep.CourseSite.Structure
+  alias ArchiDep.CourseSite.Urls.RootFileManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
 
   @typedoc """
@@ -76,8 +77,9 @@ defmodule ArchiDep.CourseSite.Builder do
   - `:output_dir` (required) — where the build is published.
   - `:options` (required) — what the build is, as an
     `ArchiDep.CourseSite.Build.Site.Options`. The two asset manifests of its URL
-    context are **replaced** by the ones the build read: which name each asset
-    was published under is something a build finds out rather than something its
+    context, and the root file one, are **replaced** by the ones the build read:
+    which name each asset was published under, and which files a build carries
+    at its mount point, are things a build finds out rather than things its
     caller can state, and threading them back in by hand is the step this exists
     to remove. The PDF manifest is replaced the same way, but only when
     `:pdf_base` says so.
@@ -127,7 +129,8 @@ defmodule ArchiDep.CourseSite.Builder do
           urls
           | assets: inputs.assets,
             page_assets: inputs.page_assets,
-            pdfs: pdfs(urls.pdfs, pdf_base, inputs.structure)
+            pdfs: pdfs(urls.pdfs, pdf_base, inputs.structure),
+            root_files: RootFileManifest.new(Map.keys(inputs.root_files))
         }
     }
 
