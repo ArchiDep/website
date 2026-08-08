@@ -486,13 +486,20 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 
 **Search, QA and cutover**
 
-- [ ] Reuse the existing `npm run idx`/`lunr` path initially, building
-      `search.json` with Floki — see [Search index](#search-index).
-- [ ] Draw the search dialog's own icons from the emoji registry. `search.ts`
-      writes the five type icons and the two of its result and empty-state
-      templates as characters, which is the last place the [emoji
-      vocabulary](#one-emoji-vocabulary) is not enforced; the client needs a
-      generated name→URL map, since only the build knows the digested names —
+- [x] Build `search.json` from the rendered pages in Elixir. **Done:
+      `ArchiDep.CourseSite.Build.SearchIndex` cuts a page into an entry of its
+      own and one per top-level heading**, read with `LazyHTML` rather than
+      Floki, which is no longer a dependency of anything here. The Node half of
+      it is **not** reused — `idx.ts` and `lunr.json` are gone, with four
+      corrections recorded below — see [Search index](#search-index).
+- [x] Draw the search dialog's own icons from the emoji registry. `search.ts`
+      wrote the type icons and the two of its result and empty-state templates
+      as characters, which was the last place the [emoji
+      vocabulary](#one-emoji-vocabulary) was not enforced. **Done: the page
+      leaves the seven pictures it draws in a hidden element and the script
+      takes them from there** — not the name→URL map this item expected, because
+      a client that is handed a URL has to know what an emoji looks like in
+      HTML, and `ArchiDep.Emoji.img/3` is meant to be the only thing that does —
       see [Search index](#search-index).
 - [ ] Run an HTML fidelity diff / visual-regression gate against current Jekyll
       output — see [HTML fidelity gate](#html-fidelity-gate).
@@ -3630,6 +3637,70 @@ that makes it more than a substitution is that a client cannot work out where an
 emoji file is — only the build knows the digested names — so the build hands it
 a generated name→URL map, the same one any other script would need.
 
+**Corrections while implementing:**
+
+- **`lunr.json` and `idx.ts` are gone rather than reused, and the browser builds
+  the index.** The reuse this item asked for is not available: the development
+  build now lands inside the application's own container, which the Node and
+  Ruby containers cannot reach, so keeping the step would mean putting a Node
+  toolchain into the Elixir image and running a Node process on every content
+  save. Measuring what it buys settled it — building the index in the browser
+  costs **122 ms** for all 1058 entries against **37 ms** to parse and load a
+  prebuilt one, and removes a **5.1 MB** download, `search.json` being fetched
+  either way. So the build writes one file rather than two, `idx.ts` and its
+  `npm run idx` script are deleted, and `search.ts` builds the index where it
+  already parses its JSON.
+- **`extraText` had to join the client's codec.** It is indexed with a boost of
+  ten and never shown, so the codec left it out and `t.exact` stripped it — which
+  was harmless while a Node script built the index from the raw file, and would
+  have silently dropped the home page's ranking hack the moment the browser
+  built it instead.
+- **A deck is converted by the Markdown library rather than by the renderer.**
+  Slides never reach a Markdown renderer, so there is no HTML of a deck to read
+  and one has to be made. Making it through the renderer fails: a deck's code
+  fences are reveal.js's own, saying which lines to reveal when, and the site's
+  highlighter reads them as malformed decorators and refuses the document. It is
+  converted with MDEx directly instead, for reading and throwing away.
+- **The dashboard entry needed a reference kind of its own.** `dashboard.txt`
+  exists only to put one "Dashboard → `/app`" entry in the index, and `/app` is
+  neither a page of the course nor a file of the build — so `{:app, path}` was
+  added, resolving under the mount point on the live site and **refusing**
+  everywhere else, which is what `standalone: false` meant. The entry is stated
+  in `SearchIndex` rather than in the course's declarations: it is a fact about
+  the application, and the rule that governs it is about which copy of the site
+  is being built.
+- **`build_id` became configuration.** The dashboard runs the same dialog over
+  the same index, and it does not build the site — so it cannot work out a name
+  the build chose. Both now read `:archidep, :course_site, :build_id`, and
+  `CourseMaterialHelpers`' deliberate `@build_id "app"` literal is gone. Note the
+  **interim**: the dashboard asks for `/2025/search-<build_id>.json`, which
+  production does not serve until [production
+  serving](#development-and-production-serving) points it at the Elixir build —
+  the same interim its course links are already in.
+- **`data-base-path` is gone.** It existed so `search.ts` could join `/lunr.json`
+  onto the mount point, and with the build resolving both URLs through the seam
+  nothing read it any more — so it went, and `Chrome.Assigns` lost the field
+  behind it.
+- **The pictures are handed over as markup, not as URLs.** A client given a URL
+  would have to know what an emoji looks like in HTML, and the point of the
+  [one emoji vocabulary](#one-emoji-vocabulary) is that `ArchiDep.Emoji.img/3` is
+  the only thing that does. So the page draws the seven the dialog needs into a
+  hidden element and the script takes their markup. The 🚀 of the result
+  template was **not** replaced but deleted: it is overwritten before it is ever
+  painted, so it was a picture of nothing. Its `data-tip` was a latent bug of the
+  same lines — every result's tooltip said "Subject" — and now names the type it
+  is on.
+
+**Checked against the Jekyll baseline.** Every one of Jekyll's 1058 entries has
+a counterpart, and the counts per type are identical but for slides: `subject`
+342, `exercise` 334, `graded-exercise` 52, `cheatsheet` 65, `home` 5,
+`dashboard` 1. Slides come to 272 against 259 — thirteen **more**, all in decks
+where a raw `<table>` made kramdown swallow the headings after it as text, which
+CommonMark closes at the blank line. 358 entries moved to a different anchor,
+which is the [359 heading identifiers](#toc-and-heading-anchors) that dropped
+their emoji shortcode, and one title lost its `~strikethrough~` markers, GFM
+applying what kramdown did not.
+
 ### HTML fidelity gate
 
 The gating QA step — but the bar is **functional and visual parity, not
@@ -3680,6 +3751,18 @@ once `_data/` and `_config.yml` are gone:
   is.
 - **The cheatsheet order in `_config.yml`**, which is the same list a second
   time and is kept in step with the first only until here.
+
+Four things left behind by the [search index](#search-index) go with the rest of
+the Ruby layer, all of them the interim that keeps Jekyll serving until here:
+
+- `course/dashboard.txt`, whose one entry the Elixir build now states itself.
+- The `:site, :post_render` and `:site, :post_write` search hooks of
+  `_plugins/archidep.rb`, and `search_elements` with them.
+- `search.json` in `ArchiDepWeb.static_paths/0`, which is what serves Jekyll's
+  copy of it at the origin's root.
+- The `data-search-data-url` of `_includes/head.html`, which is that copy's URL.
+  The two sites share one `search.ts`, so Jekyll's pages had to start naming
+  their index the moment the script stopped assembling the name itself.
 
 One thing becomes **scaffolding to remove** rather than something to keep:
 `archidep.json` is written with `Jason.OrderedObject` and `pretty: true` so that

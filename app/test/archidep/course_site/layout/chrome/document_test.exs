@@ -12,11 +12,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
   alias ArchiDep.CourseSite.Layout.Chrome.Sidebar
   alias ArchiDep.CourseSite.Renderer.Page
   alias ArchiDep.CourseSite.SiteInfo
+  alias ArchiDep.Emoji
 
   @links %{
     home: "/",
     theme_css: "/assets/theme/theme-abc.css",
     course_js: "/assets/course/course-abc.js",
+    search_data: "/search-abc.json",
     favicon: "/favicon.ico",
     favicon_16: "/favicons/archidep-rocket-16.png",
     favicon_32: "/favicons/archidep-rocket-32.png",
@@ -34,11 +36,6 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
   describe "document/1" do
     test "wraps a page in the whole of what a browser receives" do
       assert document() == expected([])
-    end
-
-    test "tells the script where the site is mounted and that this is the live one" do
-      assert document(base_path: "/2025") ==
-               expected(base_path: "/2025", standalone: "false")
     end
 
     test "tells the script that a build which is not the live site stands in for it" do
@@ -82,9 +79,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
       sections: [],
       cheatsheets: [],
       cards: [],
-      base_path: Keyword.get(overrides, :base_path, ""),
       standalone?: Keyword.get(overrides, :standalone?, false),
       legend_emoji: %{},
+      search_emoji: %{"memo" => memo_emoji()},
       page_class: "course-cheatsheet",
       cloud_server: nil,
       pdf_tooltip: "Cheatsheet PDF",
@@ -92,18 +89,23 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
     }
   end
 
+  # One of the pictures the search dialog draws, drawn by the one emitter that
+  # knows what an emoji looks like.
+  defp memo_emoji, do: Emoji.img(Emoji.fetch!("memo"), "/assets/emoji/1f4dd.svg")
+
   defp links(nil), do: @links
   defp links(_kind), do: Map.put(@links, :banner, @banner_url)
 
   # What each part draws is pinned by that part's own test; what this one is
   # about is the document those parts are placed in — the head a browser reads
-  # before anything, the drawer the navigation slides out of, and the two things
-  # the head says to a script rather than to a browser.
+  # before anything, the drawer the navigation slides out of, the two things the
+  # head says to a script rather than to a browser, and the pictures the search
+  # dialog is left to draw itself with.
   defp expected(parts) do
     String.trim_trailing("""
     <!DOCTYPE html>
     <html lang="en">
-      <head data-base-path="#{Keyword.get(parts, :base_path, "")}" data-archidep-standalone="#{Keyword.get(parts, :standalone, "false")}">
+      <head data-search-data-url="/search-abc.json" data-archidep-standalone="#{Keyword.get(parts, :standalone, "false")}">
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -133,6 +135,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DocumentTest do
             document.body.prepend(alwaysTellMeMore);
           }
         </script>
+
+        <div id="search-emoji" hidden>
+          <span data-emoji="memo">
+            #{memo_emoji()}
+          </span>
+        </div>
 
         #{Keyword.get(parts, :header, header_markup())}
 

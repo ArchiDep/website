@@ -100,7 +100,6 @@ defmodule ArchiDep.CourseSite.Layout.ChromeTest do
       statuses: %{500 => :due, 507 => :due},
       urls:
         build(:url_context,
-          base_path: "",
           version: nil,
           assets: AssetManifest.new(Map.new(assets(overrides), &{&1, &1}))
         ),
@@ -120,7 +119,7 @@ defmodule ArchiDep.CourseSite.Layout.ChromeTest do
   defp emoji_assets,
     do:
       Enum.map(
-        ~w(book memo trophy hammer_and_wrench clapper scroll exclamation question space_invader checkered_flag classical_building boom),
+        ~w(book memo trophy hammer_and_wrench clapper house shrug scroll exclamation question space_invader checkered_flag classical_building boom),
         &Emoji.asset_path(Emoji.fetch!(&1))
       )
 

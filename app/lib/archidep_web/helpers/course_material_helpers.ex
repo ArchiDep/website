@@ -19,12 +19,6 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpers do
   alias ArchiDep.CourseSite.Urls
   alias ArchiDep.CourseSite.Urls.UrlContext
 
-  # The application resolves no reference that is named after a build, so there
-  # is nothing meaningful to identify one with. It is a literal rather than the
-  # Git revision because a checkout that cannot say what its revision is would
-  # otherwise take every page of the dashboard down with it.
-  @build_id "app"
-
   @doc """
   Where a page of the course material, or one of its headings, is served from.
 
@@ -42,8 +36,14 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpers do
   def course_url(page), do: Urls.resolve!(url_context(), reference(page))
 
   @doc """
-  How the dashboard addresses the course material site: where it is mounted and
-  which edition of the course it holds.
+  How the dashboard addresses the course material site: where it is mounted,
+  which edition of the course it holds, and which build of it is being served.
+
+  The build is named here because the dashboard carries the same search dialog
+  the site does, and the index that dialog reads is named after the build that
+  wrote it. The application does not build the site, so what it knows of that
+  build is configuration — the one place whatever did build it says the same
+  thing.
 
   Built per call rather than memoized — it is a handful of guards and three
   empty manifests, against the fifty-odd references one page of the dashboard
@@ -51,11 +51,17 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpers do
   """
   @spec url_context() :: UrlContext.t()
   def url_context,
-    do:
-      :archidep
-      |> Application.get_env(:course_site, [])
-      |> Keyword.put(:build_id, @build_id)
-      |> UrlContext.new()
+    do: :archidep |> Application.get_env(:course_site, []) |> UrlContext.new()
+
+  @doc """
+  Where the search dialog of the dashboard reads the course material from.
+
+  The dashboard and the site run the same dialog over the same index, which is
+  written by the build of the site rather than by the application — so this
+  names it exactly as a page of the site does.
+  """
+  @spec search_data_url() :: String.t()
+  def search_data_url, do: Urls.resolve!(url_context(), {:build_file, "search.json"})
 
   defp reference(%Chapter{} = chapter), do: Chapter.page_ref(chapter)
   defp reference(%Cheatsheet{} = cheatsheet), do: Cheatsheet.page_ref(cheatsheet)

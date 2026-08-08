@@ -59,13 +59,19 @@ defmodule ArchiDepWeb.Helpers.CourseMaterialHelpersTest do
                mode: :live,
                base_path: "",
                version: "1955",
-               build_id: "app",
+               build_id: "test-build",
                absolute_base_url: nil,
                live_site_url: nil,
                assets: AssetManifest.new(%{}),
                page_assets: PageAssetManifest.new(%{}),
                pdfs: PdfManifest.new(:site, %{})
              }
+    end
+  end
+
+  describe "search_data_url/0" do
+    test "names the index the build of the site wrote, under that edition" do
+      assert CourseMaterialHelpers.search_data_url() == "/1955/search-test-build.json"
     end
   end
 end

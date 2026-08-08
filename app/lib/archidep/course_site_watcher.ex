@@ -126,7 +126,10 @@ defmodule ArchiDep.CourseSiteWatcher do
   A development build is not digested — the asset watchers write `priv/static`
   under the names the sources have — and it is the live site rather than a copy
   of it, everything else about where it is published coming from the
-  `course_site` configuration the dashboard's own links already come from.
+  `course_site` configuration the dashboard's own links already come from. The
+  build's identifier comes from there too rather than from the checkout: the
+  dashboard names the same search index this build writes, and configuration is
+  the one place both of them read.
   """
   @spec build_options() :: Site.Options.t()
   def build_options do
@@ -138,7 +141,7 @@ defmodule ArchiDep.CourseSiteWatcher do
           mode: Keyword.get(config, :mode, :live),
           base_path: Keyword.get(config, :base_path, ""),
           version: Keyword.get(config, :version),
-          build_id: Git.git_revision()
+          build_id: Keyword.fetch!(config, :build_id)
         ),
       site:
         SiteInfo.new(

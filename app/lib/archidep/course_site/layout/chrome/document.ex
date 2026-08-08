@@ -6,16 +6,18 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Document do
   ## Two things the `<head>` says to a script rather than to a browser
 
   `course/src/assets/course.ts` runs on every page and has to know two things
-  the page cannot ask anybody at runtime: where the site is mounted, so that it
-  can fetch the search index beside the pages rather than at the origin's root,
-  and whether this build is the live site, so that it does not report a reader
-  of an archived edition as a visitor to the current one. Both are written as
-  data attributes, because a static file has nowhere else to put them.
+  the page cannot ask anybody at runtime: where the search index of this build
+  is, and whether this build is the live site, so that it does not report a
+  reader of an archived edition as a visitor to the current one. Both are
+  written as data attributes, because a static file has nowhere else to put
+  them.
 
-  The mount point is the one URL in the chrome that does not come from
-  `ArchiDep.CourseSite.Urls.resolve/2`, and cannot: it is a **prefix** rather
-  than a URL, and the seam resolves references to things, not the place they are
-  all under.
+  The index is named by its whole URL rather than by a file name for the script
+  to join onto the mount point. That is not a convenience: its name carries the
+  identifier of the build that produced it, which no script can work out, and it
+  is what stops a freshly built page from searching the previous build's index.
+  It also leaves the script with no URL of its own to assemble, which is the
+  point of `ArchiDep.CourseSite.Urls`.
 
   ## What the script does before anything is drawn
 
@@ -55,6 +57,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Document do
   # element it names is written here.
   @drawer_id "sidebar"
 
+  # What names the pictures the search dialog draws with. The dialog is built by
+  # a script out of markup of its own, so the page cannot draw its icons where
+  # they go — it leaves them here, hidden, for the script to take. The dashboard
+  # writes the same element under the same name, being the other page that runs
+  # the dialog.
+  @search_emoji_id "search-emoji"
+
   attr :page, Assigns,
     required: true,
     doc: "everything this page is drawn from, its own content included"
@@ -68,7 +77,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Document do
     <!DOCTYPE html>
     <html lang={lang()}>
       <head
-        data-base-path={@page.base_path}
+        data-search-data-url={@page.links[:search_data]}
         data-archidep-standalone={to_string(@page.standalone?)}
       >
         <meta charset="utf-8" />
@@ -100,6 +109,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Document do
             document.body.prepend(alwaysTellMeMore);
           }
         </script>
+
+        <div id={search_emoji_id()} hidden>
+          <span :for={{name, image} <- @page.search_emoji} data-emoji={name}>
+            {Phoenix.HTML.raw(image)}
+          </span>
+        </div>
 
         <Header.header links={@page.links} policy={@page.policy} site={@page.site} />
 
@@ -139,4 +154,5 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Document do
   defp fonts_url, do: @fonts_url
   defp fonts_static_url, do: @fonts_static_url
   defp drawer_id, do: @drawer_id
+  defp search_emoji_id, do: @search_emoji_id
 end

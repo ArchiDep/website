@@ -24,6 +24,7 @@ defmodule ArchiDep.CourseSite.Urls do
   | `{:build_file, path}`       | ditto, named after the build that produced it           |
   | `{:pdf, page}`              | the generated PDF of a page                             |
   | `{:root_file, path}`        | a file anchored at the mount point, e.g. a favicon      |
+  | `{:app, path}`              | a page of the application the live site is served with  |
   | `{:live_site, page}`        | this page on the current edition's own site             |
   | `{:current_edition, page}`  | whatever superseded this page, resolved at request time |
   | `{:external, url}`          | passthrough                                             |
@@ -41,6 +42,7 @@ defmodule ArchiDep.CourseSite.Urls do
   | `{:build_file, _}`                         | yes                                                    | build ID | no                |
   | `{:pdf, _}`                                | yes, unless published externally                       | no       | no                |
   | `{:root_file, _}`                          | never — mount point only                               | no       | no                |
+  | `{:app, _}`                                | never — mount point only, and only on the live site    | no       | no                |
   | `{:live_site, _}`, `{:current_edition, _}` | always absolute, against the current edition's site    | no       | n/a               |
 
   Two of those rows are what make the site addressable from anywhere: **content
@@ -70,6 +72,7 @@ defmodule ArchiDep.CourseSite.Urls do
           | {:build_file, String.t()}
           | {:pdf, PageRef.t()}
           | {:root_file, String.t()}
+          | {:app, String.t()}
           | {:live_site, PageRef.t()}
           | {:current_edition, PageRef.t()}
           | {:external, String.t()}
@@ -83,6 +86,7 @@ defmodule ArchiDep.CourseSite.Urls do
           | {:page_asset_outside_site, PageRef.t(), String.t()}
           | {:missing_live_site_url, logical_reference()}
           | {:missing_version, logical_reference()}
+          | {:app_outside_live_site, logical_reference()}
           | {:invalid_reference, term()}
 
   @doc """
@@ -150,6 +154,18 @@ defmodule ArchiDep.CourseSite.Urls do
 
   def resolve(%UrlContext{} = context, {:root_file, path}, _from) when is_binary(path),
     do: {:ok, context.base_path <> "/" <> UrlPath.encode(path)}
+
+  # The application answers beside the site rather than under the edition it is
+  # serving: it is one dashboard across every edition, so its address carries
+  # the mount point and nothing else. Only a live site has one at all — a copy
+  # of the site is read where the application is not running, which is why a
+  # build that is not the live one refuses the reference instead of writing a
+  # link nothing answers.
+  def resolve(%UrlContext{mode: :live} = context, {:app, path}, _from) when is_binary(path),
+    do: {:ok, context.base_path <> "/" <> UrlPath.encode(path)}
+
+  def resolve(%UrlContext{}, {:app, path} = reference, _from) when is_binary(path),
+    do: {:error, {:app_outside_live_site, reference}}
 
   # The home page of an edition sits at the root of the live site while that
   # edition is being taught and moves under its own prefix once archived, which
@@ -261,6 +277,9 @@ defmodule ArchiDep.CourseSite.Urls do
 
   def format_error({:missing_version, reference}),
     do: "Reference #{inspect(reference)} requires the build to have a version"
+
+  def format_error({:app_outside_live_site, reference}),
+    do: "Reference #{inspect(reference)} is only answered by the live site"
 
   def format_error({:invalid_reference, reference}),
     do: "#{inspect(reference)} is not a valid reference"

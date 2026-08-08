@@ -64,8 +64,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     for the build's own `/pdf/` directory, or the absolute base URL of wherever
     they are, e.g. a release. A build that says nothing offers no download link
     at all, which is what a build made before its PDFs have been printed wants.
-  - `--build-id` — names the files a build produces of itself. Defaults to
-    `build`.
+  - `--build-id` — names the files a build produces of itself, chiefly the
+    search index, which cannot be named after its own contents. Defaults to what
+    the `course_site` configuration says the deployment is serving, so that the
+    application asks for the file this writes.
   """
 
   use Mix.Task
@@ -177,7 +179,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     urls =
       UrlContext.new(
         mode: mode(opts),
-        build_id: Keyword.get(opts, :build_id, "build"),
+        build_id:
+          Keyword.get_lazy(opts, :build_id, fn -> Keyword.fetch!(course_site, :build_id) end),
         base_path: Keyword.get(opts, :base_path, ""),
         version: Keyword.get_lazy(opts, :version, fn -> Keyword.get(course_site, :version) end),
         live_site_url: Keyword.get(opts, :live_site_url),

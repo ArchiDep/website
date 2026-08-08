@@ -9,7 +9,7 @@ defmodule ArchiDepWeb do
   # let a copy left in `priv/static` answer for the site instead.
   @spec static_paths :: list(String.t())
   def static_paths,
-    do: ~w(assets favicon.ico favicons feed.xml fonts images lunr.json robots.txt search.json)
+    do: ~w(assets favicon.ico favicons feed.xml fonts images robots.txt search.json)
 
   @spec router :: Macro.t()
   def router do

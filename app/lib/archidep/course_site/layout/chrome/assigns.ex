@@ -93,9 +93,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     :sections,
     :cheatsheets,
     :cards,
-    :base_path,
     :standalone?,
     :legend_emoji,
+    :search_emoji,
     :page_class,
     :cloud_server,
     :pdf_tooltip,
@@ -116,9 +116,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     :sections,
     :cheatsheets,
     :cards,
-    :base_path,
     :standalone?,
     :legend_emoji,
+    :search_emoji,
     :page_class,
     :cloud_server,
     :pdf_tooltip,
@@ -158,9 +158,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
           sections: [MenuSection.t()],
           cheatsheets: [MenuEntry.t()],
           cards: [HomeCard.t()],
-          base_path: String.t(),
           standalone?: boolean(),
           legend_emoji: %{String.t() => String.t()},
+          search_emoji: %{String.t() => String.t()},
           page_class: String.t(),
           cloud_server: String.t() | nil,
           pdf_tooltip: String.t(),
@@ -214,6 +214,21 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     legend_checkered_flag: "checkered_flag",
     legend_classical_building: "classical_building",
     legend_boom: "boom"
+  }
+
+  # The pictures the search dialog draws. It is the one part of the site drawn
+  # by a script rather than by a page, so it cannot know what an emoji looks
+  # like: the page carries the pictures and the script puts them where its own
+  # markup says. `course/src/assets/course/search.ts` is what asks for them,
+  # under these names.
+  @search_emoji %{
+    search_book: "book",
+    search_clapper: "clapper",
+    search_hammer_and_wrench: "hammer_and_wrench",
+    search_house: "house",
+    search_memo: "memo",
+    search_shrug: "shrug",
+    search_trophy: "trophy"
   }
 
   # The identifiers of the headings the chrome draws. They are named here rather
@@ -299,9 +314,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
       sections: sections(context, links),
       cheatsheets: cheatsheets(context, links),
       cards: cards(context, policy, links),
-      base_path: UrlContext.content_prefix(context.urls),
       standalone?: context.urls.mode != :live,
       legend_emoji: legend_emoji(links),
+      search_emoji: search_emoji(links),
       page_class: page_class(context),
       cloud_server: front_matter(context, "cloud_server"),
       pdf_tooltip: pdf_tooltip(kind(context)),
@@ -320,6 +335,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     |> favicons()
     |> menu_emoji()
     |> emoji(@legend_emoji)
+    |> emoji(@search_emoji)
     |> put(:repository, @repository)
     |> put(:branch, branch_url(context.site))
     |> put(:source, source_url(context))
@@ -361,10 +377,15 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     |> required(:slides_mermaid_js, {:asset, "/assets/course/slides-mermaid.js"})
   end
 
+  # The search index is asked for by name rather than by digest, and the name is
+  # the one `ArchiDep.CourseSite.Build.Site` writes it under. It carries the
+  # build's identifier because it cannot carry its own: it is read off the pages
+  # whose `<head>` this is.
   defp stylesheets_and_scripts(resolved, %LayoutContext{}) do
     resolved
     |> required(:theme_css, {:asset, "/assets/theme/theme.css"})
     |> required(:course_js, {:asset, "/assets/course/course.js"})
+    |> required(:search_data, {:build_file, "search.json"})
   end
 
   defp favicons(resolved) do
@@ -388,6 +409,15 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   # resolved under.
   defp legend_emoji(links) do
     Map.new(@legend_emoji, fn {key, name} ->
+      {name, Emoji.img(Emoji.fetch!(name), Map.fetch!(links, key))}
+    end)
+  end
+
+  # The search dialog asks for a picture by the name the registry keeps it
+  # under, the same way the legend does, because that is the name its own code
+  # writes.
+  defp search_emoji(links) do
+    Map.new(@search_emoji, fn {key, name} ->
       {name, Emoji.img(Emoji.fetch!(name), Map.fetch!(links, key))}
     end)
   end

@@ -509,6 +509,48 @@ defmodule ArchiDep.CourseSite.UrlsTest do
     end
   end
 
+  describe "resolve/3 with :app" do
+    test "resolves beside the site rather than under the edition it is serving" do
+      context =
+        CourseSiteFactory.build(:url_context, mode: :live, base_path: "", version: "2026")
+
+      assert Urls.resolve(context, {:app, "app"}) == {:ok, "/app"}
+    end
+
+    test "resolves under the mount point the application shares with the site" do
+      context =
+        CourseSiteFactory.build(:url_context, mode: :live, base_path: "/website", version: "2026")
+
+      assert Urls.resolve(context, {:app, "app"}) == {:ok, "/website/app"}
+    end
+
+    test "refuses to say where the application is on a copy of the site" do
+      context =
+        CourseSiteFactory.build(:url_context,
+          mode: :backup,
+          base_path: "",
+          version: "2026",
+          live_site_url: "https://archidep.example.com"
+        )
+
+      assert Urls.resolve(context, {:app, "app"}) ==
+               {:error, {:app_outside_live_site, {:app, "app"}}}
+    end
+
+    test "refuses to say where the application is in an archived edition" do
+      context =
+        CourseSiteFactory.build(:url_context,
+          mode: :archive,
+          base_path: "",
+          version: "2025",
+          live_site_url: "https://archidep.example.com"
+        )
+
+      assert Urls.resolve(context, {:app, "app"}) ==
+               {:error, {:app_outside_live_site, {:app, "app"}}}
+    end
+  end
+
   describe "resolve/3 with :pdf" do
     test "resolves a PDF published alongside the site" do
       document =
@@ -834,6 +876,11 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                "Reference {:current_edition, :home} requires the build to have a version"
     end
 
+    test "describes a reference only the live site answers" do
+      assert Urls.format_error({:app_outside_live_site, {:app, "app"}}) ==
+               "Reference {:app, \"app\"} is only answered by the live site"
+    end
+
     test "describes an unknown reference" do
       assert Urls.format_error({:invalid_reference, {:progress, "2026-02-13"}}) ==
                "{:progress, \"2026-02-13\"} is not a valid reference"
@@ -860,6 +907,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                site_file: "/2026/archidep.json",
                pdf: "/2026/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/favicon.ico",
+               app: {:ok, "/app"},
                live_site: "https://archidep.example.com/2026/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2026/course/104-ssh/",
                external: "https://azure.microsoft.com/"
@@ -886,6 +934,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                site_file: "/website/2026/archidep.json",
                pdf: "/website/2026/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/website/favicon.ico",
+               app: {:error, {:app_outside_live_site, {:app, "app"}}},
                live_site: "https://archidep.example.com/2026/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2026/course/104-ssh/",
                external: "https://azure.microsoft.com/"
@@ -911,6 +960,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                site_file: "/2025/archidep.json",
                pdf: "/2025/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/favicon.ico",
+               app: {:error, {:app_outside_live_site, {:app, "app"}}},
                live_site: "https://archidep.example.com/2025/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2025/course/104-ssh/",
                external: "https://azure.microsoft.com/"
@@ -937,6 +987,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                site_file: "/website/2025/archidep.json",
                pdf: "/website/2025/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/website/favicon.ico",
+               app: {:error, {:app_outside_live_site, {:app, "app"}}},
                live_site: "https://archidep.example.com/2025/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2025/course/104-ssh/",
                external: "https://azure.microsoft.com/"
@@ -963,6 +1014,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                site_file: "/2026/archidep.json",
                pdf: "/2026/pdf/archidep-103-hello-shell-exercise.pdf",
                root_file: "/favicon.ico",
+               app: {:ok, "/app"},
                live_site: "https://archidep.example.com/2026/course/104-ssh/",
                current_edition: "https://archidep.example.com/latest?to=/2026/course/104-ssh/",
                external: "https://azure.microsoft.com/"
@@ -1088,6 +1140,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
       site_file: Urls.resolve!(context, {:site_file, "archidep.json"}),
       pdf: Urls.resolve!(context, {:pdf, {:document, hello_shell}}),
       root_file: Urls.resolve!(context, {:root_file, "favicon.ico"}),
+      app: Urls.resolve(context, {:app, "app"}),
       live_site: Urls.resolve!(context, {:live_site, {:document, ssh}}),
       current_edition: Urls.resolve!(context, {:current_edition, {:document, ssh}}),
       external: Urls.resolve!(context, {:external, "https://azure.microsoft.com/"})

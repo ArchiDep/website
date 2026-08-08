@@ -27,7 +27,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
   @branching DocumentRef.new(202, "git-branching", :slides)
 
   describe "plan/2" do
-    test "plans a file for every page of the course, and the three it writes of its own" do
+    test "plans a file for every page of the course, and the four it writes of its own" do
       assert {:ok, site} = Site.plan(inputs(), options())
 
       assert site.files == %{
@@ -44,6 +44,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                "/cheatsheets/git/index.html" =>
                  "/cheatsheets/git/|_cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>",
                "/archidep.json" => archidep_json(),
+               "/search-abc123.json" => search_json(),
                "/version.json" => version_json(),
                "/404.html" => not_found_html()
              }
@@ -96,6 +97,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                "/favicon.ico" => "the mark",
                "/favicons/heig.png" => "the school's mark",
                "/archidep.json" => archidep_json(),
+               "/search-abc123.json" => search_json(),
                "/version.json" => version_json(),
                "/404.html" => not_found_html()
              }
@@ -208,6 +210,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
           mode: :live,
           base_path: "",
           version: nil,
+          build_id: "abc123",
           live_site_url: nil,
           absolute_base_url: Keyword.get(overrides, :absolute_base_url),
           pdfs: Keyword.get(overrides, :pdfs, PdfManifest.new(:site, %{}))
@@ -359,6 +362,76 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         }
       ]
     }
+    """
+  end
+
+  defp search_json do
+    """
+    [
+      {
+        "id": "/",
+        "type": "home",
+        "url": "/",
+        "title": "Architecture & Deployment",
+        "subtitle": "Architecture & Deployment",
+        "text": "Welcome.",
+        "extraText": ""
+      },
+      {
+        "id": "/course/101-command-line/",
+        "type": "subject",
+        "url": "/course/101-command-line/",
+        "title": "Command Line",
+        "subtitle": "Command Line",
+        "text": "What",
+        "extraText": ""
+      },
+      {
+        "id": "/course/101-command-line/slides/",
+        "type": "slides",
+        "url": "/course/101-command-line/slides/",
+        "title": "Command Line Slides",
+        "subtitle": "Command Line Slides",
+        "text": "Command Line",
+        "extraText": ""
+      },
+      {
+        "id": "/course/202-git-branching/slides/",
+        "type": "slides",
+        "url": "/course/202-git-branching/slides/",
+        "title": "Git Branching",
+        "subtitle": "Git Branching",
+        "text": "Branching",
+        "extraText": ""
+      },
+      {
+        "id": "/course/205-php-todolist/",
+        "type": "exercise",
+        "url": "/course/205-php-todolist/",
+        "title": "PHP Todolist",
+        "subtitle": "PHP Todolist",
+        "text": "Build it.",
+        "extraText": ""
+      },
+      {
+        "id": "/cheatsheets/git/",
+        "type": "cheatsheet",
+        "url": "/cheatsheets/git/",
+        "title": "Git Cheatsheet",
+        "subtitle": "Git Cheatsheet",
+        "text": "Commit.",
+        "extraText": ""
+      },
+      {
+        "id": "/app",
+        "type": "dashboard",
+        "url": "/app",
+        "title": "Dashboard",
+        "subtitle": "User & server dashboard",
+        "text": "Manage your user account for the course and register a server for the exercises.",
+        "extraText": ""
+      }
+    ]
     """
   end
 

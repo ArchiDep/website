@@ -8,7 +8,6 @@
     "build": "webpack --config webpack.config.cjs",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "idx": "tsx src/scripts/idx.ts",
     "pdf": "tsx src/scripts/pdf.ts",
     "start": "webpack --config webpack.config.cjs --watch"
   },

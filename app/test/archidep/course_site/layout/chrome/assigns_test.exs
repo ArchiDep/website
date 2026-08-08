@@ -41,9 +41,11 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     "/assets/course/slides-mermaid.js"
   ]
 
-  # The two sets of pictures the chrome resolves, keyed as it keys them: the
-  # navigation's, sized and labelled, and the legend's, drawn as prose. Trophy
-  # is in both, under a key of its own in each.
+  # The three sets of pictures the chrome resolves, keyed as it keys them: the
+  # navigation's, sized and labelled; the legend's, drawn as prose; and the
+  # search dialog's, which a script rather than a page draws. A picture in more
+  # than one of them is resolved under a key of its own in each.
+
   @menu_emoji %{
     emoji_subject: {"book", "Subject"},
     emoji_cheatsheet: {"memo", "Cheatsheet"},
@@ -63,6 +65,16 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     legend_boom: "boom"
   }
 
+  @search_emoji %{
+    search_book: "book",
+    search_clapper: "clapper",
+    search_hammer_and_wrench: "hammer_and_wrench",
+    search_house: "house",
+    search_memo: "memo",
+    search_shrug: "shrug",
+    search_trophy: "trophy"
+  }
+
   describe "build/1" do
     test "works out everything a chapter is drawn from" do
       assert Assigns.build(context()) == {:ok, expected()}
@@ -71,6 +83,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     test "offers a chapter its own PDF and its deck's once the build publishes them" do
       urls =
         build(:url_context,
+          build_id: "9f8e7d",
           mode: :live,
           base_path: "",
           version: nil,
@@ -96,6 +109,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     test "leaves out the download of a deck whose PDF has not been printed" do
       urls =
         build(:url_context,
+          build_id: "9f8e7d",
           mode: :live,
           base_path: "",
           version: nil,
@@ -198,6 +212,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                   links:
                     links(
                       assets: @deck_assets,
+                      search: false,
                       source: source_url("course/collections/_course/507-dns/slides.md")
                     )
                 )}
@@ -207,13 +222,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       assert Assigns.build(context(urls: archived_urls())) ==
                {:ok,
                 expected(
-                  base_path: "/2025",
                   standalone?: true,
                   policy: archived_policy(),
                   banner: :archive,
                   sections: sections(prefix: "/2025"),
                   cheatsheets: [cheatsheet_entry(prefix: "/2025")],
                   legend_emoji: legend_emoji("/2025"),
+                  search_emoji: search_emoji("/2025"),
                   links: archived_links()
                 )}
     end
@@ -227,13 +242,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                   page_class: "course-home",
                   pdf_tooltip: "Home PDF",
                   toc: [page_heading()],
-                  base_path: "/2025",
                   standalone?: true,
                   policy: archived_policy(),
                   banner: :archive,
                   sections: sections(prefix: "/2025", current: nil),
                   cheatsheets: [cheatsheet_entry(prefix: "/2025")],
                   legend_emoji: legend_emoji("/2025"),
+                  search_emoji: search_emoji("/2025"),
                   links: archived_home_links()
                 )}
     end
@@ -241,6 +256,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     test "leaves the dashboard out of the backup copy as well, which still says where the course has got to" do
       urls =
         build(:url_context,
+          build_id: "9f8e7d",
           base_path: "",
           version: "2025",
           mode: :backup,
@@ -256,7 +272,6 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                   page_class: "course-home",
                   pdf_tooltip: "Home PDF",
                   toc: [page_heading()],
-                  base_path: "/2025",
                   standalone?: true,
                   policy: backup_policy(),
                   banner: :backup,
@@ -267,6 +282,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                     %HomeCard{kind: :due_next, entries: [todolist_entry("/2025", nil)]}
                   ],
                   legend_emoji: legend_emoji("/2025"),
+                  search_emoji: search_emoji("/2025"),
                   links: backup_home_links()
                 )}
     end
@@ -349,9 +365,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       sections: Keyword.get(overrides, :sections, sections()),
       cheatsheets: Keyword.get(overrides, :cheatsheets, [cheatsheet_entry()]),
       cards: Keyword.get(overrides, :cards, []),
-      base_path: Keyword.get(overrides, :base_path, ""),
       standalone?: Keyword.get(overrides, :standalone?, false),
       legend_emoji: Keyword.get(overrides, :legend_emoji, legend_emoji("")),
+      search_emoji: Keyword.get(overrides, :search_emoji, search_emoji("")),
       page_class: Keyword.get(overrides, :page_class, "course-subject"),
       cloud_server: Keyword.get(overrides, :cloud_server, nil),
       pdf_tooltip: Keyword.get(overrides, :pdf_tooltip, "Subject PDF"),
@@ -371,6 +387,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   defp archived_urls,
     do:
       build(:url_context,
+        build_id: "9f8e7d",
         base_path: "",
         version: "2025",
         mode: :archive,
@@ -389,6 +406,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       home: "/2025/",
       theme_css: "/2025/assets/theme/theme.css",
       course_js: "/2025/assets/course/course.js",
+      search_data: "/2025/search-9f8e7d.json",
       deck: "/2025/course/507-dns/slides/",
       emoji_subject: "/2025/assets/emoji/1f4d6.svg",
       emoji_cheatsheet: "/2025/assets/emoji/1f4dd.svg",
@@ -402,7 +420,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       legend_space_invader: "/2025/assets/emoji/1f47e.svg",
       legend_checkered_flag: "/2025/assets/emoji/1f3c1.svg",
       legend_classical_building: "/2025/assets/emoji/1f3db.svg",
-      legend_boom: "/2025/assets/emoji/1f4a5.svg"
+      legend_boom: "/2025/assets/emoji/1f4a5.svg",
+      search_book: "/2025/assets/emoji/1f4d6.svg",
+      search_clapper: "/2025/assets/emoji/1f3ac.svg",
+      search_hammer_and_wrench: "/2025/assets/emoji/1f6e0.svg",
+      search_house: "/2025/assets/emoji/1f3e0.svg",
+      search_memo: "/2025/assets/emoji/1f4dd.svg",
+      search_shrug: "/2025/assets/emoji/1f937.svg",
+      search_trophy: "/2025/assets/emoji/1f3c6.svg"
     })
   end
 
@@ -443,6 +468,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       heig_logo: "/favicons/heig.png",
       logo: "/favicons/archidep-512-flat.png",
       coffee_logo: "/favicons/archidep-coffee.png",
+      search_data: "/search-9f8e7d.json",
       repository: "https://github.com/ArchiDep/website",
       branch: "https://github.com/ArchiDep/website/tree/main",
       source:
@@ -455,13 +481,19 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
     |> Map.merge(Map.new(assets, &{asset_key(&1), &1}))
     |> Map.merge(Map.new(@menu_emoji, fn {key, {name, _alt}} -> {key, emoji_path(name)} end))
     |> Map.merge(Map.new(@legend_emoji, fn {key, name} -> {key, emoji_path(name)} end))
+    |> Map.merge(Map.new(@search_emoji, fn {key, name} -> {key, emoji_path(name)} end))
     |> deck_link(Keyword.get(overrides, :deck, true))
+    |> search_link(Keyword.get(overrides, :search, true))
     |> pdf_links(Keyword.take(overrides, [:page_pdf, :deck_pdf]))
   end
 
   # Only a chapter that has one links to a deck.
   defp deck_link(links, false), do: links
   defp deck_link(links, true), do: Map.put(links, :deck, "/course/507-dns/slides/")
+
+  # A deck carries no search dialog, so it asks for no index.
+  defp search_link(links, true), do: links
+  defp search_link(links, false), do: Map.delete(links, :search_data)
 
   defp pdf_links(links, pdfs), do: Map.merge(links, Map.new(pdfs))
 
@@ -540,6 +572,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
         {name, Emoji.img(Emoji.fetch!(name), prefix <> emoji_path(name))}
       end)
 
+  defp search_emoji(prefix),
+    do:
+      Map.new(@search_emoji, fn {_key, name} ->
+        {name, Emoji.img(Emoji.fetch!(name), prefix <> emoji_path(name))}
+      end)
+
   defp menu_emoji(prefix, name, alt),
     do: Emoji.img(Emoji.fetch!(name), prefix <> emoji_path(name), alt: alt, class: "size-4")
 
@@ -570,6 +608,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
       urls:
         Keyword.get_lazy(overrides, :urls, fn ->
           build(:url_context,
+            build_id: "9f8e7d",
             mode: :live,
             base_path: "",
             version: nil,
@@ -589,8 +628,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   defp emoji_assets do
     menu = Enum.map(@menu_emoji, fn {_key, {name, _alt}} -> emoji_path(name) end)
     legend = Enum.map(@legend_emoji, fn {_key, name} -> emoji_path(name) end)
+    search = Enum.map(@search_emoji, fn {_key, name} -> emoji_path(name) end)
 
-    menu ++ legend
+    Enum.uniq(menu ++ legend ++ search)
   end
 
   defp site(overrides \\ []) do

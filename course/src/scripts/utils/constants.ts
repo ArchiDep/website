@@ -13,5 +13,3 @@ export const courseRoot = pipe(
 
 export const repoRoot = path.dirname(courseRoot);
 export const destDir = path.resolve(repoRoot, 'app', 'priv', 'static');
-export const courseSearchFile = path.join(destDir, 'search.json');
-export const courseIndexFile = path.join(destDir, 'lunr.json');

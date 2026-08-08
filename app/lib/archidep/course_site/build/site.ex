@@ -51,6 +51,8 @@ defmodule ArchiDep.CourseSite.Build.Site do
   alias ArchiDep.CourseSite.Build.LinkCheck
   alias ArchiDep.CourseSite.Build.NotFound
   alias ArchiDep.CourseSite.Build.PdfNames
+  alias ArchiDep.CourseSite.Build.SearchIndex
+  alias ArchiDep.CourseSite.Build.SearchIndex.Entry
   alias ArchiDep.CourseSite.Build.Site.Inputs
   alias ArchiDep.CourseSite.Build.Site.Options
   alias ArchiDep.CourseSite.DocumentRef
@@ -58,6 +60,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
   alias ArchiDep.CourseSite.PageRef
   alias ArchiDep.CourseSite.Progress
   alias ArchiDep.CourseSite.Renderer
+  alias ArchiDep.CourseSite.Renderer.Markdown
   alias ArchiDep.CourseSite.Renderer.Page
   alias ArchiDep.CourseSite.Renderer.PageMetadata
   alias ArchiDep.CourseSite.Renderer.RenderContext
@@ -70,6 +73,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
   alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.CourseSite.Urls
   alias ArchiDep.CourseSite.Urls.UrlContext
+  alias ArchiDep.CourseSite.Urls.UrlPath
 
   # A page is published as a directory holding this, which is what a static
   # server answers a request for the directory with.
@@ -83,6 +87,11 @@ defmodule ArchiDep.CourseSite.Build.Site do
   # What produced the build, for the footer of the site and anyone asking which
   # revision they are looking at.
   @version_file "/version.json"
+
+  # What the search dialog searches. It is named after the build rather than
+  # after its own contents, which it cannot be: it is read off the pages whose
+  # `<head>` has to name it.
+  @search_file "/search.json"
 
   # What a static host shows for a path the build never wrote. Alone among the
   # files a build makes of itself it belongs at the mount point rather than
@@ -117,12 +126,12 @@ defmodule ArchiDep.CourseSite.Build.Site do
       |> pages()
       |> Enum.reduce({[], []}, fn planned_page, {planned, errors} ->
         case page(planned_page, inputs, options, statuses) do
-          {:ok, files, pages} -> {[{files, pages} | planned], errors}
+          {:ok, files, pages, entries} -> {[{files, pages, entries} | planned], errors}
           {:error, page_errors} -> {planned, Enum.reverse(page_errors) ++ errors}
         end
       end)
 
-    collect(planned, errors, build_files(inputs, options, statuses))
+    collect(planned, errors, build_files(inputs, options, statuses), options)
   end
 
   @doc """
@@ -135,19 +144,27 @@ defmodule ArchiDep.CourseSite.Build.Site do
   def format_error({:unlayoutable_page, page, error}),
     do: "Page #{PageRef.output_path(page)} could not be laid out: #{Urls.format_error(error)}"
 
-  defp collect(planned, [], build) do
-    {files, pages} =
-      planned
-      |> Enum.reverse()
-      |> Enum.reduce({build, []}, fn {page_files, page_pages}, {files, pages} ->
-        {Map.merge(files, page_files), pages ++ page_pages}
-      end)
+  # The index goes in over the pages rather than under them, being derived from
+  # what they say: a page is a directory holding an `index.html`, so there is no
+  # path it could take from one.
+  defp collect(planned, [], build, options) do
+    {files, pages, entries} =
+      planned |> Enum.reverse() |> Enum.reduce({build, [], []}, &merge/2)
 
-    {:ok, %__MODULE__{files: files, pages: pages}}
+    indexed = entries ++ SearchIndex.application_entries(UrlContext.local(options.urls))
+
+    {:ok,
+     %__MODULE__{
+       files: Map.put(files, search_path(options.urls), search_json(indexed)),
+       pages: pages
+     }}
   end
 
-  defp collect(_planned, [_first | _rest] = errors, _build),
+  defp collect(_planned, [_first | _rest] = errors, _build, _options),
     do: {:error, Enum.sort(Enum.reverse(errors))}
+
+  defp merge({page_files, page_pages, page_entries}, {files, pages, entries}),
+    do: {Map.merge(files, page_files), pages ++ page_pages, entries ++ page_entries}
 
   # Every page of the site, in the order the site is read: the home page, then a
   # chapter's own page and the deck it presents, section by section, and the
@@ -185,8 +202,9 @@ defmodule ArchiDep.CourseSite.Build.Site do
       )
 
     with {:ok, content} <- render(page, context, source_path),
-         {:ok, html} <- lay_out(page, content, context, entry, section, inputs, options, statuses) do
-      {:ok, page_files(page, options.urls, html), link_check_pages(page, content, html)}
+         {:ok, html} <- lay_out(page, content, context, entry, section, inputs, options, statuses),
+         {:ok, entries} <- index(page, entry, content, context, options) do
+      {:ok, page_files(page, options.urls, html), link_check_pages(page, content, html), entries}
     end
   end
 
@@ -235,6 +253,89 @@ defmodule ArchiDep.CourseSite.Build.Site do
       {:error, errors} -> {:error, Enum.map(errors, &{:unlayoutable_page, page, &1})}
     end
   end
+
+  # A page is indexed as the document it is rather than as the page it was laid
+  # out into. The chrome says the same words around every page of the site, so a
+  # search that read them would answer every query with the whole course.
+  #
+  # A result is somewhere to go in the copy of the site the dialog is open in,
+  # which is why its URLs are the build's own
+  # (`ArchiDep.CourseSite.Urls.UrlContext.local/1`) whatever its pages link to —
+  # the same reason `archidep.json` describes the copy beside it.
+  defp index(page, entry, content, context, options) do
+    urls = UrlContext.local(options.urls)
+
+    with {:ok, body} <- indexable(content, context) do
+      {:ok, SearchIndex.entries(urls, page, indexed_as(page, entry, context, urls), body)}
+    end
+  end
+
+  # The site shows a page's opening above its table of contents and the rest of
+  # it below, and both halves are the document a reader came for.
+  defp indexable(%Page{html: html, excerpt_html: nil}, _context), do: {:ok, html}
+  defp indexable(%Page{html: html, excerpt_html: excerpt}, _context), do: {:ok, excerpt <> html}
+
+  # A deck stays Markdown all the way to the browser, so the only HTML there is
+  # of one is converted here, to be read and thrown away.
+  #
+  # It is converted by the Markdown library directly rather than by the
+  # renderer, which would do two things to a deck that a deck is not written
+  # for: run the rewrites that have already run over it while it was rendered,
+  # and hand its code fences to the site's highlighter — and a deck's fences are
+  # reveal.js's own, saying which lines to reveal when, which the site's
+  # highlighter reads as a malformed decorator and refuses. What is wanted here
+  # is neither of those, only the words and the identifiers of the headings
+  # between them.
+  defp indexable(%Slides{markdown: markdown}, %RenderContext{} = context) do
+    case MDEx.to_html(markdown, Markdown.options()) do
+      {:ok, html} ->
+        {:ok, html}
+
+      {:error, error} ->
+        {:error,
+         [
+           {:unrenderable_document, context.source_path,
+            RenderError.new({:markdown, Exception.message(error)}, context.source_path)}
+         ]}
+    end
+  end
+
+  # What a page is in the index before it is read. `search_subtitle` and
+  # `search_extra_text` are the two things a page may say about how it is found
+  # rather than about what it is: what to show it under, and words to find it by
+  # that it does not show.
+  defp indexed_as(page, entry, context, urls) do
+    front_matter = context.source.front_matter
+    title = title(context)
+
+    %Entry{
+      id: PageRef.output_path(page),
+      type: indexed_type(page, entry),
+      url: Urls.resolve!(urls, page),
+      title: title,
+      subtitle: Map.get(front_matter, "search_subtitle", title),
+      extra_text: Map.get(front_matter, "search_extra_text", "")
+    }
+  end
+
+  # Every document and cheatsheet is named by `ArchiDep.CourseSite.Structure`,
+  # which refuses one that is not. The home page is outside the content tree and
+  # so outside that rule, and a page with no name of its own is called after the
+  # site.
+  defp title(context) do
+    case Map.get(RenderContext.page_variables(context), "title") do
+      title when is_binary(title) and title != "" -> title
+      _none -> PageMetadata.title(nil)
+    end
+  end
+
+  defp indexed_type(:home, _entry), do: "home"
+  defp indexed_type({:cheatsheet, _slug}, _entry), do: "cheatsheet"
+
+  defp indexed_type({:document, %DocumentRef{type: :exercise}}, %Chapter{graded?: true}),
+    do: "graded-exercise"
+
+  defp indexed_type({:document, %DocumentRef{type: type}}, _entry), do: Atom.to_string(type)
 
   defp excerpt(%Page{excerpt_html: html}), do: html
   defp excerpt(%Slides{}), do: nil
@@ -337,6 +438,29 @@ defmodule ArchiDep.CourseSite.Build.Site do
         url: Urls.resolve!(urls, Cheatsheet.page_ref(cheatsheet)),
         pdf: PdfNames.name(Cheatsheet.page_ref(cheatsheet))
       )
+
+  defp search_path(urls),
+    do: UrlContext.edition_prefix(urls) <> UrlPath.insert_suffix(@search_file, urls.build_id)
+
+  # The key order is the one the client reads, and `extraText` is written the
+  # way the client spells it: this file is a message to a script rather than a
+  # record of the build.
+  defp search_json(entries),
+    do:
+      Jason.encode!(
+        Enum.map(entries, fn %Entry{} = entry ->
+          Jason.OrderedObject.new(
+            id: entry.id,
+            type: entry.type,
+            url: entry.url,
+            title: entry.title,
+            subtitle: entry.subtitle,
+            text: entry.text,
+            extraText: entry.extra_text
+          )
+        end),
+        pretty: true
+      ) <> "\n"
 
   defp version_json(%SiteInfo{} = site) do
     Jason.encode!(

@@ -40,6 +40,33 @@ defmodule ArchiDepWeb.Components.CoreComponents do
     """
   end
 
+  # The pictures the search dialog draws. The dashboard runs the same dialog the
+  # course material site does, and that site's chrome leaves the same pictures
+  # under the same name — `ArchiDep.CourseSite.Layout.Chrome.Assigns` is where
+  # it says so, and `course/src/assets/course/search.ts` is what asks for them.
+  @search_emoji ~w(book clapper hammer_and_wrench house memo shrug trophy)
+
+  @doc """
+  The pictures the search dialog draws with, left where the script that builds
+  the dialog can take them.
+
+  The dialog is markup of the script's own rather than of the page's, so the
+  page cannot draw an icon where it goes; it draws them all here instead, out of
+  sight.
+  """
+  @spec search_emoji(map()) :: Rendered.t()
+  def search_emoji(assigns) do
+    assigns = assign(assigns, names: @search_emoji)
+
+    ~H"""
+    <div id="search-emoji" hidden>
+      <span :for={name <- @names} data-emoji={name}>
+        <.emoji name={name} />
+      </span>
+    </div>
+    """
+  end
+
   attr :responsive, :boolean,
     default: true,
     doc: "whether to display elements horizontally on larger screens"

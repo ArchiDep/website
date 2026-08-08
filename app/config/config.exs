@@ -41,6 +41,13 @@ config :archidep,
     version: "2025",
     years: "2025-2026",
     years_short: "25-26",
+    # Which build of the site this deployment is serving. It names the search
+    # index, so the application and whatever built the site have to agree on it
+    # or the dashboard's own search dialog asks for a file nobody wrote — which
+    # is why it is configuration rather than something either of them works out.
+    # A literal is the default because a checkout that cannot say what its
+    # revision is would otherwise take every page of the dashboard down with it.
+    build_id: "build",
     # Where the generated PDFs of a build are published, as a base of
     # ArchiDep.CourseSite.Urls.PdfManifest. Nothing publishes them yet, and a
     # build that cannot say where they are offers no download link.

@@ -50,7 +50,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       dirs = course_fixture(tmp_dir)
       urls = UrlContext.new(mode: :live, build_id: "test", version: "2026")
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 16)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 17)}
       assert written(dirs.output_dir) == expected_build("/2026")
     end
 
@@ -66,7 +66,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
           absolute_base_url: "https://archidep.example.com"
         )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 16)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 17)}
 
       assert written(dirs.output_dir) == %{
                expected_build("/2026")
@@ -86,7 +86,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         )
 
       assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs)}
-      assert written(dirs.output_dir) == expected_build("/2025", false)
+      assert written(dirs.output_dir) == expected_build("/2025", false, :archive)
     end
 
     test "offers every page the PDF of it the build publishes", %{tmp_dir: tmp_dir} do
@@ -249,7 +249,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         "---\ntitle: Command Line\n---\n\n![CLI](images/cli.jpg)\n"
       )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 16)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 17)}
     end
 
     test "says which of an edition's links lead nowhere", %{tmp_dir: tmp_dir} do
@@ -346,7 +346,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       output_dir: dirs.output_dir,
       pages: 2,
       chapters: 1,
-      files: Keyword.get(overrides, :files, 15),
+      files: Keyword.get(overrides, :files, 16),
       page_assets: 1,
       assets: 1
     }
@@ -357,7 +357,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
   # carries. An edition holds all of its own under its prefix; what is anchored
   # at the mount point sits beside it, and so does a second copy of the home
   # page for as long as that edition is the one being taught.
-  defp expected_build(edition \\ "", home_at_base? \\ true) do
+  defp expected_build(edition \\ "", home_at_base? \\ true, mode \\ :live) do
     home = "/|index.md|Architecture & Deployment · ArchiDep|||CLI|page:::<p>Welcome.</p>"
     home_url = if home_at_base?, do: "/", else: edition <> "/"
 
@@ -369,6 +369,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         "a picture",
       (edition <> "/assets/theme/theme.css") => "body {}",
       (edition <> "/archidep.json") => archidep_json(edition, home_url),
+      (edition <> "/search-test.json") => search_json(edition, home_url, mode),
       (edition <> "/version.json") => version_json()
     }
 
@@ -380,6 +381,54 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
     Map.merge(edition_files, mount_point)
   end
+
+  defp search_json(edition, home_url, mode) do
+    pages = [
+      """
+        {
+          "id": "/",
+          "type": "home",
+          "url": "#{home_url}",
+          "title": "Architecture & Deployment",
+          "subtitle": "Architecture & Deployment",
+          "text": "Welcome.",
+          "extraText": ""
+        }\
+      """,
+      """
+        {
+          "id": "/course/101-command-line/",
+          "type": "subject",
+          "url": "#{edition}/course/101-command-line/",
+          "title": "Command Line",
+          "subtitle": "Command Line",
+          "text": "Type.",
+          "extraText": ""
+        }\
+      """
+    ]
+
+    "[\n" <> Enum.join(pages ++ application(mode), ",\n") <> "\n]\n"
+  end
+
+  # Only a live site is served beside the application, so only a live build holds
+  # an entry for it.
+  defp application(:live),
+    do: [
+      """
+        {
+          "id": "/app",
+          "type": "dashboard",
+          "url": "/app",
+          "title": "Dashboard",
+          "subtitle": "User & server dashboard",
+          "text": "Manage your user account for the course and register a server for the exercises.",
+          "extraText": ""
+        }\
+      """
+    ]
+
+  defp application(_mode), do: []
 
   defp archidep_json(edition, home_url) do
     """

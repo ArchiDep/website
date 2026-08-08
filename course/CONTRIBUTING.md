@@ -773,13 +773,12 @@ application:
   called; its URLs are the build's own even when the build's pages link to the
   deployed site, because the file describes the copy the export is about to
   walk. See [PDF Generation](#pdf-generation).
-- The source data used to build the search index is exported to
-  `app/priv/static/search.json` so that the dashboard application can display
-  the same search results interface.
-- The full-text search index built with [Lunr][lunr] is exported to
-  `app/priv/static/lunr.json` (by the `npm run idx` script, see
-  [Search](#search)) so that the dashboard application can perform the same
-  client-side search.
+- What the search dialog can find is exported to `app/priv/static/search.json`,
+  so that the dashboard application can offer the same search over the same
+  material. The Elixir build writes the same file under the edition prefix and
+  under a name carrying the identifier of the build that produced it, which it
+  must: the index is read _off_ the pages whose `<head>` names it, so it cannot
+  be named after its own contents. See [Search](#search).
 - Build metadata (application version, Git branch and revision) is exported to
   `app/priv/static/version.json`.
 
@@ -810,16 +809,29 @@ analytics are disabled.
 
 ### Search
 
-Full-text search uses [Lunr][lunr]. At build time, the
-[`archidep.rb`](./_plugins/archidep.rb) plugin extracts a searchable element for
-each document and heading and writes `search.json`; the `npm run idx` script
-([`src/scripts/idx.ts`](./src/scripts/idx.ts)) then builds the Lunr index into
-`lunr.json` (boosting the `extraText` field and keeping match positions for
-highlighting). On the client,
-[`src/assets/course/search.ts`](./src/assets/course/search.ts) lazily loads both
-files, renders the dialog from the `*.template.html` templates, and supports
-keyboard activation (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd>) and quick
-shortcuts.
+Full-text search uses [Lunr][lunr]. At build time, one searchable element is
+extracted for each document and for each of its top-level headings and written
+to `search.json` — by the [`archidep.rb`](./_plugins/archidep.rb) plugin under
+Jekyll, and by `ArchiDep.CourseSite.Build.SearchIndex` under the Elixir
+renderer.
+
+The Lunr index itself is **not** built at build time and not downloaded: on the
+client, [`src/assets/course/search.ts`](./src/assets/course/search.ts) lazily
+loads `search.json` and builds the index in the browser (boosting the
+`extraText` field and keeping match positions for highlighting). A serialised
+index is five times the size of the data it is built from, and building it takes
+a fraction of what downloading that would cost — a couple of hundred
+milliseconds for the whole course, against megabytes that would otherwise cross
+the network before the first search.
+
+The page says where the index is, as a whole URL in `data-search-data-url`,
+because its name carries the identifier of the build that wrote it and no script
+can work that out. The dialog is rendered from the `*.template.html` templates
+and supports keyboard activation (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd>)
+and quick shortcuts. Its own icons are the site's own emoji
+([`app/lib/archidep/emoji.ex`][emoji]): the page leaves them in a hidden element
+for the script to take, since only the build knows what an emoji file is called
+once it has been digested.
 
 ### Slides
 

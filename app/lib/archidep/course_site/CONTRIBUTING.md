@@ -411,6 +411,14 @@ content: it is built _from_ the rendered pages whose `<head>` has to name it.
 Naming it after the build's _inputs_ breaks the cycle, which is what separates
 `{:build_file, path}` from `{:site_file, path}`.
 
+It is **configuration** rather than something a build works out, because two
+programs have to agree on it: whatever built the site writes
+`search-<build_id>.json`, and the running application's own dashboard — which
+carries the same search dialog — has to ask for that file by name without having
+built anything. `:archidep, :course_site, :build_id` is where both read it, via
+`ArchiDepWeb.Helpers.CourseMaterialHelpers.url_context/0` on the application's
+side and `--build-id` on the [build task](#building)'s.
+
 ### Reference kinds and their policy
 
 `Urls` documents the full table; the two rules worth knowing before touching any
@@ -544,6 +552,7 @@ it, documented there rather than here:
 | [`PdfNames`](./build/pdf_names.ex)                | what the generated PDF of a page is called                                                     |
 | [`AssetDigest`](./build/asset_digest.ex)          | where the global assets went, per `phx.digest`                                                 |
 | [`LinkCheck`](./build/link_check.ex)              | which of a finished build's links lead nowhere                                                 |
+| [`SearchIndex`](./build/search_index.ex)          | what the search dialog can find, cut out of the pages a build rendered                         |
 | [`Site`](./build/site.ex)                         | every file a build writes and what is in each, which `site_inputs/1` chains the reads for      |
 | [`Builder`](./builder.ex)                         | the order those steps are run in, for a caller that is not a Mix task                          |
 | [`NotFound`](./build/not_found.ex)                | what a static host shows for a path the build never wrote                                      |
@@ -637,6 +646,36 @@ collects discards the page, so there is no such thing as publishing a page that
 is known to be wrong. `mix archidep.course_site.assets` sorts errors into those
 about a reference and everything else, but that is a property of a check that
 answers for the manifests and nothing else — it is not a model for a build.
+
+### What the search dialog can find
+
+A build writes one more file of its own: the index the search dialog reads,
+named after the build rather than after its contents ([what a build
+is](#what-a-build-is) says why). [`SearchIndex`](./build/search_index.ex) is
+what cuts it out of the pages, and what it cuts them into — an entry per page
+and one per top-level heading — is documented there.
+
+Two of its edges are not about the cutting and belong here:
+
+- **A deck is converted for reading and thrown away.** Slides [stay
+  Markdown](#slides-are-not-converted) all the way to the browser, so `Site`
+  converts one with the Markdown library directly rather than through the
+  renderer. Going through the renderer would run the rewrites that have already
+  run over the deck, and hand a deck's code fences — reveal.js's own, saying
+  which lines to reveal when — to the site's
+  [highlighter](#colouring-a-code-block), which reads them as a malformed
+  decorator and refuses the document.
+- **The index names the application, and only where there is one.** The
+  dashboard is a page of the site's search that the course writes no document
+  for, so `SearchIndex` states it, and a copy of the site holds no entry for it:
+  an archive and the backup copy are read where the application is not running.
+  That is what the `{:app, path}` reference kind is — it resolves on the live
+  site and refuses everywhere else, so a build cannot quietly publish a link
+  nothing answers.
+
+The entries' URLs go through [`UrlContext.local/1`](./urls/url_context.ex) for
+the same reason `archidep.json`'s do: a result is somewhere to go in the copy of
+the site the dialog is open in, not on the site that copy links to.
 
 ### Checking it against the real content
 

@@ -12,7 +12,9 @@ import { trackEvent } from './plausible';
 import searchDialogTemplate from './search-dialog.template.html';
 import searchResultTemplate from './search-result.template.html';
 
-const quickSearch = {
+// What a one-letter query means, so that the shortest thing worth typing goes
+// somewhere useful. Anything else is searched as it was written.
+const quickSearch: Readonly<Record<string, string>> = {
   c: 'course',
   d: 'dashboard',
   h: 'home'
@@ -36,11 +38,15 @@ const searchElement = t.readonly(
       subtitle: t.string,
       url: t.string,
       type: searchElementType,
+      // Never shown, and weighed more heavily than anything else: this is how a
+      // page is found by words it does not say.
+      extraText: t.string,
       text: t.string
     })
   )
 );
 
+type SearchElementType = t.TypeOf<typeof searchElementType>;
 type SearchElement = t.TypeOf<typeof searchElement>;
 
 type SearchResult = lunr.Index.Result & {
@@ -51,7 +57,38 @@ type SearchPosition = readonly [number, number];
 
 const searchData = t.readonlyArray(searchElement);
 
-const basePath = document.querySelector('head')?.dataset['basePath'] ?? '';
+// Where this build published what the dialog searches. The page says so
+// outright rather than naming a file to join onto the site's mount point: the
+// index carries the identifier of the build that wrote it, so its name is not
+// something a script can work out.
+const searchDataUrl = document.querySelector('head')?.dataset['searchDataUrl'];
+
+// What a result of each kind is called, which is what its icon says when a
+// reader hovers it.
+const searchElementTypeLabels: Record<SearchElementType, string> = {
+  cheatsheet: 'Cheatsheet',
+  dashboard: 'Dashboard',
+  exercise: 'Exercise',
+  'graded-exercise': 'Graded exercise',
+  home: 'Home',
+  slides: 'Slides',
+  subject: 'Subject'
+};
+
+/**
+ * One of the site's emoji, as the page drew it.
+ *
+ * The dialog is markup of this script's own, so the page cannot draw an icon
+ * where it goes; it leaves them all in a hidden element instead, because only
+ * the build knows what an emoji file is called once it has been digested.
+ */
+function emoji(name: string): string {
+  return (
+    document.querySelector(`#search-emoji [data-emoji="${name}"]`)?.innerHTML ??
+    ''
+  );
+}
+
 const body = document.querySelector('body');
 
 const testNode = document.createElement('div');
@@ -101,6 +138,13 @@ const $searchNoResults = required(
   'Search no results element not found'
 );
 
+const $searchNoResultsIcon = required(
+  document.getElementById('search-no-results-icon'),
+  'Search no results icon element not found'
+);
+
+$searchNoResultsIcon.innerHTML = emoji('shrug');
+
 const $searchResults = required(
   document.getElementById('search-results'),
   'Search results element not found'
@@ -126,9 +170,9 @@ window.addEventListener('phx:page-loading-stop', () =>
 );
 
 export function setUpSearch(): void {
-  Promise.all([loadSearchIndex(), loadSearchData()])
-    .then(([idx, data]) => {
-      setUpSearchListeners(idx, data);
+  loadSearchData()
+    .then(data => {
+      setUpSearchListeners(buildSearchIndex(data), data);
       showSearchButton();
     })
     .catch(err => logger.error(`Failed to set up search: ${err.message}`));
@@ -342,10 +386,16 @@ function performSearch(idx: lunr.Index, data: readonly SearchElement[]): void {
   trackSearch(query);
 
   const actualQuery = quickSearch[query.toLowerCase()] ?? query;
-  const results = idx.search(actualQuery).reduce((acc, result) => {
-    const element = data.find(e => e.id === result.ref);
-    return element ? [...acc, { ...result, datum: element }] : acc;
-  }, []);
+
+  // A hit names an entry by its identifier, and what the dialog shows is the
+  // entry. One the data does not hold is dropped rather than shown empty: it can
+  // only mean the index and the data came from different builds.
+  const results = idx
+    .search(actualQuery)
+    .reduce<readonly SearchResult[]>((acc, result) => {
+      const element = data.find(e => e.id === result.ref);
+      return element ? [...acc, { ...result, datum: element }] : acc;
+    }, []);
 
   renderSearchResults(query, results);
 }
@@ -395,17 +445,19 @@ function renderSearchResults(
         </svg>
       `
       )
-      .with('cheatsheet', () => '📝')
-      .with('exercise', () => '🛠️')
-      .with('graded-exercise', () => '🏆')
-      .with('home', () => '🏠')
-      .with('slides', () => '🎬')
-      .with('subject', () => '📖')
+      .with('cheatsheet', () => emoji('memo'))
+      .with('exercise', () => emoji('hammer_and_wrench'))
+      .with('graded-exercise', () => emoji('trophy'))
+      .with('home', () => emoji('house'))
+      .with('slides', () => emoji('clapper'))
+      .with('subject', () => emoji('book'))
       .exhaustive();
 
+    element.querySelector<HTMLElement>('.icon')!.dataset['tip'] =
+      searchElementTypeLabels[result.datum.type];
+
     const titleHtml = pipe(
-      O.fromNullable(query),
-      O.mapNullable(q => result.matchData.metadata[q]?.['title']?.['position']),
+      O.fromNullable(matchPositions(result, query, 'title')),
       O.map(positions => highlight(result.datum.title, positions)),
       O.getWithDefault(result.datum.title)
     );
@@ -414,12 +466,16 @@ function renderSearchResults(
     element.querySelector('.subtitle')!.textContent = result.datum.subtitle;
 
     const textHtml = pipe(
-      O.fromNullable(query),
-      O.mapNullable(q => result.matchData.metadata[q]?.['text']?.['position']),
+      O.fromNullable(matchPositions(result, query, 'text')),
       O.map(positions => highlight(result.datum.text, positions)),
       O.getWithDefault(result.datum.text)
     );
-    element.querySelectorAll('.text').forEach(el => (el.innerHTML = textHtml));
+
+    // The same text twice: one copy is shown on a narrow screen and the other
+    // on a wide one.
+    element
+      .querySelectorAll<HTMLElement>('.text')
+      .forEach(el => (el.innerHTML = textHtml));
 
     element.querySelector('.link')!.setAttribute('href', result.datum.url);
 
@@ -436,6 +492,34 @@ function renderSearchResults(
   if (results.length <= 10) {
     $searchMoreResults.classList.remove('active');
   }
+}
+
+/**
+ * Where in one of a result's fields the query matched, if it matched there.
+ *
+ * Lunr types its match metadata as a bare object, because what is in it is
+ * whatever the index was built to whitelist — positions, here. So the shape is
+ * stated once, in the one place that reads it, rather than at each call site.
+ *
+ * It is keyed by the whole query rather than by the terms the query was split
+ * into, so a search of more than one word matches nothing here and is shown
+ * unhighlighted. That is the behaviour, not an oversight: the point of the
+ * highlight is to show *where* a single term was found in a long page.
+ */
+function matchPositions(
+  result: SearchResult,
+  query: string | undefined,
+  field: 'title' | 'text'
+): readonly SearchPosition[] | undefined {
+  if (query === undefined) {
+    return undefined;
+  }
+
+  const metadata = result.matchData.metadata as Readonly<
+    Record<string, Record<string, Record<string, readonly SearchPosition[]>>>
+  >;
+
+  return metadata[query]?.[field]?.['position'];
 }
 
 function highlight(text: string, positions: readonly SearchPosition[]): string {
@@ -482,51 +566,52 @@ function highlight(text: string, positions: readonly SearchPosition[]): string {
   return container.innerHTML;
 }
 
-function loadSearchIndex(): Promise<lunr.Index> {
+/**
+ * Builds the Lunr index in the browser rather than downloading one the build
+ * prepared. The serialised index is five times the size of the data it is built
+ * from, and building it here costs a fraction of what downloading that would:
+ * the whole course is a couple of hundred milliseconds of work, done once,
+ * against megabytes that would otherwise cross the network on every first
+ * search.
+ *
+ * The fields and their weights are the search itself: `extraText` is never
+ * shown and exists only to be weighed, which is what lets a page be found by
+ * words it does not say. Match positions are kept because the dialog highlights
+ * what it matched.
+ */
+function buildSearchIndex(data: readonly SearchElement[]): lunr.Index {
   const start = Date.now();
-  logger.debug('Downloading search index...');
 
-  return fetch(`${basePath}/lunr.json`)
-    .then(res => {
-      if (!res.ok) {
-        throw new Error(
-          `Failed to load search index with response code ${res.status}`
-        );
-      }
+  const idx = lunr(function () {
+    this.ref('id');
+    this.field('title');
+    this.field('text');
+    this.field('extraText', { boost: 10 });
+    this.metadataWhitelist = ['position'];
 
-      return { downloaded: Date.now(), res };
-    })
-    .then(({ res, ...rest }) =>
-      parseJsonWhenIdle(res).then(({ data, waited }) => ({
-        ...rest,
-        data,
-        waited,
-        parsed: Date.now()
-      }))
-    )
-    .then(({ data, downloaded, waited, parsed }) => {
-      const idx = lunr.Index.load(data);
-      const built = Date.now();
+    for (const datum of data) {
+      this.add(datum);
+    }
+  });
 
-      const downloadTime = downloaded - start;
-      const waitTime = waited - downloaded;
-      const parseTime = parsed - waited;
-      const buildTime = built - parsed;
-      const totalTime = built - start;
+  logger.info(
+    `Built search index of ${data.length} entries in ${Date.now() - start}ms`
+  );
 
-      logger.info(
-        `Loaded search index in ${totalTime}ms (${downloadTime}ms dl, ${waitTime} wait, ${parseTime}ms parse, ${buildTime}ms build)`
-      );
-
-      return idx;
-    });
+  return idx;
 }
 
 function loadSearchData(): Promise<readonly SearchElement[]> {
+  if (searchDataUrl === undefined) {
+    return Promise.reject(
+      new Error('The page does not say where the search data is')
+    );
+  }
+
   const start = Date.now();
   logger.debug('Downloading search data...');
 
-  return fetch(`${basePath}/search.json`)
+  return fetch(searchDataUrl)
     .then(res => {
       if (!res.ok) {
         throw new Error(
@@ -620,7 +705,10 @@ function showSearchDialog(): void {
   setTimeout(() => $searchInput.focus(), 100);
 }
 
-function elementIsVisibleInViewport(el, partiallyVisible = false): boolean {
+function elementIsVisibleInViewport(
+  el: Element,
+  partiallyVisible = false
+): boolean {
   const { top, left, bottom, right } = el.getBoundingClientRect();
   const { innerHeight, innerWidth } = window;
   return partiallyVisible

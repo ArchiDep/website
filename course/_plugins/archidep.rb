@@ -344,8 +344,6 @@ Jekyll::Hooks.register :site, :post_write do |site|
     File.join(site.dest, "search.json"),
     JSON.pretty_generate(site.data["search_elements"])
   )
-
-  system("npm run idx", exception: true)
 end
 
 Jekyll::Hooks.register :site, :post_write do |site|

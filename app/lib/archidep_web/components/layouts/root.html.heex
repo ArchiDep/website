@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="[scrollbar-gutter:stable]">
-  <head>
+  <head data-search-data-url={search_data_url()}>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
@@ -23,6 +23,7 @@
     </script>
   </head>
   <body>
+    <.search_emoji />
     {@inner_content}
   </body>
 </html>
