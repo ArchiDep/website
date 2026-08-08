@@ -130,6 +130,11 @@ the dashboard functionality is only available during the current semester).
     [Client-Side Architecture](#client-side-architecture).
   - `src/assets/utils.ts` & `src/assets/errors.ts`: Small shared helpers and
     error types used across the client-side modules.
+  - `src/assets/globals.d.ts` & `src/assets/index.d.ts`: What the client-side
+    code puts on `window` for another bundle to pick up, and the modules that
+    ship no types of their own. TypeScript is compiled with `noImplicitAny`, so
+    an untyped global is stated in one of these rather than inferred silently at
+    each use.
   - `src/assets/git-memoir/**/*.ts`: TypeScript definitions of interactive Git
     diagrams shown in some slides and exercises, and a renderer to display them.
   - `src/assets/slides.ts` & `src/assets/slides/**/*.ts`: TypeScript files to

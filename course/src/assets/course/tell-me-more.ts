@@ -1,3 +1,5 @@
+import { CustomProperties } from '@plausible-analytics/tracker';
+
 import { trackEvent } from './plausible';
 
 document.addEventListener('click', event => {
@@ -44,7 +46,7 @@ document.addEventListener('click', event => {
 });
 
 function trackCalloutEvent(name: string, target: HTMLElement) {
-  const props = {};
+  const props: CustomProperties = {};
 
   const callout =
     target.closest('.callout[data-callout]')?.getAttribute('data-callout') ??

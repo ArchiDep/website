@@ -2,11 +2,20 @@ import { icons } from '@iconify-json/fluent';
 import mermaid from 'mermaid';
 import Reveal from 'reveal.js';
 
+import { required } from './utils';
+
+// What reveal.js hands a `slidechanged` listener. Its own types say only that
+// it is an event, so the one field this reads is stated here.
+type SlideChangedEvent = Event & { readonly currentSlide?: unknown };
+
 const urlSearch = new URLSearchParams(window.location.search);
 const printPdfMode = urlSearch.has('print-pdf');
 const scrollMode = urlSearch.get('view') === 'scroll';
 
-const deck: Reveal.Api = window['deck'];
+// The deck `src/assets/slides.ts` set up. This script is loaded beside it on a
+// slides page and nowhere else, so a page with no deck is a mistake in the
+// layout rather than something to draw around.
+const deck: Reveal.Api = required(window['deck'], 'Reveal.js deck not found');
 
 mermaid.initialize({
   startOnLoad: false,
@@ -27,7 +36,7 @@ if (printPdfMode || scrollMode) {
   renderMermaidElements(mermaidElements);
 
   deck.on('slidechanged', event => {
-    const currentSlide = event['currentSlide'];
+    const currentSlide = (event as SlideChangedEvent).currentSlide;
     if (currentSlide instanceof HTMLElement) {
       const mermaidElements = [
         ...currentSlide.querySelectorAll<HTMLElement>('.mermaid')

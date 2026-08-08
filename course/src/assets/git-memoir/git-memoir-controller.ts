@@ -76,7 +76,7 @@ export class GitMemoirController {
   #drawingPromise: Promise<unknown> | undefined;
   #tooltips: Instance[] | undefined;
 
-  constructor(element) {
+  constructor(element: Element) {
     this.$element = $(element);
     this.$element.data('controller', this);
 
@@ -361,7 +361,7 @@ export class GitMemoirController {
     }
   }
 
-  updateModeTooltip(text) {
+  updateModeTooltip(text: string) {
     if (!this.#tooltips) {
       return;
     }
@@ -378,7 +378,7 @@ export class GitMemoirController {
   }
 }
 
-function destroyTooltips(tooltips) {
+function destroyTooltips(tooltips: Instance | Instance[]) {
   if (Array.isArray(tooltips)) {
     tooltips.forEach(destroyTooltips);
   } else {

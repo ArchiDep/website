@@ -5,7 +5,14 @@ import log from '../logging';
 import { shuffle } from 'lodash-es';
 
 const logger = log.getLogger('randomizer');
+
+// Where an element's randomizer is kept, so that the element the page already
+// holds is what remembers it rather than a second index of them. The key is a
+// symbol so that it cannot collide with anything else stamped on an element,
+// and `Randomized` is what says an element may be carrying one.
 const randomizerKey = Symbol('archidep-randomizer');
+type Randomized = HTMLElement & { [randomizerKey]?: Randomizer };
+
 const chance = new Chance();
 
 class Randomizer {
@@ -80,7 +87,7 @@ class Randomizer {
       }
     }
 
-    codeElement[randomizerKey] = randomizer;
+    (codeElement as Randomized)[randomizerKey] = randomizer;
 
     return randomizer;
   }
@@ -340,7 +347,7 @@ function setUpRandomizers(elements: HTMLCollectionOf<HTMLElement>) {
 
     const interval = setInterval(() => {
       for (const el of els) {
-        const randomizer = el[randomizerKey];
+        const randomizer = (el as Randomized)[randomizerKey];
         if (randomizer instanceof Randomizer) {
           randomizer.randomize();
         }
