@@ -11,11 +11,20 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
 
   ## What a page is about
 
-  Nothing in the course declares a description, so it is the page's own opening,
-  as [the site shows it](`ArchiDep.CourseSite.Renderer.Excerpt`) with its markup
-  taken back off. That is what makes the description of a chapter the sentence
-  the chapter itself opens with rather than a line someone has to remember to
-  keep in step with the page.
+  A page's description is its own opening, as [the site shows
+  it](`ArchiDep.CourseSite.Renderer.Excerpt`) with its markup taken back off.
+  That is what makes the description of a chapter the sentence the chapter
+  itself opens with rather than a line someone has to remember to keep in step
+  with the page.
+
+  Two things sit either side of that. A page may declare a `description` in its
+  front matter, which wins: a page whose opening reads as a description only in
+  place — a lead-in ending in a colon, a sentence that only means anything under
+  the heading above it — has no other way to say so. And a **deck** has no
+  opening at all, being handed to the browser whole rather than split, so it
+  says that it is the slides of its chapter; the site's own description is what
+  is left for a page with neither, and it is worth avoiding, since every page
+  that falls back to it claims the same thing as all the others.
 
   ## Where a page really lives
 
@@ -35,6 +44,7 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
   the archive out of the results just as well while severing it.
   """
 
+  alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Urls
   alias ArchiDep.CourseSite.Urls.UrlContext
@@ -95,7 +105,7 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
     %__MODULE__{
       title: title(page_title),
       page_title: page_title,
-      description: description(excerpt_html),
+      description: description(context, page_title, excerpt_html),
       canonical_url: canonical_url(context),
       robots: robots(context)
     }
@@ -169,14 +179,34 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
     end
   end
 
-  defp description(nil), do: @site_description
+  defp description(context, page_title, excerpt_html) do
+    declared(context) || from_excerpt(excerpt_html) || slides_description(context, page_title) ||
+      @site_description
+  end
 
-  defp description(excerpt_html) do
+  defp declared(context) do
+    case Map.get(RenderContext.page_variables(context), "description") do
+      declared when is_binary(declared) and declared != "" -> snippet(text_of(declared))
+      _none -> nil
+    end
+  end
+
+  defp from_excerpt(nil), do: nil
+
+  defp from_excerpt(excerpt_html) do
     case excerpt_html |> text_of() |> snippet() do
-      "" -> @site_description
+      "" -> nil
       description -> description
     end
   end
+
+  # A deck is the one page with nothing of its own to read, so what it says is
+  # what it is: the slides of its chapter, which its title names.
+  defp slides_description(%RenderContext{page: {:document, %DocumentRef{type: :slides}}}, title)
+       when is_binary(title),
+       do: "Slides for the #{title} chapter of the #{@site_title} course."
+
+  defp slides_description(_context, _title), do: nil
 
   # The opening as it is read rather than as it is marked up: an image drops out
   # with the rest of the markup, so a heading decorated with an emoji describes

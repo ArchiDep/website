@@ -9,6 +9,9 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
 
   @site_description "Media engineering architecture and deployment course"
 
+  @subject {:document, DocumentRef.new(104, "ssh", :subject)}
+  @deck {:document, DocumentRef.new(104, "ssh", :slides)}
+
   describe "of/2" do
     test "says what a page is called, what it is about and where it lives" do
       assert metadata_of(
@@ -142,25 +145,52 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
                }
     end
 
-    test "takes a slide deck to have no opening" do
-      context =
-        CourseSiteFactory.build(:render_context,
-          page: {:document, DocumentRef.new(104, "ssh", :slides)},
-          page_variables: %{"title" => "Secure Shell (SSH)"},
-          urls:
-            CourseSiteFactory.build(:url_context,
-              mode: :live,
-              base_path: "",
-              version: "2027",
-              live_site_url: "https://archidep.example.com"
-            )
-        )
-
-      assert PageMetadata.of(context) ==
+    test "says of a slide deck, which has no opening, that it is the slides of its chapter" do
+      assert metadata_of_page(@deck, %{"title" => "Secure Shell (SSH)"}, nil) ==
                %PageMetadata{
                  title: "Secure Shell (SSH) · ArchiDep",
                  page_title: "Secure Shell (SSH)",
+                 description: "Slides for the Secure Shell (SSH) chapter of the ArchiDep course.",
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/slides/",
+                 robots: nil
+               }
+    end
+
+    test "falls back to what the site is about for a deck that is not even titled" do
+      assert metadata_of_page(@deck, %{}, nil) ==
+               %PageMetadata{
+                 title: "ArchiDep",
+                 page_title: nil,
                  description: @site_description,
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/slides/",
+                 robots: nil
+               }
+    end
+
+    test "prefers the description a page declares to the opening it shows" do
+      variables = %{
+        "title" => "How to improve",
+        "description" => "What the rest of the course fixes about a basic deployment."
+      }
+
+      assert metadata_of_page(@subject, variables, "<p>The deployment has several flaws:</p>") ==
+               %PageMetadata{
+                 title: "How to improve · ArchiDep",
+                 page_title: "How to improve",
+                 description: "What the rest of the course fixes about a basic deployment.",
+                 canonical_url: "https://archidep.example.com/2027/course/104-ssh/",
+                 robots: nil
+               }
+    end
+
+    test "prefers the description a deck declares to what it would say of itself" do
+      variables = %{"title" => "Secure Shell (SSH)", "description" => "Keys and agents."}
+
+      assert metadata_of_page(@deck, variables, nil) ==
+               %PageMetadata{
+                 title: "Secure Shell (SSH) · ArchiDep",
+                 page_title: "Secure Shell (SSH)",
+                 description: "Keys and agents.",
                  canonical_url: "https://archidep.example.com/2027/course/104-ssh/slides/",
                  robots: nil
                }
@@ -263,11 +293,14 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
     end
   end
 
-  defp metadata_of(title, excerpt_html, url_context \\ []) do
+  defp metadata_of(title, excerpt_html, url_context \\ []),
+    do: metadata_of_page(@subject, page_variables(title), excerpt_html, url_context)
+
+  defp metadata_of_page(page, variables, excerpt_html, url_context \\ []) do
     context =
       CourseSiteFactory.build(:render_context,
-        page: {:document, DocumentRef.new(104, "ssh", :subject)},
-        page_variables: page_variables(title),
+        page: page,
+        page_variables: variables,
         urls:
           CourseSiteFactory.build(
             :url_context,

@@ -34,8 +34,11 @@ body {
   @apply bg-gray-200/50 px-1 rounded-xl border border-gray-600;
 }
 
+/* A slide's text is far larger than a page's and scales with the viewport, so
+   an emoji written in it is sized against the text it sits in rather than at
+   the fixed size the markup falls back to. */
 img.emoji {
-  @apply m-0;
+  @apply m-0 inline-block align-baseline w-[1em] h-[1em];
 }
 
 .emoji-container img.emoji {

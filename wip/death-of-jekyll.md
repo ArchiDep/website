@@ -3739,6 +3739,40 @@ pass/fail byte gate; the acceptance decision is "nothing broken, looks good."
 [Cutover](#cutover) — the actual deletion of Jekyll — does not happen until this
 passes.
 
+**The diff half is done and the visual half is not.** The harness lives in
+`tmp/fidelity` and its README says what its normalisations mean; it compares the
+`<main>` of every page, a deck as the Markdown inside its `textarea` — which the
+page comparison cannot see at all, a deck having no `<main>` — and every title
+and description. It found **three defects, all now fixed**, and each was
+invisible to the checks that already existed:
+
+- **Link reference definitions were appended to fragments as the file writes
+  them**, so a destination that is a `{% link %}` reached the page as raw Liquid
+  and as visible text inside every note and callout of two documents. They are
+  expanded before the body is rendered now
+  ([`Liquid.render_definitions/1`](../app/lib/archidep/course_site/renderer/liquid.ex)).
+- **Emoji drawn in a slide deck had no size**: the drawings state no dimensions
+  of their own and the sizing lives in a rule scoped to `main`, which a deck has
+  none of. The markup states them now
+  ([`Emoji.img/3`](../app/lib/archidep/emoji.ex)), which is a floor for every
+  context rather than a rule for this one.
+- **`[https://example.com][ref]` was mangled into a link to
+  `https://example.com%5D%5Bref`**, comrak's autolink extension taking the URL
+  and the brackets after it as one address. `autolink: false` restores what the
+  content is written against and settles the same question for the ~66 bare URLs
+  in prose that had become links, nearly all of them hosts a reader is told to
+  substitute into.
+
+Two shapes are worth remembering from that: `LinkCheck` answers whether a link
+resolves and nothing answered whether a link was _formed_, which is what both
+the first and the third were; and a rule scoped to where a thing is usually
+drawn is not a rule about the thing, which is what the second was.
+
+What is left for the visual pass, none of it acted on: lists that comrak makes
+looser than kramdown did (11 pages, 29 paragraphs), `<git-memoir>` elements
+wrapped in a paragraph (16, all on `204-hello-github`), table cells aligned with
+the attribute rather than the style, and the four divergences named above.
+
 ### Cutover
 
 Once the gate passes, the removal is **decisive and complete** (scorched earth):

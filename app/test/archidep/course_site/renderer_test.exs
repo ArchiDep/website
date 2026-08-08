@@ -18,8 +18,8 @@ defmodule ArchiDep.CourseSite.RendererTest do
   alias ArchiDep.Support.CourseSiteRendererTestTags.ShoutingPass
   alias ArchiDep.Support.CourseSiteRendererTestTags.SignaturePass
 
-  @books ~s(<img class="emoji" src="/2026/assets/emoji/1f4da.svg" alt="📚" />)
-  @coffee ~s(<img class="emoji" src="/2026/assets/emoji/2615.svg" alt="☕" />)
+  @books ~s(<img class="emoji" src="/2026/assets/emoji/1f4da.svg" alt="📚" width="20" height="20" />)
+  @coffee ~s(<img class="emoji" src="/2026/assets/emoji/2615.svg" alt="☕" width="20" height="20" />)
   @elsewhere ~s( target="_blank" rel="noopener noreferrer")
 
   describe "render_page/1" do
@@ -220,6 +220,35 @@ defmodule ArchiDep.CourseSite.RendererTest do
                     %{line: 1, column: 1}
                   )
                 ]}
+    end
+
+    test "expands the Liquid a link reference definition is written with, in the page and in a fragment of it" do
+      assert render_page("""
+             Read the [command line subject][cli].
+
+             {% prose kind: note %}
+             And [the same subject][cli] from inside a tag.
+             {% endprose %}
+
+             [cli]: {% link _course/101-command-line/subject.md %}
+             """) ==
+               {:ok,
+                %Page{
+                  excerpt_html:
+                    ~s(<p>Read the <a href="/2026/course/101-command-line/">command line subject</a>.</p>),
+                  html:
+                    ~s(<div class="prose-note"><p>And <a href="/2026/course/101-command-line/">) <>
+                      ~s(the same subject</a> from inside a tag.</p></div>),
+                  toc: []
+                }}
+    end
+
+    test "reports what is wrong with a link reference definition once, where it is written" do
+      assert render_page("""
+             Read the [broken link][broken].
+
+             [broken]: {% boom %}
+             """) == {:error, [boom_error(%{line: 3, column: 11})]}
     end
   end
 

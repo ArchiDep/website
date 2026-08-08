@@ -18,6 +18,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid do
   alias ArchiDep.CourseSite.Renderer.Liquid.Registers
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderError
+  alias ArchiDep.CourseSite.Renderer.Source
 
   @doc """
   Expand the Liquid of a document.
@@ -28,6 +29,33 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid do
     case parse_body(context) do
       {:ok, template} -> render_template(template, context)
       {:error, errors} -> {:error, errors}
+    end
+  end
+
+  @doc """
+  Expand the Liquid of the document's link reference definitions.
+
+  They are expanded on their own, and before the body, because a block tag's
+  body is converted *while* the body is being expanded — the definitions sit at
+  the bottom of the file, so by the time the document's own copy of them is
+  reached, every fragment that needed them has already been converted.
+
+  **Nothing that goes wrong here is reported**, and a document whose definitions
+  do not even parse simply defines nothing. That is not a hole: the definitions
+  are part of the body, so `render/1` expands the same Liquid a second time and
+  reports whatever is wrong with it there — at the line of the file it is
+  actually written on, which this rendering of two lines out of context cannot
+  say. Reporting here would report every such mistake twice, once with the wrong
+  location.
+  """
+  @spec render_definitions(RenderContext.t()) :: [{String.t(), String.t()}]
+  def render_definitions(%RenderContext{source: source} = context) do
+    with definitions when definitions != "" <- Source.definitions(source.link_references),
+         {:ok, template} <- parse(definitions, context.options.tags, context.source_path),
+         {:ok, rendered, _errors} <- render_template(template, context) do
+      Source.link_references(rendered)
+    else
+      _nothing_to_expand_or_nothing_that_expanded -> []
     end
   end
 

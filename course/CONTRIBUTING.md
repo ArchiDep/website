@@ -179,6 +179,12 @@ materials.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.
 - Ensure all links are valid and point to relevant resources.
+- Write a link you want a reader to follow as a link. A bare URL in prose stays
+  text, deliberately: the URLs the course writes are mostly ones a reader is
+  told to substitute into — `http://todolist.jde.archidep.ch` replacing `jde`
+  with their own username, `http://W.X.Y.Z:3001`, `http://localhost:3000` — and
+  linking those offers them somewhere that is not theirs to go. Write
+  `<https://example.com>` or `[text](https://example.com)` where a link is meant.
 - Link to a heading by the anchor slugged from its text — lowercased, with
   punctuation dropped and spaces turned into hyphens (`## Configure basic
 settings` → `#configure-basic-settings`). The emoji shortcode a heading is
@@ -309,6 +315,13 @@ The following front matter keys are meant to be set by authors:
   the top of a document. Write the separator itself in the body, where the
   excerpt is meant to end: a document that declares one and never writes it
   takes its whole body to be the excerpt.
+- `description`: What the page says about itself to a search engine or to a chat
+  client unfurling a link to it. A page that declares none is described by its
+  own opening, which is usually what you want and is one less thing to keep in
+  step with the page — so write one only where that opening does not stand on
+  its own, such as a lead-in ending in a colon. A slide deck, which has no
+  opening to show, says that it is the slides of its chapter unless it declares
+  otherwise.
 - `standalone: false`: Excludes the document from the search index in
   [standalone builds](#configuration--deployment-modes) (e.g. content that only
   makes sense alongside the dashboard).

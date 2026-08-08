@@ -50,6 +50,8 @@ defmodule ArchiDep.CourseSite.Renderer do
   @spec render_page(RenderContext.t()) ::
           {:ok, Page.t()} | {:error, nonempty_list(RenderError.t())}
   def render_page(%RenderContext{} = context) do
+    context = resolve_link_references(context)
+
     with {:ok, markdown, liquid_errors} <- Liquid.render(context),
          {:ok, document} <- parse(markdown, context) do
       {excerpt, body, separator_errors} = split(document, context)
@@ -82,10 +84,12 @@ defmodule ArchiDep.CourseSite.Renderer do
   @spec render_slides(RenderContext.t()) ::
           {:ok, Slides.t()} | {:error, nonempty_list(RenderError.t())}
   def render_slides(%RenderContext{} = context) do
+    context = resolve_link_references(context)
+
     case Liquid.render(context) do
       {:ok, markdown, liquid_errors} ->
         {deck, sweep_errors} =
-          context.source
+          context.link_references
           |> Source.substitute(markdown)
           |> sweep(context)
 
@@ -152,6 +156,9 @@ defmodule ArchiDep.CourseSite.Renderer do
 
     {drawn, file_errors ++ emoji_errors}
   end
+
+  defp resolve_link_references(context),
+    do: RenderContext.resolve_link_references(context, Liquid.render_definitions(context))
 
   defp parse(markdown, context) do
     case Markdown.parse(markdown, context) do

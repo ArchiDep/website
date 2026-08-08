@@ -27,12 +27,13 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
                page_variables: %{},
                includes: %{},
                options: RenderOptions.new(),
-               solutions: :revealed
+               solutions: :revealed,
+               link_references: []
              }
     end
 
     test "builds a fully configured context" do
-      {:ok, source} = Source.parse("Prose.\n")
+      {:ok, source} = Source.parse("Prose.\n\n[dig]: https://example.com/dig\n")
       {:ok, includes} = Renderer.compile_includes(%{"icons/photo.html" => "<svg/>"})
 
       urls =
@@ -62,7 +63,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
                page_variables: %{"num" => 507},
                includes: includes,
                options: options,
-               solutions: :hidden
+               solutions: :hidden,
+               link_references: [{"dig", "https://example.com/dig"}]
              }
     end
 
@@ -100,6 +102,16 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
       assert_raise ArgumentError,
                    "Includes must map paths to parsed templates, got: %{\"icons/photo.html\" => \"<svg/>\"}",
                    fn -> new(includes: %{"icons/photo.html" => "<svg/>"}) end
+    end
+  end
+
+  describe "resolve_link_references/2" do
+    test "replaces the definitions the file writes with the ones it means" do
+      {:ok, source} = Source.parse("Prose.\n\n[cli]: {% link _course/101-command-line.md %}\n")
+      context = new(source: source)
+
+      assert RenderContext.resolve_link_references(context, [{"cli", "/course/101-command-line/"}]) ==
+               %RenderContext{context | link_references: [{"cli", "/course/101-command-line/"}]}
     end
   end
 

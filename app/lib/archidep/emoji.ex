@@ -22,6 +22,11 @@ defmodule ArchiDep.Emoji do
   character, and `img/3` the only place that writes the markup one is shown as.
   """
 
+  # The size an emoji is drawn at where nothing says otherwise, in pixels. It is
+  # roughly the height of a line of body text, which is the one thing true of an
+  # emoji wherever it is drawn; see `img/3` for why it is stated at all.
+  @size 20
+
   @enforce_keys [:name, :character, :codepoints]
   defstruct [:name, :character, :codepoints]
 
@@ -253,17 +258,26 @@ defmodule ArchiDep.Emoji do
   it. Pass `:alt` where the emoji says something the surrounding text does not,
   and `:class` to size it.
 
+  The dimensions are written out because the drawings have none of their own: a
+  Twemoji file states the box it is drawn in and no size, so an `<img>` of one
+  that no rule sizes is laid out at the default size of a replaced element —
+  three hundred pixels of emoji. Stating them makes an emoji nobody has styled
+  merely plain rather than broken, in a slide deck, an exported PDF or wherever
+  one is drawn next; a stylesheet still wins wherever there is one, an attribute
+  losing to every rule.
+
       iex> Emoji.img(Emoji.fetch!("books"), "/assets/emoji/1f4da.svg")
-      ~s(<img class="emoji" src="/assets/emoji/1f4da.svg" alt="📚" />)
+      ~s(<img class="emoji" src="/assets/emoji/1f4da.svg" alt="📚" width="20" height="20" />)
 
       iex> Emoji.img(Emoji.fetch!("trophy"), "/assets/emoji/1f3c6.svg", alt: "Graded", class: "size-4")
-      ~s(<img class="emoji size-4" src="/assets/emoji/1f3c6.svg" alt="Graded" />)
+      ~s(<img class="emoji size-4" src="/assets/emoji/1f3c6.svg" alt="Graded" width="20" height="20" />)
   """
   @spec img(t(), String.t()) :: String.t()
   @spec img(t(), String.t(), keyword()) :: String.t()
   def img(%__MODULE__{character: character}, url, opts \\ []) when is_binary(url) do
     class = Enum.join(["emoji" | List.wrap(Keyword.get(opts, :class))], " ")
     alt = Keyword.get(opts, :alt, character)
-    ~s(<img class="#{class}" src="#{url}" alt="#{alt}" />)
+
+    ~s(<img class="#{class}" src="#{url}" alt="#{alt}" width="#{@size}" height="#{@size}" />)
   end
 end

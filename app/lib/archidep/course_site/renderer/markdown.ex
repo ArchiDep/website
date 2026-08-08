@@ -7,7 +7,7 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
   converted its own body with its own options is how two parts of the same page
   end up disagreeing about what Markdown is.
 
-  Three of the options are not preferences:
+  Four of the options are not preferences:
 
   - `unsafe: true` keeps the raw HTML the course writes in its Markdown. Without
     it every such island is replaced by a comment saying it was omitted. The
@@ -16,6 +16,14 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
   - `header_id_prefix: ""` is what gives headings the identifiers the table of
     contents, the in-page anchors and the application's own links to the course
     all depend on.
+  - `autolink: false` leaves a bare URL written in prose as text, which is what
+    the course is written against. The URLs it writes are overwhelmingly ones a
+    reader is told to substitute into — `http://todolist.jde.archidep.ch`
+    "replacing `jde` with your username", `http://W.X.Y.Z:3001`,
+    `http://localhost:3000` — so linking them offers a reader somewhere that is
+    not theirs to go. It is also what lets `[https://example.com][ref]` mean the
+    reference link it looks like: the extension otherwise takes the URL and the
+    `][ref]` after it as one address.
 
   Two rewrites on the way out are likewise not choices a build makes, unlike the
   passes it configures:
@@ -45,7 +53,7 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
     extension: [
       strikethrough: true,
       table: true,
-      autolink: true,
+      autolink: false,
       tasklist: true,
       footnotes: true,
       header_id_prefix: ""
@@ -72,7 +80,7 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
   @spec parse(String.t(), RenderContext.t()) ::
           {:ok, MDEx.Document.t()} | {:error, RenderError.t()}
   def parse(markdown, %RenderContext{} = context) when is_binary(markdown) do
-    case MDEx.parse_document(with_definitions(markdown, context.source), @options) do
+    case MDEx.parse_document(with_definitions(markdown, context), @options) do
       {:ok, document} -> {:ok, document}
       {:error, error} -> {:error, markdown_error(error, context)}
     end
@@ -114,8 +122,8 @@ defmodule ArchiDep.CourseSite.Renderer.Markdown do
     end)
   end
 
-  defp with_definitions(markdown, source) do
-    case Source.definitions(source) do
+  defp with_definitions(markdown, context) do
+    case Source.definitions(context.link_references) do
       "" -> markdown
       definitions -> markdown <> "\n\n" <> definitions
     end

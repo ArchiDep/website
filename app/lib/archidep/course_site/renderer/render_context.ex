@@ -4,10 +4,12 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
   document itself, which page of which build it is, and what a tag inside it is
   allowed to know.
 
-  It is built once per document and never updated. Anything a tag produces
-  besides HTML — a collected identifier, an error — travels back through
-  `Solid`'s own context instead, so that there is one place a result accumulates
-  rather than two orderings to reconcile.
+  It is built once per document, and the renderer settles one thing on it before
+  rendering begins — the document's link reference definitions, whose
+  destinations are Liquid like the rest of the file. Nothing updates it after
+  that: anything a tag produces besides HTML — a collected identifier, an error
+  — travels back through `Solid`'s own context instead, so that there is one
+  place a result accumulates rather than two orderings to reconcile.
 
   The URL context is in here rather than reachable from a tag directly because
   `ArchiDep.CourseSite.Urls` also needs to know which page is being rendered:
@@ -28,6 +30,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
     :urls,
     :page,
     :options,
+    :link_references,
     page_variables: %{},
     includes: %{},
     solutions: :revealed
@@ -50,7 +53,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
           page_variables: %{String.t() => term()},
           includes: %{String.t() => Solid.Template.t()},
           options: RenderOptions.t(),
-          solutions: solutions()
+          solutions: solutions(),
+          link_references: [{String.t(), String.t()}]
         }
 
   @doc """
@@ -84,17 +88,35 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
   """
   @spec new(keyword()) :: t()
   def new(opts) when is_list(opts) do
+    source = source!(opts)
+
     %__MODULE__{
-      source: source!(opts),
+      source: source,
       source_path: source_path!(opts),
       urls: urls!(opts),
       page: page!(opts),
       page_variables: page_variables!(opts),
       includes: includes!(opts),
       options: options!(opts),
-      solutions: solutions!(opts)
+      solutions: solutions!(opts),
+      link_references: source.link_references
     }
   end
+
+  @doc """
+  The same context, with the document's link reference definitions as they read
+  once their Liquid has been expanded.
+
+  A destination may be a `{% link %}`, and a definition is appended to fragments
+  of the document that are converted on their own — so one that still said what
+  the file writes would put raw Liquid inside every block tag of the page. The
+  renderer settles this before it renders the body, since a block tag's body is
+  converted while the body is being expanded, long before the definitions at the
+  bottom of the file are reached.
+  """
+  @spec resolve_link_references(t(), [{String.t(), String.t()}]) :: t()
+  def resolve_link_references(%__MODULE__{} = context, references) when is_list(references),
+    do: %__MODULE__{context | link_references: references}
 
   @doc """
   What `{{ page.… }}` resolves to: the document's front matter with the build's

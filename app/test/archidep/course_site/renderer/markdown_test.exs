@@ -58,7 +58,7 @@ defmodule ArchiDep.CourseSite.Renderer.MarkdownTest do
                - [x] Done
                - [ ] Not done
 
-               ~~Struck~~ and https://example.com
+               ~~Struck~~ and [a link](https://example.com)
                """,
                context()
              ) ==
@@ -81,8 +81,24 @@ defmodule ArchiDep.CourseSite.Renderer.MarkdownTest do
                 <li><input type="checkbox" checked="" disabled="" /> Done</li>
                 <li><input type="checkbox" disabled="" /> Not done</li>
                 </ul>
-                <p><del>Struck</del> and <a href="https://example.com">https://example.com</a></p>
+                <p><del>Struck</del> and <a href="https://example.com">a link</a></p>
                 """), []}
+    end
+
+    test "leaves a URL written in prose as the text it is written as" do
+      assert Markdown.to_html("Visit http://todolist.jde.archidep.ch now.\n", context()) ==
+               {"<p>Visit http://todolist.jde.archidep.ch now.</p>", []}
+    end
+
+    test "reads a reference link whose text is a URL as the link it looks like" do
+      {:ok, source} = Source.parse("Prose.\n\n[todolist]: https://todolist.archidep.ch\n")
+
+      assert Markdown.to_html(
+               "See [https://todolist.archidep.ch][todolist].",
+               context(source: source)
+             ) ==
+               {~s(<p>See <a href="https://todolist.archidep.ch">https://todolist.archidep.ch</a>.</p>),
+                []}
     end
 
     test "resolves a reference link against the definitions of the document it comes from" do

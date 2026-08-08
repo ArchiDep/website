@@ -132,31 +132,50 @@ defmodule ArchiDep.CourseSite.Renderer.SourceTest do
     end
   end
 
+  describe "link_references/1" do
+    test "reads the definitions written at the end" do
+      assert Source.link_references("Text.\n\n[a]: https://example.com/a\n[b]: /b\n") ==
+               [{"a", "https://example.com/a"}, {"b", "/b"}]
+    end
+
+    test "reads a definition whose destination is still Liquid" do
+      assert Source.link_references("[cli]: {% link _course/101-command-line/subject.md %}\n") ==
+               [{"cli", "{% link _course/101-command-line/subject.md %}"}]
+    end
+
+    test "leaves a definition that is not at the end to the Markdown renderer" do
+      assert Source.link_references("[a]: https://example.com/a\n\nText.\n") == []
+    end
+
+    test "reads nothing from a document that defines nothing" do
+      assert Source.link_references("Nothing to define.\n") == []
+    end
+  end
+
   describe "definitions/1" do
     test "writes the definitions back as Markdown" do
-      {:ok, source} =
-        Source.parse("Text.\n\n[a]: https://example.com/a\n[b]: https://example.com/b\n")
-
-      assert Source.definitions(source) ==
+      assert Source.definitions([{"a", "https://example.com/a"}, {"b", "https://example.com/b"}]) ==
                "[a]: https://example.com/a\n[b]: https://example.com/b"
+    end
+
+    test "writes nothing for a document that defines nothing" do
+      assert Source.definitions([]) == ""
     end
   end
 
   describe "substitute/2" do
     test "rewrites every reference link of a fragment" do
-      {:ok, source} =
-        Source.parse(
-          "Text.\n\n[dig]: https://example.com/dig\n[ping]: https://example.com/ping\n"
-        )
+      references = [{"dig", "https://example.com/dig"}, {"ping", "https://example.com/ping"}]
 
-      assert Source.substitute(source, "Use [dig][dig], then [ping][ping], then [dig][dig].") ==
+      assert Source.substitute(
+               references,
+               "Use [dig][dig], then [ping][ping], then [dig][dig]."
+             ) ==
                "Use [dig](https://example.com/dig), then [ping](https://example.com/ping), then [dig](https://example.com/dig)."
     end
 
     test "leaves a fragment alone when the document defines nothing" do
-      {:ok, source} = Source.parse("Text.\n")
-
-      assert Source.substitute(source, "Use [dig][dig].") == "Use [dig][dig]."
+      assert Source.substitute([], "Use [dig][dig].") == "Use [dig][dig]."
     end
   end
 

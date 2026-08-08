@@ -12,6 +12,12 @@ defmodule ArchiDep.CourseSite.Renderer.Source do
   document, is what lets that happen without re-scanning the source at every
   use.
 
+  What is kept here is what the **file writes**, which is not always what the
+  document means: a destination may itself be Liquid. Expanding it is the
+  renderer's job, and `ArchiDep.CourseSite.Renderer.RenderContext` is what
+  carries the result — which is why the two functions that put definitions back
+  into a fragment take references rather than a source.
+
   `body_line_offset` is the other reason this module exists: the body is
   rendered as if it were the whole file, so every location an error carries has
   to be moved back down by the length of the front matter to point at the real
@@ -69,19 +75,50 @@ defmodule ArchiDep.CourseSite.Renderer.Source do
   end
 
   @doc """
-  The link reference definitions as Markdown, ready to be appended to a fragment
-  of the document so that a reference link inside it resolves.
+  The `[ref]: url` definitions written at the end of a piece of Markdown.
 
-      iex> {:ok, source} = Source.parse("See [OWASP][owasp].\\n\\n[owasp]: https://owasp.org\\n")
-      iex> Source.definitions(source)
+  Definitions are the run of such lines at the very end, which is where the
+  course writes them. One in the middle of a document is left to the Markdown
+  renderer, which resolves it for the document but not for a fragment extracted
+  from it.
+
+  This is applied to a file by `parse/1` and to those definitions again once
+  their Liquid has been expanded, which is what makes the pair of them the same
+  reading of the same syntax.
+
+      iex> Source.link_references("Text.\\n\\n[dig]: https://linux.die.net/man/1/dig\\n")
+      [{"dig", "https://linux.die.net/man/1/dig"}]
+
+      iex> Source.link_references("Nothing to define.\\n")
+      []
+  """
+  @spec link_references(String.t()) :: [{String.t(), String.t()}]
+  def link_references(markdown) when is_binary(markdown) do
+    markdown
+    |> String.split("\n")
+    |> Enum.reverse()
+    |> Enum.map(&String.trim/1)
+    |> Enum.drop_while(&(&1 == ""))
+    |> Enum.take_while(&Regex.match?(@link_reference, &1))
+    |> Enum.reverse()
+    |> Enum.map(fn line ->
+      [_line, name, url] = Regex.run(@link_reference, line)
+      {name, String.trim(url)}
+    end)
+  end
+
+  @doc """
+  Link reference definitions as Markdown, ready to be appended to a fragment of
+  the document so that a reference link inside it resolves.
+
+      iex> Source.definitions([{"owasp", "https://owasp.org"}])
       "[owasp]: https://owasp.org"
 
-      iex> {:ok, source} = Source.parse("Nothing to define.\\n")
-      iex> Source.definitions(source)
+      iex> Source.definitions([])
       ""
   """
-  @spec definitions(t()) :: String.t()
-  def definitions(%__MODULE__{link_references: references}),
+  @spec definitions([{String.t(), String.t()}]) :: String.t()
+  def definitions(references) when is_list(references),
     do: Enum.map_join(references, "\n", fn {name, url} -> "[#{name}]: #{url}" end)
 
   @doc """
@@ -92,12 +129,11 @@ defmodule ArchiDep.CourseSite.Renderer.Source do
   once would only serve the last section. Substituting the URL in place is what
   Jekyll does for slides today, and it survives being split anywhere.
 
-      iex> {:ok, source} = Source.parse("[Ada][ada]\\n\\n[ada]: https://example.com/ada\\n")
-      iex> Source.substitute(source, "See [Ada][ada] and [Ada][ada].")
+      iex> Source.substitute([{"ada", "https://example.com/ada"}], "See [Ada][ada] and [Ada][ada].")
       "See [Ada](https://example.com/ada) and [Ada](https://example.com/ada)."
   """
-  @spec substitute(t(), String.t()) :: String.t()
-  def substitute(%__MODULE__{link_references: references}, markdown) when is_binary(markdown) do
+  @spec substitute([{String.t(), String.t()}], String.t()) :: String.t()
+  def substitute(references, markdown) when is_list(references) and is_binary(markdown) do
     Enum.reduce(references, markdown, fn {name, url}, acc ->
       String.replace(acc, "][#{name}]", "](#{url})")
     end)
@@ -148,23 +184,5 @@ defmodule ArchiDep.CourseSite.Renderer.Source do
       {:error, error} ->
         {:error, {:invalid_front_matter, Exception.message(error)}}
     end
-  end
-
-  # Definitions are the run of `[ref]: url` lines at the very end of the
-  # document, which is where the course writes them. One in the middle of a
-  # document is left to the Markdown renderer, which resolves it for the
-  # document but not for a fragment extracted from it.
-  defp link_references(body) do
-    body
-    |> String.split("\n")
-    |> Enum.reverse()
-    |> Enum.map(&String.trim/1)
-    |> Enum.drop_while(&(&1 == ""))
-    |> Enum.take_while(&Regex.match?(@link_reference, &1))
-    |> Enum.reverse()
-    |> Enum.map(fn line ->
-      [_line, name, url] = Regex.run(@link_reference, line)
-      {name, String.trim(url)}
-    end)
   end
 end
