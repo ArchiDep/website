@@ -35,6 +35,16 @@ const deck = new Reveal({
 });
 
 deck.initialize().then(async () => {
+  // A deck's opening slide is set differently from the rest of it, and which
+  // slide that is has to be marked on the slide itself rather than left to a
+  // rule about where it sits: reveal rewrites the deck to print it, wrapping
+  // every slide in a page of its own and putting the slide's background ahead
+  // of it, so a rule keyed on position styles the title on screen and nothing
+  // at all in a PDF.
+  document
+    .querySelector('.reveal .slides section')
+    ?.classList.add('title-slide');
+
   document.querySelectorAll('a:not([target="_blank"])').forEach(link => {
     link.setAttribute('target', '_blank');
   });

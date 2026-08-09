@@ -3581,16 +3581,19 @@ rest of it is what has to be true around them. Five corrections.
   tested now" otherwise cannot mean.
 - **It cannot reuse the artifacts the `build` workflow already publishes**,
   which is what makes it a workflow of its own rather than a job beside them.
-  That workflow builds the course assets with `ARCHIDEP_BASE_PATH=/website` for
-  the Pages copy, and webpack bakes that into the address its runtime chunks are
-  fetched from, so a build served at a root would 404 every one of mermaid's
-  chunks — and the export waits for the network to go quiet, which a 404 does.
-  The run stays green and every deck prints with its diagrams missing, which is
-  the worst shape a failure can take here. So the job builds its own assets and
-  asserts the address, one `grep` that turns the whole class into a red build.
-  The theme artifact is no better: it carries `assets/theme` and not
-  `assets/emoji`, which Jekyll never needed and every page of this renderer
-  does.
+  That workflow builds the course assets for the Pages copy, which was then
+  served under `/website` and is now served wherever it is put: webpack baked
+  the prefix into the address its runtime chunks are fetched from, so a build
+  served anywhere else 404ed every one of mermaid's chunks — and the export
+  waits for the network to go quiet, which a 404 does. The run stays green and
+  every deck prints with its diagrams missing, which is the worst shape a
+  failure can take here. **The manual diff review found that the prefix a build
+  publishes its assets under is exactly such an "anywhere else"**, so the
+  address is no longer baked at all and a bundle asks for its chunks and its
+  fonts relative to itself; the workflow's `grep` asserts that instead, which is
+  the same red build for the same class. The theme artifact is no better: it
+  carries `assets/theme` and not `assets/emoji`, which Jekyll never needed and
+  every page of this renderer does.
 - **`MIX_ENV=test` would build the 1955 edition.** The test configuration names
   an edition of its own so that a test asserting a URL asserts a fact about the
   code; a job inheriting the app job's environment would have inherited that,

@@ -14,6 +14,17 @@ main pre.lumis .l-highlighted {
   @apply inline-block min-w-full;
 }
 
+/* Paper cannot scroll, so a line the box would be read sideways for is a line
+ * the reader of a PDF never sees at all: printed, a code block wraps instead.
+ * It wraps anywhere rather than at spaces because the lines this is for are
+ * long single words — a URL, a path, a key. */
+@media print {
+  main pre.lumis {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
 main a:not(.btn):not(.no-hover) {
   @apply hover:text-accent;
 }
@@ -87,6 +98,24 @@ main .note {
 
   .title {
     @apply flex items-center gap-2 font-bold text-gray-600 dark:text-gray-400;
+  }
+
+  /* An aside is one thing to read, so a page break inside it must leave both
+   * halves worth reading: never the box alone with everything in it overleaf,
+   * never the title at the bottom of a page and what it announces on the next,
+   * and never a single line of a paragraph either side of the break. Breaking
+   * an aside in the middle is fine. */
+  @media print {
+    .title {
+      break-before: avoid;
+      break-after: avoid;
+      break-inside: avoid;
+    }
+
+    .content > * {
+      orphans: 2;
+      widows: 2;
+    }
   }
 
   &.note-advanced {

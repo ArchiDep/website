@@ -121,6 +121,16 @@ defmodule ArchiDep.CourseSite.RendererTest do
                {:ok, %Page{excerpt_html: nil, html: "<p>The only paragraph.</p>", toc: []}}
     end
 
+    test "hands the home page over whole, its opening being the site's own" do
+      assert render_page("An opening paragraph.\n\nThe rest of the page.\n", page: :home) ==
+               {:ok,
+                %Page{
+                  excerpt_html: nil,
+                  html: "<p>An opening paragraph.</p>\n<p>The rest of the page.</p>",
+                  toc: []
+                }}
+    end
+
     test "runs the build's passes over both pieces of the page" do
       assert render_page(
                "An opening paragraph.\n\nThe rest of the page.\n",

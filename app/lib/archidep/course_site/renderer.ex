@@ -173,6 +173,11 @@ defmodule ArchiDep.CourseSite.Renderer do
     {passed, errors ++ pass_errors}
   end
 
+  # The home page is not cut: what the site shows above its table of contents is
+  # the greeting and how far the course has got, not a piece of the page, so its
+  # first block belongs where the author wrote it — under them.
+  defp split(document, %RenderContext{page: :home}), do: {nil, document, []}
+
   # A page that declares a separator it never writes is cut where a page that
   # declares none is cut, so that the rest of its problems are reported in the
   # same pass as the omission.

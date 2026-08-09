@@ -81,7 +81,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: theme
-          path: app/priv/static/assets/theme
+          path: app/priv/static/assets
 
       - name: Install Erlang/OTP & Elixir
         uses: erlef/setup-beam@v1
@@ -176,8 +176,6 @@ jobs:
       - name: Build course assets
         run: npm run build
         working-directory: course
-        env:
-          ARCHIDEP_BASE_PATH: '/website'
 
       - name: Ensure there are no uncommitted changes
         run: |
@@ -229,7 +227,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: theme
-          path: app/priv/static/assets/theme
+          path: app/priv/static/assets
 
       - name: Build the course
         run: bundle exec jekyll build --config _config.yml,_config.pages.yml
@@ -279,11 +277,16 @@ jobs:
           git status --porcelain
           test -z "$(git status --porcelain)"
 
+      # The fonts travel with the stylesheets naming them, which address them
+      # relative to themselves: a copy of one without the other is a site set in
+      # whatever the browser falls back to.
       - name: Upload theme
         uses: actions/upload-artifact@v4
         with:
           name: theme
-          path: app/priv/static/assets/theme
+          path: |
+            app/priv/static/assets/fonts
+            app/priv/static/assets/theme
           retention-days: 5
 
   format:

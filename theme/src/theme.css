@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Fjalla+One&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import './fonts.css';
 
 @import 'tailwindcss';
 @plugin "@tailwindcss/typography";

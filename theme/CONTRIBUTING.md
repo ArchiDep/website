@@ -75,6 +75,8 @@ the running application serves it:
 - `src/theme.css` is compiled to `app/priv/static/assets/theme/theme.css`.
 - `src/slides.css` is compiled to `app/priv/static/assets/theme/slides.css`.
 - `emoji/*.svg` are copied to `app/priv/static/assets/emoji/`.
+- The font files the stylesheets name are copied to
+  `app/priv/static/assets/fonts/`. See [Typography & Fonts](#typography--fonts).
 
 All output files are generated and ignored by Git. The application must have the
 theme built for it to compile and serve pages correctly, as documented in the
@@ -101,6 +103,9 @@ theme built for it to compile and serve pages correctly, as documented in the
   - `src/toc.css`: Styles for the table of contents shown in the sidebar.
   - `src/git-memoir.css`: Styles for the interactive [Git memoir][git-memoir]
     diagrams. Imported by both `theme.css` (via `course.css`) and `slides.css`.
+  - `src/fonts.css`: The `@font-face` rules for the three families the site is
+    set in, imported by both entry points. See [Typography &
+    Fonts](#typography--fonts).
   - `src/highlight-light.css` & `src/highlight-dark.css`: Syntax highlighting
     color schemes for code blocks. See [Syntax Highlighting](#syntax-highlighting).
 - **Other Files**
@@ -111,6 +116,8 @@ theme built for it to compile and serve pages correctly, as documented in the
     [`emoji/README.md`](./emoji/README.md) says where they come from and how to
     add one.
   - `scripts/copy-emoji.mjs`: Copies the above into the static assets.
+  - `scripts/copy-fonts.mjs`: Copies the font files `src/fonts.css` names into
+    the static assets.
   - `package.json`: npm workspace configuration, dependencies and build scripts.
   - `.gitignore`: Ignores the local `dist` directory.
 
@@ -208,13 +215,30 @@ and [`course`][course-contributing] documentation.
 
 ### Typography & Fonts
 
-Custom fonts are imported from Google Fonts at the top of each entry point and
-applied in `shared.css`:
+Three families, declared by `src/fonts.css` — which both entry points import —
+and applied in `shared.css`:
 
 - **Bitcount Prop Single** — the title font, exposed as the `--font-title` theme
   token and used for `h1` headings and slide titles.
 - **Fjalla One** — used for `h2`–`h6` headings.
 - **PT Sans** — the default body font (`--default-font-family`).
+
+**They are served from where the site is served**, never fetched from a font
+host: a page has to look the same offline, in a container that cannot resolve a
+name, and in the headless browser that prints the PDFs — which would otherwise
+print every title in a fallback font and say nothing. `src/fonts.css` is
+therefore the `@font-face` rules themselves, and `scripts/copy-fonts.mjs`
+publishes the files they name, working out which those are by reading them: a
+face named in the stylesheet that no installed package provides stops the build
+rather than 404ing in a browser. Adding a family means installing its
+[Fontsource][fontsource] package, listing it in that script and declaring its
+faces.
+
+The addresses in those rules are **relative to the stylesheet** (`../fonts/…`),
+as is everything an asset fetches for itself. A build publishes its assets under
+its edition prefix, under a mount point, or at the root of an export, and
+nothing bundled can know which; only the URLs the renderer emits go through [its
+seam][urls].
 
 ### Syntax Highlighting
 
@@ -305,11 +329,14 @@ format` (check) or `npm run format:write` (apply) from the repository root, as
 Run these from the `theme` directory (or prefix with `npm run --workspace theme`
 from the repository root):
 
-- `npm run build`: Build and minify both stylesheets.
+- `npm run build`: Publish the emoji and fonts, then build and minify both
+  stylesheets.
+- `npm run build:emoji`: Copy only the emoji into the static assets.
+- `npm run build:fonts`: Copy only the fonts into the static assets.
 - `npm run build:main`: Build and minify only `theme.css`.
 - `npm run build:slides`: Build and minify only `slides.css`.
-- `npm start`: Build both stylesheets and watch for changes (without
-  minification).
+- `npm start`: Publish the emoji and fonts, then build both stylesheets and
+  watch for changes (without minification).
 - `npm run start:main`: Watch and rebuild only `theme.css`.
 - `npm run start:slides`: Watch and rebuild only `slides.css`.
 
@@ -344,6 +371,7 @@ agents.
 [daisyui]: https://daisyui.com/docs/
 [emoji]: ../app/lib/archidep/emoji.ex
 [flashy]: https://hexdocs.pm/flashy/readme.html
+[fontsource]: https://fontsource.org
 [git-memoir]: https://github.com/AlphaHydrae/git-memoir
 [lumis]: https://hexdocs.pm/lumis
 [prettier]: https://prettier.io
@@ -352,3 +380,4 @@ agents.
 [tailwind-cli]: https://tailwindcss.com/docs/installation/tailwind-cli
 [tailwind-typography]: https://github.com/tailwindlabs/tailwindcss-typography
 [twemoji]: https://github.com/jdecked/twemoji
+[urls]: ../app/lib/archidep/course_site/CONTRIBUTING.md#url-and-link-emission

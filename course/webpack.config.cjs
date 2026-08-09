@@ -2,7 +2,6 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const path = require('path');
 
 const production = process.env.NODE_ENV === 'production';
-const basePath = process.env.ARCHIDEP_BASE_PATH ?? '';
 
 const baseConfig = {
   devtool: 'source-map',
@@ -67,7 +66,13 @@ module.exports = [
         'assets',
         'course'
       ),
-      publicPath: `${basePath}/assets/course/`
+      // Everything these bundles fetch for themselves — a runtime chunk, a font
+      // a stylesheet names — is addressed relative to the file asking for it
+      // rather than from a prefix baked in here. Nothing of that goes through
+      // the build's URL seam, and where a build publishes its assets is not
+      // known when they are bundled: the same bundle is served under an edition
+      // prefix, under a mount point, and from the root of an export.
+      publicPath: 'auto'
     },
     plugins: [
       new MiniCssExtractPlugin({
@@ -110,7 +115,7 @@ module.exports = [
         'assets',
         'search'
       ),
-      publicPath: `${basePath}/assets/search/`
+      publicPath: 'auto'
     }
   }
 ];

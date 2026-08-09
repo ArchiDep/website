@@ -770,6 +770,15 @@ name and records it. Chunks Webpack loads at runtime are the exception: the
 Webpack runtime requests those by name from its own `publicPath` and never
 consults a manifest, so they keep Webpack's `[chunkhash]`.
 
+**What a bundle fetches for itself is addressed relative to the file asking for
+it** (`publicPath: 'auto'`) — a runtime chunk, a font a bundled stylesheet
+names. None of that goes through the build's [URL seam][urls], and where a build
+publishes its assets is not known when they are bundled: the same bundle is
+served under an edition prefix, under a mount point, and from the root of the
+copy the PDFs are printed from. An address baked in here resolves in exactly one
+of those and 404s in the rest, which shows up as a deck printed with its
+diagrams missing and its titles in a fallback font.
+
 The [`relative_asset_url.rb`](./_plugins/relative_asset_url.rb) plugin reads
 `cache_manifest.json` so templates can reference assets by their logical name
 and get the correct hashed URL. **Do not hardcode hashed asset paths in
@@ -986,5 +995,6 @@ agents.
 [ruby-docs]: https://www.ruby-lang.org/en/documentation/
 [ts-pattern]: https://github.com/gvergnaud/ts-pattern
 [typescript]: https://www.typescriptlang.org
+[urls]: ../app/lib/archidep/course_site/CONTRIBUTING.md#url-and-link-emission
 [webpack]: https://webpack.js.org
 [webpack-docs]: https://webpack.js.org/concepts/

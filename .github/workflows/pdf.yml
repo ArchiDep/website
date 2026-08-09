@@ -80,19 +80,19 @@ jobs:
         run: npm run build
         working-directory: theme
 
-      # No ARCHIDEP_BASE_PATH: this build is served at a root, and webpack bakes
-      # the base path into the address its runtime chunks are fetched from.
       - name: Build course assets
         run: npm run build
         working-directory: course
         env:
           NODE_ENV: production
 
-      # A wrong base path would only ever show up as a slide deck printed with
-      # its diagrams missing: the chunks 404 and the export waits for the
-      # network to go quiet, which a 404 does.
-      - name: Check the assets are addressed at a root
-        run: grep -q '__webpack_require__.p = "/assets/course/"' app/priv/static/assets/course/slides-mermaid.js
+      # An address baked in here would only ever show up as a slide deck printed
+      # with its diagrams missing and its titles in a fallback font: the chunks
+      # and the fonts 404, and the export waits for the network to go quiet,
+      # which a 404 does. A build's assets sit under its edition prefix, so
+      # there is no one prefix to bake.
+      - name: Check the assets address themselves relatively
+        run: grep -q '__webpack_require__.p = scriptUrl' app/priv/static/assets/course/slides-mermaid.js
 
       - name: Install Erlang/OTP & Elixir
         uses: erlef/setup-beam@v1

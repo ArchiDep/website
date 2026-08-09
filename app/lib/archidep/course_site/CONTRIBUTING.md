@@ -1085,6 +1085,10 @@ table of contents and the rest below. [`Excerpt`](./renderer/excerpt.ex) splits
 the parsed document at the `excerpt_separator` the front matter declares, or
 after the first block when it declares none.
 
+The home page is the exception and comes back whole: what the site shows above
+its table of contents is the greeting and how far the course has got, which the
+chrome writes, so cutting a first block off the page would put it above them.
+
 Splitting the document rather than the text is what makes this safe: reference
 links are already resolved when the document is parsed, so both pieces keep
 working, and a separator written inside a code block is a code block rather than

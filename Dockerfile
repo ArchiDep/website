@@ -144,6 +144,7 @@ COPY --chown=build:build --from=app-assets /build/app/priv/static/assets/app/ /b
 COPY --chown=build:build --from=course-assets /build/app/priv/static/assets/course/ /build/digest/priv/static/assets/course/
 COPY --chown=build:build --from=course-assets /build/app/priv/static/assets/search/ /build/digest/priv/static/assets/search/
 COPY --chown=build:build --from=theme /build/app/priv/static/assets/emoji/ /build/digest/priv/static/assets/emoji/
+COPY --chown=build:build --from=theme /build/app/priv/static/assets/fonts/ /build/digest/priv/static/assets/fonts/
 COPY --chown=build:build --from=theme /build/app/priv/static/assets/theme/ /build/digest/priv/static/assets/theme/
 
 RUN mix phx.digest priv/static -o priv/static && \

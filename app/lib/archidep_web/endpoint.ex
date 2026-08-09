@@ -11,7 +11,12 @@ defmodule ArchiDepWeb.Endpoint do
     signing_salt: {__MODULE__, :session_signing_salt, []}
   ]
 
-  @serve_static :archidep |> Application.compile_env!(__MODULE__) |> Keyword.fetch!(:serve_static)
+  # Read key by key rather than as a whole configuration. Mix compares what a
+  # compile-time read saw with what the runtime holds, and `runtime.exs` sets
+  # this endpoint's configuration wholesale: the entries are the same but their
+  # order is not, and an ordering is enough to fail that comparison and refuse
+  # to boot.
+  @serve_static Application.compile_env!(:archidep, [__MODULE__, :serve_static])
 
   # Where the course material site is published, for a deployment that asked
   # this application to serve it. Only development does: production publishes a
@@ -19,19 +24,17 @@ defmodule ArchiDepWeb.Endpoint do
   # front of it, the reverse proxy routing the course URLs there and the
   # dashboard's here. So this is keyed on `serve` being asked for rather than on
   # a build directory being configured, which production will do as well.
-  @course_site :archidep
-               |> Application.compile_env(:course_site, [])
-               |> Keyword.take([:serve, :build_dir, :version])
-
-  @course_site_dir if Keyword.get(@course_site, :serve, false),
-                     do: Keyword.fetch!(@course_site, :build_dir)
+  @course_site_dir if Application.compile_env(:archidep, [:course_site, :serve], false),
+                     do: Application.compile_env!(:archidep, [:course_site, :build_dir])
 
   # The edition a served build holds, as a path. A build that carries its own
   # global assets answers for them itself; the one served here does not, being
   # rewritten by the asset watchers as it is served, so its edition prefix is
   # where "priv/static" has to answer as well.
-  @course_site_edition if @course_site_dir && Keyword.get(@course_site, :version),
-                         do: "/" <> Keyword.fetch!(@course_site, :version)
+  @course_site_version if @course_site_dir,
+                         do: Application.compile_env(:archidep, [:course_site, :version])
+
+  @course_site_edition if @course_site_version, do: "/" <> @course_site_version
 
   # Phoenix LiveView
   socket "/live", Phoenix.LiveView.Socket,
