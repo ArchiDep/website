@@ -63,11 +63,14 @@ class Randomizer {
       return undefined;
     }
 
+    // The block whose values are randomized is the one the element announces:
+    // the next one in the page.
+    const codeBlock = element.nextElementSibling ?? undefined;
     const codeElement =
-      document.querySelector<HTMLElement>(`#${id} + * code`) ?? undefined;
-    if (!codeElement) {
+      codeBlock?.querySelector<HTMLElement>('code') ?? undefined;
+    if (!codeBlock || !codeElement) {
       logger.warn(
-        `Cannot create a randomizer for element with ID ${id} because no code element was found under its next sibiling`,
+        `Cannot create a randomizer for element with ID ${id} because no code element was found under its next sibling`,
         element
       );
       return undefined;
@@ -80,11 +83,14 @@ class Randomizer {
     );
 
     if (tooltipEnabled === 'true') {
-      const parent = codeElement.parentElement?.parentElement?.parentElement;
-      if (parent) {
-        parent.classList.add('tooltip', 'tooltip-accent', 'block');
-        parent.dataset['tip'] = 'Remember to change the values!';
-      }
+      // The tooltip is drawn above the block it reminds the reader about, and
+      // an element it hangs off that scrolls sideways clips it — which a code
+      // block does. So the block is moved inside this element, which has no
+      // box of its own until it holds the block and then has exactly the
+      // block's, and the tooltip hangs off that instead.
+      element.appendChild(codeBlock);
+      element.classList.add('tooltip', 'tooltip-accent', 'block');
+      element.dataset['tip'] = 'Remember to change the values!';
     }
 
     (codeElement as Randomized)[randomizerKey] = randomizer;

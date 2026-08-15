@@ -4,7 +4,12 @@ git-memoir {
   @apply bg-zinc-400 border-slate-800 min-h-[var(--memoir-min-height)] my-4;
 }
 
-main > pre.lumis {
+/* A code block whose values are randomized is moved inside the element that
+ * announces it, which is what carries the reminder tooltip (see
+ * `course/src/assets/course/randomize.ts`), so it is a block of the page all
+ * the same and is drawn as widely as the rest. */
+main > pre.lumis,
+main > .archidep-randomize > pre.lumis {
   @apply -ml-4 lg:-ml-6 xl:-ml-8 -mr-4 lg:-mr-6 xl:-mr-8;
 }
 

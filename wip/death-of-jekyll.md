@@ -3771,6 +3771,22 @@ resolves and nothing answered whether a link was _formed_, which is what both
 the first and the third were; and a rule scoped to where a thing is usually
 drawn is not a rule about the thing, which is what the second was.
 
+The visual pass has found one of its own, since fixed: on `402-run-virtual-server`
+the **"Remember to change the values!" tooltip was drawn over the whole page**,
+appearing at the top of it whenever the pointer was anywhere in the content.
+[`randomize.ts`](../course/src/assets/course/randomize.ts) reached the element
+to hang it off by walking three parents up from the `<code>`, which was rouge's
+`div.highlighter-rouge` under Jekyll and is the card holding `<main>` now that a
+code block is a bare `<pre class="lumis">`. The block is moved inside the
+`.archidep-randomize` element that announces it and the tooltip hangs off that
+instead — an element the content states rather than one counted off from the
+markup, and, unlike the block, one that cannot clip a tooltip drawn above it by
+scrolling sideways. That is a third shape: **the client-side scripts were
+written against the markup rouge emitted**, and nothing type-checks or tests
+that. Reaching for an ancestor by counting was the only instance of it, but the
+same question is worth asking of any script that reads the page rather than
+being handed it.
+
 What is left for the visual pass, none of it acted on: lists that comrak makes
 looser than kramdown did (11 pages, 29 paragraphs), `<git-memoir>` elements
 wrapped in a paragraph (16, all on `204-hello-github`), table cells aligned with
