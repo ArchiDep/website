@@ -26,6 +26,7 @@ and tooling that also apply here. Read that document first.
   - [Generated PDFs](#generated-pdfs)
   - [Errors](#errors)
 - [Building](#building)
+  - [What the search dialog can find](#what-the-search-dialog-can-find)
   - [Checking it against the real content](#checking-it-against-the-real-content)
 - [Laying a page out](#laying-a-page-out)
   - [The chrome](#the-chrome)

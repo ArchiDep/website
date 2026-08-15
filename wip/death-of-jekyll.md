@@ -55,6 +55,7 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Search index](#search-index)
   - [HTML fidelity gate](#html-fidelity-gate)
   - [Cutover](#cutover)
+  - [The course directory after Jekyll](#the-course-directory-after-jekyll)
 - [What the course actually depends on (measured, not assumed)](#what-the-course-actually-depends-on-measured-not-assumed)
 - [The decisive point: half of this is already rendered in Elixir](#the-decisive-point-half-of-this-is-already-rendered-in-elixir)
 - [What gets simpler, and what is load-bearing](#what-gets-simpler-and-what-is-load-bearing)
@@ -501,8 +502,14 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       a client that is handed a URL has to know what an emoji looks like in
       HTML, and `ArchiDep.Emoji.img/3` is meant to be the only thing that does —
       see [Search index](#search-index).
-- [ ] Run an HTML fidelity diff / visual-regression gate against current Jekyll
-      output — see [HTML fidelity gate](#html-fidelity-gate).
+- [x] Run an HTML fidelity diff / visual-regression gate against current Jekyll
+      output — see [HTML fidelity gate](#html-fidelity-gate). **Accepted on the
+      bar this gate states — nothing broken, each page looks good — rather than
+      on an empty diff**, which it never asked for. The four findings the visual
+      pass left unacted on are deferred to the 2026 edition, whose content is
+      being gone through anyway; the 2025 edition is recoverable from the tag cut
+      before that work starts, so deferring them costs the ability to fix them
+      later nothing.
 - [ ] Serve the build in **production** — see [Development and production
       serving](#development-and-production-serving). It sits here rather than
       beside the development half because it blocks **nothing but the cutover
@@ -531,6 +538,12 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 
 **Deferred (scheduled after cutover)**
 
+- [ ] Take the course directory out of Jekyll's shape: `collections/_course` →
+      `chapters`, `collections/_cheatsheets` → `cheatsheets`, `_includes/icons`
+      → `icons`, and `_data/course.yml` to the course root — see [The course
+      directory after Jekyll](#the-course-directory-after-jekyll). First of these
+      rather than last: it is the only one with a deadline, since the 2026
+      content is what makes it more expensive the longer it waits.
 - [ ] Move the progress _status source_ from `progress.json` to a database model
       edited through the admin console, driving an in-process rebuild — see
       [Progress: structure vs status](#progress-structure-vs-status).
@@ -3113,8 +3126,11 @@ the marker.
 What this leaves open, beyond the production half above:
 
 - **Jekyll must keep running in development**, for `search.json`, `lunr.json`
-  and `feed.xml`, which this build does not write. That puts the [search
-  index](#search-index) on the critical path to deleting Jekyll.
+  and `feed.xml`, which this build does not write. **Closed since**: the build
+  writes the index itself and `lunr.json` is gone with the Node half of it (see
+  [Search index](#search-index)), and `jekyll-feed` was
+  [dropped](#smaller-jekyll-plugins) rather than reimplemented. Nothing in
+  development waits on Jekyll now.
 - **Every rebuild copies all 373 files that sit next to a page** — 49 MB —
   because a staging directory starts empty by design. A whole rebuild measures
   ~2.2 s on an SSD, which is the per-edit cost; hard-linking, or carrying the
@@ -3847,6 +3863,67 @@ Elixir's own `JSON`. So at cutover:
 - Take the opportunity to slim the shape if wanted — `archidep.json` is
   [ours to define](#drop-the-archidepjson-round-trip) by then, and `pdf.ts` reads
   five keys of a document and four of a cheatsheet.
+
+### The course directory after Jekyll
+
+`collections/` is Jekyll's `collections_dir` and nothing else; `_course` and
+`_cheatsheets` are collection names whose leading underscore is Jekyll's mark for
+a directory it must not publish. Once the Ruby stage is gone all three name
+nothing: what is left is a two-level wrapper whose only remaining job is to be
+the string two regexes match on. The layout to move to:
+
+- `collections/_course/` → `chapters/`
+- `collections/_cheatsheets/` → `cheatsheets/`
+- `_includes/icons/` → `icons/`, the only part of `_includes` a document may
+  include and so the only part the [cutover](#cutover) keeps
+- `_data/course.yml` → `course.yml` at the course root. It moves anyway; moving
+  it here is that edit made once rather than twice.
+- `collections/_json/` goes with the rest of the Ruby layer.
+
+**Why it is separate from the cutover rather than part of it.** The cutover is
+already a large deletion, and it is the change to bisect first if production
+serving misbehaves. A rename landing in the same commit is noise across every
+diff of it.
+
+**Why it does not wait past that.** The cost is one rewrite per cross-reference
+and scales with how much content exists: 107 `{% link _course/… %}` across 34
+files today, plus everything the 2026 edition adds. Every file written between
+cutover and the rename is written against a layout already decided against.
+
+**What it touches**, all of it concentrated because the Jekyll names never
+spread:
+
+- [`ContentTree`](../app/lib/archidep/course_site/build/content_tree.ex) —
+  `@roots` and `@chapter_regex`.
+- [`DocumentRef`](../app/lib/archidep/course_site/document_ref.ex) —
+  `@source_path_regex`.
+- [`Builder.course_inputs/1`](../app/lib/archidep/course_site/builder.ex), the
+  one place a course directory becomes the five inputs of a build, and the
+  defaults of the `structure` and `assets` Mix tasks.
+- The `@source` globs of [`slides.css`](../theme/src/slides.css) and
+  [`theme.css`](../theme/src/theme.css).
+- The 107 link tags, and the fixture paths the build and watcher tests state.
+
+**It cannot break silently**, which is what makes it a safe refactor to do in
+bulk: a link naming a path that does not exist fails the build, and `LinkCheck`
+answers for the rest. Already-published editions are unaffected — the "Source
+code" link is built from a pinned revision, so a page keeps pointing into the
+tree it was built from whatever the tree looks like afterwards.
+
+**Two adjacent inconsistencies to settle deliberately rather than fold in.**
+Five chapters keep `slides.md` at their root and nine use `slides/slides.md`,
+which `DocumentRef` accepts as two spellings of one thing; the output URL is the
+same either way, so this is an authoring wart rather than a behaviour. If it is
+normalised, `slides/slides.md` is the form to keep, a deck with images needing
+the directory regardless. And cheatsheets are `<topic>/cheatsheet.md` though only
+`sysadmin` has images — which reads worse right up until the second one needs a
+picture, and is best left alone.
+
+**Out of scope, and recorded where it will outlive this document**: what
+`{% link %}` should take once we own the tag, in [the future work
+document](../app/docs/future-work.md#let-the-link-tag-name-a-document-rather-than-a-source-path).
+It would make the content immune to a move like this one, which is an argument
+for doing it — but not for holding the rename until it exists.
 
 ---
 

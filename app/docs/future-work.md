@@ -23,6 +23,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Keep the server `secret_key` out of the Ansible admin web state](#keep-the-server-secret_key-out-of-the-ansible-admin-web-state)
 - [Publish SSH host-key parsing across the context boundary](#publish-ssh-host-key-parsing-across-the-context-boundary)
 - [Remaining uncovered code after the 90% coverage push](#remaining-uncovered-code-after-the-90-coverage-push)
+- [Let the link tag name a document rather than a source path](#let-the-link-tag-name-a-document-rather-than-a-source-path)
 
 <!-- END doctoc -->
 
@@ -491,5 +492,47 @@ compatibility test drives the in-process Erlang `:ssh` stack (within the
 ecosystem), so it was untagged and now runs in the standard suite, giving
 `Servers.SSH.Client.SystemClient` real coverage. Only the Ansible smoke tests,
 which drive a foreign tool against a live host, remain `:external`.
+
+## Let the link tag name a document rather than a source path
+
+**Problem:** A cross-reference in the course material is written as a file path —
+`{% link _course/205-php-todolist/exercise.md %}` — of which there are 107 across
+34 documents. The tag is Jekyll's, and so is its contract: it takes where a file
+sits on disk and returns the URL that file is published at. Every cross-reference
+in the content is therefore coupled to the layout of the source tree, and any
+change to that layout is a rewrite of all of them.
+
+**Why this matters:** A document already has an identity that is not its path.
+`ArchiDep.CourseSite.DocumentRef` parses one out of the path — a chapter code, a
+slug and which of the four kinds of document it is — because the rest of the
+subsystem needs that identity rather than the path. The path is thus a spelling
+of a reference the system reconstructs anyway, and the least stable spelling
+available: it changes when a file moves, when a deck grows an images directory
+and gains a level, or when the directories are renamed. Naming the reference
+directly would make the content immune to all three, and shorter to write.
+
+Nothing forces this while Jekyll is in the picture, since the tag has to keep
+meaning what Jekyll means by it. Once the Ruby stage is gone the tag is ours, and
+this becomes a question of what we want it to say.
+
+**Proposed approach:** Accept a document reference — the chapter code plus the
+kind, e.g. `{% link 205 exercise %}` — resolved through the same URL seam the
+path form resolves through today, so that an unresolvable reference stays a build
+error rather than a broken page. The path form can either keep working through a
+transition or be converted wholesale in one pass, the content being the only
+caller.
+
+**Open questions to resolve when scheduling this**
+
+- What the canonical spelling is: the numeric code alone is unambiguous, while
+  the code with its slug reads better at the call site and states an expectation
+  a build can check.
+- Whether cheatsheets and slide decks take the same form, given that a cheatsheet
+  has a topic rather than a code, and a deck belongs to a chapter.
+- Whether the path form is kept at all, or removed once the content no longer
+  uses it.
+- What the "Source code" link does, since it must keep resolving to a real file
+  in the repository and is therefore the one consumer that genuinely wants a
+  path.
 
 [coveralls-config]: ../coveralls.json
