@@ -56,8 +56,14 @@ a {
   }
 }
 
+/* reveal.js's Solarized theme drops a shadow under every block it presents as
+   code, which the site's flat code blocks do not have. */
+.reveal pre {
+  @apply shadow-none;
+}
+
 pre.mermaid {
-  @apply shadow-none text-center text-gray-600;
+  @apply text-center text-gray-600;
 }
 
 pre.mermaid.loading {
