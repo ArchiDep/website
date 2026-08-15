@@ -24,6 +24,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Publish SSH host-key parsing across the context boundary](#publish-ssh-host-key-parsing-across-the-context-boundary)
 - [Remaining uncovered code after the 90% coverage push](#remaining-uncovered-code-after-the-90-coverage-push)
 - [Let the link tag name a document rather than a source path](#let-the-link-tag-name-a-document-rather-than-a-source-path)
+- [Stop publishing source maps with the course assets](#stop-publishing-source-maps-with-the-course-assets)
 
 <!-- END doctoc -->
 
@@ -534,5 +535,43 @@ caller.
 - What the "Source code" link does, since it must keep resolving to a real file
   in the repository and is therefore the one consumer that genuinely wants a
   path.
+
+## Stop publishing source maps with the course assets
+
+**Problem:** [`webpack.config.cjs`](../../course/webpack.config.cjs) sets
+`devtool: 'source-map'` unconditionally — `mode` switches on the environment and
+`devtool` does not — so a production build emits a `.map` beside every chunk and
+writes a `sourceMappingURL` comment into all of them. They are published with the
+rest of the assets: a build tree measured here held 267 map files under
+`assets/course` totalling 89 MB, the largest single one 4.2 MB. That figure is
+inflated by digested copies accumulating in a long-lived local `priv/static`, so
+a clean build is smaller, but the order of magnitude is the point.
+
+**Why this matters:** Nothing consumes them. There is no error-reporting service
+wired to the course front end, so the maps exist only for whoever opens developer
+tools against the deployed site. What they cost is not user bandwidth — a browser
+fetches a map only when devtools are open — but the weight of every image built
+and every deployment made, on a repository whose image is rebuilt on each push.
+It is not a disclosure concern either: the sources are in a public repository.
+
+**Proposed approach:** Make `devtool` depend on the mode the way `mode` already
+does.
+
+- `devtool: false` for production if the maps have no consumer, which is the
+  situation today.
+- `hidden-source-map` instead, if they are ever wanted for error reporting: the
+  maps are still emitted, but no `sourceMappingURL` comment points a browser at
+  them, and the build step that would use them uploads them rather than
+  publishing them.
+
+**Open questions to resolve when scheduling this**
+
+- Whether the dashboard's own assets do the same thing, which was not checked
+  when this was written.
+- Whether the maps should be kept as a build artifact — uploaded by CI and not
+  served — rather than simply not produced.
+- Whether the accumulation of stale digested copies in a long-lived
+  `priv/static` is worth addressing separately; it inflates any measurement of
+  the published tree and is not specific to source maps.
 
 [coveralls-config]: ../coveralls.json
