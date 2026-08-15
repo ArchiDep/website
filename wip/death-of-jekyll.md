@@ -514,11 +514,14 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       serving](#development-and-production-serving). It sits here rather than
       beside the development half because it blocks **nothing but the cutover
       below**, which cannot happen without it: dropping the Ruby stage takes
-      away what production serves today. It splits in two, and only the second
-      half reaches outside this repository: - **What the static server serves.**
-      The separate static server, its configuration and the proxy split already
-      exist here and serve Jekyll's output; what is left is pointing them at the
-      Elixir build. This is the half the cutover waits on. Forwarding the
+      away what production serves today. It splits in two, and **both** halves
+      reach outside this repository: - **What the static server serves.** The
+      separate static server, its configuration and the proxy split already
+      exist and serve Jekyll's output; what is left is pointing them at the
+      Elixir build — which is not one directory swapped for another, the build's
+      tree being prefixed by its edition where Jekyll's was not, so the rules
+      that name paths move with it. This is the half the cutover waits on.
+      Forwarding the
       [legacy paths](#optional-url-prefix) at the proxy belongs to this change
       and to nowhere else, since the same rules name the same paths — and it is
       optional, the application already answering them wherever the proxy does
@@ -527,9 +530,11 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       [database progress source](#progress-structure-vs-status) needs this, and
       that is already deferred past the cutover. `Build.swap_output/2` is the
       atomic publish itself and is done.
-- [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stage,
-      and remove the JSON ordering scaffolding that only exists to keep
-      `archidep.json` diffable against Jekyll's — see [Cutover](#cutover). The
+- [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stages —
+      **both** of them, the release one and the development service that is easy
+      to forget — and remove the JSON ordering scaffolding that only exists to
+      keep `archidep.json` diffable against Jekyll's — see [Cutover](#cutover).
+      The
       CI job publishing the **GitHub Pages backup** is part of that stage: it
       builds the site with `_config.pages.yml` today, and what it must run
       instead is the build task with the `:backup` row of the [consumers
@@ -1096,9 +1101,13 @@ Traps to handle when implementing:
   content edits) but reimplement it as a real `{:page_asset, …}` lookup.
 - **Immutable caching needs a server rule.** A separately-digested tree is not
   in `cache_manifest.json`, so `Plug.Static` will ETag it rather than mark it
-  immutable. Because _every_ page asset is digested, the production static
-  server can match on extension under the course tree
-  (`/20\d\d/course/.*\.(png|jpe?g|webp|gif|svg|pdf)$`) to serve them immutable.
+  immutable. The rule is keyed on the **digest** rather than on the file type —
+  `^/[0-9]{4}/.*-[0-9a-f]{32}\.[^./]+$` — which covers a page asset and a global
+  one alike, and leaves out the pages, the JSON files and the undigested aliases
+  a build also publishes, every one of which is replaced in place. An extension
+  list would under-cache what it missed (a digested `.pdf` beside a page is as
+  immutable as the images next to it) and would state a rule about pictures
+  where the fact is about names.
 
 **Corrections while implementing:**
 
@@ -3042,8 +3051,8 @@ deployment:
 - What it serves is `priv/static` **baked into the image**, which is where
   Jekyll writes. So production serving is not a topology to build but a source
   to change: the same stage taking the Elixir build, and the paths the proxy and
-  nginx name kept in step with what that build writes (`/cheatsheets/`, and
-  `/404.html` as an error page rather than a fall-through).
+  nginx name kept in step with what that build writes — which is more than a
+  rename, the build's tree being prefixed by its edition where Jekyll's was not.
 - **The shared volume is a separate concern from that**, and a later one. It
   exists to let a running application republish the site without rebuilding the
   image, which is what the [database progress
@@ -3051,10 +3060,41 @@ deployment:
   [cutover](#cutover). Until then the build is an artifact of the image like
   Jekyll's is, and nothing has to be shared.
 
-The consequence for ordering is that the half the cutover waits on is a change
-to the `Dockerfile`, `docker/nginx.conf` and the proxy rules, and how much of
-that reaches the deployment repository depends only on which of those rules that
-repository sets rather than this one.
+The half the cutover waits on is therefore a change to the `Dockerfile`,
+`docker/nginx.conf` and the proxy rules — and the rules exist **twice**, since
+[`compose.prod.yml`](../compose.prod.yml) states the split for a local
+production-like run and the deployment repository states the one production
+actually runs, against the real host and with `/favicons/`, `/cheatsheets/` and
+`/pdf/` besides. They are kept in step by hand, so a change to one is a change
+to both. What each file owes the Elixir build, settled here rather than left to
+whoever picks this up:
+
+- **The proxy learns the edition prefix.** A build writes its home page and its
+  root files at the mount point and everything else — `assets/`, `course/`,
+  `cheatsheets/` and the JSON files — under `<year>/`. Nothing in the assets
+  router matches that, and the application's rule is that router's exact
+  negation, so every course page would fall through to Phoenix. One clause on
+  each side settles it, written as a year pattern (`^/[0-9]{4}/`) rather than as
+  a literal so that the [year-end rollover](#where-past-editions-are-kept) does
+  not have to edit a proxy.
+- **`/course/` and `/cheatsheets/` stop being the static server's.** Nothing is
+  published at either path once the content moves under the prefix, and the
+  application already answers both with a 301 into the edition. Falling through
+  to it is the behaviour those redirects were written for, so the two clauses
+  become leftovers rather than rules anything depends on.
+- **`/assets/` goes to the application.** Only the dashboard asks for the
+  unprefixed path, a course page referencing its own edition's copy, so the
+  static server keeping it would mean either carrying the whole digested tree in
+  the image a second time or symlinking `assets` into `<year>/assets` — which
+  buys the bytes back at the price of teaching the image which edition it
+  carries, and of a rollover step whose failure is to quietly serve a frozen
+  edition's assets. Routing it to Phoenix costs one hop on the smallest slice of
+  static traffic and removes all three.
+- **nginx caches on the digest.** Its `location /assets` and its extension-keyed
+  image rule were both written for a tree that had neither an edition prefix nor
+  digested page assets, and neither describes what the build publishes — see
+  [the rule those assets need](#url-and-link-emission-seam). `/404.html` becomes
+  the error page rather than a fall-through.
 
 #### The development half, as built
 
@@ -3815,11 +3855,44 @@ switch the app to the Elixir-rendered output and **delete the entire Jekyll
 layer** — the Liquid sidebar/header (`course/_includes/sidebar.html`,
 `header.html`) in favour of the single HEEx source of truth, the `_plugins`,
 `_layouts`, `_includes`, `_config*.yml`, the `Gemfile`/Bundler setup, and the
-Ruby/Jekyll Docker stage and its cross-language hacks. No dual pipeline or
+Ruby/Jekyll Docker stages and their cross-language hacks. No dual pipeline or
 fallback flag is left behind. Keep PDF generation and the search scripts running
 against the new output. The deployed archive used as the visual reference during
 the [HTML fidelity gate](#html-fidelity-gate) stays up as the previous-year
 archive regardless — there is nothing to discard after cutover.
+
+**Jekyll is installed twice, and only one of the two is obvious.** The stage of
+the [`Dockerfile`](../Dockerfile) that builds the site for the image is the one
+the sentence above is usually read as naming. The other is the `course` service
+of [`compose.dev.yml`](../compose.dev.yml), a Jekyll development server with an
+image of its own. Development stopped needing it when the watcher and the
+endpoint took the job over ([the development half, as
+built](#the-development-half-as-built)), so it is already redundant rather than
+made so here — but it is not inert, the `app` service declaring `depends_on` it:
+a compose file that still names it gates the application on a service whose image
+no longer has a Jekyll to install. What goes with it:
+
+- The `course` service, and the `depends_on` edge from `app` that would outlive
+  it.
+- `docker/dev/course/` and the Bundler cache volume it is given under `tmp/`.
+- Port `42002` in [`README.md`](../README.md), documented there as "Jekyll live
+  reload". The `livereload_port` and `livereload_base_url` that publish it need
+  no separate mention, being part of `_config.yml`.
+- The service's two names in [`scripts/dev`](../scripts/dev), which builds and
+  then starts an explicit list of services rather than everything the compose
+  file declares, so it names `course` twice and would fail on the first of them.
+- The line of that same script deleting
+  `tmp/docker/dev/app/priv/static/archidep.json`. It is there because each
+  service is held ready by a marker file and a stale one from the last run would
+  report a service healthy before it had built anything — and that particular
+  marker is Jekyll's, being what `docker/dev/course/Dockerfile` health-checks. It
+  is not repointed at the Elixir build, which writes its `archidep.json` into the
+  build directory `dev.exs` names and never into `priv/static`.
+
+`course-assets` **stays**: it is webpack over TypeScript and has nothing to do
+with Ruby. And `42002` occurs in the course content as well, as an example port
+in the `515-fibscale-deployment` exercise — a coincidence rather than a
+reference, and one that must survive a search for the number.
 
 Two things move rather than being deleted, because the content still needs them
 once `_data/` and `_config.yml` are gone:
