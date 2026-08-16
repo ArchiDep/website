@@ -18,7 +18,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.MarkdownTagTest do
     test "expands the Liquid it contains before converting it" do
       assert render("""
              {% markdown %}
-             Read the [SFTP exercise]({% link _course/410-sftp-deployment/exercise.md %}).
+             Read the [SFTP exercise]({% link chapters/410-sftp-deployment/exercise.md %}).
              {% endmarkdown %}\
              """) ==
                {:ok,
@@ -32,7 +32,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.MarkdownTagTest do
     Liquid.render(
       CourseSiteFactory.build(:render_context,
         source: CourseSiteFactory.build(:source, text: text),
-        source_path: "_course/601-databases/subject.md",
+        source_path: "chapters/601-databases/subject.md",
         page: {:document, DocumentRef.new(601, "databases", :subject)},
         urls: CourseSiteFactory.build(:url_context, version: "2032", base_path: "")
       )

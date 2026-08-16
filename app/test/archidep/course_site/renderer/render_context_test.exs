@@ -16,12 +16,12 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
 
       assert RenderContext.new(
                source: source,
-               source_path: "_course/507-dns/subject.md",
+               source_path: "chapters/507-dns/subject.md",
                urls: urls,
                page: page
              ) == %RenderContext{
                source: source,
-               source_path: "_course/507-dns/subject.md",
+               source_path: "chapters/507-dns/subject.md",
                urls: urls,
                page: page,
                page_variables: %{},
@@ -48,7 +48,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
 
       assert RenderContext.new(
                source: source,
-               source_path: "_cheatsheets/git/cheatsheet.md",
+               source_path: "cheatsheets/git/cheatsheet.md",
                urls: urls,
                page: {:cheatsheet, "git"},
                page_variables: %{"num" => 507},
@@ -57,7 +57,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
                solutions: :hidden
              ) == %RenderContext{
                source: source,
-               source_path: "_cheatsheets/git/cheatsheet.md",
+               source_path: "cheatsheets/git/cheatsheet.md",
                urls: urls,
                page: {:cheatsheet, "git"},
                page_variables: %{"num" => 507},
@@ -107,7 +107,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
 
   describe "resolve_link_references/2" do
     test "replaces the definitions the file writes with the ones it means" do
-      {:ok, source} = Source.parse("Prose.\n\n[cli]: {% link _course/101-command-line.md %}\n")
+      {:ok, source} = Source.parse("Prose.\n\n[cli]: {% link chapters/101-command-line.md %}\n")
       context = new(source: source)
 
       assert RenderContext.resolve_link_references(context, [{"cli", "/course/101-command-line/"}]) ==
@@ -132,7 +132,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContextTest do
       Keyword.merge(
         [
           source: source,
-          source_path: "_course/507-dns/subject.md",
+          source_path: "chapters/507-dns/subject.md",
           urls: UrlContext.new(mode: :live, build_id: "3f2a1b"),
           page: {:document, DocumentRef.new(507, "dns", :subject)}
         ],

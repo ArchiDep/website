@@ -21,10 +21,10 @@ defmodule ArchiDep.CourseSiteWatcherTest do
   describe "rebuild?/2" do
     test "rebuilds for what a build reads" do
       for path <- [
-            "/archidep/course/collections/_course/101-command-line/subject.md",
-            "/archidep/course/collections/_cheatsheets/git/cheatsheet.md",
-            "/archidep/course/_data/course.yml",
-            "/archidep/course/_includes/icons/tip.html",
+            "/archidep/course/chapters/101-command-line/subject.md",
+            "/archidep/course/cheatsheets/git/cheatsheet.md",
+            "/archidep/course/course.yml",
+            "/archidep/course/icons/tip.html",
             "/archidep/course/favicons/heig.png",
             "/archidep/course/favicon.ico",
             "/archidep/course/index.md"
@@ -40,6 +40,8 @@ defmodule ArchiDep.CourseSiteWatcherTest do
             "/archidep/course/src/scripts/pdf.ts",
             "/archidep/course/pdf/101-command-line.pdf",
             "/archidep/course/README.md",
+            "/archidep/course/archives.yml",
+            "/archidep/course/archives/2025.json",
             "/archidep/app/priv/course/progress.json",
             "/archidep/app/priv/static/assets/app/app.js",
             "/somewhere/else/entirely.md"
@@ -60,10 +62,10 @@ defmodule ArchiDep.CourseSiteWatcherTest do
 
       assert opts == [
                progress: sessions(),
-               content_dir: Path.join(dirs.course_dir, "collections"),
+               content_dir: dirs.course_dir,
                home_file: Path.join(dirs.course_dir, "index.md"),
-               includes_dir: Path.join(dirs.course_dir, "_includes"),
-               declarations_file: Path.join(dirs.course_dir, "_data/course.yml"),
+               includes_dir: dirs.course_dir,
+               declarations_file: Path.join(dirs.course_dir, "course.yml"),
                root_files_dir: dirs.course_dir,
                static_dir: dirs.static_dir,
                digested: false,
@@ -84,10 +86,10 @@ defmodule ArchiDep.CourseSiteWatcherTest do
 
       assert opts == [
                progress: sessions(),
-               content_dir: Path.join(dirs.course_dir, "collections"),
+               content_dir: dirs.course_dir,
                home_file: Path.join(dirs.course_dir, "index.md"),
-               includes_dir: Path.join(dirs.course_dir, "_includes"),
-               declarations_file: Path.join(dirs.course_dir, "_data/course.yml"),
+               includes_dir: dirs.course_dir,
+               declarations_file: Path.join(dirs.course_dir, "course.yml"),
                root_files_dir: dirs.course_dir,
                static_dir: dirs.static_dir,
                digested: false,
@@ -109,7 +111,7 @@ defmodule ArchiDep.CourseSiteWatcherTest do
 
       send(
         watcher,
-        file_event(Path.join(dirs.course_dir, "collections/_course/507-dns/subject.md"))
+        file_event(Path.join(dirs.course_dir, "chapters/507-dns/subject.md"))
       )
 
       assert_receive {:built, _second}, @debounce * 10
@@ -137,12 +139,12 @@ defmodule ArchiDep.CourseSiteWatcherTest do
 
       send(
         watcher,
-        file_event(Path.join(dirs.course_dir, "collections/_course/507-dns/subject.md"))
+        file_event(Path.join(dirs.course_dir, "chapters/507-dns/subject.md"))
       )
 
       send(
         watcher,
-        file_event(Path.join(dirs.course_dir, "collections/_course/508-tls/subject.md"))
+        file_event(Path.join(dirs.course_dir, "chapters/508-tls/subject.md"))
       )
 
       assert_receive {:built, _second}, @debounce * 10

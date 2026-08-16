@@ -189,15 +189,18 @@ COPY --chown=app:app ./app/ /usr/src/app/
 # `ArchiDep.CourseSite.Material` resolves it relative to its own source file, so
 # the repository layout has to be reproduced here: the working directory is
 # /usr/src/app, which makes /usr/src the repository root.
-COPY --chown=app:app ./course/collections/ /usr/src/course/collections/
-COPY --chown=app:app ./course/_data/ /usr/src/course/_data/
+COPY --chown=app:app ./course/chapters/ /usr/src/course/chapters/
+COPY --chown=app:app ./course/cheatsheets/ /usr/src/course/cheatsheets/
+COPY --chown=app:app ./course/course.yml /usr/src/course/course.yml
 # The editions that came before, whose pages this one has to be able to account
 # for: `ArchiDep.CourseSite.Archives` compiles the mapping and refuses one it
-# cannot resolve.
+# cannot resolve, and `archives.yml` is where it is told about the pages that
+# have moved since.
 COPY --chown=app:app ./course/archives/ /usr/src/course/archives/
+COPY --chown=app:app ./course/archives.yml /usr/src/course/archives.yml
 # The partials too: a page names its headings by being rendered, and it is the
 # tags of the course that include them rather than its documents.
-COPY --chown=app:app ./course/_includes/ /usr/src/course/_includes/
+COPY --chown=app:app ./course/icons/ /usr/src/course/icons/
 
 COPY ./.git/ /tmp/.git/
 RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\///' > /usr/src/app/.git-branch && \
@@ -222,8 +225,8 @@ FROM release AS site
 WORKDIR /usr/src/app
 USER app:app
 
-# The release stage brings the three inputs the compiled model of the course
-# reads; a build reads the course whole, and these are the rest of it: the page
+# The release stage brings the inputs the compiled model of the course reads; a
+# build reads the course whole, and these are the rest of it: the page
 # introducing it, and the marks it publishes at its mount point.
 COPY --chown=app:app ./course/index.md /usr/src/course/index.md
 COPY --chown=app:app ./course/favicon.ico /usr/src/course/favicon.ico

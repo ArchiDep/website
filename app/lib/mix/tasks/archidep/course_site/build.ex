@@ -20,16 +20,16 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
 
   - `--course` — the course material directory, which every input but the
     progress file below is read from. Defaults to `../course`.
-  - `--content` — the course collections directory. Defaults to the
-    `collections` directory of the course.
-  - `--home` — the page introducing the course, which is not one of them.
+  - `--content` — the directory holding the course's content roots. Defaults to
+    the course itself.
+  - `--home` — the page introducing the course, which is under neither of them.
     Defaults to the `index.md` of the course.
   - `--includes` — the directory of partials a document may include. Defaults to
-    the `_includes` directory of the course.
+    the course itself.
   - `--root-files` — the directory the files anchored at the build's mount point
     are read from. Defaults to the course itself.
   - `--declarations` — what the course declares about itself. Defaults to the
-    `_data/course.yml` of the course.
+    `course.yml` of the course.
   - `--progress` — the file recording how far the course has got, which decides
     which chapters show their answers. Defaults to the application's own
     `priv/course/progress.json`. Reading it from a file is what makes this

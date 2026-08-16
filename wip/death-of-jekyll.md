@@ -550,7 +550,7 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 
 **Deferred (scheduled after cutover)**
 
-- [ ] Take the course directory out of Jekyll's shape: `collections/_course` →
+- [x] Take the course directory out of Jekyll's shape: `collections/_course` →
       `chapters`, `collections/_cheatsheets` → `cheatsheets`, `_includes/icons`
       → `icons`, and both files of `_data/` to the course root — see [The course
       directory after Jekyll](#the-course-directory-after-jekyll). **First among
@@ -559,7 +559,12 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       edition says of itself — a page's "Source code" link names the tree it was
       written in — so its deadline is the **2025 archive** rather than the 2026
       content: an edition rendered before the rename points at a layout that
-      existed for a few weeks, permanently.
+      existed for a few weeks, permanently. **Done**, and the complete check
+      this task was written around held: a build before and after differs in 112
+      lines, every one of them a "Source code" link, and the theme's two
+      stylesheets come out byte-identical. Four corrections are recorded there,
+      the sharpest being that the cross-reference count this item was scoped
+      against was an undercount of the tag rather than of the content.
 - [ ] Stand up the **archive repository** that keeps the finished editions and
       is itself the backup site: an organisation Pages site mounted at a root,
       named `backup.archidep.ch`, published by pushing this repository's build
@@ -4180,8 +4185,8 @@ diff of it.
   `chapters/`. Nothing breaks — a pinned revision keeps resolving — but the copy
   meant to outlive everything is the worst place to leave that.
 - **The 2026 content.** The cost is one rewrite per cross-reference and scales
-  with how much content exists: 52 `{% link _course/… %}` across 27 files today,
-  plus everything the next edition adds. Every file written between cutover and
+  with how much content exists: 107 cross-references across 34 files today, plus
+  everything the next edition adds. Every file written between cutover and
   the rename is written against a layout already decided against.
 
 **What it touches**, all of it concentrated because the Jekyll names never
@@ -4222,27 +4227,58 @@ unaffected, that link being built from a pinned revision, so a page keeps
 pointing into the tree it was built from whatever the tree looks like
 afterwards.
 
-**Two adjacent inconsistencies, to be discussed rather than folded in.** Neither
-is decided, and neither is part of this task; they are recorded here because
-this is the change that puts us in every one of those directories.
-
-- Five chapters keep `slides.md` at their root and nine use `slides/slides.md`,
-  which `DocumentRef` accepts as two spellings of one thing. The output URL is
-  the same either way, so this is an authoring wart rather than a behaviour.
-  _If_ we ever decide to normalise it, `slides/slides.md` is the form that would
-  survive, a deck with images needing the directory regardless.
-- Cheatsheets are `<topic>/cheatsheet.md` though only `sysadmin` has images,
-  which reads redundant right up until the second one needs a picture.
-
-Whatever is decided, it belongs in its own commit: folding either into the
-rename would put a behaviour question inside a change whose whole value is being
+**Two adjacent inconsistencies, both now settled** — neither folded into the
+rename, for the reason they were raised separately in the first place: either
+would have put a behaviour question inside a change whose whole value is being
 mechanical.
+
+- The two slide layouts — five chapters keep `slides.md` at their root and nine
+  use `slides/slides.md`, which `DocumentRef` accepts as two spellings of one
+  thing — are **not** normalised now. The question moved to [the future work
+  document](../app/docs/future-work.md#normalise-the-two-slide-deck-source-layouts),
+  which is where a deferred change to an authoring rule belongs once it is no
+  longer adjacent to anything being worked on.
+- Cheatsheets **stay** `<topic>/cheatsheet.md` with an `images/` beside them.
+  Only `sysadmin` has pictures today, and that is a fact about this year's
+  content rather than about the shape: flattening the other three would buy one
+  shorter directory listing and cost the shape back the moment a second
+  cheatsheet needs an image.
 
 **Out of scope, and recorded where it will outlive this document**: what
 `{% link %}` should take once we own the tag, in [the future work
 document](../app/docs/future-work.md#let-the-link-tag-name-a-document-rather-than-a-source-path).
 It would make the content immune to a move like this one, which is an argument
 for doing it — but not for holding the rename until it exists.
+
+**Corrections while implementing:**
+
+- **The content is 107 cross-references across 34 files, not 52 across 27**, and
+  the undercount was in the counting rather than in the content: Prettier wraps
+  the tag, so only 50 of them are written `{% link chapters/…` on one line.
+  Fifty more break after `{% link`, five after `{%`, and two are spelled
+  `{%link`. A sweep keyed on the tag would have rewritten under half of them and
+  left the rest naming a directory that no longer exists — and **nothing at
+  compile time would have said so**, `Material` rendering only two pages while
+  it compiles, neither of which holds a cross-reference. What made the sweep
+  safe instead was that `_course/` never appears in the content outside a tag's
+  path, so the directory name alone is the thing to rewrite.
+- **There is no wrapper directory left to be the `content_dir`, and none is
+  needed.** It is the course directory itself, because `Build.content_files/1`
+  walks the roots `ContentTree.roots/0` names rather than the directory it is
+  given — the one input of a build that was already scoped by a list instead of
+  by a path. So `content_dir`, `includes_dir` and `root_files_dir` are now the
+  same directory. They stay three options: three questions a build asks, which
+  the same answer today does not merge.
+- **`@content_subdirectory` and `@home_subdirectory` were the same constant all
+  along** — the home page was the special case only because the collections sat
+  one level below it. Both are `course` now, and the dispatch that chose between
+  them is gone.
+- **The theme is the one place the flattening does not let a path collapse.**
+  Tailwind's `@source` has no equivalent of the roots list, so pointing it at
+  `course/` would scan `node_modules`, `dist` and the generated PDFs; the two
+  roots and the icons are named one by one. The check that says it is right is
+  the same shape as this task's own: the same content is being scanned, so both
+  stylesheets must come out byte-identical, and they do.
 
 ---
 

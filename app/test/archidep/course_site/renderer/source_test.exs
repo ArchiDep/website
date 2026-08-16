@@ -139,8 +139,8 @@ defmodule ArchiDep.CourseSite.Renderer.SourceTest do
     end
 
     test "reads a definition whose destination is still Liquid" do
-      assert Source.link_references("[cli]: {% link _course/101-command-line/subject.md %}\n") ==
-               [{"cli", "{% link _course/101-command-line/subject.md %}"}]
+      assert Source.link_references("[cli]: {% link chapters/101-command-line/subject.md %}\n") ==
+               [{"cli", "{% link chapters/101-command-line/subject.md %}"}]
     end
 
     test "leaves a definition that is not at the end to the Markdown renderer" do

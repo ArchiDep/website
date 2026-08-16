@@ -38,25 +38,31 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
   describe "content_files/1" do
     test "lists the files a build reads, sorted, litter included", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/509-reverse-proxy/subject.md", "# Reverse proxy")
-      write!(content_dir, "_course/101-command-line/subject.md", "# Command line")
-      write!(content_dir, "_course/101-command-line/.DS_Store", "litter")
-      write!(content_dir, "_cheatsheets/git/cheatsheet.md", "# Git")
-      write!(content_dir, "_notices/exam.md", "---\ntitle: Exam\n---\n")
-      File.mkdir_p!(Path.join(content_dir, "_course/510-empty"))
+      write!(content_dir, "chapters/509-reverse-proxy/subject.md", "# Reverse proxy")
+      write!(content_dir, "chapters/101-command-line/subject.md", "# Command line")
+      write!(content_dir, "chapters/101-command-line/.DS_Store", "litter")
+      write!(content_dir, "cheatsheets/git/cheatsheet.md", "# Git")
+      File.mkdir_p!(Path.join(content_dir, "chapters/510-empty"))
+
+      # The content roots share a directory with everything else the course
+      # holds, so what is beside them is what the walk must not read.
+      write!(content_dir, "index.md", "---\ntitle: Home\n---\n")
+      write!(content_dir, "archives/2025.json", ~s({"edition":"2025"}))
+      write!(content_dir, "src/assets/course.ts", "export {};")
+      write!(content_dir, "node_modules/reveal.js/README.md", "# reveal.js")
 
       assert Build.content_files(content_dir) == [
-               "_cheatsheets/git/cheatsheet.md",
-               "_course/101-command-line/.DS_Store",
-               "_course/101-command-line/subject.md",
-               "_course/509-reverse-proxy/subject.md"
+               "chapters/101-command-line/.DS_Store",
+               "chapters/101-command-line/subject.md",
+               "chapters/509-reverse-proxy/subject.md",
+               "cheatsheets/git/cheatsheet.md"
              ]
     end
 
     test "lists nothing of an empty content directory", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
       File.mkdir_p!(content_dir)
 
       assert Build.content_files(content_dir) == []
@@ -65,20 +71,20 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
   describe "content_digest/1" do
     test "hashes the names of the files a build reads", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/301-security/subject.md", "# Security")
-      write!(content_dir, "_course/301-security/images/lock.png", "a lock")
-      write!(content_dir, "_cheatsheets/docker/cheatsheet.md", "# Docker")
+      write!(content_dir, "chapters/301-security/subject.md", "# Security")
+      write!(content_dir, "chapters/301-security/images/lock.png", "a lock")
+      write!(content_dir, "cheatsheets/docker/cheatsheet.md", "# Docker")
 
       assert Build.content_digest(content_dir) ==
                :crypto.hash(
                  :sha256,
                  Enum.join(
                    [
-                     "_cheatsheets/docker/cheatsheet.md",
-                     "_course/301-security/images/lock.png",
-                     "_course/301-security/subject.md"
+                     "chapters/301-security/images/lock.png",
+                     "chapters/301-security/subject.md",
+                     "cheatsheets/docker/cheatsheet.md"
                    ],
                    "\n"
                  )
@@ -86,24 +92,24 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "hashes a content directory differently once a file is added", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/302-cloud-computing/subject.md", "# Cloud computing")
+      write!(content_dir, "chapters/302-cloud-computing/subject.md", "# Cloud computing")
       digest = Build.content_digest(content_dir)
 
-      write!(content_dir, "_course/302-cloud-computing/images/cloud.png", "a cloud")
+      write!(content_dir, "chapters/302-cloud-computing/images/cloud.png", "a cloud")
 
       refute Build.content_digest(content_dir) == digest
     end
 
     test "hashes a content directory differently once a file is removed", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/303-hashing/subject.md", "# Hashing")
-      write!(content_dir, "_course/303-hashing/slides.md", "# Hashing, presented")
+      write!(content_dir, "chapters/303-hashing/subject.md", "# Hashing")
+      write!(content_dir, "chapters/303-hashing/slides.md", "# Hashing, presented")
       digest = Build.content_digest(content_dir)
 
-      File.rm!(Path.join(content_dir, "_course/303-hashing/slides.md"))
+      File.rm!(Path.join(content_dir, "chapters/303-hashing/slides.md"))
 
       refute Build.content_digest(content_dir) == digest
     end
@@ -111,12 +117,12 @@ defmodule ArchiDep.CourseSite.BuildTest do
     test "hashes a content directory the same when only what a file holds changes", %{
       tmp_dir: tmp_dir
     } do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/304-tls/subject.md", "# TLS")
+      write!(content_dir, "chapters/304-tls/subject.md", "# TLS")
       digest = Build.content_digest(content_dir)
 
-      write!(content_dir, "_course/304-tls/subject.md", "# Transport Layer Security")
+      write!(content_dir, "chapters/304-tls/subject.md", "# Transport Layer Security")
 
       assert Build.content_digest(content_dir) == digest
     end
@@ -124,30 +130,30 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
   describe "course!/2" do
     test "works out what the course is from a content directory", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
       declarations_file = Path.join(tmp_dir, "course.yml")
 
       write!(
         content_dir,
-        "_course/101-command-line/subject.md",
+        "chapters/101-command-line/subject.md",
         "---\ntitle: Command Line\n---\n\nType.\n"
       )
 
       write!(
         content_dir,
-        "_course/101-command-line/slides.md",
+        "chapters/101-command-line/slides.md",
         "---\ntitle: Command Line Slides\n---\n\nType.\n"
       )
 
       write!(
         content_dir,
-        "_course/205-php-todolist/exercise.md",
+        "chapters/205-php-todolist/exercise.md",
         "---\ntitle: PHP Todolist\ngraded: true\n---\n\nBuild it.\n"
       )
 
       write!(
         content_dir,
-        "_cheatsheets/git/cheatsheet.md",
+        "cheatsheets/git/cheatsheet.md",
         "---\ntitle: Git Cheatsheet\nsidebar_title: Git\n---\n\nCommit.\n"
       )
 
@@ -178,42 +184,42 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "reports every file of the content directory it cannot place", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
       declarations_file = Path.join(tmp_dir, "course.yml")
 
-      write!(content_dir, "_course/103-ssh/notes.md", "# Notes")
-      write!(content_dir, "_course/103-ssh/todo.md", "# Todo")
+      write!(content_dir, "chapters/103-ssh/notes.md", "# Notes")
+      write!(content_dir, "chapters/103-ssh/todo.md", "# Todo")
 
       assert_raise RuntimeError,
                    """
                    The content directory could not be read:
-                     Source file "_course/103-ssh/notes.md" is neither a document nor a file of a page
-                     Source file "_course/103-ssh/todo.md" is neither a document nor a file of a page\
+                     Source file "chapters/103-ssh/notes.md" is neither a document nor a file of a page
+                     Source file "chapters/103-ssh/todo.md" is neither a document nor a file of a page\
                    """,
                    fn -> Build.course!(content_dir, declarations_file) end
     end
 
     test "reports every page of the content directory it cannot take apart", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
       declarations_file = Path.join(tmp_dir, "course.yml")
 
-      write!(content_dir, "_course/104-git/subject.md", "---\ntitle: Git\n")
-      write!(content_dir, "_cheatsheets/git/cheatsheet.md", "---\ntitle: [\n---\n\nCommit.\n")
+      write!(content_dir, "chapters/104-git/subject.md", "---\ntitle: Git\n")
+      write!(content_dir, "cheatsheets/git/cheatsheet.md", "---\ntitle: [\n---\n\nCommit.\n")
 
       assert_raise RuntimeError,
                    """
                    The pages of the content directory could not be read:
-                     Document "_cheatsheets/git/cheatsheet.md" has invalid front matter: malformed yaml
-                     Document "_course/104-git/subject.md" opens front matter it never closes\
+                     Document "chapters/104-git/subject.md" opens front matter it never closes
+                     Document "cheatsheets/git/cheatsheet.md" has invalid front matter: malformed yaml\
                    """,
                    fn -> Build.course!(content_dir, declarations_file) end
     end
 
     test "reports declarations it cannot read", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
       declarations_file = Path.join(tmp_dir, "course.yml")
 
-      write!(content_dir, "_course/105-tls/subject.md", "---\ntitle: TLS\n---\n\nEncrypt.\n")
+      write!(content_dir, "chapters/105-tls/subject.md", "---\ntitle: TLS\n---\n\nEncrypt.\n")
 
       assert_raise RuntimeError,
                    """
@@ -224,14 +230,14 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "reports everything that makes the content not a course", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
       declarations_file = Path.join(tmp_dir, "course.yml")
 
-      write!(content_dir, "_course/106-dns/subject.md", "---\nlayout: subject\n---\n\nName.\n")
+      write!(content_dir, "chapters/106-dns/subject.md", "---\nlayout: subject\n---\n\nName.\n")
 
       write!(
         content_dir,
-        "_cheatsheets/docker/cheatsheet.md",
+        "cheatsheets/docker/cheatsheet.md",
         "---\ntitle: Docker\n---\n\nRun.\n"
       )
 
@@ -245,7 +251,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
       assert_raise RuntimeError,
                    """
                    What the course says it is could not be worked out:
-                     Document "_course/106-dns/subject.md" has no title
+                     Document "chapters/106-dns/subject.md" has no title
                      Cheatsheet "docker" is not one of the declared cheatsheets\
                    """,
                    fn -> Build.course!(content_dir, declarations_file) end
@@ -254,7 +260,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
   describe "include_files/1" do
     test "lists the partials a document may include, sorted", %{tmp_dir: tmp_dir} do
-      includes_dir = Path.join(tmp_dir, "_includes")
+      includes_dir = Path.join(tmp_dir, "course")
 
       write!(includes_dir, "icons/photo.html", "<svg/>")
       write!(includes_dir, "icons/nested/gem.html", "<svg/>")
@@ -265,13 +271,13 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "lists nothing when there is no includes directory", %{tmp_dir: tmp_dir} do
-      assert Build.include_files(Path.join(tmp_dir, "_includes")) == []
+      assert Build.include_files(Path.join(tmp_dir, "course")) == []
     end
   end
 
   describe "includes/1" do
     test "parses the partials a document may include", %{tmp_dir: tmp_dir} do
-      includes_dir = Path.join(tmp_dir, "_includes")
+      includes_dir = Path.join(tmp_dir, "course")
 
       write!(includes_dir, "icons/photo.html", ~s(<svg class="{{ include.class }}"/>))
 
@@ -284,11 +290,11 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "parses nothing when there is no includes directory", %{tmp_dir: tmp_dir} do
-      assert Build.includes(Path.join(tmp_dir, "_includes")) == {:ok, %{}}
+      assert Build.includes(Path.join(tmp_dir, "course")) == {:ok, %{}}
     end
 
     test "reports every partial it cannot parse", %{tmp_dir: tmp_dir} do
-      includes_dir = Path.join(tmp_dir, "_includes")
+      includes_dir = Path.join(tmp_dir, "course")
 
       write!(includes_dir, "icons/broken.html", "{% endunless %}")
 
@@ -339,19 +345,19 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "reports what is wrong with a page it cannot render", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
-      includes_dir = Path.join(tmp_dir, "_includes")
+      content_dir = Path.join(tmp_dir, "course")
+      includes_dir = Path.join(tmp_dir, "course")
 
       write!(
         content_dir,
-        "_course/507-dns/subject.md",
+        "chapters/507-dns/subject.md",
         "---\ntitle: DNS\n---\n\n{% include icons/gone.html %}\n"
       )
 
       assert_raise RuntimeError,
                    """
                    The headings of the course material could not be read:
-                     Document "_course/507-dns/subject.md" could not be rendered: There is no include named "icons/gone.html" in _course/507-dns/subject.md at line 5, column 1\
+                     Document "chapters/507-dns/subject.md" could not be rendered: There is no include named "icons/gone.html" in chapters/507-dns/subject.md at line 5, column 1\
                    """,
                    fn ->
                      Build.headings!(content_dir, includes_dir, [
@@ -412,31 +418,31 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
   describe "content_tree/1" do
     test "sorts the files of a content directory, litter included", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/509-reverse-proxy/subject.md", "# Reverse proxy")
-      write!(content_dir, "_course/509-reverse-proxy/images/proxy.png", "a picture")
-      write!(content_dir, "_course/509-reverse-proxy/.DS_Store", "litter")
-      write!(content_dir, "_cheatsheets/git/cheatsheet.md", "# Git")
+      write!(content_dir, "chapters/509-reverse-proxy/subject.md", "# Reverse proxy")
+      write!(content_dir, "chapters/509-reverse-proxy/images/proxy.png", "a picture")
+      write!(content_dir, "chapters/509-reverse-proxy/.DS_Store", "litter")
+      write!(content_dir, "cheatsheets/git/cheatsheet.md", "# Git")
 
       assert Build.content_tree(content_dir) ==
                {:ok,
                 %ContentTree{
                   documents: %{
                     DocumentRef.new(509, "reverse-proxy", :subject) =>
-                      "_course/509-reverse-proxy/subject.md"
+                      "chapters/509-reverse-proxy/subject.md"
                   },
-                  cheatsheets: %{"git" => "_cheatsheets/git/cheatsheet.md"},
+                  cheatsheets: %{"git" => "cheatsheets/git/cheatsheet.md"},
                   page_assets: %{
                     "/course/509-reverse-proxy/images/proxy.png" =>
-                      "_course/509-reverse-proxy/images/proxy.png"
+                      "chapters/509-reverse-proxy/images/proxy.png"
                   },
-                  ignored: ["_course/509-reverse-proxy/.DS_Store"]
+                  ignored: ["chapters/509-reverse-proxy/.DS_Store"]
                 }}
     end
 
     test "sorts an empty content directory", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
       File.mkdir_p!(content_dir)
 
       assert Build.content_tree(content_dir) ==
@@ -627,10 +633,10 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
   describe "sources/2" do
     test "takes every page of a content directory apart", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/507-dns/subject.md", "---\ntitle: DNS\n---\n\nA name.\n")
-      write!(content_dir, "_cheatsheets/git/cheatsheet.md", "---\ntitle: Git\n---\n\nA commit.\n")
+      write!(content_dir, "chapters/507-dns/subject.md", "---\ntitle: DNS\n---\n\nA name.\n")
+      write!(content_dir, "cheatsheets/git/cheatsheet.md", "---\ntitle: Git\n---\n\nA commit.\n")
 
       {:ok, tree} = Build.content_tree(content_dir)
       {:ok, subject} = Source.parse("---\ntitle: DNS\n---\n\nA name.\n")
@@ -647,20 +653,20 @@ defmodule ArchiDep.CourseSite.BuildTest do
     test "reports every page that cannot be taken apart rather than the first", %{
       tmp_dir: tmp_dir
     } do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/101-command-line/subject.md", "---\ntitle: Command Line\n")
-      write!(content_dir, "_cheatsheets/git/cheatsheet.md", "---\ntitle: [\n---\n\nA commit.\n")
+      write!(content_dir, "chapters/101-command-line/subject.md", "---\ntitle: Command Line\n")
+      write!(content_dir, "cheatsheets/git/cheatsheet.md", "---\ntitle: [\n---\n\nA commit.\n")
 
       {:ok, tree} = Build.content_tree(content_dir)
 
       assert Build.sources(tree, content_dir) ==
                {:error,
                 [
-                  {:unparsable_document, "_cheatsheets/git/cheatsheet.md",
-                   {:invalid_front_matter, "malformed yaml"}},
-                  {:unparsable_document, "_course/101-command-line/subject.md",
-                   :unterminated_front_matter}
+                  {:unparsable_document, "chapters/101-command-line/subject.md",
+                   :unterminated_front_matter},
+                  {:unparsable_document, "cheatsheets/git/cheatsheet.md",
+                   {:invalid_front_matter, "malformed yaml"}}
                 ]}
     end
   end
@@ -694,17 +700,17 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
   describe "front_matter/1" do
     test "reads what every page of a content directory says it is", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
       write!(
         content_dir,
-        "_course/205-php-todolist/exercise.md",
+        "chapters/205-php-todolist/exercise.md",
         "---\ntitle: PHP Todolist\ngraded: true\n---\n\nBuild it.\n"
       )
 
       write!(
         content_dir,
-        "_cheatsheets/docker/cheatsheet.md",
+        "cheatsheets/docker/cheatsheet.md",
         "A cheatsheet with no front matter"
       )
 
@@ -723,11 +729,11 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
   describe "page_asset_manifest/2" do
     test "names each file after the content it holds", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/801-docker/slides/slides.md", "# Docker")
-      write!(content_dir, "_course/801-docker/slides/images/whale.png", "a whale")
-      write!(content_dir, "_course/801-docker/images/layers.png", "some layers")
+      write!(content_dir, "chapters/801-docker/slides/slides.md", "# Docker")
+      write!(content_dir, "chapters/801-docker/slides/images/whale.png", "a whale")
+      write!(content_dir, "chapters/801-docker/images/layers.png", "some layers")
 
       {:ok, tree} = Build.content_tree(content_dir)
 
@@ -741,9 +747,9 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "names nothing when no page has a file next to it", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/802-docker-fibscale/subject.md", "# Fibscale")
+      write!(content_dir, "chapters/802-docker-fibscale/subject.md", "# Fibscale")
 
       {:ok, tree} = Build.content_tree(content_dir)
 
@@ -751,18 +757,18 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "reports every file it cannot read", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
 
-      write!(content_dir, "_course/803-docker-isolation/images/there.png", "a picture")
+      write!(content_dir, "chapters/803-docker-isolation/images/there.png", "a picture")
 
       tree = %ContentTree{
         documents: %{},
         cheatsheets: %{},
         page_assets: %{
           "/course/803-docker-isolation/images/there.png" =>
-            "_course/803-docker-isolation/images/there.png",
+            "chapters/803-docker-isolation/images/there.png",
           "/course/803-docker-isolation/images/gone.png" =>
-            "_course/803-docker-isolation/images/gone.png"
+            "chapters/803-docker-isolation/images/gone.png"
         },
         ignored: []
       }
@@ -771,19 +777,19 @@ defmodule ArchiDep.CourseSite.BuildTest do
                {:error,
                 [
                   {:unreadable_source, "/course/803-docker-isolation/images/gone.png",
-                   "_course/803-docker-isolation/images/gone.png", :enoent}
+                   "chapters/803-docker-isolation/images/gone.png", :enoent}
                 ]}
     end
   end
 
   describe "publish_page_assets/4" do
     test "copies each file under the name it is published as", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
       output_dir = Path.join(tmp_dir, "build")
 
-      write!(content_dir, "_course/804-docker-compose/slides/slides.md", "# Compose")
-      write!(content_dir, "_course/804-docker-compose/slides/images/stack.png", "a stack")
-      write!(content_dir, "_course/804-docker-compose/images/network.png", "a network")
+      write!(content_dir, "chapters/804-docker-compose/slides/slides.md", "# Compose")
+      write!(content_dir, "chapters/804-docker-compose/slides/images/stack.png", "a stack")
+      write!(content_dir, "chapters/804-docker-compose/images/network.png", "a network")
 
       {:ok, tree} = Build.content_tree(content_dir)
       {:ok, manifest} = Build.page_asset_manifest(tree, content_dir)
@@ -800,10 +806,10 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "copies nothing when there is nothing to publish", %{tmp_dir: tmp_dir} do
-      content_dir = Path.join(tmp_dir, "collections")
+      content_dir = Path.join(tmp_dir, "course")
       output_dir = Path.join(tmp_dir, "build")
 
-      write!(content_dir, "_course/805-docker-swarm/subject.md", "# Swarm")
+      write!(content_dir, "chapters/805-docker-swarm/subject.md", "# Swarm")
 
       {:ok, tree} = Build.content_tree(content_dir)
       {:ok, manifest} = Build.page_asset_manifest(tree, content_dir)
@@ -960,10 +966,10 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
     test "reports a content directory it cannot read, and nothing else", %{tmp_dir: tmp_dir} do
       dirs = site_fixture(tmp_dir)
-      write!(dirs.content_dir, "_course/101-command-line/notes.md", "# Notes")
+      write!(dirs.content_dir, "chapters/101-command-line/notes.md", "# Notes")
 
       assert Build.site_inputs(site_options(dirs)) ==
-               {:error, [{:unknown_source, "_course/101-command-line/notes.md"}]}
+               {:error, [{:unknown_source, "chapters/101-command-line/notes.md"}]}
     end
 
     test "reports everything else that is wrong at once", %{tmp_dir: tmp_dir} do
@@ -1190,9 +1196,9 @@ defmodule ArchiDep.CourseSite.BuildTest do
     test "describes a file that could not be read" do
       assert Build.format_error(
                {:unreadable_source, "/course/805-swarm/images/x.png",
-                "_course/805-swarm/images/x.png", :enoent}
+                "chapters/805-swarm/images/x.png", :enoent}
              ) ==
-               ~s{File "_course/805-swarm/images/x.png", published at "/course/805-swarm/images/x.png", could not be read: no such file or directory}
+               ~s{File "chapters/805-swarm/images/x.png", published at "/course/805-swarm/images/x.png", could not be read: no such file or directory}
     end
 
     test "describes a file that could not be written" do
@@ -1205,10 +1211,10 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
     test "describes a partial that could not be read" do
       assert Build.format_error(
-               {:unreadable_include, "icons/photo.html", "/build/_includes/icons/photo.html",
+               {:unreadable_include, "icons/photo.html", "/build/course/icons/photo.html",
                 :eacces}
              ) ==
-               ~s{Partial "icons/photo.html" could not be read from "/build/_includes/icons/photo.html": permission denied}
+               ~s{Partial "icons/photo.html" could not be read from "/build/course/icons/photo.html": permission denied}
     end
 
     test "describes a partial that could not be parsed" do
@@ -1232,19 +1238,19 @@ defmodule ArchiDep.CourseSite.BuildTest do
       error =
         RenderError.new(
           {:invalid_tag, "note", "this tag always fails"},
-          "_course/507-dns/subject.md",
+          "chapters/507-dns/subject.md",
           %{line: 3, column: 1}
         )
 
-      assert Build.format_error({:unrenderable_document, "_course/507-dns/subject.md", error}) ==
-               "Document \"_course/507-dns/subject.md\" could not be rendered: " <>
+      assert Build.format_error({:unrenderable_document, "chapters/507-dns/subject.md", error}) ==
+               "Document \"chapters/507-dns/subject.md\" could not be rendered: " <>
                  "Invalid {% note %} tag (this tag always fails) " <>
-                 "in _course/507-dns/subject.md at line 3, column 1"
+                 "in chapters/507-dns/subject.md at line 3, column 1"
     end
 
     test "describes what went wrong in the content directory" do
-      assert Build.format_error({:unknown_source, "_course/807-nomad/notes.md"}) ==
-               ~s{Source file "_course/807-nomad/notes.md" is neither a document nor a file of a page}
+      assert Build.format_error({:unknown_source, "chapters/807-nomad/notes.md"}) ==
+               ~s{Source file "chapters/807-nomad/notes.md" is neither a document nor a file of a page}
     end
 
     test "describes a name two files would be published under" do
@@ -1256,43 +1262,43 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
 
     test "describes declarations that are not there" do
-      assert Build.format_error({:missing_declarations, "/course/_data/course.yml"}) ==
-               ~s{Course declarations "/course/_data/course.yml" do not exist}
+      assert Build.format_error({:missing_declarations, "/course/course.yml"}) ==
+               ~s{Course declarations "/course/course.yml" do not exist}
     end
 
     test "describes declarations that could not be read" do
-      assert Build.format_error({:unreadable_declarations, "/course/_data/course.yml", :eacces}) ==
-               ~s{Course declarations "/course/_data/course.yml" could not be read: permission denied}
+      assert Build.format_error({:unreadable_declarations, "/course/course.yml", :eacces}) ==
+               ~s{Course declarations "/course/course.yml" could not be read: permission denied}
     end
 
     test "describes declarations that are not YAML" do
       assert Build.format_error(
-               {:undecodable_declarations, "/course/_data/course.yml", "malformed yaml"}
+               {:undecodable_declarations, "/course/course.yml", "malformed yaml"}
              ) ==
-               ~s{Course declarations "/course/_data/course.yml" are not YAML: malformed yaml}
+               ~s{Course declarations "/course/course.yml" are not YAML: malformed yaml}
     end
 
     test "describes a document that could not be read" do
       assert Build.format_error(
-               {:unreadable_document, "_course/809-etcd/subject.md",
-                "/course/collections/_course/809-etcd/subject.md", :eacces}
+               {:unreadable_document, "chapters/809-etcd/subject.md",
+                "/course/chapters/809-etcd/subject.md", :eacces}
              ) ==
-               ~s{Document "_course/809-etcd/subject.md" could not be read from "/course/collections/_course/809-etcd/subject.md": permission denied}
+               ~s{Document "chapters/809-etcd/subject.md" could not be read from "/course/chapters/809-etcd/subject.md": permission denied}
     end
 
     test "describes a document that opens front matter it never closes" do
       assert Build.format_error(
-               {:unparsable_document, "_course/810-vault/subject.md", :unterminated_front_matter}
+               {:unparsable_document, "chapters/810-vault/subject.md", :unterminated_front_matter}
              ) ==
-               ~s{Document "_course/810-vault/subject.md" opens front matter it never closes}
+               ~s{Document "chapters/810-vault/subject.md" opens front matter it never closes}
     end
 
     test "describes a document whose front matter is not valid" do
       assert Build.format_error(
-               {:unparsable_document, "_course/811-istio/subject.md",
+               {:unparsable_document, "chapters/811-istio/subject.md",
                 {:invalid_front_matter, "malformed yaml"}}
              ) ==
-               ~s{Document "_course/811-istio/subject.md" has invalid front matter: malformed yaml}
+               ~s{Document "chapters/811-istio/subject.md" has invalid front matter: malformed yaml}
     end
 
     test "describes a manifest of an unsupported version" do
@@ -1304,12 +1310,12 @@ defmodule ArchiDep.CourseSite.BuildTest do
   # A content directory of two pages that write headings, and the one partial
   # the tag of a note draws its icon from.
   defp course_with_headings(tmp_dir) do
-    content_dir = Path.join(tmp_dir, "collections")
-    includes_dir = Path.join(tmp_dir, "_includes")
+    content_dir = Path.join(tmp_dir, "course")
+    includes_dir = Path.join(tmp_dir, "course")
 
     write!(includes_dir, "icons/info-circle.html", "<svg/>")
 
-    write!(content_dir, "_course/402-run-virtual-server/exercise.md", """
+    write!(content_dir, "chapters/402-run-virtual-server/exercise.md", """
     ---
     title: Run your own virtual server
     ---
@@ -1323,7 +1329,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
     {% endnote %}
     """)
 
-    write!(content_dir, "_cheatsheets/sysadmin/cheatsheet.md", """
+    write!(content_dir, "cheatsheets/sysadmin/cheatsheet.md", """
     ---
     title: System Administration Cheatsheet
     ---
@@ -1339,7 +1345,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
   # anchored at the mount point and one digested asset.
   defp site_fixture(tmp_dir) do
     dirs = %{
-      content_dir: Path.join(tmp_dir, "collections"),
+      content_dir: Path.join(tmp_dir, "course"),
       includes_dir: Path.join(tmp_dir, "includes"),
       root_files_dir: Path.join(tmp_dir, "root"),
       static_dir: Path.join(tmp_dir, "static"),
@@ -1357,13 +1363,13 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
     write!(
       dirs.content_dir,
-      "_course/101-command-line/subject.md",
+      "chapters/101-command-line/subject.md",
       "---\ntitle: Command Line\n---\n\nType.\n"
     )
 
     write!(
       dirs.content_dir,
-      "_cheatsheets/git/cheatsheet.md",
+      "cheatsheets/git/cheatsheet.md",
       "---\ntitle: Git Cheatsheet\n---\n\nCommit.\n"
     )
 

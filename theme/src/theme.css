@@ -22,11 +22,10 @@
 @source "../../app/deps/flashy/**/*.*ex";
 @source "../../app/lib/archidep/course_site/layout";
 @source "../../app/lib/archidep_web";
-@source "../../course/collections";
-@source "../../course/_includes";
+@source "../../course/chapters";
+@source "../../course/cheatsheets";
+@source "../../course/icons";
 @source "../../course/index.md";
-@source "../../course/_layouts";
-@source "../../course/_plugins";
 @source "../../course/src/assets";
 
 @import './shared.css';

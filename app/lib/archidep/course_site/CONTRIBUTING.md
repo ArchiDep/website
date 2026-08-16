@@ -189,7 +189,7 @@ list falls back to its title the same way.
 ### What the course declares about itself
 
 Two things no document states: which sections the course has, and in what order
-its cheatsheets go. Both are declared in `course/_data/course.yml`, read by
+its cheatsheets go. Both are declared in `course/course.yml`, read by
 [`Build.declarations/1`](./build.ex) and validated by `Structure.plan/3` — bytes
 in the one module that fetches them, rules in the pure one beside it.
 
@@ -286,8 +286,8 @@ it is kept to what it must be: the two pages that are named, with the renderer's
 passes dropped. Rendering the whole course, or rendering it with its passes,
 would put a build's asset manifests inside `mix compile`. The partials are
 needed even so — it is the tags of the course rather than its documents that
-include them, a note drawing its icon that way — so `course/_includes` is a
-compile-time input alongside the collections, and the
+include them, a note drawing its icon that way — so `course/icons` is a
+compile-time input alongside the content roots, and the
 [`Dockerfile`](../../../../Dockerfile) copies it.
 
 **Two mechanisms decide when it is compiled again**, because neither covers the
@@ -298,14 +298,14 @@ other's case:
   or deleted** — Mix compares each one's content digest, so it is immune to a
   fresh checkout;
 - `__mix_recompile__?/0` compares `Build.content_digest/1`, a hash of the
-  **names** of every file of the collections, which is what catches one being
+  **names** of every file of the content roots, which is what catches one being
   **added**. An `@external_resource` cannot: a file nobody registered is a file
   Mix is not watching.
 
 The files beside a page are not registered — their names are all this depends on
 and the digest covers those, where registering 49 MB of images would have Mix
-digest every one of them on each compile. The digest covers the collections a
-build renders, so a newly added **session** is the one change neither mechanism
+digest every one of them on each compile. The digest covers the content a build
+renders, so a newly added **session** is the one change neither mechanism
 notices.
 
 **How far the course has got is not part of the structure, and not compiled at
@@ -337,11 +337,11 @@ a new file in a directory `Material` does not watch — a recompilation question
 
 Three pure modules decide what it holds, and `Build` reads the two files:
 
-| Module                                          | What it decides                                                                                   |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| [`Archives.Manifest`](./archives/manifest.ex)   | What one finished edition published, as `course/archives/<year>.json`                             |
-| [`Archives.Overrides`](./archives/overrides.ex) | What the course declares in `course/_data/archives.yml` about the pages it has renamed or dropped |
-| [`Archives.Mapping`](./archives/mapping.ex)     | What each archived page has become, and which of them nothing accounts for                        |
+| Module                                          | What it decides                                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [`Archives.Manifest`](./archives/manifest.ex)   | What one finished edition published, as `course/archives/<year>.json`                       |
+| [`Archives.Overrides`](./archives/overrides.ex) | What the course declares in `course/archives.yml` about the pages it has renamed or dropped |
+| [`Archives.Mapping`](./archives/mapping.ex)     | What each archived page has become, and which of them nothing accounts for                  |
 
 **An archived path is opaque.** It is compared for equality and never taken
 apart: the numbering, the slugging and the shape of a URL may all differ in a
@@ -869,8 +869,8 @@ Three rules run across all of them:
   picture](#one-emoji-one-picture).
 
 Neither kind of icon is written out as markup: a tag holds either an emoji of
-the site or the name of an `icons/…` partial — the same one the content includes
-by hand — and [`TagIcon`](./renderer/liquid/tag_icon.ex) renders both.
+the site or the name of an `icons/…` partial — and
+[`TagIcon`](./renderer/liquid/tag_icon.ex) renders both.
 
 ### Naming what a page renders
 

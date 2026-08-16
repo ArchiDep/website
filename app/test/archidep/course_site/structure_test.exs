@@ -14,15 +14,15 @@ defmodule ArchiDep.CourseSite.StructureTest do
     test "works out what the course is" do
       {:ok, tree} =
         ContentTree.plan([
-          "_course/101-command-line/subject.md",
-          "_course/101-command-line/slides.md",
-          "_course/102-hello-shell/exercise.md",
-          "_course/103-ssh/subject.md",
-          "_course/103-ssh/slides/slides.md",
-          "_course/201-git/slides.md",
-          "_course/202-php-todolist/exercise.md",
-          "_cheatsheets/command-line/cheatsheet.md",
-          "_cheatsheets/git/cheatsheet.md"
+          "chapters/101-command-line/subject.md",
+          "chapters/101-command-line/slides.md",
+          "chapters/102-hello-shell/exercise.md",
+          "chapters/103-ssh/subject.md",
+          "chapters/103-ssh/slides/slides.md",
+          "chapters/201-git/slides.md",
+          "chapters/202-php-todolist/exercise.md",
+          "cheatsheets/command-line/cheatsheet.md",
+          "cheatsheets/git/cheatsheet.md"
         ])
 
       front_matter = %{
@@ -94,8 +94,8 @@ defmodule ArchiDep.CourseSite.StructureTest do
       # shown, never what the chapter is called in a list.
       {:ok, tree} =
         ContentTree.plan([
-          "_course/107-dns/subject.md",
-          "_course/107-dns/slides/slides.md"
+          "chapters/107-dns/subject.md",
+          "chapters/107-dns/slides/slides.md"
         ])
 
       front_matter = %{
@@ -185,7 +185,7 @@ defmodule ArchiDep.CourseSite.StructureTest do
     end
 
     test "refuses two sections that would fold each other in the navigation" do
-      {:ok, tree} = ContentTree.plan(["_course/101-command-line/subject.md"])
+      {:ok, tree} = ContentTree.plan(["chapters/101-command-line/subject.md"])
 
       front_matter = %{
         {:document, DocumentRef.new(101, "command-line", :subject)} => %{
@@ -211,9 +211,9 @@ defmodule ArchiDep.CourseSite.StructureTest do
     test "refuses a chapter numbered for a section nobody declared" do
       {:ok, tree} =
         ContentTree.plan([
-          "_course/101-command-line/subject.md",
-          "_course/901-quantum-deployment/exercise.md",
-          "_course/902-quantum-scaling/exercise.md"
+          "chapters/101-command-line/subject.md",
+          "chapters/901-quantum-deployment/exercise.md",
+          "chapters/902-quantum-scaling/exercise.md"
         ])
 
       front_matter = %{
@@ -240,7 +240,7 @@ defmodule ArchiDep.CourseSite.StructureTest do
     end
 
     test "refuses a declared section no chapter is numbered for" do
-      {:ok, tree} = ContentTree.plan(["_course/201-git/subject.md"])
+      {:ok, tree} = ContentTree.plan(["chapters/201-git/subject.md"])
 
       front_matter = %{
         {:document, DocumentRef.new(201, "git", :subject)} => %{"title" => "Version Control"}
@@ -256,10 +256,10 @@ defmodule ArchiDep.CourseSite.StructureTest do
     test "refuses a page with no title, or with something else in its place" do
       {:ok, tree} =
         ContentTree.plan([
-          "_course/101-command-line/subject.md",
-          "_course/102-shell-scripting/subject.md",
-          "_course/103-hello-shell/exercise.md",
-          "_cheatsheets/git/cheatsheet.md"
+          "chapters/101-command-line/subject.md",
+          "chapters/102-shell-scripting/subject.md",
+          "chapters/103-hello-shell/exercise.md",
+          "cheatsheets/git/cheatsheet.md"
         ])
 
       front_matter = %{
@@ -275,15 +275,15 @@ defmodule ArchiDep.CourseSite.StructureTest do
              }) ==
                {:error,
                 [
-                  {:invalid_title, "_cheatsheets/git/cheatsheet.md", nil},
-                  {:missing_title, "_course/101-command-line/subject.md"},
-                  {:invalid_title, "_course/102-shell-scripting/subject.md", 42},
-                  {:invalid_title, "_course/103-hello-shell/exercise.md", "  "}
+                  {:missing_title, "chapters/101-command-line/subject.md"},
+                  {:invalid_title, "chapters/102-shell-scripting/subject.md", 42},
+                  {:invalid_title, "chapters/103-hello-shell/exercise.md", "  "},
+                  {:invalid_title, "cheatsheets/git/cheatsheet.md", nil}
                 ]}
     end
 
     test "refuses a document that is graded as something other than yes or no" do
-      {:ok, tree} = ContentTree.plan(["_course/103-hello-shell/exercise.md"])
+      {:ok, tree} = ContentTree.plan(["chapters/103-hello-shell/exercise.md"])
 
       front_matter = %{
         {:document, DocumentRef.new(103, "hello-shell", :exercise)} => %{
@@ -296,15 +296,15 @@ defmodule ArchiDep.CourseSite.StructureTest do
                "sections" => [%{"title" => "Introduction"}],
                "cheatsheets" => []
              }) ==
-               {:error, [{:invalid_graded, "_course/103-hello-shell/exercise.md", "yes"}]}
+               {:error, [{:invalid_graded, "chapters/103-hello-shell/exercise.md", "yes"}]}
     end
 
     test "refuses a document that is graded and is not an exercise" do
       {:ok, tree} =
         ContentTree.plan([
-          "_course/101-command-line/subject.md",
-          "_course/101-command-line/slides.md",
-          "_cheatsheets/git/cheatsheet.md"
+          "chapters/101-command-line/subject.md",
+          "chapters/101-command-line/slides.md",
+          "cheatsheets/git/cheatsheet.md"
         ])
 
       front_matter = %{
@@ -325,14 +325,14 @@ defmodule ArchiDep.CourseSite.StructureTest do
              }) ==
                {:error,
                 [
-                  {:graded_non_exercise, "_cheatsheets/git/cheatsheet.md"},
-                  {:graded_non_exercise, "_course/101-command-line/slides.md"},
-                  {:graded_non_exercise, "_course/101-command-line/subject.md"}
+                  {:graded_non_exercise, "chapters/101-command-line/slides.md"},
+                  {:graded_non_exercise, "chapters/101-command-line/subject.md"},
+                  {:graded_non_exercise, "cheatsheets/git/cheatsheet.md"}
                 ]}
     end
 
     test "refuses a cheatsheet whose sidebar title is not a name" do
-      {:ok, tree} = ContentTree.plan(["_cheatsheets/git/cheatsheet.md"])
+      {:ok, tree} = ContentTree.plan(["cheatsheets/git/cheatsheet.md"])
 
       front_matter = %{
         {:cheatsheet, "git"} => %{"title" => "Git Cheatsheet", "sidebar_title" => ""}
@@ -342,14 +342,14 @@ defmodule ArchiDep.CourseSite.StructureTest do
                "sections" => [],
                "cheatsheets" => ["git"]
              }) ==
-               {:error, [{:invalid_sidebar_title, "_cheatsheets/git/cheatsheet.md", ""}]}
+               {:error, [{:invalid_sidebar_title, "cheatsheets/git/cheatsheet.md", ""}]}
     end
 
     test "refuses a cheatsheet nobody declared, and a declared cheatsheet nobody wrote" do
       {:ok, tree} =
         ContentTree.plan([
-          "_cheatsheets/docker/cheatsheet.md",
-          "_cheatsheets/git/cheatsheet.md"
+          "cheatsheets/docker/cheatsheet.md",
+          "cheatsheets/git/cheatsheet.md"
         ])
 
       front_matter = %{
@@ -371,9 +371,9 @@ defmodule ArchiDep.CourseSite.StructureTest do
     test "reports every offending document rather than the first" do
       {:ok, tree} =
         ContentTree.plan([
-          "_course/101-command-line/subject.md",
-          "_course/902-quantum-scaling/exercise.md",
-          "_cheatsheets/git/cheatsheet.md"
+          "chapters/101-command-line/subject.md",
+          "chapters/902-quantum-scaling/exercise.md",
+          "cheatsheets/git/cheatsheet.md"
         ])
 
       front_matter = %{
@@ -392,17 +392,17 @@ defmodule ArchiDep.CourseSite.StructureTest do
                 [
                   {:unknown_section, "902-quantum-scaling", 9},
                   {:empty_section, 2, "Version Control"},
-                  {:missing_title, "_course/101-command-line/subject.md"},
-                  {:graded_non_exercise, "_course/101-command-line/subject.md"},
+                  {:missing_title, "chapters/101-command-line/subject.md"},
+                  {:graded_non_exercise, "chapters/101-command-line/subject.md"},
                   {:unlisted_cheatsheet, "git"}
                 ]}
     end
 
     test "raises when it is handed a page the front matter says nothing about" do
-      {:ok, tree} = ContentTree.plan(["_course/101-command-line/subject.md"])
+      {:ok, tree} = ContentTree.plan(["chapters/101-command-line/subject.md"])
 
       assert_raise ArgumentError,
-                   ~s{No front matter was given for "_course/101-command-line/subject.md"},
+                   ~s{No front matter was given for "chapters/101-command-line/subject.md"},
                    fn ->
                      Structure.plan(tree, %{}, %{
                        "sections" => [%{"title" => "Introduction"}],
@@ -594,32 +594,30 @@ defmodule ArchiDep.CourseSite.StructureTest do
     end
 
     test "describes a page with no title" do
-      assert Structure.format_error({:missing_title, "_course/507-dns/subject.md"}) ==
-               ~s{Document "_course/507-dns/subject.md" has no title}
+      assert Structure.format_error({:missing_title, "chapters/507-dns/subject.md"}) ==
+               ~s{Document "chapters/507-dns/subject.md" has no title}
     end
 
     test "describes a page whose title is not one" do
-      assert Structure.format_error({:invalid_title, "_course/507-dns/subject.md", 42}) ==
-               ~s{Document "_course/507-dns/subject.md" has 42 as its title}
+      assert Structure.format_error({:invalid_title, "chapters/507-dns/subject.md", 42}) ==
+               ~s{Document "chapters/507-dns/subject.md" has 42 as its title}
     end
 
     test "describes a document graded as something other than yes or no" do
       assert Structure.format_error(
-               {:invalid_graded, "_course/205-php-todolist/exercise.md", "yes"}
+               {:invalid_graded, "chapters/205-php-todolist/exercise.md", "yes"}
              ) ==
-               ~s{Document "_course/205-php-todolist/exercise.md" declares "yes" as graded rather than true or false}
+               ~s{Document "chapters/205-php-todolist/exercise.md" declares "yes" as graded rather than true or false}
     end
 
     test "describes a document that is graded and is not an exercise" do
-      assert Structure.format_error({:graded_non_exercise, "_course/301-security/subject.md"}) ==
-               ~s{Document "_course/301-security/subject.md" is graded, which only an exercise can be}
+      assert Structure.format_error({:graded_non_exercise, "chapters/301-security/subject.md"}) ==
+               ~s{Document "chapters/301-security/subject.md" is graded, which only an exercise can be}
     end
 
     test "describes a cheatsheet whose name in a list is not a name" do
-      assert Structure.format_error(
-               {:invalid_sidebar_title, "_cheatsheets/git/cheatsheet.md", ""}
-             ) ==
-               ~s{Document "_cheatsheets/git/cheatsheet.md" has "" as its title in a list}
+      assert Structure.format_error({:invalid_sidebar_title, "cheatsheets/git/cheatsheet.md", ""}) ==
+               ~s{Document "cheatsheets/git/cheatsheet.md" has "" as its title in a list}
     end
 
     test "describes a cheatsheet nobody declared" do

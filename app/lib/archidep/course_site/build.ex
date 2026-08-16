@@ -112,10 +112,11 @@ defmodule ArchiDep.CourseSite.Build do
   @doc """
   Every file a build reads from a content directory, relative to it, sorted.
 
-  Only the collections `ArchiDep.CourseSite.Build.ContentTree.roots/0` names are
-  walked, and nothing is left out of the listing — what a build ignores is a
-  decision `ArchiDep.CourseSite.Build.ContentTree` records rather than a default
-  of the walk.
+  Only the roots `ArchiDep.CourseSite.Build.ContentTree.roots/0` names are
+  walked, which is what lets the content directory be the course directory
+  itself. Nothing is left out of the listing beyond that — what a build ignores
+  is a decision `ArchiDep.CourseSite.Build.ContentTree` records rather than a
+  default of the walk.
   """
   @spec content_files(Path.t()) :: [String.t()]
   def content_files(content_dir),
@@ -140,9 +141,8 @@ defmodule ArchiDep.CourseSite.Build do
   @doc """
   What each file of a content directory is and where it is published.
 
-  The directory is the one holding the course's collections, and only the
-  collections `ArchiDep.CourseSite.Build.ContentTree.roots/0` names are read
-  from it.
+  The directory is the one holding the course's content roots, and only the
+  roots `ArchiDep.CourseSite.Build.ContentTree.roots/0` names are read from it.
   """
   @spec content_tree(Path.t()) :: {:ok, ContentTree.t()} | {:error, nonempty_list(error())}
   def content_tree(content_dir), do: content_dir |> content_files() |> ContentTree.plan()
@@ -407,10 +407,10 @@ defmodule ArchiDep.CourseSite.Build do
 
   This is read when a build runs rather than when the application compiles: how
   far the course has got changes every week of the year, while what the course
-  *is* does not. So it is a file of its own, outside the collections a build
-  renders — `ArchiDep.CourseSite.Build.ContentTree.roots/0` does not name it —
-  and the caller says where it is, since only the caller knows whether it is
-  reading a repository or a release.
+  *is* does not. So it is a file of its own, outside the content a build renders
+  — `ArchiDep.CourseSite.Build.ContentTree.roots/0` does not name it — and the
+  caller says where it is, since only the caller knows whether it is reading a
+  repository or a release.
   """
   @spec progress(Path.t()) :: {:ok, [Session.t()]} | {:error, nonempty_list(error())}
   def progress(file) do
@@ -532,9 +532,10 @@ defmodule ArchiDep.CourseSite.Build do
 
   Options:
 
-  - `:content_dir` (required) — the course collections.
-  - `:home_file` (required) — the page introducing the course, which is not one
-    of them.
+  - `:content_dir` (required) — where the content roots
+    `ArchiDep.CourseSite.Build.ContentTree.roots/0` names are.
+  - `:home_file` (required) — the page introducing the course, which is under
+    neither of them.
   - `:includes_dir` (required) — the partials a document may include.
   - `:root_files_dir` (required) — where the files anchored at the build's mount
     point are read from.

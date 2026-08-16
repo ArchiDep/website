@@ -49,9 +49,11 @@ defmodule ArchiDep.CourseSiteWatcher do
   # What a build reads from the course material directory. The rest of it — the
   # asset sources, the generated PDFs — is either an input of some other
   # pipeline or an output of this one, and rebuilding on it would be a rebuild
-  # per rebuild.
-  @watched_dirs ["_data", "_includes", "collections", "favicons"]
-  @watched_files ["favicon.ico", "index.md"]
+  # per rebuild. `archives.yml` sits beside `course.yml` and is deliberately not
+  # here: it is compiled into `ArchiDep.CourseSite.Archives` rather than read by
+  # a build, so a rebuild on it would write the same bytes again.
+  @watched_dirs ["chapters", "cheatsheets", "favicons", "icons"]
+  @watched_files ["course.yml", "favicon.ico", "index.md"]
 
   # Long enough that an editor writing a file in two goes is one rebuild, short
   # enough that saving and switching to the browser does not outrun it.

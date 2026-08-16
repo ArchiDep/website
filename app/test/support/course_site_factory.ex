@@ -155,7 +155,7 @@ defmodule ArchiDep.Support.CourseSiteFactory do
     {source, attrs!} = Map.pop_lazy(attrs!, :source, fn -> build(:source) end)
 
     {source_path, attrs!} =
-      Map.pop_lazy(attrs!, :source_path, fn -> "_course/101-#{slug()}/subject.md" end)
+      Map.pop_lazy(attrs!, :source_path, fn -> "chapters/101-#{slug()}/subject.md" end)
 
     {urls, attrs!} = Map.pop_lazy(attrs!, :urls, fn -> build(:url_context) end)
 
@@ -283,10 +283,10 @@ defmodule ArchiDep.Support.CourseSiteFactory do
 
       document_paths =
         Enum.flat_map(chapters, fn {num, word, shape, _graded?} ->
-          Enum.map(shape, &"_course/#{num}-#{word}/#{&1}")
+          Enum.map(shape, &"chapters/#{num}-#{word}/#{&1}")
         end)
 
-      cheatsheet_paths = Enum.map(cheatsheet_slugs, &"_cheatsheets/#{&1}/cheatsheet.md")
+      cheatsheet_paths = Enum.map(cheatsheet_slugs, &"cheatsheets/#{&1}/cheatsheet.md")
 
       {:ok, tree} = ContentTree.plan(document_paths ++ cheatsheet_paths)
 

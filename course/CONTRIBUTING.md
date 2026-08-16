@@ -93,25 +93,17 @@ the dashboard functionality is only available during the current semester).
 
 ## Site Structure
 
-The underscore-prefixed names — `collections/_course`, `_data`, `_includes` —
-are what Jekyll called these directories before the application took over
-rendering the site. They mean nothing to anything that reads them today and are
-scheduled to be renamed; until then they are simply the paths the build is
-pointed at.
-
 - **Main Parts**
   - `index.md`: The home page of the course material site.
-  - `collections/_course`: The main course materials, including subjects, slides
-    and exercises, all identified with a simple numeric code (101, 102, 103,
-    201, 202, etc).
-  - `_data/course.yml`: The definition of the overall course sections into which
-    the materials are organized, and the order the cheatsheets are listed in.
-    Both are things no single document states.
-  - `collections/_cheatsheets`: Cheatsheets for students to quickly reference
-    key concepts and commands.
-  - `_includes/icons`: SVG icons a document may include by name. This is the
-    only part of `_includes` that is still read, the chrome around a page being
-    the application's.
+  - `chapters`: The main course materials, including subjects, slides and
+    exercises, all identified with a simple numeric code (101, 102, 103, 201,
+    202, etc).
+  - `course.yml`: The definition of the overall course sections into which the
+    materials are organized, and the order the cheatsheets are listed in. Both
+    are things no single document states.
+  - `cheatsheets`: Cheatsheets for students to quickly reference key concepts
+    and commands.
+  - `icons`: SVG icons the course's tags draw by name.
 - **Important Files**
   - `src/assets/course.ts` & `src/assets/course/**/*.{ts,tsx,html}`: TypeScript
     and HTML files for client-side interactivity, such as the search dialog,
@@ -214,14 +206,14 @@ Take care to respect the following conventions to ensure proper display,
 ordering and identification of documents. The build relies on these conventions
 to extract metadata from filenames and directory structures.
 
-- Store subjects, slides and exercises in the [`collections/_course`
-  directory](./collections/_course).
+- Store subjects, slides and exercises in the [`chapters`
+  directory](./chapters).
   - Name subdirectories with a three-digit numeric code followed by a short
     URL-friendly name, e.g. `101-introduction`, `201-deployment.md`,
     `202-git-basics.md`. The numeric code is used for ordering and
     identification.
   - The first digit of the numeric code indicates the section (1 for section 1,
-    2 for section 2, etc). Sections are defined in the `_data/course.yml` file.
+    2 for section 2, etc). Sections are defined in the `course.yml` file.
     The second and third digits indicate the order of documents within each
     section.
   - The main file in each subdirectory should be named `subject.md`, `slides.md`
@@ -238,18 +230,17 @@ to extract metadata from filenames and directory structures.
   - Subjects, slides and exercices can have additional files, such as images or
     data files, placed in an `images` subdirectory next to their respective
     Markdown files.
-- Store cheatsheets in the [`collections/_cheatsheets`
-  directory](./collections/_cheatsheets).
+- Store cheatsheets in the [`cheatsheets` directory](./cheatsheets).
   - Each cheatsheet should have its own subdirectory named with a short
     URL-friendly name, e.g. `command-line`, `git`.
   - The main file in each subdirectory should be named `cheatsheet.md`.
   - A cheatsheet can have additional files, such as images or data files, placed
     in an `images` subdirectory next to the `cheatsheet.md` file.
   - Every cheatsheet must be listed, in the order it should appear in, under the
-    `cheatsheets` key of [`_data/course.yml`](./_data/course.yml). A cheatsheet
-    that is not listed there, or a slug listed there with no such directory,
-    **fails the build**: unlike a chapter, a cheatsheet has no number to be
-    ordered by, so its position is a decision rather than something to derive.
+    `cheatsheets` key of [`course.yml`](./course.yml). A cheatsheet that is not
+    listed there, or a slug listed there with no such directory, **fails the
+    build**: unlike a chapter, a cheatsheet has no number to be ordered by, so
+    its position is a decision rather than something to derive.
 
 ### Document Front Matter
 

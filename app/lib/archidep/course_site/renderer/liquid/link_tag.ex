@@ -1,6 +1,6 @@
 defmodule ArchiDep.CourseSite.Renderer.Liquid.LinkTag do
   @moduledoc """
-  `{% link _course/205-php-todolist/exercise.md %}` — the URL of another
+  `{% link chapters/205-php-todolist/exercise.md %}` — the URL of another
   document of the course, written as the path of its source file.
 
   The tag emits nothing but a logical reference; where that document ends up

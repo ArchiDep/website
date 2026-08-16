@@ -8,7 +8,7 @@ defmodule ArchiDep.CourseSite.Renderer.EmojiImagesTest do
   alias ArchiDep.Emoji
   alias ArchiDep.Support.CourseSiteFactory
 
-  @source_path "_course/406-unix-processes/subject.md"
+  @source_path "chapters/406-unix-processes/subject.md"
 
   describe "run/2" do
     test "draws the shortcode a page opens a heading with" do

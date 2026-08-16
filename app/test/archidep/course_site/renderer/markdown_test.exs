@@ -119,7 +119,7 @@ defmodule ArchiDep.CourseSite.Renderer.MarkdownTest do
     test "reports what a pass could not do, and still renders the page" do
       context =
         context(
-          source_path: "_course/507-dns/subject.md",
+          source_path: "chapters/507-dns/subject.md",
           options: CourseSiteFactory.build(:render_options, ast_passes: [FailingPass])
         )
 
@@ -128,7 +128,7 @@ defmodule ArchiDep.CourseSite.Renderer.MarkdownTest do
                 [
                   RenderError.new(
                     {:invalid_tag, "pass", "this pass always fails"},
-                    "_course/507-dns/subject.md"
+                    "chapters/507-dns/subject.md"
                   )
                 ]}
     end

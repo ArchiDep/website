@@ -69,24 +69,23 @@ defmodule ArchiDep.CourseSite.Material do
   alias ArchiDep.CourseSite.Structure.Section
 
   # Resolved against this file rather than through a configuration knob, so that
-  # it can only ever mean the content directory of the repository the
-  # application was compiled from.
+  # it can only ever mean the course directory of the repository the application
+  # was compiled from. It is what a build reads its content, its partials and
+  # its root files from, all three sitting at its top level.
   @course_dir Path.expand("../../../../course", __DIR__)
-  @content_dir Path.join(@course_dir, "collections")
-  @includes_dir Path.join(@course_dir, "_includes")
-  @declarations_file Path.join(@course_dir, "_data/course.yml")
+  @declarations_file Path.join(@course_dir, "course.yml")
 
   @external_resource @declarations_file
-  for file <- Build.content_files(@content_dir), String.ends_with?(file, ".md") do
-    @external_resource Path.join(@content_dir, file)
+  for file <- Build.content_files(@course_dir), String.ends_with?(file, ".md") do
+    @external_resource Path.join(@course_dir, file)
   end
 
-  for file <- Build.include_files(@includes_dir) do
-    @external_resource Path.join(@includes_dir, file)
+  for file <- Build.include_files(@course_dir) do
+    @external_resource Path.join(@course_dir, file)
   end
 
-  @content_digest Build.content_digest(@content_dir)
-  @structure Build.course!(@content_dir, @declarations_file)
+  @content_digest Build.content_digest(@course_dir)
+  @structure Build.course!(@course_dir, @declarations_file)
 
   # Projected while this module compiles rather than in a function body, so that
   # listing the course is not a map access on a literal of a few thousand words
@@ -99,7 +98,7 @@ defmodule ArchiDep.CourseSite.Material do
   @run_virtual_server_page Chapter.page_ref(@run_virtual_server_exercise)
   @sysadmin_page @structure |> Structure.cheatsheet!("sysadmin") |> Cheatsheet.page_ref()
 
-  @headings Build.headings!(@content_dir, @includes_dir, [
+  @headings Build.headings!(@course_dir, @course_dir, [
               @run_virtual_server_page,
               @sysadmin_page
             ])
@@ -251,5 +250,5 @@ defmodule ArchiDep.CourseSite.Material do
   module was compiled from.
   """
   @spec __mix_recompile__?() :: boolean()
-  def __mix_recompile__?, do: @content_digest != Build.content_digest(@content_dir)
+  def __mix_recompile__?, do: @content_digest != Build.content_digest(@course_dir)
 end

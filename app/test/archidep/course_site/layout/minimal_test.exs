@@ -73,7 +73,7 @@ defmodule ArchiDep.CourseSite.Layout.MinimalTest do
   defp context(content) do
     LayoutContext.new(
       page: {:document, DocumentRef.new(507, "dns", :subject)},
-      source_path: "_course/507-dns/subject.md",
+      source_path: "chapters/507-dns/subject.md",
       content: content,
       metadata: @metadata,
       front_matter: %{"title" => "Domain Name System (DNS)"},

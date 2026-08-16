@@ -28,7 +28,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
     current?: false,
     deck?: false
   }
-  @source "https://github.com/ArchiDep/website/blob/abc123/course/collections/x.md"
+  @source "https://github.com/ArchiDep/website/blob/abc123/course/x.md"
 
   describe "article/1" do
     test "shows a cheatsheet bare, with nothing said before it says anything" do

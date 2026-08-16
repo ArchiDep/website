@@ -44,7 +44,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
 
       assert LayoutContext.new(
                page: @page,
-               source_path: "_course/507-dns/subject.md",
+               source_path: "chapters/507-dns/subject.md",
                content: @content,
                metadata: @metadata,
                entry: chapter,
@@ -57,7 +57,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
                site: site
              ) == %LayoutContext{
                page: @page,
-               source_path: "_course/507-dns/subject.md",
+               source_path: "chapters/507-dns/subject.md",
                content: @content,
                metadata: @metadata,
                entry: chapter,
@@ -85,7 +85,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
 
       assert LayoutContext.new(options(urls: urls, site: site)) == %LayoutContext{
                page: @page,
-               source_path: "_course/507-dns/subject.md",
+               source_path: "chapters/507-dns/subject.md",
                content: @content,
                metadata: @metadata,
                entry: nil,
@@ -113,7 +113,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
 
       assert LayoutContext.new(options(page: :home, urls: urls, site: site)) == %LayoutContext{
                page: :home,
-               source_path: "_course/507-dns/subject.md",
+               source_path: "chapters/507-dns/subject.md",
                content: @content,
                metadata: @metadata,
                entry: nil,
@@ -216,7 +216,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContextTest do
     Keyword.merge(
       [
         page: @page,
-        source_path: "_course/507-dns/subject.md",
+        source_path: "chapters/507-dns/subject.md",
         content: @content,
         metadata: @metadata,
         front_matter: %{"title" => "DNS"},

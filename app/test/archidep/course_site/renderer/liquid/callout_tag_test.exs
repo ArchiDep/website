@@ -7,7 +7,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTagTest do
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.Support.CourseSiteFactory
 
-  @source_path "_course/501-nginx/exercise.md"
+  @source_path "chapters/501-nginx/exercise.md"
 
   describe "render/1" do
     test "shows a callout of every kind under its own icon" do
@@ -111,7 +111,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CalloutTagTest do
     test "expands the Liquid its prose contains before converting it" do
       assert render("""
              {% callout type: exercise %}
-             Read the [SFTP exercise]({% link _course/410-sftp-deployment/exercise.md %}).
+             Read the [SFTP exercise]({% link chapters/410-sftp-deployment/exercise.md %}).
              {% endcallout %}\
              """) ==
                {:ok,

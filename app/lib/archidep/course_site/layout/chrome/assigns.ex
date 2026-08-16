@@ -174,11 +174,10 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   # where its own pages are.
   @repository "https://github.com/ArchiDep/website"
 
-  # Where a page of the course sits in that repository, which is not where the
-  # build read it from: the collections are one directory below the page
-  # introducing them.
-  @content_subdirectory "course/collections"
-  @home_subdirectory "course"
+  # Where the course sits in that repository. Every page is under it at the path
+  # the build read it from, the home page included, so a source link is that
+  # prefix and nothing else.
+  @course_subdirectory "course"
 
   # The pictures the navigation draws, which are the same ones the dashboard
   # draws beside the same chapters. They are resolved up front like every other
@@ -609,11 +608,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   defp source_url(%LayoutContext{site: %SiteInfo{git_revision: nil}}), do: nil
 
   defp source_url(%LayoutContext{site: %SiteInfo{git_revision: revision}} = context),
-    do: "#{@repository}/blob/#{revision}/#{subdirectory(context.page)}/#{context.source_path}"
+    do: "#{@repository}/blob/#{revision}/#{@course_subdirectory}/#{context.source_path}"
 
   defp branch_url(%SiteInfo{git_branch: nil}), do: nil
   defp branch_url(%SiteInfo{git_branch: branch}), do: "#{@repository}/tree/#{branch}"
-
-  defp subdirectory(:home), do: @home_subdirectory
-  defp subdirectory(_page), do: @content_subdirectory
 end

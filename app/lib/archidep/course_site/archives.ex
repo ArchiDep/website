@@ -53,7 +53,7 @@ defmodule ArchiDep.CourseSite.Archives do
   # course of the repository the application was compiled from.
   @course_dir Path.expand("../../../../course", __DIR__)
   @archives_dir Path.join(@course_dir, "archives")
-  @overrides_file Path.join(@course_dir, "_data/archives.yml")
+  @overrides_file Path.join(@course_dir, "archives.yml")
 
   @external_resource @overrides_file
   for file <- Build.archive_files(@archives_dir) do

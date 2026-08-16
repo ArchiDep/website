@@ -28,7 +28,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.MermaidTagTest do
     Liquid.render(
       CourseSiteFactory.build(:render_context,
         source: CourseSiteFactory.build(:source, text: text),
-        source_path: "_course/104-ssh/slides/slides.md",
+        source_path: "chapters/104-ssh/slides/slides.md",
         page: {:document, DocumentRef.new(104, "ssh", :slides)},
         urls: CourseSiteFactory.build(:url_context, version: "2031", base_path: "")
       )

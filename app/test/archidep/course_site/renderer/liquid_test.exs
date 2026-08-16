@@ -17,7 +17,7 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
 
     test "resolves a link to another document of the course" do
       assert render(
-               "See the [SFTP exercise]({% link _course/410-sftp-deployment/exercise.md %}).\n"
+               "See the [SFTP exercise]({% link chapters/410-sftp-deployment/exercise.md %}).\n"
              ) ==
                {:ok, "See the [SFTP exercise](/2026/course/410-sftp-deployment/).\n", []}
     end
@@ -25,18 +25,18 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
     test "resolves a link written across several lines, and its fragment" do
       assert render("""
              See the [exercise]({%
-               link _course/410-sftp-deployment/exercise.md %}#the-end).
+               link chapters/410-sftp-deployment/exercise.md %}#the-end).
              """) ==
                {:ok, "See the [exercise](/2026/course/410-sftp-deployment/#the-end).\n", []}
     end
 
     test "reports a link to a document that is not one, and leaves the link empty" do
-      assert render("See the [notes]({% link _course/507-dns/notes.md %}).\n") ==
+      assert render("See the [notes]({% link chapters/507-dns/notes.md %}).\n") ==
                {:ok, "See the [notes]().\n",
                 [
                   RenderError.new(
-                    {:invalid_document, "_course/507-dns/notes.md"},
-                    "_course/701-paas/subject.md",
+                    {:invalid_document, "chapters/507-dns/notes.md"},
+                    "chapters/701-paas/subject.md",
                     %{line: 1, column: 17}
                   )
                 ]}
@@ -74,7 +74,7 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
                 [
                   RenderError.new(
                     {:unknown_include, "icons/nope.html"},
-                    "_course/701-paas/subject.md",
+                    "chapters/701-paas/subject.md",
                     %{line: 1, column: 1}
                   )
                 ]}
@@ -93,7 +93,7 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
                 [
                   RenderError.new(
                     {:liquid, "Undefined variable page.author"},
-                    "_course/701-paas/subject.md",
+                    "chapters/701-paas/subject.md",
                     %{line: 1, column: 15}
                   )
                 ]}
@@ -121,7 +121,7 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
                     {:url,
                      {:unknown_page_asset, {:document, DocumentRef.new(701, "paas", :subject)},
                       "images/missing.png", "/course/701-paas/images/missing.png"}},
-                    "_course/701-paas/subject.md"
+                    "chapters/701-paas/subject.md"
                   )
                 ]}
     end
@@ -129,7 +129,7 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
     test "expands the Liquid of a block tag's body, then converts it" do
       assert render("""
              {% prose kind: tip %}
-             See the [exercise]({% link _course/410-sftp-deployment/exercise.md %}).
+             See the [exercise]({% link chapters/410-sftp-deployment/exercise.md %}).
              {% endprose %}
              """) ==
                {:ok,
@@ -185,12 +185,12 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
     do:
       RenderError.new(
         {:invalid_tag, "boom", "this tag always fails"},
-        "_course/701-paas/subject.md",
+        "chapters/701-paas/subject.md",
         loc
       )
 
   defp liquid_error(message, loc),
-    do: RenderError.new({:liquid, message}, "_course/701-paas/subject.md", loc)
+    do: RenderError.new({:liquid, message}, "chapters/701-paas/subject.md", loc)
 
   defp render(text, attrs \\ []) do
     Liquid.render(
@@ -199,7 +199,7 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
         Keyword.merge(
           [
             source: CourseSiteFactory.build(:source, text: text),
-            source_path: "_course/701-paas/subject.md",
+            source_path: "chapters/701-paas/subject.md",
             page: {:document, DocumentRef.new(701, "paas", :subject)},
             urls: CourseSiteFactory.build(:url_context, version: "2026", base_path: ""),
             options:

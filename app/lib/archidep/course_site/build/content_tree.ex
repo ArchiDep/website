@@ -92,11 +92,11 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
           | {:subject_and_exercise, String.t(), [String.t()]}
           | {:exercise_with_slides, String.t(), [String.t()]}
 
-  @roots ["_course", "_cheatsheets"]
+  @roots ["chapters", "cheatsheets"]
 
-  @chapter_regex ~r{\A_course/([1-9]\d\d-[^/]+)/(.+)\z}
-  @cheatsheet_regex ~r{\A_cheatsheets/([^/]+)/(.+)\z}
-  @cheatsheet_document_regex ~r{\A_cheatsheets/([^/]+)/cheatsheet\.md\z}
+  @chapter_regex ~r{\Achapters/([1-9]\d\d-[^/]+)/(.+)\z}
+  @cheatsheet_regex ~r{\Acheatsheets/([^/]+)/(.+)\z}
+  @cheatsheet_document_regex ~r{\Acheatsheets/([^/]+)/cheatsheet\.md\z}
 
   # Why a published path must not need percent-encoding:
   # `ArchiDep.CourseSite.Urls.PageAssetManifest`.
@@ -106,8 +106,13 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   The directories of the content tree a build reads, relative to the content
   directory.
 
+  They are named rather than derived from what the directory holds, which is
+  what lets the content directory be the course directory itself: everything
+  beside them — the asset sources, the archive manifests, the generated PDFs —
+  is another pipeline's input or this one's output.
+
       iex> ContentTree.roots()
-      ["_course", "_cheatsheets"]
+      ["chapters", "cheatsheets"]
   """
   @spec roots() :: [String.t()]
   def roots, do: @roots

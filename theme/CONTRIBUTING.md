@@ -187,10 +187,11 @@ points (`theme.css` and `slides.css`) and uses the following directives:
   scans the application's web templates (`app/lib/archidep_web`), the course
   site's own chrome (`app/lib/archidep/course_site/layout`, which is Elixir
   rather than Liquid), the [Flashy][flashy] dependency used for notifications,
-  and the course material (`course/collections`, `course/_includes`,
-  `course/_layouts`, `course/_plugins`, `course/_posts`, `course/index.md` and
-  `course/src/assets`). This is why the theme must be rebuilt whenever utility
-  classes change in any of them (see [Integration With Other
+  and the course material (`course/chapters`, `course/cheatsheets`,
+  `course/icons`, `course/index.md` and `course/src/assets`, named one by one
+  rather than as `course/` so that Tailwind does not scan the directory's
+  `node_modules` and build outputs). This is why the theme must be rebuilt
+  whenever utility classes change in any of them (see [Integration With Other
   Components](#integration-with-other-components)).
 - `@source inline("...")` safelists classes that are composed dynamically and
   therefore cannot be discovered by scanning, such as the `section-{0..10}`

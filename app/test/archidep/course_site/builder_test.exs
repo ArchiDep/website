@@ -29,10 +29,10 @@ defmodule ArchiDep.CourseSite.BuilderTest do
   describe "course_inputs/1" do
     test "says where each input a build reads is, given the course" do
       assert Builder.course_inputs("/archidep/course") == [
-               content_dir: "/archidep/course/collections",
+               content_dir: "/archidep/course",
                home_file: "/archidep/course/index.md",
-               includes_dir: "/archidep/course/_includes",
-               declarations_file: "/archidep/course/_data/course.yml",
+               includes_dir: "/archidep/course",
+               declarations_file: "/archidep/course/course.yml",
                root_files_dir: "/archidep/course"
              ]
     end
@@ -156,16 +156,16 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
       write!(
         dirs.course_dir,
-        "collections/_course/101-command-line/subject.md",
+        "chapters/101-command-line/subject.md",
         "---\ntitle: Command Line\n---\n\n{% link nope %}\n"
       )
 
       assert Builder.build(opts(dirs, output: :swap)) ==
                {:error, "The site could not be rendered",
                 [
-                  ~s{Document _course/101-command-line/subject.md could not be rendered: } <>
+                  ~s{Document chapters/101-command-line/subject.md could not be rendered: } <>
                     ~s{"nope" is not the path of a course document in } <>
-                    ~s{_course/101-command-line/subject.md at line 5, column 1}
+                    ~s{chapters/101-command-line/subject.md at line 5, column 1}
                 ]}
 
       assert written(dirs.output_dir) == %{"/index.html" => "the build being served"}
@@ -191,16 +191,16 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
       write!(
         dirs.course_dir,
-        "collections/_course/101-command-line/subject.md",
+        "chapters/101-command-line/subject.md",
         "---\ntitle: Command Line\n---\n\n{% link nope %}\n"
       )
 
       assert Builder.build(opts(dirs)) ==
                {:error, "The site could not be rendered",
                 [
-                  ~s{Document _course/101-command-line/subject.md could not be rendered: } <>
+                  ~s{Document chapters/101-command-line/subject.md could not be rendered: } <>
                     ~s{"nope" is not the path of a course document in } <>
-                    ~s{_course/101-command-line/subject.md at line 5, column 1}
+                    ~s{chapters/101-command-line/subject.md at line 5, column 1}
                 ]}
 
       assert File.exists?(dirs.output_dir) == false
@@ -224,7 +224,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
       write!(
         dirs.course_dir,
-        "collections/_course/101-command-line/subject.md",
+        "chapters/101-command-line/subject.md",
         "---\ntitle: Command Line\n---\n\n[Nowhere](nowhere/)\n"
       )
 
@@ -245,7 +245,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
       write!(
         dirs.course_dir,
-        "collections/_course/101-command-line/subject.md",
+        "chapters/101-command-line/subject.md",
         "---\ntitle: Command Line\n---\n\n![CLI](images/cli.jpg)\n"
       )
 
@@ -258,7 +258,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
       write!(
         dirs.course_dir,
-        "collections/_course/101-command-line/subject.md",
+        "chapters/101-command-line/subject.md",
         "---\ntitle: Command Line\n---\n\n[Nowhere](nowhere/)\n"
       )
 
@@ -278,7 +278,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     dirs = %{
       course_dir: Path.join(tmp_dir, "course"),
       static_dir: Path.join(tmp_dir, "static"),
-      declarations_file: Path.join(tmp_dir, "course/_data/course.yml"),
+      declarations_file: Path.join(tmp_dir, "course/course.yml"),
       progress: [Session.new(~D[2026-02-02], "CLI", [100], [101], [])],
       output_dir: Path.join(tmp_dir, "build")
     }
@@ -293,19 +293,19 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
     write!(
       dirs.course_dir,
-      "collections/_course/101-command-line/subject.md",
+      "chapters/101-command-line/subject.md",
       "---\ntitle: Command Line\n---\n\nType.\n"
     )
 
-    write!(dirs.course_dir, "collections/_course/101-command-line/images/cli.jpg", "a picture")
+    write!(dirs.course_dir, "chapters/101-command-line/images/cli.jpg", "a picture")
 
     write!(
       dirs.course_dir,
-      "_data/course.yml",
+      "course.yml",
       "---\nsections:\n  - title: Introduction\ncheatsheets: []\n"
     )
 
-    File.mkdir_p!(Path.join(dirs.course_dir, "_includes"))
+    File.mkdir_p!(Path.join(dirs.course_dir, "icons"))
     write!(dirs.static_dir, "assets/theme/theme.css", "body {}")
 
     dirs
@@ -364,7 +364,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     edition_files = %{
       (edition <> "/index.html") => home,
       (edition <> "/course/101-command-line/index.html") =>
-        "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|CLI|page:::<p>Type.</p>",
+        "/course/101-command-line/|chapters/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|CLI|page:::<p>Type.</p>",
       (edition <> "/course/101-command-line/images/cli-#{digest("a picture")}.jpg") =>
         "a picture",
       (edition <> "/assets/theme/theme.css") => "body {}",

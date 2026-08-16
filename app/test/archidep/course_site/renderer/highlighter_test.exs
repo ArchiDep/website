@@ -6,7 +6,7 @@ defmodule ArchiDep.CourseSite.Renderer.HighlighterTest do
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.Support.CourseSiteFactory
 
-  @source_path "_course/101-command-line/subject.md"
+  @source_path "chapters/101-command-line/subject.md"
 
   describe "run/2" do
     test "colours the code of a fenced block" do

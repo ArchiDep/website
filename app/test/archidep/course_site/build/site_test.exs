@@ -34,15 +34,15 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                "/index.html" =>
                  "/|index.md|Architecture & Deployment · ArchiDep|||Session|page:::<p>Welcome.</p>",
                "/course/101-command-line/index.html" =>
-                 "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|Session|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>",
+                 "/course/101-command-line/|chapters/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|Session|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>",
                "/course/101-command-line/slides/index.html" =>
-                 "/course/101-command-line/slides/|_course/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|Session|deck:# Command Line\n",
+                 "/course/101-command-line/slides/|chapters/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|Session|deck:# Command Line\n",
                "/course/202-git-branching/slides/index.html" =>
-                 "/course/202-git-branching/slides/|_course/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|Session|deck:# Branching\n",
+                 "/course/202-git-branching/slides/|chapters/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|Session|deck:# Branching\n",
                "/course/205-php-todolist/index.html" =>
-                 "/course/205-php-todolist/|_course/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|Session|page:::<p>Build it.</p>",
+                 "/course/205-php-todolist/|chapters/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|Session|page:::<p>Build it.</p>",
                "/cheatsheets/git/index.html" =>
-                 "/cheatsheets/git/|_cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>",
+                 "/cheatsheets/git/|cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>",
                "/archidep.json" => archidep_json(),
                "/search-abc123.json" => search_json(),
                "/version.json" => version_json(),
@@ -85,15 +85,15 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                "/index.html" =>
                  "/|index.md|Architecture & Deployment · ArchiDep|||Session|page:::<p>Welcome.</p>",
                "/course/101-command-line/index.html" =>
-                 "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|Session|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>",
+                 "/course/101-command-line/|chapters/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|Session|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>",
                "/course/101-command-line/slides/index.html" =>
-                 "/course/101-command-line/slides/|_course/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|Session|deck:# Command Line\n",
+                 "/course/101-command-line/slides/|chapters/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|Session|deck:# Command Line\n",
                "/course/202-git-branching/slides/index.html" =>
-                 "/course/202-git-branching/slides/|_course/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|Session|deck:# Branching\n",
+                 "/course/202-git-branching/slides/|chapters/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|Session|deck:# Branching\n",
                "/course/205-php-todolist/index.html" =>
-                 "/course/205-php-todolist/|_course/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|Session|page:::<p>Build it.</p>",
+                 "/course/205-php-todolist/|chapters/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|Session|page:::<p>Build it.</p>",
                "/cheatsheets/git/index.html" =>
-                 "/cheatsheets/git/|_cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>",
+                 "/cheatsheets/git/|cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>",
                "/favicon.ico" => "the mark",
                "/favicons/heig.png" => "the school's mark",
                "/archidep.json" => archidep_json(),
@@ -110,17 +110,17 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                {:home, :html,
                 "/|index.md|Architecture & Deployment · ArchiDep|||Session|page:::<p>Welcome.</p>"},
                {{:document, @cli_subject}, :html,
-                "/course/101-command-line/|_course/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|Session|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>"},
+                "/course/101-command-line/|chapters/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|Session|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>"},
                {{:document, @cli_slides}, :markdown, "# Command Line\n"},
                {{:document, @cli_slides}, :html,
-                "/course/101-command-line/slides/|_course/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|Session|deck:# Command Line\n"},
+                "/course/101-command-line/slides/|chapters/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|Session|deck:# Command Line\n"},
                {{:document, @branching}, :markdown, "# Branching\n"},
                {{:document, @branching}, :html,
-                "/course/202-git-branching/slides/|_course/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|Session|deck:# Branching\n"},
+                "/course/202-git-branching/slides/|chapters/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|Session|deck:# Branching\n"},
                {{:document, @todolist}, :html,
-                "/course/205-php-todolist/|_course/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|Session|page:::<p>Build it.</p>"},
+                "/course/205-php-todolist/|chapters/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|Session|page:::<p>Build it.</p>"},
                {{:cheatsheet, "git"}, :html,
-                "/cheatsheets/git/|_cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>"}
+                "/cheatsheets/git/|cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>"}
              ]
     end
 
@@ -152,16 +152,16 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       assert Site.plan(inputs(sources: sources, structure: two_pages()), options()) ==
                {:error,
                 [
-                  {:unrenderable_document, "_course/101-command-line/subject.md",
+                  {:unrenderable_document, "chapters/101-command-line/subject.md",
                    %RenderError{
                      reason: {:invalid_document, "nope"},
-                     source_path: "_course/101-command-line/subject.md",
+                     source_path: "chapters/101-command-line/subject.md",
                      loc: %{line: 5, column: 1}
                    }},
-                  {:unrenderable_document, "_course/205-php-todolist/exercise.md",
+                  {:unrenderable_document, "chapters/205-php-todolist/exercise.md",
                    %RenderError{
                      reason: {:invalid_document, "nope"},
-                     source_path: "_course/205-php-todolist/exercise.md",
+                     source_path: "chapters/205-php-todolist/exercise.md",
                      loc: %{line: 5, column: 1}
                    }}
                 ]}
@@ -172,12 +172,12 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     test "describes a document that could not be rendered" do
       error = %RenderError{
         reason: {:invalid_document, "nope"},
-        source_path: "_course/507-dns/subject.md",
+        source_path: "chapters/507-dns/subject.md",
         loc: %{line: 5, column: 1}
       }
 
-      assert Site.format_error({:unrenderable_document, "_course/507-dns/subject.md", error}) ==
-               "Document _course/507-dns/subject.md could not be rendered: " <>
+      assert Site.format_error({:unrenderable_document, "chapters/507-dns/subject.md", error}) ==
+               "Document chapters/507-dns/subject.md could not be rendered: " <>
                  RenderError.message(error)
     end
 
@@ -230,12 +230,12 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
   defp tree do
     %ContentTree{
       documents: %{
-        @cli_subject => "_course/101-command-line/subject.md",
-        @cli_slides => "_course/101-command-line/slides.md",
-        @branching => "_course/202-git-branching/slides.md",
-        @todolist => "_course/205-php-todolist/exercise.md"
+        @cli_subject => "chapters/101-command-line/subject.md",
+        @cli_slides => "chapters/101-command-line/slides.md",
+        @branching => "chapters/202-git-branching/slides.md",
+        @todolist => "chapters/205-php-todolist/exercise.md"
       },
-      cheatsheets: %{"git" => "_cheatsheets/git/cheatsheet.md"},
+      cheatsheets: %{"git" => "cheatsheets/git/cheatsheet.md"},
       page_assets: %{},
       ignored: []
     }

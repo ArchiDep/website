@@ -5,14 +5,14 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.RawMarkupTest do
 
   describe "parse/1" do
     test "reads markup a Liquid lexer would refuse" do
-      assert parse("_course/101-command-line/subject.md %}the rest") ==
-               {:ok, "_course/101-command-line/subject.md",
-                %{rest: "the rest", line: 1, column: 39}}
+      assert parse("chapters/101-command-line/subject.md %}the rest") ==
+               {:ok, "chapters/101-command-line/subject.md",
+                %{rest: "the rest", line: 1, column: 40}}
     end
 
     test "reads markup written across several lines" do
-      assert parse("_course/803-docker-isolation/subject.md\n  %}the rest") ==
-               {:ok, "_course/803-docker-isolation/subject.md",
+      assert parse("chapters/803-docker-isolation/subject.md\n  %}the rest") ==
+               {:ok, "chapters/803-docker-isolation/subject.md",
                 %{rest: "the rest", line: 2, column: 5}}
     end
 
@@ -27,8 +27,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.RawMarkupTest do
     end
 
     test "reports a tag that is never closed" do
-      assert parse("_course/101-command-line/subject.md") ==
-               {:error, "Tag not terminated, expected %}", %{line: 1, column: 36}}
+      assert parse("chapters/101-command-line/subject.md") ==
+               {:error, "Tag not terminated, expected %}", %{line: 1, column: 37}}
     end
   end
 

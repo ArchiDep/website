@@ -123,7 +123,7 @@ defmodule ArchiDep.CourseSite.Renderer.AssetReferencesTest do
                     {:url,
                      {:unknown_page_asset, {:document, DocumentRef.new(201, "git", :slides)},
                       "images/typo.png", "/course/201-git/slides/images/typo.png"}},
-                    "_course/201-git/slides/slides.md"
+                    "chapters/201-git/slides/slides.md"
                   )
                 ]}
     end
@@ -190,7 +190,7 @@ defmodule ArchiDep.CourseSite.Renderer.AssetReferencesTest do
       check all %UrlContext{} = generated <- CourseSiteFactory.url_context_generator() do
         context =
           CourseSiteFactory.build(:render_context,
-            source_path: "_course/408-unix-networking/slides/slides.md",
+            source_path: "chapters/408-unix-networking/slides/slides.md",
             page: {:document, DocumentRef.new(408, "unix-networking", :slides)},
             urls: %{generated | page_assets: page_assets}
           )
@@ -221,8 +221,8 @@ defmodule ArchiDep.CourseSite.Renderer.AssetReferencesTest do
   end
 
   defp source_path({:document, %DocumentRef{type: :slides} = document}),
-    do: "_course/#{DocumentRef.dir(document)}/slides/slides.md"
+    do: "chapters/#{DocumentRef.dir(document)}/slides/slides.md"
 
   defp source_path({:document, %DocumentRef{type: type} = document}),
-    do: "_course/#{DocumentRef.dir(document)}/#{type}.md"
+    do: "chapters/#{DocumentRef.dir(document)}/#{type}.md"
 end

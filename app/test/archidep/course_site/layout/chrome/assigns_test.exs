@@ -155,8 +155,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                   links:
                     links(
                       deck: false,
-                      source:
-                        source_url("course/collections/_course/205-php-todolist/exercise.md")
+                      source: source_url("course/chapters/205-php-todolist/exercise.md")
                     )
                 )}
     end
@@ -175,7 +174,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                   links:
                     links(
                       deck: false,
-                      source: source_url("course/collections/_cheatsheets/git/cheatsheet.md")
+                      source: source_url("course/cheatsheets/git/cheatsheet.md")
                     )
                 )}
     end
@@ -229,7 +228,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
                     links(
                       assets: @deck_assets,
                       search: false,
-                      source: source_url("course/collections/_course/507-dns/slides.md")
+                      source: source_url("course/chapters/507-dns/slides.md")
                     )
                 )}
     end
@@ -496,7 +495,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
         Keyword.get(
           overrides,
           :source,
-          source_url("course/collections/_course/507-dns/subject.md")
+          source_url("course/chapters/507-dns/subject.md")
         )
     }
     |> Map.merge(Map.new(assets, &{asset_key(&1), &1}))
@@ -718,8 +717,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   defp section({:document, _ref}), do: Section.new(5, "Networking", [])
 
   defp source_path(:home), do: "index.md"
-  defp source_path({:cheatsheet, slug}), do: "_cheatsheets/#{slug}/cheatsheet.md"
-  defp source_path({:document, @todolist}), do: "_course/205-php-todolist/exercise.md"
-  defp source_path({:document, @dns_deck}), do: "_course/507-dns/slides.md"
-  defp source_path({:document, _ref}), do: "_course/507-dns/subject.md"
+  defp source_path({:cheatsheet, slug}), do: "cheatsheets/#{slug}/cheatsheet.md"
+  defp source_path({:document, @todolist}), do: "chapters/205-php-todolist/exercise.md"
+  defp source_path({:document, @dns_deck}), do: "chapters/507-dns/slides.md"
+  defp source_path({:document, _ref}), do: "chapters/507-dns/subject.md"
 end

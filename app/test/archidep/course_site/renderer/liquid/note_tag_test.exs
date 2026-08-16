@@ -7,7 +7,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.NoteTagTest do
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.Support.CourseSiteFactory
 
-  @source_path "_course/406-unix-processes/subject.md"
+  @source_path "chapters/406-unix-processes/subject.md"
 
   describe "render/1" do
     test "shows an aside of every kind under its own icon and title" do
@@ -50,7 +50,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.NoteTagTest do
     test "expands the Liquid its prose contains before converting it" do
       assert render("""
              {% note type: tip %}
-             See the [SFTP exercise]({% link _course/410-sftp-deployment/exercise.md %}).
+             See the [SFTP exercise]({% link chapters/410-sftp-deployment/exercise.md %}).
              {% endnote %}\
              """) ==
                {:ok,

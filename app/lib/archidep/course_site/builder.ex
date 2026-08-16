@@ -57,14 +57,20 @@ defmodule ArchiDep.CourseSite.Builder do
   has got is **not** among them, being the one input of a build that is not part
   of the course material — see the `:progress` option of
   `ArchiDep.CourseSite.Build.site_inputs/1`.
+
+  Three of the five are the course directory itself, the content roots, the icon
+  partials and the marks published at the mount point all sitting at its top
+  level. They stay three inputs rather than one because they are three questions
+  a build asks, and nothing about them being answered by the same directory
+  today makes them the same question.
   """
   @spec course_inputs(Path.t()) :: keyword()
   def course_inputs(course_dir),
     do: [
-      content_dir: Path.join(course_dir, "collections"),
+      content_dir: course_dir,
       home_file: Path.join(course_dir, "index.md"),
-      includes_dir: Path.join(course_dir, "_includes"),
-      declarations_file: Path.join(course_dir, "_data/course.yml"),
+      includes_dir: course_dir,
+      declarations_file: Path.join(course_dir, "course.yml"),
       root_files_dir: course_dir
     ]
 

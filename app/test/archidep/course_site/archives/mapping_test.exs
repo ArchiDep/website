@@ -366,48 +366,48 @@ defmodule ArchiDep.CourseSite.Archives.MappingTest do
 
     test "describes a page nothing accounts for" do
       assert Mapping.format_error({:unresolved, "2025", "/course/104-ssh/"}) ==
-               ~s|Edition 2025 published "/course/104-ssh/", which the course no longer holds; say where it went in course/_data/archives.yml, or declare it gone|
+               ~s|Edition 2025 published "/course/104-ssh/", which the course no longer holds; say where it went in course/archives.yml, or declare it gone|
     end
 
     test "describes a page whose slug the course now uses twice" do
       assert Mapping.format_error(
                {:ambiguous, "2025", "/course/104-ssh/", {:chapter, 104, "ssh"}}
              ) ==
-               ~s|Edition 2025 published "/course/104-ssh/", and the course now holds more than one "ssh" chapter; say which one it is in course/_data/archives.yml|
+               ~s|Edition 2025 published "/course/104-ssh/", and the course now holds more than one "ssh" chapter; say which one it is in course/archives.yml|
     end
 
     test "describes an ambiguous deck" do
       assert Mapping.format_error(
                {:ambiguous, "2025", "/course/104-ssh/slides/", {:chapter_slides, 104, "ssh"}}
              ) ==
-               ~s|Edition 2025 published "/course/104-ssh/slides/", and the course now holds more than one "ssh" slide deck; say which one it is in course/_data/archives.yml|
+               ~s|Edition 2025 published "/course/104-ssh/slides/", and the course now holds more than one "ssh" slide deck; say which one it is in course/archives.yml|
     end
 
     test "describes an ambiguous cheatsheet" do
       assert Mapping.format_error({:ambiguous, "2025", "/cheatsheets/git/", {:cheatsheet, "git"}}) ==
-               ~s|Edition 2025 published "/cheatsheets/git/", and the course now holds more than one "git" cheatsheet; say which one it is in course/_data/archives.yml|
+               ~s|Edition 2025 published "/cheatsheets/git/", and the course now holds more than one "git" cheatsheet; say which one it is in course/archives.yml|
     end
 
     test "describes an ambiguous home page" do
       assert Mapping.format_error({:ambiguous, "2025", "/", :home}) ==
-               ~s|Edition 2025 published "/", and the course now holds more than one home page; say which one it is in course/_data/archives.yml|
+               ~s|Edition 2025 published "/", and the course now holds more than one home page; say which one it is in course/archives.yml|
     end
 
     test "describes declarations about an edition that is not archived" do
       assert Mapping.format_error({:unknown_override_edition, "2031"}) ==
-               "course/_data/archives.yml declares edition 2031, which is not archived"
+               "course/archives.yml declares edition 2031, which is not archived"
     end
 
     test "describes a declaration about a page its edition never published" do
       assert Mapping.format_error({:unknown_override_source, "2025", "/course/104-shh/"}) ==
-               ~s|course/_data/archives.yml sends "/course/104-shh/", which edition 2025 never published|
+               ~s|course/archives.yml sends "/course/104-shh/", which edition 2025 never published|
     end
 
     test "describes a declaration sending a page where the course holds nothing" do
       assert Mapping.format_error(
                {:unknown_override_target, "2025", "/course/104-ssh/", "/course/999-nowhere/"}
              ) ==
-               ~s|course/_data/archives.yml sends edition 2025's "/course/104-ssh/" to "/course/999-nowhere/", which the course does not hold|
+               ~s|course/archives.yml sends edition 2025's "/course/104-ssh/" to "/course/999-nowhere/", which the course does not hold|
     end
   end
 

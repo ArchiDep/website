@@ -26,10 +26,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Archives do
   Options:
 
   - `--course` — the course material directory. Defaults to `../course`.
-  - `--content` — the course collections directory. Defaults to the
-    `collections` directory of the course.
+  - `--content` — the directory holding the course's content roots. Defaults to
+    the course itself.
   - `--declarations` — what the course declares about itself. Defaults to the
-    `_data/course.yml` of the course.
+    `course.yml` of the course.
   - `--version` — the edition being recorded, i.e. the starting year of the
     academic year. Defaults to the edition the application's `course_site`
     configuration says this checkout holds.
@@ -65,8 +65,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Archives do
       Manifest.of(
         edition,
         Build.course!(
-          Keyword.get(opts, :content, Path.join(course_dir, "collections")),
-          Keyword.get(opts, :declarations, Path.join(course_dir, "_data/course.yml"))
+          Keyword.get(opts, :content, course_dir),
+          Keyword.get(opts, :declarations, Path.join(course_dir, "course.yml"))
         )
       )
 

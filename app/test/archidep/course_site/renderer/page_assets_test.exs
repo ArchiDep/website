@@ -7,7 +7,7 @@ defmodule ArchiDep.CourseSite.Renderer.PageAssetsTest do
   alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.Support.CourseSiteFactory
 
-  @source_path "_course/507-dns/subject.md"
+  @source_path "chapters/507-dns/subject.md"
   @page {:document, DocumentRef.new(507, "dns", :subject)}
 
   describe "run/2" do

@@ -68,7 +68,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
     than the renderer because the build reads the front matter to work out what
     the document *is* before it renders it.
   - `:source_path` (required) — the path of the file, e.g.
-    `"_course/507-dns/subject.md"`. Only ever used to say where a problem is.
+    `"chapters/507-dns/subject.md"`. Only ever used to say where a problem is.
   - `:urls` (required) — the build, as an `ArchiDep.CourseSite.Urls.UrlContext`.
   - `:page` (required) — the page being rendered, as an
     `ArchiDep.CourseSite.PageRef`.

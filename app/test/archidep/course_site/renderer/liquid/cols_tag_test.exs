@@ -9,7 +9,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.ColsTagTest do
 
   doctest ColsTag
 
-  @source_path "_course/302-git-branching/subject.md"
+  @source_path "chapters/302-git-branching/subject.md"
 
   describe "render/1" do
     test "lays two columns out side by side, which is what a row is by default" do
@@ -70,7 +70,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.ColsTagTest do
     test "expands the Liquid a column contains before converting it" do
       assert render("""
              {% cols %}
-             Read the [SFTP exercise]({% link _course/410-sftp-deployment/exercise.md %}).
+             Read the [SFTP exercise]({% link chapters/410-sftp-deployment/exercise.md %}).
              <!-- col -->
              Then come back.
              {% endcols %}\

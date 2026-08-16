@@ -13,10 +13,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Structure do
 
   Options:
 
-  - `--content` — the course collections directory. Defaults to
-    `../course/collections`.
+  - `--content` — the directory holding the course's content roots. Defaults to
+    `../course`.
   - `--declarations` — the file declaring the sections of the course and the
-    order of its cheatsheets. Defaults to `../course/_data/course.yml`.
+    order of its cheatsheets. Defaults to `../course/course.yml`.
   """
 
   use Mix.Task
@@ -36,10 +36,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Structure do
     {opts, [], []} =
       OptionParser.parse(args, strict: [content: :string, declarations: :string])
 
-    content_dir = Keyword.get(opts, :content, Path.join(@app_dir, "../course/collections"))
+    content_dir = Keyword.get(opts, :content, Path.join(@app_dir, "../course"))
 
     declarations_file =
-      Keyword.get(opts, :declarations, Path.join(@app_dir, "../course/_data/course.yml"))
+      Keyword.get(opts, :declarations, Path.join(@app_dir, "../course/course.yml"))
 
     tree = tree!(content_dir)
     front_matter = tree |> sources!(content_dir) |> Build.front_matter()

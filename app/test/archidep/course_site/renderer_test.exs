@@ -40,7 +40,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
 
                ## Deploying
 
-               Read the [SFTP exercise]({% link _course/410-sftp-deployment/exercise.md %}) first,
+               Read the [SFTP exercise]({% link chapters/410-sftp-deployment/exercise.md %}) first,
                then {% include icons/photo.html class="size-6" %} look at {{ page.title }}.
 
                [render]: https://render.com
@@ -186,7 +186,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
                 [
                   RenderError.new(
                     {:missing_excerpt_separator, "<!-- more -->"},
-                    "_course/701-paas/subject.md"
+                    "chapters/701-paas/subject.md"
                   )
                 ]}
     end
@@ -226,7 +226,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
                 [
                   RenderError.new(
                     {:liquid, "Unexpected tag 'nope'"},
-                    "_course/701-paas/subject.md",
+                    "chapters/701-paas/subject.md",
                     %{line: 1, column: 1}
                   )
                 ]}
@@ -240,7 +240,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
              And [the same subject][cli] from inside a tag.
              {% endprose %}
 
-             [cli]: {% link _course/101-command-line/subject.md %}
+             [cli]: {% link chapters/101-command-line/subject.md %}
              """) ==
                {:ok,
                 %Page{
@@ -271,7 +271,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
 
              # Command line
 
-             See the [exercise]({% link _course/410-sftp-deployment/exercise.md %}).
+             See the [exercise]({% link chapters/410-sftp-deployment/exercise.md %}).
              """) ==
                {:ok,
                 %Slides{
@@ -328,7 +328,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
                Carelessness and coffee spills <div class="emoji-container">:coffee:</div>
                """,
                page: {:document, DocumentRef.new(401, "cloud-computing", :slides)},
-               source_path: "_course/401-cloud-computing/slides.md",
+               source_path: "chapters/401-cloud-computing/slides.md",
                urls:
                  CourseSiteFactory.build(:url_context,
                    version: "2026",
@@ -363,7 +363,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
     test "leaves the picture of an emoji it just drew alone" do
       assert render_slides("A drink :coffee: and a picture ![Zone](images/zone.png)\n",
                page: {:document, DocumentRef.new(507, "dns", :slides)},
-               source_path: "_course/507-dns/slides/slides.md",
+               source_path: "chapters/507-dns/slides/slides.md",
                urls:
                  CourseSiteFactory.build(:url_context,
                    version: "2026",
@@ -389,7 +389,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
       assert render_slides(
                "<img src='images/gone.png' />\n\n---\n\n![Gone](images/gone.png)\n",
                page: {:document, DocumentRef.new(201, "git", :slides)},
-               source_path: "_course/201-git/slides/slides.md"
+               source_path: "chapters/201-git/slides/slides.md"
              ) ==
                {:error,
                 [
@@ -397,7 +397,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
                     {:url,
                      {:unknown_page_asset, {:document, DocumentRef.new(201, "git", :slides)},
                       "images/gone.png", "/course/201-git/slides/images/gone.png"}},
-                    "_course/201-git/slides/slides.md"
+                    "chapters/201-git/slides/slides.md"
                   )
                 ]}
     end
@@ -504,7 +504,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
     do:
       RenderError.new(
         {:invalid_tag, "boom", "this tag always fails"},
-        "_course/701-paas/subject.md",
+        "chapters/701-paas/subject.md",
         loc
       )
 
@@ -512,7 +512,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
     do:
       RenderError.new(
         {:invalid_tag, "pass", "this pass always fails"},
-        "_course/701-paas/subject.md"
+        "chapters/701-paas/subject.md"
       )
 
   defp headings(text, attrs \\ []), do: Renderer.headings(context(text, attrs))
@@ -527,7 +527,7 @@ defmodule ArchiDep.CourseSite.RendererTest do
       Keyword.merge(
         [
           source: CourseSiteFactory.build(:source, text: text),
-          source_path: "_course/701-paas/subject.md",
+          source_path: "chapters/701-paas/subject.md",
           page: {:document, DocumentRef.new(701, "paas", :subject)},
           urls: CourseSiteFactory.build(:url_context, version: "2026", base_path: ""),
           options:

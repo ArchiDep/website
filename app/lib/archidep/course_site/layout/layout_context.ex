@@ -96,7 +96,7 @@ defmodule ArchiDep.CourseSite.Layout.LayoutContext do
   - `:page` (required) — which page this is, as an
     `ArchiDep.CourseSite.PageRef`.
   - `:source_path` (required) — the file it was written in, e.g.
-    `"_course/507-dns/subject.md"`. What the "Source code" link points at.
+    `"chapters/507-dns/subject.md"`. What the "Source code" link points at.
   - `:content` (required) — what the renderer produced.
   - `:metadata` (required) — what the page says about itself, for the `<head>`.
   - `:front_matter` (required) — what the author declared, for the keys only a

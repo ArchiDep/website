@@ -163,8 +163,8 @@ defmodule ArchiDep.CourseSite.Layout.ChromeTest do
   defp section({:document, _ref}), do: Section.new(5, "Networking", [])
 
   defp source_path(:home), do: "index.md"
-  defp source_path({:cheatsheet, slug}), do: "_cheatsheets/#{slug}/cheatsheet.md"
-  defp source_path({:document, @todolist}), do: "_course/205-php-todolist/exercise.md"
-  defp source_path({:document, @dns_deck}), do: "_course/507-dns/slides.md"
-  defp source_path({:document, _ref}), do: "_course/507-dns/subject.md"
+  defp source_path({:cheatsheet, slug}), do: "cheatsheets/#{slug}/cheatsheet.md"
+  defp source_path({:document, @todolist}), do: "chapters/205-php-todolist/exercise.md"
+  defp source_path({:document, @dns_deck}), do: "chapters/507-dns/slides.md"
+  defp source_path({:document, _ref}), do: "chapters/507-dns/subject.md"
 end

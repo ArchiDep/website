@@ -67,9 +67,9 @@ defmodule ArchiDep.CourseSite.Renderer.RenderError do
   front matter. Shifting once, at the end, keeps that arithmetic out of every
   tag.
 
-      iex> RenderError.new({:liquid, "boom"}, "_course/101-command-line/subject.md", %{line: 2, column: 5})
+      iex> RenderError.new({:liquid, "boom"}, "chapters/101-command-line/subject.md", %{line: 2, column: 5})
       ...> |> RenderError.shift(4)
-      RenderError.new({:liquid, "boom"}, "_course/101-command-line/subject.md", %{line: 6, column: 5})
+      RenderError.new({:liquid, "boom"}, "chapters/101-command-line/subject.md", %{line: 6, column: 5})
   """
   @spec shift(t(), non_neg_integer()) :: t()
   def shift(%__MODULE__{loc: nil} = error, _lines), do: error

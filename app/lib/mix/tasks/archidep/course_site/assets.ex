@@ -15,10 +15,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
 
   Options:
 
-  - `--content` — the course collections directory. Defaults to
-    `../course/collections`.
+  - `--content` — the directory holding the course's content roots. Defaults to
+    `../course`.
   - `--includes` — the directory of partials a document may include. Defaults to
-    `../course/_includes`.
+    `../course`.
   - `--static` — the static directory holding the global assets. Defaults to
     `priv/static`. Its `cache_manifest.json` is read when it is there, and the
     assets are taken to be undigested when it is not.
@@ -51,8 +51,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
         strict: [content: :string, includes: :string, static: :string, progress: :string]
       )
 
-    content_dir = Keyword.get(opts, :content, Path.join(@app_dir, "../course/collections"))
-    includes_dir = Keyword.get(opts, :includes, Path.join(@app_dir, "../course/_includes"))
+    content_dir = Keyword.get(opts, :content, Path.join(@app_dir, "../course"))
+    includes_dir = Keyword.get(opts, :includes, Path.join(@app_dir, "../course"))
     static_dir = Keyword.get(opts, :static, Path.join(@app_dir, "priv/static"))
 
     progress_file =

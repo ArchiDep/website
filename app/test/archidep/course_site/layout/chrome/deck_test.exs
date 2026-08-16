@@ -17,7 +17,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
     slides_js: "/assets/course/slides.js",
     slides_mermaid_js: "/assets/course/slides-mermaid.js",
     heig_logo: "/favicons/heig.png",
-    source: "https://github.com/ArchiDep/website/blob/abc123/course/collections/x.md",
+    source: "https://github.com/ArchiDep/website/blob/abc123/course/x.md",
     page_pdf: "/pdf/Slides.pdf"
   }
 

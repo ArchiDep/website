@@ -44,7 +44,7 @@ defmodule ArchiDep.CourseSite.Archives.Overrides do
           | {:malformed_target, String.t(), String.t(), term()}
 
   @doc """
-  The overrides a decoded `course/_data/archives.yml` declares.
+  The overrides a decoded `course/archives.yml` declares.
 
   A year is written unquoted in YAML and therefore read as a number, so both
   forms are accepted and answer to the same edition.

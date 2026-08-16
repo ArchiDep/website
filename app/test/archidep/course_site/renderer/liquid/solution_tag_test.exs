@@ -6,7 +6,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTagTest do
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.Support.CourseSiteFactory
 
-  @source_path "_course/205-php-todolist/exercise.md"
+  @source_path "chapters/205-php-todolist/exercise.md"
   @page {:document, DocumentRef.new(205, "php-todolist", :exercise)}
 
   describe "render/1" do
@@ -18,7 +18,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTagTest do
     test "expands the Liquid the answer contains before converting it" do
       assert render("""
              {% solution %}
-             Read the [SFTP exercise]({% link _course/410-sftp-deployment/exercise.md %}).
+             Read the [SFTP exercise]({% link chapters/410-sftp-deployment/exercise.md %}).
              {% endsolution %}\
              """) ==
                {:ok,

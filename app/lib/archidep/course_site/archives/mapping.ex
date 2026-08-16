@@ -119,22 +119,21 @@ defmodule ArchiDep.CourseSite.Archives.Mapping do
 
   def format_error({:unresolved, edition, path}),
     do:
-      "Edition #{edition} published #{inspect(path)}, which the course no longer holds; say where it went in course/_data/archives.yml, or declare it gone"
+      "Edition #{edition} published #{inspect(path)}, which the course no longer holds; say where it went in course/archives.yml, or declare it gone"
 
   def format_error({:ambiguous, edition, path, identity}),
     do:
-      "Edition #{edition} published #{inspect(path)}, and the course now holds more than one #{describe(identity)}; say which one it is in course/_data/archives.yml"
+      "Edition #{edition} published #{inspect(path)}, and the course now holds more than one #{describe(identity)}; say which one it is in course/archives.yml"
 
   def format_error({:unknown_override_edition, edition}),
-    do: "course/_data/archives.yml declares edition #{edition}, which is not archived"
+    do: "course/archives.yml declares edition #{edition}, which is not archived"
 
   def format_error({:unknown_override_source, edition, path}),
-    do:
-      "course/_data/archives.yml sends #{inspect(path)}, which edition #{edition} never published"
+    do: "course/archives.yml sends #{inspect(path)}, which edition #{edition} never published"
 
   def format_error({:unknown_override_target, edition, path, target}),
     do:
-      "course/_data/archives.yml sends edition #{edition}'s #{inspect(path)} to #{inspect(target)}, which the course does not hold"
+      "course/archives.yml sends edition #{edition}'s #{inspect(path)} to #{inspect(target)}, which the course does not hold"
 
   defp current_pages(%Structure{} = structure) do
     pages =

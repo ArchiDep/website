@@ -97,7 +97,7 @@ defmodule ArchiDep.CourseSite.Renderer.ExternalLinksTest do
     ExternalLinks.run(
       html,
       CourseSiteFactory.build(:render_context,
-        source_path: "_course/104-ssh/subject.md",
+        source_path: "chapters/104-ssh/subject.md",
         page: {:document, DocumentRef.new(104, "ssh", :subject)},
         urls:
           CourseSiteFactory.build(

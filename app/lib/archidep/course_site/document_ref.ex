@@ -20,7 +20,7 @@ defmodule ArchiDep.CourseSite.DocumentRef do
           type: doc_type()
         }
 
-  @source_path_regex ~r{\A_course/([1-9])(\d\d)-([^/]+)/(subject|exercise|slides|slides/slides)\.md\z}
+  @source_path_regex ~r{\Achapters/([1-9])(\d\d)-([^/]+)/(subject|exercise|slides|slides/slides)\.md\z}
 
   @doc """
   Build a document reference.
@@ -47,14 +47,14 @@ defmodule ArchiDep.CourseSite.DocumentRef do
   `slides/slides.md` in a subdirectory — which are the same document as far as
   its identity and its URL are concerned.
 
-      iex> DocumentRef.parse_source_path("_course/402-run-virtual-server/exercise.md")
+      iex> DocumentRef.parse_source_path("chapters/402-run-virtual-server/exercise.md")
       {:ok, DocumentRef.new(402, "run-virtual-server", :exercise)}
 
-      iex> DocumentRef.parse_source_path("_course/101-command-line/slides/slides.md")
+      iex> DocumentRef.parse_source_path("chapters/101-command-line/slides/slides.md")
       {:ok, DocumentRef.new(101, "command-line", :slides)}
 
-      iex> DocumentRef.parse_source_path("_course/101-command-line/notes.md")
-      {:error, {:invalid_source_path, "_course/101-command-line/notes.md"}}
+      iex> DocumentRef.parse_source_path("chapters/101-command-line/notes.md")
+      {:error, {:invalid_source_path, "chapters/101-command-line/notes.md"}}
   """
   @spec parse_source_path(String.t()) ::
           {:ok, t()} | {:error, {:invalid_source_path, String.t()}}

@@ -24,6 +24,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Publish SSH host-key parsing across the context boundary](#publish-ssh-host-key-parsing-across-the-context-boundary)
 - [Remaining uncovered code after the 90% coverage push](#remaining-uncovered-code-after-the-90-coverage-push)
 - [Let the link tag name a document rather than a source path](#let-the-link-tag-name-a-document-rather-than-a-source-path)
+- [Normalise the two slide-deck source layouts](#normalise-the-two-slide-deck-source-layouts)
 - [Stop publishing source maps with the course assets](#stop-publishing-source-maps-with-the-course-assets)
 
 <!-- END doctoc -->
@@ -495,7 +496,7 @@ which drive a foreign tool against a live host, remain `:external`.
 ## Let the link tag name a document rather than a source path
 
 **Problem:** A cross-reference in the course material is written as a file path
-— `{% link _course/205-php-todolist/exercise.md %}` — of which there are 107
+— `{% link chapters/205-php-todolist/exercise.md %}` — of which there are 107
 across 34 documents. The tag takes where a file sits on disk and returns the URL
 that file is published at. Every cross-reference in the content is therefore
 coupled to the layout of the source tree, and any change to that layout is a
@@ -533,23 +534,64 @@ caller.
   in the repository and is therefore the one consumer that genuinely wants a
   path.
 
+## Normalise the two slide-deck source layouts
+
+**Problem:** A chapter writes its slide deck in one of two places — `slides.md`
+at the chapter root, or `slides/slides.md` in a subdirectory beside `subject.md`
+— and the course uses both: five chapters take the first form and nine the
+second. [`DocumentRef`](../lib/archidep/course_site/document_ref.ex) accepts
+them as two spellings of one thing, and
+[`ContentTree`](../lib/archidep/course_site/build/content_tree.ex) publishes
+either at the same URL, so nothing downstream can tell them apart.
+
+**Why it is not being done now:** Nothing is wrong. The output is identical, the
+rule is documented in [the course writing
+guidelines](../../course/CONTRIBUTING.md#file-naming-conventions), and both
+forms are load-bearing today — a standalone deck with no images has nothing to
+put in a directory. This is an authoring wart, and it surfaced beside the rename
+that took the course directory out of Jekyll's shape rather than as a problem
+anyone hit. Folding it into that change would have put a content decision inside
+a rewrite whose whole value was being mechanical.
+
+**Proposed approach:** Settle on `slides/slides.md` and move the five root-level
+decks into a directory of their own. It is the form that survives contact with
+growth — a deck that gains an image needs the directory regardless, and a deck
+that gains one later has to move — and it is the form the majority already uses.
+Once every deck is written that way, `DocumentRef`'s `slides|slides/slides`
+alternation collapses to one branch, and the sentence in `ContentTree`
+explaining why a root-level deck reaches its chapter's images with `../images/…`
+describes a case that no longer exists.
+
+**Open questions to resolve when scheduling this**
+
+- Whether it is worth doing at all, given that the second form costs one
+  directory per deck and buys only one fewer branch in one regex.
+- Whether it should wait on [Let the link tag name a document rather than a
+  source path](#let-the-link-tag-name-a-document-rather-than-a-source-path),
+  which would make the content immune to the move rather than needing every
+  cross-reference to a moved deck rewritten with it.
+- What happens to the `images/` directories of the five decks that move, since a
+  deck published one segment deeper than it is written refers to them
+  differently.
+
 ## Stop publishing source maps with the course assets
 
 **Problem:** [`webpack.config.cjs`](../../course/webpack.config.cjs) sets
 `devtool: 'source-map'` unconditionally — `mode` switches on the environment and
 `devtool` does not — so a production build emits a `.map` beside every chunk and
-writes a `sourceMappingURL` comment into all of them. They are published with the
-rest of the assets: a build tree measured here held 267 map files under
+writes a `sourceMappingURL` comment into all of them. They are published with
+the rest of the assets: a build tree measured here held 267 map files under
 `assets/course` totalling 89 MB, the largest single one 4.2 MB. That figure is
 inflated by digested copies accumulating in a long-lived local `priv/static`, so
 a clean build is smaller, but the order of magnitude is the point.
 
 **Why this matters:** Nothing consumes them. There is no error-reporting service
-wired to the course front end, so the maps exist only for whoever opens developer
-tools against the deployed site. What they cost is not user bandwidth — a browser
-fetches a map only when devtools are open — but the weight of every image built
-and every deployment made, on a repository whose image is rebuilt on each push.
-It is not a disclosure concern either: the sources are in a public repository.
+wired to the course front end, so the maps exist only for whoever opens
+developer tools against the deployed site. What they cost is not user bandwidth
+— a browser fetches a map only when devtools are open — but the weight of every
+image built and every deployment made, on a repository whose image is rebuilt on
+each push. It is not a disclosure concern either: the sources are in a public
+repository.
 
 **Proposed approach:** Make `devtool` depend on the mode the way `mode` already
 does.
