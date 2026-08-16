@@ -540,37 +540,61 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       **both** of them, the release one and the development service that is easy
       to forget — and remove the JSON ordering scaffolding that only exists to
       keep `archidep.json` diffable against Jekyll's — see [Cutover](#cutover).
-      The CI job publishing the **GitHub Pages backup** is part of that stage:
-      it builds the site with `_config.pages.yml` today, and what it must run
-      instead is the build task with the `:backup` row of the [consumers
+      The two CI jobs behind the **GitHub Pages backup** are part of that stage,
+      and they split rather than move: the Jekyll build job is replaced by one
+      running the build task for the `:backup` row of the [consumers
       table](#consumers-as-configurations), beside the global assets that row's
-      URLs point at.
+      URLs point at, while the artifact-based Pages deployment is deleted
+      outright rather than repointed — see [Cutover](#cutover).
 
 **Deferred (scheduled after cutover)**
 
-- [ ] Take the course directory out of Jekyll's shape: `collections/_course` →
-      `chapters`, `collections/_cheatsheets` → `cheatsheets`, `_includes/icons`
-      → `icons`, and `_data/course.yml` to the course root — see [The course
-      directory after Jekyll](#the-course-directory-after-jekyll). First of these
-      rather than last: it is the only one with a deadline, since the 2026
-      content is what makes it more expensive the longer it waits.
-- [ ] Move the progress _status source_ from `progress.json` to a database model
-      edited through the admin console, driving an in-process rebuild — see
-      [Progress: structure vs status](#progress-structure-vs-status).
 - [ ] Stand up the **archive repository** that keeps the finished editions and
       is itself the backup site: an organisation Pages site mounted at a root,
       named `backup.archidep.ch`, published by pushing this repository's build
       into it rather than by uploading a Pages artifact — see [Where past
-      editions are kept](#where-past-editions-are-kept). It sits here because
-      there is nothing to seed it with until the renderer can generate the 2025
-      edition; until it exists the backup keeps publishing to today's project
-      Pages site, which is the one place `base_path` is not `""`.
+      editions are kept](#where-past-editions-are-kept). It sits after the
+      cutover because it publishes that stage's `:backup` build, and first among
+      these because it carries the backup itself: the cutover deletes the Pages
+      deployment instead of repointing it, so until this exists no backup tracks
+      `main`. It shares the deadline of the course directory below, the frozen
+      copy left serving meanwhile being the truth only until the 2026 content
+      lands.
+- [ ] Make **every host hold every edition**, which today only the backup would:
+      a one-shot service filling a persisted clone of the archive repository, a
+      second nginx root falling back to it, the same two plugs again in the
+      endpoint for development, and the boot-time completeness check that
+      reports a missing edition instead of refusing to start — see [Where past
+      editions are kept](#where-past-editions-are-kept). It follows the archive
+      repository, having nothing to clone until that exists, and must land
+      **before the rollover**: the day the `version` knob moves is the day the
+      assets image stops carrying the outgoing edition, and the redirects
+      `ArchiDepWeb.Course.LegacyController` sends there are permanent and cached
+      for a year.
+- [ ] Take the course directory out of Jekyll's shape: `collections/_course` →
+      `chapters`, `collections/_cheatsheets` → `cheatsheets`, `_includes/icons`
+      → `icons`, and `_data/course.yml` to the course root — see [The course
+      directory after Jekyll](#the-course-directory-after-jekyll). Before the
+      2026 content, which is what makes it more expensive the longer it waits.
 - [ ] Write and run the **year-end rollover**: build the finished edition with
       `--mode archive` and its own progress file, commit it as `<year>/`, emit
-      `course/archives/<year>.json`, tag the source `archive/<year>`, and move
-      the `version` knob on — see [Where past editions are
+      `course/archives/<year>.json`, tag the source `archive/<year>`, move the
+      `version` knob on, and deploy — see [Where past editions are
       kept](#where-past-editions-are-kept). Distinct from the
       [cutover](#cutover) above, which happens once; this happens every year.
+      The deploy is the step that hands the outgoing edition over from the image
+      that was built from it to the clone every later year is served from, so
+      every host holding every edition has to be in place first.
+- [ ] Move the progress _status source_ from `progress.json` to a database model
+      edited through the admin console, driving an in-process rebuild — see
+      [Progress: structure vs status](#progress-structure-vs-status). **Last**,
+      because only the edition being taught has a progress that moves: 2025 is
+      archived with its own frozen into it, and every edition after it likewise,
+      so this is worth having for 2026 and worth nothing for any year already
+      finished. It is also what first has the application writing into a
+      directory holding editions other than the one it is building, which is
+      where `--clean` stops being safe — see [Development and production
+      serving](#development-and-production-serving).
 
 ---
 
@@ -3030,9 +3054,12 @@ rebuild (the deferred database-progress feature, and any content rebuild), it
 writes the output to a **volume shared** with the static server. To avoid
 serving a half-written build, a rebuild must be **atomic**: render into a
 temporary directory on the same volume, then swap it into place (rename, or flip
-a `current` symlink) so the static server only ever sees a complete build. The
-per-year prefix archives ([Optional URL prefix](#optional-url-prefix)) compose
-naturally — each year is an immutable directory under the same volume.
+a `current` symlink) so the static server only ever sees a complete build. It
+must also leave the frozen editions ([Optional URL
+prefix](#optional-url-prefix)) beside it untouched, which is what makes
+`--clean` dangerous on a shared volume: it empties the output directory, and the
+siblings are other years. Where those editions come from on each host is settled
+in [Where past editions are kept](#where-past-editions-are-kept).
 
 **Asset routing.** Digested asset URLs are emitted at build time (via
 `phx.digest` + verified routes — see [Asset URLs](#asset-urls)) as plain strings
@@ -3397,7 +3424,7 @@ outlive everything. Two rows of the [consumers
 table](#consumers-as-configurations) collapse into one as a result: an edition
 is a single `:archive` build, served by both hosts.
 
-**The year-end rollover**, then, is four steps and no rendering decisions:
+**The year-end rollover**, then, is five steps and no rendering decisions:
 
 1. Build the finished edition with `--mode archive --version <year>` and that
    year's `--progress` file — the option exists precisely so that an edition
@@ -3409,6 +3436,10 @@ is a single `:archive` build, served by both hosts.
 3. Emit `course/archives/<year>.json` here and tag the source `archive/<year>`.
 4. Move the `version` knob to the new edition; the next build lands beside the
    frozen ones rather than over them.
+5. Deploy, and read the completeness check below. This is the step that closes
+   the window in which the outgoing edition is held only by an image built
+   before it was archived: after it, production serves that edition from the
+   clone like every other finished one.
 
 **What it costs, and what has to stay out of it.** A published edition measures
 ~53 MB of content (the ~370 files sitting next to pages) plus the ~55 MB of
@@ -3421,6 +3452,70 @@ budget is the reason the [PDFs are stored elsewhere](#per-year-pdf-archive) —
 keep checking the total against the host's published-size limit rather than
 assuming the room is unlimited. The one moving part this adds is a credential:
 publishing into another repository replaces `upload-pages-artifact` with a push.
+
+**How each host comes to hold every edition.** The decision above says where an
+edition's bytes live; both hosts have to serve all of them. For the backup that
+costs nothing — the repository _is_ the site, so an edition is published by
+being committed. Production is the half this left unanswered: the assets image
+holds exactly the edition it was built from, its document root being a `COPY
+--from=site` of one build, so the day the `version` knob moves the previous
+edition stops existing on `archidep.ch`. That takes every `/<year>/…` link with
+it and lands every one of the permanent, year-cached redirects
+`ArchiDepWeb.Course.LegacyController` sends into that edition on a 404. Carrying
+past editions in the image instead is the ~108 MB apiece, re-shipped on every
+deploy, that the budget above rules out, and redirecting them to the backup host
+would make the copy that exists for this site's downtime a dependency of it.
+
+**Production clones the archive repository rather than being handed a copy.**
+One home for an edition's bytes, two hosts reading it. A one-shot
+`website-archives` service fills a **persisted** volume — `git clone --depth 1`
+the first time, `git fetch --depth 1` and a hard reset every time after, so a
+restart transfers deltas and a redeploy transfers nothing — and the repository
+being public, no credential is involved. It belongs to the compose files rather
+than to the deployment repository's Ansible, so that `docker compose up` is a
+whole site and Ansible supplies configuration (which repository, which ref)
+rather than mechanism.
+
+**The archives are a second root, not symlinks into the first.** nginx falls
+back to them: the year-pattern location does `try_files $uri $uri/index.html
+@archives`, and `@archives` takes the volume as its `root`. The image's tree
+goes on meaning exactly one thing — its own edition — and the archives are
+additive. Symlinks would instead write into a document root the image owns, need
+`disable_symlinks off`, and fail invisibly when one breaks. **Order is image
+first**, which decides the one window where the two are not disjoint: the
+rollover commits the outgoing edition while the deployed image is still built
+from it, and stays that way until the next image ships.
+
+**Development gets the same shape one layer up.** The endpoint already serves
+the build with `ArchiDepWeb.CourseSitePages` and `Plug.Static` over the build
+directory; the archives are a second pair of those plugs over the archives
+directory, which is `try_files … @archives` written in the language development
+has — same first-match-wins, same order, so a resolution bug reproduces off
+production. That directory is filled by the same one-shot service, named by
+`compose.dev.yml` and by `scripts/dev`, so nothing here is a task anyone has to
+remember to run; what a developer still decides is whether to fetch the editions
+at all, which is a real question at ~108 MB each and a moot one until the first
+rollover. Symlinking them into the build directory would work too — `File.rm_rf`
+does not follow symlinks, so `--clean` takes the links and leaves the clone —
+but it pins the clone to a path that also resolves inside a container, has to be
+redone after every build the watcher triggers, and would be a third mechanism
+where this is the second.
+
+**Nothing fails to boot over a missing edition, and nothing keeps quiet about
+one.** Refusing to start is disproportionate at both levels where it could be
+done: the application serves none of these bytes and would be trading the
+dashboard, the admin console and the servers pipeline for a dead link, while a
+fetch service exiting non-zero blocks the assets server behind it, so one first
+boot with GitHub unreachable would take `archidep.ch` down whole to protect an
+edition nobody is being taught. Both start, and the fetch says what it could not
+do. What replaces the failure is a check only the application can make: the
+editions that must be reachable are not configuration but a compiled fact of
+[`ArchiDep.CourseSite.Archives`](../app/lib/archidep/course_site/archives.ex) —
+one `course/archives/<year>.json` each, every one an `@external_resource` — so
+with the archives mounted read-only beside it, it asserts at boot that each has
+a page where it should be and reports the ones that do not, and the rollover
+overlap above, at error level and in the admin console. Fail open, loudly, with
+one authoritative answer to whether a deployment is complete.
 
 ### Decouple PDF generation from production
 
@@ -3909,6 +4004,42 @@ fallback flag is left behind. Keep PDF generation and the search scripts running
 against the new output. The deployed archive used as the visual reference during
 the [HTML fidelity gate](#html-fidelity-gate) stays up as the previous-year
 archive regardless — there is nothing to discard after cutover.
+
+**The GitHub Pages backup splits rather than moves.** Two jobs of
+[`build.yml`](../.github/workflows/build.yml) serve it today: `build-course`,
+which renders the site with `_config.pages.yml`, and `publish-pages`, which
+deploys the uploaded artifact to this repository's project Pages site. The build
+is replaced and the deployment is deleted, which is not the "repoint the job at
+the new build task" this looks like from the outside.
+
+- **The build job turns round.** `build-course` produces an _input_ to
+  `build-app`, which downloads the `course` artifact into `app/priv/static`;
+  after cutover the site is an _output_ of the compiled application, so the edge
+  reverses and the replacement is a new job rather than a changed command. It
+  cannot simply become a step of `build-app` either, that job running
+  `MIX_ENV=test` and therefore rendering the 1955 edition — the trap [the PDF
+  job](#the-ci-job) already hit, and it costs the same production environment
+  here.
+- **The deployment goes, and does not come back to this repository.** Repointing
+  it would mean publishing the backup under `/website`, the one `base_path` the
+  [consumers table](#consumers-as-configurations) no longer has, through an
+  `upload-pages-artifact` that [the archive
+  repository](#where-past-editions-are-kept) replaces with a push. Both halves
+  of what the interim would prove are halves the end state does not have; only
+  the build invocation is common to both, and that already runs in production in
+  the `site` stage of the [`Dockerfile`](../Dockerfile) and in the PDF job. So
+  the `pages: write` and `id-token: write` permissions and the `pages`
+  concurrency group go with the job, and publishing the backup becomes part of
+  [standing up the archive repository](#where-past-editions-are-kept).
+- **The gap costs a backup that stops tracking `main`, not one that
+  disappears.** GitHub keeps serving the last deployment, so the frozen Jekyll
+  copy stays up and stays coherent — it is that content under the [legacy
+  unprefixed paths](#optional-url-prefix), which is what those paths mean. It
+  stops being the truth when the 2026 content lands, which is the deadline on
+  the archive repository rather than a reason to keep publishing here. The
+  replacement build job uploads the `:backup` build as a workflow artifact
+  meanwhile, so the bytes to publish by hand exist if the site goes down first —
+  the same fallback the [PDF job](#the-ci-job) keeps for its own upload.
 
 **Jekyll is installed twice, and only one of the two is obvious.** The stage of
 the [`Dockerfile`](../Dockerfile) that builds the site for the image is the one
