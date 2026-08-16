@@ -3,12 +3,11 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Attributes do
   The `key: value` lists the course's block tags take — `{% cols columns: 3 %}`,
   `{% note type: tip %}`, `{% callout type: more, id: what-is-npm %}`.
 
-  Jekyll's tags scan their markup with a regular expression, which makes the
-  separator between two attributes a matter of taste: the content uses commas,
-  spaces, quoted and unquoted values interchangeably. `Solid`'s lexer already
-  produces the tokens, so all that is needed here is to read pairs off it and to
-  accept every separator the content actually uses, rather than the one a tag
-  author had in mind.
+  The content writes them with commas, with spaces, and with quoted and unquoted
+  values interchangeably, no tag having ever required one spelling. `Solid`'s
+  lexer already produces the tokens, so all that is needed here is to read pairs
+  off it and to accept every separator the content actually uses, rather than
+  the one a tag author had in mind.
 
   Values keep the type the lexer gave them, so `columns: 3` is the number 3.
   """

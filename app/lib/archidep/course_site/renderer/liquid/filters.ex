@@ -9,10 +9,9 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Filters do
   context.
 
   There is one filter, and it is about assets sitting next to a page: `{{
-  'images/analytical-engine.jpg' | relative_file_url }}`. It matters mostly to
-  slides, which is where all of its uses are, and it is worth knowing that it
-  does nothing at all today — Jekyll's version silently returns its argument
-  because of a guard that never passes in the hook it runs in.
+  'images/analytical-engine.jpg' | relative_file_url }}` resolves to the
+  digested name that file was published under. It matters mostly to slides,
+  which is where all of its uses are.
   """
 
   alias ArchiDep.CourseSite.Renderer.RenderContext

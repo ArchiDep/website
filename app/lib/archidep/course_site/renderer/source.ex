@@ -126,8 +126,8 @@ defmodule ArchiDep.CourseSite.Renderer.Source do
 
   Slides never reach a Markdown renderer here — reveal.js splits the deck into
   sections and converts each one in the browser — so appending the definitions
-  once would only serve the last section. Substituting the URL in place is what
-  Jekyll does for slides today, and it survives being split anywhere.
+  once would only serve the last section. Substituting the URL in place survives
+  being split anywhere.
 
       iex> Source.substitute([{"ada", "https://example.com/ada"}], "See [Ada][ada] and [Ada][ada].")
       "See [Ada](https://example.com/ada) and [Ada](https://example.com/ada)."

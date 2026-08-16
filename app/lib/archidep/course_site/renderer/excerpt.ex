@@ -3,22 +3,18 @@ defmodule ArchiDep.CourseSite.Renderer.Excerpt do
   Where a page stops introducing itself and starts being itself.
 
   The site shows a page's opening above its table of contents and the rest of it
-  below, so a page is really two fragments. Jekyll produces them by rendering
-  the opening twice and then deleting one copy from the other by string match,
-  which silently fails as soon as anything in the opening renders differently
-  the second time. Splitting the parsed document instead cannot fail that way,
-  and a separator written inside a code block is a code block rather than a
-  place to cut.
+  below, so a page is really two fragments. They are produced by splitting the
+  parsed document, so a separator written inside a code block is a code block
+  rather than a place to cut.
 
   A document says where to cut with an `excerpt_separator` in its front matter,
   which every document that sets one writes as `<!-- more -->`. A document that
-  sets none is cut after its first block, which is what Jekyll does by default.
+  sets none is cut after its first block.
 
   Declaring a separator and never writing it is neither of those: it is an
   omission, reported as `:missing_separator` for the renderer to turn into an
   error. The document is still cut after its first block so that the rest of its
-  problems are found in the same pass. Jekyll instead makes the whole page the
-  opening, which is visibly not what the author meant.
+  problems are found in the same pass.
   """
 
   @doc """

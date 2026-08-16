@@ -384,99 +384,83 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
   defp search_json(edition, home_url, mode) do
     pages = [
-      """
-        {
-          "id": "/",
-          "type": "home",
-          "url": "#{home_url}",
-          "title": "Architecture & Deployment",
-          "subtitle": "Architecture & Deployment",
-          "text": "Welcome.",
-          "extraText": ""
-        }\
-      """,
-      """
-        {
-          "id": "/course/101-command-line/",
-          "type": "subject",
-          "url": "#{edition}/course/101-command-line/",
-          "title": "Command Line",
-          "subtitle": "Command Line",
-          "text": "Type.",
-          "extraText": ""
-        }\
-      """
+      %{
+        id: "/",
+        type: "home",
+        url: home_url,
+        title: "Architecture & Deployment",
+        subtitle: "Architecture & Deployment",
+        text: "Welcome.",
+        extraText: ""
+      },
+      %{
+        id: "/course/101-command-line/",
+        type: "subject",
+        url: "#{edition}/course/101-command-line/",
+        title: "Command Line",
+        subtitle: "Command Line",
+        text: "Type.",
+        extraText: ""
+      }
     ]
 
-    "[\n" <> Enum.join(pages ++ application(mode), ",\n") <> "\n]\n"
+    JSON.encode!(pages ++ application(mode)) <> "\n"
   end
 
   # Only a live site is served beside the application, so only a live build holds
   # an entry for it.
   defp application(:live),
     do: [
-      """
-        {
-          "id": "/app",
-          "type": "dashboard",
-          "url": "/app",
-          "title": "Dashboard",
-          "subtitle": "User & server dashboard",
-          "text": "Manage your user account for the course and register a server for the exercises.",
-          "extraText": ""
-        }\
-      """
+      %{
+        id: "/app",
+        type: "dashboard",
+        url: "/app",
+        title: "Dashboard",
+        subtitle: "User & server dashboard",
+        text: "Manage your user account for the course and register a server for the exercises.",
+        extraText: ""
+      }
     ]
 
   defp application(_mode), do: []
 
   defp archidep_json(edition, home_url) do
-    """
-    {
-      "home": {
-        "url": "#{home_url}",
-        "pdf": "archidep-000-course.pdf"
-      },
-      "sections": [
-        {
-          "title": "Introduction",
-          "slug": "introduction",
-          "num": 100,
-          "progress": "done",
-          "open": true,
-          "docs": [
-            {
-              "title": "Command Line",
-              "num": 101,
-              "course_type": "subject",
-              "graded": false,
-              "course_slug": "command-line",
-              "section": 1,
-              "section_chapter": 1,
-              "progress": "due",
-              "slides": false,
-              "url": "#{edition}/course/101-command-line/",
-              "pdf": "archidep-101-command-line-subject.pdf",
-              "slides_pdf": null
+    JSON.encode!(%{
+      home: %{url: home_url, pdf: "archidep-000-course.pdf"},
+      sections: [
+        %{
+          title: "Introduction",
+          slug: "introduction",
+          num: 100,
+          progress: "done",
+          open: true,
+          docs: [
+            %{
+              title: "Command Line",
+              num: 101,
+              course_type: "subject",
+              graded: false,
+              course_slug: "command-line",
+              section: 1,
+              section_chapter: 1,
+              progress: "due",
+              slides: false,
+              url: "#{edition}/course/101-command-line/",
+              pdf: "archidep-101-command-line-subject.pdf",
+              slides_pdf: nil
             }
           ]
         }
       ],
-      "cheatsheets": []
-    }
-    """
+      cheatsheets: []
+    }) <> "\n"
   end
 
   defp version_json do
-    """
-    {
-      "version": "1.2.3",
-      "git": {
-        "branch": "main",
-        "revision": "abc123"
-      }
-    }
-    """
+    JSON.encode!(%{
+      version: "1.2.3",
+      git: %{branch: "main", revision: "abc123"}
+    }) <> "\n"
   end
 
   defp not_found_html(home_url) do

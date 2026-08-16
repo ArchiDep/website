@@ -284,167 +284,155 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
   end
 
   defp archidep_json do
-    """
-    {
-      "home": {
-        "url": "/",
-        "pdf": "archidep-000-course.pdf"
-      },
-      "sections": [
-        {
-          "title": "Introduction",
-          "slug": "introduction",
-          "num": 100,
-          "progress": "done",
-          "open": false,
-          "docs": [
-            {
-              "title": "Command Line",
-              "num": 101,
-              "course_type": "subject",
-              "graded": false,
-              "course_slug": "command-line",
-              "section": 1,
-              "section_chapter": 1,
-              "progress": "done",
-              "slides": true,
-              "url": "/course/101-command-line/",
-              "pdf": "archidep-101-command-line-subject.pdf",
-              "slides_pdf": "archidep-101-command-line-slides.pdf"
+    JSON.encode!(%{
+      home: %{url: "/", pdf: "archidep-000-course.pdf"},
+      sections: [
+        %{
+          title: "Introduction",
+          slug: "introduction",
+          num: 100,
+          progress: "done",
+          open: false,
+          docs: [
+            %{
+              title: "Command Line",
+              num: 101,
+              course_type: "subject",
+              graded: false,
+              course_slug: "command-line",
+              section: 1,
+              section_chapter: 1,
+              progress: "done",
+              slides: true,
+              url: "/course/101-command-line/",
+              pdf: "archidep-101-command-line-subject.pdf",
+              slides_pdf: "archidep-101-command-line-slides.pdf"
             }
           ]
         },
-        {
-          "title": "Version Control",
-          "slug": "version-control",
-          "num": 200,
-          "progress": "due",
-          "open": true,
-          "docs": [
-            {
-              "title": "Git Branching",
-              "num": 202,
-              "course_type": "slides",
-              "graded": false,
-              "course_slug": "git-branching",
-              "section": 2,
-              "section_chapter": 2,
-              "progress": "next",
-              "slides": false,
-              "url": "/course/202-git-branching/slides/",
-              "pdf": "archidep-202-git-branching-slides.pdf",
-              "slides_pdf": null
+        %{
+          title: "Version Control",
+          slug: "version-control",
+          num: 200,
+          progress: "due",
+          open: true,
+          docs: [
+            %{
+              title: "Git Branching",
+              num: 202,
+              course_type: "slides",
+              graded: false,
+              course_slug: "git-branching",
+              section: 2,
+              section_chapter: 2,
+              progress: "next",
+              slides: false,
+              url: "/course/202-git-branching/slides/",
+              pdf: "archidep-202-git-branching-slides.pdf",
+              slides_pdf: nil
             },
-            {
-              "title": "PHP Todolist",
-              "num": 205,
-              "course_type": "exercise",
-              "graded": false,
-              "course_slug": "php-todolist",
-              "section": 2,
-              "section_chapter": 5,
-              "progress": "future",
-              "slides": false,
-              "url": "/course/205-php-todolist/",
-              "pdf": "archidep-205-php-todolist-exercise.pdf",
-              "slides_pdf": null
+            %{
+              title: "PHP Todolist",
+              num: 205,
+              course_type: "exercise",
+              graded: false,
+              course_slug: "php-todolist",
+              section: 2,
+              section_chapter: 5,
+              progress: "future",
+              slides: false,
+              url: "/course/205-php-todolist/",
+              pdf: "archidep-205-php-todolist-exercise.pdf",
+              slides_pdf: nil
             }
           ]
         }
       ],
-      "cheatsheets": [
-        {
-          "title": "Git Cheatsheet",
-          "sidebar_title": "Git Cheatsheet",
-          "slug": "git",
-          "url": "/cheatsheets/git/",
-          "pdf": "archidep-999-git.pdf"
+      cheatsheets: [
+        %{
+          title: "Git Cheatsheet",
+          sidebar_title: "Git Cheatsheet",
+          slug: "git",
+          url: "/cheatsheets/git/",
+          pdf: "archidep-999-git.pdf"
         }
       ]
-    }
-    """
+    }) <> "\n"
   end
 
   defp search_json do
-    """
-    [
-      {
-        "id": "/",
-        "type": "home",
-        "url": "/",
-        "title": "Architecture & Deployment",
-        "subtitle": "Architecture & Deployment",
-        "text": "Welcome.",
-        "extraText": ""
+    JSON.encode!([
+      %{
+        id: "/",
+        type: "home",
+        url: "/",
+        title: "Architecture & Deployment",
+        subtitle: "Architecture & Deployment",
+        text: "Welcome.",
+        extraText: ""
       },
-      {
-        "id": "/course/101-command-line/",
-        "type": "subject",
-        "url": "/course/101-command-line/",
-        "title": "Command Line",
-        "subtitle": "Command Line",
-        "text": "What",
-        "extraText": ""
+      %{
+        id: "/course/101-command-line/",
+        type: "subject",
+        url: "/course/101-command-line/",
+        title: "Command Line",
+        subtitle: "Command Line",
+        text: "What",
+        extraText: ""
       },
-      {
-        "id": "/course/101-command-line/slides/",
-        "type": "slides",
-        "url": "/course/101-command-line/slides/",
-        "title": "Command Line Slides",
-        "subtitle": "Command Line Slides",
-        "text": "Command Line",
-        "extraText": ""
+      %{
+        id: "/course/101-command-line/slides/",
+        type: "slides",
+        url: "/course/101-command-line/slides/",
+        title: "Command Line Slides",
+        subtitle: "Command Line Slides",
+        text: "Command Line",
+        extraText: ""
       },
-      {
-        "id": "/course/202-git-branching/slides/",
-        "type": "slides",
-        "url": "/course/202-git-branching/slides/",
-        "title": "Git Branching",
-        "subtitle": "Git Branching",
-        "text": "Branching",
-        "extraText": ""
+      %{
+        id: "/course/202-git-branching/slides/",
+        type: "slides",
+        url: "/course/202-git-branching/slides/",
+        title: "Git Branching",
+        subtitle: "Git Branching",
+        text: "Branching",
+        extraText: ""
       },
-      {
-        "id": "/course/205-php-todolist/",
-        "type": "exercise",
-        "url": "/course/205-php-todolist/",
-        "title": "PHP Todolist",
-        "subtitle": "PHP Todolist",
-        "text": "Build it.",
-        "extraText": ""
+      %{
+        id: "/course/205-php-todolist/",
+        type: "exercise",
+        url: "/course/205-php-todolist/",
+        title: "PHP Todolist",
+        subtitle: "PHP Todolist",
+        text: "Build it.",
+        extraText: ""
       },
-      {
-        "id": "/cheatsheets/git/",
-        "type": "cheatsheet",
-        "url": "/cheatsheets/git/",
-        "title": "Git Cheatsheet",
-        "subtitle": "Git Cheatsheet",
-        "text": "Commit.",
-        "extraText": ""
+      %{
+        id: "/cheatsheets/git/",
+        type: "cheatsheet",
+        url: "/cheatsheets/git/",
+        title: "Git Cheatsheet",
+        subtitle: "Git Cheatsheet",
+        text: "Commit.",
+        extraText: ""
       },
-      {
-        "id": "/app",
-        "type": "dashboard",
-        "url": "/app",
-        "title": "Dashboard",
-        "subtitle": "User & server dashboard",
-        "text": "Manage your user account for the course and register a server for the exercises.",
-        "extraText": ""
+      %{
+        id: "/app",
+        type: "dashboard",
+        url: "/app",
+        title: "Dashboard",
+        subtitle: "User & server dashboard",
+        text: "Manage your user account for the course and register a server for the exercises.",
+        extraText: ""
       }
-    ]
-    """
+    ]) <> "\n"
   end
 
   defp version_json do
-    """
-    {
-      "version": "1.2.3",
-      "git": {
-        "branch": "main",
-        "revision": "abc123"
-      }
-    }
-    """
+    JSON.encode!(%{
+      version: "1.2.3",
+      git: %{branch: "main", revision: "abc123"}
+    }) <> "\n"
   end
 
   defp not_found_html(home_url \\ "/") do

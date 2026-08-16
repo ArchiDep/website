@@ -162,29 +162,27 @@ and drive it through the existing Ansible pipeline.
 
 ## Dual search system
 
-**Problem:** Course search is powered by Lunr. At build time a Jekyll plugin
-extracts the searchable content of every page into `search.json`, a TypeScript
-script turns that into a serialised Lunr index (`lunr.json`), and the client
-loads both files and searches entirely in the browser. This is enough for basic
-search, but a fully client-side index is limited in scalability and in the
-advanced features (typo tolerance, ranking, faceting) we might want.
+**Problem:** Course search is powered by Lunr. The build extracts the searchable
+content of every page into a search index file, a TypeScript script turns that
+into a serialised Lunr index (`lunr.json`), and the client loads both files and
+searches entirely in the browser. This is enough for basic search, but a fully
+client-side index is limited in scalability and in the advanced features (typo
+tolerance, ranking, faceting) we might want.
 
 **Why keep Lunr at all?** A purely static, dashboard-free build of the course
-must remain possible for archival and as a GitHub Pages backup (see [Death of
-Jekyll — Goals and
-Constraints](../../wip/death-of-jekyll.md#goals-and-constraints)). That build
-has no backend, so it cannot depend on an external search service. Lunr works
-offline from static JSON, so it is the right fallback for the archival build
-even if the live application uses something more capable.
+must remain possible, for archival and as the backup copy. That build has no
+backend, so it cannot depend on an external search service. Lunr works offline
+from static JSON, so it is the right fallback for the archival build even if the
+live application uses something more capable.
 
 **Proposed approach:** Run two search backends from the same source data — a
 richer engine (e.g. Meilisearch) for the live Phoenix application, and Lunr for
 the static archival build.
 
-- Keep `search.json` as the shared, build-time source of searchable content.
-  Index generation is already decoupled from extraction (the Jekyll plugin only
-  writes `search.json`; a separate script builds `lunr.json`), so a second
-  indexer can consume the same file.
+- Keep the search index file as the shared, build-time source of searchable
+  content. Index generation is already decoupled from extraction (the build only
+  writes the searchable content; a separate script builds `lunr.json`), so a
+  second indexer can consume the same file.
 - Add a Meilisearch indexer that populates a search service from `search.json`,
   and have the live application query it.
 - Have the client choose its backend: the richer engine when the application is
@@ -496,12 +494,12 @@ which drive a foreign tool against a live host, remain `:external`.
 
 ## Let the link tag name a document rather than a source path
 
-**Problem:** A cross-reference in the course material is written as a file path —
-`{% link _course/205-php-todolist/exercise.md %}` — of which there are 107 across
-34 documents. The tag is Jekyll's, and so is its contract: it takes where a file
-sits on disk and returns the URL that file is published at. Every cross-reference
-in the content is therefore coupled to the layout of the source tree, and any
-change to that layout is a rewrite of all of them.
+**Problem:** A cross-reference in the course material is written as a file path
+— `{% link _course/205-php-todolist/exercise.md %}` — of which there are 107
+across 34 documents. The tag takes where a file sits on disk and returns the URL
+that file is published at. Every cross-reference in the content is therefore
+coupled to the layout of the source tree, and any change to that layout is a
+rewrite of all of them.
 
 **Why this matters:** A document already has an identity that is not its path.
 `ArchiDep.CourseSite.DocumentRef` parses one out of the path — a chapter code, a
@@ -512,9 +510,8 @@ available: it changes when a file moves, when a deck grows an images directory
 and gains a level, or when the directories are renamed. Naming the reference
 directly would make the content immune to all three, and shorter to write.
 
-Nothing forces this while Jekyll is in the picture, since the tag has to keep
-meaning what Jekyll means by it. Once the Ruby stage is gone the tag is ours, and
-this becomes a question of what we want it to say.
+The tag is now ours — nothing else implements it — so this is a question of what
+we want it to say rather than of what it is allowed to mean.
 
 **Proposed approach:** Accept a document reference — the chapter code plus the
 kind, e.g. `{% link 205 exercise %}` — resolved through the same URL seam the

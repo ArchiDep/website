@@ -14,8 +14,8 @@ exhaustive index.
 
 - **Whole project** — repository layout, cross-component tooling, project-wide
   coding and security guidelines: [`CONTRIBUTING.md`][contributing]
-- **Course material site** — writing guidelines, document types, front matter,
-  Liquid/Jekyll, slides, PDF generation:
+- **Course material** — writing guidelines, document types, front matter, the
+  Liquid tags a document may use, slides:
   [`course/CONTRIBUTING.md`](./course/CONTRIBUTING.md)
 - **Theme** — Tailwind/DaisyUI, dark mode, typography, syntax highlighting:
   [`theme/CONTRIBUTING.md`](./theme/CONTRIBUTING.md)

@@ -151,47 +151,6 @@ RUN mix phx.digest priv/static -o priv/static && \
     ls -laR /build/digest/priv/static/ && \
     cat /build/digest/priv/static/cache_manifest.json
 
-##############
-### Course ###
-##############
-FROM ruby:3.4.4-alpine AS course
-
-RUN apk add --no-cache g++ make nodejs npm && \
-    addgroup -S build && \
-    adduser -D -G build -H -h /build -S build && \
-    mkdir -p /build/course/ && \
-    chown -R build:build /build && \
-    chmod 700 /build
-
-WORKDIR /build/course
-USER build:build
-
-COPY --chown=build:build ./course/Gemfile ./course/Gemfile.lock /build/course/
-
-RUN bundle install
-
-COPY --chown=build:build ./package.json ./package-lock.json /build/
-COPY --chown=build:build ./course/package.json /build/course/
-
-RUN npm ci
-
-COPY --chown=build:build ./course/ /build/course/
-COPY --chown=build:build ./app/mix.exs /build/app/mix.exs
-# How far the course has got, which both halves of the site read from the one
-# copy the application ships: the Liquid sidebar colours its entries by it and
-# the home page's cards list what the last session covered.
-COPY --chown=build:build ./app/priv/course/ /build/app/priv/course/
-COPY --chown=build:build --from=digest /build/digest/priv/static/ /build/app/priv/static/
-
-COPY ./.git/ /tmp/.git/
-RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\///' > /build/course/.git-branch && \
-    touch /build/course/.git-dirty && \
-    cat /tmp/.git/HEAD | awk '{print "/tmp/.git/"$2}' | xargs cat > /build/course/.git-revision
-
-ENV JEKYLL_ENV=production
-
-RUN bundle exec jekyll build
-
 ###########################
 ### Application Release ###
 ###########################

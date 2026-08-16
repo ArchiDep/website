@@ -9,5 +9,6 @@ and automated agents interacting with this project.
 
 ## AI Assistant Instructions
 
-- Treat `.html` files in this directory and its subdirectories as Liquid
-  templates even if they do not use the `.liquid` extension.
+- The Liquid tags in the Markdown of this directory are implemented in
+  [`ArchiDep.CourseSite.Renderer`](../app/lib/archidep/course_site/CONTRIBUTING.md).
+  A tag that does not exist there does not exist.

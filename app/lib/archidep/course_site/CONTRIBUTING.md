@@ -44,7 +44,7 @@ and tooling that also apply here. Read that document first.
   - [The opening of a page](#the-opening-of-a-page)
   - [Slides are not converted](#slides-are-not-converted)
   - [Reporting rather than raising](#reporting-rather-than-raising)
-  - [Known differences from what Jekyll produces](#known-differences-from-what-jekyll-produces)
+  - [What a page emits](#what-a-page-emits)
 - [Testing](#testing)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -171,7 +171,7 @@ The material lists a chapter once, whatever documents it holds, so
 subject, its exercise, or a deck standing on its own — and, beside it, the deck
 that page presents. There is therefore no rule that hides a chapter's deck when
 it also has a subject: the deck was never a second entry to be filtered back
-out, which is what the Jekyll generator had to do.
+out.
 
 Only four fillings of a chapter directory are representable, and they are
 exactly the four the [chapter rules](#identities) leave: a subject, a subject
@@ -194,9 +194,8 @@ its cheatsheets go. Both are declared in `course/_data/course.yml`, read by
 in the one module that fetches them, rules in the pure one beside it.
 
 The cheatsheet list is **closed**: a cheatsheet the list does not name, or a
-name with no cheatsheet behind it, is refused. Jekyll ordered them from a
-`_config.yml` key that named three of the four, so the fourth came last by
-accident rather than by decision.
+name with no cheatsheet behind it, is refused: a cheatsheet has no number to be
+ordered by, so its position is a decision rather than something to derive.
 
 ### What it refuses
 
@@ -736,7 +735,7 @@ what every real build uses.
 
 ### The chrome
 
-`Chrome` is one module per thing the Jekyll site kept in a template, under
+`Chrome` is one module per region of the page, under
 [`layout/chrome/`](./layout/chrome): the [document](./layout/chrome/document.ex)
 and the [deck](./layout/chrome/deck.ex) it dispatches between, the
 [header](./layout/chrome/header.ex), [sidebar](./layout/chrome/sidebar.ex) and
@@ -798,12 +797,11 @@ are part of what the page says, and go through the partials it includes.
 ## Rendering
 
 [`Renderer`](./renderer.ex) turns one source file into what the site serves for
-it. A document goes through **two stages**, the same two Jekyll uses: the Liquid
-of the whole document is expanded first
-([`Renderer.Liquid`](./renderer/liquid.ex)), and what comes out is then
-converted from Markdown ([`Renderer.Markdown`](./renderer/markdown.ex)). The
-order is what lets a tag produce Markdown and have it converted like the rest of
-the page.
+it. A document goes through **two stages**: the Liquid of the whole document is
+expanded first ([`Renderer.Liquid`](./renderer/liquid.ex)), and what comes out
+is then converted from Markdown ([`Renderer.Markdown`](./renderer/markdown.ex)).
+The order is what lets a tag produce Markdown and have it converted like the
+rest of the page.
 
 A build hands the renderer a [`RenderContext`](./renderer/render_context.ex) —
 one document, which page of which build it is — and gets back a page or a list
@@ -817,8 +815,7 @@ A block tag converts its own body, rather than emitting Markdown for the page's
 conversion to pick up later. That is not a stylistic choice: a tag wraps its
 body in HTML, and CommonMark treats the content of a raw HTML block as opaque,
 so a single conversion of the whole page would leave the inside of every note
-and callout unconverted. Jekyll converts tag bodies separately for the same
-reason.
+and callout unconverted.
 
 Two consequences for anyone writing a tag:
 
@@ -997,9 +994,8 @@ asks.
 A page introduces itself to things that are not reading it — a browser tab, a
 search engine, a chat client unfurling a pasted link — and
 [`PageMetadata`](./renderer/page_metadata.ex) is where the four things it says
-are decided, instead of in whatever lays the page out. Deciding them in the
-layout is how the site came to serve two `<title>` elements per page, its own
-and `jekyll-seo-tag`'s, saying different things.
+are decided, instead of in whatever lays the page out. A layout that decides
+them is a layout that can disagree with another one about what a page is called.
 
 - **What it is called** is the page's title with the site's name after it, which
   is what the application's own layout does.
@@ -1093,17 +1089,13 @@ chrome writes, so cutting a first block off the page would put it above them.
 Splitting the document rather than the text is what makes this safe: reference
 links are already resolved when the document is parsed, so both pieces keep
 working, and a separator written inside a code block is a code block rather than
-a place to cut. Jekyll instead renders the opening twice and deletes one copy
-from the other by string match, which fails silently whenever anything in the
-opening renders differently the second time.
+a place to cut.
 
 Declaring a separator the document never writes is an **error**, not a third way
 of cutting a page: the author asked for a boundary and left it out. The page is
 still cut after its first block so that the rest of its problems are reported in
 the same pass, per [Reporting rather than
-raising](#reporting-rather-than-raising). Jekyll instead makes the whole page
-the opening, which is why the documents doing this today read as if their
-opening were the entire page.
+raising](#reporting-rather-than-raising).
 
 ### Slides are not converted
 
@@ -1153,79 +1145,50 @@ lives under in `Solid`'s registers. Anything a tag needs to produce besides HTML
 new field of `RenderContext`, which is built once per document and never
 updated.
 
-### Known differences from what Jekyll produces
+### What a page emits
 
-The bar is a page that reads correctly and looks right, not identical markup.
-These differences are known and expected rather than regressions:
+Details of the markup that are decisions rather than consequences, and that the
+theme, the client scripts or the content depend on:
 
-- A heading carries an anchor element (`<h2 id="…">Text<a class="anchor"></a>`)
-  that kramdown does not emit.
-- **A heading decorated with an emoji shortcode is identified without it**, so
-  the 359 headings of the course that open with one — `#create-your-server`
-  rather than `#exclamation-create-your-server` — have moved. The shortcode was
-  never meant to be part of the anchor; every heading written without one is
-  identified exactly as kramdown identified it, verified against every heading
-  of every course document.
-- **An entry of the table of contents keeps the heading's markup.**
-  `jekyll-toc` replaced every element of a heading but an image by its text, so
-  a heading naming a command lost its `<code>` in the navigation.
-- **A code block is coloured by [Lumis](https://hexdocs.pm/lumis) rather than by
-  Rouge**, so it is a `<pre class="lumis">` of `l-*` token classes where Jekyll
-  produced `<div class="highlighter-rouge">` of Pygments-style ones, and inline
-  code carries no class at all. The theme's two highlighting stylesheets are
-  written against the new markup.
-- **A column of a `cols` row carries the classes its marker asks for.** Jekyll
-  emitted them as the _content_ of the class attribute (`class="&lt;!-- col
-md:col-span-2 --&gt;"`), so no column of the course has ever spanned more than
-  one. The classes the content writes are already in the stylesheet, since
-  Tailwind scans the Markdown they are written in.
-- **A folded callout of a cheatsheet is named after the cheatsheet.** Jekyll
-  built the prefix from two page variables its generator only sets for a
-  chapter, so every one of them was named `-`.
-- **A folded callout's congratulation is the same on every build**, where Jekyll
-  drew one at random each time it rendered the page.
-- **An emoji is a file of the site's own** rather than an image hotlinked from
-  `github.githubassets.com`, and every emoji is one: `jemoji` drew the
-  shortcodes and left the characters a page or a layout typed to whatever font
-  the reader happened to have.
-- **A deck's emoji are drawn too.** `jemoji` ran over a rendered page, and a
-  deck is handed to the browser as the text of a `<textarea>`, so a deck's
-  `:coffee:` was published as five words and its 🛠️ as whatever the reader had.
-- **A file next to a page is referred to by its digested name**, where Jekyll
-  emitted the plain relative path. The path shape the author wrote is kept, so
-  only the file name differs — and `relative_file_url`, which Jekyll's version
-  silently returned unchanged, now resolves.
-- **A tag's wrapper is emitted without the blank lines Jekyll's has.** kramdown
-  tolerated them inside an HTML block; CommonMark ends the block at the first
-  one, which would leave the rest of the wrapper to be read as Markdown.
-- **A page carries one `<title>`**, where the Jekyll site emits its own and then
-  `jekyll-seo-tag`'s, saying the same thing two ways with two different
-  separators. Along with the second one go the tags that said nothing true: the
-  `generator`, and an `og:type` of `article` whose publication date was the time
-  of the build.
-- **The site publishes no feed.** `jekyll-feed` wrote a `/feed.xml` of a course
-  that has no posts, and nothing has ever linked to it but the `feed_meta` tag
-  that announced it.
-- **A home page with no cards draws no row for them.** Jekyll emitted the grid
-  holding the "Previously", "Due next" and "Next time" cards whatever it held,
-  guarding each card inside it, so a home page with nothing to say about where
-  the course has got to left an empty `<div>` behind. The row is what holds
-  cards apart, and a page with none of them omits it —
+- A heading carries an anchor element: `<h2 id="…">Text<a class="anchor"></a>`.
+- **A heading decorated with an emoji shortcode is identified without it** —
+  `#create-your-server`, not `#exclamation-create-your-server`. The decoration
+  is not part of what the heading is called.
+- **An entry of the table of contents keeps the heading's markup**, so a heading
+  naming a command keeps its `<code>` in the navigation.
+- **A code block is coloured by [Lumis](https://hexdocs.pm/lumis)**: a `<pre
+class="lumis">` of `l-*` token classes, with inline code carrying no class at
+  all. The theme's two highlighting stylesheets are written against that markup.
+- **A column of a `cols` row carries the classes its marker asks for.** They are
+  already in the stylesheet, since Tailwind scans the Markdown they are written
+  in.
+- **A folded callout of a cheatsheet is named after the cheatsheet**, its
+  identifier needing something to be unique within.
+- **A folded callout's congratulation is the same on every build.** It is drawn
+  from the callout's identity rather than at random, so that rebuilding
+  unchanged content produces unchanged bytes.
+- **Every emoji is a file of the site's own**, whether the source wrote a
+  shortcode or the character, and a deck's are drawn like a page's.
+- **A file next to a page is referred to by its digested name**, keeping the
+  path shape the author wrote so that only the file name differs.
+- **A tag's wrapper carries no blank lines.** CommonMark ends an HTML block at
+  the first one, which would leave the rest of the wrapper to be read as
+  Markdown.
+- **A page carries one `<title>`**, and no meta tag that says something untrue —
+  in particular no `og:type` of `article` dated by the build.
+- **The site publishes no feed**, having no posts to put in one.
+- **A home page with no cards draws no row for them.** The row is what holds
+  cards apart, so a page with none of them omits it —
   [`Chrome.Home`](./layout/chrome/home.ex).
-- **The 404 page carries none of the site's chrome and loads nothing**, where
-  the Jekyll one was a page like any other, with the sidebar, the header and the
-  theme's stylesheet around it. A host offering a 404 page at all offers exactly
-  one of them for every edition it publishes, and it is shown when something was
-  not found — see [`NotFound`](./build/not_found.ex).
+- **The 404 page carries none of the site's chrome and loads nothing.** A host
+  offering one at all offers exactly one for every edition it publishes, and it
+  is shown when something was not found — see
+  [`NotFound`](./build/not_found.ex).
 - **A deck escapes the one sequence that would cut it short.** Its `<textarea>`
   holds RCDATA, so the markup and the entities a deck writes reach `reveal.js`
   exactly as they stand — but `</textarea` would end the element wherever it
   appeared, so that alone is written as `&lt;/textarea`, which decodes back to
-  itself. Jekyll escaped nothing and would have published a broken page for it.
-
-Everything else matches: the classes, identifiers and structure every tag of
-every subject, exercise and cheatsheet emits were diffed against a Jekyll build
-of the same content, and the differences above are the whole list.
+  itself.
 
 ## Testing
 

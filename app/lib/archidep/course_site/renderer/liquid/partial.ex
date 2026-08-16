@@ -34,7 +34,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Partial do
   end
 
   # The partial sees the document's variables plus its own; whatever it does to
-  # them stays inside it, the way a Jekyll include does.
+  # them stays inside it.
   defp render_template(template, variables, context, options) do
     document_variables = context.vars
 

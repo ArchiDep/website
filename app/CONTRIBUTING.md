@@ -255,10 +255,10 @@ used.
 This application is not standalone. It is part of the whole ArchiDep website
 which also includes:
 
-- A static site that contains most of the course material, implemented with
-  [Jekyll][jekyll] and found in the `course` directory. The site compiles into
-  this application's `priv/static` directory. See [`CONTRIBUTING.md` in the
-  `course` directory](../course/CONTRIBUTING.md) for more information.
+- A static site that contains most of the course material, written in Markdown
+  in the `course` directory and rendered by this application. See
+  [`CONTRIBUTING.md` in the `course` directory](../course/CONTRIBUTING.md) for
+  more information.
 - A shared Tailwind CSS theme for both this application and the course site,
   found in the `theme` directory. The theme builds into this application's
   `priv/static/assets/theme` directory. See [`CONTRIBUTING.md` in the `theme`
@@ -273,12 +273,12 @@ application.
 
 #### Development Environment
 
-In development, this application will serve requests for the static site's
-contents from the `priv/static` directory, which is populated by a local Jekyll
-server that compiles the course material with live reload. See the [Run the
-website in development mode](../README.md#run-the-website-in-development-mode)
-section in the main [README.md](../README.md) file for instructions on how to
-set up the development environment.
+In development, this application renders the course material itself and serves
+what it rendered, rebuilding and reloading the browser when a document changes.
+See the [Run the website in development
+mode](../README.md#run-the-website-in-development-mode) section in the main
+[README.md](../README.md) file for instructions on how to set up the development
+environment.
 
 ### Internal architecture
 
@@ -900,7 +900,6 @@ agents.
 [gettext]: https://hexdocs.pm/gettext/Gettext.html
 [hammox]: https://github.com/msz/hammox
 [heroicons]: https://heroicons.com
-[jekyll]: https://jekyllrb.com
 [lazy-html]: https://hexdocs.pm/lazy_html
 [live-dashboard]: https://hexdocs.pm/phoenix_live_dashboard
 [mix-format]: https://mix.hexdocs.pm/Mix.Tasks.Format.html

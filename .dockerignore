@@ -17,14 +17,9 @@
 /app/priv/uploads
 /app/tmp/
 
-/course/.bundle
 /course/dist
-/course/.jekyll-cache
-/course/.jekyll-metadata
 /course/node_modules
 /course/pdf
-/course/_site
-/course/vendor
 
 /.env*
 

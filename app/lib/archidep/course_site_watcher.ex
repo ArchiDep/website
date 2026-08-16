@@ -47,9 +47,9 @@ defmodule ArchiDep.CourseSiteWatcher do
   require Logger
 
   # What a build reads from the course material directory. The rest of it — the
-  # asset sources, the Ruby bundle's cache, the generated PDFs — is either an
-  # input of some other pipeline or an output of this one, and rebuilding on it
-  # would be a rebuild per rebuild.
+  # asset sources, the generated PDFs — is either an input of some other
+  # pipeline or an output of this one, and rebuilding on it would be a rebuild
+  # per rebuild.
   @watched_dirs ["_data", "_includes", "collections", "favicons"]
   @watched_files ["favicon.ico", "index.md"]
 

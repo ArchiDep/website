@@ -3,7 +3,6 @@ title: Deploy Flood It, a Spring Boot (Java) & Angular (JavaScript) application 
 cloud_server: details
 excerpt_separator: <!-- more -->
 graded: true
-published: true
 ---
 
 The goal of this exercise is to put in practice the knowledge acquired during

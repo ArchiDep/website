@@ -7,7 +7,7 @@
 This repository contains the source code for the Media Engineering Architecture
 & Deployment course website, composed of:
 
-- A [Jekyll][jekyll] static site containing most course material
+- A static site containing most course material, rendered by the application
 - A [Phoenix][phoenix] application to help students manage a virtual machine in
   the context of the course
 - A [Tailwind][tailwind] theme for both parts
@@ -23,7 +23,6 @@ This repository contains the source code for the Media Engineering Architecture
 - [Run the website in development mode](#run-the-website-in-development-mode)
   - [Run in development mode with Docker](#run-in-development-mode-with-docker)
   - [Run in development mode on your machine](#run-in-development-mode-on-your-machine)
-  - [Run the course only in development mode](#run-the-course-only-in-development-mode)
 - [Configuration](#configuration)
 - [Credits](#credits)
 
@@ -40,11 +39,10 @@ To run on your machine:
 - [Elixir][elixir] 1.19.x
 - [Erlang/OTP][erlang] 28.x
 - [Node.js][node] 24.x
-- [Ruby][ruby] 3.4.x
 - [PostgreSQL][postgresql] 17.x
 - `ssh-keygen` to generate a key pair
 
-> Use [asdf] or [mise] to install Elixir, Erlang/OTP, Node.js & Ruby based on
+> Use [asdf] or [mise] to install Elixir, Erlang/OTP & Node.js based on
 > [`.tool-versions`](./.tool-versions).
 
 Other optional tools (useful in both modes):
@@ -102,13 +100,8 @@ npm run --workspace app build
 npm run --workspace course build
 npm run --workspace theme build
 
-# Install the Jekyll site's dependencies & build at least once
-cd course
-bundle install
-bundle exec jekyll build
-
 # Install and compile the Phoenix application's dependencies
-cd ../app
+cd app
 mix deps.get
 mix compile  # grab another coffee (extra large mug)
 mix ua_inspector.download --force  # user agent database
@@ -147,7 +140,6 @@ How to run the website in development mode with live reload on code changes.
 > - Start the database (`db` container), compile the application assets
 >   (`app-assets` container), course assets (`course-assets` container, takes a
 >   while to perform the first build) & theme (`theme` container)
-> - Serve the course material (`course` container)
 > - Start the application (`app` container)
 
 Visit http://localhost:42000 once the application has started. The `app`
@@ -171,11 +163,7 @@ npm start
 cd theme
 npm start
 
-# Serve course material with Jekyll
-cd course
-bundle exec jekyll server --config _config.yml,_config.proxied.yml --drafts --livereload
-
-# Run the Phoenix web application (also proxies to Jekyll)
+# Run the Phoenix web application
 cd app
 mix phx.server
 ```
@@ -185,37 +173,13 @@ application renders the course material itself and serves what it rendered, so
 editing a document under `course/` rebuilds the site and reloads the browser.
 Start it **after** the asset watchers, since the first build reads what they
 write into `app/priv/static`; `ArchiDep.CourseSiteWatcher.rebuild()` from IEx
-runs one by hand if it was too early. Jekyll is still needed for the search
-index it produces.
-
-### Run the course only in development mode
-
-If you only need to work on course material, and not on the application
-dashboard or admin console, run only these commands in parallel:
-
-```bash
-# Build and watch course assets with Webpack
-cd course
-npm start
-
-# Build and watch the CSS theme with Tailwind
-cd theme
-npm start
-
-# Serve course material with Jekyll
-cd course
-bundle exec jekyll server --config _config.yml --drafts --livereload
-```
-
-Visit http://localhost:42001.
+runs one by hand if it was too early.
 
 ## Configuration
 
 These ports are used:
 
 - 42000 (app, main entrypoint)
-- 42001 (Jekyll, _not exposed directly with Docker_)
-- 42002 (Jekyll live reload)
 - 42003 (Prometheus metrics at `/metrics`)
 
 Concerning the monitoring metrics available at `http://42003/metrics`, note that
@@ -235,12 +199,10 @@ under [CC-BY 4.0][cc-by-4].
 [docker]: https://www.docker.com
 [elixir]: https://elixir-lang.org
 [erlang]: https://www.erlang.org
-[jekyll]: https://jekyllrb.com
 [mise]: https://mise.jdx.dev
 [node]: https://nodejs.org
 [phoenix]: https://www.phoenixframework.org
 [postgresql]: https://www.postgresql.org
-[ruby]: https://www.ruby-lang.org
 [tailwind]: https://tailwindcss.com
 [twemoji]: https://github.com/jdecked/twemoji
 [typescript]: https://www.typescriptlang.org

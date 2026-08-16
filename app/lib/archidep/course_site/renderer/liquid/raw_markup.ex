@@ -4,10 +4,10 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.RawMarkup do
 
   `Solid`'s lexer refuses the unquoted paths the course writes — `{% link
   _course/101-command-line/subject.md %}`, `{% include icons/photo.html %}` —
-  because a bare `/` is not something a Liquid expression may contain. Jekyll's
-  own `link` and `include` tags do not tokenize their markup either; they read
-  the text and interpret it themselves. This is that, so that no course file has
-  to be edited to accommodate a different Liquid implementation.
+  because a bare `/` is not something a Liquid expression may contain. So these
+  two tags do not tokenize their markup at all: they read the text and interpret
+  it themselves, which is what lets a document go on naming a path the way it
+  reads.
 
   A tag whose markup *is* a Liquid expression should use
   `Solid.Lexer.tokenize_tag_end/1` instead.

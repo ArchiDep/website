@@ -33,8 +33,7 @@ for AI assistants and automated agents.
     - [Interactive Git Diagrams](#interactive-git-diagrams)
 - [General Coding Guidelines](#general-coding-guidelines)
 - [Site Implementation](#site-implementation)
-  - [Custom Jekyll Plugins](#custom-jekyll-plugins)
-  - [Configuration & Deployment Modes](#configuration--deployment-modes)
+  - [Who Renders This](#who-renders-this)
   - [Build Output & Asset URLs](#build-output--asset-urls)
   - [JSON Exports](#json-exports)
   - [Client-Side Architecture](#client-side-architecture)
@@ -94,6 +93,12 @@ the dashboard functionality is only available during the current semester).
 
 ## Site Structure
 
+The underscore-prefixed names — `collections/_course`, `_data`, `_includes` —
+are what Jekyll called these directories before the application took over
+rendering the site. They mean nothing to anything that reads them today and are
+scheduled to be renamed; until then they are simply the paths the build is
+pointed at.
+
 - **Main Parts**
   - `index.md`: The home page of the course material site.
   - `collections/_course`: The main course materials, including subjects, slides
@@ -104,25 +109,10 @@ the dashboard functionality is only available during the current semester).
     Both are things no single document states.
   - `collections/_cheatsheets`: Cheatsheets for students to quickly reference
     key concepts and commands.
-  - `collections/_json`: JSON data exports for integration with the dashboard
-    application.
+  - `_includes/icons`: SVG icons a document may include by name. This is the
+    only part of `_includes` that is still read, the chrome around a page being
+    the application's.
 - **Important Files**
-  - `_plugins/archidep.rb`: Custom Jekyll plugin to enrich documents with
-    additional metadata, such as determining the type of document (subject,
-    slide, exercise, cheatsheet) and extracting the numeric code from filenames,
-    building the search data, and various other things. See [Custom Jekyll
-    Plugins](#custom-jekyll-plugins).
-  - `_plugins/utils.rb`: Shared Ruby helpers used by the custom tags and
-    plugins, such as Markdown rendering, SVG icon rendering and Markdown
-    reference-link resolution.
-  - `_plugins/filters.rb`: Custom Liquid filters (e.g. `collapse_whitespace`).
-  - `_plugins/relative_asset_url.rb`: Custom Liquid filters that resolve
-    cache-busted asset URLs from the Webpack and Phoenix manifests. See [Build
-    Output & Asset URLs](#build-output--asset-urls).
-  - `_plugins/tags/**/*.rb`: Custom Liquid tags to spruce up course content,
-    such as callout boxes, styled notes, responsive side-by-side columns,
-    collapsible solutions and Mermaid diagrams. See [Special Tags and
-    Features](#special-tags-and-features).
   - `src/assets/course.ts` & `src/assets/course/**/*.{ts,tsx,html}`: TypeScript
     and HTML files for client-side interactivity, such as the search dialog,
     copy-to-clipboard buttons, the cloud server widget, randomized exercise
@@ -143,17 +133,6 @@ the dashboard functionality is only available during the current semester).
     in slides.
 - **Other Things**
   - `favicons`: Favicons for various platforms and devices.
-  - `Gemfile` & `Gemfile.lock`: Ruby dependencies for Jekyll and its plugins.
-  - `_config.yml` & `_config.*.yml`: Main Jekyll configuration file and
-    environment-specific overrides (Docker development, proxied development and
-    standalone GitHub Pages builds). See [Configuration & Deployment
-    Modes](#configuration--deployment-modes) and the explanations in each file.
-  - `dashboard.txt`: Placeholder document to have the dashboard show up as an
-    entry in search results.
-  - `_includes`: Reusable Liquid templates for various parts of the
-    site, including the sidebar, header, footer, and individual content blocks.
-  - `_layouts`: Layout templates for different types of pages, such as the main
-    layout, slide layout, exercise layout, and cheatsheet layout.
   - `src/assets/logging.ts`: Shared logging utilities for client-side scripts.
   - `src/scripts/**/*.ts`: TypeScript scripts for build-time tasks, such as
     generating PDFs and building the search index.
@@ -189,17 +168,13 @@ materials.
   punctuation dropped and spaces turned into hyphens (`## Configure basic
 settings` → `#configure-basic-settings`). The emoji shortcode a heading is
   decorated with is **not** part of its anchor: write `#create-your-server`, not
-  `#exclamation-create-your-server`. (The Jekyll build still emits the shortcode
-  in the anchor, so such a link scrolls nowhere until the Elixir renderer takes
-  over; it still opens the right page.)
+  `#exclamation-create-your-server`.
 - Write an emoji either as its shortcode (`:books:`) or as the character itself
   (📚); the Elixir renderer draws both from the same file, so the two spellings
   are the same picture. The emoji the site has are a **closed set**, listed in
   [`app/lib/archidep/emoji.ex`][emoji]; the build reports any other one. Adding
   an emoji is an entry there plus an SVG, as
-  [`theme/emoji/README.md`](../theme/emoji/README.md) describes. (Until the
-  Elixir renderer takes over, Jekyll draws a shortcode as an image hotlinked
-  from GitHub and leaves a character to whatever font the reader has.)
+  [`theme/emoji/README.md`](../theme/emoji/README.md) describes.
 - Refer to a file sitting next to a document — an image, a PDF — by a plain
   relative path (`images/cli.jpg`, `./images/cli.jpg`, or `../images/cli.jpg`
   from a `slides.md` written at the root of its chapter, since a deck is
@@ -236,9 +211,8 @@ relative_file_url }}` is no longer needed — the plain path is resolved whereve
 ### File Naming Conventions
 
 Take care to respect the following conventions to ensure proper display,
-ordering and identification of documents. The `_plugins/archidep.rb` plugin
-relies on these conventions to extract metadata from filenames and directory
-structures.
+ordering and identification of documents. The build relies on these conventions
+to extract metadata from filenames and directory structures.
 
 - Store subjects, slides and exercises in the [`collections/_course`
   directory](./collections/_course).
@@ -276,33 +250,25 @@ structures.
     that is not listed there, or a slug listed there with no such directory,
     **fails the build**: unlike a chapter, a cheatsheet has no number to be
     ordered by, so its position is a decision rather than something to derive.
-    Jekyll reads the same order from the `collections.cheatsheets.order` key of
-    [`_config.yml`](./_config.yml); keep the two in step until the Jekyll build
-    is retired.
 
 ### Document Front Matter
 
-Most document metadata is computed automatically by the
-[`_plugins/archidep.rb`](./_plugins/archidep.rb) plugin from the filename and
-directory structure (`num`, `section`, `course_type`, `permalink`, `layout`,
-`progress`, `has_slides`, etc.). Do not set these keys manually, as they will be
-overwritten. See [Custom Jekyll Plugins](#custom-jekyll-plugins).
+Most document metadata is computed by the build from the filename and directory
+structure (its number, section, type, URL, progress, whether it has slides).
+Those are not front matter keys at all, so setting them says nothing.
 
 The following front matter keys are meant to be set by authors:
 
-- `title`: The document title. May include emoji shortcodes (rendered by
-  [jemoji][jemoji]), e.g. `:rocket:`. **Required**: every document and
-  cheatsheet must have one, and one without it fails the build. It is what the
-  document is called in the sidebar, in a browser tab and in the name of its
-  PDF, none of which has anywhere else to look. (Jekyll instead publishes those
-  as blanks.)
+- `title`: The document title. May include emoji shortcodes, e.g. `:rocket:`.
+  **Required**: every document and cheatsheet must have one, and one without it
+  fails the build. It is what the document is called in the sidebar, in a
+  browser tab and in the name of its PDF, none of which has anywhere else to
+  look.
 - `graded: true`: Marks an exercise as graded. Graded exercises are flagged in
   the UI and indexed as a distinct `graded-exercise` type for search. Only an
   exercise may be graded: a subject, a slide deck or a cheatsheet declaring it
   fails the build rather than saying something that has no effect, and so does a
   value that is neither `true` nor `false`.
-- `published: false`: Hides a work-in-progress document (standard Jekyll
-  behaviour).
 - `cloud_server: creation` or `cloud_server: details`: Embeds the [cloud server
   widget](#cloud-server-widget) in an exercise. Use `creation` on the exercise
   where students first create their server, and `details` on later exercises
@@ -322,9 +288,9 @@ The following front matter keys are meant to be set by authors:
   its own, such as a lead-in ending in a colon. A slide deck, which has no
   opening to show, says that it is the slides of its chapter unless it declares
   otherwise.
-- `standalone: false`: Excludes the document from the search index in
-  [standalone builds](#configuration--deployment-modes) (e.g. content that only
-  makes sense alongside the dashboard).
+- `standalone: false`: Excludes the document from the search index of a build
+  that is not served beside the dashboard (see [Standalone
+  Mode](#standalone-mode)), for content that only makes sense alongside it.
 - `search_url`, `search_subtitle`, `search_extra_text`: Override the URL,
   subtitle and extra indexed text used when building the search data.
 
@@ -353,10 +319,9 @@ The numbers are the computed `num` of a document (e.g. `201`). To advance the
 course, **append a session** rather than editing the ones already there; a
 session may leave a category out.
 
-The [`_plugins/archidep.rb`](./_plugins/archidep.rb) plugin aggregates the lists
-across every session and assigns each chapter and section one of four progress
-states, which drive the sidebar indicators, the home page cards, search
-filtering and whether [solutions](#solutions) are shown:
+The build aggregates the lists across every session and assigns each chapter and
+section one of four progress states, which drive the sidebar indicators, the
+home page cards, search filtering and whether [solutions](#solutions) are shown:
 
 - `done`: listed in any `done` array.
 - `due`: listed in `due` but not yet `done`.
@@ -368,6 +333,11 @@ filtering and whether [solutions](#solutions) are shown:
 This section describes special Liquid tags and features available for use in
 course materials. Use them to enhance the content and improve the learning
 experience.
+
+They are implemented by the application's renderer: a tag exists if
+[`ArchiDep.CourseSite.Renderer`][renderer] implements it, and the build fails on
+one that does not. This section states what a document may write; how a tag is
+rendered is documented with the renderer.
 
 #### Notes
 
@@ -383,9 +353,6 @@ information. The following note types are available:
 
 Prefer adding a new line after the opening tag and before the closing tag for
 better readability and to avoid issues when wrapping lines.
-
-The `note` tag is implemented in the [`_plugins/tags/note.rb`
-file](./_plugins/tags/note.rb).
 
 **Example usage:**
 
@@ -410,9 +377,6 @@ sparingly. The following callout types are available:
 
 Prefer adding a new line after the opening tag and before the closing tag for
 better readability and to avoid issues when wrapping lines.
-
-The `callout` tag is implemented in the [`_plugins/tags/callout.rb`
-file](./_plugins/tags/callout.rb).
 
 **Example usage:**
 
@@ -459,9 +423,6 @@ better readability.
 
 Prefer adding a new line after the opening tag and before the closing tag for
 better readability and to avoid issues when wrapping lines.
-
-The `cols` tag is implemented in the [`_plugins/tags/cols.rb`
-file](./_plugins/tags/cols.rb).
 
 **Example usage:**
 
@@ -521,9 +482,6 @@ its content when clicked. Use it to hide exercise solutions so students can
 attempt the exercise first. It accepts an optional `title` attribute (default
 "Solution").
 
-The `solution` tag is implemented in the [`_plugins/tags/solution.rb`
-file](./_plugins/tags/solution.rb).
-
 A solution belongs to a chapter's exercise: writing one on the home page or in a
 cheatsheet fails the build, since there is nothing there for it to answer. The
 Elixir renderer additionally **leaves an answer out of the page entirely** until
@@ -547,8 +505,7 @@ The `mermaid` tag renders a [Mermaid][mermaid] diagram from its content. The
 diagram is rendered client-side (it shows a loading skeleton until then). Use
 Mermaid for diagrams and visualizations where appropriate.
 
-The `mermaid` tag is implemented in the [`_plugins/tags/mermaid.rb`
-file](./_plugins/tags/mermaid.rb). Mermaid diagrams on slides are rendered by
+Mermaid diagrams on slides are rendered by
 [`src/assets/slides-mermaid.ts`](./src/assets/slides-mermaid.ts).
 
 **Example usage:**
@@ -563,8 +520,7 @@ graph LR A[Client] --> B[Server]
 
 The `markdown` tag wraps its content in a `<div class="markdown">` and forces
 Markdown rendering of the block. It is useful when content nested inside raw
-HTML would otherwise not be processed as Markdown. It is implemented in the
-[`_plugins/tags/markdown.rb` file](./_plugins/tags/markdown.rb).
+HTML would otherwise not be processed as Markdown.
 
 #### Code Blocks
 
@@ -600,19 +556,15 @@ $> pwd
 It is the only decorator available, and a fence asking for anything else fails
 the build.
 
-Decorators are read by the site's own renderer, which is replacing Jekyll. Until
-it serves the site, a fence carrying one renders as literal text: kramdown's
-fenced block accepts a bare language and nothing else.
-
 #### Cloud Server Widget
 
 Setting `cloud_server: creation` or `cloud_server: details` in an exercise's
 [front matter](#document-front-matter) embeds a live widget that displays the
 student's cloud server details (username, IP address, SSH command, etc.) with
 copy-to-clipboard buttons. The widget is rendered into a `cloud-server-data`
-element by the [layout](./_layouts/toc.html) and driven by real-time updates
-from the dashboard (see [Client-Side Architecture](#client-side-architecture)).
-It is implemented as a Preact component in
+element by the page's layout and driven by real-time updates from the dashboard
+(see [Client-Side Architecture](#client-side-architecture)). It is implemented
+as a Preact component in
 [`src/assets/course/cloud-server.tsx`](./src/assets/course/cloud-server.tsx).
 
 #### Randomized Values
@@ -666,17 +618,16 @@ The following guidelines concern the source code of the site at a general level.
 See the next sections for more specific guidelines.
 
 - **Main Frameworks, Languages and Libraries**
-  - [Jekyll][jekyll] written in [Ruby][ruby] for static site generation
-  - [Liquid][liquid] templating language for HTML generation
+  - [Liquid][liquid] tags and filters in the Markdown, rendered by the
+    application
   - [Webpack][webpack] for bundling JavaScript and [TypeScript][typescript]
     scripts
   - [Preact][preact] and [Preact signals][preact-signals] with TSX for
     client-side interactive components
   - [Lunr][lunr] for full-text search
 - **Liquid Guidelines**
-  - Keep logic in Liquid templates minimal; prefer to handle complex logic in
-    Ruby plugins. Look for refactoring opportunities as this may not currently
-    be the case.
+  - Keep the Liquid in a document to naming things — a tag, a link, an include.
+    Logic belongs in the renderer, which is where a mistake can fail the build.
 - **Client Assets Guidelines**
   - Use [Preact][preact] for interactive components
   - Use [Preact signals][preact-signals] for state management
@@ -695,61 +646,18 @@ See the next sections for more specific guidelines.
 
 This section describes the technical implementation of the course material site.
 
-### Custom Jekyll Plugins
+### Who Renders This
 
-The site relies on several custom plugins in the [`_plugins`](./_plugins)
-directory:
+Nothing in this directory renders it. The site is built by the application, from
+these sources, by `mix archidep.course_site.build`: it compiles a model of the
+course from the Markdown, renders every page, and writes the whole site. What
+each build is — the edition it holds, where it is published, whether it carries
+the dashboard-only UI — is the task's options and the application's
+`course_site` configuration, so this directory has no configuration of its own.
 
-- [`archidep.rb`](./_plugins/archidep.rb): The main plugin. Its `Generator`
-  computes per-document metadata from filenames and the
-  [`_data/course.yml`](./_data/course.yml) sections (`num`, `section`,
-  `section_title`, `course_type`, `layout`, `permalink`, `progress`,
-  `has_slides`, `toc`, etc.), links subjects to their slides, attaches items to
-  their sections, and prepares the data shown on the [home page](#home-page).
-  All of that but the progress is now also computed in Elixir by
-  [`ArchiDep.CourseSite.Structure`][course-site-structure], which is what will
-  replace this generator; the two agree, chapter for chapter, on the structure
-  they describe. Its hooks also expose the application version and Git revision
-  (read from `../app/mix.exs` and Git), render each document's `raw_markdown`
-  (used by the [slide layout](#slides)), build the [search data](#search), and
-  write the [JSON exports](#json-exports).
-- [`utils.rb`](./_plugins/utils.rb): Shared `ArchiDep::Utils` helpers used by
-  the custom tags — `render_markdown`, `render_icon` (renders an SVG from
-  [`_includes/icons`](./_includes)) and the Markdown reference-link resolution
-  used so that reference-style links keep working inside tags and slides.
-- [`filters.rb`](./_plugins/filters.rb): Custom Liquid filters such as
-  `collapse_whitespace`.
-- [`relative_asset_url.rb`](./_plugins/relative_asset_url.rb): Liquid filters
-  that resolve cache-busted asset URLs (see [Build Output & Asset
-  URLs](#build-output--asset-urls)).
-
-### Configuration & Deployment Modes
-
-The base configuration is [`_config.yml`](./_config.yml). Notable settings:
-
-- `destination: '../app/priv/static'`: The site is built directly into the
-  dashboard application's static directory.
-- `collections`: The `course`, `cheatsheets`, `json`, `progress` (and a reserved
-  `notices`) collections, with `collections_dir: collections`.
-- `plugins`: `jekyll-feed`, `jekyll-target-blank`, `jekyll-toc` and `jemoji`.
-- `keep_files: [assets, cache_manifest.json]`: Preserves the assets and Phoenix
-  cache manifest produced by the other build steps so Jekyll does not delete
-  them when writing into `priv/static`.
-- `archidep_standalone`, `archidep_years`, `archidep_repo` and similar custom
-  keys used throughout the templates.
-
-Environment-specific overrides are layered on top (e.g. `jekyll build --config
-_config.yml,_config.proxied.yml`):
-
-- [`_config.docker.yml`](./_config.docker.yml): Sets `host: 0.0.0.0` so the dev
-  server is reachable from outside its Docker container.
-- [`_config.proxied.yml`](./_config.proxied.yml): Forces the livereload script
-  into the HTML so live reload works when the dashboard application serves the
-  compiled files directly, bypassing the Jekyll server. This is the normal
-  development setup (visit the site through the application).
-- [`_config.pages.yml`](./_config.pages.yml): Builds the **standalone** site for
-  GitHub Pages — sets `baseurl: '/website'` and `archidep_standalone: true`,
-  which hides dashboard-only UI and excludes dashboard-only content from search.
+That build, its options and the modules behind them are documented with the
+subsystem, in
+[`app/lib/archidep/course_site/CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md).
 
 ### Build Output & Asset URLs
 
@@ -779,35 +687,29 @@ copy the PDFs are printed from. An address baked in here resolves in exactly one
 of those and 404s in the rest, which shows up as a deck printed with its
 diagrams missing and its titles in a fallback font.
 
-The [`relative_asset_url.rb`](./_plugins/relative_asset_url.rb) plugin reads
-`cache_manifest.json` so templates can reference assets by their logical name
-and get the correct hashed URL. **Do not hardcode hashed asset paths in
-templates** — use the asset-url filters instead. In development, where nothing
-is digested, the filters fall back to the plain path.
+The build reads `cache_manifest.json` to turn an asset's logical name into the
+name it was published under. **Do not hardcode hashed asset paths**: a page
+names an asset logically and the build resolves it, failing rather than emitting
+a name that only resolves in development.
 
 ### JSON Exports
 
-The following JSON files are written into the application's static directory
-during the build for integration with (and archival of) the dashboard
-application:
+The build writes the following JSON files beside the pages, under the edition
+prefix:
 
-- The course structure is exported to `app/priv/static/archidep.json` (from
-  [`collections/_json/archidep.json.liquid`](./collections/_json)), which the
-  PDF generation script reads to know which pages to print. The dashboard
-  application no longer reads it: it compiles its own model of the course from
-  the Markdown sources. The Elixir build writes the same file, under the edition
-  prefix of whatever directory it was given, and adds what each page's PDF is
-  called; its URLs are the build's own even when the build's pages link to the
-  deployed site, because the file describes the copy the export is about to
-  walk. See [PDF Generation](#pdf-generation).
-- What the search dialog can find is exported to `app/priv/static/search.json`,
-  so that the dashboard application can offer the same search over the same
-  material. The Elixir build writes the same file under the edition prefix and
-  under a name carrying the identifier of the build that produced it, which it
-  must: the index is read _off_ the pages whose `<head>` names it, so it cannot
-  be named after its own contents. See [Search](#search).
+- The course structure is exported to `archidep.json`, which the PDF generation
+  script reads to know which pages to print. The dashboard application does not
+  read it: it compiles its own model of the course from the Markdown sources. It
+  says what each page's PDF is called; its URLs are the build's own even when
+  the build's pages link to the deployed site, because the file describes the
+  copy the export is about to walk. See [PDF Generation](#pdf-generation).
+- What the search dialog can find is exported to `search-<build>.json`, so that
+  the dashboard application can offer the same search over the same material.
+  The name carries the identifier of the build that produced it rather than a
+  digest of its contents, which it must: the index is read _off_ the pages whose
+  `<head>` names it. See [Search](#search).
 - Build metadata (application version, Git branch and revision) is exported to
-  `app/priv/static/version.json`.
+  `version.json`.
 
 ### Client-Side Architecture
 
@@ -838,9 +740,7 @@ analytics are disabled.
 
 Full-text search uses [Lunr][lunr]. At build time, one searchable element is
 extracted for each document and for each of its top-level headings and written
-to `search.json` — by the [`archidep.rb`](./_plugins/archidep.rb) plugin under
-Jekyll, and by `ArchiDep.CourseSite.Build.SearchIndex` under the Elixir
-renderer.
+to the search index by `ArchiDep.CourseSite.Build.SearchIndex`.
 
 The Lunr index itself is **not** built at build time and not downloaded: on the
 client, [`src/assets/course/search.ts`](./src/assets/course/search.ts) lazily
@@ -864,10 +764,9 @@ once it has been digested.
 
 Slides are presented with [reveal.js][reveal], configured in
 [`src/assets/slides.ts`](./src/assets/slides.ts) (Markdown, highlight, notes and
-search plugins). The slide [layout](./_layouts) feeds the document's
-pre-rendered `raw_markdown` into reveal.js. Mermaid diagrams are rendered lazily
-per slide by
-[`src/assets/slides-mermaid.ts`](./src/assets/slides-mermaid.ts), and
+search plugins). The slide layout feeds the deck's Markdown into reveal.js,
+which splits it into slides itself. Mermaid diagrams are rendered lazily per
+slide by [`src/assets/slides-mermaid.ts`](./src/assets/slides-mermaid.ts), and
 [interactive Git diagrams](#interactive-git-diagrams) are wired into the slide
 lifecycle by [`src/assets/slides/git-memoirs.ts`](./src/assets/slides). Useful
 query parameters include `?print-pdf` (PDF export layout), `?view=scroll`
@@ -921,30 +820,26 @@ it locally only when you need the files themselves.
 
 ### Home Page
 
-The home page ([`index.md`](./index.md), `home` layout) summarizes course
-progress with three cards — what was covered previously, what is due next, and
-what is coming up — built from the most recent [progress
-documents](#progress-tracking) by the [`archidep.rb`](./_plugins/archidep.rb)
-plugin (`previous_chapters`, `next_due_exercises`, `next_chapters`).
+The home page ([`index.md`](./index.md)) summarizes course progress with three
+cards — what was covered previously, what is due next, and what is coming up —
+built by the application from the most recent [progress
+documents](#progress-tracking). An archived edition holds none of them, its
+progress having stopped meaning anything the day it was frozen.
 
 ---
 
 ## Formatting and Linting
 
-- Use [Prettier][prettier] for formatting Liquid templates as well as Ruby and
-  TypeScript code.
+- Use [Prettier][prettier] for formatting TypeScript code.
 
 ---
 
 ## References
 
-- [Jekyll][jekyll] for static site generation
-  - [Jekyll Documentation][jekyll-docs]
 - [Liquid Documentation][liquid] for HTML templating
 - [Git memoir][git-memoir] for interactive Git diagrams
 - [io-ts][io-ts] for runtime type checking and validation
   - [io-ts Documentation][io-ts-docs]
-- [jemoji][jemoji] for emoji shortcode rendering
 - [Loglevel][loglevel] for client-side logging
 - [Lunr][lunr] for full-text search
 - [Mermaid][mermaid] for diagrams and visualizations
@@ -955,8 +850,6 @@ plugin (`previous_chapters`, `next_due_exercises`, `next_chapters`).
 - [Prettier Documentation][prettier] for code formatting
 - [Puppeteer][puppeteer] for PDF generation
 - [Reveal][reveal] for slide presentations
-- [Ruby][ruby]
-  - [Ruby Documentation][ruby-docs]
 - [TypeScript][typescript]
   - [ts-pattern][ts-pattern] for exhaustive pattern matching
 - [Webpack][webpack] for bundling JavaScript and TypeScript
@@ -975,11 +868,8 @@ agents.
 [io-ts-concepts]: https://gcanti.github.io/io-ts/
 [io-ts-docs]: https://github.com/gcanti/io-ts/blob/master/index.md
 [git-memoir]: https://github.com/AlphaHydrae/git-memoir
-[jekyll]: https://jekyllrb.com
-[jekyll-docs]: https://jekyllrb.com/docs
 [course-site-structure]: ../app/lib/archidep/course_site/structure.ex
 [emoji]: ../app/lib/archidep/emoji.ex
-[jemoji]: https://github.com/jekyll/jemoji
 [liquid]: https://shopify.github.io/liquid/
 [phoenix]: https://hexdocs.pm/phoenix/Phoenix.Channel.html
 [loglevel]: https://github.com/pimterry/loglevel
@@ -991,8 +881,6 @@ agents.
 [prettier]: https://prettier.io
 [puppeteer]: https://pptr.dev
 [reveal]: https://revealjs.com
-[ruby]: https://www.ruby-lang.org
-[ruby-docs]: https://www.ruby-lang.org/en/documentation/
 [ts-pattern]: https://github.com/gvergnaud/ts-pattern
 [typescript]: https://www.typescriptlang.org
 [urls]: ../app/lib/archidep/course_site/CONTRIBUTING.md#url-and-link-emission

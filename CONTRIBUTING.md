@@ -35,7 +35,7 @@ flowchart TB
     user(["Teacher / student<br/>browser"])
 
     subgraph build["Build time"]
-        course["course/<br/>(Jekyll)"]
+        course["course/<br/>(Markdown + Liquid)"]
         theme["theme/<br/>(Tailwind + DaisyUI)"]
     end
 
@@ -67,7 +67,8 @@ flowchart TB
     See [`app/CONTRIBUTING.md`][app-contributing] and
     [`app/AGENTS.md`][app-agents] for more details.
 
-  - [`course/`](./course): Course material site, implemented with Jekyll (Ruby)
+  - [`course/`](./course): Course material, written in Markdown and rendered by
+    the application
 
     See [`course/CONTRIBUTING.md`][course-contributing] and
     [`course/AGENTS.md`][course-agents] for more details.
@@ -109,7 +110,8 @@ subdirectories (`app`, `course` and `theme`) for more specific guidelines.
 - **Frameworks, Languages and Libraries**
   - Dashboard application for teachers & students: Phoenix (Elixir), Phoenix
     LiveView, HTML/CSS
-  - Course material site: Jekyll (Ruby), JavaScript/TypeScript, HTML/CSS
+  - Course material site: Markdown & Liquid rendered in Elixir,
+    JavaScript/TypeScript, HTML/CSS
   - Theme: DaisyUI & Tailwind CSS
 
 - **General Style**
@@ -189,11 +191,11 @@ component-specific frameworks, languages and tools.
   are specified in the [`.tool-versions`](./.tool-versions) file at the root of
   the repository.
 - [Prettier](https://prettier.io) is used to format a significant part of the
-  code in this project (Ruby, JavaScript/TypeScript and HTML files that are not
-  part of the Phoenix application). See the
-  [`.prettierrc.yml`](./.prettierrc.yml) file at the root of the repository and
-  in the `course` directory. Note that Prettier is not used for Elixir code in
-  the `app` directory, as there is no widely adopted code
+  code in this project (JavaScript/TypeScript and HTML files that are not part
+  of the Phoenix application). See the [`.prettierrc.yml`](./.prettierrc.yml)
+  file at the root of the repository and in the `course` directory. Note that
+  Prettier is not used for Elixir code in the `app` directory, as there is no
+  widely adopted code
 - [remark](https://remark.js.org) is used to lint the project's Markdown
   documentation — it validates internal links, heading structure and
   fenced-code-block languages. See the [`.remarkrc.yml`](./.remarkrc.yml) and

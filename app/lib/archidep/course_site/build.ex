@@ -38,9 +38,9 @@ defmodule ArchiDep.CourseSite.Build do
   @cache_manifest "cache_manifest.json"
   @assets_dir "assets"
 
-  # Only the partials a *document* includes, which today are the icons. The rest
-  # of the includes directory is the Liquid layout the site is wrapped in, which
-  # belongs to Jekyll and uses the tags of its plugins.
+  # Only the partials a *document* includes, which are the icons. The chrome a
+  # page is wrapped in is the application's own layout rather than anything the
+  # course holds.
   @includes "icons/**/*.html"
 
   # The files anchored at the build's mount point rather than under its edition,

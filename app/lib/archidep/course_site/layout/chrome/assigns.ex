@@ -128,8 +128,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
   ]
 
   @typedoc """
-  Which of the site's layouts a page is drawn with, which is what the Jekyll
-  site chose a template by.
+  Which of the site's layouts a page is drawn with.
   """
   @type kind :: :home | :subject | :exercise | :cheatsheet | :deck
 

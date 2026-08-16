@@ -6,9 +6,7 @@ defmodule ArchiDepWeb.CourseSitePages do
   `Phoenix.LiveReloader` injects its script from a `before_send` callback
   guarded by the response having a body, and `Plug.Static` answers with
   `Plug.Conn.send_file/5`, which leaves it empty. So a page served the ordinary
-  way can never reload itself, however the build got there. Until now that did
-  not show, because the pages were Jekyll's and Jekyll injected a script of its
-  own.
+  way can never reload itself, however the build got there.
 
   Reading a whole page into memory to send it is exactly what `Plug.Static`
   avoids and exactly what is wanted here: the pages are tens of kilobytes, and

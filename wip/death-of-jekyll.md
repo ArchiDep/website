@@ -299,10 +299,11 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       can prefix along with everything else. And that settles the chrome
       question **against** chrome: one file standing for every edition can carry
       neither one edition's chapter list nor one build's digested stylesheet
-      name. The Jekyll page it replaces had both, which is a [known
-      difference](../app/lib/archidep/course_site/CONTRIBUTING.md#known-differences-from-what-jekyll-produces)
-      rather than a fidelity regression. The `course/404.html` source goes with
-      the rest of the Jekyll layer at [cutover](#cutover).
+      name. The Jekyll page it replaces had both, which is a deliberate
+      difference rather than a fidelity regression — recorded in [what a page
+      emits](../app/lib/archidep/course_site/CONTRIBUTING.md#what-a-page-emits).
+      The `course/404.html` source goes with the rest of the Jekyll layer at
+      [cutover](#cutover).
 - [x] Serve the build via Phoenix in **development**, rebuilt as the course is
       edited — see [Development and production
       serving](#development-and-production-serving). **Done**, with five
@@ -536,7 +537,7 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       source](#progress-structure-vs-status) needs this, and that is already
       deferred past the cutover. `Build.swap_output/2` is the atomic publish
       itself and is done.
-- [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stages —
+- [x] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stages —
       **both** of them, the release one and the development service that is easy
       to forget — and remove the JSON ordering scaffolding that only exists to
       keep `archidep.json` diffable against Jekyll's — see [Cutover](#cutover).
@@ -4037,9 +4038,10 @@ the new build task" this looks like from the outside.
   unprefixed paths](#optional-url-prefix), which is what those paths mean. It
   stops being the truth when the 2026 content lands, which is the deadline on
   the archive repository rather than a reason to keep publishing here. The
-  replacement build job uploads the `:backup` build as a workflow artifact
-  meanwhile, so the bytes to publish by hand exist if the site goes down first —
-  the same fallback the [PDF job](#the-ci-job) keeps for its own upload.
+  replacement build job keeps nothing: it proves the build and throws the bytes
+  away, artifact storage being metered and a copy nothing publishes being worth
+  less than it costs. Producing the backup by hand, on the day it is wanted, is
+  the build task run from a checkout.
 
 **Jekyll is installed twice, and only one of the two is obvious.** The stage of
 the [`Dockerfile`](../Dockerfile) that builds the site for the image is the one
@@ -4114,14 +4116,17 @@ its keys come out in Jekyll's order and its shape stays diffable against the
 file Jekyll produces. That is the **only** reason: `pdf.ts` merely parses the
 file, and `priv/static` is gitignored, so nothing reviews the bytes. Once there
 is no Jekyll output left to compare against, the ordering shim is answering a
-question nobody asks — and it is what makes
-[`Build.Site`](../app/lib/archidep/course_site/build/site.ex) the one place in
-the subsystem that encodes with `Jason` while everything else decodes with
-Elixir's own `JSON`. So at cutover:
+question nobody asks. So at cutover:
 
-- Encode both build outputs with `JSON.encode!`, leaving one JSON library in the
-  subsystem. (The `jason` dependency stays — the events and the admin console
-  use it, and several dependencies pull it in regardless.)
+- Encode both outputs of
+  [`Build.Site`](../app/lib/archidep/course_site/build/site.ex) with
+  `JSON.encode!`. (The `jason` dependency stays — the events and the admin
+  console use it, and several dependencies pull it in regardless.)
+- **Leave `ArchiDep.CourseSite.Archives.Manifest` alone.** It encodes with
+  `Jason` too, for a reason of its own that Jekyll's departure does not touch —
+  the manifest is a committed file — and that reason is documented where it
+  lives. Ordered encoding therefore ends the cutover in the one place that needs
+  it rather than in none, which an earlier draft of this section had wrong.
 - Delete the comment above `course_json/3` that explains the choice. It is the
   rationale for a constraint that will no longer exist, which is exactly the
   kind of comment that rots.

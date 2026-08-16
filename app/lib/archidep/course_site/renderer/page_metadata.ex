@@ -67,8 +67,7 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
   @escaped [{"&", "&amp;"}, {"<", "&lt;"}, {">", "&gt;"}, {"\"", "&quot;"}]
 
   # Long enough that no opening of the course is cut, short enough that a page
-  # whose opening is a whole section does not carry it twice. This is the length
-  # `jekyll-seo-tag` truncates at.
+  # whose opening is a whole section does not carry it twice.
   @description_max_words 200
 
   # What a page of a frozen edition asks of a crawler.

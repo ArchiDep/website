@@ -3,9 +3,9 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid do
   The first of the renderer's two stages: everything written in `{% %}` and `{{
   }}` is expanded, and what comes out is still Markdown.
 
-  This is the order Jekyll works in, and it is what makes a tag able to produce
-  Markdown that the next stage then converts — or, for a slide deck, the whole
-  answer, since a deck is never converted here at all.
+  This order is what makes a tag able to produce Markdown that the next stage
+  then converts — or, for a slide deck, the whole answer, since a deck is never
+  converted here at all.
 
   Two kinds of failure come out of it and they are not the same thing. A
   template that does not parse produces nothing, and there is no page to speak

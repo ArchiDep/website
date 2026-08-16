@@ -12,21 +12,12 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-# Allow only one concurrent deployment, skipping runs queued between the run
-# in-progress and latest queued. However, do NOT cancel in-progress runs as
-# we want to allow these production deployments to complete.
-concurrency:
-  group: 'pages'
-  cancel-in-progress: false
 
 jobs:
   build-app:
     runs-on: ubuntu-24.04
     name: Build app
-    needs: [build-assets, build-course, build-theme]
+    needs: [build-assets, build-theme]
     env:
       ARCHIDEP_REPO_URL: ecto://archidep:archidep@127.0.0.1:5432/archidep
       ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID: id
@@ -64,12 +55,6 @@ jobs:
           key: ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-
-
-      - name: Download course
-        uses: actions/download-artifact@v4
-        with:
-          name: course
-          path: app/priv/static
 
       - name: Download course assets
         uses: actions/download-artifact@v4
@@ -189,20 +174,30 @@ jobs:
           path: app/priv/static/assets/course
           retention-days: 5
 
-  build-course:
+  build-site:
     runs-on: ubuntu-24.04
-    name: Build course
-    needs: [build-assets, build-theme]
+    name: Build course material site
+    env:
+      # The runtime configuration is read whatever the command, so the build
+      # task needs a value for everything it makes mandatory even though it
+      # starts neither an endpoint nor a repository — the same list the PDF
+      # workflow states, for the same reason.
+      ARCHIDEP_REPO_URL: ecto://archidep:archidep@127.0.0.1:5432/archidep
+      ARCHIDEP_SERVERS_API_BASE_URL: https://archidep.ch/api
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID: id
+      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_SECRET: secret
+      ARCHIDEP_WEB_ENDPOINT_LIVE_VIEW_SIGNING_SALT: 5vur1eNR+LPxlMBG7Z8dgcipgv4N9+ADI2MzF/2jiFqNZUG2Ts/g4+hK1y5bAqOU9QT+9X2tU7lvwXz5
+      ARCHIDEP_WEB_ENDPOINT_SECRET_KEY_BASE: 5JCHwFiOWjHyyGcp+dTHqYniYWdBvKvkT2CnwJwTBat9XlGRF1juYvGwEWGcKaXz/a61Hqn4bxHWAt+g
+      ARCHIDEP_WEB_ENDPOINT_SESSION_SIGNING_SALT: WIrprzaArMvOUrkFjBi81OwfIGRIlzJXYISJycsk0qhKEELihlYp7i8QFj1Km+CmTwmroGsgS9byMgAw
+      ELIXIR_VERSION: 1.19.5
+      ERLANG_VERSION: 28.5.0.1
+      # The environment the site ships in. Not `test`, whose configuration names
+      # an edition of its own so that a test asserting a URL is asserting a fact
+      # about the code.
+      MIX_ENV: prod
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
-
-      - name: Install Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          ruby-version: 3.4.4
-          working-directory: course
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -217,39 +212,61 @@ jobs:
       - name: Check formatting
         run: npm run --workspace course format
 
-      - name: Download course assets
-        uses: actions/download-artifact@v4
-        with:
-          name: course_assets
-          path: app/priv/static/assets/course
+      # Built here rather than downloaded from the jobs beside this one: their
+      # theme artifact carries `assets/theme` and not `assets/emoji`, which
+      # every page of this renderer needs.
+      - name: Build the theme
+        run: npm run build
+        working-directory: theme
 
-      - name: Download theme
-        uses: actions/download-artifact@v4
-        with:
-          name: theme
-          path: app/priv/static/assets
-
-      - name: Build the course
-        run: bundle exec jekyll build --config _config.yml,_config.pages.yml
+      - name: Build course assets
+        run: npm run build
         working-directory: course
+        env:
+          NODE_ENV: production
+
+      - name: Install Erlang/OTP & Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.ERLANG_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      # Keyed by environment as well, the build directory holding one of them, so
+      # that this does not share a key with the test build of the app job.
+      - name: Cache app build
+        uses: actions/cache@v3
+        with:
+          path: |
+            app/deps
+            app/_build
+          key: ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ env.MIX_ENV }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ env.MIX_ENV }}-
+
+      - name: Install dependencies
+        run: mix deps.get
+        working-directory: app
+
+      - name: Compile the app
+        run: mix compile
+        working-directory: app
+
+      - name: Digest the assets
+        run: mix assets.deploy
+        working-directory: app
+
+      # The backup copy: served at a root of its own, with content links left
+      # local so that the copy standing in for a site that is down does not send
+      # its reader back to it. It reaches the live site only through the banner
+      # and the canonical link, which is what `--live-site-url` is for.
+      - name: Build the site
+        run: mix archidep.course_site.build --output ../tmp/site --clean --mode backup --live-site-url https://archidep.ch
+        working-directory: app
 
       - name: Ensure there are no uncommitted changes
         run: |
           git status --porcelain
           test -z "$(git status --porcelain)"
-
-      - name: Upload course
-        uses: actions/upload-artifact@v4
-        with:
-          name: course
-          path: app/priv/static
-          retention-days: 5
-
-      - name: Upload static files as artifact
-        id: deployment
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: app/priv/static
 
   build-theme:
     runs-on: ubuntu-24.04
@@ -341,16 +358,3 @@ jobs:
         run: |
           git status --porcelain
           test -z "$(git status --porcelain)"
-
-  publish-pages:
-    name: Publish to GitHub Pages
-    runs-on: ubuntu-24.04
-    needs: [build-course]
-    if: github.repository == 'ArchiDep/website' && github.ref == 'refs/heads/main'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

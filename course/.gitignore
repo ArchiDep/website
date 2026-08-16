@@ -1,9 +1,4 @@
 # https://git-scm.com/docs/gitignore
-/.bundle
 /dist
-/.jekyll-cache
-/.jekyll-metadata
 /node_modules
 /pdf
-/_site
-/vendor

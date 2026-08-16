@@ -8,9 +8,6 @@
 /app/priv/uploads
 /app/tmp
 /course/**/*.html
-/course/Gemfile
-/course/.jekyll-cache
-/course/**/*.rb
 /digest/_build
 /digest/deps
 /node_modules

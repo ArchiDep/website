@@ -2,10 +2,10 @@ defmodule ArchiDep.CourseSite.Renderer do
   @moduledoc """
   Turns one course source file into what the site serves for it.
 
-  A document goes through two stages, the same two Jekyll uses: everything
-  written in `{% %}` and `{{ }}` is expanded first, and what comes out is then
-  converted from Markdown to HTML. The order is what lets a tag produce Markdown
-  and have it converted like the rest of the page.
+  A document goes through two stages: everything written in `{% %}` and `{{ }}`
+  is expanded first, and what comes out is then converted from Markdown to HTML.
+  The order is what lets a tag produce Markdown and have it converted like the
+  rest of the page.
 
   Slides stop after the first stage. A deck is converted in the browser by
   reveal.js, so `render_slides/1` hands back Markdown; converting it here would

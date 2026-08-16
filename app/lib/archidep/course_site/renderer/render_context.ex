@@ -74,8 +74,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderContext do
     `ArchiDep.CourseSite.PageRef`.
   - `:page_variables` — what `{{ page.x }}` resolves to, on top of the front
     matter. These are the values the build derives (a chapter number, a slug),
-    and they win over the front matter, which is the precedence Jekyll's
-    generator has today.
+    and they win over the front matter: what a document states about itself
+    cannot override what its place in the course says it is.
   - `:includes` — the partials `{% include %}` may pull in, already parsed by
     `ArchiDep.CourseSite.Renderer.compile_includes/1`.
   - `:options` — the build's `ArchiDep.CourseSite.Renderer.RenderOptions`.
