@@ -48,6 +48,9 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   - `--undigested` — take the global assets to carry no digest.
   - `--no-assets` — leave the global assets out of the build, for a build
     something else serves them for.
+  - `--no-source-maps` — leave the maps beside the bundles out, for a build
+    published to be read rather than debugged. They are a third of what a build
+    weighs, which is what an edition kept forever pays every year.
 
   Where the build is published, which is what every URL in it follows from:
 
@@ -105,6 +108,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     minimal: :boolean,
     undigested: :boolean,
     assets: :boolean,
+    source_maps: :boolean,
     mode: :string,
     base_path: :string,
     version: :string,
@@ -125,6 +129,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
             output_dir: path(opts, :output, "tmp/course_site"),
             output: if(Keyword.get(opts, :clean, false), do: :clean, else: :empty),
             carry_assets: Keyword.get(opts, :assets, true),
+            source_maps: Keyword.get(opts, :source_maps, true),
             pdf_base: pdf_base(opts),
             options: options(opts)
           ]

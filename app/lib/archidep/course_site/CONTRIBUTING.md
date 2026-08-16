@@ -606,7 +606,9 @@ under its prefix and the files a host keeps one of sit beside them —
 is the global assets of a development build: they are rewritten by the asset
 watchers while the site is being served, so the application serves them where
 they are rather than from a copy that would be stale — the `:carry_assets`
-option of [`Builder.build/1`](./builder.ex).
+option of [`Builder.build/1`](./builder.ex). Its `:source_maps` option is the
+other thing a build may leave out of that copy, and the two are the whole of
+what a caller decides about it.
 
 **A build carries the files anchored at its mount point.** The `{:root_file, _}`
 targets — `favicon.ico` and the marks under `favicons/` — are read from the

@@ -647,14 +647,25 @@ defmodule ArchiDep.CourseSite.Build do
   The one build that does not carry them is the development one, whose assets
   are written by the watchers while it is being served — see the `:carry_assets`
   option of `ArchiDep.CourseSite.Builder.build/1`.
+
+  Options:
+
+  - `:source_maps` — whether the maps beside the bundles are copied too.
+    Defaults to `true`. They are a third of what a build weighs and are read by
+    nobody but a browser with its developer tools open, so a copy published for
+    people to read rather than for anyone to debug leaves them out. Nothing
+    refers to them by a link: a bundle names its map in a trailing comment the
+    link check never sees, and a browser that asks for a missing one carries on.
   """
-  @spec publish_assets(Path.t(), Path.t()) :: :ok | {:error, nonempty_list(error())}
-  def publish_assets(static_dir, output_dir) do
+  @spec publish_assets(Path.t(), Path.t(), keyword()) ::
+          :ok | {:error, nonempty_list(error())}
+  def publish_assets(static_dir, output_dir, opts \\ []) do
     assets_dir = Path.join(static_dir, @assets_dir)
 
     errors =
       assets_dir
       |> relative_files(static_dir)
+      |> keep_source_maps(Keyword.get(opts, :source_maps, true))
       |> Enum.sort()
       |> Enum.flat_map(fn path ->
         target = Path.join(output_dir, path)
@@ -957,6 +968,13 @@ defmodule ArchiDep.CourseSite.Build do
       {:error, reason} -> {:error, [{:unwritable_output, "/", target, reason}]}
     end
   end
+
+  # Both extensions, the digest step gzipping whatever it publishes: a map and
+  # its compressed twin are the same file to everyone but the web server.
+  defp keep_source_maps(paths, true), do: paths
+
+  defp keep_source_maps(paths, false),
+    do: Enum.reject(paths, &String.ends_with?(&1, [".map", ".map.gz"]))
 
   # Dotfiles are listed rather than skipped here, so that what a build ignores
   # is a decision `ContentTree` records instead of a default of the walk.

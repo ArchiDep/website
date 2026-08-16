@@ -255,18 +255,80 @@ jobs:
         run: mix assets.deploy
         working-directory: app
 
+      # Read rather than written, for the reason the PDF workflow gives: the
+      # edition rendered and the directory it is published as are one fact.
+      - name: Read the edition being published
+        id: edition
+        working-directory: app
+        run: |
+          year="$(mix run --no-start --no-compile -e 'IO.puts(Keyword.fetch!(Application.fetch_env!(:archidep, :course_site), :version))' | tail -n 1)"
+          test -n "$year"
+          echo "Building the $year edition"
+          echo "year=$year" >> "$GITHUB_OUTPUT"
+
       # The backup copy: served at a root of its own, with content links left
       # local so that the copy standing in for a site that is down does not send
       # its reader back to it. It reaches the live site only through the banner
       # and the canonical link, which is what `--live-site-url` is for.
       - name: Build the site
-        run: mix archidep.course_site.build --output ../tmp/site --clean --mode backup --live-site-url https://archidep.ch
+        run: mix archidep.course_site.build --output ../tmp/site --clean --mode backup --live-site-url https://archidep.ch --no-source-maps
         working-directory: app
 
       - name: Ensure there are no uncommitted changes
         run: |
           git status --porcelain
           test -z "$(git status --porcelain)"
+
+      # The archive repository is the backup site: publishing is a push into the
+      # tree GitHub Pages serves, rather than an artifact upload that keeps
+      # nothing between deployments. It holds the finished editions too, which
+      # is what the two syncs below are about — the build owns its own edition
+      # and the mount point, and must not touch a year it did not render.
+      #
+      # Nothing is published until the repository is named, so every step above
+      # runs on a fork and on a branch while this one waits.
+      - name: Publish the backup site
+        if: github.ref == 'refs/heads/main' && vars.ARCHIDEP_ARCHIVE_REPO != ''
+        env:
+          ARCHIVE_REPO: ${{ vars.ARCHIDEP_ARCHIVE_REPO }}
+          ARCHIVE_TOKEN: ${{ secrets.ARCHIDEP_ARCHIVE_TOKEN }}
+          YEAR: ${{ steps.edition.outputs.year }}
+        run: |
+          set -euo pipefail
+
+          git clone --depth 1 "https://x-access-token:$ARCHIVE_TOKEN@github.com/$ARCHIVE_REPO.git" tmp/archive
+
+          # This edition's directory is replaced whole, so that a page dropped
+          # since the last push stops being served.
+          rsync -a --checksum --delete "tmp/site/$YEAR/" "tmp/archive/$YEAR/"
+
+          # The mount point is this edition's as well, but it is shared: the
+          # archived years are excluded so that they are neither copied over nor
+          # deleted as strays, and so are the files that belong to the
+          # repository rather than to any build. `.git` above all — a `--delete`
+          # that reached it would take the history with it.
+          rsync -a --checksum --delete \
+            --exclude '/20[0-9][0-9]/' \
+            --exclude '/.git/' \
+            --exclude '/CNAME' \
+            --exclude '/.nojekyll' \
+            --exclude '/README.md' \
+            tmp/site/ tmp/archive/
+
+          cd tmp/archive
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+
+          # A run that rendered the same bytes as the last one leaves no commit
+          # behind, the history of this repository being a history of the site
+          # rather than of the pushes that produced it.
+          if git diff --cached --quiet; then
+            echo "The published site is already up to date"
+          else
+            git commit --message "Publish the $YEAR edition from $GITHUB_SHA"
+            git push
+          fi
 
   build-theme:
     runs-on: ubuntu-24.04

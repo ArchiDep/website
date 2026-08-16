@@ -1138,7 +1138,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
     end
   end
 
-  describe "publish_assets/2" do
+  describe "publish_assets/3" do
     test "copies the whole of the static directory's assets", %{tmp_dir: tmp_dir} do
       static_dir = Path.join(tmp_dir, "static")
       output_dir = Path.join(tmp_dir, "build")
@@ -1153,6 +1153,42 @@ defmodule ArchiDep.CourseSite.BuildTest do
       assert written(output_dir) == %{
                "/assets/theme/theme-abc123.css" => "body {}",
                "/assets/course/course-def456.js" => "console.log('hi')"
+             }
+    end
+
+    test "copies the source maps when it is told to", %{tmp_dir: tmp_dir} do
+      static_dir = Path.join(tmp_dir, "static")
+      output_dir = Path.join(tmp_dir, "build")
+
+      write!(static_dir, "assets/course/course-def456.js", "console.log('hi')")
+      write!(static_dir, "assets/course/course-def456.js.map", "the map")
+      write!(static_dir, "assets/course/course-def456.js.map.gz", "the map, compressed")
+
+      assert Build.publish_assets(static_dir, output_dir, source_maps: true) == :ok
+
+      assert written(output_dir) == %{
+               "/assets/course/course-def456.js" => "console.log('hi')",
+               "/assets/course/course-def456.js.map" => "the map",
+               "/assets/course/course-def456.js.map.gz" => "the map, compressed"
+             }
+    end
+
+    test "leaves the source maps out when it is told to", %{tmp_dir: tmp_dir} do
+      static_dir = Path.join(tmp_dir, "static")
+      output_dir = Path.join(tmp_dir, "build")
+
+      write!(static_dir, "assets/course/course-def456.js", "console.log('hi')")
+      write!(static_dir, "assets/course/course-def456.js.gz", "the bundle, compressed")
+      write!(static_dir, "assets/course/course-def456.js.map", "the map")
+      write!(static_dir, "assets/course/course-def456.js.map.gz", "the map, compressed")
+      write!(static_dir, "assets/course/mapped-abc123.css", "a name that ends in no map")
+
+      assert Build.publish_assets(static_dir, output_dir, source_maps: false) == :ok
+
+      assert written(output_dir) == %{
+               "/assets/course/course-def456.js" => "console.log('hi')",
+               "/assets/course/course-def456.js.gz" => "the bundle, compressed",
+               "/assets/course/mapped-abc123.css" => "a name that ends in no map"
              }
     end
 

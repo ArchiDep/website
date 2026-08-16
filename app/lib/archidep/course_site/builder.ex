@@ -103,6 +103,9 @@ defmodule ArchiDep.CourseSite.Builder do
     development build is the exception: its assets are rewritten by the watchers
     while it is being served, so a copy of them would be stale the moment a
     stylesheet is edited, and the application serves them live instead.
+  - `:source_maps` — whether those assets include the maps beside the bundles.
+    Defaults to `true`; see the option of the same name of
+    `ArchiDep.CourseSite.Build.publish_assets/3`.
   """
   @spec build(keyword()) :: {:ok, Report.t()} | failure()
   def build(opts) when is_list(opts) do
@@ -183,7 +186,9 @@ defmodule ArchiDep.CourseSite.Builder do
 
   defp publish_assets(opts, edition_dir) do
     if Keyword.get(opts, :carry_assets, true) do
-      Build.publish_assets(Keyword.fetch!(opts, :static_dir), edition_dir)
+      Build.publish_assets(Keyword.fetch!(opts, :static_dir), edition_dir,
+        source_maps: Keyword.get(opts, :source_maps, true)
+      )
     else
       :ok
     end
