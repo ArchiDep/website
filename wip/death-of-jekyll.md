@@ -550,17 +550,27 @@ theme.highlight_css`; the fence decorator is documented in the course writing
 
 **Deferred (scheduled after cutover)**
 
+- [ ] Take the course directory out of Jekyll's shape: `collections/_course` →
+      `chapters`, `collections/_cheatsheets` → `cheatsheets`, `_includes/icons`
+      → `icons`, and both files of `_data/` to the course root — see [The course
+      directory after Jekyll](#the-course-directory-after-jekyll). **First among
+      these**, ahead of the hosting items it does not depend on and which do not
+      depend on it. It is the only one of them that touches what a published
+      edition says of itself — a page's "Source code" link names the tree it was
+      written in — so its deadline is the **2025 archive** rather than the 2026
+      content: an edition rendered before the rename points at a layout that
+      existed for a few weeks, permanently.
 - [ ] Stand up the **archive repository** that keeps the finished editions and
       is itself the backup site: an organisation Pages site mounted at a root,
       named `backup.archidep.ch`, published by pushing this repository's build
       into it rather than by uploading a Pages artifact — see [Where past
       editions are kept](#where-past-editions-are-kept). It sits after the
-      cutover because it publishes that stage's `:backup` build, and first among
-      these because it carries the backup itself: the cutover deletes the Pages
-      deployment instead of repointing it, so until this exists no backup tracks
-      `main`. It shares the deadline of the course directory below, the frozen
-      copy left serving meanwhile being the truth only until the 2026 content
-      lands.
+      cutover because it publishes that stage's `:backup` build, and ahead of
+      the rest of the hosting work because it carries the backup itself: the
+      cutover deletes the Pages deployment instead of repointing it, so until
+      this exists no backup tracks `main`. It shares the deadline of the course
+      directory above, the frozen copy left serving meanwhile being the truth
+      only until the 2026 content lands.
 - [ ] Make **every host hold every edition**, which today only the backup would:
       a one-shot service filling a persisted clone of the archive repository, a
       second nginx root falling back to it, the same two plugs again in the
@@ -572,11 +582,6 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       assets image stops carrying the outgoing edition, and the redirects
       `ArchiDepWeb.Course.LegacyController` sends there are permanent and cached
       for a year.
-- [ ] Take the course directory out of Jekyll's shape: `collections/_course` →
-      `chapters`, `collections/_cheatsheets` → `cheatsheets`, `_includes/icons`
-      → `icons`, and `_data/course.yml` to the course root — see [The course
-      directory after Jekyll](#the-course-directory-after-jekyll). Before the
-      2026 content, which is what makes it more expensive the longer it waits.
 - [ ] Write and run the **year-end rollover**: build the finished edition with
       `--mode archive` and its own progress file, commit it as `<year>/`, emit
       `course/archives/<year>.json`, tag the source `archive/<year>`, move the
@@ -4144,10 +4149,17 @@ the string two regexes match on. The layout to move to:
 
 - `collections/_course/` → `chapters/`
 - `collections/_cheatsheets/` → `cheatsheets/`
-- `_includes/icons/` → `icons/`, the only part of `_includes` a document may
-  include and so the only part the [cutover](#cutover) keeps
-- `_data/course.yml` → `course.yml` at the course root. It moves anyway; moving
-  it here is that edit made once rather than twice.
+- `_includes/icons/` → `icons/`, the only part of `_includes` the
+  [cutover](#cutover) keeps. No document includes anything — the icons are drawn
+  by the note and callout tags — so this half of the rename is invisible to the
+  content.
+- `_data/course.yml` → `course.yml` and `_data/archives.yml` → `archives.yml`,
+  both at the course root, and `_data/` is gone. They stay **two** files: what
+  the course is made of and what became of the pages it no longer holds are
+  different questions, `archives.yml` is empty only until the first page is
+  renamed, and folding it into `course.yml` would make the file the whole build
+  reads harder to take in for the sake of removing one entry from a directory
+  listing.
 - `collections/_json/` goes with the rest of the Ruby layer.
 
 **Why it is separate from the cutover rather than part of it.** The cutover is
@@ -4155,39 +4167,76 @@ already a large deletion, and it is the change to bisect first if production
 serving misbehaves. A rename landing in the same commit is noise across every
 diff of it.
 
-**Why it does not wait past that.** The cost is one rewrite per cross-reference
-and scales with how much content exists: 107 `{% link _course/… %}` across 34
-files today, plus everything the 2026 edition adds. Every file written between
-cutover and the rename is written against a layout already decided against.
+**Why it does not wait past that.** Two deadlines, the nearer one first.
+
+- **The 2025 archive**, which is what makes this the first of the deferred
+  items. A build's output paths derive from a chapter's number and slug, so the
+  rename changes no URL and no byte of a rendered page — except one. `Assigns`
+  builds each page's "Source code" link from `@content_subdirectory` plus a
+  pinned revision, so the source layout is the one part of the tree that a
+  published edition freezes into itself. Render 2025 before the rename and the
+  archive, and the `archive/2025` tag beside it, name a layout that existed for
+  a few weeks, in a repository where every later edition lives under
+  `chapters/`. Nothing breaks — a pinned revision keeps resolving — but the copy
+  meant to outlive everything is the worst place to leave that.
+- **The 2026 content.** The cost is one rewrite per cross-reference and scales
+  with how much content exists: 52 `{% link _course/… %}` across 27 files today,
+  plus everything the next edition adds. Every file written between cutover and
+  the rename is written against a layout already decided against.
 
 **What it touches**, all of it concentrated because the Jekyll names never
 spread:
 
 - [`ContentTree`](../app/lib/archidep/course_site/build/content_tree.ex) —
-  `@roots` and `@chapter_regex`.
+  `@roots`, `@chapter_regex` and the two cheatsheet regexes.
 - [`DocumentRef`](../app/lib/archidep/course_site/document_ref.ex) —
-  `@source_path_regex`.
+  `@source_path_regex` and its doctests.
 - [`Builder.course_inputs/1`](../app/lib/archidep/course_site/builder.ex), the
-  one place a course directory becomes the five inputs of a build, and the
-  defaults of the `structure` and `assets` Mix tasks.
+  one place a course directory becomes the five inputs of a build;
+  [`Material`](../app/lib/archidep/course_site/material.ex)'s three compile-time
+  attributes, which name the same inputs a second time for the compiled model;
+  and the defaults **and `@moduledoc` prose** of all four
+  `archidep.course_site.*` Mix tasks.
+- [`Assigns`](../app/lib/archidep/course_site/layout/chrome/assigns.ex) —
+  `@content_subdirectory`, the one of these that reaches a published page.
+- [`CourseSiteWatcher`](../app/lib/archidep/course_site_watcher.ex) —
+  `@watched_dirs`, which names `_data`, `_includes` and `collections`.
+- [`Archives`](../app/lib/archidep/course_site/archives.ex) — `@overrides_file`,
+  and the four `Archives.Mapping` error messages that tell an author which file
+  to edit.
 - The `@source` globs of [`slides.css`](../theme/src/slides.css) and
-  [`theme.css`](../theme/src/theme.css).
-- The 107 link tags, and the fixture paths the build and watcher tests state.
+  [`theme.css`](../theme/src/theme.css). While there: `theme.css` still lists
+  `course/_layouts` and `course/_plugins`, which the cutover deleted, and this
+  is the change that is already in that block.
+- The layout as it is described in prose, in
+  [`course/CONTRIBUTING.md`](../course/CONTRIBUTING.md) and in the course site's
+  own [`CONTRIBUTING.md`](../app/lib/archidep/course_site/CONTRIBUTING.md).
+- The 52 link tags, and the fixture paths the build and watcher tests state.
 
 **It cannot break silently**, which is what makes it a safe refactor to do in
 bulk: a link naming a path that does not exist fails the build, and `LinkCheck`
-answers for the rest. Already-published editions are unaffected — the "Source
-code" link is built from a pinned revision, so a page keeps pointing into the
-tree it was built from whatever the tree looks like afterwards.
+answers for the rest. Stronger still, the rename has a **complete** check
+available that no earlier task did — a full build before and after must differ
+in nothing but the "Source code" links. Already-published editions are
+unaffected, that link being built from a pinned revision, so a page keeps
+pointing into the tree it was built from whatever the tree looks like
+afterwards.
 
-**Two adjacent inconsistencies to settle deliberately rather than fold in.**
-Five chapters keep `slides.md` at their root and nine use `slides/slides.md`,
-which `DocumentRef` accepts as two spellings of one thing; the output URL is the
-same either way, so this is an authoring wart rather than a behaviour. If it is
-normalised, `slides/slides.md` is the form to keep, a deck with images needing
-the directory regardless. And cheatsheets are `<topic>/cheatsheet.md` though only
-`sysadmin` has images — which reads worse right up until the second one needs a
-picture, and is best left alone.
+**Two adjacent inconsistencies, to be discussed rather than folded in.** Neither
+is decided, and neither is part of this task; they are recorded here because
+this is the change that puts us in every one of those directories.
+
+- Five chapters keep `slides.md` at their root and nine use `slides/slides.md`,
+  which `DocumentRef` accepts as two spellings of one thing. The output URL is
+  the same either way, so this is an authoring wart rather than a behaviour.
+  _If_ we ever decide to normalise it, `slides/slides.md` is the form that would
+  survive, a deck with images needing the directory regardless.
+- Cheatsheets are `<topic>/cheatsheet.md` though only `sysadmin` has images,
+  which reads redundant right up until the second one needs a picture.
+
+Whatever is decided, it belongs in its own commit: folding either into the
+rename would put a behaviour question inside a change whose whole value is being
+mechanical.
 
 **Out of scope, and recorded where it will outlive this document**: what
 `{% link %}` should take once we own the tag, in [the future work
