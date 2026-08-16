@@ -575,7 +575,17 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       cutover deletes the Pages deployment instead of repointing it, so until
       this exists no backup tracks `main`. It shares the deadline of the course
       directory above, the frozen copy left serving meanwhile being the truth
-      only until the 2026 content lands.
+      only until the 2026 content lands. **In progress** — what is done and what
+      is left is recorded there.
+- [ ] Make the build **byte-reproducible**: two runs over an unchanged tree
+      differ today, in the search index on every build and in the chrome's SVG
+      attributes when the atom order shifts — see [The build is not
+      byte-reproducible](#the-build-is-not-byte-reproducible). Found while
+      measuring the archive repository's size, and it belongs **beside** that
+      item rather than after it: the publish step commits only when something
+      changed, and an index rewritten on every run makes that guard fire every
+      time. Its real deadline is the **first frozen edition**, an edition being
+      kept as bytes on the argument that a re-render would not reproduce it.
 - [ ] Make **every host hold every edition**, which today only the backup would:
       a one-shot service filling a persisted clone of the archive repository, a
       second nginx root falling back to it, the same two plugs again in the
@@ -3456,13 +3466,29 @@ is a single `:archive` build, served by both hosts.
 ~53 MB of content (the ~370 files sitting next to pages) plus the ~55 MB of
 global assets each edition carries under its own prefix. Git content-addresses,
 so the page assets that survive from one year to the next cost nothing to keep a
-second time; the real growth is the bundles. Source maps (~9 MB of that) have no
-business in a frozen edition and should be left out of archive builds. That
-budget is the reason the [PDFs are stored elsewhere](#per-year-pdf-archive) —
-127 MB an edition, none of it shared with the year before — and the reason to
-keep checking the total against the host's published-size limit rather than
-assuming the room is unlimited. The one moving part this adds is a credential:
-publishing into another repository replaces `upload-pages-artifact` with a push.
+second time; the real growth is the bundles. That budget is the reason the [PDFs
+are stored elsewhere](#per-year-pdf-archive) — 127 MB an edition, none of it
+shared with the year before — and the reason to keep checking the total against
+the host's published-size limit rather than assuming the room is unlimited. The
+one moving part this adds is a credential: publishing into another repository
+replaces `upload-pages-artifact` with a push.
+
+**Both halves of that estimate were low, and the source maps were the larger
+half.** Measured rather than estimated, a `:backup` build is **304 MB**, against
+the ~108 MB above. Source maps are **107 MB** of it — a third, not the ~9 MB
+this said — because the digest step publishes a `.gz` beside everything,
+doubling them, and the course bundle carries far more of them than the theme.
+They are gone: `--no-source-maps` leaves out both extensions and is passed by
+the backup build, taking it to **197 MB**. Nothing links to a map — a bundle
+names its own in a trailing comment no link check reads, and a browser that asks
+for a missing one carries on — so this costs only debugging a published copy,
+which is what the mode already says nobody does.
+
+What is left unmeasured is the `.gz` files themselves, ~46 MB an edition. They
+are dead weight on GitHub Pages, which compresses what it serves, and
+load-bearing in production, where `docker/nginx.conf` sets `gzip_static on`. So
+dropping them is a `:backup`/`:archive` decision rather than a build-wide one,
+and it is not taken.
 
 **How each host comes to hold every edition.** The decision above says where an
 edition's bytes live; both hosts have to serve all of them. For the backup that
@@ -3527,6 +3553,35 @@ with the archives mounted read-only beside it, it asserts at boot that each has
 a page where it should be and reports the ones that do not, and the rollover
 overlap above, at error level and in the admin console. Fail open, loudly, with
 one authoritative answer to whether a deployment is complete.
+
+#### Where standing the repository up has got to
+
+Everything outside this repository is **done**: `ArchiDep/archidep.github.io`
+exists, holds `.nojekyll` and a `CNAME` naming `backup.archidep.ch`, serves that
+domain from the branch, and the fine-grained token that may write its contents
+is stored as `ARCHIDEP_ARCHIVE_TOKEN` beside the `ARCHIDEP_ARCHIVE_REPO`
+variable naming it. That variable is the switch the [PDF job](#the-ci-job)
+already waited on, so naming it also turned on the `pdf/<year>` release upload
+and the `--pdf-base` it renders against.
+
+Inside this repository, the publish step is written and **not yet run**, the
+first push to `main` being what runs it. What it does, and the two things that
+shaped it:
+
+- It syncs the edition's own directory with `--delete`, then the mount point
+  with the archived years, `.git`, `CNAME`, `.nojekyll` and `README.md`
+  excluded. Excluding an archived year is not tidiness: the build renders one
+  edition, and a `--delete` over a root it shares would take every finished
+  edition with it — and `.git` with them.
+- It compares by `--checksum` rather than by timestamp. A clone stamps every
+  file with the moment it was fetched, so a modification time here describes the
+  runner and not the file; a same-size page written in the same second as the
+  clone is otherwise skipped, which a dry run of the two syncs did.
+
+What is left is the first push and reading what it produced, plus one knob:
+`pdf_base` is still `nil` in `config.exs`, so no page offers a PDF link even
+once the release exists. It wants the release's base URL, and it moves with
+`version` at each rollover, which is why they sit together.
 
 ### Decouple PDF generation from production
 
@@ -4002,6 +4057,84 @@ What is left for the visual pass, none of it acted on: lists that comrak makes
 looser than kramdown did (11 pages, 29 paragraphs), `<git-memoir>` elements
 wrapped in a paragraph (16, all on `204-hello-github`), table cells aligned with
 the attribute rather than the style, and the four divergences named above.
+
+### The build is not byte-reproducible
+
+**Two runs of the same command over the same sources do not produce the same
+bytes.** Found while measuring what `--no-source-maps` saves, which is how a
+build came to be run twice in a row and the outputs compared. It was never
+looked for: the [fidelity gate](#html-fidelity-gate) above compares this
+renderer against Jekyll and normalises before it does, so a build disagreeing
+with _itself_ is the one comparison nothing was making.
+
+**The cause is that an atom-keyed map decides the order.** Erlang stores the
+keys of a small map in the order the atoms were created in that VM run, so
+anything that reaches output through `Enum`/`JSON.encode!` over such a map comes
+out in an order that is a property of the run rather than of the data:
+
+```bash
+$ elixir -e '_ = [:stroke, :fill]; IO.inspect(Map.keys(%{"aria-hidden": "true", fill: "none", viewBox: "0 0 24 24", "stroke-width": "1.5", stroke: "currentColor", class: "size-5"}))'
+[:stroke, :fill, :"aria-hidden", :viewBox, :"stroke-width", :class]
+
+$ elixir -e '_ = [:"stroke-width", :viewBox]; IO.inspect(Map.keys(%{"aria-hidden": "true", fill: "none", viewBox: "0 0 24 24", "stroke-width": "1.5", stroke: "currentColor", class: "size-5"}))'
+[:"stroke-width", :viewBox, :"aria-hidden", :fill, :stroke, :class]
+```
+
+Two places emit through such a map, and they differ in how often they show it:
+
+- **The search index, on every build.** `search-build.json` comes out the same
+  length and the same data with its JSON object keys in a different order —
+  `{"id","type","text",…}` against `{"id","type","title","text",…}`. This one
+  reproduces between two consecutive builds of an already-compiled tree, which
+  is the cheapest way to see the whole finding.
+- **Every SVG the chrome draws, when the atom order shifts.** `heroicons`
+  declares its default attributes as an atom-keyed map and splats it into the
+  tag, so `fill stroke aria-hidden` and `aria-hidden fill … stroke` are the same
+  call on two runs. `xmlns` is a literal in that template and `:class` is an
+  atom every boot creates early, which is why those two look stable and
+  everything after them moves. Measured across a build that recompiled: **52
+  files**, all of them pages, every difference an SVG attribute order.
+  Recompiling a single chrome module does _not_ do it, so the trigger is
+  something coarser about load order and is not yet pinned down.
+
+**Why it has to be fixed here rather than filed.** Three of this plan's
+decisions rest on a build being a function of its inputs:
+
+- An edition is [frozen output rather than sources kept to be
+  rebuilt](#where-past-editions-are-kept), and the argument for that is that a
+  re-render would not reproduce it. That argument is much weaker while a build
+  does not reproduce _itself_ — and it makes the deliberate re-render the same
+  section allows produce a diff nobody can read.
+- The [archive repository](#where-past-editions-are-kept) is published by
+  pushing a build into it and committing only when something changed. With the
+  search index rewritten on every run, that guard almost never fires: every push
+  to `main` commits, and the repository meant to stay cheap to clone grows for
+  reasons that are not content.
+- Anything that ever diffs one build against another — the check the [course
+  directory rename](#the-course-directory-after-jekyll) was verified with, which
+  read as "112 lines, every one a Source code link" — can be reading noise it
+  does not know is there. That one came out clean, so whatever it did avoided
+  the compile that shifts the order; the next such check has no reason to be as
+  lucky, and none of them should have to be.
+
+**What to do**, cheapest first and not acted on:
+
+- **The search index**: encode from something ordered — a keyword list, or an
+  explicit list of pairs — in
+  [`SearchIndex`](../app/lib/archidep/course_site/build/search_index.ex). It
+  fires on every build and no rendered page changes shape, so it carries no
+  visual risk.
+- **The SVG attributes**: the chrome has 23 `Heroicons.*` call sites, and
+  wrapping them in a local component that writes the attributes literally would
+  pin the order. That is in tension with what
+  [`Chrome.Icons`](../app/lib/archidep/course_site/layout/chrome/icons.ex)
+  documents about itself — it exists for the icons `Heroicons` does _not_ have,
+  precisely so a third copy of the same paths does not enter the repository —
+  so the alternative worth weighing is accepting the churn on the pages and
+  fixing only the index.
+
+Whatever is done, the check that says it worked is two builds of an unchanged
+tree comparing equal, which nothing runs today.
 
 ### Cutover
 
