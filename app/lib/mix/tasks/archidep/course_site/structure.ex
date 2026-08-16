@@ -27,7 +27,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Structure do
   alias ArchiDep.CourseSite.Structure.Cheatsheet
   alias ArchiDep.CourseSite.Structure.Section
 
-  @requirements ["app.config"]
+  @requirements ["compile"]
 
   @app_dir Path.expand("../../../../..", __DIR__)
 

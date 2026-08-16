@@ -510,33 +510,38 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       being gone through anyway; the 2025 edition is recoverable from the tag cut
       before that work starts, so deferring them costs the ability to fix them
       later nothing.
-- [ ] Serve the build in **production** — see [Development and production
-      serving](#development-and-production-serving). It sits here rather than
-      beside the development half because it blocks **nothing but the cutover
-      below**, which cannot happen without it: dropping the Ruby stage takes
-      away what production serves today. It splits in two, and **both** halves
-      reach outside this repository: - **What the static server serves.** The
-      separate static server, its configuration and the proxy split already
+- [x] Serve the build in **production** — see [Development and production
+      serving](#development-and-production-serving). **Done: the `site` stage of
+      the [`Dockerfile`](../Dockerfile) renders the site with the application
+      that was just compiled, and the assets image serves what it wrote.** Six
+      corrections recorded there, the sharpest being that a subsystem with
+      neither a repository nor an endpoint was making its callers produce a
+      database URL and an SSH key before it would render a page — which is fine
+      in a checkout and impossible in an image being built. It sits here rather
+      than beside the development half because it blocks **nothing but the
+      cutover below**, which cannot happen without it: dropping the Ruby stage
+      takes away what production serves today. It splits in two, and **both**
+      halves reach outside this repository: - **What the static server serves.**
+      The separate static server, its configuration and the proxy split already
       exist and serve Jekyll's output; what is left is pointing them at the
       Elixir build — which is not one directory swapped for another, the build's
       tree being prefixed by its edition where Jekyll's was not, so the rules
       that name paths move with it. This is the half the cutover waits on.
-      Forwarding the
-      [legacy paths](#optional-url-prefix) at the proxy belongs to this change
-      and to nowhere else, since the same rules name the same paths — and it is
-      optional, the application already answering them wherever the proxy does
-      not. - **Publishing an in-process rebuild atomically to a volume shared
-      with that server**, replacing the build baked into the image. Only the
-      [database progress source](#progress-structure-vs-status) needs this, and
-      that is already deferred past the cutover. `Build.swap_output/2` is the
-      atomic publish itself and is done.
+      Forwarding the [legacy paths](#optional-url-prefix) at the proxy belongs
+      to this change and to nowhere else, since the same rules name the same
+      paths — and it is optional, the application already answering them
+      wherever the proxy does not. - **Publishing an in-process rebuild
+      atomically to a volume shared with that server**, replacing the build
+      baked into the image. Only the [database progress
+      source](#progress-structure-vs-status) needs this, and that is already
+      deferred past the cutover. `Build.swap_output/2` is the atomic publish
+      itself and is done.
 - [ ] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stages —
       **both** of them, the release one and the development service that is easy
       to forget — and remove the JSON ordering scaffolding that only exists to
       keep `archidep.json` diffable against Jekyll's — see [Cutover](#cutover).
-      The
-      CI job publishing the **GitHub Pages backup** is part of that stage: it
-      builds the site with `_config.pages.yml` today, and what it must run
+      The CI job publishing the **GitHub Pages backup** is part of that stage:
+      it builds the site with `_config.pages.yml` today, and what it must run
       instead is the build task with the `:backup` row of the [consumers
       table](#consumers-as-configurations), beside the global assets that row's
       URLs point at.
@@ -3096,6 +3101,50 @@ whoever picks this up:
   [the rule those assets need](#url-and-link-emission-seam). `/404.html` becomes
   the error page rather than a fall-through.
 
+**What was actually needed**, beyond the four rules above, which all held:
+
+- **The build is a stage of its own, `FROM release`.** The site is rendered by
+  the application, so it can only be rendered once that has been compiled — and
+  it needs the course whole, where compiling the model needs three directories
+  of it. What the release stage carries is therefore not what a build reads, and
+  the two lists are stated separately rather than one being widened to cover
+  both. The assets image no longer copies out of the `app` stage either, so it
+  has stopped depending on Ansible and gosu for a tree it never used.
+- **The Mix tasks of the subsystem no longer load the runtime configuration.**
+  `@requirements ["app.config"]` made every one of them evaluate `runtime.exs`,
+  which in production demands a database URL, an OIDC client secret and a
+  readable SSH private key — none of which a renderer reads, and none of which
+  an image being built has. Fabricating them was the first attempt and it takes
+  a generated keypair to get past the last one, which is the point at which the
+  requirement is the thing that is wrong: a subsystem documented as having
+  neither a repository nor an endpoint should not make a caller produce either.
+  They require `compile` now, which is where the `course_site` block already
+  is. Recorded in [the subsystem
+  documentation](../app/lib/archidep/course_site/CONTRIBUTING.md#building).
+- **Where the PDFs are published is configuration, not an argument.** The base
+  names the edition's year, so a caller passing it has to work that year out —
+  and the only ways to read it from outside the application are to start it
+  (the wall above) or to parse its configuration file. `pdf_base` was already a
+  key of the `course_site` block, read by the watcher and by nothing else; the
+  build task falls back to it now, which puts the base beside the `version` it
+  has to agree with and leaves the image with nothing to decide.
+- **The release stage no longer built at all**, and had not since the archives
+  landed: `ArchiDep.CourseSite.Archives` compiles against `course/archives/` and
+  `_data/archives.yml`, which the `Dockerfile` never copied. So the image was
+  broken before this item started, and nothing said so — the two workflows that
+  would have caught it are dormant outside the public repository.
+- **`/assets/` going to the application meant giving it a static plug.**
+  Production compiled every one of them out (`serve_static: false`), which was
+  right while the static server held the whole tree. It is on now, and whether
+  those files may be cached for a year is keyed on `cache_static_manifest` being
+  configured — which is the statement "these were named after their contents",
+  true in production and false in development, rather than a knob that can
+  disagree with the files it describes.
+- **`compose.prod.yml`'s Traefik was too old to talk to the local Docker**, so
+  no rule of it was reaching the proxy at all: the provider fails the API
+  version negotiation and every request 404s with no router matched. It is the
+  version production runs now, which is what the file is for.
+
 #### The development half, as built
 
 `ArchiDep.CourseSiteWatcher` rebuilds the site whenever the course material
@@ -3872,12 +3921,24 @@ made so here — but it is not inert, the `app` service declaring `depends_on` i
 a compose file that still names it gates the application on a service whose image
 no longer has a Jekyll to install. What goes with it:
 
+**Done ahead of the rest of this item**, because that gate had already closed:
+the service died on a `git` its image never installed — the plugin reads
+`.git-branch` where a built image writes one and shells out otherwise — and
+`depends_on` took the whole development stack down with it, so nothing about the
+Elixir half could be run at all. Everything below is removed except the port,
+which is not the service's to take.
+
 - The `course` service, and the `depends_on` edge from `app` that would outlive
   it.
 - `docker/dev/course/` and the Bundler cache volume it is given under `tmp/`.
 - Port `42002` in [`README.md`](../README.md), documented there as "Jekyll live
   reload". The `livereload_port` and `livereload_base_url` that publish it need
-  no separate mention, being part of `_config.yml`.
+  no separate mention, being part of `_config.yml`. **This one belongs to the
+  rest of the cutover rather than to the service**: the port is published by
+  `--livereload` on a Jekyll run from a checkout, which the same file documents
+  two sections above and which nothing here removes. It stops being a port that
+  is used when there is no Jekyll to run, not when there is no container to run
+  it in.
 - The service's two names in [`scripts/dev`](../scripts/dev), which builds and
   then starts an explicit list of services rather than everything the compose
   file declares, so it names `course` twice and would fail on the first of them.

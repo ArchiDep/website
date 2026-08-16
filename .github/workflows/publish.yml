@@ -136,10 +136,16 @@ jobs:
         with:
           context: .
           target: assets-server
+          # The assets image is the course material site rendered by the
+          # application, so this leg goes through the release stage as well and
+          # needs the same compiled dependencies rather than building its own.
+          build-args: |
+            APP_DEPS_IMAGE=${{ env.REGISTRY }}/archidep/app-deps-compiled:app-deps-cache-${{ steps.deps-hash.outputs.deps_hash }}-otp-${{ env.ELIXIR_OTP }}
           push: true
           tags: ${{ steps.assets-meta.outputs.tags }}
           labels: ${{ steps.assets-meta.outputs.labels }}
           cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/archidep/app-deps-compiled:app-deps-cache-${{ steps.deps-hash.outputs.deps_hash }}-otp-${{ env.ELIXIR_OTP }}
             type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache
             type=registry,ref=${{ env.REGISTRY }}/archidep/assets:latest
           cache-to: type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache,mode=max

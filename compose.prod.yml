@@ -2,7 +2,7 @@ name: archidep
 
 services:
   rp:
-    image: 'traefik:v3.5'
+    image: 'traefik:v3.7.10'
     container_name: 'traefik'
     command:
       - '--log.level=DEBUG'
@@ -25,7 +25,18 @@ services:
       target: assets-server
     labels:
       - 'traefik.enable=true'
-      - "traefik.http.routers.archidep-assets.rule=Host(`localhost`) && (Path(`/`) || PathPrefix(`/assets/`) || PathPrefix(`/course/`) || PathRegexp(`^/[^/]+\\.[^/]+$`))"
+      # What the course material site publishes: an edition's own tree, under
+      # its year, and the files a host keeps exactly one of, at the mount point
+      # beside it. A year pattern rather than a literal, so that the year-end
+      # rollover does not have to edit a proxy. The application's rule below is
+      # this one's exact negation and the two are edited together.
+      #
+      # `/assets/` is the application's: only the dashboard asks for the
+      # unprefixed path, every page of a build carrying its own edition's copy.
+      # `/course/` and `/cheatsheets/` are the application's too: nothing is
+      # published at either, and it answers both with a permanent redirect into
+      # the edition that holds them.
+      - "traefik.http.routers.archidep-assets.rule=Host(`localhost`) && (Path(`/`) || PathRegexp(`^/[0-9]{4}/`) || PathPrefix(`/favicons/`) || PathPrefix(`/pdf/`) || PathRegexp(`^/[^/]+\\.[^/]+$`))"
       - 'traefik.http.routers.archidep-assets.entrypoints=web'
       - 'traefik.http.services.archidep-assets.loadbalancer.server.port=80'
     restart: unless-stopped
@@ -55,7 +66,7 @@ services:
     init: true
     labels:
       - 'traefik.enable=true'
-      - "traefik.http.routers.archidep-app.rule=Host(`localhost`) && !Path(`/`) && !PathPrefix(`/assets/`) && !PathPrefix(`/course/`) && !PathRegexp(`^/[^/]+\\.[^/]+$`)"
+      - "traefik.http.routers.archidep-app.rule=Host(`localhost`) && !Path(`/`) && !PathRegexp(`^/[0-9]{4}/`) && !PathPrefix(`/favicons/`) && !PathPrefix(`/pdf/`) && !PathRegexp(`^/[^/]+\\.[^/]+$`)"
       - 'traefik.http.routers.archidep-app.entrypoints=web'
       - 'traefik.http.services.archidep-app.loadbalancer.server.port=42000'
     networks:

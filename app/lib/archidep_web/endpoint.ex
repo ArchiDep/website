@@ -77,15 +77,28 @@ defmodule ArchiDepWeb.Endpoint do
   end
 
   if @serve_static do
+    # Whether these files were named after their contents by `mix phx.digest`,
+    # which is what holding a manifest of those names means. A digested name can
+    # only ever stand for one file, so a response may say it never needs
+    # checking again and the compressed copy beside it is the same file;
+    # development's keep their names as they are rewritten, so both claims would
+    # be wrong there.
+    @digested_static Application.compile_env(:archidep, [__MODULE__, :cache_static_manifest]) !=
+                       nil
+
     # Serve at "/" the static files from "priv/static" directory, which is what
     # answers "/assets/**" and the search index behind the build.
     #
-    # You should set gzip to true if you are running phx.digest
-    # when deploying your static files in production.
+    # In production this is the whole of what the application serves statically:
+    # every page of a build carries its own edition's copy of the assets, so the
+    # unprefixed path is the dashboard's alone and the reverse proxy sends
+    # nothing else here.
     plug Plug.Static,
       at: "/",
       from: :archidep,
-      gzip: false,
+      gzip: @digested_static,
+      cache_control_for_etags:
+        if(@digested_static, do: "public, max-age=31536000, immutable", else: "public"),
       only: ArchiDepWeb.static_paths()
   end
 

@@ -62,8 +62,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   - `--absolute-base-url` — baked onto content links, for the PDF export.
   - `--pdf-base` — where the generated PDFs of this build are published: `site`
     for the build's own `/pdf/` directory, or the absolute base URL of wherever
-    they are, e.g. a release. A build that says nothing offers no download link
-    at all, which is what a build made before its PDFs have been printed wants.
+    they are, e.g. a release. Defaults to what the application's `course_site`
+    configuration says this deployment publishes them at. A build that has
+    neither offers no download link at all, which is what a build made before
+    its PDFs have been printed wants.
   - `--build-id` — names the files a build produces of itself, chiefly the
     search index, which cannot be named after its own contents. Defaults to what
     the `course_site` configuration says the deployment is serving, so that the
@@ -83,7 +85,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   alias ArchiDep.CourseSite.Urls.UrlContext
   alias ArchiDep.Git
 
-  @requirements ["app.config"]
+  @requirements ["compile"]
 
   @app_dir Path.expand("../../../../..", __DIR__)
 
@@ -205,10 +207,13 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   end
 
   # Checked here rather than after the course has been read, a base being what
-  # the caller wrote rather than something the build finds out.
+  # the caller wrote rather than something the build finds out. A caller who
+  # writes nothing gets what this deployment publishes its PDFs at, which is
+  # stated beside the edition they are of: the two move together at the
+  # rollover, and a base names a year.
   defp pdf_base(opts) do
     case Keyword.fetch(opts, :pdf_base) do
-      :error -> nil
+      :error -> :archidep |> Application.get_env(:course_site, []) |> Keyword.get(:pdf_base)
       {:ok, "site"} -> :site
       {:ok, base} -> PdfManifest.validate_base!({:external, base})
     end

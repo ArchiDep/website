@@ -40,7 +40,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
   alias ArchiDep.CourseSite.Renderer.Source
   alias ArchiDep.CourseSite.Urls.UrlContext
 
-  @requirements ["app.config"]
+  @requirements ["compile"]
 
   @app_dir Path.expand("../../../../..", __DIR__)
 

@@ -49,8 +49,13 @@ config :archidep,
     # revision is would otherwise take every page of the dashboard down with it.
     build_id: "build",
     # Where the generated PDFs of a build are published, as a base of
-    # ArchiDep.CourseSite.Urls.PdfManifest. Nothing publishes them yet, and a
-    # build that cannot say where they are offers no download link.
+    # ArchiDep.CourseSite.Urls.PdfManifest. They are a release of the archive
+    # repository, one per edition, so the value to write here is `{:external,
+    # "https://github.com/<owner>/<repo>/releases/download/pdf/<year>"}` — and
+    # it names the same year as the edition above, which is why it is stated
+    # beside it. That repository does not exist yet, and a build that cannot say
+    # where its PDFs are offers no download link, which is what a build made
+    # before they have been printed wants.
     pdf_base: nil,
     watch: false,
     serve: false

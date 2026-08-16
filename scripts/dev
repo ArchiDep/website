@@ -16,15 +16,14 @@ $compose build node
 $compose run --rm node
 
 # Compile remaining Docker images.
-$compose build app-assets course course-assets theme
+$compose build app-assets course-assets theme
 
 # Delete these files that are used by the various health checks to know when
 # each component is ready.
-rm -f tmp/docker/dev/app/priv/static/archidep.json \
-      tmp/docker/dev/app/priv/static/assets/app/app.js \
+rm -f tmp/docker/dev/app/priv/static/assets/app/app.js \
       tmp/docker/dev/app/priv/static/assets/course/course.js \
       tmp/docker/dev/app/priv/static/assets/theme/theme.css
 
 # Phases 3-5: Run everything. Services will wait for each other to be healthy
 # before starting.
-exec $compose up --force-recreate app app-assets course course-assets theme db
+exec $compose up --force-recreate app app-assets course-assets theme db

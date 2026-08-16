@@ -42,7 +42,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Archives do
   alias ArchiDep.CourseSite.Archives.Manifest
   alias ArchiDep.CourseSite.Build
 
-  @requirements ["app.config"]
+  @requirements ["compile"]
 
   @app_dir Path.expand("../../../../..", __DIR__)
 

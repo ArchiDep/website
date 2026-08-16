@@ -10,9 +10,6 @@ services:
       app-assets:
         condition: service_healthy
         restart: true
-      course:
-        condition: service_healthy
-        restart: true
       course-assets:
         condition: service_healthy
         restart: true
@@ -90,32 +87,6 @@ services:
       - ./package-lock.json:/archidep/package-lock.json:ro
       - ./tmp/docker/dev/app/deps:/archidep/app/deps:ro
       - ./tmp/docker/dev/app/priv:/archidep/app/priv:rw
-      - ./tmp/docker/dev/node/dist/node_modules:/archidep/node_modules:ro
-
-  course:
-    image: archidep/dev-course
-    build:
-      context: .
-      dockerfile: ./docker/dev/course/Dockerfile
-    depends_on:
-      app-assets:
-        condition: service_healthy
-        restart: true
-      course-assets:
-        condition: service_healthy
-        restart: true
-      theme:
-        condition: service_healthy
-        restart: true
-    ports:
-      - '127.0.0.1:42002:42002'
-    volumes:
-      - ./app/mix.exs:/archidep/app/mix.exs:ro
-      - ./course:/archidep/course:ro
-      - ./package.json:/archidep/package.json:ro
-      - ./package-lock.json:/archidep/package-lock.json:ro
-      - ./tmp/docker/dev/app/priv:/archidep/app/priv:rw
-      - ./tmp/docker/dev/course/bundle:/var/lib/archidep/bundle:rw
       - ./tmp/docker/dev/node/dist/node_modules:/archidep/node_modules:ro
 
   course-assets:

@@ -231,7 +231,11 @@ COPY --chown=app:app ./app/ /usr/src/app/
 # the repository layout has to be reproduced here: the working directory is
 # /usr/src/app, which makes /usr/src the repository root.
 COPY --chown=app:app ./course/collections/ /usr/src/course/collections/
-COPY --chown=app:app ./course/_data/course.yml /usr/src/course/_data/course.yml
+COPY --chown=app:app ./course/_data/ /usr/src/course/_data/
+# The editions that came before, whose pages this one has to be able to account
+# for: `ArchiDep.CourseSite.Archives` compiles the mapping and refuses one it
+# cannot resolve.
+COPY --chown=app:app ./course/archives/ /usr/src/course/archives/
 # The partials too: a page names its headings by being rendered, and it is the
 # tags of the course that include them rather than its documents.
 COPY --chown=app:app ./course/_includes/ /usr/src/course/_includes/
@@ -243,10 +247,34 @@ RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\/
 
 RUN mix ua_inspector.download --force
 
-COPY --chown=app:app --from=course /build/app/priv/static/ /usr/src/app/priv/static/
+# The digested assets, which are the whole of what this application serves
+# statically: the course material site is a build of its own, published by the
+# stage below and put in front of users by a separate static server.
+COPY --chown=app:app --from=digest /build/digest/priv/static/ /usr/src/app/priv/static/
 
 RUN mix sentry.package_source_code && \
     mix release
+
+############################
+### Course material site ###
+############################
+FROM release AS site
+
+WORKDIR /usr/src/app
+USER app:app
+
+# The release stage brings the three inputs the compiled model of the course
+# reads; a build reads the course whole, and these are the rest of it: the page
+# introducing it, and the marks it publishes at its mount point.
+COPY --chown=app:app ./course/index.md /usr/src/course/index.md
+COPY --chown=app:app ./course/favicon.ico /usr/src/course/favicon.ico
+COPY --chown=app:app ./course/favicons/ /usr/src/course/favicons/
+
+# What this build is is stated entirely by the `course_site` configuration: the
+# edition this deployment holds, what it calls that edition, which build of it
+# the dashboard's own search dialog is going to ask for, and where the generated
+# PDFs of it are published. Nothing about a production build is decided here.
+RUN mix archidep.course_site.build --output tmp/course_site --clean
 
 ###################
 ### Application ###
@@ -341,4 +369,6 @@ RUN rm -fr /usr/share/nginx/html/* && \
     chmod 700 /var/www/html
 
 COPY ./docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=app /archidep/lib/archidep-*/priv/static/ /var/www/html
+# A build's output directory is its mount point, so what it wrote is what this
+# serves, as it stands.
+COPY --from=site /usr/src/app/tmp/course_site/ /var/www/html

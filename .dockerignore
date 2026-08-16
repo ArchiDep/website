@@ -28,9 +28,11 @@
 
 /.env*
 
+# What a release and a build of the site are stamped with: HEAD names the
+# branch, and the ref it names is under refs/.
 /.git
-/!.git/HEAD
-/!.git/refs
+!.git/HEAD
+!.git/refs
 
 /theme/dist
 
