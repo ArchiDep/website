@@ -193,6 +193,14 @@ points (`theme.css` and `slides.css`) and uses the following directives:
   `node_modules` and build outputs). This is why the theme must be rebuilt
   whenever utility classes change in any of them (see [Integration With Other
   Components](#integration-with-other-components)).
+
+  These paths are build inputs, and Tailwind passes over one that is not there
+  without a warning or a failing exit code: the build succeeds and the
+  stylesheet is simply missing every class used only by the tree that was
+  absent. Whenever you add an `@source`, make sure each environment that builds
+  the theme has the files it names — the development containers mount them (see
+  the `theme` service in `compose.dev.yml`) and the production image copies them
+  into its `theme` stage (see the [`Dockerfile`](../Dockerfile)).
 - `@source inline("...")` safelists classes that are composed dynamically and
   therefore cannot be discovered by scanning, such as the `section-{0..10}`
   peer/group classes used by the course progress indicators.

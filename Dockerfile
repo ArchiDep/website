@@ -112,7 +112,7 @@ COPY --chown=build:build ./theme/package.json /build/theme/
 RUN npm ci
 
 COPY --chown=build:build --from=app-deps /build/deps/ /build/app/deps/
-COPY --chown=build:build ./app/lib/archidep_web/ /build/app/lib/archidep_web/
+COPY --chown=build:build ./app/lib/ /build/app/lib/
 COPY --chown=build:build ./course/ /build/course/
 COPY --chown=build:build ./theme/ /build/theme/
 
