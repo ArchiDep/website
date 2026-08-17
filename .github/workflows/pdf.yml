@@ -139,6 +139,22 @@ jobs:
           fi
           mix archidep.course_site.build "${args[@]}"
 
+      # Chrome isolates its renderers in an unprivileged user namespace, which
+      # Ubuntu 24.04 denies to unconfined programs through AppArmor; denied it,
+      # Chrome refuses to start at all rather than start unsandboxed. Lifted
+      # here for the runner, which is a machine thrown away at the end of the
+      # job, rather than by passing `--no-sandbox` to the browser: that flag
+      # would follow the script onto the machine of anyone printing a build.
+      # Nothing to lift is not a failure — the print step below is what has to
+      # fail if the sandbox still cannot start.
+      - name: Let Chrome's sandbox start
+        run: |
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          else
+            echo 'No unprivileged user namespace restriction to lift'
+          fi
+
       - name: Print the PDFs
         run: npm run pdf -- --build tmp/pdf-build --output tmp/pdf
 
