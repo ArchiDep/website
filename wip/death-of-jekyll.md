@@ -567,7 +567,7 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       stylesheets come out byte-identical. Four corrections are recorded there,
       the sharpest being that the cross-reference count this item was scoped
       against was an undercount of the tag rather than of the content.
-- [ ] Stand up the **archive repository** that keeps the finished editions and
+- [x] Stand up the **archive repository** that keeps the finished editions and
       is itself the backup site: an organisation Pages site mounted at a root,
       named `backup.archidep.ch`, published by pushing this repository's build
       into it rather than by uploading a Pages artifact — see [Where past
@@ -577,9 +577,12 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       cutover deletes the Pages deployment instead of repointing it, so until
       this exists no backup tracks `main`. It shares the deadline of the course
       directory above, the frozen copy left serving meanwhile being the truth
-      only until the 2026 content lands. **In progress** — what is done and what
-      is left is recorded there.
-- [ ] Make the build **byte-reproducible**: two runs over an unchanged tree
+      only until the 2026 content lands. **Done: `backup.archidep.ch` is the
+      2025 edition as `build` pushed it into `ArchiDep/archidep.github.io`**,
+      and what the first push produced is recorded there — including that
+      reading the published copy is what caught two rendering faults, which is
+      the argument for having a host that is read rather than assumed.
+- [x] Make the build **byte-reproducible**: two runs over an unchanged tree
       differ today, in the search index on every build and in the chrome's SVG
       attributes when the atom order shifts — see [The build is not
       byte-reproducible](#the-build-is-not-byte-reproducible). Found while
@@ -588,6 +591,10 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       changed, and an index rewritten on every run makes that guard fire every
       time. Its real deadline is the **first frozen edition**, an edition being
       kept as bytes on the argument that a re-render would not reproduce it.
+      **Done as one of the two halves: the build's JSON is written in a stated
+      order and the SVG attributes are left alone**, which is narrower than this
+      item asked for; seven builds of one unchanged tree say what that leaves,
+      and both are recorded there.
 - [ ] Make **every host hold every edition**, which today only the backup would:
       a one-shot service filling a persisted clone of the archive repository, a
       second nginx root falling back to it, the same two plugs again in the
@@ -3566,9 +3573,9 @@ variable naming it. That variable is the switch the [PDF job](#the-ci-job)
 already waited on, so naming it also turned on the `pdf/<year>` release upload
 and the `--pdf-base` it renders against.
 
-Inside this repository, the publish step is written and **not yet run**, the
-first push to `main` being what runs it. What it does, and the two things that
-shaped it:
+Inside this repository, the publish step has **run**, on the first push to
+`main`, and `backup.archidep.ch` has served the edition it committed ever since.
+What it does, and the two things that shaped it:
 
 - It syncs the edition's own directory with `--delete`, then the mount point
   with the archived years, `.git`, `CNAME`, `.nojekyll` and `README.md`
@@ -3580,10 +3587,33 @@ shaped it:
   runner and not the file; a same-size page written in the same second as the
   clone is otherwise skipped, which a dry run of the two syncs did.
 
-What is left is the first push and reading what it produced, plus one knob:
-`pdf_base` is still `nil` in `config.exs`, so no page offers a PDF link even
-once the release exists. It wants the release's base URL, and it moves with
-`version` at each rollover, which is why they sit together.
+The knob this was waiting on is set: `pdf_base` names the `pdf/2025` release, so
+a page offers its PDF again, and it sits beside `version` in `config.exs`
+because the two move together at each rollover.
+
+**What the first push produced**, none of it in the sync itself:
+
+- **The edition became one fact instead of three.** Each workflow worked the
+  year out for itself, so the edition rendered, the base baked into its pages
+  and the release its PDFs are uploaded to could disagree without anything
+  saying so. `mix archidep.course_site.edition` reports the year the application
+  is configured with, and both workflows read it rather than deciding it.
+- **A stage that builds the theme has to hold everything the theme scans.**
+  Tailwind passes over an `@source` path that is not there without a warning or
+  a failing exit code, so the production image built a stylesheet missing every
+  class used only by the tree it had not copied — a whole site published with
+  the classes of one half of it. The `Dockerfile` copies `app/lib` rather than
+  `app/lib/archidep_web`, and the rule that a build input must exist in every
+  environment that builds it is recorded in the [theme's
+  documentation](../theme/CONTRIBUTING.md).
+- **Reading the published copy caught two faults nothing else would have.** Both
+  are gone, and both are the same shape: a page that is right in a browser and
+  wrong where nothing was looking. The deck a subject page embeds is reveal's
+  scroll view, whose rewrite of the deck the opening slide's marking had not
+  accounted for; and the browser that prints the PDFs drops a variable font's
+  weight axis on Linux, so every title in every PDF came out light. Neither is
+  something the [fidelity gate](#html-fidelity-gate) could see, comparing
+  rendered HTML rather than what a viewer does with it.
 
 ### Decouple PDF generation from production
 
@@ -4094,10 +4124,15 @@ Two places emit through such a map, and they differ in how often they show it:
   tag, so `fill stroke aria-hidden` and `aria-hidden fill … stroke` are the same
   call on two runs. `xmlns` is a literal in that template and `:class` is an
   atom every boot creates early, which is why those two look stable and
-  everything after them moves. Measured across a build that recompiled: **52
-  files**, all of them pages, every difference an SVG attribute order.
-  Recompiling a single chrome module does _not_ do it, so the trigger is
-  something coarser about load order and is not yet pinned down.
+  everything after them moves. Measured then across a build that recompiled:
+  **52 files**, all of them pages, every difference an SVG attribute order.
+  Recompiling a single chrome module does _not_ do it, which left the trigger
+  described here as something coarser about load order. **It is whether the
+  compiler ran in the same VM as the render**: `mix` compiling the project
+  before it runs the build task creates the atoms of every module it compiles,
+  in an order a plain boot does not reach, and the keys of the map follow.
+  Nothing about _which_ module changed comes into it — see the seven builds
+  below.
 
 **Why it has to be fixed here rather than filed.** Three of this plan's
 decisions rest on a build being a function of its inputs:
@@ -4119,24 +4154,53 @@ decisions rest on a build being a function of its inputs:
   the compile that shifts the order; the next such check has no reason to be as
   lucky, and none of them should have to be.
 
-**What to do**, cheapest first and not acted on:
+**What was done: the first half, and only that.**
 
-- **The search index**: encode from something ordered — a keyword list, or an
-  explicit list of pairs — in
-  [`SearchIndex`](../app/lib/archidep/course_site/build/search_index.ex). It
-  fires on every build and no rendered page changes shape, so it carries no
-  visual risk.
-- **The SVG attributes**: the chrome has 23 `Heroicons.*` call sites, and
-  wrapping them in a local component that writes the attributes literally would
-  pin the order. That is in tension with what
+- **The JSON the build writes is written in a stated order.** Every object of
+  `search.json`, `archidep.json` and `version.json` is a `Jason.OrderedObject`
+  over a keyword list rather than a map, so its keys come out in the order the
+  code states them instead of the order the VM happened to create the atoms in —
+  the same thing
+  [`Archives.Manifest`](../app/lib/archidep/course_site/archives/manifest.ex)
+  already did, and for the reason it gives. That is the whole of the finding
+  that reproduced between two consecutive builds, and it is what the publish
+  guard needed: nothing rewrites itself on every run any more, so a run that
+  renders the same site can leave no commit behind, which is what the archive
+  repository's history is supposed to mean. Every push to `main` so far has
+  changed the site, so that quiet case has not actually been seen.
+- **The SVG attributes are left alone**, deliberately. Pinning them means
+  wrapping the 23 `Heroicons.*` call sites in a local component that writes the
+  attributes literally, against what
   [`Chrome.Icons`](../app/lib/archidep/course_site/layout/chrome/icons.ex)
-  documents about itself — it exists for the icons `Heroicons` does _not_ have,
-  precisely so a third copy of the same paths does not enter the repository —
-  so the alternative worth weighing is accepting the churn on the pages and
-  fixing only the index.
+  exists to prevent — a second copy of the same paths in this repository — to
+  buy a property nothing that publishes ever asks for. **The published copies
+  cannot see this**, which is what makes the churn cheap to accept: both
+  workflows compile in a step of their own and render in another, so the
+  invocation that writes a page never carries a compiler with it. What is left
+  is a developer building a stale tree, whose next build moves 65 pages and
+  moves them back.
 
-Whatever is done, the check that says it worked is two builds of an unchanged
-tree comparing equal, which nothing runs today.
+**The check has been run.** Seven builds of one unchanged tree, `diff -r` over
+1463 files apiece:
+
+- **Five that compiled nothing are byte-identical.** Two of them were run to see
+  what does not count: one after `mix compile --force`, which recompiles
+  everything in a VM of its own and exits, leaving the render that follows a
+  plain boot; and one after a `touch` of every source file, which mix declines
+  to act on at all, the contents being what it compares.
+- **Two that compiled 400 files in the invocation that rendered are
+  byte-identical to each other**, and differ from the five in **65 files**,
+  every one a page and every difference an SVG attribute order: `aria-hidden
+fill viewBox stroke stroke-width` against `fill stroke aria-hidden viewBox
+stroke-width`. Nothing else in a build diverges — the JSON that used to is now
+  stable across both groups.
+
+So a build is a function of its inputs, and of one thing more that is not an
+input: whether the compiler ran in the same VM. That is worth knowing before
+reading any diff of one build against another — the trap the [course directory
+rename](#the-course-directory-after-jekyll) got past by luck, and which it turns
+out it got past because a compile and a render were two commands rather than
+one.
 
 ### Cutover
 
