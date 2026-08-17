@@ -595,7 +595,7 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       order and the SVG attributes are left alone**, which is narrower than this
       item asked for; seven builds of one unchanged tree say what that leaves,
       and both are recorded there.
-- [ ] Make **every host hold every edition**, which today only the backup would:
+- [x] Make **every host hold every edition**, which today only the backup would:
       a one-shot service filling a persisted clone of the archive repository, a
       second nginx root falling back to it, the same two plugs again in the
       endpoint for development, and the boot-time completeness check that
@@ -605,7 +605,11 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       **before the rollover**: the day the `version` knob moves is the day the
       assets image stops carrying the outgoing edition, and the redirects
       `ArchiDepWeb.Course.LegacyController` sends there are permanent and cached
-      for a year.
+      for a year. **Done**, with four corrections recorded there, the sharpest
+      being that the fallback cannot be the `try_files` this planned: it would
+      have taken the trailing-slash redirect away from the edition the image
+      itself holds. The clone measures 159 MB against the ~200 MB assumed, 18
+      seconds the first time and under two after that.
 - [ ] Write and run the **year-end rollover**: build the finished edition with
       `--mode archive` and its own progress file, commit it as `<year>/`, emit
       `course/archives/<year>.json`, tag the source `archive/<year>`, move the
@@ -3547,6 +3551,46 @@ but it pins the clone to a path that also resolves inside a container, has to be
 redone after every build the watcher triggers, and would be a third mechanism
 where this is the second.
 
+**Four corrections, applied while building it:**
+
+- **The fallback is `error_page 404 = @archived`, not `try_files`.** The rule
+  above cannot be written as `try_files $uri $uri/index.html @archives`, because
+  `$uri/index.html` bypasses the `index` module — the thing that redirects
+  `/2025/course/104-ssh` to the same path with a trailing slash. A build's pages
+  reference their co-located assets relatively, so serving one at the slash-less
+  URL resolves every image against the parent directory. And the loss would not
+  be limited to the archives: the year location matches the edition the image
+  itself holds, so this would have changed how the current edition is served in
+  order to add a fallback for the finished ones. `error_page` attaches after
+  everything the image's own root does, redirect included, and says "image
+  first" more plainly than an ordered file list does. It needs
+  `recursive_error_pages on`, which is what lets a page missing from the clone
+  still answer with the build's `/404.html`.
+- **The fallback is per location, and `location /` does not get one.** Three
+  rules gain it — the two that cache digested files, so an archived edition's
+  assets keep their year, and a new year-pattern rule for pages, which must sit
+  **after** the digest rule or it would match page assets first. The catch-all
+  is left alone deliberately: the second root is a git checkout whose
+  `README.md` and `CNAME` sit beside the editions, and the proxy does route root
+  files here. The same statement is made in development by the archive
+  `Plug.Static`'s `only:`, which is the archived years — a compiled fact there,
+  where nginx has a pattern.
+- **Nothing waits for the fetch.** Writing it as a dependency of the assets
+  server was the first attempt and it is the failure this section warns about
+  one level up: the first boot's clone is 159 MB, and that server answers `/`,
+  so gating it on a download would take the site down to protect editions nobody
+  is being taught. It is a service of the compose file that nothing depends on,
+  and the script exits 0 even when the fetch fails — a service that exits
+  non-zero is something anything downstream would wait on later. nginx serves an
+  empty second root as a 404 and the editions appear when the clone lands, which
+  is checked.
+- **It runs from the assets image.** The deployment names published images only,
+  and copying the script into the deployment repository would give it two homes,
+  so `docker/archives.sh` and `git` go into the `assets-server` stage and the
+  one-shot is a second container of it. That is also where it belongs by
+  cohesion: the image that serves the finished editions is the one that knows
+  how to fetch them. Development builds a three-line image over the same script.
+
 **Nothing fails to boot over a missing edition, and nothing keeps quiet about
 one.** Refusing to start is disproportionate at both levels where it could be
 done: the application serves none of these bytes and would be trading the
@@ -3562,6 +3606,25 @@ with the archives mounted read-only beside it, it asserts at boot that each has
 a page where it should be and reports the ones that do not, and the rollover
 overlap above, at error level and in the admin console. Fail open, loudly, with
 one authoritative answer to whether a deployment is complete.
+
+Two corrections to that, both about what it checks rather than what it does about
+it:
+
+- **The overlap is not reported at any level.** It is not a window: the archive
+  repository holds the edition being taught as well, that directory being the
+  backup copy, so a host's clone overlaps its image permanently and 2025 is
+  archived _and_ being taught right now. A report of something expected to be
+  true forever is noise, so the edition a deployment renders is left out of the
+  check entirely — including when the clone holds nothing for it, since those
+  pages come from the build and what the clone has for that year cannot reach a
+  reader. A deployment whose only archived edition is the one it renders is
+  therefore complete, which is what every deployment before the first rollover
+  is.
+- **It checks every page of every manifest, not one page each.** The manifests
+  are already the input of the resolution, so checking all of them costs a few
+  dozen `File.exists?` at boot and catches a half-synced edition rather than
+  only an absent one. Measured against the published 2025 edition: 64 pages, all
+  present.
 
 #### Where standing the repository up has got to
 

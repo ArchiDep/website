@@ -23,6 +23,22 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
     end
   end
 
+  describe "editions/0" do
+    # As above, the one archived edition is the one being taught, so the pages a
+    # host must hold for it are the current ones under its prefix. This is the
+    # other assertion to rewrite at the first rollover.
+    test "names every page a host must hold, for every archived edition" do
+      assert Archives.editions() ==
+               %{
+                 "2025" =>
+                   Enum.map(
+                     current_pages(),
+                     &PageRef.edition_path("2025", PageRef.output_path(&1))
+                   )
+               }
+    end
+  end
+
   describe "resolve/1" do
     test "sends an archived chapter to what the course now holds at its name" do
       assert Archives.resolve("/2025/course/402-run-virtual-server/") ==

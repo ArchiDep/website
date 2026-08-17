@@ -137,6 +137,8 @@ How to run the website in development mode with live reload on code changes.
 > containers only start when their dependencies have finished their initial run,
 > as defined by their health checks. The startup order is as follows:
 >
+> - Install the dependencies and fetch the finished editions of the course
+>   (`archives` container, a ~160 MB clone the first time and deltas after that)
 > - Start the database (`db` container), compile the application assets
 >   (`app-assets` container), course assets (`course-assets` container, takes a
 >   while to perform the first build) & theme (`theme` container)
@@ -145,6 +147,12 @@ How to run the website in development mode with live reload on code changes.
 Visit http://localhost:42000 once the application has started. The `app`
 container renders the course material itself and serves what it rendered, so
 editing a document under `course/` rebuilds the site and reloads the browser.
+
+This repository holds one edition of the course material, so the editions that
+came before it are fetched rather than rendered: they are published as [a
+repository of their own](https://github.com/ArchiDep/archidep.github.io), cloned
+into `tmp/course_site_archives`, and served behind the build the way
+production's static server serves them behind its own document root.
 
 ### Run in development mode on your machine
 
@@ -174,6 +182,13 @@ editing a document under `course/` rebuilds the site and reloads the browser.
 Start it **after** the asset watchers, since the first build reads what they
 write into `app/priv/static`; `ArchiDep.CourseSiteWatcher.rebuild()` from IEx
 runs one by hand if it was too early.
+
+The editions that came before are read from the same `tmp/course_site_archives`
+the Docker workflow fills, so a machine-native run shares that clone. Nothing
+fills it here: `./scripts/dev` does, or by hand, `git clone --depth 1
+https://github.com/ArchiDep/archidep.github.io.git tmp/course_site_archives`.
+Until it is filled the application logs which editions it cannot serve and the
+admin console says so.
 
 ## Configuration
 

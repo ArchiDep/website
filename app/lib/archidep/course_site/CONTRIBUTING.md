@@ -337,11 +337,12 @@ a new file in a directory `Material` does not watch — a recompilation question
 
 Three pure modules decide what it holds, and `Build` reads the two files:
 
-| Module                                          | What it decides                                                                             |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [`Archives.Manifest`](./archives/manifest.ex)   | What one finished edition published, as `course/archives/<year>.json`                       |
-| [`Archives.Overrides`](./archives/overrides.ex) | What the course declares in `course/archives.yml` about the pages it has renamed or dropped |
-| [`Archives.Mapping`](./archives/mapping.ex)     | What each archived page has become, and which of them nothing accounts for                  |
+| Module                                                | What it decides                                                                             |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [`Archives.Manifest`](./archives/manifest.ex)         | What one finished edition published, as `course/archives/<year>.json`                       |
+| [`Archives.Overrides`](./archives/overrides.ex)       | What the course declares in `course/archives.yml` about the pages it has renamed or dropped |
+| [`Archives.Mapping`](./archives/mapping.ex)           | What each archived page has become, and which of them nothing accounts for                  |
+| [`Archives.Completeness`](./archives/completeness.ex) | Whether a host holds the editions it is supposed to serve                                   |
 
 **An archived path is opaque.** It is compared for equality and never taken
 apart: the numbering, the slugging and the shape of a URL may all differ in a
@@ -369,6 +370,28 @@ on a static host, and one file reading `location.search` against that same map
 answers these URLs with no application at all. The route that serves it today is
 [the web
 layer's](../../archidep_web/CONTRIBUTING.md#routing-endpoint--pipelines).
+
+**Where the bytes of those editions are, and whether they are all there.** This
+repository renders one edition; the finished ones are published as a git
+repository that is also the backup site, and a host comes to hold them by
+cloning it into a directory the assets server takes as a second root and the
+endpoint serves behind the build. `Archives.editions/0` is what says which pages
+that amounts to, and `Archives.completeness/0` is the check, run at boot from
+[`ArchiDep.Application`](../application.ex) and read again by the admin
+overview.
+
+Two rules it is built on:
+
+- **It reports; it never refuses to boot.** The application serves none of these
+  bytes, so refusing would trade the dashboard, the admin console and the
+  servers pipeline for a dead link. The fetch cannot fail hard either, or one
+  first boot with the repository unreachable would take the whole site down.
+  Fail open, loudly.
+- **The edition being rendered is never checked.** The archive repository holds
+  it too — that directory _is_ the backup copy — so a host's clone always
+  contains a second copy of the edition that host renders. It is served from the
+  build, first, so what the clone holds for that year cannot affect what a
+  reader gets.
 
 ## URL and link emission
 

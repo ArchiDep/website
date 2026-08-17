@@ -43,6 +43,8 @@ defmodule ArchiDep.CourseSite.Archives do
   no application at all. Nothing here may become a set of function clauses.
   """
 
+  alias ArchiDep.CourseSite.Archives.Completeness
+  alias ArchiDep.CourseSite.Archives.Manifest
   alias ArchiDep.CourseSite.Archives.Mapping
   alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.Material
@@ -61,9 +63,11 @@ defmodule ArchiDep.CourseSite.Archives do
   end
 
   @archives_digest Build.archives_digest(@archives_dir)
-  @mapping Build.archives!(@archives_dir, @overrides_file, Material.structure())
+  @manifests Build.archives!(@archives_dir)
+  @mapping Build.archive_mapping!(@manifests, @overrides_file, Material.structure())
 
   @entries Mapping.entries(@mapping)
+  @editions Map.new(@manifests, &{&1.edition, Manifest.edition_paths(&1)})
 
   @doc """
   What the current edition holds in place of the archived page a reader arrived
@@ -84,6 +88,36 @@ defmodule ArchiDep.CourseSite.Archives do
   """
   @spec mapping() :: %{String.t() => Mapping.entry()}
   def mapping, do: @entries
+
+  @doc """
+  Which pages a host must hold to serve every archived edition, keyed by the
+  edition.
+
+  This is the other half of what the manifests say. `mapping/0` answers a reader
+  who arrived at an archived page; this says what "the archives are all here"
+  means for a host that keeps them beside the edition it renders itself, which
+  is the only authoritative answer to whether a deployment is complete.
+  """
+  @spec editions() :: %{String.t() => [String.t()]}
+  def editions, do: @editions
+
+  @doc """
+  Whether this deployment holds the archived editions it is supposed to serve.
+
+  The editions and their pages are the compiled facts above; where a host keeps
+  them and which edition it renders itself are the two things it takes from
+  configuration.
+  """
+  @spec completeness() :: Completeness.t()
+  def completeness do
+    config = Application.get_env(:archidep, :course_site, [])
+
+    Completeness.check(
+      Keyword.get(config, :archives_dir),
+      @editions,
+      Keyword.get(config, :version)
+    )
+  end
 
   @doc """
   Whether an edition has been archived or unarchived since this module was

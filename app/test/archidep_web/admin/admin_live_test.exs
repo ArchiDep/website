@@ -28,6 +28,14 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   # config in `config/test.exs`).
   @ssh_public_key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE1Q2L2jlt2R71iHClMbx1uIIkKbBGMwGo5c1gFJVArH archidep"
 
+  # What this environment is: one archived edition, an edition being rendered
+  # that is not it (`config/test.exs` says 1955) and nowhere configured to keep
+  # the finished ones, so the page says the deployment is incomplete. The
+  # sentence moves when an edition is archived, like the assertions in
+  # `ArchiDep.CourseSite.ArchivesTest` do.
+  @past_editions {"Edition 2025 must be served from this host, which has no archives directory",
+                  :error}
+
   setup :verify_on_exit!
 
   describe "as a root user" do
@@ -80,6 +88,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(html) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"2/3", :warning},
                  ansible_jobs: {"2", :warning},
@@ -103,6 +112,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(html) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -146,6 +156,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       # tracker pushes a state.
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -190,6 +201,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       # the group tracker's concern, so it renders disconnected for now.
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -233,6 +245,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -275,6 +288,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -297,6 +311,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(html) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -316,6 +331,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -333,6 +349,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(html) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"1/4", :warning},
                  ansible_jobs: {"0", :success},
@@ -406,6 +423,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       # before Alpha.
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -458,6 +476,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       # Alpha.
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -494,6 +513,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       # The class is renamed in place; no stale "Alpha" section lingers.
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -528,6 +548,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -563,6 +584,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -594,6 +616,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
 
       assert page(render(view)) == %{
                ssh_public_key: @ssh_public_key,
+               past_editions: @past_editions,
                stats: %{
                  ansible_queue: {"0/0", :success},
                  ansible_jobs: {"0", :success},
@@ -689,6 +712,7 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   defp page(html),
     do: %{
       ssh_public_key: ssh_public_key(html),
+      past_editions: past_editions(html),
       stats: stats(html),
       classes: class_sections(html)
     }
@@ -696,6 +720,11 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   defp ssh_public_key(html) do
     [dd] = find_html_elements(html, "dl dd.font-mono")
     html_element_text(dd)
+  end
+
+  defp past_editions(html) do
+    [_ssh_public_key, dd] = find_html_elements(html, "dl dd")
+    {html_element_text(dd), variant(dd)}
   end
 
   defp stats(html) do
@@ -720,6 +749,15 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
       "text-warning" in tokens -> :warning
       "text-success" in tokens -> :success
       true -> :secondary
+    end
+  end
+
+  defp variant(element) do
+    tokens = element |> html_element_attribute("class") |> String.split()
+
+    cond do
+      "text-error" in tokens -> :error
+      "text-success" in tokens -> :success
     end
   end
 

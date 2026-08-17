@@ -325,12 +325,17 @@ EXPOSE 42003
 #####################
 FROM nginx:1.29-alpine AS assets-server
 
-RUN rm -fr /usr/share/nginx/html/* && \
-    mkdir -p /var/www/html && \
-    chown nginx:nginx /var/www/html && \
-    chmod 700 /var/www/html
+# Git is here for the one-shot service that fills the second root below, which
+# runs from this same image.
+RUN apk add --no-cache git && \
+    rm -fr /usr/share/nginx/html/* && \
+    mkdir -p /var/www/html /var/www/archives && \
+    chown nginx:nginx /var/www/html /var/www/archives && \
+    chmod 700 /var/www/html && \
+    chmod 755 /var/www/archives
 
 COPY ./docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./docker/archives.sh /usr/local/bin/archives.sh
 # A build's output directory is its mount point, so what it wrote is what this
 # serves, as it stands.
 COPY --from=site /usr/src/app/tmp/course_site/ /var/www/html

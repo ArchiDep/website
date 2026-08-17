@@ -83,7 +83,7 @@ Two things worth knowing:
 usual plug pipeline (Sentry capture, request id, telemetry, parsers, session),
 and serves the static course site.
 
-Serving it takes three plugs, in this order, and only where the
+Serving it takes five plugs, in this order, and only where the
 [`course_site`](../../config/config.exs) configuration says where a build of the
 site is published — which is development and nowhere else, production putting a
 separate static server in front of the same build:
@@ -94,9 +94,19 @@ separate static server in front of the same build:
    one and `Plug.Static` sends a file instead.
 2. `Plug.Static` over the build directory answers everything else in it, with no
    whitelist: a build owns its output directory.
-3. `Plug.Static` over `priv/static`, limited to
+3. The same pair again over the directory holding the **editions this deployment
+   did not render**, which the build is served in front of for the reason
+   production's document root comes before its second root — see [where past
+   editions are
+   kept](../archidep/course_site/CONTRIBUTING.md#the-editions-that-came-before).
+   Its `Plug.Static` is limited to the archived years, since that directory is a
+   clone of the repository they are published in and its `README.md`, `CNAME`
+   and `.git` sit beside them; its `CourseSitePages` needs no such limit, the
+   only `.html` at that root being the home and 404 pages the build already
+   holds.
+4. `Plug.Static` over `priv/static`, limited to
    [`ArchiDepWeb.static_paths/0`](../archidep_web.ex), answers `/assets/**` and
-   the search index behind the two above.
+   the search index behind all of the above.
 
 `Phoenix.LiveReloader` is mounted **before** all of them, since its callback has
 to be registered before a response is sent, and `Phoenix.CodeReloader` after, so

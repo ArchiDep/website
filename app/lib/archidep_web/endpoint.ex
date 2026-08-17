@@ -36,6 +36,14 @@ defmodule ArchiDepWeb.Endpoint do
 
   @course_site_edition if @course_site_version, do: "/" <> @course_site_version
 
+  # Where the editions this deployment did not render are kept, for the same
+  # deployment that asked to serve the build. Production's static server takes
+  # them as a second root; this is that arrangement one layer up, so that a
+  # resolution bug reproduces off production.
+  @course_site_archives_dir if @course_site_dir,
+                              do:
+                                Application.compile_env(:archidep, [:course_site, :archives_dir])
+
   # Phoenix LiveView
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [:peer_data, :user_agent, session: @session_options]],
@@ -56,8 +64,8 @@ defmodule ArchiDepWeb.Endpoint do
   end
 
   if @serve_static do
-    # A request for a directory is a request for the page in it, for all three
-    # of the plugs below.
+    # A request for a directory is a request for the page in it, for every one of
+    # the static plugs below.
     plug Plug.Static.IndexHtml
   end
 
@@ -74,6 +82,29 @@ defmodule ArchiDepWeb.Endpoint do
   if @course_site_dir do
     plug ArchiDepWeb.CourseSitePages, from: @course_site_dir
     plug Plug.Static, at: "/", from: @course_site_dir, gzip: false
+  end
+
+  # Then the finished editions, from wherever this host keeps them. The build
+  # comes first for the reason production's document root does: the edition
+  # being taught is the build's, and the copy of it these hold is the backup
+  # copy of the same year, which must never answer for it.
+  if @course_site_archives_dir do
+    # Which first segments they may answer for. They are a clone of the
+    # repository the editions are published in, so without this "/.git/config",
+    # "/README.md" and "/CNAME" would be served as well; it is the same
+    # statement nginx makes with a year pattern, made instead with the years
+    # themselves, which are a compiled fact here. The pages plug needs no
+    # equivalent: the only ".html" at the clone's root are the home and 404
+    # pages, and the build above holds both.
+    @course_site_archive_editions Map.keys(ArchiDep.CourseSite.Archives.editions())
+
+    plug ArchiDepWeb.CourseSitePages, from: @course_site_archives_dir
+
+    plug Plug.Static,
+      at: "/",
+      from: @course_site_archives_dir,
+      gzip: false,
+      only: @course_site_archive_editions
   end
 
   if @serve_static do

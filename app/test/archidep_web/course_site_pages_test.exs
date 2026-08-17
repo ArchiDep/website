@@ -88,17 +88,78 @@ defmodule ArchiDepWeb.CourseSitePagesTest do
     end
   end
 
-  defp response(method, path, opts) do
-    conn = CourseSitePages.call(Plug.Test.conn(method, path), opts)
+  # The endpoint puts one of these in front of the build and a second in front
+  # of the editions that came before it, which is how production's static server
+  # falls back from its own document root to the clone of the archive
+  # repository. What the two instances have to agree on is the order, so it is
+  # pinned here rather than left to the endpoint, where no request can reach it.
+  describe "call/2 chained over the build and the editions before it" do
+    setup %{tmp_dir: tmp_dir} do
+      archives = Path.join(tmp_dir, "archives")
 
-    %{
+      # The current edition is in both: the archive repository holds it as the
+      # backup copy, so a host's clone of it always overlaps the build.
+      write!(
+        archives,
+        "2025/course/507-dns/index.html",
+        "<html><body>The backup copy</body></html>"
+      )
+
+      write!(archives, "2024/course/507-dns/index.html", "<html><body>DNS in 2024</body></html>")
+
+      %{archives_opts: CourseSitePages.init(from: archives)}
+    end
+
+    test "answers a page of a finished edition from the editions", %{
+      opts: opts,
+      archives_opts: archives_opts
+    } do
+      assert chained("/2024/course/507-dns/index.html", opts, archives_opts) == %{
+               status: 200,
+               content_type: "text/html; charset=utf-8",
+               cache_control: "no-cache",
+               body: "<html><body>DNS in 2024</body></html>",
+               halted: true
+             }
+    end
+
+    test "answers a page of the edition being taught from the build", %{
+      opts: opts,
+      archives_opts: archives_opts
+    } do
+      assert chained("/2025/course/507-dns/index.html", opts, archives_opts) == %{
+               status: 200,
+               content_type: "text/html; charset=utf-8",
+               cache_control: "no-cache",
+               body: "<html><body>DNS in 2025</body></html>",
+               halted: true
+             }
+    end
+
+    test "passes on a page neither holds", %{opts: opts, archives_opts: archives_opts} do
+      assert chained("/2023/course/507-dns/index.html", opts, archives_opts) == untouched()
+    end
+  end
+
+  defp chained(path, opts, archives_opts) do
+    conn = CourseSitePages.call(Plug.Test.conn(:get, path), opts)
+
+    conn
+    |> then(&if(&1.halted, do: &1, else: CourseSitePages.call(&1, archives_opts)))
+    |> projection()
+  end
+
+  defp response(method, path, opts),
+    do: method |> Plug.Test.conn(path) |> CourseSitePages.call(opts) |> projection()
+
+  defp projection(conn),
+    do: %{
       status: conn.status,
       content_type: header(conn, "content-type"),
       cache_control: header(conn, "cache-control"),
       body: conn.resp_body,
       halted: conn.halted
     }
-  end
 
   # What the plug leaves a connection it has nothing to say about: untouched, so
   # that the `Plug.Static` behind it answers instead. The cache-control is the

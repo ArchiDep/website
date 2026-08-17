@@ -3,6 +3,9 @@ defmodule ArchiDep.Application do
 
   use Application
 
+  alias ArchiDep.CourseSite.Archives
+  alias ArchiDep.CourseSite.Archives.Completeness
+
   @impl Application
   def start(_type, _args) do
     :logger.add_handler(:archidep_sentry_handler, Sentry.LoggerHandler, %{
@@ -12,6 +15,12 @@ defmodule ArchiDep.Application do
     ArchiDep.Git.start()
     ArchiDep.Config.start!()
     ArchiDepWeb.Config.start!()
+
+    # Unlike the two above, this reports rather than raises. The application
+    # serves none of the archived editions and refusing to boot over one would
+    # trade the dashboard, the admin console and the servers pipeline for a dead
+    # link.
+    Completeness.log(Archives.completeness())
 
     children =
       [

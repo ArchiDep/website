@@ -305,19 +305,32 @@ defmodule ArchiDep.CourseSite.Build do
   end
 
   @doc """
-  Work out what every page of every archived edition has become in a given
+  What each finished edition of the course published, raising when any of the
+  manifests cannot be read.
+
+  It raises for the same reason `course!/2` does: its only caller is a module
+  compiling.
+  """
+  @spec archives!(Path.t()) :: [Manifest.t()]
+  def archives!(archives_dir),
+    do: archives_dir |> archives() |> or_raise("The archived editions could not be read")
+
+  @doc """
+  Work out what every page of a set of archived editions has become in a given
   course, raising when any of them has become nothing.
 
-  This is the reading `ArchiDep.CourseSite.Archives.Mapping` needs, in one call,
-  and it raises for the same reason `course!/2` does: its only caller is a
-  module compiling, and a page of an archive that resolves to nothing is
-  precisely what has to stop the build rather than reach a reader.
-  """
-  @spec archives!(Path.t(), Path.t(), Structure.t()) :: Mapping.t()
-  def archives!(archives_dir, overrides_file, %Structure{} = structure) do
-    manifests =
-      archives_dir |> archives() |> or_raise("The archived editions could not be read")
+  The manifests are passed in rather than read here because
+  `ArchiDep.CourseSite.Archives` asks them a second question — which pages a
+  host must hold for each edition — and reading them twice would let the two
+  answers describe different bytes.
 
+  It raises for the same reason `course!/2` does, and this one matters more: a
+  page of an archive that resolves to nothing is precisely what has to stop the
+  build rather than reach a reader.
+  """
+  @spec archive_mapping!([Manifest.t()], Path.t(), Structure.t()) :: Mapping.t()
+  def archive_mapping!(manifests, overrides_file, %Structure{} = structure)
+      when is_list(manifests) do
     overrides =
       overrides_file
       |> archive_overrides()

@@ -9,6 +9,8 @@ defmodule ArchiDepWeb.Admin.AdminLive do
   alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.CourseSite.Archives
+  alias ArchiDep.CourseSite.Archives.Completeness
   alias ArchiDep.PubSub.Scope
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Events.ServerCreated
@@ -119,6 +121,12 @@ defmodule ArchiDepWeb.Admin.AdminLive do
       server_state_map: ServerTrackerClient.server_state_map(all_servers),
       server_trackers: server_trackers,
       ssh_public_key: SSH.ssh_public_key(),
+      # Whether this deployment holds the finished editions of the course it is
+      # supposed to serve. Worked out here rather than kept anywhere: it is a
+      # handful of file lookups over compiled facts, and reading it on mount is
+      # what makes it the state of the deployment now rather than at its last
+      # boot.
+      archives: Archives.completeness(),
       ansible: ansible
     )
     |> attach_server_state_refresh()

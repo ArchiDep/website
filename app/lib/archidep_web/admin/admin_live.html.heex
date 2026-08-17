@@ -7,6 +7,15 @@
           {@ssh_public_key}
         </dd>
       </div>
+      <div class="flex flex-col mt-2">
+        <dt class="mb-1 text-sm text-base-content/50">Past editions</dt>
+        <dd class={[
+          "text-xs",
+          if(Completeness.complete?(@archives), do: "text-success", else: "text-error")
+        ]}>
+          {Completeness.summary(@archives)}
+        </dd>
+      </div>
     </dl>
 
     <div class="stats stats-vertical xl:stats-horizontal shadow shrink-0">

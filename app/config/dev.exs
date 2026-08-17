@@ -13,7 +13,12 @@ config :archidep,
     watch: true,
     serve: true,
     build_dir: Path.expand("../tmp/course_site", __DIR__),
-    course_dir: Path.expand("../../course", __DIR__)
+    course_dir: Path.expand("../../course", __DIR__),
+    # The finished editions, which are not rendered here but fetched from the
+    # repository they are published in. Unlike the build above this one sits at
+    # the root of the repository rather than under the application, because a
+    # docker run and a machine-native run must share the one clone.
+    archives_dir: Path.expand("../../tmp/course_site_archives", __DIR__)
   ],
   monitoring: [
     # Refresh monitoring metrics every 10 minutes to avoid polluting the logs

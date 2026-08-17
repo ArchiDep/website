@@ -19,6 +19,12 @@ config :archidep, ArchiDepWeb.Endpoint,
   # is serving.
   serve_static: true
 
+# Where the finished editions are kept, which the static server in front of the
+# course material site serves as a second root and this application only reads:
+# it holds none of these bytes out, and mounts them to be able to say whether
+# the deployment is complete.
+config :archidep, course_site: [archives_dir: "/var/lib/archidep/archives"]
+
 # Enable Prometheus metrics server
 config :archidep, ArchiDep.PromEx, disabled: false, metrics_server: [port: 42003]
 

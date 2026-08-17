@@ -40,6 +40,26 @@ services:
       - 'traefik.http.routers.archidep-assets.entrypoints=web'
       - 'traefik.http.services.archidep-assets.loadbalancer.server.port=80'
     restart: unless-stopped
+    volumes:
+      # The finished editions, as a second root this server falls back to.
+      - 'archives:/var/www/archives:ro'
+
+  # Fills the volume above, once, then exits. It runs from the assets image
+  # because that image holds both the script and the server that reads what it
+  # writes; the deployment names published images only.
+  archives:
+    image: archidep/assets-server:latest
+    build:
+      context: .
+      target: assets-server
+    entrypoint: ['/usr/local/bin/archives.sh']
+    environment:
+      ARCHIDEP_ARCHIVES_DIRECTORY: /var/www/archives
+      ARCHIDEP_ARCHIVES_REPOSITORY: https://github.com/ArchiDep/archidep.github.io.git
+      ARCHIDEP_ARCHIVES_REF: main
+    restart: 'no'
+    volumes:
+      - 'archives:/var/www/archives:rw'
 
   app:
     image: archidep/website:latest
@@ -79,6 +99,10 @@ services:
       - ./app/priv/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}:/etc/archidep/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}:ro
       - ./app/priv/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}.pub:/etc/archidep/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}.pub:ro
       - app_uploads:/var/lib/archidep/uploads:rw
+      # Read-only, and read by one thing: the check that says at boot whether
+      # this deployment holds the editions it is supposed to serve. The
+      # application serves none of these bytes — the static server above does.
+      - 'archives:/var/lib/archidep/archives:ro'
 
   db:
     image: postgres:17.5-alpine
@@ -92,4 +116,7 @@ services:
 
 volumes:
   app_uploads:
+  # Persisted so that a restart transfers deltas and a redeploy transfers
+  # nothing.
+  archives:
   db_data:

@@ -60,6 +60,12 @@ services:
       # across a bind mount would dominate it, and because a host-run build
       # writes to the same path and the two must not fight over it.
       - ./course:/archidep/course:ro
+      # The finished editions, which the endpoint serves as a second root behind
+      # the build, the way production's static server does. Unlike the build
+      # this *is* a bind mount: it is written once by the service below rather
+      # than on every edit, and a machine-native run reads the same clone at the
+      # same path.
+      - ./tmp/course_site_archives:/archidep/tmp/course_site_archives:ro
       - ./app/priv/ansible:/archidep/app/priv/ansible:ro
       - ./app/priv/course:/archidep/app/priv/course:ro
       - ./app/priv/gettext:/archidep/app/priv/gettext:ro
@@ -74,6 +80,22 @@ services:
       - ./tmp/docker/dev/app/mix:/home/archidep/.mix:rw
       - ./tmp/docker/dev/app/priv/static:/archidep/app/priv/static:rw
       - ./tmp/docker/dev/app/uploads:/var/lib/archidep/uploads:rw
+
+  # Fills the directory above, once, then exits. Development gets the finished
+  # editions the same way production does, from the repository they are
+  # published in, so that a resolution bug between an edition being taught and
+  # one that is over reproduces here.
+  archives:
+    image: archidep/dev-archives
+    build:
+      context: .
+      dockerfile: ./docker/dev/archives/Dockerfile
+    environment:
+      ARCHIDEP_ARCHIVES_DIRECTORY: /archidep/tmp/course_site_archives
+      ARCHIDEP_ARCHIVES_REPOSITORY: https://github.com/ArchiDep/archidep.github.io.git
+      ARCHIDEP_ARCHIVES_REF: main
+    volumes:
+      - ./tmp/course_site_archives:/archidep/tmp/course_site_archives:rw
 
   app-assets:
     image: archidep/dev-app-assets

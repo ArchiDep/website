@@ -6,12 +6,21 @@ compose="docker compose -f compose.dev.yml"
 mkdir -p tmp/docker/dev
 chmod 700 tmp/docker/dev
 
+# Created here rather than by Docker so that it belongs to the developer: it is
+# also read by a machine-native run, at the same path.
+mkdir -p tmp/course_site_archives
+
 # Phase 1: Download the application's Elixir dependencies which are needed to
 # compile the application assets and the theme.
 $compose build app
 $compose run --entrypoint /usr/local/bin/deps.sh --no-deps --rm app
 
-# Phase 2: Install Node.js dependencies.
+# Phase 2: Fetch the finished editions of the course, which this repository does
+# not hold and the application serves beside the one it renders, then install
+# Node.js dependencies.
+$compose build archives
+$compose run --rm archives
+
 $compose build node
 $compose run --rm node
 

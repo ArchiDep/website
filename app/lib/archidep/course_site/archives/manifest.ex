@@ -101,6 +101,24 @@ defmodule ArchiDep.CourseSite.Archives.Manifest do
     do: {:error, {:malformed_manifest, "#{inspect(manifest)} is not a map"}}
 
   @doc """
+  Where every page of this edition sits on a host that holds it.
+
+  The manifest records the paths the edition emitted, which are relative to the
+  edition; a host serves every edition at once, so what it must hold is each of
+  them under its year. Nothing is taken apart to work that out — the edition is
+  the one the manifest names.
+
+      iex> Manifest.edition_paths(%Manifest{
+      ...>   edition: "2025",
+      ...>   pages: [{"/", :home}, {"/cheatsheets/git/", {:cheatsheet, "git"}}]
+      ...> })
+      ["/2025/", "/2025/cheatsheets/git/"]
+  """
+  @spec edition_paths(t()) :: [String.t()]
+  def edition_paths(%__MODULE__{edition: edition, pages: pages}),
+    do: Enum.map(pages, fn {path, _identity} -> PageRef.edition_path(edition, path) end)
+
+  @doc """
   The manifest as the file it is committed as.
 
   The key order and the indentation are fixed, and the pages keep the order they
