@@ -201,6 +201,7 @@ points (`theme.css` and `slides.css`) and uses the following directives:
   the theme has the files it names — the development containers mount them (see
   the `theme` service in `compose.dev.yml`) and the production image copies them
   into its `theme` stage (see the [`Dockerfile`](../Dockerfile)).
+
 - `@source inline("...")` safelists classes that are composed dynamically and
   therefore cannot be discovered by scanning, such as the `section-{0..10}`
   peer/group classes used by the course progress indicators.
