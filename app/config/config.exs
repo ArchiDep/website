@@ -50,13 +50,12 @@ config :archidep,
     build_id: "build",
     # Where the generated PDFs of a build are published, as a base of
     # ArchiDep.CourseSite.Urls.PdfManifest. They are a release of the archive
-    # repository, one per edition, so the value to write here is `{:external,
-    # "https://github.com/<owner>/<repo>/releases/download/pdf/<year>"}` — and
-    # it names the same year as the edition above, which is why it is stated
-    # beside it. That repository does not exist yet, and a build that cannot say
-    # where its PDFs are offers no download link, which is what a build made
-    # before they have been printed wants.
-    pdf_base: "https://github.com/ArchiDep/archidep.github.io/releases/download/pdf/2025",
+    # repository, one per edition, so this names the same year as the edition
+    # above, which is why it is stated beside it: the two move together at the
+    # rollover. A build told nothing here offers no download link, which is what
+    # a build made before its PDFs have been printed wants.
+    pdf_base:
+      {:external, "https://github.com/ArchiDep/archidep.github.io/releases/download/pdf/2025"},
     watch: false,
     serve: false
   ],

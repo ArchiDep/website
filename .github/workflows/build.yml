@@ -178,22 +178,8 @@ jobs:
     runs-on: ubuntu-24.04
     name: Build course material site
     env:
-      # The runtime configuration is read whatever the command, so the build
-      # task needs a value for everything it makes mandatory even though it
-      # starts neither an endpoint nor a repository — the same list the PDF
-      # workflow states, for the same reason.
-      ARCHIDEP_REPO_URL: ecto://archidep:archidep@127.0.0.1:5432/archidep
-      ARCHIDEP_SERVERS_API_BASE_URL: https://archidep.ch/api
-      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_ID: id
-      ARCHIDEP_AUTH_SWITCH_EDU_ID_CLIENT_SECRET: secret
-      ARCHIDEP_WEB_ENDPOINT_LIVE_VIEW_SIGNING_SALT: 5vur1eNR+LPxlMBG7Z8dgcipgv4N9+ADI2MzF/2jiFqNZUG2Ts/g4+hK1y5bAqOU9QT+9X2tU7lvwXz5
-      ARCHIDEP_WEB_ENDPOINT_SECRET_KEY_BASE: 5JCHwFiOWjHyyGcp+dTHqYniYWdBvKvkT2CnwJwTBat9XlGRF1juYvGwEWGcKaXz/a61Hqn4bxHWAt+g
-      ARCHIDEP_WEB_ENDPOINT_SESSION_SIGNING_SALT: WIrprzaArMvOUrkFjBi81OwfIGRIlzJXYISJycsk0qhKEELihlYp7i8QFj1Km+CmTwmroGsgS9byMgAw
       ELIXIR_VERSION: 1.19.5
       ERLANG_VERSION: 28.5.0.1
-      # The environment the site ships in. Not `test`, whose configuration names
-      # an edition of its own so that a test asserting a URL is asserting a fact
-      # about the code.
       MIX_ENV: prod
     steps:
       - name: Checkout the repository
@@ -261,7 +247,7 @@ jobs:
         id: edition
         working-directory: app
         run: |
-          year="$(mix run --no-start --no-compile -e 'IO.puts(Keyword.fetch!(Application.fetch_env!(:archidep, :course_site), :version))' | tail -n 1)"
+          year="$(mix archidep.course_site.edition | tail -n 1)"
           test -n "$year"
           echo "Building the $year edition"
           echo "year=$year" >> "$GITHUB_OUTPUT"

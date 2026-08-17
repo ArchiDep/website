@@ -7,8 +7,10 @@ config :archidep,
   # An edition of its own, so that what a test asserts about a URL is a fact
   # about the code rather than about the year the course is currently in: the
   # edition the deployment holds moves every year and this one never does. The
-  # build's identifier is pinned for the same reason.
-  course_site: [version: "1955", build_id: "test-build"],
+  # build's identifier is pinned for the same reason, and the PDFs of that
+  # edition are published nowhere: a test that wants a base states it, and one
+  # that wants none is not handed the deployment's.
+  course_site: [version: "1955", build_id: "test-build", pdf_base: nil],
   servers: [
     api_base_url: "http://localhost:42000/api",
     connection_timeout: 5_000,
