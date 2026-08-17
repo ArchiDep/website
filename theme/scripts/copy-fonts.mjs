@@ -26,7 +26,7 @@ const require = createRequire(import.meta.url);
 const packages = [
   '@fontsource/pt-sans',
   '@fontsource/fjalla-one',
-  '@fontsource-variable/bitcount-prop-single'
+  '@fontsource/bitcount-prop-single'
 ];
 
 const stylesheet = new URL('../src/fonts.css', import.meta.url);

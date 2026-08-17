@@ -16,6 +16,27 @@ const urlSearch = new URLSearchParams(window.location.search);
 const printPdfMode = urlSearch.has('print-pdf');
 const scrollMode = urlSearch.get('view') === 'scroll';
 
+// A deck's opening slide is set differently from the rest of it, and which
+// slide that is has to be marked on the slide itself rather than left to a rule
+// about which one comes first: every view but the default rewrites the deck,
+// moving each slide into a page of its own, so a rule keyed on position styles
+// the title in a browser and nothing at all in a PDF or a scrolled deck.
+//
+// The marking is a plugin because that is what runs at the right moment: reveal
+// initializes plugins one after another in the order given here and only then
+// builds a view, so a plugin after Markdown sees the slides it split out of the
+// deck while they are still where it put them, and the mark travels with a
+// slide into whatever page a view moves it into. Marking it after `initialize`
+// would be too late: a scrolled deck leaves the emptied stacks of its vertical
+// slides behind and ahead of the pages it builds, so the deck's opening slide
+// is no longer the first one in the document.
+const titleSlide = () => ({
+  id: 'archidep-title-slide',
+  init: (reveal: Reveal.Api) => {
+    reveal.getSlides()[0]?.classList.add('title-slide');
+  }
+});
+
 const deck = new Reveal({
   hash: true,
   markdown: {
@@ -24,9 +45,11 @@ const deck = new Reveal({
   },
   plugins: [
     Markdown,
-    // Beware that the order of plugins matters! Highlight must be after
-    // Markdown so that code blocks are highlighted correctly.
+    // Beware that the order of plugins matters! Both of these must be after
+    // Markdown: Highlight so that the code blocks it converts are highlighted,
+    // and the title slide so that there is a slide of the deck to mark.
     Highlight,
+    titleSlide,
     Notes,
     Search
   ],
@@ -35,16 +58,6 @@ const deck = new Reveal({
 });
 
 deck.initialize().then(async () => {
-  // A deck's opening slide is set differently from the rest of it, and which
-  // slide that is has to be marked on the slide itself rather than left to a
-  // rule about where it sits: reveal rewrites the deck to print it, wrapping
-  // every slide in a page of its own and putting the slide's background ahead
-  // of it, so a rule keyed on position styles the title on screen and nothing
-  // at all in a PDF.
-  document
-    .querySelector('.reveal .slides section')
-    ?.classList.add('title-slide');
-
   document.querySelectorAll('a:not([target="_blank"])').forEach(link => {
     link.setAttribute('target', '_blank');
   });

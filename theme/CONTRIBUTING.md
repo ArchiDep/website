@@ -242,7 +242,8 @@ publishes the files they name, working out which those are by reading them: a
 face named in the stylesheet that no installed package provides stops the build
 rather than 404ing in a browser. Adding a family means installing its
 [Fontsource][fontsource] package, listing it in that script and declaring its
-faces.
+faces — the static package rather than the `-variable` one, and one face per
+weight the family is used at, for the reason `src/fonts.css` gives.
 
 The addresses in those rules are **relative to the stylesheet** (`../fonts/…`),
 as is everything an asset fetches for itself. A build publishes its assets under
