@@ -367,6 +367,11 @@ defmodule ArchiDep.CourseSite.Build.Site do
     })
   end
 
+  # The three files below are objects whose keys are written in the order they
+  # are stated, for the reason `ArchiDep.CourseSite.Archives.Manifest.to_json/1`
+  # gives: a build is a function of its inputs, and a file whose keys come out
+  # in the order the atoms of one run happened to be created in is not.
+  #
   # The name of a PDF is asked of `PdfNames` rather than read out of the URL
   # context's manifest, which is empty in a build that publishes none — and a
   # build that publishes none is exactly the one this file is printed from.
@@ -377,30 +382,32 @@ defmodule ArchiDep.CourseSite.Build.Site do
   # to the main site would otherwise send that consumer there too.
   defp course_json(%Structure{} = structure, urls, statuses),
     do:
-      JSON.encode!(%{
-        home: home_json(urls),
-        sections: Enum.map(structure.sections, &section_json(&1, urls, statuses)),
-        cheatsheets: Enum.map(structure.cheatsheets, &cheatsheet_json(&1, urls))
-      }) <> "\n"
+      encode_json(
+        object(
+          home: object(home_json(urls)),
+          sections: Enum.map(structure.sections, &object(section_json(&1, urls, statuses))),
+          cheatsheets: Enum.map(structure.cheatsheets, &object(cheatsheet_json(&1, urls)))
+        )
+      )
 
   defp home_json(urls),
-    do: %{
+    do: [
       url: Urls.resolve!(urls, :home),
       pdf: PdfNames.name(:home)
-    }
+    ]
 
   defp section_json(%Section{} = section, urls, statuses),
-    do: %{
+    do: [
       title: section.title,
       slug: Section.slug(section),
       num: Section.num(section),
       progress: status(statuses, Section.num(section)),
       open: Progress.section_open?(statuses, section),
-      docs: Enum.map(section.chapters, &chapter_json(&1, urls, statuses))
-    }
+      docs: Enum.map(section.chapters, &object(chapter_json(&1, urls, statuses)))
+    ]
 
   defp chapter_json(%Chapter{page: %DocumentRef{} = document} = chapter, urls, statuses),
-    do: %{
+    do: [
       title: chapter.title,
       num: Chapter.num(chapter),
       course_type: Atom.to_string(document.type),
@@ -413,19 +420,19 @@ defmodule ArchiDep.CourseSite.Build.Site do
       url: Urls.resolve!(urls, Chapter.page_ref(chapter)),
       pdf: PdfNames.name(Chapter.page_ref(chapter)),
       slides_pdf: slides_pdf(chapter)
-    }
+    ]
 
   defp slides_pdf(%Chapter{slides: nil}), do: nil
   defp slides_pdf(%Chapter{slides: %DocumentRef{} = deck}), do: PdfNames.name({:document, deck})
 
   defp cheatsheet_json(%Cheatsheet{} = cheatsheet, urls),
-    do: %{
+    do: [
       title: cheatsheet.title,
       sidebar_title: Cheatsheet.sidebar_title(cheatsheet),
       slug: cheatsheet.slug,
       url: Urls.resolve!(urls, Cheatsheet.page_ref(cheatsheet)),
       pdf: PdfNames.name(Cheatsheet.page_ref(cheatsheet))
-    }
+    ]
 
   defp search_path(urls),
     do: UrlContext.edition_prefix(urls) <> UrlPath.insert_suffix(@search_file, urls.build_id)
@@ -434,9 +441,9 @@ defmodule ArchiDep.CourseSite.Build.Site do
   # to a script rather than a record of the build.
   defp search_json(entries),
     do:
-      JSON.encode!(
+      encode_json(
         Enum.map(entries, fn %Entry{} = entry ->
-          %{
+          object(
             id: entry.id,
             type: entry.type,
             url: entry.url,
@@ -444,19 +451,22 @@ defmodule ArchiDep.CourseSite.Build.Site do
             subtitle: entry.subtitle,
             text: entry.text,
             extraText: entry.extra_text
-          }
+          )
         end)
-      ) <> "\n"
+      )
 
   defp version_json(%SiteInfo{} = site),
     do:
-      JSON.encode!(%{
-        version: site.version,
-        git: %{
-          branch: site.git_branch,
-          revision: site.git_revision
-        }
-      }) <> "\n"
+      encode_json(
+        object(
+          version: site.version,
+          git: object(branch: site.git_branch, revision: site.git_revision)
+        )
+      )
+
+  defp object(pairs), do: Jason.OrderedObject.new(pairs)
+
+  defp encode_json(term), do: Jason.encode!(term) <> "\n"
 
   defp status(statuses, num), do: statuses |> Map.get(num, :future) |> Atom.to_string()
 end

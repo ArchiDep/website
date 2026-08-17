@@ -384,7 +384,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
   defp search_json(edition, home_url, mode) do
     pages = [
-      %{
+      object(
         id: "/",
         type: "home",
         url: home_url,
@@ -392,8 +392,8 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         subtitle: "Architecture & Deployment",
         text: "Welcome.",
         extraText: ""
-      },
-      %{
+      ),
+      object(
         id: "/course/101-command-line/",
         type: "subject",
         url: "#{edition}/course/101-command-line/",
@@ -401,17 +401,17 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         subtitle: "Command Line",
         text: "Type.",
         extraText: ""
-      }
+      )
     ]
 
-    JSON.encode!(pages ++ application(mode)) <> "\n"
+    json(pages ++ application(mode))
   end
 
   # Only a live site is served beside the application, so only a live build holds
   # an entry for it.
   defp application(:live),
     do: [
-      %{
+      object(
         id: "/app",
         type: "dashboard",
         url: "/app",
@@ -419,49 +419,54 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         subtitle: "User & server dashboard",
         text: "Manage your user account for the course and register a server for the exercises.",
         extraText: ""
-      }
+      )
     ]
 
   defp application(_mode), do: []
 
+  # The keys are stated in the order the file is expected to write them, so that
+  # a build reordering them fails here.
   defp archidep_json(edition, home_url) do
-    JSON.encode!(%{
-      home: %{url: home_url, pdf: "archidep-000-course.pdf"},
-      sections: [
-        %{
-          title: "Introduction",
-          slug: "introduction",
-          num: 100,
-          progress: "done",
-          open: true,
-          docs: [
-            %{
-              title: "Command Line",
-              num: 101,
-              course_type: "subject",
-              graded: false,
-              course_slug: "command-line",
-              section: 1,
-              section_chapter: 1,
-              progress: "due",
-              slides: false,
-              url: "#{edition}/course/101-command-line/",
-              pdf: "archidep-101-command-line-subject.pdf",
-              slides_pdf: nil
-            }
-          ]
-        }
-      ],
-      cheatsheets: []
-    }) <> "\n"
+    json(
+      object(
+        home: object(url: home_url, pdf: "archidep-000-course.pdf"),
+        sections: [
+          object(
+            title: "Introduction",
+            slug: "introduction",
+            num: 100,
+            progress: "done",
+            open: true,
+            docs: [
+              object(
+                title: "Command Line",
+                num: 101,
+                course_type: "subject",
+                graded: false,
+                course_slug: "command-line",
+                section: 1,
+                section_chapter: 1,
+                progress: "due",
+                slides: false,
+                url: "#{edition}/course/101-command-line/",
+                pdf: "archidep-101-command-line-subject.pdf",
+                slides_pdf: nil
+              )
+            ]
+          )
+        ],
+        cheatsheets: []
+      )
+    )
   end
 
   defp version_json do
-    JSON.encode!(%{
-      version: "1.2.3",
-      git: %{branch: "main", revision: "abc123"}
-    }) <> "\n"
+    json(object(version: "1.2.3", git: object(branch: "main", revision: "abc123")))
   end
+
+  defp object(pairs), do: Jason.OrderedObject.new(pairs)
+
+  defp json(term), do: Jason.encode!(term) <> "\n"
 
   defp not_found_html(home_url) do
     """

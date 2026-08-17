@@ -283,86 +283,90 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     source
   end
 
+  # The keys are stated in the order the file is expected to write them, so that
+  # a build reordering them fails here.
   defp archidep_json do
-    JSON.encode!(%{
-      home: %{url: "/", pdf: "archidep-000-course.pdf"},
-      sections: [
-        %{
-          title: "Introduction",
-          slug: "introduction",
-          num: 100,
-          progress: "done",
-          open: false,
-          docs: [
-            %{
-              title: "Command Line",
-              num: 101,
-              course_type: "subject",
-              graded: false,
-              course_slug: "command-line",
-              section: 1,
-              section_chapter: 1,
-              progress: "done",
-              slides: true,
-              url: "/course/101-command-line/",
-              pdf: "archidep-101-command-line-subject.pdf",
-              slides_pdf: "archidep-101-command-line-slides.pdf"
-            }
-          ]
-        },
-        %{
-          title: "Version Control",
-          slug: "version-control",
-          num: 200,
-          progress: "due",
-          open: true,
-          docs: [
-            %{
-              title: "Git Branching",
-              num: 202,
-              course_type: "slides",
-              graded: false,
-              course_slug: "git-branching",
-              section: 2,
-              section_chapter: 2,
-              progress: "next",
-              slides: false,
-              url: "/course/202-git-branching/slides/",
-              pdf: "archidep-202-git-branching-slides.pdf",
-              slides_pdf: nil
-            },
-            %{
-              title: "PHP Todolist",
-              num: 205,
-              course_type: "exercise",
-              graded: false,
-              course_slug: "php-todolist",
-              section: 2,
-              section_chapter: 5,
-              progress: "future",
-              slides: false,
-              url: "/course/205-php-todolist/",
-              pdf: "archidep-205-php-todolist-exercise.pdf",
-              slides_pdf: nil
-            }
-          ]
-        }
-      ],
-      cheatsheets: [
-        %{
-          title: "Git Cheatsheet",
-          sidebar_title: "Git Cheatsheet",
-          slug: "git",
-          url: "/cheatsheets/git/",
-          pdf: "archidep-999-git.pdf"
-        }
-      ]
-    }) <> "\n"
+    json(
+      object(
+        home: object(url: "/", pdf: "archidep-000-course.pdf"),
+        sections: [
+          object(
+            title: "Introduction",
+            slug: "introduction",
+            num: 100,
+            progress: "done",
+            open: false,
+            docs: [
+              object(
+                title: "Command Line",
+                num: 101,
+                course_type: "subject",
+                graded: false,
+                course_slug: "command-line",
+                section: 1,
+                section_chapter: 1,
+                progress: "done",
+                slides: true,
+                url: "/course/101-command-line/",
+                pdf: "archidep-101-command-line-subject.pdf",
+                slides_pdf: "archidep-101-command-line-slides.pdf"
+              )
+            ]
+          ),
+          object(
+            title: "Version Control",
+            slug: "version-control",
+            num: 200,
+            progress: "due",
+            open: true,
+            docs: [
+              object(
+                title: "Git Branching",
+                num: 202,
+                course_type: "slides",
+                graded: false,
+                course_slug: "git-branching",
+                section: 2,
+                section_chapter: 2,
+                progress: "next",
+                slides: false,
+                url: "/course/202-git-branching/slides/",
+                pdf: "archidep-202-git-branching-slides.pdf",
+                slides_pdf: nil
+              ),
+              object(
+                title: "PHP Todolist",
+                num: 205,
+                course_type: "exercise",
+                graded: false,
+                course_slug: "php-todolist",
+                section: 2,
+                section_chapter: 5,
+                progress: "future",
+                slides: false,
+                url: "/course/205-php-todolist/",
+                pdf: "archidep-205-php-todolist-exercise.pdf",
+                slides_pdf: nil
+              )
+            ]
+          )
+        ],
+        cheatsheets: [
+          object(
+            title: "Git Cheatsheet",
+            sidebar_title: "Git Cheatsheet",
+            slug: "git",
+            url: "/cheatsheets/git/",
+            pdf: "archidep-999-git.pdf"
+          )
+        ]
+      )
+    )
   end
 
   defp search_json do
-    JSON.encode!([
-      %{
+    json([
+      object(
         id: "/",
         type: "home",
         url: "/",
@@ -370,8 +374,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         subtitle: "Architecture & Deployment",
         text: "Welcome.",
         extraText: ""
-      },
-      %{
+      ),
+      object(
         id: "/course/101-command-line/",
         type: "subject",
         url: "/course/101-command-line/",
@@ -379,8 +383,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         subtitle: "Command Line",
         text: "What",
         extraText: ""
-      },
-      %{
+      ),
+      object(
         id: "/course/101-command-line/slides/",
         type: "slides",
         url: "/course/101-command-line/slides/",
@@ -388,8 +392,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         subtitle: "Command Line Slides",
         text: "Command Line",
         extraText: ""
-      },
-      %{
+      ),
+      object(
         id: "/course/202-git-branching/slides/",
         type: "slides",
         url: "/course/202-git-branching/slides/",
@@ -397,8 +401,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         subtitle: "Git Branching",
         text: "Branching",
         extraText: ""
-      },
-      %{
+      ),
+      object(
         id: "/course/205-php-todolist/",
         type: "exercise",
         url: "/course/205-php-todolist/",
@@ -406,8 +410,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         subtitle: "PHP Todolist",
         text: "Build it.",
         extraText: ""
-      },
-      %{
+      ),
+      object(
         id: "/cheatsheets/git/",
         type: "cheatsheet",
         url: "/cheatsheets/git/",
@@ -415,8 +419,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         subtitle: "Git Cheatsheet",
         text: "Commit.",
         extraText: ""
-      },
-      %{
+      ),
+      object(
         id: "/app",
         type: "dashboard",
         url: "/app",
@@ -424,16 +428,17 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         subtitle: "User & server dashboard",
         text: "Manage your user account for the course and register a server for the exercises.",
         extraText: ""
-      }
-    ]) <> "\n"
+      )
+    ])
   end
 
   defp version_json do
-    JSON.encode!(%{
-      version: "1.2.3",
-      git: %{branch: "main", revision: "abc123"}
-    }) <> "\n"
+    json(object(version: "1.2.3", git: object(branch: "main", revision: "abc123")))
   end
+
+  defp object(pairs), do: Jason.OrderedObject.new(pairs)
+
+  defp json(term), do: Jason.encode!(term) <> "\n"
 
   defp not_found_html(home_url \\ "/") do
     """
