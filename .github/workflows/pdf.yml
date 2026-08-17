@@ -71,13 +71,13 @@ jobs:
         env:
           NODE_ENV: production
 
-      # An address baked in here would only ever show up as a slide deck printed
-      # with its diagrams missing and its titles in a fallback font: the chunks
-      # and the fonts 404, and the export waits for the network to go quiet,
-      # which a 404 does. A build's assets sit under its edition prefix, so
-      # there is no one prefix to bake.
+      # The same check as in the `build` workflow. Repeated here because this
+      # workflow builds the assets itself: what a baked-in address costs here is
+      # a slide deck printed with its diagrams missing and its titles in a
+      # fallback font, and an export that waits on the network going quiet,
+      # which a 404 does.
       - name: Check the assets address themselves relatively
-        run: grep -q '__webpack_require__.p = scriptUrl' app/priv/static/assets/course/slides-mermaid.js
+        run: grep -qF 'Automatic publicPath is not supported in this browser' app/priv/static/assets/course/slides-mermaid.js
 
       - name: Install Erlang/OTP & Elixir
         uses: erlef/setup-beam@v1

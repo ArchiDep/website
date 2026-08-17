@@ -211,6 +211,24 @@ jobs:
         env:
           NODE_ENV: production
 
+      # Where a build publishes its assets is not known when they are bundled:
+      # the same bundle is served under an edition prefix, under a mount point,
+      # and from the root of an export. A prefix baked in here would 404 in all
+      # but one of those, taking with it the diagrams and the fonts.
+      #
+      # What is matched is the message webpack's automatic-publicPath runtime
+      # throws where it cannot work out its own address, present only in a
+      # bundle that has that runtime rather than a prefix. It is matched instead
+      # of the assignment it guards because a string literal is the part of that
+      # runtime a minified build keeps: the names around it, webpack's own
+      # included, are gone by then.
+      #
+      # Checked here, where a production build of the assets happens on every
+      # push, and again in the `pdf` workflow, which builds them itself and
+      # cannot depend on this job having run.
+      - name: Check the assets address themselves relatively
+        run: grep -qF 'Automatic publicPath is not supported in this browser' app/priv/static/assets/course/slides-mermaid.js
+
       - name: Install Erlang/OTP & Elixir
         uses: erlef/setup-beam@v1
         with:
