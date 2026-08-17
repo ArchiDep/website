@@ -56,7 +56,7 @@ config :archidep,
     # beside it. That repository does not exist yet, and a build that cannot say
     # where its PDFs are offers no download link, which is what a build made
     # before they have been printed wants.
-    pdf_base: nil,
+    pdf_base: "https://github.com/ArchiDep/archidep.github.io/releases/download/pdf/2025",
     watch: false,
     serve: false
   ],
