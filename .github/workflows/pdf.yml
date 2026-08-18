@@ -90,7 +90,7 @@ jobs:
       # build of the `build` workflow would leave whichever ran second with
       # nothing to restore for the life of the lock file.
       - name: Cache app build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             app/deps

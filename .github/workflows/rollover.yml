@@ -137,7 +137,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Cache app build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             app/deps

@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Cache app build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             app/deps
@@ -251,7 +251,7 @@ jobs:
       # Keyed by environment as well, the build directory holding one of them, so
       # that this does not share a key with the test build of the app job.
       - name: Cache app build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             app/deps
