@@ -1,0 +1,356 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: rollover
+
+# Freezing an edition is a once-a-year act on bytes that are never rendered
+# again, so it is dispatched deliberately and never by a push.
+#
+# `check` is the default, and the reason this workflow is shaped the way it is:
+# something run once a year rots between runs, and would otherwise be found
+# broken at the one moment there is no time to fix it. In `check` mode every
+# step below runs and nothing is written anywhere, so rehearsing the rollover is
+# the first step of performing it — see `docs/rollover.md`.
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: 'Edition to freeze, as the starting year of its academic year'
+        type: string
+        required: true
+      ref:
+        description: 'Tag to render it from (default: archive/<year>)'
+        type: string
+        required: false
+        default: ''
+      mode:
+        description: 'check renders and verifies; publish also pushes'
+        type: choice
+        options:
+          - check
+          - publish
+        default: check
+
+permissions:
+  contents: read
+
+# Two runs would race on the same directory of the archive repository. Queued
+# rather than cancelled: the run already going may be pushing, and a superseding
+# run has nothing better to publish.
+concurrency:
+  group: 'rollover'
+  cancel-in-progress: false
+
+jobs:
+  rollover:
+    runs-on: ubuntu-24.04
+    name: Freeze an edition
+    timeout-minutes: 60
+    env:
+      ELIXIR_VERSION: 1.19.5
+      ERLANG_VERSION: 28.5.0.1
+      MIX_ENV: prod
+      YEAR: ${{ inputs.year }}
+      MODE: ${{ inputs.mode }}
+      # A re-freeze names its own tag, the first one having been published and
+      # become immutable; every other run wants the edition's own. Stated once,
+      # here, because the checkout, the assertions and the bytes themselves all
+      # have to name the same thing.
+      REF: ${{ inputs.ref || format('archive/{0}', inputs.year) }}
+      ARCHIVE_REPO: ${{ vars.ARCHIDEP_ARCHIVE_REPO }}
+    steps:
+      # Everything that can be known before a fifteen-minute build is checked
+      # before it, so that a mistyped input or a missing credential costs
+      # seconds rather than the whole run.
+      - name: Work out what to freeze
+        run: |
+          set -euo pipefail
+
+          case "$YEAR" in
+            [0-9][0-9][0-9][0-9]) ;;
+            *)
+              echo "::error::Edition $YEAR must be a four-digit year, the starting year of the academic year"
+              exit 1
+              ;;
+          esac
+
+          if [ "$MODE" = publish ] && [ -z "$ARCHIVE_REPO" ]; then
+            echo "::error::Cannot publish: no archive repository is configured (ARCHIDEP_ARCHIVE_REPO)"
+            exit 1
+          fi
+
+          echo "Freezing the $YEAR edition from $REF in $MODE mode"
+
+      - name: Checkout the edition
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
+
+      - name: Check that the source is a tag
+        id: checkout
+        run: |
+          set -euo pipefail
+
+          # A tag and not a branch: what a branch names moves, and what this
+          # publishes never does. It is also where a ref that is merely absent
+          # or misspelled stops, the checkout above having taken anything that
+          # resolves at all.
+          if ! git show-ref --verify --quiet "refs/tags/$REF"; then
+            echo "::error::$REF is not a tag of this repository"
+            exit 1
+          fi
+
+          sha="$(git rev-parse HEAD)"
+          test "$(git rev-parse "refs/tags/$REF^{commit}")" = "$sha"
+
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: npm
+          cache-dependency-path: package-lock.json
+          node-version: 24.4.0
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Built here rather than downloaded from another workflow's artifact, for
+      # the reason the build workflow gives: an artifact carries `assets/theme`
+      # and not `assets/emoji`, which every page of this renderer needs.
+      - name: Build the theme
+        run: npm run build
+        working-directory: theme
+
+      - name: Build course assets
+        run: npm run build
+        working-directory: course
+        env:
+          NODE_ENV: production
+
+      # The same guard the build workflow explains.
+      - name: Check the assets address themselves relatively
+        run: grep -qF 'Automatic publicPath is not supported in this browser' app/priv/static/assets/course/slides-mermaid.js
+
+      - name: Install Erlang/OTP & Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.ERLANG_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Cache app build
+        uses: actions/cache@v3
+        with:
+          path: |
+            app/deps
+            app/_build
+          key: ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ env.MIX_ENV }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-${{ env.MIX_ENV }}-
+
+      - name: Install dependencies
+        run: mix deps.get
+        working-directory: app
+
+      - name: Compile the app
+        run: mix compile
+        working-directory: app
+
+      - name: Digest the assets
+        run: mix assets.deploy
+        working-directory: app
+
+      # What the tag holds rather than what the input said: the two are one fact
+      # for the same reason the build and PDF workflows read the edition instead
+      # of deciding it, and disagreeing here means freezing the wrong tree
+      # entirely under the right name.
+      - name: Check that the tag holds the edition being frozen
+        working-directory: app
+        run: |
+          set -euo pipefail
+
+          edition="$(mix archidep.course_site.edition | tail -n 1)"
+          test -n "$edition"
+
+          if [ "$edition" != "$YEAR" ]; then
+            echo "::error::$REF holds the $edition edition, not $YEAR"
+            exit 1
+          fi
+
+      - name: Read what main says about this edition
+        run: |
+          set -euo pipefail
+
+          mkdir -p tmp
+          git fetch --depth 1 origin main
+
+          # The `version` knob of the edition being taught, read from `main`
+          # rather than from this tag, which by definition still names its own.
+          taught="$(git show FETCH_HEAD:app/config/config.exs | sed -n 's/^ *version: "\([0-9]\{4\}\)",$/\1/p')"
+
+          # Exactly one match, or this has stopped describing the file it reads
+          # and must say so rather than pass by finding nothing.
+          if [ "$(printf '%s\n' "$taught" | grep -c .)" -ne 1 ]; then
+            echo "::error::Cannot tell which edition main configures; this check no longer matches app/config/config.exs"
+            exit 1
+          fi
+
+          # The ordering constraint of the rollover, made mechanical. While
+          # `main` still configures this edition, the build workflow republishes
+          # its backup copy over the same directory on every push, and an
+          # edition frozen before that stops would be silently unfrozen again.
+          #
+          # A warning rather than an error in `check` mode, so that the
+          # rehearsal can come before the knob moves, which is where the
+          # procedure puts it.
+          if [ "$taught" != "$YEAR" ]; then
+            echo "main is teaching the $taught edition"
+          elif [ "$MODE" = publish ]; then
+            echo "::error::main still teaches the $YEAR edition, whose backup copy would overwrite this; move the version knob first"
+            exit 1
+          else
+            echo "::warning::main still teaches the $YEAR edition, so this could not be published yet"
+          fi
+
+          # The manifest of this edition as `main` holds it, which is the copy
+          # the running application compiles in and resolves `/latest` against —
+          # and therefore the one whose pages have to exist.
+          manifest="course/archives/$YEAR.json"
+          if ! git show "FETCH_HEAD:$manifest" > tmp/manifest.json; then
+            echo "::error::main holds no $manifest, so no deployment knows this edition"
+            exit 1
+          fi
+
+          if ! git diff --quiet --no-index "$manifest" tmp/manifest.json; then
+            echo "::warning::$manifest differs between $REF and main; main's is the one checked below"
+          fi
+
+      - name: Render the frozen edition
+        working-directory: app
+        env:
+          # A tag checkout is detached, so a build left to read the branch from
+          # the checkout would find `HEAD` and every page's source-code link
+          # would say so, permanently. The tag is both what this was rendered
+          # from and a working tree URL, which is the truer answer anyway.
+          #
+          # Set on this step rather than on the job because the job cannot refer
+          # to its own environment; the compilation above is redone here as a
+          # result, which is what `ArchiDep.Git.__mix_recompile__?/0` is for.
+          ARCHIDEP_GIT_BRANCH: ${{ env.REF }}
+        run: |
+          mix archidep.course_site.build --output ../tmp/site --clean \
+            --mode archive --version "$YEAR" \
+            --live-site-url https://archidep.ch --no-source-maps
+
+      # Nothing reads these bytes closely ever again, so everything that can be
+      # asserted about them is asserted here, while it is still free to fix.
+      # Each check below is a way the output could be wrong while looking
+      # entirely normal.
+      - name: Check what was rendered
+        env:
+          SHA: ${{ steps.checkout.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          fail() { echo "::error::$1"; exit 1; }
+
+          # `:archive` is the mode that keeps the home page under the edition
+          # prefix. A home page at the mount point is a backup build, and
+          # publishing one would claim the root of the archive site — the home
+          # page of the edition being taught — for a finished year.
+          test -f "tmp/site/$YEAR/index.html" || fail "Nothing was rendered at tmp/site/$YEAR/"
+          test ! -f tmp/site/index.html || fail "A home page was rendered at the mount point, so this is not an archive build"
+
+          # Source maps are a third of what a published edition weighs and
+          # nothing links to them; a frozen copy is not what anyone debugs.
+          maps="$(find tmp/site \( -name '*.map' -o -name '*.map.gz' \) -print -quit)"
+          test -z "$maps" || fail "Source maps were rendered ($maps), so --no-source-maps did not take"
+
+          # What says the ARCHIDEP_GIT_BRANCH above took. Without it this reads
+          # `HEAD` — a plausible-looking value, and a dead source-code link on
+          # every page of the edition, forever.
+          branch="$(jq -r .git.branch "tmp/site/$YEAR/version.json")"
+          revision="$(jq -r .git.revision "tmp/site/$YEAR/version.json")"
+          test "$branch" = "$REF" || fail "The edition says it was rendered from $branch, not $REF"
+          test "$revision" = "$SHA" || fail "The edition says it was rendered from $revision, not $SHA"
+
+          # The archive chrome rather than the backup chrome: the banner that
+          # offers the current version of a page, and the crawler instruction
+          # that keeps a finished year from competing with the one being taught.
+          grep -qF 'noindex, follow' "tmp/site/$YEAR/index.html" || fail "The rendered pages do not ask crawlers to leave them alone"
+          grep -qF "/latest?to=/$YEAR/" "tmp/site/$YEAR/index.html" || fail "The rendered pages carry no archive banner"
+
+          # Every page the manifest promises — the check the application makes
+          # at boot against the deployed clone, made here instead, where a
+          # mismatch is still cheap to fix.
+          missing=0
+          while IFS= read -r page; do
+            test -f "tmp/site/$YEAR${page}index.html" || { echo "Missing $page"; missing=$((missing + 1)); }
+          done < <(jq -r '.pages[].path' tmp/manifest.json)
+          test "$missing" -eq 0 || fail "$missing pages of the manifest were not rendered"
+
+          echo "The $YEAR edition is $(jq -r '.pages | length' tmp/manifest.json) pages and $(du -sh "tmp/site/$YEAR" | cut -f1)"
+
+      - name: Ensure there are no uncommitted changes
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+
+      - name: Compare with what is published
+        if: vars.ARCHIDEP_ARCHIVE_REPO != ''
+        run: |
+          set -euo pipefail
+
+          git clone --depth 1 "https://github.com/$ARCHIVE_REPO.git" tmp/archive
+
+          # One sync and not the two the build workflow does: an archive build
+          # owns its own directory and nothing else. The mount point belongs to
+          # the edition being taught, and a `--delete` reaching it would take
+          # that edition's home page and root files with it.
+          #
+          # By checksum rather than by timestamp, for the reason that workflow
+          # gives: a clone stamps every file with the moment it was fetched.
+          echo 'What publishing would change:'
+          rsync -a --checksum --delete --dry-run --itemize-changes \
+            "tmp/site/$YEAR/" "tmp/archive/$YEAR/"
+
+      - name: Say why nothing was compared
+        if: vars.ARCHIDEP_ARCHIVE_REPO == ''
+        run: echo "::notice::No archive repository is configured, so what this would publish was not compared with what is published"
+
+      - name: Publish the frozen edition
+        if: inputs.mode == 'publish' && vars.ARCHIDEP_ARCHIVE_REPO != ''
+        env:
+          ARCHIVE_TOKEN: ${{ secrets.ARCHIDEP_ARCHIVE_TOKEN }}
+          SHA: ${{ steps.checkout.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          rsync -a --checksum --delete "tmp/site/$YEAR/" "tmp/archive/$YEAR/"
+
+          cd tmp/archive
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+
+          # A run that rendered exactly what is already published leaves no
+          # commit behind, so publishing again after a failure further on costs
+          # nothing and says nothing.
+          if git diff --cached --quiet; then
+            echo "The $YEAR edition is already published exactly as rendered"
+          else
+            git commit --message "Freeze the $YEAR edition from $REF ($SHA)"
+            git remote set-url origin "https://x-access-token:$ARCHIVE_TOKEN@github.com/$ARCHIVE_REPO.git"
+            git push
+          fi
+
+      - name: Summarise the run
+        if: always()
+        env:
+          SHA: ${{ steps.checkout.outputs.sha }}
+        run: |
+          {
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| Edition | $YEAR |"
+            echo "| Rendered from | \`$REF\` (\`$SHA\`) |"
+            echo "| Mode | $MODE |"
+          } >> "$GITHUB_STEP_SUMMARY"

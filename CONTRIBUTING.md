@@ -85,6 +85,10 @@ flowchart TB
     busting without having to build the whole application.
   - `docker/`: Support files for the production Docker image and the local
     Docker development images.
+  - `docs/`: Procedures that belong to no single component.
+    - [`docs/rollover.md`][rollover] explains the year-end rollover, which
+      publishes the edition that has ended and points the repository at the next
+      one.
   - `scripts/`: Utility scripts for local development.
   - `tmp/`: Temporary files created during local development or by developers.
   - `.github/`: CI/CD workflows and GitHub configuration.
@@ -283,5 +287,6 @@ agents.
 [app-contributing]: ./app/CONTRIBUTING.md
 [course-agents]: ./course/AGENTS.md
 [course-contributing]: ./course/CONTRIBUTING.md
+[rollover]: ./docs/rollover.md
 [theme-agents]: ./theme/AGENTS.md
 [theme-contributing]: ./theme/CONTRIBUTING.md

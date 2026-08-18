@@ -618,7 +618,35 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       [cutover](#cutover) above, which happens once; this happens every year.
       The deploy is the step that hands the outgoing edition over from the image
       that was built from it to the clone every later year is served from, so
-      every host holding every edition has to be in place first.
+      every host holding every edition has to be in place first. **Written, not
+      yet run**: the procedure is [`docs/rollover.md`](../docs/rollover.md) and
+      the freeze is `.github/workflows/rollover.yml`, so what remains is the
+      half that tags, pushes and deploys. Four things building it produced,
+      besides the reordering recorded [below](#where-past-editions-are-kept).
+      **A procedure run once a year has to be runnable without side effects**,
+      or the only state it is ever run in is the one it has rotted into; `check`
+      is therefore the default mode and writes nothing anywhere, which makes the
+      rehearsal the first step of the rollover rather than a precaution beside
+      it. It needs no credential either — the archive repository is public, so
+      the comparison against what is published clones anonymously — leaving the
+      whole of it runnable from a branch. **A tag checkout is detached, and a
+      build reads its branch from the checkout**, so left alone the branch it
+      finds is `HEAD` and every page of the frozen edition carries a source-code
+      link to `/tree/HEAD`, permanently, in bytes nobody re-reads;
+      `ARCHIDEP_GIT_BRANCH` names the tag instead, which is the truer answer
+      anyway, and `version.json` saying so is one of the assertions. **The boot
+      completeness check is worth making before publishing rather than after
+      deploying** — it is the same few dozen `File.exists?` either way, and
+      making it while the answer can still be changed turns a deployment-time
+      error line into a build-time failure; the manifest read is `main`'s, that
+      being the copy a running application compiles in. And **a correction is a
+      new freeze**: the tag of a published edition is immutable, `git fetch` not
+      updating a tag that moved and a moved one therefore leaving every existing
+      clone pointing at bytes that are no longer served, so a fix is committed
+      on a branch off the tag, tagged `archive/<year>.<n>` and published over
+      the same directory — branching off the tag rather than off `main` being
+      what keeps the correction rendered by the renderer that produced the
+      original.
 - [ ] Move the progress _status source_ from `progress.json` to a database model
       edited through the admin console, driving an in-process rebuild — see
       [Progress: structure vs status](#progress-structure-vs-status). **Last**,
@@ -3474,6 +3502,22 @@ is a single `:archive` build, served by both hosts.
    the window in which the outgoing edition is held only by an image built
    before it was archived: after it, production serves that edition from the
    clone like every other finished one.
+
+**Steps 2 and 4 are the other way round, and the freeze gained a step zero.**
+Committing the frozen edition while this repository still configures it leaves a
+window with nothing to close it: the [publish
+step](#where-standing-the-repository-up-has-got-to) syncs the edition it renders
+on every push to `main`, so the backup copy would be written back over the
+archive the next time anything landed. Moving the `version` knob first is what
+ends that — the sync excludes any year it did not render — and it costs nothing,
+because the clone goes on holding the outgoing edition as its backup copy in the
+meantime, so there is no moment when that year is missing rather than merely
+carrying the wrong banner. The workflow enforces the order rather than the
+procedure asking for it: it reads the knob from `main` and refuses to publish a
+year still being taught. Step zero is the rehearsal that a once-a-year procedure
+needs, and the whole of it is written down in
+[`docs/rollover.md`](../docs/rollover.md), which is also where correcting a
+published edition is settled.
 
 **What it costs, and what has to stay out of it.** A published edition measures
 ~53 MB of content (the ~370 files sitting next to pages) plus the ~55 MB of

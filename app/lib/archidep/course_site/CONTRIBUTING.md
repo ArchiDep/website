@@ -351,7 +351,8 @@ archive it never described. That is why a manifest records each page's
 [identity](#identities) **beside** its path — written by the edition that
 assigned it, at the one moment anything knows it — and why `mix
 archidep.course_site.archives` is a rollover step rather than something derived
-later. It is also why there is no way back from a path to an identity.
+later ([the procedure](../../../../docs/rollover.md)). It is also why there is
+no way back from a path to an identity.
 
 **Matching is by kind and slug, never by number**, so a renumbered chapter needs
 no entry at all and the yearly cost of the whole mechanism is the diff. An

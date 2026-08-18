@@ -38,9 +38,9 @@ config :archidep,
   course_site: [
     mode: :live,
     base_path: "",
-    version: "2025",
-    years: "2025-2026",
-    years_short: "25-26",
+    version: "2026",
+    years: "2026-2027",
+    years_short: "26-27",
     # Which build of the site this deployment is serving. It names the search
     # index, so the application and whatever built the site have to agree on it
     # or the dashboard's own search dialog asks for a file nobody wrote — which
@@ -55,7 +55,7 @@ config :archidep,
     # rollover. A build told nothing here offers no download link, which is what
     # a build made before its PDFs have been printed wants.
     pdf_base:
-      {:external, "https://github.com/ArchiDep/archidep.github.io/releases/download/pdf/2025"},
+      {:external, "https://github.com/ArchiDep/archidep.github.io/releases/download/pdf/2026"},
     watch: false,
     serve: false
   ],

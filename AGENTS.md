@@ -17,6 +17,9 @@ exhaustive index.
 - **Course material** — writing guidelines, document types, front matter, the
   Liquid tags a document may use, slides:
   [`course/CONTRIBUTING.md`](./course/CONTRIBUTING.md)
+- **Year-end rollover** — freezing and publishing the edition that has ended,
+  pointing the repository at the next one, and correcting a frozen edition:
+  [`docs/rollover.md`](./docs/rollover.md)
 - **Theme** — Tailwind/DaisyUI, dark mode, typography, syntax highlighting:
   [`theme/CONTRIBUTING.md`](./theme/CONTRIBUTING.md)
 - **Dashboard application** — overall architecture, development environment,

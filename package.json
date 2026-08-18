@@ -25,7 +25,7 @@
   "homepage": "https://github.com/ArchiDep/website#readme",
   "scripts": {
     "doctoc": "concurrently npm:doctoc:*",
-    "doctoc:root": "doctoc --github --notitle CONTRIBUTING.md README.md TEST-MATTER.md course/CONTRIBUTING.md theme/CONTRIBUTING.md && prettier --write CONTRIBUTING.md README.md TEST-MATTER.md course/CONTRIBUTING.md theme/CONTRIBUTING.md",
+    "doctoc:root": "doctoc --github --notitle CONTRIBUTING.md README.md TEST-MATTER.md course/CONTRIBUTING.md docs/*.md theme/CONTRIBUTING.md && prettier --write CONTRIBUTING.md README.md TEST-MATTER.md course/CONTRIBUTING.md docs/*.md theme/CONTRIBUTING.md",
     "doctoc:app": "doctoc --github --notitle app/CONTRIBUTING.md app/docs/*.md app/lib/archidep/accounts/CONTRIBUTING.md app/lib/archidep/course/CONTRIBUTING.md app/lib/archidep/course_site/CONTRIBUTING.md app/lib/archidep/servers/CONTRIBUTING.md app/lib/archidep_web/CONTRIBUTING.md && prettier --write app/CONTRIBUTING.md app/docs/*.md app/lib/archidep/accounts/CONTRIBUTING.md app/lib/archidep/course/CONTRIBUTING.md app/lib/archidep/course_site/CONTRIBUTING.md app/lib/archidep/servers/CONTRIBUTING.md app/lib/archidep_web/CONTRIBUTING.md",
     "doctoc:wip": "doctoc --github --notitle wip/*.md && prettier --write wip/*.md",
     "format": "npm run format:root && npm run --workspace course format",
