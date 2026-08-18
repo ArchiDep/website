@@ -1,0 +1,384 @@
+{
+  "version": 1,
+  "edition": "2026",
+  "pages": [
+    {
+      "path": "/",
+      "kind": "home"
+    },
+    {
+      "path": "/course/101-command-line/",
+      "kind": "chapter",
+      "num": 101,
+      "slug": "command-line"
+    },
+    {
+      "path": "/course/101-command-line/slides/",
+      "kind": "chapter_slides",
+      "num": 101,
+      "slug": "command-line"
+    },
+    {
+      "path": "/course/102-shell-scripting/",
+      "kind": "chapter",
+      "num": 102,
+      "slug": "shell-scripting"
+    },
+    {
+      "path": "/course/103-hello-shell/",
+      "kind": "chapter",
+      "num": 103,
+      "slug": "hello-shell"
+    },
+    {
+      "path": "/course/104-ssh/",
+      "kind": "chapter",
+      "num": 104,
+      "slug": "ssh"
+    },
+    {
+      "path": "/course/104-ssh/slides/",
+      "kind": "chapter_slides",
+      "num": 104,
+      "slug": "ssh"
+    },
+    {
+      "path": "/course/105-hello-ssh/",
+      "kind": "chapter",
+      "num": 105,
+      "slug": "hello-ssh"
+    },
+    {
+      "path": "/course/201-git/",
+      "kind": "chapter",
+      "num": 201,
+      "slug": "git"
+    },
+    {
+      "path": "/course/201-git/slides/",
+      "kind": "chapter_slides",
+      "num": 201,
+      "slug": "git"
+    },
+    {
+      "path": "/course/202-git-branching/slides/",
+      "kind": "chapter_slides",
+      "num": 202,
+      "slug": "git-branching"
+    },
+    {
+      "path": "/course/203-git-collaborating/slides/",
+      "kind": "chapter_slides",
+      "num": 203,
+      "slug": "git-collaborating"
+    },
+    {
+      "path": "/course/204-hello-github/",
+      "kind": "chapter",
+      "num": 204,
+      "slug": "hello-github"
+    },
+    {
+      "path": "/course/205-php-todolist/",
+      "kind": "chapter",
+      "num": 205,
+      "slug": "php-todolist"
+    },
+    {
+      "path": "/course/301-security/",
+      "kind": "chapter",
+      "num": 301,
+      "slug": "security"
+    },
+    {
+      "path": "/course/302-image-gallery/",
+      "kind": "chapter",
+      "num": 302,
+      "slug": "image-gallery"
+    },
+    {
+      "path": "/course/401-cloud-computing/slides/",
+      "kind": "chapter_slides",
+      "num": 401,
+      "slug": "cloud-computing"
+    },
+    {
+      "path": "/course/402-run-virtual-server/",
+      "kind": "chapter",
+      "num": 402,
+      "slug": "run-virtual-server"
+    },
+    {
+      "path": "/course/403-linux/slides/",
+      "kind": "chapter_slides",
+      "num": 403,
+      "slug": "linux"
+    },
+    {
+      "path": "/course/404-unix-basics/",
+      "kind": "chapter",
+      "num": 404,
+      "slug": "unix-basics"
+    },
+    {
+      "path": "/course/405-permissions/",
+      "kind": "chapter",
+      "num": 405,
+      "slug": "permissions"
+    },
+    {
+      "path": "/course/406-unix-processes/",
+      "kind": "chapter",
+      "num": 406,
+      "slug": "unix-processes"
+    },
+    {
+      "path": "/course/407-pipeline/",
+      "kind": "chapter",
+      "num": 407,
+      "slug": "pipeline"
+    },
+    {
+      "path": "/course/408-unix-networking/",
+      "kind": "chapter",
+      "num": 408,
+      "slug": "unix-networking"
+    },
+    {
+      "path": "/course/408-unix-networking/slides/",
+      "kind": "chapter_slides",
+      "num": 408,
+      "slug": "unix-networking"
+    },
+    {
+      "path": "/course/409-tcp/",
+      "kind": "chapter",
+      "num": 409,
+      "slug": "tcp"
+    },
+    {
+      "path": "/course/410-sftp-deployment/",
+      "kind": "chapter",
+      "num": 410,
+      "slug": "sftp-deployment"
+    },
+    {
+      "path": "/course/411-how-to-improve/",
+      "kind": "chapter",
+      "num": 411,
+      "slug": "how-to-improve"
+    },
+    {
+      "path": "/course/501-git-clone-deployment/",
+      "kind": "chapter",
+      "num": 501,
+      "slug": "git-clone-deployment"
+    },
+    {
+      "path": "/course/502-twelve-factor/",
+      "kind": "chapter",
+      "num": 502,
+      "slug": "twelve-factor"
+    },
+    {
+      "path": "/course/503-environment-variables/",
+      "kind": "chapter",
+      "num": 503,
+      "slug": "environment-variables"
+    },
+    {
+      "path": "/course/503-environment-variables/slides/",
+      "kind": "chapter_slides",
+      "num": 503,
+      "slug": "environment-variables"
+    },
+    {
+      "path": "/course/504-config-through-environment/",
+      "kind": "chapter",
+      "num": 504,
+      "slug": "config-through-environment"
+    },
+    {
+      "path": "/course/505-linux-process-management/",
+      "kind": "chapter",
+      "num": 505,
+      "slug": "linux-process-management"
+    },
+    {
+      "path": "/course/506-systemd-deployment/",
+      "kind": "chapter",
+      "num": 506,
+      "slug": "systemd-deployment"
+    },
+    {
+      "path": "/course/507-dns/",
+      "kind": "chapter",
+      "num": 507,
+      "slug": "dns"
+    },
+    {
+      "path": "/course/507-dns/slides/",
+      "kind": "chapter_slides",
+      "num": 507,
+      "slug": "dns"
+    },
+    {
+      "path": "/course/508-dns-config/",
+      "kind": "chapter",
+      "num": 508,
+      "slug": "dns-config"
+    },
+    {
+      "path": "/course/509-reverse-proxy/",
+      "kind": "chapter",
+      "num": 509,
+      "slug": "reverse-proxy"
+    },
+    {
+      "path": "/course/509-reverse-proxy/slides/",
+      "kind": "chapter_slides",
+      "num": 509,
+      "slug": "reverse-proxy"
+    },
+    {
+      "path": "/course/510-nginx-static-deployment/",
+      "kind": "chapter",
+      "num": 510,
+      "slug": "nginx-static-deployment"
+    },
+    {
+      "path": "/course/511-revprod-deployment/",
+      "kind": "chapter",
+      "num": 511,
+      "slug": "revprod-deployment"
+    },
+    {
+      "path": "/course/512-nginx-php-fpm-deployment/",
+      "kind": "chapter",
+      "num": 512,
+      "slug": "nginx-php-fpm-deployment"
+    },
+    {
+      "path": "/course/513-tls/slides/",
+      "kind": "chapter_slides",
+      "num": 513,
+      "slug": "tls"
+    },
+    {
+      "path": "/course/514-certbot-deployment/",
+      "kind": "chapter",
+      "num": 514,
+      "slug": "certbot-deployment"
+    },
+    {
+      "path": "/course/515-fibscale-deployment/",
+      "kind": "chapter",
+      "num": 515,
+      "slug": "fibscale-deployment"
+    },
+    {
+      "path": "/course/601-git-hooks/",
+      "kind": "chapter",
+      "num": 601,
+      "slug": "git-hooks"
+    },
+    {
+      "path": "/course/602-git-automated-deployment/",
+      "kind": "chapter",
+      "num": 602,
+      "slug": "git-automated-deployment"
+    },
+    {
+      "path": "/course/603-floodit-deployment/",
+      "kind": "chapter",
+      "num": 603,
+      "slug": "floodit-deployment"
+    },
+    {
+      "path": "/course/701-paas/",
+      "kind": "chapter",
+      "num": 701,
+      "slug": "paas"
+    },
+    {
+      "path": "/course/702-github-pages-deployment/",
+      "kind": "chapter",
+      "num": 702,
+      "slug": "github-pages-deployment"
+    },
+    {
+      "path": "/course/703-netlify-static-deployment/",
+      "kind": "chapter",
+      "num": 703,
+      "slug": "netlify-static-deployment"
+    },
+    {
+      "path": "/course/704-render-deployment/",
+      "kind": "chapter",
+      "num": 704,
+      "slug": "render-deployment"
+    },
+    {
+      "path": "/course/801-docker/",
+      "kind": "chapter",
+      "num": 801,
+      "slug": "docker"
+    },
+    {
+      "path": "/course/801-docker/slides/",
+      "kind": "chapter_slides",
+      "num": 801,
+      "slug": "docker"
+    },
+    {
+      "path": "/course/802-docker-fibscale/",
+      "kind": "chapter",
+      "num": 802,
+      "slug": "docker-fibscale"
+    },
+    {
+      "path": "/course/803-docker-isolation/",
+      "kind": "chapter",
+      "num": 803,
+      "slug": "docker-isolation"
+    },
+    {
+      "path": "/course/804-docker-compose/",
+      "kind": "chapter",
+      "num": 804,
+      "slug": "docker-compose"
+    },
+    {
+      "path": "/course/804-docker-compose/slides/",
+      "kind": "chapter_slides",
+      "num": 804,
+      "slug": "docker-compose"
+    },
+    {
+      "path": "/course/805-docker-compose-deployment/",
+      "kind": "chapter",
+      "num": 805,
+      "slug": "docker-compose-deployment"
+    },
+    {
+      "path": "/cheatsheets/command-line/",
+      "kind": "cheatsheet",
+      "slug": "command-line"
+    },
+    {
+      "path": "/cheatsheets/git/",
+      "kind": "cheatsheet",
+      "slug": "git"
+    },
+    {
+      "path": "/cheatsheets/sysadmin/",
+      "kind": "cheatsheet",
+      "slug": "sysadmin"
+    },
+    {
+      "path": "/cheatsheets/docker/",
+      "kind": "cheatsheet",
+      "slug": "docker"
+    }
+  ]
+}
