@@ -28,12 +28,12 @@ defmodule ArchiDepWeb.Admin.AdminLiveTest do
   # config in `config/test.exs`).
   @ssh_public_key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE1Q2L2jlt2R71iHClMbx1uIIkKbBGMwGo5c1gFJVArH archidep"
 
-  # What this environment is: one archived edition, an edition being rendered
-  # that is not it (`config/test.exs` says 1955) and nowhere configured to keep
-  # the finished ones, so the page says the deployment is incomplete. The
-  # sentence moves when an edition is archived, like the assertions in
+  # What this environment is: two archived editions, an edition being rendered
+  # that is neither of them (`config/test.exs` says 1955) and nowhere configured
+  # to keep the finished ones, so the page says the deployment is incomplete.
+  # The sentence moves when an edition is archived, like the assertions in
   # `ArchiDep.CourseSite.ArchivesTest` do.
-  @past_editions {"Edition 2025 must be served from this host, which has no archives directory",
+  @past_editions {"Editions 2025, 2026 must be served from this host, which has no archives directory",
                   :error}
 
   setup :verify_on_exit!

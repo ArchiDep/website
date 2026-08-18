@@ -9,33 +9,34 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   alias ArchiDep.CourseSite.Structure.Chapter
   alias ArchiDep.CourseSite.Structure.Cheatsheet
 
+  # The editions `course/archives` holds a manifest for. None of them has been
+  # reworked since it was archived, so each published exactly the pages the
+  # course holds now, and both assertions below are written from that. They are
+  # the ones to rewrite once the material moves on and an archived page stops
+  # being answered for by the page at its own path.
+  @archived_editions ["2025", "2026"]
+
   describe "mapping/0" do
-    # The 2025 edition is archived *and* still the one being taught, so every
-    # one of its pages is answered for by the page now at that same path. This
-    # is the assertion to rewrite at the first rollover, when the two stop
-    # coinciding.
     test "answers for every page the archived edition published, with the page now at its path" do
       assert Archives.mapping() ==
                Map.new(
-                 current_pages(),
-                 &{PageRef.edition_path("2025", PageRef.output_path(&1)), &1}
+                 for edition <- @archived_editions, page <- current_pages() do
+                   {PageRef.edition_path(edition, PageRef.output_path(page)), page}
+                 end
                )
     end
   end
 
   describe "editions/0" do
-    # As above, the one archived edition is the one being taught, so the pages a
-    # host must hold for it are the current ones under its prefix. This is the
-    # other assertion to rewrite at the first rollover.
     test "names every page a host must hold, for every archived edition" do
       assert Archives.editions() ==
-               %{
-                 "2025" =>
-                   Enum.map(
-                     current_pages(),
-                     &PageRef.edition_path("2025", PageRef.output_path(&1))
-                   )
-               }
+               Map.new(@archived_editions, fn edition ->
+                 {edition,
+                  Enum.map(
+                    current_pages(),
+                    &PageRef.edition_path(edition, PageRef.output_path(&1))
+                  )}
+               end)
     end
   end
 
