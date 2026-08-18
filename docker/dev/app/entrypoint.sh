@@ -20,12 +20,7 @@ cat <<EOF
 ==================================================
 EOF
 
-if ! test -f /var/lib/archidep/deps/ua_inspector/priv/bot.bots.yml; then
-  echo "Downloading user agent database..."
-  mix ua_inspector.download --force
-else
-  echo "User agent database already exists."
-fi
+mix archidep.ua_inspector.download --if-missing
 
 unix_timestamp=$(date +%s)
 cat <<EOF > /archidep/app/config/local.exs

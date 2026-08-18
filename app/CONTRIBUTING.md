@@ -789,6 +789,14 @@ These [Mix aliases](./mix.exs) bundle common workflows:
   mirrors what runs in CI.
 - `mix check.security`: Run the [Sobelow][sobelow] security scanner.
 - `mix start` (alias for `mix phx.server`): Start the Phoenix server.
+- `mix archidep.ua_inspector.download`: Download the [UAInspector][ua-inspector]
+  database, keeping the last copy that downloaded cleanly in the cache directory
+  named by `$ARCHIDEP_UA_INSPECTOR_CACHE_DIR` (`tmp/ua_inspector` by default).
+  The remote source regularly times out, so a failed download falls back on that
+  copy with a warning instead of failing; it fails only when there is nothing
+  cached to fall back on. Run `mix help archidep.ua_inspector.download` for the
+  options. Every environment downloads through this task: CI, the development
+  container and the production image build alike.
 - `mix theme.highlight_css`: Regenerate the two syntax highlighting stylesheets
   of the [`theme` directory](../theme/CONTRIBUTING.md) from the Lumis themes the
   task names. Run it after changing either theme and after upgrading Lumis.

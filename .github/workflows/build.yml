@@ -56,6 +56,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-erlang-${{ env.ERLANG_VERSION }}-elixir-${{ env.ELIXIR_VERSION }}-
 
+      # The user agent database is downloaded from a remote source that
+      # regularly times out. Cached separately from the build above so that a
+      # failed download has the last copy that worked to fall back on: the key
+      # carries the run so that each run saves the copy it ended up with, and
+      # the prefix restores the most recent one.
+      - name: Cache user agent database
+        uses: actions/cache@v4
+        with:
+          path: app/tmp/ua_inspector
+          key: ${{ runner.os }}-ua-inspector-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-ua-inspector-
+
       - name: Download course assets
         uses: actions/download-artifact@v4
         with:
@@ -83,7 +96,7 @@ jobs:
         working-directory: app
 
       - name: Download user agent database
-        run: mix ua_inspector.download --force
+        run: mix archidep.ua_inspector.download
         working-directory: app
 
       - name: Fix test private key permissions

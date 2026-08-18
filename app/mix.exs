@@ -146,7 +146,7 @@ defmodule ArchiDep.MixProject do
       setup: [
         "deps.get",
         "ecto.setup",
-        "ua_inspector.download --force",
+        "archidep.ua_inspector.download",
         "assets.setup",
         "assets.build"
       ],

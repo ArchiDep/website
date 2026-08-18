@@ -183,6 +183,17 @@ RUN mix local.hex --force --if-missing && \
     mix local.rebar --force --if-missing && \
     mix deps.compile
 
+# The user agent database, fetched here rather than after the application source
+# below so that the layer holding it is keyed on the dependencies alone: a build
+# that changes only the application reuses it instead of going back out to a
+# remote source that regularly times out. Only the task doing the downloading is
+# copied in — it is written to need neither the rest of the application nor its
+# configuration — and the cache mount is what it falls back on when the download
+# fails.
+COPY --chown=app:app ./app/lib/mix/tasks/archidep/ua_inspector/ /usr/src/app/lib/mix/tasks/archidep/ua_inspector/
+RUN --mount=type=cache,target=/cache,mode=0777 \
+    ARCHIDEP_UA_INSPECTOR_CACHE_DIR=/cache mix archidep.ua_inspector.download
+
 COPY --chown=app:app ./app/ /usr/src/app/
 
 # The course material the application compiles its model of the course from.
@@ -206,8 +217,6 @@ COPY ./.git/ /tmp/.git/
 RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\///' > /usr/src/app/.git-branch && \
     touch /usr/src/app/.git-dirty && \
     cat /tmp/.git/HEAD | awk '{print "/tmp/.git/"$2}' | xargs cat > /usr/src/app/.git-revision
-
-RUN mix ua_inspector.download --force
 
 # The digested assets, which are the whole of what this application serves
 # statically: the course material site is a build of its own, published by the
