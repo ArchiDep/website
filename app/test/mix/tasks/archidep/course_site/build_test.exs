@@ -137,13 +137,13 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
     File.write!(
       dirs.progress_file,
-      ~s({"sessions":[{"date":"2031-02-02","title":"CLI","done":[100,101],"due":[],"next":[]}]})
+      ~s({"sessions":[{"date":"1994-02-02","title":"CLI","done":[100,101],"due":[],"next":[]}]})
     )
 
     put_course_site_config(
-      version: "2031",
-      years: "2031-2032",
-      years_short: "31-32",
+      version: "1994",
+      years: "1994-1995",
+      years_short: "94-95",
       build_id: "test-build"
     )
 

@@ -126,7 +126,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.AssetsTest do
 
     File.write!(
       dirs.progress_file,
-      ~s({"sessions":[{"date":"2031-02-02","title":"CLI","done":[100,101],"due":[],"next":[]}]})
+      ~s({"sessions":[{"date":"1999-02-02","title":"CLI","done":[100,101],"due":[],"next":[]}]})
     )
 
     dirs

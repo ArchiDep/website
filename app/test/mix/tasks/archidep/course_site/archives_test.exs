@@ -22,7 +22,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.ArchivesTest do
       write!(content_dir, "chapters/104-ssh/subject.md", "---\ntitle: SSH\n---\n\nConnect.\n")
       File.write!(declarations_file, "---\nsections:\n  - title: Remote\ncheatsheets: []\n")
 
-      put_course_site_config(version: "2031")
+      put_course_site_config(version: "1988")
 
       Archives.run([
         "--content",
@@ -30,18 +30,18 @@ defmodule Mix.Tasks.Archidep.CourseSite.ArchivesTest do
         "--declarations",
         declarations_file,
         "--version",
-        "2042",
+        "1987",
         "--output",
         output_file
       ])
 
       assert File.read!(output_file) ==
                Manifest.to_json(
-                 Manifest.of("2042", Build.course!(content_dir, declarations_file))
+                 Manifest.of("1987", Build.course!(content_dir, declarations_file))
                )
 
       assert shell_output() == [
-               {:info, "Recorded the 2 pages of edition 2042 in #{output_file}"}
+               {:info, "Recorded the 2 pages of edition 1987 in #{output_file}"}
              ]
     end
 
@@ -50,7 +50,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.ArchivesTest do
     test "records the configured edition into the archives of the course it names",
          %{tmp_dir: tmp_dir} do
       course_dir = Path.join(tmp_dir, "course")
-      output_file = Path.join([course_dir, "archives", "2031.json"])
+      output_file = Path.join([course_dir, "archives", "1989.json"])
 
       write!(
         course_dir,
@@ -69,20 +69,20 @@ defmodule Mix.Tasks.Archidep.CourseSite.ArchivesTest do
         "---\nsections:\n  - title: Safety\ncheatsheets:\n  - openssl\n"
       )
 
-      put_course_site_config(version: "2031")
+      put_course_site_config(version: "1989")
 
       Archives.run(["--course", course_dir])
 
       assert File.read!(output_file) ==
                Manifest.to_json(
                  Manifest.of(
-                   "2031",
+                   "1989",
                    Build.course!(course_dir, Path.join(course_dir, "course.yml"))
                  )
                )
 
       assert shell_output() == [
-               {:info, "Recorded the 3 pages of edition 2031 in #{output_file}"}
+               {:info, "Recorded the 3 pages of edition 1989 in #{output_file}"}
              ]
     end
 
@@ -92,7 +92,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.ArchivesTest do
       write!(course_dir, "chapters/104-ssh/subject.md", "---\ntitle: SSH\n---\n\nConnect.\n")
       File.write!(Path.join(course_dir, "course.yml"), "---\nsections: []\ncheatsheets: []\n")
 
-      put_course_site_config(years: "2031-2032")
+      put_course_site_config(years: "1990-1991")
 
       assert_raise Mix.Error, "No edition is configured; say which one with --version", fn ->
         Archives.run(["--course", course_dir])
