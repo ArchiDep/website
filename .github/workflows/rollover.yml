@@ -308,9 +308,26 @@ jobs:
           #
           # By checksum rather than by timestamp, for the reason that workflow
           # gives: a clone stamps every file with the moment it was fetched.
-          echo 'What publishing would change:'
           rsync -a --checksum --delete --dry-run --itemize-changes \
-            "tmp/site/$YEAR/" "tmp/archive/$YEAR/"
+            "tmp/site/$YEAR/" "tmp/archive/$YEAR/" > tmp/changes.txt
+
+          # That same stamp is why almost every line of the above says only that
+          # a modification time would be set (`.f..t......`): the contents match
+          # and nothing would be transferred. Git records no modification times,
+          # so not one of those lines can produce a commit, and printing them
+          # would bury the handful that mean something under a line per file.
+          # They are counted; everything else is shown.
+          touched="$(grep -Ec '^\.f\.\.t\.{6} ' tmp/changes.txt || true)"
+          changes="$(grep -Ev '^\.f\.\.t\.{6} ' tmp/changes.txt || true)"
+
+          if [ -n "$changes" ]; then
+            echo 'What publishing would change:'
+            echo "$changes"
+          else
+            echo 'Publishing would change nothing that git records'
+          fi
+
+          echo "($touched files are identical but for a modification time)"
 
       - name: Say why nothing was compared
         if: vars.ARCHIDEP_ARCHIVE_REPO == ''
