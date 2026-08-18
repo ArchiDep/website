@@ -769,12 +769,8 @@ The `test/support/` directory provides shared testing infrastructure:
 - Aim for high coverage, but do not sacrifice code quality or maintainability
   just to increase coverage numbers.
 - A build fails below the minimum coverage set in
-  [`coveralls.json`](./coveralls.json), which excludes the Mix tasks under
-  `lib/mix/tasks`: they are commands run by hand or by CI rather than
-  application code, and none of them is tested, so counting them measures
-  nothing while letting each new one lower the figure for everything else.
-  Nothing else is excluded — the point of the minimum is that untested
-  application code cannot hide from it.
+  [`coveralls.json`](./coveralls.json). **Nothing is excluded from the
+  measure**.
 
 ---
 

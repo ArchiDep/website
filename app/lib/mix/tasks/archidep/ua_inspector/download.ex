@@ -29,6 +29,9 @@ defmodule Mix.Tasks.Archidep.UaInspector.Download do
     there is none.
   - `--if-missing` — do nothing at all when the database is already there. For
     the development container, whose entrypoint runs this on every start.
+  - `--database` — the directory to put the database in. Defaults to the one
+    UAInspector reads it from, which is the only one the running application
+    looks in.
 
   The cache directory is `$ARCHIDEP_UA_INSPECTOR_CACHE_DIR`, defaulting to the
   application's own `tmp/ua_inspector`. Point it at whatever a given environment
@@ -48,7 +51,8 @@ defmodule Mix.Tasks.Archidep.UaInspector.Download do
   @switches [
     attempts: :integer,
     offline: :boolean,
-    if_missing: :boolean
+    if_missing: :boolean,
+    database: :string
   ]
 
   @cache_dir_env "ARCHIDEP_UA_INSPECTOR_CACHE_DIR"
@@ -71,7 +75,7 @@ defmodule Mix.Tasks.Archidep.UaInspector.Download do
   def run(args) do
     {opts, [], []} = OptionParser.parse(args, strict: @switches)
 
-    database_dir = Config.database_path()
+    database_dir = Keyword.get_lazy(opts, :database, &Config.database_path/0)
     cache_dir = cache_dir()
     current_dir = Path.join(cache_dir, "current")
 
