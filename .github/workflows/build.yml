@@ -44,10 +44,10 @@ jobs:
           - '5432:5432'
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Cache app build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             app/deps
@@ -62,7 +62,7 @@ jobs:
       # carries the run so that each run saves the copy it ended up with, and
       # the prefix restores the most recent one.
       - name: Cache user agent database
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: app/tmp/ua_inspector
           key: ${{ runner.os }}-ua-inspector-${{ github.run_id }}
@@ -70,13 +70,13 @@ jobs:
             ${{ runner.os }}-ua-inspector-
 
       - name: Download course assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: course_assets
           path: app/priv/static/assets/course
 
       - name: Download theme
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: theme
           path: app/priv/static/assets
@@ -159,10 +159,10 @@ jobs:
     name: Build course assets
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           cache: npm
           cache-dependency-path: package-lock.json
@@ -181,7 +181,7 @@ jobs:
           test -z "$(git status --porcelain)"
 
       - name: Upload course assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: course_assets
           path: app/priv/static/assets/course
@@ -196,10 +196,10 @@ jobs:
       MIX_ENV: prod
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           cache: npm
           cache-dependency-path: package-lock.json
@@ -251,7 +251,7 @@ jobs:
       # Keyed by environment as well, the build directory holding one of them, so
       # that this does not share a key with the test build of the app job.
       - name: Cache app build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             app/deps
@@ -352,10 +352,10 @@ jobs:
     name: Build theme
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           cache: npm
           cache-dependency-path: package-lock.json
@@ -377,7 +377,7 @@ jobs:
       # relative to themselves: a copy of one without the other is a site set in
       # whatever the browser falls back to.
       - name: Upload theme
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: theme
           path: |
@@ -390,10 +390,10 @@ jobs:
     name: Check formatting
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           cache: npm
           cache-dependency-path: package-lock.json
@@ -415,10 +415,10 @@ jobs:
     name: Lint Markdown
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           cache: npm
           cache-dependency-path: package-lock.json

@@ -49,10 +49,10 @@ jobs:
       MIX_ENV: prod
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           cache: npm
           cache-dependency-path: package-lock.json
@@ -90,7 +90,7 @@ jobs:
       # build of the `build` workflow would leave whichever ran second with
       # nothing to restore for the life of the lock file.
       - name: Cache app build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             app/deps
@@ -167,7 +167,7 @@ jobs:
       # a human fetches while nothing does and the evidence of a run whose
       # publication is what failed.
       - name: Upload the PDFs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pdf-${{ steps.edition.outputs.year }}
           path: tmp/pdf

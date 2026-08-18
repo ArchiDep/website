@@ -24,7 +24,7 @@ jobs:
     steps:
       # https://github.com/actions/checkout
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Compute a short hash of `app/mix.lock` to use as the deps cache tag.
       # When `mix.lock` changes the hash changes and CI will use a new cache tag
@@ -46,7 +46,7 @@ jobs:
 
       # https://github.com/docker/login-action
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -57,18 +57,17 @@ jobs:
       # cache export to registry and will fail with "Cache export is not
       # supported for the docker driver" when using `cache-to: type=registry`.
       - name: Set up QEMU (optional, enables cross-platform builds)
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx (container driver)
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v4
         with:
           driver: docker-container
-          install: true
 
       # https://github.com/docker/metadata-action
       - name: Extract metadata (tags, labels) for the app image
         id: app-meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/archidep/app
           tags: |
@@ -84,7 +83,7 @@ jobs:
       # Elixir/OTP version so it is automatically invalidated when deps or the
       # runtime change.
       - name: Build & push app-deps cache
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           target: app-deps-compiled
@@ -94,7 +93,7 @@ jobs:
       # https://github.com/docker/build-push-action
       - name: Build and push the app image
         id: app-push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           target: app
@@ -111,7 +110,7 @@ jobs:
 
       # https://github.com/actions/attest-build-provenance
       - name: Generate artifact attestation for the app image
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ env.REGISTRY }}/archidep/app
           subject-digest: ${{ steps.app-push.outputs.digest }}
@@ -120,7 +119,7 @@ jobs:
       # https://github.com/docker/metadata-action
       - name: Extract metadata (tags, labels) for the assets image
         id: assets-meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/archidep/assets
           tags: |
@@ -132,7 +131,7 @@ jobs:
       # https://github.com/docker/build-push-action
       - name: Build and push the assets image
         id: assets-push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           target: assets-server
@@ -152,7 +151,7 @@ jobs:
 
       # https://github.com/actions/attest-build-provenance
       - name: Generate artifact attestation for the assets image
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ env.REGISTRY }}/archidep/assets
           subject-digest: ${{ steps.assets-push.outputs.digest }}

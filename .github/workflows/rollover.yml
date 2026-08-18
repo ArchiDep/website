@@ -80,7 +80,7 @@ jobs:
           echo "Freezing the $YEAR edition from $REF in $MODE mode"
 
       - name: Checkout the edition
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ env.REF }}
 
@@ -104,7 +104,7 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           cache: npm
           cache-dependency-path: package-lock.json
@@ -137,7 +137,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Cache app build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             app/deps
