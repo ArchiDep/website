@@ -76,6 +76,25 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
 
+      # The app-deps cache image is addressed by its contents: the mix.lock hash
+      # and the Elixir/OTP version are the whole of what goes into it. A tag
+      # that is already in the registry is therefore already the image this
+      # build would produce, and rebuilding it would only spend `mix
+      # deps.compile` again to arrive at the same place. Runners start with an
+      # empty layer store, so nothing else would catch this.
+      - name: Check for an existing app-deps cache image
+        id: deps-cache
+        run: |
+          set -eu
+          ref="${{ env.REGISTRY }}/archidep/app-deps-compiled:app-deps-cache-${{ steps.deps-hash.outputs.deps_hash }}-otp-${{ env.ELIXIR_OTP }}"
+          if docker buildx imagetools inspect "$ref" > /dev/null 2>&1; then
+            echo "Found $ref; skipping the app-deps build"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "No $ref yet; the app-deps build will produce it"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       # Build and push compiled app deps stage as an app-deps cache image. This
       # compiles dependencies (`mix deps.compile`) into `/build/_build` and
       # `/build/deps` so the heavy compile step can be reused by the release
@@ -83,6 +102,7 @@ jobs:
       # Elixir/OTP version so it is automatically invalidated when deps or the
       # runtime change.
       - name: Build & push app-deps cache
+        if: steps.deps-cache.outputs.exists != 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -102,10 +122,11 @@ jobs:
           push: true
           tags: ${{ steps.app-meta.outputs.tags }}
           labels: ${{ steps.app-meta.outputs.labels }}
-          cache-from: |
-            type=registry,ref=${{ env.REGISTRY }}/archidep/app-deps-compiled:app-deps-cache-${{ steps.deps-hash.outputs.deps_hash }}-otp-${{ env.ELIXIR_OTP }}
-            type=registry,ref=${{ env.REGISTRY }}/archidep/app:buildcache
-            type=registry,ref=${{ env.REGISTRY }}/archidep/app:latest
+          # Only refs written by a `cache-to` carry the metadata a cache import
+          # reads. Plain image tags — the app-deps cache image, `app:latest` —
+          # import nothing; they are pulled where they are needed (`FROM
+          # ${APP_DEPS_IMAGE}`) rather than consulted here.
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/archidep/app:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/archidep/app:buildcache,mode=max
 
       # https://github.com/actions/attest-build-provenance
@@ -143,10 +164,14 @@ jobs:
           push: true
           tags: ${{ steps.assets-meta.outputs.tags }}
           labels: ${{ steps.assets-meta.outputs.labels }}
+          # This leg shares every stage up to and including `release` with the
+          # app image built above, and that build has just exported them:
+          # `app:buildcache` is read first so the release is taken from it
+          # instead of being compiled a second time. What remains to build here
+          # is the course material site on top of it.
           cache-from: |
-            type=registry,ref=${{ env.REGISTRY }}/archidep/app-deps-compiled:app-deps-cache-${{ steps.deps-hash.outputs.deps_hash }}-otp-${{ env.ELIXIR_OTP }}
+            type=registry,ref=${{ env.REGISTRY }}/archidep/app:buildcache
             type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache
-            type=registry,ref=${{ env.REGISTRY }}/archidep/assets:latest
           cache-to: type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache,mode=max
 
       # https://github.com/actions/attest-build-provenance

@@ -37,6 +37,11 @@ RUN mix deps.compile --only prod
 ## Named stage that references the registry-pulled compiled-deps image.
 ## This stage is created from the `APP_DEPS_IMAGE` build-arg so we can reliably
 ## use `COPY --from=app-deps-image` below (avoids variable expansion in --from).
+## Every stage that needs the dependencies takes them from here rather than from
+## `app-deps`: when the build-arg names a registry image, the two stages above
+## drop out of the graph entirely and nothing resolves dependencies a second
+## time. It carries the sources as well as the compiled artifacts, so the asset
+## stages below get from it what they would have got from `app-deps`.
 FROM ${APP_DEPS_IMAGE} AS app-deps-image
 
 ##########################
@@ -59,7 +64,7 @@ COPY --chown=build:build ./app/package.json /build/app/
 RUN npm ci
 
 COPY --chown=build:build ./app/assets/ /build/app/assets/
-COPY --chown=build:build --from=app-deps /build/deps/ /build/app/deps/
+COPY --chown=build:build --from=app-deps-image /build/deps/ /build/app/deps/
 
 ENV NODE_ENV=production \
     NODE_PATH=/build/app/deps
@@ -111,7 +116,7 @@ COPY --chown=build:build ./theme/package.json /build/theme/
 
 RUN npm ci
 
-COPY --chown=build:build --from=app-deps /build/deps/ /build/app/deps/
+COPY --chown=build:build --from=app-deps-image /build/deps/ /build/app/deps/
 COPY --chown=build:build ./app/lib/ /build/app/lib/
 COPY --chown=build:build ./course/ /build/course/
 COPY --chown=build:build ./theme/ /build/theme/
