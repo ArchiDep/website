@@ -1,4 +1,5 @@
 # https://git-scm.com/docs/gitignore
+/.ansible
 /.claude/settings.local.json
 /.env
 !/.env.sample

@@ -1,11 +1,15 @@
 name: publish
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - v*
+  # Publishing is what a green build of the main branch leads to, rather than
+  # something a push starts in parallel with the build: an image that is pushed
+  # here is deployed, so it has to be an image whose commit passed. The build
+  # workflow goes on running on every branch of every repository this is
+  # mirrored to; only here does anything follow it.
+  workflow_run:
+    workflows: [build]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -14,17 +18,39 @@ env:
 
 jobs:
   publish:
-    if: github.repository == 'ArchiDep/website'
+    # A `workflow_run` fires whatever the build concluded, including failure and
+    # cancellation. A manual dispatch carries no build to consult and is taken
+    # as deliberate.
+    if: >-
+      github.repository == 'ArchiDep/website' &&
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
       attestations: write
       id-token: write
+    outputs:
+      app_digest: ${{ steps.app-push.outputs.digest }}
+      assets_digest: ${{ steps.assets-push.outputs.digest }}
+    env:
+      # The commit the build actually ran on. Under `workflow_run` the default
+      # `github.sha` is the head of the default branch when the event fired,
+      # which is not necessarily the commit that was built — two pushes in quick
+      # succession are enough to make them differ, and the image would then be
+      # of a commit nothing tested.
+      BUILT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       # https://github.com/actions/checkout
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BUILT_SHA }}
+
+      - name: Shorten the built commit
+        id: built
+        run: echo "sha=${BUILT_SHA::7}" >> "$GITHUB_OUTPUT"
 
       # Compute a short hash of `app/mix.lock` to use as the deps cache tag.
       # When `mix.lock` changes the hash changes and CI will use a new cache tag
@@ -70,11 +96,16 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/archidep/app
+          # What the deployment pins is the digest, which needs no tag at all.
+          # The `main-<sha>` tag exists so that the manifest behind that digest
+          # is not an untagged one the registry is free to clean up, and so that
+          # the image a host is running can be read back as a commit.
           tags: |
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=main-${{ steps.built.outputs.sha }},enable={{is_default_branch}}
 
       # The app-deps cache image is addressed by its contents: the mix.lock hash
       # and the Elixir/OTP version are the whole of what goes into it. A tag
@@ -148,6 +179,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=main-${{ steps.built.outputs.sha }},enable={{is_default_branch}}
 
       # https://github.com/docker/build-push-action
       - name: Build and push the assets image
@@ -193,3 +225,50 @@ jobs:
           echo "\nListing GHCR package versions for archidep/assets via GitHub API"
           curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/orgs/ArchiDep/packages/container/assets/versions" | python -m json.tool || true
+
+  # The whole of what this repository is allowed to do to the production server.
+  # The key it authenticates with is locked to one command there, which takes
+  # the two digests below and nothing else: the images come from the registry,
+  # the configuration is the server's own, and the server verifies that these
+  # digests really were built by this workflow before it runs them.
+  deploy:
+    if: github.repository == 'ArchiDep/website' && github.ref == 'refs/heads/main'
+    needs: publish
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions: {}
+    timeout-minutes: 20
+    steps:
+      - name: Deploy the published images
+        env:
+          APP_DIGEST: ${{ needs.publish.outputs.app_digest }}
+          ASSETS_DIGEST: ${{ needs.publish.outputs.assets_digest }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$APP_DIGEST" ] || [ -z "$ASSETS_DIGEST" ]; then
+            echo "The publish job did not report both image digests" >&2
+            exit 1
+          fi
+
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_deploy"
+          # The server's host key, pinned. Without it the first connection would
+          # be to whoever answers on that address.
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts_deploy"
+          chmod 600 "$HOME/.ssh/id_deploy" "$HOME/.ssh/known_hosts_deploy"
+
+          ssh \
+            -i "$HOME/.ssh/id_deploy" \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts_deploy" \
+            -o ConnectTimeout=30 \
+            -p "$DEPLOY_PORT" \
+            "archidep-deploy@$DEPLOY_HOST" \
+            "deploy $APP_DIGEST $ASSETS_DIGEST"
