@@ -114,11 +114,13 @@ components, can be found in the `theme` directory (see [`CONTRIBUTING.md` in the
       the order those steps are run in for a caller that is not a Mix task.
       `course_site/material.ex` is the model of the course the dashboard links
       into, compiled from the Markdown sources while the application compiles.
-    - `course_site_watcher.ex`: Rebuilds the course material site whenever one
-      of its sources changes, and is started only where the `course_site`
-      configuration says both where the material is and where a build of it
-      goes — which is development, the environment whose endpoint serves that
-      build.
+    - `course_site_publisher.ex`: What the application renders the course
+      material site with — which build this deployment is, and what running one
+      means. Production renders it at boot, into a directory a separate static
+      server takes as its document root, and refuses to boot if it cannot.
+    - `course_site_watcher.ex`: Decides _when_ to render it in development,
+      running a build of the publisher's whenever one of the site's sources
+      changes.
   - `lib/archidep_web`: The Phoenix web interface, including controllers, views,
     APIs, templates, live views, and channels.
 - **Supporting Files**

@@ -19,11 +19,11 @@ defmodule ArchiDepWeb.Endpoint do
   @serve_static Application.compile_env!(:archidep, [__MODULE__, :serve_static])
 
   # Where the course material site is published, for a deployment that asked
-  # this application to serve it. Only development does: production publishes a
+  # this application to serve it. Only development does: production renders a
   # build to a directory of the same kind but puts a separate static server in
   # front of it, the reverse proxy routing the course URLs there and the
   # dashboard's here. So this is keyed on `serve` being asked for rather than on
-  # a build directory being configured, which production will do as well.
+  # a build directory being configured, which production does as well.
   @course_site_dir if Application.compile_env(:archidep, [:course_site, :serve], false),
                      do: Application.compile_env!(:archidep, [:course_site, :build_dir])
 

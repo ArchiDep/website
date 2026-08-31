@@ -18,11 +18,11 @@ services:
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock:ro'
 
+  # An upstream image with a configuration mounted into it: what it serves is
+  # rendered by the application beside it rather than built into an image of
+  # ours, so nothing here is rebuilt when the site changes.
   assets-server:
-    image: archidep/assets-server:latest
-    build:
-      context: .
-      target: assets-server
+    image: nginx:1.29-alpine
     labels:
       - 'traefik.enable=true'
       # What the course material site publishes: an edition's own tree, under
@@ -41,25 +41,29 @@ services:
       - 'traefik.http.services.archidep-assets.loadbalancer.server.port=80'
     restart: unless-stopped
     volumes:
+      - './docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro'
+      # The edition this deployment holds, as the application rendered it.
+      - 'site:/var/www/site:ro'
       # The finished editions, as a second root this server falls back to.
       - 'archives:/var/www/archives:ro'
 
-  # Fills the volume above, once, then exits. It runs from the assets image
-  # because that image holds both the script and the server that reads what it
-  # writes; the deployment names published images only.
+  # Fills the volume above, once, then exits. It runs from the application's
+  # image, which carries the script, but deliberately not from its entrypoint:
+  # this fills a volume and exits, and it does it as root, which is what leaves
+  # a clone every other container can read.
   archives:
-    image: archidep/assets-server:latest
+    image: archidep/website:latest
     build:
       context: .
-      target: assets-server
+      target: app
     entrypoint: ['/usr/local/bin/archives.sh']
     environment:
-      ARCHIDEP_ARCHIVES_DIRECTORY: /var/www/archives
+      ARCHIDEP_ARCHIVES_DIRECTORY: /var/lib/archidep/archives
       ARCHIDEP_ARCHIVES_REPOSITORY: https://github.com/ArchiDep/archidep.github.io.git
       ARCHIDEP_ARCHIVES_REF: main
     restart: 'no'
     volumes:
-      - 'archives:/var/www/archives:rw'
+      - 'archives:/var/lib/archidep/archives:rw'
 
   app:
     image: archidep/website:latest
@@ -99,6 +103,9 @@ services:
       - ./app/priv/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}:/etc/archidep/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}:ro
       - ./app/priv/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}.pub:/etc/archidep/ssh/id_${ARCHIDEP_SERVERS_SSH_PRIVATE_KEY_FILE_TYPE}.pub:ro
       - app_uploads:/var/lib/archidep/uploads:rw
+      # What the application renders the course material site into at boot, and
+      # the static server above serves. It is the one writer.
+      - 'site:/var/lib/archidep/site:rw'
       # Read-only, and read by one thing: the check that says at boot whether
       # this deployment holds the editions it is supposed to serve. The
       # application serves none of these bytes — the static server above does.
@@ -120,3 +127,6 @@ volumes:
   # nothing.
   archives:
   db_data:
+  # Persisted so that the static server has something to serve while the
+  # application boots and renders the next build into it.
+  site:

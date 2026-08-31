@@ -48,9 +48,9 @@ Take the 2025 edition ending and 2026 beginning. When the rollover is done:
 - This repository configures `2026`, so every build lands beside the frozen
   editions rather than over them, and `course/archives/2025.json` is the record
   of what 2025 published, which the `/latest` resolver answers from.
-- Both hosts serve both editions: `archidep.ch` from its own image plus the
-  clone of the archive repository, `backup.archidep.ch` from the repository
-  itself.
+- Both hosts serve both editions: `archidep.ch` from the build its application
+  renders plus the clone of the archive repository, `backup.archidep.ch` from
+  the repository itself.
 
 **The new edition renders the old material at first.** Moving the knob is not
 the same act as upgrading the content, and nothing forces them to happen
@@ -159,8 +159,11 @@ exactly what was rendered.
 Deploy the latest version of the application.
 
 This is the step that hands the outgoing edition over: until it runs,
-`archidep.ch` serves that year from the image built from it; afterwards, from
-the clone, like every other finished edition.
+`archidep.ch` serves that year from the build its application rendered — the
+`version` knob was still on it; afterwards the application boots on the new
+knob, renders the new year over the old one, and the outgoing edition is served
+from the clone, like every other finished edition. So the clone has to hold it
+before this step, which is what step 4 is for.
 
 Then read what the application says about whether it holds every edition it
 should — at boot, as one error line per problem, and in the admin console. A

@@ -223,34 +223,13 @@ RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\/
     touch /usr/src/app/.git-dirty && \
     cat /tmp/.git/HEAD | awk '{print "/tmp/.git/"$2}' | xargs cat > /usr/src/app/.git-revision
 
-# The digested assets, which are the whole of what this application serves
-# statically: the course material site is a build of its own, published by the
-# stage below and put in front of users by a separate static server.
+# The digested assets. They are both what this application serves statically and
+# what a build of the course material site carries a copy of, that build being
+# run by the application itself once it is running.
 COPY --chown=app:app --from=digest /build/digest/priv/static/ /usr/src/app/priv/static/
 
 RUN mix sentry.package_source_code && \
     mix release
-
-############################
-### Course material site ###
-############################
-FROM release AS site
-
-WORKDIR /usr/src/app
-USER app:app
-
-# The release stage brings the inputs the compiled model of the course reads; a
-# build reads the course whole, and these are the rest of it: the page
-# introducing it, and the marks it publishes at its mount point.
-COPY --chown=app:app ./course/index.md /usr/src/course/index.md
-COPY --chown=app:app ./course/favicon.ico /usr/src/course/favicon.ico
-COPY --chown=app:app ./course/favicons/ /usr/src/course/favicons/
-
-# What this build is is stated entirely by the `course_site` configuration: the
-# edition this deployment holds, what it calls that edition, which build of it
-# the dashboard's own search dialog is going to ask for, and where the generated
-# PDFs of it are published. Nothing about a production build is decided here.
-RUN mix archidep.course_site.build --output tmp/course_site --clean
 
 ###################
 ### Application ###
@@ -270,6 +249,7 @@ ENV ARCHIDEP_UID=42000 \
 
 RUN apk add --no-cache \
       ca-certificates \
+      git \
       libstdc++ \
       musl-locales \
       ncurses \
@@ -308,9 +288,13 @@ RUN apk add --no-cache \
     # Create application user and group
     addgroup -g 42000 -S archidep && \
     adduser -D -G archidep -H -h /home/archidep -S -u 42000 archidep && \
-    mkdir -p /etc/archidep/ssh /home/archidep /var/lib/archidep/uploads && \
+    mkdir -p /etc/archidep/ssh /home/archidep /var/lib/archidep/uploads /var/lib/archidep/site && \
     chown -R archidep:archidep /archidep /home/archidep /etc/archidep /var/lib/archidep && \
-    chmod 700 /archidep /etc/archidep /home/archidep /var/lib/archidep
+    chmod 700 /archidep /etc/archidep /home/archidep /var/lib/archidep && \
+    # The one directory here a different user reads: the static server in front
+    # of the course material site is handed what the application renders into
+    # it.
+    chmod 755 /var/lib/archidep/site
 
 # Install the pinned Ansible from the single source of truth also consumed by
 # the external-tool compatibility test, rather than Alpine's rolling `ansible`
@@ -327,29 +311,23 @@ RUN apk add --no-cache --virtual .ansible-build-deps py3-pip && \
 
 COPY --chown=archidep:archidep --from=release /usr/src/app/_build/prod/rel/archidep ./
 COPY ./docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY ./docker/archives.sh /usr/local/bin/archives.sh
+
+# The course material a build reads.
+COPY ./course/chapters/ /usr/share/archidep/course/chapters/
+COPY ./course/cheatsheets/ /usr/share/archidep/course/cheatsheets/
+COPY ./course/icons/ /usr/share/archidep/course/icons/
+COPY ./course/favicons/ /usr/share/archidep/course/favicons/
+COPY ./course/course.yml ./course/index.md ./course/favicon.ico /usr/share/archidep/course/
+
+# A build copies the files sitting next to a page out as it read them, modes
+# included, into a directory a different user serves. Normalised here so that
+# the umask of whoever produced the build context cannot decide whether the site
+# is readable.
+RUN chmod -R a+rX /usr/share/archidep/course /archidep/lib
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/archidep/bin/server"]
 
 EXPOSE 42000
 EXPOSE 42003
-
-#####################
-### Assets server ###
-#####################
-FROM nginx:1.29-alpine AS assets-server
-
-# Git is here for the one-shot service that fills the second root below, which
-# runs from this same image.
-RUN apk add --no-cache git && \
-    rm -fr /usr/share/nginx/html/* && \
-    mkdir -p /var/www/html /var/www/archives && \
-    chown nginx:nginx /var/www/html /var/www/archives && \
-    chmod 700 /var/www/html && \
-    chmod 755 /var/www/archives
-
-COPY ./docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY ./docker/archives.sh /usr/local/bin/archives.sh
-# A build's output directory is its mount point, so what it wrote is what this
-# serves, as it stands.
-COPY --from=site /usr/src/app/tmp/course_site/ /var/www/html

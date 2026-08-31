@@ -33,7 +33,6 @@ jobs:
       id-token: write
     outputs:
       app_digest: ${{ steps.app-push.outputs.digest }}
-      assets_digest: ${{ steps.assets-push.outputs.digest }}
     env:
       # The commit the build actually ran on. Under `workflow_run` the default
       # `github.sha` is the head of the default branch when the event fired,
@@ -168,52 +167,6 @@ jobs:
           subject-digest: ${{ steps.app-push.outputs.digest }}
           push-to-registry: true
 
-      # https://github.com/docker/metadata-action
-      - name: Extract metadata (tags, labels) for the assets image
-        id: assets-meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY }}/archidep/assets
-          tags: |
-            type=semver,pattern={{major}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=main-${{ steps.built.outputs.sha }},enable={{is_default_branch}}
-
-      # https://github.com/docker/build-push-action
-      - name: Build and push the assets image
-        id: assets-push
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          target: assets-server
-          # The assets image is the course material site rendered by the
-          # application, so this leg goes through the release stage as well and
-          # needs the same compiled dependencies rather than building its own.
-          build-args: |
-            APP_DEPS_IMAGE=${{ env.REGISTRY }}/archidep/app-deps-compiled:app-deps-cache-${{ steps.deps-hash.outputs.deps_hash }}-otp-${{ env.ELIXIR_OTP }}
-          push: true
-          tags: ${{ steps.assets-meta.outputs.tags }}
-          labels: ${{ steps.assets-meta.outputs.labels }}
-          # This leg shares every stage up to and including `release` with the
-          # app image built above, and that build has just exported them:
-          # `app:buildcache` is read first so the release is taken from it
-          # instead of being compiled a second time. What remains to build here
-          # is the course material site on top of it.
-          cache-from: |
-            type=registry,ref=${{ env.REGISTRY }}/archidep/app:buildcache
-            type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/archidep/assets:buildcache,mode=max
-
-      # https://github.com/actions/attest-build-provenance
-      - name: Generate artifact attestation for the assets image
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-name: ${{ env.REGISTRY }}/archidep/assets
-          subject-digest: ${{ steps.assets-push.outputs.digest }}
-          push-to-registry: true
-
       # List pushed cache images (GHCR tags) so we can easily verify cache artifacts
       - name: List GHCR package versions (via GitHub API)
         shell: bash
@@ -222,15 +175,12 @@ jobs:
           echo "Listing GHCR package versions for archidep/app via GitHub API"
           curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/orgs/ArchiDep/packages/container/app/versions" | python -m json.tool || true
-          echo "\nListing GHCR package versions for archidep/assets via GitHub API"
-          curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/orgs/ArchiDep/packages/container/assets/versions" | python -m json.tool || true
 
   # The whole of what this repository is allowed to do to the production server.
   # The key it authenticates with is locked to one command there, which takes
-  # the two digests below and nothing else: the images come from the registry,
-  # the configuration is the server's own, and the server verifies that these
-  # digests really were built by this workflow before it runs them.
+  # the digest below and nothing else: the image comes from the registry, the
+  # configuration is the server's own, and the server verifies that this digest
+  # really was built by this workflow before it runs it.
   deploy:
     if: github.repository == 'ArchiDep/website' && github.ref == 'refs/heads/main'
     needs: publish
@@ -239,10 +189,9 @@ jobs:
     permissions: {}
     timeout-minutes: 20
     steps:
-      - name: Deploy the published images
+      - name: Deploy the published image
         env:
           APP_DIGEST: ${{ needs.publish.outputs.app_digest }}
-          ASSETS_DIGEST: ${{ needs.publish.outputs.assets_digest }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
@@ -250,8 +199,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "$APP_DIGEST" ] || [ -z "$ASSETS_DIGEST" ]; then
-            echo "The publish job did not report both image digests" >&2
+          if [ -z "$APP_DIGEST" ]; then
+            echo "The publish job did not report the image digest" >&2
             exit 1
           fi
 
@@ -271,4 +220,4 @@ jobs:
             -o ConnectTimeout=30 \
             -p "$DEPLOY_PORT" \
             "archidep-deploy@$DEPLOY_HOST" \
-            "deploy $APP_DIGEST $ASSETS_DIGEST"
+            "deploy $APP_DIGEST"

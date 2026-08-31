@@ -84,9 +84,10 @@ usual plug pipeline (Sentry capture, request id, telemetry, parsers, session),
 and serves the static course site.
 
 Serving it takes five plugs, in this order, and only where the
-[`course_site`](../../config/config.exs) configuration says where a build of the
-site is published — which is development and nowhere else, production putting a
-separate static server in front of the same build:
+[`course_site`](../../config/config.exs) configuration asks this application to
+serve the build — which is development and nowhere else, production putting a
+separate static server in front of the build it renders at boot (see
+[`ArchiDep.CourseSitePublisher`](../archidep/course_site_publisher.ex)):
 
 1. [`ArchiDepWeb.CourseSitePages`](./course_site_pages.ex) answers a request for
    an `.html` file of the build with a **body**, because
@@ -146,11 +147,10 @@ no-store`, never a `301`, because its target is a fact about the edition
   public, and unauthenticated outright — a redirect that does not depend on who
   is asking. It is the **opposite** statement to the resolver above: a `301`
   cacheable for a year, because which edition those paths named is settled
-  forever. Production is expected to forward these paths at the reverse proxy
-  rather than here, but does not have to: the static server falls back to this
-  application for anything it does not hold
-  ([`docker/nginx.conf`](../../../docker/nginx.conf)), so the route answers
-  either way and the proxy rule only saves a hop.
+  forever. In production these paths reach this application by falling through:
+  the reverse proxy gives the static server the edition prefix and the files
+  anchored at the mount point, and nothing else, so everything unprefixed comes
+  here.
 - **API callbacks:** `/api/callbacks/servers/:id/up` (the [token-authenticated
   server callback](../archidep/servers/CONTRIBUTING.md#use-cases)) and
   `/api/health` (see [Errors, Health & Telemetry](#errors-health--telemetry)).

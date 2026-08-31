@@ -29,12 +29,12 @@ config :archidep,
   # same thing in the two forms the site needs — the URL carries the starting
   # year alone, the chrome writes both.
   #
-  # `watch` and `serve` are off here and switched on only by dev.exs. They are
-  # asked explicitly rather than inferred from `course_dir` and `build_dir`
-  # being set, because production will eventually set both: it rebuilds the site
-  # too, but on an edit in the admin console rather than on a file changing, and
-  # a separate static server puts the result in front of users. Inferring either
-  # from a directory would turn both on exactly where neither is wanted.
+  # `build`, `watch` and `serve` are off here and switched on by one environment
+  # each: production builds the site at boot and lets a separate static server
+  # put it in front of users, development watches the course material and serves
+  # what it wrote. All three are asked explicitly rather than inferred from
+  # `course_dir` and `build_dir` being set, because both environments set both
+  # directories and want different things done with them.
   course_site: [
     mode: :live,
     base_path: "",
@@ -56,6 +56,7 @@ config :archidep,
     # a build made before its PDFs have been printed wants.
     pdf_base:
       {:external, "https://github.com/ArchiDep/archidep.github.io/releases/download/pdf/2026"},
+    build: false,
     watch: false,
     serve: false
   ],

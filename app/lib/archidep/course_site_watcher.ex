@@ -5,30 +5,20 @@ defmodule ArchiDep.CourseSiteWatcher do
   In development the site is served from a directory rather than rendered per
   request (see `ArchiDepWeb.Endpoint`), so something has to notice that a
   document was edited. This is that something: it watches the course material
-  and runs a whole build when any of it changes.
+  and runs a whole build when any of it changes. What that build is, and what
+  running one means, is `ArchiDep.CourseSitePublisher`; this decides only when.
 
   It watches the course material and **nothing else**. How far the course has
-  got is the one input of a build that is not part of that material, and it is
-  read through `ArchiDep.Course.course_sessions/0` rather than from wherever it
-  happens to be kept — so moving that record from a file to the database is a
-  change to the context and to nothing here. What it costs is that a progress
-  edit is not noticed on its own until the admin console is what makes it;
-  `rebuild/1` covers it meanwhile.
-
-  It is here rather than inside `ArchiDep.CourseSite` because that subsystem is
-  a set of pure functions over its inputs and holds no processes; running one of
-  them on a timer is the application's business, the way fetching Git metadata
-  is.
+  got is the one input of a build that is not part of that material, so a
+  progress edit is not noticed on its own until the admin console is what makes
+  it; `rebuild/1` covers it meanwhile.
 
   What it is careful about:
 
   - **Booting cannot fail because of it.** `init/1` reads nothing, so a course
     directory that is missing, unreadable or broken leaves the application
-    running and the first build reporting why.
-  - **A failed build changes nothing.** Builds go through
-    `ArchiDep.CourseSite.Builder` in `:swap` mode, so what is being served is
-    replaced only by a build that succeeded, errors and all being logged
-    instead. That is what makes a half-written document safe to save.
+    running and the first build reporting why. Production, which renders the
+    site once at boot and serves what it wrote, makes the opposite trade.
   - **The browser is told when the build is done**, not when the edit was made,
     by touching a marker file that Phoenix's live reloader watches. The output
     tree itself cannot be watched: publishing a build is a directory rename, and
@@ -37,13 +27,9 @@ defmodule ArchiDep.CourseSiteWatcher do
 
   use GenServer
 
-  alias ArchiDep.Course
-  alias ArchiDep.CourseSite.Build.Site
   alias ArchiDep.CourseSite.Builder
   alias ArchiDep.CourseSite.Builder.Report
-  alias ArchiDep.CourseSite.SiteInfo
-  alias ArchiDep.CourseSite.Urls.UrlContext
-  alias ArchiDep.Git
+  alias ArchiDep.CourseSitePublisher
   require Logger
 
   # What a build reads from the course material directory. The rest of it — the
@@ -63,8 +49,8 @@ defmodule ArchiDep.CourseSiteWatcher do
   # process, so a caller asking for one synchronously waits that long.
   @rebuild_timeout 300_000
 
-  @enforce_keys [:build_opts, :reload_marker, :course_dir, :progress, :builder, :debounce]
-  defstruct [:build_opts, :reload_marker, :course_dir, :progress, :builder, :debounce, :timer]
+  @enforce_keys [:build_opts, :publish_opts, :reload_marker, :course_dir, :debounce]
+  defstruct [:build_opts, :publish_opts, :reload_marker, :course_dir, :debounce, :timer]
 
   @doc """
   Start watching the course material.
@@ -73,18 +59,8 @@ defmodule ArchiDep.CourseSiteWatcher do
 
   - `:course_dir` (required) — the course material directory.
   - `:build_dir` (required) — where the build being served is published.
-  - `:progress` — how far the course has got, as a function returning the
-    sessions. Read afresh for every build, so a build always reflects what the
-    record says now. Defaults to `ArchiDep.Course.course_sessions/0`.
-  - `:static_dir` — where the global assets were published. Defaults to the
-    application's own `priv/static`, which is what the asset watchers write
-    into.
   - `:reload_marker` — the file touched after a successful build, for the live
     reloader to see. Defaults to `<build_dir>.reload`.
-  - `:options` — what the build is, as an
-    `ArchiDep.CourseSite.Build.Site.Options`. Defaults to `build_options/0`.
-  - `:builder` — what runs a build, as a function of the build's options.
-    Defaults to `ArchiDep.CourseSite.Builder.build/1`.
   - `:debounce` — how long to wait for the changes to stop, in milliseconds.
   - `:name` — the name to register under.
   """
@@ -121,41 +97,6 @@ defmodule ArchiDep.CourseSiteWatcher do
       |> Path.split()
       |> course_input?()
 
-  @doc """
-  What the application builds the course material site as, when it builds it
-  itself.
-
-  A development build is not digested — the asset watchers write `priv/static`
-  under the names the sources have — and it is the live site rather than a copy
-  of it, everything else about where it is published coming from the
-  `course_site` configuration the dashboard's own links already come from. The
-  build's identifier comes from there too rather than from the checkout: the
-  dashboard names the same search index this build writes, and configuration is
-  the one place both of them read.
-  """
-  @spec build_options() :: Site.Options.t()
-  def build_options do
-    config = Application.get_env(:archidep, :course_site, [])
-
-    Site.Options.new(
-      urls:
-        UrlContext.new(
-          mode: Keyword.get(config, :mode, :live),
-          base_path: Keyword.get(config, :base_path, ""),
-          version: Keyword.get(config, :version),
-          build_id: Keyword.fetch!(config, :build_id)
-        ),
-      site:
-        SiteInfo.new(
-          version: to_string(Application.spec(:archidep, :vsn)),
-          git_branch: Git.git_branch(),
-          git_revision: Git.git_revision(),
-          years: Keyword.fetch!(config, :years),
-          years_short: Keyword.fetch!(config, :years_short)
-        )
-    )
-  end
-
   @impl GenServer
   def init(opts) do
     course_dir = Keyword.fetch!(opts, :course_dir)
@@ -163,23 +104,22 @@ defmodule ArchiDep.CourseSiteWatcher do
 
     state = %__MODULE__{
       build_opts:
-        Builder.course_inputs(course_dir) ++
-          [
-            # The asset watchers rewrite `priv/static` while the site is being
-            # served, so a development build neither digests those names nor
-            # takes a copy of them: the application serves them where they are.
-            static_dir: Keyword.get_lazy(opts, :static_dir, &static_dir/0),
-            digested: false,
-            carry_assets: false,
-            pdf_base: Keyword.get_lazy(opts, :pdf_base, &pdf_base/0),
-            output_dir: build_dir,
-            output: :swap,
-            options: Keyword.get_lazy(opts, :options, &build_options/0)
-          ],
+        CourseSitePublisher.options(
+          Keyword.take(opts, [:static_dir, :pdf_base, :options]) ++
+            [
+              course_dir: course_dir,
+              build_dir: build_dir,
+              # The asset watchers rewrite `priv/static` while the site is being
+              # served, so a development build neither digests those names nor
+              # takes a copy of them: the application serves them where they
+              # are.
+              digested: false,
+              carry_assets: false
+            ]
+        ),
+      publish_opts: Keyword.take(opts, [:progress, :builder]),
       reload_marker: Keyword.get(opts, :reload_marker, build_dir <> ".reload"),
       course_dir: course_dir,
-      progress: Keyword.get(opts, :progress, &Course.course_sessions/0),
-      builder: Keyword.get(opts, :builder, &Builder.build/1),
       debounce: Keyword.get(opts, :debounce, @debounce)
     }
 
@@ -247,18 +187,13 @@ defmodule ArchiDep.CourseSiteWatcher do
     state
   end
 
-  defp run(%__MODULE__{builder: builder, build_opts: build_opts, progress: progress} = state) do
-    case builder.([{:progress, progress.()} | build_opts]) do
-      {:ok, %Report{} = report} = result ->
-        Logger.info(
-          "Built the course material site: #{report.pages} pages and #{report.files} files in #{report.output_dir}"
-        )
-
+  defp run(%__MODULE__{build_opts: build_opts, publish_opts: publish_opts} = state) do
+    case CourseSitePublisher.publish(build_opts, publish_opts) do
+      {:ok, %Report{}} = result ->
         touch(state.reload_marker)
         result
 
-      {:error, what, errors} = result ->
-        Logger.error("#{what}:\n" <> Enum.map_join(errors, "\n", &("  " <> &1)))
+      {:error, _what, _errors} = result ->
         result
     end
   end
@@ -269,13 +204,6 @@ defmodule ArchiDep.CourseSiteWatcher do
     File.mkdir_p!(Path.dirname(marker))
     File.touch!(marker)
   end
-
-  defp static_dir, do: Application.app_dir(:archidep, "priv/static")
-
-  # Stated in the seam's own terms — `:site` or `{:external, url}` — because
-  # configuration is Elixir; only a command line has a string to parse.
-  defp pdf_base,
-    do: :archidep |> Application.get_env(:course_site, []) |> Keyword.get(:pdf_base)
 
   defp course_input?([first | rest]),
     do: first in @watched_dirs or (rest == [] and first in @watched_files)

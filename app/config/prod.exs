@@ -19,11 +19,30 @@ config :archidep, ArchiDepWeb.Endpoint,
   # is serving.
   serve_static: true
 
-# Where the finished editions are kept, which the static server in front of the
-# course material site serves as a second root and this application only reads:
-# it holds none of these bytes out, and mounts them to be able to say whether
-# the deployment is complete.
-config :archidep, course_site: [archives_dir: "/var/lib/archidep/archives"]
+# What this deployment does with the course material site: it renders it at
+# boot, into a directory the static server in front of it takes as its document
+# root. The application serves none of those bytes and does not watch for
+# changes to them — a build is what an image holds, so it can only change when
+# the image does.
+#
+# The course is a copy of its own, at a path of the image rather than the one
+# `ArchiDep.CourseSite.Material` resolved when it was compiled: the model was
+# compiled in another stage, from a layout that is not reproduced here.
+#
+# The build directory is inside the volume rather than the volume itself.
+# Publishing renames a staging directory beside the output and moves the old one
+# aside, so the parent has to be writable and on the same filesystem.
+#
+# `archives_dir` is the finished editions, which the same static server serves
+# as a second root and this application only reads: it holds none of those bytes
+# out, and mounts them to be able to say whether the deployment is complete.
+config :archidep,
+  course_site: [
+    archives_dir: "/var/lib/archidep/archives",
+    build: true,
+    build_dir: "/var/lib/archidep/site/build",
+    course_dir: "/usr/share/archidep/course"
+  ]
 
 # Enable Prometheus metrics server
 config :archidep, ArchiDep.PromEx, disabled: false, metrics_server: [port: 42003]

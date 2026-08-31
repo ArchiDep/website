@@ -84,7 +84,8 @@ flowchart TB
   - `digest/`: Small Phoenix application to compute asset digests for cache
     busting without having to build the whole application.
   - `docker/`: Support files for the production Docker image and the local
-    Docker development images.
+    Docker development images, including `nginx.conf` — the configuration of the
+    static server in front of the course material site.
   - `docs/`: Procedures that belong to no single component.
     - [`docs/rollover.md`][rollover] explains the year-end rollover, which
       publishes the edition that has ended and points the repository at the next

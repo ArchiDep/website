@@ -538,7 +538,11 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       baked into the image. Only the [database progress
       source](#progress-structure-vs-status) needs this, and that is already
       deferred past the cutover. `Build.swap_output/2` is the atomic publish
-      itself and is done.
+      itself and is done. **Done since, and ahead of what needed it**: the
+      application renders the site at boot into a volume a stock nginx serves,
+      which is what took the deployment from two built images to one — see the
+      corrections under [Development and production
+      serving](#development-and-production-serving).
 - [x] Cut over: delete the Liquid sidebar/header, drop the Ruby/Jekyll stages —
       **both** of them, the release one and the development service that is easy
       to forget — and remove the JSON ordering scaffolding that only exists to
@@ -603,7 +607,7 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       editions are kept](#where-past-editions-are-kept). It follows the archive
       repository, having nothing to clone until that exists, and must land
       **before the rollover**: the day the `version` knob moves is the day the
-      assets image stops carrying the outgoing edition, and the redirects
+      deployment stops rendering the outgoing edition, and the redirects
       `ArchiDepWeb.Course.LegacyController` sends there are permanent and cached
       for a year. **Done**, with four corrections recorded there, the sharpest
       being that the fallback cannot be the `try_files` this planned: it would
@@ -3234,6 +3238,75 @@ whoever picks this up:
   version negotiation and every request 404s with no router matched. It is the
   version production runs now, which is what the file is for.
 
+#### One image, and the site rendered at boot
+
+The arrangement above was two built images — the application, and an nginx
+carrying a build of the site produced by a `site` stage `FROM release`. **It is
+one now**: the application renders the site at boot into a volume a **stock**
+`nginx:1.29-alpine` serves, and the second half of the deferred item this
+section left open landed with it rather than waiting for the [database progress
+source](#progress-structure-vs-status) that needed it.
+
+What the second image cost was not the bytes, which move rather than
+disappear — the course tree goes into the application image instead — but that
+every deploy pinned, attested, pulled and rolled back a **pair**, and that
+rendering the site meant taking a release stage through a second leg of the
+publish workflow. What it bought was that the served bytes were an immutable
+artifact: that is what is given up, and what makes it acceptable is that a build
+is [byte-reproducible](#the-build-is-not-byte-reproducible) and both the course
+and the renderer are still inside an attested image. Only the volume is
+unattested, and nothing outside the application writes it.
+
+The rules it is built on, in the order they bite:
+
+- **The build runs on every boot, unconditionally.** Never skipped because the
+  volume already holds one: a rollback puts an older image back, and an
+  application that saw a build already there would leave the newer site being
+  served by the older application.
+- **A build that fails fails the boot.** `ArchiDep.Application.start/2` raises,
+  which fails the health check, which is what makes `archidep-deploy` put the
+  previous image back. The static server meanwhile goes on serving the previous
+  build, so the site does not go down over a content error — the swap is what
+  publishes, and it never happened.
+- **The deploy is no longer atomic for the site**, and it is better for it. A
+  stock image with a bind-mounted configuration is not recreated by a deploy, so
+  the static server serves the previous build for the whole of the new
+  application's boot and flips when the rename lands. The old arrangement
+  recreated that container on every deploy.
+- **The output directory is a child of the volume, not the volume.**
+  `swap_output/2` renames `<output>.staging` into place and `<output>` aside to
+  `<output>.old` — siblings, on the same filesystem — so the mount point has to
+  be their parent.
+- **What the application writes, a different user reads.** `File.cp` preserves
+  the modes it read, so the modes in the image decide whether nginx can read the
+  site; they are normalised in the image rather than per file. The volume's own
+  ownership is settled in `docker/entrypoint.sh`, unconditionally, because
+  whichever container mounts a fresh volume first decides who owns it and the
+  static server's image has no such directory to take it from.
+
+Four things building it produced, besides the rules above:
+
+- **The static server's health check had to stop being a request for a page.**
+  It asked for `/`, which does not exist until the application has rendered the
+  site, so under `compose up --wait` the **first ever deployment** would have
+  failed — the one case the two-image arrangement never had, its image always
+  carrying a build. `/healthz` says what that container can answer for: nginx is
+  up and holding this configuration. Whether the site is there is the
+  application's health.
+- **`docker/nginx.conf` now has two homes.** Production mounts it rather than
+  running an image that carries it.
+- **The archives one-shot moved to the application's image**, which is the only
+  one left, and runs from it without its entrypoint: it fills a volume as root
+  and exits, which is what leaves a clone every other container can read. That
+  it does _not_ run the application's entrypoint is the kind of thing that reads
+  like an oversight, so the service says so.
+- **CI already covered the failure this makes possible.** A content error
+  reaching a production boot sounds like a new risk, and is not:
+  `build.yml`'s `build-site` job renders the whole site on every push and
+  `publish.yml` only runs after it. What is still uncovered is the `:live` mode
+  (CI builds `--mode backup`) and the swap into a volume as a release rather
+  than under Mix.
+
 #### The development half, as built
 
 `ArchiDep.CourseSiteWatcher` rebuilds the site whenever the course material
@@ -3553,12 +3626,16 @@ costs nothing — the repository _is_ the site, so an edition is published by
 being committed. Production is the half this left unanswered: the assets image
 holds exactly the edition it was built from, its document root being a `COPY
 --from=site` of one build, so the day the `version` knob moves the previous
-edition stops existing on `archidep.ch`. That takes every `/<year>/…` link with
-it and lands every one of the permanent, year-cached redirects
-`ArchiDepWeb.Course.LegacyController` sends into that edition on a 404. Carrying
-past editions in the image instead is the ~108 MB apiece, re-shipped on every
-deploy, that the budget above rules out, and redirecting them to the backup host
-would make the copy that exists for this site's downtime a dependency of it.
+edition stops existing on `archidep.ch`. (The image is gone and the application
+renders that document root at boot instead — see [One image, and the site
+rendered at boot](#one-image-and-the-site-rendered-at-boot) — which changes
+nothing here: a build still holds exactly one edition, and moving the knob still
+replaces it.) That takes every `/<year>/…` link with it and lands every one of
+the permanent, year-cached redirects `ArchiDepWeb.Course.LegacyController` sends
+into that edition on a 404. Carrying past editions in the image instead is the
+~108 MB apiece, re-shipped on every deploy, that the budget above rules out, and
+redirecting them to the backup host would make the copy that exists for this
+site's downtime a dependency of it.
 
 **Production clones the archive repository rather than being handed a copy.**
 One home for an edition's bytes, two hosts reading it. A one-shot
@@ -3634,12 +3711,16 @@ where this is the second.
   one-shot is a second container of it. That is also where it belongs by
   cohesion: the image that serves the finished editions is the one that knows
   how to fetch them. Development builds a three-line image over the same script.
+  **It runs from the application's image now**, that being the only published
+  one left, and the cohesion argument went with the image it was about — what
+  holds it together is the reason underneath, that the deployment names
+  published images and the script has one home.
 
 **Nothing fails to boot over a missing edition, and nothing keeps quiet about
 one.** Refusing to start is disproportionate at both levels where it could be
 done: the application serves none of these bytes and would be trading the
 dashboard, the admin console and the servers pipeline for a dead link, while a
-fetch service exiting non-zero blocks the assets server behind it, so one first
+fetch service exiting non-zero blocks the static server behind it, so one first
 boot with GitHub unreachable would take `archidep.ch` down whole to protect an
 edition nobody is being taught. Both start, and the fetch says what it could not
 do. What replaces the failure is a check only the application can make: the
@@ -3820,7 +3901,14 @@ each looks like reuse:
   build.
 - **`docker/nginx.conf` mounted on a stock nginx.** Its fallback proxies misses
   to `http://archidep-website-app:42000`, a literal hostname nginx resolves when
-  it starts, so with no application container it does not start at all.
+  it starts, so with no application container it does not start at all. **No
+  longer true, and this is how production serves the site now**: the fallbacks
+  are two `root` directives at the archived editions and nothing proxies
+  anywhere, so a stock nginx over this file starts with no application in sight
+  — see [Development and production
+  serving](#development-and-production-serving). What still rules it out here is
+  the rest of the paragraph above: it is a document root and this job wants a
+  server over an export.
 
 The job therefore mirrors the shape of the course build rather than the app
 build: the asset artifacts, the build task with the PDF flags, a throwaway

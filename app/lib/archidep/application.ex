@@ -5,6 +5,7 @@ defmodule ArchiDep.Application do
 
   alias ArchiDep.CourseSite.Archives
   alias ArchiDep.CourseSite.Archives.Completeness
+  alias ArchiDep.CourseSitePublisher
 
   @impl Application
   def start(_type, _args) do
@@ -21,6 +22,13 @@ defmodule ArchiDep.Application do
     # trade the dashboard, the admin console and the servers pipeline for a dead
     # link.
     Completeness.log(Archives.completeness())
+
+    # And unlike the line above, this refuses to boot. The build is what a
+    # separate static server is pointed at, and it is already holding the
+    # previous one: an application that carried on would leave the site it
+    # serves and the application beside it disagreeing about which edition this
+    # deployment is.
+    build_course_site()
 
     children =
       [
@@ -44,6 +52,20 @@ defmodule ArchiDep.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html for other strategies and
     # supported options.
     Supervisor.start_link(children, name: ArchiDep.Supervisor, strategy: :one_for_one)
+  end
+
+  # Rendering the course material site is asked for explicitly, by the `build`
+  # key of the `course_site` configuration, and only production asks:
+  # development has the watcher below render it instead, and every other
+  # environment does not render it.
+  defp build_course_site do
+    config = Application.get_env(:archidep, :course_site, [])
+
+    if Keyword.get(config, :build, false) do
+      CourseSitePublisher.publish_configured!()
+    else
+      :ok
+    end
   end
 
   # Watching the course material and rebuilding the site as it changes is asked

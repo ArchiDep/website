@@ -152,7 +152,8 @@ This repository holds one edition of the course material, so the editions that
 came before it are fetched rather than rendered: they are published as [a
 repository of their own](https://github.com/ArchiDep/archidep.github.io), cloned
 into `tmp/course_site_archives`, and served behind the build the way
-production's static server serves them behind its own document root.
+production's static server serves them behind the build the application renders
+into its document root.
 
 ### Run in development mode on your machine
 

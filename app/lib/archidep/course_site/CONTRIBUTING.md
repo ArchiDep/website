@@ -375,7 +375,7 @@ layer's](../../archidep_web/CONTRIBUTING.md#routing-endpoint--pipelines).
 **Where the bytes of those editions are, and whether they are all there.** This
 repository renders one edition; the finished ones are published as a git
 repository that is also the backup site, and a host comes to hold them by
-cloning it into a directory the assets server takes as a second root and the
+cloning it into a directory the static server takes as a second root and the
 endpoint serves behind the build. `Archives.editions/0` is what says which pages
 that amounts to, and `Archives.completeness/0` is the check, run at boot from
 [`ArchiDep.Application`](../application.ex) and read again by the admin
@@ -730,8 +730,9 @@ configurations of one command rather than three.
 It is a thin shell over [`Builder`](./builder.ex), which names the order the
 steps of `Build` are run in and turns each stage's failures into strings — so
 that a caller with no `Mix.shell/0` to print to and no `exit/1` to abort with
-runs the same build. `ArchiDep.CourseSiteWatcher` is that caller: it rebuilds
-the site as it is edited, for the development server to serve.
+runs the same build. `ArchiDep.CourseSitePublisher` is that caller: it is what
+the application renders the site with, at boot in production and on every edit
+in development, where `ArchiDep.CourseSiteWatcher` decides when.
 `Builder.course_inputs/1` derives every input a build reads from one course
 directory, so that the two drivers cannot disagree about where `course.yml` is.
 
