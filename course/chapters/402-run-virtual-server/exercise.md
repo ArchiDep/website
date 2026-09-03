@@ -327,7 +327,7 @@ Once you are connected, run the following command to give the teacher access to
 your virtual machine (**be sure to copy the whole line**):
 
 ```bash
-$> echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB1TC4ygWjzpRemdOyrtqQYmOARxMMks71fUduU1Og+i archidep" | sudo tee --append "$HOME/.ssh/authorized_keys"
+$> echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOvqijz9czJd80ujna0JsLPkxi7X0EKuPrK7vebg7oJk archidep" | sudo tee --append "$HOME/.ssh/authorized_keys"
 ```
 
 {% note type: more %}
