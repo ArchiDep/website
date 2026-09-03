@@ -163,7 +163,7 @@ services:
       - ./tmp/docker/dev/node/dist/node_modules:/archidep/node_modules:ro
 
   db:
-    image: postgres:17.5-alpine
+    image: postgres:17.11-alpine
     environment:
       POSTGRES_DB: archidep
       POSTGRES_PASSWORD: archidep
