@@ -45,6 +45,7 @@ actually uses is small and clean, and the codebase is already half-way there.
   - [Static build step](#static-build-step)
   - [Development and production serving](#development-and-production-serving)
     - [The production half already stands, serving the wrong thing](#the-production-half-already-stands-serving-the-wrong-thing)
+    - [One image, and the site rendered at boot](#one-image-and-the-site-rendered-at-boot)
     - [The development half, as built](#the-development-half-as-built)
   - [Standalone / archival mode](#standalone--archival-mode)
   - [Optional URL prefix](#optional-url-prefix)
