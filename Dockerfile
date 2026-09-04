@@ -218,10 +218,39 @@ COPY --chown=app:app ./course/archives.yml /usr/src/course/archives.yml
 # tags of the course that include them rather than its documents.
 COPY --chown=app:app ./course/icons/ /usr/src/course/icons/
 
+# What the application reports itself as, and what the source code links of the
+# course material site it renders point at. A build that already knows is
+# believed; one that does not reads the checkout, which `.dockerignore` reduces
+# to `HEAD` and `refs/`. `git` is installed in this stage but cannot answer
+# this: no object database comes along for it to resolve a commit against.
+ARG ARCHIDEP_GIT_BRANCH=""
+ARG ARCHIDEP_GIT_REVISION=""
+
 COPY ./.git/ /tmp/.git/
-RUN cat /tmp/.git/HEAD | grep '^ref: refs\/heads\/' | sed 's/^ref: refs\/heads\///' > /usr/src/app/.git-branch && \
-    touch /usr/src/app/.git-dirty && \
-    cat /tmp/.git/HEAD | awk '{print "/tmp/.git/"$2}' | xargs cat > /usr/src/app/.git-revision
+
+# A detached `HEAD` — what `actions/checkout` leaves behind when it is given a
+# commit rather than a branch — names no branch and holds the commit itself.
+# `ArchiDep.Helpers.GitHelpers` reads the empty branch that leaves as `HEAD`,
+# which is why the branch is worth passing in and the revision never is.
+RUN set -eu; \
+    head="$(cat /tmp/.git/HEAD)"; \
+    branch="${ARCHIDEP_GIT_BRANCH:-}"; \
+    revision="${ARCHIDEP_GIT_REVISION:-}"; \
+    case "${head}" in \
+      "ref: "*) \
+        ref="${head#ref: }"; \
+        [ -n "${branch}" ] || branch="${ref#refs/heads/}"; \
+        [ -n "${revision}" ] || revision="$(cat "/tmp/.git/${ref}" 2>/dev/null || true)" ;; \
+      *) \
+        [ -n "${revision}" ] || revision="${head}" ;; \
+    esac; \
+    [ -n "${revision}" ] || { \
+      echo "Could not determine the Git revision: /tmp/.git/HEAD is '${head}' and the ref it names is not in the build context, which a packed one would not be. Pass --build-arg ARCHIDEP_GIT_REVISION." >&2; \
+      exit 1; \
+    }; \
+    printf '%s\n' "${branch}" > /usr/src/app/.git-branch; \
+    printf '%s\n' "${revision}" > /usr/src/app/.git-revision; \
+    touch /usr/src/app/.git-dirty
 
 # The digested assets. They are both what this application serves statically and
 # what a build of the course material site carries a copy of, that build being

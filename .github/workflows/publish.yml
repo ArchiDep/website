@@ -40,6 +40,11 @@ jobs:
       # succession are enough to make them differ, and the image would then be
       # of a commit nothing tested.
       BUILT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      # The branch that commit was on. Checking out a commit detaches `HEAD`, so
+      # the image would otherwise say it was built from `HEAD` — a plausible
+      # answer, and a dead source code link on every page of the course material
+      # site it serves.
+      BUILT_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
     steps:
       # https://github.com/actions/checkout
       - name: Checkout repository
@@ -149,6 +154,8 @@ jobs:
           target: app
           build-args: |
             APP_DEPS_IMAGE=${{ env.REGISTRY }}/archidep/app-deps-compiled:app-deps-cache-${{ steps.deps-hash.outputs.deps_hash }}-otp-${{ env.ELIXIR_OTP }}
+            ARCHIDEP_GIT_BRANCH=${{ env.BUILT_BRANCH }}
+            ARCHIDEP_GIT_REVISION=${{ env.BUILT_SHA }}
           push: true
           tags: ${{ steps.app-meta.outputs.tags }}
           labels: ${{ steps.app-meta.outputs.labels }}

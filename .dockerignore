@@ -23,8 +23,8 @@
 
 /.env*
 
-# What a release and a build of the site are stamped with: HEAD names the
-# branch, and the ref it names is under refs/.
+# What a release and a build of the site are stamped with: HEAD holds the commit
+# itself when it is detached, and otherwise names a ref under refs/.
 /.git
 !.git/HEAD
 !.git/refs
