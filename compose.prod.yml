@@ -119,7 +119,7 @@ services:
       POSTGRES_USER: archidep
     restart: unless-stopped
     volumes:
-      - db_data:/var/lib/postgresql/data:rw
+      - db_data:/var/lib/postgresql:rw
 
 volumes:
   app_uploads:

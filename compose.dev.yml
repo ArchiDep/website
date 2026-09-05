@@ -176,4 +176,4 @@ services:
       start_period: 30s
       start_interval: 5s
     volumes:
-      - ./tmp/docker/dev/db/data:/var/lib/postgresql/data:rw
+      - ./tmp/docker/dev/db/postgresql:/var/lib/postgresql:rw
