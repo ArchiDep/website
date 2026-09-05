@@ -570,6 +570,7 @@ level and fastest-to-use service model.
 [gmail]: https://www.google.com/gmail/
 [google-cloud]: https://cloud.google.com
 [heroku]: https://www.heroku.com
+[heroku-pricing]: https://www.heroku.com/pricing/
 [http]: https://en.wikipedia.org/wiki/HTTP
 [hypervisor]: https://en.wikipedia.org/wiki/Hypervisor
 [iaas]: https://en.wikipedia.org/wiki/Infrastructure_as_a_service

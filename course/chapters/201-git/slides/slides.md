@@ -204,7 +204,7 @@ Often you will only see a prefix (the first 6-7 characters):
 
 **Notes:**
 
-SHA-1 is a [hash function][cryptographic-hashfunction] and provides integrity.
+SHA-1 is a [hash function][cryptographic-hash-function] and provides integrity.
 Because all content is [hashed][hash], it's virtually impossible for files to be
 lost or corrupted without Git knowing about it. This functionality is built into
 Git at the lowest levels and is integral to its philosophy.
