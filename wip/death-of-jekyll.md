@@ -615,7 +615,7 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       have taken the trailing-slash redirect away from the edition the image
       itself holds. The clone measures 159 MB against the ~200 MB assumed, 18
       seconds the first time and under two after that.
-- [ ] Write and run the **year-end rollover**: build the finished edition with
+- [x] Write and run the **year-end rollover**: build the finished edition with
       `--mode archive` and its own progress file, commit it as `<year>/`, emit
       `course/archives/<year>.json`, tag the source `archive/<year>`, move the
       `version` knob on, and deploy — see [Where past editions are
