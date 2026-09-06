@@ -183,10 +183,11 @@ event.
 Following the link triggers
 [`LogInOrRegisterWithLink`](./use_cases/log_in_or_register_with_link.ex), which
 validates the token ([`LoginLink`](./schemas/login_link.ex), valid while
-`active` and unused), creates the account if needed, starts a session, marks the
-link as used, and records a
-[`UserRegisteredWithLink`](./events/user_registered_with_link.ex) or
-[`UserLoggedInWithLink`](./events/user_logged_in_with_link.ex) event.
+`active`, unused, and within the validity window the schema defines — a link
+that is never followed expires on its own rather than lasting as long as the
+class), creates the account if needed, starts a session, marks the link as used,
+and records a [`UserRegisteredWithLink`](./events/user_registered_with_link.ex)
+or [`UserLoggedInWithLink`](./events/user_logged_in_with_link.ex) event.
 
 **One person, one account** ([see below](#one-person-one-account)): when the
 preregistration the link was issued for has no account yet, the use case first

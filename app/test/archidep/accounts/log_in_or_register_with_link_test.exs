@@ -32,6 +32,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
   # (see `docs/testing.md`).
   @now ~U[2024-03-15 10:30:00.000000Z]
   @session_validity_in_seconds 30 * 24 * 60 * 60
+  @link_validity_in_seconds 48 * 60 * 60
 
   @login_telemetry_event [:archidep, :accounts, :auth, :login]
 
@@ -299,6 +300,79 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
       AccountsFactory.insert(
         :login_link,
         login_link_attrs(preregistered_user_id: student.id, used_at: @now)
+      )
+
+    metadata = Factory.build(:client_metadata)
+
+    previous_counts = count_rows(@affected_tables)
+
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+
+    assert_no_login_side_effects(previous_counts)
+    refute_preregistered_user_broadcast(broadcasts)
+    assert_login_link_untouched(login_link)
+  end
+
+  # A link expires on its own, so that one that was generated and never followed
+  # does not stay usable for the rest of the class. The two tests below sit on
+  # either side of that window's edge: the cutoff is exclusive, so a link
+  # created one second later is the youngest that still works and one created
+  # exactly on it is the oldest that does not.
+
+  test "a login link created within its validity window can still be used to log in", %{
+    log_in_or_register_with_link: log_in_or_register_with_link
+  } do
+    class = CourseFactory.insert(:class, active: true, now: @now)
+    student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
+
+    broadcasts = subscribe_to_preregistered_user(student)
+
+    user_account =
+      AccountsFactory.insert(:user_account, student_user_account_attrs(student, active: true))
+
+    link_student_to_user_account(student, user_account)
+
+    login_link =
+      AccountsFactory.insert(
+        :login_link,
+        login_link_attrs(
+          preregistered_user_id: student.id,
+          created_at: DateTime.add(@now, -@link_validity_in_seconds + 1, :second)
+        )
+      )
+
+    metadata = Factory.build(:client_metadata)
+
+    previous_counts = count_rows(@affected_tables)
+
+    assert {:ok, auth} = log_in_or_register_with_link.(login_link.token, metadata)
+
+    auth
+    |> assert_auth(user_account.username, user_account.root)
+    |> assert_login_telemetry()
+    |> assert_logged_in_with_link_event(metadata, login_link, user_account, student)
+    |> assert_persisted_session_for_existing_user(auth, user_account, student)
+
+    assert_login_link_used(login_link)
+    assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 1})
+    refute_preregistered_user_broadcast(broadcasts)
+  end
+
+  test "a login link that has reached the end of its validity window cannot be used to log in", %{
+    log_in_or_register_with_link: log_in_or_register_with_link
+  } do
+    class = CourseFactory.insert(:class, active: true, now: @now)
+    student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
+
+    broadcasts = subscribe_to_preregistered_user(student)
+
+    login_link =
+      AccountsFactory.insert(
+        :login_link,
+        login_link_attrs(
+          preregistered_user_id: student.id,
+          created_at: DateTime.add(@now, -@link_validity_in_seconds, :second)
+        )
       )
 
     metadata = Factory.build(:client_metadata)

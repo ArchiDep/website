@@ -22,6 +22,16 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime_usec]
 
+  # How long a link may be followed after it was generated. A link is a bearer
+  # token in a URL — it leaks through browser history, proxy and server logs and
+  # `Referer` headers — so being single-use is not on its own enough: an
+  # unfollowed link would otherwise stay usable for as long as its student's
+  # class runs. Two days covers a student who is given a link during a class and
+  # only gets to it the next day; a teacher generates another whenever one has
+  # lapsed.
+  @link_validity_in_hours 48
+  @one_hour_in_seconds 60 * 60
+
   @type t :: %__MODULE__{
           id: UUID.t(),
           token: binary(),
@@ -43,11 +53,13 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
     field(:created_at, :utc_datetime_usec)
   end
 
-  @spec fetch_valid_link_by_token(binary()) :: {:ok, t()} | {:error, :invalid_link}
-  def fetch_valid_link_by_token(token),
+  @spec fetch_valid_link_by_token(binary(), DateTime.t()) :: {:ok, t()} | {:error, :invalid_link}
+  def fetch_valid_link_by_token(token, now),
     do:
       from(ll in __MODULE__,
-        where: ll.token == ^token and ll.active and is_nil(ll.used_at),
+        where:
+          ll.token == ^token and ll.active and is_nil(ll.used_at) and
+            ll.created_at > ^link_validity_cutoff(now),
         left_join: pu in assoc(ll, :preregistered_user),
         left_join: pug in assoc(pu, :group),
         left_join: pua in assoc(pu, :user_account),
@@ -91,4 +103,10 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
         :token,
         :created_at
       ])
+
+  # The earliest creation instant a link may have and still be followed. Derived
+  # from the injected clock so the validity window is deterministic and can be
+  # pinned in tests.
+  defp link_validity_cutoff(now),
+    do: DateTime.add(now, -@link_validity_in_hours * @one_hour_in_seconds, :second)
 end

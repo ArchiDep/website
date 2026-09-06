@@ -9,10 +9,53 @@ and the options for resolving it.
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [A handful of process tests fail intermittently under full-suite load](#a-handful-of-process-tests-fail-intermittently-under-full-suite-load)
 - [Deleting a student who has logged in fails](#deleting-a-student-who-has-logged-in-fails)
 - [SSH host key fingerprint parsing crashes on malformed input](#ssh-host-key-fingerprint-parsing-crashes-on-malformed-input)
 
 <!-- END doctoc -->
+
+## A handful of process tests fail intermittently under full-suite load
+
+Several tests that drive a process and wait for a message fail every few full
+`mix test` runs, always with `assert_receive` timing out on an **empty** mailbox
+rather than with a wrong value. The same tests pass consistently when their file
+or directory is run on its own, and adding load makes them more likely: measured
+over three full-suite runs each, before and after an unrelated change, the rate
+was 0–2 failures per run either way.
+
+Observed so far, most to least often:
+
+- `ArchiDep.CourseSiteWatcherTest` — "asks for a build when it is one a build
+  reads" and "asks once per change, the coalescing being the rebuilder's", both
+  on `assert_receive {:proxy, ^rebuilder, {:cast, :request}}`.
+- `ArchiDep.Servers.ServerTracking.ServerManagerTest` — "have a server manager
+  check open ports (and report any problems)", on `assert_receive :done`.
+- `ArchiDep.Servers.ServerTracking.ServersOrchestratorTest` — "starts a
+  supervisor for each server to track on boot".
+- `ArchiDep.Servers.Ansible.Pipeline.AnsiblePipelineQueueStoreTest` —
+  "mark_incomplete_runs_as_timed_out/0 times out every pending and running run
+  and leaves terminal runs alone".
+
+For the watcher tests there is a concrete hypothesis, not yet confirmed.
+`CourseSiteWatcher.init/1` returns `{:continue, :watch}`, and the
+`handle_continue` starts a **real** `FileSystem` watcher on the test's `tmp_dir`
+— on macOS an OS-level port process. The test sends its `:file_event` straight
+after `start_supervised!`, so that message queues behind the `handle_continue`;
+if starting the port takes longer than the 500 ms `assert_receive_timeout` set
+in `test_helper.exs`, the assertion times out before the watcher ever looks at
+the event. Nothing in these tests needs a real watcher: they drive `handle_info`
+directly.
+
+Decision to make, once the cause is confirmed for each test: either give the
+watcher a **synchronisation barrier** in the test (a `:sys.get_state/1` before
+sending the event forces the `handle_continue` to finish first), or **inject the
+`FileSystem` start** behind a façade the way `ArchiDep.Cmd` and `ArchiDep.Clock`
+are injected, so no test spawns a real watcher at all. The latter is the more
+thorough fix and would also stop the suite touching the filesystem watcher API.
+The other three tests need the same "what is this actually waiting for, and what
+makes it slow under load" pass before assuming they share a cause; raising the
+global timeout would hide the symptom without answering that.
 
 ## Deleting a student who has logged in fails
 

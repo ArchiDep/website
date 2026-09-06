@@ -63,24 +63,26 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
     end
   end
 
-  defp log_in_or_register(link_token, client_metadata),
-    do:
-      Multi.new()
-      |> Multi.run(
-        :valid_login_link,
-        fn _repo, %{} -> LoginLink.fetch_valid_link_by_token(link_token) end
-      )
-      |> Multi.merge(fn
-        %{
-          valid_login_link:
-            %LoginLink{preregistered_user: %PreregisteredUser{} = preregistered_user} = link
-        } ->
-          log_in_or_register_preregistered_user(link, preregistered_user, client_metadata)
+  defp log_in_or_register(link_token, client_metadata) do
+    now = Clock.now()
 
-        %{valid_login_link: %LoginLink{user_account: %UserAccount{} = user_account} = link} ->
-          log_in_or_register_user_account(link, user_account, client_metadata)
-      end)
-      |> Repo.transaction()
+    Multi.new()
+    |> Multi.run(
+      :valid_login_link,
+      fn _repo, %{} -> LoginLink.fetch_valid_link_by_token(link_token, now) end
+    )
+    |> Multi.merge(fn
+      %{
+        valid_login_link:
+          %LoginLink{preregistered_user: %PreregisteredUser{} = preregistered_user} = link
+      } ->
+        log_in_or_register_preregistered_user(link, preregistered_user, client_metadata, now)
+
+      %{valid_login_link: %LoginLink{user_account: %UserAccount{} = user_account} = link} ->
+        log_in_or_register_user_account(link, user_account, client_metadata, now)
+    end)
+    |> Repo.transaction()
+  end
 
   defp log_in_or_register_preregistered_user(
          link,
@@ -92,10 +94,9 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
          # fail closed with `:invalid_link`.
          %PreregisteredUser{user_account: %UserAccount{active: true, root: false} = user_account} =
            preregistered_user,
-         client_metadata
+         client_metadata,
+         now
        ) do
-    now = Clock.now()
-
     if PreregisteredUser.active?(preregistered_user, now) do
       Multi.new()
       |> Multi.put(:user_account, user_account)
@@ -120,10 +121,9 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
   defp log_in_or_register_preregistered_user(
          link,
          %PreregisteredUser{user_account: nil} = preregistered_user,
-         client_metadata
+         client_metadata,
+         now
        ) do
-    now = Clock.now()
-
     if PreregisteredUser.active?(preregistered_user, now) do
       # A person keeps one account across the years. Someone enrolled again in a
       # later class gets a fresh preregistration, and the account their previous
@@ -148,12 +148,13 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
   defp log_in_or_register_preregistered_user(
          _link,
          %PreregisteredUser{},
-         _client_metadata
+         _client_metadata,
+         _now
        ) do
     invalid_link()
   end
 
-  defp log_in_or_register_user_account(_link_token, _user_account, _client_metadata) do
+  defp log_in_or_register_user_account(_link_token, _user_account, _client_metadata, _now) do
     invalid_link()
   end
 
