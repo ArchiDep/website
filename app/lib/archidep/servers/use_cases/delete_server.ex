@@ -43,6 +43,7 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
     now = Clock.now()
 
     {:ok, fresh_server_owner} = ServerOwner.fetch_server_owner(server.owner_id)
+    counters = ServerOwner.counters_in_group(fresh_server_owner, server.group_id)
 
     case Multi.new()
          |> Multi.delete(:server, server)
@@ -50,11 +51,11 @@ defmodule ArchiDep.Servers.UseCases.DeleteServer do
          # Note: make sure to decrease the active server count before decreasing
          # the server count, or the database constraint checking the consistency
          # of the two will complain.
-         |> Multi.merge(&decrease_active_server_count(fresh_server_owner.counters, &1.server))
+         |> Multi.merge(&decrease_active_server_count(counters, &1.server))
          |> Multi.update(
            :server_limit,
            &ServerOwnerCounters.update_server_count(
-             Map.get(&1, :active_server_limit, fresh_server_owner.counters),
+             Map.get(&1, :active_server_limit, counters),
              -1
            )
          )

@@ -50,7 +50,11 @@ defmodule ArchiDep.Course.UseCases.ImportStudents do
            Student,
            insert_data,
            on_conflict: :nothing,
-           conflict_target: [:class_id, :email],
+           # Matches `students_unique_email_in_class_index`, which folds case,
+           # so re-importing a roster that spells an address differently skips
+           # the student already in the class instead of adding a second row
+           # for them.
+           conflict_target: {:unsafe_fragment, "(class_id, LOWER(email))"},
            returning: true
          )
          |> Multi.run(:new_students, fn _repo, changes ->

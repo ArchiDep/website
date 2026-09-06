@@ -121,6 +121,23 @@ defmodule ArchiDep.Servers.ServerView do
       active and ServerGroup.active?(group, now) and ServerOwner.active?(owner, now) and
         (owner.group_member == nil or owner.group_member.group_id == group.id)
 
+  @doc """
+  Whether the server belongs to a group its owner has since left — a server
+  registered during a class that has ended, kept as history now that its owner
+  is enrolled in another one. Such a server is never tracked (`active?/2` says
+  the same thing, among its other conditions) and nothing may be done to it, so
+  the pages that list an owner's own servers mark it as past rather than
+  offering it as one of theirs.
+  """
+  @spec in_former_group?(t()) :: boolean()
+  def in_former_group?(%__MODULE__{
+        group: %ServerGroup{id: group_id},
+        owner: %ServerOwner{group_member: %ServerGroupMember{group_id: member_group_id}}
+      }),
+      do: member_group_id != group_id
+
+  def in_former_group?(%__MODULE__{}), do: false
+
   @spec set_up?(t()) :: boolean()
   def set_up?(%__MODULE__{set_up_at: set_up_at}), do: set_up_at != nil
 

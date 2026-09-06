@@ -21,14 +21,21 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
 
   @spec server_name(map()) :: Rendered.t()
   def server_name(assigns) do
+    assigns = assign(assigns, :in_former_group, ServerView.in_former_group?(assigns.server))
+
     ~H"""
-    <%= if @server.name do %>
-      {@server.name}
-    <% else %>
-      <span class="font-mono">
-        {ServerView.ssh_connection_description(@server)}
-      </span>
-    <% end %>
+    <span
+      class={@in_former_group && "text-base-content/50 line-through tooltip tooltip-bottom"}
+      data-tip={@in_former_group && gettext("Registered during a previous class")}
+    >
+      <%= if @server.name do %>
+        {@server.name}
+      <% else %>
+        <span class="font-mono">
+          {ServerView.ssh_connection_description(@server)}
+        </span>
+      <% end %>
+    </span>
     """
   end
 

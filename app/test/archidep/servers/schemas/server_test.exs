@@ -198,6 +198,65 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     end
   end
 
+  describe "new/4 uniqueness at the database" do
+    test "a name taken after the changeset was built is an error, not a raise" do
+      {owner, group} = persisted_owner_and_group()
+      data = ServersFactory.random_server_data(name: "Raced")
+      changeset = Server.new(data, group, owner, @now)
+
+      ServersTestHelpers.insert_server(owner.id, group.id, name: "Raced")
+
+      assert {:error, conflicted} = Repo.insert(changeset)
+      assert errors_on(conflicted) == %{name: ["has already been taken"]}
+    end
+
+    test "an IP address taken after the changeset was built is an error, not a raise" do
+      {owner, group} = persisted_owner_and_group()
+      data = ServersFactory.random_server_data(name: "Raced")
+      changeset = Server.new(data, group, owner, @now)
+
+      {:ok, taken_ip_address} = EctoNetwork.INET.cast(data.ip_address)
+
+      ServersTestHelpers.insert_server(owner.id, group.id,
+        name: "Other",
+        ip_address: taken_ip_address
+      )
+
+      assert {:error, conflicted} = Repo.insert(changeset)
+      assert errors_on(conflicted) == %{ip_address: ["has already been taken"]}
+    end
+  end
+
+  describe "update/3 uniqueness at the database" do
+    test "a name taken after the changeset was built is an error, not a raise" do
+      {owner, group} = persisted_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner.id, group.id, name: "Mine")
+      changeset = Server.update(server, ServersFactory.random_server_data(name: "Raced"), @now)
+
+      ServersTestHelpers.insert_server(owner.id, group.id, name: "Raced")
+
+      assert {:error, conflicted} = Repo.update(changeset)
+      assert errors_on(conflicted) == %{name: ["has already been taken"]}
+    end
+
+    test "an IP address taken after the changeset was built is an error, not a raise" do
+      {owner, group} = persisted_owner_and_group()
+      server = ServersTestHelpers.insert_server(owner.id, group.id, name: "Mine")
+      data = ServersFactory.random_server_data(name: "Mine")
+      changeset = Server.update(server, data, @now)
+
+      {:ok, taken_ip_address} = EctoNetwork.INET.cast(data.ip_address)
+
+      ServersTestHelpers.insert_server(owner.id, group.id,
+        name: "Other",
+        ip_address: taken_ip_address
+      )
+
+      assert {:error, conflicted} = Repo.update(changeset)
+      assert errors_on(conflicted) == %{ip_address: ["has already been taken"]}
+    end
+  end
+
   describe "update/3 uniqueness" do
     test "the name must not be taken by another server in the same group" do
       {owner, group} = persisted_owner_and_group()
@@ -242,11 +301,19 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
   describe "new_group_member_server/3 server limits" do
     test "a group member at the active-server limit cannot create another active server" do
+      member = ServersFactory.build(:server_group_member)
+
       owner =
         ServersFactory.build(:server_owner,
           root: false,
-          counters:
-            ServersFactory.build(:server_owner_counters, active_server_count: 1, server_count: 1)
+          group_member: member,
+          counters: [
+            ServersFactory.build(:server_owner_counters,
+              class_id: member.group_id,
+              active_server_count: 1,
+              server_count: 1
+            )
+          ]
         )
 
       data = ServersFactory.random_server_data(active: true)
@@ -258,11 +325,19 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     end
 
     test "a group member at the server limit cannot create another server" do
+      member = ServersFactory.build(:server_group_member)
+
       owner =
         ServersFactory.build(:server_owner,
           root: false,
-          counters:
-            ServersFactory.build(:server_owner_counters, active_server_count: 0, server_count: 5)
+          group_member: member,
+          counters: [
+            ServersFactory.build(:server_owner_counters,
+              class_id: member.group_id,
+              active_server_count: 0,
+              server_count: 5
+            )
+          ]
         )
 
       data = ServersFactory.random_server_data(active: false)
@@ -274,14 +349,20 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
   describe "update_group_member_server/4 server limits" do
     test "a group member at the active-server limit cannot activate another server" do
+      server = ServersFactory.build(:server, active: false)
+
       owner =
         ServersFactory.build(:server_owner,
           root: false,
-          counters:
-            ServersFactory.build(:server_owner_counters, active_server_count: 1, server_count: 1)
+          counters: [
+            ServersFactory.build(:server_owner_counters,
+              class_id: server.group_id,
+              active_server_count: 1,
+              server_count: 1
+            )
+          ]
         )
 
-      server = ServersFactory.build(:server, active: false)
       data = ServersFactory.random_server_data(active: true)
 
       assert errors_on(Server.update_group_member_server(server, data, owner, @now)) ==
@@ -754,7 +835,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   end
 
   defp changeset(:new_group_member, overrides) do
-    owner = ServersFactory.build(:server_owner, root: false, counters: nil)
+    owner = ServersFactory.build(:server_owner, root: false, counters: [])
 
     Server.new_group_member_server(server_data(overrides), owner, @now)
   end
@@ -765,7 +846,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   end
 
   defp changeset(:update_group_member, overrides) do
-    owner = ServersFactory.build(:server_owner, root: false, counters: nil)
+    owner = ServersFactory.build(:server_owner, root: false, counters: [])
 
     server = ServersFactory.build(:server)
     Server.update_group_member_server(server, server_data(overrides), owner, @now)

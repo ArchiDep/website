@@ -25,6 +25,7 @@ what the three build modes mean.
   - [3. Move the edition knob](#3-move-the-edition-knob)
   - [4. Publish the frozen edition](#4-publish-the-frozen-edition)
   - [5. Deploy, and read the completeness check](#5-deploy-and-read-the-completeness-check)
+- [The class that has ended](#the-class-that-has-ended)
 - [Correcting a frozen edition](#correcting-a-frozen-edition)
   - [Before it has been published](#before-it-has-been-published)
   - [After it has been published](#after-it-has-been-published)
@@ -172,6 +173,38 @@ deployment that reports nothing holds everything; the check is documented in
 
 ---
 
+## The class that has ended
+
+The steps above roll over the **material**. The dashboard's own rollover is one
+act, performed in the admin console before the new class's students are
+imported:
+
+**Deactivate the class that has ended** — clear its `active` flag, or let its
+`end_date` pass.
+
+That is the whole procedure, and it is not optional. Until it is done, a student
+enrolled in both classes logs straight back into the old one: `active?` on their
+account is still true, so nothing sends the login looking for their new
+preregistration, and it succeeds without complaint — see [One person, one
+account][one-account]. Someone who never logged in during the class that has
+ended fares worse: two preregistrations match their email and the login is
+refused outright.
+
+Everything else is already handled and needs no step of its own:
+
+- **Their servers stay.** Registrations are never deleted, and a class cannot be
+  deleted while it holds any — which is why past classes stay in the database
+  for good. The [current-group rule][former-servers] stops them being tracked,
+  counted against the new class's quotas, or reserving their address or name,
+  and marks them as past in the student's own list.
+- **Their account follows them.** Both login paths move it onto the new
+  preregistration, and the student row of the class they have left keeps
+  pointing at it so the admin pages can say where they went.
+- **Their username is theirs again.** It is unique within a class, so the import
+  suggests the same one it did last year and they may confirm it as before.
+
+---
+
 ## Correcting a frozen edition
 
 A mistake found in a published edition is fixed by **freezing it again**, never
@@ -266,6 +299,8 @@ rename, not at the next rollover.
 
 [build-workflow]: ../.github/workflows/build.yml
 [completeness]: ../app/lib/archidep/course_site/archives/completeness.ex
+[former-servers]: ../app/lib/archidep/servers/CONTRIBUTING.md#servers-of-a-class-that-has-ended
+[one-account]: ../app/lib/archidep/accounts/CONTRIBUTING.md#one-person-one-account
 [editions]: ../app/lib/archidep/course_site/CONTRIBUTING.md#the-editions-that-came-before
 [pdf-workflow]: ../.github/workflows/pdf.yml
 [rollover-workflow]: ../.github/workflows/rollover.yml

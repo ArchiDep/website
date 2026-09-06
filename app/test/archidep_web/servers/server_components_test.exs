@@ -25,15 +25,50 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
 
   describe "server_name/1" do
     test "shows the server's name when it has one" do
-      server = ServersFactory.build(:server_view, name: "web-01")
+      server = ServersFactory.build(:server_view, current_class_server_attrs(name: "web-01"))
 
-      assert rendered_server_name(server) == "web-01"
+      assert server_name_projection(server) == %{
+               text: "web-01",
+               struck_through: false,
+               tooltip: nil
+             }
     end
 
     test "falls back to the SSH connection description when unnamed" do
-      server = ServersFactory.build(:server_view, name: nil)
+      server = ServersFactory.build(:server_view, current_class_server_attrs(name: nil))
 
-      assert rendered_server_name(server) == ServerView.ssh_connection_description(server)
+      assert server_name_projection(server) == %{
+               text: ServerView.ssh_connection_description(server),
+               struck_through: false,
+               tooltip: nil
+             }
+    end
+
+    # Servers are kept when a class ends, so an owner enrolled again still sees
+    # the ones they registered then. Striking the name through is what tells
+    # them apart from the servers of the class they are in now.
+
+    test "marks a server registered during a class its owner has left" do
+      member = ServersFactory.build(:server_group_member)
+      owner = ServersFactory.build(:server_owner, root: false, group_member: member)
+      server = ServersFactory.build(:server_view, name: "web-02", owner: owner)
+
+      assert server_name_projection(server) == %{
+               text: "web-02",
+               struck_through: true,
+               tooltip: "Registered during a previous class"
+             }
+    end
+
+    test "leaves a root owner's server unmarked" do
+      owner = ServersFactory.build(:server_owner, root: true)
+      server = ServersFactory.build(:server_view, name: "web-03", owner: owner)
+
+      assert server_name_projection(server) == %{
+               text: "web-03",
+               struck_through: false,
+               tooltip: nil
+             }
     end
   end
 
@@ -922,9 +957,30 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
     end
   end
 
-  defp rendered_server_name(server) do
+  # Attributes placing a server view in the class its owner belongs to. The
+  # factory would otherwise give the owner an unrelated group and make the
+  # struck-through rendering depend on the seed.
+  defp current_class_server_attrs(overrides) do
+    member = ServersFactory.build(:server_group_member)
+    owner = ServersFactory.build(:server_owner, root: false, group_member: member)
+
+    Keyword.merge([group_id: member.group_id, owner: owner], overrides)
+  end
+
+  # The displayed name, whether it is struck through as a past class's, and the
+  # tooltip that says so — the whole of what this component conveys. The
+  # wrapper is the outer span; an unnamed server nests a monospace one inside
+  # it for the SSH connection description.
+  defp server_name_projection(server) do
     html = render_component(&ServerComponents.server_name/1, server: server)
-    normalized_text(html)
+    [wrapper | _nested] = find_html_elements(html, "span")
+    classes = wrapper |> html_element_attribute("class") |> to_string() |> String.split()
+
+    %{
+      text: html_element_text(wrapper),
+      struck_through: "line-through" in classes,
+      tooltip: html_element_attribute(wrapper, "data-tip")
+    }
   end
 
   defp server(opts \\ []),

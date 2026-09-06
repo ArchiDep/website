@@ -19,6 +19,7 @@ and tooling that also apply here. Read that document first.
 - [Context Structure](#context-structure)
 - [Domain Model](#domain-model)
 - [Servers](#servers)
+  - [Servers of a class that has ended](#servers-of-a-class-that-has-ended)
 - [Server Groups & Members](#server-groups--members)
 - [Server Properties](#server-properties)
 - [Use Cases](#use-cases)
@@ -55,8 +56,13 @@ Key concepts a contributor must understand:
 - **Expected vs. actual properties.** A server has both the
   [expected properties](#server-properties) defined for its class and the
   last-known properties gathered from the machine, so deviations can be flagged.
-- **Quotas.** A student may own at most **5 servers**, of which at most **1**
-  may be active at a time (see [`ServerOwner`](./schemas/server_owner.ex)).
+- **Quotas.** A student may own at most **5 servers** per class, of which at
+  most **1** may be active at a time (see
+  [`ServerOwner`](./schemas/server_owner.ex)).
+- **Servers outlive their class.** A server registered during a class that has
+  ended is never deleted, so a student who takes the course again keeps
+  everything they registered the first time. What separates the two is [the
+  current-group rule](#servers-of-a-class-that-has-ended).
 - **Runtime subsystems.** Connecting, monitoring and configuring servers is
   performed by per-server [server-tracking](#server-tracking) processes and an
   [Ansible](#ansible-pipeline) execution pipeline. The use cases hand off to
@@ -130,9 +136,10 @@ quotas).
 A [`Server`](./schemas/server.ex) is a student's registered cloud machine.
 Notable fields:
 
-- **SSH connection** — `ip_address` (globally unique), `ssh_port` (default 22),
-  the initial `username` used for setup, the `app_username` the application uses
-  afterwards (`archidep` for group members), and `ssh_host_key_fingerprints`.
+- **SSH connection** — `ip_address` (unique within a class), `ssh_port` (default
+  22), the initial `username` used for setup, the `app_username` the application
+  uses afterwards (`archidep` for group members), and
+  `ssh_host_key_fingerprints`.
 - **Ownership** — `owner` ([`ServerOwner`](./schemas/server_owner.ex)) and
   `group` ([`ServerGroup`](./schemas/server_group.ex)).
 - **Properties** — `expected_properties` and `last_known_properties` (see
@@ -152,9 +159,44 @@ problems, …) is held in the in-memory
 
 **Quotas.** Counts are tracked in
 [`server_owner_counters`](./schemas/server_owner_counters.ex) (`server_count`,
-`active_server_count`, with optimistic locks), read through
-[`ServerOwner`](./schemas/server_owner.ex), and enforced on creation: at most
-**5 servers** per owner and **1 active** at a time.
+`active_server_count`, with optimistic locks), keyed by **owner and class**,
+read through [`ServerOwner`](./schemas/server_owner.ex), and enforced on
+creation: at most **5 servers** and **1 active** at a time, per owner per class.
+
+### Servers of a class that has ended
+
+Servers are kept forever, and an owner keeps their account when they enrol
+again, so the same account owns the servers of every class it has been through.
+The one rule that separates them is on
+[`Server`](./schemas/server.ex)`.active?/3`:
+
+```elixir
+owner.group_member == nil or owner.group_member.group_id == group.id
+```
+
+— a server is **current** only while its group is still the one its owner
+belongs to. Everything that must ignore a past class's servers applies that
+rule, and the [server-tracking](#server-tracking) orchestrator's query
+(`list_active_servers/1`) is its query-level twin, so such a server simply stops
+being tracked when its owner moves on.
+
+Three consequences worth knowing, because each is a thing that would otherwise
+follow an owner from one year to the next:
+
+- **The quotas are per class** (above), so a class that has ended cannot leave
+  someone unable to register anything in the class they are in now.
+- **Uniqueness is per class.** `servers_unique_ip_address` is `(class_id,
+ip_address)` and `servers_unique_name` is `(class_id, user_account_id, name)`,
+  so the same machine may be registered again, under the same name, in a later
+  class. Address uniqueness only has to stop two _tracked_ records from fighting
+  over one machine, and tracking is already confined to the current class by the
+  rule above.
+- **They stay visible to their owner**, listed by `list_my_servers/1` like any
+  other, since the point of keeping them is that the student can still see what
+  they built. Nothing can be done to them — the [policy](#authorization) matches
+  the member's group against the server's — so
+  [`ServerView`](./server_view.ex)`.in_former_group?/1` marks them as past
+  wherever an owner's own servers are shown.
 
 ---
 

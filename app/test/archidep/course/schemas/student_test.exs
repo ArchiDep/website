@@ -150,6 +150,36 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
       assert errors_on(Student.new(build(:student_data, username: "TAKEN"), class, @now)) ==
                %{username: ["has already been taken"]}
     end
+
+    test "an email taken after the changeset was built is an error, not a raise" do
+      class = insert(:class, now: @now)
+      changeset = Student.new(build(:student_data, email: "raced@example.ch"), class, @now)
+
+      insert(:student, class: class, email: "raced@example.ch", now: @now)
+
+      assert {:error, conflicted} = Repo.insert(changeset)
+      assert errors_on(conflicted) == %{email: ["has already been taken"]}
+    end
+
+    test "the email index folds case, like the check that precedes it" do
+      class = insert(:class, now: @now)
+      changeset = Student.new(build(:student_data, email: "RACED@example.ch"), class, @now)
+
+      insert(:student, class: class, email: "raced@example.ch", now: @now)
+
+      assert {:error, conflicted} = Repo.insert(changeset)
+      assert errors_on(conflicted) == %{email: ["has already been taken"]}
+    end
+
+    test "a username taken after the changeset was built is an error, not a raise" do
+      class = insert(:class, now: @now)
+      changeset = Student.new(build(:student_data, username: "raced"), class, @now)
+
+      insert(:student, class: class, username: "raced", now: @now)
+
+      assert {:error, conflicted} = Repo.insert(changeset)
+      assert errors_on(conflicted) == %{username: ["has already been taken"]}
+    end
   end
 
   describe "update/3 uniqueness within the class" do
@@ -237,12 +267,46 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
 
       assert Changeset.get_change(changeset, :username_confirmed) == true
     end
+
+    # `configure_changeset/3` declares its own username constraint, so it needs
+    # its own database-level case: the checks above run before the update, and
+    # only a row that appears after the changeset was built reaches the
+    # constraint. It must name the index it guards, or the conflict surfaces as
+    # a raise instead of a changeset error.
+
+    test "a username taken after the changeset was built is an error, not a raise" do
+      class = insert(:class, now: @now)
+      student = insert(:student, class: class, now: @now)
+      changeset = Student.configure_changeset(student, %{username: "raced"}, @now)
+
+      insert(:student, class: class, username: "raced", now: @now)
+
+      assert {:error, conflicted} = Repo.update(changeset)
+      assert errors_on(conflicted) == %{username: ["has already been taken"]}
+    end
   end
 
   describe "count_registered_students/0" do
     test "counts only students linked to a user account" do
       AccountsTestHelpers.register_active_student(@now)
       insert(:student, user: nil, now: @now)
+
+      assert Student.count_registered_students() == 1
+    end
+
+    test "counts someone taking the course again once, not once per class" do
+      {user_account, _student} = AccountsTestHelpers.register_active_student(@now)
+
+      # A second enrolment for the same person. The student row of the class
+      # they have left keeps pointing at their account, so both rows are linked
+      # to it.
+      new_class = insert(:class, active: true, now: @now)
+      new_student = insert(:student, class: new_class, active: true, user: nil, now: @now)
+
+      {1, nil} =
+        Repo.update_all(from(s in Student, where: s.id == ^new_student.id),
+          set: [user_id: user_account.id]
+        )
 
       assert Student.count_registered_students() == 1
     end

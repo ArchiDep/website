@@ -78,7 +78,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
         StoredEvent => 1
       })
 
-      assert_owner_counters(owner.id,
+      assert_owner_counters(owner.id, group.id,
         server_count: 1,
         server_count_lock: 1,
         active_server_count: 1,
@@ -125,7 +125,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       })
 
       # An inactive server leaves the active-server count untouched.
-      assert_owner_counters(owner.id,
+      assert_owner_counters(owner.id, group.id,
         server_count: 1,
         server_count_lock: 1,
         active_server_count: 0,
@@ -181,7 +181,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
         StoredEvent => 1
       })
 
-      assert_owner_counters(owner.id,
+      assert_owner_counters(owner.id, group.id,
         server_count: 1,
         server_count_lock: 1,
         active_server_count: 1,
@@ -224,7 +224,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
         StoredEvent => 1
       })
 
-      assert_owner_counters(owner.id,
+      assert_owner_counters(owner.id, group.id,
         server_count: 1,
         server_count_lock: 1,
         active_server_count: 0,
@@ -319,7 +319,7 @@ defmodule ArchiDep.Servers.CreateServerTest do
       create_server: create_server
     } do
       %{auth: auth, class: class, owner: owner} = ServersTestHelpers.register_group_member(@past)
-      set_owner_counts(owner.id, server_count: 1, active_server_count: 1)
+      set_owner_counts(owner.id, class.id, server_count: 1, active_server_count: 1)
 
       data = ServersFactory.random_server_data(active: true)
 
@@ -332,6 +332,135 @@ defmodule ArchiDep.Servers.CreateServerTest do
       assert errors_on(changeset) == %{active: ["active server limit reached (max {current})"]}
 
       assert_no_side_effects(new_servers, previous_counts)
+    end
+  end
+
+  # Servers are kept when a class ends, and someone taking the course again
+  # keeps the account that registered them, so everything a past class reserved
+  # against that account — its quotas, its addresses, its names — has to stop
+  # applying in the class they are enrolled in now.
+
+  describe "create_server/3 (group member enrolled again in a new class)" do
+    test "the server quotas of the class that has ended do not apply", %{
+      create_server: create_server
+    } do
+      first_year = ServersTestHelpers.register_group_member(@past)
+
+      # Both quotas used up during the class that has ended: five servers, one
+      # of them active.
+      set_owner_counts(first_year.owner.id, first_year.class.id,
+        server_count: 5,
+        active_server_count: 1
+      )
+
+      %{auth: auth, class: class} = ServersTestHelpers.enrol_in_new_class(first_year, @past)
+      {:ok, group} = ServerGroup.fetch_server_group(class.id)
+      owner = ServerOwner.fetch_authenticated(auth)
+
+      data = ServersFactory.random_server_data(active: true)
+
+      previous_counts = count_rows(@affected_tables)
+
+      assert {:ok, server} = create_server.(auth, group.id, data)
+
+      server
+      |> assert_created_server(
+        %{data | app_username: "archidep"},
+        group,
+        owner,
+        blank_properties_data()
+      )
+      |> assert_server_created_event(auth, group, owner)
+      |> assert_persisted_server(server.secret_key)
+
+      assert_row_count_diff(previous_counts, %{
+        Server => 1,
+        ServerProperties => 1,
+        ServerOwnerCounters => 1,
+        StoredEvent => 1
+      })
+
+      # A fresh row for the new class, counting only its one server…
+      assert_owner_counters(owner.id, group.id,
+        server_count: 1,
+        server_count_lock: 1,
+        active_server_count: 1,
+        active_server_count_lock: 2
+      )
+
+      # …while the row of the class that has ended keeps its own tally.
+      assert_owner_counters(owner.id, first_year.class.id,
+        server_count: 5,
+        server_count_lock: 1,
+        active_server_count: 1,
+        active_server_count_lock: 1
+      )
+    end
+
+    test "the IP address of a server registered in the class that has ended can be registered again",
+         %{create_server: create_server} do
+      first_year = ServersTestHelpers.register_group_member(@past)
+
+      former_server =
+        ServersTestHelpers.insert_server(first_year.owner.id, first_year.class.id, active: true)
+
+      %{auth: auth, class: class} = ServersTestHelpers.enrol_in_new_class(first_year, @past)
+      {:ok, group} = ServerGroup.fetch_server_group(class.id)
+      owner = ServerOwner.fetch_authenticated(auth)
+
+      data =
+        ServersFactory.random_server_data(
+          active: true,
+          ip_address: former_server.ip_address |> EctoNetwork.INET.decode() |> to_string()
+        )
+
+      assert {:ok, server} = create_server.(auth, group.id, data)
+
+      server
+      |> assert_created_server(
+        %{data | app_username: "archidep"},
+        group,
+        owner,
+        blank_properties_data()
+      )
+      |> assert_server_created_event(auth, group, owner)
+      |> assert_persisted_server(server.secret_key)
+
+      # Two registrations for the one machine now coexist: the new one, and the
+      # untouched registration of the class that has ended.
+      ServersTestHelpers.assert_server_unchanged(former_server)
+    end
+
+    test "the name of a server registered in the class that has ended can be reused", %{
+      create_server: create_server
+    } do
+      first_year = ServersTestHelpers.register_group_member(@past)
+
+      former_server =
+        ServersTestHelpers.insert_server(first_year.owner.id, first_year.class.id,
+          active: true,
+          name: "Reused"
+        )
+
+      %{auth: auth, class: class} = ServersTestHelpers.enrol_in_new_class(first_year, @past)
+      {:ok, group} = ServerGroup.fetch_server_group(class.id)
+      owner = ServerOwner.fetch_authenticated(auth)
+
+      data = ServersFactory.random_server_data(active: true, name: "Reused")
+
+      assert {:ok, server} = create_server.(auth, group.id, data)
+
+      server
+      |> assert_created_server(
+        %{data | app_username: "archidep"},
+        group,
+        owner,
+        blank_properties_data()
+      )
+      |> assert_server_created_event(auth, group, owner)
+      |> assert_persisted_server(server.secret_key)
+
+      ServersTestHelpers.assert_server_unchanged(former_server)
     end
   end
 
@@ -555,20 +684,22 @@ defmodule ArchiDep.Servers.CreateServerTest do
     inet
   end
 
-  defp assert_owner_counters(owner_id,
+  defp assert_owner_counters(owner_id, class_id,
          server_count: server_count,
          server_count_lock: server_count_lock,
          active_server_count: active_server_count,
          active_server_count_lock: active_server_count_lock
        ) do
-    assert Repo.get!(ServerOwnerCounters, owner_id) == %ServerOwnerCounters{
-             __meta__: loaded(ServerOwnerCounters, "server_owner_counters"),
-             user_account_id: owner_id,
-             server_count: server_count,
-             server_count_lock: server_count_lock,
-             active_server_count: active_server_count,
-             active_server_count_lock: active_server_count_lock
-           }
+    assert Repo.get_by!(ServerOwnerCounters, user_account_id: owner_id, class_id: class_id) ==
+             %ServerOwnerCounters{
+               __meta__: loaded(ServerOwnerCounters, "server_owner_counters"),
+               user_account_id: owner_id,
+               class_id: class_id,
+               server_count: server_count,
+               server_count_lock: server_count_lock,
+               active_server_count: active_server_count,
+               active_server_count_lock: active_server_count_lock
+             }
   end
 
   # Asserts the server-created broadcast reached each of the three topics
@@ -594,17 +725,21 @@ defmodule ArchiDep.Servers.CreateServerTest do
     assert received_broadcasts(new_servers) == []
   end
 
-  defp set_owner_counts(owner_id, server_count: server_count, active_server_count: active) do
+  defp set_owner_counts(owner_id, class_id,
+         server_count: server_count,
+         active_server_count: active
+       ) do
     Repo.insert!(
       %ServerOwnerCounters{
         user_account_id: owner_id,
+        class_id: class_id,
         server_count: server_count,
         server_count_lock: 1,
         active_server_count: active,
         active_server_count_lock: 1
       },
       on_conflict: [set: [server_count: server_count, active_server_count: active]],
-      conflict_target: :user_account_id
+      conflict_target: [:user_account_id, :class_id]
     )
 
     :ok

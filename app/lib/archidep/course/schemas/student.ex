@@ -149,9 +149,17 @@ defmodule ArchiDep.Course.Schemas.Student do
       |> Repo.one()
       |> truthy_or(:student_not_found)
 
+  # Counts people, not enrolments: someone taking the course again keeps their
+  # account, and the student record of the class they have left keeps pointing
+  # at it, so counting rows would count them once per year they attended.
   @spec count_registered_students() :: non_neg_integer
   def count_registered_students,
-    do: Repo.aggregate(from(s in __MODULE__, where: not is_nil(s.user_id)), :count, :id)
+    do:
+      Repo.aggregate(
+        from(s in __MODULE__, where: not is_nil(s.user_id), distinct: s.user_id),
+        :count,
+        :user_id
+      )
 
   @spec new(Types.student_data(), Class.t(), DateTime.t()) :: Changeset.t(t())
   def new(data, class, now) do
@@ -255,7 +263,7 @@ defmodule ArchiDep.Course.Schemas.Student do
       # Email
       |> validate_length(:email, max: 255)
       |> validate_format(:email, ~r/\A.+@.+\..+\z/, message: "must be a valid email address")
-      |> unique_constraint(:email, name: :students_unique_email_index)
+      |> unique_constraint(:email, name: :students_unique_email_in_class_index)
       # Academic class
       |> validate_length(:academic_class, max: 30)
       # Username

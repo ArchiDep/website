@@ -72,7 +72,11 @@ defmodule ArchiDep.Servers.UseCases.UpdateServer do
     case Multi.new()
          |> Multi.update(:server, update_server_changeset(auth, server, data, owner, now))
          |> Multi.merge(
-           &update_active_server_count(fresh_server_owner.counters, server.active, &1.server)
+           &update_active_server_count(
+             ServerOwner.counters_in_group(fresh_server_owner, server.group_id),
+             server.active,
+             &1.server
+           )
          )
          |> Multi.insert(:stored_event, &server_updated(auth, &1.server))
          |> Repo.transaction() do

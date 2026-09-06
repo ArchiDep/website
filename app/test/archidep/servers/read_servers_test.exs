@@ -210,6 +210,43 @@ defmodule ArchiDep.Servers.ReadServersTest do
 
       assert_no_stored_events!()
     end
+
+    test "a server the member registered in a class that has ended is not their active server", %{
+      fetch_active_server_for_group_member: fetch_active_server_for_group_member
+    } do
+      first_year = ServersTestHelpers.register_group_member(@past)
+
+      ServersTestHelpers.insert_server(first_year.owner.id, first_year.class.id, active: true)
+
+      %{student: student} = ServersTestHelpers.enrol_in_new_class(first_year, @past)
+
+      root = Factory.build(:authentication, root: true)
+
+      assert fetch_active_server_for_group_member.(root, student.id) ==
+               {:error, :server_not_found}
+
+      assert_no_stored_events!()
+    end
+
+    test "the server of the member's current class is found even though one of a class that has ended remains",
+         %{fetch_active_server_for_group_member: fetch_active_server_for_group_member} do
+      first_year = ServersTestHelpers.register_group_member(@past)
+
+      # Kept, still flagged active, and owned by the very same account.
+      ServersTestHelpers.insert_server(first_year.owner.id, first_year.class.id, active: true)
+
+      %{owner: owner, student: student, class: class} =
+        ServersTestHelpers.enrol_in_new_class(first_year, @past)
+
+      server = ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+
+      root = Factory.build(:authentication, root: true)
+
+      assert fetch_active_server_for_group_member.(root, student.id) ==
+               {:ok, ServerView.from(server)}
+
+      assert_no_stored_events!()
+    end
   end
 
   describe "subscribe_server/1" do

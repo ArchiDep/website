@@ -25,7 +25,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
           active: boolean(),
           group_member: ServerGroupMember.t() | nil | NotLoaded.t(),
           group_member_id: UUID.t() | nil,
-          counters: ServerOwnerCounters.t() | nil | NotLoaded.t(),
+          counters: list(ServerOwnerCounters.t()) | NotLoaded.t(),
           version: pos_integer(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -36,7 +36,7 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
     field(:root, :boolean)
     field(:active, :boolean)
     belongs_to(:group_member, ServerGroupMember, source: :student_id)
-    has_one(:counters, ServerOwnerCounters, foreign_key: :user_account_id, references: :id)
+    has_many(:counters, ServerOwnerCounters, foreign_key: :user_account_id, references: :id)
     field(:version, :integer)
     field(:created_at, :utc_datetime_usec)
     field(:updated_at, :utc_datetime_usec)
@@ -104,32 +104,50 @@ defmodule ArchiDep.Servers.Schemas.ServerOwner do
       |> Repo.one()
       |> truthy_or(:server_owner_not_found)
 
-  # An owner with no counters row has never registered a server, so its counts
-  # are zero. A `NotLoaded` association is a forgotten preload, not a zero
-  # count, so it is left to raise rather than silently reporting the limits as
-  # unmet.
+  # The quotas are per owner *per class*: an owner keeps their account when they
+  # enrol again, and the servers of the class that has ended are kept, so the
+  # only counts that may hold a registration back are the ones for the class
+  # being registered in. An owner with no counters row for that class has never
+  # registered a server in it, so its counts are zero. A `NotLoaded` association
+  # is a forgotten preload, not a zero count, so it is left to raise rather than
+  # silently reporting the limits as unmet.
 
-  @spec active_server_count(t()) :: non_neg_integer()
-  def active_server_count(%__MODULE__{
-        counters: %ServerOwnerCounters{active_server_count: count}
-      }),
-      do: count
+  @spec counters_in_group(t(), UUID.t()) :: ServerOwnerCounters.t() | nil
+  def counters_in_group(%__MODULE__{counters: counters}, group_id) when is_list(counters),
+    do: Enum.find(counters, &(&1.class_id == group_id))
 
-  def active_server_count(%__MODULE__{counters: nil}), do: 0
+  @spec active_server_count(t(), UUID.t()) :: non_neg_integer()
+  def active_server_count(%__MODULE__{} = owner, group_id) do
+    case counters_in_group(owner, group_id) do
+      %ServerOwnerCounters{active_server_count: count} -> count
+      nil -> 0
+    end
+  end
 
-  @spec server_count(t()) :: non_neg_integer()
-  def server_count(%__MODULE__{counters: %ServerOwnerCounters{server_count: count}}), do: count
-  def server_count(%__MODULE__{counters: nil}), do: 0
+  @spec server_count(t(), UUID.t()) :: non_neg_integer()
+  def server_count(%__MODULE__{} = owner, group_id) do
+    case counters_in_group(owner, group_id) do
+      %ServerOwnerCounters{server_count: count} -> count
+      nil -> 0
+    end
+  end
 
-  @spec active_server_limit_reached?(t()) :: boolean()
-  def active_server_limit_reached?(%__MODULE__{counters: %ServerOwnerCounters{} = counters}),
-    do: ServerOwnerCounters.active_server_limit_reached?(counters)
+  @spec active_server_limit_reached?(t(), UUID.t()) :: boolean()
+  def active_server_limit_reached?(%__MODULE__{} = owner, group_id) do
+    case counters_in_group(owner, group_id) do
+      %ServerOwnerCounters{} = counters ->
+        ServerOwnerCounters.active_server_limit_reached?(counters)
 
-  def active_server_limit_reached?(%__MODULE__{counters: nil}), do: false
+      nil ->
+        false
+    end
+  end
 
-  @spec server_limit_reached?(t()) :: boolean()
-  def server_limit_reached?(%__MODULE__{counters: %ServerOwnerCounters{} = counters}),
-    do: ServerOwnerCounters.server_limit_reached?(counters)
-
-  def server_limit_reached?(%__MODULE__{counters: nil}), do: false
+  @spec server_limit_reached?(t(), UUID.t()) :: boolean()
+  def server_limit_reached?(%__MODULE__{} = owner, group_id) do
+    case counters_in_group(owner, group_id) do
+      %ServerOwnerCounters{} = counters -> ServerOwnerCounters.server_limit_reached?(counters)
+      nil -> false
+    end
+  end
 end

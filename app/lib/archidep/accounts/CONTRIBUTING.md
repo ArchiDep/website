@@ -16,6 +16,7 @@ and tooling that also apply here. Read that document first.
 - [Authentication](#authentication)
   - [Switch edu-ID (OIDC)](#switch-edu-id-oidc)
   - [Login Links](#login-links)
+  - [One person, one account](#one-person-one-account)
   - [Web Wiring](#web-wiring)
 - [Sessions](#sessions)
 - [Impersonation](#impersonation)
@@ -186,6 +187,45 @@ validates the token ([`LoginLink`](./schemas/login_link.ex), valid while
 link as used, and records a
 [`UserRegisteredWithLink`](./events/user_registered_with_link.ex) or
 [`UserLoggedInWithLink`](./events/user_logged_in_with_link.ex) event.
+
+**One person, one account** ([see below](#one-person-one-account)): when the
+preregistration the link was issued for has no account yet, the use case first
+looks for one belonging to another of the same person's enrolments
+(`PreregisteredUser.list_user_accounts_for_other_enrolments/1`, matched by email
+across classes) and **relinks** that account rather than creating a second one.
+It creates an account only when there is none, and refuses the link
+(`:invalid_link`) when there is more than one, which no login may silently pick
+between.
+
+### One person, one account
+
+Someone taking the course again is preregistered afresh — a new
+[`Student`](../course/CONTRIBUTING.md#students) row in the new class — but keeps
+the **same `UserAccount`**, which both login paths move onto the new
+preregistration rather than duplicating. The account's `student_id` always names
+the person's **current** enrolment, and that direction is the authoritative one:
+every read that resolves a login to a student joins on it.
+
+The `students.user_account_id` back-pointer of the class they have left is
+deliberately **not** cleared. It is historically true, the admin pages read it
+to show the account struck through with "Student now in class …"
+([`StudentHelpers`](../../archidep_web/helpers/student_helpers.ex)), and it is
+what keeps that preregistration out of
+`list_available_preregistered_users_for_emails/2` — the query admits a
+preregistration only while it has no account, or one with no Switch edu-ID
+identity.
+
+Two things follow, and both are enforced:
+
+- **A login never picks between two accounts.** The Switch edu-ID path accepts a
+  candidate preregistration only when it is unlinked; anything else is
+  `:unauthorized_switch_edu_id`. The [login-link path](#login-links) reuses the
+  person's existing account instead of creating the second one in the first
+  place.
+- **The class that has ended must be deactivated**, or the person logs straight
+  back into it: `UserAccount.active?/2` is what sends a login looking for a new
+  preregistration, and it stays true while the old class is active. This is a
+  [rollover](../../../../docs/rollover.md#the-class-that-has-ended) step.
 
 ### Web Wiring
 

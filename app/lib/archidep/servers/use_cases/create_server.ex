@@ -43,7 +43,7 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
          :ok <- authorize(auth, Policy, :servers, :create_server, {data, group, owner}) do
       case Multi.new()
            |> Multi.insert(:server, new_server(auth, data, group, owner, Clock.now()))
-           |> increment_server_count(owner)
+           |> increment_server_count(owner, group.id)
            |> Multi.merge(&increase_active_server_count(&1.server_limit, &1.server))
            |> Multi.insert(:stored_event, &server_created(auth, &1.server))
            |> Repo.transaction() do
@@ -71,18 +71,27 @@ defmodule ArchiDep.Servers.UseCases.CreateServer do
     end
   end
 
-  # The counters row exists for every owner who already has a server; a
-  # brand-new owner registering their first server has none yet, so create it.
-  defp increment_server_count(multi, %ServerOwner{counters: nil, id: id}),
-    do: Multi.insert(multi, :server_limit, ServerOwnerCounters.initial_changeset(id))
+  # The counters row exists for every owner who already has a server in the
+  # group; an owner registering their first server in it has none yet, so create
+  # it. An owner enrolled again in a new class starts from a fresh row there,
+  # leaving the counts of the class that has ended alone.
+  defp increment_server_count(multi, %ServerOwner{} = owner, group_id) do
+    case ServerOwner.counters_in_group(owner, group_id) do
+      nil ->
+        Multi.insert(
+          multi,
+          :server_limit,
+          ServerOwnerCounters.initial_changeset(owner.id, group_id)
+        )
 
-  defp increment_server_count(multi, %ServerOwner{counters: %ServerOwnerCounters{} = counters}),
-    do:
-      Multi.update(
-        multi,
-        :server_limit,
-        ServerOwnerCounters.update_server_count(counters, 1)
-      )
+      %ServerOwnerCounters{} = counters ->
+        Multi.update(
+          multi,
+          :server_limit,
+          ServerOwnerCounters.update_server_count(counters, 1)
+        )
+    end
+  end
 
   defp increase_active_server_count(%ServerOwnerCounters{} = counters, %Server{active: true}),
     do:

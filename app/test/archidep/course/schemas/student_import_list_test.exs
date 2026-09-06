@@ -141,6 +141,23 @@ defmodule ArchiDep.Course.Schemas.StudentImportListTest do
                StudentImportList.to_insert_data(import_list, class, [], @now)
     end
 
+    test "de-duplicates students whose emails differ only in case" do
+      class = build_class()
+
+      import_list =
+        validated(
+          import_data(
+            students: [
+              %{name: "First", email: "dup@example.ch"},
+              %{name: "Second", email: "DUP@Example.CH"}
+            ]
+          )
+        )
+
+      assert [%{email: "dup@example.ch", name: "First"}] =
+               StudentImportList.to_insert_data(import_list, class, [], @now)
+    end
+
     test "preserves the input order of the students" do
       class = build_class()
 

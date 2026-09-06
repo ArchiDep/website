@@ -125,6 +125,40 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
     now = Clock.now()
 
     if PreregisteredUser.active?(preregistered_user, now) do
+      # A person keeps one account across the years. Someone enrolled again in a
+      # later class gets a fresh preregistration, and the account their previous
+      # enrolment created is moved onto it; creating a second one here would
+      # split their servers and sessions and would leave the Switch edu-ID login
+      # unable to tell which of the two to log them into.
+      case PreregisteredUser.list_user_accounts_for_other_enrolments(preregistered_user) do
+        [] ->
+          register_preregistered_user(link, preregistered_user, client_metadata, now)
+
+        [%UserAccount{root: false, active: true} = user_account] ->
+          relink_preregistered_user(link, preregistered_user, user_account, client_metadata, now)
+
+        _otherwise ->
+          invalid_link()
+      end
+    else
+      invalid_link()
+    end
+  end
+
+  defp log_in_or_register_preregistered_user(
+         _link,
+         %PreregisteredUser{},
+         _client_metadata
+       ) do
+    invalid_link()
+  end
+
+  defp log_in_or_register_user_account(_link_token, _user_account, _client_metadata) do
+    invalid_link()
+  end
+
+  defp register_preregistered_user(link, preregistered_user, client_metadata, now),
+    do:
       Multi.new()
       |> Multi.insert(
         :user_account,
@@ -158,22 +192,50 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithLink do
           &1.stored_event
         )
       )
-    else
-      Multi.run(Multi.new(), :invalid_link, fn _repo, _changes -> {:error, :invalid_link} end)
-    end
-  end
 
-  defp log_in_or_register_preregistered_user(
-         _link,
-         %PreregisteredUser{},
-         _client_metadata
-       ) do
-    Multi.run(Multi.new(), :invalid_link, fn _repo, _changes -> {:error, :invalid_link} end)
-  end
+  defp relink_preregistered_user(link, preregistered_user, user_account, client_metadata, now),
+    do:
+      Multi.new()
+      |> Multi.update(
+        :user_account,
+        UserAccount.relink_to_preregistered_user(user_account, preregistered_user, now)
+      )
+      |> Multi.update(
+        :linked_preregistered_user,
+        &PreregisteredUser.link_to_user_account(preregistered_user, &1.user_account, now)
+      )
+      |> Multi.insert(
+        :user_session,
+        fn %{
+             user_account: %UserAccount{} = user_account,
+             linked_preregistered_user: linked_preregistered_user
+           } ->
+          UserSession.new_session(
+            %UserAccount{user_account | preregistered_user: linked_preregistered_user},
+            client_metadata,
+            now
+          )
+        end
+      )
+      |> Multi.update(
+        :used_login_link,
+        LoginLink.mark_as_used_changeset(link, now)
+      )
+      |> Multi.insert(
+        :stored_event,
+        &user_logged_in_with_link(link, &1.user_session, client_metadata)
+      )
+      |> Multi.insert(
+        :linkage_event,
+        &preregistered_user_linked_to_user_account(
+          &1.linked_preregistered_user,
+          &1.user_account,
+          &1.stored_event
+        )
+      )
 
-  defp log_in_or_register_user_account(_link_token, _user_account, _client_metadata) do
-    Multi.run(Multi.new(), :invalid_link, fn _repo, _changes -> {:error, :invalid_link} end)
-  end
+  defp invalid_link,
+    do: Multi.run(Multi.new(), :invalid_link, fn _repo, _changes -> {:error, :invalid_link} end)
 
   defp user_registered_with_link(
          login_link,

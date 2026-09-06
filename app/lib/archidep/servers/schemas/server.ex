@@ -145,7 +145,13 @@ defmodule ArchiDep.Servers.Schemas.Server do
              join: gesp in assoc(g, :expected_server_properties),
              join: ep in assoc(s, :expected_properties),
              left_join: lkp in assoc(s, :last_known_properties),
-             where: s.active and o.group_member_id == ^group_member_id,
+             # Only the member's servers in the class they are currently
+             # enrolled in: the ones they registered in a class that has ended
+             # are kept, and are no more their active server than someone
+             # else's would be.
+             where:
+               s.active and o.group_member_id == ^group_member_id and
+                 s.group_id == ogm.group_id,
              preload: [
                group: {g, expected_server_properties: gesp},
                expected_properties: ep,
@@ -332,6 +338,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           Changeset.t(t())
   def new_group_member_server(data, owner, now) do
     id = UUID.generate()
+    group_id = owner.group_member.group_id
 
     %__MODULE__{}
     |> cast(data, [
@@ -351,7 +358,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       owner: owner,
       owner_id: owner.id,
       group: owner.group_member.group,
-      group_id: owner.group_member.group_id,
+      group_id: group_id,
       app_username: "archidep",
       version: 1,
       created_at: now,
@@ -360,11 +367,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_new_server()
     |> validate_username_not_reserved()
     |> validate_change(:active, fn :active, active ->
-      if active and ServerOwner.active_server_limit_reached?(owner) do
+      if active and ServerOwner.active_server_limit_reached?(owner, group_id) do
         [
           active:
             {"active server limit reached (max {current})",
-             current: ServerOwner.active_server_count(owner),
+             current: ServerOwner.active_server_count(owner, group_id),
              limit: ServerOwnerCounters.active_server_limit()}
         ]
       else
@@ -372,11 +379,12 @@ defmodule ArchiDep.Servers.Schemas.Server do
       end
     end)
     |> validate_change(:active, fn :active, _active ->
-      if ServerOwner.server_limit_reached?(owner) do
+      if ServerOwner.server_limit_reached?(owner, group_id) do
         [
           active:
             {"server limit reached (max {current})",
-             current: ServerOwner.server_count(owner), limit: ServerOwnerCounters.server_limit()}
+             current: ServerOwner.server_count(owner, group_id),
+             limit: ServerOwnerCounters.server_limit()}
         ]
       else
         []
@@ -411,6 +419,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           Changeset.t(t())
   def update_group_member_server(server, data, owner, now) do
     id = server.id
+    group_id = server.group_id
 
     server
     |> cast(data, [
@@ -426,11 +435,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_existing_server(id)
     |> validate_username_not_reserved()
     |> validate_change(:active, fn :active, active ->
-      if active and ServerOwner.active_server_limit_reached?(owner) do
+      if active and ServerOwner.active_server_limit_reached?(owner, group_id) do
         [
           active:
             {"active server limit reached (max {current})",
-             current: ServerOwner.active_server_count(owner),
+             current: ServerOwner.active_server_count(owner, group_id),
              limit: ServerOwnerCounters.active_server_limit()}
         ]
       else
@@ -509,22 +518,28 @@ defmodule ArchiDep.Servers.Schemas.Server do
     def event_initiator_stream(server), do: Server.event_stream(server)
   end
 
+  # Both uniqueness checks are scoped to the group, matching the indexes: a
+  # server registered in a class that has ended is kept, and must not reserve
+  # its address or its name against the class its owner is enrolled in now.
+
   defp validate_new_server(changeset) do
     changeset
     |> validate()
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
       group_id = get_field(changeset, :group_id)
+      owner_id = get_field(changeset, :owner_id)
 
       from(s in __MODULE__,
-        where: s.name == ^name and s.group_id == ^group_id
+        where: s.name == ^name and s.group_id == ^group_id and s.owner_id == ^owner_id
       )
     end)
     |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
       ip_address = get_field(changeset, :ip_address)
+      group_id = get_field(changeset, :group_id)
 
       from(s in __MODULE__,
-        where: s.ip_address == ^ip_address
+        where: s.ip_address == ^ip_address and s.group_id == ^group_id
       )
     end)
   end
@@ -536,16 +551,19 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> unsafe_validate_unique_query(:name, Repo, fn changeset ->
       name = get_field(changeset, :name)
       group_id = get_field(changeset, :group_id)
+      owner_id = get_field(changeset, :owner_id)
 
       from(s in __MODULE__,
-        where: s.id != ^id and s.name == ^name and s.group_id == ^group_id
+        where:
+          s.id != ^id and s.name == ^name and s.group_id == ^group_id and s.owner_id == ^owner_id
       )
     end)
     |> unsafe_validate_unique_query(:ip_address, Repo, fn changeset ->
       ip_address = get_field(changeset, :ip_address)
+      group_id = get_field(changeset, :group_id)
 
       from(s in __MODULE__,
-        where: s.id != ^id and s.ip_address == ^ip_address
+        where: s.id != ^id and s.ip_address == ^ip_address and s.group_id == ^group_id
       )
     end)
   end
@@ -568,7 +586,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
       :expected_properties
     ])
     |> validate_length(:name, max: 50)
-    |> unique_constraint(:name)
+    |> unique_constraint(:name, name: :servers_unique_name)
     |> validate_length(:username, max: 32)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
     |> validate_change(:ssh_host_key_fingerprints, fn :ssh_host_key_fingerprints, fingerprints ->
@@ -584,7 +602,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
           ]
       end
     end)
-    |> unique_constraint(:ip_address)
+    |> unique_constraint(:ip_address, name: :servers_unique_ip_address)
     |> assoc_constraint(:owner)
     |> validate_length(:app_username, max: 32)
   end

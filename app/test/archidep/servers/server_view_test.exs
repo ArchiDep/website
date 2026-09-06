@@ -9,6 +9,7 @@ defmodule ArchiDep.Servers.ServerViewTest do
   alias ArchiDep.Servers.Schemas.ServerProperties
   alias ArchiDep.Servers.ServerView
   alias ArchiDep.Support.EventsFactory
+  alias ArchiDep.Support.ServersFactory
   alias ArchiDep.Support.ServersTestHelpers
 
   @now ~U[2024-03-15 10:30:00.000000Z]
@@ -16,6 +17,30 @@ defmodule ArchiDep.Servers.ServerViewTest do
   # A later instant for the broadcast payloads a refresh applies, distinct from
   # the persisted fixtures' timestamps.
   @later ~U[2024-06-01 12:00:00.000000Z]
+
+  describe "in_former_group?/1" do
+    test "is true for a server of a group its owner has left" do
+      member = ServersFactory.build(:server_group_member)
+      owner = ServersFactory.build(:server_owner, root: false, group_member: member)
+
+      assert ServerView.in_former_group?(ServersFactory.build(:server_view, owner: owner))
+    end
+
+    test "is false for a server of the group its owner belongs to" do
+      member = ServersFactory.build(:server_group_member)
+      owner = ServersFactory.build(:server_owner, root: false, group_member: member)
+
+      refute ServerView.in_former_group?(
+               ServersFactory.build(:server_view, group_id: member.group_id, owner: owner)
+             )
+    end
+
+    test "is false for a root owner's server, which belongs to no group member" do
+      owner = ServersFactory.build(:server_owner, root: true)
+
+      refute ServerView.in_former_group?(ServersFactory.build(:server_view, owner: owner))
+    end
+  end
 
   describe "refresh!/3" do
     test "merges a ServerUpdated event one version ahead into the cached view" do

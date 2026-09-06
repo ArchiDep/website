@@ -145,7 +145,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
       if root do
         user_account = AccountsFactory.insert(:user_account, active: true, root: true)
 
-        insert_owner_counters!(user_account.id, server_active)
+        insert_owner_counters!(user_account.id, class.id, server_active)
 
         user_account
       else
@@ -166,7 +166,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
 
         student_id = student.id
 
-        insert_owner_counters!(user_account.id, server_active)
+        insert_owner_counters!(user_account.id, class.id, server_active)
 
         Repo.update_all(from(sgm in ServerGroupMember, where: sgm.id == ^student_id),
           set: [owner_id: user_account.id]
@@ -217,10 +217,11 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
     %Server{} = id |> Server.fetch_server() |> unpair_ok()
   end
 
-  defp insert_owner_counters!(user_account_id, server_active),
+  defp insert_owner_counters!(user_account_id, class_id, server_active),
     do:
       Repo.insert!(%ServerOwnerCounters{
         user_account_id: user_account_id,
+        class_id: class_id,
         server_count: 1,
         server_count_lock: 1,
         active_server_count: if(server_active, do: 1, else: 0),

@@ -46,7 +46,7 @@ defmodule ArchiDep.Servers.DeleteServerTest do
 
   test "deletes an inactive server" do
     {auth, owner_id, group_id} = root_owner_and_group()
-    set_owner_counts(owner_id, server_count: 1, active_server_count: 0)
+    set_owner_counts(owner_id, group_id, server_count: 1, active_server_count: 0)
 
     server =
       ServersTestHelpers.insert_server(owner_id, group_id,
@@ -72,7 +72,7 @@ defmodule ArchiDep.Servers.DeleteServerTest do
     })
 
     # Deleting an inactive server leaves the active-server count untouched.
-    assert_owner_counters(owner_id,
+    assert_owner_counters(owner_id, group_id,
       server_count: 0,
       server_count_lock: 2,
       active_server_count: 0,
@@ -82,7 +82,7 @@ defmodule ArchiDep.Servers.DeleteServerTest do
 
   test "deletes an active server, decrementing the active-server count" do
     {auth, owner_id, group_id} = root_owner_and_group()
-    set_owner_counts(owner_id, server_count: 1, active_server_count: 1)
+    set_owner_counts(owner_id, group_id, server_count: 1, active_server_count: 1)
 
     server =
       ServersTestHelpers.insert_server(owner_id, group_id,
@@ -107,7 +107,7 @@ defmodule ArchiDep.Servers.DeleteServerTest do
       StoredEvent => 1
     })
 
-    assert_owner_counters(owner_id,
+    assert_owner_counters(owner_id, group_id,
       server_count: 0,
       server_count_lock: 2,
       active_server_count: 0,
@@ -246,31 +246,37 @@ defmodule ArchiDep.Servers.DeleteServerTest do
     server
   end
 
-  defp assert_owner_counters(owner_id,
+  defp assert_owner_counters(owner_id, group_id,
          server_count: server_count,
          server_count_lock: server_count_lock,
          active_server_count: active_server_count,
          active_server_count_lock: active_server_count_lock
        ) do
-    assert Repo.get!(ServerOwnerCounters, owner_id) == %ServerOwnerCounters{
-             __meta__: loaded(ServerOwnerCounters, "server_owner_counters"),
-             user_account_id: owner_id,
-             server_count: server_count,
-             server_count_lock: server_count_lock,
-             active_server_count: active_server_count,
-             active_server_count_lock: active_server_count_lock
-           }
+    assert Repo.get_by!(ServerOwnerCounters, user_account_id: owner_id, class_id: group_id) ==
+             %ServerOwnerCounters{
+               __meta__: loaded(ServerOwnerCounters, "server_owner_counters"),
+               user_account_id: owner_id,
+               class_id: group_id,
+               server_count: server_count,
+               server_count_lock: server_count_lock,
+               active_server_count: active_server_count,
+               active_server_count_lock: active_server_count_lock
+             }
   end
 
-  defp set_owner_counts(owner_id, server_count: server_count, active_server_count: active),
-    do:
-      Repo.insert!(%ServerOwnerCounters{
-        user_account_id: owner_id,
-        server_count: server_count,
-        server_count_lock: 1,
-        active_server_count: active,
-        active_server_count_lock: 1
-      })
+  defp set_owner_counts(owner_id, group_id,
+         server_count: server_count,
+         active_server_count: active
+       ),
+       do:
+         Repo.insert!(%ServerOwnerCounters{
+           user_account_id: owner_id,
+           class_id: group_id,
+           server_count: server_count,
+           server_count_lock: 1,
+           active_server_count: active,
+           active_server_count_lock: 1
+         })
 
   # Subscribes each of the three topics a server-deleted broadcast reaches in
   # its own collector, so each topic's delivery can be asserted independently

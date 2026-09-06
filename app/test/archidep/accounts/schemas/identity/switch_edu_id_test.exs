@@ -56,6 +56,21 @@ defmodule ArchiDep.Accounts.Schemas.Identity.SwitchEduIdTest do
     end
   end
 
+  describe "create_or_update/2 uniqueness at the database" do
+    test "an identifier taken after the changeset was built is an error, not a raise" do
+      data = build(:switch_edu_id_login_data, swiss_edu_person_unique_id: "sepui-raced")
+      changeset = SwitchEduId.create_or_update(data, @now)
+
+      insert(:switch_edu_id, swiss_edu_person_unique_id: "sepui-raced", now: @now)
+
+      assert {:error, conflicted} = Repo.insert(changeset)
+
+      assert errors_on(conflicted) == %{
+               swiss_edu_person_unique_id: ["has already been taken"]
+             }
+    end
+  end
+
   describe "create_or_update/2 when an identity already exists" do
     test "updates the names and bumps both timestamps when the name data changed" do
       insert(:switch_edu_id,

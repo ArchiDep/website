@@ -224,6 +224,17 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
     end
   end
 
+  describe "new/2 name uniqueness at the database" do
+    test "a name taken after the changeset was built is an error, not a raise" do
+      changeset = changeset(:new, name: "raced-2024")
+
+      insert(:class, name: "RACED-2024", now: @now)
+
+      assert {:error, conflicted} = Repo.insert(changeset)
+      assert errors_on(conflicted) == %{name: ["has already been taken"]}
+    end
+  end
+
   describe "update/3 name uniqueness" do
     test "the name must not be taken by another class (case-insensitive)" do
       insert(:class, name: "INFO-2024", now: @now)

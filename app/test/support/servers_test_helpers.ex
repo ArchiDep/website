@@ -12,6 +12,7 @@ defmodule ArchiDep.Support.ServersTestHelpers do
   import ArchiDep.Support.DataCase, only: [not_loaded: 2]
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Authentication
+  alias ArchiDep.Course.Schemas.Class
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Schemas.Server
@@ -54,12 +55,12 @@ defmodule ArchiDep.Support.ServersTestHelpers do
           auth: Authentication.t(),
           owner: UserAccount.t(),
           student: Student.t(),
-          class: ArchiDep.Course.Schemas.Class.t()
+          class: Class.t()
         }
   def register_group_member(now, opts \\ []) do
     class =
       case opts[:class] do
-        %ArchiDep.Course.Schemas.Class{} = existing ->
+        %Class{} = existing ->
           existing
 
         class_attrs ->
@@ -105,6 +106,84 @@ defmodule ArchiDep.Support.ServersTestHelpers do
     auth = Factory.build(:authentication, principal_id: owner.id, root: false)
 
     %{auth: auth, owner: owner, student: student, class: class}
+  end
+
+  @doc """
+  Enrols an existing group member in a new class, leaving behind the state a
+  repeating student's first login of the new year produces: the class they were
+  in is deactivated, a new active class holds a new student row for the same
+  person (same name, email and username), and the account is relinked to that
+  row in **both** directions. The student row of the class that has ended keeps
+  pointing at the account, exactly as the relink leaves it.
+
+  Takes and returns the `register_group_member/2` shape — `auth`, `owner`,
+  `student` and `class` now describe the new enrolment — plus `former_student`
+  and `former_class`.
+  """
+  @spec enrol_in_new_class(map(), DateTime.t(), Keyword.t()) :: %{
+          auth: Authentication.t(),
+          owner: UserAccount.t(),
+          student: Student.t(),
+          class: Class.t(),
+          former_student: Student.t(),
+          former_class: Class.t()
+        }
+  def enrol_in_new_class(
+        %{
+          auth: auth,
+          owner: owner,
+          student: former_student,
+          class: %Class{} = former_class
+        },
+        now,
+        opts \\ []
+      ) do
+    {1, nil} =
+      Repo.update_all(from(c in Class, where: c.id == ^former_class.id), set: [active: false])
+
+    class =
+      CourseFactory.insert(
+        :class,
+        Keyword.merge([active: true, servers_enabled: true, now: now], opts[:class] || [])
+      )
+
+    student =
+      CourseFactory.insert(
+        :student,
+        Keyword.merge(
+          [
+            class: class,
+            name: former_student.name,
+            email: former_student.email,
+            username: former_student.username,
+            active: true,
+            servers_enabled: true,
+            username_confirmed: true,
+            user: nil,
+            user_id: nil,
+            now: now
+          ],
+          opts[:student] || []
+        )
+      )
+
+    {1, nil} =
+      Repo.update_all(from(s in Student, where: s.id == ^student.id), set: [user_id: owner.id])
+
+    {1, nil} =
+      Repo.update_all(
+        from(ua in UserAccount, where: ua.id == ^owner.id),
+        set: [preregistered_user_id: student.id]
+      )
+
+    %{
+      auth: auth,
+      owner: owner,
+      student: student,
+      class: class,
+      former_student: former_student,
+      former_class: %Class{former_class | active: false}
+    }
   end
 
   @doc """

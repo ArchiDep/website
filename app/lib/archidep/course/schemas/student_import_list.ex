@@ -66,7 +66,9 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
 
     students
     |> Enum.map(&Map.from_struct/1)
-    |> Enum.uniq_by(& &1.email)
+    # By folded email, like the index the insert conflicts against: one person
+    # listed twice in the same payload under different spellings is one student.
+    |> Enum.uniq_by(&String.downcase(&1.email))
     |> Enum.with_index()
     |> Enum.map(fn {student, idx} ->
       password =

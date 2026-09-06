@@ -161,12 +161,12 @@ defmodule ArchiDep.Servers.UpdateServerTest do
 
     test "activating a server increments the owner's active-server count", %{} do
       {auth, owner_id, group_id} = root_owner_and_group()
-      set_owner_counts(owner_id, server_count: 1, active_server_count: 0)
+      set_owner_counts(owner_id, group_id, server_count: 1, active_server_count: 0)
       server = ServersTestHelpers.insert_server(owner_id, group_id, active: false)
 
       assert_root_update(auth, server, ServersFactory.random_server_data(active: true))
 
-      assert_owner_counters(owner_id,
+      assert_owner_counters(owner_id, group_id,
         server_count: 1,
         server_count_lock: 1,
         active_server_count: 1,
@@ -176,12 +176,12 @@ defmodule ArchiDep.Servers.UpdateServerTest do
 
     test "deactivating a server decrements the owner's active-server count", %{} do
       {auth, owner_id, group_id} = root_owner_and_group()
-      set_owner_counts(owner_id, server_count: 1, active_server_count: 1)
+      set_owner_counts(owner_id, group_id, server_count: 1, active_server_count: 1)
       server = ServersTestHelpers.insert_server(owner_id, group_id, active: true)
 
       assert_root_update(auth, server, ServersFactory.random_server_data(active: false))
 
-      assert_owner_counters(owner_id,
+      assert_owner_counters(owner_id, group_id,
         server_count: 1,
         server_count_lock: 1,
         active_server_count: 0,
@@ -617,31 +617,37 @@ defmodule ArchiDep.Servers.UpdateServerTest do
     assert received_broadcasts(subscriptions.owner) == []
   end
 
-  defp assert_owner_counters(owner_id,
+  defp assert_owner_counters(owner_id, group_id,
          server_count: server_count,
          server_count_lock: server_count_lock,
          active_server_count: active_server_count,
          active_server_count_lock: active_server_count_lock
        ) do
-    assert Repo.get!(ServerOwnerCounters, owner_id) == %ServerOwnerCounters{
-             __meta__: loaded(ServerOwnerCounters, "server_owner_counters"),
-             user_account_id: owner_id,
-             server_count: server_count,
-             server_count_lock: server_count_lock,
-             active_server_count: active_server_count,
-             active_server_count_lock: active_server_count_lock
-           }
+    assert Repo.get_by!(ServerOwnerCounters, user_account_id: owner_id, class_id: group_id) ==
+             %ServerOwnerCounters{
+               __meta__: loaded(ServerOwnerCounters, "server_owner_counters"),
+               user_account_id: owner_id,
+               class_id: group_id,
+               server_count: server_count,
+               server_count_lock: server_count_lock,
+               active_server_count: active_server_count,
+               active_server_count_lock: active_server_count_lock
+             }
   end
 
-  defp set_owner_counts(owner_id, server_count: server_count, active_server_count: active),
-    do:
-      Repo.insert!(%ServerOwnerCounters{
-        user_account_id: owner_id,
-        server_count: server_count,
-        server_count_lock: 1,
-        active_server_count: active,
-        active_server_count_lock: 1
-      })
+  defp set_owner_counts(owner_id, group_id,
+         server_count: server_count,
+         active_server_count: active
+       ),
+       do:
+         Repo.insert!(%ServerOwnerCounters{
+           user_account_id: owner_id,
+           class_id: group_id,
+           server_count: server_count,
+           server_count_lock: 1,
+           active_server_count: active,
+           active_server_count_lock: 1
+         })
 
   # Subscribes each of the three topics a server-updated broadcast reaches in
   # its own collector, so each topic's delivery can be asserted independently

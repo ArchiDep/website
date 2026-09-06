@@ -147,7 +147,8 @@ class cannot be deleted while it still has servers.
 A [`Student`](./schemas/student.ex) belongs to a class and represents an
 enrolled participant. Notable fields:
 
-- `name`, `email` (unique within the class), and an optional `academic_class`.
+- `name`, `email` (unique within the class, compared without regard to case),
+  and an optional `academic_class`.
 - `username` and `username_confirmed` — the student's chosen login/server
   username and whether they have confirmed it (see [Username
   Confirmation](#username-confirmation)).
@@ -169,8 +170,10 @@ Teachers can bulk-import students into a class with `import_students/3`. The
 validates the payload (a required `domain`, an optional `academic_class`, and a
 list of `{name, email}` students) and prepares the rows to insert:
 
-- Students are **de-duplicated by email**, and the insert ignores rows that
-  conflict with existing students.
+- Students are **de-duplicated by email, without regard to case** — the same
+  comparison the `students_unique_email_in_class_index` index makes — both
+  within the payload and against the students already in the class, whose rows
+  the insert leaves alone.
 - A **suggested username is generated** for each student, avoiding collisions
   with usernames already in the class — derived from the email local part when
   possible (e.g. `john.doe@…` → `jd`, `jd1`, …), otherwise random.

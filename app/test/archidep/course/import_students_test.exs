@@ -162,6 +162,70 @@ defmodule ArchiDep.Course.ImportStudentsTest do
     assert_students_imported_broadcast(class_students, class, data, students)
   end
 
+  test "a student already in the class is skipped whatever the case of their email", %{
+    import_students: import_students
+  } do
+    class = CourseFactory.insert(:class)
+
+    CourseFactory.insert(:student, class: class, email: "existing@example.ch")
+
+    class_students = subscribe_class_students(class)
+
+    # The same person, spelled differently. Addresses are compared without
+    # regard to case everywhere else, so re-importing a roster that capitalises
+    # one must skip them rather than add a second row for them in the class.
+    data = %{
+      academic_class: "BIO-1",
+      domain: "example.ch",
+      students: [%{name: "Existing Student", email: "Existing@Example.CH"}]
+    }
+
+    auth = Factory.build(:authentication, root: true)
+
+    previous_counts = count_rows(@affected_tables)
+
+    assert {:ok, []} = import_students.(auth, class.id, data)
+
+    assert_no_row_count_diff(previous_counts)
+    assert_no_stored_events!()
+    assert received_broadcasts(class_students) == []
+  end
+
+  test "one person listed twice under different spellings is imported once", %{
+    import_students: import_students
+  } do
+    class = CourseFactory.insert(:class)
+    class_students = subscribe_class_students(class)
+
+    data = %{
+      academic_class: "BIO-1",
+      domain: "example.ch",
+      students: [
+        %{name: "John Doe", email: "john.doe@example.ch"},
+        %{name: "John Doe", email: "JOHN.DOE@example.ch"}
+      ]
+    }
+
+    auth = Factory.build(:authentication, root: true)
+
+    previous_counts = count_rows(@affected_tables)
+
+    assert {:ok, students} = import_students.(auth, class.id, data)
+
+    students
+    |> assert_imported_students(
+      class,
+      [%{name: "John Doe", email: "john.doe@example.ch"}],
+      data
+    )
+    |> assert_import_events(class, auth, data, 1)
+    |> assert_persisted_students()
+
+    assert_row_count_diff(previous_counts, %{Student => 1, StoredEvent => 2})
+
+    assert_students_imported_broadcast(class_students, class, data, students)
+  end
+
   test "importing only students that already exist is a no-op", %{
     import_students: import_students
   } do

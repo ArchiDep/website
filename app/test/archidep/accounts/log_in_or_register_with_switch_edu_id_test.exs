@@ -541,6 +541,81 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     refute_preregistered_user_broadcast(broadcasts)
   end
 
+  test "an existing inactive user account cannot log in to a preregistration that belongs to another account",
+       %{log_in_or_register_with_switch_edu_id: log_in_or_register_with_switch_edu_id} do
+    class = CourseFactory.insert(:class, active: true, now: @now)
+    student = CourseFactory.insert(:student, active: true, class: class, user: nil, now: @now)
+
+    broadcasts = subscribe_to_preregistered_user(student)
+
+    old_class = CourseFactory.insert(:class, active: false)
+
+    old_student =
+      CourseFactory.insert(:student,
+        email: student.email,
+        active: true,
+        class: old_class,
+        user: nil
+      )
+
+    {switch_edu_id, switch_edu_id_login_data} = insert_existing_switch_edu_id([student.email])
+
+    user_account =
+      AccountsFactory.insert(:user_account,
+        root: false,
+        active: true,
+        switch_edu_id: switch_edu_id,
+        preregistered_user_id: old_student.id,
+        now: @now
+      )
+
+    link_student_to_user_account(old_student, user_account)
+
+    # A second account for the same person. Neither may be picked silently, so
+    # the login is refused rather than guessing between them.
+    other_account =
+      AccountsFactory.insert(:user_account,
+        root: false,
+        active: true,
+        switch_edu_id: nil,
+        preregistered_user_id: student.id,
+        now: @now
+      )
+
+    link_student_to_user_account(student, other_account)
+
+    metadata = Factory.build(:client_metadata)
+
+    previous_counts = count_rows(@affected_tables)
+
+    assert {:error, :unauthorized_switch_edu_id} =
+             log_in_or_register_with_switch_edu_id.(
+               switch_edu_id_login_data,
+               metadata
+             )
+
+    assert [^switch_edu_id] = Repo.all(SwitchEduId)
+
+    # Both accounts are left byte-for-byte as inserted: the transaction rolled
+    # back, so no version, timestamp or link moved on either of them.
+    assert Enum.sort_by(Repo.all(UserAccount), & &1.id) ==
+             [user_account, other_account]
+             |> Enum.map(&without_loaded_associations/1)
+             |> Enum.sort_by(& &1.id)
+
+    assert_no_row_count_diff(previous_counts)
+    assert_no_stored_events!()
+    refute_login_telemetry()
+    refute_preregistered_user_broadcast(broadcasts)
+  end
+
+  defp without_loaded_associations(%UserAccount{} = user_account),
+    do: %UserAccount{
+      user_account
+      | switch_edu_id: not_loaded(:switch_edu_id, UserAccount),
+        preregistered_user: not_loaded(:preregistered_user, UserAccount)
+    }
+
   defp assert_auth(auth, username, root) do
     assert %Authentication{
              principal_id: user_account_id,

@@ -87,6 +87,30 @@ defmodule ArchiDep.Accounts.Schemas.PreregisteredUser do
     )
   end
 
+  @doc """
+  Lists the user accounts already linked to the same person's *other*
+  preregistrations, matched by email across classes. A person enrolled again in
+  a later class gets a fresh preregistration but keeps the account their
+  previous enrolment created, so this is how a login path finds that account
+  instead of creating a second one for them.
+
+  More than one account means the person already has duplicates, which a caller
+  must refuse rather than pick between.
+  """
+  @spec list_user_accounts_for_other_enrolments(t()) :: list(UserAccount.t())
+  def list_user_accounts_for_other_enrolments(%__MODULE__{id: id, email: email}),
+    do:
+      Repo.all(
+        from(ua in UserAccount,
+          distinct: true,
+          join: pu in __MODULE__,
+          on: pu.user_account_id == ua.id,
+          where:
+            pu.id != ^id and
+              fragment("LOWER(?)", pu.email) == fragment("LOWER(?)", ^email)
+        )
+      )
+
   @spec link_to_user_account(
           t(),
           UserAccount.t(),

@@ -268,12 +268,14 @@ defmodule ArchiDep.Accounts.UseCases.LogInOrRegisterWithSwitchEduId do
         # If there is exactly one active preregistered user with a matching
         # email that is not yet linked to a user account, link the user account
         # to it.
-        [exactly_one_preregistered_user] ->
+        [%PreregisteredUser{user_account_id: nil} = exactly_one_preregistered_user] ->
           {:ok, {:existing_student, change(user_account), exactly_one_preregistered_user}}
 
-        # If there are no preregistered users or more than one matches, deny
-        # access.
-        _zero_or_multiple_preregistered_users ->
+        # If there are no preregistered users, if more than one matches, or if
+        # the only match already belongs to another account, deny access. That
+        # last case is a person with two accounts, which no login may silently
+        # pick between.
+        _otherwise ->
           {:error, :unauthorized_switch_edu_id}
       end
     end

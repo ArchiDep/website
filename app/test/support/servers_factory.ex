@@ -880,6 +880,7 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec server_owner_counters_factory(map()) :: ServerOwnerCounters.t()
   def server_owner_counters_factory(attrs!) do
     {user_account_id, attrs!} = Map.pop_lazy(attrs!, :user_account_id, &UUID.generate/0)
+    {class_id, attrs!} = Map.pop_lazy(attrs!, :class_id, &UUID.generate/0)
 
     {server_count, attrs!} =
       Map.pop_lazy(attrs!, :server_count, fn -> Faker.random_between(0, 5) end)
@@ -897,6 +898,7 @@ defmodule ArchiDep.Support.ServersFactory do
 
     %ServerOwnerCounters{
       user_account_id: user_account_id,
+      class_id: class_id,
       active_server_count: active_server_count,
       active_server_count_lock: active_server_count_lock,
       server_count: server_count,

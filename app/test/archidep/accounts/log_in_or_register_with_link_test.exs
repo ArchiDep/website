@@ -125,6 +125,130 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     refute_preregistered_user_broadcast(broadcasts)
   end
 
+  # A person keeps one account across the years. A link issued for the new
+  # preregistration of someone taking the course again must move that account
+  # onto it, because a second account would split their servers and sessions and
+  # would leave the Switch edu-ID login unable to tell which one to use.
+
+  test "a login link for a repeating student reuses the account of their previous enrolment", %{
+    log_in_or_register_with_link: log_in_or_register_with_link
+  } do
+    former_class = CourseFactory.insert(:class, active: false, now: @now)
+
+    former_student =
+      CourseFactory.insert(:student, active: true, class: former_class, user: nil, now: @now)
+
+    user_account =
+      AccountsFactory.insert(
+        :user_account,
+        student_user_account_attrs(former_student, active: true)
+      )
+
+    link_student_to_user_account(former_student, user_account)
+
+    class = CourseFactory.insert(:class, active: true, now: @now)
+
+    student =
+      CourseFactory.insert(:student,
+        active: true,
+        class: class,
+        email: former_student.email,
+        user: nil,
+        now: @now
+      )
+
+    broadcasts = subscribe_to_preregistered_user(student)
+
+    login_link =
+      AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
+
+    metadata = Factory.build(:client_metadata)
+
+    previous_counts = count_rows(@affected_tables)
+
+    assert {:ok, auth} = log_in_or_register_with_link.(login_link.token, metadata)
+
+    # The account of the previous enrolment, not a new one.
+    assert auth.principal_id == user_account.id
+
+    auth
+    |> assert_auth(user_account.username, false)
+    |> assert_login_telemetry()
+    |> assert_relinked_with_link_events(metadata, login_link, user_account, student)
+    |> assert_persisted_session_for_relinked_user(auth, user_account, student)
+
+    assert_login_link_used(login_link)
+
+    # No account row is added: only the session, the login event and the linkage
+    # event of the new preregistration.
+    assert_row_count_diff(previous_counts, %{UserSession => 1, StoredEvent => 2})
+
+    assert_relinked_preregistered_user_broadcast(broadcasts, student, user_account)
+
+    # The student row of the class that has ended is left exactly as it was,
+    # still pointing at the account — which is what the admin pages read to say
+    # the person is now in another class.
+    assert Repo.get!(Student, former_student.id) == %{
+             former_student
+             | user_id: user_account.id,
+               class: not_loaded(:class, Student),
+               user: not_loaded(:user, Student)
+           }
+  end
+
+  test "a login link is refused when the person already has more than one account", %{
+    log_in_or_register_with_link: log_in_or_register_with_link
+  } do
+    email = "repeat@example.com"
+
+    for year <- [:first, :second] do
+      former_class = CourseFactory.insert(:class, active: false, now: @now)
+
+      former_student =
+        CourseFactory.insert(:student,
+          active: true,
+          class: former_class,
+          email: email,
+          user: nil,
+          now: @now
+        )
+
+      account =
+        AccountsFactory.insert(
+          :user_account,
+          student_user_account_attrs(former_student, active: true, username: to_string(year))
+        )
+
+      link_student_to_user_account(former_student, account)
+    end
+
+    class = CourseFactory.insert(:class, active: true, now: @now)
+
+    student =
+      CourseFactory.insert(:student,
+        active: true,
+        class: class,
+        email: email,
+        user: nil,
+        now: @now
+      )
+
+    broadcasts = subscribe_to_preregistered_user(student)
+
+    login_link =
+      AccountsFactory.insert(:login_link, login_link_attrs(preregistered_user_id: student.id))
+
+    metadata = Factory.build(:client_metadata)
+
+    previous_counts = count_rows(@affected_tables)
+
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+
+    assert_no_login_side_effects(previous_counts)
+    refute_preregistered_user_broadcast(broadcasts)
+    assert_login_link_untouched(login_link)
+  end
+
   test "an unknown login link token cannot be used to log in", %{
     log_in_or_register_with_link: log_in_or_register_with_link
   } do
@@ -547,6 +671,134 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
            }
 
     logged_in_event
+  end
+
+  # The relink path records both a login event on the account's stream (the
+  # person already had an account) and the linkage of the new preregistration to
+  # it. The account row is updated to point at the new preregistration, so its
+  # version — and the version the event is stamped with — is one past the
+  # inserted one.
+  defp assert_relinked_with_link_events(
+         %Authentication{principal_id: user_account_id, session_id: session_id},
+         client_metadata,
+         login_link,
+         %UserAccount{id: user_account_id} = user_account,
+         student
+       ) do
+    assert [%StoredEvent{} = linkage_event, %StoredEvent{} = logged_in_event] =
+             Enum.sort_by(fetch_new_stored_events(), & &1.type)
+
+    assert logged_in_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: logged_in_event.id,
+             stream: "accounts:user-accounts:#{user_account_id}",
+             version: user_account.version + 1,
+             schema_version: 1,
+             type: "archidep/accounts/user-logged-in-with-link",
+             data:
+               event_data(login_link, client_metadata, session_id, student, %{
+                 "id" => user_account_id,
+                 "username" => user_account.username,
+                 "root" => false
+               }),
+             meta: %{},
+             initiator: "accounts:user-accounts:#{user_account_id}",
+             causation_id: logged_in_event.id,
+             correlation_id: logged_in_event.id,
+             occurred_at: @now,
+             entity: nil
+           }
+
+    assert linkage_event == %StoredEvent{
+             __meta__: loaded(StoredEvent, "events"),
+             id: linkage_event.id,
+             stream: "accounts:preregistered-users:#{student.id}",
+             version: student.version + 1,
+             schema_version: 1,
+             type: "archidep/accounts/preregistered-user-linked-to-user-account",
+             data: %{
+               "preregistered_user_id" => student.id,
+               "user_account" => %{
+                 "id" => user_account_id,
+                 "username" => user_account.username,
+                 "active" => true,
+                 "version" => user_account.version + 1
+               }
+             },
+             meta: %{},
+             initiator: "accounts:user-accounts:#{user_account_id}",
+             causation_id: logged_in_event.id,
+             correlation_id: logged_in_event.id,
+             occurred_at: @now,
+             entity: nil
+           }
+
+    logged_in_event
+  end
+
+  defp assert_persisted_session_for_relinked_user(
+         event,
+         auth,
+         %UserAccount{} = user_account,
+         student
+       ) do
+    preregistered_user =
+      expected_preregistered_user(student, user_account.id, student.version + 1, @now)
+
+    assert_persisted_user_session(
+      event,
+      auth,
+      %{
+        username: user_account.username,
+        root: user_account.root,
+        version: user_account.version + 1,
+        created_at: user_account.created_at,
+        updated_at: @now
+      },
+      preregistered_user
+    )
+  end
+
+  # The relink's linkage event is caused by the login event on the account's
+  # stream, and carries the account as it stands after the relink.
+  defp assert_relinked_preregistered_user_broadcast(broadcasts, student, user_account) do
+    login_id =
+      Repo.one!(
+        from(e in StoredEvent,
+          where: e.stream == ^"accounts:user-accounts:#{user_account.id}",
+          select: e.id
+        )
+      )
+
+    linkage_id =
+      Repo.one!(
+        from(e in StoredEvent,
+          where: e.stream == ^"accounts:preregistered-users:#{student.id}",
+          select: e.id
+        )
+      )
+
+    message =
+      {:preregistered_user_updated,
+       %PreregisteredUserLinkedToUserAccount{
+         preregistered_user_id: student.id,
+         user_account: %{
+           id: user_account.id,
+           username: user_account.username,
+           active: true,
+           version: user_account.version + 1
+         }
+       },
+       %EventReference{
+         id: linkage_id,
+         causation_id: login_id,
+         correlation_id: login_id,
+         version: student.version + 1,
+         occurred_at: @now
+       }}
+
+    assert received_broadcasts(broadcasts.specific) == [message]
+    assert received_broadcasts(broadcasts.group) == [message]
   end
 
   defp event_data(login_link, client_metadata, session_id, student, user_account_data) do

@@ -2,7 +2,14 @@ defmodule ArchiDep.Servers.Schemas.ServerOwnerCounters do
   @moduledoc """
   Per-owner tallies of how many servers a server owner has registered, and how
   many of those are active. Owned and written by the Servers context, keyed by
-  the `user_account_id` of the owning account.
+  the `user_account_id` of the owning account **and the class those servers
+  belong to**.
+
+  The class is part of the key because an account outlives the class it was
+  enrolled in: someone repeating a year keeps their account, and the servers of
+  the class that has ended are kept as history. An account-wide tally would
+  carry those forever and leave the person unable to register anything in their
+  new class.
 
   The counts back the per-owner server and active-server limits enforced when
   registering or activating a server. Each counter carries its own optimistic
@@ -15,11 +22,12 @@ defmodule ArchiDep.Servers.Schemas.ServerOwnerCounters do
   @active_server_limit 1
   @server_limit 5
 
-  @primary_key {:user_account_id, :binary_id, []}
+  @primary_key false
   @foreign_key_type :binary_id
 
   @type t :: %__MODULE__{
           user_account_id: UUID.t(),
+          class_id: UUID.t(),
           active_server_count: non_neg_integer(),
           active_server_count_lock: pos_integer(),
           server_count: non_neg_integer(),
@@ -27,6 +35,8 @@ defmodule ArchiDep.Servers.Schemas.ServerOwnerCounters do
         }
 
   schema "server_owner_counters" do
+    field(:user_account_id, :binary_id, primary_key: true)
+    field(:class_id, :binary_id, primary_key: true)
     field(:active_server_count, :integer)
     field(:active_server_count_lock, :integer)
     field(:server_count, :integer)
@@ -48,13 +58,13 @@ defmodule ArchiDep.Servers.Schemas.ServerOwnerCounters do
     do: count >= @server_limit
 
   @doc """
-  Changeset that creates the counters row for an owner's first server: one
-  server, not yet active, with both optimistic locks starting at 1.
+  Changeset that creates the counters row for an owner's first server in a
+  class: one server, not yet active, with both optimistic locks starting at 1.
   """
-  @spec initial_changeset(UUID.t()) :: Changeset.t(t())
-  def initial_changeset(user_account_id),
+  @spec initial_changeset(UUID.t(), UUID.t()) :: Changeset.t(t())
+  def initial_changeset(user_account_id, class_id),
     do:
-      change(%__MODULE__{user_account_id: user_account_id}, %{
+      change(%__MODULE__{user_account_id: user_account_id, class_id: class_id}, %{
         active_server_count: 0,
         active_server_count_lock: 1,
         server_count: 1,
