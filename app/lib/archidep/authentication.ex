@@ -49,6 +49,10 @@ defmodule ArchiDep.Authentication do
   @spec session_id(t()) :: UUID.t()
   def session_id(%__MODULE__{session_id: session_id}), do: session_id
 
+  @spec session_expires_at(t()) :: DateTime.t()
+  def session_expires_at(%__MODULE__{session_expires_at: session_expires_at}),
+    do: session_expires_at
+
   @doc """
   The session's token, as the caller presented it or as it was handed out when
   the session was created.

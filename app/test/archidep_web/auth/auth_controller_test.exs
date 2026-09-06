@@ -6,6 +6,7 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
   import Hammox
   alias ArchiDep.Accounts
   alias ArchiDep.ClientMetadata
+  alias ArchiDep.Clock
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.Factory
   alias ArchiDepWeb.Auth.AuthController
@@ -13,7 +14,12 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
   alias Phoenix.Token
 
   @remember_me_cookie "_archidep_remember_me"
-  @remember_me_max_age 60 * 60 * 24 * 60
+  # The clock is pinned so the remember-me cookie's lifetime can be asserted
+  # exactly: it is derived from the session's expiry rather than being a
+  # constant of its own (see `ArchiDepWeb.Auth`).
+  @now ~U[2024-03-15 10:30:00.000000Z]
+  @session_validity_in_seconds 30 * 24 * 60 * 60
+  @session_expires_at DateTime.add(@now, @session_validity_in_seconds, :second)
   @user_agent "ExUnit/1.0"
   @metadata ClientMetadata.new({127, 0, 0, 1}, @user_agent)
 
@@ -66,7 +72,7 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
   describe "GET /auth/link" do
     test "log a user in from a valid login link", %{conn: conn} do
       raw_token = "raw-login-link-token"
-      auth = Factory.build(:authentication)
+      auth = Factory.build(:authentication, session_expires_at: @session_expires_at)
 
       expect(Accounts.ContextMock, :log_in_or_register_with_link, 1, fn ^raw_token, @metadata ->
         {:ok, auth}
@@ -86,8 +92,10 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
     end
 
     test "honor the stored return path and remember-me flag when logging in", %{conn: conn} do
+      stub(Clock.Mock, :now, fn -> @now end)
+
       raw_token = "raw-login-link-token"
-      auth = Factory.build(:authentication)
+      auth = Factory.build(:authentication, session_expires_at: @session_expires_at)
 
       expect(Accounts.ContextMock, :log_in_or_register_with_link, 1, fn ^raw_token, @metadata ->
         {:ok, auth}
@@ -105,7 +113,7 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
                flash: [{:success, "Welcome!"}],
                remember_me_cookie: %{
                  value?: true,
-                 max_age: @remember_me_max_age,
+                 max_age: @session_validity_in_seconds,
                  same_site: "Lax",
                  secure: true
                }

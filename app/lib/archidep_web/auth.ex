@@ -9,24 +9,22 @@ defmodule ArchiDepWeb.Auth do
   import Plug.Conn
   alias ArchiDep.Accounts
   alias ArchiDep.Authentication
+  alias ArchiDep.Clock
   alias ArchiDepWeb.Endpoint
   alias Plug.Conn
-
-  # Make the session cookie valid for 60 days. If you want bump or reduce
-  # this value, also change the session token expiry itself.
-  @max_age_in_seconds 60 * 60 * 24 * 60
 
   @remember_me_cookie "_archidep_remember_me"
 
   # Carries the session token for as long as the cookie lasts, so it is stated
   # to be off plain HTTP for the same reason the session cookie it stands in for
   # is (see `ArchiDepWeb.Endpoint`).
-  @remember_me_options [
-    sign: true,
-    max_age: @max_age_in_seconds,
-    same_site: "Lax",
-    secure: true
-  ]
+  #
+  # How long that is is deliberately absent here: a cookie outliving the session
+  # it carries is a cookie the browser goes on sending after the server has
+  # stopped accepting it, so the lifetime is derived per login from that
+  # session's own expiry rather than restated as a second number to keep in step
+  # with it.
+  @remember_me_options [sign: true, same_site: "Lax", secure: true]
 
   @doc """
   Logs the user_account in.
@@ -45,7 +43,7 @@ defmodule ArchiDepWeb.Auth do
     |> put_session(:session_token, token)
     |> put_session(:live_socket_id, live_socket_id(auth))
     |> delete_session(:user_return_to)
-    |> maybe_write_remember_me_cookie(token, remember_me)
+    |> maybe_write_remember_me_cookie(auth, token, remember_me)
     |> redirect(to: user_return_to || signed_in_path())
   end
 
@@ -72,10 +70,21 @@ defmodule ArchiDepWeb.Auth do
     :ok = Endpoint.broadcast(live_socket_id(auth), "disconnect", %{})
   end
 
-  defp maybe_write_remember_me_cookie(conn, token, true),
-    do: put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
+  defp maybe_write_remember_me_cookie(conn, auth, token, true),
+    do:
+      put_resp_cookie(
+        conn,
+        @remember_me_cookie,
+        token,
+        Keyword.put(@remember_me_options, :max_age, remember_me_max_age(auth))
+      )
 
-  defp maybe_write_remember_me_cookie(conn, _token, false), do: conn
+  defp maybe_write_remember_me_cookie(conn, _auth, _token, false), do: conn
+
+  # As long as the session has left, so the browser stops offering the token at
+  # the moment the session it names stops being accepted.
+  defp remember_me_max_age(auth),
+    do: DateTime.diff(Authentication.session_expires_at(auth), Clock.now())
 
   # This function renews the session ID and erases the whole session to avoid
   # fixation attacks. If there is any data in the session you may want to
