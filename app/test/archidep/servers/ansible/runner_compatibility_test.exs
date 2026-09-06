@@ -102,6 +102,39 @@ defmodule ArchiDep.Servers.Ansible.RunnerCompatibilityTest do
            }
   end
 
+  # The runner hands Ansible every variable as one JSON document precisely so
+  # that no value can define further variables. That property belongs to
+  # Ansible, not to us, so it is certified against the real tool here; the
+  # mocked unit tests can only pin the document the runner builds. The [fixture
+  # playbook](../../../priv/ansible/compat-extra-vars.yml) carries the
+  # assertions, so the task running rather than failing is the whole signal.
+  #
+  # Unlike the two round-trips above, nothing here is non-deterministic: a play
+  # of one task emits one known sequence, so the whole stream is asserted as the
+  # names of the events in it followed by the exit.
+  test "the real ansible-playbook reads the extra variables as one JSON document",
+       %{target: target} do
+    playbook = Path.join(File.cwd!(), "test/priv/ansible/compat-extra-vars.yml")
+
+    elements =
+      playbook
+      |> Runner.run_playbook(target.host, target.port, target.username, %{
+        "probe" => "harmless probe_target=injected"
+      })
+      |> Enum.to_list()
+
+    assert Enum.map(elements, fn
+             {:event, %{"_event" => name}} -> name
+             {:exit, status} -> status
+           end) == [
+             "v2_playbook_on_play_start",
+             "v2_playbook_on_task_start",
+             "v2_runner_on_ok",
+             "v2_playbook_on_stats",
+             {:status, 0}
+           ]
+  end
+
   test "the real ansible-playbook streams JSONL events and stats the app decodes",
        %{target: target} do
     %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)

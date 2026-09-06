@@ -63,13 +63,12 @@ defmodule ArchiDep.Servers.Ansible.RunnerTest do
                "-i",
                "archidep,",
                "-e",
-               "ansible_host=192.168.1.10",
-               "-e",
-               "ansible_port=2222",
-               "-e",
-               "ansible_ssh_private_key_file=\"#{SSH.ssh_private_key_file()}\"",
-               "-e",
-               "ansible_user=deploy",
+               JSON.encode!(%{
+                 "ansible_host" => "192.168.1.10",
+                 "ansible_port" => 2222,
+                 "ansible_ssh_private_key_file" => SSH.ssh_private_key_file(),
+                 "ansible_user" => "deploy"
+               }),
                "-m",
                "gather_facts"
              ]
@@ -81,6 +80,43 @@ defmodule ArchiDep.Servers.Ansible.RunnerTest do
                  {"ANSIBLE_STDOUT_CALLBACK", "ansible.posix.json"}
                ],
                exit_timeout: 60_000
+             ]
+    end
+
+    # Ansible reads `--extra-vars` in the `key=value` form by splitting the
+    # value on whitespace and taking each resulting word as another `key=value`
+    # pair, so a username carrying such text would define the variables named in
+    # it — the connection parameters among them. The JSON form keeps it a value.
+    test "passes a username that reads as further variables as a single value" do
+      expect(Cmd.Mock, :stream, fn command, _opts ->
+        send(self(), {:stream_called, command})
+
+        [
+          JSON.encode!(
+            gather_facts_payload(%{"action" => "gather_facts", "ansible_facts" => %{}})
+          ),
+          {:exit, {:status, 0}}
+        ]
+      end)
+
+      assert Runner.gather_facts(@host, @port, "x ansible_host=203.0.113.9") == {:ok, %{}}
+
+      assert_received {:stream_called, command}
+
+      assert command == [
+               "ansible",
+               "archidep",
+               "-i",
+               "archidep,",
+               "-e",
+               JSON.encode!(%{
+                 "ansible_host" => "192.168.1.10",
+                 "ansible_port" => 2222,
+                 "ansible_ssh_private_key_file" => SSH.ssh_private_key_file(),
+                 "ansible_user" => "x ansible_host=203.0.113.9"
+               }),
+               "-m",
+               "gather_facts"
              ]
     end
 
@@ -176,15 +212,13 @@ defmodule ArchiDep.Servers.Ansible.RunnerTest do
                "-i",
                "archidep,",
                "-e",
-               "ansible_host=192.168.1.10",
-               "-e",
-               "ansible_port=2222",
-               "-e",
-               "ansible_ssh_private_key_file=\"#{SSH.ssh_private_key_file()}\"",
-               "-e",
-               "ansible_user=deploy",
-               "-e",
-               "app=\"demo\"",
+               JSON.encode!(%{
+                 "app" => "demo",
+                 "ansible_host" => "192.168.1.10",
+                 "ansible_port" => 2222,
+                 "ansible_ssh_private_key_file" => SSH.ssh_private_key_file(),
+                 "ansible_user" => "deploy"
+               }),
                "/path/to/playbook.yml"
              ]
 
@@ -194,6 +228,63 @@ defmodule ArchiDep.Servers.Ansible.RunnerTest do
                  {"ANSIBLE_STDOUT_CALLBACK", "ansible.posix.jsonl"}
                ],
                exit_timeout: 60_000
+             ]
+    end
+
+    test "passes a username and a variable that read as further variables as single values" do
+      expect(Cmd.Mock, :stream, fn command, _opts ->
+        send(self(), {:stream_called, command})
+        [{:exit, {:status, 0}}]
+      end)
+
+      assert run_playbook(
+               %{"app" => "demo ansible_port=2200"},
+               "x ansible_host=203.0.113.9"
+             ) == [{:exit, {:status, 0}}]
+
+      assert_received {:stream_called, command}
+
+      assert command == [
+               "ansible-playbook",
+               "-i",
+               "archidep,",
+               "-e",
+               JSON.encode!(%{
+                 "ansible_host" => "192.168.1.10",
+                 "ansible_port" => 2222,
+                 "ansible_ssh_private_key_file" => SSH.ssh_private_key_file(),
+                 "ansible_user" => "x ansible_host=203.0.113.9",
+                 "app" => "demo ansible_port=2200"
+               }),
+               "/path/to/playbook.yml"
+             ]
+    end
+
+    test "the host connection parameters win over playbook variables of the same name" do
+      expect(Cmd.Mock, :stream, fn command, _opts ->
+        send(self(), {:stream_called, command})
+        [{:exit, {:status, 0}}]
+      end)
+
+      assert run_playbook(%{
+               "ansible_host" => "203.0.113.9",
+               "ansible_user" => "root"
+             }) == [{:exit, {:status, 0}}]
+
+      assert_received {:stream_called, command}
+
+      assert command == [
+               "ansible-playbook",
+               "-i",
+               "archidep,",
+               "-e",
+               JSON.encode!(%{
+                 "ansible_host" => "192.168.1.10",
+                 "ansible_port" => 2222,
+                 "ansible_ssh_private_key_file" => SSH.ssh_private_key_file(),
+                 "ansible_user" => "deploy"
+               }),
+               "/path/to/playbook.yml"
              ]
     end
 
@@ -262,9 +353,9 @@ defmodule ArchiDep.Servers.Ansible.RunnerTest do
     end
   end
 
-  defp run_playbook(vars \\ %{}),
+  defp run_playbook(vars \\ %{}, user \\ @user),
     do:
       "/path/to/playbook.yml"
-      |> Runner.run_playbook(@host, @port, @user, vars)
+      |> Runner.run_playbook(@host, @port, user, vars)
       |> Enum.to_list()
 end

@@ -77,6 +77,54 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesControllerTest do
              }
     end
 
+    test "prefix cells a spreadsheet would evaluate as a formula", %{conn: conn, auth: auth} do
+      class = CourseFactory.build(:class, name: "Formula Class")
+
+      student =
+        CourseFactory.build(:student_view,
+          class: class,
+          name: "=HYPERLINK(\"http://evil.example.com\")",
+          academic_class: "+CS-1",
+          email: "-carol@example.com",
+          domain: "@carol.archidep.ch"
+        )
+
+      server =
+        ServersFactory.build(:server_view,
+          username: "\tcarol",
+          ip_address: %Postgrex.INET{address: {10, 0, 0, 43}, netmask: 32}
+        )
+
+      student_id = student.id
+      class_view = ClassView.from(class)
+
+      expect(Course.ContextMock, :fetch_class, 1, fn ^auth, class_id ->
+        ^class_id = class.id
+        {:ok, class_view}
+      end)
+
+      expect(Course.ContextMock, :list_students, 1, fn ^auth, ^class_view -> [student] end)
+
+      expect(Servers.ContextMock, :fetch_active_server_for_group_member, 1, fn ^auth,
+                                                                               ^student_id ->
+        {:ok, server}
+      end)
+
+      conn = get(conn, ~p"/admin/classes/#{class.id}/csv")
+
+      ip = to_string(server.ip_address)
+
+      assert download(conn, & &1) == %{
+               status: 200,
+               content_type: ["text/csv; charset=utf-8"],
+               content_disposition: ["attachment; filename=\"Formula Class.csv\""],
+               body:
+                 "name,class,email,ip,username,domain,comments\n" <>
+                   ~s|"'=HYPERLINK(""http://evil.example.com"")",'+CS-1,| <>
+                   ~s|'-carol@example.com,#{ip},'\tcarol,'@carol.archidep.ch,\n|
+             }
+    end
+
     test "download a header-only CSV file for a class with no students", %{
       conn: conn,
       auth: auth

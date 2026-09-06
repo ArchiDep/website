@@ -1860,6 +1860,18 @@ it is not read as license for partial assertions. Keep the target generic and
 the playbook trivial: the canary certifies the callback format, not the app's
 business logic, which the mocked pipeline tests cover.
 
+A third round-trip certifies an **input** contract rather than an output one:
+`Runner` passes every variable as a single JSON document precisely so that no
+value can define further variables, and that parsing rule is Ansible's, not
+ours. A [second fixture playbook][ansible-compat-extra-vars-playbook] carries
+`ansible.builtin.assert` tasks stating the rule, so **the playbook is the
+assertion** and the test only pins the event stream it produces. This is the
+shape to reuse whenever the contract is "the tool interprets what we send the
+way we assume": state it in the foreign tool's own language, and let the run
+fail. Note it needs no bind-then-`==` exception — a one-task play emits a known
+sequence, so the whole stream is asserted by `==` on the event names plus the
+exit.
+
 [contributing]: ../CONTRIBUTING.md#testing
 [data-case]: ../test/support/data_case.ex
 [telemetry]: ../test/support/telemetry_test_helpers.ex
@@ -1898,6 +1910,7 @@ business logic, which the mocked pipeline tests cover.
 [ubuntu-server-container]: ../test/support/ubuntu_server_container.ex
 [ubuntu-server-dockerfile]: ../test/docker/ubuntu-server/Dockerfile
 [ansible-compat-playbook]: ../test/priv/ansible/compat.yml
+[ansible-compat-extra-vars-playbook]: ../test/priv/ansible/compat-extra-vars.yml
 [ansible-requirements]: ../../requirements.txt
 [ansible-galaxy-requirements]: ../../requirements.yml
 [queue-state-test]: ../test/archidep/servers/ansible/pipeline/ansible_pipeline_queue_state_test.exs

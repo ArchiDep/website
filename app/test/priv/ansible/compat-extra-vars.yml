@@ -1,0 +1,18 @@
+---
+# Minimal playbook for the external-tool compatibility smoke test, certifying
+# how the real ansible-playbook reads the `--extra-vars` document the runner
+# builds. The assertions are the contract: a value stays one opaque value, and
+# the `key=value` text inside it defines nothing. Were Ansible to read the
+# document as `key=value` pairs instead, it would split `probe` on whitespace
+# and `probe_target` would be defined, so this play fails and the run exits
+# non-zero. It talks to no managed node beyond the connection itself.
+- name: ArchiDep external-tool compatibility smoke test for extra variables
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check that a variable's text defined no other variable
+      ansible.builtin.assert:
+        that:
+          - probe == "harmless probe_target=injected"
+          - probe_target is not defined
+        quiet: true

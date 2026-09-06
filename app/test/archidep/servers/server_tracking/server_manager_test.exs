@@ -778,7 +778,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     server: %Server{} = server,
     test_pid: test_pid
   } do
-    updated_server = %Server{server | username: Faker.Internet.user_name()}
+    updated_server = %Server{server | username: ServersFactory.random_username()}
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
     data = ServersFactory.random_server_data()
     fake_event = EventsFactory.build(:event_reference)

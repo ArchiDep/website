@@ -5,6 +5,11 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
 
+  # A spreadsheet application evaluates a cell whose text begins with one of
+  # these as a formula when it opens the file, so every cell that carries text
+  # someone else wrote is prefixed with an apostrophe to keep it text.
+  @csv_formula_prefixes ["=", "+", "-", "@", "\t", "\r"]
+
   @spec generate_class_csv(Conn.t(), map) :: Conn.t()
   def generate_class_csv(conn, %{"id" => id}) do
     auth = conn.assigns.auth
@@ -20,15 +25,18 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
           |> Enum.map(fn student ->
             {ip_address, username} = Map.get(server_data, student.id, {nil, nil})
 
-            [
-              student.name,
-              student.academic_class || "",
-              student.email,
-              ip_address,
-              username,
-              student.domain,
-              ""
-            ]
+            Enum.map(
+              [
+                student.name,
+                student.academic_class || "",
+                student.email,
+                ip_address,
+                username,
+                student.domain,
+                ""
+              ],
+              &csv_cell/1
+            )
           end)
           |> List.insert_at(0, [
             "name",
@@ -54,6 +62,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesController do
         send_resp(conn, 401, "Unauthorized")
     end
   end
+
+  defp csv_cell(value) when is_binary(value) do
+    if String.starts_with?(value, @csv_formula_prefixes), do: "'" <> value, else: value
+  end
+
+  # The IP address is an inet struct and the missing values are `nil`; neither
+  # can carry text, so both go through as they are.
+  defp csv_cell(value), do: value
 
   defp load_server_data_for(auth, students) do
     students

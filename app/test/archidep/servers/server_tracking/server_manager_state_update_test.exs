@@ -57,7 +57,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    new_server_username = Faker.Internet.user_name()
+    new_server_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,
@@ -135,7 +135,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: true)
 
-    new_server_app_username = Faker.Internet.user_name()
+    new_server_app_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,
@@ -216,7 +216,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    new_server_username = Faker.Internet.user_name()
+    new_server_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,
@@ -315,7 +315,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    new_server_username = Faker.Internet.user_name()
+    new_server_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,
@@ -404,7 +404,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    new_server_username = Faker.Internet.user_name()
+    new_server_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,
@@ -493,7 +493,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    new_server_username = Faker.Internet.user_name()
+    new_server_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,
@@ -581,7 +581,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    new_server_username = Faker.Internet.user_name()
+    new_server_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,
@@ -667,7 +667,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    new_server_username = Faker.Internet.user_name()
+    new_server_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,
@@ -753,7 +753,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    new_server_username = Faker.Internet.user_name()
+    new_server_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,
@@ -842,7 +842,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
 
     auth = Factory.build(:authentication, principal_id: server.owner_id, root: false)
 
-    new_server_username = Faker.Internet.user_name()
+    new_server_username = ServersFactory.random_username()
 
     data = %{
       name: server.name,

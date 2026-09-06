@@ -40,13 +40,7 @@ defmodule ArchiDep.Servers.Ansible.Runner do
         "archidep,",
         # Host connection parameters
         "-e",
-        "ansible_host=#{:inet.ntoa(host)}",
-        "-e",
-        "ansible_port=#{port}",
-        "-e",
-        "ansible_ssh_private_key_file=\"#{shell_escape(SSH.ssh_private_key_file())}\"",
-        "-e",
-        "ansible_user=#{user}",
+        extra_variables(host, port, user),
         # Gather facts
         "-m",
         "gather_facts"
@@ -142,23 +136,15 @@ defmodule ArchiDep.Servers.Ansible.Runner do
   def run_playbook(playbook_path, host, port, user, vars)
       when is_binary(playbook_path) and is_ip_address(host) and is_network_port(port) and
              is_binary(user) and is_map(vars) do
-    ([
-       "ansible-playbook",
-       "-i",
-       "archidep,",
-       "-e",
-       "ansible_host=#{:inet.ntoa(host)}",
-       "-e",
-       "ansible_port=#{port}",
-       "-e",
-       "ansible_ssh_private_key_file=\"#{shell_escape(SSH.ssh_private_key_file())}\"",
-       "-e",
-       "ansible_user=#{user}"
-     ] ++
-       Enum.flat_map(vars, fn {key, value} ->
-         ["-e", "#{key}=\"#{shell_escape(value)}\""]
-       end) ++
-       [playbook_path])
+    [
+      "ansible-playbook",
+      "-i",
+      "archidep,",
+      # Host connection parameters and the playbook's variables
+      "-e",
+      extra_variables(host, port, user, vars),
+      playbook_path
+    ]
     |> Cmd.stream(
       env: [
         {"ANSIBLE_HOST_KEY_CHECKING", "false"},
@@ -216,5 +202,26 @@ defmodule ArchiDep.Servers.Ansible.Runner do
         end
       end)
 
-  defp shell_escape(value) when is_binary(value), do: String.replace(value, "\"", "\\\"")
+  # The value of the single `--extra-vars` argument carrying the host connection
+  # parameters and, for a playbook, its variables.
+  #
+  # It is one JSON document rather than repeated `key=value` arguments because
+  # Ansible parses an `--extra-vars` value that starts with `{` as JSON, which
+  # keeps every value one opaque value. The `key=value` form instead splits the
+  # value on whitespace and reads each resulting word as a further `key=value`
+  # pair, so any value that may contain a space could define arbitrary other
+  # variables — the connection parameters below among them.
+  #
+  # The connection parameters are merged last so that a playbook variable of the
+  # same name can never take over the connection.
+  defp extra_variables(host, port, user, vars \\ %{}),
+    do:
+      JSON.encode!(
+        Map.merge(vars, %{
+          "ansible_host" => host |> :inet.ntoa() |> to_string(),
+          "ansible_port" => port,
+          "ansible_ssh_private_key_file" => SSH.ssh_private_key_file(),
+          "ansible_user" => user
+        })
+      )
 end

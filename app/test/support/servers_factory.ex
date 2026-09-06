@@ -30,6 +30,11 @@ defmodule ArchiDep.Support.ServersFactory do
   @failed_ansible_playbook_run_states [:failed, :interrupted, :timeout]
   @finished_ansible_playbook_run_states [:succeeded] ++ @failed_ansible_playbook_run_states
 
+  # The characters `Server` accepts in a username: it must start with a letter
+  # and may then also contain digits and hyphens.
+  @username_first_characters ~c"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  @username_characters @username_first_characters ++ ~c"0123456789-"
+
   @spec ansible_playbook_event_factory(map()) :: AnsiblePlaybookEvent.t()
   def ansible_playbook_event_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
@@ -611,13 +616,9 @@ defmodule ArchiDep.Support.ServersFactory do
     {ip_address, attrs!} =
       Map.pop_lazy(attrs!, :ip_address, &NetFactory.postgrex_inet/0)
 
-    {username, attrs!} =
-      Map.pop_lazy(attrs!, :username, fn -> sequence(:server_username, &"user#{&1}") end)
+    {username, attrs!} = Map.pop_lazy(attrs!, :username, &random_username/0)
 
-    {app_username, attrs!} =
-      Map.pop_lazy(attrs!, :app_username, fn ->
-        sequence(:server_app_username, &"appuser#{&1}")
-      end)
+    {app_username, attrs!} = Map.pop_lazy(attrs!, :app_username, &random_username/0)
 
     {ssh_port, attrs!} =
       case Map.pop_lazy(attrs!, :ssh_port, optionally(&NetFactory.port/0)) do
@@ -714,13 +715,9 @@ defmodule ArchiDep.Support.ServersFactory do
 
     {ip_address, attrs!} = Map.pop_lazy(attrs!, :ip_address, &NetFactory.postgrex_inet/0)
 
-    {username, attrs!} =
-      Map.pop_lazy(attrs!, :username, fn -> sequence(:server_username, &"user#{&1}") end)
+    {username, attrs!} = Map.pop_lazy(attrs!, :username, &random_username/0)
 
-    {app_username, attrs!} =
-      Map.pop_lazy(attrs!, :app_username, fn ->
-        sequence(:server_app_username, &"appuser#{&1}")
-      end)
+    {app_username, attrs!} = Map.pop_lazy(attrs!, :app_username, &random_username/0)
 
     {ssh_port, attrs!} =
       case Map.pop_lazy(attrs!, :ssh_port, optionally(&NetFactory.port/0)) do
@@ -976,7 +973,8 @@ defmodule ArchiDep.Support.ServersFactory do
         NetFactory.ip_address() |> :inet.ntoa() |> to_string()
       end)
 
-    {username, attrs!} = Keyword.pop_lazy(attrs!, :username, &Faker.Internet.user_name/0)
+    {username, attrs!} = Keyword.pop_lazy(attrs!, :username, &random_username/0)
+
     {ssh_port, attrs!} = Keyword.pop_lazy(attrs!, :ssh_port, &NetFactory.port/0)
 
     {ssh_host_key_fingerprints, attrs!} =
@@ -987,7 +985,8 @@ defmodule ArchiDep.Support.ServersFactory do
       end)
 
     {active, attrs!} = Keyword.pop_lazy(attrs!, :active, &bool/0)
-    {app_username, attrs!} = Keyword.pop_lazy(attrs!, :app_username, &Faker.Internet.user_name/0)
+
+    {app_username, attrs!} = Keyword.pop_lazy(attrs!, :app_username, &random_username/0)
 
     {expected_properties, attrs!} =
       Keyword.pop_lazy(attrs!, :expected_properties, &random_server_properties/0)
@@ -1004,6 +1003,23 @@ defmodule ArchiDep.Support.ServersFactory do
       app_username: app_username,
       expected_properties: expected_properties
     }
+  end
+
+  @doc """
+  Generates a username `Server` accepts for either of its two username fields:
+  random within the format those are validated against, and distinct on every
+  call, since a server's two usernames must differ from each other.
+  """
+  @spec random_username() :: String.t()
+  def random_username do
+    rest =
+      for _character <- 1..Faker.random_between(0, 8)//1,
+          into: "",
+          do: <<Enum.random(@username_characters)>>
+
+    # The trailing number makes each generated username distinct, and also keeps
+    # it clear of the reserved "archidep" the group-member changesets reject.
+    sequence(:server_username, &"#{<<Enum.random(@username_first_characters)>>}#{rest}#{&1}")
   end
 
   @spec random_server_properties() :: Types.server_properties()

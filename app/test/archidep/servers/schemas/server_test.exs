@@ -33,6 +33,10 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   # conflict is set up before the changeset under test runs at `@now`.
   @past ~U[2023-09-15 09:42:17.000000Z]
 
+  # Both usernames are validated against the same format, so both report it with
+  # this message.
+  @username_format_error "must contain only letters (without accents), numbers and hyphens, and start with a letter"
+
   # `Server.new/4`, `Server.new_group_member_server/3`, `Server.update/3` and
   # `Server.update_group_member_server/4` all run the same `validate/1` rules.
   # Each rule is written once below and the `for` comprehension generates one
@@ -64,6 +68,16 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
       test "the username cannot be longer than 32 characters" do
         assert errors_on(changeset(unquote(variant), username: String.duplicate("a", 33))) ==
                  %{username: ["should be at most 32 character(s)"]}
+      end
+
+      test "the username cannot contain characters a Unix account name may not have" do
+        assert errors_on(changeset(unquote(variant), username: "x ansible_host=203.0.113.9")) ==
+                 %{username: [@username_format_error]}
+      end
+
+      test "the username must start with a letter" do
+        assert errors_on(changeset(unquote(variant), username: "1user")) ==
+                 %{username: [@username_format_error]}
       end
 
       test "the SSH port must be greater than 0" do
@@ -115,6 +129,16 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
       test "the app username cannot be longer than 32 characters" do
         assert errors_on(changeset(unquote(variant), app_username: String.duplicate("a", 33))) ==
                  %{app_username: ["should be at most 32 character(s)"]}
+      end
+
+      test "the app username cannot contain characters a Unix account name may not have" do
+        assert errors_on(changeset(unquote(variant), app_username: "x ansible_port=2200")) ==
+                 %{app_username: [@username_format_error]}
+      end
+
+      test "the app username must start with a letter" do
+        assert errors_on(changeset(unquote(variant), app_username: "1user")) ==
+                 %{app_username: [@username_format_error]}
       end
 
       test "the app username cannot be the same as the username" do

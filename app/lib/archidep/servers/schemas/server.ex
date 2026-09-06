@@ -34,6 +34,12 @@ defmodule ArchiDep.Servers.Schemas.Server do
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime_usec]
 
+  # Both usernames name a Unix account on the server — the one the application
+  # logs in as, and the one it creates for itself — so both are restricted to
+  # the characters such an account name may have.
+  @username_format ~r/\A[a-z][\-a-z0-9]*\z/i
+  @username_format_message "must contain only letters (without accents), numbers and hyphens, and start with a letter"
+
   # TODO: store number of consecutive failed connection attemps
 
   @type t :: %__MODULE__{
@@ -588,6 +594,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> validate_length(:name, max: 50)
     |> unique_constraint(:name, name: :servers_unique_name)
     |> validate_length(:username, max: 32)
+    |> validate_format(:username, @username_format, message: @username_format_message)
     |> validate_number(:ssh_port, greater_than: 0, less_than: 65_536)
     |> validate_change(:ssh_host_key_fingerprints, fn :ssh_host_key_fingerprints, fingerprints ->
       case SSH.parse_ssh_host_key_fingerprints(fingerprints) do
@@ -605,6 +612,7 @@ defmodule ArchiDep.Servers.Schemas.Server do
     |> unique_constraint(:ip_address, name: :servers_unique_ip_address)
     |> assoc_constraint(:owner)
     |> validate_length(:app_username, max: 32)
+    |> validate_format(:app_username, @username_format, message: @username_format_message)
   end
 
   defp validate_username_and_app_username(changeset) do
