@@ -168,7 +168,7 @@ defmodule ArchiDepWeb.Admin.Classes.StudentLiveTest do
       stub_student_page(auth, student: student)
       student_id = student.id
 
-      login_link = AccountsFactory.build(:login_link, token: <<1, 2, 3, 4>>)
+      login_link = AccountsFactory.build(:login_link, raw_token: <<1, 2, 3, 4>>)
 
       expect(Accounts.ContextMock, :create_login_link_for_preregistered_user, fn ^auth,
                                                                                  ^student_id ->

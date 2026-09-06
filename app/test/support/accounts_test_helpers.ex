@@ -111,7 +111,8 @@ defmodule ArchiDep.Support.AccountsTestHelpers do
   def assert_session_untouched(session) do
     assert Repo.get!(UserSession, session.id) == %{
              session
-             | user_account: not_loaded(:user_account, UserSession),
+             | raw_token: nil,
+               user_account: not_loaded(:user_account, UserSession),
                impersonated_user_account: not_loaded(:impersonated_user_account, UserSession)
            }
 

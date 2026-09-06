@@ -1010,7 +1010,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithSwitchEduIdTest do
     assert user_session == %UserSession{
              __meta__: loaded(UserSession, "user_sessions"),
              id: session_id,
-             token: session_token,
+             token_hash: :crypto.hash(:sha256, session_token),
+             raw_token: nil,
              created_at: @now,
              client_ip_address: client_ip_address,
              client_user_agent: client_user_agent,

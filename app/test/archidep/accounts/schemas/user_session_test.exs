@@ -23,11 +23,12 @@ defmodule ArchiDep.Accounts.Schemas.UserSessionTest do
       assert errors_on(changeset) == %{}
       session = Changeset.apply_changes(changeset)
       assert {:ok, _uuid} = Ecto.UUID.cast(session.id)
-      assert_secure_random_token(session.token)
+      assert_secure_random_token(session.raw_token)
 
       assert session == %UserSession{
                id: session.id,
-               token: session.token,
+               token_hash: :crypto.hash(:sha256, session.raw_token),
+               raw_token: session.raw_token,
                created_at: @now,
                used_at: nil,
                client_ip_address: "1.2.3.4",
@@ -48,11 +49,12 @@ defmodule ArchiDep.Accounts.Schemas.UserSessionTest do
       assert errors_on(changeset) == %{}
       session = Changeset.apply_changes(changeset)
       assert {:ok, _uuid} = Ecto.UUID.cast(session.id)
-      assert_secure_random_token(session.token)
+      assert_secure_random_token(session.raw_token)
 
       assert session == %UserSession{
                id: session.id,
-               token: session.token,
+               token_hash: :crypto.hash(:sha256, session.raw_token),
+               raw_token: session.raw_token,
                created_at: @now,
                used_at: nil,
                client_ip_address: nil,
@@ -91,7 +93,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSessionTest do
                username: "alice",
                root: true,
                session_id: session.id,
-               session_token: session.token,
+               session_token: session.raw_token,
                session_expires_at: DateTime.add(@now, @validity_in_seconds, :second),
                impersonated_id: nil
              }
@@ -115,7 +117,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSessionTest do
                username: "bob",
                root: false,
                session_id: session.id,
-               session_token: session.token,
+               session_token: session.raw_token,
                session_expires_at: DateTime.add(@now, @validity_in_seconds, :second),
                impersonated_id: impersonated.id
              }

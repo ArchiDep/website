@@ -31,10 +31,12 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
   # lapsed.
   @link_validity_in_hours 48
   @one_hour_in_seconds 60 * 60
+  @token_bytes 100
 
   @type t :: %__MODULE__{
           id: UUID.t(),
-          token: binary(),
+          token_hash: binary(),
+          raw_token: binary() | nil,
           active: boolean(),
           used_at: DateTime.t() | nil,
           user_account: UserAccount.t() | nil | NotLoaded.t(),
@@ -45,7 +47,14 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
         }
 
   schema "login_links" do
-    field(:token, :binary, redact: true)
+    # The hash of the link's token, never the token itself — a link is a bearer
+    # credential in a URL, and a row that held it would let anyone who can read
+    # this table log in as the student it was issued for. A link is found by
+    # hashing the token in the URL and comparing that.
+    field(:token_hash, :binary, redact: true)
+    # The token itself, held only in memory and only on the one path that has
+    # it: the link that was just generated, whose URL the teacher is shown.
+    field(:raw_token, :binary, virtual: true, redact: true)
     field(:active, :boolean)
     field(:used_at, :utc_datetime_usec)
     belongs_to(:user_account, UserAccount)
@@ -58,7 +67,7 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
     do:
       from(ll in __MODULE__,
         where:
-          ll.token == ^token and ll.active and is_nil(ll.used_at) and
+          ll.token_hash == ^hash_token(token) and ll.active and is_nil(ll.used_at) and
             ll.created_at > ^link_validity_cutoff(now),
         left_join: pu in assoc(ll, :preregistered_user),
         left_join: pug in assoc(pu, :group),
@@ -73,19 +82,26 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
           Changeset.t(t())
   def new_token_for_preregistered_user_changeset(preregistered_user, now) do
     id = UUID.generate()
-    token = :crypto.strong_rand_bytes(100)
+    raw_token = :crypto.strong_rand_bytes(@token_bytes)
 
     %__MODULE__{}
     |> change(
       id: id,
-      token: token,
+      token_hash: hash_token(raw_token),
+      raw_token: raw_token,
       active: true,
       preregistered_user: preregistered_user,
       preregistered_user_id: preregistered_user.id,
       created_at: now
     )
     |> validate()
-    |> validate_required([:id, :token, :preregistered_user, :preregistered_user_id, :created_at])
+    |> validate_required([
+      :id,
+      :token_hash,
+      :preregistered_user,
+      :preregistered_user_id,
+      :created_at
+    ])
   end
 
   @spec mark_as_used_changeset(t(), DateTime.t()) :: Changeset.t(t())
@@ -100,9 +116,14 @@ defmodule ArchiDep.Accounts.Schemas.LoginLink do
     do:
       validate_required(changeset, [
         :id,
-        :token,
+        :token_hash,
         :created_at
       ])
+
+  # A plain digest rather than a password hash, for the reason given in
+  # `ArchiDep.Accounts.Schemas.UserSession`: the token is a long random value,
+  # so only irreversibility is wanted.
+  defp hash_token(token), do: :crypto.hash(:sha256, token)
 
   # The earliest creation instant a link may have and still be followed. Derived
   # from the injected clock so the validity window is deterministic and can be

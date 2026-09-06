@@ -181,9 +181,10 @@ defmodule ArchiDep.Accounts.DeleteSessionTest do
 
   # The use case echoes back the session it fetched by id: the (root) user
   # account is preloaded with its — here empty — Switch edu-ID and preregistered
-  # user, and the impersonated user account is loaded as `nil`.
+  # user, and the impersonated user account is loaded as `nil`. A session read
+  # back from a row carries no token, only the hash of one being stored.
   defp fetched_session(session, account),
-    do: %{session | user_account: account, impersonated_user_account: nil}
+    do: %{session | raw_token: nil, user_account: account, impersonated_user_account: nil}
 
   defp assert_session_deleted_event(session, account, preregistered_user, initiator_id) do
     assert [%StoredEvent{id: event_id} = event] = fetch_new_stored_events()

@@ -112,7 +112,7 @@ defmodule ArchiDepWeb.Support.ConnCase do
 
     [] = Keyword.keys(opts!)
 
-    session_token = session.token
+    session_token = session.raw_token
 
     auth =
       Factory.build(:authentication,

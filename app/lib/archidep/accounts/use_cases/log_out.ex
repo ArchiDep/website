@@ -13,10 +13,14 @@ defmodule ArchiDep.Accounts.UseCases.LogOut do
 
   @spec log_out(Authentication.t()) :: :ok | {:error, :session_not_found}
   def log_out(auth) do
-    token = Authentication.session_token(auth)
+    # By ID rather than by token: the session being logged out is the one the
+    # authentication names, and its ID identifies it without the caller having
+    # to still hold the token, which a channel-authenticated caller does not
+    # (see `ArchiDep.Authentication.session_token/1`).
+    id = Authentication.session_id(auth)
     now = Clock.now()
 
-    with {:ok, session} <- UserSession.fetch_active_session_by_token(token, now) do
+    with {:ok, session} <- UserSession.fetch_active_session_by_id(id, now) do
       {:ok, _multi} = delete_session(session, auth, now)
 
       :telemetry.execute([:archidep, :accounts, :auth, :logout], %{}, %{

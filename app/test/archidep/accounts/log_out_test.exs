@@ -73,12 +73,15 @@ defmodule ArchiDep.Accounts.LogOutTest do
     assert_row_count_diff(previous_counts, %{UserSession => -1, StoredEvent => 1})
   end
 
-  test "logging out with an unknown session token does nothing", %{log_out: log_out} do
+  test "logging out an unknown session does nothing", %{log_out: log_out} do
     account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
 
     session = AccountsFactory.insert(:user_session, session_attrs(account, @now))
 
-    auth = Map.put(authentication_for(account, session), :session_token, "unknown-session-token")
+    # The session logged out is the one the authentication names by ID, so an
+    # ID no session has is what makes the log-out find nothing — and the real
+    # session below is left alone, which is what the assertions check.
+    auth = Map.put(authentication_for(account, session), :session_id, Ecto.UUID.generate())
 
     previous_counts = count_rows(@affected_tables)
 
@@ -118,7 +121,7 @@ defmodule ArchiDep.Accounts.LogOutTest do
         username: account.username,
         root: account.root,
         session_id: session.id,
-        session_token: session.token,
+        session_token: session.raw_token,
         impersonated_id: nil
       )
 

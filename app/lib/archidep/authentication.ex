@@ -32,7 +32,7 @@ defmodule ArchiDep.Authentication do
           username: String.t() | nil,
           root: boolean(),
           session_id: UUID.t(),
-          session_token: String.t(),
+          session_token: binary() | nil,
           session_expires_at: DateTime.t(),
           impersonated_id: UUID.t() | nil
         }
@@ -49,7 +49,17 @@ defmodule ArchiDep.Authentication do
   @spec session_id(t()) :: UUID.t()
   def session_id(%__MODULE__{session_id: session_id}), do: session_id
 
-  @spec session_token(t()) :: String.t()
+  @doc """
+  The session's token, as the caller presented it or as it was handed out when
+  the session was created.
+
+  It is absent from an authentication built from a session the caller did not
+  present a token for, e.g. a channel connecting with a signed session ID rather
+  than the token, because only the hash of the token is stored, and a hash
+  cannot produce it. The guard is deliberate: nothing may quietly treat a
+  missing token as a token.
+  """
+  @spec session_token(t()) :: binary()
   def session_token(%__MODULE__{session_token: session_token}) when is_binary(session_token),
     do: session_token
 

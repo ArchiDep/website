@@ -18,11 +18,15 @@ defmodule ArchiDep.Accounts.Schemas.LoginLinkTest do
       assert errors_on(changeset) == %{}
       login_link = Changeset.apply_changes(changeset)
       assert {:ok, _uuid} = Ecto.UUID.cast(login_link.id)
-      assert_secure_random_token(login_link.token)
+      assert_secure_random_token(login_link.raw_token)
 
+      # The digest is computed here rather than read back off the link, so that
+      # the assertion says the stored value is the hash of the token rather than
+      # only that it equals itself.
       assert login_link == %LoginLink{
                id: login_link.id,
-               token: login_link.token,
+               token_hash: :crypto.hash(:sha256, login_link.raw_token),
+               raw_token: login_link.raw_token,
                active: true,
                used_at: nil,
                preregistered_user: preregistered_user,

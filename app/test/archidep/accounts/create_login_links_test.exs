@@ -63,7 +63,7 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
     login_link
     |> assert_created_login_link(preregistered_user)
     |> assert_link_created_event(auth, student)
-    |> assert_persisted_login_link(login_link.token)
+    |> assert_persisted_login_link(login_link.raw_token)
 
     assert_row_count_diff(previous_counts, %{LoginLink => 1, StoredEvent => 1})
   end
@@ -94,7 +94,7 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
     login_link
     |> assert_created_login_link(preregistered_user)
     |> assert_link_created_event(auth, student)
-    |> assert_persisted_login_link(login_link.token)
+    |> assert_persisted_login_link(login_link.raw_token)
 
     # Each previous link is deactivated in place: only the `active` flag flips,
     # it is not marked as used.
@@ -189,7 +189,7 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
     login_link
     |> assert_created_login_link(preregistered_user)
     |> assert_link_created_event(auth, student)
-    |> assert_persisted_login_link(login_link.token)
+    |> assert_persisted_login_link(login_link.raw_token)
 
     assert_row_count_diff(previous_counts, %{LoginLink => 1, StoredEvent => 1})
     assert_user_account_untouched(root_account)
@@ -204,13 +204,14 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
          %LoginLink{} = login_link,
          %PreregisteredUser{} = preregistered_user
        ) do
-    assert %LoginLink{id: id, token: token} = login_link
-    assert_secure_random_token(token)
+    assert %LoginLink{id: id, raw_token: raw_token} = login_link
+    assert_secure_random_token(raw_token)
 
     assert login_link == %LoginLink{
              __meta__: loaded(LoginLink, "login_links"),
              id: id,
-             token: token,
+             token_hash: :crypto.hash(:sha256, raw_token),
+             raw_token: raw_token,
              active: true,
              used_at: nil,
              preregistered_user: preregistered_user,
@@ -257,6 +258,10 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
   # one value the event deliberately omits because it is a secret. Receiving the
   # event rather than the returned link both proves the event is a sufficient
   # audit log and avoids checking the row against the use case's own output.
+  #
+  # The row is asserted to hold the *hash* of that token and no token at all,
+  # which is the whole point of storing it hashed: what is on disk cannot be
+  # replayed as the link.
   defp assert_persisted_login_link(
          %StoredEvent{
            data: %{
@@ -270,7 +275,8 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
     assert Repo.get!(LoginLink, link_id) == %LoginLink{
              __meta__: loaded(LoginLink, "login_links"),
              id: link_id,
-             token: token,
+             token_hash: :crypto.hash(:sha256, token),
+             raw_token: nil,
              active: true,
              used_at: nil,
              preregistered_user: not_loaded(:preregistered_user, LoginLink),
@@ -285,6 +291,7 @@ defmodule ArchiDep.Accounts.CreateLoginLinksTest do
     assert Repo.get!(LoginLink, previous_link.id) == %{
              previous_link
              | active: false,
+               raw_token: nil,
                preregistered_user: not_loaded(:preregistered_user, LoginLink),
                user_account: not_loaded(:user_account, LoginLink)
            }

@@ -273,6 +273,16 @@ Wiring](#web-wiring)) persists for 60 days. Token and session-id validation, the
 `used_at`/metadata refresh, and listing of active sessions are implemented in
 the [`Sessions`](./use_cases/sessions.ex) use case.
 
+**Only the hash of a token is stored** — for a session and for a [login
+link](#login-links) alike. A token is a bearer credential, so a row holding one
+would be a row that can be replayed by anyone able to read the table; a session
+is found by hashing what the caller presented and comparing that. Two things
+follow. A token exists only in the cookie or URL it was handed out in, so it
+cannot be recovered from the database and a lost one can only be replaced.
+And an authentication built without one — a channel connecting with a signed
+session id rather than a token — carries **no** `session_token`, which is why
+anything that needs to name a session again does so by its id.
+
 Users can review and revoke their own sessions from the profile page
 ([`ProfileLive`](../../archidep_web/profile/profile_live.ex) and the
 [`CurrentSessionsLive`](../../archidep_web/profile/current_sessions_live.ex)

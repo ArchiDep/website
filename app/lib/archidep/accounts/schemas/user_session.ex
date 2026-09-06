@@ -23,7 +23,8 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
 
   @type t :: %__MODULE__{
           id: UUID.t(),
-          token: String.t(),
+          token_hash: binary(),
+          raw_token: binary() | nil,
           created_at: DateTime.t(),
           used_at: DateTime.t() | nil,
           client_ip_address: String.t() | nil,
@@ -35,7 +36,17 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
         }
 
   schema "user_sessions" do
-    field(:token, :binary, redact: true)
+    # What is stored is the hash of the session token, never the token itself:
+    # the token is a bearer credential, and a row that held it would let anyone
+    # who can read this table log in as its owner. The token is looked up by
+    # hashing what the caller presented and comparing that, so the column is
+    # enough to authenticate and useless to replay.
+    field(:token_hash, :binary, redact: true)
+    # The token itself, held only in memory and only on the paths that have it:
+    # the session that was just created, and the one a caller was just
+    # authenticated by. It is what the browser is given, and what a row must
+    # never contain.
+    field(:raw_token, :binary, virtual: true, redact: true)
     field(:created_at, :utc_datetime_usec)
     field(:used_at, :utc_datetime_usec)
     field(:client_ip_address, :string)
@@ -47,7 +58,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   @spec authentication(t()) :: Authentication.t()
   def authentication(%__MODULE__{
         id: id,
-        token: token,
+        raw_token: raw_token,
         created_at: created_at,
         user_account: user_account,
         impersonated_user_account: impersonated_user_account,
@@ -63,7 +74,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
       username: principal.username,
       root: principal.root,
       session_id: id,
-      session_token: token,
+      session_token: raw_token,
       session_expires_at: session_expires_at,
       impersonated_id: impersonated_user_account_id
     }
@@ -83,6 +94,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
           Changeset.t(t())
   def new_session(user_account, client_metadata, now) do
     id = UUID.generate()
+    raw_token = generate_session_token()
 
     client_ip_address =
       if client_metadata.ip_address,
@@ -92,14 +104,15 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
     %__MODULE__{}
     |> change(
       id: id,
-      token: generate_session_token(),
+      token_hash: hash_token(raw_token),
+      raw_token: raw_token,
       client_ip_address: client_ip_address,
       client_user_agent: client_metadata.user_agent,
       user_account: user_account,
       user_account_id: user_account.id,
       created_at: now
     )
-    |> validate_required([:id, :token, :user_account, :created_at])
+    |> validate_required([:id, :token_hash, :user_account, :created_at])
     |> validate_length(:client_ip_address, max: 50)
   end
 
@@ -168,38 +181,41 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
           {:ok, t()} | {:error, :session_not_found}
   def fetch_active_session_by_token(token, now) do
     cutoff = session_validity_cutoff(now)
+    token_hash = hash_token(token)
 
     where =
       dynamic(
         [user_session: us],
-        us.token == ^token and us.created_at > ^cutoff and
+        us.token_hash == ^token_hash and us.created_at > ^cutoff and
           ^where_user_account_active(now)
       )
 
-    if session =
-         Repo.one(
-           from(us in __MODULE__,
-             as: :user_session,
-             join: ua in assoc(us, :user_account),
-             as: :user_account,
-             left_join: sei in assoc(ua, :switch_edu_id),
-             left_join: pu in assoc(ua, :preregistered_user),
-             as: :preregistered_user,
-             left_join: ug in assoc(pu, :group),
-             as: :user_group,
-             left_join: iua in assoc(us, :impersonated_user_account),
-             left_join: iuapu in assoc(iua, :preregistered_user),
-             left_join: iuag in assoc(iuapu, :group),
-             where: ^where,
-             preload: [
-               user_account: {ua, preregistered_user: {pu, group: ug}, switch_edu_id: sei},
-               impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}
-             ]
-           )
-         ) do
-      {:ok, session}
-    else
-      {:error, :session_not_found}
+    query =
+      from(us in __MODULE__,
+        as: :user_session,
+        join: ua in assoc(us, :user_account),
+        as: :user_account,
+        left_join: sei in assoc(ua, :switch_edu_id),
+        left_join: pu in assoc(ua, :preregistered_user),
+        as: :preregistered_user,
+        left_join: ug in assoc(pu, :group),
+        as: :user_group,
+        left_join: iua in assoc(us, :impersonated_user_account),
+        left_join: iuapu in assoc(iua, :preregistered_user),
+        left_join: iuag in assoc(iuapu, :group),
+        where: ^where,
+        preload: [
+          user_account: {ua, preregistered_user: {pu, group: ug}, switch_edu_id: sei},
+          impersonated_user_account: {iua, preregistered_user: {iuapu, group: iuag}}
+        ]
+      )
+
+    case Repo.one(query) do
+      # The caller presented this token, so hand it back on the session: it is
+      # what `authentication/1` puts in the authentication, and the row itself
+      # holds only its hash.
+      %__MODULE__{} = session -> {:ok, %__MODULE__{session | raw_token: token}}
+      nil -> {:error, :session_not_found}
     end
   end
 
@@ -312,6 +328,12 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
 
     <<time::64>> <> random_bytes
   end
+
+  # A plain digest, not a password hash: the token is 58 bytes of which 50 are
+  # from a cryptographic random source, so there is no dictionary to try and
+  # nothing for a slow hash to buy. What is wanted is only that the stored value
+  # cannot be turned back into the token.
+  defp hash_token(token), do: :crypto.hash(:sha256, token)
 
   defp query_session_by_id(%__MODULE__{id: id}), do: from(us in __MODULE__, where: us.id == ^id)
 end

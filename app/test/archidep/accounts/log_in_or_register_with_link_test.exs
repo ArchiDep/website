@@ -72,7 +72,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:ok, auth} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:ok, auth} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     auth
     |> assert_auth(nil, false)
@@ -109,7 +109,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:ok, auth} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:ok, auth} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     auth
     |> assert_auth(user_account.username, user_account.root)
@@ -167,7 +167,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:ok, auth} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:ok, auth} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     # The account of the previous enrolment, not a new one.
     assert auth.principal_id == user_account.id
@@ -243,7 +243,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     assert_no_login_side_effects(previous_counts)
     refute_preregistered_user_broadcast(broadcasts)
@@ -281,7 +281,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     assert_no_login_side_effects(previous_counts)
     refute_preregistered_user_broadcast(broadcasts)
@@ -306,7 +306,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     assert_no_login_side_effects(previous_counts)
     refute_preregistered_user_broadcast(broadcasts)
@@ -345,7 +345,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:ok, auth} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:ok, auth} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     auth
     |> assert_auth(user_account.username, user_account.root)
@@ -379,7 +379,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     assert_no_login_side_effects(previous_counts)
     refute_preregistered_user_broadcast(broadcasts)
@@ -401,7 +401,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     assert_no_login_side_effects(previous_counts)
     refute_preregistered_user_broadcast(broadcasts)
@@ -428,7 +428,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
@@ -456,7 +456,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
@@ -496,7 +496,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
@@ -524,7 +524,7 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
     previous_counts = count_rows(@affected_tables)
 
-    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.token, metadata)
+    assert {:error, :invalid_link} = log_in_or_register_with_link.(login_link.raw_token, metadata)
 
     assert_no_login_side_effects(previous_counts)
     assert_user_account_untouched(user_account)
@@ -958,7 +958,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     assert user_session == %UserSession{
              __meta__: loaded(UserSession, "user_sessions"),
              id: session_id,
-             token: session_token,
+             token_hash: :crypto.hash(:sha256, session_token),
+             raw_token: nil,
              created_at: @now,
              client_ip_address: client_ip_address,
              client_user_agent: client_user_agent,
@@ -1002,12 +1003,15 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
 
   # Asserts the login link row was marked as used: deactivated (the optimistic
   # lock flips `active` from true to false) and stamped with the pinned instant.
+  # The consumed link keeps holding only the hash of its token: using a link
+  # neither stores nor clears the token, which was never in the row.
   defp assert_login_link_used(login_link) do
     assert Repo.get!(LoginLink, login_link.id) ==
              %{
                login_link
                | active: false,
                  used_at: @now,
+                 raw_token: nil,
                  preregistered_user: not_loaded(:preregistered_user, LoginLink),
                  user_account: not_loaded(:user_account, LoginLink)
              }
@@ -1017,7 +1021,8 @@ defmodule ArchiDep.Accounts.LogInOrRegisterWithLinkTest do
     assert Repo.get!(LoginLink, login_link.id) ==
              %{
                login_link
-               | preregistered_user: not_loaded(:preregistered_user, LoginLink),
+               | raw_token: nil,
+                 preregistered_user: not_loaded(:preregistered_user, LoginLink),
                  user_account: not_loaded(:user_account, LoginLink)
              }
   end

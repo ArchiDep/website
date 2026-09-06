@@ -150,8 +150,8 @@ defmodule ArchiDep.Accounts.SessionsTest do
 
       previous_counts = count_rows(@affected_tables)
 
-      assert {:ok, auth} = validate_session_token.(session.token, metadata)
-      assert auth == expected_authentication(session, account)
+      assert {:ok, auth} = validate_session_token.(session.raw_token, metadata)
+      assert auth == expected_authentication(session, account, session.raw_token)
 
       assert_session_refreshed(session, metadata)
 
@@ -172,8 +172,8 @@ defmodule ArchiDep.Accounts.SessionsTest do
 
       previous_counts = count_rows(@affected_tables)
 
-      assert {:ok, auth} = validate_session_token.(session.token, metadata)
-      assert auth == expected_authentication(session, account)
+      assert {:ok, auth} = validate_session_token.(session.raw_token, metadata)
+      assert auth == expected_authentication(session, account, session.raw_token)
 
       assert_session_refreshed(session, metadata)
 
@@ -199,7 +199,7 @@ defmodule ArchiDep.Accounts.SessionsTest do
 
       previous_counts = count_rows(@affected_tables)
 
-      assert validate_session_token.(session.token, client_metadata()) ==
+      assert validate_session_token.(session.raw_token, client_metadata()) ==
                {:error, :session_not_found}
 
       assert_session_untouched(session)
@@ -216,7 +216,7 @@ defmodule ArchiDep.Accounts.SessionsTest do
 
       previous_counts = count_rows(@affected_tables)
 
-      assert validate_session_token.(session.token, client_metadata()) ==
+      assert validate_session_token.(session.raw_token, client_metadata()) ==
                {:error, :session_not_found}
 
       assert_session_untouched(session)
@@ -239,7 +239,7 @@ defmodule ArchiDep.Accounts.SessionsTest do
       previous_counts = count_rows(@affected_tables)
 
       assert {:ok, auth} = validate_session_id.(session.id, metadata)
-      assert auth == expected_authentication(session, account)
+      assert auth == expected_authentication(session, account, nil)
 
       assert_session_refreshed(session, metadata)
 
@@ -312,21 +312,26 @@ defmodule ArchiDep.Accounts.SessionsTest do
     do: Factory.build(:client_metadata, ip_address: {192, 168, 1, 1}, user_agent: "Test Agent")
 
   # The query preloads the user account (with its — here empty — Switch edu-ID
-  # and preregistered user) but not the impersonated user account.
+  # and preregistered user) but not the impersonated user account. The token is
+  # absent: only its hash is stored, so a session read back from a row carries
+  # no token unless the caller presented one.
   defp active_session(session, account),
     do: %{
       session
-      | user_account: account,
+      | raw_token: nil,
+        user_account: account,
         impersonated_user_account: not_loaded(:impersonated_user_account, UserSession)
     }
 
-  defp expected_authentication(session, account),
+  # `session_token` is what the caller presented, so it is passed in rather than
+  # read off the session.
+  defp expected_authentication(session, account, session_token),
     do: %Authentication{
       principal_id: account.id,
       username: account.username,
       root: account.root,
       session_id: session.id,
-      session_token: session.token,
+      session_token: session_token,
       session_expires_at: DateTime.add(session.created_at, @session_validity_in_seconds, :second),
       impersonated_id: nil
     }
@@ -334,7 +339,8 @@ defmodule ArchiDep.Accounts.SessionsTest do
   defp assert_session_refreshed(session, metadata) do
     assert Repo.get!(UserSession, session.id) == %{
              session
-             | used_at: @now,
+             | raw_token: nil,
+               used_at: @now,
                client_ip_address: ClientMetadata.serialize_ip_address(metadata.ip_address),
                client_user_agent: metadata.user_agent,
                user_account: not_loaded(:user_account, UserSession),

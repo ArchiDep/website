@@ -128,7 +128,7 @@
         <input
           type="text"
           class="grow"
-          value={url(~p"/auth/link?#{%{token: Base.encode64(@login_link.token)}}")}
+          value={url(~p"/auth/link?#{%{token: Base.encode64(@login_link.raw_token)}}")}
           readonly
         />
       </label>

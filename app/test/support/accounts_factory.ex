@@ -18,6 +18,13 @@ defmodule ArchiDep.Support.AccountsFactory do
   @spec client_ip_address() :: String.t()
   def client_ip_address, do: NetFactory.ip_address() |> :inet.ntoa() |> List.to_string()
 
+  @doc """
+  Hashes a session or login-link token the way the schemas do, so that a fixture
+  built around a known token is found by the queries that look one up.
+  """
+  @spec hash_token(binary()) :: binary()
+  def hash_token(token), do: :crypto.hash(:sha256, token)
+
   @spec client_user_agent() :: String.t()
   defdelegate client_user_agent, to: Factory, as: :user_agent
 
@@ -41,8 +48,8 @@ defmodule ArchiDep.Support.AccountsFactory do
   def login_link_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
 
-    {token, attrs!} =
-      Map.pop_lazy(attrs!, :token, fn -> :crypto.strong_rand_bytes(100) end)
+    {raw_token, attrs!} =
+      Map.pop_lazy(attrs!, :raw_token, fn -> :crypto.strong_rand_bytes(100) end)
 
     {active, attrs!} = Map.pop_lazy(attrs!, :active, fn -> true end)
     {used_at, attrs!} = Map.pop(attrs!, :used_at, nil)
@@ -76,7 +83,8 @@ defmodule ArchiDep.Support.AccountsFactory do
 
     %LoginLink{
       id: id,
-      token: token,
+      token_hash: hash_token(raw_token),
+      raw_token: raw_token,
       active: active,
       used_at: used_at,
       preregistered_user: preregistered_user,
@@ -330,8 +338,8 @@ defmodule ArchiDep.Support.AccountsFactory do
   def user_session_factory(attrs!) do
     {id, attrs!} = pop_entity_id(attrs!)
 
-    {token, attrs!} =
-      Map.pop_lazy(attrs!, :token, fn ->
+    {raw_token, attrs!} =
+      Map.pop_lazy(attrs!, :raw_token, fn ->
         sequence(:user_session_token, &"user-session-token-#{&1}")
       end)
 
@@ -377,7 +385,8 @@ defmodule ArchiDep.Support.AccountsFactory do
 
     %UserSession{
       id: id,
-      token: token,
+      token_hash: hash_token(raw_token),
+      raw_token: raw_token,
       created_at: created_at,
       used_at: used_at,
       client_ip_address: client_ip_address,

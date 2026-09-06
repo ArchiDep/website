@@ -177,7 +177,7 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
         username: account.username,
         root: account.root,
         session_id: session.id,
-        session_token: session.token,
+        session_token: session.raw_token,
         impersonated_id: nil
       )
 
@@ -191,7 +191,7 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
         username: impersonated.username,
         root: impersonated.root,
         session_id: session.id,
-        session_token: session.token,
+        session_token: session.raw_token,
         impersonated_id: impersonated.id
       )
 
@@ -199,6 +199,7 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
     assert Repo.get!(UserSession, session.id) == %{
              session
              | impersonated_user_account_id: target.id,
+               raw_token: nil,
                user_account: not_loaded(:user_account, UserSession),
                impersonated_user_account: not_loaded(:impersonated_user_account, UserSession)
            }
@@ -210,6 +211,7 @@ defmodule ArchiDep.Accounts.ImpersonateTest do
     assert Repo.get!(UserSession, session.id) == %{
              session
              | impersonated_user_account_id: nil,
+               raw_token: nil,
                user_account: not_loaded(:user_account, UserSession),
                impersonated_user_account: not_loaded(:impersonated_user_account, UserSession)
            }
