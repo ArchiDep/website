@@ -461,14 +461,14 @@ steps.
 DaisyUI modifier is picked from what happens, not from how much the button
 should stand out:
 
-| Modifier        | The action                                                      |
-| --------------- | --------------------------------------------------------------- |
-| `btn-success`   | Creates something that did not exist (a class, a session)       |
-| `btn-warning`   | Opens something that exists for editing (`Edit`, `Change`)      |
-| `btn-error`     | Destroys something, and confirms the destruction (`Delete`)     |
-| `btn-primary`   | Submits the form it is in (`Save`, `Log in`, `Upload`)          |
-| `btn-secondary` | Leaves without doing it (`Close`, `No`), and side actions       |
-| `btn-neutral`   | Downloads what is already there (the class CSV, the inventory)  |
+| Modifier        | The action                                                     |
+| --------------- | -------------------------------------------------------------- |
+| `btn-success`   | Creates something that did not exist (a class, a session)      |
+| `btn-warning`   | Opens something that exists for editing (`Edit`, `Change`)     |
+| `btn-error`     | Destroys something, and confirms the destruction (`Delete`)    |
+| `btn-primary`   | Submits the form it is in (`Save`, `Log in`, `Upload`)         |
+| `btn-secondary` | Leaves without doing it (`Close`, `No`), and side actions      |
+| `btn-neutral`   | Downloads what is already there (the class CSV, the inventory) |
 
 ---
 
