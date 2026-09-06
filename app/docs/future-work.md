@@ -13,6 +13,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Store SSH public keys rather than their fingerprints](#store-ssh-public-keys-rather-than-their-fingerprints)
+- [Verify SSH host keys when Ansible connects](#verify-ssh-host-keys-when-ansible-connects)
 - [Break-glass recovery for root users when Switch edu-ID is unavailable](#break-glass-recovery-for-root-users-when-switch-edu-id-is-unavailable)
 - [Automated SSH exercise VM setup with Ansible](#automated-ssh-exercise-vm-setup-with-ansible)
 - [Dual search system](#dual-search-system)
@@ -61,16 +62,102 @@ fingerprints from them wherever a fingerprint is currently displayed or matched.
 - Compute MD5 and SHA256 fingerprints on the fly from the stored key for the
   dashboard and the connection-verification callback.
 
+**Migration: nothing is backfilled.** A fingerprint cannot be reversed into a
+key, but nothing has to be recovered — the machines of a past course are gone,
+and every server registered against the next one is registered after the change.
+What the migration must not do is leave the database asserting a key it does not
+have. Server rows are never deleted: a past class keeps its servers [for
+good](../../docs/rollover.md), so those rows will hold fingerprints and no key,
+and the schema has to permit that rather than demand a value. There is a
+precedent worth not following — the migration that made
+`ssh_host_key_fingerprints` `NOT NULL` filled the gap with a `'(no keys
+defined)'` sentinel, a value that parses to no fingerprints at all; a nullable
+column, with the requirement enforced where a server is actually connected to,
+says the same thing without inventing one. All of this holds only while the
+change ships **between** courses: shipping it mid-course would leave live
+servers with fingerprints and no key, the one case that would need re-entry, or
+the keyscan path described in [Verify SSH host keys when Ansible
+connects][verify-ansible-host-keys].
+
 **Open questions to resolve when scheduling this**
 
-- How to migrate existing rows: a fingerprint cannot be reversed into a public
-  key, so existing hosts would need to be re-scanned (`ssh-keyscan`) or
-  re-entered, possibly via a transition window where both fingerprints and keys
-  are accepted.
 - Which input formats to accept (raw public keys, `ssh-keyscan` output, full
   `known_hosts` lines) and how strict the parser should be.
 - Whether to drop the fingerprint columns entirely or retain them as a
   derived/denormalised cache for queries and display.
+- Whether the class's exercise-VM columns change at the same time as the
+  servers' or in a later step, given that [the exercise VM's own
+  automation][ssh-exercise-vm-automation] is not scheduled either.
+
+## Verify SSH host keys when Ansible connects
+
+**Problem:** The application reaches a student's server over SSH twice over, and
+only one of the two checks who answers. The tracking connection
+([`ServerConnection`](../lib/archidep/servers/server_tracking/server_connection.ex))
+verifies the host key against the fingerprints registered for the server,
+through the `silently_accept_hosts` callback. The Ansible runs
+([`Runner`](../lib/archidep/servers/ansible/runner.ex)) set
+`ANSIBLE_HOST_KEY_CHECKING=false` for both fact gathering and playbooks, and
+verify nothing. The setup playbook is the run that installs the application's
+key and creates a passwordless-sudo account, so the connection where being sure
+of the host matters most is the one that checks least.
+
+**How much this is worth:** less than the asymmetry suggests, which is why it is
+recorded rather than rushed. A student supplies both the address and the
+fingerprints, so neither proves they own the machine, and Ansible can only get
+in if the application's public key is already authorised there — which the
+student has to arrange. What host-key checking would actually close is the
+window between a fingerprint being registered and a connection being made: an
+address that changes hands, or a machine in the middle, is caught on the
+tracking connection and not on the Ansible one. Closing it also means the two
+paths stop disagreeing about a question they both answer.
+
+**Why it is not being done now:** the obstacle is the data, not the code. A
+`known_hosts` file needs public keys, and we store fingerprints, which are a
+one-way hash of exactly what the file wants. This therefore waits on [Store SSH
+public keys rather than their fingerprints][store-ssh-public-keys], after which
+it is small.
+
+**Proposed approach:** once the keys are stored, write them for the run and tell
+Ansible to use them.
+
+- Render the server's stored host public keys to a `known_hosts` file for that
+  run.
+- Pass `-o UserKnownHostsFile=<path> -o StrictHostKeyChecking=yes` as the
+  `ansible_ssh_common_args` variable, and set `ANSIBLE_HOST_KEY_CHECKING` to
+  `true`.
+
+Three details that are easy to get wrong. The value above contains spaces, and
+is safe only because the runner sends every variable as a **single JSON
+document** — under the `key=value` form Ansible splits a value on whitespace and
+reads each word as a further variable. `StrictHostKeyChecking=yes` rather than
+`accept-new`: we are supplying the key, so an unknown one is a refusal, not
+something to learn. And `ansible_ssh_common_args` rather than the
+`ANSIBLE_SSH_ARGS` environment variable, which _replaces_ Ansible's own defaults
+(`ControlMaster`, `ControlPersist`) instead of adding to them.
+
+**If it ever has to be done before the keys are stored**, the key can be fetched
+and checked rather than trusted: `ssh-keyscan` the host, keep only the keys
+whose fingerprint matches one already registered, and write those. The trust
+root stays the stored fingerprint, so nothing from the network is believed on
+its own. This needs no new parsing — `:ssh_file.decode/2` followed by
+`:ssh.hostkey_fingerprint/2` produces exactly the MD5 and SHA256 strings
+`ssh-keygen -l` does, which is what
+[`SSHKeyFingerprint`](../lib/archidep/servers/ssh/ssh_key_fingerprint.ex)
+already compares. It is more moving parts than reading a column, which is why it
+is the fallback and not the plan.
+
+**Open questions to resolve when scheduling this**
+
+- Where the per-run `known_hosts` file is written and cleaned up, given that the
+  pipeline runs several playbooks concurrently.
+- What a legitimately changed host key looks like to a student. Today a stale
+  fingerprint fails on the tracking connection while Ansible connects anyway;
+  with checking on it becomes a hard failure on both, which is the point but is
+  a new way for a server to be stuck.
+- Whether the exercise VM takes the same path when [its
+  automation][ssh-exercise-vm-automation] is built, since its keys live on the
+  class rather than on a server.
 
 ## Break-glass recovery for root users when Switch edu-ID is unavailable
 
@@ -448,7 +535,7 @@ fold SSH into it.
 - Whether it is worth pairing with a public Servers facade for the tracking and
   pipeline surfaces the web layer currently reaches into directly.
 - How it interacts with [Store SSH public keys rather than their
-  fingerprints](#store-ssh-public-keys-rather-than-their-fingerprints), which
+  fingerprints][store-ssh-public-keys], which
   would change what is parsed and stored.
 
 ## Remaining uncovered code after the 90% coverage push
@@ -614,3 +701,6 @@ does.
   the published tree and is not specific to source maps.
 
 [coveralls-config]: ../coveralls.json
+[ssh-exercise-vm-automation]: #automated-ssh-exercise-vm-setup-with-ansible
+[store-ssh-public-keys]: #store-ssh-public-keys-rather-than-their-fingerprints
+[verify-ansible-host-keys]: #verify-ssh-host-keys-when-ansible-connects
