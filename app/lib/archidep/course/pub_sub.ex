@@ -1,6 +1,7 @@
 defmodule ArchiDep.Course.PubSub do
   @moduledoc """
-  Publication and subscription of events related to course classes and students.
+  Publication and subscription of events related to course classes, students and
+  sessions.
   """
 
   use ArchiDep, :pub_sub
@@ -9,6 +10,9 @@ defmodule ArchiDep.Course.PubSub do
   alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated
   alias ArchiDep.Course.Events.ClassUpdated
+  alias ArchiDep.Course.Events.CourseSessionCreated
+  alias ArchiDep.Course.Events.CourseSessionDeleted
+  alias ArchiDep.Course.Events.CourseSessionUpdated
   alias ArchiDep.Course.Events.StudentConfigured
   alias ArchiDep.Course.Events.StudentCreated
   alias ArchiDep.Course.Events.StudentDeleted
@@ -19,6 +23,48 @@ defmodule ArchiDep.Course.PubSub do
   alias ArchiDep.Events.Store.EventReference
 
   @pubsub ArchiDep.PubSub
+
+  @course_sessions_topic "course-sessions"
+
+  @doc """
+  The global topic every change to the record of how far the course has got is
+  broadcast on. This is exposed unresolved because a process started at
+  application boot cannot resolve the scope for itself.
+  """
+  @spec course_sessions_topic() :: String.t()
+  def course_sessions_topic, do: @course_sessions_topic
+
+  @spec publish_course_session_created(CourseSessionCreated.t(), EventReference.t()) :: :ok
+  def publish_course_session_created(event, reference),
+    do:
+      PubSub.broadcast(
+        @pubsub,
+        Scope.global_topic(@course_sessions_topic),
+        {:course_session_created, event, reference}
+      )
+
+  @spec publish_course_session_updated(CourseSessionUpdated.t(), EventReference.t()) :: :ok
+  def publish_course_session_updated(event, reference),
+    do:
+      PubSub.broadcast(
+        @pubsub,
+        Scope.global_topic(@course_sessions_topic),
+        {:course_session_updated, event, reference}
+      )
+
+  @spec publish_course_session_deleted(CourseSessionDeleted.t(), EventReference.t()) :: :ok
+  def publish_course_session_deleted(event, reference),
+    do:
+      PubSub.broadcast(
+        @pubsub,
+        Scope.global_topic(@course_sessions_topic),
+        {:course_session_deleted, event, reference}
+      )
+
+  @spec subscribe_course_sessions() :: :ok
+  def subscribe_course_sessions do
+    :ok = PubSub.subscribe(@pubsub, Scope.global_topic(@course_sessions_topic))
+  end
 
   @spec publish_class_created(ClassCreated.t(), EventReference.t()) :: :ok
   def publish_class_created(event, reference),

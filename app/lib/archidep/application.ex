@@ -5,7 +5,6 @@ defmodule ArchiDep.Application do
 
   alias ArchiDep.CourseSite.Archives
   alias ArchiDep.CourseSite.Archives.Completeness
-  alias ArchiDep.CourseSitePublisher
 
   @impl Application
   def start(_type, _args) do
@@ -23,13 +22,11 @@ defmodule ArchiDep.Application do
     # link.
     Completeness.log(Archives.completeness())
 
-    # And unlike the line above, this refuses to boot. The build is what a
-    # separate static server is pointed at, and it is already holding the
-    # previous one: an application that carried on would leave the site it
-    # serves and the application beside it disagreeing about which edition this
-    # deployment is.
-    build_course_site()
-
+    # Rendering the course material site comes after the repository and PubSub,
+    # which a build reads how far the course has got through, and before the
+    # endpoint, which must not answer a request until this deployment has
+    # rendered the site it exists to serve. The watcher only reports to the
+    # rebuilder, so it comes after it.
     children =
       [
         ArchiDepWeb.Telemetry,
@@ -44,10 +41,14 @@ defmodule ArchiDep.Application do
         # Start the Finch HTTP client for sending emails.
         {Finch, name: ArchiDep.Finch},
         # Start supervisors for the application's contexts.
-        ArchiDep.Servers.Supervisor,
-        # Start to serve requests, typically the last entry
-        ArchiDepWeb.Endpoint
-      ] ++ course_site_watcher()
+        ArchiDep.Servers.Supervisor
+      ] ++
+        course_site_rebuilder() ++
+        course_site_watcher() ++
+        [
+          # Start to serve requests, typically the last entry
+          ArchiDepWeb.Endpoint
+        ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html for other strategies and
     # supported options.
@@ -55,33 +56,49 @@ defmodule ArchiDep.Application do
   end
 
   # Rendering the course material site is asked for explicitly, by the `build`
-  # key of the `course_site` configuration, and only production asks:
-  # development has the watcher below render it instead, and every other
-  # environment does not render it.
-  defp build_course_site do
+  # and `watch` keys of the `course_site` configuration, and two environments
+  # ask: production renders it at boot and again whenever how far the course has
+  # got changes, development renders it as the material is edited. Every other
+  # environment does not render it at all. A deployment that is missing the two
+  # directories it takes while asking for it is misconfigured rather than opting
+  # out, so this fetches them and lets the application refuse to boot.
+  defp course_site_rebuilder do
     config = Application.get_env(:archidep, :course_site, [])
+    build = Keyword.get(config, :build, false)
+    watch = Keyword.get(config, :watch, false)
 
-    if Keyword.get(config, :build, false) do
-      CourseSitePublisher.publish_configured!()
+    if build or watch do
+      build_dir = Keyword.fetch!(config, :build_dir)
+
+      # A deployment that serves the site refuses to boot without it; one that
+      # is being edited reports instead, so that a broken document is not a
+      # broken development server. Only a deployment that watches has a browser
+      # to tell, and its assets alone are rewritten under it by the asset
+      # watchers while the site is being served — so its builds neither digest
+      # those names nor take a copy of them: the application serves them where
+      # they are.
+      opts = [
+        course_dir: Keyword.fetch!(config, :course_dir),
+        build_dir: build_dir,
+        boot: if(build, do: :required, else: :deferred),
+        reload_marker: if(watch, do: build_dir <> ".reload"),
+        digested: not watch,
+        carry_assets: not watch
+      ]
+
+      [{ArchiDep.CourseSiteRebuilder, opts}]
     else
-      :ok
+      []
     end
   end
 
-  # Watching the course material and rebuilding the site as it changes is asked
-  # for explicitly, by the `watch` key of the `course_site` configuration, and
-  # only development asks. A deployment that is missing the two directories it
-  # takes while asking for it is misconfigured rather than opting out, so this
-  # fetches them and lets the application refuse to boot.
+  # Watching the course material is asked for by the `watch` key of the
+  # `course_site` configuration, and only development asks.
   defp course_site_watcher do
     config = Application.get_env(:archidep, :course_site, [])
 
     if Keyword.get(config, :watch, false) do
-      [
-        {ArchiDep.CourseSiteWatcher,
-         course_dir: Keyword.fetch!(config, :course_dir),
-         build_dir: Keyword.fetch!(config, :build_dir)}
-      ]
+      [{ArchiDep.CourseSiteWatcher, course_dir: Keyword.fetch!(config, :course_dir)}]
     else
       []
     end

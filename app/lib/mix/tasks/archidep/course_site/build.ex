@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   Options:
 
   - `--course` — the course material directory, which every input but the
-    progress file below is read from. Defaults to `../course`.
+    progress below is read from. Defaults to `../course`.
   - `--content` — the directory holding the course's content roots. Defaults to
     the course itself.
   - `--home` — the page introducing the course, which is under neither of them.
@@ -30,11 +30,12 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     are read from. Defaults to the course itself.
   - `--declarations` — what the course declares about itself. Defaults to the
     `course.yml` of the course.
-  - `--progress` — the file recording how far the course has got, which decides
-    which chapters show their answers. Defaults to the application's own
-    `priv/course/progress.json`. Reading it from a file is what makes this
-    command able to build an edition that is over, whose progress no running
-    application holds any more.
+  - `--progress` — how far the course has got, which decides which chapters show
+    their answers: `complete`, the URL of a running deployment's progress route,
+    or a file holding the same JSON. See
+    `Mix.Tasks.Archidep.CourseSite.ProgressSource`. An archive defaults to
+    `complete` and is the only build that may be told it; every other build has
+    to be told where to read it, there being no answer that is safe to guess.
   - `--static` — the static directory holding the global assets. Defaults to
     `priv/static`.
   - `--years` — the academic year this edition covers. Defaults to what the
@@ -77,7 +78,6 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
 
   use Mix.Task
 
-  alias ArchiDep.CourseSite.Build
   alias ArchiDep.CourseSite.Build.Site
   alias ArchiDep.CourseSite.Builder
   alias ArchiDep.CourseSite.Builder.Report
@@ -87,6 +87,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   alias ArchiDep.CourseSite.Urls.PdfManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
   alias ArchiDep.Git
+  alias Mix.Tasks.Archidep.CourseSite.ProgressSource
 
   @requirements ["compile"]
 
@@ -157,25 +158,12 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
     |> Builder.course_inputs()
     |> Keyword.merge(Enum.reject(overrides, fn {_key, value} -> is_nil(value) end))
     |> Keyword.merge(
-      progress: progress!(path(opts, :progress, "priv/course/progress.json")),
+      # The one input a build is handed rather than pointed at, and so the one
+      # this command reads for itself.
+      progress: ProgressSource.progress!(Keyword.get(opts, :progress), mode(opts) == :archive),
       static_dir: path(opts, :static, "priv/static"),
       digested: not Keyword.get(opts, :undigested, false)
     )
-  end
-
-  # The one input a build is handed rather than pointed at, and so the one this
-  # command reads for itself.
-  defp progress!(file) do
-    case Build.progress(file) do
-      {:ok, sessions} ->
-        sessions
-
-      {:error, errors} ->
-        abort!(
-          "The progress through the course could not be read",
-          Enum.map(errors, &Build.format_error/1)
-        )
-    end
   end
 
   defp path(opts, key, default), do: Keyword.get(opts, key, Path.join(@app_dir, default))

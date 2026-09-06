@@ -22,10 +22,13 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
   - `--static` — the static directory holding the global assets. Defaults to
     `priv/static`. Its `cache_manifest.json` is read when it is there, and the
     assets are taken to be undigested when it is not.
-  - `--progress` — the file recording how far the course has got, which decides
-    which chapters show their answers. Defaults to the application's own
-    `priv/course/progress.json`; pointing it at a file recording fewer sessions
-    is how the gating is checked against a course still being taught.
+  - `--progress` — how far the course has got, which decides which chapters show
+    their answers: `complete`, the URL of a running deployment's progress route,
+    or a file holding the same JSON. See
+    `Mix.Tasks.Archidep.CourseSite.ProgressSource`. Defaults to `complete`,
+    every page having to be rendered whole for its references to be checked;
+    naming a source is how the gating is checked against a course still being
+    taught.
   """
 
   use Mix.Task
@@ -39,6 +42,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
   alias ArchiDep.CourseSite.Renderer.RenderError
   alias ArchiDep.CourseSite.Renderer.Source
   alias ArchiDep.CourseSite.Urls.UrlContext
+  alias Mix.Tasks.Archidep.CourseSite.ProgressSource
 
   @requirements ["compile"]
 
@@ -55,14 +59,11 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
     includes_dir = Keyword.get(opts, :includes, Path.join(@app_dir, "../course"))
     static_dir = Keyword.get(opts, :static, Path.join(@app_dir, "priv/static"))
 
-    progress_file =
-      Keyword.get(opts, :progress, Path.join(@app_dir, "priv/course/progress.json"))
-
     tree = tree!(content_dir)
     page_assets = page_assets!(tree, content_dir)
     assets = assets!(static_dir)
     includes = includes!(includes_dir)
-    progress = progress!(progress_file)
+    progress = progress!(Keyword.get(opts, :progress), tree)
 
     urls =
       UrlContext.new(mode: :live, build_id: "check", assets: assets, page_assets: page_assets)
@@ -130,20 +131,21 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
     end
   end
 
-  defp progress!(progress_file) do
-    case Build.progress(progress_file) do
-      {:ok, sessions} ->
-        progress = Progress.new(sessions)
+  # Complete unless told otherwise: this command renders every page to find out
+  # whether its references resolve, and a chapter whose answers are withheld is
+  # a page it has seen less of.
+  defp progress!(value, %ContentTree{documents: documents}) do
+    progress =
+      case ProgressSource.progress!(value, true) do
+        :complete -> documents |> Map.keys() |> Enum.map(& &1.num) |> Progress.complete()
+        sessions -> Progress.new(sessions)
+      end
 
-        Mix.shell().info(
-          "Read #{length(sessions)} sessions from #{progress_file}; #{MapSet.size(progress.done)} sections and chapters are done"
-        )
+    Mix.shell().info(
+      "#{MapSet.size(progress.done)} sections and chapters are done as far as this run is concerned"
+    )
 
-        progress
-
-      {:error, errors} ->
-        abort!("The progress through the course could not be read", errors, &Build.format_error/1)
-    end
+    progress
   end
 
   defp withheld(%ContentTree{documents: documents}, progress),

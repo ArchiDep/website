@@ -241,15 +241,14 @@ that is kept apart from it (below). It is compiled from the **Markdown** rather
 than from a build artifact so that the application does not need the course
 material site to have been built in order to compile at all.
 
-That today's deployed release carries no `course/` directory — the material is
-served as static files by then — is a **consequence** of this, not a reason for
-it, and it is not permanent: rebuilding the site when progress is toggled from
-the database would mean the application holds the content at runtime. What that
-fact decides today is narrower, and both places are marked: `Material` resolves
-its content directory relative to its own source file rather than through a
-configuration knob, so it can only ever mean the repository the application was
-compiled from, and the [`Dockerfile`](../../../../Dockerfile) reproduces the
-repository layout so that the compile step finds it.
+**The deployment holds the material at two paths, for two different reasons,
+and both are marked.** The stage of the [`Dockerfile`](../../../../Dockerfile)
+that compiles the release reproduces the repository layout, because `Material`
+resolves its content directory relative to its own source file rather than
+through a configuration knob — so it can only ever mean the repository the
+application was compiled from. The image the application runs in carries a
+second copy, at the path the deployment configures, and that one is the input of
+the builds the running application renders the site with.
 
 **It stores references, and the application resolves them.** A chapter is a
 `Chapter`, whose page is a [`DocumentRef`](#identities), never a URL. The
@@ -293,10 +292,10 @@ compile-time input alongside the content roots, and the
 **Two mechanisms decide when it is compiled again**, because neither covers the
 other's case:
 
-- every Markdown source, the declarations, every recorded session and every
-  partial are `@external_resource`s, which is what catches a file being **edited
-  or deleted** — Mix compares each one's content digest, so it is immune to a
-  fresh checkout;
+- every Markdown source, the declarations and every partial are
+  `@external_resource`s, which is what catches a file being **edited or
+  deleted** — Mix compares each one's content digest, so it is immune to a fresh
+  checkout;
 - `__mix_recompile__?/0` compares `Build.content_digest/1`, a hash of the
   **names** of every file of the content roots, which is what catches one being
   **added**. An `@external_resource` cannot: a file nobody registered is a file
@@ -304,16 +303,17 @@ other's case:
 
 The files beside a page are not registered — their names are all this depends on
 and the digest covers those, where registering 49 MB of images would have Mix
-digest every one of them on each compile. The digest covers the content a build
-renders, so a newly added **session** is the one change neither mechanism
-notices.
+digest every one of them on each compile.
 
 **How far the course has got is not part of the structure, and not compiled at
 all.** A [`Session`](./session.ex) is what one teaching session recorded and
 [`Progress`](./progress.ex) is the union of all of them; both modules say why
-the two are kept apart. [`Build.progress/1`](#building) reads them from a file
-the **caller** names, since this subsystem configures nothing — which is the
-whole of the seam the source needs in order to become a database later.
+the two are kept apart. A build is **handed** the sessions rather than pointed
+at them, since this subsystem configures nothing and knows no database: the
+running application reads them from its own tables through
+`ArchiDep.Course.course_sessions/0`, and a command-line build is told where to
+look (see [Building](#building)). That seam is why a week of teaching is neither
+a recompilation nor a change to anything here.
 
 **The renderer is told what to show, not how far the course has got.**
 `solutions_revealed?/2` names the one threshold — a chapter's answers are shown
@@ -598,9 +598,12 @@ see [what the course declares about
 itself](#what-the-course-declares-about-itself) and [what the course
 is](#what-the-course-is). Both read one file and hand what they decoded to a
 pure module that says what it means, which is also how `asset_manifest/1` reads
-the digester's manifest. `include_files/1` and `includes/1` are the read of the
-partials, which are files of neither: they are what a document is written
-against rather than something the site publishes.
+the digester's manifest. `progress/1` is the one of them a build may never call:
+the sessions are an option of `site_inputs/1` rather than a path, so a caller
+reading them from somewhere that is not a file — a database, an HTTP route —
+hands them over without going through here at all. `include_files/1` and
+`includes/1` are the read of the partials, which are files of neither: they are
+what a document is written against rather than something the site publishes.
 
 **Naming a heading takes a render.** `headings!/3` is the only read that runs
 the renderer, because an identifier is [settled while a page is
@@ -731,10 +734,21 @@ It is a thin shell over [`Builder`](./builder.ex), which names the order the
 steps of `Build` are run in and turns each stage's failures into strings — so
 that a caller with no `Mix.shell/0` to print to and no `exit/1` to abort with
 runs the same build. `ArchiDep.CourseSitePublisher` is that caller: it is what
-the application renders the site with, at boot in production and on every edit
-in development, where `ArchiDep.CourseSiteWatcher` decides when.
-`Builder.course_inputs/1` derives every input a build reads from one course
-directory, so that the two drivers cannot disagree about where `course.yml` is.
+the application renders the site with, and `ArchiDep.CourseSiteRebuilder`
+decides when — at boot, whenever how far the course has got changes, and, in
+development, whenever the material is edited (which
+`ArchiDep.CourseSiteWatcher` notices). `Builder.course_inputs/1` derives every
+input a build reads from one course directory, so that the two drivers cannot
+disagree about where `course.yml` is.
+
+**How far the course has got is the one input a command has to be told about.**
+The application reads it from its own tables; a command has no application
+running, so `--progress` says where to look — a URL, a file, or `complete` for
+an edition that is over, which is derived from the course rather than read at
+all. `Mix.Tasks.Archidep.CourseSite.ProgressSource` is the whole of that, and it
+lives with the commands rather than here: this subsystem must run standalone and
+reads nothing but the filesystem, and a build that can reach the network is a
+different claim.
 
 ## Laying a page out
 

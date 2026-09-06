@@ -9,6 +9,7 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.CourseSession
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Servers.Schemas.Server
@@ -104,6 +105,16 @@ defmodule ArchiDepWeb.Admin.Events.EventsComponents do
         <span class={"flex items-center #{@extra_class}"}>
           <Heroicons.academic_cap solid class="size-6 mr-1" />
           <span>{@name}</span>
+        </span>
+        """
+
+      %CourseSession{date: date, title: title} ->
+        assigns = assigns |> assign(:date, date) |> assign(:title, title)
+
+        ~H"""
+        <span class={"flex items-center #{@extra_class}"}>
+          <Heroicons.calendar_days solid class="size-6 mr-1" />
+          <span>{Date.to_iso8601(@date)} {@title}</span>
         </span>
         """
 

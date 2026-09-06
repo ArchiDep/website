@@ -1,0 +1,38 @@
+<dialog
+  id={id(@course_session)}
+  class="modal"
+  phx-mounted={JS.ignore_attributes(["open"])}
+  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id(@course_session)})}
+>
+  <div class="modal-box">
+    <h3 class="text-lg font-bold">{gettext("Delete session")}</h3>
+    <p class="mt-4">
+      {gettext("Are you sure you want to permanently delete the session of {date}, {title}?",
+        date: Date.to_iso8601(@course_session.date),
+        title: @course_session.title
+      )}
+    </p>
+    <p class="mt-2 text-warning">
+      {gettext(
+        "What it recorded will no longer count towards how far the course has got, and the site will be rendered again without it."
+      )}
+    </p>
+    <div class="mt-4 flex justify-end gap-x-2">
+      <button type="button" class="btn btn-secondary" phx-click={close(@course_session)}>
+        <span class="flex items-center gap-x-2">
+          <Heroicons.x_mark class="size-4" />
+          <span>{gettext("No")}</span>
+        </span>
+      </button>
+      <button type="button" class="btn btn-error" phx-click="delete" phx-target={@myself}>
+        <span class="flex items-center gap-x-2">
+          <Heroicons.trash class="size-4" />
+          <span>{gettext("Yes")}</span>
+        </span>
+      </button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
+    <button type="submit">{gettext("Close")}</button>
+  </form>
+</dialog>

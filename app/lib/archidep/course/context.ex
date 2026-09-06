@@ -12,6 +12,41 @@ defmodule ArchiDep.Course.Context do
   @impl Behaviour
   defdelegate course_sessions(), to: UseCases.ReadCourseSessions
 
+  @doc false
+  @impl Behaviour
+  defdelegate list_course_sessions(auth), to: UseCases.ReadCourseSessions
+
+  @doc false
+  @impl Behaviour
+  defdelegate subscribe_course_sessions(), to: UseCases.ReadCourseSessions
+
+  @doc false
+  @impl Behaviour
+  defdelegate refresh_course_sessions(auth, course_sessions, message),
+    to: UseCases.ReadCourseSessions
+
+  @doc false
+  @impl Behaviour
+  defdelegate validate_course_session(auth, data), to: UseCases.CreateCourseSession
+
+  @doc false
+  @impl Behaviour
+  defdelegate create_course_session(auth, data), to: UseCases.CreateCourseSession
+
+  @doc false
+  @impl Behaviour
+  defdelegate validate_existing_course_session(auth, course_session_id, data),
+    to: UseCases.UpdateCourseSession
+
+  @doc false
+  @impl Behaviour
+  defdelegate update_course_session(auth, course_session_id, data),
+    to: UseCases.UpdateCourseSession
+
+  @doc false
+  @impl Behaviour
+  defdelegate delete_course_session(auth, course_session_id), to: UseCases.DeleteCourseSession
+
   # Classes
 
   @doc false

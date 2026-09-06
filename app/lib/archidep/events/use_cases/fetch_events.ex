@@ -7,6 +7,7 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
   alias ArchiDep.Accounts.Schemas.PreregisteredUser
   alias ArchiDep.Accounts.Schemas.UserAccount
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.CourseSession
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Events.Policy
   alias ArchiDep.Events.Store.StoredEvent
@@ -95,6 +96,9 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
         ["course", "classes", id], map ->
           Map.update(map, "course:classes", [id], fn ids -> [id | ids] end)
 
+        ["course", "sessions", id], map ->
+          Map.update(map, "course:sessions", [id], fn ids -> [id | ids] end)
+
         ["course", "students", id], map ->
           Map.update(map, "course:students", [id], fn ids -> [id | ids] end)
 
@@ -146,6 +150,9 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
   defp fetch_entities_by_type({"course:classes", ids}) when is_list(ids),
     do: from(c in Class, where: c.id in ^ids)
 
+  defp fetch_entities_by_type({"course:sessions", ids}) when is_list(ids),
+    do: from(cs in CourseSession, where: cs.id in ^ids)
+
   defp fetch_entities_by_type({"course:students", ids}) when is_list(ids),
     do: from(s in Student, where: s.id in ^ids)
 
@@ -173,6 +180,11 @@ defmodule ArchiDep.Events.UseCases.FetchEvents do
         {"course:classes", classes}, map ->
           Enum.reduce(classes, map, fn class, acc ->
             Map.put(acc, "course:classes:#{class.id}", class)
+          end)
+
+        {"course:sessions", course_sessions}, map ->
+          Enum.reduce(course_sessions, map, fn course_session, acc ->
+            Map.put(acc, "course:sessions:#{course_session.id}", course_session)
           end)
 
         {"course:students", students}, map ->

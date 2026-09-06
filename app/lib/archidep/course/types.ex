@@ -1,6 +1,14 @@
 defmodule ArchiDep.Course.Types do
   @moduledoc false
 
+  @type course_session_data :: %{
+          date: Date.t() | nil,
+          title: String.t(),
+          done: [integer()],
+          due: [integer()],
+          next: [integer()]
+        }
+
   @type class_data :: %{
           name: String.t(),
           start_date: Date.t() | nil,

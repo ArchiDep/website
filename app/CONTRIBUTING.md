@@ -116,11 +116,14 @@ components, can be found in the `theme` directory (see [`CONTRIBUTING.md` in the
       into, compiled from the Markdown sources while the application compiles.
     - `course_site_publisher.ex`: What the application renders the course
       material site with — which build this deployment is, and what running one
-      means. Production renders it at boot, into a directory a separate static
-      server takes as its document root, and refuses to boot if it cannot.
-    - `course_site_watcher.ex`: Decides _when_ to render it in development,
-      running a build of the publisher's whenever one of the site's sources
-      changes.
+      means.
+    - `course_site_rebuilder.ex`: Decides _when_ to render it, and is the only
+      thing in the application that runs a build. Production renders the site at
+      boot, into a directory a separate static server takes as its document
+      root, and refuses to boot if it cannot; every deployment that renders the
+      site also renders it again whenever how far the course has got changes.
+    - `course_site_watcher.ex`: Notices in development that the course material
+      changed, and tells the rebuilder. It renders nothing itself.
   - `lib/archidep_web`: The Phoenix web interface, including controllers, views,
     APIs, templates, live views, and channels.
 - **Supporting Files**
@@ -441,6 +444,7 @@ flowchart LR
     subgraph course["Course"]
         cl[("classes")]
         st[("students")]
+        cs[("course_sessions")]
     end
 
     subgraph servers["Servers"]
@@ -838,6 +842,12 @@ check` locally before submitting changes is recommended.
   directory.
 - `mix coveralls.html`: Generate an HTML report of test coverage and the
   `cover/cov.coverdata` file using ExCoveralls.
+
+The tests run against a real PostgreSQL database. Its connection comes from
+`config/local.exs` on a machine-native setup (copied from
+`config/local.sample.exs`, see [Initial setup](../README.md#initial-setup) in
+the main [README.md](../README.md)) and from the container's environment under
+Docker, so there is nothing to pass on the command line.
 
 ---
 

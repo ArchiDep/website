@@ -127,13 +127,19 @@ jobs:
       # directory, so a mount point would prefix every URL the served tree does
       # not have. A build told of no PDF base offers no download link, which is
       # what a build has to do until there is a release to link to.
+      #
+      # How far the course has got is read from the live site, so a printed deck
+      # shows the answers the site showed when it was printed. There is no safe
+      # fallback if that read fails — printing every answer of a course still
+      # being taught is the failure this gating exists to prevent — so the job
+      # fails instead.
       - name: Render the site the PDFs are printed from
         working-directory: app
         env:
           ARCHIVE_REPO: ${{ vars.ARCHIDEP_ARCHIVE_REPO }}
           YEAR: ${{ steps.edition.outputs.year }}
         run: |
-          args=(--output ../tmp/pdf-build --clean --absolute-base-url https://archidep.ch)
+          args=(--output ../tmp/pdf-build --clean --absolute-base-url https://archidep.ch --progress https://archidep.ch/api/progress)
           if [ -n "$ARCHIVE_REPO" ]; then
             args+=(--pdf-base "https://github.com/$ARCHIVE_REPO/releases/download/pdf/$YEAR")
           fi

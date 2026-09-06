@@ -174,25 +174,4 @@ defmodule ArchiDep.CourseSitePublisherTest do
       end)
     end
   end
-
-  describe "publish_configured!/0" do
-    test "refuses a build it could not read", %{tmp_dir: tmp_dir} do
-      put_course_site_config(
-        build_id: "boot",
-        years: "2031-2032",
-        years_short: "31-32",
-        version: "2031",
-        course_dir: Path.join(tmp_dir, "nothing-here"),
-        build_dir: Path.join(tmp_dir, "build")
-      )
-
-      Hammox.stub(ArchiDep.Course.ContextMock, :course_sessions, fn -> [] end)
-
-      capture_log(fn ->
-        assert_raise RuntimeError,
-                     "The course material site could not be built. The build could not be read.",
-                     &CourseSitePublisher.publish_configured!/0
-      end)
-    end
-  end
 end

@@ -5,6 +5,7 @@ defmodule ArchiDep.Course.Behaviour do
 
   alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.CourseSession
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.StudentView
@@ -26,6 +27,65 @@ defmodule ArchiDep.Course.Behaviour do
   answer both — see that module.
   """
   @callback course_sessions() :: [Session.t()]
+
+  @doc """
+  Lists every session of the course, in the order they were taught.
+
+  This is what the admin console edits, so it answers with the records
+  themselves rather than with what `course_sessions/0` derives from them.
+  """
+  @callback list_course_sessions(Authentication.t()) :: [CourseSession.t()]
+
+  @doc """
+  Subscribes the calling process to every topic that keeps the list of course
+  sessions live.
+  """
+  @callback subscribe_course_sessions() :: :ok
+
+  @doc """
+  Reconciles the list of course sessions from a PubSub message broadcast on one
+  of the topics of `subscribe_course_sessions/0`, returning the updated list or
+  `:ignore` for a message that does not concern it.
+  """
+  @callback refresh_course_sessions(Authentication.t(), [CourseSession.t()], term()) ::
+              {:ok, [CourseSession.t()]} | :ignore
+
+  @doc """
+  Validates the data to record a new session of the course.
+  """
+  @callback validate_course_session(Authentication.t(), Types.course_session_data()) ::
+              Changeset.t()
+
+  @doc """
+  Records a new session of the course.
+  """
+  @callback create_course_session(Authentication.t(), Types.course_session_data()) ::
+              {:ok, CourseSession.t()} | {:error, Changeset.t()}
+
+  @doc """
+  Validates the data to update a session of the course that was already
+  recorded.
+  """
+  @callback validate_existing_course_session(
+              Authentication.t(),
+              UUID.t(),
+              Types.course_session_data()
+            ) ::
+              {:ok, Changeset.t()} | {:error, :course_session_not_found}
+
+  @doc """
+  Updates what the specified session of the course recorded.
+  """
+  @callback update_course_session(Authentication.t(), UUID.t(), Types.course_session_data()) ::
+              {:ok, CourseSession.t()}
+              | {:error, Changeset.t()}
+              | {:error, :course_session_not_found}
+
+  @doc """
+  Deletes the specified session of the course.
+  """
+  @callback delete_course_session(Authentication.t(), UUID.t()) ::
+              :ok | {:error, :course_session_not_found}
 
   # Classes
 

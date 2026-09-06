@@ -40,14 +40,15 @@ Key concepts a contributor must understand:
   teaching class for a given semester); a [`Student`](./schemas/student.ex)
   belongs to a class. Teachers create classes and add students individually or
   by [bulk import](#student-import).
-- **This context owns the `classes` and `students` tables.** The [Accounts
-  context](../accounts/CONTRIBUTING.md#domain-model) reads those same tables (as
-  `UserGroup` and `PreregisteredUser`) for authentication. Course is the system
-  of record for enrollment; Accounts observes it. When changing those tables,
-  consider both contexts.
-- **How far the course has got.** `course_sessions/0` answers what each teaching
-  session recorded — see [Course progress](#course-progress). It is the one thing
-  this context serves that it owns no table for.
+- **This context owns the `classes`, `students` and `course_sessions` tables.**
+  The [Accounts context](../accounts/CONTRIBUTING.md#domain-model) reads the
+  first two (as `UserGroup` and `PreregisteredUser`) for authentication. Course
+  is the system of record for enrollment; Accounts observes it. When changing
+  those tables, consider both contexts.
+- **How far the course has got.** A
+  [`CourseSession`](./schemas/course_session.ex) is one teaching session and
+  what it recorded of the progress through the course — see [Course
+  progress](#course-progress).
 - **Preregistration.** A student record exists **before** the person logs in.
   When they first authenticate, the Accounts context links the student to a
   newly created user account by email. A [`User`](./schemas/user.ex) read-view
@@ -69,15 +70,15 @@ The context follows the standard [bounded context anatomy][bounded-contexts]:
   [`context.ex`](./context.ex) (which implements [`behaviour.ex`](./behaviour.ex)),
   which in turn routes each operation to a [use case](#use-cases). See [Use
   Cases](#use-cases) for the operations and the module that implements each.
-- **Types** — [`types.ex`](./types.ex) (class, student, import and expected
-  server properties data).
+- **Types** — [`types.ex`](./types.ex) (class, student, course session, import
+  and expected server properties data).
 - **Schemas** — [`schemas/`](./schemas), see [Domain Model](#domain-model).
 - **Use cases** — [`use_cases/`](./use_cases), see [Use Cases](#use-cases).
 - **Policy** — [`policy.ex`](./policy.ex), see [Authorization](#authorization).
 - **Events** — [`events/`](./events), see [Business Events](#business-events).
-- **PubSub** — [`pub_sub.ex`](./pub_sub.ex) broadcasts class and student changes
-  on the `classes`, `classes:{id}`, `classes:{id}:students` and `students:{id}`
-  topics.
+- **PubSub** — [`pub_sub.ex`](./pub_sub.ex) broadcasts class, student and course
+  session changes on the `classes`, `classes:{id}`, `classes:{id}:students`,
+  `students:{id}` and `course-sessions` topics.
 
 ---
 
@@ -89,6 +90,9 @@ The context's schemas and the database tables they back:
   [Classes](#classes)). Owns one `ExpectedServerProperties`.
 - [`Student`](./schemas/student.ex) (`students`): A student in a class (see
   [Students](#students)). Optionally linked to a `User` once they log in.
+- [`CourseSession`](./schemas/course_session.ex) (`course_sessions`): One
+  teaching session and what it recorded of the progress through the course (see
+  [Course progress](#course-progress)).
 - [`ExpectedServerProperties`](./schemas/expected_server_properties.ex)
   (`server_properties`): The expected hardware/OS profile for a class's servers
   (see [Expected Server Properties](#expected-server-properties)).
@@ -231,6 +235,20 @@ exceptions are noted.
   — `update_expected_server_properties_for_class/3` (see [Expected Server
   Properties](#expected-server-properties)).
 
+**Course sessions**
+
+- [`CreateCourseSession`](./use_cases/create_course_session.ex) —
+  `create_course_session/2`: record a session.
+- [`UpdateCourseSession`](./use_cases/update_course_session.ex) —
+  `update_course_session/3`: correct one already recorded.
+- [`DeleteCourseSession`](./use_cases/delete_course_session.ex) —
+  `delete_course_session/2`.
+- [`ReadCourseSessions`](./use_cases/read_course_sessions.ex) —
+  `course_sessions/0` (**no authentication**, see [Course
+  progress](#course-progress)) and `list_course_sessions/1` (root), plus the
+  live-read-model helpers `subscribe_course_sessions/0` +
+  `refresh_course_sessions/3`.
+
 **Students**
 
 - [`CreateStudent`](./use_cases/create_student.ex) — `create_student/3`: add a
@@ -258,13 +276,17 @@ exceptions are noted.
 
 Following the application's [event-logging convention][bounded-contexts], every
 significant action is persisted as a business event under [`events/`](./events).
-Class events are written to the `course:classes:{id}` stream and student events
-to the `course:students:{id}` stream.
+Class events are written to the `course:classes:{id}` stream, student events to
+the `course:students:{id}` stream and session events to the
+`course:sessions:{id}` stream.
 
 - [`ClassCreated`](./events/class_created.ex),
   [`ClassUpdated`](./events/class_updated.ex),
   [`ClassDeleted`](./events/class_deleted.ex),
   [`ClassExpectedServerPropertiesUpdated`](./events/class_expected_server_properties_updated.ex)
+- [`CourseSessionCreated`](./events/course_session_created.ex),
+  [`CourseSessionUpdated`](./events/course_session_updated.ex),
+  [`CourseSessionDeleted`](./events/course_session_deleted.ex)
 - [`StudentCreated`](./events/student_created.ex),
   [`StudentUpdated`](./events/student_updated.ex),
   [`StudentDeleted`](./events/student_deleted.ex),
@@ -275,15 +297,33 @@ to the `course:students:{id}` stream.
 
 ## Course progress
 
-`course_sessions/0` returns what each session of the course recorded, in the
-order they were taught, read from `app/priv/course/progress.json` by
-[`ReadCourseSessions`](./use_cases/read_course_sessions.ex).
+A [`CourseSession`](./schemas/course_session.ex) records one teaching session:
+the day it was taught, what it was called, and the section and chapter numbers
+it finished, set work on, and announced for the next one. What an author needs
+to know about the record — how the four states are derived from it and what a
+recorded number does and does not mean — is in the [course's own
+documentation](../../../../course/CONTRIBUTING.md#progress-tracking); what
+consumes it is the [course material site
+subsystem](../course_site/CONTRIBUTING.md).
 
-It is the odd one out of this context: it owns no table, and it takes no
-authentication because how far the course has got is public. Reading a file is
-the interim — progress is meant to become a model of this context edited through
-the admin console, and it is behind the facade now so that the move changes that
-use case and nothing else.
+Two things about this entity are unlike the rest of the context:
+
+- **`course_sessions/0` takes no authentication.** How far the course has got is
+  public: it colours the course material's own navigation, and it is served at
+  `GET /api/progress` so that a copy of the site built elsewhere can bake the
+  same progress into its pages. Everything that writes, and the admin read
+  `list_course_sessions/1`, is root-only like the rest.
+- **The numbers are validated for shape only**, never against
+  `ArchiDep.CourseSite.Material`. The course material is written as the course
+  runs, so a chapter that has not been taught yet may be added, removed or
+  renumbered at any point; a row records what a session said on the day rather
+  than pointing into the course as it stands. The schema's moduledoc says what
+  follows from that.
+
+Changing the record renders the course material site again: `pub_sub.ex`
+broadcasts on the `course-sessions` topic, and
+[`ArchiDep.CourseSiteRebuilder`](../course_site_rebuilder.ex) is subscribed to
+it.
 
 ## Authorization
 

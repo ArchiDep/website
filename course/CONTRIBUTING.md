@@ -287,28 +287,17 @@ The following front matter keys are meant to be set by authors:
 
 ### Progress Tracking
 
-How far the course has got is recorded in
-[`app/priv/course/progress.json`](../app/priv/course/progress.json) — under the
-dashboard application because both halves of the site read it from there — with
-one entry per teaching session, in the order they were taught:
+How far the course has got is recorded in the dashboard application's database
+and edited at **`/admin/course-sessions`**, with one entry per teaching session.
+To advance the course, **add a session** rather than editing the ones already
+there; each one records only what changed, and a session may leave a category
+empty. The form offers a checkbox per section and chapter of the course in three
+independent columns, because one session may both finish a chapter and set work
+on it.
 
-```json
-{
-  "sessions": [
-    {
-      "date": "2025-10-03",
-      "title": "Git Branching and Collaborating",
-      "done": [105, 200, 201, 202, 203],
-      "due": [204, 205],
-      "next": [300, 301, 400, 401, 402, 403]
-    }
-  ]
-}
-```
-
-The numbers are the computed `num` of a document (e.g. `201`). To advance the
-course, **append a session** rather than editing the ones already there; a
-session may leave a category out.
+Recording a session **renders the site again by itself** — no commit, no deploy.
+The page says whether that build succeeded; if it did not, what is being served
+is unchanged and the reasons are in the application log.
 
 The build aggregates the lists across every session and assigns each chapter and
 section one of four progress states, which drive the sidebar indicators, the
@@ -318,6 +307,29 @@ home page cards, search filtering and whether [solutions](#solutions) are shown:
 - `due`: listed in `due` but not yet `done`.
 - `next`: listed in `next` but not `done` or `due`.
 - `future`: not listed anywhere (the default).
+
+The home page's "Previously", "Due next" and "Next time" cards read the **last**
+session that recorded each category, which is why the sessions are kept as a
+list rather than as one aggregate. The last session is the one with the latest
+date, and among sessions sharing a date, the one added last.
+
+**A recorded number is a record, not a reference.** Because the material is
+written as the course runs, a chapter that has not been taught yet may be added,
+removed or renumbered at any point, and a number recorded in September may name
+nothing in November. Nothing breaks — such a number simply colours nothing — and
+the admin page badges the session and keeps the number, checked, in a row of its
+own so that correcting the session does not silently drop it. The one case
+nothing can catch is the reverse: renumbering an untaught chapter **into** a
+number an earlier session already recorded transfers that session's verdict to
+it, answers included. Check the recorded numbers before renumbering a chapter
+below the point the course has reached.
+
+A build made outside the application — the backup copy, the printed PDFs, an
+archived edition — has no database to read, so it is told where to look with
+`--progress`; see
+[`Mix.Tasks.Archidep.CourseSite.ProgressSource`](../app/lib/mix/tasks/archidep/course_site/progress_source.ex).
+The same record is served publicly at `GET /api/progress`, which is what those
+builds read.
 
 ### Special Tags and Features
 
@@ -792,8 +804,13 @@ build that is printed is the one made with `--absolute-base-url`:
 cd app && mix archidep.course_site.build \
   --output ../tmp/pdf-build --clean \
   --absolute-base-url https://archidep.ch \
+  --progress https://archidep.ch/api/progress \
   --pdf-base https://example.com/where/the/pdfs/are/published
 ```
+
+`--progress` is what decides which chapters show their answers, and a build made
+outside the application has to be told: see [Progress
+Tracking](#progress-tracking).
 
 Such a build must not set `--base-path`: the export maps URL paths straight onto
 the build directory, and a mount point would put a prefix in every URL that the

@@ -7,12 +7,75 @@ defmodule ArchiDep.Support.CourseFactory do
 
   alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.CourseSession
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Schemas.User
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Course.Types
   alias ArchiDep.Support.SSHFactory
+
+  @spec course_session_factory(map()) :: CourseSession.t()
+  def course_session_factory(attrs!) do
+    {id, attrs!} = pop_entity_id(attrs!)
+    {now, attrs!} = pop_now(attrs!)
+    {date, attrs!} = Map.pop_lazy(attrs!, :date, &random_course_session_date/0)
+    {title, attrs!} = Map.pop_lazy(attrs!, :title, &random_course_session_title/0)
+    {done, attrs!} = Map.pop_lazy(attrs!, :done, &random_course_session_numbers/0)
+    {due, attrs!} = Map.pop_lazy(attrs!, :due, &random_course_session_numbers/0)
+    {next, attrs!} = Map.pop_lazy(attrs!, :next, &random_course_session_numbers/0)
+    {version, created_at, updated_at, attrs!} = pop_entity_version_and_timestamps(attrs!, now)
+
+    [] = Map.keys(attrs!)
+
+    %CourseSession{
+      id: id,
+      date: date,
+      title: title,
+      done: done,
+      due: due,
+      next: next,
+      version: version,
+      created_at: created_at,
+      updated_at: updated_at
+    }
+  end
+
+  @spec course_session_data_factory(map()) :: Types.course_session_data()
+  def course_session_data_factory(attrs!) do
+    {date, attrs!} = Map.pop_lazy(attrs!, :date, &random_course_session_date/0)
+    {title, attrs!} = Map.pop_lazy(attrs!, :title, &random_course_session_title/0)
+    {done, attrs!} = Map.pop_lazy(attrs!, :done, &random_course_session_numbers/0)
+    {due, attrs!} = Map.pop_lazy(attrs!, :due, &random_course_session_numbers/0)
+    {next, attrs!} = Map.pop_lazy(attrs!, :next, &random_course_session_numbers/0)
+
+    [] = Map.keys(attrs!)
+
+    %{date: date, title: title, done: done, due: due, next: next}
+  end
+
+  @doc """
+  A section or chapter number, in the space the course numbers them in. Nothing
+  checks a stored number against the course as it stands, so a factory does not
+  have to name a chapter that exists.
+  """
+  @spec random_course_session_number() :: pos_integer()
+  def random_course_session_number, do: Faker.random_between(100, 999)
+
+  @spec random_course_session_numbers() :: [pos_integer()]
+  def random_course_session_numbers,
+    do:
+      1..Faker.random_between(0, 4)//1
+      |> Enum.map(fn _index -> random_course_session_number() end)
+      |> Enum.uniq()
+      |> Enum.sort()
+
+  @spec random_course_session_date() :: Date.t()
+  def random_course_session_date,
+    do: Faker.Date.between(~D[2020-01-01], ~D[2039-12-31])
+
+  @spec random_course_session_title() :: String.t()
+  def random_course_session_title, do: sequence(:course_session_title, &"Session #{&1}")
 
   @spec class_factory(map()) :: Class.t()
   def class_factory(attrs!) do

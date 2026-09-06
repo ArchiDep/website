@@ -554,11 +554,15 @@ defmodule ArchiDep.CourseSite.Build do
     point are read from.
   - `:declarations_file` (required) — what the course declares about itself.
   - `:progress` (required) — how far the course has got, as the sessions that
-    taught it. It is handed over already read, where every other input is a path
-    to read from: which chapters have been covered is the one thing about a
-    build that is **not** a fact about the course material, and where it is kept
-    is the caller's business. `progress/1` is the reader for a caller whose
-    source is a file.
+    taught it, or `:complete` for a course that is over. It is handed over
+    already read, where every other input is a path to read from: which chapters
+    have been covered is the one thing about a build that is **not** a fact
+    about the course material, and where it is kept is the caller's business.
+    `progress/1` is the reader for a caller whose source is a file. `:complete`
+    is not a source at all — an archived edition has covered everything by
+    definition, so it is derived from the course rather than read from anywhere;
+    see `ArchiDep.CourseSite.Progress.complete/1` for why it belongs to that
+    mode alone.
   - `:static_dir` (required) — where the global assets were published.
   - `:digested` — whether those assets carry a digest, which is a **mode**
     rather than a fallback: a build whose manifest is missing fails rather than
@@ -863,7 +867,7 @@ defmodule ArchiDep.CourseSite.Build do
            sources: Map.put(value_of(sources), :home, value_of(home)),
            home_source_path: Path.basename(home_file),
            structure: value_of(structure),
-           progress: Progress.new(Keyword.fetch!(opts, :progress)),
+           progress: progress_of(Keyword.fetch!(opts, :progress), value_of(structure)),
            includes: value_of(includes),
            root_files: value_of(root_files),
            assets: value_of(assets),
@@ -874,6 +878,11 @@ defmodule ArchiDep.CourseSite.Build do
         {:error, errors}
     end
   end
+
+  defp progress_of(:complete, structure),
+    do: structure |> Structure.numbers() |> Progress.complete()
+
+  defp progress_of(sessions, _structure) when is_list(sessions), do: Progress.new(sessions)
 
   # What the course says it is is a different kind of failure from a file that
   # could not be read, so it is wrapped and worded by `Structure` itself. The

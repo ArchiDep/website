@@ -1,0 +1,149 @@
+<Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
+  <div class="breadcrumbs text-xs">
+    <ul>
+      <li class="text-error">
+        <.link class="flex items-center gap-1" navigate={~p"/admin"}>
+          <Heroicons.fire outline class="size-4" />
+          <span>{gettext("Admin")}</span>
+        </.link>
+      </li>
+    </ul>
+  </div>
+
+  <div class="my-2 flex justify-between items-end">
+    <h2 class="text-2xl font-bold flex items-center gap-x-2">
+      <Heroicons.calendar_days solid class="size-6" />
+      {gettext("Course progress")}
+    </h2>
+    <button
+      type="button"
+      class="btn btn-success btn-sm"
+      phx-click={JS.dispatch("open-dialog", detail: %{dialog: NewCourseSessionDialogLive.id()})}
+    >
+      <span class="flex items-center gap-x-2">
+        <Heroicons.plus class="size-4" />
+        <span>{gettext("Session")}</span>
+      </span>
+    </button>
+  </div>
+
+  <p class="text-sm opacity-70">
+    {gettext(
+      "The sessions are listed in the order they were taught, which is the order they count in: the last one is what the home page shows. Editing any of them renders the course material site again."
+    )}
+  </p>
+
+  <div id="last-build" class="my-2">
+    <div :if={@last_build == nil} class="text-sm opacity-50">
+      {gettext("The site has not been rendered since this page was opened.")}
+    </div>
+    <div :if={match?({:ok, _report}, @last_build)} class="alert alert-success alert-soft">
+      <Heroicons.check_circle class="size-5" />
+      <span>{gettext("The site was rendered again.")}</span>
+    </div>
+    <div :if={match?({:error, _what, _errors}, @last_build)} class="alert alert-error alert-soft">
+      <Heroicons.exclamation_triangle class="size-5" />
+      <span>
+        {gettext(
+          "The site could not be rendered ({what}), so what is being served is unchanged. The reasons are in the application log.",
+          what: elem(@last_build, 1)
+        )}
+      </span>
+    </div>
+  </div>
+
+  <table class="table" id="course-sessions">
+    <thead>
+      <tr>
+        <th>{gettext("Date")}</th>
+        <th>{gettext("Title")}</th>
+        <th>{gettext("Done")}</th>
+        <th>{gettext("Due")}</th>
+        <th>{gettext("Next")}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr :if={Enum.empty?(@course_sessions)}>
+        <td colspan="1000">
+          <.no_data text={gettext("No sessions recorded")} />
+        </td>
+      </tr>
+      <tr
+        :for={course_session <- @course_sessions}
+        :key={course_session.id}
+        id={"course-session-#{course_session.id}"}
+        class="hover:bg-base-300 even:bg-base-200"
+      >
+        <td class="whitespace-nowrap">{Date.to_iso8601(course_session.date)}</td>
+        <td>
+          <span class="course-session-title">{course_session.title}</span>
+          <span
+            :if={CourseSessionGrid.orphans(course_session) != []}
+            class="course-session-orphans badge badge-warning badge-sm ms-2"
+            title={
+              gettext("These numbers name no section or chapter of the course as it stands now.")
+            }
+          >
+            {gettext("{numbers} no longer in the course",
+              numbers: Enum.join(CourseSessionGrid.orphans(course_session), ", ")
+            )}
+          </span>
+        </td>
+        <td :for={numbers <- [course_session.done, course_session.due, course_session.next]}>
+          <span :if={numbers != []} class="font-mono text-xs">{Enum.join(numbers, ", ")}</span>
+          <.no_data :if={numbers == []} />
+        </td>
+        <td class="text-right whitespace-nowrap">
+          <button
+            type="button"
+            class="edit-course-session btn btn-warning btn-xs"
+            phx-click={
+              JS.dispatch("open-dialog",
+                detail: %{dialog: EditCourseSessionDialogLive.id(course_session)}
+              )
+            }
+          >
+            <Heroicons.pencil_square class="size-4" />
+            <span class="sr-only">{gettext("Edit")}</span>
+          </button>
+          <button
+            type="button"
+            class="delete-course-session btn btn-error btn-xs"
+            phx-click={
+              JS.dispatch("open-dialog",
+                detail: %{dialog: DeleteCourseSessionDialogLive.id(course_session)}
+              )
+            }
+          >
+            <Heroicons.trash class="size-4" />
+            <span class="sr-only">{gettext("Delete")}</span>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <.live_component
+    module={NewCourseSessionDialogLive}
+    id={NewCourseSessionDialogLive.id()}
+    auth={@auth}
+    course_sessions={@course_sessions}
+  />
+  <.live_component
+    :for={course_session <- @course_sessions}
+    :key={course_session.id}
+    module={EditCourseSessionDialogLive}
+    id={EditCourseSessionDialogLive.id(course_session)}
+    auth={@auth}
+    course_session={course_session}
+  />
+  <.live_component
+    :for={course_session <- @course_sessions}
+    :key={course_session.id}
+    module={DeleteCourseSessionDialogLive}
+    id={DeleteCourseSessionDialogLive.id(course_session)}
+    auth={@auth}
+    course_session={course_session}
+  />
+</Layouts.app>

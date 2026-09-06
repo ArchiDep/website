@@ -435,6 +435,25 @@ defmodule ArchiDep.CourseSite.StructureTest do
     end
   end
 
+  describe "numbers/1" do
+    test "reads every number the course uses in reading order, sections included" do
+      structure = %Structure{
+        sections: [
+          Section.new(1, "Introduction", [
+            Chapter.new(DocumentRef.new(101, "command-line", :subject), "Command Line"),
+            Chapter.new(DocumentRef.new(102, "hello-shell", :exercise), "Hello Shell")
+          ]),
+          Section.new(2, "Version Control", [
+            Chapter.new(DocumentRef.new(201, "git", :slides), "Git")
+          ])
+        ],
+        cheatsheets: []
+      }
+
+      assert Structure.numbers(structure) == [100, 101, 102, 200, 201]
+    end
+  end
+
   describe "pages/1" do
     test "reads every page of the course in reading order, deck included" do
       structure = %Structure{

@@ -652,7 +652,7 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       the same directory — branching off the tag rather than off `main` being
       what keeps the correction rendered by the renderer that produced the
       original.
-- [ ] Move the progress _status source_ from `progress.json` to a database model
+- [x] Move the progress _status source_ from `progress.json` to a database model
       edited through the admin console, driving an in-process rebuild — see
       [Progress: structure vs status](#progress-structure-vs-status). **Last**,
       because only the edition being taught has a progress that moves: 2025 is
@@ -661,7 +661,11 @@ theme.highlight_css`; the fence decorator is documented in the course writing
       finished. It is also what first has the application writing into a
       directory holding editions other than the one it is building, which is
       where `--clean` stops being safe — see [Development and production
-      serving](#development-and-production-serving).
+      serving](#development-and-production-serving). **Done: the
+      `course_sessions` table of the Course context is edited at
+      `/admin/course-sessions`, `ArchiDep.CourseSiteRebuilder` renders the site
+      again whenever it changes, and `app/priv/course/progress.json` is gone —
+      with eight corrections recorded below.**
 
 ---
 
@@ -2829,20 +2833,82 @@ serving](#development-and-production-serving)). Because the seam already exists,
 this swap touches one module — not the renderer, `Course.Material`, the API, or
 either consumer.
 
-**Open questions to resolve when scheduling the database source:**
+**The four open questions, as they were answered:**
 
-- The **granularity** of the stored model: per-session `done`/`due`/`next`
-  arrays (as today) versus a per-chapter status, and how the per-chapter state
-  is computed.
-- The shape of the archival build's progress source: a single knob that is
-  either a URL (live) or a frozen/all-complete value, versus separate modes. A
-  single snapshot captured once at archival time keeps the per-year archive
-  immutable.
-- What the rebuild queue looks like (debouncing, failure handling, whether a
-  rebuild blocks serving the previous build) and how it interacts with the
-  static build task.
-- Whether `progress.json` is retained as an export/interchange format once the
-  database is the source, or dropped.
+- **Granularity: per-session, as before.** The shape does not change at all —
+  one row per teaching session with three integer arrays — because the home
+  page's three cards read the _last_ session that recorded each category, which
+  no per-chapter aggregate can answer.
+- **The archival build's source is not a source.** `--progress complete` is
+  derived from the course being built (`Progress.complete/1`) rather than read
+  from anywhere, so an archive needs no snapshot and cannot drift from one. It
+  is **refused outside `--mode archive`**: `complete` records no last session,
+  and a `:live` or `:backup` build would render the three cards empty rather
+  than absent — the plausible-looking output the archival chrome policy exists
+  to prevent.
+- **The rebuild queue is a debounce, not a queue.** `ArchiDep.CourseSiteRebuilder`
+  re-arms a timer rather than accumulating, runs the build **in its own
+  process**, and a request arriving during one waits in the mailbox and re-arms
+  the debounce afterwards — which is the whole of "coalesce and run one at a
+  time" without a `dirty?` flag. A failure logs and changes nothing: `:swap`
+  means the previous build keeps being served.
+- **`progress.json` is dropped**, the file and its place in the repository both.
+  `Build.progress/1` and `ProgressFile` stay: they are the file form of the
+  `--progress` switch, and `ProgressFile` is also what parses the API response.
+
+**Eight corrections while implementing it:**
+
+- **The boot build had to move into the supervision tree.** `Application.start/2`
+  rendered the site _before_ `children`, so before `ArchiDep.Repo` — and a build
+  that reads how far the course has got from the database cannot run there. It
+  is `CourseSiteRebuilder.init/1` now, with the child after the repository and
+  PubSub and before the endpoint. The production guarantee is unchanged: a raise
+  in `init/1` fails `Supervisor.start_link/2` and so the boot, the health check
+  fails, the deployment rolls back, and the static server serves the previous
+  build throughout because the swap never happened.
+- **`ArchiDep.CourseSiteWatcher` renders nothing any more.** It keeps the
+  filesystem watch and the decision about which paths matter, and reports to the
+  rebuilder. Two processes renaming into one output directory is the race the
+  publisher's documentation always warned about and nothing enforced; one
+  process that owns the build is what enforces it.
+- **`rollover.yml` is untouched, deliberately.** It checks out the **tag** and
+  runs _that_ checkout's Mix task while the YAML comes from `main`, so a
+  `--progress complete` added here would be handed to the old task during a
+  re-freeze and read as a path. It is redundant anyway — `--mode archive`
+  defaults to `complete`.
+- **A number recorded against a chapter is a record, not a reference.** The
+  material is written as the course runs, so an untaught chapter may be
+  renumbered or dropped at any point; validating stored numbers against
+  `Material` would make a correction to a session's _title_ fail because a
+  chapter moved since. The changeset validates shape only, and the admin grid
+  offers a row for every number the session holds — orphans included, ticked —
+  so that correcting a session cannot silently drop one. The reverse, a
+  renumbering _into_ a number an earlier session recorded, is undetectable and
+  is written down instead.
+- **`name="course_session[done][]"` cannot empty a category.** An unchecked
+  checkbox sends nothing, so the key would vanish from the params and `cast/3`
+  would keep the stored list — a category could be added to and never cleared.
+  Each box is named for its own number and paired with a hidden `"false"`, as
+  every other checkbox in the console is.
+- **The rebuilder cannot resolve a scoped PubSub topic.** It is started at boot
+  and owned by no test, which `ArchiDep.PubSub.Scope` forbids from calling the
+  injected scope; both topics are handed to it by its caller, as the
+  `AnsiblePipelineQueue` already was.
+- **The audit log would have called every progress edit a deletion.**
+  `FetchEvents` resolves an unrecognised stream to a `nil` entity and the admin
+  console renders `nil` as a trash icon and the word "deleted", so the three
+  stream clauses were not polish.
+- **The Mix tasks compile the application rather than starting it**, so `Req`'s
+  own application is not running: the URL form starts it. Adding `app.start`
+  instead would have made a build under production configuration trigger a boot
+  build inside the task.
+
+**Left as it was, and worth knowing:** `layouts.ex` reads
+`Course.course_sessions/0` on every render of the application shell, which is
+now a query rather than a file read. It was I/O of the same frequency before —
+`File.read` plus a JSON decode — so this is a lateral move rather than a
+regression, and hoisting it into an assign would touch every template that
+draws the shell. `GET /api/progress` gets no cache for the same reason.
 
 ### Progressive solution reveal
 

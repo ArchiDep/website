@@ -1,11 +1,15 @@
 defmodule ArchiDep.CourseSite.Build.ProgressFile do
   @moduledoc """
-  The sessions of the course, read from the one file that records them.
+  The sessions of the course, read from the JSON that records them — a file
+  handed over by hand, or the body of the route a running deployment serves them
+  at.
 
-  The file holds them under a `sessions` key, **in the order they were taught**,
-  and that order is the file's rather than something derived from the dates: two
-  sessions may carry the same date, and one of them recording work the other
-  finished is the whole point of the sequence.
+  Either holds them under a `sessions` key, **in the order they were taught**,
+  and this reads that order rather than deriving one: two sessions may carry the
+  same date, and one of them recording work the other finished is the whole
+  point of the sequence. Whoever wrote the JSON is who decided the order — the
+  application sorts by the day taught and then by when the session was entered,
+  which is the same thing said from the other side.
 
   A session may leave a category out, which a course that set no work naturally
   does; every category a session does name has to be a list of numbers, because

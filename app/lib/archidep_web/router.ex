@@ -96,6 +96,7 @@ defmodule ArchiDepWeb.Router do
         live "/ansible/playbook-runs/:id", Admin.Ansible.AnsiblePlaybookRunLive
         live "/classes", Admin.Classes.ClassesLive
         live "/classes/:id", Admin.Classes.ClassLive
+        live "/course-sessions", Admin.CourseSessions.CourseSessionsLive
 
         get "/classes/:id/csv", Admin.Classes.ClassesController, :generate_class_csv
 

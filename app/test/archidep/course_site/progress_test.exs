@@ -49,6 +49,41 @@ defmodule ArchiDep.CourseSite.ProgressTest do
     end
   end
 
+  describe "complete/1" do
+    test "takes every number it is given to be done, and records no last session" do
+      assert Progress.complete([100, 101, 200]) == %Progress{
+               done: MapSet.new([100, 101, 200]),
+               due: MapSet.new([]),
+               next: MapSet.new([]),
+               last: nil
+             }
+    end
+
+    test "reveals every answer of the course it is given" do
+      progress = Progress.complete([101, 102])
+
+      assert Progress.solutions_revealed?(progress, 101) == true
+      assert Progress.solutions_revealed?(progress, 102) == true
+    end
+
+    test "says nothing about what the course did last, having no last session" do
+      structure = %Structure{
+        sections: [
+          Section.new(1, "Introduction", [
+            Chapter.new(DocumentRef.new(101, "command-line", :subject), "Command Line")
+          ])
+        ],
+        cheatsheets: []
+      }
+
+      progress = Progress.complete(Structure.numbers(structure))
+
+      assert Progress.last_recorded(progress, structure, :done) == []
+      assert Progress.last_recorded(progress, structure, :due) == []
+      assert Progress.last_recorded(progress, structure, :next) == []
+    end
+  end
+
   describe "status/2" do
     test "answers for a section and a chapter out of the same lists" do
       progress = Progress.new([build(:session, done: [300, 301], due: [302], next: [400, 401])])

@@ -105,6 +105,20 @@ defmodule ArchiDep.CourseSite.Structure do
   def chapters(%__MODULE__{sections: sections}), do: Enum.flat_map(sections, & &1.chapters)
 
   @doc """
+  Every number the course uses, in reading order: each section's, then the
+  numbers of the chapters under it.
+
+  Sections and chapters are numbered in one space, so this is the whole of what
+  a progress record may name.
+  """
+  @spec numbers(t()) :: [pos_integer()]
+  def numbers(%__MODULE__{sections: sections}),
+    do:
+      Enum.flat_map(sections, fn %Section{chapters: chapters} = section ->
+        [Section.num(section) | Enum.map(chapters, &Chapter.num/1)]
+      end)
+
+  @doc """
   Every page of the course, in reading order: each chapter's page, the deck
   beside it when it has one, then the cheatsheets.
 

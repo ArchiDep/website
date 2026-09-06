@@ -287,8 +287,15 @@ jobs:
       # local so that the copy standing in for a site that is down does not send
       # its reader back to it. It reaches the live site only through the banner
       # and the canonical link, which is what `--live-site-url` is for.
+      #
+      # It does read the live site for one thing: how far the course has got,
+      # which is what makes the copy track the course rather than freeze at
+      # whatever was committed. There is no safe fallback if that read fails —
+      # a complete progress would publish every answer of a course still being
+      # taught and an empty one would publish none — so the job fails instead,
+      # leaving the copy already published in place.
       - name: Build the site
-        run: mix archidep.course_site.build --output ../tmp/site --clean --mode backup --live-site-url https://archidep.ch --no-source-maps
+        run: mix archidep.course_site.build --output ../tmp/site --clean --mode backup --live-site-url https://archidep.ch --progress https://archidep.ch/api/progress --no-source-maps
         working-directory: app
 
       - name: Ensure there are no uncommitted changes

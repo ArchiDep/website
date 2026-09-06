@@ -31,8 +31,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.AssetsTest do
                {:info,
                 "Read 1 undigested assets from #{dirs.static_dir}, which was never digested"},
                {:info, "Parsed 1 partials from #{dirs.includes_dir}"},
-               {:info,
-                "Read 1 sessions from #{dirs.progress_file}; 2 sections and chapters are done"},
+               {:info, "2 sections and chapters are done as far as this run is concerned"},
                {:info, "Withheld the answers of 0 documents the course has not covered yet"},
                {:info, "Rendered 1 documents; every reference resolves"}
              ]
@@ -62,8 +61,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.AssetsTest do
                {:info, "Digested 0 files next to a page"},
                {:info, "Read 1 digested assets from #{dirs.static_dir}"},
                {:info, "Parsed 1 partials from #{dirs.includes_dir}"},
-               {:info,
-                "Read 1 sessions from #{dirs.progress_file}; 2 sections and chapters are done"},
+               {:info, "2 sections and chapters are done as far as this run is concerned"},
                {:info, "Withheld the answers of 1 documents the course has not covered yet"},
                {:info, "Rendered 1 documents; every reference resolves"}
              ]
@@ -87,12 +85,38 @@ defmodule Mix.Tasks.Archidep.CourseSite.AssetsTest do
                {:info,
                 "Read 1 undigested assets from #{dirs.static_dir}, which was never digested"},
                {:info, "Parsed 1 partials from #{dirs.includes_dir}"},
-               {:info,
-                "Read 1 sessions from #{dirs.progress_file}; 2 sections and chapters are done"},
+               {:info, "2 sections and chapters are done as far as this run is concerned"},
                {:info, "Withheld the answers of 1 documents the course has not covered yet"},
                {:error, "1 references could not be resolved:"},
                {:error,
                 "  chapters/103-hello-shell/exercise.md: Page asset \"images/gone.jpg\" of page 103-hello-shell (exercise) is not in the page asset manifest (looked for \"/course/103-hello-shell/images/gone.jpg\") in chapters/103-hello-shell/exercise.md"}
+             ]
+    end
+
+    # This command renders every page to find out whether its references
+    # resolve, and a chapter whose answers are withheld is a page it has seen
+    # less of — so with nothing said, it takes the course to be over.
+    test "takes the course to be over when it is told nothing", %{tmp_dir: tmp_dir} do
+      dirs = course!(tmp_dir)
+
+      write!(
+        dirs.content_dir,
+        "chapters/102-shell-scripting/subject.md",
+        "---\ntitle: Shell Scripting\n---\n\nScript.\n"
+      )
+
+      Assets.run(args(dirs, progress: nil))
+
+      assert shell_output() == [
+               {:info,
+                "Read 1 documents, 0 cheatsheets and 0 files next to a page from #{dirs.content_dir}"},
+               {:info, "Digested 0 files next to a page"},
+               {:info,
+                "Read 1 undigested assets from #{dirs.static_dir}, which was never digested"},
+               {:info, "Parsed 1 partials from #{dirs.includes_dir}"},
+               {:info, "1 sections and chapters are done as far as this run is concerned"},
+               {:info, "Withheld the answers of 0 documents the course has not covered yet"},
+               {:info, "Rendered 1 documents; every reference resolves"}
              ]
     end
 
@@ -132,17 +156,18 @@ defmodule Mix.Tasks.Archidep.CourseSite.AssetsTest do
     dirs
   end
 
-  defp args(dirs),
-    do: [
+  defp args(dirs, overrides \\ []) do
+    progress = Keyword.get(overrides, :progress, dirs.progress_file)
+
+    [
       "--content",
       dirs.content_dir,
       "--includes",
       dirs.includes_dir,
       "--static",
-      dirs.static_dir,
-      "--progress",
-      dirs.progress_file
-    ]
+      dirs.static_dir
+    ] ++ if(progress, do: ["--progress", progress], else: [])
+  end
 
   defp write!(root, path, contents) do
     file = Path.join(root, path)

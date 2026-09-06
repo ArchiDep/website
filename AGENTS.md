@@ -167,10 +167,11 @@ instructions targeted towards AI agents.
 
     3. **Re-read every comment you added** against the comment rules above and
        deleted or rewritten any that reference a short-lived doc, duplicate the
-       guidelines, or record historical rationale. This audit is mandatory and
-       is the last step before reporting completion — these rules existed and
-       were still violated, so treat the audit as the enforcement mechanism, not
-       the prose alone.
+       guidelines, or record historical rationale.
+
+    This audit is mandatory and is the last step before reporting completion —
+    these rules existed and were still violated, so treat the audit as the
+    enforcement mechanism, not the prose alone.
 
   - After editing Markdown documentation, run `npm run lint:md` (documented in
     [`./CONTRIBUTING.md`][contributing]) and fix any reported issues.

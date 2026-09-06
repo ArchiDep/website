@@ -32,6 +32,12 @@ defmodule ArchiDep.CourseSite.Progress do
   which the union has folded into everything that came before it. That is why
   the sessions are kept as the list they are — see
   `ArchiDep.CourseSite.Session`.
+
+  It is also the **only** thing here that depends on the order they are given
+  in: `done` is a union and `due` and `next` are set differences from it, and a
+  set difference over unions cannot tell what order it was fed. So a source is
+  free to decide the order however it likes, as long as it puts the last session
+  last.
   """
 
   alias ArchiDep.CourseSite.DocumentRef
@@ -92,6 +98,28 @@ defmodule ArchiDep.CourseSite.Progress do
   end
 
   @doc """
+  A course that is over: every number it uses is done, nothing is due and
+  nothing comes next.
+
+  This is what an **archival** build is rendered with, and it is deliberately
+  not usable anywhere else. A frozen edition has covered everything, so every
+  chapter colours `done` and `solutions_revealed?/2` reveals every answer, which
+  is what an archive is for. But it also records no last session, so
+  `last_recorded/3` answers nothing — and the home page's three cards are
+  dropped by the archival chrome policy rather than by that emptiness. In any
+  other mode those cards are rendered, and a course with no last session would
+  draw three empty ones.
+  """
+  @spec complete(Enumerable.t(pos_integer())) :: t()
+  def complete(numbers),
+    do: %__MODULE__{
+      done: MapSet.new(numbers),
+      due: MapSet.new(),
+      next: MapSet.new(),
+      last: nil
+    }
+
+  @doc """
   What has become of the section or chapter with the given number.
   """
   @spec status(t(), pos_integer()) :: status()
@@ -109,13 +137,8 @@ defmodule ArchiDep.CourseSite.Progress do
   handed to whatever lists it.
   """
   @spec statuses(t(), Structure.t()) :: %{pos_integer() => status()}
-  def statuses(%__MODULE__{} = progress, %Structure{sections: sections}),
-    do:
-      sections
-      |> Enum.flat_map(fn %Section{chapters: chapters} = section ->
-        [Section.num(section) | Enum.map(chapters, &Chapter.num/1)]
-      end)
-      |> Map.new(&{&1, status(progress, &1)})
+  def statuses(%__MODULE__{} = progress, %Structure{} = structure),
+    do: structure |> Structure.numbers() |> Map.new(&{&1, status(progress, &1)})
 
   @doc """
   The chapters the course's last session recorded in one category, in the order

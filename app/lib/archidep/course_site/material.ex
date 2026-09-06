@@ -55,9 +55,9 @@ defmodule ArchiDep.CourseSite.Material do
   compile. A partial nothing yet includes is the one change neither mechanism
   notices.
 
-  How far the course has got is not in here at all: it is read when a build
-  runs, from the source `ArchiDep.CourseSite.Build.progress/1` names. That is
-  what keeps a week of teaching from being a recompilation of the course.
+  How far the course has got is not in here at all: it is an input a build is
+  handed when it runs. That is what keeps a week of teaching from being a
+  recompilation of the course.
   """
 
   alias ArchiDep.CourseSite.Build

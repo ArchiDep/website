@@ -60,6 +60,14 @@ defmodule ArchiDep.Events.Store.EventSchemaVersionDriftTest do
     ArchiDep.Course.Events.ClassUpdated =>
       {1,
        "%{active: boolean(), end_date: Date.t() | nil, id: Ecto.UUID.t(), name: String.t(), servers_enabled: boolean(), ssh_exercise_vm_md5_host_key_fingerprints: String.t() | nil, ssh_exercise_vm_sha256_host_key_fingerprints: String.t() | nil, start_date: Date.t() | nil, teacher_ssh_public_keys: [String.t()]}"},
+    ArchiDep.Course.Events.CourseSessionCreated =>
+      {1,
+       "%{date: Date.t(), done: [pos_integer()], due: [pos_integer()], id: Ecto.UUID.t(), next: [pos_integer()], title: String.t()}"},
+    ArchiDep.Course.Events.CourseSessionDeleted =>
+      {1, "%{date: Date.t(), id: Ecto.UUID.t(), title: String.t()}"},
+    ArchiDep.Course.Events.CourseSessionUpdated =>
+      {1,
+       "%{date: Date.t(), done: [pos_integer()], due: [pos_integer()], id: Ecto.UUID.t(), next: [pos_integer()], title: String.t()}"},
     ArchiDep.Course.Events.StudentConfigured =>
       {1,
        "%{class: %{id: Ecto.UUID.t(), name: String.t()}, email: String.t(), id: Ecto.UUID.t(), name: String.t(), username: String.t()}"},

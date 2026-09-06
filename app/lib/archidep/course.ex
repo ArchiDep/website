@@ -9,6 +9,7 @@ defmodule ArchiDep.Course do
 
   alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.CourseSession
   alias ArchiDep.Course.Schemas.ExpectedServerProperties
   alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.StudentView
@@ -33,6 +34,86 @@ defmodule ArchiDep.Course do
   """
   @spec course_sessions() :: [Session.t()]
   defdelegate course_sessions(), to: @implementation
+
+  @doc """
+  The global PubSub topic every change to the record of how far the course has
+  got is broadcast on, before the per-test scope is applied.
+
+  This is not a callback of the behaviour: a topic name is a constant of this
+  context rather than something an implementation decides, and it is exposed
+  unresolved for the one kind of subscriber that cannot resolve the scope for
+  itself — a process started at application boot. See `ArchiDep.PubSub.Scope`
+  and `subscribe_course_sessions/0`, which is what everything else uses.
+  """
+  @spec course_sessions_topic() :: String.t()
+  defdelegate course_sessions_topic(), to: ArchiDep.Course.PubSub
+
+  @doc """
+  Lists every session of the course, in the order they were taught.
+
+  This is what the admin console edits, so it answers with the records
+  themselves rather than with what `course_sessions/0` derives from them.
+  """
+  @spec list_course_sessions(Authentication.t()) :: [CourseSession.t()]
+  defdelegate list_course_sessions(auth), to: @implementation
+
+  @doc """
+  Subscribes the calling process to every topic that keeps the list of course
+  sessions live.
+  """
+  @spec subscribe_course_sessions() :: :ok
+  defdelegate subscribe_course_sessions(), to: @implementation
+
+  @doc """
+  Reconciles the list of course sessions from a PubSub message broadcast on one
+  of the topics of `subscribe_course_sessions/0`, returning the updated list or
+  `:ignore` for a message that does not concern it.
+  """
+  @spec refresh_course_sessions(Authentication.t(), [CourseSession.t()], term()) ::
+          {:ok, [CourseSession.t()]} | :ignore
+  defdelegate refresh_course_sessions(auth, course_sessions, message), to: @implementation
+
+  @doc """
+  Validates the data to record a new session of the course.
+  """
+  @spec validate_course_session(Authentication.t(), Types.course_session_data()) :: Changeset.t()
+  defdelegate validate_course_session(auth, data), to: @implementation
+
+  @doc """
+  Records a new session of the course.
+  """
+  @spec create_course_session(Authentication.t(), Types.course_session_data()) ::
+          {:ok, CourseSession.t()} | {:error, Changeset.t()}
+  defdelegate create_course_session(auth, data), to: @implementation
+
+  @doc """
+  Validates the data to update a session of the course that was already
+  recorded.
+  """
+  @spec validate_existing_course_session(
+          Authentication.t(),
+          UUID.t(),
+          Types.course_session_data()
+        ) ::
+          {:ok, Changeset.t()} | {:error, :course_session_not_found}
+  defdelegate validate_existing_course_session(auth, course_session_id, data),
+    to: @implementation
+
+  @doc """
+  Updates what the specified session of the course recorded.
+  """
+  @spec update_course_session(Authentication.t(), UUID.t(), Types.course_session_data()) ::
+          {:ok, CourseSession.t()}
+          | {:error, Changeset.t()}
+          | {:error, :course_session_not_found}
+  defdelegate update_course_session(auth, course_session_id, data), to: @implementation
+
+  @doc """
+  Deletes the specified session of the course.
+  """
+  @spec delete_course_session(Authentication.t(), UUID.t()) ::
+          :ok | {:error, :course_session_not_found}
+  defdelegate delete_course_session(auth, course_session_id), to: @implementation
 
   # Classes
 

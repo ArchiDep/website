@@ -183,6 +183,21 @@ defmodule ArchiDepWeb.Components.Layouts do
             </li>
             <li :if={root?(@auth) and String.starts_with?(@current_path, "/admin")}>
               <.link
+                navigate={~p"/admin/course-sessions"}
+                class={[
+                  "flex items-center gap-2",
+                  if(@current_path == "/admin/course-sessions",
+                    do: "bg-neutral font-bold",
+                    else: nil
+                  )
+                ]}
+              >
+                <Heroicons.calendar_days class="size-4" />
+                <span>{gettext("Course progress")}</span>
+              </.link>
+            </li>
+            <li :if={root?(@auth) and String.starts_with?(@current_path, "/admin")}>
+              <.link
                 navigate={~p"/admin/ansible"}
                 class={[
                   "flex items-center gap-2",

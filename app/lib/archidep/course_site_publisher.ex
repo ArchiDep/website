@@ -3,12 +3,9 @@ defmodule ArchiDep.CourseSitePublisher do
   Rendering the course material site from the running application.
 
   The site is a build rather than a set of pages rendered per request, so
-  something has to run that build. In production that is the boot: the
-  application renders the site into a directory a separate static server takes
-  as its document root, before it starts answering requests. In development it
-  is `ArchiDep.CourseSiteWatcher`, which runs the same build every time the
-  course material changes. What the two of them have in common is here: what a
-  build of this deployment is, and what running one means.
+  something has to run that build. That something is
+  `ArchiDep.CourseSiteRebuilder`, which decides *when*. What is here is *what*:
+  what a build of this deployment is, and what running one means.
 
   It is here rather than inside `ArchiDep.CourseSite` because that subsystem is
   a set of pure functions over its inputs and reads no configuration; deciding
@@ -29,15 +26,14 @@ defmodule ArchiDep.CourseSitePublisher do
     save, and what lets a deployment that cannot render refuse to serve without
     taking away the build it was already serving.
   - **How far the course has got is read afresh for every build**, through
-    `ArchiDep.Course.course_sessions/0` rather than from wherever that record
-    happens to be kept, so moving it to the database is a change to the context
-    and to nothing here.
+    `ArchiDep.Course.course_sessions/0`, so a build reflects what the record
+    says at the moment it runs rather than what it said when the application
+    booted.
 
   One build at a time writes into one output directory. Publishing is a rename
   of a staging directory beside it, and two builds sharing an output directory
   would race over both that and the directory the previous build is moved to.
-  Nothing here enforces it: the deployment runs one application per output
-  directory.
+  Nothing here enforces it; `ArchiDep.CourseSiteRebuilder` is what does.
   """
 
   alias ArchiDep.Course
@@ -119,38 +115,6 @@ defmodule ArchiDep.CourseSitePublisher do
       {:error, what, errors} = result ->
         Logger.error("#{what}:\n" <> Enum.map_join(errors, "\n", &("  " <> &1)))
         result
-    end
-  end
-
-  @doc """
-  Render the build this deployment is configured for, or raise.
-
-  This is what production runs at boot, and it is the whole of what the `build`
-  key of the `course_site` configuration asks for. It raises because the site it
-  could not render is what this deployment exists to serve: an application that
-  answered requests anyway would leave the static server in front of it holding
-  whichever build it happened to have, with nothing but a log line to say the
-  two no longer agree.
-
-  What was wrong with the build is logged by `publish/2` before this raises, the
-  exception being a summary of it rather than the report.
-  """
-  @spec publish_configured!() :: :ok
-  def publish_configured! do
-    config = Application.get_env(:archidep, :course_site, [])
-
-    build_opts =
-      options(
-        course_dir: Keyword.fetch!(config, :course_dir),
-        build_dir: Keyword.fetch!(config, :build_dir)
-      )
-
-    case publish(build_opts) do
-      {:ok, %Report{}} ->
-        :ok
-
-      {:error, what, _errors} ->
-        raise "The course material site could not be built. #{what}."
     end
   end
 

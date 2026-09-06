@@ -3,14 +3,16 @@ defmodule ArchiDep.PubSub.Scope do
   Per-process suffix applied to global (non-keyed) PubSub topics.
 
   Some topics are shared by every subscriber rather than keyed by a resource id
-  — currently `"classes"` (the admin classes list), `"servers:new"` (newly
-  created servers) and `"ansible-queue"` (the `ArchiDep.Tracker` presence topic
-  the admin and ansible dashboards watch). Unlike the SQL sandbox,
-  `Phoenix.PubSub` is process-global, so a broadcast on such a topic reaches
-  every subscribed process, including concurrent `async: true` tests. Resolving
-  these topic names through `global_topic/1` lets the test environment scope
-  them per test, so each test observes only its own broadcasts and can assert
-  whole lists by equality.
+  — currently `"classes"` (the admin classes list), `"course-sessions"` (the
+  record of how far the course has got), `"course-site-builds"` (the outcome of
+  each rebuild of the course material site), `"servers:new"` (newly created
+  servers) and `"ansible-queue"` (the `ArchiDep.Tracker` presence topic the
+  admin and ansible dashboards watch). Unlike the SQL sandbox, `Phoenix.PubSub`
+  is process-global, so a broadcast on such a topic reaches every subscribed
+  process, including concurrent `async: true` tests. Resolving these topic names
+  through `global_topic/1` lets the test environment scope them per test, so
+  each test observes only its own broadcasts and can assert whole lists by
+  equality.
 
   A subscriber that resolves the scope in its own process (a use case called
   from the test, a `LiveView`) works transparently. A boot-time supervised

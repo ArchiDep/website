@@ -111,8 +111,10 @@ separate static server in front of the build it renders at boot (see
 
 `Phoenix.LiveReloader` is mounted **before** all of them, since its callback has
 to be registered before a response is sent, and `Phoenix.CodeReloader` after, so
-that serving a file never recompiles the application. What rebuilds the site as
-it is edited is [`ArchiDep.CourseSiteWatcher`](../archidep/course_site_watcher.ex).
+that serving a file never recompiles the application. What rebuilds the site is
+[`ArchiDep.CourseSiteRebuilder`](../archidep/course_site_rebuilder.ex), which
+[`ArchiDep.CourseSiteWatcher`](../archidep/course_site_watcher.ex) tells when
+the material is edited.
 
 [`router.ex`](./router.ex) defines three pipelines — `:browser` (session, CSRF,
 secure headers, SSL), `:api` (JSON, SSL) and `:dev` — and these route groups:
@@ -371,6 +373,14 @@ The areas map directly onto the bounded contexts:
   context](../archidep/course/CONTRIBUTING.md#use-cases).
   [`ClassesController`](./admin/classes/classes_controller.ex) adds two `GET`
   endpoints: a class CSV export and the SSH-exercise-VM Ansible inventory.
+- **Course progress** —
+  [`CourseSessionsLive`](./admin/course_sessions/course_sessions_live.ex)
+  (`/admin/course-sessions`), with dialogs for recording, correcting and
+  deleting a [teaching
+  session](../archidep/course/CONTRIBUTING.md#course-progress). Its form offers
+  a checkbox grid over the compiled course, and the page shows the outcome of
+  the site rebuild each edit sets off — it is the only page that subscribes to
+  something that is not a bounded context's.
 - **Servers** — [`AdminClassServersLive`](./admin/admin_class_servers_live.ex)
   shows a class's servers; the `/admin/servers/:id` route reuses the user-facing
   [`ServerLive`](#servers-ui) with an admin scope.
@@ -446,6 +456,19 @@ steps.
   [`app`](./components/layouts.ex) layout function component (the header and
   sidebar shared with the course site, the flash container, and the admin menu
   shown to root users).
+
+**A button's colour says what its action does to the thing it acts on.** The
+DaisyUI modifier is picked from what happens, not from how much the button
+should stand out:
+
+| Modifier        | The action                                                      |
+| --------------- | --------------------------------------------------------------- |
+| `btn-success`   | Creates something that did not exist (a class, a session)       |
+| `btn-warning`   | Opens something that exists for editing (`Edit`, `Change`)      |
+| `btn-error`     | Destroys something, and confirms the destruction (`Delete`)     |
+| `btn-primary`   | Submits the form it is in (`Save`, `Log in`, `Upload`)          |
+| `btn-secondary` | Leaves without doing it (`Close`, `No`), and side actions       |
+| `btn-neutral`   | Downloads what is already there (the class CSV, the inventory)  |
 
 ---
 

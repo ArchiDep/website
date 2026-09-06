@@ -68,7 +68,6 @@ services:
       # same path.
       - ./tmp/course_site_archives:/archidep/tmp/course_site_archives:ro
       - ./app/priv/ansible:/archidep/app/priv/ansible:ro
-      - ./app/priv/course:/archidep/app/priv/course:ro
       - ./app/priv/gettext:/archidep/app/priv/gettext:ro
       - ./app/priv/repo:/archidep/app/priv/repo:ro
       - ./app/priv/scripts:/archidep/app/priv/scripts:ro
