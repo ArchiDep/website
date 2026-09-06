@@ -106,7 +106,8 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
                remember_me_cookie: %{
                  value?: true,
                  max_age: @remember_me_max_age,
-                 same_site: "Lax"
+                 same_site: "Lax",
+                 secure: true
                }
              }
     end
@@ -486,7 +487,8 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
         %{
           value?: is_binary(cookie.value) and cookie.value != "",
           max_age: cookie.max_age,
-          same_site: cookie.same_site
+          same_site: cookie.same_site,
+          secure: cookie.secure
         }
     end
   end

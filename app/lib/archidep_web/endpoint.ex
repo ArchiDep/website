@@ -5,10 +5,29 @@ defmodule ArchiDepWeb.Endpoint do
   # The session will be stored in the cookie and signed, this means its contents
   # can be read but not tampered with. Set :encryption_salt if you would also
   # like to encrypt it.
+  #
+  # `secure` and `same_site` are stated rather than left to be derived. Plug
+  # would add `secure` by itself, but only from the scheme of the connection the
+  # cookie is written on, which is the forwarded scheme `Plug.SSL` resolved in
+  # the router pipeline — correct today, and correct only for as long as every
+  # route that touches the session goes through that pipeline. Saying it here
+  # makes it a property of the cookie rather than of the path taken to it.
+  # Development is served over plain HTTP and keeps working because browsers
+  # treat `localhost` as a trustworthy origin and take `secure` cookies from it
+  # anyway; a development host that is not `localhost` would not, and logging in
+  # would fail there with no error to see.
+  #
+  # `same_site` has no default at all, so without this the browser picks. It is
+  # "Lax" and not "Strict" because logging in through Switch edu-ID returns
+  # through a cross-site top-level GET (`/auth/switch-edu-id/callback`), which
+  # "Strict" would strip the session cookie from — losing the OIDC state the
+  # callback is there to check.
   @session_options [
     store: :cookie,
     key: "_archidep_key",
-    signing_salt: {__MODULE__, :session_signing_salt, []}
+    signing_salt: {__MODULE__, :session_signing_salt, []},
+    secure: true,
+    same_site: "Lax"
   ]
 
   # Read key by key rather than as a whole configuration. Mix compares what a

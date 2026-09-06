@@ -17,7 +17,16 @@ defmodule ArchiDepWeb.Auth do
   @max_age_in_seconds 60 * 60 * 24 * 60
 
   @remember_me_cookie "_archidep_remember_me"
-  @remember_me_options [sign: true, max_age: @max_age_in_seconds, same_site: "Lax"]
+
+  # Carries the session token for as long as the cookie lasts, so it is stated
+  # to be off plain HTTP for the same reason the session cookie it stands in for
+  # is (see `ArchiDepWeb.Endpoint`).
+  @remember_me_options [
+    sign: true,
+    max_age: @max_age_in_seconds,
+    same_site: "Lax",
+    secure: true
+  ]
 
   @doc """
   Logs the user_account in.
