@@ -5,6 +5,9 @@ defmodule ArchiDepWeb.Errors.ErrorHTML do
   use ArchiDepWeb, :html
 
   @custom_errors %{
+    "403.html" =>
+      {"You are not allowed to see this page.",
+       "If you think that is a mistake, ask your teacher.", "Take me back to safety!"},
     "404.html" =>
       {"This is not the page you're looking for.", "You can go about your business.",
        "Move along"}

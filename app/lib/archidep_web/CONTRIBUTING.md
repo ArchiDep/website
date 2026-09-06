@@ -529,7 +529,13 @@ two. Always use Gettext for user-facing text.
 
 - **Errors** — [`ErrorHTML`](./errors/error_html.ex) renders error pages from
   the [`fallback`](./errors/html/fallback.html.heex) template (with friendly
-  messages, e.g. for 404).
+  messages, e.g. for 403 and 404).
+  [`plug_exception.ex`](./errors/plug_exception.ex) says what status the errors
+  the business layer raises are answered with, so that a context refusing the
+  caller is a 403 page rather than the 500 an unmapped error would get. This is
+  the other half of [Authentication &
+  Authorization](#authentication--authorization): the contexts decide, and this
+  is how their refusal reaches the browser.
 - **Health** — [`HealthController`](./health/health_controller.ex) backs
   `/api/health`, checking the database and the
   [Ansible pipeline](../archidep/servers/CONTRIBUTING.md#ansible-pipeline) queue
