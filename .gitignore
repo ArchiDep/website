@@ -1,6 +1,7 @@
 # https://git-scm.com/docs/gitignore
 /.ansible
 /.claude/settings.local.json
+/.claude/skills
 /.env
 !/.env.sample
 /node_modules

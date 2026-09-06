@@ -30,6 +30,8 @@
 
 # Root files
 
+/.claude/skills
+
 /.env
 !/.env.sample
 /node_modules
