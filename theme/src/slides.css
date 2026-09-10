@@ -15,6 +15,7 @@
 @custom-variant screen (@media screen);
 
 @import './git-memoir.css';
+@import './simgit.css';
 
 @theme {
   --font-meta: 'PT Sans', sans-serif;

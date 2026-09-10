@@ -25,6 +25,13 @@ import { HttpAuthenticationError } from './errors';
 import { GitMemoirController } from './git-memoir/git-memoir-controller';
 import './git-memoir/git-memoirs-registry';
 import log from './logging';
+import './simgit/simgit-stories-registry';
+import {
+  defineSimgitStoryElement,
+  verticalStackArrangement,
+  type RenderLayout,
+  type SimgitStoryElement
+} from '@alphahydrae/simgit';
 import { required, toggleClass } from './utils';
 
 const logger = log.getLogger('course');
@@ -70,6 +77,35 @@ if (forceGitMemoirs) {
 
   gitMemoirsOnPage.forEach(el => observer.observe(el));
 }
+
+// A multi-computer story needs both of these, and they are rich values the
+// element takes by property rather than by attribute: the renderer otherwise
+// draws every computer at the same origin, piling the story into one illegible
+// heap, and without chrome the stacked repositories carry no machine names.
+// The stack keeps each computer's intrinsic height rather than filling the
+// canvas: these embeds size themselves to their content (`sizing='auto-height'`),
+// so equal-height fill would give every computer the height of the tallest and
+// leave a two-repository chapter three times taller than it needs to be.
+//
+// The layout is set before the element is defined, so the value is in place
+// when each embed connects and reads it.
+const collaborationLayout: RenderLayout = {
+  containerArrangement: verticalStackArrangement(),
+  showComputerChrome: true
+};
+for (const el of document.querySelectorAll<SimgitStoryElement>(
+  'simgit-story'
+)) {
+  if (el.getAttribute('name') === 'github') {
+    el.renderLayout = collaborationLayout;
+  }
+}
+
+// Stories are registered by importing the registry above, and only then is the
+// custom element defined, so the `<simgit-story>` tags already in the page
+// upgrade against a populated registry. Each embed defers on its own
+// IntersectionObserver, so unlike git-memoir there is nothing to observe here.
+defineSimgitStoryElement();
 
 window['logOut'] = logOut;
 

@@ -272,7 +272,7 @@ The commit objects and file snapshots have been **pushed** (or uploaded) to the
 GitHub repository. This includes not only the commit pointed to by main, but
 also the **entire history** of the repository up to that commit.
 
-<git-memoir name='github' chapter='bob-push' svg-height='350px' style='--memoir-min-height: 350px'></git-memoir>
+<simgit-story name='github' start-chapter='bob-remote' end-chapter='bob-push' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 Note the **origin/main** branch that has appeared in your local repository. This
 is a **remote-tracking branch**. It tells you where the **main** branch points
@@ -317,7 +317,7 @@ The entire history of the project is **pulled** (or downloaded) from the GitHub
 repository. Git will also automatically switch to the **main** branch in the
 working directory so you have something to work from.
 
-<git-memoir name='github' chapter='alice-pull' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-remote' end-chapter='alice-pull' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 Again, Git has created a **remote-tracking branch** in Alice's repository,
 so that you can know what the current state of the remote is.
@@ -337,7 +337,7 @@ $> git commit -m "Shorter file names"
 
 This is now the state of the shared repository and **Alice**'s local repository.
 
-<git-memoir name='github' chapter='alice-commit' svg-height='350px' style='--memoir-min-height: 350px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-commit-settings' end-chapter='alice-commit' through-chapter='alice-push' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 There is a new commit in **Alice**'s repository that is not in the shared GitHub
 repository.
@@ -350,7 +350,7 @@ Push to update the shared repository:
 $> git push origin main
 ```
 
-<git-memoir name='github' chapter='alice-push' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-push-settings' end-chapter='alice-push' through-chapter='bob-fetch' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ### :exclamation: Bob: check the state of branches
 
@@ -360,7 +360,7 @@ Note that the new commit is in the shared repository (on GitHub) but that the
 remote-tracking branch origin/main **is not up-to-date** in **Bob**'s
 repository.
 
-<git-memoir name='github' chapter='bob-look' controls='false' svg-height='350px' style='--memoir-min-height: 350px'></git-memoir>
+<simgit-story name='github' start-chapter='bob-look' end-chapter='bob-look' through-chapter='bob-fetch' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 Git does not automatically synchronize repositories. **As far as Bob knows**
 looking at information from his local repository, the main branch still points
@@ -382,7 +382,7 @@ From github.com:bob/github-demo
 
 The new commit is now here and the remote-tracking branch has been updated.
 
-<git-memoir name='github' chapter='bob-fetch' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
+<simgit-story name='github' start-chapter='bob-fetch-settings' end-chapter='bob-fetch' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 However, the local main branch **has not moved** and the working directory has
 **not been updated**.
@@ -404,7 +404,7 @@ Fast-forward
 As expected, main has been fast-forwarded to the commit pointed to by
 origin/main and the working directory has been updated.
 
-<git-memoir name='github' chapter='bob-merge' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
+<simgit-story name='github' start-chapter='bob-fetch' end-chapter='bob-merge' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Bob**'s repository is now up-to-date.
 
@@ -444,7 +444,7 @@ $> git commit -m "Fix bad <script> tags"
 $> git push origin main
 ```
 
-<git-memoir name='github' chapter='bob-fix' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
+<simgit-story name='github' start-chapter='box-fix-settings' end-chapter='bob-fix-push' through-chapter='alice-fix' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ### :exclamation: Alice: make other changes
 
@@ -476,7 +476,7 @@ $> git add index.html
 $> git commit -m "Improve layout"
 ```
 
-<git-memoir name='github' chapter='alice-fix' svg-height='525px' style='--memoir-min-height: 525px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-fix-prepare' end-chapter='alice-fix' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ```bash
 $> git push origin main
@@ -500,7 +500,7 @@ hint: See the 'Note about fast-forwards' in 'git push --help' for details.
 This is the state of **Alice**'s repository right now, compared to the state of
 shared repository:
 
-<git-memoir name='github' chapter='alice-fix-check' controls='false' svg-height='350px' style='--memoir-min-height: 350px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-fix-check' end-chapter='alice-fix-check' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 #### :exclamation: Alice: fetch the changes
 
@@ -511,7 +511,7 @@ date, try fetching those changes:
 $> git fetch origin
 ```
 
-<git-memoir name='github' chapter='alice-fetch-changes' svg-height='600px' style='--memoir-min-height: 600px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-fetch-changes-settings' end-chapter='alice-fetch-changes' through-chapter='bob-pull-merge' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 #### :exclamation: Alice: try to push again
 
@@ -530,7 +530,7 @@ hint: See the 'Note about fast-forwards' in 'git push --help' for details.
 
 This is the state of **Alice**'s and the shared repository right now:
 
-<git-memoir name='github' chapter='alice-fetch-changes-check' controls='false' svg-height='425px' style='--memoir-min-height: 425px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-fetch-changes-check' end-chapter='alice-fetch-changes-check' through-chapter='bob-pull-merge' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 ### :exclamation: Divergent history
 
@@ -538,7 +538,7 @@ The conflict occurred for the same reason as in the previous tutorial: **Bob**
 and **Alice**'s work have diverged from a common ancestor (`92fb8c` in this
 example).
 
-<git-memoir name='github' chapter='alice-fetch-changes-check-both' controls='false' svg-height='600px' style='--memoir-min-height: 600px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-fetch-changes-check-both' end-chapter='alice-fetch-changes-check-both' through-chapter='bob-pull-merge' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 A remote repository will **only accept fast-forward pushes** by default.
 
@@ -616,7 +616,7 @@ Now the state of **Alice**'s local repository is consistent with the state of
 the shared repository: the commit pointed to by `main` is ahead of the commit
 pointed to by `origin/main`.
 
-<git-memoir name='github' chapter='alice-pull-changes' svg-height='600px' style='--memoir-min-height: 600px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-pull-changes' end-chapter='alice-pull-changes' through-chapter='bob-pull-merge' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 ### :exclamation: Alice: push the changes
 
@@ -626,7 +626,7 @@ The push will be accepted now:
 $> git push origin main
 ```
 
-<git-memoir name='github' chapter='alice-push-merge' svg-height='600px' style='--memoir-min-height: 600px'></git-memoir>
+<simgit-story name='github' start-chapter='alice-pull-changes' end-chapter='alice-push-merge' through-chapter='bob-pull-merge' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ### :exclamation: Bob: pull the changes
 
@@ -636,7 +636,7 @@ $> git push origin main
 $> git pull origin main
 ```
 
-<git-memoir name='github' chapter='bob-pull-merge' svg-height='675px' style='--memoir-min-height: 675px'></git-memoir>
+<simgit-story name='github' start-chapter='bob-pull-merge-prepare' end-chapter='bob-pull-merge' sizing='auto-height' commit-representation='below' duration='1200' start-delay='2000' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ## :checkered_flag: What have I done?
 

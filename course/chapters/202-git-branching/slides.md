@@ -84,7 +84,7 @@ Each commit also contains:
 
 A branch is a lightweight, movable **pointer to a commit**.
 
-<git-memoir name='branchingOneLine' chapter='commits' svg-height='137px'></git-memoir>
+<simgit-story name='branchingOneLine' start-chapter='setup' end-chapter='third-commit' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -165,7 +165,7 @@ In fact, this command is so useful you should make an **alias**, as we will use 
 $> git branch feature-sub
 ```
 
-<git-memoir name='branchingOneLine' chapter='branch' svg-height='137px'></git-memoir>
+<simgit-story name='branchingOneLine' start-chapter='third-commit' end-chapter='branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -201,7 +201,7 @@ $> git switch feature-sub  # or git checkout feature-sub
 Switched to branch 'feature-sub'
 ```
 
-<git-memoir name='branchingOneLine' chapter='checkout' svg-height='137px'></git-memoir>
+<simgit-story name='branchingOneLine' start-chapter='branch' end-chapter='checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 > 🛠️ You can now implement the subtraction in `subtraction.js`. Move on to the
 > next slide once you're done.
@@ -225,7 +225,7 @@ $> git commit -m "Implement subtraction"
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-<git-memoir name='branchingOneLine' chapter='commit-on-a-branch' svg-height='137px'></git-memoir>
+<simgit-story name='branchingOneLine' start-chapter='checkout' end-chapter='commit-on-a-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -249,7 +249,7 @@ $> git switch main  # or git checkout main
 Switched to branch 'main'
 ```
 
-<git-memoir name='branchingOneLine' chapter='back-to-main' svg-height='137px'></git-memoir>
+<simgit-story name='branchingOneLine' start-chapter='commit-on-a-branch' end-chapter='back-to-main' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 Now check your files.
 
@@ -273,7 +273,7 @@ $> git switch -c fix-add  # or git checkout -b fix-add
 Switched to a new branch 'fix-add'
 ```
 
-<git-memoir name='branchingOneLine' chapter='another-branch' svg-height='137px'></git-memoir>
+<simgit-story name='branchingOneLine' start-chapter='back-to-main' end-chapter='another-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -296,7 +296,7 @@ $> git commit -m "Fix addition"
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-<git-memoir name='branching' chapter='divergent-history' svg-height='275px'></git-memoir>
+<simgit-story name='branching' start-chapter='another-branch' end-chapter='divergent-history' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ---
 
@@ -307,7 +307,7 @@ $> git switch feature-sub
 $> git switch fix-add
 ```
 
-<git-memoir name='branching' chapter='switch-branches' svg-height='250px'></git-memoir>
+<simgit-story name='branching' start-chapter='divergent-history' end-chapter='switch-to-fix-add' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -330,7 +330,7 @@ Let's bring back those changes to the main line.
 $> git switch main  # or git checkout main
 ```
 
-<git-memoir name='branching' chapter='fast-forward-merge-checkout' svg-height='200px'></git-memoir>
+<simgit-story name='branching' start-chapter='switch-to-fix-add' end-chapter='fast-forward-merge-checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -361,7 +361,7 @@ Notice the term **fast-forward**.
 
 ### Fast-forward
 
-<git-memoir name='branching' chapter='fast-forward-merge' svg-height='275px'></git-memoir>
+<simgit-story name='branching' start-chapter='fast-forward-merge-checkout' end-chapter='fast-forward-merge' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -378,7 +378,7 @@ $> git branch -d fix-add
 Deleted branch fix-add (was 2817bc).
 ```
 
-<git-memoir name='branching' chapter='delete-branch' svg-height='275px'></git-memoir>
+<simgit-story name='branching' start-chapter='fast-forward-merge' end-chapter='delete-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -397,7 +397,7 @@ branch anymore. Let's delete it with the `-d` (**d**elete) option of the
 $> git switch feature-sub  # or git checkout feature-sub
 ```
 
-<git-memoir name='branching' chapter='work-on-feature-branch' svg-height='225px'></git-memoir>
+<simgit-story name='branching' start-chapter='delete-branch' end-chapter='work-on-feature-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ---
 
@@ -410,13 +410,13 @@ $> git add subtraction.js
 $> git commit -m "Comment subtract function"
 ```
 
-<git-memoir name='branching' chapter='commit-on-feature-branch' svg-height='225px'></git-memoir>
+<simgit-story name='branching' start-chapter='work-on-feature-branch' end-chapter='commit-on-feature-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ---
 
 ### Merging a divergent history
 
-<git-memoir name='branching' chapter='commit-on-feature-branch' controls='false' svg-height='200px'></git-memoir>
+<simgit-story name='branching' start-chapter='commit-on-feature-branch' end-chapter='commit-on-feature-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 Oops, no fast-forward here.
 
@@ -478,7 +478,7 @@ with a generated commit message.
 
 ### Merge commit
 
-<git-memoir name='branching' chapter='merge' svg-height='275px'></git-memoir>
+<simgit-story name='branching' start-chapter='merge-checkout' end-chapter='merge' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 You can see the new **merge commit** that Git has created. It is a special
 commit in that it has more than one parent.
@@ -491,7 +491,7 @@ commit in that it has more than one parent.
 $> git branch -d feature-sub
 ```
 
-<git-memoir name='branching' chapter='delete-feature-sub' svg-height='275px'></git-memoir>
+<simgit-story name='branching' start-chapter='merge' end-chapter='delete-feature-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ---
 
@@ -549,7 +549,7 @@ $> git switch -c better-sub 4f94fa
 # or git checkout -b better-sub 4f94fa
 ```
 
-<git-memoir name='branching' chapter='checkout-past' svg-height='250px'></git-memoir>
+<simgit-story name='branching' start-chapter='delete-feature-sub' end-chapter='checkout-past' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -601,7 +601,7 @@ $> git add subtraction.js
 $> git commit -m "Implement a better subtract"
 ```
 
-<git-memoir name='branching' chapter='conflicting-change' svg-height='300px'></git-memoir>
+<simgit-story name='branching' start-chapter='checkout-past' end-chapter='conflicting-change' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -777,7 +777,7 @@ make the commit.
 $> git branch -d better-sub
 ```
 
-<git-memoir name='branching' chapter='merge-conflicting-change' svg-height='300px'></git-memoir>
+<simgit-story name='branching' start-chapter='conflicting-change' end-chapter='delete-better-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -804,7 +804,7 @@ Sometimes it's not just the contents of a file:
 $> git switch -c cleanup 4f94fa
 ```
 
-<git-memoir name='branching' chapter='conflicting-file-change-checkout' svg-height='250px'></git-memoir>
+<simgit-story name='branching' start-chapter='delete-better-sub' end-chapter='conflicting-file-change-checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ---
 
@@ -819,7 +819,7 @@ $> git add .
 $> git commit -m "Remove incomplete implementation"
 ```
 
-<git-memoir name='branching' chapter='conflicting-file-change' svg-height='300px'></git-memoir>
+<simgit-story name='branching' start-chapter='conflicting-file-change-checkout' end-chapter='conflicting-file-change' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 ---
 
@@ -922,7 +922,7 @@ $> git branch -d cleanup
 
 And you're done!
 
-<git-memoir name='branching' chapter='merge-conflicting-file-change' svg-height='325px'></git-memoir>
+<simgit-story name='branching' start-chapter='merge-conflicting-file-change-checkout' end-chapter='delete-cleanup' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 [advanced-merging]: https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging
 [branching]: https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell

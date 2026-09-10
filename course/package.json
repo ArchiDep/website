@@ -12,6 +12,7 @@
     "start": "webpack --config webpack.config.cjs --watch"
   },
   "devDependencies": {
+    "@alphahydrae/simgit": "file:../../simgit/tmp/agent/alphahydrae-simgit-0.2.0.tgz",
     "@iconify-json/fluent": "^1.2.28",
     "@mobily/ts-belt": "^4.0.0-rc.5",
     "@plausible-analytics/tracker": "^0.4.0",

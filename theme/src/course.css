@@ -1,7 +1,12 @@
 @import './git-memoir.css';
+@import './simgit.css';
 
 git-memoir {
   @apply bg-zinc-400 border-slate-800 min-h-[var(--memoir-min-height)] my-4;
+}
+
+simgit-story {
+  @apply my-4;
 }
 
 /* A code block is drawn across the padding around the text, as far as the edges
