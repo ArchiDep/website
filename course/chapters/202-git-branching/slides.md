@@ -84,7 +84,7 @@ Each commit also contains:
 
 A branch is a lightweight, movable **pointer to a commit**.
 
-<git-memoir name='branchingOneLine' chapter='commits' svg-height='137px'></git-memoir>
+<simgit-story name='branchingOneLine' start-chapter='setup' end-chapter='commits' sizing='auto-height' theme='light' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -273,7 +273,7 @@ $> git switch -c fix-add  # or git checkout -b fix-add
 Switched to a new branch 'fix-add'
 ```
 
-<git-memoir name='branchingOneLine' chapter='another-branch' svg-height='137px'></git-memoir>
+<simgit-story name='branchingOneLine' start-chapter='back-to-main' end-chapter='another-branch' sizing='auto-height' theme='light' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
