@@ -51,15 +51,15 @@ defmodule ArchiDep.Events.Store.EventSchemaVersionDriftTest do
       {1,
        "%{impersonated_user_account: ArchiDep.Accounts.Events.UserImpersonated.account(), session_id: Ecto.UUID.t(), user_account: ArchiDep.Accounts.Events.UserImpersonated.account()}"},
     ArchiDep.Course.Events.ClassCreated =>
-      {1,
-       "%{active: boolean(), end_date: Date.t() | nil, id: Ecto.UUID.t(), name: String.t(), servers_enabled: boolean(), ssh_exercise_vm_md5_host_key_fingerprints: String.t() | nil, ssh_exercise_vm_sha256_host_key_fingerprints: String.t() | nil, start_date: Date.t() | nil, teacher_ssh_public_keys: [String.t()]}"},
+      {2,
+       "%{active: boolean(), end_date: Date.t() | nil, id: Ecto.UUID.t(), name: String.t(), servers_enabled: boolean(), ssh_exercise_vm_host_keys: String.t() | nil, start_date: Date.t() | nil, teacher_ssh_public_keys: [String.t()]}"},
     ArchiDep.Course.Events.ClassDeleted => {1, "%{id: Ecto.UUID.t(), name: String.t()}"},
     ArchiDep.Course.Events.ClassExpectedServerPropertiesUpdated =>
       {1,
        "%{architecture: String.t() | nil, class: %{id: Ecto.UUID.t(), name: String.t()}, cores: pos_integer() | nil, cpus: pos_integer() | nil, distribution: String.t() | nil, distribution_release: String.t() | nil, distribution_version: String.t() | nil, hostname: String.t() | nil, machine_id: String.t() | nil, memory: pos_integer() | nil, os_family: String.t() | nil, swap: pos_integer() | nil, system: String.t() | nil, vcpus: pos_integer() | nil}"},
     ArchiDep.Course.Events.ClassUpdated =>
-      {1,
-       "%{active: boolean(), end_date: Date.t() | nil, id: Ecto.UUID.t(), name: String.t(), servers_enabled: boolean(), ssh_exercise_vm_md5_host_key_fingerprints: String.t() | nil, ssh_exercise_vm_sha256_host_key_fingerprints: String.t() | nil, start_date: Date.t() | nil, teacher_ssh_public_keys: [String.t()]}"},
+      {2,
+       "%{active: boolean(), end_date: Date.t() | nil, id: Ecto.UUID.t(), name: String.t(), servers_enabled: boolean(), ssh_exercise_vm_host_keys: String.t() | nil, start_date: Date.t() | nil, teacher_ssh_public_keys: [String.t()]}"},
     ArchiDep.Course.Events.CourseSessionCreated =>
       {1,
        "%{date: Date.t(), done: [pos_integer()], due: [pos_integer()], id: Ecto.UUID.t(), next: [pos_integer()], title: String.t()}"},
@@ -99,8 +99,8 @@ defmodule ArchiDep.Events.Store.EventSchemaVersionDriftTest do
       {1,
        "%{connection_duration: non_neg_integer(), group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_port: 1..65535 | nil, ssh_username: String.t(), username: String.t()}"},
     ArchiDep.Servers.Events.ServerCreated =>
-      {1,
-       "%{active: boolean(), app_username: String.t(), expected_properties: %{architecture: String.t() | nil, cores: non_neg_integer() | nil, cpus: non_neg_integer() | nil, distribution: String.t() | nil, distribution_release: String.t() | nil, distribution_version: String.t() | nil, hostname: String.t() | nil, machine_id: String.t() | nil, memory: non_neg_integer() | nil, os_family: String.t() | nil, swap: non_neg_integer() | nil, system: String.t() | nil, vcpus: non_neg_integer() | nil}, group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_host_key_fingerprints: String.t(), ssh_port: 1..65535 | nil, username: String.t()}"},
+      {2,
+       "%{active: boolean(), app_username: String.t(), expected_properties: %{architecture: String.t() | nil, cores: non_neg_integer() | nil, cpus: non_neg_integer() | nil, distribution: String.t() | nil, distribution_release: String.t() | nil, distribution_version: String.t() | nil, hostname: String.t() | nil, machine_id: String.t() | nil, memory: non_neg_integer() | nil, os_family: String.t() | nil, swap: non_neg_integer() | nil, system: String.t() | nil, vcpus: non_neg_integer() | nil}, group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_host_keys: String.t() | nil, ssh_port: 1..65535 | nil, username: String.t()}"},
     ArchiDep.Servers.Events.ServerDeleted =>
       {1,
        "%{group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t(), owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_port: 1..65535}"},
@@ -132,8 +132,8 @@ defmodule ArchiDep.Events.Store.EventSchemaVersionDriftTest do
       {1,
        "%{group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_port: 1..65535 | nil, ssh_username: String.t(), username: String.t()}"},
     ArchiDep.Servers.Events.ServerUpdated =>
-      {1,
-       "%{active: boolean(), app_username: String.t() | nil, expected_properties: %{architecture: String.t() | nil, cores: non_neg_integer() | nil, cpus: non_neg_integer() | nil, distribution: String.t() | nil, distribution_release: String.t() | nil, distribution_version: String.t() | nil, hostname: String.t() | nil, machine_id: String.t() | nil, memory: non_neg_integer() | nil, os_family: String.t() | nil, swap: non_neg_integer() | nil, system: String.t() | nil, vcpus: non_neg_integer() | nil}, group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_host_key_fingerprints: String.t(), ssh_port: 1..65535 | nil, username: String.t()}"}
+      {2,
+       "%{active: boolean(), app_username: String.t() | nil, expected_properties: %{architecture: String.t() | nil, cores: non_neg_integer() | nil, cpus: non_neg_integer() | nil, distribution: String.t() | nil, distribution_release: String.t() | nil, distribution_version: String.t() | nil, hostname: String.t() | nil, machine_id: String.t() | nil, memory: non_neg_integer() | nil, os_family: String.t() | nil, swap: non_neg_integer() | nil, system: String.t() | nil, vcpus: non_neg_integer() | nil}, group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_host_keys: String.t() | nil, ssh_port: 1..65535 | nil, username: String.t()}"}
   }
 
   test "each event's payload shape matches its pinned schema_version" do

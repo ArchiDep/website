@@ -76,14 +76,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblemsTest do
       server = ServersFactory.build(:server)
 
       assert ServerProblems.server_key_exchange_failed_problem(server, "SHA256:unknown") ==
-               {:server_key_exchange_failed, "SHA256:unknown", server.ssh_host_key_fingerprints}
+               {:server_key_exchange_failed, "SHA256:unknown", server.ssh_host_keys}
     end
 
     test "a key exchange failed problem accepts a nil unknown fingerprint" do
       server = ServersFactory.build(:server)
 
       assert ServerProblems.server_key_exchange_failed_problem(server, nil) ==
-               {:server_key_exchange_failed, nil, server.ssh_host_key_fingerprints}
+               {:server_key_exchange_failed, nil, server.ssh_host_keys}
     end
 
     test "a missing sudo access problem trims the standard error output" do

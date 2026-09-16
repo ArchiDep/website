@@ -161,7 +161,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
           ip_address: "10.0.0.5",
           username: "deploy2",
           ssh_port: "2244",
-          ssh_host_key_fingerprints: "SHA256:newfingerprint",
+          ssh_host_keys: "SHA256:newfingerprint",
           active: "true",
           app_username: "appdeploy",
           expected_properties: %{
@@ -188,7 +188,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
                ip_address: "10.0.0.5",
                username: "deploy2",
                ssh_port: 2244,
-               ssh_host_key_fingerprints: "SHA256:newfingerprint",
+               ssh_host_keys: "SHA256:newfingerprint",
                active: true,
                app_username: "appdeploy",
                expected_properties: %{
@@ -238,7 +238,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
           ip_address: "10.0.0.5",
           username: "deploy2",
           ssh_port: "",
-          ssh_host_key_fingerprints: "SHA256:keep",
+          ssh_host_keys: "SHA256:keep",
           active: "true",
           app_username: "archidep",
           expected_properties: %{
@@ -265,7 +265,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
                ip_address: "10.0.0.5",
                username: "deploy2",
                ssh_port: nil,
-               ssh_host_key_fingerprints: "SHA256:keep",
+               ssh_host_keys: "SHA256:keep",
                active: true,
                app_username: "archidep",
                expected_properties: %{

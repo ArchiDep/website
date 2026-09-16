@@ -17,7 +17,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
 
   @type t :: struct()
 
-  @required_fields [:ip_address, :username, :active, :ssh_host_key_fingerprints]
+  @required_fields [:ip_address, :username, :active]
   @root_required_fields [:group_id | @required_fields]
 
   @primary_key false
@@ -26,7 +26,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
     field(:ip_address, :string)
     field(:username, :string)
     field(:ssh_port, :integer)
-    field(:ssh_host_key_fingerprints, :string)
+    field(:ssh_host_keys, :string)
     field(:active, :boolean, default: true)
     field(:group_id, :binary_id)
     field(:app_username, :string)
@@ -49,7 +49,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
         :ssh_port,
         :active,
         :app_username,
-        :ssh_host_key_fingerprints,
+        :ssh_host_keys,
         :group_id
       ])
       |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
@@ -79,7 +79,7 @@ defmodule ArchiDepWeb.Servers.ServerForm do
         ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
         username: server.username,
         ssh_port: server.ssh_port,
-        ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+        ssh_host_keys: server.ssh_host_keys,
         active: server.active,
         group_id: server.group_id,
         app_username: server.app_username,
@@ -90,12 +90,12 @@ defmodule ArchiDepWeb.Servers.ServerForm do
         :ip_address,
         :username,
         :ssh_port,
-        :ssh_host_key_fingerprints,
+        :ssh_host_keys,
         :active,
         :app_username
       ])
       |> cast_embed(:expected_properties, with: &ServerPropertiesForm.changeset/2)
-      |> validate_required([:ip_address, :username, :active, :ssh_host_key_fingerprints])
+      |> validate_required(@required_fields)
   end
 
   @spec to_update_data(t()) :: Types.server_data()

@@ -644,7 +644,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
                   starting_version: starting_version,
                   done_version: done_version
                 } ->
-               fake_fingerprint = SSHFactory.random_ssh_host_key_fingerprint_digest()
+               fake_fingerprint = SSHFactory.random_ssh_host_key_fingerprint()
 
                expect(ServerManagerMock, :on_message, 2, fn
                  %ServerManagerState{

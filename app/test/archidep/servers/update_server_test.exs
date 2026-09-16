@@ -76,7 +76,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
         ip_address: "203.0.113.42",
         username: "fulluser",
         ssh_port: 2222,
-        ssh_host_key_fingerprints: SSHFactory.random_ssh_host_key_fingerprint_string(),
+        ssh_host_keys: SSHFactory.random_ssh_host_keys(),
         active: false,
         app_username: "fullapp",
         expected_properties: %{
@@ -129,7 +129,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
         ip_address: "192.168.1.10",
         username: "alice",
         ssh_port: nil,
-        ssh_host_key_fingerprints: SSHFactory.random_ssh_host_key_fingerprint_string(),
+        ssh_host_keys: SSHFactory.random_ssh_host_keys(),
         active: false,
         app_username: "appalice",
         expected_properties: %{
@@ -267,7 +267,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
                  ip_address: ip_address,
                  username: data.username,
                  ssh_port: data.ssh_port,
-                 ssh_host_key_fingerprints: data.ssh_host_key_fingerprints,
+                 ssh_host_keys: data.ssh_host_keys,
                  active: data.active,
                  version: server.version + 1,
                  updated_at: @now
@@ -508,7 +508,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
                username: data.username,
                app_username: data.app_username,
                ssh_port: data.ssh_port,
-               ssh_host_key_fingerprints: data.ssh_host_key_fingerprints,
+               ssh_host_keys: data.ssh_host_keys,
                active: data.active,
                expected_properties: expected_properties,
                version: server.version + 1,
@@ -529,7 +529,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
              id: event_id,
              stream: "servers:servers:#{id}",
              version: server.version,
-             schema_version: 1,
+             schema_version: 2,
              type: "archidep/servers/server-updated",
              data: %{
                "id" => id,
@@ -538,7 +538,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
                "username" => server.username,
                "app_username" => server.app_username,
                "ssh_port" => server.ssh_port,
-               "ssh_host_key_fingerprints" => server.ssh_host_key_fingerprints,
+               "ssh_host_keys" => server.ssh_host_keys,
                "active" => server.active,
                "group" => %{"id" => server.group.id, "name" => server.group.name},
                "owner" => %{
@@ -579,7 +579,7 @@ defmodule ArchiDep.Servers.UpdateServerTest do
              username: event_data["username"],
              app_username: event_data["app_username"],
              ssh_port: event_data["ssh_port"],
-             ssh_host_key_fingerprints: event_data["ssh_host_key_fingerprints"],
+             ssh_host_keys: event_data["ssh_host_keys"],
              secret_key: original.secret_key,
              active: event_data["active"],
              group: not_loaded(:group, Server),

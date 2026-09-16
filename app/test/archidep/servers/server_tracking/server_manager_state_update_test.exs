@@ -64,7 +64,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: server.active,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -142,7 +142,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: server.username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: server.active,
       app_username: new_server_app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -223,7 +223,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: true,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -322,7 +322,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -411,7 +411,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -500,7 +500,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -588,7 +588,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -674,7 +674,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -760,7 +760,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -849,7 +849,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: new_server_username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: false,
       app_username: server.app_username,
       expected_properties: Enum.into(@no_server_properties, %{})
@@ -940,7 +940,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
       ip_address: server.ip_address.address |> :inet.ntoa() |> to_string(),
       username: server.username,
       ssh_port: server.ssh_port,
-      ssh_host_key_fingerprints: server.ssh_host_key_fingerprints,
+      ssh_host_keys: server.ssh_host_keys,
       active: server.active,
       app_username: server.app_username,
       expected_properties: @no_server_properties |> Enum.into(%{}) |> Map.put(:cpus, 4)
@@ -1088,7 +1088,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
              id: event_id,
              stream: "servers:servers:#{server.id}",
              version: server.version + 1,
-             schema_version: 1,
+             schema_version: 2,
              type: "archidep/servers/server-updated",
              data: %{
                "id" => server.id,
@@ -1097,7 +1097,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateUpdateTest do
                "username" => server.username,
                "app_username" => server.app_username,
                "ssh_port" => server.ssh_port,
-               "ssh_host_key_fingerprints" => server.ssh_host_key_fingerprints,
+               "ssh_host_keys" => server.ssh_host_keys,
                "active" => server.active,
                "group" => %{
                  "id" => server.group.id,

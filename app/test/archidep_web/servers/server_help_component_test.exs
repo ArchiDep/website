@@ -22,7 +22,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
   @create_your_server @exercise <> "#create-your-server"
   @administrator_account @exercise <> "#configure-your-administrator-account"
   @teacher_access @exercise <> "#give-the-teacher-access-to-your-virtual-machine"
-  @fingerprints @exercise <> "#register-your-azure-vm-with-us"
+  @register_server @exercise <> "#register-your-azure-vm-with-us"
   @basic_settings @exercise <> "#configure-basic-settings"
   @hostname @exercise <> "#change-the-hostname-of-your-virtual-machine"
   @swap @exercise <> "#add-swap-space-to-your-virtual-server"
@@ -95,7 +95,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
         )
 
       assert server_help(server, state) ==
-               %{@nothing | key_exchange: %{links: [@fingerprints]}}
+               %{@nothing | key_exchange: %{links: [@register_server]}}
     end
 
     test "points at the hardware step for a non-hostname, non-swap mismatch" do
@@ -265,7 +265,7 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponentTest do
       text =~ "can't seem to connect to your server" -> :timeout
       text =~ "refusing to let us open a connection" -> :refused
       text =~ "not letting us in with the username" -> :auth_failed
-      text =~ "does not match those you have registered" -> :key_exchange
+      text =~ "of the public keys you have registered" -> :key_exchange
       text =~ "does not meet the expected configuration" -> :property_mismatch
       text =~ "reach some of the ports" -> :open_ports
     end

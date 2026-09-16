@@ -288,6 +288,15 @@ Not all services log there, however. If `journalctl` displays no log entries, yo
 
 If your service cannot start, you should be able to find an error from one of these sources.
 
+### List a server's SSH host public keys
+
+If you need a server's SSH host public keys (e.g. to register the server with a
+service that will connect to it), run the following command on the server:
+
+```bash
+cat /etc/ssh/ssh_host_*_key.pub
+```
+
 ### List a server's SSH host key fingerprints
 
 If you need to see the fingerprints of a server's SSH public keys (e.g. to check

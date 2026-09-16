@@ -831,7 +831,7 @@ so you hold every value and assert against it):
    each one is persisted and audited. **Build this input by hand** too:
    ExMachina has no trait system, so `build(:thing_data, :full)` does not work —
    pass an explicit map (drawing valid values from sub-factories where useful,
-   e.g. SSH fingerprints).
+   e.g. SSH host keys).
 
 These complement, not replace, the error/branch tests (authorization failure,
 each validation failure, conflicts). The matching strategy for **update** use
@@ -1333,7 +1333,7 @@ asserted:
 - **Cover an update form with a full _and_ a clear-every-optional submission** —
   the update analogue of the minimal/full create pair. Submit once changing
   **every** field, and once **clearing every optional** field (blank the dates,
-  empty the fingerprints), asserting in each the **exact data map the context
+  empty the host keys), asserting in each the **exact data map the context
   received**, by equality (captured the same way). The full submission proves
   every field is wired; the clear submission proves a blanked input serializes
   to `nil`/`[]` (Ecto casts an empty value to the field default) rather than

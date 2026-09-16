@@ -73,15 +73,14 @@ defmodule ArchiDep.Course.UpdateClassTest do
         active: false,
         servers_enabled: false,
         teacher_ssh_public_keys: [],
-        ssh_exercise_vm_md5_host_key_fingerprints: nil,
-        ssh_exercise_vm_sha256_host_key_fingerprints: nil,
+        ssh_exercise_vm_host_keys: nil,
         now: @past
       })
 
     broadcasts = subscribe_class_broadcasts(original.id)
 
     # Built by hand with every field set to a non-default value, so the test
-    # pins that all of them — including the SSH host-key fingerprints — are
+    # pins that all of them — including the SSH exercise VM host keys — are
     # persisted and audited on update.
     data = %{
       name: "After",
@@ -90,10 +89,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
       active: true,
       servers_enabled: true,
       teacher_ssh_public_keys: [@teacher_ssh_public_key],
-      ssh_exercise_vm_md5_host_key_fingerprints:
-        SSHFactory.random_ssh_host_key_fingerprint_string(:md5),
-      ssh_exercise_vm_sha256_host_key_fingerprints:
-        SSHFactory.random_ssh_host_key_fingerprint_string(:sha256)
+      ssh_exercise_vm_host_keys: SSHFactory.random_ssh_host_keys()
     }
 
     auth = Factory.build(:authentication, root: true)
@@ -124,10 +120,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
         active: true,
         servers_enabled: true,
         teacher_ssh_public_keys: [@teacher_ssh_public_key],
-        ssh_exercise_vm_md5_host_key_fingerprints:
-          SSHFactory.random_ssh_host_key_fingerprint_string(:md5),
-        ssh_exercise_vm_sha256_host_key_fingerprints:
-          SSHFactory.random_ssh_host_key_fingerprint_string(:sha256),
+        ssh_exercise_vm_host_keys: SSHFactory.random_ssh_host_keys(),
         now: @past
       })
 
@@ -142,8 +135,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
       active: false,
       servers_enabled: false,
       teacher_ssh_public_keys: [],
-      ssh_exercise_vm_md5_host_key_fingerprints: nil,
-      ssh_exercise_vm_sha256_host_key_fingerprints: nil
+      ssh_exercise_vm_host_keys: nil
     }
 
     auth = Factory.build(:authentication, root: true)
@@ -364,10 +356,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
              active: data.active,
              servers_enabled: data.servers_enabled,
              teacher_ssh_public_keys: data.teacher_ssh_public_keys,
-             ssh_exercise_vm_md5_host_key_fingerprints:
-               data.ssh_exercise_vm_md5_host_key_fingerprints,
-             ssh_exercise_vm_sha256_host_key_fingerprints:
-               data.ssh_exercise_vm_sha256_host_key_fingerprints,
+             ssh_exercise_vm_host_keys: data.ssh_exercise_vm_host_keys,
              expected_server_properties: original.expected_server_properties,
              expected_server_properties_id: original.expected_server_properties_id,
              version: original.version + 1,
@@ -386,7 +375,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
              id: event_id,
              stream: "course:classes:#{id}",
              version: version,
-             schema_version: 1,
+             schema_version: 2,
              type: "archidep/course/class-updated",
              data: %{
                "id" => id,
@@ -396,10 +385,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
                "active" => data.active,
                "servers_enabled" => data.servers_enabled,
                "teacher_ssh_public_keys" => data.teacher_ssh_public_keys,
-               "ssh_exercise_vm_md5_host_key_fingerprints" =>
-                 data.ssh_exercise_vm_md5_host_key_fingerprints,
-               "ssh_exercise_vm_sha256_host_key_fingerprints" =>
-                 data.ssh_exercise_vm_sha256_host_key_fingerprints
+               "ssh_exercise_vm_host_keys" => data.ssh_exercise_vm_host_keys
              },
              meta: %{},
              initiator: "accounts:user-accounts:#{auth.principal_id}",
@@ -429,8 +415,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
              "active" => active,
              "servers_enabled" => servers_enabled,
              "teacher_ssh_public_keys" => teacher_ssh_public_keys,
-             "ssh_exercise_vm_md5_host_key_fingerprints" => md5_fingerprints,
-             "ssh_exercise_vm_sha256_host_key_fingerprints" => sha256_fingerprints
+             "ssh_exercise_vm_host_keys" => ssh_exercise_vm_host_keys
            },
            version: version,
            occurred_at: updated_at
@@ -446,8 +431,7 @@ defmodule ArchiDep.Course.UpdateClassTest do
              active: active,
              servers_enabled: servers_enabled,
              teacher_ssh_public_keys: teacher_ssh_public_keys,
-             ssh_exercise_vm_md5_host_key_fingerprints: md5_fingerprints,
-             ssh_exercise_vm_sha256_host_key_fingerprints: sha256_fingerprints,
+             ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys,
              expected_server_properties: original.expected_server_properties,
              expected_server_properties_id: original.expected_server_properties_id,
              version: version,

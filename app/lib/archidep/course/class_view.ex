@@ -27,8 +27,7 @@ defmodule ArchiDep.Course.ClassView do
     :active,
     :servers_enabled,
     :teacher_ssh_public_keys,
-    :ssh_exercise_vm_md5_host_key_fingerprints,
-    :ssh_exercise_vm_sha256_host_key_fingerprints,
+    :ssh_exercise_vm_host_keys,
     :expected_server_properties,
     :expected_server_properties_id,
     :version,
@@ -43,8 +42,7 @@ defmodule ArchiDep.Course.ClassView do
     :active,
     :servers_enabled,
     :teacher_ssh_public_keys,
-    :ssh_exercise_vm_md5_host_key_fingerprints,
-    :ssh_exercise_vm_sha256_host_key_fingerprints,
+    :ssh_exercise_vm_host_keys,
     :expected_server_properties,
     :expected_server_properties_id,
     :version,
@@ -60,8 +58,7 @@ defmodule ArchiDep.Course.ClassView do
           active: boolean(),
           servers_enabled: boolean(),
           teacher_ssh_public_keys: list(String.t()),
-          ssh_exercise_vm_md5_host_key_fingerprints: String.t() | nil,
-          ssh_exercise_vm_sha256_host_key_fingerprints: String.t() | nil,
+          ssh_exercise_vm_host_keys: String.t() | nil,
           expected_server_properties: ExpectedServerProperties.t() | NotLoaded.t(),
           expected_server_properties_id: UUID.t(),
           version: pos_integer(),
@@ -85,9 +82,7 @@ defmodule ArchiDep.Course.ClassView do
       active: class.active,
       servers_enabled: class.servers_enabled,
       teacher_ssh_public_keys: class.teacher_ssh_public_keys,
-      ssh_exercise_vm_md5_host_key_fingerprints: class.ssh_exercise_vm_md5_host_key_fingerprints,
-      ssh_exercise_vm_sha256_host_key_fingerprints:
-        class.ssh_exercise_vm_sha256_host_key_fingerprints,
+      ssh_exercise_vm_host_keys: class.ssh_exercise_vm_host_keys,
       expected_server_properties: class.expected_server_properties,
       expected_server_properties_id: class.expected_server_properties_id,
       version: class.version,
@@ -143,9 +138,7 @@ defmodule ArchiDep.Course.ClassView do
            active: active,
            servers_enabled: servers_enabled,
            teacher_ssh_public_keys: teacher_ssh_public_keys,
-           ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
-           ssh_exercise_vm_sha256_host_key_fingerprints:
-             ssh_exercise_vm_sha256_host_key_fingerprints
+           ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys
          },
          version,
          updated_at
@@ -158,9 +151,7 @@ defmodule ArchiDep.Course.ClassView do
            active: active,
            servers_enabled: servers_enabled,
            teacher_ssh_public_keys: teacher_ssh_public_keys,
-           ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
-           ssh_exercise_vm_sha256_host_key_fingerprints:
-             ssh_exercise_vm_sha256_host_key_fingerprints,
+           ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys,
            version: version,
            updated_at: updated_at
        }

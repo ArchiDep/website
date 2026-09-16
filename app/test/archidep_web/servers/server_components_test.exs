@@ -14,10 +14,6 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
 
   @now ~U[2026-06-27 12:00:00Z]
 
-  # A fingerprint whose parsed human form is deterministic, so the key-exchange
-  # problem's rendered fingerprint list can be pinned exactly.
-  @sha256_fingerprint "256 SHA256:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU root@server (ED25519)"
-
   setup do
     stub(ArchiDep.Clock.Mock, :now, fn -> @now end)
     :ok
@@ -923,35 +919,31 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
   end
 
   describe "server_problem/1 key exchange failures" do
-    test "lists the registered fingerprints when the server presents an unknown one" do
-      problem = {:server_key_exchange_failed, "AA:BB:CC", @sha256_fingerprint}
+    test "lists the fingerprints of the registered keys when the server presents an unknown one" do
+      # Real host public keys generated with ssh-keygen: the expected
+      # fingerprints are the output of `ssh-keygen -lf` for them.
+      problem =
+        {:server_key_exchange_failed, "SHA256:m8HPD1dZ8lHmxBEY0nWUQakBAGBsHLkmfbq9fGl7a2I",
+         """
+         ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r89VjK9kPMhsuqERGVbUi5RZnBlccQnt4e
+         ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLw7xhOu0n7K5DlCoqSwRLA5aZExh4s9fhsf0NELpSrJVnoNHwqfd5LUQdmrq4W8PNcloyilUhidRR/tEP2MfU0=
+         """}
 
       assert problem(problem) == %{
                severity: :error,
                text:
-                 "SSH key exchange failed The host key fingerprint provided by the server is: AA:BB:CC The following host key fingerprints are registered for this server: SHA256:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU (ED25519)",
+                 "SSH key exchange failed The host key fingerprint provided by the server is: SHA256:m8HPD1dZ8lHmxBEY0nWUQakBAGBsHLkmfbq9fGl7a2I The fingerprints of the host public keys registered for this server are: SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY (ED25519) SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ (ECDSA)",
                retry: nil
              }
     end
 
-    test "reports that no fingerprints are registered" do
-      problem = {:server_key_exchange_failed, nil, ""}
+    test "reports that no keys are registered when the fingerprint presented by the server is unknown" do
+      problem = {:server_key_exchange_failed, nil, nil}
 
       assert problem(problem) == %{
                severity: :error,
                text:
-                 "SSH key exchange failed Server host key fingerprint is unknown No known host key fingerprints were registered",
-               retry: nil
-             }
-    end
-
-    test "lists invalid registered fingerprints" do
-      problem = {:server_key_exchange_failed, [], "not-a-fingerprint"}
-
-      assert problem(problem) == %{
-               severity: :error,
-               text:
-                 "SSH key exchange failed The following invalid host key fingerprints are registered for this server: not-a-fingerprint",
+                 "SSH key exchange failed Server host key fingerprint is unknown No host public keys were registered",
                retry: nil
              }
     end

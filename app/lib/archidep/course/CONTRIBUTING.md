@@ -133,8 +133,8 @@ A [`Class`](./schemas/class.ex) represents a teaching class/cohort. Besides its
   (combined with the active state by `allows_server_creation?/2`).
 - `teacher_ssh_public_keys` — SSH keys authorized to connect to the students'
   servers (so teachers can help).
-- MD5/SHA-256 host-key fingerprints of the shared **SSH exercise VM** used early
-  in the course.
+- The host public keys of the shared **SSH exercise VM** used early in the
+  course, whose fingerprints the dashboard shows students.
 - An associated [`ExpectedServerProperties`](#expected-server-properties).
 
 Classes are managed by teachers (root users) — see [Use Cases](#use-cases). A

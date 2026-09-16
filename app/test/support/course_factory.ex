@@ -96,18 +96,11 @@ defmodule ArchiDep.Support.CourseFactory do
     {teacher_ssh_public_keys, attrs!} =
       Map.pop(attrs!, :teacher_ssh_public_keys, [])
 
-    {ssh_exercise_vm_md5_host_key_fingerprints, attrs!} =
+    {ssh_exercise_vm_host_keys, attrs!} =
       Map.pop_lazy(
         attrs!,
-        :ssh_exercise_vm_md5_host_key_fingerprints,
-        optionally(fn -> random_ssh_host_key_fingerprints(:md5) end)
-      )
-
-    {ssh_exercise_vm_sha256_host_key_fingerprints, attrs!} =
-      Map.pop_lazy(
-        attrs!,
-        :ssh_exercise_vm_sha256_host_key_fingerprints,
-        optionally(fn -> random_ssh_host_key_fingerprints(:sha256) end)
+        :ssh_exercise_vm_host_keys,
+        optionally(&SSHFactory.random_ssh_host_keys/0)
       )
 
     {expected_server_properties, attrs!} =
@@ -127,8 +120,7 @@ defmodule ArchiDep.Support.CourseFactory do
       active: active,
       servers_enabled: servers_enabled,
       teacher_ssh_public_keys: teacher_ssh_public_keys,
-      ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
-      ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints,
+      ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys,
       expected_server_properties: expected_server_properties,
       expected_server_properties_id: expected_server_properties.id,
       version: version,
@@ -149,18 +141,11 @@ defmodule ArchiDep.Support.CourseFactory do
     {servers_enabled, attrs!} = Map.pop_lazy(attrs!, :servers_enabled, &bool/0)
     {teacher_ssh_public_keys, attrs!} = Map.pop(attrs!, :teacher_ssh_public_keys, [])
 
-    {ssh_exercise_vm_md5_host_key_fingerprints, attrs!} =
+    {ssh_exercise_vm_host_keys, attrs!} =
       Map.pop_lazy(
         attrs!,
-        :ssh_exercise_vm_md5_host_key_fingerprints,
-        optionally(fn -> random_ssh_host_key_fingerprints(:md5) end)
-      )
-
-    {ssh_exercise_vm_sha256_host_key_fingerprints, attrs!} =
-      Map.pop_lazy(
-        attrs!,
-        :ssh_exercise_vm_sha256_host_key_fingerprints,
-        optionally(fn -> random_ssh_host_key_fingerprints(:sha256) end)
+        :ssh_exercise_vm_host_keys,
+        optionally(&SSHFactory.random_ssh_host_keys/0)
       )
 
     [] = Map.keys(attrs!)
@@ -172,8 +157,7 @@ defmodule ArchiDep.Support.CourseFactory do
       active: active,
       servers_enabled: servers_enabled,
       teacher_ssh_public_keys: teacher_ssh_public_keys,
-      ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
-      ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints
+      ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys
     }
   end
 
@@ -472,14 +456,6 @@ defmodule ArchiDep.Support.CourseFactory do
       created_at: created_at,
       updated_at: updated_at
     }
-  end
-
-  defp random_ssh_host_key_fingerprints(digest_alg) do
-    1
-    |> Range.new(Faker.random_between(1, 3))
-    |> Enum.map_join("\n", fn _n ->
-      SSHFactory.random_ssh_host_key_fingerprint_string(digest_alg)
-    end)
   end
 
   # Pops the class date window from the given attributes, generating random but

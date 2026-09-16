@@ -260,11 +260,11 @@ in full, which remains the source of truth.
 - **Server group** — the Servers context's view of a class/cohort: the students
   and servers managed together (backed by the same `classes` and `students`
   tables the Course context owns). See [Server Groups & Members][gl-server-groups].
-- **SSH exercise VM** — a shared virtual machine students connect to at the start
-  of the course to learn SSH, before creating their own cloud servers. The
-  application stores its host-key fingerprints (per class) and a generated
-  per-student password, and displays them as credentials on the dashboard. See
-  [Students][gl-students].
+- **SSH exercise VM** — a shared virtual machine students connect to at the
+  start of the course to learn SSH, before creating their own cloud servers. The
+  application stores its host public keys (per class) and a generated
+  per-student password, and displays the credentials and the keys' fingerprints
+  on the dashboard. See [Students][gl-students].
 
 [gl-events]: ./app/CONTRIBUTING.md#events--auditing
 [gl-expected-props]: ./app/lib/archidep/course/CONTRIBUTING.md#expected-server-properties

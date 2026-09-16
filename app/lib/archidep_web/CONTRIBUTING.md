@@ -329,8 +329,8 @@ profile page, documented with the
 
 - **[`DashboardLive`](./dashboard/dashboard_live.ex)** (`/app`) — the home
   dashboard: it shows the credentials for the shared **SSH exercise VM** (with
-  copy buttons and host-key fingerprints) and the student's active servers with
-  their live state.
+  copy buttons and the SHA-256 and MD5 fingerprints of its host public keys) and
+  the student's active servers with their live state.
 - **[`MyServersLive`](./dashboard/my_servers_live.ex)** (`/app/my-servers`) —
   the student's servers: register a new one (a dialog from the [server
   UI](#servers-ui)), and view/monitor each with retry actions. Both pages track

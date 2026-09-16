@@ -1,7 +1,7 @@
 defmodule ArchiDep.Helpers.UseCaseHelpersTest do
   use ExUnit.Case, async: true
 
-  alias ArchiDep.Course.Events.ClassCreated
+  alias ArchiDep.Course.Events.ClassDeleted
   alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Helpers.UseCaseHelpers
   alias Ecto.Changeset
@@ -14,7 +14,7 @@ defmodule ArchiDep.Helpers.UseCaseHelpersTest do
   describe "add_to_stream/2" do
     test "an event that declares no version is stamped with schema version 1" do
       id = UUID.generate()
-      data = struct(ClassCreated, id: id)
+      data = struct(ClassDeleted, id: id)
 
       event =
         data
@@ -30,7 +30,7 @@ defmodule ArchiDep.Helpers.UseCaseHelpersTest do
                  stream: "course:classes:#{id}",
                  version: 4,
                  schema_version: 1,
-                 type: "archidep/course/class-created"
+                 type: "archidep/course/class-deleted"
                )
     end
   end

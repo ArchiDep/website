@@ -63,7 +63,7 @@ defmodule ArchiDep.Servers.ServerViewTest do
           username: "renameduser",
           app_username: "renamedapp",
           ssh_port: 2222,
-          ssh_host_key_fingerprints: "renamed fingerprints",
+          ssh_host_keys: "renamed keys",
           active: not server.active,
           expected_properties: new_expected_properties
       }
@@ -84,7 +84,7 @@ defmodule ArchiDep.Servers.ServerViewTest do
                  username: "renameduser",
                  app_username: "renamedapp",
                  ssh_port: 2222,
-                 ssh_host_key_fingerprints: "renamed fingerprints",
+                 ssh_host_keys: "renamed keys",
                  active: modified.active,
                  expected_properties: new_expected_properties,
                  version: view.version + 1

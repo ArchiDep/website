@@ -264,7 +264,7 @@ After a while, it should print the response:
       "code": "ProvisioningState/succeeded",
       "displayStatus": "Provisioning succeeded",
       "level": "Info",
-      "message": "Enable succeeded: \n[stdout]\n256 SHA256:IKNmtqj1OKCP4gyErlaQkBbn26gB0ofV3fLkw14yokg root@ArchiDep (ED25519)\n1024 SHA256:mUJQmHnMkGeqbxrRjRrBCJYzxyFYIlwKx/R54eLi4ds root@ArchiDep (DSA)\n3072 SHA256:RGxd9jZfWrUUynsVNGmngD78AaZGcQNT4iHjwX6cK2c root@ArchiDep (RSA)\n256 SHA256:0TORCgUgzrPGeDHzV5fGAarkpGpc5Nbkhb7q2dbG0OA root@ArchiDep (ECDSA)\n\n[stderr]\n",
+      "message": "Enable succeeded: \n[stdout]\n256 SHA256:IKNmtqj1OKCP4gyErlaQkBbn26gB0ofV3fLkw14yokg root@ArchiDep (ED25519)\n3072 SHA256:RGxd9jZfWrUUynsVNGmngD78AaZGcQNT4iHjwX6cK2c root@ArchiDep (RSA)\n256 SHA256:0TORCgUgzrPGeDHzV5fGAarkpGpc5Nbkhb7q2dbG0OA root@ArchiDep (ECDSA)\n\n[stderr]\n",
       "time": null
     }
   ]
@@ -560,44 +560,47 @@ Make a note of your virtual server's public IP address (the same IP address you
 used to connect to it with the `ssh` command).
 
 Also run the following command **while connected to your server with SSH** to
-obtain your server's SSH host key fingerprints:
+print your server's SSH host public keys:
 
 ```bash
-$> find /etc/ssh -name "*.pub" -exec ssh-keygen -lf {} \;
+$> cat /etc/ssh/ssh_host_*_key.pub
 ```
 
-Just one more step, go back to the dashboard and:
+It should print one line per key, similar to this:
+
+```
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLw7...= root@ArchiDep
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r89VjK9kPMhsuqERGVbUi5RZnBlccQnt4e root@ArchiDep
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDL6EKznX0xg652E/oWppt3TBYTZlArXmjx6Qs3UOzE...= root@ArchiDep
+```
+
+Copy all of these lines. Just one more step, go back to the dashboard, and paste
+them into the **SSH host public keys** field when you register your server:
 
 <a href="/app?server=ready" class="btn btn-primary btn-xl">
   <span class="flex items-center gap-2">
     <span>🎉</span>
-    <span class="font-title">Register you virtual server</span>
+    <span class="font-title">Register your virtual server</span>
   </span>
 </a>
 
-{% callout type: more, id: providing-virtual-server-ssh-host-key-fingerprints %}
+{% callout type: more, id: providing-virtual-server-ssh-host-public-keys %}
 
-When connecting to your server, we will match the public SSH key fingerprint it
-provides against the keys you are providing us to make sure we are connecting to
-your server and not an attacker's (man-in-the-middle).
+When connecting to your server, we will check that the SSH host key it presents
+is one of the public keys you gave us. This makes sure we are connecting to your
+server and not an attacker's (man-in-the-middle).
 
-The command above does a few things:
+The files in the `/etc/ssh` directory whose names match `ssh_host_*_key.pub` are
+the public SSH host keys of your server, i.e. the keys it uses to sign the
+Diffie-Hellman key exchange parameters when an SSH secure tunnel is established.
+Your shell replaces the `*` wildcard with whatever matches in each file name
+(`ecdsa`, `ed25519` and `rsa`), and the `cat` command prints the contents of all
+matching files one after the other.
 
-- The first `find` command finds all files named `*.pub` in the `/etc/ssh`
-  directory, which contains the configuration files for the SSH server running
-  on your virtual server. These will be the public SSH host keys of your server,
-  i.e. the keys it uses to sign the Diffie-Helmann key exchange parameters
-  during the establishment of the SSH secure tunnel.
-- The `-exec` option of the `find` command executes a command for each file that
-  was found, with `{}` being the path to the file and `\;` a marker to mark the
-  end of the command to execute.
-- For each public SSH host key file, the `ssh-keygen -lf <file>` command is
-  executed. The `ssh-keygen` command can not only generate new keys, but with
-  the `-l` option, it can also show the fingerprints of the file specified with
-  the `-f` (**f**ile) option.
-
-Basically, the entire command will print the fingerprints of all public SSH host
-keys on your server.
+Each of these public keys has a matching private key in the same directory, in
+the file with the same name without the `.pub` extension. It is safe to share a
+public key, but **never share a private key**: anyone who has it can pretend to
+be your server.
 
 {% endcallout %}
 

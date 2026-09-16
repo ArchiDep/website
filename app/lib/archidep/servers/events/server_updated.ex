@@ -19,7 +19,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
     :username,
     :app_username,
     :ssh_port,
-    :ssh_host_key_fingerprints,
+    :ssh_host_keys,
     :active,
     :group,
     :owner,
@@ -32,7 +32,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
     :username,
     :app_username,
     :ssh_port,
-    :ssh_host_key_fingerprints,
+    :ssh_host_keys,
     :active,
     :group,
     :owner,
@@ -46,7 +46,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
           username: String.t(),
           app_username: String.t() | nil,
           ssh_port: 1..65_535 | nil,
-          ssh_host_key_fingerprints: String.t(),
+          ssh_host_keys: String.t() | nil,
           active: boolean(),
           group: %{
             id: UUID.t(),
@@ -75,6 +75,9 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
           }
         }
 
+  @spec event_version() :: pos_integer()
+  def event_version, do: 2
+
   @spec new(Server.t()) :: t()
   def new(server) do
     %Server{
@@ -84,7 +87,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
       username: username,
       app_username: app_username,
       ssh_port: ssh_port,
-      ssh_host_key_fingerprints: ssh_host_key_fingerprints,
+      ssh_host_keys: ssh_host_keys,
       active: active,
       group: group,
       owner: owner,
@@ -130,7 +133,7 @@ defmodule ArchiDep.Servers.Events.ServerUpdated do
       username: username,
       app_username: app_username,
       ssh_port: ssh_port,
-      ssh_host_key_fingerprints: ssh_host_key_fingerprints,
+      ssh_host_keys: ssh_host_keys,
       active: active,
       group: %{
         id: group_id,

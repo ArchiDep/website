@@ -197,8 +197,8 @@ defmodule ArchiDep.CourseSite.Material do
   def give_the_teacher_access, do: @give_the_teacher_access
 
   @doc """
-  Where the exercise has a student register their server's SSH host key
-  fingerprints, which is what the dashboard checks a connection against.
+  Where the exercise has a student register their server's SSH host public keys,
+  which is what the dashboard checks a connection against.
   """
   @spec register_your_server_with_us() :: HeadingRef.t()
   def register_your_server_with_us, do: @register_your_server_with_us

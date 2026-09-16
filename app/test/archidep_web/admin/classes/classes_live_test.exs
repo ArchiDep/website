@@ -299,8 +299,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
                active: false,
                servers_enabled: false,
                teacher_ssh_public_keys: [],
-               ssh_exercise_vm_md5_host_key_fingerprints: nil,
-               ssh_exercise_vm_sha256_host_key_fingerprints: nil
+               ssh_exercise_vm_host_keys: nil
              }
 
       assert_push_event(view, "execute-action", %{
@@ -339,8 +338,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
           active: "true",
           servers_enabled: "true",
           teacher_ssh_public_keys: %{"0" => %{value: "ssh-ed25519 AAAAKEY"}},
-          ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-          ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+          ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
         }
       )
       |> render_submit()
@@ -354,8 +352,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
                active: true,
                servers_enabled: true,
                teacher_ssh_public_keys: ["ssh-ed25519 AAAAKEY"],
-               ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-               ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+               ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
              }
     end
 
@@ -424,8 +421,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
             active: "true",
             servers_enabled: "true",
             teacher_ssh_public_keys: %{"0" => %{value: "ssh-key"}},
-            ssh_exercise_vm_md5_host_key_fingerprints: "md5",
-            ssh_exercise_vm_sha256_host_key_fingerprints: "sha256"
+            ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm3"
           }
         )
         |> render_change()
@@ -437,8 +433,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
                active: true,
                servers_enabled: true,
                teacher_ssh_public_keys: ["ssh-key"],
-               md5_fingerprints: "md5",
-               sha256_fingerprints: "sha256"
+               exercise_vm_host_keys: "ssh-ed25519 AAAAvm3"
              }
 
       reset =
@@ -453,8 +448,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
                active: false,
                servers_enabled: false,
                teacher_ssh_public_keys: [],
-               md5_fingerprints: "",
-               sha256_fingerprints: ""
+               exercise_vm_host_keys: ""
              }
     end
   end
@@ -518,16 +512,8 @@ defmodule ArchiDepWeb.Admin.Classes.ClassesLiveTest do
           ~s(##{@new_class_form_id} input[type="text"][name^="class[teacher_ssh_public_keys]"])
         )
         |> Enum.map(&(html_element_attribute(&1, "value") || "")),
-      md5_fingerprints:
-        form_textarea_value(
-          html,
-          ~s(textarea[name="class[ssh_exercise_vm_md5_host_key_fingerprints]"])
-        ),
-      sha256_fingerprints:
-        form_textarea_value(
-          html,
-          ~s(textarea[name="class[ssh_exercise_vm_sha256_host_key_fingerprints]"])
-        )
+      exercise_vm_host_keys:
+        form_textarea_value(html, ~s(textarea[name="class[ssh_exercise_vm_host_keys]"]))
     }
   end
 

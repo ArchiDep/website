@@ -248,7 +248,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
                ip_address: "192.168.1.20",
                username: "deploy",
                ssh_port: 2222,
-               ssh_host_key_fingerprints: "fp-full",
+               ssh_host_keys: "fp-full",
                active: false,
                app_username: "archidep",
                expected_properties: %{}
@@ -424,7 +424,7 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
       ip_address: "192.168.1.20",
       username: "deploy",
       ssh_port: "2222",
-      ssh_host_key_fingerprints: "fp-full",
+      ssh_host_keys: "fp-full",
       active: "false"
     }
 

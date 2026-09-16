@@ -138,15 +138,18 @@ Notable fields:
 
 - **SSH connection** — `ip_address` (unique within a class), `ssh_port` (default
   22), the initial `username` used for setup, the `app_username` the application
-  uses afterwards (`archidep` for group members), and
-  `ssh_host_key_fingerprints`.
+  uses afterwards (`archidep` for group members), and `ssh_host_keys`, the
+  server's SSH host public keys, which the connection checks the key presented
+  by the server against.
 - **Ownership** — `owner` ([`ServerOwner`](./schemas/server_owner.ex)) and
   `group` ([`ServerGroup`](./schemas/server_group.ex)).
 - **Properties** — `expected_properties` and `last_known_properties` (see
   [Server Properties](#server-properties)).
 - **`secret_key`** — a per-server token used to authenticate the server's own
   ["notify up" callback](#use-cases).
-- **`active`** flag and `version` (optimistic lock).
+- **`active`** flag and `version` (optimistic lock). A server cannot be active
+  without `ssh_host_keys`, which the changesets validate and a database
+  constraint enforces; an inactive server may have none.
 
 **Lifecycle.** There is **no explicit status column**. A server's progress is
 implicit in timestamp fields set as setup proceeds — `set_up_at` (initial
@@ -389,8 +392,9 @@ ArchiDep.Servers.Supervisor                      (rest_for_one)
   to create and identify the problems a server can have (failed connection,
   authentication, port checks, etc.).
 - **[`ArchiDep.Servers.SSH`](./ssh.ex)** holds SSH helpers used throughout:
-  parsing host-key fingerprints (MD5/SHA-256) and locating the application's SSH
-  key pair from configuration.
+  parsing and validating SSH host public keys (see
+  [`SSHHostKey`](./ssh/ssh_host_key.ex), which also computes their MD5/SHA-256
+  fingerprints) and locating the application's SSH key pair from configuration.
 
 The [`ServerConnection`](./server_tracking/server_connection.ex) state machine
 ([`ServerConnectionState`](./server_tracking/server_connection_state.ex))

@@ -147,8 +147,8 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
     >
       <p>
         <strong>Oops.</strong> We've reached an SSH server at the IP address and
-        port you provided, but the public SSH key fingerprint it provided does
-        not match those you have registered. That means we can't be sure we're
+        port you provided, but the SSH host key it presented does not match any
+        of the public keys you have registered. That means we can't be sure we're
         connecting to the right server.
       </p>
       <ul class="mt-2 list-disc list-outside pl-6 flex flex-col gap-y-2">
@@ -161,13 +161,13 @@ defmodule ArchiDepWeb.Servers.ServerHelpComponent do
                 class="underline hover:no-underline"
                 target="_blank"
               >give us the correct SSH host
-              key fingerprints</a>? You need to connect to your server with SSH and
+              public keys</a>? You need to connect to your server with SSH and
               run the following command:
             </span>
-            <code>find /etc/ssh -name "*.pub" -exec ssh-keygen -lf {"{}"} \;</code>
+            <code>cat /etc/ssh/ssh_host_*_key.pub</code>
             <span>
               Copy the output of that command, edit your server, and make sure
-              to paste them into the <strong>SSH host key fingerprints</strong>
+              to paste it into the <strong>SSH host public keys</strong>
               field and save. You may then attempt to reconnect.
             </span>
           </div>

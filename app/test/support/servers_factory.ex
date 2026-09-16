@@ -454,11 +454,8 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec server_key_exchange_failed_problem() :: Types.server_key_exchange_failed_problem()
   def server_key_exchange_failed_problem,
     do:
-      {:server_key_exchange_failed,
-       optional(&SSHFactory.random_ssh_host_key_fingerprint_digest/0),
-       1
-       |> Range.new(Faker.random_between(1, 3))
-       |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)}
+      {:server_key_exchange_failed, optional(&SSHFactory.random_ssh_host_key_fingerprint/0),
+       optional(&SSHFactory.random_ssh_host_keys/0)}
 
   @spec server_missing_sudo_access_problem :: Types.server_missing_sudo_access_problem()
   def server_missing_sudo_access_problem,
@@ -627,12 +624,8 @@ defmodule ArchiDep.Support.ServersFactory do
         {port, attrs} when is_integer(port) and port > 0 and port < 65_536 -> {port, attrs}
       end
 
-    {ssh_host_key_fingerprints, attrs!} =
-      Map.pop_lazy(attrs!, :ssh_host_key_fingerprints, fn ->
-        1
-        |> Range.new(Faker.random_between(1, 3))
-        |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)
-      end)
+    {ssh_host_keys, attrs!} =
+      Map.pop_lazy(attrs!, :ssh_host_keys, &SSHFactory.random_ssh_host_keys/0)
 
     {secret_key, attrs!} =
       Map.pop_lazy(attrs!, :secret_key, fn -> Faker.random_bytes(20) end)
@@ -682,7 +675,7 @@ defmodule ArchiDep.Support.ServersFactory do
       username: username,
       app_username: app_username,
       ssh_port: ssh_port,
-      ssh_host_key_fingerprints: ssh_host_key_fingerprints,
+      ssh_host_keys: ssh_host_keys,
       secret_key: secret_key,
       active: active,
       group: group,
@@ -726,12 +719,8 @@ defmodule ArchiDep.Support.ServersFactory do
         {port, attrs} when is_integer(port) and port > 0 and port < 65_536 -> {port, attrs}
       end
 
-    {ssh_host_key_fingerprints, attrs!} =
-      Map.pop_lazy(attrs!, :ssh_host_key_fingerprints, fn ->
-        1
-        |> Range.new(Faker.random_between(1, 3))
-        |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)
-      end)
+    {ssh_host_keys, attrs!} =
+      Map.pop_lazy(attrs!, :ssh_host_keys, &SSHFactory.random_ssh_host_keys/0)
 
     {active, attrs!} = Map.pop_lazy(attrs!, :active, &bool/0)
     {group_id, attrs!} = Map.pop_lazy(attrs!, :group_id, &UUID.generate/0)
@@ -764,7 +753,7 @@ defmodule ArchiDep.Support.ServersFactory do
       username: username,
       app_username: app_username,
       ssh_port: ssh_port,
-      ssh_host_key_fingerprints: ssh_host_key_fingerprints,
+      ssh_host_keys: ssh_host_keys,
       active: active,
       group: group,
       group_id: group.id,
@@ -977,12 +966,8 @@ defmodule ArchiDep.Support.ServersFactory do
 
     {ssh_port, attrs!} = Keyword.pop_lazy(attrs!, :ssh_port, &NetFactory.port/0)
 
-    {ssh_host_key_fingerprints, attrs!} =
-      Keyword.pop_lazy(attrs!, :ssh_host_key_fingerprints, fn ->
-        1
-        |> Range.new(Faker.random_between(1, 3))
-        |> Enum.map_join("\n", fn _n -> SSHFactory.random_ssh_host_key_fingerprint_string() end)
-      end)
+    {ssh_host_keys, attrs!} =
+      Keyword.pop_lazy(attrs!, :ssh_host_keys, &SSHFactory.random_ssh_host_keys/0)
 
     {active, attrs!} = Keyword.pop_lazy(attrs!, :active, &bool/0)
 
@@ -998,7 +983,7 @@ defmodule ArchiDep.Support.ServersFactory do
       ip_address: ip_address,
       username: username,
       ssh_port: ssh_port,
-      ssh_host_key_fingerprints: ssh_host_key_fingerprints,
+      ssh_host_keys: ssh_host_keys,
       active: active,
       app_username: app_username,
       expected_properties: expected_properties

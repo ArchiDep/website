@@ -320,14 +320,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
         server: server
       )
 
-    fake_ssh_host_key_fingerprint = SSHFactory.random_ssh_host_key_fingerprint_digest()
+    fake_ssh_host_key_fingerprint = SSHFactory.random_ssh_host_key_fingerprint()
 
     assert on_message.(initial_state, {:unknown_key_fingerprint, fake_ssh_host_key_fingerprint}) ==
              %ServerManagerState{
                initial_state
                | problems: [
                    {:server_key_exchange_failed, fake_ssh_host_key_fingerprint,
-                    server.ssh_host_key_fingerprints}
+                    server.ssh_host_keys}
                  ]
              }
 
@@ -349,19 +349,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
         username: server.username,
         server: server,
         problems: [
-          {:server_key_exchange_failed, SSHFactory.random_ssh_host_key_fingerprint_digest(),
-           server.ssh_host_key_fingerprints}
+          {:server_key_exchange_failed, SSHFactory.random_ssh_host_key_fingerprint(),
+           server.ssh_host_keys}
         ]
       )
 
-    fake_ssh_host_key_fingerprint = SSHFactory.random_ssh_host_key_fingerprint_digest()
+    fake_ssh_host_key_fingerprint = SSHFactory.random_ssh_host_key_fingerprint()
 
     assert on_message.(initial_state, {:unknown_key_fingerprint, fake_ssh_host_key_fingerprint}) ==
              %ServerManagerState{
                initial_state
                | problems: [
                    {:server_key_exchange_failed, fake_ssh_host_key_fingerprint,
-                    server.ssh_host_key_fingerprints}
+                    server.ssh_host_keys}
                  ]
              }
 

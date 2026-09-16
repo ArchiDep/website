@@ -258,55 +258,60 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
           <.errors_for field={@form[:ssh_port]} />
         <% end %>
 
-        <label class="fieldset-label required mt-2">{gettext("SSH host key fingerprints")}</label>
+        <label class={[
+          "fieldset-label mt-2",
+          Form.normalize_value("checkbox", @form[:active].value) && "required"
+        ]}>
+          {gettext("SSH host public keys")}
+        </label>
         <%= if @loading do %>
           <div class="skeleton border border-gray-500 dark:border-gray-700 rounded-lg h-24 w-full">
           </div>
         <% else %>
           <textarea
-            id={@form[:ssh_host_key_fingerprints].id}
+            id={@form[:ssh_host_keys].id}
             class="textarea w-full"
-            name={@form[:ssh_host_key_fingerprints].name}
-            rows="3"
+            name={@form[:ssh_host_keys].name}
+            rows="4"
             placeholder={
               gettext(
-                "3072 SHA256:x4gxcQl96qBWfIL/8BxVU2WECUuF/TmnHlEQUQcqE7w= root@server (RSA)\n256 SHA256:LTmRTt/Zc7t48a0bF1hI0tlLLOWpIu9c+ZAAytialxw= root@server (ED25519)\n256 SHA256:4wjltFerVQi4J8+rqS3atzUI7jZyUXeuCXhfdH1QKg0= root@server (ECDSA)"
+                "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAA… root@server\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r8… root@server\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDL6EKznX0x… root@server"
               )
             }
-          ><%= @form[:ssh_host_key_fingerprints].value %></textarea>
+          ><%= @form[:ssh_host_keys].value %></textarea>
           <.concurrent_modification_warning
             :if={@server != nil and @changed_server != nil}
             class="justify-end !gap-1 sm:flex-wrap"
-            current_value={@form[:ssh_host_key_fingerprints].value}
-            old_value={@server.ssh_host_key_fingerprints}
+            current_value={@form[:ssh_host_keys].value}
+            old_value={@server.ssh_host_keys}
             show_old_value={false}
-            new_value={@changed_server.ssh_host_key_fingerprints}
+            new_value={@changed_server.ssh_host_keys}
             new_value_style={:raw}
           >
             <:value_display :let={value}>
               <div class="w-full tooltip" data-tip={gettext("New value")}>
                 <textarea
                   class="textarea w-full border-warning bg-warning/10 text-warning"
-                  rows="3"
+                  rows="4"
                   readonly
                 ><%= value %></textarea>
               </div>
             </:value_display>
           </.concurrent_modification_warning>
-          <.errors_for field={@form[:ssh_host_key_fingerprints]} />
+          <.errors_for field={@form[:ssh_host_keys]} />
         <% end %>
         <.field_help>
           <div class="flex flex-col gap-2">
             <span>
               {gettext(
-                "The fingerprints of your server's SSH host keys, one per line. We will use these to verify that we are connecting to your server and not an attacker's (man-in-the-middle). Simply run the following command {ss}while connected to your server with SSH{se}, and paste the output in the field above:",
+                "Your server's SSH host public keys, one per line. We will use these to verify that we are connecting to your server and not an attacker's (man-in-the-middle). Simply run the following command {ss}while connected to your server with SSH{se}, and paste the output in the field above:",
                 ss: "<strong>",
                 se: "</strong>"
               )
               |> raw()}
             </span>
             <code class="pl-2">
-              find /etc/ssh -name "*.pub" -exec ssh-keygen -lf {"{}"} \;
+              cat /etc/ssh/ssh_host_*_key.pub
             </code>
           </div>
         </.field_help>

@@ -56,8 +56,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
                active: false,
                servers_enabled: false,
                teacher_ssh_public_keys: [],
-               ssh_exercise_vm_md5_host_key_fingerprints: nil,
-               ssh_exercise_vm_sha256_host_key_fingerprints: nil
+               ssh_exercise_vm_host_keys: nil
              }
     end
 
@@ -72,8 +71,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
           "0" => %{"value" => "ssh-ed25519 AAAAKEY1"},
           "1" => %{"value" => "ssh-rsa AAAAKEY2"}
         },
-        "ssh_exercise_vm_md5_host_key_fingerprints" => "11:22:33:44",
-        "ssh_exercise_vm_sha256_host_key_fingerprints" => "aa:bb:cc:dd"
+        "ssh_exercise_vm_host_keys" => "ssh-ed25519 AAAAvm1"
       }
 
       changeset = ClassForm.create_changeset(params)
@@ -90,8 +88,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
                  %ClassFormSshPublicKey{value: "ssh-ed25519 AAAAKEY1"},
                  %ClassFormSshPublicKey{value: "ssh-rsa AAAAKEY2"}
                ],
-               ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-               ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+               ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
              }
     end
   end
@@ -106,8 +103,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
           active: false,
           servers_enabled: false,
           teacher_ssh_public_keys: ["ssh-rsa OLDKEY"],
-          ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-          ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+          ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
         )
 
       params = %{
@@ -117,8 +113,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
         "active" => "true",
         "servers_enabled" => "true",
         "teacher_ssh_public_keys" => %{"0" => %{"value" => "ssh-ed25519 NEWKEY"}},
-        "ssh_exercise_vm_md5_host_key_fingerprints" => "55:66:77:88",
-        "ssh_exercise_vm_sha256_host_key_fingerprints" => "ee:ff:00:11"
+        "ssh_exercise_vm_host_keys" => "ssh-ed25519 AAAAvm2"
       }
 
       changeset = ClassForm.update_changeset(class, params)
@@ -132,8 +127,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
                active: true,
                servers_enabled: true,
                teacher_ssh_public_keys: [%ClassFormSshPublicKey{value: "ssh-ed25519 NEWKEY"}],
-               ssh_exercise_vm_md5_host_key_fingerprints: "55:66:77:88",
-               ssh_exercise_vm_sha256_host_key_fingerprints: "ee:ff:00:11"
+               ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm2"
              }
     end
 
@@ -146,8 +140,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
           active: true,
           servers_enabled: true,
           teacher_ssh_public_keys: [],
-          ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-          ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+          ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
         )
 
       params = %{
@@ -156,8 +149,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
         "end_date" => "",
         "active" => "false",
         "servers_enabled" => "false",
-        "ssh_exercise_vm_md5_host_key_fingerprints" => "",
-        "ssh_exercise_vm_sha256_host_key_fingerprints" => ""
+        "ssh_exercise_vm_host_keys" => ""
       }
 
       changeset = ClassForm.update_changeset(class, params)
@@ -171,8 +163,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
                active: false,
                servers_enabled: false,
                teacher_ssh_public_keys: [],
-               ssh_exercise_vm_md5_host_key_fingerprints: nil,
-               ssh_exercise_vm_sha256_host_key_fingerprints: nil
+               ssh_exercise_vm_host_keys: nil
              }
     end
   end
@@ -189,8 +180,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
           %ClassFormSshPublicKey{value: "ssh-rsa KEY1"},
           %ClassFormSshPublicKey{value: "ssh-ed25519 KEY2"}
         ],
-        ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-        ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+        ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
       }
 
       assert ClassForm.to_class_data(form) == %{
@@ -200,8 +190,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
                active: true,
                servers_enabled: false,
                teacher_ssh_public_keys: ["ssh-rsa KEY1", "ssh-ed25519 KEY2"],
-               ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-               ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+               ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
              }
     end
 
@@ -215,8 +204,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
                active: false,
                servers_enabled: false,
                teacher_ssh_public_keys: [],
-               ssh_exercise_vm_md5_host_key_fingerprints: nil,
-               ssh_exercise_vm_sha256_host_key_fingerprints: nil
+               ssh_exercise_vm_host_keys: nil
              }
     end
 
@@ -230,8 +218,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassFormTest do
                active: false,
                servers_enabled: false,
                teacher_ssh_public_keys: [],
-               ssh_exercise_vm_md5_host_key_fingerprints: nil,
-               ssh_exercise_vm_sha256_host_key_fingerprints: nil
+               ssh_exercise_vm_host_keys: nil
              }
     end
   end

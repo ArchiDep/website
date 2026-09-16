@@ -16,8 +16,7 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
     :active,
     :servers_enabled,
     :teacher_ssh_public_keys,
-    :ssh_exercise_vm_md5_host_key_fingerprints,
-    :ssh_exercise_vm_sha256_host_key_fingerprints
+    :ssh_exercise_vm_host_keys
   ]
   defstruct [
     :id,
@@ -27,8 +26,7 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
     :active,
     :servers_enabled,
     :teacher_ssh_public_keys,
-    :ssh_exercise_vm_md5_host_key_fingerprints,
-    :ssh_exercise_vm_sha256_host_key_fingerprints
+    :ssh_exercise_vm_host_keys
   ]
 
   @type t :: %__MODULE__{
@@ -39,9 +37,11 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
           active: boolean(),
           servers_enabled: boolean(),
           teacher_ssh_public_keys: list(String.t()),
-          ssh_exercise_vm_md5_host_key_fingerprints: String.t() | nil,
-          ssh_exercise_vm_sha256_host_key_fingerprints: String.t() | nil
+          ssh_exercise_vm_host_keys: String.t() | nil
         }
+
+  @spec event_version() :: pos_integer()
+  def event_version, do: 2
 
   @spec new(Class.t()) :: t()
   def new(class) do
@@ -53,8 +53,7 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
       active: active,
       servers_enabled: servers_enabled,
       teacher_ssh_public_keys: teacher_ssh_public_keys,
-      ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
-      ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints
+      ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys
     } = class
 
     %__MODULE__{
@@ -65,8 +64,7 @@ defmodule ArchiDep.Course.Events.ClassUpdated do
       active: active,
       servers_enabled: servers_enabled,
       teacher_ssh_public_keys: teacher_ssh_public_keys,
-      ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
-      ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints
+      ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys
     }
   end
 

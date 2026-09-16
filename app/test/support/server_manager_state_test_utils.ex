@@ -19,7 +19,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   alias ArchiDep.Servers.ServerTracking.ServerConnection
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
   alias ArchiDep.Servers.SSH
-  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
+  alias ArchiDep.Servers.SSH.SSHHostKey
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.FactoryHelpers
@@ -59,28 +59,29 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
     assert_receive {:connect_called, silently_accept_hosts_fn}, 500
     assert is_function(silently_accept_hosts_fn, 2)
 
-    assert {:ok, ssh_host_key_fingerprints, []} =
-             SSH.parse_ssh_host_key_fingerprints(server.ssh_host_key_fingerprints)
+    {:ok, ssh_host_keys} = SSH.parse_ssh_host_keys(server.ssh_host_keys)
 
-    for fingerprint <- ssh_host_key_fingerprints do
+    for key <- ssh_host_keys do
       random_peer = :inet.ntoa(NetFactory.ip_address())
 
       assert silently_accept_hosts_fn.(
                random_peer,
-               SSHKeyFingerprint.fingerprint_human(fingerprint)
+               key |> SSHHostKey.fingerprint(:sha256) |> to_charlist()
              ) == true
     end
 
     refute_received {:unknown_key_fingerprint, _unknown_fingerprint}
 
     random_peer = :inet.ntoa(NetFactory.ip_address())
-    unknown_fingerprint = SSHFactory.random_ssh_host_key_fingerprint_digest()
+    unknown_fingerprint = SSHFactory.random_ssh_host_key_fingerprint()
 
     assert {false, msg} =
-             with_log(fn -> silently_accept_hosts_fn.(random_peer, unknown_fingerprint) end)
+             with_log(fn ->
+               silently_accept_hosts_fn.(random_peer, to_charlist(unknown_fingerprint))
+             end)
 
     assert msg =~
-             "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(unknown_fingerprint)} does not match any of the expected fingerprints"
+             "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(unknown_fingerprint)} does not match any of its registered host public keys"
 
     assert_receive {:unknown_key_fingerprint, ^unknown_fingerprint}, 500
 

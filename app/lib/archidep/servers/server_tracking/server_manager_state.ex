@@ -35,7 +35,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias ArchiDep.Servers.ServerTracking.ServerConnectionState
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.SSH
-  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
+  alias ArchiDep.Servers.SSH.SSHHostKey
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UseCases.DeleteServer
   alias ArchiDep.Servers.UseCases.UpdateServer
@@ -1747,7 +1747,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     port = server.ssh_port || 22
 
     pid = self()
-    ssh_host_key_fingerprints = Server.valid_ssh_host_key_fingerprints(server)
+
+    expected_fingerprints =
+      server |> Server.ssh_host_keys() |> Enum.map(&SSHHostKey.fingerprint(&1, :sha256))
 
     {:connect,
      fn %__MODULE__{} = task_state, task_factory ->
@@ -1758,12 +1760,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
               fn _peer_name, fingerprint_charlist ->
                 fingerprint = to_string(fingerprint_charlist)
 
-                match =
-                  Enum.any?(ssh_host_key_fingerprints, &SSHKeyFingerprint.match?(&1, fingerprint))
+                match = fingerprint in expected_fingerprints
 
                 if not match do
                   Logger.warning(
-                    "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(fingerprint)} does not match any of the expected fingerprints"
+                    "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(fingerprint)} does not match any of its registered host public keys"
                   )
 
                   send(pid, {:unknown_key_fingerprint, fingerprint})

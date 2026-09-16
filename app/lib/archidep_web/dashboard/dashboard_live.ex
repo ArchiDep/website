@@ -18,7 +18,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
   alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.SSH
-  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
+  alias ArchiDep.Servers.SSH.SSHHostKey
   alias ArchiDepWeb.Course.ChangeUsernameDialogLive
   alias ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive
   alias ArchiDepWeb.LiveRefresh
@@ -39,26 +39,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         )
       ])
 
-    ssh_exercise_vm_md5_host_key_fingerprints =
-      with %StudentView{
-             class: %ClassView{ssh_exercise_vm_md5_host_key_fingerprints: fingerprints}
-           }
-           when is_binary(fingerprints) <- student,
-           {:ok, valid, _invalid} <- SSH.parse_ssh_host_key_fingerprints(fingerprints) do
-        valid
-      else
-        _anything -> []
-      end
+    ssh_exercise_vm_host_keys =
+      case student do
+        %StudentView{class: %ClassView{ssh_exercise_vm_host_keys: keys}} ->
+          SSH.stored_ssh_host_keys(keys)
 
-    ssh_exercise_vm_sha256_host_key_fingerprints =
-      with %StudentView{
-             class: %ClassView{ssh_exercise_vm_sha256_host_key_fingerprints: fingerprints}
-           }
-           when is_binary(fingerprints) <- student,
-           {:ok, valid, _invalid} <- SSH.parse_ssh_host_key_fingerprints(fingerprints) do
-        valid
-      else
-        _anything -> []
+        _not_a_student ->
+          []
       end
 
     if connected?(socket) do
@@ -77,8 +64,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       page_title: gettext("Dashboard"),
       now: Clock.now(),
       student: student,
-      ssh_exercise_vm_md5_host_key_fingerprints: ssh_exercise_vm_md5_host_key_fingerprints,
-      ssh_exercise_vm_sha256_host_key_fingerprints: ssh_exercise_vm_sha256_host_key_fingerprints,
+      ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys,
       servers: servers,
       server_state_map: ServerTrackerClient.server_state_map(servers),
       groups: groups

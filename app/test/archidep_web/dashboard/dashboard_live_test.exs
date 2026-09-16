@@ -29,11 +29,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
   @path "/app"
   @now ~U[2026-06-27 12:00:00Z]
 
-  # A fixed fingerprint pair (one SHA256, one MD5) whose parsed human form is
-  # deterministic, so the rendered fingerprint list can be pinned exactly.
-  @sha256_fingerprint "256 SHA256:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU root@server (ED25519)"
-  @md5_fingerprint "256 MD5:6d:2a:79:40:f7:cf:06:03:da:da:6f:58:dd:46:e2:bf root@server (ECDSA)"
-
   setup do
     stub(ArchiDep.Clock.Mock, :now, fn -> @now end)
     :ok
@@ -51,8 +46,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
           now: @now,
           active: true,
           servers_enabled: false,
-          ssh_exercise_vm_sha256_host_key_fingerprints: @sha256_fingerprint,
-          ssh_exercise_vm_md5_host_key_fingerprints: @md5_fingerprint
+          # Real host public keys generated with ssh-keygen: the expected
+          # fingerprints below are the output of `ssh-keygen -lf` and
+          # `ssh-keygen -E md5 -lf` for them.
+          ssh_exercise_vm_host_keys: """
+          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r89VjK9kPMhsuqERGVbUi5RZnBlccQnt4e
+          ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLw7xhOu0n7K5DlCoqSwRLA5aZExh4s9fhsf0NELpSrJVnoNHwqfd5LUQdmrq4W8PNcloyilUhidRR/tEP2MfU0=
+          """
         )
 
       student =
@@ -74,8 +74,10 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
                  username: "alice",
                  password: "hunter2",
                  fingerprints: [
-                   "SHA256:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU (ED25519)",
-                   "MD5:6d:2a:79:40:f7:cf:06:03:da:da:6f:58:dd:46:e2:bf (ECDSA)"
+                   "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY (ED25519)",
+                   "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ (ECDSA)",
+                   "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb (ED25519)",
+                   "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd (ECDSA)"
                  ]
                },
                name_prompt?: false,
@@ -94,8 +96,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
           now: @now,
           active: true,
           servers_enabled: false,
-          ssh_exercise_vm_sha256_host_key_fingerprints: nil,
-          ssh_exercise_vm_md5_host_key_fingerprints: nil
+          ssh_exercise_vm_host_keys: nil
         )
 
       student =
@@ -227,7 +228,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
           ip_address: "10.0.0.7",
           username: "operator",
           ssh_port: "2200",
-          ssh_host_key_fingerprints: "fp-api",
+          ssh_host_keys: "fp-api",
           active: "false"
         }
       )
@@ -240,7 +241,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
                ip_address: "10.0.0.7",
                username: "operator",
                ssh_port: 2200,
-               ssh_host_key_fingerprints: "fp-api",
+               ssh_host_keys: "fp-api",
                active: false,
                app_username: "archidep",
                expected_properties: %{}
@@ -279,7 +280,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
                  ip_address: "10.0.0.3",
                  username: "dba",
                  ssh_port: "22",
-                 ssh_host_key_fingerprints: "fp-db",
+                 ssh_host_keys: "fp-db",
                  active: "false"
                }
              )
@@ -383,7 +384,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
           ip_address: "172.16.0.4",
           username: "maintainer",
           ssh_port: "2020",
-          ssh_host_key_fingerprints: "fp-edit",
+          ssh_host_keys: "fp-edit",
           active: "false"
         }
       )
@@ -396,7 +397,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
                ip_address: "172.16.0.4",
                username: "maintainer",
                ssh_port: 2020,
-               ssh_host_key_fingerprints: "fp-edit",
+               ssh_host_keys: "fp-edit",
                active: false,
                app_username: "appdeploy",
                expected_properties: %{
@@ -917,8 +918,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
         now: @now,
         active: true,
         servers_enabled: false,
-        ssh_exercise_vm_sha256_host_key_fingerprints: nil,
-        ssh_exercise_vm_md5_host_key_fingerprints: nil
+        ssh_exercise_vm_host_keys: nil
       )
 
     build_student(

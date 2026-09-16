@@ -79,11 +79,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblems do
           Types.server_key_exchange_failed_problem()
   def server_key_exchange_failed_problem(
         %Server{
-          ssh_host_key_fingerprints: ssh_host_key_fingerprints
+          ssh_host_keys: ssh_host_keys
         },
         unknown_fingerprint
       ),
-      do: {:server_key_exchange_failed, unknown_fingerprint, ssh_host_key_fingerprints}
+      do: {:server_key_exchange_failed, unknown_fingerprint, ssh_host_keys}
 
   @spec server_missing_sudo_access_problem(String.t(), String.t()) ::
           Types.server_missing_sudo_access_problem()

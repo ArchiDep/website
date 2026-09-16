@@ -3,6 +3,7 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
 
   import ArchiDep.Support.CourseFactory
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Servers.SSH.SSHHostKey
   alias ArchiDep.Support.SSHFactory
   alias Ecto.Changeset
 
@@ -128,55 +129,39 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
                  %{}
       end
 
-      # A SHA256-format fingerprint is a well-formed line that is not a valid
-      # MD5 fingerprint, so it exercises the error path. (A line that matches no
-      # fingerprint format at all currently raises in the SSH parser rather than
-      # returning an error — see
-      # ArchiDep.Servers.SSH.SSHKeyFingerprint.parse/2.)
-      test "MD5 host key fingerprints must be valid" do
+      test "exercise VM host keys must be valid SSH public keys" do
         assert errors_on(
                  changeset(unquote(variant),
-                   ssh_exercise_vm_md5_host_key_fingerprints:
-                     SSHFactory.random_ssh_host_key_fingerprint_string(:sha256)
+                   ssh_exercise_vm_host_keys:
+                     "256 SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY root@vm (ED25519)"
                  )
                ) == %{
-                 ssh_exercise_vm_md5_host_key_fingerprints: [
-                   "must contain at least one valid SSH host key fingerprint in MD5 format, with new lines between each fingerprint"
+                 ssh_exercise_vm_host_keys: [
+                   "must contain only SSH public keys, one per line (invalid lines: {lines})"
                  ]
                }
       end
 
-      test "valid MD5 host key fingerprints are accepted" do
+      test "exercise VM host keys must not contain a private key" do
         assert errors_on(
                  changeset(unquote(variant),
-                   ssh_exercise_vm_md5_host_key_fingerprints:
-                     SSHFactory.random_ssh_host_key_fingerprint_string(:md5)
-                 )
-               ) == %{}
-      end
-
-      # Regression guard for the error-key bug: this branch used to add its
-      # error under `:ssh_exercise_vm_host_key_fingerprints` (a field that does
-      # not exist), so the error never reached the form. It must surface on the
-      # SHA256 field.
-      test "SHA256 host key fingerprints must be valid" do
-        assert errors_on(
-                 changeset(unquote(variant),
-                   ssh_exercise_vm_sha256_host_key_fingerprints:
-                     SSHFactory.random_ssh_host_key_fingerprint_string(:md5)
+                   ssh_exercise_vm_host_keys: """
+                   -----BEGIN OPENSSH PRIVATE KEY-----
+                   (key material)
+                   -----END OPENSSH PRIVATE KEY-----
+                   """
                  )
                ) == %{
-                 ssh_exercise_vm_sha256_host_key_fingerprints: [
-                   "must contain at least one valid SSH host key fingerprint, with new lines between each fingerprint"
+                 ssh_exercise_vm_host_keys: [
+                   "must not contain a private key: only provide the public keys (the .pub files), and never share a private key"
                  ]
                }
       end
 
-      test "valid SHA256 host key fingerprints are accepted" do
+      test "valid exercise VM host keys are accepted" do
         assert errors_on(
                  changeset(unquote(variant),
-                   ssh_exercise_vm_sha256_host_key_fingerprints:
-                     SSHFactory.random_ssh_host_key_fingerprint_string(:sha256)
+                   ssh_exercise_vm_host_keys: SSHFactory.random_ssh_host_keys()
                  )
                ) == %{}
       end
@@ -187,17 +172,60 @@ defmodule ArchiDep.Course.Schemas.ClassTest do
                    name: String.duplicate("a", 51),
                    start_date: ~D[2024-02-01],
                    end_date: ~D[2024-01-01],
-                   ssh_exercise_vm_sha256_host_key_fingerprints:
-                     SSHFactory.random_ssh_host_key_fingerprint_string(:md5)
+                   ssh_exercise_vm_host_keys: "not a key"
                  )
                ) == %{
                  name: ["should be at most 50 character(s)"],
                  end_date: ["must be after the start date"],
-                 ssh_exercise_vm_sha256_host_key_fingerprints: [
-                   "must contain at least one valid SSH host key fingerprint, with new lines between each fingerprint"
+                 ssh_exercise_vm_host_keys: [
+                   "must contain only SSH public keys, one per line (invalid lines: {lines})"
                  ]
                }
       end
+    end
+  end
+
+  describe "update/3 exercise VM host keys" do
+    test "stores the keys in their normalized format" do
+      class = insert(:class, ssh_exercise_vm_host_keys: nil, now: @now)
+      first_key = SSHFactory.random_ssh_host_key()
+      second_key = SSHFactory.random_ssh_host_key()
+
+      changeset =
+        Class.update(
+          class,
+          %{
+            ssh_exercise_vm_host_keys: """
+            #{SSHHostKey.to_openssh(first_key)} root@vm
+            ssh.archidep.ch #{SSHHostKey.to_openssh(second_key)}
+            """
+          },
+          @now
+        )
+
+      assert Changeset.apply_changes(changeset) == %{
+               (class
+                |> Repo.reload!()
+                |> Repo.preload(:expected_server_properties))
+               | ssh_exercise_vm_host_keys:
+                   "#{SSHHostKey.to_openssh(first_key)}\n#{SSHHostKey.to_openssh(second_key)}",
+                 updated_at: @now
+             }
+    end
+
+    test "clears blank keys" do
+      class =
+        insert(:class, ssh_exercise_vm_host_keys: SSHFactory.random_ssh_host_keys(), now: @now)
+
+      changeset = Class.update(class, %{ssh_exercise_vm_host_keys: " \n "}, @now)
+
+      assert Changeset.apply_changes(changeset) == %{
+               (class
+                |> Repo.reload!()
+                |> Repo.preload(:expected_server_properties))
+               | ssh_exercise_vm_host_keys: nil,
+                 updated_at: @now
+             }
     end
   end
 

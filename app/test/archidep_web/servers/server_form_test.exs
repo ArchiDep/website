@@ -12,8 +12,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
   # value-validation tests can isolate the one field under test.
   @valid_params %{
     "ip_address" => "10.0.0.1",
-    "username" => "bob",
-    "ssh_host_key_fingerprints" => "fp"
+    "username" => "bob"
   }
 
   # `create_changeset/2` and `update_changeset/2` run the same cast and value
@@ -66,8 +65,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
 
       assert errors_on(changeset) == %{
                ip_address: ["can't be blank"],
-               username: ["can't be blank"],
-               ssh_host_key_fingerprints: ["can't be blank"]
+               username: ["can't be blank"]
              }
     end
 
@@ -77,8 +75,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
       assert errors_on(changeset) == %{
                group_id: ["can't be blank"],
                ip_address: ["can't be blank"],
-               username: ["can't be blank"],
-               ssh_host_key_fingerprints: ["can't be blank"]
+               username: ["can't be blank"]
              }
     end
 
@@ -93,7 +90,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
                ip_address: "10.0.0.1",
                username: "bob",
                ssh_port: nil,
-               ssh_host_key_fingerprints: "fp",
+               ssh_host_keys: nil,
                active: true,
                group_id: nil,
                app_username: "archidep",
@@ -107,7 +104,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
         "ip_address" => "192.168.1.20",
         "username" => "deploy",
         "ssh_port" => "2222",
-        "ssh_host_key_fingerprints" => "fp-full",
+        "ssh_host_keys" => "fp-full",
         "active" => "false",
         "app_username" => "myapp",
         "group_id" => "22222222-2222-2222-2222-222222222222",
@@ -135,7 +132,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
                ip_address: "192.168.1.20",
                username: "deploy",
                ssh_port: 2222,
-               ssh_host_key_fingerprints: "fp-full",
+               ssh_host_keys: "fp-full",
                active: false,
                group_id: "22222222-2222-2222-2222-222222222222",
                app_username: "myapp",
@@ -165,7 +162,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
         "ip_address" => "10.0.0.5",
         "username" => "newuser",
         "ssh_port" => "2222",
-        "ssh_host_key_fingerprints" => "new-fp",
+        "ssh_host_keys" => "new-fp",
         "active" => "false",
         "app_username" => "newapp"
       }
@@ -179,7 +176,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
                ip_address: "10.0.0.5",
                username: "newuser",
                ssh_port: 2222,
-               ssh_host_key_fingerprints: "new-fp",
+               ssh_host_keys: "new-fp",
                active: false,
                group_id: "11111111-1111-1111-1111-111111111111",
                app_username: "newapp",
@@ -195,7 +192,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
         "ip_address" => "10.0.0.5",
         "username" => "newuser",
         "ssh_port" => "",
-        "ssh_host_key_fingerprints" => "new-fp",
+        "ssh_host_keys" => "new-fp",
         "active" => "true",
         "app_username" => ""
       }
@@ -209,7 +206,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
                ip_address: "10.0.0.5",
                username: "newuser",
                ssh_port: nil,
-               ssh_host_key_fingerprints: "new-fp",
+               ssh_host_keys: "new-fp",
                active: true,
                group_id: "11111111-1111-1111-1111-111111111111",
                app_username: nil,
@@ -222,13 +219,12 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
         ServerForm.update_changeset(build(:server_view, server_attrs()), %{
           "ip_address" => "",
           "username" => "",
-          "ssh_host_key_fingerprints" => ""
+          "ssh_host_keys" => ""
         })
 
       assert errors_on(changeset) == %{
                ip_address: ["can't be blank"],
-               username: ["can't be blank"],
-               ssh_host_key_fingerprints: ["can't be blank"]
+               username: ["can't be blank"]
              }
     end
   end
@@ -242,7 +238,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
                ip_address: "192.168.1.20",
                username: "deploy",
                ssh_port: 2222,
-               ssh_host_key_fingerprints: "fp-full",
+               ssh_host_keys: "fp-full",
                active: false,
                app_username: "myapp",
                expected_properties: seeded_expected_properties_map()
@@ -257,7 +253,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
                ip_address: "192.168.1.20",
                username: "deploy",
                ssh_port: 2222,
-               ssh_host_key_fingerprints: "fp-full",
+               ssh_host_keys: "fp-full",
                active: false,
                app_username: "myapp",
                expected_properties: %{}
@@ -274,7 +270,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
                ip_address: "192.168.1.20",
                username: "deploy",
                ssh_port: 2222,
-               ssh_host_key_fingerprints: "fp-full",
+               ssh_host_keys: "fp-full",
                active: false,
                app_username: "myapp",
                expected_properties: seeded_expected_properties_map()
@@ -316,7 +312,7 @@ defmodule ArchiDepWeb.Servers.ServerFormTest do
       ip_address: "192.168.1.20",
       username: "deploy",
       ssh_port: 2222,
-      ssh_host_key_fingerprints: "fp-full",
+      ssh_host_keys: "fp-full",
       active: false,
       group_id: "22222222-2222-2222-2222-222222222222",
       app_username: "myapp",

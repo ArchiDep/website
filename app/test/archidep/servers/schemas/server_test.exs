@@ -9,11 +9,12 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
   alias ArchiDep.Servers.Schemas.ServerGroupMember
   alias ArchiDep.Servers.Schemas.ServerOwner
   alias ArchiDep.Servers.Schemas.ServerProperties
-  alias ArchiDep.Servers.SSH.SSHKeyFingerprint
+  alias ArchiDep.Servers.SSH.SSHHostKey
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
   alias ArchiDep.Support.ServersTestHelpers
+  alias ArchiDep.Support.SSHFactory
   alias Ecto.Changeset
 
   # These changeset validations do not depend on the creation timestamp; a fixed
@@ -90,15 +91,31 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
                  %{ssh_port: ["must be less than 65536"]}
       end
 
-      # The server field parses with the `:any` digest, so a line that matches
-      # no fingerprint format yields a validation error (it does not crash,
-      # unlike the digest-specific parser path).
-      test "the SSH host key fingerprints must contain at least one valid fingerprint" do
+      test "the SSH host keys must be valid SSH public keys" do
         assert errors_on(
-                 changeset(unquote(variant), ssh_host_key_fingerprints: "not-a-valid-fingerprint")
+                 changeset(unquote(variant),
+                   ssh_host_keys:
+                     "256 SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY root@server (ED25519)"
+                 )
                ) == %{
-                 ssh_host_key_fingerprints: [
-                   "must contain at least one valid SSH host key fingerprint, with new lines between each fingerprint"
+                 ssh_host_keys: [
+                   "must contain only SSH public keys, one per line (invalid lines: {lines})"
+                 ]
+               }
+      end
+
+      test "the SSH host keys must not contain a private key" do
+        assert errors_on(
+                 changeset(unquote(variant),
+                   ssh_host_keys: """
+                   -----BEGIN OPENSSH PRIVATE KEY-----
+                   (key material)
+                   -----END OPENSSH PRIVATE KEY-----
+                   """
+                 )
+               ) == %{
+                 ssh_host_keys: [
+                   "must not contain a private key: only provide the public keys (the .pub files), and never share a private key"
                  ]
                }
       end
@@ -108,13 +125,13 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
                  changeset(unquote(variant),
                    name: String.duplicate("a", 51),
                    ssh_port: 0,
-                   ssh_host_key_fingerprints: "not-a-valid-fingerprint"
+                   ssh_host_keys: "not a key"
                  )
                ) == %{
                  name: ["should be at most 50 character(s)"],
                  ssh_port: ["must be greater than 0"],
-                 ssh_host_key_fingerprints: [
-                   "must contain at least one valid SSH host key fingerprint, with new lines between each fingerprint"
+                 ssh_host_keys: [
+                   "must contain only SSH public keys, one per line (invalid lines: {lines})"
                  ]
                }
       end
@@ -186,9 +203,18 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
                  %{active: ["can't be blank"]}
       end
 
-      test "the SSH host key fingerprints are required" do
-        assert errors_on(changeset(unquote(variant), ssh_host_key_fingerprints: nil)) ==
-                 %{ssh_host_key_fingerprints: ["can't be blank"]}
+      test "the SSH host keys are required for an active server" do
+        assert errors_on(changeset(unquote(variant), active: true, ssh_host_keys: nil)) ==
+                 %{ssh_host_keys: ["must be provided for an active server"]}
+      end
+
+      test "blank SSH host keys are rejected for an active server" do
+        assert errors_on(changeset(unquote(variant), active: true, ssh_host_keys: " \n ")) ==
+                 %{ssh_host_keys: ["must be provided for an active server"]}
+      end
+
+      test "the SSH host keys are not required for an inactive server" do
+        assert errors_on(changeset(unquote(variant), active: false, ssh_host_keys: nil)) == %{}
       end
     end
   end
@@ -700,31 +726,67 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     end
   end
 
-  describe "valid_ssh_host_key_fingerprints/1" do
-    test "returns the parsed fingerprints" do
-      sha256 = :binary.copy(<<1>>, 32)
-      line = "256 SHA256:#{Base.encode64(sha256, padding: false)} root@server (ED25519)"
-      server = ServersFactory.build(:server, ssh_host_key_fingerprints: line)
+  describe "update/3 SSH host keys" do
+    test "stores the keys in their normalized format" do
+      {owner, group} = persisted_owner_and_group()
+      inserted = ServersTestHelpers.insert_server(owner.id, group.id)
+      {:ok, server} = Server.fetch_server(inserted.id)
+      first_key = SSHFactory.random_ssh_host_key()
+      second_key = SSHFactory.random_ssh_host_key()
 
-      assert Server.valid_ssh_host_key_fingerprints(server) == [
-               %SSHKeyFingerprint{fingerprint: {:sha256, sha256}, key_alg: "ED25519", raw: line}
-             ]
+      changeset =
+        Server.update(
+          server,
+          %{
+            expected_properties: %{},
+            ssh_host_keys: """
+            #{SSHHostKey.to_openssh(first_key)} root@server
+            server.example.com #{SSHHostKey.to_openssh(second_key)}
+            """
+          },
+          @now
+        )
+
+      assert Changeset.apply_changes(changeset) == %{
+               server
+               | ssh_host_keys:
+                   "#{SSHHostKey.to_openssh(first_key)}\n#{SSHHostKey.to_openssh(second_key)}",
+                 updated_at: @now
+             }
+    end
+  end
+
+  describe "ssh_host_keys/1" do
+    test "returns the stored keys" do
+      first_key = SSHFactory.random_ssh_host_key()
+      second_key = SSHFactory.random_ssh_host_key()
+
+      server =
+        ServersFactory.build(:server,
+          ssh_host_keys:
+            "#{SSHHostKey.to_openssh(first_key)}\n#{SSHHostKey.to_openssh(second_key)}"
+        )
+
+      assert Server.ssh_host_keys(server) == [first_key, second_key]
     end
 
-    test "ignores lines that fail to parse" do
-      sha256 = :binary.copy(<<2>>, 32)
-      valid = "256 SHA256:#{Base.encode64(sha256, padding: false)} root@server (ED25519)"
-      server = ServersFactory.build(:server, ssh_host_key_fingerprints: "#{valid}\nnope")
+    test "returns no keys for a server without keys" do
+      server = ServersFactory.build(:server, active: false, ssh_host_keys: nil)
 
-      assert Server.valid_ssh_host_key_fingerprints(server) == [
-               %SSHKeyFingerprint{fingerprint: {:sha256, sha256}, key_alg: "ED25519", raw: valid}
-             ]
+      assert Server.ssh_host_keys(server) == []
     end
+  end
 
-    test "returns an empty list when no fingerprint is valid" do
-      server = ServersFactory.build(:server, ssh_host_key_fingerprints: "not-a-fingerprint")
+  describe "database constraints" do
+    test "rejects an active server without SSH host keys" do
+      {owner, group} = persisted_owner_and_group()
 
-      assert Server.valid_ssh_host_key_fingerprints(server) == []
+      server =
+        ServersTestHelpers.insert_server(owner.id, group.id, active: false, ssh_host_keys: nil)
+
+      assert_raise Ecto.ConstraintError, ~r/active_server_has_ssh_host_keys/, fn ->
+        server |> Changeset.change(active: true) |> Repo.update!()
+      end
     end
   end
 
@@ -1011,9 +1073,9 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
       }
     }
 
-  # Rebuilds the persisted `servers` row from the audit event for every field the
-  # event carries, taking the fields the event deliberately omits (the secret
-  # key, the active flag, the SSH fingerprints, the timestamps) from the
+  # Rebuilds the persisted `servers` row from the audit event for every field
+  # the event carries, taking the fields the event deliberately omits (the
+  # secret key, the active flag, the SSH host keys, the timestamps) from the
   # unchanged original. `overrides` carries the fields the persistence function
   # changed.
   defp assert_persisted_server(%StoredEvent{data: data, version: version}, original, overrides) do
@@ -1027,7 +1089,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
       username: data["username"],
       app_username: data["ssh_username"],
       ssh_port: data["ssh_port"],
-      ssh_host_key_fingerprints: original.ssh_host_key_fingerprints,
+      ssh_host_keys: original.ssh_host_keys,
       secret_key: original.secret_key,
       active: original.active,
       group: not_loaded(:group, Server),

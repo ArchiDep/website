@@ -133,8 +133,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
           active: false,
           servers_enabled: false,
           teacher_ssh_public_keys: [],
-          ssh_exercise_vm_md5_host_key_fingerprints: nil,
-          ssh_exercise_vm_sha256_host_key_fingerprints: nil
+          ssh_exercise_vm_host_keys: nil
         )
 
       stub_class_page_calls(auth, class: class, server_group: server_group)
@@ -163,8 +162,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
           active: "true",
           servers_enabled: "true",
           teacher_ssh_public_keys: %{"0" => %{value: "ssh-ed25519 AAAAKEY"}},
-          ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-          ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+          ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
         }
       )
       |> render_submit()
@@ -178,8 +176,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
                active: true,
                servers_enabled: true,
                teacher_ssh_public_keys: ["ssh-ed25519 AAAAKEY"],
-               ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-               ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+               ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
              }
 
       edit_dialog_id = "#edit-class-dialog-#{class.id}"
@@ -201,8 +198,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
           active: true,
           servers_enabled: true,
           teacher_ssh_public_keys: [],
-          ssh_exercise_vm_md5_host_key_fingerprints: "11:22:33:44",
-          ssh_exercise_vm_sha256_host_key_fingerprints: "aa:bb:cc:dd"
+          ssh_exercise_vm_host_keys: "ssh-ed25519 AAAAvm1"
         )
 
       stub_class_page_calls(auth, class: class, server_group: server_group)
@@ -226,8 +222,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
           end_date: "",
           active: "false",
           servers_enabled: "false",
-          ssh_exercise_vm_md5_host_key_fingerprints: "",
-          ssh_exercise_vm_sha256_host_key_fingerprints: ""
+          ssh_exercise_vm_host_keys: ""
         }
       )
       |> render_submit()
@@ -241,8 +236,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
                active: false,
                servers_enabled: false,
                teacher_ssh_public_keys: [],
-               ssh_exercise_vm_md5_host_key_fingerprints: nil,
-               ssh_exercise_vm_sha256_host_key_fingerprints: nil
+               ssh_exercise_vm_host_keys: nil
              }
 
       assert_flash_notification(

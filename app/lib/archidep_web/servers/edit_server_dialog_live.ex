@@ -10,7 +10,7 @@ defmodule ArchiDepWeb.Servers.EditServerDialogLive do
   alias ArchiDepWeb.Servers.ServerForm
 
   @base_id "edit-server-dialog"
-  @base_change_detection_fields ~w(name ip_address username ssh_port ssh_host_key_fingerprints active)a
+  @base_change_detection_fields ~w(name ip_address username ssh_port ssh_host_keys active)a
   @root_change_detection_fields ~w(app_username expected_properties)a
 
   @spec id(ServerView.t()) :: String.t()
