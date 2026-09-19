@@ -8,14 +8,19 @@ prepares the hunt for you: an island where places are directories, clues are
 files, and a few things are programs. You explore it with the [Command
 Line][command-line]. On the way, you meet a few new commands.
 
+<!-- more -->
+
 {% callout type: exercise %}
 
-Do everything in your Terminal (macOS) or in the WSL (Windows). Do not use a
-file explorer or a graphical editor: that would defeat the purpose.
+**The rule of the hunt.** The goal of this exercise is to learn to use the
+command line, so do everything in your terminal: the Terminal on macOS, the WSL
+on Windows. Do not look at the files of the hunt in the Finder, the Windows file
+explorer or a graphical editor.
+
+Do not remember a command? Look it up in the **Command Line** cheatsheet, in the
+sidebar. It is there for that, and the hunt will send you there too.
 
 {% endcallout %}
-
-<!-- more -->
 
 ## :exclamation: Prepare the hunt
 
