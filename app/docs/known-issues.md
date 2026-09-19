@@ -11,6 +11,7 @@ and the options for resolving it.
 
 - [A handful of process tests fail intermittently under full-suite load](#a-handful-of-process-tests-fail-intermittently-under-full-suite-load)
 - [Deleting a student who has logged in fails](#deleting-a-student-who-has-logged-in-fails)
+- [A reference link nothing defines is rendered as its own source text](#a-reference-link-nothing-defines-is-rendered-as-its-own-source-text)
 
 <!-- END doctoc -->
 
@@ -85,3 +86,26 @@ sessions/servers) as part of the same transaction.
 
 Coverage note: `delete_student_test.exs` therefore covers only the unlinked
 case; the linked case has no test pending this decision.
+
+## A reference link nothing defines is rendered as its own source text
+
+A build fails on an asset that is not there and on a `{% link %}` that names no
+page, but `[unattended upgrades][linux-unattended-upgrades]` with no matching
+definition is not an error anywhere: Markdown renders it as that literal text,
+the build reports nothing, and the page ships with the brackets showing.
+
+Four documents carried one for some time before a reader noticed. The cause was
+`ArchiDep.CourseSite.Renderer.Source.link_references/1` ending its scan at the
+blank line the formatter puts between a plain definition and one whose
+destination is still `{% link %}`, so the definitions above it reached no
+fragment. That is fixed, but the class of mistake is not: a typo in a reference
+name, or a definition deleted with the last prose that used it and still
+referenced from a note, fails just as quietly.
+
+The check is small — render every page, strip code blocks and tags, and look for
+`][name]` in what is left, which is what found these four. Decision to make:
+whether it belongs in the build as a hard failure beside the asset and `{% link
+%}` checks, or in the link checker, and whether it can distinguish a genuine
+unresolved reference from prose that merely looks like one (a regular expression
+or a `chmod [reference...][operator]` synopsis in running text rather than in a
+code block).
