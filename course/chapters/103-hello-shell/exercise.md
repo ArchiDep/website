@@ -299,6 +299,70 @@ $> treasure
 
 {% endsolution %}
 
+## :checkered_flag: What have I done?
+
+You interacted with your computer through nothing but text. The island you
+explored is an ordinary directory in your home directory, and the Finder or the
+Windows file explorer would have shown you the same files all along: same
+computer, same file system, a different way of reaching it. Instead of seeing
+things and clicking them, you named them and told a program what to do with
+them.
+
+The rule of the hunt is lifted, so go and see that for yourself: open the island
+in your graphical interface. If your terminal is still open, the quickest way is
+to ask for it there:
+
+```bash
+$> cd ~/treasure-hunt
+$> open .            # on macOS
+$> explorer.exe .    # in the WSL
+```
+
+There is the beach, there is the old temple with the space in its name, and
+there is your bag with the treasure in it. Nothing you did happened in a
+separate command line land that only exists inside the terminal: you were moving
+these very icons around the whole time. Drag a file somewhere with the mouse,
+then run `ls` in your terminal, and you will see the same change from both
+sides.
+
+On the way to the treasure, you:
+
+- Moved around directories with relative and absolute paths.
+- Read files with `cat` and `less`.
+- Found hidden files and (possibly) a file lost deep in a tree.
+- Moved, renamed, copied, created, edited and deleted files.
+- Ran programs, stopped one, and made another one executable.
+- Added a directory to your `PATH` so that the shell finds the treasure from
+  anywhere.
+
+Underneath those commands, you learned that your file system is a tree, and that
+a path is an address in it: `.` is where you stand, `..` is one step up, `~` is
+your home and `/` is the root that everything hangs from. Every file on your
+computer has such an address, and once you can write it, you can reach anything
+from anywhere. You also saw that the tree makes no distinction between kinds of
+things: a clue, a key, a configuration file and a program were all just files,
+and the same handful of commands worked on all of them.
+
+You learned that a command is itself one of those files. `ls` and `cat` are not
+magic words the terminal knows: they are programs, sitting in a directory, that
+your shell found by looking through your `PATH`. That is why putting your bag in
+your `PATH` turned `treasure` into a command exactly like them. There is no
+privileged list of real commands that you are not allowed to add to.
+
+Two things also work differently here than in a graphical interface, and both
+are worth carrying with you:
+
+- There is no trash bin and no undo: `rm` deletes a file forever, which is why
+  you double-check each name before pressing Enter.
+- Settings often live in plain text: you opened the drawbridge by editing
+  `drawbridge.conf` in nano or vim, which is how a Unix system is typically
+  configured.
+
+That last point is why this chapter comes first. The server you will be given
+later in the course has no Finder, no windows, no GUI at all: a text-based
+command line is the only way in, and everything you just did on the island is
+what you will be doing on it when you get there.
+
 ## :question: Clean up (optional)
 
 The hunt is over? You can remove it from your computer:
@@ -319,14 +383,6 @@ press Enter. If you insert a space in the wrong place, you could delete your
 entire home directory.
 
 {% endcallout %}
-
-## :checkered_flag: What just happened?
-
-You moved around directories with relative and absolute paths, and read files
-with `cat` and `less`. You found hidden files and (possibly) a file lost deep in
-a tree. You moved, renamed, copied, created, edited and deleted files. You ran
-programs, stopped one, and made another one executable. Finally, you added a
-directory to your `PATH`, so that the shell finds the treasure from anywhere.
 
 ## :space_invader: Make your own hunt
 
