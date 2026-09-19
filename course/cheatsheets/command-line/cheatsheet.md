@@ -306,7 +306,7 @@ To be able to keep this environment variable in all future CLIs, save the
 
 ### `$PATH`
 
-`$PATH` is an environment variable that contains a semicolon-delimited (`:`)
+`$PATH` is an environment variable that contains a colon-delimited (`:`)
 list of directories. When you type a command such as `git`, Bash will look for a
 binary file named `git` in each of these directories one by one and execute the
 first one it finds.
