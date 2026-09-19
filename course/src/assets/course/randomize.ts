@@ -15,6 +15,11 @@ type Randomized = HTMLElement & { [randomizerKey]?: Randomizer };
 
 const chance = new Chance();
 
+// The values a randomizer knows how to replace, by the name of the regexp group
+// that captures each of them.
+const randomizedParts = ['username', 'ipAddress', 'domain'] as const;
+type Replacements = Partial<Record<(typeof randomizedParts)[number], string>>;
+
 class Randomizer {
   static for(element: HTMLElement): Randomizer | undefined {
     const id = element.id;
@@ -98,7 +103,7 @@ class Randomizer {
     return randomizer;
   }
 
-  #textNodes: readonly [ChildNode, string, Record<string, string>][];
+  #textNodes: readonly [ChildNode, string, Replacements][];
 
   constructor(
     readonly codeElement: HTMLElement,
@@ -112,22 +117,27 @@ class Randomizer {
   initialize(): void {
     this.#textNodes = this.#textNodes.map(
       ([node, originalText, replacements]) => {
-        const username =
-          replacements['username'] === 'jde'
-            ? 'jde'
-            : this.#randomizeUsername(replacements['username']);
-        const ipAddress = this.#randomizeIpAddress(replacements['ipAddress']);
-        const domain = this.#randomizeDomain(replacements['domain']);
-        replacements['ipAddress'] = ipAddress;
-        replacements['username'] = username;
-        replacements['domain'] = domain;
+        // Only the parts the match captured are randomized: a group that took
+        // no part in the match, such as one alternative of a regexp matching
+        // either of two lines, has nothing to replace in this node.
+        if (
+          replacements.username !== undefined &&
+          replacements.username !== 'jde'
+        ) {
+          replacements.username = this.#randomizeUsername(
+            replacements.username
+          );
+        }
+        if (replacements.ipAddress !== undefined) {
+          replacements.ipAddress = this.#randomizeIpAddress(
+            replacements.ipAddress
+          );
+        }
+        if (replacements.domain !== undefined) {
+          replacements.domain = this.#randomizeDomain(replacements.domain);
+        }
 
-        const text = this.template
-          .replace('<username>', username)
-          .replace('<ipAddress>', ipAddress)
-          .replace('<domain>', domain);
-
-        node.textContent = originalText.replace(this.regexp, text);
+        node.textContent = this.#render(originalText, replacements);
 
         return [node, originalText, replacements] as const;
       }
@@ -138,43 +148,37 @@ class Randomizer {
     this.#textNodes = this.#textNodes.map(
       ([node, originalText, replacements]) => {
         const part = shuffle(
-          ['username', 'ipAddress', 'domain'].filter(
-            part => part in replacements
-          )
+          randomizedParts.filter(part => replacements[part] !== undefined)
         )[0];
 
         if (part === 'username') {
-          replacements['username'] = this.#randomizeUsername(
-            replacements['username']
+          replacements.username = this.#randomizeUsername(
+            replacements.username
           );
         } else if (part === 'ipAddress') {
-          replacements['ipAddress'] = this.#randomizeIpAddress(
-            replacements['ipAddress']
+          replacements.ipAddress = this.#randomizeIpAddress(
+            replacements.ipAddress
           );
         } else if (part === 'domain') {
-          replacements['domain'] = this.#randomizeDomain(
-            replacements['domain']
-          );
+          replacements.domain = this.#randomizeDomain(replacements.domain);
         }
 
-        const username = replacements['username'] ?? this.#randomizeUsername();
-        const ipAddress =
-          replacements['ipAddress'] ?? this.#randomizeIpAddress();
-        const domain = replacements['domain'] ?? this.#randomizeDomain();
-        replacements['username'] = username;
-        replacements['ipAddress'] = ipAddress;
-        replacements['domain'] = domain;
-
-        const text = this.template
-          .replace('<username>', username)
-          .replace('<ipAddress>', ipAddress)
-          .replace('<domain>', domain);
-
-        node.textContent = originalText.replace(this.regexp, text);
+        node.textContent = this.#render(originalText, replacements);
 
         return [node, originalText, replacements] as const;
       }
     );
+  }
+
+  // A placeholder whose group took no part in the match is replaced by nothing,
+  // so that one template can serve every alternative of the regexp.
+  #render(originalText: string, replacements: Replacements): string {
+    const text = this.template
+      .replace('<username>', replacements.username ?? '')
+      .replace('<ipAddress>', replacements.ipAddress ?? '')
+      .replace('<domain>', replacements.domain ?? '');
+
+    return originalText.replace(this.regexp, text);
   }
 
   #randomizeUsername(previousUsername?: string): string {
@@ -367,9 +371,8 @@ function setUpRandomizers(elements: HTMLCollectionOf<HTMLElement>) {
 function findChildNodesMatching(
   node: Node,
   regexp: RegExp
-): readonly [ChildNode, string, Readonly<Record<string, string>>][] {
-  const matchingNodes: [ChildNode, string, Readonly<Record<string, string>>][] =
-    [];
+): readonly [ChildNode, string, Replacements][] {
+  const matchingNodes: [ChildNode, string, Replacements][] = [];
   for (const childNode of node.childNodes) {
     if (childNode.nodeType === Node.ELEMENT_NODE) {
       matchingNodes.push(
@@ -390,7 +393,7 @@ function findChildNodesMatching(
       continue;
     }
 
-    matchingNodes.push([childNode, textContent, match?.groups ?? {}] as const);
+    matchingNodes.push([childNode, textContent, { ...match.groups }] as const);
   }
 
   return matchingNodes;

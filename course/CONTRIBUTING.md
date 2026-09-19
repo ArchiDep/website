@@ -593,6 +593,20 @@ block:
   with `<username>`, `<ipAddress>` and `<domain>` placeholders.
 - `data-tooltip="false"`: Optionally disables the reminder tooltip.
 
+Each line of the code block is matched separately. To randomize different
+values on different lines, write the regular expression as alternatives, one
+per line, and put all their placeholders in the template: a placeholder whose
+group took no part in a line's match is replaced by nothing. For example, a
+block with an IP address on a `HostName` line and a username on a `User` line:
+
+```html
+<div
+  class="archidep-randomize"
+  data-regexp="(?:(?<=HostName )(?<ipAddress>[0-9]+(?:\.[0-9]+){3})|(?<=User )(?<username>[a-z][a-z0-9]+))"
+  data-template="<ipAddress><username>"
+></div>
+```
+
 This feature is implemented in
 [`src/assets/course/randomize.ts`](./src/assets/course/randomize.ts).
 
