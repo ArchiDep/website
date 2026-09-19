@@ -127,6 +127,9 @@ down arrow keys (exit this mode by typing the letter `q`, as in **q**uit):
 $> less file.txt
 ```
 
+In `less`, type `/` followed by a word and press `Enter` to search for that
+word. Press `n` to go to the next match.
+
 ## Writing
 
 ### Create a directory (`mkdir`)
@@ -235,6 +238,12 @@ Move a file (or directory):
 $> mv file.txt /somewhere/else
 
 $> mv directory /somewhere/else
+```
+
+Rename a file (or directory), by moving it to a new name:
+
+```bash
+$> mv oldname.txt newname.txt
 ```
 
 ### Delete stuff (`rm`)

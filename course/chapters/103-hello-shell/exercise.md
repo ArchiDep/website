@@ -3,350 +3,316 @@ title: Hello Shell
 excerpt_separator: <!-- more -->
 ---
 
-In this exercise, you'll set up a mini treasure hunt for adventurers navigating
-your server via the [Command Line][command-line]. You'll automate this hunt
-using [Shell Scripting][shell-scripting]. This activity aims to help you become
-more familiar with the command line's fundamental tools and the automation of
-tasks through basic scripting.
+In this exercise, you go on a treasure hunt on your own computer. A script
+prepares the hunt for you: an island where places are directories, clues are
+files, and a few things are programs. You explore it with the [Command
+Line][command-line]. On the way, you meet a few new commands.
 
 {% callout type: exercise %}
 
-Execute these tasks solely using the Terminal or the WSL. Utilizing GUI tools
-would defeat the purpose.
+Do everything in your Terminal (macOS) or in the WSL (Windows). Do not use a
+file explorer or a graphical editor: that would defeat the purpose.
 
 {% endcallout %}
 
 <!-- more -->
 
-## :exclamation: Creating directories and files
+## :exclamation: Prepare the hunt
 
-We're already familiar with the `pwd`, `cd`, `ls`, `mkdir`, `touch`, `echo`, and
-`cat` commands. Using the relevant commands, perform the tasks below:
+Run this command:
 
-- Starting from your home (`~`) directory, create a new directory named
-  `treasure_hunt`.
-- Within the `treasure_hunt` directory, craft three additional directories:
-  `cave`, `forest`, and `lake`.
-- Create the following files: `cave/echo.txt`, `lake/fish.txt`, and
-  `forest/tree.txt`.
+```bash
+$> curl -fsSL https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/103-hello-shell/treasure-hunt.sh | bash
+```
 
-{% callout type: more, id: home-tilde %}
+`curl` downloads a script. The pipe (`|`) sends that script to `bash`, which
+runs it. The script creates a directory named `treasure-hunt` in your home
+directory, and everything the hunt needs inside it.
 
-In Unix-like operating systems, the tilde (`~`) symbol is a shorthand
-representation for a user's home directory. It's a convenient way to refer to
-this directory without needing to know or type the full path.
+{% callout type: warning %}
 
-For instance, if a user's home directory is `/home/username`, typing `cd ~` in
-the terminal would navigate them directly to that location. The tilde is
-recognized and expanded to the full path by the shell, making it an efficient
-shortcut. Additionally, the tilde can be combined with other directory or file
-names, such as `~/Documents`, to quickly reference subdirectories or files
-within the home directory.
-
-The adoption of the tilde as a shortcut has become a deeply ingrained convention
-in the command-line world, providing users with a quick and consistent way to
-access their personal files and settings.
+**Be careful with `curl … | bash`.** It runs a program from the internet on your
+computer, and you do not see what it does before it runs. Only do this with a
+script from someone you trust. You can [read this one](treasure-hunt.sh) before
+you run it. It only writes in `~/treasure-hunt`.
 
 {% endcallout %}
 
-{% note type: advanced, title: Challenge %}
+At the end, the script tells you to type this command:
 
-As an added challenge: find a way to perform this step of the exercise using no
-more than two commands.
+```bash
+$> cd ~/treasure-hunt
+```
 
-{% endnote %}
-
-## :exclamation: Adding clues
-
-Using your preferred method, update the files we just created with the specified
-content:
-
-- `cave/echo.txt`: To uncover the next clue, explore where the water flows.
-- `lake/fish.txt`: Venture deep into the woods to discover the last hint.
-- `forest/tree.txt`: curl parrot.live
-
-{% callout type: more, id: curl %}
-
-The `curl` command is a versatile tool used primarily for transferring data
-using various protocols, most commonly HTTP and HTTPS. For beginners diving into
-the world of command-line operations, think of `curl` as a way to communicate
-with websites and servers directly from the terminal without the need for a web
-browser.
-
-Whether you're trying to fetch the contents of a web page, download a file, or
-interact with APIs, `curl` is your go-to utility. Its name stands for **C**lient
-**URL**, underscoring its capability to work with URLs to retrieve or send data.
-
-Beginners often start with basic `curl` commands, like `curl
-https://example.com`, which fetches and displays the content of the specified
-web page in the terminal. As users become more accustomed to it, they'll find
-that `curl` offers a wide range of options and parameters to customize requests,
-making it an indispensable tool for many developers and system administrators.
-
-{% endcallout %}
-
-## :question: Test the treasure hunt
-
-Ensure your setup is in order:
-
-- Transition to the `treasure_hunt` directory.
-- Examine the contents of `echo.txt` within the cave directory.
-- Guided by the clue, proceed to the subsequent directory.
-- Unravel the next hint and move forward accordingly.
-- Input the concluding hint into the terminal.
-- Relish your discovered treasure.
-
-## :exclamation: Automate the treasure hunt using shell scripting
-
-Follow these steps to script and automate your entire treasure hunt:
-
-- In the `treasure_hunt` directory, create a file named `auto_hunt`.
-- Launch your go-to command-line text editor to edit the `auto_hunt` file.
-- Add the following line at the top of the file: `#!/bin/bash`
-- Systematically script the commands to journey through the treasure hunt.
-  Introduce a theatrical pause of 2 seconds between commands using the `sleep`
-  command for heightened suspense.
+The script cannot do it for you. `bash` runs the script in a new shell, which is
+a separate program. When the script changes directory, it only changes the
+directory of that other shell, not yours.
 
 {% note type: tip %}
 
-For a touch of efficiency, consider crafting a function that merges the file
-reading and short delay. This promotes reusability throughout your script.
+Want to start over? Run the same `curl` command again. It asks before it deletes
+your hunt.
 
 {% endnote %}
 
-{% callout type: more, id: sleep %}
+## :exclamation: Explore the island
 
-The `sleep` command is a simple yet useful utility in Unix-like operating
-systems that pauses the execution of a program or script for a specified
-duration. For beginners getting acquainted with scripting or command-line tasks,
-think of sleep as a way to introduce deliberate delays. By inputting sleep
-followed by a number, the system will pause for that many seconds. For instance,
-`sleep 5` will introduce a pause of five seconds.
+Read `start.txt`, then follow the clues. Your goal for this part: find out where
+the captain hid the key, and get past the dragon.
+
+On the way, you will:
+
+- Move around with `cd`, look around with `ls`, and read with `cat`.
+- Find hidden files with `ls -a`.
+- Go into a directory whose name has a space, with quotes or with Tab
+  completion.
+- Use relative paths with `..`, and `cd` with nothing after it.
+- Read a long file with `less`. It is new: see "What's in this file?" in the
+  **Command Line** cheatsheet, in the sidebar.
+- Run a program with `./`, and stop it with `Ctrl-C`.
+
+{% note type: tip %}
+
+Stuck? Every place has a hint in a hidden file: `cat .hint`.
+
+{% endnote %}
+
+{% solution %}
+
+```bash
+$> cd ~/treasure-hunt
+$> cat start.txt
+$> cd beach
+$> ls -a
+$> cat .bottle.txt
+$> cd "../old temple"
+$> cat inscription.txt
+$> cd ../jungle/river/waterfall
+$> cat carving.txt
+$> cd ../../ruins
+$> cat stone.txt
+$> cd ../../shipwreck
+$> less diary.txt       # then type /dragon, press Enter, and q to quit
+$> cd ../cave
+$> ./dragon             # then press Ctrl-C
+$> ls lair
+```
+
+{% endsolution %}
+
+### :question: The golden idol (optional)
+
+The catacombs, under the ruins, are very deep. A golden idol is lost somewhere
+down there. Bring it back in your bag, and your treasure will be bigger. Do not
+search by hand: use `find` (see "Find files" in the **Command Line**
+cheatsheet).
+
+{% solution %}
+
+```bash
+$> cd ~/treasure-hunt/jungle/ruins/catacombs
+$> find . -name golden-idol
+./left/right/left/.../golden-idol
+$> mv ./left/right/left/.../golden-idol ~/treasure-hunt/bag/
+```
+
+Your path is different: the catacombs are different each time the hunt is
+prepared. Copy the one `find` gives you.
+
+{% endsolution %}
+
+## :exclamation: Change things
+
+In this part, you do not only look at the island: you change it. Take the key
+to the fortress and get to the top of its tower.
+
+On the way, you will:
+
+- Move a file with `mv`, and rename it with `mv` too.
+- Copy a file with `cp`, and see how it is different from `mv`.
+- Create a directory with `mkdir` and a file with `touch`, and write in a file
+  with `echo … >`.
+- Edit a file with nano (or Vim). You will do this a lot on your server later in
+  the course.
+- Delete files with `rm`.
+
+`cp`, `mv` and `rm` are new: see "Copy stuff", "Move stuff" and "Delete stuff"
+in the **Command Line** cheatsheet.
+
+{% callout type: warning %}
+
+`rm` deletes a file forever. There is no bin to get it back from. Read the name
+twice before you press Enter.
 
 {% endcallout %}
 
-- To execute the command found within `forest/tree.txt`, incorporate: `sh
-forest/tree.txt`.
-- Preserve your hard work by saving the script and gracefully exiting your text
-  editor.
-- Jumpstart your treasure hunt automation with the command:
+{% solution %}
 
 ```bash
-$> sh auto_hunt
+$> cd ~/treasure-hunt/cave
+$> mv lair/rusty-key ../bag/
+$> cd ../fortress
+$> mv ../bag/rusty-key key
+$> ./door
+$> cd courtyard
+$> ./guardian
+$> cp ../../shipwreck/map.txt map-copy.txt
+$> ./guardian
+$> ./rest
+$> mkdir camp
+$> touch camp/fire
+$> echo lit > camp/fire
+$> ./rest
+$> nano drawbridge.conf  # change state=closed to state=open, save and quit
+$> ./crank
+$> cd tower
+$> rm cursed-chest.txt
+$> rm trap-snakes.txt
+$> rm trap-spiders.txt
+$> rm trap-spikes.txt
+$> ./stairs
+$> cd top
+$> cat parrot.txt
 ```
+
+{% endsolution %}
+
+## :exclamation: Find the treasure
+
+The parrot at the top of the tower tells you where to go next, as a path.
+Follow it, then ring the bell from the right place. Before you run anything,
+work out where the path goes: count the `..` one by one.
+
+On Skull Island, the chest is a program that you are not allowed to run yet.
+`chmod +x` fixes that. You will learn about permissions later in the course. The
+chest then asks for a combination: look at the coins in your bag.
+
+{% solution %}
+
+```bash
+$> cd ../../../../beach/./boat
+$> pwd
+/Users/jde/treasure-hunt/beach/boat
+$> ~/treasure-hunt/bell
+$> cd ../../skull-island
+$> ./chest
+permission denied: ./chest
+$> chmod +x chest
+$> cat ../bag/coin-1 ../bag/coin-2 ../bag/coin-3
+$> ./chest
+$> ../bag/treasure
+```
+
+The combination is different for each student: it is chosen at random when the
+hunt is prepared.
+
+{% endsolution %}
+
+## :exclamation: Take the treasure home
+
+The treasure is a program in your bag. You can run it with its path:
+
+```bash
+$> ~/treasure-hunt/bag/treasure
+```
+
+But you cannot run it with its name only, like `ls` or `cd`:
+
+```bash
+$> treasure
+command not found: treasure
+```
+
+Your shell looks for commands in the directories listed in your `PATH`, and your
+bag is not one of them. Take your bag everywhere: add
+`~/treasure-hunt/bag` to your `PATH`, as explained in [the `PATH`
+variable][command-line-path] of "Command Line".
+
+- Look at your `PATH` with `echo $PATH`.
+- Open your shell's configuration file with nano: `~/.bashrc` in the WSL,
+  `~/.zshrc` on macOS.
+- Add this line at the end of the file, then save and quit:
+
+  ```bash
+  export PATH="$HOME/treasure-hunt/bag:$PATH"
+  ```
+
+- Close your terminal and open a new one.
+- Run `treasure`, from any directory.
+
+{% solution %}
+
+```bash
+$> nano ~/.zshrc         # or ~/.bashrc in the WSL
+```
+
+Add this line at the end, save and quit:
+
+```bash
+export PATH="$HOME/treasure-hunt/bag:$PATH"
+```
+
+Open a new terminal, then:
+
+```bash
+$> cd /
+$> treasure
+```
+
+{% endsolution %}
+
+## :question: Make your own hunt (optional)
+
+Make a small hunt of your own, with three clues, and a script that plays it. The
+[Shell Scripting][shell-scripting] chapter explains what you need.
+
+- Create a directory with three places in it. Put a clue in each one.
+- Write a script that goes through the places in order and shows each clue with
+  `cat`. Wait two seconds between clues with `sleep 2`.
+- Make the script executable, and run it.
 
 {% solution %}
 
 ```bash
 #!/bin/bash
-cd ~/treasure_hunt
+cd ~/my-hunt || exit 1
 
-read_clue() {
-  cat $1
+show_clue() {
+  cat "$1"
   sleep 2
 }
 
-read_clue cave/echo.txt
-
-read_clue lake/fish.txt
-
-read_clue forest/tree.txt
-
-sh forest/tree.txt
+show_clue cave/echo.txt
+show_clue lake/fish.txt
+show_clue forest/tree.txt
 ```
 
 {% endsolution %}
 
-## :exclamation: Make `auto_hunt` executable
+## :question: Clean up (optional)
 
-Currently, to execute the shell script, you must use the sh command followed by
-the script's precise filepath. Assuming you are in the home directory, try
-running:
+The hunt is over? You can remove it from your computer:
 
-```bash
-$> ./auto_hunt
-permission denied: ./auto_hunt
-```
+- Open your shell's configuration file with nano again, and delete the line you
+  added to your `PATH`. Then open a new terminal.
+- Delete the hunt:
 
-The error message `permission denied: ./auto_hunt` that you see indicates that
-the shell has been denied the permission to execute the file named `auto_hunt`.
-In Unix-like operating systems, files have certain permissions associated with
-them, determining who can read, write, or execute them. When you try to run
-`./auto_hunt` without the necessary execute permission, the system prevents it
-from being executed, leading to this error.
+  ```bash
+  $> rm -r ~/treasure-hunt
+  ```
 
-To address this, let's grant the `auto_hunt` script execute permissions:
-
-```bash
-$> chmod +x auto_hunt
-```
-
-{% note type: more %}
-
-At this juncture in the course, delving into the intricacies of Unix permissions
-isn't required. We'll embark on a deeper exploration of this topic as the
-semester progresses.
-
-{% endnote %}
-
-Running the script now works:
-
-```bash
-$> ./auto_hunt
-To find the next clue, search where the water flows
-...
-```
-
-## :exclamation: Running `auto_hunt` from any directory
-
-Wouldn't it be convenient to execute this script without specifying its full
-path, much like the other commands we've utilized so far? Give this a shot by
-trying:
-
-```bash
-$> auto_hunt
-command not found: auto_hunt
-```
-
-The error message `command not found: auto_hunt` essentially means that the
-shell couldn't find a command or program named `auto_hunt` in the places it
-usually looks for such commands. When you type a command in the terminal, the
-shell searches for that command in a list of directories specified in a variable
-called `PATH`. If the command or program isn't located in any of these
-directories, you'll get the "command not found" error.
-
-Let's probe where our shell currently scouts for executable programs:
-
-```bash
-$> echo $PATH
-/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-```
-
-The above command displays the contents of the `PATH` environment variable. The
-response enumerates the directories where the shell scans for executable files.
-As evident, the `~/treasure_hunt` directory is conspicuously absent from this
-compilation. Consequently, our shell remains oblivious to any executable linked
-with the `auto_hunt` command.
-
-To add `auto_hunt` to your `PATH`, you need to update the `PATH` environment
-variable to include the directory containing the `auto_hunt` script. Here's how
-you can do it:
-
-You can temporarily add the directory to your `PATH` for the current session
-with:
-
-```bash
-$> export PATH=$PATH:~/treasure_hunt
-```
-
-If you now run the following, you will see that your script is executed:
-
-```bash
-$> auto_hunt
-To find the next clue, search where the water flows
-...
-```
-
-Restart your shell and attempt executing `auto_hunt` once more. Oops! It seems
-our PATH has reverted to its original configuration.
-
-To permanently change the `PATH`, you'll need to add the export line to your
-shell's initialization file. The specific file depends on the shell you're
-using:
-
-- For `bash` (WSL), it's `~/.bashrc`.
-- For `zsh` (MacOS), it's `~/.zshrc`.
-
-With your preferred command-line text editor, append the following line to the
-end of your shell's initialization file:
-
-```bash
-export PATH=$PATH:~/treasure_hunt
-```
-
-Let's break this line down.
-
-- **`export`**: This command tells the shell to make a variable available for
-  other processes or commands that come after. When you export a variable, it's
-  like announcing to programs and scripts you might run next, "Hey, you can use
-  this!"
-
-- **`PATH`**: This is one of the most critical environment variables in
-  Unix-like operating systems. It tells the shell where to look for executable
-  files in response to commands entered by the user. Its value is a list of
-  directories separated by colons (:).
-
-- **`$PATH`**: Here, the $ is used to retrieve the current value of the `PATH`
-  variable. So, `$PATH` represents whatever directories are currently in your
-  `PATH`.
-
-- **`:`** : In the context of the `PATH` variable, the colon (:) is used as a
-  delimiter to separate different directory paths.
-
-- **`~/treasure_hunt`**: This is a directory named treasure_hunt located within
-  the user's home directory.
-
-In this command, we merge several elements together. Firstly, `$PATH` retrieves the present `PATH` value. Then, `~/treasure_hunt` gets tacked onto that value. Essentially, this operation adds the `treasure_hunt` directory in the user's home to the roster of directories the shell peruses when seeking executables. Put plainly, after initiating this command, the shell will extend its search to the `~/treasure_hunt` directory whenever a command is run, supplementing the directories already listed in your `PATH`.
-
-To incorporate the modifications made to the startup file without restarting your terminal, simply "source" the file:
-
-{% cols %}
-
-<!-- col md:order-1 -->
-
-For Bash:
-
-<!-- col md:order-3 -->
-
-```bash
-$> source ~/.bashrc
-```
-
-<!-- col md:order-2 -->
-
-For zsh:
-
-<!-- col md:order-4 -->
-
-```bash
-$> source ~/.zshrc
-```
-
-{% endcols %}
-
-Now, the `auto_hunt` command should be accessible from any location in the terminal.
-
-```bash
-$> auto_hunt
-To find the next clue, search where the water flows
-...
-           .ccccccc.
-      .,,,;cooolccoo;;,,.
-     .dOx;..;lllll;..;xOd.
-   .cdo;',loOXXXXXkll;';odc.
-  ,ol:;c,':oko:cccccc,...ckl.
-  ;c.;kXo..::..;c::'.......oc
-,dc..oXX0kk0o.':lll;..cxxc.,ld,
-kNo.'oXXXXXXo',:lll;..oXXOo;cOd.
-KOc;oOXXXXXXo.':lol;..dXXXXl';xc
-Ol,:k0XXXXXX0c.,clc'.:0XXXXx,.oc
-KOc;dOXXXXXXXl..';'..lXXXXXo..oc
-dNo..oXXXXXXXOx:..'lxOXXXXXk,.:; ..
-cNo..lXXXXXXXXXOolkXXXXXXXXXkl,..;:';.
-.,;'.,dkkkkk0XXXXXXXXXXXXXXXXXOxxl;,;,;l:.
-  ;c.;:''''':doOXXXXXXXXXXXXXXXXXXOdo;';clc.
-  ;c.lOdood:'''oXXXXXXXXXXXXXXXXXXXXXk,..;ol.
-  ';.:xxxxxocccoxxxxxxxxxxxxxxxxxxxxxxl::'.';;.
-  ';........................................;l'
-```
+  The `-r` option makes `rm` delete a directory and everything inside it. This is
+  the most dangerous command of this exercise: check the path twice before you
+  press Enter.
 
 ## :checkered_flag: What just happened?
 
-In this exercise, we navigated through basic Unix commands. We started by creating directories and files, and then crafted a "treasure hunt", where we used these commands to create and modify files.
-
-We further explored the curl command and its capabilities in interacting with the Internet directly from the command line. Transitioning to shell scripting, we automated the treasure hunt sequence with the `auto_hunt` script.
-
-A challenge arose when trying to run the script from any directory, which led us to tinker with file permissions and the `PATH` environment variable. By modifying permissions and adjusting the `PATH`, we ensured our script was easily accessible from any location in the terminal.
+You moved around directories with relative and absolute paths, and read files
+with `cat` and `less`. You found hidden files and a file lost deep in a tree.
+You moved, renamed, copied, created, edited and deleted files. You ran programs,
+stopped one, and made another one executable. Finally, you added a directory to
+your `PATH`, so that the shell finds the treasure from anywhere.
 
 [command-line]: {% link chapters/101-command-line/subject.md %}
+[command-line-path]: {% link chapters/101-command-line/subject.md %}#the-path-variable
 [shell-scripting]: {% link chapters/102-shell-scripting/subject.md %}
