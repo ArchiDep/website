@@ -118,12 +118,18 @@ URL:
 
 - [`DocumentRef`](./document_ref.ex) — a course document: a chapter number, a
   slug and a type (`:subject`, `:exercise` or `:slides`). Its
-  `parse_source_path/1` is the single place that knows the layout of the content
-  directory, including the two ways slides may be written (`slides.md` at the
-  chapter root, or `slides/slides.md`), which are one document with one URL.
+  `parse_source_path/1` knows how a chapter writes its documents, including the
+  two ways slides may be written (`slides.md` at the chapter root, or
+  `slides/slides.md`), which are one document with one URL.
 - [`PageRef`](./page_ref.ex) — anything with a page URL: the home page, a
   document or a cheatsheet. `output_path/1` is where that page lives inside a
-  build, with no mount point and no edition prefix.
+  build, with no mount point and no edition prefix. Its `parse_source_path/1` is
+  the single place that knows the layout of the content directory — a chapter's
+  documents through `DocumentRef`, and a cheatsheet, which is the one file its
+  directory is named after. Both the build, sorting the files it was handed, and
+  the [`link` tag](#the-tags-the-course-writes), reading what an author wrote,
+  read a path through it, so the pages a document may link to and the pages the
+  build publishes are one set.
 - [`HeadingRef`](./heading_ref.ex) — a place _inside_ a page: a page and the
   identifier one of its headings carries. Unlike the other two it names
   something no author writes — an identifier is [slugged while the page is

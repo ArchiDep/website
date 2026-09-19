@@ -1,23 +1,25 @@
 defmodule ArchiDep.CourseSite.Renderer.Liquid.LinkTag do
   @moduledoc """
-  `{% link chapters/205-php-todolist/exercise.md %}` — the URL of another
-  document of the course, written as the path of its source file.
+  `{% link chapters/205-php-todolist/exercise.md %}` — the URL of another page
+  of the course, written as the path of its source file. A chapter's documents
+  and a cheatsheet (`{% link cheatsheets/command-line/cheatsheet.md %}`) are
+  both named this way, since both are pages the content directory holds.
 
-  The tag emits nothing but a logical reference; where that document ends up
-  living is `ArchiDep.CourseSite.Urls`' business. That is what lets the same
-  chapter link resolve differently in the site being taught, in a frozen archive
-  and in a PDF, without the content knowing any of it.
+  The tag emits nothing but a logical reference; where that page ends up living
+  is `ArchiDep.CourseSite.Urls`' business. That is what lets the same chapter
+  link resolve differently in the site being taught, in a frozen archive and in
+  a PDF, without the content knowing any of it.
 
-  A path that is not the path of a course document is reported rather than
-  rendered as a broken link, which is the whole reason the content refers to a
-  source file instead of writing a URL. Whether the file it names actually
-  exists is not something this tag can know: it is checked against the
-  enumerated content directory by the build.
+  A path that is not the path of a course page is reported rather than rendered
+  as a broken link, which is the whole reason the content refers to a source
+  file instead of writing a URL. Whether the file it names actually exists is
+  not something this tag can know: it is checked against the enumerated content
+  directory by the build.
   """
 
   @behaviour Solid.Tag
 
-  alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.PageRef
   alias ArchiDep.CourseSite.Renderer.Liquid.RawMarkup
   alias ArchiDep.CourseSite.Renderer.Liquid.Registers
   alias ArchiDep.CourseSite.Renderer.RenderError
@@ -37,17 +39,17 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.LinkTag do
   end
 
   @doc """
-  The document a `{% link %}` tag points at, or why it points at nothing.
+  The page a `{% link %}` tag points at, or why it points at nothing.
   """
-  @spec document(t()) :: {:ok, DocumentRef.t()} | {:error, RenderError.reason()}
-  def document(%__MODULE__{source_path: source_path}) do
-    case DocumentRef.parse_source_path(source_path) do
-      {:ok, document} -> {:ok, document}
-      {:error, {:invalid_source_path, path}} -> {:error, {:invalid_document, path}}
+  @spec page(t()) :: {:ok, PageRef.t()} | {:error, RenderError.reason()}
+  def page(%__MODULE__{source_path: source_path}) do
+    case PageRef.parse_source_path(source_path) do
+      {:ok, page} -> {:ok, page}
+      {:error, {:invalid_source_path, path}} -> {:error, {:invalid_page, path}}
     end
   end
 
-  defp source_path("", loc), do: {:error, "The link tag requires the path of a document", loc}
+  defp source_path("", loc), do: {:error, "The link tag requires the path of a page", loc}
 
   defp source_path(markup, _loc),
     do: {:ok, markup |> String.trim("\"") |> String.trim("'") |> String.trim()}
@@ -59,9 +61,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.LinkTag do
     def render(tag, context, _options) do
       render_context = Registers.fetch!(context)
 
-      with {:ok, document} <- LinkTag.document(tag),
-           {:ok, url} <-
-             resolve(render_context.urls, {:document, document}, render_context.page) do
+      with {:ok, page} <- LinkTag.page(tag),
+           {:ok, url} <- resolve(render_context.urls, page, render_context.page) do
         {url, context}
       else
         {:error, reason} ->

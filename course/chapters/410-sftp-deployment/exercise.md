@@ -608,7 +608,7 @@ If you do not remember the password, follow the troubleshooting instructions for
 [php-todolist]: https://github.com/ArchiDep/php-todo-ex
 [reverse-proxy]: https://en.wikipedia.org/wiki/Reverse_proxy
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
-[sysadmin-cheatsheet-apt]: ../../cheatsheets/sysadmin/#installing--upgrading
+[sysadmin-cheatsheet-apt]: {% link cheatsheets/sysadmin/cheatsheet.md %}#installing--upgrading
 [unix-input-stream]: https://en.wikipedia.org/wiki/Standard_streams#Standard_input_(stdin)
 [unix-redirection]: https://www.guru99.com/linux-redirection.html
 [web-server]: https://en.wikipedia.org/wiki/Web_server

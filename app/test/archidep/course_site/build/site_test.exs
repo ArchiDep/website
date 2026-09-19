@@ -154,13 +154,13 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                 [
                   {:unrenderable_document, "chapters/101-command-line/subject.md",
                    %RenderError{
-                     reason: {:invalid_document, "nope"},
+                     reason: {:invalid_page, "nope"},
                      source_path: "chapters/101-command-line/subject.md",
                      loc: %{line: 5, column: 1}
                    }},
                   {:unrenderable_document, "chapters/205-php-todolist/exercise.md",
                    %RenderError{
-                     reason: {:invalid_document, "nope"},
+                     reason: {:invalid_page, "nope"},
                      source_path: "chapters/205-php-todolist/exercise.md",
                      loc: %{line: 5, column: 1}
                    }}
@@ -171,7 +171,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
   describe "format_error/1" do
     test "describes a document that could not be rendered" do
       error = %RenderError{
-        reason: {:invalid_document, "nope"},
+        reason: {:invalid_page, "nope"},
         source_path: "chapters/507-dns/subject.md",
         loc: %{line: 5, column: 1}
       }

@@ -16,7 +16,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderErrorTest do
                  {:markdown, "invalid document"},
                  {:url,
                   {:unknown_pdf, {:document, DocumentRef.new(101, "command-line", :slides)}}},
-                 {:invalid_document, "chapters/507-dns/notes.md"},
+                 {:invalid_page, "chapters/507-dns/notes.md"},
                  {:missing_excerpt_separator, "<!-- more -->"},
                  {:unknown_include, "icons/nope.html"},
                  {:invalid_tag, "cols", "columns must be between 2 and 12"}
@@ -28,7 +28,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderErrorTest do
                "Unexpected tag 'note:' in chapters/507-dns/subject.md",
                "Invalid Markdown (invalid document) in chapters/507-dns/subject.md",
                "No PDF has been published for page 101-command-line (slides) in chapters/507-dns/subject.md",
-               "\"chapters/507-dns/notes.md\" is not the path of a course document in chapters/507-dns/subject.md",
+               "\"chapters/507-dns/notes.md\" is not the path of a course document or cheatsheet in chapters/507-dns/subject.md",
                "The front matter declares the excerpt separator \"<!-- more -->\", which the document never writes in chapters/507-dns/subject.md",
                "There is no include named \"icons/nope.html\" in chapters/507-dns/subject.md",
                "Invalid {% cols %} tag (columns must be between 2 and 12) in chapters/507-dns/subject.md"

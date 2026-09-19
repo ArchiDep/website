@@ -72,6 +72,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   """
 
   alias ArchiDep.CourseSite.DocumentRef
+  alias ArchiDep.CourseSite.PageRef
 
   @enforce_keys [:documents, :cheatsheets, :page_assets, :ignored]
   defstruct [:documents, :cheatsheets, :page_assets, :ignored]
@@ -96,7 +97,6 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
 
   @chapter_regex ~r{\Achapters/([1-9]\d\d-[^/]+)/(.+)\z}
   @cheatsheet_regex ~r{\Acheatsheets/([^/]+)/(.+)\z}
-  @cheatsheet_document_regex ~r{\Acheatsheets/([^/]+)/cheatsheet\.md\z}
 
   # Why a published path must not need percent-encoding:
   # `ArchiDep.CourseSite.Urls.PageAssetManifest`.
@@ -122,7 +122,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   them.
 
   Paths are relative to the content directory and separated by slashes, the same
-  way `ArchiDep.CourseSite.DocumentRef.parse_source_path/1` reads them. Every
+  way `ArchiDep.CourseSite.PageRef.parse_source_path/1` reads them. Every
   offending path is reported rather than the first, since a build that stops at
   one makes a content directory take as many runs to fix as it has mistakes —
   and so is every ambiguous chapter, which is a fact about a directory rather
@@ -200,7 +200,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   defp classify(source_path) do
     cond do
       littered?(source_path) -> {:ok, :ignored}
-      String.ends_with?(source_path, ".md") -> document(source_path)
+      String.ends_with?(source_path, ".md") -> page(source_path)
       true -> page_asset(source_path)
     end
   end
@@ -208,17 +208,10 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   defp littered?(source_path),
     do: source_path |> String.split("/") |> Enum.any?(&String.starts_with?(&1, "."))
 
-  defp document(source_path) do
-    case DocumentRef.parse_source_path(source_path) do
-      {:ok, ref} -> {:ok, {:document, ref}}
-      {:error, {:invalid_source_path, _path}} -> cheatsheet(source_path)
-    end
-  end
-
-  defp cheatsheet(source_path) do
-    case Regex.run(@cheatsheet_document_regex, source_path) do
-      [_whole, slug] -> {:ok, {:cheatsheet, slug}}
-      nil -> {:error, {:unknown_source, source_path}}
+  defp page(source_path) do
+    case PageRef.parse_source_path(source_path) do
+      {:ok, page} -> {:ok, page}
+      {:error, {:invalid_source_path, _path}} -> {:error, {:unknown_source, source_path}}
     end
   end
 

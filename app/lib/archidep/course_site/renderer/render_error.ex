@@ -32,7 +32,7 @@ defmodule ArchiDep.CourseSite.Renderer.RenderError do
           | {:liquid, String.t()}
           | {:markdown, String.t()}
           | {:url, Urls.error()}
-          | {:invalid_document, String.t()}
+          | {:invalid_page, String.t()}
           | {:missing_excerpt_separator, String.t()}
           | {:unknown_include, String.t()}
           | {:invalid_tag, tag :: String.t(), String.t()}
@@ -94,8 +94,8 @@ defmodule ArchiDep.CourseSite.Renderer.RenderError do
   defp describe({:markdown, message}), do: "Invalid Markdown (#{message})"
   defp describe({:url, error}), do: Urls.format_error(error)
 
-  defp describe({:invalid_document, path}),
-    do: "#{inspect(path)} is not the path of a course document"
+  defp describe({:invalid_page, path}),
+    do: "#{inspect(path)} is not the path of a course document or cheatsheet"
 
   defp describe({:missing_excerpt_separator, separator}),
     do:

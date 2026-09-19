@@ -14,15 +14,19 @@ defmodule ArchiDep.CourseSite.PageRef do
   identity, and it is what an archived edition records of each of its pages so
   that `ArchiDep.CourseSite.Archives` can match one against the current course.
 
-  There is deliberately no way back from a path to an identity. A path is only
-  ever read by the edition that emitted it, and the numbering, the slugging and
-  the shape of a URL are all free to differ from one edition to the next; a
-  parser here would be this edition's grammar applied to a frozen archive it
-  never described. An archived path is an opaque string, compared for equality
-  and nothing else.
+  There is deliberately no way back from an *output* path to an identity. Such a
+  path is only ever read by the edition that emitted it, and the numbering, the
+  slugging and the shape of a URL are all free to differ from one edition to the
+  next; a parser here would be this edition's grammar applied to a frozen
+  archive it never described. An archived path is an opaque string, compared for
+  equality and nothing else. A *source* path is the opposite: it is this
+  edition's own input, written by hand in its content directory and in the `{%
+  link %}` tags of its documents, which is what `parse_source_path/1` reads.
   """
 
   alias ArchiDep.CourseSite.DocumentRef
+
+  @cheatsheet_source_path_regex ~r{\Acheatsheets/([^/]+)/cheatsheet\.md\z}
 
   @type t :: :home | {:document, DocumentRef.t()} | {:cheatsheet, String.t()}
 
@@ -31,6 +35,40 @@ defmodule ArchiDep.CourseSite.PageRef do
           | {:chapter, pos_integer(), String.t()}
           | {:chapter_slides, pos_integer(), String.t()}
           | {:cheatsheet, String.t()}
+
+  @doc """
+  Parse the source path of a page of the course material, as the content
+  directory lays it out and as a `{% link %}` tag writes it.
+
+  A chapter's documents are `ArchiDep.CourseSite.DocumentRef`'s grammar; a
+  cheatsheet is the one file its directory is named after. The home page is not
+  one of these: it is written outside the content tree and is never named by a
+  path.
+
+      iex> PageRef.parse_source_path("chapters/402-run-virtual-server/exercise.md")
+      {:ok, {:document, DocumentRef.new(402, "run-virtual-server", :exercise)}}
+
+      iex> PageRef.parse_source_path("cheatsheets/command-line/cheatsheet.md")
+      {:ok, {:cheatsheet, "command-line"}}
+
+      iex> PageRef.parse_source_path("cheatsheets/command-line/notes.md")
+      {:error, {:invalid_source_path, "cheatsheets/command-line/notes.md"}}
+  """
+  @spec parse_source_path(String.t()) ::
+          {:ok, t()} | {:error, {:invalid_source_path, String.t()}}
+  def parse_source_path(source_path) when is_binary(source_path) do
+    case DocumentRef.parse_source_path(source_path) do
+      {:ok, document} -> {:ok, {:document, document}}
+      {:error, {:invalid_source_path, _path}} -> parse_cheatsheet_source_path(source_path)
+    end
+  end
+
+  defp parse_cheatsheet_source_path(source_path) do
+    case Regex.run(@cheatsheet_source_path_regex, source_path) do
+      [_match, slug] -> {:ok, {:cheatsheet, slug}}
+      nil -> {:error, {:invalid_source_path, source_path}}
+    end
+  end
 
   @doc """
   The path of a page within a build, always starting and ending with a slash.

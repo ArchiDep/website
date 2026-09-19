@@ -8,6 +8,33 @@ defmodule ArchiDep.CourseSite.PageRefTest do
 
   doctest ArchiDep.CourseSite.PageRef
 
+  describe "parse_source_path/1" do
+    test "parses a document of a chapter" do
+      assert PageRef.parse_source_path("chapters/104-ssh/subject.md") ==
+               {:ok, {:document, %DocumentRef{num: 104, slug: "ssh", type: :subject}}}
+    end
+
+    test "parses a cheatsheet" do
+      assert PageRef.parse_source_path("cheatsheets/git/cheatsheet.md") ==
+               {:ok, {:cheatsheet, "git"}}
+    end
+
+    test "rejects another document of a cheatsheet's directory" do
+      assert PageRef.parse_source_path("cheatsheets/git/notes.md") ==
+               {:error, {:invalid_source_path, "cheatsheets/git/notes.md"}}
+    end
+
+    test "rejects a cheatsheet nested deeper than its directory" do
+      assert PageRef.parse_source_path("cheatsheets/git/parts/cheatsheet.md") ==
+               {:error, {:invalid_source_path, "cheatsheets/git/parts/cheatsheet.md"}}
+    end
+
+    test "rejects the home page, which is written outside the content tree" do
+      assert PageRef.parse_source_path("index.md") ==
+               {:error, {:invalid_source_path, "index.md"}}
+    end
+  end
+
   describe "output_path/1" do
     test "returns the path of a subject" do
       subject = DocumentRef.new(507, "dns", :subject)

@@ -164,7 +164,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
                {:error, "The site could not be rendered",
                 [
                   ~s{Document chapters/101-command-line/subject.md could not be rendered: } <>
-                    ~s{"nope" is not the path of a course document in } <>
+                    ~s{"nope" is not the path of a course document or cheatsheet in } <>
                     ~s{chapters/101-command-line/subject.md at line 5, column 1}
                 ]}
 
@@ -199,7 +199,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
                {:error, "The site could not be rendered",
                 [
                   ~s{Document chapters/101-command-line/subject.md could not be rendered: } <>
-                    ~s{"nope" is not the path of a course document in } <>
+                    ~s{"nope" is not the path of a course document or cheatsheet in } <>
                     ~s{chapters/101-command-line/subject.md at line 5, column 1}
                 ]}
 

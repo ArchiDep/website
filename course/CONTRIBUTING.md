@@ -170,6 +170,21 @@ settings` → `#configure-basic-settings`). The emoji shortcode a heading is
   [`app/lib/archidep/emoji.ex`][emoji]; the build reports any other one. Adding
   an emoji is an entry there plus an SVG, as
   [`theme/emoji/README.md`](../theme/emoji/README.md) describes.
+- Link to another page of the course — a chapter's subject, exercise or slides,
+  or a cheatsheet — with a `{% link %}` tag naming its source file, and to a
+  heading of that page with a fragment after the tag:
+
+  ```liquid
+  [the SFTP exercise]({% link chapters/410-sftp-deployment/exercise.md %})
+  [changing your username]({% link cheatsheets/sysadmin/cheatsheet.md %}#how-do-i-change-my-username-usermod)
+  ```
+
+  The renderer resolves the tag to wherever that page lives in the build being
+  made, so one link works in the site being taught, in an archived edition and
+  in a printed PDF alike, and a path that is no page's source file **fails the
+  build**. Never write a relative path to another page (`../../cheatsheets/git/`
+  and the like), which goes stale the day a chapter is renumbered or a page
+  moves.
 - Refer to a file sitting next to a document — an image, a PDF — by a plain
   relative path (`images/cli.jpg`, `./images/cli.jpg`, or `../images/cli.jpg`
   from a `slides.md` written at the root of its chapter, since a deck is

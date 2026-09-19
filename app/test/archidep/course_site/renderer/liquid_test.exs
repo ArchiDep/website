@@ -30,12 +30,17 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
                {:ok, "See the [exercise](/2026/course/410-sftp-deployment/#the-end).\n", []}
     end
 
-    test "reports a link to a document that is not one, and leaves the link empty" do
+    test "resolves a link to a cheatsheet of the course" do
+      assert render("See the [cheatsheet]({% link cheatsheets/command-line/cheatsheet.md %}).\n") ==
+               {:ok, "See the [cheatsheet](/2026/cheatsheets/command-line/).\n", []}
+    end
+
+    test "reports a link to a page that is not one, and leaves the link empty" do
       assert render("See the [notes]({% link chapters/507-dns/notes.md %}).\n") ==
                {:ok, "See the [notes]().\n",
                 [
                   RenderError.new(
-                    {:invalid_document, "chapters/507-dns/notes.md"},
+                    {:invalid_page, "chapters/507-dns/notes.md"},
                     "chapters/701-paas/subject.md",
                     %{line: 1, column: 17}
                   )
