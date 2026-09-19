@@ -27,11 +27,26 @@ text() {
   IFS= read -r -d '' "$1" || true
 }
 
+# The gold coin a gate drops, drawn with its number: @@COIN1@@, @@COIN2@@ and
+# @@COIN3@@ in a text are the three coins.
+text COIN <<'END_COIN'
+     .-"""-.
+    /  .-.  \
+   |  ( @@DIGIT@@ )  |
+    \  '-'  /
+     '-...-'
+END_COIN
+# The coin is written on a line of its own, which already ends it.
+COIN=${COIN%$'\n'}
+
 # Prints a text with its placeholders replaced.
 fill() {
   local value="$1"
   value=${value//@@HUNT@@/$HUNT}
   value=${value//@@UNPACK@@/$UNPACK}
+  value=${value//@@COIN1@@/${COIN//@@DIGIT@@/$D1}}
+  value=${value//@@COIN2@@/${COIN//@@DIGIT@@/$D2}}
+  value=${value//@@COIN3@@/${COIN//@@DIGIT@@/$D3}}
   value=${value//@@D1@@/$D1}
   value=${value//@@D2@@/$D2}
   value=${value//@@D3@@/$D3}
@@ -115,16 +130,46 @@ END_START_HINT
 # ---------------------------------------------------------------------------
 
 text SAND <<'END_SAND'
+                                                   \   |   /
+         __ _.--.  .--._ __                         .-"""-.
+      .-'  _/    \/    \_  '-.                  -- (       ) --
+     /   .'  _.-./\.-._  '.   \                     '-...-'
+     '--'  .'   / () \   '.  '--'                  /   |   \
+          /    /|    |\    \            ~~~
+               '|    |'                       ~~~          ~~~
+                 \   \
+  ~~~~~~~~~~~~~~~ \   \ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~        |   |   ~~~~~~~      ~~~~~~~~      ~~~~~~~      ~~~~~
+  ~ ~ ~ ~ ~ ~ ~ ~ ~|   |~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  . . : . . . . . /     \ . : . . . . . : . . . . : . . . . . : . . . .
+   .  :  .  .  .:/       \: :  .   .  .  :  .   .  .  :  .   .   .  :
+  : . . . : . . . . : . . . : . . . . : . . . . . : . . . : . . . . : .
+   . . :  .  .  . :  .  .  . .  : . . . . * . .  : . .  .  :  .  . . .
+  . : . . . . : . . . . : . . . : . . . . . . : . . . . . : . . . . : .
+
 Sand. Only sand, as far as you can see.
 
 Nothing here... or is there? Look closer.
 END_SAND
 
 text BOTTLE <<'END_BOTTLE'
+                     ____________________
+                    /                    \_____
+            ~~     |  ~~~    ~~~~    ~~   _____[]
+                    \____________________/
+               ~~~~       ~~~~~~       ~~~~
+
 You found a bottle! There is a message inside:
 
-    "If you want my treasure, go to the old temple.
-                                     -- The Captain"
+      ______________________________________________________
+     (__)                                                   )
+        |                                                  |
+        |    If you want my treasure,                      |
+        |    go to the old temple.                         |
+        |                                                  |
+        |                                 -- The Captain   |
+        |__________________________________________________|
+       (____________________________________________________)
 
 The old temple is next to the beach.
 Be careful: its name has a space in it.
@@ -163,8 +208,17 @@ END_BOAT_HINT
 text INSCRIPTION <<'END_INSCRIPTION'
 Words are carved in the old stone:
 
-    FOLLOW THE RIVER INTO THE JUNGLE,
-    ALL THE WAY TO THE WATERFALL.
+           _.-------------------------------------------._
+        .-'   .       '         .          ,       .      '-.
+       /  '        .                  '         .     '     \
+      |     .                                         .      |
+      |  ,      FOLLOW THE RIVER INTO THE JUNGLE,         '  |
+      |    '    ALL THE WAY TO THE WATERFALL.        .       |
+      |  .                                                 , |
+       \      '        .            ,          '     .      /
+        \____.______________'_____________.________________/
+     ___/_______________________________________________\___
+    /_______________________________________________________\
 END_INSCRIPTION
 
 text TEMPLE_HINT <<'END_TEMPLE_HINT'
@@ -194,8 +248,20 @@ END_RIVER_HINT
 text CARVING <<'END_CARVING'
 There is a carving behind the falling water:
 
-    GO BACK TWO PLACES.
-    THEN ENTER THE RUINS.
+      ~~~~~~   ~~~~~~   ~~~~~~   ~~~~~~   ~~~~~~   ~~~~~~
+   _____________________________________________________________
+  /' | : | ' | : | ' | : | ' | : | ' | : | ' | : | ' | : | ' | :\
+  |: | ' | : | ' | : | ' | : | ' | : | ' | : | ' | : | ' | : | '|
+  |' | : | ' | : .-------------------------------. ' | : | ' | :|
+  |: | ' | : | ' |                               | : | ' | : | '|
+  |' | : | ' | : |    GO BACK TWO PLACES.        | ' | : | ' | :|
+  |: | ' | : | ' |    THEN ENTER THE RUINS.      | : | ' | : | '|
+  |' | : | ' | : |                               | ' | : | ' | :|
+  |: | ' | : | ' '-------------------------------' : | ' | : | '|
+  |' | : | ' | : | ' | : | ' | : | ' | : | ' | : | ' | : | ' | :|
+  |: | ' | : | ' | : | ' | : | ' | : | ' | : | ' | : | ' | : | '|
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     ~   o    ~   o    ~   o    ~   o    ~   o    ~   o    ~
 END_CARVING
 
 text WATERFALL_HINT <<'END_WATERFALL_HINT'
@@ -212,11 +278,27 @@ END_WATERFALL_HINT
 text STONE <<'END_STONE'
 A big stone with a message on it:
 
-    THE CAPTAIN'S SHIP BROKE ON THE ROCKS.
-    FROM HERE, THE SHIPWRECK IS AT ../../shipwreck
+            _.----------------------------------------._
+        _.-'    .          '         .          ,       '-._
+      .'  '                      .                     '    '.
+     / ,       THE CAPTAIN'S SHIP BROKE ON THE ROCKS.      .  \
+    |    .            '                       ,           '    |
+    |      FROM HERE, THE SHIPWRECK IS AT ../../shipwreck    . |
+     \      ,                 '                   .           /
+      '-._________.________________'____________.__________.-'
 
 Next to the stone, stairs go down into the dark: the catacombs.
-Someone wrote on the wall: "A GOLDEN IDOL IS LOST DOWN THERE."
+Someone wrote on the wall:
+
+    ______
+          |______
+                |______
+                      |______
+      "A GOLDEN IDOL        |______
+       IS LOST                    |______
+       DOWN THERE."                     |______
+                                              |::::::::::::::
+                                              |::::::::::::::
 END_STONE
 
 text RUINS_HINT <<'END_RUINS_HINT'
@@ -364,8 +446,21 @@ wake_up() {
 The dragon opens one eye. You interrupted its sleep!
 
 It is very angry... and very lazy. It flies away to sleep somewhere
-quieter. Behind the place where it slept, there is a hole in the
-rock: its lair.
+quieter.
+
+            __                                 __
+           /  \__                           __/  \
+          /      \__                     __/      \
+         /   /\     \__               __/     /\   \
+        /___/  \___    \__   , ,   __/    ___/  \___\
+                 \___  \__  (o o)  __/  ___/
+                       \___ \ v / ___/
+                            \|_|/
+                             | |
+                             |_|
+
+Behind the place where it slept, there is a hole in the rock: its
+lair.
 EOF
   mkdir "$HUNT/cave/lair" &&
   unpack '@@RUSTY_KEY@@' "$HUNT/cave/lair/rusty-key" 644 &&
@@ -383,17 +478,37 @@ cat <<'EOF'
       \_______________/
 
 A huge dragon sleeps in the cave. Nothing can wake it up...
+
+Words are scratched on the wall of the cave:
+
+    "NO NOISE WILL EVER WAKE THE DRAGON.
+     BUT A PROGRAM, EVEN A DRAGON, CAN BE STOPPED
+     WITH TWO KEYS PRESSED TOGETHER.
+     THE COMMAND LINE CHEATSHEET KNOWS WHICH ONES."
+
+     https://archidep.ch/cheatsheets/command-line/
+
 EOF
 
+# The snores grow on one line before the next one starts, so that the dragon
+# stays on screen for a while.
 while true; do
-  echo "    Zzz..."
-  sleep 1
-  echo "        ...zzZZZ"
-  sleep 1
+  printf '   '
+  for snore in z zz Zzz ZZzz ZZZzz; do
+    printf ' %s' "$snore"
+    sleep 1
+  done
+  echo
 done
 END_DRAGON
 
 text RUSTY_KEY <<'END_RUSTY_KEY'
+   .---.
+  /  _  \______________________
+ |  (_)   _____________________|
+  \     /           |_|  |_| |_|
+   '---'
+
 RUSTY KEY
 
 An old, heavy key. A word is written on it: FORTRESS.
@@ -441,6 +556,15 @@ fi
 
 if [ ! -f "$HUNT/fortress/key" ]; then
   cat <<'EOF'
+            _________
+          .'    |    '.
+         /      |      \
+        |       |       |
+        |    o  |  o    |
+        |       |       |
+        |       |       |
+        |_______|_______|
+
 The door is locked. There is a keyhole.
 
 A key must be in the lock: a file named key, next to the door.
@@ -463,10 +587,28 @@ echo "A gold coin. A number is carved on it: @@D1@@" > "$HUNT/bag/coin-1"
 cat <<'EOF'
 Click. The key turns, and the heavy door opens.
 
+            _________
+          .'         '.
+         /             \
+        |               |
+        |               |
+        |               |
+        |               |
+        |_______________|
+
 A gold coin falls out of the lock. You put it in your bag.
 
+@@COIN1@@
+
 Behind the door is the courtyard of the fortress. Someone is waiting
-for you there.
+for you there:
+
+        .---.   /\
+        |=|=|  <||\
+        |___|   ||/
+        /|+|\==(||)
+         | |    ||
+         / \    ||
 EOF
 END_DOOR
 
@@ -499,6 +641,26 @@ if [ -f "$here/rest" ]; then
   echo "The guardian nods. You may pass."
   exit 0
 fi
+
+cat <<'EOF'
+                      /\
+         _______      ||
+        |       |   <=||\
+        | ==|== |     || )
+        | : : : |     ||/
+        |_______|     ||
+      ___\_____/___   ||
+     /   |     |   \  ||
+    /  o |  +  | o  \ ||
+   /    /|     |\    \||
+  (____/ |_____| \___(||)
+         |  |  |      ||
+         |  |  |      ||
+         |__|__|      ||
+        (___|___)     ||
+                      ||
+
+EOF
 
 if [ ! -f "$original" ]; then
   cat <<'EOF'
@@ -555,14 +717,30 @@ HUNT='@@HUNT@@'
 
 here="$HUNT/fortress/courtyard"
 
-if [ -f "$here/crank" ]; then
+if [ -f "$here/lever" ]; then
   echo "It is morning. The drawbridge is waiting."
   exit 0
 fi
 
-if [ ! -d "$here/camp" ]; then
+# The sun sets behind the walls of the fortress until the camp is ready.
+sunset() {
   cat <<'EOF'
-It is dark and cold. You cannot rest without a camp and a fire.
+        .              *                .           *
+   *            .               .                .
+                        \   |   /
+                   --   .-"""""-.   --
+  _   _   _   _   _   _   _   _   _   _   _   _
+ | |_| |_| |_| |_| |_| |_| |_| |_| |_| |_| |_| |
+ |                                             |
+
+EOF
+}
+
+if [ ! -d "$here/camp" ]; then
+  sunset
+  cat <<'EOF'
+Night is falling. It is getting dark and cold. You cannot rest without
+a camp and a fire.
 
 Make a directory named camp, here. In it, make a file named fire.
 The fire is lit when the file contains the word: lit
@@ -571,31 +749,75 @@ EOF
 fi
 
 if [ ! -f "$here/camp/fire" ]; then
+  sunset
   echo "Your camp has no fire. Make a file named fire in the camp."
   exit 1
 fi
 
 if ! grep -q 'lit' "$here/camp/fire"; then
+  sunset
   echo "The fire is not lit. The fire file must contain the word: lit"
   exit 1
 fi
 
 unpack '@@DRAWBRIDGE_CONF@@' "$here/drawbridge.conf" 644 &&
-unpack '@@CRANK@@' "$here/crank" 755 &&
+unpack '@@LEVER@@' "$here/lever" 755 &&
 unpack '@@DRAWBRIDGE_HINT@@' "$here/.hint" 644 || exit 1
 
 cat <<'EOF'
-You sleep next to the fire.
+              (
+          )    )  (
+         (  ) (    )
+          ) (  )  (
+         (  _)_(_  )
+        __(__)_(__)__
+       (___(____)____)
+
+The fire is warm. You lie down next to it, and you fall asleep.
+
+EOF
+
+# The snores grow on one line, as the dragon's do. They only take their time
+# in a terminal, where someone is watching them.
+printf '   '
+for snore in z zz Zzz ZZzz ZZZzz; do
+  printf ' %s' "$snore"
+  [ -t 1 ] && sleep 1
+done
+echo
+
+cat <<'EOF'
 
 In the morning, you see what you could not see in the dark: a big
-drawbridge, and a crank to open it. There is also a file with the
-settings of the drawbridge.
+drawbridge, closed, and a lever to open it.
+
+    _   _   _   _   _   _   _
+   | |_| |_| |_| |_| |_| |_| |
+   |  \                   /  |
+   |   \   ___________   /   |
+   |    \_|===========|_/    |
+   |      |===========|      |
+   |      |===========|      |          O
+   |      |===========|      |         /
+   |      |===========|      |        /
+   |      |===========|      |      _/_
+ ~~|______|===========|______|~~   |___|
+   ~~~~~  ~~~~~~  ~~~~~~  ~~~~~~
+
+There is also a file with the settings of the drawbridge.
 EOF
 END_REST
 
 text DRAWBRIDGE_CONF <<'END_DRAWBRIDGE_CONF'
 # Settings of the drawbridge.
-# The crank reads this file before it moves.
+# The lever reads this file before it moves.
+#
+# Using nano? A wise choice, traveller. The keys you need are written at
+# the bottom of the screen: ^O means Ctrl-O (save), ^X means Ctrl-X (quit).
+#
+# Using Vim? You chose the most dangerous path. Many adventurers went into
+# Vim, and few came out. We hope you know the magic words.
+#
 chains=rusty
 state=closed
 END_DRAWBRIDGE_CONF
@@ -610,12 +832,12 @@ Open the settings file with the nano editor:
 Move with the arrow keys. Change closed to open. Save with Ctrl-O,
 then Enter. Quit with Ctrl-X. (Vim works too, if you know it.)
 
-Then run ./crank again.
+Then run ./lever again.
 END_DRAWBRIDGE_HINT
 
-text CRANK <<'END_CRANK'
+text LEVER <<'END_LEVER'
 #!/bin/bash
-# The crank of the drawbridge.
+# The lever of the drawbridge.
 HUNT='@@HUNT@@'
 @@UNPACK@@
 
@@ -628,7 +850,7 @@ fi
 
 if ! grep -Eq '^[[:space:]]*state[[:space:]]*=[[:space:]]*open[[:space:]]*$' "$here/drawbridge.conf" 2>/dev/null; then
   cat <<'EOF'
-You turn the crank as hard as you can. It does not move.
+You pull the lever as hard as you can. It does not move.
 
 The settings of the drawbridge, in drawbridge.conf, say that it is
 closed. Change them to open.
@@ -647,30 +869,91 @@ unpack '@@TOWER_HINT@@' "$here/tower/.hint" 644 || exit 1
 mkdir -p "$HUNT/bag"
 echo "A gold coin. A number is carved on it: @@D2@@" > "$HUNT/bag/coin-2"
 
+# Each part of what happens waits a little before the next one, in a
+# terminal, where someone is watching.
+pause() {
+  if [ -t 1 ]; then sleep 1; fi
+}
+
 cat <<'EOF'
 The chains turn. Slowly, the drawbridge goes down.
 
-A gold coin was stuck in the crank. You put it in your bag.
+    _   _   _   _   _   _   _
+   | |_| |_| |_| |_| |_| |_| |
+   |  \                   /  |
+   |    \    _______    /    |
+   |      \ |       | /      |          O
+   |        |       |        |           \
+   |        |       |        |            \
+ ~~|________|       |________|~~          _\_
+  ~~~~~~~~ /=========\ ~~~~~~~~          |___|
+   ~~~~~  /===========\  ~~~~~
 
-On the other side of the drawbridge, there is a tall tower.
 EOF
-END_CRANK
+pause
+cat <<'EOF'
+A gold coin was hidden under the lever. You put it in your bag.
+
+@@COIN2@@
+
+EOF
+pause
+cat <<'EOF'
+On the other side of the drawbridge, there is a tall tower.
+
+           |>>>
+           |
+       _  _|_  _
+      | |_| |_| |
+      |         |
+      |   [ ]   |
+      |   ___   |
+     _|__|   |__|_
+EOF
+END_LEVER
 
 text CURSED_CHEST <<'END_CURSED_CHEST'
+         _______________
+        /              /|
+       /______________/ |
+       |     .-.      | |
+       |    (x.x)     | |
+       |     |=|      | |
+       |______________|/
+
 A small chest, covered with skulls. It is cursed!
 
 Nobody can climb the stairs of the tower while it is here.
 END_CURSED_CHEST
 
 text TRAP_SPIKES <<'END_TRAP_SPIKES'
+      /\  /\  /\  /\  /\  /\  /\
+     /  \/  \/  \/  \/  \/  \/  \
+    |____________________________|
+
 A trap full of spikes. Remove it before you climb.
 END_TRAP_SPIKES
 
 text TRAP_SNAKES <<'END_TRAP_SNAKES'
+         _____
+        /  o  \__
+        \_____ __>-<
+          / /
+         ( (
+          \ \_______
+           \________)
+
 A trap full of snakes. Remove it before you climb.
 END_TRAP_SNAKES
 
 text TRAP_SPIDERS <<'END_TRAP_SPIDERS'
+           |           |
+           |           |
+       \ \ | / /   \ \ | / /
+      __\_(oo)_/__ __\_(oo)_/__
+        / (  ) \     / (  ) \
+       / /    \ \   / /    \ \
+
 A trap full of spiders. Remove it before you climb.
 END_TRAP_SPIDERS
 
@@ -726,6 +1009,14 @@ unpack '@@TOP_HINT@@' "$here/top/.hint" 644 || exit 1
 
 cat <<'EOF'
 The curse is gone. You climb the stairs, all the way to the top.
+
+                        o               ______
+                       /|\        ______|
+                       / \  ______|
+                      ______|
+                ______|
+          ______|
+    ______|
 
 Someone is waiting for you there.
 EOF
@@ -798,13 +1089,48 @@ unpack '@@ISLAND_HINT@@' "$HUNT/skull-island/.hint" 644 || exit 1
 mkdir -p "$HUNT/bag"
 echo "A gold coin. A number is carved on it: @@D3@@" > "$HUNT/bag/coin-3"
 
+# Each part of the trip waits a little before the next one, in a terminal,
+# where someone is watching.
+pause() {
+  if [ -t 1 ]; then sleep 1; fi
+}
+
 cat <<'EOF'
 DING! DING! DING!
 
-The parrot lands on the boat. "SQUAWK! Row! Row!"
+The parrot lands on the boat.
+
+             ,
+            (o>
+            //\
+            V_/_
+       ______||_______
+       \  o   o   o  /
+    ~~~~\___________/~~~~
+       ~~~~~    ~~~~~
+
+EOF
+pause
+cat <<'EOF'
+"SQUAWK! Row! Row!"
 You row for a long time. Then you see it: Skull Island.
 
+                 __ _.--.  .--._ __
+              .-'  _/    \/    \_  '-.
+             /   .'  _.-./\.-._  '.   \
+             '--'  .'   /()\   '.  '--'
+                        \  \
+                         |  |
+              ___________|  |___________
+      ~~~~~~ /    .    '    '   .    .  \ ~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+EOF
+pause
+cat <<'EOF'
 A gold coin was stuck in the bell. You put it in your bag.
+
+@@COIN3@@
 
 Skull Island is in ~/treasure-hunt/skull-island. There is a chest.
 EOF
@@ -881,16 +1207,19 @@ HUNT='@@HUNT@@'
 
 cat <<'EOF'
 
-          *     .   *       .    *     .
-       .    ______________________    *
-           /   $    $    $    $  /|
-     *    /_____________________/ |   .
-          |  ____    __    ____ | |
-          | |____|  (__)  |____|| |
-          |_____________________|/    *
-      .        *      .        .
+          *             .              *
+                o       o       o
+      .        /\      /\      /\        .
+              /  \    /  \    /  \
+             /    \__/    \__/    \
+            |   <>     ()     <>   |
+     *      |______________________|      *
+          (o)(O)(o)(O)(o)(O)(o)(O)(o)
+       (O)(o)(O)(o)(O)(o)(O)(o)(O)(o)(O)
+    (o)(O)(o)(O)(o)(O)(o)(O)(o)(O)(o)(O)(o)
 
       YOU FOUND THE TREASURE OF SKULL ISLAND!
+      The crown and the gold of the captain are yours.
 
 EOF
 
@@ -980,14 +1309,14 @@ build() {
   embed BELL ISLAND_HINT ISLAND_HINT
   embed STAIRS PARROT PARROT
   embed STAIRS TOP_HINT TOP_HINT
-  embed CRANK CURSED_CHEST CURSED_CHEST
-  embed CRANK TRAP_SPIKES TRAP_SPIKES
-  embed CRANK TRAP_SNAKES TRAP_SNAKES
-  embed CRANK TRAP_SPIDERS TRAP_SPIDERS
-  embed CRANK STAIRS STAIRS
-  embed CRANK TOWER_HINT TOWER_HINT
+  embed LEVER CURSED_CHEST CURSED_CHEST
+  embed LEVER TRAP_SPIKES TRAP_SPIKES
+  embed LEVER TRAP_SNAKES TRAP_SNAKES
+  embed LEVER TRAP_SPIDERS TRAP_SPIDERS
+  embed LEVER STAIRS STAIRS
+  embed LEVER TOWER_HINT TOWER_HINT
   embed REST DRAWBRIDGE_CONF DRAWBRIDGE_CONF
-  embed REST CRANK CRANK
+  embed REST LEVER LEVER
   embed REST DRAWBRIDGE_HINT DRAWBRIDGE_HINT
   embed GUARDIAN REST REST
   embed GUARDIAN REST_HINT REST_HINT

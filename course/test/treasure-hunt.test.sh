@@ -156,15 +156,15 @@ touch "$COURTYARD/camp/fire"
 gate "the rest needs a lit fire" 1 "$COURTYARD" ./rest
 echo lit > "$COURTYARD/camp/fire"
 gate "the rest works with a lit fire" 0 "$COURTYARD" ./rest
-check "the crank appears" is_executable "$COURTYARD/crank"
+check "the lever appears" is_executable "$COURTYARD/lever"
 check "the drawbridge settings appear" [ -f "$COURTYARD/drawbridge.conf" ]
 
 echo "The drawbridge"
-gate "the crank does not move while the drawbridge is closed" 1 "$COURTYARD" ./crank
+gate "the lever does not move while the drawbridge is closed" 1 "$COURTYARD" ./lever
 conf=$(cat "$COURTYARD/drawbridge.conf")
 printf '%s\n' "${conf/state=closed/state=open}" > "$COURTYARD/drawbridge.conf"
-gate "the crank moves once the drawbridge is open" 0 "$COURTYARD" ./crank
-check "the crank drops coin 2" [ -n "$(digit_of "$HUNT/bag/coin-2")" ]
+gate "the lever moves once the drawbridge is open" 0 "$COURTYARD" ./lever
+check "the lever drops coin 2" [ -n "$(digit_of "$HUNT/bag/coin-2")" ]
 check "the tower appears with its stairs" is_executable "$COURTYARD/tower/stairs"
 
 TOWER="$COURTYARD/tower"

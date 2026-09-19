@@ -164,7 +164,7 @@ $> touch camp/fire
 $> echo lit > camp/fire
 $> ./rest
 $> nano drawbridge.conf  # change state=closed to state=open, save and quit
-$> ./crank
+$> ./lever
 $> cd tower
 $> rm cursed-chest.txt
 $> rm trap-snakes.txt

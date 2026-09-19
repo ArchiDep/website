@@ -39,6 +39,21 @@ $> history | grep ssh
 26 ssh jde@archidep.ch
 ```
 
+## Stop a running command (`Ctrl-C`)
+
+Some commands take a long time, and some never stop by themselves. While one is
+running, you have no prompt. Press `Ctrl-C` (hold the **Control** key and press
+**C**) to interrupt it and get your prompt back:
+
+```bash
+$> sleep 3600
+^C
+$>
+```
+
+On macOS too, it is the `Control` key, not `Command`. `Ctrl-C` forces the
+command to stop: it might not have finished what it was doing.
+
 ## Getting help (`man`, `--help`)
 
 - `man ls` displays the manual of the `ls` command on Unix systems (including
