@@ -41,8 +41,8 @@ $> history | grep ssh
 
 ## Getting help (`man`, `--help`)
 
-- `man ls` displays the manual of the `ls` command on Unix systems.
-- `help ls` displays the help of the `ls` command in Git Bash on Windows.
+- `man ls` displays the manual of the `ls` command on Unix systems (including
+  the WSL).
 - `git --help` displays the help of the `git` command. Many (but not all)
   commands provide a help page.
 

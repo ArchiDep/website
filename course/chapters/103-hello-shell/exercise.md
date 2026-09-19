@@ -11,8 +11,8 @@ tasks through basic scripting.
 
 {% callout type: exercise %}
 
-Execute these tasks solely using Terminal or Git Bash. Utilizing GUI tools would
-defeat the purpose.
+Execute these tasks solely using the Terminal or the WSL. Utilizing GUI tools
+would defeat the purpose.
 
 {% endcallout %}
 
@@ -254,7 +254,7 @@ To permanently change the `PATH`, you'll need to add the export line to your
 shell's initialization file. The specific file depends on the shell you're
 using:
 
-- For `bash` (Git Bash), it's typically `~/.bashrc` or `~/.bash_profile`.
+- For `bash` (WSL), it's `~/.bashrc`.
 - For `zsh` (MacOS), it's `~/.zshrc`.
 
 With your preferred command-line text editor, append the following line to the
@@ -299,7 +299,7 @@ For Bash:
 <!-- col md:order-3 -->
 
 ```bash
-$> source ~/.bash_profile
+$> source ~/.bashrc
 ```
 
 <!-- col md:order-2 -->

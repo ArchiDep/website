@@ -276,9 +276,8 @@ As the option's name implies, it's designed to **give you some help** on how to 
 Some commands don't have the `--help` option, but there are alternative sources
 of information depending on what operating system you're on:
 
-- On Linux or macOS, use `man ls` to display the **manual** for the `ls` command.
-- On Windows, use `help cd` to display help for the `cd` command;
-  you can also type `help` to list available commands (only system commands).
+- On Linux (including the WSL) or macOS, use `man ls` to display the **manual**
+  for the `ls` command.
 - If you have [Node.js and npm][node] installed, there is also [tldr
   pages][tldr-pages]: a cross-platform tool that provides simplified and
   community-driven manual pages.
@@ -665,12 +664,6 @@ $> cd /mnt/c/foo/bar
 $> cd /mnt/d/foo
 ```
 
-{% note %}
-
-If you are using Git Bash, it's `/c` instead of `/mnt/c`.
-
-{% endnote %}
-
 **Copy/Paste**
 
 Since `Ctrl-C` is used to stop the current process, it **can't** be used as a
@@ -781,8 +774,8 @@ From there, you can use some commands:
 ### An alternative to Vim
 
 If Vim is a bit too much for you, [nano][nano] is another CLI editor that is
-much simpler to use and is also usually installed on most Unix-like systems (and
-in Git Bash).
+much simpler to use and is also usually installed on most Unix-like systems
+(including the WSL).
 
 You can open a file with nano in much the same way as Vim, using the `nano`
 command instead:
@@ -833,9 +826,9 @@ As you can see, it tells you the name of the file you opened. Now you can:
 ### Setting nano as the default editor
 
 Editing the shell configuration will depend on your shell: for Zsh (the default
-terminal shell on macOS) or Bash shell (the default in Git Bash and most Linux
+terminal shell on macOS) or Bash shell (the default in the WSL and most Linux
 systems), you have to set the `$EDITOR` environment variable. You can do that by
-adding the following line to your **`~/.zshrc` or `~/.bash_profile` file**
+adding the following line to your **`~/.zshrc` or `~/.bashrc` file**
 depending on which shell you are using:
 
 ```
@@ -856,7 +849,7 @@ bash
 {% note type: tip %}
 
 Now that you know how to use nano, you can edit your Bash profile file with the
-following command: `nano ~/.bash_profile`.
+following command: `nano ~/.bashrc`.
 
 {% endnote %}
 
@@ -1019,16 +1012,16 @@ For this, you need to **add the directory containing the executable** to your `P
 To add a new path in your `PATH` variable, you have to edit a special file, used
 by your CLI interpreter (shell). This file depends upon the shell you are using:
 
-| CLI                        | File to edit      |
-| :------------------------- | :---------------- |
-| Git Bash                   | `~/.bash_profile` |
-| Terminal / [Zsh][zsh-site] | `~/.zshrc`        |
+| CLI                        | File to edit |
+| :------------------------- | :----------- |
+| WSL / Bash                 | `~/.bashrc`  |
+| Terminal / [Zsh][zsh-site] | `~/.zshrc`   |
 
-Open the adequate file (`.bash_profile` for this example) from the CLI with
-`nano` or your favorite editor if it can display hidden files:
+Open the adequate file (`.bashrc` for this example) from the CLI with `nano` or
+your favorite editor if it can display hidden files:
 
 ```bash
-$> nano ~/.bash_profile
+$> nano ~/.bashrc
 ```
 
 Add this line at the bottom of your file (use `i` to enter **insert** mode if
@@ -1114,8 +1107,8 @@ The next time you run a command, your shell will **first look** in this director
 
 - What you must put in the `PATH` is **NOT** the path to the executable,
   but the path to the **directory containing the executable**.
-- You must re-open your CLI for the change to take effect:
-  the shell configuration file (e.g. `~/.bash_profile`) is only applied when the shell starts.
+- You must re-open your CLI for the change to take effect: the shell
+  configuration file (e.g. `~/.bashrc`) is only applied when the shell starts.
 
 ## Unleash your terminal
 
@@ -1132,9 +1125,8 @@ unleash the power of your Terminal. It has [plugins][oh-my-zsh-plugins] to
 integrate with Homebrew, Git, various programming languages like Ruby, PHP, Go,
 and much more.
 
-On Windows, you may want to [install the Windows Subsystem for Linux][wsl] so
-you can install a Linux distribution like Ubuntu. You can then [install Zsh and
-Oh My Zsh as well][oh-my-zsh-windows].
+On Windows, you can [install Zsh and Oh My Zsh in the WSL][oh-my-zsh-windows] as
+well.
 
 ### Other tools for the command line lover
 
@@ -1184,7 +1176,6 @@ A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 [eniac]: https://en.wikipedia.org/wiki/ENIAC
 [freebsd]: https://en.wikipedia.org/wiki/FreeBSD
 [general-purpose-computer]: https://en.wikipedia.org/wiki/Computer
-[gitbash]: https://gitforwindows.org
 [gui]: https://en.wikipedia.org/wiki/Graphical_user_interface
 [keypunch]: https://en.wikipedia.org/wiki/Keypunch
 [lfm]: https://en.wikipedia.org/wiki/Luigi_Federico_Menabrea

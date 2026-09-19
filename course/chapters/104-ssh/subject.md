@@ -15,7 +15,7 @@ Learn about the SSH cryptographic network protocol and how to use the SSH comman
 ## The `ssh` command
 
 The `ssh` command is available on most Unix-like systems (e.g. Linux & macOS)
-and in Unix shells on Windows (e.g. Git Bash or WSL). Its basic syntax is:
+and in the WSL on Windows. Its basic syntax is:
 
 ```
 ssh [user@]hostname [command]
@@ -30,7 +30,7 @@ Here's a few examples:
 - `ssh jde@192.168.50.4 hostname` - Run the `hostname` command as user `jde`
   on the SSH server at `192.168.50.4`.
 
-Run `man ssh` to see available options (or just `ssh` in Git Bash).
+Run `man ssh` to see available options.
 
 ## SSH known hosts
 
