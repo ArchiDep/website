@@ -583,6 +583,98 @@ see what you can do.
 
 Now you know another way to copy files over SSH.
 
+## :question: Sign a message with your key
+
+When you log in with your key, your SSH client **signs** data from the
+connection with your private key, and the server **checks the signature** with
+your public key from `~/.ssh/authorized_keys`. You can do the same thing by
+hand, with a message of your own.
+
+On your machine, create a message and sign it with your private key:
+
+```bash
+$> echo "Hello Bob, I like you" > message.txt
+
+$> ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n file message.txt
+Signing file message.txt
+Write signature to message.txt.sig
+```
+
+The `-f` option is the private key to sign with. The `-n` option is a label
+saying what the signature is for (here, a **file**). The same label must be
+given when checking the signature, so that a signature made for one purpose
+cannot be reused for another. If your key is protected by a passphrase, you will
+be asked for it.
+
+The signature is in the new `message.txt.sig` file. Take a look at it with
+`cat`.
+
+Copy both files to the server. The `scp` command can copy several files at
+once, if you list them before the destination:
+
+```bash
+$> scp message.txt message.txt.sig jde@ssh.archidep.ch:
+```
+
+Connect to the server and check the signature:
+
+```bash
+$> ssh-keygen -Y check-novalidate -n file -s message.txt.sig < message.txt
+Good "file" signature with ED25519 key SHA256:oV28VA4IAtvQKMi6Tq21cCOy...
+```
+
+The `-s` option is the signature to check. The `<` character sends the contents
+of `message.txt` to the command as its input. You will learn more about it later
+in this course.
+
+The command tells you that the signature is valid for this message, and which
+key made it, by its fingerprint. It does not tell you whether that key is one
+you trust. Display the fingerprint of the public key in your
+`~/.ssh/authorized_keys` file, and compare the two:
+
+```bash
+$> ssh-keygen -l -f ~/.ssh/authorized_keys
+256 SHA256:oV28VA4IAtvQKMi6Tq21cCOy... jde@example.com (ED25519)
+```
+
+Now modify the message **on the server**, and check the signature again:
+
+```bash
+$> echo "Hello Bob, I hate you" > message.txt
+
+$> ssh-keygen -Y check-novalidate -n file -s message.txt.sig < message.txt
+Signature verification failed: incorrect signature
+Could not verify signature.
+```
+
+Then answer these questions:
+
+- Which key made the signature, and on which machine was it?
+- Which key checked it, and on which machine was it?
+- An attacker intercepts your message, modifies it, and signs it with their own
+  private key. Would the `ssh-keygen -Y check-novalidate` command accept their
+  signature? How would you notice?
+- What does the server do when you log in that you just did by hand?
+
+{% solution %}
+
+- Your private key, `~/.ssh/id_ed25519`, on your machine, made the signature.
+- Your public key, in `~/.ssh/authorized_keys` on the server, was used to
+  check it (its fingerprint matches). The private key never left your machine:
+  only the signature was copied.
+- Yes: their signature is valid, since it was made with their private key for
+  this exact message. But the fingerprint shown would be the fingerprint of
+  their key, not the one in your `~/.ssh/authorized_keys` file. A valid
+  signature only proves something if you know whose key made it. This is the
+  same reason you check the server's fingerprint the first time you connect: an
+  attacker in the middle can sign the key exchange with their own key.
+- When you log in with your key, your SSH client signs data from the connection
+  with your private key, and the server checks the signature with a public key
+  from your `~/.ssh/authorized_keys` file. It only accepts a signature made by
+  one of the keys listed there.
+
+{% endsolution %}
+
 ## :question: SSH agent
 
 If you use a **private key that is password-protected**, you lose part of the
