@@ -209,6 +209,21 @@ check "no bonus without the idol" eval '! output_contains "golden idol"'
 OUTPUT=$(cd / && PATH="$PATH:$HUNT/bag" treasure 2>&1)
 check "the idol gives a bonus" output_contains "golden idol"
 
+echo "Programs read with cat"
+# ends_with_banner <file> <command>: the end of the file, which is what cat
+# leaves on screen, tells how to run it.
+ends_with_banner() {
+  tail -n 20 "$1" | grep -q "HALT, EXPLORER" && tail -n 20 "$1" | grep -qF "    $2"
+}
+for program in "cave/dragon ./dragon" "fortress/door ./door" \
+  "fortress/courtyard/guardian ./guardian" "fortress/courtyard/rest ./rest" \
+  "fortress/courtyard/lever ./lever" "fortress/courtyard/tower/stairs ./stairs" \
+  "bell ~/treasure-hunt/bell" "skull-island/chest ./chest" \
+  "bag/treasure ~/treasure-hunt/bag/treasure"; do
+  set -- $program
+  check "$1 ends by telling how to run it" ends_with_banner "$HUNT/$1" "$2"
+done
+
 echo "Restarting"
 if ! { : < /dev/tty; } 2>/dev/null; then
   OUTPUT=$(cat "$SETUP" | "$BASH" 2>&1)

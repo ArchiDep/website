@@ -1303,7 +1303,54 @@ catacombs() {
   put "$dir/golden-idol" "$IDOL"
 }
 
+# The end of every program of the hunt, which is what cat leaves on screen
+# when a student reads one instead of running it. @@RUN@@ is how to run it.
+text SCRIPT_END <<'END_SCRIPT_END'
+
+
+
+
+
+
+
+
+
+# ======================================================================
+# ======================================================================
+#
+#    HALT, EXPLORER!
+#
+#    This is not a scroll to read. It is a magic spell, and you are
+#    looking at the words inside it. Reading a spell does nothing:
+#    you have to cast it. Run it like this:
+#
+#        @@RUN@@
+#
+#    (Curious explorers are allowed to read spells. Some find
+#    interesting things inside. But nothing happens until you cast it.)
+#
+# ======================================================================
+# ======================================================================
+END_SCRIPT_END
+
+# Adds the end above to the program in the variable named by $1, which is run
+# with $2.
+script_end() {
+  local script="${!1}"
+  printf -v "$1" '%s%s' "$script" "${SCRIPT_END//@@RUN@@/$2}"
+}
+
 build() {
+  script_end DRAGON './dragon'
+  script_end DOOR './door'
+  script_end GUARDIAN './guardian'
+  script_end REST './rest'
+  script_end LEVER './lever'
+  script_end STAIRS './stairs'
+  script_end BELL '~/treasure-hunt/bell'
+  script_end CHEST './chest'
+  script_end TREASURE '~/treasure-hunt/bag/treasure'
+
   embed CHEST TREASURE TREASURE
   embed BELL CHEST CHEST
   embed BELL ISLAND_HINT ISLAND_HINT
