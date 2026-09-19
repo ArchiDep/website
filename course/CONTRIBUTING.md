@@ -185,6 +185,7 @@ settings` → `#configure-basic-settings`). The emoji shortcode a heading is
   build**. Never write a relative path to another page (`../../cheatsheets/git/`
   and the like), which goes stale the day a chapter is renumbered or a page
   moves.
+
 - Refer to a file sitting next to a document — an image, a PDF — by a plain
   relative path (`images/cli.jpg`, `./images/cli.jpg`, or `../images/cli.jpg`
   from a `slides.md` written at the root of its chapter, since a deck is

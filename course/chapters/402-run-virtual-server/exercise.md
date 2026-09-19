@@ -705,5 +705,6 @@ everywhere else you may have used it.)
 [man-in-the-middle-attacks]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
 [microsoft-azure]: https://azure.microsoft.com
 [ssh-config]: https://man.openbsd.org/ssh_config
+
 [sysadmin-cheatsheet]: {% link cheatsheets/sysadmin/cheatsheet.md %}
 [sysadmin-cheatsheet-change-username]: {% link cheatsheets/sysadmin/cheatsheet.md %}#how-do-i-change-my-username-usermod
