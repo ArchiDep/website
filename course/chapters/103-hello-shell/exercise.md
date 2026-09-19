@@ -8,8 +8,6 @@ prepares the hunt for you: an island where places are directories, clues are
 files, and a few things are programs. You explore it with the [Command
 Line][command-line]. On the way, you meet a few new commands.
 
-<!-- more -->
-
 {% callout type: exercise %}
 
 **The rule of the hunt.** The goal of this exercise is to learn to use the
@@ -21,6 +19,8 @@ Do not remember a command? Look it up in the **Command Line** cheatsheet, in the
 sidebar. It is there for that, and the hunt will send you there too.
 
 {% endcallout %}
+
+<!-- more -->
 
 ## :exclamation: Prepare the hunt
 
