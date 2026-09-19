@@ -583,36 +583,6 @@ see what you can do.
 
 Now you know another way to copy files over SSH.
 
-## :question: Save typing with an SSH configuration file
-
-You will type the same SSH commands many times during this course. You can give
-a server a short name in your SSH client's configuration file, `~/.ssh/config`,
-on your local machine. Create or edit that file (for example with
-`nano ~/.ssh/config`) and add the following lines, replacing `jde` with your
-username:
-
-```
-Host archidep
-  HostName ssh.archidep.ch
-  User jde
-```
-
-You can now use `archidep` instead of `jde@ssh.archidep.ch` with all SSH-based
-commands:
-
-```bash
-$> ssh archidep
-$> scp hello.txt archidep:
-```
-
-{% note type: more %}
-
-The configuration file has many other options, for example `Port` to connect to
-a non-standard port, or `IdentityFile` to use a private key that does not have
-the default name. See the [`ssh_config` documentation][ssh-config].
-
-{% endnote %}
-
 ## :question: SSH agent
 
 If you use a **private key that is password-protected**, you lose part of the
@@ -727,7 +697,6 @@ use SSH.
 [ssh-agent-run]: https://www.ssh.com/academy/ssh/agent
 [ssh-agent-run-github]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
 [ssh-agent-security]: https://www.commandprompt.com/blog/security_considerations_while_using_ssh-agent/
-[ssh-config]: https://man.openbsd.org/ssh_config
 [ssh-passphrase-add]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
 [uname-command]: https://man7.org/linux/man-pages/man1/uname.1.html
 [whoami-command]: https://man7.org/linux/man-pages/man1/whoami.1.html

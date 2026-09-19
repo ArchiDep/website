@@ -604,6 +604,49 @@ be your server.
 
 {% endcallout %}
 
+## :question: Save typing with an SSH configuration file
+
+You will connect to your server many times during this course. Instead of typing
+its username and IP address every time, you can give it a short name in your
+SSH client's configuration file, `~/.ssh/config`, **on your local machine**.
+Create or edit that file (for example with `nano ~/.ssh/config`) and add the
+following lines, replacing the IP address with your server's and the username
+with yours:
+
+<div
+  class="archidep-randomize"
+  data-regexp="(?:(?<=HostName )(?<ipAddress>[0-9]+(?:\.[0-9]+){3})|(?<=User )(?<username>[a-z][a-z0-9]+))"
+  data-template="<ipAddress><username>"></div>
+
+```
+Host archidep
+  HostName 87.65.43.210
+  User jde
+```
+
+You can now use `archidep` instead of your username and IP address with all
+SSH-based commands:
+
+```bash
+$> ssh archidep
+$> scp hello.txt archidep:
+```
+
+The exercises in this course will keep showing the full form with a username and
+an IP address. You can use `archidep` instead wherever you see it. If you delete
+your server and create a new one, it will probably have a new IP address:
+remember to update the `HostName` line in your configuration file. Also note
+that not all SFTP applications read this file. If yours does not, keep using
+your server's IP address and your username in the application.
+
+{% note type: more %}
+
+The configuration file has many other options, for example `Port` to connect to
+a non-standard port, or `IdentityFile` to use a private key that does not have
+the default name. See the [`ssh_config` documentation][ssh-config].
+
+{% endnote %}
+
 ## :checkered_flag: What have I done?
 
 You have used a popular Infrastructure-as-a-Service (IaaS) cloud service
@@ -661,5 +704,6 @@ everywhere else you may have used it.)
 [fstab-linux-manpage]: https://man7.org/linux/man-pages/man5/fstab.5.html
 [man-in-the-middle-attacks]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
 [microsoft-azure]: https://azure.microsoft.com
+[ssh-config]: https://man.openbsd.org/ssh_config
 [sysadmin-cheatsheet]: ../../cheatsheets/sysadmin/
 [sysadmin-cheatsheet-change-username]: ../../cheatsheets/sysadmin/#how-do-i-change-my-username-usermod
