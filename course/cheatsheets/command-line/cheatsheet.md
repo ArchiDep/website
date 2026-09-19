@@ -301,8 +301,8 @@ $> echo $FOO
 ```
 
 To be able to keep this environment variable in all future CLIs, save the
-`export FOO=bar` line to your `~/.bash_profile` file (create it if it doesn't
-exist).
+`export FOO=bar` line to your shell configuration file: `~/.bashrc` for Bash
+(e.g. in the WSL or on Linux), or `~/.zshrc` for Zsh (the default on macOS).
 
 ### `$PATH`
 
@@ -319,8 +319,8 @@ $> echo $PATH
 /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 ```
 
-You can modify your path by adding `export` statements to your `~/.bash_profile`
-file (create it if it doesn't exist):
+You can modify your path by adding `export` statements to your shell
+configuration file (`~/.bashrc` or `~/.zshrc`):
 
 ```
 # Add the /foo directory to the beginning of $PATH

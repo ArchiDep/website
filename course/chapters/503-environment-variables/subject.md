@@ -164,14 +164,14 @@ $FOO is not set
 
 #### Setting a variable in the shell configuration file
 
-If you add the `export` command to your shell configuration file
-(`.bash_profile` for [Bash][bash]), it will be run every time you start a new
+If you add the `export` command to your shell configuration file (`.bashrc` for
+[Bash][bash], `.zshrc` for Zsh), it will be run every time you start a new
 shell:
 
 ```bash
-$> echo 'export FOO=bar' >> ~/.bash_profile
+$> echo 'export FOO=bar' >> ~/.bashrc
 
-$> cat ~/.bash_profile
+$> tail -n 1 ~/.bashrc
 export FOO=bar
 ```
 
@@ -180,7 +180,7 @@ file is only evaluated when the shell starts. But you can evaluate it with the
 `source` command:
 
 ```bash
-$> source ~/.bash_profile
+$> source ~/.bashrc
 
 $> ./print-env-var.sh FOO
 The value of $FOO is bar

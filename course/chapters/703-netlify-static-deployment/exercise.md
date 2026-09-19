@@ -305,8 +305,8 @@ $> echo $0
 **If using `bash`**
 
 ```bash
-$> echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bash_profile
-$> source ~/.bash_profile
+$> echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+$> source ~/.bashrc
 ```
 
 **If using `zsh`**
