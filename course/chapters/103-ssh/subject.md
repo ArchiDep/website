@@ -467,13 +467,6 @@ A few examples are:
 - [Git][git] - Version control system that can use SSH (among other protocols)
   to transfer versioned data.
 
-## The birth (or death) of an SSH connection
-
-![The birth (or death) of an SSH connection](images/ssh-connection.png)
-
-- [PDF version](./images/ssh-connection.pdf)
-- [PNG version](./images/ssh-connection.png)
-
 ## References
 
 - [How does SSH Work](https://www.hostinger.com/tutorials/what-is-ssh)
@@ -681,6 +674,18 @@ $> openssl dgst -sha256 -verify public.pem \
    -signature signature.rsa message.txt
 Verification failure
 ```
+
+## Appendix: the birth (or death) of an SSH connection
+
+This diagram explains the SSH connection process in detail, step by step, from
+the moment you run the `ssh` command until you are logged in, or until the
+connection is closed. It shows what the SSH client and the SSH server each do,
+what they send each other, and every point where the connection can fail.
+
+![The birth (or death) of an SSH connection](images/ssh-connection.png)
+
+- [PDF version](./images/ssh-connection.pdf)
+- [PNG version](./images/ssh-connection.png)
 
 [aes]: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 [base64]: https://en.wikipedia.org/wiki/Base64
