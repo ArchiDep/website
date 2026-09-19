@@ -38,8 +38,9 @@ directory, and everything the hunt needs inside it.
 
 **Be careful with `curl … | bash`.** It runs a program from the internet on your
 computer, and you do not see what it does before it runs. Only do this with a
-script from someone you trust. You can [read this one](treasure-hunt.sh) before
-you run it. It only writes in `~/treasure-hunt`.
+script from someone you trust. You can [read this
+one](https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/103-hello-shell/treasure-hunt.sh)
+before you run it. It only writes in `~/treasure-hunt`.
 
 {% endcallout %}
 
