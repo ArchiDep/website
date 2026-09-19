@@ -48,7 +48,7 @@ What does this mean? _I thought SSH was **secure**?_
 
 ### Are you really the SSH server I'm looking for?
 
-As we've seen, when SSH establishes a secure channel, a Diffie-Hellman
+As the slides explain, when SSH establishes a secure channel, a Diffie-Hellman
 asymmetric key exchange will occur to agree on a secret symmetric encryption
 key. To secure this exchange, the server will perform an asymmetric digital
 signature so that no attacker can impersonate the server.
@@ -294,7 +294,7 @@ As you can see, the `hostname` command returns different results before and
 after connecting to the server with SSH, because it's running on your local
 machine the first time, but is running on the server the second time.
 
-## Logging in or running a command
+### Running a single command
 
 When you execute `ssh` with the `[command]` option, it will execute the command
 and close the connection as soon as that command is done.
@@ -312,8 +312,8 @@ $> hostname
 MyComputer.local
 ```
 
-As you can see, you are still in your local shell.
-The connection was closed as soon as the `echo` command completed.
+As you can see, you are still in your local shell. The connection was closed as
+soon as the `echo` command completed.
 
 ## Public key authentication
 
@@ -333,8 +333,22 @@ cryptography to authenticate**.
 ### How does it work?
 
 If you have a **private-public key pair**, you can **give your public key to the
-server**. Using **your private key**, your SSH client **can prove to the SSH
-server that you are the owner of that public key**.
+server**. It is stored in the `~/.ssh/authorized_keys` file of your user account
+on the server.
+
+When you connect, your SSH client proves that you are the owner of that public
+key with a **digital signature**:
+
+- Your SSH client **signs** data that is unique to this connection **with your
+  private key**, and sends the signature to the server.
+- The server **checks the signature with your public key** from its
+  `authorized_keys` file. Only the matching private key could have produced a
+  valid signature.
+
+This is the same mechanism that the server uses to prove its identity to you
+when the secure channel is established, in the other direction: the server signs
+with its private key, and your SSH client checks the signature with the server's
+public key from your known hosts file.
 
 This has advantages over password authentication:
 
@@ -342,7 +356,10 @@ This has advantages over password authentication:
   probably has much more [entropy][entropy] than your password).
 - Your private key will not be compromised by a man-in-the-middle attack or if
   the server is compromised, as it is never transmitted to the server, only used
-  to solve mathematical problems based on the public key.
+  to sign.
+- An attacker who performs a man-in-the-middle attack only receives a signature
+  that is valid for that one connection. Unlike a password, it cannot be reused
+  to log in as you.
 
 {% note type: warning %}
 
@@ -352,12 +369,6 @@ machine to be compromised, the attacker will be able to impersonate you on any
 server or service where you put your public key.
 
 {% endnote %}
-
-### How does public key authentication work?
-
-To authenticate you, the server will need your **public key**. That way, you
-will be able to prove, using your **private key**, that you are the owner of
-that public key.
 
 {% callout type: warning %}
 
@@ -385,7 +396,7 @@ use the `ssh` command's `-i` (**i**dentity) option, which allows you to choose
 the private key file you want to use:
 
 ```bash
-$> ssh-keygen -f custom_key
+$> ssh-keygen -f ~/.ssh/custom_key
 $> ssh -i ~/.ssh/custom_key jde@192.168.50.4
 ```
 
@@ -472,16 +483,176 @@ A few examples are:
 - [SSH, The Secure Shell: The Definitive Guide](https://books.google.ch/books/about/SSH_The_Secure_Shell_The_Definitive_Guid.html?id=9FSaScltd-kC&redir_esc=y)
 - [SSH Authentication Sequence and Key Files](https://serverfault.com/a/935667)
 
+## Appendix: cryptography with OpenSSL
+
+This appendix shows what some of the cryptographic techniques presented in the
+slides look like in practice, using the [OpenSSL][openssl] command line tool,
+which is installed on most computers. It is an **illustration**: you do not
+need to know these commands, and you will not use them during this course. If
+you are curious, you can run them yourself and see what happens.
+
+{% note %}
+
+On macOS, the `openssl` command is actually [LibreSSL][libressl], a fork of
+OpenSSL. The commands below work with both, but some messages may be worded
+differently.
+
+{% endnote %}
+
+### Symmetric encryption with AES
+
+Create a [**plaintext**][plaintext] file containing the words "too many
+secrets":
+
+```bash
+$> cd /path/to/projects
+$> mkdir aes-example
+$> cd aes-example
+$> echo 'too many secrets' > plaintext.txt
+```
+
+Encrypt that file with the [AES][aes] algorithm. The `-in` (**in**put) option
+is the file to encrypt, and the `-out` (**out**put) option is the file where the
+[**ciphertext**][ciphertext] is written. The command prompts you for an
+encryption password, from which the secret key is computed:
+
+```bash
+$> openssl aes-256-cbc -pbkdf2 -in plaintext.txt -out ciphertext.aes
+enter aes-256-cbc encryption password:
+Verifying - enter aes-256-cbc encryption password:
+```
+
+The ciphertext stored in the `ciphertext.aes` file cannot be decrypted without
+the key. The `-d` option makes the same command **d**ecrypt its input instead of
+encrypting it. Entering the same password as before decrypts the ciphertext:
+
+```bash
+$> openssl aes-256-cbc -pbkdf2 -d -in ciphertext.aes
+enter aes-256-cbc decryption password:
+too many secrets
+```
+
+With a different password, the decryption fails.
+
+### Asymmetric encryption with RSA
+
+Asymmetric encryption with [RSA][rsa] requires a **key pair, i.e. a private and
+public key**. The following commands generate a private key in a file named
+`private.pem`, then the corresponding public key in a file named `public.pem`:
+
+```bash
+$> cd /path/to/projects
+$> mkdir rsa-example
+$> cd rsa-example
+
+# Generate a private key
+$> openssl genrsa -out private.pem 2048
+
+# Compute the public key from the private key (quick & easy)
+$> openssl rsa -in private.pem -pubout -out public.pem
+writing RSA key
+```
+
+By convention, these files use the `.pem` extension after the [Privacy-Enhanced
+Mail (PEM) format][pem], a de facto standard format to store cryptographic data.
+
+Create a plaintext and **encrypt it with the public key**. The `-pubin`
+(**pub**lic **in**) and `-inkey` (**in**put **key**) options give the public key
+to use. The `-pkeyopt` option selects [OAEP][oaep], the recommended way of
+encrypting data with RSA:
+
+```bash
+$> echo 'too many secrets' > plaintext.txt
+
+$> openssl pkeyutl -encrypt -pubin -inkey public.pem \
+   -pkeyopt rsa_padding_mode:oaep \
+   -in plaintext.txt -out ciphertext.rsa
+
+$> ls
+ciphertext.rsa plaintext.txt private.pem public.pem
+```
+
+The ciphertext can be **decrypted with the corresponding private key**:
+
+```bash
+$> openssl pkeyutl -decrypt -inkey private.pem \
+   -pkeyopt rsa_padding_mode:oaep -in ciphertext.rsa
+too many secrets
+```
+
+You **cannot decrypt the ciphertext using the public key**, which is not a
+private key at all. And of course, an attacker who has **another private key
+cannot decrypt it either**:
+
+```bash
+# Generate another private key
+$> openssl genrsa -out hacker-private.pem 2048
+
+# Try to decrypt the ciphertext with it
+$> openssl pkeyutl -decrypt -inkey hacker-private.pem \
+   -pkeyopt rsa_padding_mode:oaep -in ciphertext.rsa
+Public Key operation error
+[...]
+```
+
+### Digital signature with RSA
+
+In the same directory as the previous example, create a `message.txt` file with
+a message to digitally sign. The following command uses the private key in
+`private.pem` to generate a digital signature for that message, and stores it
+in the `signature.rsa` file:
+
+```bash
+$> echo "Hello Bob, I like you" > message.txt
+
+$> openssl dgst -sha256 -sign private.pem \
+   -out signature.rsa message.txt
+```
+
+The signature is binary data. You can see it encoded in [Base64][base64]:
+
+```bash
+$> openssl base64 -in signature.rsa
+```
+
+Anyone with the public key can check that the signature is valid for the
+message:
+
+```bash
+$> openssl dgst -sha256 -verify public.pem \
+   -signature signature.rsa message.txt
+Verified OK
+```
+
+If you modify the message file and check again, the signature no longer
+matches the message:
+
+```bash
+$> echo "Hello Bob, I hate you" > message.txt
+
+$> openssl dgst -sha256 -verify public.pem \
+   -signature signature.rsa message.txt
+Verification failure
+```
+
+[aes]: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+[base64]: https://en.wikipedia.org/wiki/Base64
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [brute-force]: https://en.wikipedia.org/wiki/Brute-force_attack
+[ciphertext]: https://en.wikipedia.org/wiki/Ciphertext
 [dh]: https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
 [ecdsa]: https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
 [eddsa]: https://en.wikipedia.org/wiki/EdDSA
 [elliptic-curve]: https://en.wikipedia.org/wiki/Elliptic-curve_cryptography
 [entropy]: https://en.wikipedia.org/wiki/Password_strength#Entropy_as_a_measure_of_password_strength
-[github-fingerprints]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 [git]: https://git-scm.com
+[github-fingerprints]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 [hash]: https://en.wikipedia.org/wiki/Cryptographic_hash_function
+[libressl]: https://www.libressl.org
+[oaep]: https://en.wikipedia.org/wiki/Optimal_asymmetric_encryption_padding
+[openssl]: https://www.openssl.org
+[pem]: https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail
+[plaintext]: https://en.wikipedia.org/wiki/Plaintext
 [pubkey-math]: https://www.onebigfluke.com/2013/11/public-key-crypto-math-explained.html
 [rsa]: https://en.wikipedia.org/wiki/RSA_(cryptosystem)
 [rsync]: https://en.wikipedia.org/wiki/Rsync
@@ -490,5 +661,5 @@ A few examples are:
 [shell]: https://en.wikipedia.org/wiki/Shell_(computing)
 [ssh-agent]: https://www.cyberciti.biz/faq/how-to-use-ssh-agent-for-authentication-on-linux-unix/
 [ssh-copy-id]: https://www.ssh.com/academy/ssh/copy-id
-[ssh-passphrase]: https://learn.microsoft.com/en-us/azure/devops/repos/git/gcm-ssh-passphrase?view=azure-devops
-[ssh-passphrase-add]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
+[ssh-passphrase]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
+[ssh-passphrase-add]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases#adding-or-changing-a-passphrase

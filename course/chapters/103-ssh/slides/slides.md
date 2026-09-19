@@ -58,6 +58,28 @@ execute programs.
 
 ---
 
+### Same terminal, remote shell
+
+<img class="w-3/4" src="../images/ssh-channel-and-processes.jpg" alt="An SSH client in a local terminal connected to a shell running on the server" />
+
+**Notes:**
+
+Without SSH, your terminal talks to a shell running on your own machine, and
+every command you type runs there.
+
+The **SSH client** is a command like any other: your local shell starts it when
+you type `ssh`. It connects to the **SSH server** on the remote computer, which
+starts a **shell on the server** for you. From then on, your terminal is the
+same, but what you type goes through the secure channel to that remote shell,
+and the commands it starts **run on the server**. Their output comes back
+through the channel and is displayed in your terminal.
+
+The prompt may look different, but nothing else in the window tells you which
+machine you are talking to. The `hostname` command does: it prints the name of
+the machine it runs on.
+
+---
+
 ### How is it secure?
 
 1. SSH establishes a **secure channel**.
@@ -173,66 +195,13 @@ over an insecure network, and decrypt it on the other side. An attacker who
 intercepts the data **cannot decrypt it without the key** (unless a weakness is
 found in the algorithm or [its implementation][enigma-operating-shortcomings]).
 
---v
+But **both parties must have the key**. It used to be **physically
+transferred**, for example in the form of the codebooks used to operate the
+German [Enigma machine][enigma] during World War II. That is **impractical for
+modern computer networks**.
 
-#### Example: symmetric encryption with AES
-
-```bash
-# Create a "plaintext" file
-$> cd /path/to/projects
-$> mkdir aes-example
-$> cd aes-example
-$> echo 'too many secrets' > plaintext.txt
-```
-
-```bash
-# Encrypt the plaintext
-$> cat plaintext.txt | openssl aes-256-cbc -pbkdf2 > ciphertext.aes
-enter aes-256-cbc encryption password:
-Verifying - enter aes-256-cbc encryption password:
-```
-
-**Notes:**
-
-Create a [**plaintext**][plaintext] file containing the words "too many
-secrets".
-
-You may encrypt that file with the [OpenSSL library][openssl] (installed on most
-computers). Executing the example command pipeline will prompt you for an
-encryption key.
-
---v
-
-#### Example: symmetric decryption with AES
-
-```bash
-# Decrypt the ciphertext
-$> cat ciphertext.aes | openssl aes-256-cbc -pbkdf2 -d
-enter aes-256-cbc decryption password:
-too many secrets
-```
-
-**Notes:**
-
-The resulting [**ciphertext**][ciphertext] stored in the `ciphertext.aes` file
-cannot be decrypted without the key. Executing the example command pipeline
-and entering the same key as before when prompted will decrypt it.
-
-The `-d` option makes the command **d**ecrypt the provided contents instead of
-encrypting it.
-
----
-
-### Symmetric encryption over an insecure network
-
-- **Both parties must have the key**
-- It used to be **physically transferred**
-
-**Notes:**
-
-For example in the form of the codebooks used to operate the German [Enigma
-machine][enigma] during World War II. But that is **impractical for modern
-computer networks**.
+You can see what symmetric encryption with AES looks like in practice in [the
+OpenSSL examples of the SSH subject][openssl-aes].
 
 ---
 
@@ -309,102 +278,12 @@ One use case of asymmetric cryptography is **asymmetric encryption**, where the
 **sender encrypts a message with the recipient's public key**. The message can
 only be **decrypted by the recipient using the matching private key**.
 
---v
-
-#### Example: generate an asymmetric RSA key pair
-
-```bash
-$> cd /path/to/projects
-$> mkdir rsa-example
-$> cd rsa-example
-
-# Generate a private key
-$> openssl genrsa -out private.pem 2048
-Generating RSA private key, 2048 bit long modulus
-.............++++++
-.................................++++++
-e is 65537 (0x10001)
-
-# Generate public key from the private key (quick & easy)
-$> openssl rsa -in private.pem \
-   -out public.pem -outform PEM -pubout
-writing RSA key
-```
-
-**Notes:**
-
-Let's try encryption with [RSA][rsa] this time, an asymmetric algorithm. To do
-that, we need to generate a **key pair, i.e. a private and public key**. The
-example commands will generate first a private key in a file named
-`private.pem`, then a corresponding public key in a file named `public.pem`.
-
-By convention, we use the `.pem` extension after the [Privacy-Enhanced Mail
-(PEM) format][pem], a de facto standard format to store cryptographic data.
-
---v
-
-#### Example: asymmetric encryption with RSA
-
-```bash
-# Create a plaintext
-$> echo 'too many secrets' > plaintext.txt
-
-# Encrypt the plaintext with the public key
-$> openssl pkeyutl -encrypt -in plaintext.txt \
-   -inkey public.pem -pubin -out ciphertext.rsa
-
-# See what's there
-$> ls
-ciphertext.rsa plaintext.txt private.pem public.pem
-```
-
-**Notes:**
-
-You can create a plain text and **encrypt it with the public key** using the
-OpenSSL library.
-
-The example command will read the plaintext file `plaintext.txt` specified with
-the `-in` (**in**put) option. It will also read the public key in the
-`public.pem` file with the `-inkey` (**in**put **key**) and `-pubin` (**pub**lic
-**in**) options.
-
-It will then write the encrypted ciphertext to the `ciphertext.rsa` file with
-the `-out` (**out**put) option.
-
-In addition to your key pair, you should have two additional files containing
-the plaintext and ciphertext:
-
---v
-
-#### Example: asymmetric decryption with RSA
-
-```bash
-# Decrypt the ciphertext with the private key
-$> openssl pkeyutl -decrypt \
-   -inkey private.pem -in ciphertext.rsa
-too many secrets
-
-# It does not work with the public key
-$> openssl pkeyutl -decrypt \
-  -inkey public.pem -in ciphertext.rsa
-unable to load Private Key [...]
-
-# It does not work either with another private key
-$> openssl genrsa -out hacker-private.pem 1024
-$> openssl pkeyutl -decrypt \
-   -inkey hacker-private.pem -in ciphertext.rsa
-RSA operation error [...]
-```
-
-**Notes:**
-
-The ciphertext can be **decrypted with the corresponding private key**. Note
-that you **cannot decrypt the ciphertext using the public key**. Of course, a
-hacker using **another private key cannot decrypt it either**.
-
 Hence, you can encrypt data and send it to another party provided that you have
 their public key. **No single shared key needs to be exchanged** (the private
 key remains a secret known only to the recipient).
+
+You can see what generating a key pair and asymmetric encryption with RSA look
+like in practice in [the OpenSSL examples of the SSH subject][openssl-rsa].
 
 ---
 
@@ -435,12 +314,12 @@ the future, all data encrypted in the past is also compromised.
     <tr>
       <th>Symmetric encryption</th>
       <td><strong class="text-success">Fast</strong>, can be implemented in <strong class="text-success">hardware</strong></td>
-      <td><span class="text-error">Must send key, no forward secrecy</span></td>
+      <td><span class="text-error">Must send key</span></td>
     </tr>
     <tr>
       <th>Asymmetric encryption</th>
       <td><strong class="text-success">No shared key</strong></td>
-      <td><span class="text-error">Slow, no forward secrecy</span></td>
+      <td><span class="text-error">Slow, no forward secrecy with long-lived keys</span></td>
     </tr>
   </tbody>
 </table>
@@ -452,7 +331,13 @@ So far we learned that:
 - Symmetric encryption works but provides no solution to the problem of securely
   transmitting the shared secret key.
 - Asymmetric encryption works even better as it does not require a shared secret
-  key, but it does not provide forward secrecy.
+  key, but when it is used with a long-lived key pair, it does not provide
+  forward secrecy.
+
+Forward secrecy does not depend on the kind of encryption, but on **whether the
+keys are thrown away after use**. A key that no longer exists cannot be stolen
+later. As you will see, SSH gets forward secrecy from **temporary keys** that
+are created for one connection and thrown away afterwards.
 
 Additionally, it's important to note that **symmetric encryption is much faster
 than asymmetric encryption**.
@@ -553,62 +438,14 @@ signatures**. A signature proves that the message came from a particular sender.
   (only the corresponding private key could have generated a valid signature for
   that message).
 - **The message cannot be tampered with without detection**, as the digital
-  signature will no longer be valid (since it based on both the private key and
-  the message).
+  signature will no longer be valid (since it is based on both the private key
+  and the message).
 
 Note that a digital signature **does not provide confidentiality**. Although the
 message is protected from tampering, it is **not encrypted**.
 
---v
-
-#### Example: digital signature with RSA
-
-```bash
-# Create a message file
-$> echo "Hello Bob, I like you" > message.txt
-
-# Create a digital signature for
-# that message with the private key
-$> openssl dgst -sha256 -sign private.pem \
-   -out signature.rsa message.txt
-
-# See the signature (base64-encoded)
-$> openssl base64 -in signature.rsa
-```
-
-**Notes:**
-
-In the same directory as the previous example (asymmetric encryption with RSA),
-create a `message.txt` file with the message that we want to digitally sign.
-
-The example OpenSSL command will use the private key file `private.pem` (from
-the previous example) and generate a digital signature based on the message file
-`message.txt`. The signature will be stored in the file `signature.rsa`.
-
-If you open the file, you can see that it's simply binary data. You can see it
-base64-encoded with the second example command.
-
---v
-
-#### Example: verifying a digital signature with RSA
-
-```bash
-$> openssl dgst -sha256 -verify public.pem \
-   -signature signature.rsa message.txt
-Verified OK
-
-# Modify the message...
-
-$> openssl dgst -sha256 -verify public.pem \
-   -signature signature.rsa message.txt
-Verification Failure
-```
-
-**Notes:**
-
-The example command uses the public key to check that the signature is valid for
-the message. If you modify the message file and run the command again, it will
-detect that the digital signature no longer matches the message:
+You can see what signing a message and verifying the signature with RSA look
+like in practice in [the OpenSSL examples of the SSH subject][openssl-signature].
 
 ---
 
@@ -635,6 +472,11 @@ SSH uses [Message Authentication Codes (MAC)][mac], which are based on
 cryptographic hash functions, to protect both the data integrity and
 authenticity of all messages sent through the secure channel.
 
+Most SSH connections today use [authenticated encryption][authenticated-encryption]
+algorithms such as `chacha20-poly1305` or AES-GCM, where the integrity check is
+built into the encryption algorithm instead of being a separate MAC. The idea is
+the same: any modification of a message is detected.
+
 ---
 
 ### Combining it all together in SSH
@@ -646,6 +488,13 @@ authenticity of all messages sent through the secure channel.
 SSH uses most of the previous cryptographic techniques we've seen together to
 achieve as secure a channel as possible.
 
+The symmetric key is not the only thing that disappears when the channel is
+closed. The secret numbers each side chose for the Diffie-Hellman key exchange
+(the secret colors in the diagram) are temporary too, and they are thrown away
+as well. Without them, nobody can compute the symmetric key again, even with
+the recorded exchange and the server's private key. This is what provides
+**forward secrecy**.
+
 ---
 
 #### Man-in-the-Middle attack on SSH
@@ -654,7 +503,78 @@ achieve as secure a channel as possible.
 
 ---
 
-#### Threats countered
+### One mechanism, both directions
+
+<table class="text-3xl">
+  <thead>
+    <tr>
+      <th>Who proves their identity?</th>
+      <th>Who holds the private key?</th>
+      <th>Where is the public key?</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>The server</th>
+      <td>
+        the server
+        <br />
+        <code class="text-lg">/etc/ssh/ssh_host_*_key</code>
+      </td>
+      <td>
+        your machine
+        <br />
+        <em class="text-xl">(once you checked and accepted it)</em>
+        <br />
+        <code class="text-lg">~/.ssh/known_hosts</code>
+      </td>
+    </tr>
+    <tr>
+      <th>You</th>
+      <td>
+        your machine
+        <br />
+        <code class="text-lg">~/.ssh/id_ed25519</code>
+      </td>
+      <td>
+        the server
+        <br />
+        <em class="text-xl">
+          (after you provided it)
+        </em>
+        <br />
+        <code class="text-lg">~/.ssh/authorized_keys</code>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+**Notes:**
+
+Both steps of a secure SSH connection use the same mechanism, a **digital
+signature**, in opposite directions:
+
+- During step 1, the secure channel, **the server signs** the Diffie-Hellman key
+  exchange with its private key. Your SSH client checks the signature with the
+  server's public key, which is in your known hosts file once you have checked
+  its fingerprint.
+- During step 2, authentication, **your SSH client signs** data that is unique
+  to this connection with your private key. The server checks the signature with
+  your public key, which you have put in its authorized keys file.
+
+In both cases, the private key never leaves the machine it is on. Only a
+signature is sent.
+
+This is also why public key authentication is safer than a password against a
+man-in-the-middle attack. If an attacker manages to put themselves in the middle
+(for example because you did not check the server's public key), with a
+password they receive **the password itself**, and they can reuse it to log in
+as you. With a key, they only receive **a signature that is valid for that one
+connection**, which is useless for any other.
+
+---
+
+### Threats countered
 
 - Eavesdropping
 - Connection hijacking
@@ -686,11 +606,10 @@ is genuine.
 
 ---
 
-#### Threats not countered
+### Threats not countered
 
 - Password cracking <span class="text-xl italic">([common passwords](https://en.wikipedia.org/wiki/List_of_the_most_common_passwords): 123456, password, qwerty1)</span>
-- IP/TCP denial of service
-- Traffic analysis
+- Network attacks: IP/TCP DOS, traffic analysis
 - Carelessness and coffee spills <div class="inline-block ml-2 emoji-container size-10">:coffee:</div>
 - Genius mathematicians <span class="text-xl italic">(did you see [Sneakers][sneakers]?)</span>
 
@@ -713,10 +632,17 @@ SSH does not counter the following threats:
   amount of data, the source and target addresses, and the timing.
 - **Carelessness and coffee spills:** SSH doesn't protect you if you write your
   password on a post-it note and paste it on your computer screen.
-- **Genius mathematicians:** did you see [Sneakers][sneakers]?
+- **Genius mathematicians:** did you see [Sneakers][sneakers]? A real, current
+  example is the quantum computer. An attacker could record encrypted SSH
+  connections today, and decrypt them later once a large enough quantum computer
+  can break the Diffie-Hellman key exchange. This is called a ["store now,
+  decrypt later"][openssh-pq] attack. Forward secrecy does not help here, since
+  the key is computed instead of stolen. This is why OpenSSH uses a hybrid
+  post-quantum key exchange by default: `sntrup761x25519-sha512` since version
+  9.0, replaced by `mlkem768x25519-sha256` in version 10.0.
 
 [aes]: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
-[ciphertext]: https://en.wikipedia.org/wiki/Ciphertext
+[authenticated-encryption]: https://en.wikipedia.org/wiki/Authenticated_encryption
 [dh]: https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
 [discrete-logarithm]: https://en.wikipedia.org/wiki/Discrete_logarithm
 [elliptic-curve]: https://en.wikipedia.org/wiki/Elliptic-curve_cryptography
@@ -729,12 +655,13 @@ SSH does not counter the following threats:
 [integer-factorization]: https://en.wikipedia.org/wiki/Integer_factorization
 [mac]: https://en.wikipedia.org/wiki/Message_authentication_code
 [mitm]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
-[openssl]: https://www.openssl.org
-[pem]: https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail
-[plaintext]: https://en.wikipedia.org/wiki/Plaintext
+[openssh-pq]: https://www.openssh.org/pq.html
+
+[openssl-aes]: {% link chapters/103-ssh/subject.md %}#symmetric-encryption-with-aes
+[openssl-rsa]: {% link chapters/103-ssh/subject.md %}#asymmetric-encryption-with-rsa
+[openssl-signature]: {% link chapters/103-ssh/subject.md %}#digital-signature-with-rsa
 [pubkey]: https://en.wikipedia.org/wiki/Public-key_cryptography
 [pubkey-math]: https://www.onebigfluke.com/2013/11/public-key-crypto-math-explained.html
-[rsa]: https://en.wikipedia.org/wiki/RSA_(cryptosystem)
 [side-channel]: https://en.wikipedia.org/wiki/Cryptanalysis#Side-channel_attacks
 [sneakers]: https://en.wikipedia.org/wiki/Sneakers_(1992_film)
 [symmetric-encryption]: https://en.wikipedia.org/wiki/Symmetric-key_algorithm
