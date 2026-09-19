@@ -361,7 +361,6 @@ show_clue forest/tree.txt
 [cheatsheet-delete]: {% link cheatsheets/command-line/cheatsheet.md %}#delete-stuff-rm
 [cheatsheet-find]: {% link cheatsheets/command-line/cheatsheet.md %}#find-files-find
 [cheatsheet-move]: {% link cheatsheets/command-line/cheatsheet.md %}#move-stuff-mv
-[cheatsheet-read]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less
 [cheatsheet-run]: {% link cheatsheets/command-line/cheatsheet.md %}#run-a-program-program
 [command-line]: {% link chapters/101-command-line/subject.md %}
 [command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}
